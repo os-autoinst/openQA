@@ -2940,8 +2940,9 @@ openQA through the repositories, said directory will be created for you.</p>
 </div>
 <div class="paragraph">
 <p>The shown configuration causes workers to download the assets from the web UI
-and use them locally. The <code>TESTPOOLSERVER</code> setting causes also tests and needles
-to be downloaded via <code>rsync</code> from the specified location.</p>
+and use them locally. The <code>TESTPOOLSERVER</code> setting causes also tests and
+needles to be downloaded via <code>rsync</code> from the specified location. You can find
+further examples in the comments in <code>/etc/openqa/workers.ini</code>.</p>
 </div>
 <div class="paragraph">
 <p>It is suggested to have the cache and pool directories on the same filesystem
@@ -9603,7 +9604,7 @@ but provides a more robust and scalable network.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openvswitch
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openvswitch
 systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>openvswitch</code></pre>
 </div>
 </div>
@@ -9631,7 +9632,7 @@ assigned by the openQA scheduler. Install, start and enable the service:
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>os-autoinst-openvswitch
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>os-autoinst-openvswitch
 systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>os-autoinst-openvswitch</code></pre>
 </div>
 </div>
@@ -9641,8 +9642,7 @@ As it might be used by KVM already it is suggested to configure <em>br1</em> ins
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/os-autoinst-openvswitch</span>
-<span class="tok-nv">OS_AUTOINST_USE_BRIDGE</span><span class="tok-o">=</span>br1</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s1">&#39;OS_AUTOINST_USE_BRIDGE=br1&#39;</span><span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/sysconfig/os-autoinst-openvswitch</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -9659,6 +9659,27 @@ As it might be used by KVM already it is suggested to configure <em>br1</em> ins
 </div>
 <div class="sect3">
 <h4 id="_configure_virtual_interfaces">Configure virtual interfaces</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Add the bridge config including the part for all the tap devices that should
+be connected to it. The file has to be located in the
+<code>/etc/sysconfig/network/</code> directory. File name is <code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code>
+is the id of the bridge (e.g. <code>1</code>):</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-br1<span class="tok-w"> </span><span class="tok-s">&lt;&lt;EOF</span>
+<span class="tok-s">BOOTPROTO=&#39;static&#39;</span>
+<span class="tok-s">IPADDR=&#39;10.0.2.2/15&#39;</span>
+<span class="tok-s">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
+<span class="tok-nv">ZONE</span><span class="tok-o">=</span><span class="tok-s1">&#39;trusted&#39;</span>
+<span class="tok-nv">OVS_BRIDGE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span>
+<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_0</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap0&#39;</span></code></pre>
+</div>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -9690,41 +9711,25 @@ with the number for the interface, such as <code>0</code>, <code>1</code>, <code
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-tap0</span>
-<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;none&#39;</span>
-<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">NETMASK</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">PREFIXLEN</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
-<span class="tok-nv">TUNNEL</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap&#39;</span>
-<span class="tok-nv">TUNNEL_SET_GROUP</span><span class="tok-o">=</span><span class="tok-s1">&#39;nogroup&#39;</span>
-<span class="tok-nv">TUNNEL_SET_OWNER</span><span class="tok-o">=</span><span class="tok-s1">&#39;_openqa-worker&#39;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-tap0<span class="tok-w"> </span><span class="tok-s">&lt;&lt;EOF</span>
+<span class="tok-s">BOOTPROTO=&#39;none&#39;</span>
+<span class="tok-s">IPADDR=&#39;&#39;</span>
+<span class="tok-s">NETMASK=&#39;&#39;</span>
+<span class="tok-s">PREFIXLEN=&#39;&#39;</span>
+<span class="tok-s">STARTMODE=&#39;auto&#39;</span>
+<span class="tok-s">TUNNEL=&#39;tap&#39;</span>
+<span class="tok-s">TUNNEL_SET_GROUP=&#39;nogroup&#39;</span>
+<span class="tok-s">TUNNEL_SET_OWNER=&#39;_openqa-worker&#39;</span>
+<span class="tok-s">EOF</span>
+<span class="tok-nv">instances</span><span class="tok-o">=</span><span class="tok-m">42</span>
+<span class="tok-k">for</span><span class="tok-w"> </span>i<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-k">$(</span>seq<span class="tok-w"> </span><span class="tok-m">1</span><span class="tok-w"> </span><span class="tok-nv">$instances</span><span class="tok-p">;</span><span class="tok-w"> </span>seq<span class="tok-w"> </span><span class="tok-m">64</span><span class="tok-w"> </span><span class="tok-k">$((</span><span class="tok-m">64</span><span class="tok-o">+</span><span class="tok-nv">instances</span><span class="tok-k">))</span><span class="tok-p">;</span><span class="tok-w"> </span>seq<span class="tok-w"> </span><span class="tok-m">128</span><span class="tok-w"> </span><span class="tok-k">$((</span><span class="tok-m">128</span><span class="tok-o">+</span><span class="tok-nv">instances</span><span class="tok-k">)))</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
+<span class="tok-w">    </span>ln<span class="tok-w"> </span>-sf<span class="tok-w"> </span>ifcfg-tap0<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-tap<span class="tok-nv">$i</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;OVS_BRIDGE_PORT_DEVICE_</span><span class="tok-nv">$i</span><span class="tok-s2">=&#39;tap</span><span class="tok-nv">$i</span><span class="tok-s2">&#39;&quot;</span><span class="tok-w"> </span>&gt;&gt;<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-br1
+<span class="tok-k">done</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Symlinks can be used to reference the same configuration file for each tap
 interface.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Add the bridge config with all tap devices that should be connected to it.
-The file has to be located in the <code>/etc/sysconfig/network/</code> directory. File
-name is <code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code> is the id of the bridge (e.g. <code>1</code>):</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
-<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;static&#39;</span>
-<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;10.0.2.2/15&#39;</span>
-<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
-<span class="tok-nv">OVS_BRIDGE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_1</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap0&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_2</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap1&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_3</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap2&#39;</span></code></pre>
-</div>
 </div>
 </div>
 <div class="sect3">
@@ -9734,16 +9739,17 @@ name is <code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code> is the id o
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/firewalld/zones/trusted.xml</span>
-&lt;?xml<span class="tok-w"> </span><span class="tok-nv">version</span><span class="tok-o">=</span><span class="tok-s2">&quot;1.0&quot;</span><span class="tok-w"> </span><span class="tok-nv">encoding</span><span class="tok-o">=</span><span class="tok-s2">&quot;utf-8&quot;</span>?&gt;
-&lt;zone<span class="tok-w"> </span><span class="tok-nv">target</span><span class="tok-o">=</span><span class="tok-s2">&quot;ACCEPT&quot;</span>&gt;
-<span class="tok-w">  </span>&lt;short&gt;Trusted&lt;/short&gt;
-<span class="tok-w">  </span>&lt;description&gt;All<span class="tok-w"> </span>network<span class="tok-w"> </span>connections<span class="tok-w"> </span>are<span class="tok-w"> </span>accepted.&lt;/description&gt;
-<span class="tok-w">  </span>&lt;interface<span class="tok-w"> </span><span class="tok-nv">name</span><span class="tok-o">=</span><span class="tok-s2">&quot;br1&quot;</span>/&gt;
-<span class="tok-w">  </span>&lt;interface<span class="tok-w"> </span><span class="tok-nv">name</span><span class="tok-o">=</span><span class="tok-s2">&quot;ovs-system&quot;</span>/&gt;
-<span class="tok-w">  </span>&lt;interface<span class="tok-w"> </span><span class="tok-nv">name</span><span class="tok-o">=</span><span class="tok-s2">&quot;eth0&quot;</span>/&gt;
-<span class="tok-w">  </span>&lt;masquerade/&gt;
-&lt;/zone&gt;</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/firewalld/zones/trusted.xml<span class="tok-w"> </span><span class="tok-s">&lt;&lt;EOF</span>
+<span class="tok-s">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+<span class="tok-s">&lt;zone target=&quot;ACCEPT&quot;&gt;</span>
+<span class="tok-s">  &lt;short&gt;Trusted&lt;/short&gt;</span>
+<span class="tok-s">  &lt;description&gt;All network connections are accepted.&lt;/description&gt;</span>
+<span class="tok-s">  &lt;interface name=&quot;br1&quot;/&gt;</span>
+<span class="tok-s">  &lt;interface name=&quot;ovs-system&quot;/&gt;</span>
+<span class="tok-s">  &lt;interface name=&quot;eth0&quot;/&gt;</span>
+<span class="tok-s">  &lt;masquerade/&gt;</span>
+<span class="tok-s">&lt;/zone&gt;</span>
+<span class="tok-s">EOF</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9884,7 +9890,7 @@ CAP_NET_ADMIN capability on QEMU binary file:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>libcap-progs
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>libcap-progs
 setcap<span class="tok-w"> </span><span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep<span class="tok-w"> </span>/usr/bin/qemu-system-x86_64</code></pre>
 </div>
 </div>
@@ -10009,12 +10015,13 @@ on both hosts):</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
-<span class="tok-c1">#!/bin/sh</span>
-<span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
-<span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
-ovs-vsctl<span class="tok-w"> </span><span class="tok-nb">set</span><span class="tok-w"> </span>bridge<span class="tok-w"> </span><span class="tok-nv">$bridge</span><span class="tok-w"> </span><span class="tok-nv">stp_enable</span><span class="tok-o">=</span><span class="tok-nb">true</span>
-ovs-vsctl<span class="tok-w"> </span>--may-exist<span class="tok-w"> </span>add-port<span class="tok-w"> </span><span class="tok-nv">$bridge</span><span class="tok-w"> </span>gre1<span class="tok-w"> </span>--<span class="tok-w"> </span><span class="tok-nb">set</span><span class="tok-w"> </span>interface<span class="tok-w"> </span>gre1<span class="tok-w"> </span><span class="tok-nv">type</span><span class="tok-o">=</span>gre<span class="tok-w"> </span>options:remote_ip<span class="tok-o">=</span>&lt;IP<span class="tok-w"> </span>address<span class="tok-w"> </span>of<span class="tok-w"> </span>other<span class="tok-w"> </span>host&gt;</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/wicked/scripts/gre_tunnel_preup.sh<span class="tok-w"> </span><span class="tok-s">&lt;&lt;EOF</span>
+<span class="tok-s">#!/bin/sh</span>
+<span class="tok-s">action=&quot;$1&quot;</span>
+<span class="tok-s">bridge=&quot;$2&quot;</span>
+<span class="tok-s">ovs-vsctl set bridge $bridge stp_enable=true</span>
+<span class="tok-s">ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=&lt;IP address of other host&gt;</span>
+<span class="tok-s">EOF</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -12438,7 +12445,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-07-07 02:23:48 UTC
+Last updated 2023-07-20 02:26:03 UTC
 </div>
 </div>
 </body>
