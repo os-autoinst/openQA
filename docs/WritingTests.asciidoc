@@ -178,8 +178,8 @@ def run(self):
     # import further Perl-based libraries (besides `testapi`)
     perl.require("x11utils") 
 
-    # Example on how to use imported libraries and named arguments.
-    # In Perl would have been: x11_start_program("flatpak run com.obsproject.Studio", "target_match" => "obsproject-wizard")
+    # use imported Perl-based libraries; call Perl function that would be called via "named arguments" in Perl
+    # note: In Perl the call would have been: x11_start_program('flatpak run com.obsproject.Studio', target_match => 'obsproject-wizard')
     perl.x11utils.x11_start_program("flatpak run com.obsproject.Studio", "target_match", "obsproject-wizard") 
 
 def switch_to_root_console():
