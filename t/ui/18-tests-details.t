@@ -151,7 +151,8 @@ subtest 'show job modules execution time' => sub {
 subtest 'displaying image result with candidates' => sub {
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     wait_for_ajax;
-    is_deeply(find_candidate_needles, {'inst-bootmenu' => []}, 'correct tags displayed');
+    my $needles = find_candidate_needles;
+    is_deeply($needles, {'inst-bootmenu' => []}, 'correct tags displayed') or diag explain $needles;
 };
 
 subtest 'filtering' => sub {
