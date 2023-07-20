@@ -1,6 +1,8 @@
 <td id="res_<%= $resultid %>" name="jobid_td_<%= $jobid %>">
      % if ($res) {
          % if (is_operator) {
+         <a class="copy-jobid" href="#" data-jobid="<%= $jobid %>">
+         <i class="action fa fa-fw fa-copy" title="Copy job id"></i></a>
              % if ($state eq DONE || $state eq CANCELLED) {
                  %= link_post url_for('apiv1_restart', jobid => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
                  <i class="action fa fa-undo" title="Restart the job"></i>
