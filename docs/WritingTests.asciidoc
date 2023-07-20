@@ -175,7 +175,7 @@ def run(self):
     send_key('ret')
     assert_screen('openqa-search-results')
 
-    # This is how to import libraries other than 'testapi'
+    # import further Perl-based libraries (besides `testapi`)
     perl.require("x11utils") 
 
     # Example on how to use imported libraries and named arguments.
