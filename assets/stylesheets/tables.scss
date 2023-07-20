@@ -63,7 +63,11 @@
         text-align: center;
     }
 }
-
+table.settings-table tr {
+    td span {
+        white-space: pre;
+    }
+}
 table.dataTable {
     td.name {
         text-align: left;
