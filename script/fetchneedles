@@ -1,6 +1,6 @@
 #!/bin/sh -e
 : "${dbuser:="geekotest"}"
-: "${dbgroup:="www"}"
+: "${dbgroup:="nogroup"}"
 
 : "${dist_name:=${dist:-"openSUSE"}}" # the display name, for the help message
 : "${dist:="opensuse"}"
