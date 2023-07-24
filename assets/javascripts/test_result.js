@@ -1123,4 +1123,11 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
   // note: centering is achieved by centering the svg element itself like any other html block element
 }
 
+function rescheduleProductForJob(link) {
+  if (window.confirm('Do you really want to partially reschedule the product of this job?')) {
+    rescheduleProduct(link.dataset.url);
+  }
+  return false; // avoid usual link handling
+}
+
 module = {};

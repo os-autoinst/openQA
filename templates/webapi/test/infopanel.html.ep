@@ -135,7 +135,23 @@
                 <div id="scheduled-product-info">
                     Scheduled product:\
                     % if (my $scheduled_product = $job->scheduled_product) {
-                        %= link_to $scheduled_product->to_string, url_for('admin_product_log')->query(id => $scheduled_product->id)
+                        % my $sp_id = $scheduled_product->id;
+                        %= link_to $scheduled_product->to_string, url_for('admin_product_log')->query(id => $sp_id)
+                        % if (is_operator) {
+                            <div class="btn-group btn-group-sm">
+                                <a href="#"
+                                   onclick="return rescheduleProductForJob(this);" \
+                                   class="btn btn-link"\
+                                   data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
+                                     <i class="fa fa-2 fa-refresh" title="Reschedule product from here"></i>
+                                </a>
+                            </div>
+                            <%= help_popover('Partial product re-scheduling' => "
+                                <p>Schedules the product again using the current job as starting point. That means chained parents of
+                                the current job will not be scheduled again but all its children will be.</p>",
+                                undef, undef, 'bottom');
+                            %>
+                        % }
                     % } else {
                         job has not been created by posting an ISO
                         % if ($clone_of) {

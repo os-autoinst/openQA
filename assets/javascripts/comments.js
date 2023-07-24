@@ -34,14 +34,6 @@ function renderCommentHeading(comment, commentId) {
   return heading;
 }
 
-function getXhrError(jqXHR, textStatus, errorThrown) {
-  try {
-    return JSON.parse(jqXHR.responseText).error || errorThrown || textStatus;
-  } catch {
-    return errorThrown || textStatus;
-  }
-}
-
 function showXhrError(context, jqXHR, textStatus, errorThrown) {
   window.alert(context + getXhrError(jqXHR, textStatus, errorThrown));
 }

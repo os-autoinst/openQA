@@ -241,7 +241,7 @@ subtest 'bug reporting' => sub {
 
 subtest 'scheduled product shown' => sub {
     # still on test 99937
-    my $scheduled_product_link = $driver->find_element('#scheduled-product-info a');
+    my $scheduled_product_link = $driver->find_element('#scheduled-product-info > a');
     my $expected_scheduled_product_id = $schema->resultset('Jobs')->find(99937)->scheduled_product_id;
     is($scheduled_product_link->get_text(), 'distri-dvd-1234', 'scheduled product name');
     like(
@@ -249,6 +249,14 @@ subtest 'scheduled product shown' => sub {
         qr/\/admin\/productlog\?id=$expected_scheduled_product_id/,
         'scheduled product href'
     );
+    my $reschedule_link = $driver->find_element('#scheduled-product-info div > a');
+    my $expected_params = qr/scheduled_product_clone_id=$expected_scheduled_product_id&TEST=kde/;
+    like $reschedule_link->get_attribute('data-url'), $expected_params, 'reschedule link shown';
+    $reschedule_link->click;
+    $driver->accept_alert;
+    wait_for_ajax msg => 'message for rescheduling';
+    element_visible '#flash-messages .alert > span', qr/Scheduled product to clone settings from misses DISTRI/, undef,
+      'error shown';
     $driver->get('/tests/99963');
     like(
         $driver->find_element_by_id('scheduled-product-info')->get_text(),
