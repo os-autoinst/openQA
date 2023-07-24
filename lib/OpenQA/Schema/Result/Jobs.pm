@@ -138,6 +138,14 @@ __PACKAGE__->add_columns(
         data_type => 'boolean',
         default_value => 1,
     },
+    videos_present => {
+        data_type => 'boolean',
+        default_value => 1,
+    },
+    results_present => {
+        data_type => 'boolean',
+        default_value => 1,
+    },
     passed_module_count => {
         data_type => 'integer',
         default_value => 0,
