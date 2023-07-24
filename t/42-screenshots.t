@@ -192,6 +192,7 @@ subtest 'deleting screenshots of a single job' => sub {
     is $job->delete_results, 2 * (2 + 3) + 5, 'size of deleted results returned';
     $job->discard_changes;
     is $job->logs_present, 0, 'logs not considered present anymore';
+    is $job->results_present, 0, 'results not considered present anymore';
     is $job->result_size, 0, 'result size cleared';
     ok !-e $result_dir, 'result dir deleted';
     is_deeply [map { $_->filename } $screenshots->search({filename => {-in => \@fake_screenshots}})->all], ['foo'],

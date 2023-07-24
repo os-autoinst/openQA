@@ -1155,7 +1155,8 @@ sub delete_videos ($self) {
 
     my @files = (find_video_files($result_dir), Mojo::Collection->new(path($result_dir, 'video_time.vtt')));
     my $deleted_size = _delete_returning_size_from_array(\@files);
-    $self->update({result_size => \"greatest(0, result_size - $deleted_size)"});   # considering logs still present here
+    $self->update({videos_present => 0, result_size => \"greatest(0, result_size - $deleted_size)"})
+      ;    # considering logs still present here
     return $deleted_size;
 }
 
@@ -1178,7 +1179,7 @@ sub delete_results ($self) {
       = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, deleted_size => \$deleted_size);
     $self->screenshot_links->delete;
     $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename) for @$exclusively_used_screenshot_ids;
-    $self->update({logs_present => 0, result_size => 0});
+    $self->update({logs_present => 0, videos_present => 0, results_present => 0, result_size => 0});
     return $deleted_size;
 }
 

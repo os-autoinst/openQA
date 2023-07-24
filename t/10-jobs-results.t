@@ -109,6 +109,7 @@ subtest 'create result dir, delete results' => sub {
         $job->delete_videos;
         $job->discard_changes;
         is $job->logs_present, 1, 'logs still considered present';
+        is $job->videos_present, 0, 'videos no longer considered present';
         is $job->result_size, $initially_assumed_result_size - length($file_content) * 3 - $symlink_size,
           'deleted size subtracted from result size';
         is_deeply $job->video_file_paths->to_array, [], 'no more videos found'

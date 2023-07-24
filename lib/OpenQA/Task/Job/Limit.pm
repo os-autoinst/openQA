@@ -218,35 +218,36 @@ sub _ensure_results_below_threshold ($job, @) {
     # caveat: We're considering possibly lots of jobs at once here. Maybe we need to select a range here when dealing
     #         with a huge number of jobs.
 
-    log_debug "Deleting videos from non-important jobs startinng from oldest job (balance is $margin_bytes)";
+    log_debug "Deleting videos from non-important jobs starting from oldest job with videos (balance is $margin_bytes)";
     my $jobs = $schema->resultset('Jobs');
     my @job_id_args = (id => {'<=' => $max_job_id});
     my %jobs_params = (order_by => {-asc => 'id'});
-    my $relevant_jobs = $jobs->search({@job_id_args, @not_important_cond, logs_present => 1}, \%jobs_params);
+    my $relevant_jobs = $jobs->search({@job_id_args, @not_important_cond, videos_present => 1}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting video of job ' . $openqa_job->id;
         return $job->finish('Done after deleting videos from non-important jobs')
           if ($margin_bytes += $openqa_job->delete_videos) >= 0;
     }
 
-    log_debug "Deleting results from non-important jobs startinng from oldest job (balance is $margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, @not_important_cond}, \%jobs_params);
+    log_debug
+      "Deleting results from non-important jobs starting from oldest job with results (balance is $margin_bytes)";
+    $relevant_jobs = $jobs->search({@job_id_args, @not_important_cond, results_present => 1}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of job ' . $openqa_job->id;
         return $job->finish('Done after deleting results from non-important jobs')
           if ($margin_bytes += $openqa_job->delete_results) >= 0;
     }
 
-    log_debug "Deleting videos from important jobs startinng from oldest job (balance is $margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, @important_cond, logs_present => 1}, \%jobs_params);
+    log_debug "Deleting videos from important jobs startinng from oldest job with videos (balance is $margin_bytes)";
+    $relevant_jobs = $jobs->search({@job_id_args, @important_cond, videos_present => 1}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting video of important job ' . $openqa_job->id;
         return $job->finish('Done after deleting videos from important jobs')
           if ($margin_bytes += $openqa_job->delete_videos) >= 0;
     }
 
-    log_debug "Deleting results from important jobs startinng from oldest job (balance is $margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, @important_cond}, \%jobs_params);
+    log_debug "Deleting results from important jobs startinng from oldest job with results (balance is $margin_bytes)";
+    $relevant_jobs = $jobs->search({@job_id_args, @important_cond, results_present => 1}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of important job ' . $openqa_job->id;
         return $job->finish('Done after deleting results from important jobs')
