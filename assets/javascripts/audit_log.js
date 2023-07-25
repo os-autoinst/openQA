@@ -200,7 +200,7 @@ function rescheduleProduct(url) {
       const id = jqXHR.responseJSON?.scheduled_product_id;
       const msg =
         typeof id === 'number'
-          ? `The product has been re-triggered as <a href="/admin/productlog?id=${id}">${id}</a>.`
+          ? 'The product has been re-triggered as <a href="/admin/productlog?id=' + id + '">' + id + '</a>.'
           : 'Re-scheduling the product has been triggered.';
       addFlash('info', msg);
     },
