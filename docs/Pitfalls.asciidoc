@@ -130,10 +130,8 @@ using firewalld and the ports are blocked, it is fairly simple to open them:
 
 ```
 # add new service "isotovideo" with ports covering 50 worker slots as explained in debugging steps above
-firewall-cmd --new-service isotovideo
-for i in {1..50}; do firewall-cmd --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
-# allow the service in your zone (public in this example) right now
-firewall-cmd --zone=public --add-service=isotovideo
-# ensure the settings to be effective after firewall or host restarts
-firewall-cmd --runtime-to-permanent
+firewall-cmd --permanent --new-service isotovideo
+for i in {1..50}; do firewall-cmd --permanent --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
+# allow the service in your zone (trusted in this example) right now
+firewall-cmd --permanent --zone=trusted --add-service=isotovideo
 ```
