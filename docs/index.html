@@ -6460,11 +6460,11 @@ boilerplate is slightly different the function names are the same.</p>
     <span class="tok-n">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-search-results&#39;</span><span class="tok-p">)</span>
 
     <span class="tok-c1"># import further Perl-based libraries (besides `testapi`)</span>
-    <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">require</span><span class="tok-p">(</span><span class="tok-s2">&quot;x11utils&quot;</span><span class="tok-p">)</span>
+    <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">require</span><span class="tok-p">(</span><span class="tok-s1">&#39;x11utils&#39;</span><span class="tok-p">)</span>
 
     <span class="tok-c1"># use imported Perl-based libraries; call Perl function that would be called via &quot;named arguments&quot; in Perl</span>
     <span class="tok-c1"># note: In Perl the call would have been: x11_start_program(&#39;flatpak run com.obsproject.Studio&#39;, target_match =&gt; &#39;obsproject-wizard&#39;)</span>
-    <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">x11utils</span><span class="tok-o">.</span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s2">&quot;flatpak run com.obsproject.Studio&quot;</span><span class="tok-p">,</span> <span class="tok-s2">&quot;target_match&quot;</span><span class="tok-p">,</span> <span class="tok-s2">&quot;obsproject-wizard&quot;</span><span class="tok-p">)</span>
+    <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">x11utils</span><span class="tok-o">.</span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s1">&#39;flatpak run com.obsproject.Studio&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;target_match&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;obsproject-wizard&#39;</span><span class="tok-p">)</span>
 
 <span class="tok-k">def</span> <span class="tok-nf">switch_to_root_console</span><span class="tok-p">():</span>
     <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">)</span>
@@ -9476,12 +9476,10 @@ using firewalld and the ports are blocked, it is fairly simple to open them:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span># add new service &quot;isotovideo&quot; with ports covering 50 worker slots as explained in debugging steps above
-firewall-cmd --new-service isotovideo
-for i in {1..50}; do firewall-cmd --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
-# allow the service in your zone (public in this example) right now
-firewall-cmd --zone=public --add-service=isotovideo
-# ensure the settings to be effective after firewall or host restarts
-firewall-cmd --runtime-to-permanent</code></pre>
+firewall-cmd --permanent --new-service isotovideo
+for i in {1..50}; do firewall-cmd --permanent --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
+# allow the service in your zone (trusted in this example) right now
+firewall-cmd --permanent --zone=trusted --add-service=isotovideo</code></pre>
 </div>
 </div>
 </div>
@@ -12451,7 +12449,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-07-21 02:23:32 UTC
+Last updated 2023-07-26 02:25:21 UTC
 </div>
 </div>
 </body>
