@@ -67,6 +67,7 @@ requires 'Mojolicious', '>= 9.30';
 requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
 requires 'Mojolicious::Plugin::AssetPack', '>= 1.36';
+requires 'Mojolicious::Plugin::OAuth2';
 requires 'Mojolicious::Static';
 requires 'Net::OpenID::Consumer';
 requires 'POSIX';
@@ -96,7 +97,6 @@ requires 'warnings';
 
 on 'test' => sub {
     requires 'App::cpanminus';
-    requires 'Mojolicious::Plugin::OAuth2';
     requires 'Perl::Critic';
     requires 'Perl::Critic::Freenode';
     requires 'Selenium::Remote::Driver', '>= 1.23';
