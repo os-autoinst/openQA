@@ -56,6 +56,19 @@ required internet access, etc. on the host as described in the next section.
 
 === Multi-machine test setup
 
+The complete multi-machine test setup can be provided from the script
+`os-autoinst-setup-multi-machine` provided by "os-autoinst". The script can be
+also found online on
+https://github.com/os-autoinst/os-autoinst/blob/master/script/os-autoinst-setup-multi-machine
+
+[NOTE]
+====
+The rest of this chapter until the next chapter <<Verify the setup>> can be
+completely skipped if `os-autoinst-setup-multi-machine` was used. The
+following explanations are provided for reference and further explanation but
+are not guaranteed to provide a consistent working setup.
+====
+
 The section provides one of the ways for setting up the openQA environment to
 run tests that require network connection between several machines (e.g.
 client -- server tests).

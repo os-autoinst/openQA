@@ -93,6 +93,9 @@ This is basically a checklist to go through in case the developer mode is broken
 
 . Be sure to have everything up to date. That includes relevant packages on the
   machine hosting the web UI and on the worker.
+. Ensure the firewall configuration steps from
+  https://github.com/os-autoinst/os-autoinst/blob/master/script/os-autoinst-setup-multi-machine
+  have been applied to the worker machine
 . Check whether the web browser can reach the livehandler daemon. Go to a running test and open
   the live view. Then open the JavaScript console of the web browser. If it contains messages
   like `Received message via ws proxy: ...` the livehandler daemon can be reached. Otherwise,
@@ -123,15 +126,3 @@ This is basically a checklist to go through in case the developer mode is broken
   which component needs access to which other components and the ports used by default.
 
 //-
-
-=== Configure firewalld
-As mentioned, certain ports are required to be open on the worker host. If you are
-using firewalld and the ports are blocked, it is fairly simple to open them:
-
-```
-# add new service "isotovideo" with ports covering 50 worker slots as explained in debugging steps above
-firewall-cmd --permanent --new-service isotovideo
-for i in {1..50}; do firewall-cmd --permanent --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
-# allow the service in your zone (trusted in this example) right now
-firewall-cmd --permanent --zone=trusted --add-service=isotovideo
-```
