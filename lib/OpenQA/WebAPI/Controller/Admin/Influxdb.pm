@@ -110,7 +110,7 @@ sub minion ($self) {
 		  WHERE finished >= ? AND finished < ? AND task = 'hook_script' AND
 		        state = 'finished' AND (notes->'hook_rc')::int != 0}
     );
-    $sth->execute($rc_fail_timespan_start, $rc_fail_timespan_end);
+    $sth->execute($rc_fail_timespan_start, "$rc_fail_timespan_end+0");
 
     my $result = $sth->fetchrow_arrayref;
     my $jobs_hook_rc_failed_count = $result->[0];
