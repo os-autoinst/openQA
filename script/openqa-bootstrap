@@ -20,8 +20,8 @@ fi
 if [ "$NAME" = "openSUSE Leap" ]; then
     # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
     repobase=https://download.opensuse.org/repositories/devel:/openQA
-    zypper -n addrepo -p 90 "$repobase/${VERSION}" 'devel:openQA'
-    zypper -n addrepo -p 91 "$repobase:/Leap:/${VERSION}/${VERSION}" "devel:openQA:Leap:${VERSION}"
+    zypper -n addrepo -p 95 "$repobase/${VERSION}" 'devel:openQA'
+    zypper -n addrepo -p 90 "$repobase:/Leap:/${VERSION}/${VERSION}" "devel:openQA:Leap:${VERSION}"
     zypper -n  --gpg-auto-import-keys refresh
 fi
 
