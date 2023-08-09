@@ -307,10 +307,32 @@ subtest 'job grab (failed to send job to worker)' => sub {
     is_deeply($allocated, [], 'no workers/jobs allocated');
 };
 
+subtest 'job grab (no jobs because max_running_jobs limit is exceeded)' => sub {
+    $job->update({state => DONE});
+    $job2->update({state => DONE});
+    $worker_db_obj->discard_changes;
+    my $job4 = $jobs->create_from_settings(\%settings2);
+    my $s = OpenQA::Scheduler::Model::Jobs->singleton;
+    $s->{config}->{scheduler}->{max_running_jobs} = 0;
+
+    my $res = $s->schedule();
+    is $res, undef, 'schedule() returns nothing';
+
+    my $scheduled = list_jobs(state => SCHEDULED);
+    my $assigned = list_jobs(state => ASSIGNED);
+    is scalar @$assigned, 0, 'No jobs assigned';
+    is scalar @$scheduled, 1, '1 job still scheduled';
+    $jobs->find($job4->id)->delete;
+};
+
 subtest 'job grab (successful assignment)' => sub {
+    $job->update({state => SCHEDULED});
+    $job2->update({state => SCHEDULED});
     my $rjobs_before = list_jobs(state => RUNNING);
     undef $ws_send_error;
-    OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    my $s = OpenQA::Scheduler::Model::Jobs->singleton;
+    delete $s->{config}->{scheduler}->{max_running_jobs};
+    my $res = $s->schedule();
     $worker_db_obj->discard_changes;
 
     my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
