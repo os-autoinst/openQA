@@ -8,6 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Date::Format 'time2str';
 use Test::Mojo;
+use Mojo::File qw(tempdir);
 use Test::Warnings ':report_warnings';
 use Time::Seconds;
 use OpenQA::Test::TimeLimit '40';
@@ -24,6 +25,9 @@ my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob =>
 use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+$ENV{OPENQA_CONFIG} = my $config_dir = tempdir("$FindBin::Script-XXXX");
+$config_dir->child('openqa.ini')->spurt("[scheduler]\nmax_running_jobs = 3");
 
 my @job_params = (
     group_id => 1002,
@@ -144,14 +148,14 @@ subtest 'running jobs, progress bars' => sub {
 
 my @header = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected = ('3 jobs are running', '3 scheduled jobs', 'Last 11 finished jobs');
+my @expected = ('3 jobs are running (limited by server config)', '3 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
 $driver->get('/tests?limit=1');
 wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
 @header = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected = ('3 jobs are running', '1 scheduled jobs', 'Last 1 finished jobs');
+@expected = ('3 jobs are running (limited by server config)', '1 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
 $t->get_ok('/tests/99963')->status_is(200);
