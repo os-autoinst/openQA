@@ -66,6 +66,7 @@ subtest 'Test configuration default modes' => sub {
         },
         'scheduler' => {
             max_job_scheduled_time => 7,
+            max_running_jobs => -1,
         },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',

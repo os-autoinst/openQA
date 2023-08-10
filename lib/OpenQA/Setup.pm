@@ -66,6 +66,7 @@ sub read_config ($app) {
         },
         'scheduler' => {
             max_job_scheduled_time => 7,
+            max_running_jobs => -1,
         },
         logging => {
             level => undef,
