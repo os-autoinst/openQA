@@ -15,6 +15,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 
+use Capture::Tiny qw(capture);
 use Test::Fatal;
 use Test::Output qw(combined_like combined_unlike);
 use Test::MockModule;
@@ -1425,9 +1426,9 @@ subtest 'asset upload' => sub {
             $upload->emit('upload_chunk.prepare', Mojo::Collection->new);
             $upload->emit('upload_chunk.start');
             $upload->emit('upload_chunk.finish', $chunk);
-            $upload->emit('upload_local.response', $normal_tx);
-            $upload->emit('upload_chunk.response', $failure_tx);
-            $upload->emit('upload_chunk.fail', undef, Test::MockObject->new->set_always(index => 3));
+            $upload->emit('upload_local.response', $normal_tx, 0);
+            $upload->emit('upload_chunk.response', $failure_tx, 4);
+            $upload->emit('upload_chunk.fail', undef, Test::MockObject->new->set_always(index => 3), 2);
             $upload->emit('upload_chunk.error') if $mock_failure;
             push @params, \@args;
         });
@@ -1447,9 +1448,12 @@ subtest 'asset upload' => sub {
       or diag explain \@params;
 
     $mock_failure = 1;
-    combined_like { $upload_res = $job->_upload_asset(\%params) } qr/and all retry attempts have been exhausted/s,
-      'error logged';
-    is $upload_res, 0, 'upload failed';
+    my ($stdout, $stderr, @result) = capture sub { $job->_upload_asset(\%params) };
+    like $stderr, qr/Failure during asset upload \(attempts remaining: 4\)/, 'failure is reported for asset';
+    like $stderr, qr/Error uploading bar: 404 response: not found/, 'failure has details';
+    like $stderr, qr/Upload failed for chunk 3 \(attempts remaining: 2\)/, 'failure is reported for chunk';
+    like $stderr, qr/Upload failed, and all retry attempts have been exhausted/, 'all attempts exhausted message';
+    is $result[0], 0, 'upload failed';
 };
 
 subtest 'log file upload' => sub {

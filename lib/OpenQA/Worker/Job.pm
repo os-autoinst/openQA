@@ -1037,11 +1037,11 @@ sub _upload_asset {
             );
         });
 
-    my $response_cb = sub ($upload, $tx) {
+    my $response_cb = sub ($upload, $tx, $retries) {
         if ($tx->res->is_server_error) {
             log_error($tx->res->json->{error}, channels => \@channels_both, default => 1)
               if $tx->res->json && $tx->res->json->{error};
-            my $msg = "Failed uploading asset";
+            my $msg = "Failure during asset upload (attempts remaining: $retries)";
             log_error($msg, channels => \@channels_both, default => 1);
         }
         $self->_log_upload_error($filename, $tx);
@@ -1049,8 +1049,13 @@ sub _upload_asset {
     $ua->upload->on('upload_local.response' => $response_cb);
     $ua->upload->on('upload_chunk.response' => $response_cb);
     $ua->upload->on(
-        'upload_chunk.fail' => sub ($upload, $res, $chunk) {
-            log_error('Upload failed for chunk ' . $chunk->index, channels => \@channels_both, default => 1);
+        'upload_chunk.fail' => sub ($upload, $res, $chunk, $retries) {
+            my $index = $chunk->index;
+            log_error(
+                "Upload failed for chunk $index (attempts remaining: $retries)",
+                channels => \@channels_both,
+                default => 1
+            );
             sleep UPLOAD_DELAY;    # do not choke webui
         });
 

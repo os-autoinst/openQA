@@ -710,7 +710,7 @@ sub create_artefact ($self) {
 =item upload_state()
 
 It is used by the worker to inform the webui of a failed download. This is the case when
-all upload retrials from the worker have been exhausted and webui can remove the file
+all upload retries from the worker have been exhausted and webui can remove the file
 that has been partially uploaded.
 
 =back
