@@ -145,7 +145,7 @@ subtest 'upload other assets' => sub {
     $t->json_is('/name' => '00099963-hdd_image3.xml', 'name is expected for other asset');
 };
 
-subtest 'upload retrials' => sub {
+subtest 'upload retries' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image4.xml.CHUNKS/';
     my $rp = "t/data/openqa/share/factory/other/00099963-hdd_image4.xml";
 

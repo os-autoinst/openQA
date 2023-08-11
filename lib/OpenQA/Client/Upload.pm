@@ -9,7 +9,7 @@ use Carp qw(croak);
 use Mojo::Asset::Memory;
 use Mojo::File qw(path);
 
-has max_retrials => 5;
+has max_retries => 5;
 
 sub _upload_asset_fail ($self, $uri, $form) {
     $form->{state} = 'fail';
@@ -23,68 +23,72 @@ sub asset ($self, $job_id, $opts) {
 
     my $uri = "jobs/$job_id";
     $opts->{asset} //= 'public';
-    my $file_name = (!$opts->{name}) ? path($opts->{file})->basename : $opts->{name};
+    my $file_name = $opts->{name} || path($opts->{file})->basename;
 
     # Worker and WebUI are on the same host (much faster)
     if ($opts->{local} && $self->is_local) {
         $self->emit('upload_local.prepare');
-        my $res = $self->client->start(
+        my $tx = $self->client->start(
             $self->_build_post(
                 "$uri/artefact" => {
                     file => {filename => $file_name, content => ''},
                     asset => $opts->{asset},
                     local => "$opts->{file}"
                 }));
-        $self->emit('upload_local.response' => $res);
+        $self->emit('upload_local.response', $tx, 0);
         return undef;
     }
 
     my $chunk_size = $opts->{chunk_size} // 1000000;
-    my $pieces = OpenQA::File->new(file => Mojo::File->new($opts->{file}))->split($chunk_size);
-    $self->emit('upload_chunk.prepare' => $pieces);
+    my $parts = OpenQA::File->new(file => Mojo::File->new($opts->{file}))->split($chunk_size);
+    $self->emit('upload_chunk.prepare', $parts);
 
-    $self->once('upload_chunk.error' =>
-          sub { $self->_upload_asset_fail($uri => {filename => $file_name, scope => $opts->{asset}}) });
-    my $failed;
-    my $e;
+    $self->once('upload_chunk.error',
+        sub { $self->_upload_asset_fail($uri => {filename => $file_name, scope => $opts->{asset}}) });
 
-    for ($pieces->each) {
+    # Each chunk of the file should get the full number of retry attempts
+    my ($failed, $final_error);
+    for my $part ($parts->each) {
         last if $failed;
-        $self->emit('upload_chunk.start' => $_);
-        $_->prepare();
+        $self->emit('upload_chunk.start', $part);
+        $part->prepare();
 
-        my $trial = $self->max_retrials;
-        my $res;
-        my $done = 0;
+        my $retries = $self->max_retries;
+        my $done;
         do {
-            local $@;
+            $retries-- if $retries > 0;
+            my $tx;
             eval {
-                $res = $self->client->start(
-                    $self->_build_post(
-                        "$uri/artefact" => {
-                            file =>
-                              {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($_->serialize)},
-                            asset => $opts->{asset},
-                        }));
-                $self->emit('upload_chunk.response' => $res);
-                $done = 1
-                  if $res && $res->res->json && exists $res->res->json->{status} && $res->res->json->{status} eq 'ok';
+                my $form = {
+                    file => {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($part->serialize)},
+                    asset => $opts->{asset},
+                };
+                $tx = $self->client->start($self->_build_post("$uri/artefact" => $form));
+                $self->emit('upload_chunk.response', $tx, $retries);
+
+                if ($tx) {
+                    my $json = $tx->res->json;
+                    $done = 1 if $json && $json->{status} && $json->{status} eq 'ok';
+                }
             };
-            $self->emit('upload_chunk.fail' => $res => $_) if $done == 0;
+            if (my $error = $@) {
+                $self->emit('upload_chunk.request_err', $tx, $error);
+                $final_error = $error;
+            }
 
-            $trial-- if $trial > 0;
-            $self->emit('upload_chunk.request_err' => $res => $@) if $@;
-            $e = $@ || $res if $trial == 0 && $done == 0;
-        } until ($trial == 0 || $done);
+            unless ($done) {
+                $self->emit('upload_chunk.fail', $tx, $part, $retries);
+                $final_error ||= $tx if $retries == 0;
+            }
+        } until ($retries == 0 || $done);
 
-        $failed++ if $trial == 0 && $done == 0;
+        $failed = 1 if $retries == 0 && !$done;
 
-        $_->content(\undef);
-
-        $self->emit('upload_chunk.finish' => $_);
+        $part->content(\undef);
+        $self->emit('upload_chunk.finish', $part);
     }
 
-    $self->emit('upload_chunk.error' => $e) if $failed;
+    $self->emit('upload_chunk.error', $final_error) if $failed;
 
     return;
 }
