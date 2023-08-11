@@ -264,7 +264,11 @@ function renderTestLists() {
       data: ajaxQueryParams,
       dataSrc: function (json) {
         // update heading when JSON is available
-        $('#running_jobs_heading').text(json.data.length + ' jobs are running');
+        let text = json.data.length + ' jobs are running';
+        if (json.max_running_jobs !== undefined && json.max_running_jobs >= 0) {
+          text += ' (limited by server config)';
+        }
+        $('#running_jobs_heading').text(text);
         return json.data;
       }
     },

@@ -247,7 +247,10 @@ sub list_running_ajax {
                 progress => $job->progress_info,
             });
     }
-    $self->render(json => {data => \@running});
+    my %response = (data => \@running);
+    my $max_running = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} // -1;
+    $response{max_running_jobs} = $max_running if $max_running >= 0 && @running >= $max_running;
+    $self->render(json => \%response);
 }
 
 sub list_scheduled_ajax {
