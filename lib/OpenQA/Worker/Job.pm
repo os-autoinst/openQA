@@ -1001,8 +1001,10 @@ sub _upload_asset {
     my $job_id = $self->id;
     my $filename = $upload_parameter->{file}->{filename};
     my $file = $upload_parameter->{file}->{file};
-    my $chunk_size = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
-    my $local_upload = $self->worker->settings->global_settings->{LOCAL_UPLOAD} // 1;
+    my $global_settings = $self->worker->settings->global_settings;
+    my $chunk_size = $global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $retries = $global_settings->{UPLOAD_RETRIES} // 5;
+    my $local_upload = $global_settings->{LOCAL_UPLOAD} // 1;
     my $ua = $self->client->ua;
     my @channels_worker_only = ('worker');
     my @channels_both = ('autoinst', 'worker');
@@ -1077,7 +1079,8 @@ sub _upload_asset {
                 name => $filename,
                 asset => $upload_parameter->{asset},
                 chunk_size => $chunk_size,
-                local => $local_upload
+                local => $local_upload,
+                retries => $retries
             });
     };
     log_error($@, channels => \@channels_both, default => 1) if $@;

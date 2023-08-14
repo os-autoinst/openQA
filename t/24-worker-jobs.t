@@ -1443,7 +1443,8 @@ subtest 'asset upload' => sub {
     combined_like { $upload_res = $job->_upload_asset(\%params) } qr/fake error.*404.*Upload failed for chunk 3/s,
       'upload logged';
     is $upload_res, 1, 'upload succeeded';
-    is_deeply \@params, [[14, {asset => undef, chunk_size => 1000000, file => 'foo', name => 'bar', local => 1}]],
+    is_deeply \@params,
+      [[14, {asset => undef, chunk_size => 1000000, file => 'foo', name => 'bar', local => 1, retries => 5}]],
       'expected params passed'
       or diag explain \@params;
 
