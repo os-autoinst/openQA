@@ -9,8 +9,6 @@ use Carp qw(croak);
 use Mojo::Asset::Memory;
 use Mojo::File qw(path);
 
-has max_retries => 5;
-
 sub _upload_asset_fail ($self, $uri, $form) {
     $form->{state} = 'fail';
     return $self->client->start($self->_build_post("$uri/upload_state" => $form));
@@ -47,13 +45,14 @@ sub asset ($self, $job_id, $opts) {
         sub { $self->_upload_asset_fail($uri => {filename => $file_name, scope => $opts->{asset}}) });
 
     # Each chunk of the file should get the full number of retry attempts
+    my $max_retries = $opts->{retries} // 5;
     my ($failed, $final_error);
     for my $part ($parts->each) {
         last if $failed;
         $self->emit('upload_chunk.start', $part);
         $part->prepare();
 
-        my $retries = $self->max_retries;
+        my $retries = $max_retries;
         my $done;
         do {
             $retries-- if $retries > 0;

@@ -192,11 +192,11 @@ subtest 'upload failures' => sub {
         });
 
     eval {
-        $t->ua->upload->asset(
-            99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image5.xml', asset => 'other'});
+        $t->ua->upload->asset(99963 =>
+              {chunk_size => $chunk_size, file => $filename, name => 'hdd_image5.xml', asset => 'other', retries => 7});
     };
     ok !$@, 'No function errors on upload failures' or die diag $@;
-    is $fail_chunk, 5, 'All chunks failed, no recovery on upload failures';
+    is $fail_chunk, 7, 'All attempts failed, no recovery on upload failures';
     is $errored, 1, 'Upload errors';
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
     ok !-e $rp, 'Asset does not exist after upload on upload failures';
