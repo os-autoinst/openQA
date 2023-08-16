@@ -16,6 +16,7 @@ initdb --auth-local=peer -N "$DIR" -U "$(id -u -n)"
 (echo "listen_addresses=''"
 echo "unix_socket_directories='$DIR'"
 echo "fsync=off"
+echo "timezone='UTC'"
 echo "full_page_writes=off") >> "$DIR"/postgresql.conf
 
 LOGDIR="$DIR/log"
