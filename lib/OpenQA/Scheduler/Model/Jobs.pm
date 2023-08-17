@@ -43,7 +43,7 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
     my $worker_count = $schema->resultset('Workers')->count;
     my $free_worker_count = @$free_workers;
     my $running = $schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    my $limit = $self->{config}->{scheduler}->{max_running_jobs} // -1;
+    my $limit = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} // -1;
     if ($limit >= 0 && $running >= $limit) {
         log_debug("max_running_jobs ($limit) exceeded, scheduling no additional jobs");
         $self->emit('conclude');
