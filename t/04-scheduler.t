@@ -312,10 +312,8 @@ subtest 'job grab (no jobs because max_running_jobs limit is exceeded)' => sub {
     $job2->update({state => DONE});
     $worker_db_obj->discard_changes;
     my $job4 = $jobs->create_from_settings(\%settings2);
-    my $s = OpenQA::Scheduler::Model::Jobs->singleton;
-    $s->{config}->{scheduler}->{max_running_jobs} = 0;
-
-    my $res = $s->schedule();
+    local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 0;
+    my $res = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     is $res, undef, 'schedule() returns nothing';
 
     my $scheduled = list_jobs(state => SCHEDULED);
@@ -330,9 +328,7 @@ subtest 'job grab (successful assignment)' => sub {
     $job2->update({state => SCHEDULED});
     my $rjobs_before = list_jobs(state => RUNNING);
     undef $ws_send_error;
-    my $s = OpenQA::Scheduler::Model::Jobs->singleton;
-    delete $s->{config}->{scheduler}->{max_running_jobs};
-    my $res = $s->schedule();
+    my $res = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $worker_db_obj->discard_changes;
 
     my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
