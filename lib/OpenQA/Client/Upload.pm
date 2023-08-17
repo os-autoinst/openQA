@@ -45,7 +45,7 @@ sub asset ($self, $job_id, $opts) {
         sub { $self->_upload_asset_fail($uri => {filename => $file_name, scope => $opts->{asset}}) });
 
     # Each chunk of the file should get the full number of retry attempts
-    my $max_retries = $opts->{retries} // 5;
+    my $max_retries = $opts->{retries} // 10;
     my ($failed, $final_error);
     for my $part ($parts->each) {
         last if $failed;
@@ -76,7 +76,7 @@ sub asset ($self, $job_id, $opts) {
             }
 
             unless ($done) {
-                $self->emit('upload_chunk.fail', $tx, $part, $retries);
+                $self->emit('upload_chunk.fail', $tx, $part, $max_retries - $retries, $max_retries);
                 $final_error ||= $tx if $retries == 0;
             }
         } until ($retries == 0 || $done);

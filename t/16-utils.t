@@ -20,7 +20,7 @@ sub exit_code(&) {
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils (qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex),
-    qw(download_rate download_speed));
+    qw(download_rate download_speed usleep_backoff));
 use OpenQA::Task::SignalGuard;
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
@@ -429,6 +429,35 @@ subtest 'change_sec_to_word' => sub {
     is change_sec_to_word(7201), '2h 1s', 'correctly converted (hours + seconds)';
     is change_sec_to_word(64890), '18h 1m 30s', 'correctly converted (hours + minutes + seconds)';
     is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted (all units)';
+};
+
+subtest 'usleep_backoff' => sub {
+    subtest 'with fixed padding to test exact behavior' => sub {
+        is usleep_backoff(1, 5, 30, 1_000_001), 6_000_001, 'delay one';
+        is usleep_backoff(2, 5, 30, 1_000_001), 7_000_001, 'delay two';
+        is usleep_backoff(3, 5, 30, 1_000_001), 8_000_001, 'delay three';
+        is usleep_backoff(4, 5, 30, 1_000_001), 9_000_001, 'delay four';
+        is usleep_backoff(5, 5, 30, 1_000_001), 10_000_001, 'delay five';
+        is usleep_backoff(6, 5, 30, 1_000_001), 11_000_001, 'delay six';
+        is usleep_backoff(7, 5, 30, 1_000_001), 12_000_001, 'delay seven';
+        is usleep_backoff(8, 5, 30, 1_000_001), 13_000_001, 'delay eight';
+        is usleep_backoff(9, 5, 30, 1_000_001), 14_000_001, 'delay nine';
+        is usleep_backoff(10, 5, 30, 1_000_001), 15_000_001, 'delay ten';
+    };
+
+    subtest 'with random 1 second default padding' => sub {
+        my $real_usleep_value = usleep_backoff(3, 5, 30);
+        ok $real_usleep_value <= 8_000_000, 'less than 8 seconds';
+        ok $real_usleep_value > 7_000_000, 'more than 7 seconds';
+    };
+
+    subtest 'disabled with 0 second minimum value' => sub {
+        is usleep_backoff(5, 0, 30), 0, 'default to 0 if allowed';
+    };
+
+    subtest 'special cases' => sub {
+        is usleep_backoff(5, 40, 30), 30_000_000, 'maximum is not exceeded even if the minimum is higher';
+    };
 };
 
 my ($current_term_handler, $current_int_handler) = ($SIG{TERM}, $SIG{INT});

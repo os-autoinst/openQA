@@ -11,7 +11,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
 use OpenQA::Log qw(log_error log_warning log_debug log_info redact_settings_in_file);
-use OpenQA::Utils qw(find_video_files);
+use OpenQA::Utils qw(find_video_files usleep_backoff);
 
 use Digest::MD5;
 use Fcntl;
@@ -25,6 +25,7 @@ use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use File::Map 'map_file';
 use List::Util 'max';
+use Time::HiRes qw(usleep);
 
 # define attributes for public properties
 has 'worker';
@@ -1003,7 +1004,7 @@ sub _upload_asset {
     my $file = $upload_parameter->{file}->{file};
     my $global_settings = $self->worker->settings->global_settings;
     my $chunk_size = $global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
-    my $retries = $global_settings->{UPLOAD_RETRIES} // 5;
+    my $retries = $global_settings->{UPLOAD_RETRIES} // 10;
     my $local_upload = $global_settings->{LOCAL_UPLOAD} // 1;
     my $ua = $self->client->ua;
     my @channels_worker_only = ('worker');
@@ -1051,14 +1052,14 @@ sub _upload_asset {
     $ua->upload->on('upload_local.response' => $response_cb);
     $ua->upload->on('upload_chunk.response' => $response_cb);
     $ua->upload->on(
-        'upload_chunk.fail' => sub ($upload, $res, $chunk, $retries) {
+        'upload_chunk.fail' => sub ($upload, $res, $chunk, $attempts, $max_attempts) {
             my $index = $chunk->index;
             log_error(
-                "Upload failed for chunk $index (attempts remaining: $retries)",
+                "Upload failed for chunk $index (attempts: $attempts/$max_attempts)",
                 channels => \@channels_both,
                 default => 1
             );
-            sleep UPLOAD_DELAY;    # do not choke webui
+            usleep usleep_backoff($attempts, UPLOAD_DELAY, 30);    # do not choke webui
         });
 
     $ua->upload->once(
