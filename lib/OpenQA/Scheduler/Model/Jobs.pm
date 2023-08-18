@@ -43,7 +43,7 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
     my $worker_count = $schema->resultset('Workers')->count;
     my $free_worker_count = @$free_workers;
     my $running = $schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    my $limit = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} // -1;
+    my $limit = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs};
     if ($limit >= 0 && $running >= $limit) {
         log_debug("max_running_jobs ($limit) exceeded, scheduling no additional jobs");
         $self->emit('conclude');
@@ -361,8 +361,7 @@ sub _to_be_scheduled ($j, $scheduled) {
 
 sub _update_scheduled_jobs ($self) {
     my $cur_time = DateTime->now(time_zone => 'UTC');
-    my $max_job_scheduled_time = $self->{config}->{scheduler}->{max_job_scheduled_time}
-      // 7;    # default value reused for testsuite
+    my $max_job_scheduled_time = OpenQA::App->singleton->config->{scheduler}->{max_job_scheduled_time};
 
     # consider all scheduled jobs not being blocked by a parent job or Gru task
     my $schema = OpenQA::Schema->singleton;

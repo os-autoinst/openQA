@@ -17,6 +17,7 @@ use Mojo::Util 'monkey_patch';
 use OpenQA::Test::TimeLimit '10';
 
 setup_mojo_app_with_default_worker_timeout;
+OpenQA::Setup::read_config(OpenQA::App->singleton);
 
 my $schema = OpenQA::Test::Database->new->create;
 my $sent = {};

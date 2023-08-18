@@ -39,6 +39,7 @@ BEGIN {
 }
 
 setup_mojo_app_with_default_worker_timeout;
+OpenQA::Setup::read_config(OpenQA::App->singleton);
 
 # read number of workers to spawn from environment variable; skip test entirely if variable not present
 # similar to other fullstack tests

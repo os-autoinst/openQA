@@ -43,6 +43,7 @@ use OpenQA::Test::TimeLimit '150';
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 
 setup_mojo_app_with_default_worker_timeout;
+OpenQA::Setup::read_config(OpenQA::App->singleton);
 
 # setup directories and database
 my $tempdir = setup_fullstack_temp_dir('scheduler');
