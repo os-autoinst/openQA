@@ -31,6 +31,7 @@ use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
+use List::Util qw(min);
 
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
@@ -79,6 +80,8 @@ BEGIN {
 use constant UNCONSTRAINED_BUGREF_REGEX => $BUGREF_REGEX;
 use constant BUGREF_REGEX => qr{(?:^|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
 use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#]+))\b/;
+
+use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
@@ -152,6 +155,7 @@ our @EXPORT_OK = qw(
   random_string
   random_hex
   regex_match
+  usleep_backoff
 );
 
 # override OPENQA_BASEDIR for tests
@@ -956,6 +960,18 @@ sub regex_match ($regex_string, $string) {
     my $match = eval { $string =~ /$regex_string/ };
     die "invalid regex: $@" if $@;
     return $match;
+}
+
+# Returns a microsecond value suitable for use with "usleep". For the first iteration it returns the minimum value plus
+# random 0-1 second padding, and starting with the second iteration the delay increases by one second plus 0-1 second
+# padding, up to the maximum.
+sub usleep_backoff ($iteration, $min_seconds, $max_seconds, $padding = int(rand(ONE_SECOND_IN_MICROSECONDS))) {
+
+    # To allow for backoff to be disabled easily
+    return 0 if $min_seconds == 0;
+
+    my $delay = (($min_seconds + $iteration - 1) * ONE_SECOND_IN_MICROSECONDS) + $padding;
+    return min($max_seconds * ONE_SECOND_IN_MICROSECONDS, $delay);
 }
 
 1;

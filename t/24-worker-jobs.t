@@ -1428,7 +1428,7 @@ subtest 'asset upload' => sub {
             $upload->emit('upload_chunk.finish', $chunk);
             $upload->emit('upload_local.response', $normal_tx, 0);
             $upload->emit('upload_chunk.response', $failure_tx, 4);
-            $upload->emit('upload_chunk.fail', undef, Test::MockObject->new->set_always(index => 3), 2);
+            $upload->emit('upload_chunk.fail', undef, Test::MockObject->new->set_always(index => 3), 2, 4);
             $upload->emit('upload_chunk.error') if $mock_failure;
             push @params, \@args;
         });
@@ -1444,7 +1444,7 @@ subtest 'asset upload' => sub {
       'upload logged';
     is $upload_res, 1, 'upload succeeded';
     is_deeply \@params,
-      [[14, {asset => undef, chunk_size => 1000000, file => 'foo', name => 'bar', local => 1, retries => 5}]],
+      [[14, {asset => undef, chunk_size => 1000000, file => 'foo', name => 'bar', local => 1, retries => 10}]],
       'expected params passed'
       or diag explain \@params;
 
@@ -1452,7 +1452,7 @@ subtest 'asset upload' => sub {
     my ($stdout, $stderr, @result) = capture sub { $job->_upload_asset(\%params) };
     like $stderr, qr/Failure during asset upload \(attempts remaining: 4\)/, 'failure is reported for asset';
     like $stderr, qr/Error uploading bar: 404 response: not found/, 'failure has details';
-    like $stderr, qr/Upload failed for chunk 3 \(attempts remaining: 2\)/, 'failure is reported for chunk';
+    like $stderr, qr/Upload failed for chunk 3 \(attempts: 2\/4\)/, 'failure is reported for chunk';
     like $stderr, qr/Upload failed, and all retry attempts have been exhausted/, 'all attempts exhausted message';
     is $result[0], 0, 'upload failed';
 };

@@ -221,7 +221,7 @@ subtest 'upload internal errors' => sub {
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image6.xml', asset => 'other'});
     };
     ok !$@, 'No function errors on internal errors' or die diag $@;
-    is $fail_chunk, 5, 'All chunks failed, no recovery on internal errors';
+    is $fail_chunk, 10, 'All chunks failed, no recovery on internal errors';
     like $e, qr/Subdly/, 'Internal error seen';
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
     ok !-e $rp, 'Asset does not exist after upload on internal errors';
