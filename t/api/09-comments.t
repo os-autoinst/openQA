@@ -11,6 +11,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
+use OpenQA::Jobs::Constants;
 use OpenQA::Client;
 use Mojo::IOLoop;
 
@@ -253,6 +254,14 @@ subtest 'can update job result with special label comment' => sub {
       ->status_is(400, 'comment can not be created when job is unfinished')
       ->json_like('/error' => qr/only allowed on finished/);
     is $jobs->find($job_id)->result, 'none', 'unfinished job will not be updated';
+    $job_id = 99981;
+    $route = "/api/v1/jobs/$job_id/comments";
+    is $jobs->find($job_id)->state, CANCELLED, 'job initially is cancelled';
+    $t->post_ok($route => form => {text => 'label:force_result:passed:foo'})
+      ->status_is(200, 'comment can be created when job is cancelled');
+    my $job = $jobs->find($job_id);
+    is $job->state, DONE, 'cancelled job is now considered done';
+    is $job->result, PASSED, 'result of cancelled job has been updated';
 };
 
 subtest 'unauthorized users can only read' => sub {

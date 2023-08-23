@@ -185,8 +185,9 @@ sub _control_job_result ($self, $c) {
     die "force_result description '$description' does not match pattern '$force_result_re'\n"
       unless ($description // '') =~ /$force_result_re/;
     my $job = $self->job;
-    die "force_result only allowed on finished jobs\n" unless $job->state eq OpenQA::Jobs::Constants::DONE;
-    $job->update_result($new_result);
+    die "force_result only allowed on finished jobs\n"
+      unless OpenQA::Jobs::Constants::meta_state($job->state) eq OpenQA::Jobs::Constants::FINAL;
+    $job->update_result($new_result, OpenQA::Jobs::Constants::DONE);
     return undef;
 }
 
