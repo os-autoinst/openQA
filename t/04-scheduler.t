@@ -314,7 +314,7 @@ subtest 'job grab (no jobs because max_running_jobs limit is exceeded)' => sub {
     my $job4 = $jobs->create_from_settings(\%settings2);
     local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 0;
     my $res = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
-    is $res, undef, 'schedule() returns nothing';
+    is @$res, 0, 'schedule() returns empty arrayref';
 
     my $scheduled = list_jobs(state => SCHEDULED);
     my $assigned = list_jobs(state => ASSIGNED);

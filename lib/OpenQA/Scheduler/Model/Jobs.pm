@@ -14,7 +14,7 @@ use OpenQA::Utils 'random_string';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
 use Time::HiRes 'time';
-use List::Util qw(all shuffle);
+use List::Util qw(all shuffle min);
 
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
@@ -36,33 +36,22 @@ sub determine_scheduled_jobs ($self) {
     return $self->scheduled_jobs;
 }
 
-sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
-    my $start_time = time;
+sub _allocate_jobs ($self, $free_workers, $allocated_workers, $allocated_jobs) {
+    my $scheduled_jobs = $self->scheduled_jobs;
     my $schema = OpenQA::Schema->singleton;
-    my $free_workers = determine_free_workers($self->shuffle_workers);
-    my $worker_count = $schema->resultset('Workers')->count;
-    my $free_worker_count = @$free_workers;
     my $running = $schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     my $limit = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs};
     if ($limit >= 0 && $running >= $limit) {
         log_debug("max_running_jobs ($limit) exceeded, scheduling no additional jobs");
         $self->emit('conclude');
-        return;
+        return 0;
     }
-    unless ($free_worker_count) {
-        $self->emit('conclude');
-        return ();
-    }
-
-    my $scheduled_jobs = $self->determine_scheduled_jobs;
-    log_debug(
-        "Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: " . scalar(keys %$scheduled_jobs));
+    my $max_allocate = $limit >= 0 ? min(MAX_JOB_ALLOCATION, $limit - $running) : MAX_JOB_ALLOCATION;
 
     # update the matching workers to the current free
     for my $jobinfo (values %$scheduled_jobs) {
         $jobinfo->{matching_workers} = _matching_workers($jobinfo, $free_workers);
     }
-
     # before we start looking at sorted jobs, we try to repair half scheduled clusters
     # note: This can happen e.g. with workers connected to multiple web UIs or when jobs are scheduled
     #       non-atomically via openqa-clone-job.
@@ -128,9 +117,28 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
         my $busy = keys %$allocated_workers;
-        last
-          if $busy >= MAX_JOB_ALLOCATION || $busy >= $free_worker_count || $limit >= 0 && ($running + $busy) >= $limit;
+        last if $busy >= $max_allocate || $busy >= @$free_workers;
     }
+    return scalar keys %$allocated_workers;
+}
+
+
+sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
+    my $start_time = time;
+    my $schema = OpenQA::Schema->singleton;
+    my $free_workers = determine_free_workers($self->shuffle_workers);
+    my $worker_count = $schema->resultset('Workers')->count;
+    my $free_worker_count = @$free_workers;
+    unless ($free_worker_count) {
+        $self->emit('conclude');
+        return [];
+    }
+
+    my $scheduled_jobs = $self->determine_scheduled_jobs;
+    log_debug(
+        "Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: " . scalar(keys %$scheduled_jobs));
+
+    return [] unless $self->_allocate_jobs($free_workers, $allocated_workers, $allocated_jobs);
 
     my @successfully_allocated;
 
