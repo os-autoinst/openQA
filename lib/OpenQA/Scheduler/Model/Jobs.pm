@@ -127,8 +127,9 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
         }
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
-        my $busy = scalar(keys %$allocated_workers);
-        last if $busy >= MAX_JOB_ALLOCATION || $busy >= $free_worker_count;
+        my $busy = keys %$allocated_workers;
+        last
+          if $busy >= MAX_JOB_ALLOCATION || $busy >= $free_worker_count || $limit >= 0 && ($running + $busy) >= $limit;
     }
 
     my @successfully_allocated;
