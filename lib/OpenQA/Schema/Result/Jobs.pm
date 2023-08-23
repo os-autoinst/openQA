@@ -1049,9 +1049,11 @@ sub update_backend ($self, $backend_info) {
     $self->update({backend => $backend_info->{backend}});
 }
 
-sub update_result ($self, $result) {
-    my $res = $self->update({result => $result});
-    OpenQA::App->singleton->emit_event('openqa_job_update_result', {id => $self->id, result => $result}) if $res;
+sub update_result ($self, $result, $state = undef) {
+    my %values = (result => $result);
+    $values{state} = $state if defined $state;
+    my $res = $self->update(\%values);
+    OpenQA::App->singleton->emit_event('openqa_job_update_result', {id => $self->id, %values}) if $res;
     return $res;
 }
 
