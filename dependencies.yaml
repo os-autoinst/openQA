@@ -41,6 +41,7 @@ common_requires:
   perl(Mojolicious): '>= 9.30'
   perl(Regexp::Common):
   perl(Storable):
+  perl(Text::Glob):
   perl(Time::Moment):
   perl(Try::Tiny):
   perl(Config::Tiny):

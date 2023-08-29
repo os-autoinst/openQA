@@ -79,6 +79,7 @@ requires 'Sort::Versions';
 requires 'Storable';
 requires 'Test::More';
 requires 'Text::Diff';
+requires 'Text::Glob';
 requires 'Time::HiRes';
 requires 'Time::Moment';
 requires 'Time::ParseDate';

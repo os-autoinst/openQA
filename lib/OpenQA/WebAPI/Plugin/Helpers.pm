@@ -10,6 +10,7 @@ use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
 use OpenQA::Jobs::Constants qw(EXECUTION_STATES PRE_EXECUTION_STATES ABORTED_RESULTS FAILED NOT_COMPLETE_RESULTS);
+use Text::Glob qw(glob_to_regex_string);
 
 sub register ($self, $app, $config) {
     $app->helper(
@@ -396,6 +397,8 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('groupid')->num(0, undef);
     $v->optional('modules', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(0, undef);
+    $v->optional('group_glob');
+    $v->optional('not_group_glob');
 
     # add simple query params to search args
     for my $arg (qw(distri version flavor test limit)) {
@@ -423,6 +426,9 @@ sub _compose_job_overview_search_args ($c) {
     my $regexp = $v->every_param('module_re');
     $search_args{module_re} = shift @$regexp if $regexp && @$regexp;
 
+    my $group_glob = $v->every_param('group_glob');
+    my $not_group_glob = $v->every_param('not_group_glob');
+
     # add group query params to search args
     # (By 'every_param' we make sure to use multiple values for groupid and
     # group at the same time as a logical or, i.e. all specified groups are
@@ -435,6 +441,17 @@ sub _compose_job_overview_search_args ($c) {
         my @search_terms = (@group_id_search, @group_name_search);
         @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
     }
+
+    # use globs to filter job groups, first include all groups that match "group_glob" values, and then exclude those
+    # that also match "not_group_glob" values
+    elsif (@$group_glob || @$not_group_glob) {
+        my @inclusive = map { qr/$_/i } map { glob_to_regex_string($_) } @$group_glob;
+        my @exclusive = map { qr/$_/i } map { glob_to_regex_string($_) } @$not_group_glob;
+        @groups = $schema->resultset('JobGroups')->all;
+        @groups = grep { _match_group(\@inclusive, $_) } @groups if @inclusive;
+        @groups = grep { !_match_group(\@exclusive, $_) } @groups if @exclusive;
+    }
+
     # add flash message if optional "groupid" parameter is invalid
     $c->stash(flash_error => 'Specified "groupid" is invalid and therefore ignored.')
       if $c->param('groupid') && !$v->is_valid('groupid');
@@ -479,6 +496,14 @@ sub _compose_job_overview_search_args ($c) {
     $search_args{groupids} = [map { $_->id } @groups] if @groups;
 
     return (\%search_args, \@groups);
+}
+
+sub _match_group ($regexes, $group) {
+    my $name = $group->name;
+    for my $regex (@$regexes) {
+        return 1 if $name =~ $regex;
+    }
+    return 0;
 }
 
 sub _param_hash ($c, $name) {
