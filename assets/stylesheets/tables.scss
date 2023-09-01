@@ -65,7 +65,8 @@
 }
 table.settings-table tr {
     td span {
-        white-space: pre;
+        white-space: pre-wrap;
+        word-break: break-word;
     }
 }
 table.dataTable {
