@@ -36,7 +36,8 @@ sub determine_scheduled_jobs ($self) {
     return $self->scheduled_jobs;
 }
 
-sub _allocate_jobs ($self, $free_workers, $allocated_workers, $allocated_jobs) {
+sub _allocate_jobs ($self, $free_workers) {
+    my ($allocated_workers, $allocated_jobs) = ({}, {});
     my $scheduled_jobs = $self->scheduled_jobs;
     my $schema = OpenQA::Schema->singleton;
     my $running = $schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
@@ -44,7 +45,7 @@ sub _allocate_jobs ($self, $free_workers, $allocated_workers, $allocated_jobs) {
     if ($limit >= 0 && $running >= $limit) {
         log_debug("max_running_jobs ($limit) exceeded, scheduling no additional jobs");
         $self->emit('conclude');
-        return 0;
+        return ({}, {});
     }
     my $max_allocate = $limit >= 0 ? min(MAX_JOB_ALLOCATION, $limit - $running) : MAX_JOB_ALLOCATION;
 
@@ -119,11 +120,11 @@ sub _allocate_jobs ($self, $free_workers, $allocated_workers, $allocated_jobs) {
         my $busy = keys %$allocated_workers;
         last if $busy >= $max_allocate || $busy >= @$free_workers;
     }
-    return scalar keys %$allocated_workers;
+    return ($allocated_workers, $allocated_jobs);
 }
 
 
-sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
+sub schedule ($self) {
     my $start_time = time;
     my $schema = OpenQA::Schema->singleton;
     my $free_workers = determine_free_workers($self->shuffle_workers);
@@ -138,7 +139,8 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
     log_debug(
         "Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: " . scalar(keys %$scheduled_jobs));
 
-    return [] unless $self->_allocate_jobs($free_workers, $allocated_workers, $allocated_jobs);
+    my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($free_workers);
+    return [] unless keys %$allocated_workers;
 
     my @successfully_allocated;
 
