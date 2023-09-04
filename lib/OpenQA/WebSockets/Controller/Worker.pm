@@ -156,8 +156,7 @@ sub _message {
                 sub {
                     return undef unless my $w = $schema->resultset("Workers")->find($worker_id);
                     log_debug("Updating seen of worker $worker_id from worker_status ($current_worker_status)");
-                    $w->seen;
-                    $w->update({error => $current_worker_error});
+                    $w->seen({error => $current_worker_error});
                 });
         }
         catch {
