@@ -3,9 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Result::Workers;
-
-
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
@@ -70,10 +68,10 @@ sub name {
     return $self->host . ":" . $self->instance;
 }
 
-sub seen {
-    my ($self, $workercaps, $error) = @_;
-    $self->update({t_seen => now()});
-    $self->update_caps($workercaps) if $workercaps;
+sub seen ($self, $options = {}) {
+    my $data = {t_seen => now()};
+    $data->{error} = $options->{error} if exists $options->{error};
+    $self->update($data);
 }
 
 # update worker's capabilities
