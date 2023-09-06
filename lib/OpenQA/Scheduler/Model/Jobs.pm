@@ -118,7 +118,12 @@ sub _allocate_jobs ($self, $free_workers) {
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
         my $busy = keys %$allocated_workers;
-        last if $busy >= $max_allocate || $busy >= @$free_workers;
+        if ($busy >= $max_allocate || $busy >= @$free_workers) {
+            my $free_worker_count = @$free_workers;
+            log_debug("limit reached, scheduling no additional jobs"
+                  . "(max_running_jobs=$limit, free workers=$free_worker_count, running=$running, allocated=$busy)");
+            last;
+        }
     }
     return ($allocated_workers, $allocated_jobs);
 }
