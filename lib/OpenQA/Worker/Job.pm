@@ -25,6 +25,7 @@ use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use File::Map 'map_file';
 use List::Util 'max';
+use Encode 'decode';
 
 # define attributes for public properties
 has 'worker';
@@ -1238,7 +1239,7 @@ sub _log_snippet {
     sysseek($fd, $offset, Fcntl::SEEK_SET);    # FIXME: handle error?
     if (defined sysread($fd, my $buf = '', 100000)) {
         $ret{offset} = $offset;
-        $ret{data} = $buf;
+        $ret{data} = decode('utf-8', $buf);
     }
     if (my $new_offset = sysseek($fd, 0, Fcntl::SEEK_CUR)) {
         $self->{"_$offset_name"} = $new_offset;

@@ -1029,7 +1029,7 @@ sub append_log ($self, $log, $file_name) {
     my $path = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $path;    # we can't help
     $path .= "/$file_name";
-    if (open(my $fd, '>>', $path)) {
+    if (open(my $fd, '>>:utf8', $path)) {
         print $fd $log->{data};
         close($fd);
     }

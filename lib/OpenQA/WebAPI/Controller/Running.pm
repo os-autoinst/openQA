@@ -93,7 +93,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
     # if the open fails, continue, well check later
     my $log;
     my ($ino, $size);
-    if (open($log, '<', $logfile)) {
+    if (open($log, '<:utf8', $logfile)) {
         # Send the last 10KB of data from the logfile, so that
         # the client sees some data immediately
         $ino = (stat $logfile)[1];
@@ -122,7 +122,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
         TEXT_STREAMING_INTERVAL() => sub {
             if (!$ino) {
                 # log file was not yet opened
-                return unless open($log, '<', $logfile);
+                return unless open($log, '<:utf8', $logfile);
                 $ino = (stat $logfile)[1];
                 $size = -s $logfile;
             }

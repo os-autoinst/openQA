@@ -1,4 +1,4 @@
-% use Mojo::JSON 'encode_json';
+% use Mojo::JSON 'to_json';
 <div class="aligncenter" data-image="<%= url_for('test_img', filename => $screenshot) %>" id="step_view">
     <span class="candidate_needles">
         Candidate needles and tags:
@@ -37,8 +37,8 @@
                                 <tbody>
                                     % for my $needle (@{$needles_by_tag->{$tag}}) {
                                         <tr data-image="<%= $needle->{image} %>"
-                                            data-areas="<%= encode_json($needle->{areas})%>"
-                                            data-matches="<%= encode_json($needle->{matches}) %>"
+                                            data-areas="<%= to_json($needle->{areas}) %>"
+                                            data-matches="<%= to_json($needle->{matches}) %>"
                                             data-label="<%= $needle->{label} %>"
                                         % if (!$has_selection && $needle->{selected}) {
                                             % $has_selection = 1;
