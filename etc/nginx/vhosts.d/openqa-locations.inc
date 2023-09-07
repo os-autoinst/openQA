@@ -56,4 +56,5 @@ location / {
     proxy_set_header X-Forwarded-Server $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+    rewrite ^/tests/.*/asset/.*/[wW]in.*$ https://www.microsoft.com/software-download/windows10ISO last;
 }
