@@ -26,8 +26,8 @@ use OpenQA::Worker::CommandHandler;
 use OpenQA::Worker::Job;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT WORKER_COMMAND_QUIT WORKER_COMMAND_LIVELOG_STOP
   WORKER_COMMAND_LIVELOG_START WORKER_COMMAND_DEVELOPER_SESSION_START WORKER_COMMAND_GRAB_JOB
-  WORKER_COMMAND_GRAB_JOBS WORKER_SR_API_FAILURE MAX_TIMER MIN_TIMER);
-use OpenQA::Utils qw(in_range rand_range);
+  WORKER_COMMAND_GRAB_JOBS WORKER_SR_API_FAILURE MIN_TIMER MAX_TIMER);
+use OpenQA::Utils;
 
 # use Mojo::Log and suppress debug messages
 OpenQA::App->set_singleton(Mojolicious->new);
@@ -325,7 +325,6 @@ subtest 'retry delay configurable' => sub {
 subtest 'send status' => sub {
     my $ws = OpenQA::Test::FakeWebSocketTransaction->new;
     $client->websocket_connection($ws);
-    $client->send_status_interval(0.5);
     $client->send_status();
     is_deeply($ws->sent_messages, [{json => {fake_status => 1, reason => 'some error'}}], 'status sent')
       or diag explain $ws->sent_messages;
@@ -469,10 +468,6 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         'jobs have been rejected in the error cases (when possible), no rejection for job 43'
     ) or diag explain $ws->sent_messages;
 
-    # test setting population
-    $command_handler->handle_command(undef, {type => 'info', population => -42});
-    is($client->webui_host_population, -42, 'population assigned');
-
     # test accepting a job
     is($worker->current_job, undef, 'no job accepted so far');
     $command_handler->handle_command(undef,
@@ -537,64 +532,30 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 $client->worker_id(undef);
 
 subtest 'status timer interval' => sub {
-    ok((DEFAULT_WORKER_TIMEOUT - MAX_TIMER) >= 20, 'DEFAULT_WORKER_TIMEOUT is bigger than MAX_TIMER at least by 20 s');
+    ok((DEFAULT_WORKER_TIMEOUT - MAX_TIMER) >= 60, 'DEFAULT_WORKER_TIMEOUT is bigger than MAX_TIMER at least by 60 s');
 
-    # note: Using fail() instead of ok() or is() here to prevent flooding log.
-
-    my $instance_number = 1;
-    my $population = $instance_number;
-    do {
-        $client->worker->instance_number($instance_number);
-        $client->webui_host_population(++$population);
-        $client->send_status_interval(undef);
-        my $interval = $client->_calculate_status_update_interval;
-        next if in_range($interval, 70, 90);
-        # uncoverable statement
-        fail("timer $interval for instance $instance_number not in range with worker population of $population");
-      }
-      for $instance_number .. 10;
-
-    my $compare_timer = sub {
-        my ($instance1, $instance2, $population) = @_;
-        my %intervals;
-        for my $instance_number (($instance1, $instance2)) {
-            $client->worker->instance_number($instance_number);
-            $client->webui_host_population($population);
-            $client->send_status_interval(undef);
-            $intervals{$instance_number} = $client->_calculate_status_update_interval;
-        }
-        return undef unless $intervals{$instance1} == $intervals{$instance2};
-        # uncoverable statement
-        fail("timer between instances $instance1 and $instance2 not different in a population of $population)");
-        diag explain \%intervals;    # uncoverable statement
+    subtest 'default interval' => sub {
+        my $interval = $client->calculate_status_update_interval;
+        like $interval, qr/^\d+\.\d{2}$/, 'interval is fractional';
+        ok $interval <= MAX_TIMER, 'interval is smaller than MAX_TIMER';
+        ok $interval >= MIN_TIMER, 'interval is larger than MIN_TIMER';
     };
 
-    $instance_number = 25;
-    $population = $instance_number;
-    for ($instance_number .. 30) {
-        $compare_timer->(7, 9, ++$population);
-        $compare_timer->(5, 10, $population);
-        $compare_timer->(4, $instance_number, $population);
-        $compare_timer->(9, 10, $population);
-    }
+    subtest 'configured interval' => sub {
+        local $client->worker->settings->{global_settings}{STATUS_MIN_INTERVAL} = 1000;
+        local $client->worker->settings->{global_settings}{STATUS_MAX_INTERVAL} = 2000;
+        my $interval = $client->calculate_status_update_interval;
+        ok $interval <= 2000, 'interval is smaller than configured STATUS_MAX_INTERVAL';
+        ok $interval >= 1000, 'interval is larger than configured STATUS_MIN_INTERVAL';
+    };
 
-    $instance_number = 205;
-    $population = $instance_number;
-    for ($instance_number .. 300) {
-        $compare_timer->(40, 190, ++$population);
-        $compare_timer->(30, 200, $population);
-        $compare_timer->(70, 254, $population);
-    }
-
-    $population = 1;
-    for (1 .. 999) {
-        $client->worker->instance_number(int(rand_range(1, $population)));
-        $client->webui_host_population(++$population);
-        $client->send_status_interval(undef);
-        my $interval = $client->_calculate_status_update_interval;
-        next if in_range($interval, MIN_TIMER, MAX_TIMER);
-        fail("timer not in range with worker population of $population");    # uncoverable statement
-    }
+    subtest 'environment variable interval' => sub {
+        local $ENV{OPENQA_WORKER_STATUS_MIN_INTERVAL} = 3000;
+        local $ENV{OPENQA_WORKER_STATUS_MAX_INTERVAL} = 4000;
+        my $interval = $client->calculate_status_update_interval;
+        ok $interval <= 4000, 'interval is smaller than OPENQA_WORKER_STATUS_MAX_INTERVAL env variable';
+        ok $interval >= 3000, 'interval is larger than OPENQA_WORKER_STATUS_MIN_INTERVAL env variable';
+    };
 };
 
 subtest 'last error' => sub {

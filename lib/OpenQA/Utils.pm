@@ -121,11 +121,6 @@ our @EXPORT = qw(
   loaded_plugins
   hashwalker
   read_test_modules
-  feature_scaling
-  logistic_map_steps
-  logistic_map
-  rand_range
-  in_range
   walker
   ensure_timestamp_appended
   set_listen_address
@@ -818,22 +813,6 @@ sub walker {
         }
     }
 }
-
-
-# Args:
-# First is i-th element, Second is maximum element number, Third and Fourth are the range limit (lower and upper)
-# $i, $imax, MIN, MAX
-sub feature_scaling { $_[2] + ((($_[0] - 1) * ($_[3] - $_[2])) / (($_[1] - 1) || 1)) }
-# $r, $xn
-sub logistic_map { $_[0] * $_[1] * (1 - $_[1]) }
-# $steps, $r, $xn
-sub logistic_map_steps {
-    $_[2] = 0.1 if $_[2] <= 0;    # do not let population die. - with this change we get more "chaos"
-    $_[2] = logistic_map($_[1], $_[2]) for (1 .. $_[0]);
-    $_[2];
-}
-sub rand_range { $_[0] + rand($_[1] - $_[0]) }
-sub in_range { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
 
 sub set_listen_address {
     my $port = shift;

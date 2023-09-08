@@ -181,7 +181,7 @@ subtest 'web socket message handling' => sub {
         combined_like {
             $t->send_ok({json => {type => 'worker_status', status => 'broken', reason => 'test'}});
             $t->message_ok('message received');
-            $t->json_message_is({type => 'info', population => $workers->count});
+            $t->json_message_is({type => 'info', seen => 1});
         }
         qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s, 'update logged';
         is($workers->find($worker_id)->error, 'test', 'broken message set');
@@ -231,7 +231,6 @@ subtest 'web socket message handling' => sub {
         combined_like {
             $t->send_ok({json => {type => 'worker_status', status => 'idle'}});
             $t->message_ok('message received');
-            $t->json_message_is({type => 'info', population => $workers->count});
         }
         qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s, 'update logged';
         is($workers->find($worker_id)->error, undef, 'broken status unset');
