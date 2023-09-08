@@ -5,8 +5,8 @@ package OpenQA::Worker::WebUIConnection;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Log qw(log_error log_debug log_warning log_info);
-use OpenQA::Utils qw(feature_scaling rand_range logistic_map_steps);
-use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_SR_API_FAILURE MAX_TIMER MIN_TIMER);
+use OpenQA::Utils;
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_SR_API_FAILURE MIN_TIMER MAX_TIMER);
 use OpenQA::Worker::CommandHandler;
 
 use Mojo::IOLoop;
@@ -23,12 +23,6 @@ has 'cache_directory';    # cache directory for this web UI host
 
 # the websocket connection to receive commands from the web UI and send the status (Mojo::Transaction::WebSockets instance)
 has 'websocket_connection';
-
-# stores the "population" of the web UI host which is updated when receiving that info via web sockets
-has 'webui_host_population';
-
-# interval for overall worker status updates; automatically set when needed (unless set manually)
-has 'send_status_interval';
 
 sub new ($class, $webui_host, $cli_options) {
     my $url = $webui_host !~ '/' ? Mojo::URL->new->scheme('http')->host_port($webui_host) : Mojo::URL->new($webui_host);
@@ -202,7 +196,6 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
                 });
             $tx->max_websocket_size(10485760);
             $self->websocket_connection($tx);
-            $self->send_status_interval(undef);
             $self->send_status();
             $self->_set_status(connected => {});
         });
@@ -347,25 +340,11 @@ sub add_context_to_last_error ($self, $context) {
     $self->{_last_error} = "$last_error on $context" if $last_error;
 }
 
-sub _calculate_status_update_interval ($self) {
-    my $status_update_interval = $self->send_status_interval;
-    return $status_update_interval if ($status_update_interval);
-
-    # do dubious calculations to balance the load on the websocket server
-    # (see https://github.com/os-autoinst/openQA/pull/1486 and https://progress.opensuse.org/issues/25960)
-    my $i = $self->worker_id // $self->worker->instance_number;
-    my $imax = $self->webui_host_population || 1;
-    my $scale_factor = $imax;
-    my $steps = 215;
-    my $r = 3.81199961;
-    my $population = feature_scaling($i, $imax, 0, 1);
-    my $status_timer
-      = abs(feature_scaling(logistic_map_steps($steps, $r, $population) * $scale_factor, $imax, MIN_TIMER, MAX_TIMER));
-    $status_timer = $status_timer > MIN_TIMER
-      && $status_timer < MAX_TIMER ? $status_timer : $status_timer > MAX_TIMER ? MAX_TIMER : MIN_TIMER;
-
-    $self->send_status_interval($status_update_interval = sprintf("%.2f", $status_timer));
-    return $status_update_interval;
+sub calculate_status_update_interval ($self) {
+    my $global_settings = $self->worker->settings->global_settings;
+    my $min = $ENV{OPENQA_WORKER_STATUS_MIN_INTERVAL} // $global_settings->{STATUS_MIN_INTERVAL} // MIN_TIMER;
+    my $max = $ENV{OPENQA_WORKER_STATUS_MAX_INTERVAL} // $global_settings->{STATUS_MAX_INTERVAL} // MAX_TIMER;
+    return sprintf('%.2f', ($min + (rand($max - $min))));
 }
 
 # sends the overall worker status
@@ -387,7 +366,7 @@ sub send_status ($self) {
             # continue sending status updates (unless the websocket connection has been lost)
             return undef unless $self->websocket_connection;
 
-            my $status_update_interval = $self->_calculate_status_update_interval;
+            my $status_update_interval = $self->calculate_status_update_interval;
             my $webui_host = $self->webui_host;
             log_warning "$status->{reason} - checking again for web UI '$webui_host' in $status_update_interval s"
               if $status->{reason};

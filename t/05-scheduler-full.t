@@ -130,7 +130,7 @@ subtest 'Scheduler worker job allocation' => sub {
 subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes offline' => sub {
     # avoid wasting time waiting for status updates
     my $web_ui_connection_mock = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
-    $web_ui_connection_mock->redefine(_calculate_status_update_interval => .1);
+    $web_ui_connection_mock->redefine(calculate_status_update_interval => .1);
 
     my $jobs = $schema->resultset('Jobs');
     my @latest = $jobs->latest_jobs;

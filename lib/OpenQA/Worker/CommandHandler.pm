@@ -109,18 +109,9 @@ sub handle_command {
             return $worker->skip_job($job_id, $type);
         }
     }
-    log_warning("Ignoring WS message with unknown type $type from $webui_host:\n" . pp($json));
-}
 
-sub _handle_command_info {
-    my ($json, $client, $worker, $webui_host) = @_;
-
-    if (my $population = $json->{population}) {
-        $client->webui_host_population($population);
-    }
-
-    # enfore recalculation of interval for overall worker status update
-    $client->send_status_interval(undef);
+    # WS messages of type "info" can be sent for debugging
+    log_warning("Ignoring WS message with unknown type $type from $webui_host:\n" . pp($json)) if $type ne 'info';
 }
 
 sub _handle_command_livelog_start {

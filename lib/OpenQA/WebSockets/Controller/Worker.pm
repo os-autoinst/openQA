@@ -57,9 +57,10 @@ sub _message {
 
     my $app = $self->app;
     my $schema = $app->schema;
+    my $tx = $self->tx;
 
     # find relevant worker
-    my $worker_status = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$self->tx};
+    my $worker_status = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$tx};
     unless ($worker_status) {
         $app->log->warn("A message received from unknown worker connection");
         log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', dumper($json)));
@@ -158,21 +159,14 @@ sub _message {
             try {
                 log_debug("Updating seen of worker $worker_id from worker_status ($current_worker_status)");
                 $worker->seen({error => $current_worker_error});
+
+                # Tell the worker that we saw it (used for tests and debugging)
+                $tx->send({json => {type => 'info', seen => 1}});
             }
             catch {
                 log_error("Failed updating seen and error status of worker $worker_id: $_");    # uncoverable statement
             };
         }
-
-        # send worker population
-        try {
-            my $workers_population = $workers->count();
-            my $msg = {type => 'info', population => $workers_population};
-            $self->tx->send({json => $msg} => sub { log_trace("Sent population to worker: " . pp($msg)) });
-        }
-        catch {
-            log_debug("Could not send the population number to worker $worker_id: $_");    # uncoverable statement
-        };
 
         # find the job currently associated with that worker and check whether the worker still
         # executes the job it is supposed to
