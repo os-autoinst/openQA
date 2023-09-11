@@ -226,6 +226,7 @@ sub sqlt_deploy_hook ($self, $sqlt_table) {
     $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
     $sqlt_table->add_index(name => 'idx_jobs_build_group', fields => [qw(BUILD group_id)]);
     $sqlt_table->add_index(name => 'idx_jobs_scenario', fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
+    $sqlt_table->add_index(name => 'idx_assigned_worker_id_t_finished', fields => ['assigned_worker_id', 't_finished']);
 }
 
 # override to straighten out job modules and screenshot references
