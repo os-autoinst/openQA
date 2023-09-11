@@ -104,14 +104,14 @@ install-generic:
 	done
 	ln -s openqa-worker-plain@.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker@.service
 	sed \
-		-e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$$_\1 --no-cleanup \2_' \
-		-e '/After/aConflicts=openqa-worker-plain@.service' \
+		-e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$$_\1 --no-cleanup \2_; t; q1' \
+		-e '/After/aConflicts=openqa-worker-plain@.service; t; q1' \
 		systemd/openqa-worker-plain@.service > "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
 	sed \
-		-e '/Type/aEnvironment=OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE=1' \
-		-e '/ExecStart=/aExecReload=\/bin\/kill -HUP $$MAINPID' \
-		-e 's/Restart=on-failure/Restart=always/' \
-		-e '/After/aConflicts=openqa-worker-plain@.service' \
+		-e '/Type/aEnvironment=OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE=1; t; q1' \
+		-e '/ExecStart=/aExecReload=\/bin\/kill -HUP $$MAINPID; t; q1' \
+		-e 's/Restart=on-failure/Restart=always/; t; q1' \
+		-e '/After/aConflicts=openqa-worker-plain@.service; t; q1' \
 		systemd/openqa-worker-plain@.service > "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-auto-restart@.service
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
