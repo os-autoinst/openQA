@@ -13,6 +13,7 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
+use DBI qw(:sql_types);
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -87,8 +88,15 @@ sub update_caps {
 sub get_property {
     my ($self, $key) = @_;
 
-    my $r = $self->properties->find({key => $key});
-    return $r ? $r->value : undef;
+    # Optimized because this is a performance hot spot for the websocket server
+    my $sth = $self->result_source->schema->storage->dbh->prepare(
+        'SELECT value FROM worker_properties WHERE key = ? AND worker_id = ? LIMIT 1');
+    $sth->bind_param(1, $key, SQL_CHAR);
+    $sth->bind_param(2, $self->id, SQL_BIGINT);
+    $sth->execute;
+    my $r = $sth->fetchrow_arrayref;
+
+    return $r ? $r->[0] : undef;
 }
 
 sub delete_properties {
