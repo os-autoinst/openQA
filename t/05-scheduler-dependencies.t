@@ -1210,18 +1210,18 @@ subtest 'starvation of parallel jobs prevented' => sub {
     my $second_child_job = $jobs->create({id => 3, state => SCHEDULED, TEST => $mocked_jobs{3}->{test}});
 
     # run the scheduler; parallel parent supposed to be prioritized
-    my ($allocated, $allocated_workers) = (undef, {});
-    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule($allocated_workers) }
+    my $free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers();
+    my $allocated_workers;
+    combined_like { $allocated_workers = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs($free_workers) }
     qr/Need to schedule 3 parallel jobs for job 1.*Discarding job (1|2|3).*Discarding job (1|2|3)/s,
       'discarding jobs due to incomplete parallel cluster';
-    is_deeply $allocated, [], 'no jobs allocated (1)' or diag explain $allocated;
     is $mocked_jobs{1}->{priority_offset}, 10, 'priority of parallel parent increased (once per child)';
     is_deeply $allocated_workers, {}, 'no workers "held" so far while still increased prio'
       or diag explain $allocated_workers;
 
     # run the scheduler again assuming highest prio for parallel parent; worker supposed to be "held"
     $mocked_jobs{1}->{priority} = 0;
-    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule($allocated_workers) }
+    combined_like { ($allocated_workers) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs($free_workers) }
     qr/Holding worker .* for job (1|2|3) to avoid starvation.*Holding worker .* for job (1|2|3) to avoid starvation/s,
       'holding 2 workers (for 2 of our parallel jobs while 3rd worker is unavailable)';
     is_deeply [sort keys %$allocated_workers], [map { $_->id } @mocked_free_workers], 'both free workers "held"';

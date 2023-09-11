@@ -101,7 +101,7 @@ $workercaps->{cpu_opmode} = '32-bit, 64-bit';
 $workercaps->{mem_max} = '4096';
 $workercaps->{websocket_api_version} = WEBSOCKET_API_VERSION;
 $workercaps->{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
-sub register_worker { $c->_register($schema, 'host', '1', $workercaps) }
+sub register_worker ($host = 'host', $instance = 1) { $c->_register($schema, $host, $instance, $workercaps) }
 
 my ($id, $worker, $worker_db_obj);
 subtest 'worker registration' => sub {
@@ -307,20 +307,45 @@ subtest 'job grab (failed to send job to worker)' => sub {
     is_deeply($allocated, [], 'no workers/jobs allocated');
 };
 
-subtest 'job grab (no jobs because max_running_jobs limit is exceeded)' => sub {
+subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {
     $job->update({state => DONE});
     $job2->update({state => DONE});
+    undef $ws_send_error;
     $worker_db_obj->discard_changes;
-    my $job4 = $jobs->create_from_settings(\%settings2);
+    my @jobs;
+    push @jobs, $jobs->create_from_settings(\%settings2) for 1 .. 10;
     local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 0;
     my $res = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
-    is $res, undef, 'schedule() returns nothing';
+    is @$res, 0, 'schedule() returns empty arrayref';
 
     my $scheduled = list_jobs(state => SCHEDULED);
     my $assigned = list_jobs(state => ASSIGNED);
     is scalar @$assigned, 0, 'No jobs assigned';
-    is scalar @$scheduled, 1, '1 job still scheduled';
-    $jobs->find($job4->id)->delete;
+    is scalar @$scheduled, 10, '10 jobs still scheduled';
+    $jobs->find($_->id)->delete for @jobs;
+};
+
+subtest 'job grab (no jobs because max_running_jobs limit is exceeded)' => sub {
+    my @jobs;
+    my @workers;
+    for my $wid (2 .. 10) {
+        is(my $id = register_worker(host => $wid), $wid, 'new worker registered');
+        my $worker = $workers->find($id);
+        $worker->set_property(WORKER_CLASS => 'qemu_x86_64');
+        push @workers, $worker;
+    }
+    push @jobs, $jobs->create_from_settings(\%settings2) for 1 .. 10;
+
+    local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 5;
+    my $res = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    is @$res, 5, 'schedule() returns 5 items';
+
+    my $scheduled = list_jobs(state => SCHEDULED);
+    my $assigned = list_jobs(state => ASSIGNED);
+    is scalar @$assigned, 5, '5 jobs assigned';
+    is scalar @$scheduled, 5, '5 jobs still scheduled';
+    $jobs->find($_->id)->delete for @jobs;
+    $_->delete for @workers;
 };
 
 subtest 'job grab (successful assignment)' => sub {
