@@ -177,6 +177,26 @@ subtest 'web socket message handling' => sub {
     $schema->txn_rollback;
     $t->websocket_ok('/ws/1', 'establish ws connection');
 
+    subtest 'worker status: updates sent too frequently (less than minimal interval)' => sub {
+        my $expected_message = qr/Received worker 1 status too close to the last update/s;
+
+        combined_unlike {
+            $t->send_ok({json => {type => 'worker_status', status => 'idle'}})->message_ok('message received');
+        }
+        $expected_message, 'status update not yet too frequent';
+
+        combined_unlike {
+            $t->finish_ok->websocket_ok('/ws/1', 're-establish ws connection')
+              ->send_ok({json => {type => 'worker_status', status => 'idle'}})->message_ok('message received');
+        }
+        $expected_message, 'status update not yet too frequent due to reconnect';
+
+        combined_like {
+            $t->send_ok({json => {type => 'worker_status', status => 'idle'}})->message_ok('message received');
+        }
+        $expected_message, 'status update too frequent';
+    };
+
     subtest 'worker status: broken' => sub {
         combined_like {
             $t->send_ok({json => {type => 'worker_status', status => 'broken', reason => 'test'}});
