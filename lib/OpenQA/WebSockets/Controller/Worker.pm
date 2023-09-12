@@ -7,7 +7,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::Log qw(log_debug log_error log_info log_warning log_trace);
-use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION MIN_TIMER);
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;
 use OpenQA::Scheduler::Client;
@@ -47,6 +47,7 @@ sub _finish {
     }
     $reason = ($reason ? ": $reason" : '');
     log_info("Worker $worker->{id} websocket connection closed - $code$reason");
+    delete $worker->{last_seen};
 
     # note: Not marking the worker immediately as offline because it is expected to reconnect if the connection
     #       is lost unexpectedly. It will be considered offline after the configured timeout expires.
@@ -150,6 +151,14 @@ sub _message {
 
         log_trace "Received from worker $worker_id worker_status message: " . dumper($json)
           if LOG_WORKER_STATUS_MESSAGES;
+
+        # detect if the websocket server is running too close to its limit and falling behind with status updates
+        my ($last_seen, $now) = ($worker_status->{last_seen}, time);
+        if ($last_seen && ($last_seen + MIN_TIMER) > $now) {
+            log_info("Received worker $worker_id status too close to the last update,"
+                  . " websocket server possibly overloaded or worker misconfigured");
+        }
+        $worker_status->{last_seen} = $now;
 
         my $workers = $schema->resultset('Workers');
         my $worker = $workers->find($worker_id);
