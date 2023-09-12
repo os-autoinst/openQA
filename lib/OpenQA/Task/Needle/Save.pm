@@ -31,8 +31,6 @@ sub _json_validation {
     if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
         die 'no tag defined';
     }
-    my @not_ocr_area = grep { $_->{type} ne 'ocr' } @{$djson->{area}};
-    die 'Cannot create a needle with only OCR areas' if scalar(@not_ocr_area) == 0;
 
     my $areas = $djson->{area};
     foreach my $area (@$areas) {
@@ -41,6 +39,11 @@ sub _json_validation {
         die 'area without type' unless exists $area->{type};
         die 'area without height' unless exists $area->{height};
         die 'area without width' unless exists $area->{width};
+        if ($area->{type} eq 'ocr') {
+          die 'OCR area without refstr' unless defined $area->{refstr};
+          die 'refstr is an empty string' if ($area->{refstr} eq '');
+          die 'refstr contains placeholder char §' if ($area->{refstr} =~ qr/§/);
+        }
     }
     return $djson;
 }
@@ -78,21 +81,25 @@ sub _save_needle {
         return $minion_job->finish({error => "<strong>Failed to validate $needlename.</strong><br>$error"});
     }
 
-    # determine imagepath
+    my @match_areas = grep { $_->{type} eq 'match' } @{$json_data->{area}};
+
     my $imagepath;
-    if ($imagedir) {
-        $imagepath = join('/', $imagedir, $imagename);
-    }
-    elsif ($imagedistri) {
-        $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);
-    }
-    else {
-        $imagepath = join('/', $openqa_job->result_dir(), $imagename);
-    }
-    if (!-f $imagepath) {
-        my $error = "Image $imagename could not be found!";
-        $app->log->error("Failed to save needle: $error");
-        return $minion_job->fail({error => "<strong>Failed to save $needlename.</strong><br>$error"});
+    if (@match_areas) {
+        # determine imagepath
+        if ($imagedir) {
+            $imagepath = join('/', $imagedir, $imagename);
+        }
+        elsif ($imagedistri) {
+            $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);
+        }
+        else {
+            $imagepath = join('/', $openqa_job->result_dir(), $imagename);
+        }
+        if (!-f $imagepath) {
+            my $error = "Image $imagename could not be found!";
+            $app->log->error("Failed to save needle: $error");
+            return $minion_job->fail({error => "<strong>Failed to save $needlename.</strong><br>$error"});
+        }
     }
 
     # check whether needle directory actually exists
@@ -112,17 +119,19 @@ sub _save_needle {
 
     # do not overwrite the exist needle if disallow to overwrite
     my $baseneedle = "$needledir/$needlename";
-    if (-e "$baseneedle.png" && !$args->{overwrite}) {
+    if (-e "$baseneedle.json" && !$args->{overwrite}) {
         #my $returned_data = $self->req->params->to_hash;
         #$returned_data->{requires_overwrite} = 1;
         return $minion_job->finish({requires_overwrite => 1});
     }
 
-    # copy image
     my $success = 1;
-    if (!($imagepath eq "$baseneedle.png") && !copy($imagepath, "$baseneedle.png")) {
-        $app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
-        $success = 0;
+    if (@match_areas) {
+        # copy image
+        if (!($imagepath eq "$baseneedle.png") && !copy($imagepath, "$baseneedle.png")) {
+            $app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
+            $success = 0;
+        }
     }
     if ($success) {
         open(my $J, ">", "$baseneedle.json") or $success = 0;
@@ -138,9 +147,11 @@ sub _save_needle {
 
     # commit needle in Git repository
     if ($git->enabled) {
+        my @files_to_be_comm = ["$needlename.json"];
+        push(@files_to_be_comm, "$needlename.png") if (@match_areas);
         my $error = $git->commit(
             {
-                add => ["$needlename.json", "$needlename.png"],
+                add => @files_to_be_comm,
                 message => ($commit_message || sprintf("%s for %s", $needlename, $openqa_job->name)),
             });
         if ($error) {

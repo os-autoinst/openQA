@@ -220,6 +220,7 @@
                         Take image from:
                         <select id="image_select" class="form-control" style="width: fit-content; display: inline;">
                             % for my $needle (@$needles) {
+                                % next unless defined $needle->{imageurl};
                                 <option value="<%= $needle->{name} %>">
                                     %= $needle->{title}
                                 </option>
@@ -264,6 +265,10 @@
                         %= tag button => (id => 'toggle-click-coordinates') => (class => 'btn btn-default btn-block disabled') => (disabled => undef) => (onclick => 'toggleClickCoordinates()') => begin
                             %= tag i => (class => 'fa fa-mouse-pointer')
                             <span id="toggle-click-coordinates-verb">Add</span> click coordinates for<br> <code>assert_and_click</code>
+                        % end
+                    % end
+                    %= tag div => begin
+                        %= tag textarea => (id => 'txtarea-refstr') => (class => 'form-control') => (disabled => undef) => (placeholder => 'OCR Reference Text') => (oninput => 'updateRefstr()') => begin
                         % end
                     % end
                 </div>

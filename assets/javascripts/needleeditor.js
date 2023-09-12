@@ -59,6 +59,13 @@ NeedleEditor.prototype.init = function () {
         return;
       }
       a.type = NeedleEditor.nexttype(a.type);
+
+      updateAreaCtrls(a);
+
+      // Attrs only apply to some area types and are not retained elsewhere.
+      delete a.refstr;
+      delete a.margin;
+
       shape.fill = NeedleEditor.areacolor(a.type);
       editor.UpdateTextArea();
       cv.redraw();
@@ -110,15 +117,14 @@ NeedleEditor.prototype.init = function () {
     cv.addShape(shape);
     editor.needle.area.push(a);
     editor.UpdateTextArea();
+    updateAreaCtrls(a);
     return shape;
   };
-  var areaSpecificButtons = $('#change-match, #change-margin, #toggle-click-coordinates');
   $(cv).on('shape.selected', function () {
-    areaSpecificButtons.removeClass('disabled').removeAttr('disabled');
-    updateToggleClickCoordinatesButton(editor.currentClickCoordinates());
+    updateAreaCtrls(editor.selection().area);
   });
   $(cv).on('shape.unselected', function () {
-    areaSpecificButtons.addClass('disabled').attr('disabled', 1);
+    updateAreaCtrls(null);
   });
 
   document.getElementById('needleeditor_name').onchange = function () {
@@ -158,6 +164,15 @@ NeedleEditor.prototype.AddTag = function (tag, checked) {
   div.appendChild(label);
   this.tags.appendChild(div);
   return input;
+};
+
+/**
+ * Method updating the reference string and it's in it's text box and the
+ * corresponding attribute of it's area object.
+ */
+NeedleEditor.prototype.updateRefstr = function () {
+  this.selection().area.refstr = document.getElementById('txtarea-refstr').value;
+  this.UpdateTextArea();
 };
 
 NeedleEditor.nexttype = function (type) {
@@ -377,6 +392,7 @@ NeedleEditor.prototype.toggleClickCoordinates = function () {
 
 function loadBackground() {
   var needle = window.needles[$('#image_select option:selected').val()];
+  needle = needle.imageurl ? needle : window.needles['screenshot'];
   nEditor.LoadBackground(needle.imageurl);
   $('#needleeditor_image').val(needle.imagename);
   $('#needleeditor_imagedistri').val(needle.imagedistri);
@@ -440,6 +456,55 @@ function loadAreas() {
   }
 }
 
+/**
+ * Method disabling a HTML element.
+ * @param {string} elemId - The ID of the element in the HTML document.
+ */
+function disableElem(elemId) {
+  const elem = document.getElementById(elemId);
+  elem.classList.add('disabled');
+  elem.disabled = 'disabled';
+}
+
+/**
+ * Method enabling a HTML element.
+ * @param {string} elemId - The ID of the element in the HTML document.
+ */
+function enableElem(elemId) {
+  const elem = document.getElementById(elemId);
+  elem.classList.remove('disabled');
+  elem.removeAttribute('disabled');
+}
+
+/**
+ * Method enabling/disabling controls for a specific area.
+ * @param {Object} area - The area which the controls should be prepared for.
+ */
+function updateAreaCtrls(area) {
+
+  const ctrlElemIds = {
+    all: ['change-match', 'change-margin', 'toggle-click-coordinates', 'txtarea-refstr'],
+    match: ['change-match', 'change-margin', 'toggle-click-coordinates'],
+    ocr: ['change-match', 'toggle-click-coordinates', 'txtarea-refstr'],
+    exclude: ['toggle-click-coordinates']
+  }
+
+  if (!area || !(area.type in ctrlElemIds)) {
+    ctrlElemIds.all.forEach(elem => disableElem(elem));
+    document.getElementById('txtarea-refstr').value = '';
+    return;
+  }
+  ctrlElemIds[area.type].forEach(elem => enableElem(elem));
+  const otherElemIds = ctrlElemIds.all.filter(elem => !ctrlElemIds[area.type].includes(elem));
+  otherElemIds.forEach(elem => disableElem(elem));
+
+  if (area.type === 'ocr') {
+    document.getElementById('txtarea-refstr').value = area.refstr;
+  } else {
+    document.getElementById('txtarea-refstr').value = '';
+  }
+}
+
 function addTag() {
   var input = $('#newtag');
   var checkbox = nEditor.AddTag(input.val(), false);
@@ -457,6 +522,10 @@ function setMatch() {
   nEditor.setMatch($('#match').val());
 }
 
+/** Method triggering update in refstr text box in needle editor instance. */
+function updateRefstr() {
+  nEditor.updateRefstr();
+}
 function toggleClickCoordinates() {
   updateToggleClickCoordinatesButton(nEditor.toggleClickCoordinates());
 }

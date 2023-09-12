@@ -287,7 +287,7 @@ sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_di
     my $pngfile = File::Spec->catpath('', $needles_dir, $png_fname);
 
     $needle->{needledir} = $needles_dir;
-    $needle->{image} = $pngfile;
+    $needle->{image} = $pngfile if (-f $pngfile);
     $needle->{json} = $file_name;
     $needle->{name} = $name;
     $needle->{distri} = $distri;
@@ -315,12 +315,14 @@ sub _extended_needle_info ($self, $needle_dir, $needle_name, $basic_needle_data,
 
     $needle_info->{title} = $needle_name;
     $needle_info->{suggested_name} = ensure_timestamp_appended($needle_name);
-    $needle_info->{imageurl}
-      = $self->needle_url($distri, $needle_name . '.png', $version, $needle_info->{json})->to_string();
-    $needle_info->{imagename} = basename($needle_info->{image});
-    $needle_info->{imagedir} = dirname($needle_info->{image});
-    $needle_info->{imagedistri} = $distri;
-    $needle_info->{imageversion} = $version;
+    if ($needle_info->{image}) {
+      $needle_info->{imageurl}
+        = $self->needle_url($distri, $needle_name . '.png', $version, $needle_info->{json})->to_string();
+      $needle_info->{imagename} = basename($needle_info->{image});
+      $needle_info->{imagedir} = dirname($needle_info->{image});
+      $needle_info->{imagedistri} = $distri;
+      $needle_info->{imageversion} = $version;
+    }
     $needle_info->{tags} //= [];
     $needle_info->{matches} //= [];
     $needle_info->{properties} //= [];
@@ -389,6 +391,10 @@ sub save_needle_ajax ($self) {
     my $job_id = $job->id;
     my $needledir = needledir($job->DISTRI, $job->VERSION);
     my $needlename = $validation->param('needlename');
+    my $needle_json = $validation->param('json');
+
+    # The json data came from an HTML form. Might contain carriage return.
+    $needle_json =~ s/\r\n/\n/g;
 
     $self->gru->enqueue_and_keep_track(
         task_name => 'save_needle',
@@ -396,7 +402,7 @@ sub save_needle_ajax ($self) {
         task_args => {
             job_id => $job_id,
             user_id => $self->current_user->id,
-            needle_json => $validation->param('json'),
+            needle_json => $needle_json,
             overwrite => $self->param('overwrite'),
             imagedir => $self->param('imagedir') // '',
             imagedistri => $validation->param('imagedistri'),
