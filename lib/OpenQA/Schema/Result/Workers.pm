@@ -248,7 +248,7 @@ sub send_command {
 sub unfinished_jobs {
     my ($self) = @_;
 
-    return $self->previous_jobs->search({t_finished => undef});
+    return $self->previous_jobs->search({state => {-in => [OpenQA::Jobs::Constants::PENDING_STATES]}});
 }
 
 sub set_current_job {
