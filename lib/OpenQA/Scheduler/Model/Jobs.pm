@@ -14,10 +14,11 @@ use OpenQA::Utils 'random_string';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
 use Time::HiRes 'time';
-use List::Util qw(all shuffle min);
+use List::Util qw(all shuffle min sum);
 
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
+use constant MAX_REPORT_MISSING_WORKER_CLASSES => $ENV{OPENQA_SCHEDULER_MAX_REPORT_MISSING_WORKER_CLASSES} // 30;
 
 # How much the priority should be increased (the priority value decreased) to protect a parallel cluster from starvation
 use constant STARVATION_PROTECTION_PRIORITY_OFFSET => $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} // 1;
@@ -50,9 +51,21 @@ sub _allocate_jobs ($self, $free_workers) {
     my $max_allocate = $limit >= 0 ? min(MAX_JOB_ALLOCATION, $limit - $running) : MAX_JOB_ALLOCATION;
 
     # update the matching workers to the current free
-    for my $jobinfo (values %$scheduled_jobs) {
-        $jobinfo->{matching_workers} = _matching_workers($jobinfo, $free_workers);
+    my %rejected;
+    for my $id (keys %$scheduled_jobs) {
+        my $jobinfo = $scheduled_jobs->{$id};
+        $jobinfo->{matching_workers} = _matching_workers($jobinfo, $free_workers, \%rejected);
+        delete $scheduled_jobs->{$id} unless @{$jobinfo->{matching_workers}};
     }
+    if (keys %rejected) {
+        my @rejected = sort { $rejected{$b} <=> $rejected{$a} || $a cmp $b } keys %rejected;
+        splice @rejected, MAX_REPORT_MISSING_WORKER_CLASSES;
+        my $stats = join ',', map { "$_:$rejected{$_}" } @rejected;
+        my $info = sprintf "Skipping %d jobs because of no free workers for requested worker classes (%s)",
+          sum(values %rejected), $stats;
+        log_debug($info);
+    }
+
     # before we start looking at sorted jobs, we try to repair half scheduled clusters
     # note: This can happen e.g. with workers connected to multiple web UIs or when jobs are scheduled
     #       non-atomically via openqa-clone-job.
@@ -121,7 +134,7 @@ sub _allocate_jobs ($self, $free_workers) {
         if ($busy >= $max_allocate || $busy >= @$free_workers) {
             my $free_worker_count = @$free_workers;
             log_debug("limit reached, scheduling no additional jobs"
-                  . "(max_running_jobs=$limit, free workers=$free_worker_count, running=$running, allocated=$busy)");
+                  . " (max_running_jobs=$limit, free workers=$free_worker_count, running=$running, allocated=$busy)");
             last;
         }
     }
@@ -303,12 +316,14 @@ sub schedule ($self) {
 
 sub singleton { state $jobs ||= __PACKAGE__->new }
 
-sub _matching_workers ($jobinfo, $free_workers) {
+sub _matching_workers ($jobinfo, $free_workers, $rejected = {}) {
     my @filtered;
+    my @needed = sort @{$jobinfo->{worker_classes}};
     for my $worker (@$free_workers) {
-        my $matched_all = all { $worker->check_class($_) } @{$jobinfo->{worker_classes}};
+        my $matched_all = all { $worker->check_class($_) } @needed;
         push(@filtered, $worker) if $matched_all;
     }
+    $rejected->{join ',', @needed}++ unless @filtered;
     return \@filtered;
 }
 

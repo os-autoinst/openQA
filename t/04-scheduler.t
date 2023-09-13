@@ -325,28 +325,64 @@ subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {
     $jobs->find($_->id)->delete for @jobs;
 };
 
+my @workers;
+for my $wid (2 .. 10) {
+    is(my $id = register_worker(host => $wid), $wid, 'new worker registered');
+    my $worker = $workers->find($id);
+    $worker->set_property(WORKER_CLASS => 'qemu_x86_64');
+    push @workers, $worker;
+}
 subtest 'job grab (no jobs because max_running_jobs limit is exceeded)' => sub {
+    my $log_mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
+    my $log = '';
+    $log_mock->redefine(log_debug => sub { $log .= "$_[0]\n" });
     my @jobs;
-    my @workers;
-    for my $wid (2 .. 10) {
-        is(my $id = register_worker(host => $wid), $wid, 'new worker registered');
-        my $worker = $workers->find($id);
-        $worker->set_property(WORKER_CLASS => 'qemu_x86_64');
-        push @workers, $worker;
-    }
     push @jobs, $jobs->create_from_settings(\%settings2) for 1 .. 10;
 
     local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 5;
     my $res = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     is @$res, 5, 'schedule() returns 5 items';
+    like $log,
+      qr/limit reached, scheduling no additional jobs .max_running_jobs=5, free workers=10, running=0, allocated=5./,
+      'Log message about exceeded limit';
 
     my $scheduled = list_jobs(state => SCHEDULED);
     my $assigned = list_jobs(state => ASSIGNED);
     is scalar @$assigned, 5, '5 jobs assigned';
     is scalar @$scheduled, 5, '5 jobs still scheduled';
     $jobs->find($_->id)->delete for @jobs;
-    $_->delete for @workers;
 };
+
+subtest 'job grab (statistics about rejected jobs)' => sub {
+    my $log_mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
+    my @jobs;
+    my @workers;
+    my @classes = qw(atari c64 quantum);
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
+    for my $i (1 .. 10) {
+        my %set = %settings2;
+        $set{WORKER_CLASS} = $classes[$i % 3];
+        push @jobs, $jobs->create_from_settings(\%set);
+    }
+    my $scheduled_jobs = $scheduler->determine_scheduled_jobs;
+    my $free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers();
+    my %rejected;
+    for my $jobinfo (values %$scheduled_jobs) {
+        $jobinfo->{matching_workers}
+          = OpenQA::Scheduler::Model::Jobs::_matching_workers($jobinfo, $free_workers, \%rejected);
+    }
+    my $expected = {atari => 3, c64 => 4, quantum => 3};
+    is_deeply \%rejected, $expected, 'Rejected worker classes statistics like expected';
+
+    my $log = '';
+    $log_mock->redefine(log_debug => sub { $log .= "$_[0]\n" });
+    $scheduler->schedule;
+    like $log, qr/Skipping 10 jobs because of no free workers for requested worker classes .c64:4,atari:3,quantum:3./,
+      'Log message about rejected jobs';
+    $jobs->find($_->id)->delete for @jobs;
+};
+
+$_->delete for @workers;
 
 subtest 'job grab (successful assignment)' => sub {
     $job->update({state => SCHEDULED});
