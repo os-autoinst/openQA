@@ -70,7 +70,7 @@ subtest streaming => sub {
     my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
     my $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
     my $t_file = $tmpdir->child('test.txt');
-    $t_file->spurt(@fake_data);
+    $t_file->spew(join '', @fake_data);
 
     # test text streaming
     $controller->streamtext('test.txt');
@@ -80,7 +80,7 @@ subtest streaming => sub {
     like $controller->tx->res->content->{body_buffer}, qr/data: \["bar\\n"\]/, 'body buffer contains "bar"';
 
     my $fake_data = "A\n" x (12 * 1024);
-    $t_file->spurt($fake_data);
+    $t_file->spew($fake_data);
     $controller->streamtext("test.txt");
 
     my $size = -s $t_file;
@@ -103,7 +103,7 @@ subtest streaming => sub {
     $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
     my $fake_png = $tmpdir->child('01-fake.png');
     my $last_png = $tmpdir->child('last.png');
-    $fake_png->spurt('not actually a PNG');
+    $fake_png->spew('not actually a PNG');
     symlink $fake_png->basename, $last_png or die "Unable to symlink: $!";
     combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (1)';
     is $controller->res->content->{body_buffer}, "data: data:image/png;base64,bm90IGFjdHVhbGx5IGEgUE5H\n\n",

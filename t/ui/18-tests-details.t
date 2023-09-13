@@ -343,7 +343,7 @@ subtest 'running job' => sub {
         ok $step_detail_element, 'step detail present' or return;
         like $step_detail_element->get_text, qr/Unable to read/, '"Unable to read…" shown in the first place';
         # pretend the text result has been uploaded
-        $aplay_text_result->spurt('some text result');
+        $aplay_text_result->spew('some text result');
         update_status sub {
             my $text = $driver->execute_script('return document.querySelector("#module_aplay .links")?.textContent');
             ($text !~ qr/Unable to read/) && ($step_detail_element = $driver->find_element('#module_aplay .links'));
@@ -555,7 +555,7 @@ my $ntext = <<EOM;
   ]
 }
 EOM
-$needle_dir->child("$_.json")->spurt($ntext) for qw(sudo-passwordprompt-lxde sudo-passwordprompt);
+$needle_dir->child("$_.json")->spew($ntext) for qw(sudo-passwordprompt-lxde sudo-passwordprompt);
 
 sub test_with_error {
     my ($needle_to_modify, $error, $tags, $expect, $test_name) = @_;
@@ -568,7 +568,7 @@ sub test_with_error {
         my $detail = $details->[0];
         $detail->{needles}->[$needle_to_modify]->{error} = $error if defined $needle_to_modify && defined $error;
         $detail->{tags} = $tags if defined $tags;
-        $details_file->spurt(encode_json($details));
+        $details_file->spew(encode_json($details));
     }
 
     # check whether candidates are displayed as expected

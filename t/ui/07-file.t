@@ -56,16 +56,16 @@ subtest 'needle download' => sub {
     $needle_dir->make_path();
     my $json
       = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-timezone"]}';
-    path("$needle_dir/inst-timezone-text.png")->spurt("png\n");
-    path("$needle_dir/inst-timezone-text.json")->spurt($json);
+    path("$needle_dir/inst-timezone-text.png")->spew("png\n");
+    path("$needle_dir/inst-timezone-text.json")->spew($json);
 
     # and another, in a subdirectory, to test that
     my $needle_subdir = Mojo::File->new('t/data/openqa/share/tests/opensuse/needles/subdirectory');
     $needle_subdir->make_path();
     my $json2
       = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-subdirectory"]}';
-    path("$needle_subdir/inst-subdirectory.png")->spurt("png\n");
-    path("$needle_subdir/inst-subdirectory.json")->spurt($json2);
+    path("$needle_subdir/inst-subdirectory.png")->spew("png\n");
+    path("$needle_subdir/inst-subdirectory.json")->spew($json2);
 
     $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(200)->content_type_is('image/png')
       ->content_is("png\n");

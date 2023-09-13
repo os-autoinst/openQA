@@ -82,7 +82,7 @@ create_running_job_for_needle_editor;
 
 # enable use of Git (via a config file to affect all apps forked by call_driver) but mock it
 $ENV{OPENQA_CONFIG} = my $config_dir = tempdir;
-$config_dir->child('openqa.ini')->spurt("[global]\nscm = git");
+$config_dir->child('openqa.ini')->spew("[global]\nscm = git");
 shared_hash {};
 my $git_mock = Test::MockModule->new('OpenQA::Git');
 $git_mock->redefine(commit => sub ($self, $args) { shared_hash $args; return undef });
@@ -537,7 +537,7 @@ my $hash = '{ "name": "workaround", "value": "workaround for bsc#123456" }';
 my %tests = (string => '"workaround"', hash => $hash);
 foreach my $type (sort keys %tests) {
     subtest "Needle with $type properties" => sub {
-        $needle_json_file->spurt(qq({ "properties": [ $tests{$type} ] }));
+        $needle_json_file->spew(qq({ "properties": [ $tests{$type} ] }));
         $driver->refresh;
         $driver->title_is('openQA: Needle Editor', 'needle editor shows up');
         ok element_prop('property_workaround', 'checked'), 'workaround property selected';
@@ -546,7 +546,7 @@ foreach my $type (sort keys %tests) {
 }
 
 subtest 'Broken needle is handled gracefully' => sub {
-    $needle_json_file->spurt("{{{,};");
+    $needle_json_file->spew("{{{,};");
     $driver->refresh;
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     my @warnings = (split /\n/, $driver->find_element('#editor_warnings span')->get_text());

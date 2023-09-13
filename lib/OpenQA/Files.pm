@@ -25,7 +25,7 @@ sub deserialize {
     return $self->new(map { OpenQA::File->deserialize($_) } @_);
 }
 
-sub write { Mojo::File->new(pop())->spurt(shift()->join()) }
+sub write { Mojo::File->new(pop())->spew(shift()->join()) }
 
 sub generate_sum { sha1_base64(shift()->join()) }
 
@@ -50,11 +50,11 @@ sub write_verify_chunks ($class, $chunk_path, $file) {
     return $class->verify_chunks($chunk_path => $file);
 }
 
-sub spurt ($self, $dir) {
+sub spew ($self, $dir) {
     return $self->each(
         sub {
             $_->prepare;    # Prepare your data first before serializing
-            Mojo::File->new($dir, $_->index)->spurt($_->serialize);
+            Mojo::File->new($dir, $_->index)->spew($_->serialize);
         });
 }
 

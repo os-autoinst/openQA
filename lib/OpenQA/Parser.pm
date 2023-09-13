@@ -192,8 +192,8 @@ sub deserialize { shift->_load_tree(Storable::thaw(shift)) }
 sub to_json { encode_json shift->_build_tree }
 sub from_json { shift->_load_tree(decode_json shift) }
 
-sub save { my $s = shift; path(@_)->spurt($s->serialize); $s }
-sub save_to_json { my $s = shift; path(@_)->spurt($s->to_json); $s }
+sub save { my $s = shift; path(@_)->spew($s->serialize); $s }
+sub save_to_json { my $s = shift; path(@_)->spew($s->to_json); $s }
 sub from_file { shift->new()->deserialize(path(pop)->slurp()) }
 sub from_json_file { shift->new()->from_json(path(pop)->slurp()) }
 

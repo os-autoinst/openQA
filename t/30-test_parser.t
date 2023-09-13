@@ -741,7 +741,7 @@ sub serialize_test {
         my $obj_content = $parser->serialize();
 
         my $wrote_file = tempfile();
-        $wrote_file->spurt($obj_content);
+        $wrote_file->spew($obj_content);
         ok -e $wrote_file, 'File was written';
         ok length($wrote_file->slurp()) > 3000, 'File has content';
 
@@ -974,7 +974,7 @@ subtest nested_parsers => sub {
     my $frozen_again = $join->serialize();
 
     my $frozen_file = tempfile();
-    $frozen_file->spurt($frozen_again);
+    $frozen_file->spew($frozen_again);
 
     my $final_data = parser()->deserialize($frozen_file->slurp());
     test_ltp_file_v2($final_data->results->first);

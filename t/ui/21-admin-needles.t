@@ -47,7 +47,7 @@ my $fake_worker = $minion->worker->register;
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
 # create dummy files for needles
 path($needle_dir)->make_path;
-map { path($needle_dir, $_)->spurt('go away later') } @needle_files;
+map { path($needle_dir, $_)->spew('go away later') } @needle_files;
 
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();

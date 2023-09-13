@@ -84,7 +84,7 @@ subtest 'recompose in-place' => sub {
 
 
     # Save pieces to disk
-    $_->prepare && Mojo::File->new($t_dir, $_->index)->spurt($_->serialize) for $pieces->each();
+    $_->prepare && Mojo::File->new($t_dir, $_->index)->spew($_->serialize) for $pieces->each();
     #$pieces->prepare(); it will call prepare for each one
 
     is $t_dir->list_tree->size, $pieces->last->total;
@@ -137,14 +137,14 @@ subtest 'verify_chunks' => sub {
     my $copied_file = tempfile();
 
     # Save pieces to disk
-    $pieces->spurt($t_dir);
+    $pieces->spew($t_dir);
 
     is $t_dir->list_tree->size, $pieces->last->total;
 
     OpenQA::Files->write_chunks($t_dir => $copied_file);
 
     is(OpenQA::Files->verify_chunks($t_dir => $copied_file), undef, 'Verify chunks passes');
-    $copied_file->spurt('');
+    $copied_file->spew('');
 
     is(
         OpenQA::Files->verify_chunks($t_dir => $copied_file)->message(),

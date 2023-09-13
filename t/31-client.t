@@ -21,7 +21,7 @@ use Mojo::File qw(tempdir);
 
 subtest 'hostnames configurable' => sub {
     my $config_dir = tempdir;
-    $config_dir->child('client.conf')->spurt("[foo]\nkey = fookey\nsome = config\n[bar]\nkey = barkey");
+    $config_dir->child('client.conf')->spew("[foo]\nkey = fookey\nsome = config\n[bar]\nkey = barkey");
     ($ENV{OPENQA_CONFIG}, $ENV{OPENQA_SCHEDULER_HOST}, $ENV{OPENQA_WEB_SOCKETS_HOST}) = ($config_dir, qw(foo bar));
     my $scheduler_client = OpenQA::Scheduler::Client->new;
     is $scheduler_client->host, 'foo', 'scheduler hostname configurable';

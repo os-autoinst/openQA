@@ -322,7 +322,7 @@ sub status {
             # ensure parent directory exists
             $cache_file->dirname->make_path();
             # write JSON file, replacing possibly existing one
-            $cache_file->spurt(
+            $cache_file->spew(
                 encode_json(
                     {
                         data => \@assets,

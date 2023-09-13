@@ -156,7 +156,7 @@ is $jobA->done(result => PASSED), USER_RESTARTED, 'jobA job set to done (result 
 is $cloneA->done(result => PASSED), PASSED, 'cloneA job set to done';
 
 # register asset and mark as created by cloneA
-path($japath)->spurt('foobar');
+path($japath)->spew('foobar');
 my $ja = $schema->resultset('Assets')->create({name => $janame, type => 'hdd'});
 $schema->resultset('JobsAssets')->create({job_id => $cloneA->id, asset_id => $ja->id, created_by => 1});
 
@@ -181,14 +181,14 @@ my $repopath = path(assetdir, 'repo', 'tmprepo');
 remove_tree($repopath);
 # create some test content to test nested dir size discovery
 my $testdir = path($repopath, 'testdir')->make_path;
-path($repopath, 'testfile')->spurt('foobar');
-path($repopath, 'testfile2')->spurt('meep');
+path($repopath, 'testfile')->spew('foobar');
+path($repopath, 'testfile2')->spew('meep');
 my $repo = $schema->resultset('Assets')->create({name => 'tmprepo', type => 'repo'});
 
 # create a test 'fixed' asset
 my $fixed_dir = path(assetdir, 'hdd', 'fixed')->make_path;
 my $fixedpath = path($fixed_dir, 'fixed.img');
-$fixedpath->spurt('');
+$fixedpath->spew('');
 my $fixed = $schema->resultset('Assets')->create({name => 'fixed.img', type => 'hdd'});
 
 # test is_fixed

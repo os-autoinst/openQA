@@ -14,7 +14,7 @@ has 'content';
 sub write {
     my ($self, $dir) = @_;
     my $content = $self->content;
-    path($dir, $self->file)->spurt($content);
+    path($dir, $self->file)->spew($content);
     return length $content;
 }
 

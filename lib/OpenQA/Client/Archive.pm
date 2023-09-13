@@ -62,7 +62,7 @@ sub _download_test_result_details ($self, $url, $path, $module, $options) {
 
     elsif ($module->{text}) {
         my $file = $path->child('testresults', $module->{text});
-        $file->spurt($module->{text_data} // "No data\n");
+        $file->spew($module->{text_data} // "No data\n");
     }
 }
 
@@ -112,7 +112,7 @@ sub _download_test_results ($self, $url, $job, $path, $options) {
     print "Downloading test details and screenshots to $resultdir\n";
     for my $test (@{$job->{testresults}}) {
         my $filename = $resultdir->child("details-$test->{name}.json");
-        $filename->spurt(encode_json($test));
+        $filename->spew(encode_json($test));
         print "Saved details for $filename\n";
         $self->_download_test_result_details($url, $path, $_, $options) for @{$test->{details}};
     }

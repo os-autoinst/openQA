@@ -501,7 +501,7 @@ subtest 'carry over, including soft-fails' => sub {
         my $last_good_vars = decode_json $last_good_path->slurp;
         $last_good_vars->{TEST_GIT_HASH} = 'UNKNOWN';
         $last_good_vars->{NEEDLES_GIT_HASH} = 'UNKNOWN';
-        $last_good_path->spurt(encode_json $last_good_vars);
+        $last_good_path->spew(encode_json $last_good_vars);
         ok my $inv = $job->investigate, 'job can provide investigation details';
         is ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash';
         is $last_good->{link}, '/tests/99997', 'last_good hash has the correct link';

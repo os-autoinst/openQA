@@ -33,7 +33,7 @@ OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 05-
 # this test also serves to test plugin loading via config file
 my $conf = "[global]\nplugins=AMQP\n[amqp]\npublish_attempts = 2\npublish_retry_delay = 0\n";
 my $tempdir = tempdir;
-path($ENV{OPENQA_CONFIG} = $tempdir)->make_path->child('openqa.ini')->spurt($conf);
+path($ENV{OPENQA_CONFIG} = $tempdir)->make_path->child('openqa.ini')->spew($conf);
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $app = $t->app;

@@ -61,7 +61,7 @@ subtest 'filesystem removal' => sub {
 
     subtest 'remove file' => sub {
         my $asset_path = path($asset_sub_dir, 'foo.txt');
-        $asset_path->spurt('foo');
+        $asset_path->spew('foo');
         stdout_like { $assets->create({type => 'foo', name => 'foo.txt', size => 3})->delete }
         qr/removed $asset_path/, 'removal logged';
         ok(!-e $asset_path, 'asset is gone');
@@ -69,7 +69,7 @@ subtest 'filesystem removal' => sub {
     subtest 'remove directory tree' => sub {
         my $asset_path = path($asset_sub_dir, 'some-repo');
         $asset_path->make_path;
-        path($asset_path, 'repo-file')->spurt('a file within the repo');
+        path($asset_path, 'repo-file')->spew('a file within the repo');
         stdout_like { $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete }
         qr/removed $asset_path/, 'removal logged';
         ok(!-e $asset_path, 'asset is gone');
@@ -82,7 +82,7 @@ subtest 'filesystem removal' => sub {
 
 # ensure Core-7.2.iso exists (usually created by t/14-grutasks.t anyways)
 my $core72iso_path = assetdir() . '/iso/Core-7.2.iso';
-Mojo::File->new($core72iso_path)->spurt('foo') unless (-f $core72iso_path);
+Mojo::File->new($core72iso_path)->spew('foo') unless (-f $core72iso_path);
 
 # scan initially for untracked assets and refresh
 $schema->resultset('Assets')->scan_for_untracked_assets();

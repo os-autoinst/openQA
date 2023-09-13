@@ -289,7 +289,7 @@ subtest 'incomplete job because of setup failure' => sub {
 my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
 ok -e $cache_location, 'Setting up Cache directory';
 
-path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt(<<EOC);
+path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew(<<EOC);
 [global]
 CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50
@@ -311,7 +311,7 @@ subtest 'Cache tests' => sub {
     my $db_file = $cache_location->child('cache.sqlite');
     ok !-e $db_file, 'cache.sqlite is not present';
 
-    my $filename = $cache_location->child('test.file')->spurt('Hello World');
+    my $filename = $cache_location->child('test.file')->spew('Hello World');
     path($cache_location, 'test_directory')->make_path;
 
     $worker_cache_service->restart->restart;
@@ -367,7 +367,7 @@ subtest 'Cache tests' => sub {
         my $time = $result_5->{last_use};
         for (1 .. 5) {
             $filename = $cache_location->child("$_.qcow2");
-            path($filename)->spurt($filename);
+            path($filename)->spew($filename);
             # so that last_use is not the same for every item
             $time++;
             my $sth = $dbh->prepare("INSERT INTO assets (filename,etag,last_use) VALUES ( ?, 'Not valid', $time);");

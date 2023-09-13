@@ -17,7 +17,7 @@ BEGIN {
     $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
     $ENV{OPENQA_BASEDIR} = $basedir;
     $ENV{OPENQA_CONFIG} = path($basedir, 'config')->make_path;
-    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt('
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew('
 [global]
 CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
 CACHEWORKERS = 10
