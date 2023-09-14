@@ -194,14 +194,14 @@ information and results (if any) are kept for future reference.
 
 One of the main mechanisms for openQA to know the state of the virtual machine
 is checking the presence of some elements in the machine's 'screen'.
-This is performed using fuzzy image matching between the screen and the so
-called 'needles'. A needle specifies both the elements to search for and a
+This is performed matching a reference (so called 'needles') with the 'screen'.
+A needle specifies both the elements to search for and a
 list of tags used to decide which needles should be used at any moment.
 
-A needle consists of a full screenshot in PNG format and a json file with
-the same name (e.g. foo.png and foo.json) containing the associated data, like
-which areas inside the full screenshot are relevant or the mentioned list of
-tags.
+A needle consists of at least a JSON file and, optionally, a full screenshot
+in PNG format with the same name (e.g. foo.png and foo.json). The JSON file
+contains the associated data, like which areas inside the full screenshot are
+relevant and the mentioned list of tags.
 
 [source,json]
 -------------------------------------------------------------------
@@ -213,7 +213,8 @@ tags.
          "width" : INTEGER,
          "height" : INTEGER,
          "type" : ( "match" | "ocr" | "exclude" ),
-         "match" : INTEGER, // 0-100. similarity percentage
+         "match" : INTEGER, // 0-100. similarity percentage,
+         "refstr": STRING,
       },
       ...
    ],
@@ -230,11 +231,11 @@ There are three kinds of areas:
   with at least the specified similarity percentage. Regular areas are
   displayed as green boxes in the needle editor and as green or red frames
   in the needle view (green for matching areas, red for non-matching ones).
-* *OCR areas* also define relevant parts of the screenshot. However, an OCR
-  algorithm is used for matching. In the needle editor OCR areas are
+* *OCR areas* also define relevant parts of the screenshot. They are
+  converted to text in order to be matched on an OCR reference text. The
+  reference text is stored in the needle. In the needle editor OCR areas are
   displayed as orange boxes. To turn a regular area into an OCR area within
-  the needle editor, double click the concerning area twice. Note that such
-  needles are only rarely used.
+  the needle editor, double click the concerning area twice.
 * *Exclude areas* can be used to ignore parts of the reference picture.
   In the needle editor exclude areas are displayed as red boxes. To turn a
   regular area into an exclude area within the needle editor, double click

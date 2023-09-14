@@ -59,6 +59,33 @@ NeedleEditor.prototype.init = function () {
         return;
       }
       a.type = NeedleEditor.nexttype(a.type);
+
+      // Only image based match areas can utilize margin for fuzzy matching
+      var changeMarginButton = document.getElementById('change-margin');
+      // Only OCR areas can be assigned a refstr
+      var refstrTxtArea = document.getElementById('txtarea-refstr');
+      if (a.type == "match") {
+        changeMarginButton.classList.remove('disabled');
+        changeMarginButton.removeAttribute("disabled");
+        refstrTxtArea.value = '';
+        refstrTxtArea.classList.add('disabled');
+        refstrTxtArea.disabled = "disabled";
+      } else if (a.type == "ocr") {
+        refstrTxtArea.value = '';
+        refstrTxtArea.classList.remove('disabled');
+        refstrTxtArea.removeAttribute("disabled");
+      } else {
+        changeMarginButton.classList.add('disabled');
+        changeMarginButton.disabled = "disabled";
+        refstrTxtArea.value = '';
+        refstrTxtArea.classList.add('disabled');
+        refstrTxtArea.disabled = "disabled";
+      }
+
+      // Attributes only apply to some types of areas
+      delete a.refstr;
+      delete a.margin;
+
       shape.fill = NeedleEditor.areacolor(a.type);
       editor.UpdateTextArea();
       cv.redraw();
@@ -104,21 +131,41 @@ NeedleEditor.prototype.init = function () {
     }
     editor.UpdateTextArea();
   };
+  var matchAreaButtons = $('#change-match, #change-margin, #toggle-click-coordinates');
+  var otherAreaButtons = $('#change-match, #toggle-click-coordinates');
+  var refstrTxtArea = $('#txtarea-refstr');
   cv.new_shape_cb = function (x, y) {
     var a = {xpos: x, ypos: y, width: MINSIZE, height: MINSIZE, type: 'match'};
     var shape = NeedleEditor.ShapeFromArea(a);
     cv.addShape(shape);
     editor.needle.area.push(a);
     editor.UpdateTextArea();
+    matchAreaButtons.removeClass('disabled').removeAttr('disabled');
+    refstrTxtArea.val('');
+    refstrTxtArea.addClass('disabled').attr('disabled', 1);
     return shape;
   };
-  var areaSpecificButtons = $('#change-match, #change-margin, #toggle-click-coordinates');
   $(cv).on('shape.selected', function () {
-    areaSpecificButtons.removeClass('disabled').removeAttr('disabled');
-    updateToggleClickCoordinatesButton(editor.currentClickCoordinates());
+    var selection = editor.selection();
+    var a = selection.area;
+    if (a.type == "match") {
+      matchAreaButtons.removeClass('disabled').removeAttr('disabled');
+      refstrTxtArea.val('');
+      refstrTxtArea.addClass('disabled').attr('disabled', 1);
+    } else if (a.type == "ocr") {
+      otherAreaButtons.removeClass('disabled').removeAttr('disabled');
+      refstrTxtArea.val(a.refstr);
+      refstrTxtArea.removeClass('disabled').removeAttr('disabled');
+    } else {
+      otherAreaButtons.removeClass('disabled').removeAttr('disabled');
+      refstrTxtArea.val('');
+      refstrTxtArea.addClass('disabled').attr('disabled', 1);
+    }
   });
   $(cv).on('shape.unselected', function () {
-    areaSpecificButtons.addClass('disabled').attr('disabled', 1);
+    matchAreaButtons.addClass('disabled').attr('disabled', 1);
+    refstrTxtArea.val('');
+    refstrTxtArea.addClass('disabled').attr('disabled', 1);
   });
 
   document.getElementById('needleeditor_name').onchange = function () {
@@ -158,6 +205,14 @@ NeedleEditor.prototype.AddTag = function (tag, checked) {
   div.appendChild(label);
   this.tags.appendChild(div);
   return input;
+};
+
+NeedleEditor.prototype.updateRefstr = function () {
+  var selection = this.selection();
+  var selectedArea = selection.area;
+  var refstrTxtArea = document.getElementById('txtarea-refstr');
+  selectedArea.refstr = refstrTxtArea.value;
+  this.UpdateTextArea();
 };
 
 NeedleEditor.nexttype = function (type) {
@@ -457,6 +512,9 @@ function setMatch() {
   nEditor.setMatch($('#match').val());
 }
 
+function updateRefstr() {
+  nEditor.updateRefstr();
+}
 function toggleClickCoordinates() {
   updateToggleClickCoordinatesButton(nEditor.toggleClickCoordinates());
 }

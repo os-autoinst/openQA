@@ -155,7 +155,7 @@ sub edit ($self) {
                     width => int $match->{w},
                     ypos => int $match->{y},
                     height => int $match->{h},
-                    type => 'match',
+		    type => 'match',
                 );
                 $area{margin} = int($match->{margin}) if defined $match->{margin};
                 $area{match} = int($match->{match}) if defined $match->{match};
@@ -264,8 +264,9 @@ sub _new_screenshot ($self, $tags, $image_name, $matches = undef) {
             ypos => int $area->{y},
             width => int $area->{w},
             height => int $area->{h},
-            type => 'match',
         );
+        $match{type} = defined $area->{refstr} ? 'ocr' : 'match';
+        $match{refstr} = $area->{refstr} if defined $area->{refstr};
         if (my $click_point = $area->{click_point}) {
             $match{click_point} = $click_point;
         }
@@ -450,6 +451,8 @@ sub calc_matches ($needle, $areas) {
             type => $area->{result},
             similarity => int($area->{similarity} + 0.5),
         );
+        $match{ocr_str} = $area->{ocr_str} if defined $area->{ocr_str};
+	print($area->{ocr_str}) if defined $area->{ocr_str};
         if (my $click_point = $area->{click_point}) {
             $match{click_point} = $click_point;
         }
