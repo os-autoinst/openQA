@@ -77,7 +77,7 @@ RUN zypper in -y -C \\
 $dep   && zypper clean
 EOM
     $docker =~ s/($begin\n)(.*)($end\n)/$1$run$3/s;
-    path($dockerfile)->spurt($docker);
+    path($dockerfile)->spew($docker);
     say "Updated $dockerfile";
 }
 
@@ -111,7 +111,7 @@ sub update_spec {
         }
     }
 
-    path($specfile)->spurt($spec);
+    path($specfile)->spew($spec);
     say "Updated $specfile";
 }
 
@@ -186,7 +186,7 @@ $cover_requires
 };
 EOM
 
-    path($cpanfile)->spurt($cpan);
+    path($cpanfile)->spew($cpan);
     say "Updated $cpanfile";
 }
 
