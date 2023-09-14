@@ -153,10 +153,12 @@ sub _message {
           if LOG_WORKER_STATUS_MESSAGES;
 
         # detect if the websocket server is running too close to its limit and falling behind with status updates
+        # (the status "working" is special because it will be sent immediately after a worker started a new job)
         my ($last_seen, $now) = ($worker_status->{last_seen}, time);
         if ($last_seen && ($last_seen + MIN_TIMER) > $now) {
             log_info("Received worker $worker_id status too close to the last update,"
-                  . " websocket server possibly overloaded or worker misconfigured");
+                  . " websocket server possibly overloaded or worker misconfigured")
+              if $current_worker_status ne 'working';
         }
         $worker_status->{last_seen} = $now;
 

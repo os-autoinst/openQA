@@ -195,6 +195,17 @@ subtest 'web socket message handling' => sub {
             $t->send_ok({json => {type => 'worker_status', status => 'idle'}})->message_ok('message received');
         }
         $expected_message, 'status update too frequent';
+
+        combined_unlike {
+            $t->finish_ok->websocket_ok('/ws/1', 're-establish ws connection')
+              ->send_ok({json => {type => 'worker_status', status => 'idle'}})->message_ok('message received');
+        }
+        $expected_message, 'status update not yet too frequent due to another reconnect';
+
+        combined_unlike {
+            $t->send_ok({json => {type => 'worker_status', status => 'working'}})->message_ok('message received');
+        }
+        $expected_message, 'status update not too frequent for status "working"';
     };
 
     subtest 'worker status: broken' => sub {
