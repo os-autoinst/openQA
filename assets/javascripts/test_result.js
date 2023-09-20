@@ -644,16 +644,20 @@ function renderTestModules(response) {
     setCurrentPreviewFromStepLinkIfPossible($("[href='" + hash + "'], [data-href='" + hash + "']"));
   }
 
-  // setup keyboard navigation through test details
-  $(window).keydown(handleKeyDownOnTestDetails);
+  // setup event handlers for the window
+  if (!this.hasWindowEventHandlers) {
+    // setup keyboard navigation through test details
+    $(window).keydown(handleKeyDownOnTestDetails);
 
-  // ensure the size of the preview container is adjusted when the window size changes
-  $(window).resize(function () {
-    const currentPreview = $('.current_preview');
-    if (currentPreview.length) {
-      setCurrentPreview($('.current_preview'), true);
-    }
-  });
+    // ensure the size of the preview container is adjusted when the window size changes
+    $(window).resize(function () {
+      const currentPreview = $('.current_preview');
+      if (currentPreview.length) {
+        setCurrentPreview($('.current_preview'), true);
+      }
+    });
+    this.hasWindowEventHandlers = true;
+  }
 
   // setup result filter, define function to apply filter changes
   const detailsFilter = $('#details-filter');
