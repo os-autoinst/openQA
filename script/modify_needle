@@ -62,5 +62,5 @@ for my $needle (@ARGV) {
     }
     $info->{tags} = [sort keys %tags];
     next unless $changed;
-    path($needle)->spurt(Cpanel::JSON::XS->new->pretty->encode($info));
+    path($needle)->spew(Cpanel::JSON::XS->new->pretty->encode($info));
 }

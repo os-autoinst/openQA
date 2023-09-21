@@ -127,7 +127,7 @@ sub _write_content ($self, $file_name) {
     croak 'No start point is defined' unless defined $self->start();
     croak 'No end point is defined' unless defined $self->end();
 
-    Mojo::File->new($file_name)->spurt('') unless -e $file_name;
+    Mojo::File->new($file_name)->spew('') unless -e $file_name;
     CORE::open my $file, '+<', $file_name or croak "Can't open file $file_name: $!";
     binmode($file);    # old Perl versions might need this
     my $ret;

@@ -40,7 +40,7 @@ sub write {
     my ($self, $path) = @_;
     croak __PACKAGE__ . ' write() requires a path' unless $path;
     my $json_data = $self->to_json;
-    path($path)->spurt($json_data);
+    path($path)->spew($json_data);
     return length $json_data;
 }
 

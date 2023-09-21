@@ -217,7 +217,7 @@ subtest 'Test configuration override from file' => sub {
         "ignored_failed_minion_jobs = foo boo\n"
 
     );
-    $t_dir->child("openqa.ini")->spurt(@data);
+    $t_dir->child("openqa.ini")->spew(join '', @data);
     combined_like sub { OpenQA::Setup::read_config($app) }, qr/Deprecated.*blacklist/, 'notice about deprecated key';
 
     ok -e $t_dir->child("openqa.ini");
@@ -247,7 +247,7 @@ subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
         hide_asset_types = repo iso  
         recognized_referers =   bugzilla.suse.com   progress.opensuse.org github.com
     ';
-    $t_dir->child('openqa.ini')->spurt($data);
+    $t_dir->child('openqa.ini')->spew($data);
     OpenQA::Setup::read_config($app);
     ok($app->config->{global}->{appname} eq 'openQA', 'appname');
     ok($app->config->{global}->{hide_asset_types} eq 'repo iso', 'hide_asset_types');

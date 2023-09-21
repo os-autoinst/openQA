@@ -82,9 +82,9 @@ subtest 'create result dir, delete results' => sub {
     my $ulogs_dir = path($result_dir, 'ulogs')->make_path;
     my $file_content = Encode::encode('UTF-8', 'this text is 26 bytes long');
     my @fake_results = qw(autoinst-log.txt video.ogv video.webm video_time.vtt serial0.txt serial_terminal.txt);
-    path($result_dir, $_)->spurt($file_content) for @fake_results;
+    path($result_dir, $_)->spew($file_content) for @fake_results;
     my @ulogs = qw(bar.log foo.log);
-    path($ulogs_dir, $_)->spurt($file_content) for @ulogs;
+    path($ulogs_dir, $_)->spew($file_content) for @ulogs;
     is_deeply $job->test_uploadlog_list, \@ulogs, 'logs linked to job as uploaded';
     is_deeply $job->video_file_paths->map('basename')->to_array, [qw(video.ogv video.webm)], 'all videos considered';
 
@@ -102,7 +102,7 @@ subtest 'create result dir, delete results' => sub {
         $job = $jobs->create({TEST => 'delete-logs', logs_present => 1, result_size => $initially_assumed_result_size});
         $job->discard_changes;
         ok -d ($result_dir = path($job->create_result_dir)), 'result directory created';
-        path($result_dir, $_)->spurt($file_content) for @fake_results;
+        path($result_dir, $_)->spew($file_content) for @fake_results;
         symlink(path($result_dir, 'video.webm'), my $symlink = path($result_dir, 'video.mkv'))
           or die "Unable to create symlink: $!";
         my $symlink_size = $symlink->lstat->size;
@@ -136,7 +136,7 @@ subtest 'create result dir, delete results' => sub {
         my $result_dir = path($job->result_dir);
         like $result_dir, qr|$base_dir/openqa/testresults/\d{5}/\d{8}-to-be-archived|,
           'normal result directory returned by default';
-        $result_dir->child('subdir')->make_path->child('some-file')->spurt('test');
+        $result_dir->child('subdir')->make_path->child('some-file')->spew('test');
         $job->update({state => DONE});
         $job->discard_changes;
 

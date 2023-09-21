@@ -101,7 +101,7 @@ subtest 'Changelog' => sub {
     $t->get_ok('/changelog')->status_is(200)->content_like(qr/No changelog available/)
       ->content_unlike(qr/Custom changelog works/);
     my $changelog = tempfile;
-    $changelog->spurt('Custom changelog works!');
+    $changelog->spew('Custom changelog works!');
     $global_cfg->{changelog_file} = $changelog->to_string;
     $t->get_ok('/changelog')->status_is(200)->content_like(qr/Custom changelog works/);
 };

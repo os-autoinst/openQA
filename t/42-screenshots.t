@@ -183,12 +183,12 @@ subtest 'deleting screenshots of a single job' => sub {
     $screenshots->populate_images_to_job(\@fake_screenshots, $job->id);
     $thumsdir->make_path;
     for my $screenshot (@fake_screenshots) {
-        path($imagesdir, $screenshot)->spurt('--');
-        path($thumsdir, $screenshot)->spurt('---');
+        path($imagesdir, $screenshot)->spew('--');
+        path($thumsdir, $screenshot)->spew('---');
     }
 
     ok -d (my $result_dir = path($job->create_result_dir)), 'result directory created';
-    $result_dir->child('foo')->spurt('-----');
+    $result_dir->child('foo')->spew('-----');
     is $job->delete_results, 2 * (2 + 3) + 5, 'size of deleted results returned';
     $job->discard_changes;
     is $job->logs_present, 0, 'logs not considered present anymore';
@@ -228,8 +228,8 @@ subtest 'unable to delete screenshot' => sub {
     my $only_thumb = $screenshots->create({filename => 'only-thumb', t_created => '2021-01-26 08:06:54'});
     $only_screenshot->discard_changes;
     $only_thumb->discard_changes;
-    $tempdir->child('only-screenshot')->spurt('---');
-    $tempdir->child('.thumbs')->make_path->child('only-thumb')->spurt('-----');
+    $tempdir->child('only-screenshot')->spew('---');
+    $tempdir->child('.thumbs')->make_path->child('only-thumb')->spew('-----');
     $screenshot_deletion->delete_screenshot($only_screenshot->id, $only_screenshot->filename);
     is $deleted_size, 103, 'size of screenshot tracked';
     $screenshot_deletion->delete_screenshot($only_screenshot->id, $only_thumb->filename);

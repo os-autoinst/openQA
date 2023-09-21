@@ -752,7 +752,7 @@ subtest 'finalize job results' => sub {
     $minion->reset({all => 1});
 
     subtest 'successful run triggered via $job->done' => sub {
-        my $a_txt = path($job->result_dir, 'a-0.txt')->spurt('Foo');
+        my $a_txt = path($job->result_dir, 'a-0.txt')->spew('Foo');
         my $b_txt = path('t/data/14-module-b.txt')->copy_to($job->result_dir . '/b-0.txt');
         $job->done;
         $_->discard_changes for ($job, $child_job);
@@ -783,7 +783,7 @@ subtest 'finalize job results' => sub {
 
     subtest 'unsuccessful run where not all modules can be finalized' => sub {
         $minion->reset({all => 1});
-        $a_details->spurt('Not {} valid [] JSON');
+        $a_details->spew('Not {} valid [] JSON');
         combined_like { run_gru_job($app, finalize_job_results => [$job->id]) }
         qr/error: Finalizing.*failed/, 'error in finalizing handled';
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});

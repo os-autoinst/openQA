@@ -22,7 +22,7 @@ BEGIN {
     $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
     $ENV{OPENQA_BASEDIR} = $basedir;
     $ENV{OPENQA_CONFIG} = path($basedir, 'config')->make_path;
-    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt('
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew('
 [global]
 CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
 CACHEWORKERS = 10
@@ -99,7 +99,7 @@ sub test_sync ($run) {
 
     my $t_dir = int(rand(13432432));
     my $data = int(rand(348394280934820842093));
-    $dir->child($t_dir)->spurt($data);
+    $dir->child($t_dir)->spew($data);
     my $expected = $dir2->child('tests')->child($t_dir);
 
     ok !$cache_client->enqueue($rsync_request);
@@ -195,7 +195,7 @@ subtest 'Configurable minion workers' => sub {
     is_deeply([OpenQA::CacheService::setup_workers(qw(minion daemon))],
         [qw(minion daemon)], 'minion worker setup with daemon');
 
-    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew("
 [global]
 CACHEDIRECTORY = $cachedir
 CACHELIMIT = 100");
@@ -252,7 +252,7 @@ subtest 'Invalid requests' => sub {
 
 subtest 'Asset exists' => sub {
     ok(!$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent');
-    path($cachedir, 'localhost')->make_path->child('foobar')->spurt('test');
+    path($cachedir, 'localhost')->make_path->child('foobar')->spew('test');
 
     ok($cache_client->asset_exists('localhost', 'foobar'), 'Asset exists');
     unlink path($cachedir, 'localhost')->child('foobar')->to_string;
@@ -460,7 +460,7 @@ subtest 'Test Minion task registration and execution' => sub {
 subtest 'Test Minion Sync task' => sub {
     my $dir = tempdir;
     my $dir2 = tempdir;
-    $dir->child('test')->spurt('foobar');
+    $dir->child('test')->spew('foobar');
     my $expected = $dir2->child('tests')->child('test');
 
     my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
@@ -602,7 +602,7 @@ subtest 'Concurrent downloads of the same file' => sub {
 subtest 'Concurrent rsync' => sub {
     my $dir = tempdir;
     my $dir2 = tempdir;
-    $dir->child('test')->spurt('foobar');
+    $dir->child('test')->spew('foobar');
     my $expected = $dir2->child('tests')->child('test');
     my $app = $t->app;
     my $req = $cache_client->rsync_request(from => $dir, to => $dir2);

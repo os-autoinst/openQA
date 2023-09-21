@@ -151,7 +151,7 @@ my $ref_uploaded_files = [
     [{file => {file => "$pool_directory/virtio_console_user.log", filename => 'serial_terminal_user.txt'}}],
 ];
 my $testresults_dir = $pool_directory->child('testresults')->make_path;
-$testresults_dir->child('test_order.json')->spurt('[]');
+$testresults_dir->child('test_order.json')->spew('[]');
 $testresults_dir->child('.thumbs')->make_path;
 $worker->pool_directory($pool_directory);
 my $client = Test::FakeClient->new;
@@ -306,7 +306,7 @@ subtest 'Clean up pool directory' => sub {
     wait_until_job_status_ok($job, 'accepted');
 
     # Put some 'old' logs into the pool directory to verify whether those are cleaned up
-    $pool_directory->child('autoinst-log.txt')->spurt('Hello Mojo!');
+    $pool_directory->child('autoinst-log.txt')->spew('Hello Mojo!');
 
     # Try to start job
     combined_like { $job->start } qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
@@ -376,7 +376,7 @@ subtest 'Job aborted because backend process died' => sub {
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spurt(qq({"component": "backend", "msg": "$extended_reason"}));
+            $state_file->spew(qq({"component": "backend", "msg": "$extended_reason"}));
             $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
@@ -399,7 +399,7 @@ subtest 'Job aborted because backend process died, multiple lines' => sub {
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spurt(qq({"msg": "Lorem ipsum\\nDolor sit amet"}));
+            $state_file->spew(qq({"msg": "Lorem ipsum\\nDolor sit amet"}));
             $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
@@ -423,7 +423,7 @@ subtest 'Job aborted, broken state file' => sub {
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spurt(qq({"msg": "test", ));
+            $state_file->spew(qq({"msg": "test", ));
             $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
@@ -454,7 +454,7 @@ subtest 'Job aborted, broken state file' => sub {
 
 subtest 'Job aborted, statefile contains result' => sub {
     my $state_file = $pool_directory->child('base_state.json');
-    $state_file->spurt(qq({"msg": "test", "result": "incomplete"}));
+    $state_file->spew(qq({"msg": "test", "result": "incomplete"}));
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
     $job->_set_job_done('test-reason', {}, undef);
     is @{$client->sent_messages}[-1]->{result}, 'incomplete', 'result propagated'
@@ -563,9 +563,9 @@ $engine_mock->redefine(
                 note "pretending job @{[$job->id]} is done";
                 $job->stop(WORKER_SR_DONE);
             });
-        $pool_directory->child('serial_terminal.txt')->spurt('Works!');
-        $pool_directory->child('virtio_console1.log')->spurt('Works too!');
-        $pool_directory->child('virtio_console_user.log')->spurt($user_console_text);
+        $pool_directory->child('serial_terminal.txt')->spew('Works!');
+        $pool_directory->child('virtio_console1.log')->spew('Works too!');
+        $pool_directory->child('virtio_console_user.log')->spew($user_console_text);
         return $callback->({child => $isotovideo->is_running(1)});
     });
 
@@ -585,7 +585,7 @@ subtest 'Successful job' => sub {
     $job->once(uploading_results_concluded => sub ($job, $result) { $is_uploading = $job->is_uploading_results });
     $job->on(status_changed => sub ($job, $result) { $stop_reason = $result->{reason}; $job_ok = $result->{ok} });
     my $assets_public = $pool_directory->child('assets_public')->make_path;
-    $assets_public->child('test.txt')->spurt('Works!');
+    $assets_public->child('test.txt')->spew('Works!');
 
     combined_like { $job->start; wait_until_job_status_ok($job, 'stopped') }
     qr/isotovideo has been started/, 'isotovideo startup logged';
@@ -934,13 +934,13 @@ subtest 'handle upload failure' => sub {
 
     # Assume isotovideo generated some logs
     my $log_dir = $pool_directory->child('ulogs')->make_path;
-    $log_dir->child('foo')->spurt('some log');
-    $log_dir->child('bar')->spurt('another log');
+    $log_dir->child('foo')->spew('some log');
+    $log_dir->child('bar')->spew('another log');
 
     # Assume isotovideo generated some assets
     my $asset_dir = $pool_directory->child('assets_public')->make_path;
-    $asset_dir->child('hdd1.qcow')->spurt('data');
-    $asset_dir->child('hdd2.qcow')->spurt('more data');
+    $asset_dir->child('hdd1.qcow')->spew('data');
+    $asset_dir->child('hdd2.qcow')->spew('more data');
 
     combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
     wait_until_job_status_ok($job, 'stopped');
@@ -1105,7 +1105,7 @@ subtest 'Scheduling failure handled correctly' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
     my $callback_invoked;
     $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE)
-      ->spurt(encode_json({status => 'running', current_test => undef}));
+      ->spew(encode_json({status => 'running', current_test => undef}));
     $testresults_dir->child('test_order.json')->remove;
     combined_like {
         $job->_upload_results_step_0_prepare(sub { $callback_invoked = 1 })
@@ -1153,7 +1153,7 @@ subtest 'Dynamic schedule' => sub {
 
     my $status_file = $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE);
 
-    $results_directory->child('test_order.json')->spurt(encode_json($test_order));
+    $results_directory->child('test_order.json')->spew(encode_json($test_order));
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
     $job->accept;
 
@@ -1161,14 +1161,14 @@ subtest 'Dynamic schedule' => sub {
     wait_until_job_status_ok($job, 'accepted');
     combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
 
-    $status_file->spurt(encode_json($autoinst_status));
+    $status_file->spew(encode_json($autoinst_status));
 
     $job->_upload_results_step_0_prepare(sub { });
     is_deeply $job->{_test_order}, $test_order, 'Initial test schedule';
 
     # do not reload test_order.json when it hasn't changed
     $autoinst_status->{current_test} = '';
-    $status_file->spurt(encode_json($autoinst_status));
+    $status_file->spew(encode_json($autoinst_status));
     $job->_upload_results_step_0_prepare(sub { });
     $job->_upload_results_step_0_prepare(sub { });
     $job->_upload_results_step_0_prepare(sub { });
@@ -1186,7 +1186,7 @@ subtest 'Dynamic schedule' => sub {
         name => 'ping601',
         script => 'tests/kernel/run_ltp.pm'
       };
-    $results_directory->child('test_order.json')->spurt(encode_json($test_order));
+    $results_directory->child('test_order.json')->spew(encode_json($test_order));
     combined_like {
         $job->_upload_results_step_0_prepare(sub { })
     }
@@ -1194,8 +1194,8 @@ subtest 'Dynamic schedule' => sub {
     is_deeply $job->{_test_order}, $test_order, 'Updated test schedule';
 
     # Write expected test logs and shut down cleanly
-    $results_directory->child('result-install_ltp.json')->spurt('{"details": []}');
-    $results_directory->child('result-ping601.json')->spurt('{"details": []}');
+    $results_directory->child('result-install_ltp.json')->spew('{"details": []}');
+    $results_directory->child('result-ping601.json')->spew('{"details": []}');
     $job->stop(WORKER_SR_DONE);
     wait_until_job_status_ok($job, 'stopped');
 
@@ -1219,7 +1219,7 @@ subtest '_read_module_result' => sub {
     is undef, $job->_read_module_result('foo'), 'unable to read module result';
 
     my %res = (details => [{audio => 'recording.ogg', text => 'log.txt'}]);
-    $pool_directory->child('testresults')->make_path->child('result-foo.json')->spurt(encode_json(\%res));
+    $pool_directory->child('testresults')->make_path->child('result-foo.json')->spew(encode_json(\%res));
     is_deeply $job->_read_module_result('foo'), \%res, 'module result returned';
     ok $job->files_to_send->{'recording.ogg'}, 'audio file added to be sent';
     ok $job->files_to_send->{'log.txt'}, 'text file added to be sent';
@@ -1324,7 +1324,7 @@ subtest 'known images and files populated from status update' => sub {
     $job_mock->redefine(post_upload_progress_to_liveviewhandler => sub { });
 
     # fake *some* status so it does not attempt to read the test order
-    path($worker->pool_directory, 'autoinst-status.json')->spurt('{"status":"setup"}');
+    path($worker->pool_directory, 'autoinst-status.json')->spew('{"status":"setup"}');
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
     $job->_upload_results_step_0_prepare();
@@ -1358,8 +1358,8 @@ subtest 'override job reason when qemu terminated with known issues by parsing a
         my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
         $engine_mock->redefine(
             engine_workit => sub {
-                $pool_directory->child('base_state.json')->spurt($known_issue->{base_state_content});
-                $pool_directory->child('autoinst-log.txt')->spurt($known_issue->{log_file_content});
+                $pool_directory->child('base_state.json')->spew($known_issue->{base_state_content});
+                $pool_directory->child('autoinst-log.txt')->spew($known_issue->{log_file_content});
                 $job->stop(WORKER_SR_DIED);
                 return {error => 'worker interrupted'};
             });
@@ -1393,9 +1393,9 @@ subtest 'Cache setup error handling' => sub {
 subtest 'calculating md5sum of result file' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
     my $png = $pool_directory->child('foo.png');
-    $png->spurt('not really a PNG');
+    $png->spew('not really a PNG');
     is $job->_calculate_file_md5('foo.png'), '454b28784a187cd782891a721b7ae31b', 'md5sum computed';
-    $png->spurt('optimized');
+    $png->spew('optimized');
     is $job->_calculate_file_md5('foo.png'), '454b28784a187cd782891a721b7ae31b', 'previous md5sum returned';
 };
 
@@ -1501,7 +1501,7 @@ subtest 'redacting logfile' => sub {
     ok OpenQA::Worker::Job::_redact_file($test_file, 'bar'), 'no error as file skipped anyways';
     combined_like { ok !OpenQA::Worker::Job::_redact_file($test_file, 'vars.json'), 'returns falsy value on error' }
       qr/Skipping upload of vars.json because.*No such file or directory/, 'error logged';
-    $test_file->spurt(encode_json({FOO => 'bar', SOME_PASSWORD => '123', _SECRET_VARIABLE => '456'}));
+    $test_file->spew(encode_json({FOO => 'bar', SOME_PASSWORD => '123', _SECRET_VARIABLE => '456'}));
     ok OpenQA::Worker::Job::_redact_file($test_file, 'vars.json'), 'file changed with no error';
     my $vars_data = $test_file->slurp;
     my $vars = decode_json($vars_data);

@@ -25,7 +25,7 @@ OpenQA::Test::Database->new->create;
 
 sub test_auth_method_startup ($auth, @options) {
     my @conf = ("[auth]\n", "method = \t  $auth \t\n", "[openid]\n", "httpsonly = 0\n");
-    $tempdir->child('openqa.ini')->spurt(@conf, @options);
+    $tempdir->child('openqa.ini')->spew(join('', @conf, @options));
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
     $t->get_ok('/login' => {Referer => 'http://open.qa/tests/42'});

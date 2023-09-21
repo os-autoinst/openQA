@@ -44,7 +44,7 @@ symlink "$FindBin::Bin/../data/openqa/share/factory", "$share_dir/factory";
 # ensure job events are logged
 $ENV{OPENQA_CONFIG} = $tempdir;
 my @data = ("[audit]\n", "blocklist = job_grab\n");
-$tempdir->child("openqa.ini")->spurt(@data);
+$tempdir->child("openqa.ini")->spew(join '', @data);
 
 my $chunk_size = 10000000;
 
@@ -712,9 +712,9 @@ subtest 'update job status' => sub {
             my ($image_path, $thumbnail_path) = OpenQA::Utils::image_md5_filename($md5sum);
             my $file = path($image_path);
             $file->dirname->make_path;
-            $file->spurt('fake screenshot');
+            $file->spew('fake screenshot');
         }
-        path($result_dir, $_)->spurt('fake result') for @known_files;
+        path($result_dir, $_)->spew('fake result') for @known_files;
 
         my @details = (
             {screenshot => {name => 'known-screenshot.png', md5 => '098f6bcd4621d373cade4e832627b4f6'}},

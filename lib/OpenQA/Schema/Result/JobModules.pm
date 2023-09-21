@@ -201,7 +201,7 @@ sub save_results {
 
     my $dir = $self->job->result_dir;
     my $tmpfile = tempfile(DIR => $dir);
-    $tmpfile->spurt(encode_json($results))->chmod(0644)->move_to(path($dir, 'details-' . $self->name . '.json'));
+    $tmpfile->spew(encode_json($results))->chmod(0644)->move_to(path($dir, 'details-' . $self->name . '.json'));
 }
 
 # incorporate textual step data into details JSON
@@ -232,7 +232,7 @@ sub finalize_results {
     # replace file contents on disk using a temp file to preserve old file if something goes wrong
     my $new_file_contents = encode_json($results);
     my $tmpfile = tempfile(DIR => $file->dirname);
-    $tmpfile->spurt($new_file_contents);
+    $tmpfile->spew($new_file_contents);
     $tmpfile->chmod(0644)->move_to($file);
 
     # cleanup incorporated files

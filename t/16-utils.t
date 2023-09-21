@@ -252,28 +252,28 @@ ac6dd8d4475f8b7e0d683e64ff49d6d96151fb76 refs/tags/4.3
 EOT
 
     # Create a valid Changelog and check if result is the expected one
-    $changelog_file->spurt($changelog_content);
+    $changelog_file->spew($changelog_content);
     is detect_current_version($changelog_dir), '4.4.1494239160.9869466', 'Detect current version from Changelog format';
     like detect_current_version($changelog_dir), qr/(\d+\.\d+\.\d+\.$sha_regex)/, "Version scheme matches";
-    $changelog_file->spurt("- Update to version 4.4.1494239160.9869466:\n- Update to version 4.4.1489864450.251306a:");
+    $changelog_file->spew("- Update to version 4.4.1494239160.9869466:\n- Update to version 4.4.1489864450.251306a:");
     is detect_current_version($changelog_dir), '4.4.1494239160.9869466', 'Pick latest version detected in Changelog';
 
     # Failure detection case for Changelog file
-    $changelog_file->spurt("* Do job cleanup even in case of api failure");
+    $changelog_file->spew("* Do job cleanup even in case of api failure");
     is detect_current_version($changelog_dir), undef, 'Invalid Changelog return no version';
-    $changelog_file->spurt("Update to version 3a2.d2d.2ad.9869466:");
+    $changelog_file->spew("Update to version 3a2.d2d.2ad.9869466:");
     is detect_current_version($changelog_dir), undef, 'Invalid versions in Changelog returns undef';
 
     # Create a valid Git repository where we can fetch the exact version.
-    $head_file->spurt("7223a2408120127ad2d82d71ef1893bbe02ad8aa");
-    $refs_file->spurt($refs_content);
+    $head_file->spew("7223a2408120127ad2d82d71ef1893bbe02ad8aa");
+    $refs_file->spew($refs_content);
     is detect_current_version($git_dir), 'git-4.3-7223a240', 'detect current version from Git repository';
     like detect_current_version($git_dir), qr/(git\-\d+\.\d+\-$sha_regex)/, 'Git version scheme matches';
 
     # If refs file can't be found or there is no tag present, version should be undef
     unlink($refs_file);
     is detect_current_version($git_dir), undef, "Git ref file missing, version is undef";
-    $refs_file->spurt("ac6dd8d4475f8b7e0d683e64ff49d6d96151fb76");
+    $refs_file->spew("ac6dd8d4475f8b7e0d683e64ff49d6d96151fb76");
     is detect_current_version($git_dir), undef, "Git ref file shows no tag, version is undef";
 };
 
@@ -399,10 +399,10 @@ subtest 'project directory functions' => sub {
         is gitrepodir(distri => $distri), '', 'empty when .git is missing';
         $mocked_git->make_path;
         $mocked_git->child('config')
-          ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
+          ->spew(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
         is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
         $mocked_git->child('config')
-          ->spurt(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
+          ->spew(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
         is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
     };
     subtest 'custom OPENQA_BASEDIR and OPENQA_SHAREDIR' => sub {

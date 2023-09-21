@@ -23,7 +23,7 @@ sub setup_obs_rsync_test (%args) {
     my $more_config = delete $args{config} // {};
     my $more_config_str = join("\n", map { "$_=$more_config->{$_}" } keys %$more_config);
     dircopy($home_template, $home);
-    $tempdir->child('openqa.ini')->spurt(<<"EOF");
+    $tempdir->child('openqa.ini')->spew(<<"EOF");
 [global]
 plugins=ObsRsync
 [obs_rsync]

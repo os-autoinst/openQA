@@ -63,7 +63,7 @@ requires 'Mojo::RabbitMQ::Client', '>= v0.2';
 requires 'Mojo::SQLite';
 requires 'Mojo::URL';
 requires 'Mojo::Util';
-requires 'Mojolicious', '>= 9.30';
+requires 'Mojolicious', '>= 9.34';
 requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
 requires 'Mojolicious::Plugin::AssetPack', '>= 1.36';
@@ -115,7 +115,7 @@ on 'test' => sub {
 };
 
 on 'devel' => sub {
-    requires 'Perl::Tidy', '== 20230701';
+    requires 'Perl::Tidy', '== 20230909';
 
 };
 
