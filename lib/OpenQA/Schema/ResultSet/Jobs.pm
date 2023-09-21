@@ -214,7 +214,7 @@ sub _search_modules ($self, $module_re) {
         my $stderr;
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
         next if $stderr;
-        push(@results, map { $_ =~ s/\..*$//; basename $_} split(/\n/, $stdout));
+        push(@results, map { $_ =~ s/\..*$//; basename $_ } split(/\n/, $stdout));
     }
     return \@results;
 }

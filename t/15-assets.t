@@ -335,7 +335,7 @@ subtest 'check for missing assets' => sub {
           ->create({type => 'hdd', name => sprintf("%08d-disk_from_parent", $parent_job->id), size => 0});
         @assets = sort map { $_->asset->name } $job_with_2_assets->jobs_assets->all;
         $missing_assets = $job_with_2_assets->missing_assets;
-        is_deeply $missing_assets , ['hdd/non_existent'],
+        is_deeply $missing_assets, ['hdd/non_existent'],
           'private assets correctly detected also when other asset is missing'
           or diag explain $missing_assets;
     };
