@@ -65,7 +65,7 @@ subtest 'openqa_minion_jobs_hook_rc_failed counter' => sub {
 q!INSERT INTO minion_jobs (id, args, created, delayed, finished, priority, result, retried, retries, started, state, task, worker, queue, attempts, parents, notes)
 		VALUES (7291599, '["/bin/true", 11201356, {"delay": 60, "retries": 1440, "skip_rc": 142, "timeout": "10m", "kill_timeout": "10s"}]', '2023-05-26 17:00:50.542916+02', '2023-05-26 17:00:50.542916+02', ?, 0, null, null, 0, '2023-05-26 17:00:50.565839+02', 'finished', 'hook_script', 1388, 'default', 1, '{}', '{"hook_rc": -1, "hook_cmd": "foobar", "hook_result": "Job is '':investigate:'' already, skipping investigation\n"}')!
     );
-    $sth->execute($rc_fail_finished);
+    $sth->execute("$rc_fail_finished+0");
     my $mock_dt = Test::MockModule->new('DateTime');
     $mock_dt->mock(now => sub { $static_now->clone });
     $t->get_ok('/admin/influxdb/minion')->status_is(200)

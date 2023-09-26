@@ -107,8 +107,8 @@ sub minion ($self) {
     # rc means hook script return code
     my $sth = $dbh->prepare(
         q{SELECT COUNT(*) AS rc_failed_count FROM minion_jobs
-		  WHERE finished >= ? AND finished < ? AND task = 'hook_script' AND
-		        state = 'finished' AND (notes->'hook_rc')::int != 0}
+                 WHERE finished >= ? AND finished < ? AND task = 'hook_script' AND
+                       state = 'finished' AND (notes->'hook_rc')::int != 0}
     );
     $sth->execute("$rc_fail_timespan_start+0", "$rc_fail_timespan_end+0");
 
