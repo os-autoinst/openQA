@@ -146,6 +146,7 @@ table.fixedheader {
         position: sticky;
         top: 0px;
         background: white; // prevent transparent during scrolling
+        z-index: 5; // prevent buttons from being displayed on header when scrolling
     }
 }
 .darkmode {
