@@ -51,12 +51,12 @@ if ! command -v perltidy > /dev/null 2>&1; then
     exit 1
 fi
 
-perltidy_version_expected=$(sed -n "s/^.*Perl::Tidy[^0-9]*\([0-9]*\)['];$/\1/p" "$dir"/../cpanfile)
+perltidy_version_expected=$(sed -n "s/^.*Perl::Tidy[^0-9]*\([0-9]*\).*['];$/\1/p" "$dir"/../cpanfile)
 # This might be used from another repo like os-autoinst-distri-opensuse
 if [ -z "${perltidy_version_expected}" ]; then
     # No cpanfile in the linked repo, use the one from os-autoinst instead
     dir="$(dirname "$(readlink -f "$0")")"
-    perltidy_version_expected=$(sed -n "s/^.*Perl::Tidy[^0-9]*\([0-9]*\)['];$/\1/p" "$dir"/../cpanfile)
+    perltidy_version_expected=$(sed -n "s/^.*Perl::Tidy[^0-9]*\([0-9]*\).*['];$/\1/p" "$dir"/../cpanfile)
 fi
 perltidy_version_found=$(perltidy -version | sed -n '1s/^.*perltidy, v\([0-9]*\)\s*$/\1/p')
 if [ "$perltidy_version_found" != "$perltidy_version_expected" ]; then

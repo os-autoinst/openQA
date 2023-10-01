@@ -26,7 +26,7 @@ listdeps > "$DEPS_AFTER"
 comm -13 "$DEPS_BEFORE" "$DEPS_AFTER" > "$CI_PACKAGES"
 
 # let's tidy if Tidy version changes
-newtidyver="$(git diff "$CI_PACKAGES" | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9]*' || :)"
+newtidyver="$(git diff "$CI_PACKAGES" | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9.]*' || :)"
 [ -z "$newtidyver" ] || {
     sed -i -e "s/\(Perl::Tidy):\s\+'==\s\)\([0-9]\+\)\(.*\)/\1$newtidyver\3/g" dependencies.yaml
     make update-deps
