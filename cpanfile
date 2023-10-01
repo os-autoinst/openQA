@@ -115,7 +115,7 @@ on 'test' => sub {
 };
 
 on 'devel' => sub {
-    requires 'Perl::Tidy', '== 20230909';
+    requires 'Perl::Tidy', '== 20230909.0.0';
 
 };
 
