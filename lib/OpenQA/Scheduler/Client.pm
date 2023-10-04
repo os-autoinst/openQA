@@ -5,7 +5,7 @@ package OpenQA::Scheduler::Client;
 use Mojo::Base -base, -signatures;
 
 use OpenQA::Client;
-use OpenQA::Log 'log_warning';
+use OpenQA::Log 'log_debug';
 use OpenQA::Utils 'service_port';
 
 has host => sub { $ENV{OPENQA_SCHEDULER_HOST} };
@@ -26,7 +26,8 @@ sub wakeup ($self) {
     return if $self->{wakeup};
     $self->{wakeup}++;
     $self->client->max_connections(0)->request_timeout(5)->get_p($self->_api('wakeup'))
-      ->catch(sub { log_warning("Unable to wakeup scheduler: $_[0]") })->finally(sub { delete $self->{wakeup} })->wait;
+      ->catch(sub { log_debug("Unable to wakeup scheduler: $_[0]. Retry scheduled") })
+      ->finally(sub { delete $self->{wakeup} })->wait;
 }
 
 sub singleton { state $client ||= __PACKAGE__->new }
