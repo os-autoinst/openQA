@@ -288,7 +288,7 @@ perl-Test-Most-0.35
 perl-Test-Output-1.033
 perl-Test-Strict-0.40
 perl-Test-Warn-0.32
-perl-Test-Warnings-0.030
+perl-Test-Warnings-0.32.0
 perl-Text-Brew-0.02
 perl-Text-Diff-1.45
 perl-TimeDate-2.30
