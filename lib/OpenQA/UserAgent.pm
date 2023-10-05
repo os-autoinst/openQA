@@ -30,8 +30,9 @@ sub new {
             for my $i (qw(key secret)) {
                 my $attr = "api$i";
                 next if $self->$attr;
-                my $val = $cfg->val($args{api}, $i);
-                next unless $val;
+                # Fetch all the values in the file and keep the last one
+                my @values = $cfg->val($args{api}, $i);
+                next unless my $val = $values[-1];
                 $val =~ s/\s+$//;    # remove trailing whitespace
                 $self->$attr($val);
             }
