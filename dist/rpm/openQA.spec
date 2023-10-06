@@ -693,6 +693,7 @@ fi
 %dir %{_unitdir}
 %{_systemdgeneratordir}
 %{_unitdir}/openqa-worker.target
+%{_unitdir}/openqa-worker.slice
 %{_unitdir}/openqa-worker@.service
 %{_unitdir}/openqa-worker-plain@.service
 %{_unitdir}/openqa-worker-cacheservice-minion.service
