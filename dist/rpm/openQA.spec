@@ -388,6 +388,10 @@ ln -s %{_datadir}/openqa/script/openqa-clone-job %{buildroot}%{_bindir}/openqa-c
 ln -s %{_datadir}/openqa/script/openqa-dump-templates %{buildroot}%{_bindir}/openqa-dump-templates
 ln -s %{_datadir}/openqa/script/openqa-load-templates %{buildroot}%{_bindir}/openqa-load-templates
 ln -s %{_datadir}/openqa/script/openqa-clone-custom-git-refspec %{buildroot}%{_bindir}/openqa-clone-custom-git-refspec
+ln -s %{_datadir}/openqa/script/occ %{buildroot}%{_bindir}/occ
+ln -s %{_datadir}/openqa/script/ocj %{buildroot}%{_bindir}/ocj
+ln -s %{_datadir}/openqa/script/ocl %{buildroot}%{_bindir}/ocl
+ln -s %{_datadir}/openqa/script/ola %{buildroot}%{_bindir}/ola
 ln -s %{_datadir}/openqa/script/openqa-validate-yaml %{buildroot}%{_bindir}/openqa-validate-yaml
 ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
 %if %{with python_scripts}
