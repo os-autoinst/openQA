@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ex
 target="${1:?"Specify a makefile target"}"
+# Set to 1 to temporarily ignore warnings
+export PERL_TEST_WARNINGS_ONLY_REPORT_WARNINGS=0
 export COVERAGE=1
 export COVERDB_SUFFIX="_${target}"
 # Enable JUnit-compatible test results
