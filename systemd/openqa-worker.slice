@@ -1,0 +1,7 @@
+[Unit]
+Description=Slice for openqa-worker units
+
+[Slice]
+# Apply memory limit to this slice to ensure that memory cannot be exhausted
+# exclusively by openqa-worker services.
+MemoryMax=90%
