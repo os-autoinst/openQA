@@ -1113,6 +1113,25 @@ timeouts by performing the task in background.
 This is recommended on big instances but means that the results (and
 possible errors) need to be polled via `openqa-cli api isos/$scheduled_product_id`.
 
+
+===== Statistical investigation ===== 
+In case issues appear sporadically and are therefore hard to reproduce it can 
+help to trigger many more jobs on a production instance to gather more data 
+first, for example the failure ratio.
+
+Example of triggering 50 jobs in a development group so that the result of 
+passed/failed jobs is counted by openQA itself on the corresponding overview page:
+[source,sh]
+--------------------------------------------------------------------------------
+openqa-clone-job --skip-chained-deps --repeat=50 --within-instance \
+https://openqa.opensuse.org 123456  BUILD=poo32242_investigation \
+_GROUP="Test Development:openSUSE Tumbleweed" 
+--------------------------------------------------------------------------------
+
+To get an overview about the fail ratio and confidence interval of sporadically 
+failing applications you can also use a script like 
+https://github.com/okurz/scripts/blob/master/count_fail_ratio[this].
+
 [id="scenarios_yaml"]
 ===== Defining test scenarios in YAML =====
 Instead of relying on the tables for machines, mediums/products, test suites and
