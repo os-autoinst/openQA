@@ -326,7 +326,12 @@ sub details ($self) {
     my @ret;
 
     for my $module (@{$modules->{modules}}) {
-        delete $_->{needles} for @{$module->{details}};
+        for my $detail (@{$module->{details}}) {
+            if (my $text_data = $detail->{text_data}) {
+                $detail->{text_data} = $self->rendered_refs_no_shortening($text_data);
+            }
+            delete $detail->{needles};
+        }
         my $hash = {
             name => $module->{name},
             category => $module->{category},
