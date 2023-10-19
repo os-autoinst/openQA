@@ -61,19 +61,7 @@ The complete multi-machine test setup can be provided from the script
 also found online on
 https://github.com/os-autoinst/os-autoinst/blob/master/script/os-autoinst-setup-multi-machine
 
-[NOTE]
-====
-The rest of this chapter until the next chapter <<Verify the setup>> can be
-completely skipped if `os-autoinst-setup-multi-machine` was used. The
-following explanations are provided for reference and further explanation but
-are not guaranteed to provide a consistent working setup.
-====
-
-The section provides one of the ways for setting up the openQA environment to
-run tests that require network connection between several machines (e.g.
-client -- server tests).
-
-The example of the configuration is applicable for openSUSE and will use _Open
+The configuration is applicable for openSUSE and will use _Open
 vSwitch_ for virtual switch, _firewalld_ (or _SuSEfirewall2_ for older
 versions) for NAT and _wicked_ as network manager. Keep in mind that a
 firewall is not strictly necessary for operation. The operation without
@@ -82,299 +70,59 @@ firewall is not covered in all necessary details in this documentation.
 NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is described
 on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
 
-NOTE: The salt states contained by
-https://github.com/os-autoinst/salt-states-openqa[salt-states-openqa] contain all the
+NOTE: Alternatively https://github.com/os-autoinst/salt-states-openqa[salt-states-openqa] contains
 necessities to establish such a setup and configure it for all workers with the `tap`
 worker class. They also cover GRE tunnels (that are explained in the next section).
 
-*Set Up Open vSwitch*
-
-Compared to VDE setup, Open vSwitch is slightly more complicated to configure,
-but provides a more robust and scalable network.
-
-* Install and Run Open vSwitch:
+The script `os-autoinst-setup-multi-machine` can be run like this:
 
 [source,sh]
 ----
-zypper -n in openvswitch
-systemctl enable --now openvswitch
+# specify the number of test VMs to run on this host
+instances=30 bash -x $(which os-autoinst-setup-multi-machine)
 ----
 
-*  Install and configure _os-autoinst-openvswitch.service_:
+==== What os-autoinst-setup-multi-machine does
+
+===== Set up Open vSwitch
+
+The script will install and configure Open vSwitch as well as
+a service called _os-autoinst-openvswitch.service_.
 
 NOTE: _os-autoinst-openvswitch.service_ is a support service that sets the
 vlan number of Open vSwitch ports based on `NICVLAN` variable - this separates
 the groups of tests from each other. The `NICVLAN` variable is dynamically
-assigned by the openQA scheduler. Install, start and enable the service:
+assigned by the openQA scheduler.
+
+The name of the bridge (default: `br1`) will be set in
+`/etc/sysconfig/os-autoinst-openvswitch`.
+
+===== Configure virtual interfaces
+
+The script will add the bridge device and the tap devices for every
+multi-machine worker instance.
+
+NOTE: The bridge device will also call a script at
+`/etc/wicked/scripts/gre_tunnel_preup.sh` on _PRE_UP_.
+This script needs *manual* touch if you want to set up multiple
+multi-machine worker hosts. Refer to the <<GRE tunnels>> section below
+for further information.
+
+===== Configure NAT with firewalld
+The required firewall rules for masquerading (NAT) and zone configuration
+for the trusted zone will be set up. The bridge devices will be added to
+the zone.
+IP-Forwarding will be enabled.
 
 [source,sh]
 ----
-zypper -n in os-autoinst-openvswitch
-systemctl enable --now os-autoinst-openvswitch
+# show the firewall configuration
+firewall-cmd --list-all-zones
 ----
 
-The service _os-autoinst-openvswitch.service_ uses _br0_ bridge by default.
-As it might be used by KVM already it is suggested to configure _br1_ instead:
+==== What is left to do after running os-autoinst-setup-multi-machine
 
-[source,sh]
-----
-echo 'OS_AUTOINST_USE_BRIDGE=br1' > /etc/sysconfig/os-autoinst-openvswitch
-----
-
-* Create the virtual bridge _br1_:
-[source,sh]
-----
-ovs-vsctl add-br br1
-----
-
-==== Configure virtual interfaces
-
-* Add the bridge config including the part for all the tap devices that should
-  be connected to it. The file has to be located in the
-  `/etc/sysconfig/network/` directory. File name is `ifcfg-br<N>`, where `<N>`
-  is the id of the bridge (e.g. `1`):
-
-[source,sh]
-----
-cat > /etc/sysconfig/network/ifcfg-br1 <<EOF
-BOOTPROTO='static'
-IPADDR='10.0.2.2/15'
-STARTMODE='auto'
-ZONE='trusted'
-OVS_BRIDGE='yes'
-OVS_BRIDGE_PORT_DEVICE_0='tap0'
-----
-
-* Add a tap interface for every multi-machine worker instance:
-
-NOTE: Create as many interfaces as needed for a test. The instructions are
-provided for three interfaces _tap0_, _tap1_, _tap2_ to be used by _worker@1_,
-_worker@2_, _worker@3_ worker instances. The TAP interfaces have to be owned
-by the __openqa-worker_ user for the openQA worker instances to be able to
-access them.
-
-To create tap interfaces automatically on startup, add appropriate configuration files to the
-`/etc/sysconfig/network/` directory. Files have to be named as `ifcfg-tap<N>`, replacing `<N>`
-with the number for the interface, such as `0`, `1`, `2` (e.g. `ifcfg-tap0`,
-`ifcfg-tap1`):
-
-[source,sh]
-----
-cat > /etc/sysconfig/network/ifcfg-tap0 <<EOF
-BOOTPROTO='none'
-IPADDR=''
-NETMASK=''
-PREFIXLEN=''
-STARTMODE='auto'
-TUNNEL='tap'
-TUNNEL_SET_GROUP='nogroup'
-TUNNEL_SET_OWNER='_openqa-worker'
-EOF
-instances=42
-for i in $(seq 1 $instances; seq 64 $((64+instances)); seq 128 $((128+instances))); do
-    ln -sf ifcfg-tap0 /etc/sysconfig/network/ifcfg-tap$i && echo "OVS_BRIDGE_PORT_DEVICE_$i='tap$i'" >> /etc/sysconfig/network/ifcfg-br1
-done
-----
-
-Symlinks can be used to reference the same configuration file for each tap
-interface.
-
-
-==== Configure NAT with firewalld
-You can just create a configuration file for the `trusted` zone like this:
-[source,sh]
-----
-cat > /etc/firewalld/zones/trusted.xml <<EOF
-<?xml version="1.0" encoding="utf-8"?>
-<zone target="ACCEPT">
-  <short>Trusted</short>
-  <description>All network connections are accepted.</description>
-  <interface name="br1"/>
-  <interface name="ovs-system"/>
-  <interface name="eth0"/>
-  <masquerade/>
-</zone>
-EOF
-----
-
-It is important that masquerading is enabled. Then set the default zone accordingly
-in `/etc/firewalld/firewalld.conf`, e.g. `DefaultZone=trusted`. The changes will be
-effective on the next reboot which can be checked by invoking e.g.
-`firewall-cmd --zone=trusted --list-all`. It should show the configured interfaces
-and `masquerade: yes`. The firewall is configured this way by the previously
-mentioned salt states.
-
-You can of course also use `firewall-cmd` manually and use different zones. For
-instance, you can assign the bridge interface to the internal zone and the interface
-with access to the network to the external zone:
-
-[source,sh]
-----
-firewall-cmd --zone=external --add-interface=eth0
-firewall-cmd --zone=internal --add-interface=br1
-----
-
-To enable the virtual machines used by openQA to fully access the external
-network masquerading needs to be enabled on all involved zones:
-
-[source,sh]
-----
-firewall-cmd --zone=external --add-masquerade
-firewall-cmd --zone=internal --add-masquerade
-----
-
-IP forwarding is enabled automatically if masquerading is enabled:
-
-[source,sh]
-----
-grep 1 /proc/sys/net/ipv4/ip_forward
-1
-----
-
-In case the interface is in a trusted network it is possible to accept
-connections by default by changing the zone target:
-
-[source,sh]
-----
-firewall-cmd --zone=external --set-target=ACCEPT
-----
-
-If you are happy with the changes make them persistent:
-
-[source,sh]
-----
-firewall-cmd --runtime-to-permanent
-----
-
-If you do not currently have the firewalld service running, you can instead
-use the `firewall-offline-cmd` command for the configuration. In this case
-start the firewall and enable the service to run on system startup:
-
-[source,sh]
-----
-systemctl enable --now firewalld
-----
-
-Also, the `firewall-config` GUI tool for firewalld can be used for configuration.
-
-==== For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2
-
-The IP 10.0.2.2 can be also served as a gateway to access the outside network.
-For this, NAT between _br1_ and _eth0_ must be configured with SuSEfirewall2
-or iptables:
-
-[source,sh]
-----
-# /etc/sysconfig/SuSEfirewall2
-FW_DEV_INT="br1"
-FW_ROUTE="yes"
-FW_MASQUERADE="yes"
-----
-
-Start SuSEfirewall2 and enable the service to start on system startup:
-
-[source,sh]
-----
-systemctl enable --now SuSEfirewall2
-----
-
-
-==== Configure openQA workers
-Allow worker intstances to run multi-machine jobs:
-
-[source,sh]
-----
-# /etc/openqa/workers.ini
-[global]
-WORKER_CLASS = qemu_x86_64,tap
-----
-
-NOTE: The number of tap devices should correspond to the number of the running
-worker instances. For example, if you have set up 3 tap devices, the same
-number of worker instances should be configured.
-
-Enable worker instances to be started on system boot:
-
-[source,sh]
-----
-systemctl enable openqa-worker@1
-systemctl enable openqa-worker@2
-systemctl enable openqa-worker@3
-----
-
-==== Grant CAP_NET_ADMIN Capabilities to QEMU
-In order to let QEMU create TAP devices on demand it is required to set
-CAP_NET_ADMIN capability on QEMU binary file:
-
-[source,sh]
-----
-zypper -n in libcap-progs
-setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
-----
-
-==== Configure network interfaces
-Check the configuration for the _eth0_ interface:
-
-IMPORTANT: Ensure, that _eth0_ interface is configured in
-`/etc/sysconfig/network/ifcfg-eth0`. Otherwise, wicked will not be able to
-bring up the interface on start and the host will loose network connection:
-
-[source,sh]
-----
-# /etc/sysconfig/network/ifcfg-eth0
-BOOTPROTO='dhcp'
-BROADCAST=''
-ETHTOOL_OPTIONS=''
-IPADDR=''
-MTU=''
-NAME=''
-NETMASK=''
-REMOTE_IPADDR=''
-STARTMODE='auto'
-DHCLIENT_SET_DEFAULT_ROUTE='yes'
-----
-
-Pros of wicked over NetworkManager:
-
-** Proper IPv6 support
-** openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools
-** Backwards compatible with ifup scripts
-
-Check the network service currently being used:
-
-[source,sh]
-----
-systemctl show -p Id network.service
-----
-
-If the result is different from `Id=wicked.service` (e.g.
-`NetworkManager.service`), stop the network service:
-
-[source,sh]
-----
-systemctl disable --now network.service
-----
-
-Then switch to wicked and start the service:
-
-[source,sh]
-----
-systemctl enable --force wicked
-systemctl start wicked
-----
-
-Bring up the _br1_ interface:
-
-[source,sh]
-----
-wicked ifup br1
-----
-
-Finally, reboot the system.
-
-NOTE: It is also possible to switch the network configuration using YaST.
-
-=== GRE tunnels
+===== GRE tunnels
 By default all multi-machine workers have to be on a single physical machine.
 You can join multiple physical machines and its OVS bridges together by a GRE
 tunnel.
@@ -409,20 +157,33 @@ PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
 
 Ensure to make gre_tunnel_preup.sh executable.
 
-Allow GRE in older setups still using SuSEfirewall2:
-
-[source,sh]
-----
-# /etc/sysconfig/SuSEfirewall2
-FW_SERVICES_EXT_IP="GRE"
-FW_SERVICES_EXT_TCP="1723"
-----
-
 NOTE: When using GRE tunnels keep in mind that virtual machines inside the ovs
 bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
 you are using support_server/setup.pm the MTU will be set automatically to
 that value on support_server itself and it does MTU advertisement for DHCP
 clients as well.
+
+===== Configure openQA workers
+Allow worker instances to run multi-machine jobs:
+
+[source,sh]
+----
+# /etc/openqa/workers.ini
+[global]
+WORKER_CLASS = qemu_x86_64,tap
+----
+
+NOTE: The number of tap devices should correspond to the number of the running
+worker instances. For example, if you have set up 3 worker instances, the same
+number of tab devices should be configured.
+
+Enable worker instances to be started on system boot:
+
+[source,sh]
+----
+systemctl enable openqa-worker@{1..3}
+----
+
 
 === Verify the setup
 Simply run a MM test scenario. For openSUSE, you can find many relevant tests
