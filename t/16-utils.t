@@ -131,6 +131,9 @@ is href_to_bugref('https://pagure.io/foo/issue/1234'), 'pio#foo#1234', 'pagure.i
 is href_to_bugref('https://pagure.io/foo/bar/issue/1234'), 'pio#foo/bar#1234', 'pagure.io (with group) url to bugref';
 is href_to_bugref('https://gitlab.gnome.org/GNOME/foo/-/issues/1234'), 'ggo#GNOME/foo#1234',
   'GNOME gitlab url to bugref';
+is href_to_bugref('https://gitlab.com/fedora/sigs/flatpak/fedora-flatpaks/-/issues/26'),
+  'gfs#flatpak/fedora-flatpaks#26',
+  'Fedora SIGs gitlab url to bugref';
 is find_bug_number('yast_roleconf-ntp-servers-empty-bsc1114818-20181115.png'), 'bsc1114818',
   'find the bug number from the needle name';
 

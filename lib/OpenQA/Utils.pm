@@ -52,6 +52,7 @@ BEGIN {
         jsc => 'https://jira.suse.de/browse/',
         pio => 'https://pagure.io/',
         ggo => 'https://gitlab.gnome.org/',
+        gfs => 'https://gitlab.com/fedora/sigs/',
     );
     %BUGURLS = (
         'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
@@ -68,6 +69,7 @@ BEGIN {
         $BUGREFS{jsc} => 'jsc',
         $BUGREFS{pio} => 'pio',
         $BUGREFS{ggo} => 'ggo',
+        $BUGREFS{gfs} => 'gfs',
     );
 
     $MARKER_REFS = join('|', keys %BUGREFS);
