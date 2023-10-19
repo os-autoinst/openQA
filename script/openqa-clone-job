@@ -133,6 +133,17 @@ are cloned. Use C<0> to denote infinity.
 A shortcut for C<--skip-download --from HOST --host HOST> to clone a job within
 a local or remote instance.
 
+=item B<--repeat> N
+
+Do the same clone operation N times; this can be useful for Statistical 
+investigation. Example: 
+
+openqa-clone-job --skip-chained-deps --repeat=50 --within-instance \
+https://openqa.opensuse.org 123456 
+
+Will create 50 clones of the same job.
+
+
 =item B<--show-progress>
 
 Displays a progress bar when downloading assets.
@@ -175,6 +186,7 @@ use FindBin;
 use lib "$FindBin::RealBin/../lib";
 use OpenQA::Script::CloneJob;
 use OpenQA::Utils 'assetdir';
+use Scalar::Util qw(looks_like_number);
 
 my %options;
 my $jobid;
@@ -190,7 +202,7 @@ sub parse_options () {
         "apikey:s", "apisecret:s", "verbose|v", "json-output|j",
         "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance",
         "help|h", "show-progress", "within-instance|w=s", "clone-children",
-        "max-depth:i", "ignore-missing-assets", "export-command",
+        "max-depth:i", "repeat|r:i", "ignore-missing-assets", "export-command",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
@@ -207,6 +219,8 @@ sub parse_options () {
     die "missing job reference, see --help for usage\n" unless $jobid;
     ($options{'from'}, $jobid) = split_jobid($jobid) unless $options{'from'};
     usage(1) unless ($jobid && $options{'from'});
+    my $repeat = $options{'repeat'} //= 1;
+    die "invalid repeat count, should be greater than or equal to 1\n" if !looks_like_number($repeat) || $repeat < 1;
     $options{'dir'} ||= assetdir();
     $options{'host'} ||= 'localhost';
     $options{'args'} = \@ARGV;

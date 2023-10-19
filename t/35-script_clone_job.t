@@ -244,6 +244,27 @@ subtest 'export command' => sub {
     combined_like { clone_jobs(42, \%options) } $expected_cmd, 'openqa-cli command printed';
 };
 
+subtest 'cloning with repeat count' => sub {
+    my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    my @post_args;
+    my $tx_handled = 0;
+    $ua_mock->redefine(post => sub { push @post_args, [@_] });
+    $clone_mock->redefine(handle_tx => sub ($tx, $url_handler, $options, $jobs) { $tx_handled = 1 });
+    my %fake_jobs = (42 => {id => 42, name => 'myjob', settings => {TEST => 'myjob'}});
+    $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
+    my %options = (host => 'foo', from => 'bar', repeat => 100, apikey => 'bar', apisecret => 'bar');
+    OpenQA::Script::CloneJob::clone_jobs(42, \%options);
+    is $options{repeat}, undef, 'repeat count has been removed from options';
+    subtest 'post args' => sub {
+        is scalar @post_args, 100, 'exactly 100 post calls made';
+        # check Nth test name ends with -N
+        is $post_args[0]->[3]->{'TEST:42'}, 'myjob-001', 'first index has been appended to test name';
+        is $post_args[41]->[3]->{'TEST:42'}, 'myjob-042', 'random index has been appended to test name';
+        is $post_args[99]->[3]->{'TEST:42'}, 'myjob-100', 'last index has been appended to test name';
+    } or diag explain \@post_args;
+};
+
 subtest 'overall cloning with parallel and chained dependencies' => sub {
     # do not actually post any jobs, assume jobs can be cloned (clone ID = original ID + 100)
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');

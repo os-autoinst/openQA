@@ -226,11 +226,31 @@ sub handle_tx ($tx, $url_handler, $options, $jobs) {
     }
 }
 
+# append a formatted "-NN" to the TEST parameter for each job being posted
+sub append_idx_to_test_name ($n, $digits, $post_params) {
+    my $suffix = sprintf("-%0${digits}d", $n);
+    foreach my $job_key (keys %$post_params) {
+        my $job = $post_params->{$job_key};
+        if ($n == 1) {
+            $job->{TEST} .= $suffix;    # just append at the first time
+        }
+        else {
+            # from the second onwards, replace old with the new number
+            $job->{TEST} =~ s/-\d+$/$suffix/;
+        }
+    }
+}
+
 sub clone_jobs ($jobid, $options) {
     my $url_handler = create_url_handler($options);
+    my $repeat = delete $options->{repeat} || 1;
+    my $digits = length $repeat;
     clone_job($jobid, $url_handler, $options, my $post_params = {}, my $jobs = {});
-    my $tx = post_jobs($post_params, $url_handler, $options);
-    handle_tx($tx, $url_handler, $options, $jobs) if $tx;
+    for my $counter (1 .. $repeat) {
+        append_idx_to_test_name($counter, $digits, $post_params) if $repeat > 1;
+        my $tx = post_jobs($post_params, $url_handler, $options);
+        handle_tx($tx, $url_handler, $options, $jobs) if $tx;
+    }
 }
 
 sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1, $relation = '') {
