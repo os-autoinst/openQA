@@ -255,7 +255,6 @@ subtest 'cloning with repeat count' => sub {
     $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
     my %options = (host => 'foo', from => 'bar', repeat => 100, apikey => 'bar', apisecret => 'bar');
     OpenQA::Script::CloneJob::clone_jobs(42, \%options);
-    is $options{repeat}, undef, 'repeat count has been removed from options';
     subtest 'post args' => sub {
         is scalar @post_args, 100, 'exactly 100 post calls made';
         # check Nth test name ends with -N

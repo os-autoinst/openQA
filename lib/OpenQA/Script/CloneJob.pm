@@ -226,34 +226,18 @@ sub handle_tx ($tx, $url_handler, $options, $jobs) {
     }
 }
 
-# append a formatted "-NN" to the TEST parameter for each job being posted
-sub append_idx_to_test_name ($n, $digits, $post_params) {
-    my $suffix = sprintf("-%0${digits}d", $n);
-    foreach my $job_key (keys %$post_params) {
-        my $job = $post_params->{$job_key};
-        if ($n == 1) {
-            $job->{TEST} .= $suffix;    # just append at the first time
-        }
-        else {
-            # from the second onwards, replace old with the new number
-            $job->{TEST} =~ s/-\d+$/$suffix/;
-        }
-    }
-}
-
 sub clone_jobs ($jobid, $options) {
     my $url_handler = create_url_handler($options);
-    my $repeat = delete $options->{repeat} || 1;
+    my $repeat = $options->{repeat} || 1;
     my $digits = length $repeat;
-    clone_job($jobid, $url_handler, $options, my $post_params = {}, my $jobs = {});
-    for my $counter (1 .. $repeat) {
-        append_idx_to_test_name($counter, $digits, $post_params) if $repeat > 1;
+    for my $counter ('0'x($digits-1).1 .. "$repeat") {
+        prepare_jobs($jobid, $url_handler, $options, $counter, my $post_params = {}, my $jobs = {});
         my $tx = post_jobs($post_params, $url_handler, $options);
         handle_tx($tx, $url_handler, $options, $jobs) if $tx;
     }
 }
 
-sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1, $relation = '') {
+sub prepare_jobs ($jobid, $url_handler, $options, $counter, $post_params = {}, $jobs = {}, $depth = 1, $relation = '') {
     return if defined $post_params->{$jobid};
 
     my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
@@ -281,7 +265,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
                 next unless $clone_children || $dependencies == $parallel;
             }
 
-            clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1, $job_type) for @$dependencies;
+            prepare_jobs($_, $url_handler, $options, $counter, $post_params, $jobs, $depth + 1, $job_type) for @$dependencies;
         }
         if ($job_type eq 'parents') {
             _assign_existing_dependencies('_PARALLEL', $parallel, $settings, $jobs);
@@ -292,6 +276,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     $settings->{CLONED_FROM} = $url_handler->{remote_url}->clone->path("/tests/$jobid")->to_string;
     if (my $group_id = $job->{group_id}) { $settings->{_GROUP_ID} = $group_id }
     clone_job_apply_settings($options->{args}, $relation eq 'children' ? 0 : $depth, $settings, $options);
+    $settings->{TEST} .= "-$counter" if $options->{repeat};
     OpenQA::Script::CloneJobSUSE::detect_maintenance_update($jobid, $url_handler, $settings);
     clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
 }
