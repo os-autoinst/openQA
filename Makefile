@@ -212,7 +212,7 @@ test-fullstack-unstable:
 # only works with one and Fedora's build system only works with the other
 .PHONY: test-with-database
 test-with-database:
-	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
+	./t/test_postgresql $(TEST_PG_PATH)
 	$(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-[ $(KEEP_DB) = 1 ] || pg_ctl -D $(TEST_PG_PATH) stop
 

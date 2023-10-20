@@ -1,16 +1,20 @@
 #!/bin/sh -e
 
+KEEP_DB="${KEEP_DB:-0}"
 DIR=$1
 if test -z "$DIR"; then
     DIR=$(mktemp -d)
 else
     DIR=$(readlink -f "$DIR")
-fi
-if test -e "$DIR"/postmaster.pid; then
-  pg_ctl -D "$DIR" stop
-fi
-if test -d "$DIR"; then
-  rm -r "$DIR"
+    if test "$KEEP_DB" = "0"; then
+        if test -d "$DIR"; then
+            test -e "$DIR"/postmaster.pid && pg_ctl -D "$DIR" stop
+            rm -r "$DIR"
+        fi
+    else
+        echo "Re-using existing database in $DIR because KEEP_DB is set to 1."
+        exit 0
+    fi
 fi
 initdb --auth-local=peer -N "$DIR" -U "$(id -u -n)"
 (echo "listen_addresses=''"
