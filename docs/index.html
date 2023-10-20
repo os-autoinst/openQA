@@ -744,6 +744,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a>
 <ul class="sectlevel4">
+<li><a href="#_statistical_investigation">Statistical investigation</a></li>
 <li><a href="#scenarios_yaml">Defining test scenarios in YAML</a></li>
 </ul>
 </li>
@@ -939,15 +940,21 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#_multi_machine_test_setup">Multi-machine test setup</a>
 <ul class="sectlevel3">
+<li><a href="#_what_os_autoinst_setup_multi_machine_does">What os-autoinst-setup-multi-machine does</a>
+<ul class="sectlevel4">
+<li><a href="#_set_up_open_vswitch">Set up Open vSwitch</a></li>
 <li><a href="#_configure_virtual_interfaces">Configure virtual interfaces</a></li>
 <li><a href="#_configure_nat_with_firewalld">Configure NAT with firewalld</a></li>
-<li><a href="#_for_older_versions_of_opensusesle_configure_nat_with_susefirewall2">For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2</a></li>
-<li><a href="#_configure_openqa_workers">Configure openQA workers</a></li>
-<li><a href="#_grant_cap_net_admin_capabilities_to_qemu">Grant CAP_NET_ADMIN Capabilities to QEMU</a></li>
-<li><a href="#_configure_network_interfaces">Configure network interfaces</a></li>
 </ul>
 </li>
+<li><a href="#_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine">What is left to do after running os-autoinst-setup-multi-machine</a>
+<ul class="sectlevel4">
 <li><a href="#_gre_tunnels">GRE tunnels</a></li>
+<li><a href="#_configure_openqa_workers">Configure openQA workers</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#_verify_the_setup">Verify the setup</a></li>
 <li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</a></li>
 </ul>
@@ -5651,6 +5658,30 @@ This is recommended on big instances but means that the results (and
 possible errors) need to be polled via <code>openqa-cli api isos/$scheduled_product_id</code>.</p>
 </div>
 <div class="sect4">
+<h5 id="_statistical_investigation">Statistical investigation</h5>
+<div class="paragraph">
+<p>In case issues appear sporadically and are therefore hard to reproduce it can
+help to trigger many more jobs on a production instance to gather more data
+first, for example the failure ratio.</p>
+</div>
+<div class="paragraph">
+<p>Example of triggering 50 jobs in a development group so that the result of
+passed/failed jobs is counted by openQA itself on the corresponding overview page:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job<span class="tok-w"> </span>--skip-chained-deps<span class="tok-w"> </span>--repeat<span class="tok-o">=</span><span class="tok-m">50</span><span class="tok-w"> </span>--within-instance<span class="tok-w"> </span><span class="tok-se">\</span>
+https://openqa.opensuse.org<span class="tok-w"> </span><span class="tok-m">123456</span><span class="tok-w">  </span><span class="tok-nv">BUILD</span><span class="tok-o">=</span>poo32242_investigation<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-s2">&quot;Test Development:openSUSE Tumbleweed&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To get an overview about the fail ratio and confidence interval of sporadically
+failing applications you can also use a script like
+<a href="https://github.com/okurz/scripts/blob/master/count_fail_ratio">this</a>.</p>
+</div>
+</div>
+<div class="sect4">
 <h5 id="scenarios_yaml">Defining test scenarios in YAML</h5>
 <div class="paragraph">
 <p>Instead of relying on the tables for machines, mediums/products, test suites and
@@ -9543,30 +9574,8 @@ required internet access, etc. on the host as described in the next section.</p>
 also found online on
 <a href="https://github.com/os-autoinst/os-autoinst/blob/master/script/os-autoinst-setup-multi-machine" class="bare">https://github.com/os-autoinst/os-autoinst/blob/master/script/os-autoinst-setup-multi-machine</a></p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
 <div class="paragraph">
-<p>The rest of this chapter until the next chapter <a href="#_verify_the_setup">Verify the setup</a> can be
-completely skipped if <code>os-autoinst-setup-multi-machine</code> was used. The
-following explanations are provided for reference and further explanation but
-are not guaranteed to provide a consistent working setup.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The section provides one of the ways for setting up the openQA environment to
-run tests that require network connection between several machines (e.g.
-client&#8201;&#8212;&#8201;server tests).</p>
-</div>
-<div class="paragraph">
-<p>The example of the configuration is applicable for openSUSE and will use <em>Open
+<p>The configuration is applicable for openSUSE and will use <em>Open
 vSwitch</em> for virtual switch, <em>firewalld</em> (or <em>SuSEfirewall2</em> for older
 versions) for NAT and <em>wicked</em> as network manager. Keep in mind that a
 firewall is not strictly necessary for operation. The operation without
@@ -9592,8 +9601,7 @@ on the <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fe
 <div class="title">Note</div>
 </td>
 <td class="content">
-The salt states contained by
-<a href="https://github.com/os-autoinst/salt-states-openqa">salt-states-openqa</a> contain all the
+Alternatively <a href="https://github.com/os-autoinst/salt-states-openqa">salt-states-openqa</a> contains
 necessities to establish such a setup and configure it for all workers with the <code>tap</code>
 worker class. They also cover GRE tunnels (that are explained in the next section).
 </td>
@@ -9601,31 +9609,21 @@ worker class. They also cover GRE tunnels (that are explained in the next sectio
 </table>
 </div>
 <div class="paragraph">
-<p><strong>Set Up Open vSwitch</strong></p>
-</div>
-<div class="paragraph">
-<p>Compared to VDE setup, Open vSwitch is slightly more complicated to configure,
-but provides a more robust and scalable network.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Install and Run Open vSwitch:</p>
-</li>
-</ul>
+<p>The script <code>os-autoinst-setup-multi-machine</code> can be run like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openvswitch
-systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>openvswitch</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># specify the number of test VMs to run on this host</span>
+<span class="tok-nv">instances</span><span class="tok-o">=</span><span class="tok-m">30</span><span class="tok-w"> </span>bash<span class="tok-w"> </span>-x<span class="tok-w"> </span><span class="tok-k">$(</span>which<span class="tok-w"> </span>os-autoinst-setup-multi-machine<span class="tok-k">)</span></code></pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Install and configure <em>os-autoinst-openvswitch.service</em>:</p>
-</li>
-</ul>
+<div class="sect3">
+<h4 id="_what_os_autoinst_setup_multi_machine_does">What os-autoinst-setup-multi-machine does</h4>
+<div class="sect4">
+<h5 id="_set_up_open_vswitch">Set up Open vSwitch</h5>
+<div class="paragraph">
+<p>The script will install and configure Open vSwitch as well as
+a service called <em>os-autoinst-openvswitch.service</em>.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -9637,67 +9635,21 @@ systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span cla
 <em>os-autoinst-openvswitch.service</em> is a support service that sets the
 vlan number of Open vSwitch ports based on <code>NICVLAN</code> variable - this separates
 the groups of tests from each other. The <code>NICVLAN</code> variable is dynamically
-assigned by the openQA scheduler. Install, start and enable the service:
+assigned by the openQA scheduler.
 </td>
 </tr>
 </table>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>os-autoinst-openvswitch
-systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>os-autoinst-openvswitch</code></pre>
-</div>
-</div>
 <div class="paragraph">
-<p>The service <em>os-autoinst-openvswitch.service</em> uses <em>br0</em> bridge by default.
-As it might be used by KVM already it is suggested to configure <em>br1</em> instead:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s1">&#39;OS_AUTOINST_USE_BRIDGE=br1&#39;</span><span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/sysconfig/os-autoinst-openvswitch</code></pre>
+<p>The name of the bridge (default: <code>br1</code>) will be set in
+<code>/etc/sysconfig/os-autoinst-openvswitch</code>.</p>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Create the virtual bridge <em>br1</em>:</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>ovs-vsctl add-br br1</pre>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_configure_virtual_interfaces">Configure virtual interfaces</h4>
-<div class="ulist">
-<ul>
-<li>
-<p>Add the bridge config including the part for all the tap devices that should
-be connected to it. The file has to be located in the
-<code>/etc/sysconfig/network/</code> directory. File name is <code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code>
-is the id of the bridge (e.g. <code>1</code>):</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-br1<span class="tok-w"> </span><span class="tok-s">&lt;&lt;EOF</span>
-<span class="tok-s">BOOTPROTO=&#39;static&#39;</span>
-<span class="tok-s">IPADDR=&#39;10.0.2.2/15&#39;</span>
-<span class="tok-s">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
-<span class="tok-nv">ZONE</span><span class="tok-o">=</span><span class="tok-s1">&#39;trusted&#39;</span>
-<span class="tok-nv">OVS_BRIDGE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_0</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap0&#39;</span></code></pre>
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Add a tap interface for every multi-machine worker instance:</p>
-</li>
-</ul>
+<div class="sect4">
+<h5 id="_configure_virtual_interfaces">Configure virtual interfaces</h5>
+<div class="paragraph">
+<p>The script will add the bridge device and the tap devices for every
+multi-machine worker instance.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -9706,310 +9658,36 @@ is the id of the bridge (e.g. <code>1</code>):</p>
 <div class="title">Note</div>
 </td>
 <td class="content">
-Create as many interfaces as needed for a test. The instructions are
-provided for three interfaces <em>tap0</em>, <em>tap1</em>, <em>tap2</em> to be used by <em>worker@1</em>,
-<em>worker@2</em>, <em>worker@3</em> worker instances. The TAP interfaces have to be owned
-by the <em>_openqa-worker</em> user for the openQA worker instances to be able to
-access them.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>To create tap interfaces automatically on startup, add appropriate configuration files to the
-<code>/etc/sysconfig/network/</code> directory. Files have to be named as <code>ifcfg-tap&lt;N&gt;</code>, replacing <code>&lt;N&gt;</code>
-with the number for the interface, such as <code>0</code>, <code>1</code>, <code>2</code> (e.g. <code>ifcfg-tap0</code>,
-<code>ifcfg-tap1</code>):</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-tap0<span class="tok-w"> </span><span class="tok-s">&lt;&lt;EOF</span>
-<span class="tok-s">BOOTPROTO=&#39;none&#39;</span>
-<span class="tok-s">IPADDR=&#39;&#39;</span>
-<span class="tok-s">NETMASK=&#39;&#39;</span>
-<span class="tok-s">PREFIXLEN=&#39;&#39;</span>
-<span class="tok-s">STARTMODE=&#39;auto&#39;</span>
-<span class="tok-s">TUNNEL=&#39;tap&#39;</span>
-<span class="tok-s">TUNNEL_SET_GROUP=&#39;nogroup&#39;</span>
-<span class="tok-s">TUNNEL_SET_OWNER=&#39;_openqa-worker&#39;</span>
-<span class="tok-s">EOF</span>
-<span class="tok-nv">instances</span><span class="tok-o">=</span><span class="tok-m">42</span>
-<span class="tok-k">for</span><span class="tok-w"> </span>i<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-k">$(</span>seq<span class="tok-w"> </span><span class="tok-m">1</span><span class="tok-w"> </span><span class="tok-nv">$instances</span><span class="tok-p">;</span><span class="tok-w"> </span>seq<span class="tok-w"> </span><span class="tok-m">64</span><span class="tok-w"> </span><span class="tok-k">$((</span><span class="tok-m">64</span><span class="tok-o">+</span><span class="tok-nv">instances</span><span class="tok-k">))</span><span class="tok-p">;</span><span class="tok-w"> </span>seq<span class="tok-w"> </span><span class="tok-m">128</span><span class="tok-w"> </span><span class="tok-k">$((</span><span class="tok-m">128</span><span class="tok-o">+</span><span class="tok-nv">instances</span><span class="tok-k">)))</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
-<span class="tok-w">    </span>ln<span class="tok-w"> </span>-sf<span class="tok-w"> </span>ifcfg-tap0<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-tap<span class="tok-nv">$i</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;OVS_BRIDGE_PORT_DEVICE_</span><span class="tok-nv">$i</span><span class="tok-s2">=&#39;tap</span><span class="tok-nv">$i</span><span class="tok-s2">&#39;&quot;</span><span class="tok-w"> </span>&gt;&gt;<span class="tok-w"> </span>/etc/sysconfig/network/ifcfg-br1
-<span class="tok-k">done</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Symlinks can be used to reference the same configuration file for each tap
-interface.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_configure_nat_with_firewalld">Configure NAT with firewalld</h4>
-<div class="paragraph">
-<p>You can just create a configuration file for the <code>trusted</code> zone like this:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>&gt;<span class="tok-w"> </span>/etc/firewalld/zones/trusted.xml<span class="tok-w"> </span><span class="tok-s">&lt;&lt;EOF</span>
-<span class="tok-s">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-<span class="tok-s">&lt;zone target=&quot;ACCEPT&quot;&gt;</span>
-<span class="tok-s">  &lt;short&gt;Trusted&lt;/short&gt;</span>
-<span class="tok-s">  &lt;description&gt;All network connections are accepted.&lt;/description&gt;</span>
-<span class="tok-s">  &lt;interface name=&quot;br1&quot;/&gt;</span>
-<span class="tok-s">  &lt;interface name=&quot;ovs-system&quot;/&gt;</span>
-<span class="tok-s">  &lt;interface name=&quot;eth0&quot;/&gt;</span>
-<span class="tok-s">  &lt;masquerade/&gt;</span>
-<span class="tok-s">&lt;/zone&gt;</span>
-<span class="tok-s">EOF</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>It is important that masquerading is enabled. Then set the default zone accordingly
-in <code>/etc/firewalld/firewalld.conf</code>, e.g. <code>DefaultZone=trusted</code>. The changes will be
-effective on the next reboot which can be checked by invoking e.g.
-<code>firewall-cmd --zone=trusted --list-all</code>. It should show the configured interfaces
-and <code>masquerade: yes</code>. The firewall is configured this way by the previously
-mentioned salt states.</p>
-</div>
-<div class="paragraph">
-<p>You can of course also use <code>firewall-cmd</code> manually and use different zones. For
-instance, you can assign the bridge interface to the internal zone and the interface
-with access to the network to the external zone:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd<span class="tok-w"> </span>--zone<span class="tok-o">=</span>external<span class="tok-w"> </span>--add-interface<span class="tok-o">=</span>eth0
-firewall-cmd<span class="tok-w"> </span>--zone<span class="tok-o">=</span>internal<span class="tok-w"> </span>--add-interface<span class="tok-o">=</span>br1</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>To enable the virtual machines used by openQA to fully access the external
-network masquerading needs to be enabled on all involved zones:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd<span class="tok-w"> </span>--zone<span class="tok-o">=</span>external<span class="tok-w"> </span>--add-masquerade
-firewall-cmd<span class="tok-w"> </span>--zone<span class="tok-o">=</span>internal<span class="tok-w"> </span>--add-masquerade</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>IP forwarding is enabled automatically if masquerading is enabled:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>grep<span class="tok-w"> </span><span class="tok-m">1</span><span class="tok-w"> </span>/proc/sys/net/ipv4/ip_forward
-<span class="tok-m">1</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>In case the interface is in a trusted network it is possible to accept
-connections by default by changing the zone target:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd<span class="tok-w"> </span>--zone<span class="tok-o">=</span>external<span class="tok-w"> </span>--set-target<span class="tok-o">=</span>ACCEPT</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>If you are happy with the changes make them persistent:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd<span class="tok-w"> </span>--runtime-to-permanent</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>If you do not currently have the firewalld service running, you can instead
-use the <code>firewall-offline-cmd</code> command for the configuration. In this case
-start the firewall and enable the service to run on system startup:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>firewalld</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Also, the <code>firewall-config</code> GUI tool for firewalld can be used for configuration.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_for_older_versions_of_opensusesle_configure_nat_with_susefirewall2">For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2</h4>
-<div class="paragraph">
-<p>The IP 10.0.2.2 can be also served as a gateway to access the outside network.
-For this, NAT between <em>br1</em> and <em>eth0</em> must be configured with SuSEfirewall2
-or iptables:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
-<span class="tok-nv">FW_DEV_INT</span><span class="tok-o">=</span><span class="tok-s2">&quot;br1&quot;</span>
-<span class="tok-nv">FW_ROUTE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
-<span class="tok-nv">FW_MASQUERADE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Start SuSEfirewall2 and enable the service to start on system startup:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>SuSEfirewall2</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_configure_openqa_workers">Configure openQA workers</h4>
-<div class="paragraph">
-<p>Allow worker intstances to run multi-machine jobs:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/openqa/workers.ini</span>
-<span class="tok-o">[</span>global<span class="tok-o">]</span>
-<span class="tok-nv">WORKER_CLASS</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>qemu_x86_64,tap</code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-The number of tap devices should correspond to the number of the running
-worker instances. For example, if you have set up 3 tap devices, the same
-number of worker instances should be configured.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Enable worker instances to be started on system boot:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>openqa-worker@1
-systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>openqa-worker@2
-systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>openqa-worker@3</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_grant_cap_net_admin_capabilities_to_qemu">Grant CAP_NET_ADMIN Capabilities to QEMU</h4>
-<div class="paragraph">
-<p>In order to let QEMU create TAP devices on demand it is required to set
-CAP_NET_ADMIN capability on QEMU binary file:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>libcap-progs
-setcap<span class="tok-w"> </span><span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep<span class="tok-w"> </span>/usr/bin/qemu-system-x86_64</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_configure_network_interfaces">Configure network interfaces</h4>
-<div class="paragraph">
-<p>Check the configuration for the <em>eth0</em> interface:</p>
-</div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Important</div>
-</td>
-<td class="content">
-Ensure, that <em>eth0</em> interface is configured in
-<code>/etc/sysconfig/network/ifcfg-eth0</code>. Otherwise, wicked will not be able to
-bring up the interface on start and the host will loose network connection:
-</td>
-</tr>
-</table>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-eth0</span>
-<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;dhcp&#39;</span>
-<span class="tok-nv">BROADCAST</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">ETHTOOL_OPTIONS</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">MTU</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">NAME</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">NETMASK</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">REMOTE_IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
-<span class="tok-nv">DHCLIENT_SET_DEFAULT_ROUTE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Pros of wicked over NetworkManager:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Proper IPv6 support</p>
-</li>
-<li>
-<p>openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools</p>
-</li>
-<li>
-<p>Backwards compatible with ifup scripts</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Check the network service currently being used:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span>show<span class="tok-w"> </span>-p<span class="tok-w"> </span>Id<span class="tok-w"> </span>network.service</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>If the result is different from <code>Id=wicked.service</code> (e.g.
-<code>NetworkManager.service</code>), stop the network service:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span>disable<span class="tok-w"> </span>--now<span class="tok-w"> </span>network.service</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Then switch to wicked and start the service:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--force<span class="tok-w"> </span>wicked
-systemctl<span class="tok-w"> </span>start<span class="tok-w"> </span>wicked</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Bring up the <em>br1</em> interface:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>wicked<span class="tok-w"> </span>ifup<span class="tok-w"> </span>br1</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Finally, reboot the system.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-It is also possible to switch the network configuration using YaST.
+The bridge device will also call a script at
+<code>/etc/wicked/scripts/gre_tunnel_preup.sh</code> on <em>PRE_UP</em>.
+This script needs <strong>manual</strong> touch if you want to set up multiple
+multi-machine worker hosts. Refer to the <a href="#_gre_tunnels">GRE tunnels</a> section below
+for further information.
 </td>
 </tr>
 </table>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_configure_nat_with_firewalld">Configure NAT with firewalld</h5>
+<div class="paragraph">
+<p>The required firewall rules for masquerading (NAT) and zone configuration
+for the trusted zone will be set up. The bridge devices will be added to
+the zone.
+IP-Forwarding will be enabled.</p>
 </div>
-<div class="sect2">
-<h3 id="_gre_tunnels">GRE tunnels</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># show the firewall configuration</span>
+firewall-cmd<span class="tok-w"> </span>--list-all-zones</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine">What is left to do after running os-autoinst-setup-multi-machine</h4>
+<div class="sect4">
+<h5 id="_gre_tunnels">GRE tunnels</h5>
 <div class="paragraph">
 <p>By default all multi-machine workers have to be on a single physical machine.
 You can join multiple physical machines and its OVS bridges together by a GRE
@@ -10049,16 +9727,6 @@ on both hosts):</p>
 <div class="paragraph">
 <p>Ensure to make gre_tunnel_preup.sh executable.</p>
 </div>
-<div class="paragraph">
-<p>Allow GRE in older setups still using SuSEfirewall2:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
-<span class="tok-nv">FW_SERVICES_EXT_IP</span><span class="tok-o">=</span><span class="tok-s2">&quot;GRE&quot;</span>
-<span class="tok-nv">FW_SERVICES_EXT_TCP</span><span class="tok-o">=</span><span class="tok-s2">&quot;1723&quot;</span></code></pre>
-</div>
-</div>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -10074,6 +9742,43 @@ clients as well.
 </td>
 </tr>
 </table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_configure_openqa_workers">Configure openQA workers</h5>
+<div class="paragraph">
+<p>Allow worker instances to run multi-machine jobs:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/openqa/workers.ini</span>
+<span class="tok-o">[</span>global<span class="tok-o">]</span>
+<span class="tok-nv">WORKER_CLASS</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>qemu_x86_64,tap</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The number of tap devices should correspond to the number of the running
+worker instances. For example, if you have set up 3 worker instances, the same
+number of tab devices should be configured.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Enable worker instances to be started on system boot:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>openqa-worker@<span class="tok-o">{</span><span class="tok-m">1</span>..3<span class="tok-o">}</span></code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -12457,7 +12162,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-13 02:22:49 UTC
+Last updated 2023-10-20 02:23:10 UTC
 </div>
 </div>
 </body>
