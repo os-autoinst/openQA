@@ -1,6 +1,6 @@
 
 [[writingtests]]
-= openQA tests developer guide
+= openQA test developer guide
 :toc: left
 :toclevels: 6
 :author: openQA Team
@@ -22,52 +22,230 @@ https://github.com/os-autoinst/openQA[official repository].
 == Basic
 [id="basic"]
 
-This section explains the basic layout of openQA tests and the API available in tests.
-openQA tests are written in the *Perl* programming language. Some basic but no
-in-depth knowledge of Perl is needed. This document assumes that the reader
-is already familiar with Perl.
+This section explains the basic layout of an openQA test and the API available.
+Tests are written in the *Perl* programming language. However there is support
+for the *Python* programming language (through the Perl module
+`Inline::Python`).
 
-== API
+Some basic but no in-depth knowledge of Perl or Python is needed. This document
+assumes that the reader is already familiar with Perl or Python.
+
+== Test API
 [id="api"]
 :testapi: https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm[os-autoinst]
 
-{testapi} provides the API for the tests using the os-autoinst backend, you can
-take a look to the published documentation at http://open.qa/api/testapi/. This test API
-is sometimes also referred to as an openQA DSL, because in some contexts it can look like
-a domain specific language.
+{testapi} provides the API for the test using the os-autoinst backend. Take a
+look at the http://open.qa/api/testapi[test API documentation] for further
+information. Note that this test API is sometimes also referred to as an openQA
+DSL, because in some contexts it can look like a domain specific language.
 
 == How to write tests
 
-openQA tests need to implement at least the *run* subroutine to
-contain the actual test code and the test needs to be loaded in the distribution's
-main.pm.
+=== Test module interface
 
-The *test_flags* subroutine specifies what should happen when test execution of the
-current test module is finished depending on the result.
-If we should skip execution of the following test modules if current one failed, or it
-should be used to create a snapshot of the SUT to rollback to. The following flags
-are supported:
+An openQA test needs to implement at least the `run` subroutine containing the
+actual test code and the test needs to be loaded in the distribution's
+`main.pm`.
 
-* *fatal*: The whole test suite is aborted if the test module fails. The overall state
-  is set to `failed`.
-* *ignore_failure*: If this module fails, it will not affect the overall result at all.
-* *milestone*: After this test succeeds, update the 'lastgood' snapshot.
-* *no_rollback*: Don't roll back to the 'lastgood' snapshot if the test module fails.
-* *always_rollback*: Roll back to the 'lastgood' snapshot even if test was successful.
+Here is an example in Perl:
 
-See the example below for how to enable a test flag.
-Note that snapshots are only supported by the QEMU backend. When using other backends
-`fatal` is therefore enabled by default. One can explicitly set it to `0` to disable
-the behavior for all backends even though it is not possible to roll back.
+[source,perl]
+-------------------------------------------------------------------
+use Mojo::Base "basetest";
+use testapi;
 
-There are several callbacks defined:
+sub run () {
+    # write in this block the code for your test.
+}
+-------------------------------------------------------------------
 
-* *post_fail_hook* is called to upload log files or determine the state of
-  the machine
-* *pre_run_hook* is called before the run function - mainly useful for a whole
-  group of tests
-* *post_run_hook* is run after successful run function - mainly useful for a whole
-  group of tests
+And here is an example in Python:
+
+[source,perl]
+-------------------------------------------------------------------
+from testapi import *
+
+def run():
+    # write in this block the code for your test.
+-------------------------------------------------------------------
+
+There are more optional subroutines that can be defined to extend the behavior
+of a test. A test must comply with the interface defined below.
+_Please note that the subroutine marked with `*1` are optional._
+
+[source,python]
+-------------------------------------------------------------------
+# Written in type-hinted python to indicate explicitly return types
+def run(): -> None
+def test_flags(): -> dict # *1
+def post_fail_hook(): -> None # *1
+def pre_run_hook(): -> None # *1
+def post_run_hook(): -> None # *1
+-------------------------------------------------------------------
+
+==== `run`
+Defines the actual steps to be performed during the module execution.
+
+An example usage:
+
+[source,perl]
+-------------------------------------------------------------------
+sub run () {
+    # wait for bootloader to appear
+    # with a timeout explicitly lower than the default because
+    # the bootloader screen will timeout itself
+    assert_screen "bootloader", 15;
+
+    # press enter to boot right away
+    send_key "ret";
+
+    # wait for the desktop to appear
+    assert_screen "desktop", 300;
+}
+-------------------------------------------------------------------
+
+`assert_screen` & `send_key` are provided by {testapi}.
+
+==== `test_flags`
+
+Specifies what should happen when test execution of the current test module is
+finished depending on the result.
+
+Each flag is defined with a hash key, the possible hash keys are:
+
+* *fatal*: When set to `1` the whole test suite is aborted if the test module
+   fails. The overall state is set to `failed`.
+* *ignore_failure*: When set to `1` and the test module fails, it will not
+   affect the overall result at all.
+* *milestone*: After this test succeeds, update the 'lastgood' snapshot of the
+   SUT.
+* *no_rollback*: Don't roll back to the 'lastgood' snapshot of the SUT if the
+   test module fails.
+* *always_rollback*: Roll back to the 'lastgood' snapshot of the SUT even if
+   test was successful.
+
+See the example below for how to enable a test flag. Note that snapshots are
+only supported by the QEMU backend. When using other backends `fatal` is
+therefore enabled by default. One can explicitly set it to `0` to disable the
+behavior for all backends even though it is not possible to roll back.
+
+An example usage:
+
+[source,perl]
+-------------------------------------------------------------------
+sub test_flags () {
+    return {fatal => 1};
+}
+-------------------------------------------------------------------
+
+==== `pre_run_hook`
+
+It is called before the run function - mainly useful for a whole group of tests.
+It is useful to setup the start point of the test.
+
+An example usage:
+
+[source,perl]
+-------------------------------------------------------------------
+sub pre_run_hook () {
+    # Make sure to begin the test in the root console.
+    select_console 'root-console';
+}
+-------------------------------------------------------------------
+
+==== `post_fail_hook`
+
+It is called after `run()` failed. It is useful to upload log files
+or to determine the state of the machine.
+
+An example usage:
+
+[source,perl]
+-------------------------------------------------------------------
+sub post_fail_hook () {
+    # Take an screenshot when the test failed
+    save_screenshot;
+}
+-------------------------------------------------------------------
+
+==== `post_run_hook`
+
+It is called after `run()` regardless of the result of the test run.
+
+An example usage:
+
+[source,perl]
+-------------------------------------------------------------------
+sub post_fail_hook () {
+    send_key 'ctrl-alt-f3';
+
+    assert_script_run 'openqa-cli api experimental/search q=shutdown.pm' ;    
+}
+-------------------------------------------------------------------
+
+=== Notes on the Python API
+[id="notes-python-api"]
+
+The Python integration that OpenQA offers through `Inline::Python` also allows
+the test modules to import other Perl modules with the usage of the `perl`
+virtual package provided by `Inline::Python`.
+
+Because of the way `Inline::Python` binds Perl functions to Python it is not
+possible to use keywords arguments from Python to Perl functions. They must be
+passed as positional arguments, for example `"key", "value"`.
+
+See the following snippet of Perl code
+
+[source,perl]
+-------------------------------------------------------------------
+use x11utils;
+
+# [...] omitted for brevity
+
+sub run () {
+    # [...] omitted for brevity
+
+    # Start vncviewer - notice the named arguments
+    x11_start_program('vncviewer :0',
+        target_match => 'virtman-gnome_virt-install',
+        match_timeout => 100
+    );
+    # [...] omitted for brevity
+}
+-------------------------------------------------------------------
+
+versus the equivalent python code:
+
+[source,python]
+-------------------------------------------------------------------
+from testapi import *
+
+# [...] omitted for brevity
+
+def run():
+    perl.require('x11utils')
+
+    # Start vncviewer - notice the named arguments passed as positional arguments
+    # Formatted in pairs for better visibility.
+
+    perl.x11utils.x11_start_program('vncviewer :0',
+        'target_match', 'virtman-gnome_virt-install',
+        'match_timeout', 100
+    )
+    # [...] omitted for brevity
+-------------------------------------------------------------------
+
+=== Example Perl test modules
+[id="testmodule_perl_examples"]
+
+The following examples are short complete test modules written in Perl
+implementing the interface described above.
+
+==== Boot to desktop
+[id="testmodule_perl_boot"]
+
+[caption="Example: "]
+.Boots into desktop when pressing enter at the boot loader screen.
 
 The following example is a basic test that assumes some live image
 that boots into the desktop when pressing enter at the boot loader:
@@ -77,7 +255,7 @@ that boots into the desktop when pressing enter at the boot loader:
 use Mojo::Base "basetest";
 use testapi;
 
-sub run {
+sub run () {
     # wait for bootloader to appear
     # with a timeout explicitly lower than the default because
     # the bootloader screen will timeout itself
@@ -90,21 +268,20 @@ sub run {
     assert_screen "desktop", 300;
 }
 
-sub test_flags {
+sub test_flags () {
     return {fatal => 1};
 }
-
-1;
 -------------------------------------------------------------------
 
-=== Test Case Examples
-[id="testcase_examples"]
+==== Install software via `zypper`
+[id="testmodule_perl_zypper"]
 
 [caption="Example: "]
 .Console test that installs software from remote repository via zypper command
+
 [source,perl]
 ----------------------------------------------------------------------------------------------------------
-sub run() {
+sub run () {
     # change to root
     become_root;
 
@@ -125,11 +302,14 @@ sub run() {
 }
 ----------------------------------------------------------------------------------------------------------
 
+==== Sample X11 Test
+
 [caption="Example: "]
 .Typical X11 test testing kate
+
 [source,perl]
 --------------------------------------------------------------
-sub run() {
+sub run () {
     # make sure kate was installed
     # if not ensure_installed will try to install it
     ensure_installed 'kate';
@@ -158,15 +338,21 @@ sub run() {
 }
 --------------------------------------------------------------
 
-In addition to Perl, it is possible to write tests in Python. Although the
-boilerplate is slightly different the function names are the same.
+=== Example Python test modules
+[id="testmodule_python_examples"]
+
+The following examples are short complete test modules written in Python
+implementing the interface described above.
+
+==== openQA web UI sample test
+[id="testmodule_python_webui"]
 
 [caption="Example: "]
 .Test for the openQA web UI written in Python
+
 [source,python]
 --------------------------------------------------------------
 from testapi import *
-
 
 def run(self):
     assert_screen('openqa-logged-in')
@@ -180,16 +366,16 @@ def run(self):
 
     # use imported Perl-based libraries; call Perl function that would be called via "named arguments" in Perl
     # note: In Perl the call would have been: x11_start_program('flatpak run com.obsproject.Studio', target_match => 'obsproject-wizard')
+    #
+    # See the explanation in the "Notes on the Python API" section.
     perl.x11utils.x11_start_program('flatpak run com.obsproject.Studio', 'target_match', 'obsproject-wizard')
 
 def switch_to_root_console():
     send_key('ctrl-alt-f3')
 
-
 def post_fail_hook(self):
     switch_to_root_console()
     assert_script_run('openqa-cli api experimental/search q=shutdown.pm')
-
 
 def test_flags(self):
     return {'fatal': 1}
@@ -261,7 +447,7 @@ $testapi::distri->set_expected_serial_failures([
 .Defining serial exception capture in the test
 [source,perl]
 --------------------------------------------------------------
-sub run {
+sub run () {
     my ($self) = @_;
     $self->{serial_failures} = [
         {type => 'soft', message  => 'known issue',  pattern => quotemeta 'Error'},
@@ -275,7 +461,7 @@ sub run {
 .Adding serial exception capture in the test
 [source,perl]
 --------------------------------------------------------------
-sub run {
+sub run () {
     my ($self) = @_;
     push @$self->{serial_failures}, {type => 'soft', message => 'known issue',  pattern => quotemeta 'Error'};
     ...
@@ -652,7 +838,7 @@ use lockapi;
 use mmapi;
 
 # On parent job
-sub run {
+sub run () {
     # ftp service started automatically on boot
     assert_screen 'login', 300;
 
@@ -664,7 +850,7 @@ sub run {
 }
 
 # On child we wait for ftp server to be ready
-sub run {
+sub run () {
     # wait until ftp service is ready
     # performs mutex lock & unlock internally
     mutex_wait 'ftp_service_ready';
@@ -676,7 +862,7 @@ sub run {
 
 # Mutexes can be used also for garanting exclusive access to resource
 # Example on child when only one job should access ftp at time
-sub run {
+sub run () {
     # wait until ftp service is ready
     mutex_lock 'ftp_service_ready';
 
@@ -710,7 +896,7 @@ The job ID is also required when unlocking such a mutex.
 use lockapi;
 use mmapi;
 
-sub run {
+sub run () {
     my $children = get_children();
 
     # let's suppose there is only one child
@@ -753,7 +939,7 @@ use lockapi;
 barrier_create('NODES_CONFIGURED', 4);
 
 # On master job
-sub run {
+sub run () {
     assert_screen 'login', 300;
 
     # Master is ready, waiting while workers are configured (check_dead_job is optional)
@@ -769,7 +955,7 @@ sub run {
 }
 
 # On 3 worker jobs
-sub run {
+sub run () {
     assert_screen 'login', 300;
 
     # do initial worker setup
@@ -798,7 +984,7 @@ use Mojo::Base "basetest";
 use testapi;
 use mmapi;
 
-sub run {
+sub run () {
     # returns a hash ref containing (id => state) for all children
     my $children = get_children();
 
@@ -913,7 +1099,7 @@ The actual test 'child' job, will then have to set `PARALLEL_WITH=supportserver-
 use Mojo::Base 'basetest';
 use testapi;
 
-sub run {
+sub run () {
   my $script="set -e -x\n";
   $script.="echo test >test.txt\n";
   $script.="time tftp ".$server_ip." -c put test.txt test2.txt\n";
@@ -1010,12 +1196,10 @@ use Mojo::Base 'opensusebasetest';
 use testapi;
 use utils;
 
-sub run {
+sub run () {
     wait_boot;  # Utility function defined by the SUSE distribution
     select_console 'root-console';
 }
-
-1;
 --------------------------------------------------------------------------------
 
 This will select a text TTY and login as the root user (if necessary). Now
@@ -1592,17 +1776,17 @@ The test modules foo.pm and bar.pm will be downloaded into the root of the pool 
 
 A valid test module format looks like this:
 
+[source,perl]
 ----
 use Mojo::Base 'consoletest';
 use testapi;
 
-sub run {
+sub run () {
     select_console 'root-console';
     assert_script_run 'foo';
 }
 
-sub post_run_hook {}
-1;
+sub post_run_hook () {}
 ----
 
 For example this can be used in bug investigations or trying out new test
