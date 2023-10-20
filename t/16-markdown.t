@@ -147,6 +147,9 @@ subtest 'bugrefs to markdown' => sub {
       'right markdown';
     is bugref_to_markdown('ggo#GNOME/foo#1234'),
       '[ggo#GNOME/foo#1234](https://gitlab.gnome.org/GNOME/foo/issues/1234)', 'right markdown';
+    is bugref_to_markdown('gfs#flatpak/fedora-flatpaks#26'),
+      '[gfs#flatpak/fedora-flatpaks#26](https://gitlab.com/fedora/sigs/flatpak/fedora-flatpaks/issues/26)',
+      'right markdown';
     is bugref_to_markdown("boo#9876\n\ntest boo#211\n"),
       "[boo#9876](https://bugzilla.opensuse.org/show_bug.cgi?id=9876)\n\n"
       . "test [boo#211](https://bugzilla.opensuse.org/show_bug.cgi?id=211)\n",
