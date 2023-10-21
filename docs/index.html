@@ -778,14 +778,35 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_where_to_now_2">Where to now?</a></li>
 </ul>
 </li>
-<li><a href="#writingtests">openQA tests developer guide</a>
+<li><a href="#writingtests">openQA test developer guide</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_4">Introduction</a></li>
 <li><a href="#_basic">Basic</a></li>
-<li><a href="#_api">API</a></li>
+<li><a href="#_test_api">Test API</a></li>
 <li><a href="#_how_to_write_tests">How to write tests</a>
 <ul class="sectlevel2">
-<li><a href="#_test_case_examples">Test Case Examples</a></li>
+<li><a href="#_test_module_interface">Test module interface</a>
+<ul class="sectlevel3">
+<li><a href="#_run"><code>run</code></a></li>
+<li><a href="#_test_flags"><code>test_flags</code></a></li>
+<li><a href="#_pre_run_hook"><code>pre_run_hook</code></a></li>
+<li><a href="#_post_fail_hook"><code>post_fail_hook</code></a></li>
+<li><a href="#_post_run_hook"><code>post_run_hook</code></a></li>
+</ul>
+</li>
+<li><a href="#_notes_on_the_python_api">Notes on the Python API</a></li>
+<li><a href="#_example_perl_test_modules">Example Perl test modules</a>
+<ul class="sectlevel3">
+<li><a href="#_boot_to_desktop">Boot to desktop</a></li>
+<li><a href="#_install_software_via_zypper">Install software via <code>zypper</code></a></li>
+<li><a href="#_sample_x11_test">Sample X11 Test</a></li>
+</ul>
+</li>
+<li><a href="#_example_python_test_modules">Example Python test modules</a>
+<ul class="sectlevel3">
+<li><a href="#_openqa_web_ui_sample_test">openQA web UI sample test</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_variables">Variables</a></li>
@@ -6280,7 +6301,7 @@ edit window.</p>
 </div>
 </div>
 </div>
-<h1 id="writingtests" class="sect0">openQA tests developer guide</h1>
+<h1 id="writingtests" class="sect0">openQA test developer guide</h1>
 <div class="sect1">
 <h2 id="_introduction_4">Introduction</h2>
 <div class="sectionbody">
@@ -6304,85 +6325,276 @@ Starter Guide, available at the
 <h2 id="_basic">Basic</h2>
 <div class="sectionbody">
 <div id="basic" class="paragraph">
-<p>This section explains the basic layout of openQA tests and the API available in tests.
-openQA tests are written in the <strong>Perl</strong> programming language. Some basic but no
-in-depth knowledge of Perl is needed. This document assumes that the reader
-is already familiar with Perl.</p>
+<p>This section explains the basic layout of an openQA test and the API available.
+Tests are written in the <strong>Perl</strong> programming language. However there is support
+for the <strong>Python</strong> programming language (through the Perl module
+<code>Inline::Python</code>).</p>
+</div>
+<div class="paragraph">
+<p>Some basic but no in-depth knowledge of Perl or Python is needed. This document
+assumes that the reader is already familiar with Perl or Python.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_api">API</h2>
+<h2 id="_test_api">Test API</h2>
 <div class="sectionbody">
 <div id="api" class="paragraph">
-<p><a href="https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm">os-autoinst</a> provides the API for the tests using the os-autoinst backend, you can
-take a look to the published documentation at <a href="http://open.qa/api/testapi/" class="bare">http://open.qa/api/testapi/</a>. This test API
-is sometimes also referred to as an openQA DSL, because in some contexts it can look like
-a domain specific language.</p>
+<p><a href="https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm">os-autoinst</a> provides the API for the test using the os-autoinst backend. Take a
+look at the <a href="http://open.qa/api/testapi">test API documentation</a> for further
+information. Note that this test API is sometimes also referred to as an openQA
+DSL, because in some contexts it can look like a domain specific language.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_how_to_write_tests">How to write tests</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_test_module_interface">Test module interface</h3>
 <div class="paragraph">
-<p>openQA tests need to implement at least the <strong>run</strong> subroutine to
-contain the actual test code and the test needs to be loaded in the distribution&#8217;s
-main.pm.</p>
+<p>An openQA test needs to implement at least the <code>run</code> subroutine containing the
+actual test code and the test needs to be loaded in the distribution&#8217;s
+<code>main.pm</code>.</p>
 </div>
 <div class="paragraph">
-<p>The <strong>test_flags</strong> subroutine specifies what should happen when test execution of the
-current test module is finished depending on the result.
-If we should skip execution of the following test modules if current one failed, or it
-should be used to create a snapshot of the SUT to rollback to. The following flags
-are supported:</p>
+<p>Here is an example in Perl:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
+
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-c1"># write in this block the code for your test.</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And here is an example in Python:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-n">from</span><span class="tok-w"> </span><span class="tok-n">testapi</span><span class="tok-w"> </span><span class="tok-nb">import</span><span class="tok-w"> </span><span class="tok-o">*</span>
+
+<span class="tok-n">def</span><span class="tok-w"> </span><span class="tok-n">run</span><span class="tok-p">():</span>
+<span class="tok-w">    </span><span class="tok-c1"># write in this block the code for your test.</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There are more optional subroutines that can be defined to extend the behavior
+of a test. A test must comply with the interface defined below.
+<em>Please note that the subroutine marked with <code>*1</code> are optional.</em></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-c1"># Written in type-hinted python to indicate explicitly return types</span>
+<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span>
+<span class="tok-k">def</span> <span class="tok-nf">test_flags</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">dict</span> <span class="tok-c1"># *1</span>
+<span class="tok-k">def</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
+<span class="tok-k">def</span> <span class="tok-nf">pre_run_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
+<span class="tok-k">def</span> <span class="tok-nf">post_run_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span></code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_run"><code>run</code></h4>
+<div class="paragraph">
+<p>Defines the actual steps to be performed during the module execution.</p>
+</div>
+<div class="paragraph">
+<p>An example usage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-c1"># wait for bootloader to appear</span>
+<span class="tok-w">    </span><span class="tok-c1"># with a timeout explicitly lower than the default because</span>
+<span class="tok-w">    </span><span class="tok-c1"># the bootloader screen will timeout itself</span>
+<span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&quot;bootloader&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">15</span><span class="tok-p">;</span>
+
+<span class="tok-w">    </span><span class="tok-c1"># press enter to boot right away</span>
+<span class="tok-w">    </span><span class="tok-n">send_key</span><span class="tok-w"> </span><span class="tok-s">&quot;ret&quot;</span><span class="tok-p">;</span>
+
+<span class="tok-w">    </span><span class="tok-c1"># wait for the desktop to appear</span>
+<span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&quot;desktop&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>assert_screen</code> &amp; <code>send_key</code> are provided by <a href="https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm">os-autoinst</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_test_flags"><code>test_flags</code></h4>
+<div class="paragraph">
+<p>Specifies what should happen when test execution of the current test module is
+finished depending on the result.</p>
+</div>
+<div class="paragraph">
+<p>Each flag is defined with a hash key, the possible hash keys are:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>fatal</strong>: The whole test suite is aborted if the test module fails. The overall state
-is set to <code>failed</code>.</p>
+<p><strong>fatal</strong>: When set to <code>1</code> the whole test suite is aborted if the test module
+fails. The overall state is set to <code>failed</code>.</p>
 </li>
 <li>
-<p><strong>ignore_failure</strong>: If this module fails, it will not affect the overall result at all.</p>
+<p><strong>ignore_failure</strong>: When set to <code>1</code> and the test module fails, it will not
+affect the overall result at all.</p>
 </li>
 <li>
-<p><strong>milestone</strong>: After this test succeeds, update the 'lastgood' snapshot.</p>
+<p><strong>milestone</strong>: After this test succeeds, update the 'lastgood' snapshot of the
+SUT.</p>
 </li>
 <li>
-<p><strong>no_rollback</strong>: Don&#8217;t roll back to the 'lastgood' snapshot if the test module fails.</p>
+<p><strong>no_rollback</strong>: Don&#8217;t roll back to the 'lastgood' snapshot of the SUT if the
+test module fails.</p>
 </li>
 <li>
-<p><strong>always_rollback</strong>: Roll back to the 'lastgood' snapshot even if test was successful.</p>
+<p><strong>always_rollback</strong>: Roll back to the 'lastgood' snapshot of the SUT even if
+test was successful.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>See the example below for how to enable a test flag.
-Note that snapshots are only supported by the QEMU backend. When using other backends
-<code>fatal</code> is therefore enabled by default. One can explicitly set it to <code>0</code> to disable
-the behavior for all backends even though it is not possible to roll back.</p>
+<p>See the example below for how to enable a test flag. Note that snapshots are
+only supported by the QEMU backend. When using other backends <code>fatal</code> is
+therefore enabled by default. One can explicitly set it to <code>0</code> to disable the
+behavior for all backends even though it is not possible to roll back.</p>
 </div>
 <div class="paragraph">
-<p>There are several callbacks defined:</p>
+<p>An example usage:</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>post_fail_hook</strong> is called to upload log files or determine the state of
-the machine</p>
-</li>
-<li>
-<p><strong>pre_run_hook</strong> is called before the run function - mainly useful for a whole
-group of tests</p>
-</li>
-<li>
-<p><strong>post_run_hook</strong> is run after successful run function - mainly useful for a whole
-group of tests</p>
-</li>
-</ul>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-n">fatal</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">};</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_pre_run_hook"><code>pre_run_hook</code></h4>
+<div class="paragraph">
+<p>It is called before the run function - mainly useful for a whole group of tests.
+It is useful to setup the start point of the test.</p>
 </div>
 <div class="paragraph">
+<p>An example usage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">pre_run_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-c1"># Make sure to begin the test in the root console.</span>
+<span class="tok-w">    </span><span class="tok-n">select_console</span><span class="tok-w"> </span><span class="tok-s">&#39;root-console&#39;</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_post_fail_hook"><code>post_fail_hook</code></h4>
+<div class="paragraph">
+<p>It is called after <code>run()</code> failed. It is useful to upload log files
+or to determine the state of the machine.</p>
+</div>
+<div class="paragraph">
+<p>An example usage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-c1"># Take an screenshot when the test failed</span>
+<span class="tok-w">    </span><span class="tok-n">save_screenshot</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_post_run_hook"><code>post_run_hook</code></h4>
+<div class="paragraph">
+<p>It is called after <code>run()</code> regardless of the result of the test run.</p>
+</div>
+<div class="paragraph">
+<p>An example usage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">send_key</span><span class="tok-w"> </span><span class="tok-s">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">;</span>
+
+<span class="tok-w">    </span><span class="tok-n">assert_script_run</span><span class="tok-w"> </span><span class="tok-s">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-w"> </span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notes_on_the_python_api">Notes on the Python API</h3>
+<div id="notes-python-api" class="paragraph">
+<p>The Python integration that OpenQA offers through <code>Inline::Python</code> also allows
+the test modules to import other Perl modules with the usage of the <code>perl</code>
+virtual package provided by <code>Inline::Python</code>.</p>
+</div>
+<div class="paragraph">
+<p>Because of the way <code>Inline::Python</code> binds Perl functions to Python it is not
+possible to use keywords arguments from Python to Perl functions. They must be
+passed as positional arguments, for example <code>"key", "value"</code>.</p>
+</div>
+<div class="paragraph">
+<p>See the following snippet of Perl code</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">x11utils</span><span class="tok-p">;</span>
+
+<span class="tok-c1"># [...] omitted for brevity</span>
+
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-c1"># [...] omitted for brevity</span>
+
+<span class="tok-w">    </span><span class="tok-c1"># Start vncviewer - notice the named arguments</span>
+<span class="tok-w">    </span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s">&#39;vncviewer :0&#39;</span><span class="tok-p">,</span>
+<span class="tok-w">        </span><span class="tok-n">target_match</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;virtman-gnome_virt-install&#39;</span><span class="tok-p">,</span>
+<span class="tok-w">        </span><span class="tok-n">match_timeout</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-mi">100</span>
+<span class="tok-w">    </span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-c1"># [...] omitted for brevity</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>versus the equivalent python code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span> <span class="tok-nn">testapi</span> <span class="tok-kn">import</span> <span class="tok-o">*</span>
+
+<span class="tok-c1"># [...] omitted for brevity</span>
+
+<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">():</span>
+    <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">require</span><span class="tok-p">(</span><span class="tok-s1">&#39;x11utils&#39;</span><span class="tok-p">)</span>
+
+    <span class="tok-c1"># Start vncviewer - notice the named arguments passed as positional arguments</span>
+    <span class="tok-c1"># Formatted in pairs for better visibility.</span>
+
+    <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">x11utils</span><span class="tok-o">.</span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s1">&#39;vncviewer :0&#39;</span><span class="tok-p">,</span>
+        <span class="tok-s1">&#39;target_match&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;virtman-gnome_virt-install&#39;</span><span class="tok-p">,</span>
+        <span class="tok-s1">&#39;match_timeout&#39;</span><span class="tok-p">,</span> <span class="tok-mi">100</span>
+    <span class="tok-p">)</span>
+    <span class="tok-c1"># [...] omitted for brevity</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example_perl_test_modules">Example Perl test modules</h3>
+<div id="testmodule_perl_examples" class="paragraph">
+<p>The following examples are short complete test modules written in Perl
+implementing the interface described above.</p>
+</div>
+<div class="sect3">
+<h4 id="_boot_to_desktop">Boot to desktop</h4>
+<div id="testmodule_perl_boot" class="paragraph">
+<div class="title">Boots into desktop when pressing enter at the boot loader screen.</div>
 <p>The following example is a basic test that assumes some live image
 that boots into the desktop when pressing enter at the boot loader:</p>
 </div>
@@ -6391,7 +6603,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># wait for bootloader to appear</span>
 <span class="tok-w">    </span><span class="tok-c1"># with a timeout explicitly lower than the default because</span>
 <span class="tok-w">    </span><span class="tok-c1"># the bootloader screen will timeout itself</span>
@@ -6404,19 +6616,18 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&quot;desktop&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 <span class="tok-p">}</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-n">fatal</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">};</span>
-<span class="tok-p">}</span>
-
-<span class="tok-mi">1</span><span class="tok-p">;</span></code></pre>
+<span class="tok-p">}</span></code></pre>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_test_case_examples">Test Case Examples</h3>
-<div id="testcase_examples" class="listingblock">
+</div>
+<div class="sect3">
+<h4 id="_install_software_via_zypper">Install software via <code>zypper</code></h4>
+<div id="testmodule_perl_zypper" class="listingblock">
 <div class="title">Example: Console test that installs software from remote repository via zypper command</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># change to root</span>
 <span class="tok-w">    </span><span class="tok-n">become_root</span><span class="tok-p">;</span>
 
@@ -6437,10 +6648,13 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_sample_x11_test">Sample X11 Test</h4>
 <div class="listingblock">
 <div class="title">Example: Typical X11 test testing kate</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># make sure kate was installed</span>
 <span class="tok-w">    </span><span class="tok-c1"># if not ensure_installed will try to install it</span>
 <span class="tok-w">    </span><span class="tok-n">ensure_installed</span><span class="tok-w"> </span><span class="tok-s">&#39;kate&#39;</span><span class="tok-p">;</span>
@@ -6469,15 +6683,20 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>In addition to Perl, it is possible to write tests in Python. Although the
-boilerplate is slightly different the function names are the same.</p>
 </div>
-<div class="listingblock">
+</div>
+<div class="sect2">
+<h3 id="_example_python_test_modules">Example Python test modules</h3>
+<div id="testmodule_python_examples" class="paragraph">
+<p>The following examples are short complete test modules written in Python
+implementing the interface described above.</p>
+</div>
+<div class="sect3">
+<h4 id="_openqa_web_ui_sample_test">openQA web UI sample test</h4>
+<div id="testmodule_python_webui" class="listingblock">
 <div class="title">Example: Test for the openQA web UI written in Python</div>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span> <span class="tok-nn">testapi</span> <span class="tok-kn">import</span> <span class="tok-o">*</span>
-
 
 <span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-n">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-logged-in&#39;</span><span class="tok-p">)</span>
@@ -6491,19 +6710,20 @@ boilerplate is slightly different the function names are the same.</p>
 
     <span class="tok-c1"># use imported Perl-based libraries; call Perl function that would be called via &quot;named arguments&quot; in Perl</span>
     <span class="tok-c1"># note: In Perl the call would have been: x11_start_program(&#39;flatpak run com.obsproject.Studio&#39;, target_match =&gt; &#39;obsproject-wizard&#39;)</span>
+    <span class="tok-c1">#</span>
+    <span class="tok-c1"># See the explanation in the &quot;Notes on the Python API&quot; section.</span>
     <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">x11utils</span><span class="tok-o">.</span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s1">&#39;flatpak run com.obsproject.Studio&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;target_match&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;obsproject-wizard&#39;</span><span class="tok-p">)</span>
 
 <span class="tok-k">def</span> <span class="tok-nf">switch_to_root_console</span><span class="tok-p">():</span>
     <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">)</span>
 
-
 <span class="tok-k">def</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-n">switch_to_root_console</span><span class="tok-p">()</span>
     <span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-p">)</span>
 
-
 <span class="tok-k">def</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-k">return</span> <span class="tok-p">{</span><span class="tok-s1">&#39;fatal&#39;</span><span class="tok-p">:</span> <span class="tok-mi">1</span><span class="tok-p">}</span></code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -6588,7 +6808,7 @@ test suites have failed due to different test modules.</p>
 <div class="listingblock">
 <div class="title">Example: Defining serial exception capture in the test</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-nv">$self</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nv">@_</span><span class="tok-p">;</span>
 <span class="tok-w">    </span><span class="tok-nv">$self</span><span class="tok-o">-&gt;</span><span class="tok-p">{</span><span class="tok-n">serial_failures</span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">[</span>
 <span class="tok-w">        </span><span class="tok-p">{</span><span class="tok-n">type</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;soft&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">message</span><span class="tok-w">  </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;known issue&#39;</span><span class="tok-p">,</span><span class="tok-w">  </span><span class="tok-n">pattern</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">quotemeta</span><span class="tok-w"> </span><span class="tok-s">&#39;Error&#39;</span><span class="tok-p">},</span>
@@ -6602,7 +6822,7 @@ test suites have failed due to different test modules.</p>
 <div class="listingblock">
 <div class="title">Example: Adding serial exception capture in the test</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-nv">$self</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nv">@_</span><span class="tok-p">;</span>
 <span class="tok-w">    </span><span class="tok-nb">push</span><span class="tok-w"> </span><span class="tok-nv">@$self</span><span class="tok-o">-&gt;</span><span class="tok-p">{</span><span class="tok-n">serial_failures</span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-n">type</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;soft&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">message</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;known issue&#39;</span><span class="tok-p">,</span><span class="tok-w">  </span><span class="tok-n">pattern</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">quotemeta</span><span class="tok-w"> </span><span class="tok-s">&#39;Error&#39;</span><span class="tok-p">};</span>
 <span class="tok-w">    </span><span class="tok-o">...</span>
@@ -7159,7 +7379,7 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
 <span class="tok-c1"># On parent job</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># ftp service started automatically on boot</span>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 
@@ -7171,7 +7391,7 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 <span class="tok-p">}</span>
 
 <span class="tok-c1"># On child we wait for ftp server to be ready</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># wait until ftp service is ready</span>
 <span class="tok-w">    </span><span class="tok-c1"># performs mutex lock &amp; unlock internally</span>
 <span class="tok-w">    </span><span class="tok-n">mutex_wait</span><span class="tok-w"> </span><span class="tok-s">&#39;ftp_service_ready&#39;</span><span class="tok-p">;</span>
@@ -7183,7 +7403,7 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 
 <span class="tok-c1"># Mutexes can be used also for garanting exclusive access to resource</span>
 <span class="tok-c1"># Example on child when only one job should access ftp at time</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># wait until ftp service is ready</span>
 <span class="tok-w">    </span><span class="tok-n">mutex_lock</span><span class="tok-w"> </span><span class="tok-s">&#39;ftp_service_ready&#39;</span><span class="tok-p">;</span>
 
@@ -7218,7 +7438,7 @@ The job ID is also required when unlocking such a mutex.</p>
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">lockapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-nv">$children</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">get_children</span><span class="tok-p">();</span>
 
 <span class="tok-w">    </span><span class="tok-c1"># let&#39;s suppose there is only one child</span>
@@ -7264,7 +7484,7 @@ in the three worker jobs before starting main actions. In such a case you might 
 <span class="tok-n">barrier_create</span><span class="tok-p">(</span><span class="tok-s">&#39;NODES_CONFIGURED&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">4</span><span class="tok-p">);</span>
 
 <span class="tok-c1"># On master job</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 
 <span class="tok-w">    </span><span class="tok-c1"># Master is ready, waiting while workers are configured (check_dead_job is optional)</span>
@@ -7280,7 +7500,7 @@ in the three worker jobs before starting main actions. In such a case you might 
 <span class="tok-p">}</span>
 
 <span class="tok-c1"># On 3 worker jobs</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 
 <span class="tok-w">    </span><span class="tok-c1"># do initial worker setup</span>
@@ -7309,7 +7529,7 @@ in the three worker jobs before starting main actions. In such a case you might 
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># returns a hash ref containing (id =&gt; state) for all children</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-nv">$children</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">get_children</span><span class="tok-p">();</span>
 
@@ -7437,7 +7657,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-nv">$script</span><span class="tok-o">=</span><span class="tok-s">&quot;set -e -x\n&quot;</span><span class="tok-p">;</span>
 <span class="tok-w">  </span><span class="tok-nv">$script</span><span class="tok-o">.=</span><span class="tok-s">&quot;echo test &gt;test.txt\n&quot;</span><span class="tok-p">;</span>
 <span class="tok-w">  </span><span class="tok-nv">$script</span><span class="tok-o">.=</span><span class="tok-s">&quot;time tftp &quot;</span><span class="tok-o">.</span><span class="tok-nv">$server_ip</span><span class="tok-o">.</span><span class="tok-s">&quot; -c put test.txt test2.txt\n&quot;</span><span class="tok-p">;</span>
@@ -7549,12 +7769,10 @@ widely supported. Below is an example of how to use the VNC text console.</p>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">utils</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">wait_boot</span><span class="tok-p">;</span><span class="tok-w">  </span><span class="tok-c1"># Utility function defined by the SUSE distribution</span>
 <span class="tok-w">    </span><span class="tok-n">select_console</span><span class="tok-w"> </span><span class="tok-s">&#39;root-console&#39;</span><span class="tok-p">;</span>
-<span class="tok-p">}</span>
-
-<span class="tok-mi">1</span><span class="tok-p">;</span></code></pre>
+<span class="tok-p">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -8381,16 +8599,15 @@ The test modules foo.pm and bar.pm will be downloaded into the root of the pool 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>use Mojo::Base 'consoletest';
-use testapi;
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&#39;consoletest&#39;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-sub run {
-    select_console 'root-console';
-    assert_script_run 'foo';
-}
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">select_console</span><span class="tok-w"> </span><span class="tok-s">&#39;root-console&#39;</span><span class="tok-p">;</span>
+<span class="tok-w">    </span><span class="tok-n">assert_script_run</span><span class="tok-w"> </span><span class="tok-s">&#39;foo&#39;</span><span class="tok-p">;</span>
+<span class="tok-p">}</span>
 
-sub post_run_hook {}
-1;</pre>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_run_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -12162,7 +12379,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-20 02:23:10 UTC
+Last updated 2023-10-21 02:22:52 UTC
 </div>
 </div>
 </body>
