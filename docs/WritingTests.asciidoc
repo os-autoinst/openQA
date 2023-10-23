@@ -61,11 +61,11 @@ sub run () {
 
 And here is an example in Python:
 
-[source,perl]
+[source,python]
 -------------------------------------------------------------------
 from testapi import *
 
-def run():
+def run(self):
     # write in this block the code for your test.
 -------------------------------------------------------------------
 
@@ -76,7 +76,7 @@ _Please note that the subroutine marked with `*1` are optional._
 [source,python]
 -------------------------------------------------------------------
 # Written in type-hinted python to indicate explicitly return types
-def run(): -> None
+def run(self): -> None
 def test_flags(): -> dict # *1
 def post_fail_hook(): -> None # *1
 def pre_run_hook(): -> None # *1
@@ -222,7 +222,7 @@ from testapi import *
 
 # [...] omitted for brevity
 
-def run():
+def run(self):
     perl.require('x11utils')
 
     # Start vncviewer - notice the named arguments passed as positional arguments
@@ -234,6 +234,13 @@ def run():
     )
     # [...] omitted for brevity
 -------------------------------------------------------------------
+
+Additionally, Python tests do not support `run_args`. An error will be present
+when a Python test detects the presence of `run_args` on schedule.
+
+This is because of the way `Inline::Python` handles argument passing between
+Perl <-> Python, references to complex Perl objects do not reach Python
+properly and they can't be used.
 
 === Example Perl test modules
 [id="testmodule_perl_examples"]
