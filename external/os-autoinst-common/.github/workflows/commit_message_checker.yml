@@ -1,25 +1,29 @@
 ---
 # https://github.com/marketplace/actions/gs-commit-message-checker
-name: 'Commit Message Check'
+name: 'Commit message check'
 # yamllint disable-line rule:truthy
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - '!master'  # we must not fix commit messages when they already reached master
 
 jobs:
   check-commit-message:
-    name: Check Commit Message
+    name: Check commit message
     runs-on: ubuntu-latest
     steps:
-      - name: Check Subject Begining
+      - name: Check subject beginning
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '^([A-Z]|\S+:)'
+          pattern: '^([A-Z]|[A-Za-z0-9_/.\-\s]+:|git subrepo pull)'
           flags: 'g'
           error: 'The subject does not start with a capital or tag.'
           excludeDescription: 'true'
           excludeTitle: 'true'
           checkAllCommitMessages: 'true'
           accessToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check Subject Line Length
+      - name: Check subject line length
         uses: gsactions/commit-message-checker@v1
         with:
           pattern: '^.{1,72}(\n|$)'
@@ -29,7 +33,17 @@ jobs:
           excludeTitle: 'true'    # excludes the title of a pull request
           checkAllCommitMessages: 'true'    # checks all commits associated with a pull request
           accessToken: ${{ secrets.GITHUB_TOKEN }}    # only required if checkAllCommitMessages is true
-      - name: Check Empty Line
+      - name: Check subject ending
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^.+(?<!\.)(\n|$)'
+          flags: 'g'
+          error: 'The subject cannot end with a dot.'
+          excludeDescription: 'true'
+          excludeTitle: 'true'
+          checkAllCommitMessages: 'true'
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check empty line
         uses: gsactions/commit-message-checker@v1
         with:
           pattern: '^.*(\n\n|$)'
