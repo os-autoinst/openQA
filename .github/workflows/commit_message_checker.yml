@@ -38,7 +38,7 @@ jobs:
         with:
           pattern: '^.+(?<!\.)(\n|$)'
           flags: 'g'
-          error: 'The subject cannot not end with a dot.'
+          error: 'The subject cannot end with a dot.'
           excludeDescription: 'true'
           excludeTitle: 'true'
           checkAllCommitMessages: 'true'
