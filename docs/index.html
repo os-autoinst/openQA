@@ -6375,10 +6375,10 @@ actual test code and the test needs to be loaded in the distribution&#8217;s
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-n">from</span><span class="tok-w"> </span><span class="tok-n">testapi</span><span class="tok-w"> </span><span class="tok-nb">import</span><span class="tok-w"> </span><span class="tok-o">*</span>
+<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span> <span class="tok-nn">testapi</span> <span class="tok-kn">import</span> <span class="tok-o">*</span>
 
-<span class="tok-n">def</span><span class="tok-w"> </span><span class="tok-n">run</span><span class="tok-p">():</span>
-<span class="tok-w">    </span><span class="tok-c1"># write in this block the code for your test.</span></code></pre>
+<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+    <span class="tok-c1"># write in this block the code for your test.</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -6389,7 +6389,7 @@ of a test. A test must comply with the interface defined below.
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-c1"># Written in type-hinted python to indicate explicitly return types</span>
-<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span>
+<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span>
 <span class="tok-k">def</span> <span class="tok-nf">test_flags</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">dict</span> <span class="tok-c1"># *1</span>
 <span class="tok-k">def</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
 <span class="tok-k">def</span> <span class="tok-nf">pre_run_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
@@ -6571,7 +6571,7 @@ passed as positional arguments, for example <code>"key", "value"</code>.</p>
 
 <span class="tok-c1"># [...] omitted for brevity</span>
 
-<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">():</span>
+<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">require</span><span class="tok-p">(</span><span class="tok-s1">&#39;x11utils&#39;</span><span class="tok-p">)</span>
 
     <span class="tok-c1"># Start vncviewer - notice the named arguments passed as positional arguments</span>
@@ -6583,6 +6583,15 @@ passed as positional arguments, for example <code>"key", "value"</code>.</p>
     <span class="tok-p">)</span>
     <span class="tok-c1"># [...] omitted for brevity</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Additionally, Python tests do not support <code>run_args</code>. An error will be present
+when a Python test detects the presence of <code>run_args</code> on schedule.</p>
+</div>
+<div class="paragraph">
+<p>This is because of the way <code>Inline::Python</code> handles argument passing between
+Perl &lt;&#8594; Python, references to complex Perl objects do not reach Python
+properly and they can&#8217;t be used.</p>
 </div>
 </div>
 <div class="sect2">
@@ -12379,7 +12388,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-21 02:22:52 UTC
+Last updated 2023-10-24 02:23:10 UTC
 </div>
 </div>
 </body>
