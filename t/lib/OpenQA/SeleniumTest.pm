@@ -352,9 +352,7 @@ sub get_mojoport () { $mojoport }
 # uncoverable subroutine
 # uncoverable statement
 sub driver_missing () {
-    diag 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';    # uncoverable statement
-    done_testing;    # uncoverable statement
-    exit;    # uncoverable statement
+    plan skip_all => 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests'; # uncoverable statement
 }
 
 END {
