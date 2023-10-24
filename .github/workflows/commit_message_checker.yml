@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Subject Begining
-        uses: gsactions/commit-message-checker@v1
+        uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^([A-Z]|[A-Za-z0-9_/.\-\s]+:|git subrepo pull)'
           flags: 'g'
@@ -24,7 +24,7 @@ jobs:
           checkAllCommitMessages: 'true'
           accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Check Subject Line Length
-        uses: gsactions/commit-message-checker@v1
+        uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^.{1,72}(\n|$)'
           flags: 'g'
@@ -33,8 +33,18 @@ jobs:
           excludeTitle: 'true'    # excludes the title of a pull request
           checkAllCommitMessages: 'true'    # checks all commits associated with a pull request
           accessToken: ${{ secrets.GITHUB_TOKEN }}    # only required if checkAllCommitMessages is true
+      - name: Check Subject Ending
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^.+(?<!\.)(\n|$)'
+          flags: 'g'
+          error: 'The subject cannot not end with a dot.'
+          excludeDescription: 'true'
+          excludeTitle: 'true'
+          checkAllCommitMessages: 'true'
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Check Empty Line
-        uses: gsactions/commit-message-checker@v1
+        uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^.*(\n\n|$)'
           flags: 'g'
