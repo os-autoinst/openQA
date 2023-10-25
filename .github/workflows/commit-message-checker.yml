@@ -1,0 +1,15 @@
+---
+# https://github.com/marketplace/actions/gs-commit-message-checker
+name: 'Commit message check'
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+  push:
+    branches:
+      - '!master'  # we must not fix commit messages when they already reached master
+
+jobs:
+  check-commit-message:
+    secrets:
+      accessToken: "${{ secrets.GITHUB_TOKEN }}"
+    uses: os-autoinst/os-autoinst-common/.github/workflows/base-commit-message-checker.yml@master
