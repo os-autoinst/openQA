@@ -786,7 +786,7 @@ subtest 'handle job status changes' => sub {
             combined_like {
                 $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'});
             }
-qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skipping job 769 from queue because worker is broken/s,
+            qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skipping job 769 from queue because worker is broken/s,
               'status logged';
             is(
                 $worker->current_error,

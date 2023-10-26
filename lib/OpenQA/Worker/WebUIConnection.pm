@@ -123,7 +123,7 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
     # prevent messing around when there's still an active websocket connection
     return undef if $self->websocket_connection;
 
-   # make URL for websocket connection unless specified as argument (which would be the case when following redirection)
+    # make URL for websocket connection unless specified as argument (which would be the case when following redirection)
     if (!$websocket_url) {
         my $worker_id = $self->worker_id;
         my $webui_host = $self->webui_host;

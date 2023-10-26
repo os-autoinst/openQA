@@ -163,7 +163,7 @@ subtest 'asset caching' => sub {
         cache_assets =>
           sub ($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir, $callback) {
             $callback->(undef);
-        });
+          });
     my $job = Test::MockObject->new;
     my $testpool_server;
     $job->mock(client => sub { Test::MockObject->new->set_bound(testpool_server => \$testpool_server) });

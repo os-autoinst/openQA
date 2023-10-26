@@ -370,8 +370,8 @@ subtest 'assets associated with pending jobs are preserved' => sub {
             [$pending_asset_name, $other_asset_name],
             "asset $pending_asset_name has been deleted with 99947 no longer pending"
         ) or diag explain $deleted_assets;
-    # note: The main purpose of this subtest is to cross-check whether this test is actually working. If the asset would
-      #       still not be cleaned up here that would mean the pending state makes no difference for this test and it is
+        # note: The main purpose of this subtest is to cross-check whether this test is actually working. If the asset would
+        #       still not be cleaned up here that would mean the pending state makes no difference for this test and it is
         #       therefore meaningless.
     };
 };

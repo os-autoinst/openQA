@@ -281,7 +281,7 @@ sub reschedule_assigned_jobs {
         }
         catch {
             my $worker_id = $self->id;    # uncoverable statement
-            log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $_"); # uncoverable statement
+            log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $_");    # uncoverable statement
         };
     }
 }

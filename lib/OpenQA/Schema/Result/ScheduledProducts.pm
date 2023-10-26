@@ -586,7 +586,7 @@ sub _generate_jobs {
         }
         for my $job_template (@templates) {
             # compose settings from product, machine, testsuite and job template itself
-           # note: That order also defines the precedence from lowest to highest. The only exception is the WORKER_CLASS
+            # note: That order also defines the precedence from lowest to highest. The only exception is the WORKER_CLASS
             #       variable where all occurrences are merged.
             my %settings;
             my %params = (
@@ -712,7 +712,7 @@ sub _create_dependencies_for_parents {
             if ($worker_class ne $parent_worker_class) {
                 my $test_name = $job->settings_hash->{TEST};
                 die
-"Worker class of $test_name ($worker_class) does not match the worker class of its directly chained parent ($parent_worker_class)";
+                  "Worker class of $test_name ($worker_class) does not match the worker class of its directly chained parent ($parent_worker_class)";
             }
         }
         $job_dependencies->create(
@@ -779,7 +779,7 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
             next unless defined $products;
             next unless my $product = $products->{$product_name};
             next
-              if ( $product->{distri} ne _distri_key($args)
+              if ($product->{distri} ne _distri_key($args)
                 || $product->{flavor} ne $args->{FLAVOR}
                 || ($product->{version} ne '*' && $product->{version} ne $args->{VERSION})
                 || $product->{arch} ne $args->{ARCH});
@@ -951,7 +951,7 @@ sub cancel ($self, $reason = undef) {
 
     # update status to CANCELLING
     if (!$self->_update_status_if(CANCELLING, -not => {status => SCHEDULING})) {
-       # the scheduled product is SCHEDULING; set it nevertheless to CANCELLING but back off from cancelling immediately
+        # the scheduled product is SCHEDULING; set it nevertheless to CANCELLING but back off from cancelling immediately
         # unless it is not SCHEDULING anymore after all
         return 0 if $self->_update_status_if(CANCELLING, status => SCHEDULING);
     }

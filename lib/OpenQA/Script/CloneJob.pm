@@ -192,7 +192,7 @@ sub openqa_baseurl ($local_url) {
     my $port = '';
     if (
         $local_url->port
-        && (   ($local_url->scheme eq 'http' && $local_url->port != 80)
+        && (($local_url->scheme eq 'http' && $local_url->port != 80)
             || ($local_url->scheme eq 'https' && $local_url->port != 443)))
     {
         $port = ':' . $local_url->port;

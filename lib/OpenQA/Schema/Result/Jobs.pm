@@ -372,7 +372,7 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
     @{$job_hashref->{settings}}{keys %$updated_settings} = values %$updated_settings
       if $updated_settings;
 
-    if (   $job_hashref->{settings}->{NICTYPE}
+    if ($job_hashref->{settings}->{NICTYPE}
         && !defined $job_hashref->{settings}->{NICVLAN}
         && $job_hashref->{settings}->{NICTYPE} ne 'user')
     {
@@ -1149,7 +1149,7 @@ sub delete_videos ($self) {
 
     my @files = (find_video_files($result_dir), Mojo::Collection->new(path($result_dir, 'video_time.vtt')));
     my $deleted_size = _delete_returning_size_from_array(\@files);
-    $self->update({result_size => \"greatest(0, result_size - $deleted_size)"});   # considering logs still present here
+    $self->update({result_size => \"greatest(0, result_size - $deleted_size)"});    # considering logs still present here
     return $deleted_size;
 }
 
