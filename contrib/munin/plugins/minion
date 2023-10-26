@@ -9,6 +9,7 @@ use v5.22;
 #
 #   [openqa_minion_*]
 #   env.url https://openqa.opensuse.org/admin/influxdb/minion
+#   env.webui https://openqa.opensuse.org
 #   # optional
 #   env.minion_jobs_failed_warning 400
 #   env.minion_jobs_failed_critical 500
@@ -25,17 +26,17 @@ use v5.22;
 my %config = (
     minion_jobs => {
         states => [qw/ active delayed failed inactive /],
-        title => "Minion Jobs",
+        title => "Minion Jobs - see " . ($ENV{webui} // "https://openqa.opensuse.org") . "/minion/jobs?state=failed",
         warning => { failed => $ENV{minion_jobs_failed_warning} // 400 },
         critical => { failed => $ENV{minion_jobs_failed_critical} // 500 },
     },
     minion_workers => {
         states => [qw/ active inactive registered /],
-        title => "Minion Workers",
+        title => "Minion Workers - see " . ($ENV{webui} // "https://openqa.opensuse.org") . "/minion/workers",
     },
     minion_jobs_hook_rc_failed => {
         states => [qw/ rc_failed_per_5min /],
-        title => "hook failed",
+        title => "hook failed - see openqa-gru service logs for details",
         warning => { rc_failed_per_5min => $ENV{minion_jobs_hook_rc_failed_warning} // 0.5 },
         critical => { rc_failed_per_5min => $ENV{minion_jobs_hook_rc_failed_critical} // 2 },
     },
