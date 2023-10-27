@@ -42,7 +42,7 @@ libonig4-6.7.0
 libpci3-3.5.6
 librsvg-2-2-2.52.10
 libsamplerate0-0.1.9
-libssh2-1-1.9.0
+libssh2-1-1.11.0
 libwebpdemux2-1.0.3
 libXaw7-1.0.13
 libXcursor1-1.1.15
