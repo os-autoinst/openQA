@@ -98,7 +98,7 @@ perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.28
 perl-Context-Preserve-0.03
 perl-CPAN-DistnameInfo-0.12
-perl-Cpanel-JSON-XS-4.37
+perl-Cpanel-JSON-XS-4.36
 perl-CPAN-Meta-Check-0.014
 perl-CPAN-Meta-Requirements-2.140000
 perl-Crypt-DES-2.07
@@ -198,7 +198,7 @@ perl-Module-Implementation-0.09
 perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
-perl-Mojo-IOLoop-ReadWriteProcess-0.340.0
+perl-Mojo-IOLoop-ReadWriteProcess-0.33
 perl-Mojolicious-9.340.0
 perl-Mojolicious-Plugin-AssetPack-2.14
 perl-Mojolicious-Plugin-OAuth2-2.02
