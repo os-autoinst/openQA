@@ -59,7 +59,7 @@ EOM
         main::main();
     };
     my $exp_minion_jobs_hook_rc_failed_config = <<'EOM';
-graph_title hook failed
+graph_title hook failed - see openqa-gru service logs for details
 graph_args --base 1000 -l 0
 graph_category minion
 graph_order rc_failed_per_5min
