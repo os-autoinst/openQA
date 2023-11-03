@@ -103,6 +103,7 @@ our @EXPORT = qw(
   run_cmd_with_log_return_error
   parse_assets_from_settings
   find_labels
+  find_flags
   find_bugref
   find_bugrefs
   bugurl
@@ -429,6 +430,12 @@ sub find_labels {
     my @labels;
     push @labels, $+{match} while $text =~ /${\LABEL_REGEX}/g;
     return \@labels;
+}
+
+sub find_flags ($text) {
+    my @flags;
+    push @flags, $+{match} while $text =~ /${\FLAG_REGEX}/g;
+    return \@flags;
 }
 
 sub find_bugref {

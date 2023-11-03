@@ -5,7 +5,7 @@ package OpenQA::Schema::Result::Comments;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::Jobs::Constants;
-use OpenQA::Utils qw(find_labels find_bugref find_bugrefs);
+use OpenQA::Utils qw(find_labels find_flags find_bugref find_bugrefs);
 use OpenQA::Markdown qw(markdown_to_html);
 use List::Util qw(first);
 
@@ -105,6 +105,17 @@ Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_labe
 =cut
 sub label ($self) {
     return find_labels($self->text)->[0];
+}
+
+=head2 text_flags
+
+Returns flag values if C<$self> has flags, e.g. 'flag:carryover flag:foobar' returns a hashref with the keys 'carryover' and 'foobar'
+=cut
+sub text_flags ($self) {
+    my $flags = find_flags($self->text);
+    my %flag_hash;
+    @flag_hash{@$flags} = ();
+    return \%flag_hash;
 }
 
 =head2 force_result

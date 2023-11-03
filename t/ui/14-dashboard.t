@@ -72,7 +72,7 @@ log_debug('build_url: ' . $build_url);
 is(scalar @{$driver->find_elements('.h4', 'css')}, 5, 'number of builds for opensuse');
 is(
     $driver->find_element_by_id('group_description')->get_text(),
-    "Test description\nwith bugref bsc#1234",
+    "Test description\nwith bugref  bsc#1234",    # second space comes from using non-breaking space in bugref span
     'description shown'
 );
 is(

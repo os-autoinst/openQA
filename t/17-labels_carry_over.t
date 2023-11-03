@@ -15,6 +15,7 @@ use Test::Output 'combined_from';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Utils qw(assume_all_assets_exist);
+use Mojo::DOM;
 use Mojo::JSON qw(decode_json);
 
 my $test_case = OpenQA::Test::Case->new;
@@ -26,7 +27,9 @@ $test_case->login($t, 'percival');
 assume_all_assets_exist;
 
 my $comment_must
-  = '<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>(Automatic takeover from <a href="/tests/99962">t#99962</a>)';
+  = Mojo::DOM->new(
+'<span class="openqa-bugref" title="Bug referenced: bsc#1234"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span>(Automatic takeover from <a href="/tests/99962">t#99962</a>)'
+)->to_string;
 my $carry_over_note = "\n(The hook script will not be executed.)";
 sub comments ($url) {
     $t->get_ok("$url/comments_ajax")->status_is(200)->tx->res->dom->find('.media-comment > p')->map('content');

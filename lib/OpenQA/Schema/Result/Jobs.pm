@@ -1713,7 +1713,7 @@ sub carry_over_bugrefs ($self) {
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
     for my $comment ($comments->all) {
-        next unless $comment->bugref;
+        next if !$comment->bugref && !exists($comment->text_flags->{carryover});
         my $text = $comment->text;
         my $prev_id = $prev->id;
         $text .= "\n\n(Automatic takeover from t#$prev_id)" if $text !~ qr/Automatic takeover/;
