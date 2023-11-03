@@ -80,8 +80,9 @@ BEGIN {
 }
 
 use constant UNCONSTRAINED_BUGREF_REGEX => $BUGREF_REGEX;
-use constant BUGREF_REGEX => qr{(?:^|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
+use constant BUGREF_REGEX => qr{(?:^|(?<=<p>)|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
 use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#]+))\b/;
+use constant FLAG_REGEX => qr/\bflag:(?<match>([\w:#]+))\b/;
 
 use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 
@@ -90,6 +91,7 @@ our @EXPORT = qw(
   UNCONSTRAINED_BUGREF_REGEX
   BUGREF_REGEX
   LABEL_REGEX
+  FLAG_REGEX
   locate_needle
   needledir
   productdir
