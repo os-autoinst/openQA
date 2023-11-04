@@ -5,7 +5,7 @@
     </p>
     <ul>
         <li>
-            For bugreferences write <code><i>bugtracker_shortname</i>#<i>bug_nr</i></code> in a comment, e.g. <code>bsc#1234</code>.
+            For issue references write <code><i>bugtracker_shortname</i>#<i>bug_nr</i></code> in a comment, e.g. <code>bsc#1234</code> anywhere in a sentence.
         </li>
         <li>
             For generic labels use <code>label:<i>keyword</i></code> where <i>keyword</i> can be any valid character up to the next whitespace, e.g. "false_positive".
@@ -28,7 +28,8 @@
     </p>
     <p>
         Issue references are automatically carried over to the next jobs in the same scenario when the corresponding job fails in
-        the same module or the failed modules did not change.
+        the same module or the failed modules did not change. To mention links to tickets without enabling them for carry-over you can prepend the
+        link or short-reference with <code>label:</code>, e.g. <code>this is *not* label:bsc#1234</code>.
     </p>
     <p>
         Comments on job group pages can be "pinned" to the top by including the special keyword <code>pinned-description</code>
