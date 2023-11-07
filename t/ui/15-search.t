@@ -36,9 +36,10 @@ subtest 'Perl modules' => sub {
     my $header = $driver->find_element_by_id('results-heading');
     my $results = $driver->find_element_by_id('results');
     my @entries = $results->children('.list-group-item');
-    is $header->get_text(), 'Search results: ' . scalar @entries . ' matches found', 'number of results in header';
-    is scalar @entries, 2, '2 elements' or return;
+    is $header->get_text(), 'Search results: ' . (@entries - 1) . ' matches found', 'number of results in header';
+    is scalar @entries, 3, '3 elements' or return;
 
+    shift @entries;
     my $first = $entries[0];
     is $first->child('.occurrence')->get_text(), 'opensuse/tests/installation/installer_timezone.pm',
       'expected occurrence';

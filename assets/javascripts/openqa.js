@@ -290,27 +290,44 @@ function renderSearchResults(query, url) {
     }
     spinner.style.display = 'none';
     var heading = document.getElementById('results-heading');
-    heading.appendChild(document.createTextNode(': ' + json.data.length + ' matches found'));
+    heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
     var results = document.createElement('div');
     results.id = 'results';
     results.className = 'list-group';
-    json.data.forEach(function (value, index) {
-      var item = document.createElement('div');
-      item.className = 'list-group-item';
-      var header = document.createElement('div');
-      header.className = 'd-flex w-100 justify-content-between';
-      var title = document.createElement('h5');
-      title.className = 'occurrence mb-1';
-      title.appendChild(document.createTextNode(value.occurrence));
-      header.appendChild(title);
-      item.appendChild(header);
-      if (value.contents) {
-        var contents = document.createElement('pre');
-        contents.className = 'contents mb-1';
-        contents.appendChild(document.createTextNode(value.contents));
-        item.appendChild(contents);
+    const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
+
+    Object.keys(types).forEach(function (searchtype) {
+      var searchresults = json.data.results[searchtype];
+      if (searchresults.length > 0) {
+        const item = document.createElement('div');
+        item.className = 'list-group-item';
+        const header = document.createElement('h3');
+        item.appendChild(header);
+        header.id = searchtype;
+        const bold = document.createElement('strong');
+        const textnode = document.createTextNode(types[searchtype] + ': ' + searchresults.length);
+        bold.appendChild(textnode);
+        header.appendChild(bold);
+        results.append(item);
       }
-      results.append(item);
+      searchresults.forEach(function (value, index) {
+        const item = document.createElement('div');
+        item.className = 'list-group-item';
+        const header = document.createElement('div');
+        header.className = 'd-flex w-100 justify-content-between';
+        const title = document.createElement('h5');
+        title.className = 'occurrence mb-1';
+        title.appendChild(document.createTextNode(value.occurrence));
+        header.appendChild(title);
+        item.appendChild(header);
+        if (value.contents) {
+          const contents = document.createElement('pre');
+          contents.className = 'contents mb-1';
+          contents.appendChild(document.createTextNode(value.contents));
+          item.appendChild(contents);
+        }
+        results.append(item);
+      });
     });
     const oldResults = document.getElementById('results');
     oldResults.parentElement.replaceChild(results, oldResults);
