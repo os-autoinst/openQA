@@ -451,6 +451,11 @@ EOF
 
     ($stdout, $stderr, @result) = capture sub { $api->run('--retries', '1', @params) };
     like $stdout, qr/failed.*retrying/, 'requests are retried on error if requested';
+
+    @params = ('--host', 'http://localhost:123456', '--retries', 1, 'api', 'test');
+    ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
+    like $stderr, qr/Connection refused/, 'aborts on connection refused';
+    like $stdout, qr/failed.*retrying/, 'requests are retried on error if requested';
 };
 
 subtest 'Pretty print JSON' => sub {

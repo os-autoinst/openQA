@@ -124,7 +124,7 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
     for (;; --$retries) {
         $tx = $client->start($tx);
         my $res_code = $tx->res->code // 0;
-        return $self->handle_result($tx) unless $res_code =~ /50[23]/ && $retries > 0;
+        return $self->handle_result($tx) unless $res_code =~ /^(50[23]|0)$/ && $retries > 0;
         print encode('UTF-8',
             "Request failed, hit error $res_code, retrying up to $retries more times after waiting …\n");
         sleep $delay;
