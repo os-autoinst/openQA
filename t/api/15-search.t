@@ -17,9 +17,12 @@ $t->app->config->{rate_limits}->{search} = 10;
 subtest 'Perl modules' => sub {
     $t->get_ok('/api/v1/experimental/search?q=timezone', 'search successful');
     $t->json_is('/error' => undef, 'no errors');
-    $t->json_is('/data/0' => {occurrence => 'opensuse/tests/installation/installer_timezone.pm'}, 'module found');
     $t->json_is(
-        '/data/1' => {
+        '/data/results/code/0' => {occurrence => 'opensuse/tests/installation/installer_timezone.pm'},
+        'module found'
+    );
+    $t->json_is(
+        '/data/results/code/1' => {
             occurrence => 'opensuse/tests/installation/installer_timezone.pm',
             contents => qq{    3 # Summary: Verify timezone settings page\n}
               . qq{   10     assert_screen "inst-timezone", 125 || die 'no timezone';}
@@ -31,9 +34,9 @@ subtest 'Perl modules' => sub {
 subtest 'Python modules' => sub {
     $t->get_ok('/api/v1/experimental/search?q=search', 'search successful');
     $t->json_is('/error' => undef, 'no errors');
-    $t->json_is('/data/0' => {occurrence => 'opensuse/tests/openQA/search.py'}, 'module found');
+    $t->json_is('/data/results/code/0' => {occurrence => 'opensuse/tests/openQA/search.py'}, 'module found');
     $t->json_is(
-        '/data/1' => {
+        '/data/results/code/1' => {
             occurrence => 'opensuse/tests/openQA/search.py',
             contents => qq{    6     assert_and_click('openqa-search')\n}
               . qq{    9     assert_screen('openqa-search-results')}
@@ -64,14 +67,14 @@ subtest 'Job modules' => sub {
     $t->get_ok('/api/v1/experimental/search?q=ipsum', 'search successful');
     $t->json_is('/error' => undef, 'no errors');
     $t->json_is(
-        '/data/0' => {
+        '/data/results/modules/0' => {
             occurrence => 'lorem',
             contents => "tests/lorem/ipsum.pm\n" . "tests/lorem/ipsum_dolor.py"
         },
         'job module found'
     );
     $t->json_is(
-        '/data/1' => undef,
+        '/data/total_count' => 1,
         'no additional job module found'
     );
 };
@@ -97,11 +100,11 @@ subtest 'Job templates' => sub {
     $t->get_ok('/api/v1/experimental/search?q=fancy', 'search successful');
     $t->json_is('/error' => undef, 'no errors');
     $t->json_is(
-        '/data/0' => {occurrence => 'Cool Group', contents => "fancy-example\nVery posh"},
+        '/data/results/templates/0' => {occurrence => 'Cool Group', contents => "fancy-example\nVery posh"},
         'job template found'
     );
     $t->json_is(
-        '/data/1' => undef,
+        '/data/total_count' => 1,
         'no additional job template found'
     );
 
@@ -116,7 +119,7 @@ subtest 'Job templates' => sub {
     $t->get_ok('/api/v1/experimental/search?q=apple', 'search successful');
     $t->json_is('/error' => undef, 'no errors');
     $t->json_is(
-        '/data/0' => {occurrence => 'Cool Group', contents => "apple\n"},
+        '/data/results/templates/0' => {occurrence => 'Cool Group', contents => "apple\n"},
         'job template was found by using test suite name'
     );
 };
@@ -124,7 +127,7 @@ subtest 'Job templates' => sub {
 subtest 'Limits' => sub {
     $t->app->config->{global}->{search_results_limit} = 1;
     $t->get_ok('/api/v1/experimental/search?q=test', 'Extensive search with limit')->status_is(200);
-    $t->json_is('/data/1' => undef, 'capped at one match');
+    $t->json_is('/data/results/templates/1' => undef, 'capped at one match');
 };
 
 subtest 'Errors' => sub {
@@ -133,7 +136,7 @@ subtest 'Errors' => sub {
 
     $t->get_ok('/api/v1/experimental/search?q=*', 'wildcard is interpreted literally');
     $t->json_is(
-        '/data/0' => {
+        '/data/results/code/0' => {
             occurrence => "opensuse\/tests\/openQA\/search.py",
             contents => "    1 from testapi import *",
         },

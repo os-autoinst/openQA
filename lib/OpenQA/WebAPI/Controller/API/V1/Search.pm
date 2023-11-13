@@ -176,22 +176,27 @@ sub query {
       unless $self->app->minion->lock($lockname, 60, {limit => $self->app->config->{'rate_limits'}->{'search'}});
 
     my $cap = $self->app->config->{'global'}->{'search_results_limit'};
-    my @results;
+    my %results;
     my $keywords = $validation->param('q');
 
+    my %json = (total_count => 0, results => \%results);
     my $perl_module_results = $self->_search_perl_modules($keywords, $cap);
-    $cap -= scalar @{$perl_module_results};
-    push @results, @{$perl_module_results};
-    return $self->render(json => {data => \@results}) unless $cap > 0;
+    $json{total_count} += @{$perl_module_results};
+    $cap -= @{$perl_module_results};
+    $results{code} = $perl_module_results;
+    return $self->render(json => {data => \%json}) unless $cap > 0;
 
     my $job_module_results = $self->_search_job_modules($keywords, $cap);
-    $cap -= scalar @{$job_module_results};
-    push @results, @{$job_module_results};
-    return $self->render(json => {data => \@results}) unless $cap > 0;
+    $json{total_count} += @{$job_module_results};
+    $cap -= @{$job_module_results};
+    $results{modules} = $job_module_results;
+    return $self->render(json => {data => \%json}) unless $cap > 0;
 
-    push @results, @{$self->_search_job_templates($keywords, $cap)};
+    my $job_template_results = $self->_search_job_templates($keywords, $cap);
+    $json{total_count} += @{$job_template_results};
+    $results{templates} = $job_template_results;
 
-    $self->render(json => {data => \@results});
+    $self->render(json => {data => \%json});
 }
 
 1;
