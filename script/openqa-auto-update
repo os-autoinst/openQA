@@ -24,6 +24,8 @@ while true; do
 done
 
 "$(dirname "${BASH_SOURCE[0]}")"/openqa-check-devel-repo
-zypper -n dup --replacefiles --auto-agree-with-licenses --download-in-advance
+# call ref independently of dup to avoid unintended mass-removals in case ref fails (see poo#150845)
+zypper -n ref
+zypper -n --no-refresh dup --replacefiles --auto-agree-with-licenses --download-in-advance
 # shellcheck disable=SC2015
 needs-restarting --reboothint >/dev/null || (command -v rebootmgrctl >/dev/null && rebootmgrctl reboot ||:)
