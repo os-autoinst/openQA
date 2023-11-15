@@ -147,8 +147,8 @@ subtest 'mark job with taken over bugref as done' => sub {
         },
         'carried over bugref and resolved URL present in AMQP event'
     ) or diag explain $job_event;
-    ok delete $comment_event->{created}, 'takeover comment creation date present';
-    ok delete $comment_event->{updated}, 'takeover comment update date present';
+    ok delete $comment_event->{created}, 'carryover comment creation date present';
+    ok delete $comment_event->{updated}, 'carryover comment update date present';
     is_deeply(
         $comment_event,
         {
@@ -157,7 +157,7 @@ subtest 'mark job with taken over bugref as done' => sub {
             group_id => undef,
             parent_group_id => undef,
             user => 'system',
-            text => "bsc#123\n\n(Automatic takeover from t#99962)\n",
+            text => "bsc#123\n\n(Automatic carryover from t#99962)\n",
             bugref => 'bsc#123',
             taken_over_from_job_id => 99962,
         },

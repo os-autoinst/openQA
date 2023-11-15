@@ -1716,7 +1716,7 @@ sub carry_over_bugrefs ($self) {
         next if !$comment->bugref && !exists($comment->text_flags->{carryover});
         my $text = $comment->text;
         my $prev_id = $prev->id;
-        $text .= "\n\n(Automatic takeover from t#$prev_id)" if $text !~ qr/Automatic takeover/;
+        $text .= "\n\n(Automatic carryover from t#$prev_id)" if $text !~ qr/Automatic (takeover|carryover)/;
         $text .= "\n(The hook script will not be executed.)"
           if $text !~ qr/The hook script will not be executed/ && defined $self->hook_script;
         $text .= "\n" unless substr($text, -1, 1) eq "\n";

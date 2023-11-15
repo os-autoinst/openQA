@@ -28,7 +28,7 @@ assume_all_assets_exist;
 
 my $comment_must
   = Mojo::DOM->new(
-'<span class="openqa-bugref" title="Bug referenced: bsc#1234"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span>(Automatic takeover from <a href="/tests/99962">t#99962</a>)'
+'<span class="openqa-bugref" title="Bug referenced: bsc#1234"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span>(Automatic carryover from <a href="/tests/99962">t#99962</a>)'
 )->to_string;
 my $carry_over_note = "\n(The hook script will not be executed.)";
 sub comments ($url) {
@@ -84,7 +84,7 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
         like $output, qr{\Q_carry_over_candidate(99963): checking take over from 99962: _failure_reason=amarok:none};
         like $output, qr{\Q_carry_over_candidate(99963): found a good candidate (99962)};
         ok $bugs->find({bugid => 'bsc#1234'}, {limit => 1}),
-          'bugref inserted as part of comment contents being handled on takeover';
+          'bugref inserted as part of comment contents being handled on carryover';
     };
 };
 
