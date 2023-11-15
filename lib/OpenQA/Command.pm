@@ -119,6 +119,7 @@ sub url_for ($self, $path) {
 }
 
 sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
+    $client->connect_timeout($ENV{MOJO_CONNECT_TIMEOUT} // 30);
     $delay //= $ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3;
     $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
     for (;; --$retries) {
