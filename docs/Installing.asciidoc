@@ -387,15 +387,12 @@ httpsonly = 0
 [[database]]
 === Database
 
-Since version _4.5.1512500474.437cc1c7_ of openQA, PostgreSQL is used as the
-database.
-
-To configure access to the database in openQA, edit `/etc/openqa/database.ini`
-and change the settings in the `[production]` section.
-
-The `dsn` value format technically depends on the database type and is
-documented for PostgreSQL at
-https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
+openQA uses PostgreSQL as database. By default, a database with name `openqa`
+and `geekotest` user as owner is used. An automatic setup of a freshly 
+installed PostgreSQL instance can be done using https://github.com/os-autoinst/openQA/blob/master/script/setup-db[this script].
+The database connection can be configured in `/etc/openqa/database.ini`
+(normally the `[production]` section is relevant). More info about the `dsn`
+value format can be found in the https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg documentation].
 
 ==== Example for connecting to local PostgreSQL database
 
