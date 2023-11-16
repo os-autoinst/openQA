@@ -8,20 +8,30 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils qw(perform_minion_jobs wait_for_or_bail_out);
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
-
 use Mojolicious;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use Mojo::File qw(path tempfile);
 
-$SIG{INT} = sub { session->clean };
+my $mocked_time = 0;
+
+BEGIN {
+    *CORE::GLOBAL::time = sub {
+        return $mocked_time if $mocked_time;
+        return time();
+    };
+}
+
+$SIG{INT} = sub { session->clean };    # uncoverable statement count:2
+
 END { session->clean }
 
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "http://127.0.0.1:$port";
-my $url = "$host/public/build/%%PROJECT/_result";
+my $url = "$host/build/%%PROJECT/_result";
 my %fake_response_by_project = (
     Proj3 => '
 <!-- This project is published. -->
@@ -71,14 +81,42 @@ my %fake_response_by_project = (
     Proj0 => 'invalid XML',
 );
 
+my $auth_header_exact
+  = qq(Signature keyId="dummy-username",algorithm="ssh",)
+  . qq(signature="U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgSKpcECPm8Vjo9UznZS+)
+  . qq(M/QLjmXXmLzoBxkIbZ8Z/oPkAAAAaVXNlIHlvdXIgZGV2ZWxvcGVyIGFjY291bnQAAAAAAAAABn)
+  . qq(NoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA8cmvTy1PgpW2XhHWxQ1yw/wPGAfT2M3CGRJ3II)
+  . qq(7uT5Orqn1a0bWlo/lEV0WiqP+pPcQdajQ4a2YGJvpfzT1uBA==",)
+  . qq (headers="(created)",created="1664187470");
+
 note 'Starting fake API server';
-my $server_instance = process sub {
+
+my $server_process = sub {
+    use experimental 'signatures';
     my $mock = Mojolicious->new;
     $mock->mode('test');
+
+    my $www_authenticate = qq(Signature realm="Use your developer account",headers="(created)");
+    $mock->routes->get(
+        '/build/ProjWithAuth/_result' => sub ($c) {
+            return $c->render(status => 200, text => $fake_response_by_project{Proj1})
+              if $c->req->headers->authorization;
+            $c->res->headers->www_authenticate($www_authenticate);
+            return $c->render(status => 401, text => 'login');
+        });
+
+    $mock->routes->get(
+        '/build/ProjTestingSignature/_result' => sub ($c) {
+            my $client_auth_header = $c->req->headers->authorization // '';
+            return $c->render(status => 200, text => $fake_response_by_project{Proj1})
+              if $auth_header_exact eq $client_auth_header;
+            $c->res->headers->www_authenticate($www_authenticate);
+            return $c->render(status => 401, text => 'login');
+        });
+
     for my $project (sort keys %fake_response_by_project) {
         $mock->routes->get(
-            "/public/build/$project/_result" => sub {
-                my $c = shift;
+            "/build/$project/_result" => sub ($c) {
                 my $pkg = $c->param('package');
                 return $c->render(status => 404) if !$pkg and $project ne 'Proj1';
                 return $c->render(status => 200, text => $fake_response_by_project{$project});
@@ -87,12 +125,40 @@ my $server_instance = process sub {
     my $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
     $daemon->run;
     note 'Fake API server stopped';
-    _exit(0);
+    Devel::Cover::report() if Devel::Cover->can('report');
+    _exit(0);    # uncoverable statement
 };
+
+my $server_instance = process(
+    $server_process,
+    max_kill_attempts => 0,
+    blocking_stop => 1,
+    _default_blocking_signal => POSIX::SIGTERM,
+    kill_sleeptime => 0
+);
+
 $server_instance->set_pipes(0)->start;
 wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'API';
 
-my ($t, $tempdir, $home, $params) = setup_obs_rsync_test(url => $url);
+my $ssh_keyfile = tempfile("$FindBin::Script-sshkey-XXXXX");
+# using the key from [0] to have a reproduceable output.
+$ssh_keyfile->spew(<<EOF);
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBIqlwQI+bxWOj1TOdlL4z9AuOZdeYvOgHGQhtnxn+g+QAAAJiRS1EekUtR
+HgAAAAtzc2gtZWQyNTUxOQAAACBIqlwQI+bxWOj1TOdlL4z9AuOZdeYvOgHGQhtnxn+g+Q
+AAAECrZDKH46WiRLiazilOn4+BlnESdV8CNReMvlm2Pr6Yr0iqXBAj5vFY6PVM52UvjP0C
+45l15i86AcZCG2fGf6D5AAAAE3NhbXBsZS1tZmEtZmxvd0BpYnMBAg==
+-----END OPENSSH PRIVATE KEY-----
+EOF
+
+
+my ($t, $tempdir, $home, $params) = setup_obs_rsync_test(
+    url => $url,
+    config => {
+        username => 'dummy-username',
+        ssh_key_file => path($ssh_keyfile),
+    });
 my $app = $t->app;
 my $helper = $app->obs_rsync;
 
@@ -110,9 +176,9 @@ subtest 'test api package helper' => sub {
 };
 
 subtest 'test api url helper' => sub {
-    is($helper->get_api_dirty_status_url('Proj1'), "$host/public/build/Proj1/_result");
-    is($helper->get_api_dirty_status_url('Proj2'), "$host/public/build/Proj2/_result?package=0product");
-    is($helper->get_api_dirty_status_url('BatchedProj'), "$host/public/build/BatchedProj/_result?package=000product");
+    is($helper->get_api_dirty_status_url('Proj1'), "$host/build/Proj1/_result");
+    is($helper->get_api_dirty_status_url('Proj2'), "$host/build/Proj2/_result?package=0product");
+    is($helper->get_api_dirty_status_url('BatchedProj'), "$host/build/BatchedProj/_result?package=000product");
 };
 
 subtest 'test builds_text helper' => sub {
@@ -153,5 +219,33 @@ $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(
 $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/published/)->content_like(qr/dirty/)
   ->content_like(qr/publishing/);
 
+subtest 'build service ssh authentication' => sub {
+    is($helper->is_status_dirty('ProjWithAuth'), 1, 're-authenticate with ssh auth');
+};
+
+subtest 'build service authentication: signature generation' => sub {
+    $mocked_time = 1664187470;
+    note 'time right now: ' . time();
+    is(time(), $mocked_time, 'Time is not frozen!');
+    is($helper->is_status_dirty('ProjTestingSignature'), 1, 'signature matches fixture');
+    $mocked_time = undef;
+};
+
+subtest 'build service authentication: error handling' => sub {
+    $ssh_keyfile->remove();
+    throws_ok {
+        $helper->is_status_dirty('ProjTestingSignature')
+    }
+    qr/SSH key file not found at/, 'Key detection logic failed (not existing key file)';
+
+    path($ssh_keyfile)->touch();
+    throws_ok {
+        $helper->is_status_dirty('ProjTestingSignature')
+    }
+    qr/SSH key file not found at/, 'Key detection logic failed (empty key file)';
+};
+
 $server_instance->stop;
 done_testing();
+
+# [0]: https://www.suse.com/c/multi-factor-authentication-on-suses-build-service/
