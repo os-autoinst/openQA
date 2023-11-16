@@ -1121,22 +1121,16 @@ subtest 'skip "ok" children' => sub {
 
     my $new_job_cluster = $clone->cluster_jobs;
     subtest 'dependencies of cloned jobs' => sub {
-        my @expected_job_ids = ((map { $_->clone_id } ($parent, $child_2, $child_2_child_1, $child_3)), $child_1->id);
-        is(ref $new_job_cluster->{$_}, 'HASH', "new cluster contains job $_") for @expected_job_ids;
-        is_deeply(
-            [sort @{$new_job_cluster->{$clone->id}{directly_chained_children}}],
-            [$child_1->id, $child_2->clone_id, $child_3->clone_id],
-            'parent contains all children, including the not restarted one'
-        );
-        is_deeply(
-            [sort @{$new_job_cluster->{$child_1->id}{directly_chained_parents}}],
-            [$parent->id, $clone->id],
-            'skipped job has nevertheless new parent (besides old one) to appear in the new dependency tree as well'
-        );
-        is_deeply([sort @{$new_job_cluster->{$child_2_child_1->clone_id}{directly_chained_parents}}],
-            [$child_2->clone_id], 'parent for child of child assigned');
-        # note: It is not exactly clear whether creating a dependency between the skipped job and the new
-        #       parent is the best behavior but let's assert it for now.
+        my @expected_job_ids = map { $_->clone_id } ($parent, $child_2, $child_2_child_1, $child_3);
+        is ref $new_job_cluster->{$_}, 'HASH', "new cluster contains job $_" for @expected_job_ids;
+        is_deeply [sort @{$new_job_cluster->{$clone->id}{directly_chained_children}}],
+          [$child_2->clone_id, $child_3->clone_id],
+          'parent contains all children, except the skipped one (as per poo#150917)';
+        my @child_1_parents = map { $_->parent_job_id } $child_1->parents->all;
+        is_deeply \@child_1_parents, [$parent->id],
+          'skipped job has only the old parent and not also the new parent (as per poo#150917)';
+        is_deeply [sort @{$new_job_cluster->{$child_2_child_1->clone_id}{directly_chained_parents}}],
+          [$child_2->clone_id], 'parent for child of child assigned';
     } or $log_jobs->() or diag explain $new_job_cluster;
 };
 
