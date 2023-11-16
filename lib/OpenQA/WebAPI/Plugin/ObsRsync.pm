@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::ObsRsync;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::File;
 use Mojo::URL;
 use Mojo::UserAgent;
 use POSIX 'strftime';
-
+use File::Which qw(which);
 use OpenQA::Log qw(log_error);
 
 my $dirty_status_filename = '.dirty_status';
@@ -40,11 +40,16 @@ sub register {
     my $plugin_r = $app->routes->find('ensure_operator');
     my $plugin_api_r = $app->routes->find('api_ensure_operator');
 
+    # ssh-keygen is needed for the Build Service authentication.
+    die("ssh-keygen is not availabe. Aborting.\n") unless which('ssh-keygen');
+
     if (!$plugin_r) {
         $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
     }
     else {
         $app->helper('obs_rsync.home' => sub { shift->app->config->{obs_rsync}->{home} });
+        $app->helper('obs_rsync.username' => sub { shift->app->config->{obs_rsync}->{username} });
+        $app->helper('obs_rsync.ssh_key_file' => sub { shift->app->config->{obs_rsync}->{ssh_key_file} });
         $app->helper('obs_rsync.concurrency' => sub { shift->app->config->{obs_rsync}->{concurrency} });
         $app->helper('obs_rsync.retry_interval' => sub { shift->app->config->{obs_rsync}->{retry_interval} });
         $app->helper('obs_rsync.retry_max_count' => sub { shift->app->config->{obs_rsync}->{retry_max_count} });
@@ -58,7 +63,7 @@ sub register {
                 my $repo = $helper->get_api_repo($alias);
                 my $url = $helper->get_api_dirty_status_url($project);
                 return undef unless $url;
-                my @res = $self->_is_obs_project_status_dirty($url, $project, $repo);
+                my @res = $self->_is_obs_project_status_dirty($url, $project, $repo, $helper);
                 if ($trace && scalar @res > 1 && $res[1]) {
                     # ignore potential errors because we use this only for cosmetic rendering
                     open(my $fh, '>', Mojo::File->new($c->obs_rsync->home, $project, $dirty_status_filename))
@@ -165,11 +170,24 @@ sub register {
 # try to determine whether project is dirty
 # undef means status is unknown
 sub _is_obs_project_status_dirty {
-    my ($self, $url, $project, $repo) = @_;
+    my ($self, $url, $project, $repo, $helper) = @_;
     return undef unless $url;
 
+    # Use only one UserAgent
     my $ua = $self->{ua} ||= Mojo::UserAgent->new;
-    my $res = $ua->get($url)->result;
+    my $tx = $ua->get($url);
+    my $res = $tx->result;
+    # Retry if authentication is required
+    if ($res->code == 401) {
+        my $username = $helper->username;
+        my $ssh_key_file = $helper->ssh_key_file;
+        my $auth_header = _bs_ssh_auth($res->headers->www_authenticate, $username, $ssh_key_file);
+
+        # Reassign the results
+        $tx = $ua->get($url, {Authorization => $auth_header});
+        $res = $tx->result;
+    }
+
     return undef unless $res->is_success;
     return _parse_obs_response_dirty($res, $repo);
 }
@@ -513,6 +531,26 @@ sub _for_every_batch {
         return @ret if @ret && $ret[0];
     }
     return @ret;
+}
+
+# Based on https://www.suse.com/c/multi-factor-authentication-on-suses-build-service/
+sub _bs_ssh_sign ($key, $realm, $value) {
+    die "SSH key file not found at $key" unless -s $key;
+    # This needs to be a bit portable for CI testing
+    my $tmp = Mojo::File::tempfile('obs-rsync-ssh-keyfile-XXXXX')->spew($value);
+    my @lines = split "\n", qx/ssh-keygen -Y sign -f "$key" -q -n "$realm" < $tmp/;
+    shift @lines;
+    pop @lines;
+    return join '', @lines;
+}
+
+sub _bs_ssh_auth ($challenge, $user, $key) {
+    die "Unexpected OBS challenge: $challenge" unless $challenge =~ /realm="([^"]+)".*headers="\(created\)"/;
+    my $realm = $1;
+
+    my $now = time();
+    my $signature = _bs_ssh_sign($key, $realm, "(created): $now");
+    return qq{Signature keyId="$user",algorithm="ssh",signature="$signature",headers="(created)",created="$now"};
 }
 
 1;

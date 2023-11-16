@@ -175,6 +175,7 @@ test_requires:
   '%main_requires':
   '%python_scripts_requires':
   '%worker_requires':
+  openssh-common:
   curl:
   jq:
   ShellCheck:

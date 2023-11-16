@@ -115,6 +115,8 @@ subtest 'Test configuration default modes' => sub {
             queue_limit => 200,
             concurrency => 2,
             project_status_url => '',
+            username => '',
+            ssh_key_file => '',
         },
         cleanup => {
             concurrent => 0,
