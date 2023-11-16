@@ -843,7 +843,7 @@ subtest 'clone chained child with siblings; then clone chained parent' =>
     #   |- C
     #   \- D
 
-    # B failed, auto clone it
+    # auto duplicate the incomplete job B
     my $jobBc = $jobB->auto_duplicate({dup_type_auto => 1});
     ok($jobBc, 'jobB duplicated');
 
