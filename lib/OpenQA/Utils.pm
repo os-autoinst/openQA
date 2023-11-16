@@ -80,8 +80,9 @@ BEGIN {
 }
 
 use constant UNCONSTRAINED_BUGREF_REGEX => $BUGREF_REGEX;
-use constant BUGREF_REGEX => qr{(?:^|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
+use constant BUGREF_REGEX => qr{(?:^|(?<=<p>)|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
 use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#]+))\b/;
+use constant FLAG_REGEX => qr/\bflag:(?<match>([\w:#]+))\b/;
 
 use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 
@@ -90,6 +91,7 @@ our @EXPORT = qw(
   UNCONSTRAINED_BUGREF_REGEX
   BUGREF_REGEX
   LABEL_REGEX
+  FLAG_REGEX
   locate_needle
   needledir
   productdir
@@ -101,6 +103,7 @@ our @EXPORT = qw(
   run_cmd_with_log_return_error
   parse_assets_from_settings
   find_labels
+  find_flags
   find_bugref
   find_bugrefs
   bugurl
@@ -427,6 +430,12 @@ sub find_labels {
     my @labels;
     push @labels, $+{match} while $text =~ /${\LABEL_REGEX}/g;
     return \@labels;
+}
+
+sub find_flags ($text) {
+    my @flags;
+    push @flags, $+{match} while $text =~ /${\FLAG_REGEX}/g;
+    return \@flags;
 }
 
 sub find_bugref {

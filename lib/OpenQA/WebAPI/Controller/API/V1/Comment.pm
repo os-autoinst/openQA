@@ -72,8 +72,11 @@ sub _comments ($self) {
 =item list()
 
 Returns a list of comments for a job or a job group given its id. For each comment the
-list includes its bug references, date of creation, comment id, rendered markdown text,
+list includes its bug references, date of creation, comment id,
 text, date of update and the user name that created the comment.
+
+Add the optional "render_markdown=1" parameter to include the rendered markdown text
+for each comment.
 
 =back
 
@@ -82,7 +85,8 @@ text, date of update and the user name that created the comment.
 sub list ($self) {
     my $comments = $self->_comments();
     return unless $comments;
-    $self->render(json => [map { $_->extended_hash } $comments->all]);
+    my $render_markdown = $self->param('render_markdown') // 0;
+    $self->render(json => [map { $_->extended_hash($render_markdown) } $comments->all]);
 }
 
 

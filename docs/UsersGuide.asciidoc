@@ -307,7 +307,7 @@ image::images/review_badges.png[Review badges]
 
 (To simplify, checking for false-negatives is not considered here.)
 
-=== Bug references and labels
+=== Bug references, labels and flags
 ==== Bug references
 It is possible to reference a bug by writing `<bugtracker_shortname>#<bug_nr>`
 in a comment, e.g. `bsc#1234`. It is also possible to spell out the full URL,
@@ -316,6 +316,8 @@ shortened automatically. A bug reference is rendered as link and a bug icon
 is displayed for the job in various places as shown in the figure below.
 A comment containing a bug reference will also be
 <<UsersGuide.asciidoc#carry-over,carried over>> to reduce manual review work.
+Refer to the Flags section below for other ways to trigger automated comment
+carryover.
 
 WARNING: If you want to reference a bug without making it count as a bug
 reference you need to wrap it into a label (see subsequent section), e.g.
@@ -364,7 +366,15 @@ operator permissions.
 
 NOTE: `force_result`-labels are evaluated when when a comment is
 <<UsersGuide.asciidoc#carry-over,carried over>>. However, the carry over will
-only happen when the comment *also* contains a bug reference.
+only happen when the comment *also* contains a bug reference or `flag:carryover`.
+
+==== Flags
+Currently there is only one flag for job comments supported.
+
+===== flag:carryover
+Adding `flag:carryover` to a comment, will result in this comment being
+<<UsersGuide.asciidoc#carry-over,carried over>> to a new job failing for
+the same reason, without a bugref required.
 
 === Distinguish product and test issues bugref https://github.com/os-autoinst/openQA/pull/708[gh#708]
 
@@ -563,7 +573,9 @@ prefix the status with the build number.
 Many test failures within the same scenario might be due to the same reason.
 To avoid human reviewers having to add the same bug references again and
 again, bug references are carried over from previous failures in the same
-scenario if a job fails. This idea is inspired by the
+scenario if a job fails. The same behaviour can be achieved by adding
+`flag:carryover` to a comment.
+This idea is inspired by the
 https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin[Claim plugin] for
 Jenkins.
 

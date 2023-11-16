@@ -227,28 +227,28 @@ EOF
 
     # uses ( delimiter for qr as there are / in the text
     like($comments[0]->get_text(),
-qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630 bnc#1246 gh#os-autoinst/openQA#1234 gh#os-autoinst/os-autoinst#960 bgo#768954 brc#1401123)
+qr(bsc#1234  boo#2345, poo#3456 t#4567 .*poo#6789  bsc#7890 bsc#1000629 bsc#1000630  bnc#1246  gh#os-autoinst/openQA#1234  gh#os-autoinst/os-autoinst#960  bgo#768954  brc#1401123)
     );
     my @urls = $driver->find_elements('div.media-comment a', 'css');
     is(scalar @urls, 19);
     is((shift @urls)->get_text(), 'http://localhost:9562', "url2");
     is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
     is((shift @urls)->get_text(), 'http://localhost/foo/bar', "url4");
-    is((shift @urls)->get_text(), 'bsc#1234', "url5");
-    is((shift @urls)->get_text(), 'boo#2345', "url6");
-    is((shift @urls)->get_text(), 'poo#3456', "url7");
+    is((shift @urls)->get_text(), ' bsc#1234', "url5");
+    is((shift @urls)->get_text(), ' boo#2345', "url6");
+    is((shift @urls)->get_text(), ' poo#3456', "url7");
     is((shift @urls)->get_text(), 't#4567', "url8");
     is((shift @urls)->get_text(), 't#5678/modules/welcome/steps/1', "url9");
-    is((shift @urls)->get_text(), 'poo#6789', "url10");
-    is((shift @urls)->get_text(), 'bsc#7890', "url11");
+    is((shift @urls)->get_text(), ' poo#6789', "url10");
+    is((shift @urls)->get_text(), ' bsc#7890', "url11");
     is((shift @urls)->get_text(), 'bsc#1000629', "url12");
-    is((shift @urls)->get_text(), 'bnc#1246', "url14");
-    is((shift @urls)->get_text(), 'gh#os-autoinst/openQA#1234', "url15");
-    is((shift @urls)->get_text(), 'gh#os-autoinst/os-autoinst#960', "url16");
-    is((shift @urls)->get_text(), 'bgo#768954', "url17");
-    is((shift @urls)->get_text(), 'brc#1401123', "url18");
-    is((shift @urls)->get_text(), 'bgo#690345', "url19");
-    is((shift @urls)->get_text(), 'brc#343098', "url20");
+    is((shift @urls)->get_text(), ' bnc#1246', "url14");
+    is((shift @urls)->get_text(), ' gh#os-autoinst/openQA#1234', "url15");
+    is((shift @urls)->get_text(), ' gh#os-autoinst/os-autoinst#960', "url16");
+    is((shift @urls)->get_text(), ' bgo#768954', "url17");
+    is((shift @urls)->get_text(), ' brc#1401123', "url18");
+    is((shift @urls)->get_text(), ' bgo#690345', "url19");
+    is((shift @urls)->get_text(), ' brc#343098', "url20");
     is((shift @urls)->get_text(), 'bsc#1043970', "url21");
 
     my @urls2 = $driver->find_elements('div.media-comment a', 'css');

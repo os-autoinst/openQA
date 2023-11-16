@@ -5,7 +5,7 @@ package OpenQA::Schema::Result::Comments;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::Jobs::Constants;
-use OpenQA::Utils qw(find_labels find_bugref find_bugrefs);
+use OpenQA::Utils qw(find_labels find_flags find_bugref find_bugrefs);
 use OpenQA::Markdown qw(markdown_to_html);
 use List::Util qw(first);
 
@@ -107,6 +107,17 @@ sub label ($self) {
     return find_labels($self->text)->[0];
 }
 
+=head2 text_flags
+
+Returns flag values if C<$self> has flags, e.g. 'flag:carryover flag:foobar' returns a hashref with the keys 'carryover' and 'foobar'
+=cut
+sub text_flags ($self) {
+    my $flags = find_flags($self->text);
+    my %flag_hash;
+    @flag_hash{@$flags} = ();
+    return \%flag_hash;
+}
+
 =head2 force_result
 
 Returns new result value if C<$self> is a special "force_result" label, e.g.
@@ -158,11 +169,11 @@ sub event_data ($self) {
     return $data;
 }
 
-sub extended_hash ($self) {
+sub extended_hash ($self, $render_markdown = 1) {
     return {
         id => $self->id,
         text => $self->text,
-        renderedMarkdown => $self->rendered_markdown->to_string,
+        renderedMarkdown => ($render_markdown) ? $self->rendered_markdown->to_string : undef,
         bugrefs => $self->bugrefs,
         created => $self->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
         updated => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),

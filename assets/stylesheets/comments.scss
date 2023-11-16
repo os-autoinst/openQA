@@ -47,17 +47,37 @@
         }
     }
 
-    .openqa-label {
+    .openqa-bugref, .openqa-label, .openqa-flag {
         position: relative;
+        padding: .3em;
+        padding-left: .25em;
+        border-radius: .25rem;
+        white-space: nowrap;
+    }
+
+    .openqa-bugref {
+        background-color: #eee;
+        color: #666666;
+        border: 1px solid #ddd;
+    }
+
+    .openqa-label {
         background-color: #fdfd96;
         color: #666666;
-        padding: .3em;
-        padding-left: 1.25em;
-        border-radius: .25rem;
         border: 1px solid #ecec85;
     }
 
-    .openqa-label::before {
+    .openqa-flag {
+        background-color: #fdd596;
+        color: #666666;
+        border: 1px solid #ecd785;
+    }
+
+    .openqa-label, .openqa-flag {
+        padding-left: 1.25em;
+    }
+
+    .openqa-label::before, .openqa-flag::before {
         display: inline-block;
         font-style: normal;
         font-variant: normal;
@@ -65,7 +85,6 @@
         font-family: "ForkAwesome";
         font-weight: 900;
         font-size: .8em;
-        content: "\f02e";
         position: absolute;
         left: 0;
         top: 50%;
@@ -73,6 +92,15 @@
         width: 1.25em;
         text-align: center;
         padding-left: .25em;
+    }
+
+    .openqa-label::before {
+        content: "\f02e";
+    }
+
+
+    .openqa-flag::before {
+        content: "\f024";
     }
 
     .well {

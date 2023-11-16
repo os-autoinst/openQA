@@ -53,6 +53,9 @@
                 % } else {
                     <a class="help_popover fa fa-ticket" title="Add force result label" role="button"
                        data-template="label:force_result:new_result[:description_or_bugref]" onclick="insertTemplate(this)"></a>
+                    <br>
+                    <a class="help_popover fa fa-flag" title="Flag this comment for carryover even without issue reference. This is useful for comments containing only a force-result label that won't trigger automatic carryover despite an issue reference being a part of the label." role="button"
+                       data-template="flag:carryover" onclick="insertTemplate(this)"></a>
                 % }
                 <br>
                 %= include_branding 'commenting_tools';
