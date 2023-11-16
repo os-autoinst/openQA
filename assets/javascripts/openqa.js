@@ -213,10 +213,22 @@ function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetEle
   return true;
 }
 
-function forceJobRestartViaRestartLink(restartLink) {
-  if (!restartLink.href.endsWith('?force=1')) {
-    restartLink.href += '?force=1';
+function addParam(path, key, value) {
+  const paramsStart = path.indexOf('?');
+  let params;
+  if (paramsStart === -1) {
+    params = new URLSearchParams();
+    path = path + '?';
+  } else {
+    params = new URLSearchParams(path.substr(paramsStart + 1));
+    path = path.substr(0, paramsStart + 1);
   }
+  params.set(key, value);
+  return path + params.toString();
+}
+
+function forceJobRestartViaRestartLink(restartLink) {
+  restartLink.href = addParam(restartLink.href, 'force', '1');
   restartLink.click();
 }
 
@@ -242,7 +254,13 @@ function restartJob(ajaxUrl, jobId) {
       } catch {
         // Intentionally ignore all errors
       }
-      if (showJobRestartResults(responseJSON, newJobUrl, restartJob.bind(undefined, ajaxUrl + '?force=1', jobId))) {
+      if (
+        showJobRestartResults(
+          responseJSON,
+          newJobUrl,
+          restartJob.bind(undefined, addParam(ajaxUrl, 'force', '1'), jobId)
+        )
+      ) {
         return;
       }
       if (newJobUrl) {
