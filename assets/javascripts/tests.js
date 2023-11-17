@@ -488,7 +488,7 @@ function setupTestButtons() {
 function setupResultButtons() {
   $('.restart-result').click(function (event) {
     event.preventDefault();
-    restartJob($(this).attr('href'), $(this).data('jobid'));
+    restartJob(this.href, this.dataset.jobid);
     // prevent posting twice by clicking #restart-result
     return false;
   });

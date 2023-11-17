@@ -146,6 +146,11 @@ subtest 'restart job from info panel in test results' => sub {
             expected_job_id_regex(2),
             'warning with link to new job appears'
         );
+
+        my $test = "return addParam('/api/v1/jobs/123/restart?skip_ok_result_children=1', 'force', '1')";
+        my $path = $driver->execute_script($test);
+        is $path, '/api/v1/jobs/123/restart?skip_ok_result_children=1&force=1',
+          'advanced restarting parameter preserved when adding force parameter';
     };
     subtest 'successful restart' => sub {
         is($driver->get('/tests/99946'), 1, 'go to job 99946');
