@@ -55,6 +55,10 @@
         white-space: nowrap;
     }
 
+    *>.openqa-bugref, *>.openqa-label, *>.openqa-flag {
+        line-height: 2.05;
+    }
+
     .openqa-bugref {
         background-color: #eee;
         color: #666666;
