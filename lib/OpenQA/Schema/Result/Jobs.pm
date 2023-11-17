@@ -643,6 +643,7 @@ sub _create_clone_with_parent ($res, $clones, $p, $dependency) {
 }
 
 sub _create_clone_with_child ($res, $clones, $c, $dependency) {
+    return undef unless exists $clones->{$c};
     $c = $clones->{$c}->id if defined $clones->{$c};
     $res->children->find_or_create({child_job_id => $c, dependency => $dependency});
 }
