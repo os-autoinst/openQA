@@ -676,12 +676,17 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_meaning_of_the_different_colors">Meaning of the different colors</a></li>
 </ul>
 </li>
-<li><a href="#_bug_references_and_labels">Bug references and labels</a>
+<li><a href="#_bug_references_labels_and_flags">Bug references, labels and flags</a>
 <ul class="sectlevel3">
 <li><a href="#_bug_references">Bug references</a></li>
 <li><a href="#_labels">Labels</a>
 <ul class="sectlevel4">
 <li><a href="#_overwrite_result_of_job">Overwrite result of job</a></li>
+</ul>
+</li>
+<li><a href="#_flags">Flags</a>
+<ul class="sectlevel4">
+<li><a href="#_flagcarryover">flag:carryover</a></li>
 </ul>
 </li>
 </ul>
@@ -2311,17 +2316,12 @@ You can do that in <code>/etc/openqa/openqa.ini</code>:</p>
 <div class="sect2">
 <h3 id="database">Database</h3>
 <div class="paragraph">
-<p>Since version <em>4.5.1512500474.437cc1c7</em> of openQA, PostgreSQL is used as the
-database.</p>
-</div>
-<div class="paragraph">
-<p>To configure access to the database in openQA, edit <code>/etc/openqa/database.ini</code>
-and change the settings in the <code>[production]</code> section.</p>
-</div>
-<div class="paragraph">
-<p>The <code>dsn</code> value format technically depends on the database type and is
-documented for PostgreSQL at
-<a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg</a></p>
+<p>openQA uses PostgreSQL as database. By default, a database with name <code>openqa</code>
+and <code>geekotest</code> user as owner is used. An automatic setup of a freshly
+installed PostgreSQL instance can be done using <a href="https://github.com/os-autoinst/openQA/blob/master/script/setup-db">this script</a>.
+The database connection can be configured in <code>/etc/openqa/database.ini</code>
+(normally the <code>[production]</code> section is relevant). More info about the <code>dsn</code>
+value format can be found in the <a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg documentation</a>.</p>
 </div>
 <div class="sect3">
 <h4 id="_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</h4>
@@ -4508,7 +4508,7 @@ reason is stated:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_bug_references_and_labels">Bug references and labels</h3>
+<h3 id="_bug_references_labels_and_flags">Bug references, labels and flags</h3>
 <div class="sect3">
 <h4 id="_bug_references">Bug references</h4>
 <div class="paragraph">
@@ -4518,7 +4518,9 @@ e.g. <code><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234" class="bare"
 shortened automatically. A bug reference is rendered as link and a bug icon
 is displayed for the job in various places as shown in the figure below.
 A comment containing a bug reference will also be
-<a href="#carry-over">carried over</a> to reduce manual review work.</p>
+<a href="#carry-over">carried over</a> to reduce manual review work.
+Refer to the Flags section below for other ways to trigger automated comment
+carryover.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -4616,10 +4618,24 @@ operator permissions.</p>
 <td class="content">
 <code>force_result</code>-labels are evaluated when when a comment is
 <a href="#carry-over">carried over</a>. However, the carry over will
-only happen when the comment <strong>also</strong> contains a bug reference.
+only happen when the comment <strong>also</strong> contains a bug reference or <code>flag:carryover</code>.
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_flags">Flags</h4>
+<div class="paragraph">
+<p>Currently there is only one flag for job comments supported.</p>
+</div>
+<div class="sect4">
+<h5 id="_flagcarryover">flag:carryover</h5>
+<div class="paragraph">
+<p>Adding <code>flag:carryover</code> to a comment, will result in this comment being
+<a href="#carry-over">carried over</a> to a new job failing for
+the same reason, without a bugref required.</p>
 </div>
 </div>
 </div>
@@ -4899,7 +4915,9 @@ prefix the status with the build number.</p>
 <p>Many test failures within the same scenario might be due to the same reason.
 To avoid human reviewers having to add the same bug references again and
 again, bug references are carried over from previous failures in the same
-scenario if a job fails. This idea is inspired by the
+scenario if a job fails. The same behaviour can be achieved by adding
+<code>flag:carryover</code> to a comment.
+This idea is inspired by the
 <a href="https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin">Claim plugin</a> for
 Jenkins.</p>
 </div>
@@ -12388,7 +12406,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-24 02:23:10 UTC
+Last updated 2023-11-17 02:23:20 UTC
 </div>
 </div>
 </body>
