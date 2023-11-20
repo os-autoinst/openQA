@@ -160,7 +160,7 @@
   /usr/share/qemu/* rk,
   /usr/share/seabios/* r,
   /usr/share/qemu/keymaps/* r,
-  /usr/share/OVMF/* rk,
+  /usr/share/{AA,O}VMF/* rk,
   /var/lib/openqa/cache/ r,
   /var/lib/openqa/cache/** rwk,
   /var/lib/openqa/pool/ r,
