@@ -71,6 +71,17 @@ subtest 'handling assets with invalid name' => sub {
 
 is $scheduled_product->schedule_iso(\%settings), undef, 'scheduling the same product again prevented';
 
+subtest 'asset registration on scheduling' => sub {
+    my $assets = $schema->resultset('Assets');
+    my %asset_info = (type => 'iso', name => 'dvdsize42.iso');
+    $schema->storage->dbh->prepare('delete from assets where name = ? ')->execute('dvdsize42.iso');
+    is $assets->find(\%asset_info), undef, 'dvdsize42.iso is not known yet';
+    $scheduled_product = $scheduled_products->create(\%settings);
+    $scheduled_product->schedule_iso({ISO => 'dvdsize42.iso'});
+    is $assets->find(\%asset_info)->size, 42, 'dvdsize42.iso has known size';
+    $scheduled_product->discard_changes;
+};
+
 my $test_job = $scheduled_product->jobs->create({TEST => 'testjob'});
 subtest 'cancellation after product has been scheduled' => sub {
     is $scheduled_product->cancel('test reason 1'), 1, 'cancel returns the number of affected jobs';
