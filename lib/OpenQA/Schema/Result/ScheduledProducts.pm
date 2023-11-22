@@ -269,7 +269,7 @@ sub _schedule_iso {
     $force = delete $args->{_FORCE_OBSOLETE} || $force;
     if (($deprioritize || $obsolete) && $args->{TEST} && !$force) {
         return {error => 'One must not specify TEST and _DEPRIORITIZEBUILD=1/_OBSOLETE=1 at the same time as it is'
-              . 'likely not intended to deprioritize the whole build when scheduling a single scenario.'
+              . ' likely not intended to deprioritize the whole build when scheduling a single scenario.'
         };
     }
 
