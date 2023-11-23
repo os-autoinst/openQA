@@ -175,7 +175,7 @@ WORKER_CLASS = qemu_x86_64,tap
 
 NOTE: The number of tap devices should correspond to the number of the running
 worker instances. For example, if you have set up 3 worker instances, the same
-number of tab devices should be configured.
+number of tap devices should be configured.
 
 Enable worker instances to be started on system boot:
 
