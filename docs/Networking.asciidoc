@@ -63,9 +63,9 @@ https://github.com/os-autoinst/os-autoinst/blob/master/script/os-autoinst-setup-
 
 The configuration is applicable for openSUSE and will use _Open
 vSwitch_ for virtual switch, _firewalld_ (or _SuSEfirewall2_ for older
-versions) for NAT and _wicked_ as network manager. Keep in mind that a
-firewall is not strictly necessary for operation. The operation without
-firewall is not covered in all necessary details in this documentation.
+versions) for NAT and _wicked_ or _NetworkManager_ as network manager. Keep in
+mind that a firewall is not strictly necessary for operation. The operation
+without firewall is not covered in all necessary details in this documentation.
 
 NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is described
 on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
@@ -175,7 +175,7 @@ WORKER_CLASS = qemu_x86_64,tap
 
 NOTE: The number of tap devices should correspond to the number of the running
 worker instances. For example, if you have set up 3 worker instances, the same
-number of tab devices should be configured.
+number of tap devices should be configured.
 
 Enable worker instances to be started on system boot:
 
