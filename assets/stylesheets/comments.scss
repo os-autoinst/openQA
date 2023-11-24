@@ -47,7 +47,7 @@
         }
     }
 
-    .openqa-bugref, .openqa-label, .openqa-flag {
+    .openqa-bugref, .openqa-label, .openqa-flag, .openqa-testref {
         position: relative;
         padding: .3em;
         padding-left: .25em;
@@ -55,11 +55,11 @@
         white-space: nowrap;
     }
 
-    *>.openqa-bugref, *>.openqa-label, *>.openqa-flag {
+    *>.openqa-bugref, *>.openqa-label, *>.openqa-flag *>.openqa-testref {
         line-height: 2.05;
     }
 
-    .openqa-bugref {
+    .openqa-bugref, .openqa-testref {
         background-color: #eee;
         color: #666666;
         border: 1px solid #ddd;
@@ -75,6 +75,11 @@
         background-color: #fdd596;
         color: #666666;
         border: 1px solid #ecd785;
+    }
+
+    .openqa-testref i {
+        padding-left: 0.2em;
+        padding-right: 0.23em;
     }
 
     .openqa-label, .openqa-flag {

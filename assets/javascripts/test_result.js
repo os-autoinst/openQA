@@ -775,7 +775,7 @@ function renderCommentsTab(response) {
       if (href === undefined) {
         return;
       }
-      const re = new RegExp('^https?://' + hostname + '/t([0-9]+)$');
+      const re = new RegExp('^(?:https?://' + hostname + ')?/(?:tests/|t)([0-9]+)$');
       const found = href.match(re);
       if (!found) {
         return;
@@ -784,12 +784,16 @@ function renderCommentsTab(response) {
       const url = urlWithBase('/api/v1/experimental/jobs/' + id + '/status');
       $.ajax(url)
         .done(function (response) {
+          const span = document.createElement('span');
+          span.className = 'openqa-testref';
           const i = document.createElement('i');
           const job = response;
           const stateHTML = testStateHTML(job);
           i.className = stateHTML[0];
-          i.title = stateHTML[1];
-          element.appendChild(i);
+          span.title = stateHTML[1];
+          span.appendChild(i);
+          element.parentNode.replaceChild(span, element);
+          span.appendChild(element);
         })
         .fail(function (jqXHR, textStatus, errorThrown) {});
     });
