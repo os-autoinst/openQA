@@ -322,7 +322,7 @@ EOM
         write_comment $urls, 'comment with job status icons';
         $driver->refresh;
         wait_for_ajax msg => 'comment with status icons loaded';
-        my @i = $driver->find_elements('div.comment-body a i.status');
+        my @i = $driver->find_elements('div.comment-body span.openqa-testref i.status');
         is $i[0]->get_attribute('class'), 'status fa fa-circle result_passed', "Icon for success is shown";
         is $i[1]->get_attribute('class'), 'status fa fa-circle result_failed', "Icon for failure is shown";
     };
