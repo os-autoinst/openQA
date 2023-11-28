@@ -18,6 +18,7 @@ use OpenQA::Utils (
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
+use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Setup;
 use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
@@ -313,6 +314,11 @@ sub scenario_description ($self) {
     return $description if defined $description;
     my $scenario = $self->scenario or return undef;
     return $scenario->description;
+}
+
+sub rendered_scenario_description ($self) {
+    return undef unless my $desc = $self->scenario_description;
+    return Mojo::ByteStream->new(markdown_to_html($desc));
 }
 
 # return 0 if we have no worker
