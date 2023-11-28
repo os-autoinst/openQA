@@ -5,7 +5,7 @@ Release:        0
 Summary:        Test package for %{short_name}
 License:        GPL-2.0-or-later
 BuildRequires:  %{short_name} == %{version}
-ExcludeArch:    i586
+ExcludeArch:   %{ix86} 
 %ifarch ppc ppc64 ppc64le s390x
 # missing chromedriver dependency
 ExclusiveArch:  do_not_build

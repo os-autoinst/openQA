@@ -8,7 +8,7 @@ BuildRequires:  %{short_name} == %{version}
 %if 0%{?suse_version} > 1500
 BuildRequires:  user(_openqa-worker)
 %endif
-ExcludeArch:    i586
+ExcludeArch:    %{ix86}
 
 %description
 .
