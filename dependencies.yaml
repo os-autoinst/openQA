@@ -21,6 +21,7 @@ assetpack_requires:
   perl(CSS::Minifier::XS): '>= 0.01'
   perl(JavaScript::Minifier::XS): '>= 0.11'
   perl(Mojolicious::Plugin::AssetPack): '>= 1.36'
+  perl(YAML::PP): '>= 0.026'
 
 build_requires:
   rubygem(sass):

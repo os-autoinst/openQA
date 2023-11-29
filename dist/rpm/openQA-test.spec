@@ -9,7 +9,7 @@ BuildRequires:  openQA-local-db
 %if 0%{?suse_version} > 1500
 BuildRequires:  user(geekotest)
 %endif
-ExcludeArch:    i586
+ExcludeArch:    %{ix86}
 
 %description
 .
