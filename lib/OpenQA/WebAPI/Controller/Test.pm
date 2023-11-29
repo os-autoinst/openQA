@@ -363,7 +363,7 @@ sub live ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
     my $current_user = $self->current_user;
     my $worker = $job->worker;
-    my $worker_vnc = ($worker ? $worker->host . ':' . (5990 + $worker->instance) : undef);
+    my $worker_vnc = $worker ? $worker->vnc_argument : undef;
     $self->stash(
         {
             ws_developer_url => determine_web_ui_web_socket_url($job->id),
