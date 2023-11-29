@@ -286,4 +286,10 @@ sub reschedule_assigned_jobs {
     }
 }
 
+sub vnc_argument ($self) {
+    my $hostname = $self->get_property('WORKER_HOSTNAME') // $self->host;
+    my $instance = $self->instance + 5990;
+    return "$hostname:$instance";
+}
+
 1;

@@ -121,4 +121,12 @@ subtest 'tmpdir handling when assigning multiple jobs to a worker' => sub {
     ok !-d $tmpdir, 'previous tmpdir removed';
     path($worker->get_property('WORKER_TMPDIR'))->remove_tree;
 };
+
+subtest 'VNC argument' => sub {
+    my $worker = $workers->first;
+    is $worker->vnc_argument, 'remotehost:5991', 'host:instance returned';
+    $worker->set_property(WORKER_HOSTNAME => 'remotehost.foo.bar');
+    is $worker->vnc_argument, 'remotehost.foo.bar:5991', 'WORKER_HOSTNAME used if set';
+};
+
 done_testing();
