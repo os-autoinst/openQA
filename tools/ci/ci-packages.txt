@@ -59,7 +59,7 @@ libXvnc1-1.12.0
 lsof-4.91
 luit-20150706
 openssh-common-8.4p1
-optipng-0.7.7
+optipng-0.7.8
 pciutils-3.5.6
 perl-Algorithm-C3-0.11
 perl-Algorithm-Diff-1.1903
