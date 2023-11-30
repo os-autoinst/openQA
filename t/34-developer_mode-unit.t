@@ -732,7 +732,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => undef,
+                data => {vnc_arg => 'remotehost.qa:5991'},
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(
@@ -777,7 +777,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => undef,
+                data => {vnc_arg => 'remotehost.qa:5991'},
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(
@@ -832,7 +832,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => undef,
+                data => {vnc_arg => 'remotehost.qa:5991'},
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(
@@ -905,7 +905,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
-                data => undef,
+                data => {vnc_arg => 'remotehost.qa:5991'},
             });
         $t_livehandler->message_ok('another message received');
         $t_livehandler->json_message_is(

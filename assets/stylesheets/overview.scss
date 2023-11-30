@@ -47,29 +47,23 @@
 }
 
 #filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
+    #developer-status span, .card-header-appendix span {
+        color: #555;
+        float: right;
+        font-weight: 500;
+    }
+    .card-header-appendix span {
+        text-align: right;
+        width: 100%;
+        display: inline-block;
+        font-weight: normal;
+    }
     .card-header {
         cursor: pointer;
-
-        span {
-            color: #555;
-            font-weight: 500;
-            float: right;
-        }
-        .row span {
-            text-align: right;
-            width: 100%;
-            display: inline-block;
-            float: none;
-        }
-    }
-    .card-header-appendix, .card-header-appendix span {
-        font-weight: normal;
-        float: none;
     }
     .card-body, .developer-mode-element {
         display: none;
     }
-
     #filter-form {
         strong {
             display: block;

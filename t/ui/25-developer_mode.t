@@ -195,6 +195,10 @@ subtest 'state shown when connected' => sub {
     );
     element_hidden('#developer-panel .card-body');
 
+    # fake "connecting" message which contains VNC argument
+    my $connecting = '{\"type\":\"info\",\"what\":\"connecting\",\"data\":{\"vnc_arg\":\"remotehost:5991\"}}';
+    fake_message_from_ws_connection($connecting);
+
     # running, current module known
     fake_state(developerMode => {currentModule => '"installation-welcome"'});
     element_hidden('#developer-vnc-notice');
