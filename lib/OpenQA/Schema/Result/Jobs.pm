@@ -503,6 +503,7 @@ sub to_hash ($job, %args) {
             $j->{parent_group} = $parent_group->name;
         }
     }
+    $j->{missing_assets} = $job->missing_assets if $args{check_assets};
     return $j;
 }
 
