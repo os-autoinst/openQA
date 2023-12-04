@@ -147,6 +147,27 @@
                         </div>
                     </div>
                 </div>
+                <div class="row" id="filter-job-groups">
+                    <div class="col-5">
+                        <div class="form-group">
+                            <label for="group-glob"><strong>Include job groups</strong></label>
+                            <%= help_popover('Help for the <em>Include job group</em> filter' => '
+                            <p>Shows jobs from job groups matching these globs</p>') %>
+                            <input name="group_glob" type="text" id="group-glob"
+                            placeholder="globs, comma separated, e.g. *kernel*,*Tumbleweed*"
+                            class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <div class="form-group">
+                            <label for="not-group-glob"><strong>Exclude job groups</strong></label>
+                            <%= help_popover('Help for the <em>Exclude job groups</em> filter' => '
+                            <p>Do not show jobs matching these globs</p>') %>
+                            <input type="text" class="form-control" name="not_group_glob"
+                            placeholder="globs, comma separated, e.g. *development*,*test*" id="not-group-glob">
+                        </div>
+                    </div>
+                </div>
                 <div class="form-group">
                     <strong>Misc</strong>
                     <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
