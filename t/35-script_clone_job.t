@@ -41,7 +41,7 @@ use Mojo::Transaction;
     }
 }
 
-my @argv = qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40);
+my @argv = qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 create_hpc:WORKER_CLASS+=-parent);
 my %options = ('parental-inheritance' => '');
 my %child_settings = (
     NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-hpc_test@64bit',
@@ -68,7 +68,7 @@ subtest 'clone job apply settings tests' => sub {
     is_deeply(\%child_settings, \%test_settings, 'cloned child job with correct global setting and new settings');
 
     %test_settings = %parent_settings;
-    $test_settings{WORKER_CLASS} = 'local';
+    $test_settings{WORKER_CLASS} = 'local-parent';
     delete $test_settings{NAME};
     clone_job_apply_settings(\@argv, 2, \%parent_settings, \%options);
     is_deeply(\%parent_settings, \%test_settings, 'cloned parent job only take global setting');

@@ -39,13 +39,13 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
 
     for my $arg (@$argv) {
         # split arg into key and value
-        unless ($arg =~ /([A-Z0-9_]+\+?)=(.*)/) {
+        unless ($arg =~ /(([a-zA-Z0-9_]+):)?([A-Z0-9_]+\+?)=(.*)/) {
             warn "arg '$arg' does not match";
             next;
         }
-        my ($key, $value) = ($1, $2);
-
-        next unless is_global_setting($key) || $depth <= 1 || $options->{'parental-inheritance'};
+        my ($scope, $key, $value) = ($2, $3, $4);
+        next if defined $scope && ($settings->{TEST} // '') ne $scope;
+        next if !defined $scope && !is_global_setting($key) && $depth > 1 && !$options->{'parental-inheritance'};
 
         # delete key if value empty
         if (!defined $value || $value eq '') {
