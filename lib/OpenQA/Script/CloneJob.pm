@@ -40,7 +40,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
     for my $arg (@$argv) {
         # split arg into key and value
         unless ($arg =~ /(([a-zA-Z0-9_]+):)?([A-Z0-9_]+\+?)=(.*)/) {
-            warn "arg '$arg' does not match";
+            warn "command-line argument '$arg' is no valid setting and will be ignored\n";
             next;
         }
         my ($scope, $key, $value) = ($2, $3, $4);

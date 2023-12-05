@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Test::Warnings ':report_warnings';
+use Test::Warnings qw(:report_warnings warning);
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -72,6 +72,9 @@ subtest 'clone job apply settings tests' => sub {
     delete $test_settings{NAME};
     clone_job_apply_settings(\@argv, 2, \%parent_settings, \%options);
     is_deeply(\%parent_settings, \%test_settings, 'cloned parent job only take global setting');
+
+    like warning { clone_job_apply_settings(['foo'], 1, \%child_settings, \%options) },
+      qr/no valid setting/, 'warning when argument is no valid setting';
 };
 
 subtest '_GROUP and _GROUP_ID override each other' => sub {
