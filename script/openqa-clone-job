@@ -73,7 +73,7 @@ instead of generated.
 Keep in mind that by default any additionally specified job settings are NOT
 added to the also cloned parent jobs. Specify C<--parental-inheritance> if this
 is wanted. It is also possible to specify the job a setting should be added to
-explicitly, e.g. C<create_hpc:WORKER_CLASS=special-worker>. In this example the
+explicitly, e.g. C<WORKER_CLASS:create_hpc=special-worker>. In this example the
 setting "WORKER_CLASS" will only be set to the specified value for jobs where
 the setting "TEST" equals "create_hpc".
 

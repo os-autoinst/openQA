@@ -39,11 +39,11 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
 
     for my $arg (@$argv) {
         # split arg into key and value
-        unless ($arg =~ /(([a-zA-Z0-9_]+):)?([A-Z0-9_]+\+?)=(.*)/) {
+        unless ($arg =~ /([A-Z0-9_]+)(:(\w+))?(\+)?=(.*)/) {
             warn "command-line argument '$arg' is no valid setting and will be ignored\n";
             next;
         }
-        my ($scope, $key, $value) = ($2, $3, $4);
+        my ($key, $scope, $plus, $value) = ($1, $3, $4, $5);
         next if defined $scope && ($settings->{TEST} // '') ne $scope;
         next if !defined $scope && !is_global_setting($key) && $depth > 1 && !$options->{'parental-inheritance'};
 
@@ -54,10 +54,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
         }
 
         # allow appending via `+=`
-        if (substr($key, -1) eq '+') {
-            $key = substr $key, 0, -1;
-            $value = ($settings->{$key} // '') . $value;
-        }
+        $value = ($settings->{$key} // '') . $value if $plus;
 
         # assign value to key, delete overrides
         $settings->{$key} = $value;

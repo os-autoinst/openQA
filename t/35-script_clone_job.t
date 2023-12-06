@@ -41,7 +41,7 @@ use Mojo::Transaction;
     }
 }
 
-my @argv = qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 create_hpc:WORKER_CLASS+=-parent);
+my @argv = qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 WORKER_CLASS:create_hpc+=-parent);
 my %options = ('parental-inheritance' => '');
 my %child_settings = (
     NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-hpc_test@64bit',
