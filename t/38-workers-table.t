@@ -124,6 +124,7 @@ subtest 'tmpdir handling when assigning multiple jobs to a worker' => sub {
 
 subtest 'VNC argument' => sub {
     my $worker = $workers->first;
+    $worker->set_property(WORKER_HOSTNAME => '');
     is $worker->vnc_argument, 'remotehost:5991', 'host:instance returned';
     $worker->set_property(WORKER_HOSTNAME => 'remotehost.foo.bar');
     is $worker->vnc_argument, 'remotehost.foo.bar:5991', 'WORKER_HOSTNAME used if set';

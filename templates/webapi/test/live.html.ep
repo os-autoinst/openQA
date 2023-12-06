@@ -44,11 +44,9 @@
         </div>
         <div class="row">
             <div class="col-sm-12" id="developer-flash-messages">
-                % if ($worker_vnc) {
-                    <div id="developer-vnc-notice" class="alert alert-secondary developer-mode-element" role="alert" data-visible-on="isPaused">
-                        You might be able to connect to the SUT at <%= $worker_vnc %> via VNC with shared mode enabled (eg. <code>vncviewer <%= $worker_vnc %> -Shared</code> for TigerVNC).
-                    </div>
-                % }
+                <div id="developer-vnc-notice" class="alert alert-secondary developer-mode-element" role="alert" data-visible-on="isPaused,vncArg">
+                    You might be able to connect to the SUT at <span class="vnc-arg">?</span> via VNC with shared mode enabled (eg. <code>vncviewer <span class="vnc-arg">?</span> -Shared</code> for TigerVNC).
+                </div>
             </div>
         </div>
     </div>

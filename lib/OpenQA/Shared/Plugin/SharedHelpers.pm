@@ -13,6 +13,7 @@ sub register ($self, $app, @) {
     $app->helper(schema => sub { OpenQA::Schema->singleton });
     $app->helper(find_current_job => \&_find_current_job);
 
+    $app->helper(determine_connection_params_for_job => \&_determine_connection_params_for_job);
     $app->helper(determine_os_autoinst_web_socket_url => \&_determine_os_autoinst_web_socket_url);
 
     $app->helper(current_user => \&_current_user);
@@ -21,8 +22,8 @@ sub register ($self, $app, @) {
     $app->helper(is_local_request => \&_is_local_request);
 }
 
-# returns the isotovideo command server web socket URL for the given job or undef if not available
-sub _determine_os_autoinst_web_socket_url ($c, $job) {
+# returns the isotovideo command server web socket URL and the VNC argument for the given job or undef if not available
+sub _determine_connection_params_for_job ($c, $job) {
     return undef unless $job->state eq OpenQA::Jobs::Constants::RUNNING;
 
     # determine job token and host from worker
@@ -34,8 +35,10 @@ sub _determine_os_autoinst_web_socket_url ($c, $job) {
     my $cmd_srv_raw_url = $worker->get_property('CMD_SRV_URL') or return;
     my $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url);
     my $port = $cmd_srv_url->port() or return;
-    return "ws://$host:$port/$job_token/ws";
+    return ("ws://$host:$port/$job_token/ws", $worker->vnc_argument);
 }
+
+sub _determine_os_autoinst_web_socket_url ($c, $job) { (_determine_connection_params_for_job($c, $job))[0] }
 
 sub _find_current_job ($c) {
     return undef unless my $test_id = $c->param('testid');

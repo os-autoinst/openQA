@@ -506,10 +506,12 @@ var developerMode = {
     );
   },
 
-  // returns the specified property evaluating possibly assigned functions
-  prop: function (propertyName) {
-    var prop = this[propertyName];
-    return typeof prop === 'function' ? prop.apply(this) : prop;
+  // returns whether all specified properties/functions eveluate to true
+  allTrue: function (propertyNames) {
+    return propertyNames.split(',').every(propertyName => {
+      const prop = this[propertyName];
+      return typeof prop === 'function' ? prop.apply(this) : prop;
+    });
   }
 };
 
@@ -604,7 +606,7 @@ function updateDeveloperPanel() {
     var element = $(this);
     var visibleOn = element.data('visible-on');
     var hiddenOn = element.data('hidden-on');
-    var hide = (hiddenOn && developerMode.prop(hiddenOn)) || (visibleOn && !developerMode.prop(visibleOn));
+    var hide = (hiddenOn && developerMode.allTrue(hiddenOn)) || (visibleOn && !developerMode.allTrue(visibleOn));
     if (hide) {
       element.hide();
       element.tooltip('hide');
@@ -1180,6 +1182,17 @@ function processWsCommand(obj) {
           }
           break;
       }
+
+      // handle update of the VNC argument
+      const vncArg = data?.vnc_arg;
+      if (typeof vncArg === 'string' && vncArg !== developerMode.vncArg) {
+        developerMode.vncArg = vncArg;
+        somethingChanged = true;
+        Array.from(document.getElementsByClassName('vnc-arg')).forEach(e => {
+          e.textContent = vncArg;
+        });
+      }
+
       break;
   }
 

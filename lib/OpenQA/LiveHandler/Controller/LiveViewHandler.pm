@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::LiveHandler::Controller::LiveViewHandler;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Try::Tiny;
 use Mojo::URL;
@@ -349,12 +349,13 @@ sub handle_disconnect_from_os_autoinst {
 }
 
 # connects to the os-autoinst command server for the specified job ID; re-uses an existing connection
-sub connect_to_cmd_srv {
-    my ($self, $job_id, $cmd_srv_raw_url, $cmd_srv_url) = @_;
-
+sub connect_to_cmd_srv ($self, $job_id, $cmd_srv_raw_url, $data) {
     log_debug("connecting to os-autoinst command server for job $job_id at $cmd_srv_raw_url");
-    $self->send_message_to_java_script_clients($job_id,
-        info => 'connecting to os-autoinst command server at ' . $cmd_srv_raw_url);
+    $self->send_message_to_java_script_clients(
+        $job_id,
+        info => 'connecting to os-autoinst command server at ' . $cmd_srv_raw_url,
+        $data
+    );
 
     # prevent opening the same connection to os-autoinst cmd srv twice
     if (my $cmd_srv_tx = $self->cmd_srv_transactions_by_job->{$job_id}) {
@@ -364,10 +365,8 @@ sub connect_to_cmd_srv {
         return $cmd_srv_tx;
     }
 
-    # initialize $cmd_srv_url as Mojo::URL if not done yet
-    $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url) unless ($cmd_srv_url);
-
     # start a new connection to os-autoinst cmd srv
+    my $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url);
     return $self->app->ua->websocket(
         $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
@@ -511,7 +510,7 @@ sub ws_proxy {
     push(@$java_script_transactions_for_current_job, $java_script_tx);
 
     # determine url to os-autoinst command server
-    my $cmd_srv_raw_url = $self->determine_os_autoinst_web_socket_url($job);
+    my ($cmd_srv_raw_url, $vnc_arg) = $self->determine_connection_params_for_job($job);
     if (!$cmd_srv_raw_url) {
         $app->log->debug('attempt to open ws proxy for job '
               . $job->name . ' ('
@@ -527,7 +526,7 @@ sub ws_proxy {
     }
 
     # start opening a websocket connection to os-autoinst instantly
-    $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url) if ($cmd_srv_raw_url);
+    $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, {vnc_arg => $vnc_arg}) if $cmd_srv_raw_url;
 
     # don't react to any messages from the JavaScript client if serving the status-only route
     if ($status_only) {

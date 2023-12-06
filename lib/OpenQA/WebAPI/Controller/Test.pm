@@ -371,7 +371,6 @@ sub live ($self) {
             developer_session => $job->developer_session,
             is_devel_mode_accessible => $current_user && $current_user->is_operator,
             current_user_id => $current_user ? $current_user->id : 'undefined',
-            worker_vnc => $worker_vnc,
         });
     $self->render('test/live');
 }
