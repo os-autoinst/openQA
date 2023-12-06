@@ -206,6 +206,35 @@ the jobs individually and then invoke it.
 
 Also be sure to reboot the worker host to make sure the setup is actually persistent.
 
+==== Start test VMs manually
+You may also start VMs manually to verify the setup.
+
+First, download a suitable image and launch a VM in the same way `os-autoinst` would do
+for MM jobs:
+```
+wget http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
+qemu-system-x86_64 -m 2048 -enable-kvm -vnc :42 -snapshot \
+  -netdev tap,id=qanet0,ifname=tap39,script=no,downscript=no -device virtio-net,netdev=qanet0,mac=00:00:00:00:00:01 \
+  openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
+```
+
+The image used here is of course just an example. Within the VM configure the network
+*like* this (you may need to adjust concrete IP addresses, subnets and interface names):
+
+```
+ip a add dev eth0 10.0.2.15/24
+ip r add default via 10.0.2.2
+ip link set dev eth0 mtu 1458
+echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+```
+
+The MTU is chosen in accordance with what the openSUSE test distribution uses for MM
+tests and should be below the MTU set on the Open vSwitch bridge device (e.g. via
+`os-autoinst-setup-multi-machine`).
+
+After this it should be possible to reach other hosts. You may also launch a 2nd VM to
+see whether the VMs can talk to each other.
+
 === Debugging Open vSwitch Configuration
 Boot sequence with wicked (version 0.6.23 and newer):
 
@@ -283,7 +312,6 @@ packet count in the forward chain between the br1 and external interface.
 NOTE: To list the package count when `nftables` is used one needed to use
 https://wiki.nftables.org/wiki-nftables/index.php/Counters[counters] (which can
 be https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules[added to existing rules]).
-
 
 == VDE Based Network
 
