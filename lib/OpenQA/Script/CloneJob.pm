@@ -70,6 +70,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
 sub clone_job_get_job ($jobid, $url_handler, $options) {
     my $url = $url_handler->{remote_url}->clone;
     $url->path("jobs/$jobid");
+    $url->query->merge(check_assets => 1) unless $options->{'ignore-missing-assets'};
     my $tx = $url_handler->{remote}->max_redirects(3)->get($url);
     if ($tx->error) {
         my $err = $tx->error;
@@ -113,8 +114,25 @@ sub _job_publishes_uefi_vars ($job, $file) {
     $job->{settings}->{UEFI} && _job_setting_is $job, PUBLISH_PFLASH_VARS => $file;
 }
 
+sub _check_for_missing_assets ($job, $parents, $options) {
+    return undef if $options->{'ignore-missing-assets'};
+    my $missing_assets = $job->{missing_assets};
+    return undef unless ref $missing_assets eq 'ARRAY';    # most likely an old version of the web UI
+    my @relevant_missing_assets;
+    for my $missing_asset (@$missing_assets) {
+        my ($type, $name) = split '/', $missing_asset, 2;
+        push @relevant_missing_assets, $missing_asset
+          unless _is_asset_generated_by_cloned_jobs $job, $parents, $name, $options;
+    }
+    return undef unless @relevant_missing_assets;
+    my $relevant_missing_assets = join("\n - ", @relevant_missing_assets);
+    my $note = 'Use --ignore-missing-assets or --skip-download to proceed regardless.';
+    die "The following assets are missing:\n - $relevant_missing_assets\n$note\n";
+}
+
 sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
     my $parents = _get_chained_parents($job, $url_handler, $options);
+    _check_for_missing_assets($job, $parents, $options);
     my $ua = $url_handler->{ua};
     my $remote_url = $url_handler->{remote_url};
     for my $type (keys %{$job->{assets}}) {

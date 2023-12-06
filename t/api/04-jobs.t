@@ -1129,6 +1129,19 @@ subtest 'job details' => sub {
 
 };
 
+subtest 'check for missing assets' => sub {
+    $t->get_ok('/api/v1/jobs/99939?check_assets=1')->status_is(200, 'status for job with missing asset');
+    $t->json_is('/job/assets/hdd/0', 'openSUSE-13.1-x86_64.hda', 'present asset returned');
+    $t->json_is(
+        '/job/missing_assets/0',
+        'iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso',
+        'missing asset returned'
+    );
+
+    $t->get_ok('/api/v1/jobs/99927?check_assets=1')->status_is(200, 'status for job without missing assets');
+    $t->json_is('/job/missing_assets/0', undef, 'no missing asset returned for 99927');
+};
+
 subtest 'update job and job settings' => sub {
     # check defaults
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);

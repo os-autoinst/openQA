@@ -445,9 +445,11 @@ settings, state and times of startup and finish of the job.
 sub show ($self) {
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
+    my $check_assets = !!$self->param('check_assets');
     my $job = $self->schema->resultset("Jobs")->find($job_id, {prefetch => 'settings'});
     return $self->reply->not_found unless $job;
-    $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
+    $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
+    $self->render(json => {job => $job});
 }
 
 =over 4
