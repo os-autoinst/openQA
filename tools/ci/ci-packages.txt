@@ -22,7 +22,7 @@ hwdata-0.371
 icewm-1.4.2
 icewm-default-1.4.2
 icewm-theme-branding-1.2.5
-ipxe-bootimgs-1.21.1+git20230120.a99e435c
+ipxe-bootimgs-1.21.1+git20231006.ff0f8604
 jq-1.6
 libaspell15-0.60.8
 libatopology2-1.2.8
