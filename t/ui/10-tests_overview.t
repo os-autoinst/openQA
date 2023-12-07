@@ -139,7 +139,7 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 # Test whether all URL parameter are passed correctly
 my $url_with_escaped_parameters
   = $baseurl
-  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
@@ -467,6 +467,71 @@ subtest "filtering by machine" => sub {
         element_not_present('#flavor_GONME-Live_arch_i686');
         element_not_present('#flavor_DVD_arch_i586');
 
+    };
+};
+
+subtest 'filtering by job group' => sub {
+    $schema->resultset('JobGroups')->create($_)
+      for (
+        {
+            id => 1003,
+            sort_order => 0,
+            name => 'opensuse development'
+        },
+        {
+            id => 1004,
+            sort_order => 0,
+            name => 'Tumbleweed'
+        },
+        {
+            id => 1005,
+            sort_order => 0,
+            name => 'SLE 15 SP5'
+        },
+        {
+            id => 1006,
+            sort_order => 0,
+            name => 'SLE 15 SP5 development'
+        });
+
+    my $get_text = sub {
+        $driver->get(shift);
+        my @el = $driver->find_element('.card-header');
+        return $el[0]->get_text;
+    };
+
+    subtest 'filter with exact include' => sub {
+        my $text = $get_text->('/tests/overview?group_glob=opensuse');
+        like $text, qr/Summary of opensuse build/, 'job group match';
+    };
+
+    subtest 'filter with glob include' => sub {
+        my $text = $get_text->('/tests/overview?group_glob=*opensuse*');
+        like $text, qr/Summary of opensuse, opensuse test, opensuse development build/, 'job group match';
+    };
+
+    subtest 'filter with multiple glob includes' => sub {
+        my $text = $get_text->('/tests/overview?group_glob=opensuse*,SLE*');
+        like $text,
+          qr/Summary of opensuse, opensuse test, opensuse development, SLE 15 SP5, SLE 15 SP5 development build/,
+          'job group match';
+    };
+
+    subtest 'filter with exact exclude' => sub {
+        my $text = $get_text->('/tests/overview?not_group_glob=opensuse');
+        like $text,
+          qr/Summary of opensuse test, opensuse development, Tumbleweed, SLE 15 SP5, SLE 15 SP5 development build/,
+          'job group match';
+    };
+
+    subtest 'filter with glob exclude' => sub {
+        my $text = $get_text->('/tests/overview?not_group_glob=*SLE*');
+        like $text, qr/Summary of opensuse, opensuse test, opensuse development, Tumbleweed build/, 'job group match';
+    };
+
+    subtest 'filter with glob include and exclude' => sub {
+        my $text = $get_text->('/tests/overview?group_glob=*opensuse*,*SLE*&not_group_glob=*development*');
+        like $text, qr/Summary of opensuse, opensuse test, SLE 15 SP5 build/, 'job group match';
     };
 };
 

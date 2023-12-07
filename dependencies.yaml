@@ -44,6 +44,7 @@ common_requires:
     rpm: '>= 9.340.0'
   perl(Regexp::Common):
   perl(Storable):
+  perl(Text::Glob):
   perl(Time::Moment):
   perl(Try::Tiny):
   perl(Config::Tiny):

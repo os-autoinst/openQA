@@ -252,6 +252,12 @@ function setupOverview() {
       modules_results.push(val);
       modulesResultFilter.val(modules_results).trigger('chosen:updated').trigger('change');
       return formatFilter(val);
+    } else if (key === 'group_glob') {
+      $('#group-glob').prop('value', val);
+      return val;
+    } else if (key === 'not_group_glob') {
+      $('#not-group-glob').prop('value', val);
+      return val;
     }
   });
 
