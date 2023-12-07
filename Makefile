@@ -350,3 +350,11 @@ test-helm-install:
 .PHONY: update-deps
 update-deps:
 	tools/update-deps --specfile dist/rpm/openQA.spec
+
+.PHONY: generate-docs
+generate-docs:
+	tools/generate-docs
+
+.PHONY: serve-docs
+serve-docs: generate-docs
+	(cd docs/build/; python3 -m http.server)

@@ -46,3 +46,5 @@ node_modules
 package-lock.json
 .tidyall.d/
 openqa-documentation.html
+docs/build/
+

@@ -1,0 +1,13 @@
+#!/bin/bash -e
+
+# Navigate to the docs directory
+cd $(git rev-parse --show-toplevel)/docs
+
+# Make sure dependencies exist
+bundle install
+
+# Run asciidoc
+bundle exec asciidoctor -o openqa-documentation.html ./index.asciidoc -d book
+
+# Create a symlink to images (in case it doesn't exist).
+test -e build/images || ln -s ../images build/images
