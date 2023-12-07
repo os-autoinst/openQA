@@ -24,7 +24,7 @@ sub _create_jobs ($self, $client, $args, $param_file, $job_ids) {
         say $job_count == 1 ? '1 job has been created:' : "$job_count jobs have been created:";
         say ' - ' . $host_url->clone->path("tests/$_") for @$job_ids;
     }
-    return 0 unless my $error = $json->{error};
+    return 0 unless my $error = $json->{error} // join("\n", map { $_->{error_message} } @{$json->{failed}});
     print STDERR colored(['red'], $error, "\n");
     return 1;
 }
