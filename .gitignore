@@ -46,3 +46,6 @@ node_modules
 package-lock.json
 .tidyall.d/
 openqa-documentation.html
+container/terraform/.terraform*
+container/terraform/terraform.tf*
+container/terraform/supervisord.pid

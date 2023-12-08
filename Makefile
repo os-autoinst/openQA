@@ -347,6 +347,10 @@ test-helm-lint:
 test-helm-install:
 	tools/test_helm_chart install
 
+.PHONY: test-check-terraform
+test-check-terraform:
+	tools/test_terraform
+
 .PHONY: update-deps
 update-deps:
 	tools/update-deps --specfile dist/rpm/openQA.spec
