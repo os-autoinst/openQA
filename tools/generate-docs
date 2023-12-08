@@ -8,10 +8,16 @@ if [[ ! -e ./build/images ]]; then
     ln -s ../images build/images
 fi
 
-export BUNDLE_PATH=./vendor/
+asciidoctor_bin=$(command -v asciidoctor) || true
 
-# Make sure dependencies exist
-bundle install
+if [[ -z "$asciidoctor_bin" ]]; then
+    echo "asciidoc not found in PATH."
+    echo "Fallback to Rubygem's Asciidoc"
+    export BUNDLE_PATH=./vendor/
+    # Make sure dependencies exist
+    bundle install
+    asciidoctor_bin="bundle exec asciidoctor"
+fi
 
 # Run asciidoc
-bundle exec asciidoctor -o build/index.html ./index.asciidoc -d book
+$asciidoctor_bin -o build/index.html ./index.asciidoc -d book
