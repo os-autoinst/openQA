@@ -18,6 +18,7 @@ my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema
   = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
+my $comments = $schema->resultset('Comments');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -482,6 +483,11 @@ subtest 'editing when logged in as regular user' => sub {
         write_comment $description_test_message, 'comment with pinning for group added by regular user';
         $driver->get($group_url);
         is(scalar @{$driver->find_elements('.pinned-comment-row')}, 1, 'there shouldn\'t appear more pinned comments');
+
+        # verify the number of comments we have added so far for easier debugging in case subsequent tests fail
+        my $group_id = (split('/', $group_url))[-1];
+        my %cond = (-or => [{group_id => $group_id}, {parent_group_id => $group_id}]);
+        is $comments->search(\%cond)->count, 5, 'expected number of comments present in database at this point';
 
         # pagination present
         is(scalar @{$driver->find_elements('.comments-pagination a')}, 1, 'one pagination button present');
