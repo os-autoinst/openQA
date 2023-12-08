@@ -981,7 +981,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
-<li><a href="#_verify_the_setup">Verify the setup</a></li>
+<li><a href="#_verify_the_setup">Verify the setup</a>
+<ul class="sectlevel3">
+<li><a href="#_start_test_vms_manually">Start test VMs manually</a></li>
+</ul>
+</li>
 <li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</a></li>
 </ul>
 </li>
@@ -10053,6 +10057,45 @@ the jobs individually and then invoke it.</p>
 <div class="paragraph">
 <p>Also be sure to reboot the worker host to make sure the setup is actually persistent.</p>
 </div>
+<div class="sect3">
+<h4 id="_start_test_vms_manually">Start test VMs manually</h4>
+<div class="paragraph">
+<p>You may also start VMs manually to verify the setup.</p>
+</div>
+<div class="paragraph">
+<p>First, download a suitable image and launch a VM in the same way <code>os-autoinst</code> would do
+for MM jobs:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>wget http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
+qemu-system-x86_64 -m 2048 -enable-kvm -vnc :42 -snapshot \
+  -netdev tap,id=qanet0,ifname=tap39,script=no,downscript=no -device virtio-net,netdev=qanet0,mac=00:00:00:00:00:01 \
+  openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The image used here is of course just an example. Within the VM configure the network
+<strong>like</strong> this (you may need to adjust concrete IP addresses, subnets and interface names):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>ip a add dev eth0 10.0.2.15/24
+ip r add default via 10.0.2.2
+ip link set dev eth0 mtu 1458
+echo &#39;nameserver 8.8.8.8&#39; &gt; /etc/resolv.conf</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The MTU is chosen in accordance with what the openSUSE test distribution uses for MM
+tests and should be below the MTU set on the Open vSwitch bridge device (e.g. via
+<code>os-autoinst-setup-multi-machine</code>).</p>
+</div>
+<div class="paragraph">
+<p>After this it should be possible to reach other hosts. You may also launch a 2nd VM to
+see whether the VMs can talk to each other.</p>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</h3>
@@ -12406,7 +12449,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-11-25 02:23:13 UTC
+Last updated 2023-12-08 10:59:21 UTC
 </div>
 </div>
 </body>
