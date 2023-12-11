@@ -47,4 +47,4 @@ package-lock.json
 .tidyall.d/
 openqa-documentation.html
 docs/build/
-
+docs/vendor/

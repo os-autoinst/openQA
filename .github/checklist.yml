@@ -4,6 +4,6 @@ paths:
   "assets/stylesheets/**":
     - Consider providing screenshots in a PR comment to show the difference visually
   "docs/*.asciidoc":
-    - Consider generating documentation locally to verify it is rendered correctly using `tools/generate-htmldoc`
+    - Consider generating documentation locally to verify it is rendered correctly using `tools/generate-docs`
   "external/**":
     - Consider doing this change in the upstream repository directly, see external/os-autoinst-common/README.md
