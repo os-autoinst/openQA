@@ -209,31 +209,37 @@ Also be sure to reboot the worker host to make sure the setup is actually persis
 ==== Start test VMs manually
 You may also start VMs manually to verify the setup.
 
-First, download a suitable image and launch a VM in the same way `os-autoinst` would do
-for MM jobs:
+First, download a suitable image and launch a VM in the same way `os-autoinst`
+would do for MM jobs:
 ```
 wget http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
 qemu-system-x86_64 -m 2048 -enable-kvm -vnc :42 -snapshot \
-  -netdev tap,id=qanet0,ifname=tap39,script=no,downscript=no -device virtio-net,netdev=qanet0,mac=00:00:00:00:00:01 \
+  -netdev tap,id=qanet0,ifname=tap40,script=no,downscript=no \
+  -device virtio-net,netdev=qanet0,mac=52:54:00:13:0b:4a \
   openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
 ```
 
-The image used here is of course just an example. Within the VM configure the network
-*like* this (you may need to adjust concrete IP addresses, subnets and interface names):
+The image used here is of course just an example. You need to make sure to
+assign a unique MAC address (e.g. by adjusting the last two figures in the
+example; this will not conflict with MAC addresses used by os-autoinst) and use
+a tap device not used at the same time by a SUT-VM.
+
+Within the VM configure the network *like* this (you may need to adjust concrete
+IP addresses, subnets and interface names):
 
 ```
+ip link set dev eth0 up mtu 1458
 ip a add dev eth0 10.0.2.15/24
 ip r add default via 10.0.2.2
-ip link set dev eth0 mtu 1458
 echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 ```
 
-The MTU is chosen in accordance with what the openSUSE test distribution uses for MM
-tests and should be below the MTU set on the Open vSwitch bridge device (e.g. via
-`os-autoinst-setup-multi-machine`).
+The MTU is chosen in accordance with what the openSUSE test distribution uses
+for MM tests and should be below the MTU set on the Open vSwitch bridge device
+(e.g. via `os-autoinst-setup-multi-machine`).
 
-After this it should be possible to reach other hosts. You may also launch a 2nd VM to
-see whether the VMs can talk to each other.
+After this it should be possible to reach other hosts. You may also launch a 2nd
+VM to see whether the VMs can talk to each other.
 
 === Debugging Open vSwitch Configuration
 Boot sequence with wicked (version 0.6.23 and newer):
