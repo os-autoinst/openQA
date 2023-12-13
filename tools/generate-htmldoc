@@ -1,4 +1,0 @@
-#!/bin/bash -e
-
-cre=${cre:-"podman"}
-$cre run -it --rm -v"$PWD"/:/openqa --workdir /openqa --env GEM_HOME=/home/squamata/.gem registry.opensuse.org/devel/openqa/ci/containers/base:latest tools/generate-htmldoc-in-container

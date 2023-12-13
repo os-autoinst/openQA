@@ -1,0 +1,23 @@
+#!/bin/bash -e
+
+# Navigate to the docs directory
+cd "$(dirname "${BASH_SOURCE[0]}")/../docs"
+mkdir -p ./build/
+
+if [[ ! -e ./build/images ]]; then
+    ln -s ../images build/images
+fi
+
+asciidoctor_bin=$(command -v asciidoctor) || true
+
+if [[ -z "$asciidoctor_bin" ]]; then
+    echo "asciidoc not found in PATH."
+    echo "Fallback to Rubygem's Asciidoc"
+    export BUNDLE_PATH=./vendor/
+    # Make sure dependencies exist
+    bundle install
+    asciidoctor_bin="bundle exec asciidoctor"
+fi
+
+# Run asciidoc
+$asciidoctor_bin -o build/index.html ./index.asciidoc -d book

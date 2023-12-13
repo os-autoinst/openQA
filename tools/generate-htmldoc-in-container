@@ -1,9 +1,0 @@
-#!/bin/bash -e
-
-gem install asciidoctor pygments.rb
-
-asciidoctor_bin=$(command -v asciidoctor) || true
-[[ -n "$asciidoctor_bin" ]] || \
-    for asciidoctor_bin in "${GEM_HOME}"/bin/asciidoctor.ruby*; do :; done
-set -x
-"$asciidoctor_bin" -o openqa-documentation.html docs/index.asciidoc -d book

@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    asciidoctor (2.0.20)
+    pygments.rb (2.4.1)
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  asciidoctor
+  pygments.rb
+
+BUNDLED WITH
+   2.4.10
