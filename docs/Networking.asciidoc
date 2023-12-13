@@ -67,12 +67,15 @@ versions) for NAT and _wicked_ or _NetworkManager_ as network manager. Keep in
 mind that a firewall is not strictly necessary for operation. The operation
 without firewall is not covered in all necessary details in this documentation.
 
-NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is described
-on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
+NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is
+described on the
+link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
 
-NOTE: Alternatively https://github.com/os-autoinst/salt-states-openqa[salt-states-openqa] contains
-necessities to establish such a setup and configure it for all workers with the `tap`
-worker class. They also cover GRE tunnels (that are explained in the next section).
+NOTE: Alternatively
+https://github.com/os-autoinst/salt-states-openqa[salt-states-openqa] contains
+necessities to establish such a setup and configure it for all workers with the
+`tap` worker class. They also cover GRE tunnels (that are explained in the next
+section).
 
 The script `os-autoinst-setup-multi-machine` can be run like this:
 
@@ -186,10 +189,10 @@ systemctl enable openqa-worker@{1..3}
 
 
 === Verify the setup
-Simply run a MM test scenario. For openSUSE, you can find many relevant tests
-on https://openqa.opensuse.org[o3], e.g. look for networking-related tests like
-wicked-tests. To test GRE tunnels, you may want to change the jobs worker classes
-so the different jobs are executed on different workers.
+Simply run a MM test scenario. For openSUSE, you can find many relevant tests on
+https://openqa.opensuse.org[o3], e.g. look for networking-related tests like
+wicked-tests. To test GRE tunnels, you may want to change the jobs worker
+classes so the different jobs are executed on different workers.
 
 So you could call `openqa-clone-job` like this:
 ```
@@ -201,45 +204,53 @@ openqa-clone-job \
     _GROUP=0 BUILD+=test-mm-setup            # avoid interfering with production jobs
 ```
 
-It will print an `openqa-cli` call. You can modify it to change the worker classes of
-the jobs individually and then invoke it.
+It will print an `openqa-cli` call. You can modify it to change the worker
+classes of the jobs individually and then invoke it.
 
-Also be sure to reboot the worker host to make sure the setup is actually persistent.
+Also be sure to reboot the worker host to make sure the setup is actually
+persistent.
 
 ==== Start test VMs manually
 You may also start VMs manually to verify the setup.
 
-First, download a suitable image and launch a VM in the same way `os-autoinst` would do
-for MM jobs:
+First, download a suitable image and launch a VM in the same way `os-autoinst`
+would do for MM jobs:
 ```
 wget http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
 qemu-system-x86_64 -m 2048 -enable-kvm -vnc :42 -snapshot \
-  -netdev tap,id=qanet0,ifname=tap39,script=no,downscript=no -device virtio-net,netdev=qanet0,mac=00:00:00:00:00:01 \
+  -netdev tap,id=qanet0,ifname=tap40,script=no,downscript=no \
+  -device virtio-net,netdev=qanet0,mac=52:54:00:13:0b:4a \
   openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
 ```
 
-The image used here is of course just an example. Within the VM configure the network
-*like* this (you may need to adjust concrete IP addresses, subnets and interface names):
+The image used here is of course just an example. You need to make sure to
+assign a unique MAC address (e.g. by adjusting the last two figures in the
+example; this will not conflict with MAC addresses used by os-autoinst) and use
+a tap device not used at the same time by a SUT-VM.
+
+Within the VM configure the network *like* this (you may need to adjust concrete
+IP addresses, subnets and interface names):
 
 ```
+ip link set dev eth0 up mtu 1458
 ip a add dev eth0 10.0.2.15/24
 ip r add default via 10.0.2.2
-ip link set dev eth0 mtu 1458
 echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 ```
 
-The MTU is chosen in accordance with what the openSUSE test distribution uses for MM
-tests and should be below the MTU set on the Open vSwitch bridge device (e.g. via
-`os-autoinst-setup-multi-machine`).
+The MTU is chosen in accordance with what the openSUSE test distribution uses
+for MM tests and should be below the MTU set on the Open vSwitch bridge device
+(e.g. via `os-autoinst-setup-multi-machine`).
 
-After this it should be possible to reach other hosts. You may also launch a 2nd VM to
-see whether the VMs can talk to each other.
+After this it should be possible to reach other hosts. You may also launch a 2nd
+VM to see whether the VMs can talk to each other.
 
 === Debugging Open vSwitch Configuration
 Boot sequence with wicked (version 0.6.23 and newer):
 
 1. openvswitch (as above)
-2. wicked - creates the bridge `br1` and tap devices, adds tap devices to the bridge,
+2. wicked - creates the bridge `br1` and tap devices, adds tap devices to the
+   bridge,
 3. firewalld (or SuSEfirewall2 in older setups)
 4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
@@ -304,7 +315,8 @@ Check the flow of packets over the network:
 * packets from tapX to br1 create additional rules in table=1
 * packets from br1 to tapX increase packet counts in table=1
 * empty output indicates a problem with os-autoinst-openvswitch service
-* zero packet count or missing rules in table=1 indicate problem with tap devices
+* zero packet count or missing rules in table=1 indicate problem with tap
+  devices
 
 As long as the SUT has access to external network, there should be a non-zero
 packet count in the forward chain between the br1 and external interface.
