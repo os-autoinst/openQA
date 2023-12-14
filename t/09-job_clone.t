@@ -32,6 +32,18 @@ my $testsuites = $schema->resultset("TestSuites");
 my $jobs = $schema->resultset("Jobs");
 
 my $rset = $t->app->schema->resultset("Jobs");
+
+subtest 'multiple clones' => sub {
+    $schema->txn_begin;
+    my $orig = $rset->find(99946);
+    my $sp = $schema->resultset('ScheduledProducts')->create({id => 23, settings => []});
+    $orig->update({scheduled_product_id => $sp->id});
+    my $last = $rset->find(99946);
+    my $product_id = $last->related_scheduled_product_id;
+    is $product_id, 23, 'Found original scheduled_product_id of clone';
+    $schema->txn_rollback;
+};
+
 my $minimalx = $rset->find(99926);
 my $clones = $minimalx->duplicate();
 my $clone = $rset->find($clones->{$minimalx->id}->{clone});

@@ -2014,7 +2014,18 @@ sub cancel_whole_clone_chain ($self, @args) {
 # returns the related scheduled product; if the job has not been created by one the origin job is checked
 sub related_scheduled_product_id ($self) {
     if (my $sp_id = $self->scheduled_product_id) { return $sp_id }
-    if (my $origin = $self->origin) { return $origin->related_scheduled_product_id }
+    return $self->{_orig_scheduled_product_id} if exists $self->{_orig_scheduled_product_id};
+    my $sth = $self->result_source->schema->storage->dbh->prepare(<<~'EOM');
+        with recursive orig_id as (
+            select ? as orig_id, ? as prod
+            union all
+            select id as orig_id, scheduled_product_id as prod from jobs join orig_id on orig_id.orig_id = jobs.clone_id)
+        select prod from orig_id where prod is not null
+        EOM
+    $sth->bind_param(1, $self->id, SQL_BIGINT);
+    $sth->bind_param(2, undef, SQL_BIGINT);
+    $sth->execute;
+    $self->{_orig_scheduled_product_id} = $sth->fetchrow_array;
 }
 
 =head2 done
