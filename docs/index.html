@@ -9836,8 +9836,9 @@ without firewall is not covered in all necessary details in this documentation.<
 <div class="title">Note</div>
 </td>
 <td class="content">
-Another way to setup the environment with <em>iptables</em> and <em>firewalld</em> is described
-on the <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fedora wiki</a>.
+Another way to setup the environment with <em>iptables</em> and <em>firewalld</em> is
+described on the
+<a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fedora wiki</a>.
 </td>
 </tr>
 </table>
@@ -9849,9 +9850,11 @@ on the <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fe
 <div class="title">Note</div>
 </td>
 <td class="content">
-Alternatively <a href="https://github.com/os-autoinst/salt-states-openqa">salt-states-openqa</a> contains
-necessities to establish such a setup and configure it for all workers with the <code>tap</code>
-worker class. They also cover GRE tunnels (that are explained in the next section).
+Alternatively
+<a href="https://github.com/os-autoinst/salt-states-openqa">salt-states-openqa</a> contains
+necessities to establish such a setup and configure it for all workers with the
+<code>tap</code> worker class. They also cover GRE tunnels (that are explained in the next
+section).
 </td>
 </tr>
 </table>
@@ -10032,10 +10035,10 @@ number of tap devices should be configured.
 <div class="sect2">
 <h3 id="_verify_the_setup">Verify the setup</h3>
 <div class="paragraph">
-<p>Simply run a MM test scenario. For openSUSE, you can find many relevant tests
-on <a href="https://openqa.opensuse.org">o3</a>, e.g. look for networking-related tests like
-wicked-tests. To test GRE tunnels, you may want to change the jobs worker classes
-so the different jobs are executed on different workers.</p>
+<p>Simply run a MM test scenario. For openSUSE, you can find many relevant tests on
+<a href="https://openqa.opensuse.org">o3</a>, e.g. look for networking-related tests like
+wicked-tests. To test GRE tunnels, you may want to change the jobs worker
+classes so the different jobs are executed on different workers.</p>
 </div>
 <div class="paragraph">
 <p>So you could call <code>openqa-clone-job</code> like this:</p>
@@ -10051,11 +10054,12 @@ so the different jobs are executed on different workers.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>It will print an <code>openqa-cli</code> call. You can modify it to change the worker classes of
-the jobs individually and then invoke it.</p>
+<p>It will print an <code>openqa-cli</code> call. You can modify it to change the worker
+classes of the jobs individually and then invoke it.</p>
 </div>
 <div class="paragraph">
-<p>Also be sure to reboot the worker host to make sure the setup is actually persistent.</p>
+<p>Also be sure to reboot the worker host to make sure the setup is actually
+persistent.</p>
 </div>
 <div class="sect3">
 <h4 id="_start_test_vms_manually">Start test VMs manually</h4>
@@ -10063,37 +10067,44 @@ the jobs individually and then invoke it.</p>
 <p>You may also start VMs manually to verify the setup.</p>
 </div>
 <div class="paragraph">
-<p>First, download a suitable image and launch a VM in the same way <code>os-autoinst</code> would do
-for MM jobs:</p>
+<p>First, download a suitable image and launch a VM in the same way <code>os-autoinst</code>
+would do for MM jobs:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span>wget http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
 qemu-system-x86_64 -m 2048 -enable-kvm -vnc :42 -snapshot \
-  -netdev tap,id=qanet0,ifname=tap39,script=no,downscript=no -device virtio-net,netdev=qanet0,mac=00:00:00:00:00:01 \
+  -netdev tap,id=qanet0,ifname=tap40,script=no,downscript=no \
+  -device virtio-net,netdev=qanet0,mac=52:54:00:13:0b:4a \
   openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The image used here is of course just an example. Within the VM configure the network
-<strong>like</strong> this (you may need to adjust concrete IP addresses, subnets and interface names):</p>
+<p>The image used here is of course just an example. You need to make sure to
+assign a unique MAC address (e.g. by adjusting the last two figures in the
+example; this will not conflict with MAC addresses used by os-autoinst) and use
+a tap device not used at the same time by a SUT-VM.</p>
+</div>
+<div class="paragraph">
+<p>Within the VM configure the network <strong>like</strong> this (you may need to adjust concrete
+IP addresses, subnets and interface names):</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>ip a add dev eth0 10.0.2.15/24
+<pre class="pygments highlight"><code><span></span>ip link set dev eth0 up mtu 1458
+ip a add dev eth0 10.0.2.15/24
 ip r add default via 10.0.2.2
-ip link set dev eth0 mtu 1458
 echo &#39;nameserver 8.8.8.8&#39; &gt; /etc/resolv.conf</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The MTU is chosen in accordance with what the openSUSE test distribution uses for MM
-tests and should be below the MTU set on the Open vSwitch bridge device (e.g. via
-<code>os-autoinst-setup-multi-machine</code>).</p>
+<p>The MTU is chosen in accordance with what the openSUSE test distribution uses
+for MM tests and should be below the MTU set on the Open vSwitch bridge device
+(e.g. via <code>os-autoinst-setup-multi-machine</code>).</p>
 </div>
 <div class="paragraph">
-<p>After this it should be possible to reach other hosts. You may also launch a 2nd VM to
-see whether the VMs can talk to each other.</p>
+<p>After this it should be possible to reach other hosts. You may also launch a 2nd
+VM to see whether the VMs can talk to each other.</p>
 </div>
 </div>
 </div>
@@ -10108,7 +10119,8 @@ see whether the VMs can talk to each other.</p>
 <p>openvswitch (as above)</p>
 </li>
 <li>
-<p>wicked - creates the bridge <code>br1</code> and tap devices, adds tap devices to the bridge,</p>
+<p>wicked - creates the bridge <code>br1</code> and tap devices, adds tap devices to the
+bridge,</p>
 </li>
 <li>
 <p>firewalld (or SuSEfirewall2 in older setups)</p>
@@ -10221,7 +10233,8 @@ nft<span class="tok-w"> </span>list<span class="tok-w"> </span>table<span class=
 <p>empty output indicates a problem with os-autoinst-openvswitch service</p>
 </li>
 <li>
-<p>zero packet count or missing rules in table=1 indicate problem with tap devices</p>
+<p>zero packet count or missing rules in table=1 indicate problem with tap
+devices</p>
 </li>
 </ul>
 </div>
@@ -12449,7 +12462,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-12-08 10:59:21 UTC
+Last updated 2023-12-14 02:24:13 UTC
 </div>
 </div>
 </body>
