@@ -14,7 +14,7 @@ use OpenQA::Utils 'random_string';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
 use Time::HiRes 'time';
-use List::Util qw(all shuffle min sum);
+use List::Util qw(all any shuffle min sum);
 
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
@@ -35,6 +35,82 @@ sub determine_free_workers ($shuffle = 0) {
 sub determine_scheduled_jobs ($self) {
     $self->_update_scheduled_jobs;
     return $self->scheduled_jobs;
+}
+
+# reduces the matching workers of the $to_be_scheduled jobs to support pinning parallel jobs to single host
+sub _pick_slots_with_common_worker_host ($to_be_scheduled) {
+    # return early if we don't need to care about picking a common host for the given set of jobs
+    return undef unless any { $_->{one_host_only} } @$to_be_scheduled;
+    my $cluster_size = scalar @$to_be_scheduled;
+    return undef if $cluster_size < 2;
+
+    # pick slots on the first best worker host that has enough matching slots; let each job pick one slot per host
+    my %matching_worker_slots_by_host;
+    my %visited_worker_slots_by_id;
+    my $picked_matching_worker_slots = [];
+    for my $job (@$to_be_scheduled) {
+        # go through the list of matching worker slots and pick one slot per host
+        my %visited_worker_slots_by_host;
+        for my $matching_worker (@{$job->{matching_workers}}) {
+            my $id = $matching_worker->id;
+            next if exists $visited_worker_slots_by_id{$id};    # skip slots that have already been picked
+            my $host = $matching_worker->host;
+            next if $visited_worker_slots_by_host{$host}++;    # skip to pick only one slot per host
+            my $matching_worker_slots = ($matching_worker_slots_by_host{$host} //= []);
+            push @$matching_worker_slots, $matching_worker;
+            $visited_worker_slots_by_id{$id} = $job;
+            next if @$matching_worker_slots < $cluster_size;
+            $picked_matching_worker_slots = $matching_worker_slots;
+            last;
+        }
+
+        # go tough the list of matching workers again to re-visit hosts we could not pick a slot on
+        for my $matching_worker (@{$job->{matching_workers}}) {
+            my $host = $matching_worker->host;
+            next if $visited_worker_slots_by_host{$host};    # skip hosts we were able to pick a slot on
+
+           # check the job we are competing with for this slot and see whether we might be able to swap picks by finding
+            # the competing job an alternative slot
+            my $id = $matching_worker->id;
+            next unless my $competitor_job = $visited_worker_slots_by_id{$id};
+            my $found_alternative_for_competitor = 0;
+            my $matching_worker_slots = ($matching_worker_slots_by_host{$host} //= []);
+            for my $alternative_matching_worker (@{$competitor_job->{matching_workers}}) {
+                # check whether the competitor can use this slot alternatively
+                my $alternative_id = $alternative_matching_worker->id;
+                next if exists $visited_worker_slots_by_id{$alternative_id};  # skip slots that have already been picked
+                next if $id == $alternative_id;    # skip the competitor's current slot for this host
+                next if $alternative_matching_worker->host ne $host;    # skip slots that are not on the relevant host
+                    # make the competitor job use the alternative we have just found
+                for (my $i = 0; $i != @$matching_worker_slots; ++$i) {
+                    if ($matching_worker_slots->[$i]->id == $id) {
+                        $matching_worker_slots->[$i] = $alternative_matching_worker;
+                        last;
+                    }
+                }
+                $visited_worker_slots_by_id{$alternative_id} = $competitor_job;
+                $found_alternative_for_competitor = 1;
+                last;
+            }
+
+            # use the slot from the competitor job if we found an alternative for the competitor job
+            next unless $found_alternative_for_competitor;
+            push @$matching_worker_slots, $matching_worker;
+            $visited_worker_slots_by_id{$id} = $job, $matching_worker;
+            next if @$matching_worker_slots < $cluster_size;
+            $picked_matching_worker_slots = $matching_worker_slots;
+            last;
+        }
+    }
+
+    # reduce the matching workers of each job to a single slot on the picked worker host's slots
+    # note: If no single host provides enough matching slots ($picked_matching_worker_slots is still an
+    #       empty arrayref) we assign an empty arrayref here. Then _allocate_jobs will not allocate any
+    #       of those jobs and prioritize the jobs as usual via _allocate_worker_with_priority.
+    for (my $i = 0; $i != $cluster_size; ++$i) {
+        $to_be_scheduled->[$i]->{matching_workers} = [$picked_matching_worker_slots->[$i] // ()];
+    }
+    return $picked_matching_worker_slots;
 }
 
 sub _allocate_jobs ($self, $free_workers) {
@@ -79,6 +155,7 @@ sub _allocate_jobs ($self, $free_workers) {
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
         next if defined $allocated_jobs->{$j->{id}};
         next unless $tobescheduled;
+        _pick_slots_with_common_worker_host($tobescheduled);
         my @tobescheduled = grep { $_->{id} } @$tobescheduled;
         my $parallel_count = scalar(@tobescheduled);
         log_debug "Need to schedule $parallel_count parallel jobs for job $j->{id} (with priority $j->{priority})";
@@ -334,34 +411,36 @@ sub _jobs_in_execution ($need) {
     $jobs_rs->search({id => {-in => $need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]})->all;
 }
 
+sub _worker_host_of_job ($job) {
+    return '' unless my $assigned_worker = $job->assigned_worker;
+    return $assigned_worker->host;
+}
+
 sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
     my $scheduled_jobs = $self->scheduled_jobs;
     my @need;
-    # now fetch the remaining job states of cluster jobs
+    # determine the IDs of unallocated jobs in parallel clusters of currently scheduled jobs
     for my $jobinfo (values %$scheduled_jobs) {
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            next if defined $scheduled_jobs->{$j};
-            push(@need, $j);
+            push @need, $j unless defined $scheduled_jobs->{$j};
         }
     }
 
-    my %clusterjobs = map { $_->id => $_->state } _jobs_in_execution(\@need);
+    # determine all running jobs in parallel clusters of currently scheduled jobs and their worker host
+    my %clusterjobs = map { ($_->id => _worker_host_of_job $_) } _jobs_in_execution(\@need);
 
-    # first pick cluster jobs with running siblings (prio doesn't matter)
+    # pick jobs with running parallel siblings (prio doesn't matter)
     for my $jobinfo (values %$scheduled_jobs) {
-        my $has_cluster_running = 0;
+        my $worker_host;
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            if (defined $clusterjobs{$j}) {
-                $has_cluster_running = 1;
-                last;
-            }
+            last if $worker_host = $clusterjobs{$j};
         }
-        if ($has_cluster_running) {
-            for my $w (@{$jobinfo->{matching_workers}}) {
-                next if $allocated_workers->{$w->id};
-                $allocated_workers->{$w->id} = $jobinfo->{id};
-                $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
-            }
+        last unless $worker_host;
+        for my $w (@{$jobinfo->{matching_workers}}) {
+            next if $allocated_workers->{$w->id};
+            next if $jobinfo->{one_host_only} && $w->host ne $worker_host;
+            $allocated_workers->{$w->id} = $jobinfo->{id};
+            $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
         }
     }
 }
@@ -429,6 +508,7 @@ sub _update_scheduled_jobs ($self) {
             $info->{worker_classes} = [];
         }
         $info->{cluster_jobs} ||= $cluster_infos{$job->id};
+        $info->{one_host_only} = $job->settings_hash->{PARALLEL_ONE_HOST_ONLY};
 
         if (!$info->{cluster_jobs}) {
             $info->{cluster_jobs} = $job->cluster_jobs;

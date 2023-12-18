@@ -567,4 +567,112 @@ subtest 'allocating network' => sub {
     }
 };
 
+subtest 'parallel pinning' => sub {
+    # create 4 worker slots so that only slot 2, 3 and 4 are on the same host
+    my $ws1 = $workers->create({host => 'host1', instance => 1}) or return fail 'unable to create worker1';
+    my $ws2 = $workers->create({host => 'host2', instance => 1}) or return fail 'unable to create worker2';
+    my $ws3 = $workers->create({host => 'host2', instance => 2}) or return fail 'unable to create worker3';
+    my $ws4 = $workers->create({host => 'host2', instance => 3}) or return fail 'unable to create worker4';
+
+    my $slots;
+    my $explain_slots = sub () {
+        diag 'slots: ' . join ', ', map { $_->name } @$slots;
+    };
+    my @to_be_scheduled = ({id => 1, matching_workers => [$ws1, $ws2]}, {id => 2, matching_workers => [$ws1, $ws2]});
+
+    subtest 'no slots on common host picked when pinning not explicitly enabled' => sub {
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, undef, 'undef returned if not at least one job has pinning enabled';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws1, $ws2], 'slots of job 1 not altered';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws1, $ws2], 'slots of job 2 not altered';
+    } or diag $explain_slots->();
+
+    subtest 'not enough matching slots on single host found' => sub {
+        $to_be_scheduled[-1]->{one_host_only} = 1;
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [], 'empty array returned if no single host has enough matching slots';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [], 'no slots assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [], 'no slots assigned to job 2';
+    } or diag $explain_slots->();
+
+    subtest 'slots on host with enough matching slots picked' => sub {
+        $to_be_scheduled[0]->{matching_workers} = [$ws1, $ws2, $ws3];
+        $to_be_scheduled[1]->{matching_workers} = [$ws1, $ws2, $ws3];
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [$ws2, $ws3], 'slots on host2 returned';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws2], 'slot 2 assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws3], 'slot 3 assigned to job 2';
+    } or diag $explain_slots->();
+
+    subtest 'slots on host with enough matching slots picked (jobs with distinct sets of matching slots)' => sub {
+        $to_be_scheduled[0]->{matching_workers} = [$ws1, $ws2];
+        $to_be_scheduled[1]->{matching_workers} = [$ws1, $ws3];
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [$ws2, $ws3], 'slots on host2 returned';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws2], 'slot 2 assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws3], 'slot 3 assigned to job 2';
+
+        $to_be_scheduled[0]->{matching_workers} = [$ws1, $ws3];
+        $to_be_scheduled[1]->{matching_workers} = [$ws1, $ws2];
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [$ws3, $ws2], 'still slots on host2 returned after reversing matching slots';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws3], 'slot 3 now assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws2], 'slot 2 now assigned to job 2';
+    } or diag $explain_slots->();
+
+    subtest 'not enough matching slots handled correctly for bigger clusters' => sub {
+        @to_be_scheduled = (
+            {id => 1, matching_workers => [$ws1, $ws2, $ws3, $ws4]},
+            {id => 2, matching_workers => [$ws1, $ws2, $ws3, $ws4], one_host_only => 1},
+            {id => 3, matching_workers => [$ws1, $ws2, $ws3, $ws4]},
+            {id => 4, matching_workers => [$ws1, $ws2, $ws3, $ws4]});
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [], 'empty array returned as there is one slot too few on host2';
+        is_deeply $_->{matching_workers}, [], "no slots assigned to job $_->{id}" for @to_be_scheduled;
+    } or diag $explain_slots->();
+
+    subtest 'slots can be assigned even though the best and only possible constellation is not obvious' => sub {
+        # assume ws1 is on the same host
+        $ws1->update({host => $ws2->host, instance => 4});
+        # assume a combination of matching workers that leaves no wiggle room for picking the best assignment
+        @to_be_scheduled = (
+            {id => 1, matching_workers => [$ws1, $ws2, $ws3]},  # needs slot 2 to preserve slot 1 and 3 for jobs 2 and 4
+            {id => 2, matching_workers => [$ws1], one_host_only => 1},    # other jobs need to preserve slot 1
+            {id => 3, matching_workers => [$ws3, $ws4]},    # need to preserve slot 3 for job 4
+            {id => 4, matching_workers => [$ws1, $ws3]});    # slot 3 remains as only option left
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [$ws2, $ws1, $ws4, $ws3], 'slots on host2 returned';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws2], 'slot 2 assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws1], 'slot 1 assigned to job 2';
+        is_deeply $to_be_scheduled[2]->{matching_workers}, [$ws4], 'slot 4 assigned to job 3';
+        is_deeply $to_be_scheduled[3]->{matching_workers}, [$ws3], 'slot 3 assigned to job 4';
+    } or diag $explain_slots->();
+
+    subtest 'slots are not assigned if there is no way to resolve the given matching workers' => sub {
+        # assume a combination that is impossible to solve
+        @to_be_scheduled = (
+            {id => 1, matching_workers => [$ws1, $ws2]},
+            {id => 2, matching_workers => [$ws2, $ws3]},
+            {id => 3, matching_workers => [$ws3, $ws4], one_host_only => 1},
+            {id => 4, matching_workers => [$ws1, $ws2]});
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [], 'empty array returned as there is one slot too few on host2';
+        is_deeply $_->{matching_workers}, [], "no slots assigned to job $_->{id}" for @to_be_scheduled;
+    } or diag $explain_slots->();
+
+    subtest 'slots can be assigned with a mix of different hosts and best assignment not obvious' => sub {
+        # assume ws1 and ws2 are on one host and ws3 and ws4 on another
+        $ws1->update({host => 'host1', instance => 1});
+        $ws2->update({host => 'host1', instance => 2});
+        # assume a combination of matching workers that leaves no wiggle room for picking the best assignment
+        @to_be_scheduled = (
+            {id => 1, matching_workers => [$ws2, $ws3, $ws1]},
+            {id => 2, matching_workers => [$ws4, $ws2, $ws3], one_host_only => 1});
+        $slots = OpenQA::Scheduler::Model::Jobs::_pick_slots_with_common_worker_host(\@to_be_scheduled);
+        is_deeply $slots, [$ws1, $ws2], 'slots on host1 returned';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws1], 'slot 1 assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws2], 'slot 2 assigned to job 2';
+    } or diag $explain_slots->();
+};
+
 done_testing;

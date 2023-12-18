@@ -637,6 +637,13 @@ only assign these jobs if there is a sufficient number of free worker-slots. To
 avoid a parallel cluster from starvation its priority is increased gradually and
 eventually workers can be held back for the cluster.
 
+====== Dependency pinning
+It is possible to ensure that all jobs within the same _parallel_ cluster are
+executed on the same worker host. This is useful for connecting the SUTs without
+having to connect the physical worker hosts. Use `PARALLEL_ONE_HOST_ONLY=1` to
+enable this. Of course this means that you need to provide enough worker slots
+on single worker hosts to fit an entire cluster.
+
 ==== Inter-machine dependencies
 Those dependencies make it possible to create job dependencies between tests
 which are supposed to run on different machines.
