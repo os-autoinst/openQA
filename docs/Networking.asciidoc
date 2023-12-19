@@ -263,6 +263,8 @@ ovs-vsctl show # shows the bridge br1, the tap devices are assigned to it
 ovs-ofctl dump-flows br1 # shows the rules installed by os-autoinst-openvswitch in table=0
 ovs-dpctl show # show basic info on all datapaths
 ovs-dpctl dump-flows # displays flows in datapaths
+ovs-appctl stp/show # show stp information
+ovs-appctl fdb/show br1 # show MAC address table
 ----
 
 When everything is ok and the machines are able to communicate, the ovs-vsctl
