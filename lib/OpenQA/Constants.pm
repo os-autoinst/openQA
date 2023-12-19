@@ -99,7 +99,7 @@ use constant VIDEO_FILE_NAME_REGEX => qr/^.*\/video\.[^\/]*$/;
 use constant FRAGMENT_REGEX => qr'(#([-?/:@.~!$&\'()*+,;=\w]|%[0-9a-fA-F]{2})*)*';
 
 use constant JOBS_OVERVIEW_SEARCH_CRITERIA =>
-  (qw(distri version flavor build test modules modules_result module_re group groupid id group_glob not_group_glob));
+  (qw(distri version flavor build test modules modules_result module_re group groupid id));
 
 our @EXPORT_OK = qw(
   WEBSOCKET_API_VERSION DEFAULT_WORKER_TIMEOUT
