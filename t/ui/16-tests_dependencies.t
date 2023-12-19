@@ -15,6 +15,7 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::SeleniumTest;
 use OpenQA::Schema::Result::JobDependencies;
+use OpenQA::JobDependencies::Constants qw(CHAINED DIRECTLY_CHAINED);
 use OpenQA::Jobs::Constants;
 
 my $test_case = OpenQA::Test::Case->new;
@@ -24,45 +25,30 @@ my $schema = $test_case->init_data(
     fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl'
 );
 
-sub prepare_database {
-    my $jobs = $schema->resultset('Jobs');
-    my $dependencies = $schema->resultset('JobDependencies');
+my $jobs = $schema->resultset('Jobs');
+my $dependencies = $schema->resultset('JobDependencies');
 
-    # make doc job a clone of the textmode job
-    my $doc_job_id = 99938;
-    my $textmode_job = $jobs->find(99945);
-    $textmode_job->update({clone_id => $doc_job_id});
+# make doc job a clone of the textmode job
+my $doc_job_id = 99938;
+my $textmode_job = $jobs->find(99945);
+$textmode_job->update({clone_id => $doc_job_id});
 
-    # insert dependencies (in addition to existing ones in regular fixtures) to get the following graph:
-    #             => textmode (99945)
-    # kde (99937) => doc (99938)      => kde (99963)
-    #                                    kde (99961) => RAID0 (99927)
-    # (99963 and 99961 are a cluster/parallel)
-    # (99945 is hidden because it is a clone of 99938)
-    # (99927 follows 99961 *directly*)
-    $dependencies->create(
-        {
-            child_job_id => 99963,
-            parent_job_id => 99938,
-            dependency => OpenQA::JobDependencies::Constants::CHAINED,
-        });
-    $dependencies->create(
-        {
-            child_job_id => 99945,
-            parent_job_id => 99937,
-            dependency => OpenQA::JobDependencies::Constants::CHAINED,
-        });
-    $dependencies->create(
-        {
-            child_job_id => 99927,
-            parent_job_id => 99961,
-            dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
-        });
-    # note: This cluster makes no sense but that is not the point of this test.
-}
+# avoid duplicating the chained parent 99938 for the sake of this test
+$jobs->find(99938)->update({result => PASSED});
 
-prepare_database;
+# insert dependencies (in addition to existing ones in regular fixtures) to get the following graph:
+#             => textmode (99945)
+# kde (99937) => doc (99938)      => kde (99963)
+#                                    kde (99961) => RAID0 (99927)
+# (99963 and 99961 are a cluster/parallel)
+# (99945 is hidden because it is a clone of 99938)
+# (99927 follows 99961 *directly*)
+# note: This cluster makes no sense but that is not the point of this test.
+$dependencies->create({child_job_id => 99963, parent_job_id => 99938, dependency => CHAINED});
+$dependencies->create({child_job_id => 99945, parent_job_id => 99937, dependency => CHAINED});
+$dependencies->create({child_job_id => 99927, parent_job_id => 99961, dependency => DIRECTLY_CHAINED});
 
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 driver_missing unless my $driver = call_driver;
 
 sub get_tooltip ($job_id) {
@@ -75,11 +61,6 @@ sub node_name ($name, $a, $d, $as_child, $pd) {
 
 subtest 'dependency json' => sub {
     my $baseurl = $driver->get_current_url;
-    my $t = Test::Mojo->new;
-    my $app = $t->app;
-    $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
-    $t->app($app);
-
     my (%cluster, @edges);
     my @basic_node = (blocked_by_id => undef, chained => [], directly_chained => [], parallel => []);
     my @nodes = (
@@ -103,7 +84,7 @@ subtest 'dependency json' => sub {
             @basic_node,
             id => 99938,
             label => 'doc@64bit',
-            result => FAILED,
+            result => PASSED,
             state => DONE,
             name => node_name('Factory-DVD-x86_64-Build0048-doc@64bit', 2, 0, 0, 2),
             chained => ['kde'],
@@ -146,6 +127,54 @@ subtest 'dependency json' => sub {
     $t->get_ok($baseurl . 'tests/99938/dependencies_ajax')->status_is(200);
     $t->json_is('' => \%expected, 'nodes, edges and cluster computed');
     diag explain $t->tx->res->json unless $t->success;
+};
+
+subtest 'dependency JSON after duplicating jobs' => sub {
+    # remove the job 99938 is cloned as to make this test more distinct from the previous subtest
+    $schema->txn_begin;
+    $textmode_job->delete;
+
+    # duplicate one of the jobs in the parallel cluster (which will also duplicate a few dependend jobs)
+    my $duplicates = $jobs->find(99963)->auto_duplicate->{cluster_cloned};
+    my @new_jobs = sort values %$duplicates;
+    my $directly_chained_child_dup = $duplicates->{99927};
+    is_deeply [sort keys %$duplicates], [99927, 99961, 99963], 'expected set of jobs has been duplicated';
+
+    subtest 'graph for the original jobs' => sub {
+        my $json = $t->get_ok('/tests/99963/dependencies_ajax')->status_is(200)->tx->res->json;
+        my @rendered_nodes = sort map { $_->{id} } @{$json->{nodes}};
+        my @expected_nodes = (
+            99927,    # because it has the same clone-depth as the original job
+            99937,    # because it has not been duplicated
+            99938,    # because it has not been duplicated
+            99961,    # because it has the same clone-depth as the original job
+            99963,    # because it is the original job
+            @new_jobs    # because those are indirect dependencies
+        );
+        is_deeply \@rendered_nodes, \@expected_nodes, 'all original jobs are present as well'
+          or diag explain \@rendered_nodes, $duplicates;
+
+        $json = $t->get_ok('/tests/99961/dependencies_ajax')->status_is(200)->tx->res->json;
+        @rendered_nodes = sort map { $_->{id} } @{$json->{nodes}};
+        @expected_nodes = grep { $_ != $directly_chained_child_dup } @expected_nodes;
+        is_deeply \@rendered_nodes, \@expected_nodes,
+          'same outcome for parallel sibling except that directly chained child is not indirectly added'
+          or diag explain \@rendered_nodes, $duplicates;
+    };
+
+    subtest 'graph for the duplicated jobs' => sub {
+        my $json = $t->get_ok("/tests/$duplicates->{99963}/dependencies_ajax")->status_is(200)->tx->res->json;
+        my @rendered_nodes = sort map { $_->{id} } @{$json->{nodes}};
+        my @expected_nodes = (
+            99937,    # because it has not been duplicated
+            99938,    # because it has not been duplicated
+            @new_jobs    # because those are the duplicated jobs
+        );
+        is_deeply \@rendered_nodes, \@expected_nodes, 'only the latest jobs are shown'
+          or diag explain \@rendered_nodes;
+    };
+
+    $schema->txn_rollback;
 };
 
 subtest 'job without dependencies' => sub {
