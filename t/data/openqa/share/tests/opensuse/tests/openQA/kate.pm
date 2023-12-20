@@ -13,8 +13,7 @@
 #   and closed
 # Maintainer: Oliver Kurz <okurz@suse.de>
 
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 sub run {
     my @regexp = qw(test-kate-3 tes-module_re);
