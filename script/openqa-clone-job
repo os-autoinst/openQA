@@ -153,7 +153,6 @@ https://openqa.opensuse.org 123456
 
 Will create 50 clones of the same job.
 
-
 =item B<--show-progress>
 
 Displays a progress bar when downloading assets.
