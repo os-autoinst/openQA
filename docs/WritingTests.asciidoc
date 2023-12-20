@@ -412,10 +412,6 @@ The download of assets, synchronization of tests and other setup tasks do *not*
 count into `MAX_JOB_TIME`. However, the setup time is limited by default to one
 hour. This can be changed by setting `MAX_SETUP_TIME`.
 
-To save disk space, increasing `MAX_JOB_TIME` beyond the default will
-automatically disable the video by adding `NOVIDEO=1` to the test settings.
-This can be prevented by adding `NOVIDEO=0` explicitly.
-
 The variable `TIMEOUT_SCALE` allows to scale `MAX_JOB_TIME` and timeouts
 within the backend, for example the <<_api,test API>>. This is supposed to
 be set within the worker settings on slow worker hosts. It has no influence on
