@@ -10138,7 +10138,9 @@ bridge,</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl<span class="tok-w"> </span>show<span class="tok-w"> </span><span class="tok-c1"># shows the bridge br1, the tap devices are assigned to it</span>
 ovs-ofctl<span class="tok-w"> </span>dump-flows<span class="tok-w"> </span>br1<span class="tok-w"> </span><span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span>
 ovs-dpctl<span class="tok-w"> </span>show<span class="tok-w"> </span><span class="tok-c1"># show basic info on all datapaths</span>
-ovs-dpctl<span class="tok-w"> </span>dump-flows<span class="tok-w"> </span><span class="tok-c1"># displays flows in datapaths</span></code></pre>
+ovs-dpctl<span class="tok-w"> </span>dump-flows<span class="tok-w"> </span><span class="tok-c1"># displays flows in datapaths</span>
+ovs-appctl<span class="tok-w"> </span>stp/show<span class="tok-w"> </span><span class="tok-c1"># show stp information</span>
+ovs-appctl<span class="tok-w"> </span>fdb/show<span class="tok-w"> </span>br1<span class="tok-w"> </span><span class="tok-c1"># show MAC address table</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -12462,7 +12464,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-12-14 02:24:13 UTC
+Last updated 2023-12-20 02:24:17 UTC
 </div>
 </div>
 </body>
