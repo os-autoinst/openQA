@@ -104,6 +104,10 @@ from JOBREF if it is a URL).
 Specifies the directory to store test assets (defaults to
 $OPENQA_SHAREDIR/factory).
 
+=item B<--skip-checks>
+
+Skips additional checks like maintenance update availability.
+
 =item B<--skip-deps>
 
 Do NOT clone parent jobs (which is done by default).
@@ -148,7 +152,6 @@ openqa-clone-job --skip-chained-deps --repeat=50 --within-instance \
 https://openqa.opensuse.org 123456 
 
 Will create 50 clones of the same job.
-
 
 =item B<--show-progress>
 
@@ -209,6 +212,7 @@ sub parse_options () {
         "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance",
         "help|h", "show-progress", "within-instance|w=s", "clone-children",
         "max-depth:i", "repeat|r:i", "ignore-missing-assets", "export-command",
+        "skip-checks",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
