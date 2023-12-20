@@ -58,6 +58,7 @@ sub run () {
     # write in this block the code for your test.
 }
 -------------------------------------------------------------------
+* **Note:** `Mojo::Base` _automatically enables: strict, warnings, utf8, perl5.16. See https://docs.mosjolicious.org/Mojo/Base#DESCRIPTION[Mojo::Base Description]_
 
 And here is an example in Python:
 
