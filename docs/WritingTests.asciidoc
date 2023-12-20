@@ -539,28 +539,7 @@ causing incomplete jobs.
 <<Installing.asciidoc#custom_hook_scripts_job_done,Custom hook scripts on "job done" based on result>>
 can be used to apply more elaborate issue detection and retriggering of tests.
 
-=== Writing multi-machine tests
-[id="mm-tests"]
-
-Scenarios requiring more than one system under test (SUT), like High Availability testing, are covered as multi-machine tests (MM tests) in this section.
-
-openQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:
-
-* _everything needed for MM tests must be running as a test job_ (or you are on your own), even support infrastructure (custom DHCP, NFS,
-etc. if required), which in principle is not part of the actual testing, must have a defined test suite so a test job can be created
-* openQA scheduler makes sure _tests are started as a group_ and in right order, _cancelled as a group_ if some dependencies are violated and _cloned as
-a group_ if requested.
-* openQA _does not synchronize_ individual steps of the tests.
-* openQA provides _locking server for basic synchronization_ of tests (e.g. wait until services are ready for failover), but the _correct usage of locks is
-test designer job_ (beware deadlocks).
-
-In short, writing multi-machine tests adds a few more layers of complexity:
-
-1. documenting the dependencies and order between individual tests
-2. synchronization between individual tests
-3. actual technical realization (i.e. <<Networking.asciidoc#networking,custom networking>>)
-
-==== Job dependencies
+=== Job dependencies
 There are different dependency *types*, most importantly _chained_ and
 _parallel_ dependencies.
 
@@ -576,7 +555,7 @@ Additionally, dependencies can be machine-specific (see
 <<WritingTests.asciidoc#_inter_machine_dependencies,Inter-machine dependencies>>
 section).
 
-===== Declaring dependencies
+==== Declaring dependencies
 Dependencies are declared by adding a job setting on the child job specifying
 its parents. There is one variable for each dependency type.
 
@@ -593,7 +572,7 @@ explained in the
 <<UsersGuide.asciidoc#_further_examples_for_advanced_dependency_handling,Further examples for advanced dependency handling>>
 section. The variables mentioned in the subsequent sections do *not* apply.
 
-====== Chained dependencies
+===== Chained dependencies
 _Chained_ dependencies declare that one test must only
 run after another test has concluded. For instance, extra tests relying on a
 successfully finished installation should declare a chained dependency on the
@@ -624,7 +603,7 @@ dependencies between each other is sometimes called a _directly-chained
 cluster_. All jobs within the cluster will be assigned to a single worker-slot
 at the same time by the scheduler.
 
-====== Parallel dependencies
+===== Parallel dependencies
 _Parallel_ dependencies declare that tests must be scheduled to run at the same
 time. An example are "multi-machine tests" which usually test some kind of
 server and multiple clients. In this example the client tests should declare a
@@ -645,7 +624,7 @@ only assign these jobs if there is a sufficient number of free worker-slots. To
 avoid a parallel cluster from starvation its priority is increased gradually and
 eventually workers can be held back for the cluster.
 
-===== Inter-machine dependencies
+==== Inter-machine dependencies
 Those dependencies make it possible to create job dependencies between tests which are supposed to run on different machines.
 
 To use it, simply append the machine name for each dependent test suite with an `@` sign separated.
@@ -663,7 +642,7 @@ Then, in job templates, add test suite(s) and all of its dependent test suite(s)
 have been explicitly defined in a variable for each dependent test suite.
 Checkout the following example sections to get a better understanding.
 
-===== Handling of related jobs on failure / cancellation / restart
+==== Handling of related jobs on failure / cancellation / restart
 openQA tries to handle things sensibly when jobs with dependencies either fail, or are manually cancelled or restarted:
 
 * When a chained or parallel parent fails or is cancelled, all children will be cancelled.
@@ -673,11 +652,11 @@ openQA tries to handle things sensibly when jobs with dependencies either fail, 
 * When a *directly* chained child is restarted, all directly chained parents are recursively restarted (but not directly chained siblings). Otherwise it would not be possible to guarantee that the jobs run directly after each other on the same worker.
 * When a parallel *child* fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it's sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job's PARALLEL_CANCEL_WHOLE_CLUSTER to a false value, i.e. 0, changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.
 
-====== Further notes
+===== Further notes
 * The API also allows to skip restarting parents via `skip_parents=1` and to skip restarting children via `skip_children=1`. It is also possible to skip restarting only passed and softfailed children via `skip_ok_result_children=1`.
 * Restarting multiple directly chained children individually is not possible because the parent would be restarted twice which is not possible. So one needs to restart the parent job instead. Use the mentioned `skip_ok_result_children=1` to restart only jobs which are not ok.
 
-===== Handling of dependencies when cloning jobs
+==== Handling of dependencies when cloning jobs
 Be sure to have ready the <<WritingTests.asciidoc#_job_dependencies,job
 dependencies>> section to have an understanding of different dependency types
 and the distinction between parents and children.
@@ -703,15 +682,15 @@ an "installation" test) as well but *not* vice versa.
 "server" test). When cloning a parallel child, only _that_ child and the parent
 will be cloned but not the siblings (e.g. the other "client" tests).
 
-===== Examples
-====== Specify machine explicitly
+==== Examples
+===== Specify machine explicitly
 Assume there is a test suite `A` supposed to run on machine `64bit-8G`. Additionally, test suite `B` supposed to run on machine `64bit-1G`.
 That means test suite `B` needs the variable `START_AFTER_TEST=A@64bit-8G`. This results in the following dependency:
 ----
 A@64bit-8G --> B@64bit-1G
 ----
 
-====== Implicitly inherit machines from parent
+===== Implicitly inherit machines from parent
 Assume test suite `A` is supposed to run on the machines `64bit` and `ppc`. Additionally, test suite `B` is supposed to run on both of these
 machines as well. This can be achieved by simply adding the variable `START_AFTER_TEST=A` to test suite `B` (omitting the machine at all).
 openQA take the best matches. This results in the following dependencies:
@@ -721,7 +700,7 @@ A@64bit --> B@64bit
 A@ppc --> B@ppc
 ----
 
-====== Conflicting machines prevent inheritance from parent
+===== Conflicting machines prevent inheritance from parent
 Assume test suite `A` is supposed to run on machine `64bit-8G`. Additionally, test suite `B` is supposed to run on machine `64bit-1G`.
 
 Adding the variable `START_AFTER_TEST=A` to test suite `B` will *not* work. That means openQA will *not* create a job dependency and instead shows
@@ -742,13 +721,13 @@ B@ppc-1G  C@ppc-2G  D@ppc64le
 
 openQA will also show errors that test suite `A` is not necessary on the machines `64bit` and `s390x`.
 
-====== Implicitly creating a dependency on same machine
+===== Implicitly creating a dependency on same machine
 Assume the value of the variable `START_AFTER_TEST` or `PARALLEL_WITH` *only* contains a test suite name but no
 machine (e.g. `START_AFTER_TEST=A,B` or `PARALLEL_WITH=A,B`).
 
 In this case openQA will create job dependencies that are scheduled on the same machine if all test suites are placed on the same machine.
 
-===== Notes regarding directly chained dependencies
+==== Notes regarding directly chained dependencies
 Having multiple jobs with `START_DIRECTLY_AFTER_TEST` pointing to the same parent job is possible, e.g.:
 ----
    --> B --> C
@@ -766,11 +745,11 @@ If `A` fails, none of the other jobs are attempted to be executed. If `B` fails,
 
 Directly chained dependencies and regularly chained dependencies can be mixed. This allows to create a dependency tree which contains multiple directly chained sub-trees. Be aware that these sub-trees might be executed on *different* workers and depending on the tree even be executed in parallel.
 
-===== Worker requirements
+==== Worker requirements
 `CHAINED` and `DIRECTLY_CHAINED` dependencies require only one worker. `PARALLEL` dependencies on the other hand require as many free workers as jobs are present in the
 parallel cluster.
 
-====== Examples
+===== Examples
 
 .`CHAINED` - i.e. test basic functionality before going advanced - requires 1 worker
 ----
@@ -819,6 +798,27 @@ and then define B,C,D with PARALLEL_WITH=A
 A is parent test suite for B, C, D (all can run in parallel).
 Children B, C, D can run and finish anytime, but A must run until all B, C, D finishes.
 ----
+
+[id="mm-tests"]
+=== Writing multi-machine tests
+
+Scenarios requiring more than one system under test (SUT), like High Availability testing, are covered as multi-machine tests (MM tests) in this section.
+
+openQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:
+
+* _everything needed for MM tests must be running as a test job_ (or you are on your own), even support infrastructure (custom DHCP, NFS,
+etc. if required), which in principle is not part of the actual testing, must have a defined test suite so a test job can be created
+* openQA scheduler makes sure _tests are started as a group_ and in right order, _cancelled as a group_ if some dependencies are violated and _cloned as
+a group_ if requested.
+* openQA _does not synchronize_ individual steps of the tests.
+* openQA provides _locking server for basic synchronization_ of tests (e.g. wait until services are ready for failover), but the _correct usage of locks is
+test designer job_ (beware deadlocks).
+
+In short, writing multi-machine tests adds a few more layers of complexity:
+
+1. documenting the dependencies and order between individual tests
+2. synchronization between individual tests
+3. actual technical realization (i.e. <<Networking.asciidoc#networking,custom networking>>)
 
 === Test synchronization and locking API
 
