@@ -944,7 +944,6 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
     my $job_id = $job->id;
     my $visited = $dependency_data->{visited};
     return $job_id if $visited->{$job_id};
-    $visited->{$job_id} = 1;
 
     # show only the latest child jobs but still require the cloned job to be an actual child
     if ($as_child_of) {
@@ -970,6 +969,7 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
         blocked_by_id => $job->blocked_by_id,
     );
     $node{$_} = [] for OpenQA::JobDependencies::Constants::names;
+    $visited->{$job_id} = 1;
     push(@{$dependency_data->{nodes}}, \%node);
 
     # add parents
