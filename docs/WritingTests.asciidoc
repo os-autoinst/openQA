@@ -477,13 +477,13 @@ sub run () {
 
 By default, any worker can get any job with the matching architecture.
 
-This behavior can be changed by setting job variable WORKER_CLASS. Jobs with
+This behavior can be changed by setting job variable `WORKER_CLASS`. Jobs with
 this variable set (typically via machines or test suites configuration) are
 assigned only to workers, which have the same variable in the configuration
 file.
 
 For example, the following configuration ensures, that jobs with
-WORKER_CLASS=desktop can be assigned _only_ to worker instances 1 and 2.
+`WORKER_CLASS=desktop` can be assigned _only_ to worker instances 1 and 2.
 
 [caption="File: "]
 .workers.ini
@@ -1236,7 +1236,7 @@ SUPPORT_SERVER_ROLES=pxe,qemuproxy
 WORKER_CLASS=server,qemu_autoyast_tap_64
 --------------------------------------------------------------------------------
 
-The actual test 'child' job, will then be defined as :
+The actual test 'child' job, will then be defined as:
 
 [source,ini]
 --------------------------------------------------------------------------------
