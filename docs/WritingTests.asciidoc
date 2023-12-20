@@ -857,26 +857,27 @@ Scenarios requiring more than one system under test (SUT), like High
 Availability testing, are covered as multi-machine tests (MM tests) in this
 section.
 
-openQA approaches multi-machine testing by assigning dependencies between
-individual jobs. This means the following:
+openQA approaches multi-machine testing by assigning parallel dependencies
+between individual jobs (which are explained in the previous section). For MM
+tests specifically, also take note of the following remarks:
 
-* _everything needed for MM tests must be running as a test job_ (or you are on
-  your own), even support infrastructure (custom DHCP, NFS, etc. if required),
+* _Everything needed for MM tests must be running as a test job_ (or you are on
+  your own). Even support infrastructure (custom DHCP, NFS, etc. if required),
   which in principle is not part of the actual testing, must have a defined test
-  suite so a test job can be created
-* openQA scheduler makes sure _tests are started as a group_ and in right order,
-  _cancelled as a group_ if some dependencies are violated and _cloned as a
-  group_ if requested.
-* openQA _does not synchronize_ individual steps of the tests.
-* openQA provides _locking server for basic synchronization_ of tests (e.g. wait
-  until services are ready for failover), but the _correct usage of locks is
-  test designer job_ (beware deadlocks).
+  suite so a test job can be created.
+* The openQA scheduler makes sure _tests are started as a group_ and in right
+  order, _cancelled as a group_ if some dependencies are violated and _cloned as
+  a group_ if requested (according to the specified job dependencies).
+* openQA does _not_ automatically synchronize individual steps of the tests.
+* openQA provides a _locking server for basic synchronization_ of tests (e.g.
+  wait until services are ready for failover). The correct usage of these locks
+  is the responsibility of the test writer (beware deadlocks).
 
 In short, writing multi-machine tests adds a few more layers of complexity:
 
-1. documenting the dependencies and order between individual tests
-2. synchronization between individual tests
-3. actual technical realization (i.e.
+1. Documenting the dependencies and order between individual tests
+2. Synchronization between individual tests
+3. Actual technical realization (i.e.
    <<Networking.asciidoc#networking,custom networking>>)
 
 === Test synchronization and locking API
