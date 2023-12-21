@@ -63,7 +63,7 @@ sub _extend_job_info {
 
     my $args = $job->{args};
     $args = $args->[0] if (ref $args eq 'ARRAY' && scalar(@$args) == 1);
-    if (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project}) {
+    if (ref $args eq 'HASH' && $args->{project}) {
         $args = $args->{project};
     }
     else { $args = dump($args) }    # uncoverable statement
@@ -128,7 +128,7 @@ sub run {
     return $self->render(json => {message => 'queue full'}, status => QUEUE_FULL)
       if ($results->{total} >= $queue_limit);
 
-    $app->gru->enqueue('obs_rsync_run', {project => $project}, {priority => 100});
+    $app->gru->enqueue('obs_rsync_run', {project => $project, url => $helper->project_status_url}, {priority => 100});
 
     return $self->render(json => {message => 'queued'}, status => QUEUED) if $has_active_job;    # uncoverable statement
     return $self->render(json => {message => 'started'}, status => STARTED);
