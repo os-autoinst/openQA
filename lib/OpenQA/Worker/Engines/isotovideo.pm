@@ -212,7 +212,6 @@ sub sync_tests ($cache_client, $job, $vars, $shared_cache, $rsync_source, $remai
     );
     my $rsync_request = $cache_client->rsync_request(from => $rsync_source, to => $shared_cache);
     my $rsync_request_description = "from '$rsync_source' to '$shared_cache'";
-    $job->worker->settings->global_settings->{PRJDIR} = $shared_cache;
 
     # enqueue rsync task; retry in some error cases
     if (my $err = $cache_client->enqueue($rsync_request)) {
@@ -315,13 +314,8 @@ sub engine_workit ($job, $callback) {
         OPENQA_URL => $openqa_url,
         WORKER_INSTANCE => $instance,
         WORKER_ID => $workerid,
-        PRJDIR => OpenQA::Utils::sharedir(),
         %$job_settings
     );
-    # note: PRJDIR is used as base for relative needle paths by os-autoinst. This is supposed to change
-    #       but for compatibility with current old os-autoinst we need to set PRJDIR for a consistent
-    #       behavior.
-
     log_debug "Job settings:\n" . format_settings(\%vars);
 
     # cache/locate assets, set ASSETDIR

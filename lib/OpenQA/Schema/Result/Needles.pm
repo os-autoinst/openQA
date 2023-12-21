@@ -86,8 +86,7 @@ sub update_needle_cache ($needle_cache) { $_->update for values %$needle_cache }
 # be aware that giving the optional needle_cache hash ref, makes you responsible
 # to call update_needle_cache after a loop
 sub update_needle ($filename, $module, $matched = undef, $needle_cache = undef) {
-    # assume that path of the JSON file is relative to the job's needle dir or (to support legacy versions
-    # of os-autoinst) relative to the "share dir" (the $bmwqemu::vars{PRJDIR} variable in legacy os-autoinst)
+    # assume that path of the JSON file is relative to the job's needle dir
     my $needle_dir;
     unless (-f $filename) {
         return undef unless $filename = locate_needle($filename, $needle_dir = $module->job->needle_dir);
