@@ -135,7 +135,7 @@ sub list_ajax ($self) {
         state => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope => $scope,
         match => $self->get_match_param,
-        groupid => $self->param('groupid'),
+        groupids => $self->_prepare_groupids,
         limit => min(
             $limits->{all_tests_max_finished_jobs},
             $self->param('limit') // $limits->{all_tests_default_finished_jobs}
@@ -716,6 +716,16 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
     return ($limit_exceeded, \%archs, \%results, $aggregated);
+}
+
+sub _prepare_groupids ($self) {
+    if (my @groups = $self->groups_for_globs) {
+        return [map { $_->id } @groups];
+    }
+
+    my $v = $self->validation;
+    $v->optional('groupid')->num(0, undef);
+    return $v->is_valid('groupid') ? $self->every_param('groupid') : undef;
 }
 
 # avoid running a SELECT for each job

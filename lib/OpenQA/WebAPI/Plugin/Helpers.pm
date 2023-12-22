@@ -346,6 +346,7 @@ sub register ($self, $app, $config) {
     $app->helper('reply.validation_error' => \&_validation_error);
 
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
+    $app->helper(groups_for_globs => \&_groups_for_globs);
     $app->helper(param_hash => \&_param_hash);
     $app->helper(
         link_key_exists => sub {
@@ -425,9 +426,6 @@ sub _compose_job_overview_search_args ($c) {
     my $regexp = $v->every_param('module_re');
     $search_args{module_re} = shift @$regexp if $regexp && @$regexp;
 
-    my $group_glob = [split(/\s*,\s*/, $v->param('group_glob') // '')];
-    my $not_group_glob = [split(/\s*,\s*/, $v->param('not_group_glob') // '')];
-
     # add group query params to search args
     # (By 'every_param' we make sure to use multiple values for groupid and
     # group at the same time as a logical or, i.e. all specified groups are
@@ -441,15 +439,7 @@ sub _compose_job_overview_search_args ($c) {
         @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
     }
 
-    # use globs to filter job groups, first include all groups that match "group_glob" values, and then exclude those
-    # that also match "not_group_glob" values
-    elsif (@$group_glob || @$not_group_glob) {
-        my @inclusive = map { qr/^$_$/i } map { glob_to_regex_string($_) } @$group_glob;
-        my @exclusive = map { qr/^$_$/i } map { glob_to_regex_string($_) } @$not_group_glob;
-        @groups = $schema->resultset('JobGroups')->all;
-        @groups = grep { _match_group(\@inclusive, $_) } @groups if @inclusive;
-        @groups = grep { !_match_group(\@exclusive, $_) } @groups if @exclusive;
-    }
+    else { @groups = $c->groups_for_globs }
 
     # add flash message if optional "groupid" parameter is invalid
     $c->stash(flash_error => 'Specified "groupid" is invalid and therefore ignored.')
@@ -495,6 +485,27 @@ sub _compose_job_overview_search_args ($c) {
     $search_args{groupids} = [map { $_->id } @groups] if @groups;
 
     return (\%search_args, \@groups);
+}
+
+sub _groups_for_globs ($c) {
+    my $v = $c->validation;
+    $v->optional($_, 'not_empty') for qw(group_glob not_group_glob);
+
+    my $group_glob = [split(/\s*,\s*/, $v->param('group_glob') // '')];
+    my $not_group_glob = [split(/\s*,\s*/, $v->param('not_group_glob') // '')];
+
+    # use globs to filter job groups, first include all groups that match "group_glob" values, and then exclude those
+    # that also match "not_group_glob" values
+    my @groups;
+    if (@$group_glob || @$not_group_glob) {
+        my @inclusive = map { qr/^$_$/i } map { glob_to_regex_string($_) } @$group_glob;
+        my @exclusive = map { qr/^$_$/i } map { glob_to_regex_string($_) } @$not_group_glob;
+        @groups = $c->schema->resultset('JobGroups')->all;
+        @groups = grep { _match_group(\@inclusive, $_) } @groups if @inclusive;
+        @groups = grep { !_match_group(\@exclusive, $_) } @groups if @exclusive;
+    }
+
+    return @groups;
 }
 
 sub _match_group ($regexes, $group) {
