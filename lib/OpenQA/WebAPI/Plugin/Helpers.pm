@@ -439,7 +439,11 @@ sub _compose_job_overview_search_args ($c) {
         @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
     }
 
-    else { @groups = $c->groups_for_globs }
+    else {
+        my $groups = $c->groups_for_globs;
+        if (defined $groups) { @groups = @$groups }
+        else { $search_args{groupids} = [0] }
+    }
 
     # add flash message if optional "groupid" parameter is invalid
     $c->stash(flash_error => 'Specified "groupid" is invalid and therefore ignored.')
@@ -503,9 +507,12 @@ sub _groups_for_globs ($c) {
         @groups = $c->schema->resultset('JobGroups')->all;
         @groups = grep { _match_group(\@inclusive, $_) } @groups if @inclusive;
         @groups = grep { !_match_group(\@exclusive, $_) } @groups if @exclusive;
+
+        # No matches at all needs to be a special case to be handled gracefully by the caller
+        return undef unless @groups;
     }
 
-    return @groups;
+    return \@groups;
 }
 
 sub _match_group ($regexes, $group) {

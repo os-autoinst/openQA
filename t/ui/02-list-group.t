@@ -144,6 +144,13 @@ subtest 'group_glob and not_group_glob' => sub {
         is @rows, 1, 'one job';
         ok $driver->find_element('#results #job_99953'), '99953 listed';
     };
+
+    subtest 'filter with glob and no match' => sub {
+        ok $driver->get('/tests?group_glob=does_not_exist'), 'list jobs';
+        wait_for_ajax(msg => 'wait for test list');
+        my @rows = $driver->find_child_elements($driver->find_element('#results tbody'), 'tr');
+        like $rows[0]->get_text, qr/No data available in table/, 'no results';
+    };
 };
 
 kill_driver;

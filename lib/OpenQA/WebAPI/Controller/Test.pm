@@ -719,9 +719,8 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
 }
 
 sub _prepare_groupids ($self) {
-    if (my @groups = $self->groups_for_globs) {
-        return [map { $_->id } @groups];
-    }
+    return [0] unless my $groups = $self->groups_for_globs;
+    return [map { $_->id } @$groups] if @$groups;
 
     my $v = $self->validation;
     $v->optional('groupid')->num(0, undef);
