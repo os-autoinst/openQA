@@ -822,25 +822,23 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
 <li><a href="#_running_a_custom_worker_engine">Running a custom worker engine</a></li>
 <li><a href="#_automatic_retries_of_jobs">Automatic retries of jobs</a></li>
-<li><a href="#_writing_multi_machine_tests">Writing multi-machine tests</a>
-<ul class="sectlevel3">
 <li><a href="#_job_dependencies">Job dependencies</a>
-<ul class="sectlevel4">
+<ul class="sectlevel3">
 <li><a href="#_declaring_dependencies">Declaring dependencies</a>
-<ul class="sectlevel5">
+<ul class="sectlevel4">
 <li><a href="#_chained_dependencies">Chained dependencies</a></li>
 <li><a href="#_parallel_dependencies">Parallel dependencies</a></li>
 </ul>
 </li>
 <li><a href="#_inter_machine_dependencies">Inter-machine dependencies</a></li>
 <li><a href="#_handling_of_related_jobs_on_failure_cancellation_restart">Handling of related jobs on failure / cancellation / restart</a>
-<ul class="sectlevel5">
+<ul class="sectlevel4">
 <li><a href="#_further_notes_2">Further notes</a></li>
 </ul>
 </li>
 <li><a href="#_handling_of_dependencies_when_cloning_jobs">Handling of dependencies when cloning jobs</a></li>
 <li><a href="#_examples">Examples</a>
-<ul class="sectlevel5">
+<ul class="sectlevel4">
 <li><a href="#_specify_machine_explicitly">Specify machine explicitly</a></li>
 <li><a href="#_implicitly_inherit_machines_from_parent">Implicitly inherit machines from parent</a></li>
 <li><a href="#_conflicting_machines_prevent_inheritance_from_parent">Conflicting machines prevent inheritance from parent</a></li>
@@ -849,14 +847,13 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_notes_regarding_directly_chained_dependencies">Notes regarding directly chained dependencies</a></li>
 <li><a href="#_worker_requirements">Worker requirements</a>
-<ul class="sectlevel5">
+<ul class="sectlevel4">
 <li><a href="#_examples_2">Examples</a></li>
 </ul>
 </li>
 </ul>
 </li>
-</ul>
-</li>
+<li><a href="#mm-tests">Writing multi-machine tests</a></li>
 <li><a href="#_test_synchronization_and_locking_api">Test synchronization and locking API</a></li>
 <li><a href="#_support_server_based_tests">Support Server based tests</a>
 <ul class="sectlevel3">
@@ -6336,9 +6333,8 @@ source code and documentation are hosted in the
 </div>
 <div class="paragraph">
 <p>This document provides the information needed to start developing new tests for
-openQA or to improve the existing ones. It&#8217;s
-assumed that the reader is already familiar with openQA and has already read the
-Starter Guide, available at the
+openQA or to improve the existing ones. It&#8217;s assumed that the reader is already
+familiar with openQA and has already read the Starter Guide, available at the
 <a href="https://github.com/os-autoinst/openQA">official repository</a>.</p>
 </div>
 </div>
@@ -6412,8 +6408,8 @@ actual test code and the test needs to be loaded in the distribution&#8217;s
 </div>
 <div class="paragraph">
 <p>There are more optional subroutines that can be defined to extend the behavior
-of a test. A test must comply with the interface defined below.
-<em>Please note that the subroutine marked with <code>*1</code> are optional.</em></p>
+of a test. A test must comply with the interface defined below. <em>Please note
+that the subroutine marked with <code>*1</code> are optional.</em></p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6524,8 +6520,8 @@ It is useful to setup the start point of the test.</p>
 <div class="sect3">
 <h4 id="_post_fail_hook"><code>post_fail_hook</code></h4>
 <div class="paragraph">
-<p>It is called after <code>run()</code> failed. It is useful to upload log files
-or to determine the state of the machine.</p>
+<p>It is called after <code>run()</code> failed. It is useful to upload log files or to
+determine the state of the machine.</p>
 </div>
 <div class="paragraph">
 <p>An example usage:</p>
@@ -6619,8 +6615,8 @@ when a Python test detects the presence of <code>run_args</code> on schedule.</p
 </div>
 <div class="paragraph">
 <p>This is because of the way <code>Inline::Python</code> handles argument passing between
-Perl &lt;&#8594; Python, references to complex Perl objects do not reach Python
-properly and they can&#8217;t be used.</p>
+Perl &lt;&#8594; Python, references to complex Perl objects do not reach Python properly
+and they can&#8217;t be used.</p>
 </div>
 </div>
 <div class="sect2">
@@ -6633,8 +6629,8 @@ implementing the interface described above.</p>
 <h4 id="_boot_to_desktop">Boot to desktop</h4>
 <div id="testmodule_perl_boot" class="paragraph">
 <div class="title">Boots into desktop when pressing enter at the boot loader screen.</div>
-<p>The following example is a basic test that assumes some live image
-that boots into the desktop when pressing enter at the boot loader:</p>
+<p>The following example is a basic test that assumes some live image that boots
+into the desktop when pressing enter at the boot loader:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6771,11 +6767,9 @@ implementing the interface described above.</p>
 <h2 id="_variables">Variables</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Test case behavior can be controlled via variables. Some basic
-variables like <code>DISTRI</code>, <code>VERSION</code>, <code>ARCH</code> are always set.
-Others like <code>DESKTOP</code> are defined by the 'Test suites' in the openQA
-web UI.
-Check the existing tests at
+<p>Test case behavior can be controlled via variables. Some basic variables like
+<code>DISTRI</code>, <code>VERSION</code>, <code>ARCH</code> are always set. Others like <code>DESKTOP</code> are defined by
+the 'Test suites' in the openQA web UI. Check the existing tests at
 <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse
 on GitHub</a> for examples.</p>
 </div>
@@ -6800,37 +6794,37 @@ hour. This can be changed by setting <code>MAX_SETUP_TIME</code>.</p>
 </div>
 <div class="paragraph">
 <p>To save disk space, increasing <code>MAX_JOB_TIME</code> beyond the default will
-automatically disable the video by adding <code>NOVIDEO=1</code> to the test settings.
-This can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
+automatically disable the video by adding <code>NOVIDEO=1</code> to the test settings. This
+can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
 </div>
 <div class="paragraph">
-<p>The variable <code>TIMEOUT_SCALE</code> allows to scale <code>MAX_JOB_TIME</code> and timeouts
-within the backend, for example the <a href="#_api">test API</a>. This is supposed to
-be set within the worker settings on slow worker hosts. It has no influence on
-the video setting.</p>
+<p>The variable <code>TIMEOUT_SCALE</code> allows to scale <code>MAX_JOB_TIME</code> and timeouts within
+the backend, for example the <a href="#_api">test API</a>. This is supposed to be set
+within the worker settings on slow worker hosts. It has no influence on the
+video setting.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</h3>
 <div class="paragraph">
-<p>Soft and hard failures can be triggered on demand by regular expressions when they match the
-serial output which is done after the test is executed. In case it does not make sense
-to continue the test run even if the current test module does not have the fatal flag, use <code>fatal</code>
-as serial failure type, so all subsequent test modules will not be executed if such failure
-was detected.</p>
+<p>Soft and hard failures can be triggered on demand by regular expressions when
+they match the serial output which is done after the test is executed. In case
+it does not make sense to continue the test run even if the current test module
+does not have the fatal flag, use <code>fatal</code> as serial failure type, so all
+subsequent test modules will not be executed if such failure was detected.</p>
 </div>
 <div class="paragraph">
 <p>To use this functionality the test developer needs to define the patterns to
-look for in the serial output either in the main.pm or in the test itself.
-Any pattern change done in a test it will be reflected in the next tests.</p>
+look for in the serial output either in the main.pm or in the test itself. Any
+pattern change done in a test it will be reflected in the next tests.</p>
 </div>
 <div class="paragraph">
 <p>The patterns defined in <code>main.pm</code> will be valid for all the tests.</p>
 </div>
 <div class="paragraph">
-<p>To simplify tests results review, if job fails with the same message, which is defined
-for the pattern, as previous job, automatic comment carryover will work even if
-test suites have failed due to different test modules.</p>
+<p>To simplify tests results review, if job fails with the same message, which is
+defined for the pattern, as previous job, automatic comment carryover will work
+even if test suites have failed due to different test modules.</p>
 </div>
 <div class="listingblock">
 <div class="title">Example: Defining serial exception capture in the main.pm</div>
@@ -6874,13 +6868,14 @@ test suites have failed due to different test modules.</p>
 <p>By default, any worker can get any job with the matching architecture.</p>
 </div>
 <div class="paragraph">
-<p>This behavior can be changed by setting job variable WORKER_CLASS. Jobs
-with this variable set (typically via machines or test suites configuration) are
-assigned only to workers, which have the same variable in the configuration file.</p>
+<p>This behavior can be changed by setting job variable <code>WORKER_CLASS</code>. Jobs with
+this variable set (typically via machines or test suites configuration) are
+assigned only to workers, which have the same variable in the configuration
+file.</p>
 </div>
 <div class="paragraph">
-<p>For example, the following configuration ensures, that jobs with WORKER_CLASS=desktop
-can be assigned <em>only</em> to worker instances 1 and 2.</p>
+<p>For example, the following configuration ensures, that jobs with
+<code>WORKER_CLASS=desktop</code> can be assigned <em>only</em> to worker instances 1 and 2.</p>
 </div>
 <div class="listingblock">
 <div class="title">File: workers.ini</div>
@@ -6899,8 +6894,8 @@ can be assigned <em>only</em> to worker instances 1 and 2.</p>
 <div class="sect2">
 <h3 id="_running_a_custom_worker_engine">Running a custom worker engine</h3>
 <div class="paragraph">
-<p>By default the openQA workers run the "isotovideo" application from PATH on
-the worker host, that is in most cases
+<p>By default the openQA workers run the "isotovideo" application from PATH on the
+worker host, that is in most cases
 <a href="https://github.com/os-autoinst/os-autoinst/blob/master/isotovideo">isotovideo</a>.
 A custom worker engine command can be set with the test variable <code>ISOTOVIDEO</code>.
 For example to run isotovideo from a custom container image one could use the
@@ -6941,50 +6936,7 @@ can be used to apply more elaborate issue detection and retriggering of tests.</
 </div>
 </div>
 <div class="sect2">
-<h3 id="_writing_multi_machine_tests">Writing multi-machine tests</h3>
-<div id="mm-tests" class="paragraph">
-<p>Scenarios requiring more than one system under test (SUT), like High Availability testing, are covered as multi-machine tests (MM tests) in this section.</p>
-</div>
-<div class="paragraph">
-<p>openQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><em>everything needed for MM tests must be running as a test job</em> (or you are on your own), even support infrastructure (custom DHCP, NFS,
-etc. if required), which in principle is not part of the actual testing, must have a defined test suite so a test job can be created</p>
-</li>
-<li>
-<p>openQA scheduler makes sure <em>tests are started as a group</em> and in right order, <em>cancelled as a group</em> if some dependencies are violated and <em>cloned as
-a group</em> if requested.</p>
-</li>
-<li>
-<p>openQA <em>does not synchronize</em> individual steps of the tests.</p>
-</li>
-<li>
-<p>openQA provides <em>locking server for basic synchronization</em> of tests (e.g. wait until services are ready for failover), but the <em>correct usage of locks is
-test designer job</em> (beware deadlocks).</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>In short, writing multi-machine tests adds a few more layers of complexity:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>documenting the dependencies and order between individual tests</p>
-</li>
-<li>
-<p>synchronization between individual tests</p>
-</li>
-<li>
-<p>actual technical realization (i.e. <a href="#networking">custom networking</a>)</p>
-</li>
-</ol>
-</div>
-<div class="sect3">
-<h4 id="_job_dependencies">Job dependencies</h4>
+<h3 id="_job_dependencies">Job dependencies</h3>
 <div class="paragraph">
 <p>There are different dependency <strong>types</strong>, most importantly <em>chained</em> and
 <em>parallel</em> dependencies.</p>
@@ -7004,8 +6956,8 @@ can be of an arbitrary type.</p>
 <a href="#_inter_machine_dependencies">Inter-machine dependencies</a>
 section).</p>
 </div>
-<div class="sect4">
-<h5 id="_declaring_dependencies">Declaring dependencies</h5>
+<div class="sect3">
+<h4 id="_declaring_dependencies">Declaring dependencies</h4>
 <div class="paragraph">
 <p>Dependencies are declared by adding a job setting on the child job specifying
 its parents. There is one variable for each dependency type.</p>
@@ -7025,13 +6977,12 @@ explained in the
 <a href="#_further_examples_for_advanced_dependency_handling">Further examples for advanced dependency handling</a>
 section. The variables mentioned in the subsequent sections do <strong>not</strong> apply.</p>
 </div>
-<div class="sect5">
-<h6 id="_chained_dependencies">Chained dependencies</h6>
+<div class="sect4">
+<h5 id="_chained_dependencies">Chained dependencies</h5>
 <div class="paragraph">
-<p><em>Chained</em> dependencies declare that one test must only
-run after another test has concluded. For instance, extra tests relying on a
-successfully finished installation should declare a chained dependency on the
-installation test.</p>
+<p><em>Chained</em> dependencies declare that one test must only run after another test
+has concluded. For instance, extra tests relying on a successfully finished
+installation should declare a chained dependency on the installation test.</p>
 </div>
 <div class="paragraph">
 <p>There are also <em>directly-chained</em> dependencies. They are similar to <em>chained</em>
@@ -7073,8 +7024,8 @@ at the same time by the scheduler.
 </table>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_parallel_dependencies">Parallel dependencies</h6>
+<div class="sect4">
+<h5 id="_parallel_dependencies">Parallel dependencies</h5>
 <div class="paragraph">
 <p><em>Parallel</em> dependencies declare that tests must be scheduled to run at the same
 time. An example are "multi-machine tests" which usually test some kind of
@@ -7110,14 +7061,16 @@ eventually workers can be held back for the cluster.
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_inter_machine_dependencies">Inter-machine dependencies</h5>
+<div class="sect3">
+<h4 id="_inter_machine_dependencies">Inter-machine dependencies</h4>
 <div class="paragraph">
-<p>Those dependencies make it possible to create job dependencies between tests which are supposed to run on different machines.</p>
+<p>Those dependencies make it possible to create job dependencies between tests
+which are supposed to run on different machines.</p>
 </div>
 <div class="paragraph">
-<p>To use it, simply append the machine name for each dependent test suite with an <code>@</code> sign separated.
-If a machine is not explicitly defined, the variable <code>MACHINE</code> of the current job is used for the dependent test suite.</p>
+<p>To use it, simply append the machine name for each dependent test suite with an
+<code>@</code> sign separated. If a machine is not explicitly defined, the variable
+<code>MACHINE</code> of the current job is used for the dependent test suite.</p>
 </div>
 <div class="paragraph">
 <p>Example 1:</p>
@@ -7136,54 +7089,81 @@ If a machine is not explicitly defined, the variable <code>MACHINE</code> of the
 </div>
 </div>
 <div class="paragraph">
-<p>Then, in job templates, add test suite(s) and all of its dependent test suite(s). Keep in mind to place the machines which
-have been explicitly defined in a variable for each dependent test suite.
-Checkout the following example sections to get a better understanding.</p>
+<p>Then, in job templates, add test suite(s) and all of its dependent test
+suite(s). Keep in mind to place the machines which have been explicitly defined
+in a variable for each dependent test suite. Checkout the following example
+sections to get a better understanding.</p>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_handling_of_related_jobs_on_failure_cancellation_restart">Handling of related jobs on failure / cancellation / restart</h5>
+<div class="sect3">
+<h4 id="_handling_of_related_jobs_on_failure_cancellation_restart">Handling of related jobs on failure / cancellation / restart</h4>
 <div class="paragraph">
-<p>openQA tries to handle things sensibly when jobs with dependencies either fail, or are manually cancelled or restarted:</p>
+<p>openQA tries to handle things sensibly when jobs with dependencies either fail,
+or are manually cancelled or restarted:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>When a chained or parallel parent fails or is cancelled, all children will be cancelled.</p>
+<p>When a chained or parallel parent fails or is cancelled, all children will be
+cancelled.</p>
 </li>
 <li>
 <p>When a parent is restarted, all children are also restarted recursively.</p>
 </li>
 <li>
-<p>When a parallel child is restarted, the parent and siblings will also be restarted.</p>
+<p>When a parallel child is restarted, the parent and siblings will also be
+restarted.</p>
 </li>
 <li>
-<p>When a <strong>regularly</strong> chained child is restarted, the parent is only restarted if it failed. This will usually be fine, but be aware that if an asset uploaded by the chained parent has been cleaned up, the child may fail immediately. To deal with this case, just restart the parent to recreate the asset.</p>
+<p>When a <strong>regularly</strong> chained child is restarted, the parent is only restarted if
+it failed. This will usually be fine, but be aware that if an asset uploaded
+by the chained parent has been cleaned up, the child may fail immediately. To
+deal with this case, just restart the parent to recreate the asset.</p>
 </li>
 <li>
-<p>When a <strong>directly</strong> chained child is restarted, all directly chained parents are recursively restarted (but not directly chained siblings). Otherwise it would not be possible to guarantee that the jobs run directly after each other on the same worker.</p>
+<p>When a <strong>directly</strong> chained child is restarted, all directly chained parents are
+recursively restarted (but not directly chained siblings). Otherwise it would
+not be possible to guarantee that the jobs run directly after each other on
+the same worker.</p>
 </li>
 <li>
-<p>When a parallel <strong>child</strong> fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it&#8217;s sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job&#8217;s PARALLEL_CANCEL_WHOLE_CLUSTER to a false value, i.e. 0, changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.</p>
+<p>When a parallel <strong>child</strong> fails or is cancelled, the parent and all other
+children are also cancelled. This behaviour is intended for closely-related
+clusters of jobs, e.g. high availability tests, where it&#8217;s sensible to assume
+the entire test is invalid if any of its components fails. A special variable
+can be used to change this behaviour. Setting a parallel parent job&#8217;s
+PARALLEL_CANCEL_WHOLE_CLUSTER to a false value, i.e. 0, changes this so that,
+if one of its children fails or is cancelled but the parent has other pending
+or active children, the parent and the other children will not be cancelled.
+This behaviour makes more sense if the parent is providing services to the
+various children but the children themselves are not closely related and a
+failure of one does not imply that the tests run by the other children and the
+parent are invalid.</p>
 </li>
 </ul>
 </div>
-<div class="sect5">
-<h6 id="_further_notes_2">Further notes</h6>
+<div class="sect4">
+<h5 id="_further_notes_2">Further notes</h5>
 <div class="ulist">
 <ul>
 <li>
-<p>The API also allows to skip restarting parents via <code>skip_parents=1</code> and to skip restarting children via <code>skip_children=1</code>. It is also possible to skip restarting only passed and softfailed children via <code>skip_ok_result_children=1</code>.</p>
+<p>The API also allows to skip restarting parents via <code>skip_parents=1</code> and to
+skip restarting children via <code>skip_children=1</code>. It is also possible to skip
+restarting only passed and softfailed children via
+<code>skip_ok_result_children=1</code>.</p>
 </li>
 <li>
-<p>Restarting multiple directly chained children individually is not possible because the parent would be restarted twice which is not possible. So one needs to restart the parent job instead. Use the mentioned <code>skip_ok_result_children=1</code> to restart only jobs which are not ok.</p>
+<p>Restarting multiple directly chained children individually is not possible
+because the parent would be restarted twice which is not possible. So one
+needs to restart the parent job instead. Use the mentioned
+<code>skip_ok_result_children=1</code> to restart only jobs which are not ok</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_handling_of_dependencies_when_cloning_jobs">Handling of dependencies when cloning jobs</h5>
+<div class="sect3">
+<h4 id="_handling_of_dependencies_when_cloning_jobs">Handling of dependencies when cloning jobs</h4>
 <div class="paragraph">
 <p>Be sure to have ready the <a href="#_job_dependencies">job
 dependencies</a> section to have an understanding of different dependency types
@@ -7204,8 +7184,8 @@ that this affects siblings as well when cloning parents (as explained in the
 previous paragraph).</p>
 </div>
 <div class="paragraph">
-<p>As a consequence it makes a difference which job of the dependency tree
-is cloned, especially with default parameters. Examples:</p>
+<p>As a consequence it makes a difference which job of the dependency tree is
+cloned, especially with default parameters. Examples:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -7221,13 +7201,17 @@ will be cloned but not the siblings (e.g. the other "client" tests).</p>
 </ul>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_examples">Examples</h4>
 <div class="sect4">
-<h5 id="_examples">Examples</h5>
-<div class="sect5">
-<h6 id="_specify_machine_explicitly">Specify machine explicitly</h6>
+<h5 id="_specify_machine_explicitly">Specify machine explicitly</h5>
 <div class="paragraph">
-<p>Assume there is a test suite <code>A</code> supposed to run on machine <code>64bit-8G</code>. Additionally, test suite <code>B</code> supposed to run on machine <code>64bit-1G</code>.
-That means test suite <code>B</code> needs the variable <code>START_AFTER_TEST=A@64bit-8G</code>. This results in the following dependency:</p>
+<p>Assume there is a test suite <code>A</code> supposed to run on machine <code>64bit-8G</code>.
+Additionally, test suite <code>B</code> supposed to run on machine <code>64bit-1G</code>.</p>
+</div>
+<div class="paragraph">
+<p>That means test suite <code>B</code> needs the variable <code>START_AFTER_TEST=A@64bit-8G</code>. This
+results in the following dependency:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7235,12 +7219,14 @@ That means test suite <code>B</code> needs the variable <code>START_AFTER_TEST=A
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_implicitly_inherit_machines_from_parent">Implicitly inherit machines from parent</h6>
+<div class="sect4">
+<h5 id="_implicitly_inherit_machines_from_parent">Implicitly inherit machines from parent</h5>
 <div class="paragraph">
-<p>Assume test suite <code>A</code> is supposed to run on the machines <code>64bit</code> and <code>ppc</code>. Additionally, test suite <code>B</code> is supposed to run on both of these
-machines as well. This can be achieved by simply adding the variable <code>START_AFTER_TEST=A</code> to test suite <code>B</code> (omitting the machine at all).
-openQA take the best matches. This results in the following dependencies:</p>
+<p>Assume test suite <code>A</code> is supposed to run on the machines <code>64bit</code> and <code>ppc</code>.
+Additionally, test suite <code>B</code> is supposed to run on both of these machines as
+well. This can be achieved by simply adding the variable <code>START_AFTER_TEST=A</code> to
+test suite <code>B</code> (omitting the machine at all). openQA take the best matches. This
+results in the following dependencies:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7249,21 +7235,26 @@ A@ppc --&gt; B@ppc</pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_conflicting_machines_prevent_inheritance_from_parent">Conflicting machines prevent inheritance from parent</h6>
+<div class="sect4">
+<h5 id="_conflicting_machines_prevent_inheritance_from_parent">Conflicting machines prevent inheritance from parent</h5>
 <div class="paragraph">
-<p>Assume test suite <code>A</code> is supposed to run on machine <code>64bit-8G</code>. Additionally, test suite <code>B</code> is supposed to run on machine <code>64bit-1G</code>.</p>
+<p>Assume test suite <code>A</code> is supposed to run on machine <code>64bit-8G</code>. Additionally,
+test suite <code>B</code> is supposed to run on machine <code>64bit-1G</code>.</p>
 </div>
 <div class="paragraph">
-<p>Adding the variable <code>START_AFTER_TEST=A</code> to test suite <code>B</code> will <strong>not</strong> work. That means openQA will <strong>not</strong> create a job dependency and instead shows
-an error message. So it is required to explicitly define the variable as <code>START_AFTER_TEST=A@64bit-8G</code> in that case.</p>
+<p>Adding the variable <code>START_AFTER_TEST=A</code> to test suite <code>B</code> will <strong>not</strong> work. That
+means openQA will <strong>not</strong> create a job dependency and instead shows an error
+message. So it is required to explicitly define the variable as
+<code>START_AFTER_TEST=A@64bit-8G</code> in that case.</p>
 </div>
 <div class="paragraph">
-<p>Consider a different example: Assume test suite <code>A</code> is supposed to run on the machines <code>ppc</code>, <code>64bit</code> and <code>s390x</code>. Additionally, there are 3
-testsuites <code>B</code> on <code>ppc-1G</code>, <code>C</code> on <code>ppc-2G</code> and <code>D</code> on <code>ppc64le</code>.</p>
+<p>Consider a different example: Assume test suite <code>A</code> is supposed to run on the
+machines <code>ppc</code>, <code>64bit</code> and <code>s390x</code>. Additionally, there are 3 testsuites <code>B</code> on
+<code>ppc-1G</code>, <code>C</code> on <code>ppc-2G</code> and <code>D</code> on <code>ppc64le</code>.</p>
 </div>
 <div class="paragraph">
-<p>Adding the variable <code>PARALLEL_WITH=A@ppc</code> to the test suites <code>B</code>, <code>C</code> and <code>D</code> will result in the following dependencies:</p>
+<p>Adding the variable <code>PARALLEL_WITH=A@ppc</code> to the test suites <code>B</code>, <code>C</code> and <code>D</code>
+will result in the following dependencies:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7275,24 +7266,28 @@ B@ppc-1G  C@ppc-2G  D@ppc64le</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>openQA will also show errors that test suite <code>A</code> is not necessary on the machines <code>64bit</code> and <code>s390x</code>.</p>
-</div>
-</div>
-<div class="sect5">
-<h6 id="_implicitly_creating_a_dependency_on_same_machine">Implicitly creating a dependency on same machine</h6>
-<div class="paragraph">
-<p>Assume the value of the variable <code>START_AFTER_TEST</code> or <code>PARALLEL_WITH</code> <strong>only</strong> contains a test suite name but no
-machine (e.g. <code>START_AFTER_TEST=A,B</code> or <code>PARALLEL_WITH=A,B</code>).</p>
-</div>
-<div class="paragraph">
-<p>In this case openQA will create job dependencies that are scheduled on the same machine if all test suites are placed on the same machine.</p>
-</div>
+<p>openQA will also show errors that test suite <code>A</code> is not necessary on the
+machines <code>64bit</code> and <code>s390x</code>.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_notes_regarding_directly_chained_dependencies">Notes regarding directly chained dependencies</h5>
+<h5 id="_implicitly_creating_a_dependency_on_same_machine">Implicitly creating a dependency on same machine</h5>
 <div class="paragraph">
-<p>Having multiple jobs with <code>START_DIRECTLY_AFTER_TEST</code> pointing to the same parent job is possible, e.g.:</p>
+<p>Assume the value of the variable <code>START_AFTER_TEST</code> or <code>PARALLEL_WITH</code> <strong>only</strong>
+contains a test suite name but no machine (e.g. <code>START_AFTER_TEST=A,B</code> or
+<code>PARALLEL_WITH=A,B</code>).</p>
+</div>
+<div class="paragraph">
+<p>In this case openQA will create job dependencies that are scheduled on the same
+machine if all test suites are placed on the same machine.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_notes_regarding_directly_chained_dependencies">Notes regarding directly chained dependencies</h4>
+<div class="paragraph">
+<p>Having multiple jobs with <code>START_DIRECTLY_AFTER_TEST</code> pointing to the same
+parent job is possible, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7304,26 +7299,37 @@ A
 </div>
 </div>
 <div class="paragraph">
-<p>Of course only either <code>B</code> or <code>D</code> jobs can really be started <strong>directly</strong> after <code>A</code>. However, the use of <code>START_DIRECTLY_AFTER_TEST</code> still makes sure that no completely different job is executed in the middle and of course that all of these jobs are executed on the same worker.</p>
+<p>Of course only either <code>B</code> or <code>D</code> jobs can really be started <strong>directly</strong> after
+<code>A</code>. However, the use of <code>START_DIRECTLY_AFTER_TEST</code> still makes sure that no
+completely different job is executed in the middle and of course that all of
+these jobs are executed on the same worker.</p>
 </div>
 <div class="paragraph">
-<p>The directly chained sub-trees are executed in alphabetical order. So the above tree would result in the following execution order: <code>A, B, C, D, E</code>.</p>
+<p>The directly chained sub-trees are executed in alphabetical order. So the above
+tree would result in the following execution order: <code>A, B, C, D, E</code>.</p>
 </div>
 <div class="paragraph">
-<p>If <code>A</code> fails, none of the other jobs are attempted to be executed. If <code>B</code> fails, <code>C</code> is not attempted to be executed but <code>D</code> and <code>E</code> are. The assumption is that the average error case does not leave the system in a completely broken state and possibly required cleanup is done in the post fail hook.</p>
+<p>If <code>A</code> fails, none of the other jobs are attempted to be executed. If <code>B</code> fails,
+<code>C</code> is not attempted to be executed but <code>D</code> and <code>E</code> are. The assumption is that
+the average error case does not leave the system in a completely broken state
+and possibly required cleanup is done in the post fail hook.</p>
 </div>
 <div class="paragraph">
-<p>Directly chained dependencies and regularly chained dependencies can be mixed. This allows to create a dependency tree which contains multiple directly chained sub-trees. Be aware that these sub-trees might be executed on <strong>different</strong> workers and depending on the tree even be executed in parallel.</p>
+<p>Directly chained dependencies and regularly chained dependencies can be mixed.
+This allows to create a dependency tree which contains multiple directly chained
+sub-trees. Be aware that these sub-trees might be executed on <strong>different</strong>
+workers and depending on the tree even be executed in parallel.</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_worker_requirements">Worker requirements</h4>
+<div class="paragraph">
+<p><code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> dependencies require only one worker.
+<code>PARALLEL</code> dependencies on the other hand require as many free workers as jobs
+are present in the parallel cluster.</p>
 </div>
 <div class="sect4">
-<h5 id="_worker_requirements">Worker requirements</h5>
-<div class="paragraph">
-<p><code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> dependencies require only one worker. <code>PARALLEL</code> dependencies on the other hand require as many free workers as jobs are present in the
-parallel cluster.</p>
-</div>
-<div class="sect5">
-<h6 id="_examples_2">Examples</h6>
+<h5 id="_examples_2">Examples</h5>
 <div class="listingblock">
 <div class="title">Listing 1. <code>CHAINED</code> - i.e. test basic functionality before going advanced - requires 1 worker</div>
 <div class="content">
@@ -7382,32 +7388,99 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="mm-tests">Writing multi-machine tests</h3>
+<div class="paragraph">
+<p>Scenarios requiring more than one system under test (SUT), like High
+Availability testing, are covered as multi-machine tests (MM tests) in this
+section.</p>
+</div>
+<div class="paragraph">
+<p>openQA approaches multi-machine testing by assigning parallel dependencies
+between individual jobs (which are explained in the previous section). For MM
+tests specifically, also take note of the following remarks:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Everything needed for MM tests must be running as a test job</em> (or you are on
+your own). Even support infrastructure (custom DHCP, NFS, etc. if required),
+which in principle is not part of the actual testing, must have a defined test
+suite so a test job can be created.</p>
+</li>
+<li>
+<p>The openQA scheduler makes sure <em>tests are started as a group</em> and in right
+order, <em>cancelled as a group</em> if some dependencies are violated and <em>cloned as
+a group</em> if requested (according to the specified job dependencies).</p>
+</li>
+<li>
+<p>openQA does <em>not</em> automatically synchronize individual steps of the tests.</p>
+</li>
+<li>
+<p>openQA provides a <em>locking server for basic synchronization</em> of tests (e.g.
+wait until services are ready for failover). The correct usage of these locks
+is the responsibility of the test writer (beware deadlocks).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In short, writing multi-machine tests adds a few more layers of complexity:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Documenting the dependencies and order between individual tests</p>
+</li>
+<li>
+<p>Synchronization between individual tests</p>
+</li>
+<li>
+<p>Actual technical realization (i.e.
+<a href="#networking">custom networking</a>)</p>
+</li>
+</ol>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_test_synchronization_and_locking_api">Test synchronization and locking API</h3>
 <div class="paragraph">
-<p>openQA provides a locking API. To use it in your test files import the <code>lockapi</code> package (<em>use lockapi;</em>). It provides the following functions: <code>mutex_create</code>, <code>mutex_lock</code>, <code>mutex_unlock</code>, <code>mutex_wait</code></p>
+<p>openQA provides a locking API. To use it in your test files import the <code>lockapi</code>
+package (<em>use lockapi;</em>). It provides the following functions: <code>mutex_create</code>,
+<code>mutex_lock</code>, <code>mutex_unlock</code>, <code>mutex_wait</code></p>
 </div>
 <div class="paragraph">
-<p>Each of these functions takes the name of the mutex lock as first parameter. The name must not contain the "-" character. Mutex locks are associated with the caller&#8217;s job.</p>
+<p>Each of these functions takes the name of the mutex lock as first parameter. The
+name must not contain the "-" character. Mutex locks are associated with the
+caller&#8217;s job.</p>
 </div>
 <div class="paragraph">
-<p><code>mutex_lock</code> tries to lock the mutex for the caller&#8217;s job. The <code>mutex_lock</code> call blocks if the mutex does not exist or has been locked by a different job.</p>
+<p><code>mutex_lock</code> tries to lock the mutex for the caller&#8217;s job. The <code>mutex_lock</code> call
+blocks if the mutex does not exist or has been locked by a different job.</p>
 </div>
 <div class="paragraph">
-<p><code>mutex_unlock</code> tries to unlock the mutex. If the mutex is locked by a different job, <code>mutex_unlock</code> call blocks until the lock becomes available. If the mutex does not exist the call returns immediately without doing anything.</p>
+<p><code>mutex_unlock</code> tries to unlock the mutex. If the mutex is locked by a different
+job, <code>mutex_unlock</code> call blocks until the lock becomes available. If the mutex
+does not exist the call returns immediately without doing anything.</p>
 </div>
 <div class="paragraph">
-<p><code>mutex_wait</code> is a combination of <code>mutex_lock</code> and <code>mutex_unlock</code>. It displays more information about mutex state (time spent waiting, location of the lock). Use it if you need to wait for a specific action from single place (e.g. that Apache is running on the master node).</p>
+<p><code>mutex_wait</code> is a combination of <code>mutex_lock</code> and <code>mutex_unlock</code>. It displays
+more information about mutex state (time spent waiting, location of the lock).
+Use it if you need to wait for a specific action from single place (e.g. that
+Apache is running on the master node).</p>
 </div>
 <div class="paragraph">
-<p><code>mutex_create</code> creates a new mutex which is initially unlocked. If the mutex already exists the call returns immediately without doing anything.</p>
+<p><code>mutex_create</code> creates a new mutex which is initially unlocked. If the mutex
+already exists the call returns immediately without doing anything.</p>
 </div>
 <div class="paragraph">
-<p>Mutexes are addressed by <em>their name</em>. Each cluster of parallel jobs (defined via <code>PARALLEL_WITH</code> dependencies) has its own namespace. That means concurrently running jobs in different parallel job clusters use distinct mutexes (even if the same names are used).</p>
+<p>Mutexes are addressed by <em>their name</em>. Each cluster of parallel jobs (defined
+via <code>PARALLEL_WITH</code> dependencies) has its own namespace. That means concurrently
+running jobs in different parallel job clusters use distinct mutexes (even if
+the same names are used).</p>
 </div>
 <div class="paragraph">
-<p>The <code>mmapi</code> package provides <code>wait_for_children</code> which the parent can use to wait for the children to complete.</p>
+<p>The <code>mmapi</code> package provides <code>wait_for_children</code> which the parent can use to
+wait for the children to complete.</p>
 </div>
 <div class="exampleblock">
 <div class="content">
@@ -7458,15 +7531,16 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 </div>
 </div>
 <div class="paragraph">
-<p>Sometimes it is useful to wait for a certain action from the child or sibling job rather than the parent.
-In this case the child or sibling will create a mutex and any cluster job can lock/unlock it.</p>
+<p>Sometimes it is useful to wait for a certain action from the child or sibling
+job rather than the parent. In this case the child or sibling will create a
+mutex and any cluster job can lock/unlock it.</p>
 </div>
 <div class="paragraph">
-<p>The child can however die at any time. To prevent parent deadlock in this situation,
-it is required to pass the mutex owner&#8217;s job ID as a second parameter to <code>mutex_lock</code> and <code>mutex_wait</code>.
-The mutex owner is the job that creates the mutex.
-If a child job with a given ID has already finished, <code>mutex_lock</code> calls die.
-The job ID is also required when unlocking such a mutex.</p>
+<p>The child can however die at any time. To prevent parent deadlock in this
+situation, it is required to pass the mutex owner&#8217;s job ID as a second parameter
+to <code>mutex_lock</code> and <code>mutex_wait</code>. The mutex owner is the job that creates the
+mutex. If a child job with a given ID has already finished, <code>mutex_lock</code> calls
+die. The job ID is also required when unlocking such a mutex.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of mmapi: Parent JobWait until the child reaches given point</div>
@@ -7492,24 +7566,25 @@ The job ID is also required when unlocking such a mutex.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Mutexes are a way to wait for specific events from a single job.
-When we need multiple jobs to reach a certain state we need to use barriers.</p>
+<p>Mutexes are a way to wait for specific events from a single job. When we need
+multiple jobs to reach a certain state we need to use barriers.</p>
 </div>
 <div class="paragraph">
 <p>To create a barrier call <code>barrier_create</code> with the parameters name and count.
-The name serves as an ID (same as with mutexes). The count parameter specifies the
-number of jobs needed to call <code>barrier_wait</code> to unlock barrier.</p>
+The name serves as an ID (same as with mutexes). The count parameter specifies
+the number of jobs needed to call <code>barrier_wait</code> to unlock barrier.</p>
 </div>
 <div class="paragraph">
-<p>There is an optional <code>barrier_wait</code> parameter called <code>check_dead_job</code>.
-When used it will kill all jobs waiting in <code>barrier_wait</code> if one of the cluster jobs
-dies. It prevents waiting for states that will never be reached (and eventually dies
+<p>There is an optional <code>barrier_wait</code> parameter called <code>check_dead_job</code>. When used
+it will kill all jobs waiting in <code>barrier_wait</code> if one of the cluster jobs dies.
+It prevents waiting for states that will never be reached (and eventually dies
 on job timeout). It should be set only on one of the <code>barrier_wait</code> calls.</p>
 </div>
 <div class="paragraph">
-<p>An example would be one master and three worker jobs and you want to do initial setup
-in the three worker jobs before starting main actions. In such a case you might use
-<code>check_dead_job</code> to avoid useless actions when one of the worker jobs dies.</p>
+<p>An example would be one master and three worker jobs and you want to do initial
+setup in the three worker jobs before starting main actions. In such a case you
+might use <code>check_dead_job</code> to avoid useless actions when one of the worker jobs
+dies.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of barriers: Check for dead jobs while waiting for barrier</div>
@@ -7603,15 +7678,20 @@ in the three worker jobs before starting main actions. In such a case you might 
 <div class="sect2">
 <h3 id="_support_server_based_tests">Support Server based tests</h3>
 <div class="paragraph">
-<p>The idea is to have a dedicated "helper server" to allow advanced network based testing.</p>
+<p>The idea is to have a dedicated "helper server" to allow advanced network based
+testing.</p>
 </div>
 <div class="paragraph">
-<p>Support server takes advantage of the basic parallel setup as described in the previous section, with the support server being the parent test 'A' and the test needing it being the child test 'B'. This ensures that the test 'B' always have the support server available.</p>
+<p>Support server takes advantage of the basic parallel setup as described in the
+previous section, with the support server being the parent test 'A' and the test
+needing it being the child test 'B'. This ensures that the test 'B' always have
+the support server available.</p>
 </div>
 <div class="sect3">
 <h4 id="_preparing_the_supportserver">Preparing the supportserver</h4>
 <div class="paragraph">
-<p>The support server image is created by calling a special test, based on the autoyast test:</p>
+<p>The support server image is created by calling a special test, based on the
+autoyast test:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7623,11 +7703,13 @@ in the three worker jobs before starting main actions. In such a case you might 
 </div>
 </div>
 <div class="paragraph">
-<p>This produces QEMU image 'supportserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
-should define correct user and password, as well as packages and the common configuration.</p>
+<p>This produces QEMU image 'supportserver.qcow2' that contains the supportserver.
+The 'autoyast_supportserver.xml' should define correct user and password, as
+well as packages and the common configuration.</p>
 </div>
 <div class="paragraph">
-<p>More specific role the supportserver should take is then selected when the server is run in the actual test scenario.</p>
+<p>More specific role the supportserver should take is then selected when the
+server is run in the actual test scenario.</p>
 </div>
 </div>
 <div class="sect3">
@@ -7644,16 +7726,20 @@ should define correct user and password, as well as packages and the common conf
 </div>
 </div>
 <div class="paragraph">
-<p>where the <code>SUPPORT_SERVER_ROLES</code> defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
- <code>HDD_1</code> variable must be the name of the supportserver image as defined via <code>PUBLISH_HDD_1</code> variable during supportserver generation. If the support
-server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add <code>HDDMODEL=virtio-blk</code>. In case of QEMU backend, one can
-also use <code>BOOTFROM=c</code>, for faster boot directly from the <code>HDD_1</code> image.</p>
+<p>where the <code>SUPPORT_SERVER_ROLES</code> defines the specific role (see code in
+'tests/support_server/setup.pm' for available roles and their definition), and
+<code>HDD_1</code> variable must be the name of the supportserver image as defined via
+<code>PUBLISH_HDD_1</code> variable during supportserver generation. If the support server
+is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be
+needed to add <code>HDDMODEL=virtio-blk</code>. In case of QEMU backend, one can also use
+<code>BOOTFROM=c</code>, for faster boot directly from the <code>HDD_1</code> image.</p>
 </div>
 <div class="paragraph">
-<p>Then for the 'child' test using this supportserver, the following additional variable must be set:
-<code>PARALLEL_WITH=supportserver-pxe-tftp</code>
-where 'supportserver-pxe-tftp' is the name given to the supportserver in the test suites screen.
-Once the tests are defined, they can be added to openQA in the usual way:</p>
+<p>Then for the 'child' test using this supportserver, the following additional
+variable must be set: <code>PARALLEL_WITH=supportserver-pxe-tftp</code> where
+'supportserver-pxe-tftp' is the name given to the supportserver in the test
+suites screen. Once the tests are defined, they can be added to openQA in the
+usual way:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7662,14 +7748,17 @@ Once the tests are defined, they can be added to openQA in the usual way:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>where the <code>DISTRI</code>, <code>VERSION</code>, <code>FLAVOR</code> and <code>ARCH</code> correspond to the job group containing the tests.
-Note that the networking is provided by tap devices, so both jobs should run on machines defined by (apart from others) having <code>NICTYPE=tap</code>, <code>WORKER_CLASS=qemu_autoyast_tap_64</code>.</p>
+<p>where the <code>DISTRI</code>, <code>VERSION</code>, <code>FLAVOR</code> and <code>ARCH</code> correspond to the job group
+containing the tests. Note that the networking is provided by tap devices, so
+both jobs should run on machines defined by (apart from others) having
+<code>NICTYPE=tap</code>, <code>WORKER_CLASS=qemu_autoyast_tap_64</code>.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of Support Server: a simple tftp test</div>
 <div class="content">
 <div class="paragraph">
-<p>Let&#8217;s assume that we want to test tftp client operation. For this, we setup the supportserver as a tftp server:</p>
+<p>Let&#8217;s assume that we want to test tftp client operation. For this, we setup the
+supportserver as a tftp server:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7685,7 +7774,11 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <p>With a test-suites name <code>supportserver-opensuse-tftp</code>.</p>
 </div>
 <div class="paragraph">
-<p>The actual test 'child' job, will then have to set <code>PARALLEL_WITH=supportserver-opensuse-tftp</code>, and also other variables according to the test requirements. For convenience, we have also started a dhcp server on the supportserver, but even without it, network could be set up manually by assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.</p>
+<p>The actual test 'child' job, will then have to set
+<code>PARALLEL_WITH=supportserver-opensuse-tftp</code>, and also other variables according
+to the test requirements. For convenience, we have also started a dhcp server on
+the supportserver, but even without it, network could be set up manually by
+assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of Support Server: The code in the *.pm module doing the actual tftp test could then look something like the example below</div>
@@ -7709,13 +7802,19 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 </div>
 <div class="paragraph">
-<p>assuming of course, that the tested machine was already set up with necessary infrastructure for tftp, e.g. network was set up, tftp rpm installed and tftp service started, etc. All of this could be conveniently achieved using the autoyast installation, as shown in the next section.</p>
+<p>assuming of course, that the tested machine was already set up with necessary
+infrastructure for tftp, e.g. network was set up, tftp rpm installed and tftp
+service started, etc. All of this could be conveniently achieved using the
+autoyast installation, as shown in the next section.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of Support Server: autoyast based tftp test</div>
 <div class="content">
 <div class="paragraph">
-<p>Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access QEMU provided data, for downloading autoyast profile and tftp verify script:</p>
+<p>Here we will use autoyast to setup the system of the test job and the
+os-autoinst autoyast testing infrastructure. For supportserver, this means using
+proxy to access QEMU provided data, for downloading autoyast profile and tftp
+verify script:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7726,7 +7825,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 </div>
 <div class="paragraph">
-<p>The actual test 'child' job, will then be defined as :</p>
+<p>The actual test 'child' job, will then be defined as:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7740,7 +7839,9 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 </div>
 <div class="paragraph">
-<p>again assuming the support server&#8217;s name being <code>supportserver-opensuse-tftp</code>. Note that the <code>pxe</code> role already contains <code>tftp</code> and <code>dhcp</code> server role, since they are needed for the pxe boot to work.</p>
+<p>again assuming the support server&#8217;s name being <code>supportserver-opensuse-tftp</code>.
+Note that the <code>pxe</code> role already contains <code>tftp</code> and <code>dhcp</code> server role, since
+they are needed for the pxe boot to work.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of Support Server: The tftp test defined in the <code>autoyast_opensuse/opensuse_autoyast_tftp.sh</code> file could be something like:</div>
@@ -7755,7 +7856,8 @@ diff<span class="tok-w"> </span>-u<span class="tok-w"> </span>test.txt<span clas
 </div>
 </div>
 <div class="paragraph">
-<p>and the rest is done automatically, using already prepared test modules in <code>tests/autoyast</code> subdirectory.</p>
+<p>and the rest is done automatically, using already prepared test modules in
+<code>tests/autoyast</code> subdirectory.</p>
 </div>
 </div>
 </div>
@@ -7842,21 +7944,21 @@ library before using it directly.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>This returns the contents of the SUT&#8217;s /proc/cpuinfo file to the test script
-and then searches it for the term 'avx2' using a regex.</p>
+<p>This returns the contents of the SUT&#8217;s /proc/cpuinfo file to the test script and
+then searches it for the term 'avx2' using a regex.</p>
 </div>
 </div>
 </div>
 <div class="paragraph">
 <p>The <code>script_run</code> and <code>script_output</code> are high level commands which use
-<code>type_string</code> and <code>wait_serial</code> underneath. Sometimes you may wish to use
-lower level commands which give you more control, but be warned that it may
-also make your code less portable.</p>
+<code>type_string</code> and <code>wait_serial</code> underneath. Sometimes you may wish to use lower
+level commands which give you more control, but be warned that it may also make
+your code less portable.</p>
 </div>
 <div class="paragraph">
 <p>The command <code>wait_serial</code> watches the SUT&#8217;s serial port for text output and
-matches it against a regex. <code>type_string</code> sends a string to the SUT like it
-was typed in by the user over VNC.</p>
+matches it against a regex. <code>type_string</code> sends a string to the SUT like it was
+typed in by the user over VNC.</p>
 </div>
 <div class="sect3">
 <h4 id="_using_a_serial_terminal">Using a serial terminal</h4>
@@ -7867,41 +7969,38 @@ was typed in by the user over VNC.</p>
 <div class="title">Important</div>
 </td>
 <td class="content">
-You need a QEMU version &gt;= 2.6.1 and to set the
-<code>VIRTIO_CONSOLE</code> variable to 1 to use this with the QEMU backend
-(it is enabled by default for
-<a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse</a>
-tests). The svirt backend uses the <code>SERIAL_CONSOLE</code> variable, but only on s390x
-machines it has been confirmed to be working (failing on Hyper-V, VMware and
-XEN, see <a href="https://progress.opensuse.org/issues/55985">poo#55985</a>).
+You need a QEMU version &gt;= 2.6.1 and to set the <code>VIRTIO_CONSOLE</code>
+variable to 1 to use this with the QEMU backend (it is enabled by default for
+<a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-
+opensuse</a> tests). The svirt backend uses the <code>SERIAL_CONSOLE</code> variable, but only
+on s390x machines it has been confirmed to be working (failing on Hyper-V,
+VMware and XEN, see <a href="https://progress.opensuse.org/issues/55985">poo#55985</a>).
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>Usually openQA controls the system under test using VNC. This allows the use
-of both graphical and text based consoles. Key presses are sent individually
-as VNC commands and output is returned in the form of screen images and text
-output from the SUT&#8217;s default serial port.</p>
+<p>Usually openQA controls the system under test using VNC. This allows the use of
+both graphical and text based consoles. Key presses are sent individually as VNC
+commands and output is returned in the form of screen images and text output
+from the SUT&#8217;s default serial port.</p>
 </div>
 <div class="paragraph">
-<p>Sending key presses over VNC is very slow, so for tests which send a lot of
-text commands it is much faster to use a serial port for both sending shell
-commands and received program output.</p>
+<p>Sending key presses over VNC is very slow, so for tests which send a lot of text
+commands it is much faster to use a serial port for both sending shell commands
+and received program output.</p>
 </div>
 <div class="paragraph">
 <p>Communicating entirely using text also means that you no longer have to worry
-about your needles being invalidated due to a font change or similar. It is
-also much cheaper to transfer text and test it against regular expressions
-than encode images from a VNC feed and test them against sample images
-(needles).</p>
+about your needles being invalidated due to a font change or similar. It is also
+much cheaper to transfer text and test it against regular expressions than
+encode images from a VNC feed and test them against sample images (needles).</p>
 </div>
 <div class="paragraph">
 <p>On the other hand you can no longer use <code>assert_screen</code> or take a screen shot
-because the text is never rendered as an image. A lot of programs will also
-send ANSI escape sequences which will appear as raw text to the test script
-instead of being interpreted by a terminal emulator which then renders the
-text.</p>
+because the text is never rendered as an image. A lot of programs will also send
+ANSI escape sequences which will appear as raw text to the test script instead
+of being interpreted by a terminal emulator which then renders the text.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7909,10 +8008,10 @@ text.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The above code will cause <code>type_string</code> and <code>wait_serial</code> to write and read
-from a virtio serial port. A distribution specific call back will be made
-which allows os-autoinst to log into a serial terminal session running on the
-SUT. Once <code>select_console</code> returns you should be logged into a TTY as root.</p>
+<p>The above code will cause <code>type_string</code> and <code>wait_serial</code> to write and read from
+a virtio serial port. A distribution specific call back will be made which
+allows os-autoinst to log into a serial terminal session running on the SUT.
+Once <code>select_console</code> returns you should be logged into a TTY as root.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -7922,8 +8021,8 @@ SUT. Once <code>select_console</code> returns you should be logged into a TTY as
 </td>
 <td class="content">
 for <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse</a>
-tests instead of using <code>select_console('root-virtio-terminal')</code> directly is
-the preferred way to use wrapper <code>select_serial_terminal()</code>, which handles all
+tests instead of using <code>select_console('root-virtio-terminal')</code> directly is the
+preferred way to use wrapper <code>select_serial_terminal()</code>, which handles all
 backends:
 </td>
 </tr>
@@ -7938,36 +8037,34 @@ backends:
 </div>
 <div class="paragraph">
 <p>If you are struggling to visualise what is happening, imagine SSH-ing into a
-remote machine as root, you can then type in commands and read the results as
-if you were sat at that computer. What we are doing is much simpler than using
-an SSH connection (it is more like using GNU <code>screen</code> with a serial port), but
-the end result looks quite similar.</p>
+remote machine as root, you can then type in commands and read the results as if
+you were sat at that computer. What we are doing is much simpler than using an
+SSH connection (it is more like using GNU <code>screen</code> with a serial port), but the
+end result looks quite similar.</p>
 </div>
 <div class="paragraph">
 <p>As mentioned above, changing input and output to a serial terminal has the
 effect of changing where <code>wait_serial</code> reads output from. On a QEMU VM
-<code>wait_serial</code> usually reads from the default serial port which is also where
-the kernel log is usually output to.</p>
+<code>wait_serial</code> usually reads from the default serial port which is also where the
+kernel log is usually output to.</p>
 </div>
 <div class="paragraph">
 <p>When switching to a virtio based serial terminal, <code>wait_serial</code> will then read
-from a virtio serial port instead. However the default serial port still
-exists and can receive output. Some utility library functions are hard coded
-to redirect output to the default serial port and expect that <code>wait_serial</code>
-will be able to read it. Usually it is not too difficult to fix the utility
-function, you just need to remove some redirection from the relevant shell
-command.</p>
+from a virtio serial port instead. However the default serial port still exists
+and can receive output. Some utility library functions are hard coded to
+redirect output to the default serial port and expect that <code>wait_serial</code> will be
+able to read it. Usually it is not too difficult to fix the utility function,
+you just need to remove some redirection from the relevant shell command.</p>
 </div>
 <div class="paragraph">
-<p>Another common problem is that some library or utility function tries to take
-a screen shot. The hard part is finding what takes the screen shot, but then
-it is just a simple case of checking <code>is_serial_terminal</code> and not taking the
-screen shot if we are on a serial terminal console.</p>
+<p>Another common problem is that some library or utility function tries to take a
+screen shot. The hard part is finding what takes the screen shot, but then it is
+just a simple case of checking <code>is_serial_terminal</code> and not taking the screen
+shot if we are on a serial terminal console.</p>
 </div>
 <div class="paragraph">
 <p>Distributions usually wrap <code>select_console</code>, so instead of using it directly,
-you can use something like the following which is from the OpenSUSE test
-suite.</p>
+you can use something like the following which is from the OpenSUSE test suite.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7982,22 +8079,22 @@ available then it returns true. It is also possible to check if the current
 console is a serial terminal by calling <code>is_serial_terminal</code>.</p>
 </div>
 <div class="paragraph">
-<p>Once you have selected a serial terminal, the video feed will disappear from
-the live view, however at the bottom of the live screen there is a separate
-text feed. After the test has finished you can view the serial log(s) in the
-assets tab. You will probably have two serial logs; <code>serial0.txt</code> which is
-written from the default serial port and <code>serial_terminal.txt</code>.</p>
+<p>Once you have selected a serial terminal, the video feed will disappear from the
+live view, however at the bottom of the live screen there is a separate text
+feed. After the test has finished you can view the serial log(s) in the assets
+tab. You will probably have two serial logs; <code>serial0.txt</code> which is written from
+the default serial port and <code>serial_terminal.txt</code>.</p>
 </div>
 <div class="paragraph">
-<p>Now that you are on a serial terminal console everything will start to go a
-lot faster. So much faster in fact that race conditions become a big
-issue. Generally these can be avoided by using the higher level functions such
-as <code>script_run</code> and <code>script_output</code>.</p>
+<p>Now that you are on a serial terminal console everything will start to go a lot
+faster. So much faster in fact that race conditions become a big issue.
+Generally these can be avoided by using the higher level functions such as
+<code>script_run</code> and <code>script_output</code>.</p>
 </div>
 <div class="paragraph">
 <p>It is rarely necessary to use the lower level functions, however it helps to
-recognise problems caused by race conditions at the lower level, so please
-read the following section regardless.</p>
+recognise problems caused by race conditions at the lower level, so please read
+the following section regardless.</p>
 </div>
 <div class="paragraph">
 <p>So if you do need to use <code>type_string</code> and <code>wait_serial</code> directly then try to
@@ -8036,76 +8133,75 @@ which correspond to the steps above.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The first <code>wait_serial</code> (Step 1) ensures that the shell prompt has
-appeared. If we do not wait for the shell prompt then it is possible that we
-can send input to whatever command was run before. In this case that command
-would be 'echo' which is used by <code>script_run</code> to print a 'finished' message.</p>
+<p>The first <code>wait_serial</code> (Step 1) ensures that the shell prompt has appeared. If
+we do not wait for the shell prompt then it is possible that we can send input
+to whatever command was run before. In this case that command would be 'echo'
+which is used by <code>script_run</code> to print a 'finished' message.</p>
 </div>
 <div class="paragraph">
 <p>It is possible that echo was able to print the finish message, but was then
-suspended by the OS before it could exit. In which case the test script is
-able to race ahead and start sending input to echo which was intended for the
-shell. Waiting for the shell prompt stops this from happening.</p>
+suspended by the OS before it could exit. In which case the test script is able
+to race ahead and start sending input to echo which was intended for the shell.
+Waiting for the shell prompt stops this from happening.</p>
 </div>
 <div class="paragraph">
 <p>INFO: It appears that echo does not read STDIN in this case, and so the input
 will stay inside STDIN&#8217;s buffer and be read by the shell (Bash). Unfortunately
 this results in the input being displayed twice: once by the terminal&#8217;s echo
-(explained later) and once by Bash. Depending on your configuration the
-behavior could be completely different</p>
+(explained later) and once by Bash. Depending on your configuration the behavior
+could be completely different</p>
 </div>
 <div class="paragraph">
 <p>The function <code>serial_term_prompt</code> is a distribution specific function which
-returns the characters previously set as the shell prompt (e.g. export PS1="#
-", see the bash(1) or dash(1) man pages). If you are adapting a new
-distribution to use the serial terminal console, then we recommend setting a
-simple shell prompt and keeping track of it with utility functions.</p>
+returns the characters previously set as the shell prompt (e.g. export PS1="# ",
+see the bash(1) or dash(1) man pages). If you are adapting a new distribution to
+use the serial terminal console, then we recommend setting a simple shell prompt
+and keeping track of it with utility functions.</p>
 </div>
 <div class="paragraph">
-<p>The <code>no_regex</code> argument tells wait_serial to use simple string matching
-instead of regular expressions, see the implementation section for more
-details. The other arguments are the timeout (<code>undef</code> means we use the
-default) and a boolean which inverts the result of <code>wait_serial</code>. These are
-explained in the <code>os-autoinst/testapi.pm</code> documentation.</p>
+<p>The <code>no_regex</code> argument tells wait_serial to use simple string matching instead
+of regular expressions, see the implementation section for more details. The
+other arguments are the timeout (<code>undef</code> means we use the default) and a boolean
+which inverts the result of <code>wait_serial</code>. These are explained in the
+<code>os-autoinst/testapi.pm</code> documentation.</p>
 </div>
 <div class="paragraph">
 <p>Then the test script enters our command with <code>type_string</code> (Step 2) and waits
 for the command&#8217;s text to be echoed back by the system under test. Terminals
-usually echo back the characters sent to them so that the user can see what
-they have typed.</p>
+usually echo back the characters sent to them so that the user can see what they
+have typed.</p>
 </div>
 <div class="paragraph">
 <p>However this can be disabled (see the stty(1) man page) or possibly even
 unimplemented on your terminal. So this step may not be applicable, but it
-provides some error checking so you should think carefully before disabling
-echo deliberately.</p>
+provides some error checking so you should think carefully before disabling echo
+deliberately.</p>
 </div>
 <div class="paragraph">
-<p>We then consume the echo text (Step 3) before sending enter, to both check
-that the correct text was received and also to separate it from the command
-output. It also ensures that the text has been fully processed before sending
-the newline character which will cause the shell to change state.</p>
+<p>We then consume the echo text (Step 3) before sending enter, to both check that
+the correct text was received and also to separate it from the command output.
+It also ensures that the text has been fully processed before sending the
+newline character which will cause the shell to change state.</p>
 </div>
 <div class="paragraph">
-<p>It is worth reminding oneself that we are sending and receiving data
-extremely quickly on an interface usually limited by human typing speed. So
-any string which results in a significant state change should be treated as a
-potential source of race conditions.</p>
+<p>It is worth reminding oneself that we are sending and receiving data extremely
+quickly on an interface usually limited by human typing speed. So any string
+which results in a significant state change should be treated as a potential
+source of race conditions.</p>
 </div>
 <div class="paragraph">
-<p>Finally we send the newline character and wait for our custom finish
-message. <code>record_output</code> is set to ensure all the output from the SUT is
-saved (see the next section for more info).</p>
+<p>Finally we send the newline character and wait for our custom finish message.
+<code>record_output</code> is set to ensure all the output from the SUT is saved (see the
+next section for more info).</p>
 </div>
 <div class="paragraph">
-<p>What we do <strong>not</strong> do at this point, is wait for the shell prompt to appear.
-That would consume the prompt character breaking the next call to
-<code>script_run</code>.</p>
+<p>What we do <strong>not</strong> do at this point, is wait for the shell prompt to appear. That
+would consume the prompt character breaking the next call to <code>script_run</code>.</p>
 </div>
 <div class="paragraph">
 <p>We choose to wait for the prompt just before sending a command, rather than
-after it, so that Step 5 can be deferred to a later time. In theory this
-allows the test script to perform some other work while the SUT is busy.</p>
+after it, so that Step 5 can be deferred to a later time. In theory this allows
+the test script to perform some other work while the SUT is busy.</p>
 </div>
 </div>
 <div class="sect3">
@@ -8114,9 +8210,9 @@ allows the test script to perform some other work while the SUT is busy.</p>
 <p>The following command will timeout: <code>script_run("echo \"1\n2\"")</code>. The reason
 being <code>script_run</code> will call <code>wait_serial("echo \"1\n2\"")</code> to check that the
 command was entered successfully and echoed back (see above for explanation of
-serial terminal echo, note the echo shell command has not been executed
-yet). However the shell will translate the newline characters into a newline
-character plus '&gt;', so we will get something similar to the following output.</p>
+serial terminal echo, note the echo shell command has not been executed yet).
+However the shell will translate the newline characters into a newline character
+plus '&gt;', so we will get something similar to the following output.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8132,8 +8228,8 @@ substitution instead (note the '-e' switch for echo).</p>
 </div>
 <div class="paragraph">
 <p>In general you should be aware that, Perl, the guest kernel and the shell may
-transform whatever character sequence you enter. Transformations can be
-spotted by comparing the input string with what <code>wait_serial</code> actually finds.</p>
+transform whatever character sequence you enter. Transformations can be spotted
+by comparing the input string with what <code>wait_serial</code> actually finds.</p>
 </div>
 </div>
 <div class="sect3">
@@ -8162,10 +8258,10 @@ same effect.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The ETX ASCII code means End of Text and usually results in SIGINT being
-raised. In fact pressing <code>ctrl-c</code> may just be translated into ETX, so you
-might consider this a more direct method. Also you can use 'EOT' to do the
-same thing as pressing <code>ctrl-d</code>.</p>
+<p>The ETX ASCII code means End of Text and usually results in SIGINT being raised.
+In fact pressing <code>ctrl-c</code> may just be translated into ETX, so you might consider
+this a more direct method. Also you can use 'EOT' to do the same thing as
+pressing <code>ctrl-d</code>.</p>
 </div>
 <div class="paragraph">
 <p>You also have the option of using Perl&#8217;s control character escape sequences in
@@ -8178,35 +8274,34 @@ the first argument to <code>type_string</code>. So you can also send ETX with:</
 </div>
 <div class="paragraph">
 <p>The <code>terminate_with</code> parameter just exists to display intention. It is also
-possible to send any character using the hex code like '\x0f' which may have
-the effect of pressing the magic SysRq key if you are lucky.</p>
+possible to send any character using the hex code like '\x0f' which may have the
+effect of pressing the magic SysRq key if you are lucky.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_the_virtio_serial_terminal_implementation">The virtio serial terminal implementation</h4>
 <div class="paragraph">
-<p>The os-autoinst package supports several types of 'consoles' of which the
-virtio serial terminal is one. The majority of code for this console is
-located in consoles/virtio_terminal.pm and consoles/serial_screen.pm (used also
-by the svirt serial console). However there is also related code in
-backends/qemu.pm and distribution.pm.</p>
+<p>The os-autoinst package supports several types of 'consoles' of which the virtio
+serial terminal is one. The majority of code for this console is located in
+consoles/virtio_terminal.pm and consoles/serial_screen.pm (used also by the
+svirt serial console). However there is also related code in backends/qemu.pm
+and distribution.pm.</p>
 </div>
 <div class="paragraph">
 <p>You may find it useful to read the documentation in virtio_terminal.pm and
 serial_screen.pm if you need to perform some special action on a terminal such
-as triggering a signal or simulating the SysRq key. There are also some
-console specific arguments to <code>wait_serial</code> and <code>type_string</code> such as
-<code>record_output</code>.</p>
+as triggering a signal or simulating the SysRq key. There are also some console
+specific arguments to <code>wait_serial</code> and <code>type_string</code> such as <code>record_output</code>.</p>
 </div>
 <div class="paragraph">
-<p>The virtio 'screen' essentially reads data from a socket created by QEMU into
-a ring buffer and scans it after every read with a regular expression. The
-ring buffer is large enough to hold anything you are likely to want to match
-against, but not too large as to cause performance issues. Usually the
-contents of this ring buffer, up to the end of the match, are returned by
-<code>wait_serial</code>. This means earlier output will be overwritten once the ring
-buffer&#8217;s length is exceeded. However you can pass <code>record_output</code> which saves
-the output to a separate unlimited buffer and returns that instead.</p>
+<p>The virtio 'screen' essentially reads data from a socket created by QEMU into a
+ring buffer and scans it after every read with a regular expression. The ring
+buffer is large enough to hold anything you are likely to want to match against,
+but not too large as to cause performance issues. Usually the contents of this
+ring buffer, up to the end of the match, are returned by <code>wait_serial</code>. This
+means earlier output will be overwritten once the ring buffer&#8217;s length is
+exceeded. However you can pass <code>record_output</code> which saves the output to a
+separate unlimited buffer and returns that instead.</p>
 </div>
 <div class="paragraph">
 <p>Like <code>record_output</code>, the <code>no_regex</code> argument is a console specific argument
@@ -8222,24 +8317,24 @@ ring buffer.</p>
 because the openQA console implementation would need to map key actions like
 <code>ctrl-c</code> to a character and then send that character. This may mislead some
 people into thinking they are actually sending <code>ctrl-c</code> to the SUT and also
-requires openQA to choose what character <code>ctrl-c</code> represents which varies
-across terminal configurations.</p>
+requires openQA to choose what character <code>ctrl-c</code> represents which varies across
+terminal configurations.</p>
 </div>
 <div class="paragraph">
 <p>Very little of the code (perhaps none) is specific to a virtio based serial
-terminal and can be reused with a physical serial port, SSH socket, IPMI or
-some other text based interface. It is called the virtio console because the
-current implementation just uses a virtio serial device in QEMU (and it could
-easily be converted to an emulated port), but it otherwise has nothing to do
-with the virtio standard and so you should avoid using the name 'virtio
-console' unless specifically referring to the QEMU virtio implementation.</p>
+terminal and can be reused with a physical serial port, SSH socket, IPMI or some
+other text based interface. It is called the virtio console because the current
+implementation just uses a virtio serial device in QEMU (and it could easily be
+converted to an emulated port), but it otherwise has nothing to do with the
+virtio standard and so you should avoid using the name 'virtio console' unless
+specifically referring to the QEMU virtio implementation.</p>
 </div>
 <div class="paragraph">
-<p>As mentioned previously, ANSI escape sequences can be a pain. So we try to
-avoid them by informing the shell that it is running on a 'dumb' terminal (see
-the SUSE distribution&#8217;s serial terminal utility library). However some
-programs ignore this, but piping there output into <code>tee</code> is usually enough to
-stop them outputting non-printable characters.</p>
+<p>As mentioned previously, ANSI escape sequences can be a pain. So we try to avoid
+them by informing the shell that it is running on a 'dumb' terminal (see the
+SUSE distribution&#8217;s serial terminal utility library). However some programs
+ignore this, but piping there output into <code>tee</code> is usually enough to stop them
+outputting non-printable characters.</p>
 </div>
 </div>
 </div>
@@ -8251,10 +8346,10 @@ stop them outputting non-printable characters.</p>
 <div class="sect2">
 <h3 id="_trigger_new_tests_by_modifying_settings_from_existing_test_runs">Trigger new tests by modifying settings from existing test runs</h3>
 <div class="paragraph">
-<p>To trigger new tests with custom settings the command line client
-<code>openqa-cli</code> can be used. To trigger new tests relying on all settings from
-existing tests runs but modifying specific settings the <code>openqa-clone-job</code>
-script can be used. Within the openQA repository the script is located at
+<p>To trigger new tests with custom settings the command line client <code>openqa-cli</code>
+can be used. To trigger new tests relying on all settings from existing tests
+runs but modifying specific settings the <code>openqa-clone-job</code> script can be used.
+Within the openQA repository the script is located at
 <code>/usr/share/openqa/script/</code>.  This tool can be used to create a new job that
 adds, removes or changes settings.</p>
 </div>
@@ -8274,16 +8369,16 @@ adds, removes or changes settings.</p>
 <div class="title">Note</div>
 </td>
 <td class="content">
-When cloning children via <code>--clone-children</code> as well, the children are also
-affected. Parent jobs (which are cloned as well by default) are <em>not</em> affected
-unless the <code>--parental-inheritance</code> flag is used.
+When cloning children via <code>--clone-children</code> as well, the children are
+also affected. Parent jobs (which are cloned as well by default) are <em>not</em>
+affected unless the <code>--parental-inheritance</code> flag is used.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>If you do not want a cloned job to start up in the same job group as the job
-you cloned from, e.g. to not pollute build results, the job group can be
+<p>If you do not want a cloned job to start up in the same job group as the job you
+cloned from, e.g. to not pollute build results, the job group can be
 overwritten, too, using the special variable <code>_GROUP</code>. Add the quoted group
 name, e.g.:</p>
 </div>
@@ -8335,7 +8430,8 @@ which can help in this situation.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Create and <strong>preserve</strong> snapshots for <strong>every test</strong> module run (<code>MAKETESTSNAPSHOTS</code>)</p>
+<p>Create and <strong>preserve</strong> snapshots for <strong>every test</strong> module run
+(<code>MAKETESTSNAPSHOTS</code>)</p>
 <div class="ulist">
 <ul>
 <li>
@@ -8370,9 +8466,9 @@ which can be limiting, but preserves disk space in comparison to
 </div>
 <div class="paragraph">
 <p>In both modes there is no need to modify tests (i.e. adding <code>milestone</code> test
-flag as the behaviour is implied). In the later mode every test module is
-also considered <code>fatal</code>. This means the job is aborted after the first failed
-test module.</p>
+flag as the behaviour is implied). In the later mode every test module is also
+considered <code>fatal</code>. This means the job is aborted after the first failed test
+module.</p>
 </div>
 <div class="sect3">
 <h4 id="snapshots-for-each-module">Enable snapshots for each module</h4>
@@ -8380,14 +8476,14 @@ test module.</p>
 <ul>
 <li>
 <p>Run the worker with <code>--no-cleanup</code> parameter. This will preserve the hard
-disks after test runs. If the worker(s) are being started via the systemd unit,
-then this can achieved by using the <code>openqa-worker-no-cleanup@.service</code> unit
-instead of <code>openqa-worker@.service</code>.</p>
+disks after test runs. If the worker(s) are being started via the systemd
+unit, then this can achieved by using the <code>openqa-worker-no-cleanup@.service</code>
+unit instead of <code>openqa-worker@.service</code>.</p>
 </li>
 <li>
-<p>Set <code>MAKETESTSNAPSHOTS=1</code> on a job. This will make openQA save a
-snapshot for every test module run. One way to do that is by cloning an
-existing job and adding the setting:</p>
+<p>Set <code>MAKETESTSNAPSHOTS=1</code> on a job. This will make openQA save a snapshot for
+every test module run. One way to do that is by cloning an existing job and
+adding the setting:</p>
 </li>
 </ul>
 </div>
@@ -8414,8 +8510,9 @@ existing job and adding the setting:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Use qemu-img snapshot -l something.img to find out what snapshots are in the image. Snapshots are named
-<code>"test module category"-"test module name"</code> (e.g. <code>installation-start_install</code>).</p>
+<p>Use qemu-img snapshot -l something.img to find out what snapshots are in the
+image. Snapshots are named <code>"test module category"-"test module name"</code> (e.g.
+<code>installation-start_install</code>).</p>
 </li>
 </ul>
 </div>
@@ -8425,11 +8522,13 @@ existing job and adding the setting:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Run the worker with <code>--no-cleanup parameter</code>. This will preserve the hard disks after test runs.</p>
+<p>Run the worker with <code>--no-cleanup parameter</code>. This will preserve the hard
+disks after test runs.</p>
 </li>
 <li>
 <p>Set <code>TESTDEBUG=1</code> on a job. This will make openQA save a snapshot after each
-successful test module run. Snapshots are overwritten. The snapshot is named <code>lastgood</code> in all cases.</p>
+successful test module run. Snapshots are overwritten. The snapshot is named
+<code>lastgood</code> in all cases.</p>
 </li>
 </ul>
 </div>
@@ -8573,7 +8672,8 @@ Excluding modules that are not scheduled does not raise an error.
 <div class="title">Note</div>
 </td>
 <td class="content">
-Including modules that are not scheduled does not raise an error, but they are not scheduled.
+Including modules that are not scheduled does not raise an error, but they
+are not scheduled.
 </td>
 </tr>
 </table>
@@ -8582,7 +8682,8 @@ Including modules that are not scheduled does not raise an error, but they are n
 <div class="sect3">
 <h4 id="_schedule">SCHEDULE</h4>
 <div class="paragraph">
-<p>Additionally it is possible to define a custom schedule using the test variable <code>SCHEDULE</code>.</p>
+<p>Additionally it is possible to define a custom schedule using the test variable
+<code>SCHEDULE</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8605,14 +8706,14 @@ Any existing test module within <strong>CASEDIR</strong> can be scheduled.
 <div class="sect3">
 <h4 id="_schedule_asset_nr_url">SCHEDULE + ASSET_&lt;NR&gt;_URL</h4>
 <div class="paragraph">
-<p>Test modules can be defined and overridden on-the-fly using a
-downloadable asset (combining <strong>ASSET_&lt;NR&gt;_URL</strong> and <strong>SCHEDULE</strong>).</p>
+<p>Test modules can be defined and overridden on-the-fly using a downloadable asset
+(combining <strong>ASSET_&lt;NR&gt;_URL</strong> and <strong>SCHEDULE</strong>).</p>
 </div>
 <div class="paragraph">
 <p>For example one can schedule a job on a production instance with a custom
-schedule consisting of two modules from the provided test distribution plus
-one test module which is defined dynamically and downloaded as an asset from
-an external trusted download domain:</p>
+schedule consisting of two modules from the provided test distribution plus one
+test module which is defined dynamically and downloaded as an asset from an
+external trusted download domain:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8627,7 +8728,9 @@ an external trusted download domain:</p>
 </td>
 <td class="content">
 The asset number doesn&#8217;t affect the schedule order.<br>
-The test modules foo.pm and bar.pm will be downloaded into the root of the pool directory where tests and assets are used by isotovideo. For this reason, to schedule them, no path is needed.
+The test modules foo.pm and bar.pm will be downloaded into the root of the pool
+directory where tests and assets are used by isotovideo. For this reason, to
+schedule them, no path is needed.
 </td>
 </tr>
 </table>
@@ -8799,10 +8902,10 @@ feature is explained in further detail in the corresponding
 <td class="content">
 This example shows how API credentials are supplied. It is important to
 note that using <code>on:pull_request</code> would only work for PRs created on the main
-repository but not for PRs created from forks. Therefore <code>on:pull_request_target</code>
-is used instead. To still run the tests on the PR version the variables under
-<code>github.event.pull_request.head.*</code> are utilized (instead of e.g. just
-<code>$GITHUB_REF</code>).
+repository but not for PRs created from forks. Therefore
+<code>on:pull_request_target</code> is used instead. To still run the tests on the PR
+version the variables under <code>github.event.pull_request.head.*</code> are utilized
+(instead of e.g. just <code>$GITHUB_REF</code>).
 </td>
 </tr>
 </table>
@@ -8815,9 +8918,9 @@ is used instead. To still run the tests on the PR version the variables under
 </td>
 <td class="content">
 Due to the use of <code>on:pull_request_target</code> the scenario definitions are
-read from the main repository in this example. This is the conservative approach.
-To allow scheduling jobs based on the PR version of the scenario definitions file
-one could use e.g.
+read from the main repository in this example. This is the conservative
+approach. To allow scheduling jobs based on the PR version of the scenario
+definitions file one could use e.g.
 <code>SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/$GH_REPO/$GH_REF/.github/workflows/openqa.yml</code>
 instead of <code>- uses: actions/checkout@v3</code> and
 <code>--param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml</code>.
@@ -8832,18 +8935,18 @@ instead of <code>- uses: actions/checkout@v3</code> and
 <p>This approach is so far specific to GitHub and is a bit more effort to setup
 than the approach mentioned in the previous section. For this to work, GitHub
 needs to be able to inform openQA that a PR has been created or updated and
-openQA needs to be able to inform GitHub about the result of the jobs it ran.
-So authentication needs to be configured on both sides. On the upside, there
-is no additional CI runner required and the authentication also works when a
-PR is created from a fork repository branch which extra configuration.</p>
+openQA needs to be able to inform GitHub about the result of the jobs it ran. So
+authentication needs to be configured on both sides. On the upside, there is no
+additional CI runner required and the authentication also works when a PR is
+created from a fork repository branch which extra configuration.</p>
 </div>
 <div class="paragraph">
 <p>The test scenarios for your repository need to be defined in the file
 <code>scenario-definitions.yaml</code> at the root of your repository. Checkout the
 <a href="https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml">scenario definitions</a>
 from the example distribution for an example. You may append a parameter like
-<code>SCENARIO_DEFINITIONS_YAML=path/of/yaml</code> to the query parameters of the
-webhook to change the lookup path of this file.</p>
+<code>SCENARIO_DEFINITIONS_YAML=path/of/yaml</code> to the query parameters of the webhook
+to change the lookup path of this file.</p>
 </div>
 <div class="sect3">
 <h4 id="_setup_a_github_access_token_for_openqa">Setup a GitHub access token for openQA</h4>
@@ -8892,8 +8995,8 @@ the CI check status.
 <div class="sect3">
 <h4 id="_setup_webhook_on_github">Setup webhook on GitHub</h4>
 <div class="paragraph">
-<p>This setup is required for GitHub to be able to inform openQA that a PR has
-been created or updated.</p>
+<p>This setup is required for GitHub to be able to inform openQA that a PR has been
+created or updated.</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -12471,7 +12574,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-12-21 02:24:06 UTC
+Last updated 2023-12-22 02:23:57 UTC
 </div>
 </div>
 </body>
