@@ -533,6 +533,11 @@ subtest 'filtering by job group' => sub {
         my $text = $get_text->('/tests/overview?group_glob=*opensuse*,*SLE*&not_group_glob=*development*');
         like $text, qr/Summary of opensuse, opensuse test, SLE 15 SP5 build/, 'job group match';
     };
+
+    subtest 'filter with glob and no match' => sub {
+        my $text = $get_text->('/tests/overview?group_glob=does_not_exist');
+        like $text, qr/Overall Summary of multiple distri\/version/, 'no match';
+    };
 };
 
 subtest "job template names displayed on 'Test result overview' page" => sub {
