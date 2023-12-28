@@ -122,6 +122,7 @@ jobs:
           command: tools/ci/prepare_dependency_pr.sh
 
   cache:
+    no_output_timeout: 50m
     docker:
       - <<: *base
     steps:
