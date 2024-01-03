@@ -214,6 +214,7 @@ tags.
          "height" : INTEGER,
          "type" : ( "match" | "ocr" | "exclude" ),
          "match" : INTEGER, // 0-100. similarity percentage
+         "click_point" : CLICK_POINT, // Optional click point
       },
       ...
    ],
@@ -241,6 +242,23 @@ There are three kinds of areas:
   the concerning area.
   In the needle view exclude areas are displayed as gray boxes.
 
+==== Click points ====
+Each regular match area in a needle can optionally contain a *click point*.
+This is used with the `testapi::assert_and_click` function to match GUI
+elements such as buttons and then click inside the matched area.
+
+[source,json]
+-------------------------------------------------------------------
+{
+  "xpos" : INTEGER, // Relative coordinates inside the match area
+  "ypos" : INTEGER,
+  "id" : STRING,    // Optional
+}
+-------------------------------------------------------------------
+
+Each click point can have an `id`, and if a needle contains multiple click points
+you must pass it to `testapi::assert_and_click` to select which click point
+to use.
 
 === Access management
 
