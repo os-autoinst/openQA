@@ -525,6 +525,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_needles">Needles</a>
 <ul class="sectlevel3">
 <li><a href="#_areas">Areas</a></li>
+<li><a href="#_click_points">Click points</a></li>
 </ul>
 </li>
 <li><a href="#_access_management">Access management</a></li>
@@ -1487,6 +1488,7 @@ tags.</p>
 <span class="tok-w">         </span><span class="tok-nt">&quot;height&quot;</span><span class="tok-w"> </span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-err">INTEGER</span><span class="tok-p">,</span>
 <span class="tok-w">         </span><span class="tok-nt">&quot;type&quot;</span><span class="tok-w"> </span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-err">(</span><span class="tok-w"> </span><span class="tok-s2">&quot;match&quot;</span><span class="tok-w"> </span><span class="tok-err">|</span><span class="tok-w"> </span><span class="tok-s2">&quot;ocr&quot;</span><span class="tok-w"> </span><span class="tok-err">|</span><span class="tok-w"> </span><span class="tok-s2">&quot;exclude&quot;</span><span class="tok-w"> </span><span class="tok-err">)</span><span class="tok-p">,</span>
 <span class="tok-w">         </span><span class="tok-nt">&quot;match&quot;</span><span class="tok-w"> </span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-err">INTEGER</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-c1">// 0-100. similarity percentage</span>
+<span class="tok-w">         </span><span class="tok-nt">&quot;click_point&quot;</span><span class="tok-w"> </span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-err">CLICK_POINT</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-c1">// Optional click point</span>
 <span class="tok-w">      </span><span class="tok-p">},</span>
 <span class="tok-w">      </span><span class="tok-err">...</span>
 <span class="tok-w">   </span><span class="tok-p">],</span>
@@ -1524,6 +1526,28 @@ the concerning area.
 In the needle view exclude areas are displayed as gray boxes.</p>
 </li>
 </ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_click_points">Click points</h4>
+<div class="paragraph">
+<p>Each regular match area in a needle can optionally contain a <strong>click point</strong>.
+This is used with the <code>testapi::assert_and_click</code> function to match GUI
+elements such as buttons and then click inside the matched area.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-nt">&quot;xpos&quot;</span><span class="tok-w"> </span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-err">INTEGER</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-c1">// Relative coordinates inside the match area</span>
+<span class="tok-w">  </span><span class="tok-nt">&quot;ypos&quot;</span><span class="tok-w"> </span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-err">INTEGER</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-nt">&quot;id&quot;</span><span class="tok-w"> </span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-err">STRING</span><span class="tok-p">,</span><span class="tok-w">    </span><span class="tok-c1">// Optional</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each click point can have an <code>id</code>, and if a needle contains multiple click points
+you must pass it to <code>testapi::assert_and_click</code> to select which click point
+to use.</p>
 </div>
 </div>
 </div>
@@ -12574,7 +12598,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-12-22 02:23:57 UTC
+Last updated 2024-01-04 04:44:22 UTC
 </div>
 </div>
 </body>
