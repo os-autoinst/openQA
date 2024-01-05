@@ -72,7 +72,7 @@ sub index {
             my $args = $job->{args};
             $args = $args->[0] if (ref $args eq 'ARRAY' && scalar(@$args) == 1);
 
-            next unless (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project});
+            next unless (ref $args eq 'HASH' && $args->{project});
             my $project = $args->{project};
             next unless exists $folder_info_by_name{$project};
             $folder_info_by_name{$project}->{state} = $job->{state};
