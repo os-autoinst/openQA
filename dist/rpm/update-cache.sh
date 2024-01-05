@@ -1,5 +1,8 @@
 #! /bin/sh
 
+# Note: this might not work correctly anymore because the 'lr' command
+# was obsoleted.
+
 set -e
 
 export LC_ALL='en_US.UTF-8'
@@ -9,7 +12,7 @@ rm -f _service\:*
 rm -f *.tar *.cpio
 osc service lr
 # special call for tar buildtime service
-osc service lr tar
+osc service run tar
 
 SD=$PWD
 cd openQA
