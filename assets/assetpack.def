@@ -149,7 +149,7 @@
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
-< https://shepherdjs.dev/dist/js/shepherd.js
+< https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/js/shepherd.js
 
 ! anser.js
 < javascripts/anser-import.js
