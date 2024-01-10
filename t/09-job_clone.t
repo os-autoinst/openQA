@@ -113,4 +113,62 @@ subtest 'get job with verbose output' => sub {
     combined_like { clone_job_get_job($job_id, $url_handler, \%options) } qr/"id" : $job_id/, 'Job settings logged';
 };
 
+subtest 'auto_clone limits' => sub {
+    $schema->txn_begin;
+    my $limit = 3;
+    local $t->app->config->{global}{auto_clone_limit} = $limit;
+    my @jobs;
+    my $backend_reason = 'backend died: VNC Connection refused';
+    for my $i (reverse 10 .. 15) {
+        my $clone_id = $i < 15 ? $i + 1 : undef;
+        my $new = $jobs->create(
+            {
+                id => $i,
+                clone_id => $clone_id,
+                state => DONE,
+                result => INCOMPLETE,
+                TEST => 'foo',
+                reason => $backend_reason,
+            });
+        push @jobs, $new;
+    }
+    my $last = $jobs[0];
+    $last->update({reason => undef});
+    my ($last_incompletes, $restart, %new);
+
+    subtest 'more than auto_clone_limit incompletes - all matching auto_clone_regex' => sub {
+        $last_incompletes = $last->incomplete_ancestors($limit);
+        is scalar @$last_incompletes, $limit, "incomplete_ancestors returns $limit incompletes";
+        $restart = 0;
+        $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
+        is $restart, 0, "restart false";
+        like $new{reason}, qr{Not restarting because.*auto_clone_limit}, '$reason is modified';
+    };
+
+    subtest 'more than auto_clone_limit incompletes - but less matching auto_clone_regex' => sub {
+        $jobs[3]->update({reason => 'unrelated'});
+        delete $last->{_incomplete_ancestors};
+        $last_incompletes = $last->incomplete_ancestors($limit);
+        is scalar @$last_incompletes, $limit, "incomplete_ancestors returns $limit incompletes";
+        $restart = 0;
+        %new = ();
+        $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
+        is $restart, 1, "restart true";
+        like $new{reason}, qr{Auto-restarting because.*auto_clone_regex}, '$reason is modified';
+    };
+
+    subtest 'less than auto_clone_limit incompletes' => sub {
+        $jobs[3]->update({result => 'failed'});
+        delete $last->{_incomplete_ancestors};
+        $last_incompletes = $last->incomplete_ancestors($limit);
+        is scalar @$last_incompletes, 2, 'incomplete_ancestors returns a row of 2 incompletes';
+        $restart = 0;
+        %new = ();
+        $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
+        is $restart, 1, "restart true";
+        like $new{reason}, qr{Auto-restarting because.*auto_clone_regex}, '$reason is modified';
+    };
+    $schema->txn_rollback;
+};
+
 done_testing();

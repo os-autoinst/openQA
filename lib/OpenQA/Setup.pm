@@ -49,6 +49,7 @@ sub read_config ($app) {
             search_results_limit => 50000,
             auto_clone_regex =>
 '^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory)',
+            auto_clone_limit => 20,
             force_result_regex => '',
             parallel_children_collapsable_results => join(' ', OK_RESULTS),
         },

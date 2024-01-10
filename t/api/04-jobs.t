@@ -1480,16 +1480,17 @@ subtest 'marking job as done' => sub {
         perform_minion_jobs($t->app->minion);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => INCOMPLETE, 'result set');
-        $t->json_is('/job/reason' => $cache_failure_reason, 'reason set');
+        $t->json_like('/job/reason' => qr{\Q$cache_failure_reason}, 'reason set');
         $t->json_is('/job/state' => DONE, 'state set');
-        $t->json_like('/job/clone_id' => qr/\d+/, 'job cloned when reason does matches configured regex');
+        $t->json_like('/job/clone_id' => qr/\d+/, 'job cloned when reason does match configured regex');
+
     };
     subtest 'job is already done with reason, not overriding existing result and reason' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
         $t->json_is('/result' => INCOMPLETE, 'post yields result (old result as not overridden)');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => INCOMPLETE, 'result unchanged');
-        $t->json_is('/job/reason' => $cache_failure_reason, 'reason unchanged');
+        $t->json_like('/job/reason' => qr{\Q$cache_failure_reason}, 'reason unchanged');
     };
     my $reason_cutted = join('', map { 'ä' } (1 .. 300));
     my $reason = $reason_cutted . ' additional characters';
@@ -1518,7 +1519,7 @@ subtest 'marking job as done' => sub {
         perform_minion_jobs($t->app->minion);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => INCOMPLETE, 'the job status is correct');
-        $t->json_is('/job/reason' => $incomplete_reason, 'the incomplete reason is correct');
+        $t->json_like('/job/reason' => qr{\Q$incomplete_reason}, 'the incomplete reason is correct');
         $t->json_like('/job/clone_id' => qr/\d+/, 'job was cloned when reason matches the configured regex');
     };
 };

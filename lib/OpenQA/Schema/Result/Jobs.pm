@@ -1955,6 +1955,29 @@ sub descendants ($self, $limit = -1) {
     $self->{_descendants} = $sth->fetchrow_array;
 }
 
+sub incomplete_ancestors ($self, $limit = -1) {
+    my $ancestors = $self->{_incomplete_ancestors};
+    return $ancestors if defined $ancestors;
+    my $sth = $self->result_source->schema->storage->dbh->prepare(<<~'EOM');
+    with recursive orig_id as (
+      select ? as orig_id, 0 as level, ? as orig_result, ? as orig_reason
+        union all
+      select id as orig_id, orig_id.level + 1 as level, result as orig_result, reason as orig_reason
+        from jobs join orig_id on orig_id.orig_id = jobs.clone_id
+        where result = 'incomplete' and (? < 0 or level < ?))
+      select orig_id, level, orig_reason from orig_id order by level asc;
+    EOM
+    $sth->bind_param(1, $self->id, SQL_BIGINT);
+    $sth->bind_param(2, $self->result, SQL_VARCHAR);
+    $sth->bind_param(3, $self->reason, SQL_VARCHAR);
+    $sth->bind_param(4, $limit, SQL_BIGINT);
+    $sth->bind_param(5, $limit, SQL_BIGINT);
+    $sth->execute;
+    $ancestors = $sth->fetchall_arrayref;
+    shift @$ancestors;
+    $self->{_incomplete_ancestors} = $ancestors;
+}
+
 sub latest_job ($self) {
     return $self unless my $clone = $self->clone;
     return $clone->latest_job;
@@ -2065,28 +2088,12 @@ sub done ($self, %args) {
         $worker->update({job_id => undef});
     }
 
+    my %new_val = (state => DONE);
     # update result unless already known (it is already known for CANCELLED jobs)
     # update the reason if updating the result or if there is no reason yet
     my $reason = $args{reason};
-    my $result_unknown = $self->result eq NONE;
-    my $reason_unknown = !$self->reason;
-    my %new_val = (state => DONE);
     my $restart = 0;
-    $new_val{result} = $result if $result_unknown;
-    if (($result_unknown || $reason_unknown) && defined $reason) {
-        # restart incompletes when the reason matches the configured regex
-        my $auto_clone_regex = OpenQA::App->singleton->config->{global}->{auto_clone_regex};
-        $restart = 1 if $result eq INCOMPLETE && $auto_clone_regex && $reason =~ $auto_clone_regex;
-
-        # limit length of the reason
-        # note: The reason can be anything the worker picked up as useful information so better cut it at a
-        #       reasonable, human-readable length. This also avoids growing the database too big.
-        $reason = substr($reason, 0, 300) . '…' if defined $reason && length $reason > 300;
-        $new_val{reason} = $reason;
-    }
-    elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
-        $new_val{reason} = 'no test modules scheduled/uploaded';
-    }
+    $self->_compute_result_and_reason(\%new_val, $result, $reason, \$restart);
     $self->update(\%new_val);
     $self->unblock;
     my %finalize_opts = (lax => 1);
@@ -2107,6 +2114,41 @@ sub done ($self, %args) {
     $self->enqueue_finalize_job_results([$carried_over], \%finalize_opts);
 
     return $new_val{result} // $self->result;
+}
+
+sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
+    my $result_unknown = $self->result eq NONE;
+    my $reason_unknown = !$self->reason;
+    $new_val->{result} = $result if $result_unknown;
+    if (($result_unknown || $reason_unknown) && defined $reason) {
+        # restart incompletes when the reason matches the configured regex
+        my $append_reason = '';
+        my $auto_clone_regex = OpenQA::App->singleton->config->{global}->{auto_clone_regex};
+        if ($result eq INCOMPLETE and $auto_clone_regex and $reason =~ $auto_clone_regex) {
+            my $limit = OpenQA::App->singleton->config->{global}{auto_clone_limit};
+            my $ancestors = $self->incomplete_ancestors($limit + 1);
+            # how many of those incomplete ancestors had a reason not matching auto_clone?
+            my $unrelated = grep { $_->[2] !~ m/$auto_clone_regex/ } @$ancestors;
+            if (@$ancestors < $limit || $unrelated > 0) {
+                $append_reason = ' [Auto-restarting because reason matches /$auto_clone_regex/]';
+                $$restart = 1;
+            }
+            else {
+                $append_reason
+                  = ' [Not restarting because job has been restarted already $auto_clone_limit times and failed with /$auto_clone_regex/]';
+            }
+        }
+
+        # limit length of the reason
+        # note: The reason can be anything the worker picked up as useful information so better cut it at a
+        # reasonable, human-readable length. This also avoids growing the database too big.
+        $reason = substr($reason, 0, 300) . '…' if length $reason > 300;
+        $reason .= $append_reason;
+        $new_val->{reason} = $reason;
+    }
+    elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
+        $new_val->{reason} = 'no test modules scheduled/uploaded';
+    }
 }
 
 sub cancel ($self, $result, $reason = undef) {
