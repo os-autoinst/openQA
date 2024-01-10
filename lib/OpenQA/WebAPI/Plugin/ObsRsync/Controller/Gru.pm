@@ -128,7 +128,8 @@ sub run {
     return $self->render(json => {message => 'queue full'}, status => QUEUE_FULL)
       if ($results->{total} >= $queue_limit);
 
-    $app->gru->enqueue('obs_rsync_run', {project => $project, url => $helper->project_status_url}, {priority => 100});
+    my $url = $helper->get_api_dirty_status_url($project);
+    $app->gru->enqueue('obs_rsync_run', {project => $project, url => $url}, {priority => 100});
 
     return $self->render(json => {message => 'queued'}, status => QUEUED) if $has_active_job;    # uncoverable statement
     return $self->render(json => {message => 'started'}, status => STARTED);
