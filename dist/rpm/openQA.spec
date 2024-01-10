@@ -495,10 +495,12 @@ else
 fi
 
 %service_add_post %{openqa_services}
+systemctl reload dbus || :
 
 %post worker
 %tmpfiles_create %{_tmpfilesdir}/openqa.conf
 %service_add_post %{openqa_worker_services}
+systemctl reload dbus || :
 
 %post auto-update
 %service_add_post openqa-auto-update.timer
