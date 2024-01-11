@@ -415,13 +415,17 @@ as part of openSUSE Tumbleweed.
    push directly) locally, e.g. `osc co devel:openQA/openQA`.
 2. Get the script `update-cache.sh` from the main git repository with
    `osc service ra`
-3. Run `bash *update-cache.sh` inside the repository folder. Follow the log
-   checking no download errors occurred.
-4. Do a sanity check on the generated `cache.txz`. It usually should not be
+3. If you changed a url or added a new asset, you have to run the steps from
+   `update-cache.sh` manually, and instead of running
+   `./tools/generate-packed-assets` from the upstream git, you have to run it
+   on the git checkout that contains the change.
+4. If there are no changes or new urls, run `bash *update-cache.sh` inside the
+   repository folder. Follow the log checking no download errors occurred.
+5. Check the generated `cache.txz`. It usually should not be
    smaller than before, contain the newly added sources and must not contain
    any empty files.
-5. Add an entry to the changes file using `osc vc openQA.changes`.
-6. `osc ci -m 'Update asset cache'`
+6. Add an entry to the changes file using `osc vc openQA.changes`.
+7. `osc ci -m 'Update asset cache'`
 
 == Managing the database
 
