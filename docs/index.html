@@ -11146,11 +11146,17 @@ push directly) locally, e.g. <code>osc co devel:openQA/openQA</code>.</p>
 <code>osc service ra</code></p>
 </li>
 <li>
-<p>Run <code>bash *update-cache.sh</code> inside the repository folder. Follow the log
-checking no download errors occurred.</p>
+<p>If you changed a url or added a new asset, you have to run the steps from
+<code>update-cache.sh</code> manually, and instead of running
+<code>./tools/generate-packed-assets</code> from the upstream git, you have to run it
+on the git checkout that contains the change.</p>
 </li>
 <li>
-<p>Do a sanity check on the generated <code>cache.txz</code>. It usually should not be
+<p>If there are no changes or new urls, run <code>bash *update-cache.sh</code> inside the
+repository folder. Follow the log checking no download errors occurred.</p>
+</li>
+<li>
+<p>Check the generated <code>cache.txz</code>. It usually should not be
 smaller than before, contain the newly added sources and must not contain
 any empty files.</p>
 </li>
@@ -12598,7 +12604,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-01-04 04:44:22 UTC
+Last updated 2024-01-12 04:44:12 UTC
 </div>
 </div>
 </body>
