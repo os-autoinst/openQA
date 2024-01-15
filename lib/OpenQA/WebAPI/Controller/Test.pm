@@ -135,6 +135,7 @@ sub list_ajax ($self) {
         state => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope => $scope,
         match => $self->get_match_param,
+        comment_text => $self->param('comment'),
         groupids => $self->_prepare_groupids,
         limit => min(
             $limits->{all_tests_max_finished_jobs},
@@ -214,6 +215,7 @@ sub list_running_ajax {
     my $running = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match => $self->get_match_param,
+        comment_text => $self->param('comment'),
         groupid => $self->param('groupid'),
         order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}],
         columns => [
@@ -261,6 +263,7 @@ sub list_scheduled_ajax {
     my $scheduled = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match => $self->get_match_param,
+        comment_text => $self->param('comment'),
         groupid => $self->param('groupid'),
         order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}],
         columns => [
