@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::JobGroup;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Schema::Result::JobGroups;
 
@@ -36,8 +36,7 @@ Reports true if the job group given to the method is a parent group.
 
 =cut
 
-sub is_parent {
-    my ($self) = @_;
+sub is_parent ($self) {
     return $self->req->url->path =~ qr/.*\/parent_groups/;
 }
 
@@ -51,8 +50,7 @@ Returns results for a set of groups.
 
 =cut
 
-sub resultset {
-    my ($self) = @_;
+sub resultset ($self) {
     return $self->schema->resultset($self->is_parent ? 'JobGroupParents' : 'JobGroups');
 }
 
@@ -66,9 +64,7 @@ Returns information from a job group given its ID.
 
 =cut
 
-sub find_group {
-    my ($self) = @_;
-
+sub find_group ($self) {
     my $group_id = $self->param('group_id');
     if (!defined $group_id) {
         $self->render(json => {error => 'No group ID specified'}, status => 400);
@@ -95,8 +91,7 @@ create or update a job group via DBIx.
 
 =cut
 
-sub load_properties {
-    my ($self) = @_;
+sub load_properties ($self) {
 
     if (my $cached_properties = $self->{cached_properties}) {
         return $cached_properties;
@@ -134,9 +129,7 @@ timestamps - is also returned as a list of indexed lists.
 
 =cut
 
-sub list {
-    my ($self) = @_;
-
+sub list ($self) {
     my $groups;
     my $group_id = $self->param('group_id');
     if ($group_id) {
@@ -170,9 +163,7 @@ Check existing job group on top level to prevent create/update duplicate.
 
 =cut
 
-sub check_top_level_group {
-    my ($self, $group_id) = @_;
-
+sub check_top_level_group ($self, $group_id = undef) {
     return 0 if $self->is_parent;
     my $properties = $self->load_properties;
     my $conditions = {name => $properties->{name}, parent_id => undef};
@@ -180,8 +171,7 @@ sub check_top_level_group {
     return $self->resultset->search($conditions);
 }
 
-sub _validate_common_properties {
-    my ($self) = @_;
+sub _validate_common_properties ($self) {
     my $validation = $self->validation;
     $validation->optional('parent_id')->like(qr/^(none|[0-9]+)\z/);
     $validation->optional('size_limit_gb')->like(qr/^(|[0-9]+)\z/);
@@ -215,9 +205,7 @@ Returns a 400 code on error or a 500 code if the group already exists.
 
 =cut
 
-sub create {
-    my ($self) = @_;
-
+sub create ($self) {
     my $validation = $self->validation;
     $validation->required('name')->like(qr/^(?!\s*$).+/);
     $validation->optional('default_keep_logs_in_days')->num(0);
@@ -257,9 +245,7 @@ Updates the properties of a job group.
 
 =cut
 
-sub update {
-    my ($self) = @_;
-
+sub update ($self) {
     my $group = $self->find_group;
     return unless $group;
 
@@ -299,9 +285,7 @@ List jobs belonging to a job group.
 
 =cut
 
-sub list_jobs {
-    my ($self) = @_;
-
+sub list_jobs ($self) {
     my $group = $self->find_group;
     return unless $group;
 
@@ -325,9 +309,7 @@ Deletes a job group. Verifies that it is not empty before attempting to remove.
 
 =cut
 
-sub delete {
-    my ($self) = @_;
-
+sub delete ($self) {
     my $group = $self->find_group();
     return unless $group;
 
