@@ -396,6 +396,7 @@ sub _compose_job_overview_search_args ($c) {
 
     my $v = $c->validation;
     $v->optional($_, 'not_empty') for JOBS_OVERVIEW_SEARCH_CRITERIA;
+    $v->optional('comment');
     $v->optional('groupid')->num(0, undef);
     $v->optional('modules', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(0, undef);
@@ -487,6 +488,9 @@ sub _compose_job_overview_search_args ($c) {
 
     # allow filtering by group ID or group name
     $search_args{groupids} = [map { $_->id } @groups] if @groups;
+
+    # allow filtering by comment text
+    $search_args{comment_text} = $v->param('comment');
 
     return (\%search_args, \@groups);
 }

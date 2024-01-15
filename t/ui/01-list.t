@@ -424,13 +424,22 @@ subtest 'filter-finished' => sub {
     cmp_ok scalar $driver->find_elements('#results tbody tr', 'css'), '>', scalar @jobs, 'all jobs shown again';
 };
 
-$driver->get('/tests?match=staging_e');
-wait_for_ajax();
+subtest 'match parameter' => sub {
+    $driver->get('/tests?match=staging_e');
+    wait_for_ajax msg => '"All tests" with match parameter';
+    @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')};
+    ok !$jobs[0], 'no running job matching';
+    ok !$jobs[1], 'no scheduled job matching';
+    is $jobs[2], 'job_99926', 'exactly one finished job matching';
+};
 
-@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')};
-ok !$jobs[0], 'no running job matching';
-ok !$jobs[1], 'no scheduled job matching';
-is $jobs[2], 'job_99926', 'exactly one finished job matching';
+subtest 'comment parameter' => sub {
+    $driver->get('/tests?comment=test1');
+    wait_for_ajax msg => '"All tests" with comment parameter';
+    is_deeply [map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')}],
+      [qw(job_99963 job_99928 job_99946)],
+      'exactly one running, scheduled and finished job match';
+};
 
 $driver->get('/tests');
 wait_for_ajax();

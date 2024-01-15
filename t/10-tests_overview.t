@@ -23,6 +23,7 @@ sub get_summary { OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#sum
 
 my $jobs = $schema->resultset('Jobs');
 $jobs->find(99928)->update({blocked_by_id => 99927});
+$jobs->find($_)->comments->create({text => 'foobar', user_id => 99901}) for 99946, 99963;
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'})->status_is(200);
 
 my $summary = get_summary;
@@ -345,6 +346,13 @@ $t->get_ok('/tests/overview', form => $form)->status_is(200);
 like(get_summary, qr/current time Failed: 1$/i);
 $t->element_exists('#res_DVD_x86_64_doc .result_failed', 'job with failed module logpackages still shown');
 $t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
+
+subtest 'comment parameter' => sub {
+    $t->get_ok('/tests/overview?groupid=1001&distri=opensuse&version=13.1&build=0091&comment=oob');
+    $t->status_is(200);
+    my $ids = $t->tx->res->dom->find('.overview span[id^="res-"]')->map(attr => 'id')->sort->to_array;
+    is_deeply $ids, [qw(res-99946 res-99963)], 'expected set of jobs present';
+};
 
 # Check if another random module has failed
 $latest_job->update({DISTRI => 'opensuse'});

@@ -299,6 +299,10 @@ sub _prepare_complex_query_search_args ($self, $args) {
         }
     }
 
+    if (defined(my $c = $args->{comment_text})) {
+        push @conds, \["(select id from comments where job_id = me.id and text like ? limit 1) is not null", "%$c%"];
+    }
+
     push(@conds, @{$args->{additional_conds}}) if $args->{additional_conds};
     my %attrs;
     $attrs{columns} = $args->{columns} if $args->{columns};
