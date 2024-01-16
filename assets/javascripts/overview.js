@@ -199,10 +199,11 @@ function setupOverview() {
   collapseOkParallelChildren();
 
   setupFilterForm();
-  $('#filter-todo').prop('checked', false);
+  const form = document.getElementById('filter-form');
+  form.todo = false;
 
   // initialize filter for modules results
-  var modulesResultFilter = $('#modules_result');
+  const modulesResultFilter = $('#modules_result');
   modulesResultFilter.chosen({width: '100%'});
   modulesResultFilter.change(function (event) {
     // update query params
@@ -213,72 +214,47 @@ function setupOverview() {
   modulesResultFilter.chosen({width: '100%'});
 
   // find specified results
-  var results = {};
-  var states = {};
-  var modules_results = [];
-
-  var formatFilter = function (filter) {
-    return filter.replace(/_/g, ' ');
+  const flags = {result: {}, state: {}};
+  const modulesResults = [];
+  const formatFilter = filter => {
+    filter.replace(/_/g, ' ');
   };
-  var filterLabels = parseFilterArguments(function (key, val) {
-    if (key === 'result') {
-      results[val] = true;
-      return formatFilter(val);
-    } else if (key === 'test') {
-      $('#filter-test').prop('value', val);
-      return val;
-    } else if (key === 'state') {
-      states[val] = true;
+  const filterLabels = parseFilterArguments((key, val) => {
+    if (key === 'result' || key === 'state') {
+      flags[key][val] = true;
       return formatFilter(val);
     } else if (key === 'todo') {
-      $('#filter-todo').prop('checked', val !== '0');
+      form.todo.checked = val !== '0';
       return 'TODO';
-    } else if (key === 'arch') {
-      $('#filter-arch').prop('value', val);
-      return val;
-    } else if (key === 'flavor') {
-      $('#filter-flavor').prop('value', val);
-      return val;
-    } else if (key === 'machine') {
-      $('#filter-machine').prop('value', val);
-      return val;
-    } else if (key === 'module_re') {
-      $('#filter-module-re').prop('value', val);
-      return val;
-    } else if (key === 'modules') {
-      $('#modules').prop('value', val);
-      return val;
     } else if (key === 'modules_result') {
-      modules_results.push(val);
-      modulesResultFilter.val(modules_results).trigger('chosen:updated').trigger('change');
+      modulesResults.push(val);
+      modulesResultFilter.val(modulesResults).trigger('chosen:updated').trigger('change');
       return formatFilter(val);
-    } else if (key === 'group_glob') {
-      $('#group-glob').prop('value', val);
-      return val;
-    } else if (key === 'not_group_glob') {
-      $('#not-group-glob').prop('value', val);
-      return val;
-    } else if (key === 'comment') {
-      $('#comment-text-filter').prop('value', val);
-      return val;
+    } else {
+      const formElement = form[key];
+      if (formElement) {
+        return (form[key].value = val);
+      }
     }
   });
 
   // set enabled/disabled state of checkboxes (according to current filter)
   if (filterLabels.length > 0) {
-    $('#filter-results input').each(function (index, element) {
-      element.checked = results[element.id.substr(7)];
-    });
-    $('#filter-states input').each(function (index, element) {
-      element.checked = states[element.id.substr(7)];
-    });
+    setCheckboxStatesForFlags('filter-results', flags.result);
+    setCheckboxStatesForFlags('filter-states', flags.state);
   }
 
-  var parentChild = document.getElementsByClassName('parents_children');
+  const parentChild = document.getElementsByClassName('parents_children');
   for (let i = 0; i < parentChild.length; i++) {
     parentChild[i].addEventListener('mouseover', highlightDeps);
     parentChild[i].addEventListener('mouseout', unhighlightDeps);
   }
+}
+
+function setCheckboxStatesForFlags(containerId, flags) {
+  Array.from(document.getElementById(containerId).getElementsByTagName('input')).forEach(e => {
+    e.checked = flags[e.id.substr(7)];
+  });
 }
 
 function highlightDeps() {
