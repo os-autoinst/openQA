@@ -75,6 +75,8 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(directory => 'OpenQA::Schema::Result::NeedleDirs', 'dir_id');
 
 # override insert to ensure new needles have 'last_updated' set
+# note: Not used by the function update_needle but still required for unit tests that
+#       create needles directly.
 sub insert ($self, @args) {
     $self->next::method(@args);
     $self->update({last_updated => $self->t_updated});
@@ -87,63 +89,72 @@ sub update_needle_cache ($needle_cache) { $_->update for values %$needle_cache }
 # to call update_needle_cache after a loop
 sub update_needle ($filename, $module, $matched = undef, $needle_cache = undef) {
     # assume that path of the JSON file is relative to the job's needle dir
-    my $needle_dir;
-    unless (-f $filename) {
-        return undef unless $filename = locate_needle($filename, $needle_dir = $module->job->needle_dir);
-    }
+    my $job = $module->job;
+    my $needle_dir = $job->needle_dir;
+    return undef unless -f $filename || ($filename = locate_needle($filename, $needle_dir));
 
     my $schema = OpenQA::Schema->singleton;
     my $guard = $schema->txn_scope_guard;
+    my $needle = $needle_cache ? $needle_cache->{$filename} : undef;
+    my $needle_id;
 
-    my $needle;
-    if ($needle_cache) {
-        $needle = $needle_cache->{$filename};
-    }
+    # find/insert needle and its dir if the needle is not cached
     if (!$needle) {
-        # create a canonical path out of it
-        my $realpath = realpath($filename);
-        my $needledir_path = realpath($needle_dir // $module->job->needle_dir);
-        my $dir;
-        my $basename;
-        if (index($realpath, $needledir_path) != 0) {    # leave old behaviour as it is
-            $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
-            $basename = basename($realpath);
+        my $dbh = $schema->storage->dbh;
+        my $sth_needle_dir = $dbh->prepare(<<~'END_SQL');
+            INSERT INTO needle_dirs (path, name)
+                             VALUES (?,    ?)
+              ON CONFLICT DO NOTHING RETURNING id
+          END_SQL
+        my $sth_needle = $dbh->prepare(<<~'END_SQL');
+            INSERT INTO needles (dir_id, filename, last_updated, t_created, t_updated)
+                         VALUES (?,      ?,        now(),        now(),     now())
+              ON CONFLICT DO NOTHING RETURNING id
+          END_SQL
+
+        # determine canonical path
+        my $real_file_path = realpath($filename);
+        my $real_dir_path = realpath($needle_dir);
+        my ($dir_path, $basename);
+        if (index($real_file_path, $real_dir_path) != 0) {    # leave old behaviour as it is
+            $dir_path = dirname($real_file_path);
+            $basename = basename($real_file_path);
         }
         else {
-            $dir = $schema->resultset('NeedleDirs')->find_or_new({path => $needledir_path});
-            # basename should contain relative path to json in needledir
-            $basename = substr $realpath, length($needledir_path) + 1, length($realpath);
+            $dir_path = $real_dir_path;
+            $basename = substr $real_file_path, length($real_dir_path) + 1, length($real_file_path);
         }
-        if (!$dir->in_storage) {
-            # first job seen defines the name
-            $dir->set_name_from_job($module->job);
-            $dir->insert;
-        }
-        $needle ||= $dir->needles->find_or_new({filename => $basename}, {key => 'needles_dir_id_filename'});
+
+        # find/insert the needle dir and the needle itself
+        my $dir_name = sprintf('%s-%s', $job->DISTRI, $job->VERSION);
+        $sth_needle_dir->execute($dir_path, $dir_name);
+        my ($dir_id) = $sth_needle_dir->fetchrow_array
+          // $schema->resultset('NeedleDirs')->find({path => $dir_path})->id;
+        $sth_needle->execute($dir_id, $basename);
+        ($needle_id) = $sth_needle->fetchrow_array;
+        $needle = $schema->resultset('Needles')->find($needle_id // {dir_id => $dir_id, filename => $basename});
     }
 
-    # it's not impossible that two instances update this information independent of each other, but we don't mind
-    # the *exact* last module as long as it's alive around the same time
+    # update last seen/match
+    # note: It is not impossible that two instances update this information independently of each other, but we
+    #       don't mind the *exact* last module as long as it is alive around the same time.
+    my $module_id = $module->id;
+    my $now;
     if (($needle->last_seen_module_id // 0) < $module->id) {
         $needle->last_seen_module_id($module->id);
-        $needle->last_seen_time(now());
+        $needle->last_seen_time($now //= now());
     }
 
     if ($matched && ($needle->last_matched_module_id // 0) < $module->id) {
         $needle->last_matched_module_id($module->id);
-        $needle->last_matched_time(now());
+        $needle->last_matched_time($now //= now());
     }
 
-    if ($needle->in_storage) {
-        # if a cache is given, the caller needs to update all needles after the call
-        $needle->update unless $needle_cache;
-    }
-    else {
-        $needle->check_file;
-        $needle->insert;
-    }
-    $needle_cache->{$filename} = $needle;
+    # update whether file present if a new needle was created
+    $needle->check_file if $needle_id;
 
+    # update the needle in cache or in storage (with cache the caller needs to update the needle in storage)
+    $needle_cache ? $needle_cache->{$filename} = $needle : $needle->update;
     $guard->commit;
     return $needle;
 }
