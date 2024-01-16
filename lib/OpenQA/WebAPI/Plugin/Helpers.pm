@@ -490,7 +490,7 @@ sub _compose_job_overview_search_args ($c) {
     $search_args{groupids} = [map { $_->id } @groups] if @groups;
 
     # allow filtering by comment text
-    $search_args{comment_text} = $v->param('comment');
+    if (my $c = $v->param('comment')) { $search_args{comment_text} = $c }
 
     return (\%search_args, \@groups);
 }

@@ -258,6 +258,9 @@ function setupOverview() {
     } else if (key === 'not_group_glob') {
       $('#not-group-glob').prop('value', val);
       return val;
+    } else if (key === 'comment') {
+      $('#comment-text-filter').prop('value', val);
+      return val;
     }
   });
 
