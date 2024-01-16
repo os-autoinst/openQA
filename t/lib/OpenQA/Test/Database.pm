@@ -29,10 +29,13 @@ sub create {
     # create new database connection
     my $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0);
 
+    # ensure the time zone is set consistently to UTC for this session
+    my $storage = $schema->storage;
+    my $dbh = $storage->dbh;
+    $dbh->do('SET TIME ZONE "utc"');
+
     # create a new schema or use an existing one
     unless (defined $options{skip_schema}) {
-        my $storage = $schema->storage;
-        my $dbh = $storage->dbh;
         my $schema_name = $options{schema_name} // generate_schema_name;
         log_info("using database schema \"$schema_name\"");
 
