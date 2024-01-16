@@ -45,7 +45,8 @@
   <h2 id="finished_jobs_heading" style="display: inline-block">Finished jobs</h2><%=
     help_popover 'Parameters for finished jobs' =>
       '<p>It is possible to increase the number of finished jobs shown in the table via the <code>limit</code> query parameter.</p>'
-    . '<p>Additionally you can use the <code>group_glob</code> and <code>not_group_glob</code> query parameters to include and exclude job groups with comma separated lists of globs, like <code>*kernel*,*Tumbleweed*</code>.</p>',
+    . '<p>Additionally you can use the <code>group_glob</code> and <code>not_group_glob</code> query parameters to include and exclude job groups with comma separated lists of globs, like <code>*kernel*,*Tumbleweed*</code>.</p>'
+    . '<p>It is possible to filter jobs by comments using the <code>comment</code> query parameter, e.g. <code>comment=boo%23123</code> to search for jobs referencing Bugzilla ticket 123.</p>',
     undef, undef, undef, style => 'vertical-align: text-top'; %>
   </div>
   <div id="flash-messages-finished-jobs"></div>
