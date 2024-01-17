@@ -11,20 +11,6 @@ use OpenQA::BuildResults;
 use OpenQA::Utils;
 use Mojo::File qw(path);
 
-sub _map_tags_into_build ($results, $tags) {
-    for my $res (@$results) {
-        if (my $full_tag = $tags->{$res->{key}}) {
-            $res->{tag} = $full_tag;
-        }
-        elsif (my $build_only_tag = $tags->{$res->{build}}) {
-            # as fallback we are looking for build and not other criteria we can end
-            # up with multiple tags if the build appears more than once, e.g.
-            # for each version
-            $res->{tag} = $build_only_tag;
-        }
-    }
-}
-
 sub dashboard_build_results ($self) {
     my $validation = $self->validation;
     $validation->optional('limit_builds')->num;
@@ -56,10 +42,9 @@ sub dashboard_build_results ($self) {
             my $build_results
               = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
                 $only_tagged ? $tags : undef,
-                $group_params);
+                $group_params, $show_tags ? $tags : undef);
 
             my $build_results_for_group = $build_results->{build_results};
-            _map_tags_into_build($build_results_for_group, $tags) if $show_tags;
             push(@results, $build_results) if @{$build_results_for_group};
         }
     };
@@ -135,9 +120,9 @@ sub _group_overview ($self, $resultset, $template) {
 
     my $tags = $group->tags;
     my $cbr = eval {
-        OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-            $only_tagged ? $tags : undef,
-            $group_params);
+        OpenQA::BuildResults::compute_build_results($group, $limit_builds,
+            $time_limit_days, $only_tagged ? $tags : undef,
+            $group_params, $tags);
     };
     if (my $error = $@) {
         die $error unless $error =~ qr/^invalid regex: /;
@@ -145,9 +130,8 @@ sub _group_overview ($self, $resultset, $template) {
     }
     my $build_results = $cbr->{build_results};
     my $max_jobs = $cbr->{max_jobs};
-    $self->stash(children => $cbr->{children});
 
-    _map_tags_into_build($build_results, $tags);
+    $self->stash(children => $cbr->{children});
     $self->stash(build_results => $build_results, max_jobs => $max_jobs);
 
     my $is_parent_group = $group->can('children');

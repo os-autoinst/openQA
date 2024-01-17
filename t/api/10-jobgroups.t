@@ -19,6 +19,63 @@ my $schema = $t->app->schema;
 my $audit_events = $schema->resultset('AuditEvents');
 
 my $opensuse_group = '1001';
+
+
+subtest 'build results' => sub {
+    subtest 'default' => sub {
+        $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=99999")->status_is(200);
+        $t->json_is('/build_results/4/all_passed' => '');
+        $t->json_is('/build_results/4/build' => '0091');
+        $t->json_is('/build_results/4/key' => '13.1-0091');
+        $t->json_is('/build_results/4/comments' => 0);
+        $t->json_is('/build_results/4/commented' => 1);
+        $t->json_is('/build_results/4/escaped_id' => '13_1-0091');
+        $t->json_is('/build_results/4/escaped_build' => '0091');
+        $t->json_is('/build_results/4/escaped_version' => '13_1');
+        $t->json_is('/build_results/4/failed' => 0);
+        $t->json_is('/build_results/4/labeled' => 0);
+        $t->json_is('/build_results/4/passed' => 2);
+        $t->json_is('/build_results/4/reviewed' => 1);
+        $t->json_is('/build_results/4/skipped' => 1);
+        $t->json_is('/build_results/4/softfailed' => 0);
+        $t->json_is('/build_results/4/total' => 5);
+        $t->json_is('/build_results/4/unfinished' => 2);
+        $t->json_is('/build_results/4/version' => '13.1');
+        $t->json_is('/build_results/3/build' => '0092');
+        $t->json_is('/build_results/2/build' => '0048');
+        $t->json_is('/build_results/1/build' => '0048@0815');
+        $t->json_is('/build_results/0/build' => '87.5011');
+        $t->json_is('/build_results/0/tag' => undef);
+        $t->json_is('/build_results/5' => undef);
+        $t->json_is('/max_jobs' => 5,);
+        $t->json_is('/group/id' => $opensuse_group);
+        $t->json_is('/group/name' => 'opensuse');
+    };
+
+    subtest 'tags' => sub {
+        $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=99999&show_tags=1")
+          ->status_is(200);
+        $t->json_is('/build_results/0/tag' => undef);
+
+        $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=99999&only_tagged=1&show_tags=1")
+          ->status_is(200);
+        $t->json_is('/build_results/0' => undef, 'no tagged build is shown');
+
+        my $comment = 'tag:0091:published:published';
+        $t->post_ok("/api/v1/groups/$opensuse_group/comments" => form => {text => $comment})
+          ->status_is(200, 'comment can be created')->or(sub { diag 'error: ' . $t->tx->res->json->{error} });
+        my $cid = $t->tx->res->json->{id};
+        $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=99999&only_tagged=1&show_tags=1")
+          ->status_is(200);
+        my $json = $t->tx->res->json;
+        $t->json_is('/build_results/0/build' => '0091', 'one tagged build is shown');
+        $t->json_is('/build_results/0/tag/build' => '0091');
+        $t->json_is('/build_results/0/tag/description' => 'published');
+        $t->json_is('/build_results/0/tag/type' => 'published');
+        $t->json_is('/build_results/0/tag/version' => undef);
+    };
+};
+
 subtest 'list job groups' => sub() {
     $t->get_ok('/api/v1/job_groups')->status_is(200);
     is_deeply(

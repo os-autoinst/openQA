@@ -326,4 +326,45 @@ sub delete ($self) {
     $self->render(json => $event_data);
 }
 
+=over 4
+
+=item build_results()
+
+Shows build results for a job group, similar to what the group_overview page
+provides.
+
+Currently it does not support parent job groups.
+
+Use limit_builds=n to limit the number of returned builds. Default is 10.
+
+Use time_limit_days=n to only go back n days.
+
+Use only_tagged=1 to only return tagged builds.
+
+Use show_tags=1 to show tags for each build. only_tagged implies show_tags.
+
+=back
+
+=cut
+
+sub build_results ($self) {
+    my $group = $self->find_group() or return;
+    my $validation = $self->validation;
+    $validation->optional('limit_builds')->num;
+    $validation->optional('time_limit_days')->like(qr/^[0-9.]+$/);
+    $validation->optional('only_tagged');
+    $validation->optional('show_tags');
+    my $limit_builds = $validation->param('limit_builds') // 10;
+    my $time_limit_days = $validation->param('time_limit_days') // 0;
+    my $only_tagged = $validation->param('only_tagged') // 0;
+    my $show_tags = $validation->param('show_tags') // $only_tagged;
+
+    my $tags = $show_tags ? $group->tags : undef;
+    my $cbr
+      = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
+        $time_limit_days, $only_tagged ? $tags : undef,
+        [], $tags);
+    $self->render(json => $cbr);
+}
+
 1;

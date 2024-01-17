@@ -110,7 +110,7 @@ sub find_child_groups ($group, $subgroup_filter) {
     return filter_subgroups($group, $subgroup_filter);
 }
 
-sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter) {
+sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags) {
 
     # find relevant child groups taking filter into account
     my $child_groups = find_child_groups($group, $subgroup_filter);
@@ -233,8 +233,23 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         $max_jobs = $jr{total} if ($jr{total} > $max_jobs);
     }
     $result{max_jobs} = $max_jobs;
+    _map_tags_into_build($result{build_results}, $show_tags) if $show_tags;
     return \%result;
 }
 
-1;
+sub _map_tags_into_build ($results, $tags) {
+    for my $res (@$results) {
+        if (my $full_tag = $tags->{$res->{key}}) {
+            $res->{tag} = $full_tag;
+        }
+        elsif (my $build_only_tag = $tags->{$res->{build}}) {
+            # as fallback we are looking for build and not other criteria we can end
+            # up with multiple tags if the build appears more than once, e.g.
+            # for each version
+            $res->{tag} = $build_only_tag;
+        }
+    }
+}
 
+
+1;
