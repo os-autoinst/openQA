@@ -124,25 +124,6 @@ h2 .fa {
     text-align: right;
 }
 
-// parent group overview
-* + #child_groups {
-    border-top: 1px solid #e3e3e3;
-    margin-top: 20px;
-    padding-top: 20px;
-}
-#child_groups {
-    h3 {
-        font-size: 150%;
-        margin-top: 0px;
-    }
-    ul {
-        margin: 0px;
-        padding: 0px;
-        list-style: none;
-        font-size: 120%;
-    }
-}
-
 // center comments pagination
 .comments-pagination {
     display: block;

@@ -174,8 +174,6 @@ sub _group_overview ($self, $resultset, $template) {
         comment_put_action => 'apiv1_put_' . $comment_context_route_suffix,
         comment_delete_action => 'apiv1_delete_' . $comment_context_route_suffix
     );
-    $self->stash(child_groups => [$group->children->all]) if $is_parent_group;
-
     $self->respond_to(
         json => sub ($self) {
             @comments = map($_->hash, @comments);
