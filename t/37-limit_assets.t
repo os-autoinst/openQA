@@ -57,26 +57,46 @@ subtest 'configurable concurrency' => sub {
 
 subtest 'filesystem removal' => sub {
     my $asset_sub_dir = path(assetdir(), 'foo');
-    $asset_sub_dir->make_path;
+    $asset_sub_dir->remove_tree->make_path;
 
     subtest 'remove file' => sub {
-        my $asset_path = path($asset_sub_dir, 'foo.txt');
+        my $asset_path = $asset_sub_dir->child('foo.txt');
         $asset_path->spew('foo');
         stdout_like { $assets->create({type => 'foo', name => 'foo.txt', size => 3})->delete }
-        qr/removed $asset_path/, 'removal logged';
-        ok(!-e $asset_path, 'asset is gone');
+        qr/removed '$asset_path'/, 'removal logged';
+        ok !-e $asset_path, 'asset is gone';
     };
+
+    my $asset_path = $asset_sub_dir->child('some-repo');
+    my %asset_params = (type => 'foo', name => 'some-repo', size => 3);
     subtest 'remove directory tree' => sub {
-        my $asset_path = path($asset_sub_dir, 'some-repo');
         $asset_path->make_path;
-        path($asset_path, 'repo-file')->spew('a file within the repo');
-        stdout_like { $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete }
-        qr/removed $asset_path/, 'removal logged';
-        ok(!-e $asset_path, 'asset is gone');
+        $asset_path->child('repo-file')->spew('a file within the repo');
+        stdout_like { $assets->create(\%asset_params)->delete }
+        qr/removed tree '$asset_path'/, 'removal logged';
+        ok !-e $asset_path, 'asset is gone';
     };
-    subtest 'removal skipped' => sub {
-        stdout_like { $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete }
-        qr/skipping removal of foo\/some-repo/, 'skpping logged';
+    subtest 'remove dangling symlink' => sub {
+        ok symlink('does-not-exist', $asset_path), 'created dangling symlink';
+        stdout_like { $assets->create(\%asset_params)->delete }
+        qr/removed dangling symlink '$asset_path' pointing to 'does-not-exist'/, 'removal logged';
+        is readlink($asset_path), undef, 'asset is gone';
+        ok !-l $asset_path, 'asset is gone';
+    };
+    subtest 'removal of non-existing asset skipped' => sub {
+        stdout_like { $assets->create(\%asset_params)->delete }
+        qr/skipping removal of non-existing '$asset_path'/, 'skipping logged';
+    };
+    subtest 'preserve symlink into fixed directory' => sub {
+        my $fixed_asset_path = $asset_sub_dir->child('fixed/some-repo')->make_path;
+        my $fixed_asset_file = $fixed_asset_path->child('repo-file');
+        $fixed_asset_file->spew('a file within the repo');
+        ok symlink('./fixed/some-repo', $asset_path), 'created symlink into fixed directory';
+        stdout_like { $assets->create(\%asset_params)->delete }
+        qr{skipping .* '$asset_path' .* './fixed/some-repo'}, 'skipping logged';
+        ok -e $asset_path, 'asset was preserved';
+        ok -e $fixed_asset_path, 'asset under fixed directly was preserved';
+        ok -e $fixed_asset_file, 'file contained within the repo was preserved';
     };
 };
 
