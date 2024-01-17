@@ -139,7 +139,7 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 # Test whether all URL parameter are passed correctly
 my $url_with_escaped_parameters
   = $baseurl
-  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&comment=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
