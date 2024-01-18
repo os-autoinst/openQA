@@ -1,0 +1,14 @@
+# Workaround needed for handling non-ASCII in files.
+# # See <https://github.com/houseabsolute/perl-code-tidyall/issues/84>.
+--character-encoding=none
+--no-valign
+-l=160
+-fbl     # don't change blank lines
+-fnl     # don't remove new lines
+-nsfs    # no spaces before semicolons
+-baao    # space after operators
+-bbao    # space before operators
+-pt=2    # no spaces around ()
+-bt=2    # no spaces around []
+-sbt=2   # no spaces around {}
+-sct     # stack closing tokens )}

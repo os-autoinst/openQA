@@ -15,7 +15,8 @@ if (
   )
 {
 
-#<<<  do not let perltidy touch this
+#<<<  do not let perltidy nor perlcritic touch this
+## no critic (TestingAndDebugging::ProhibitNoStrict ValuesAndExpressions::ProhibitInterpolationOfLiterals)
 # This is not our code, and formatting should stay the same for
 # better comparison with new versions of B::Deparse
 # <---- PATCH
@@ -60,7 +61,7 @@ elsif ($B::Deparse::VERSION) {
     diag
       "Using B::Deparse v$B::Deparse::VERSION. If you see 'uninitialized' warnings, update patch in t/lib/OpenQA/Test/PatchDeparse.pm";
 }
-
+## use critic
 1;
 
 
