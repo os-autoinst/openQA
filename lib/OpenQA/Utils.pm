@@ -403,9 +403,7 @@ sub parse_assets_from_settings {
     return $assets;
 }
 
-sub _relative_or_absolute {
-    my ($path, $relative) = @_;
-
+sub _relative_or_absolute ($path, $relative = 0) {
     return $path if $relative;
     return catfile(assetdir(), $path);
 }
@@ -413,9 +411,7 @@ sub _relative_or_absolute {
 # find the actual disk location of a given asset. Supported arguments are
 # mustexist => 1 - return undef if the asset is not present
 # relative => 1 - return path below assetdir, otherwise absolute path
-sub locate_asset {
-    my ($type, $name, %args) = @_;
-
+sub locate_asset ($type, $name, %args) {
     my $trans = catfile($type, $name);
     return _relative_or_absolute($trans, $args{relative}) if -e _relative_or_absolute($trans);
 
