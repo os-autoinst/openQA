@@ -1,0 +1,32 @@
+---
+# % is placeholder for section.
+# e.g.:
+#   % => develop
+#   %_requires => develop_requires
+targets:
+  # List all %_requires into a cpanfile
+  cpanfile: [main, develop, test]
+  cpanfile-targets:
+    # save %_require into cpanfile section
+    develop: develop
+    test: test
+
+main_requires:
+  # Needed until preaction/Log-Any#105 is solved.
+  perl(Storable): '>= 3.06'
+  perl(Module::CPANfile):
+  perl(version):
+
+develop_requires:
+  perl(Perl::Tidy): '== 20230912'
+  perl(Code::TidyAll):
+  perl(Perl::Critic):
+  perl(Perl::Critic::Community):
+
+cover_requires:
+  perl(Devel::Cover):
+  perl(Devel::Cover::Report::Codecov):
+
+test_requires:
+  perl(Test::Most):
+  perl(Test::Warnings):

@@ -1,0 +1,17 @@
+---
+name: 'Perl critic'
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'master'
+
+ perl-critic-checks:
+    runs-on: ubuntu-latest
+    name: "Perlcritic"
+    container:
+      image: perldocker/perl-tester
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./tools/perlcritic --quiet .
