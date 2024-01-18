@@ -7,7 +7,7 @@ use Test::Warnings;
 use FindBin '$Bin';
 
 if (not -e "$Bin/../.git") {
-    pass("Skipping all tests, not in a git repository");
+    pass('Skipping all tests, not in a git repository');
     done_testing;
     exit;
 }

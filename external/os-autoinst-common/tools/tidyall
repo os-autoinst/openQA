@@ -1,0 +1,71 @@
+#!/usr/bin/env perl
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Tidyall command with perltidy version constraint.
+use strict;
+use warnings;
+use version;
+use Perl::Tidy;
+use Module::CPANfile;
+use FindBin '$Bin';
+
+=item perltidy_version
+
+Grabs the perltidy version from cpanfile using Module::CPANfile.
+
+=cut
+
+sub perltidy_version {
+    my $cpanfile_location;
+    # Try searching for a cpanfile in:
+    # - the current working directory
+    # - a directory above this command
+    # - the catch-all location in external/os-autoinst-common
+    my @locations = ('.', "$Bin/..", "$Bin/../external/os-autoinst-common");
+
+    foreach my $path (@locations) {
+        next unless -e "$path/cpanfile";
+        $cpanfile_location = "$path/cpanfile" and last;
+    }
+
+    my $version = Module::CPANfile->load($cpanfile_location)
+      ->prereq_for_module('Perl::Tidy')
+      ->requirement
+      ->version;
+    # Version requirements may contain qualifiers >=, ==, <, etc. The convention
+    # is to separate the qualifier from the actual version with a space.
+    #
+    # It's safe enough to assume that the last item is really the version.
+    #
+    # Additionally version will take care of 1.2.0 being equal to 1.2
+    return version->new((split ' ', $version)[-1]);
+}
+
+sub is_force_flag { $_ eq '--force' }
+
+my $required_version = perltidy_version();
+my $detected_version = version->new($Perl::Tidy::VERSION);
+my @tidyall_argv = @ARGV;
+
+unless ($detected_version eq $required_version) {
+    print STDERR "Incorrect version of perltidy.\n";
+    printf STDERR "- Detected: %s\n+ Required: %s\n\n", $detected_version, $required_version;
+
+    my $force_run = grep { is_force_flag } @ARGV;
+
+    unless ($force_run) {
+        printf STDERR "Please install the appropriate version of perltidy.\n";
+        printf STDERR "If you want to proceed anyways, re run with --force flag.\n";
+        exit 1;
+    }
+
+    # tidyall does not know about the --force flag.
+    @tidyall_argv = grep { !is_force_flag } @tidyall_argv;
+
+    print STDERR 'Proceeding to run with incorrect version of perltidy. ';
+    print STDERR "Results might not be consistent.\n";
+    print STDERR "==================\n";
+}
+
+exec 'tidyall', @tidyall_argv;

@@ -1,0 +1,20 @@
+#!/usr/bin/env perl
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# perlcritic with auto-injection of custom perlcritic rules.
+use strict;
+use warnings;
+use experimental 'signatures';
+use FindBin '$Bin';
+
+sub extra_include_paths (@extra_paths) {
+    my @paths = map { ("$Bin/../$_", "$Bin/../external/os-autoinst-common/$_") } @extra_paths;
+
+    # Remove non existing paths
+    return grep { -e $_ } @paths;
+}
+
+$ENV{PERL5LIB} = join(':', (extra_include_paths('lib/perlcritic'), $ENV{PERL5LIB} // ''));
+
+exec 'perlcritic', @ARGV;

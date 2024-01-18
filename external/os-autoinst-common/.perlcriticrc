@@ -1,0 +1,49 @@
+theme = community + openqa
+severity = 4
+include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals
+
+verbose = ::warning file=%f,line=%l,col=%c,title=%m - severity %s::[%p] %e\n
+
+# == Perlcritic Policies
+# -- Test::Most brings in strict & warnings
+[TestingAndDebugging::RequireUseStrict]
+equivalent_modules = Test::Most
+
+[TestingAndDebugging::RequireUseWarnings]
+equivalent_modules = Test::Most
+
+# -- Avoid double quotes unless there's interpolation or a single quote.
+[ValuesAndExpressions::ProhibitInterpolationOfLiterals]
+allow_if_string_contains_single_quote = 1
+severity = 3
+
+# -- Prohibit deep nesting
+[ControlStructures::ProhibitDeepNests]
+severity = 4
+add_themes = community
+max_nests = 4
+
+# == Community Policies
+# -- Test::Most brings in strict & warnings
+[Freenode::StrictWarnings]
+extra_importers = Test::Most
+
+# -- Test::Most brings in strict & warnings
+[Community::StrictWarnings]
+extra_importers = Test::Most
+
+[Community::DiscouragedModules]
+severity = 3
+
+# Test modules have no package declaration
+[Community::PackageMatchesFilename]
+severity = 1
+
+# == Custom Policies
+# -- Useless quotes on hashes
+[HashKeyQuotes]
+severity = 5
+
+# -- Superfluous use strict/warning.
+[RedundantStrictWarning]
+equivalent_modules = Test::Most

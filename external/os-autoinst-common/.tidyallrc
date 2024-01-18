@@ -1,0 +1,3 @@
+[PerlTidy]
+select = **/*.{pl,pm,t} tools/tidyall tools/perlcritic tools/update-deps
+argv = --profile=$ROOT/.perltidyrc

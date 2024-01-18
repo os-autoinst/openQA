@@ -1,0 +1,19 @@
+---
+name: 'Perl static checks'
+
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  perl-lint-checks:
+    runs-on: ubuntu-latest
+    name: "Perltidy"
+    container:
+      image: perldocker/perl-tester
+    steps:
+      - uses: actions/checkout@v4
+      - run: GITHUB_ACTIONS=1 ./tools/tidyall --check-only --all --quiet

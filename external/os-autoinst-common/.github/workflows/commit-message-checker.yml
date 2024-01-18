@@ -1,0 +1,16 @@
+---
+name: 'Commit message check'
+
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+  push:
+    branches:
+      # we must not fix commit messages when they already reached master
+      - '!master'
+
+jobs:
+  check-commit-message:
+    secrets:
+      accessToken: "${{ secrets.GITHUB_TOKEN }}"
+    uses: ./.github/workflows/base-commit-message-checker.yml
