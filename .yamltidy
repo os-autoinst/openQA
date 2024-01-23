@@ -1,0 +1,8 @@
+---
+v: v0.1
+indentation:
+  spaces: 2
+  block-sequence-in-mapping: 2
+trailing-spaces: fix
+scalar-style:
+  default: plain

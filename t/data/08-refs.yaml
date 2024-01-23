@@ -1,8 +1,8 @@
 scenarios:
   i586:
     opensuse-13.1-DVD-i586: &tests
-    - spam
-    - eggs
+      - spam
+      - eggs
   ppc64:
     opensuse-13.1-DVD-ppc64:
       *tests

@@ -44,136 +44,136 @@ products:
 scenarios:
   x86_64:
     sle-12-SP5-Server-DVD-A-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install: &default_install
-        settings:
-          INSTALLONLY: ""
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging: &zdup
-        priority: 50
-    - rescue_system_sle11sp4
-    - RAID1: &raid1
-        settings:
-          INSTALLATION_VALIDATION: ""
-          INSTALLONLY: ""
-    - ext4_uefi-staging: &ext4
-        machine: uefi-staging
-    - minimal+base
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install: &default_install
+          settings:
+            INSTALLONLY: ""
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging: &zdup
+          priority: 50
+      - rescue_system_sle11sp4
+      - RAID1: &raid1
+          settings:
+            INSTALLATION_VALIDATION: ""
+            INSTALLONLY: ""
+      - ext4_uefi-staging: &ext4
+          machine: uefi-staging
+      - minimal+base
     sle-12-SP5-Server-DVD-B-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          *ext4
+      - minimal+base
     sle-12-SP5-Server-DVD-C-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          *ext4
+      - minimal+base
     sle-12-SP5-Server-DVD-D-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          *ext4
+      - minimal+base
     sle-12-SP5-Server-DVD-E-Staging-x86_64:
-    - cryptlvm
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
+      - cryptlvm
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          *ext4
+      - minimal+base
     sle-12-SP5-Server-DVD-H-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          *ext4
+      - minimal+base
     sle-12-SP5-Server-DVD-S-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          *ext4
+      - minimal+base
     sle-12-SP5-Server-DVD-V-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        machine: uefi-virtio-vga
-        settings:
-          YAML_SCHEDULE: schedule/staging/%TEST%@uefi-staging.yaml
-          INSTALLONLY: ""
-    - minimal+base
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          machine: uefi-virtio-vga
+          settings:
+            YAML_SCHEDULE: schedule/staging/%TEST%@uefi-staging.yaml
+            INSTALLONLY: ""
+      - minimal+base
     sle-12-SP5-Server-DVD-Y-Staging-x86_64:
-    - autoyast_mini_no_product
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
+      - autoyast_mini_no_product
+      - gnome
+      - cryptlvm_minimal_x
+      - default_install:
+          *default_install
+      - installcheck
+      - migration_zdup_offline_sle12sp2_64bit-staging:
+          *zdup
+      - rescue_system_sle11sp4
+      - RAID1:
+          *raid1
+      - ext4_uefi-staging:
+          *ext4
+      - minimal+base

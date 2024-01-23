@@ -16,7 +16,7 @@ products:
 scenarios:
   i586:
     opensuse-13.1-DVD-i586:
-    - kde_usb:
-        settings:
-          USB: '1'
-        <<: *kde_template
+      - kde_usb:
+          settings:
+            USB: '1'
+          <<: *kde_template

@@ -16,19 +16,19 @@ products:
 scenarios:
   x86_64:
     openqa-*-dev-x86_64:
-    - openqa_install+publish:
-        testsuite: null
-        settings:
-          PUBLISH_HDD_1: 'opensuse-Tumbleweed-%ARCH%@%MACHINE%-%BUILD%.qcow2'
-          PUBLISH_PFLASH_VARS: 'opensuse-Tumbleweed-%ARCH%@%MACHINE%-%BUILD%-uefi-vars.qcow2'
-        description: >-
-          Maintainer: okurz@suse.de Test for installation of openQA itself.
-          To be used with "openqa" distri. Publishes an qcow2 image including the openQA installation
-          ready to run as an appliance.
-    - openqa_from_git:
-        testsuite: null
-        settings:
-          OPENQA_FROM_GIT: '1'
-        description: >-
-          Maintainer: okurz@suse.de Test for running openQA itself from git. To be used with "openqa"
-          distri.
+      - openqa_install+publish:
+          testsuite: null
+          settings:
+            PUBLISH_HDD_1: opensuse-Tumbleweed-%ARCH%@%MACHINE%-%BUILD%.qcow2
+            PUBLISH_PFLASH_VARS: opensuse-Tumbleweed-%ARCH%@%MACHINE%-%BUILD%-uefi-vars.qcow2
+          description: >-
+            Maintainer: okurz@suse.de Test for installation of openQA itself.
+            To be used with "openqa" distri. Publishes an qcow2 image including the openQA installation
+            ready to run as an appliance.
+      - openqa_from_git:
+          testsuite: null
+          settings:
+            OPENQA_FROM_GIT: '1'
+          description: >-
+            Maintainer: okurz@suse.de Test for running openQA itself from git. To be used with "openqa"
+            distri.

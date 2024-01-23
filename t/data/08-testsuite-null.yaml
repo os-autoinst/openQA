@@ -1,11 +1,11 @@
 scenarios:
   i586:
     opensuse-13.1-DVD-i586:
-    - lala:
-        testsuite: null
-        description: Testsuite null
-        machine: 32bit
-        priority: 97
+      - lala:
+          testsuite: null
+          description: Testsuite null
+          machine: 32bit
+          priority: 97
 products:
   opensuse-13.1-DVD-i586:
     distri: opensuse

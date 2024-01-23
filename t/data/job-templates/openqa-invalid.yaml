@@ -9,7 +9,7 @@ products:
 scenarios:
   x86_64:
     foo:
-    - bar:
-        testsuite: null
-        settings:
-          FOO: BAR
+      - bar:
+          testsuite: null
+          settings:
+            FOO: BAR

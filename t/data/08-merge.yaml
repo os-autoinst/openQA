@@ -1,25 +1,25 @@
 scenarios:
   i586:
     opensuse-13.1-DVD-i586:
-    - lala:
-        settings: &common1
-          A: default A
-          B: default B
-        testsuite: null
-        machine: 32bit
-    - lala2:
-        settings: &common2
-          B: default2 B
-          C: default C
-        testsuite: null
-        machine: 32bit
-    - lala3:
-        settings:
-          <<: [*common1, *common2]
-          B: b
-          D: d
-        testsuite: null
-        machine: 32bit
+      - lala:
+          settings: &common1
+            A: default A
+            B: default B
+          testsuite: null
+          machine: 32bit
+      - lala2:
+          settings: &common2
+            B: default2 B
+            C: default C
+          testsuite: null
+          machine: 32bit
+      - lala3:
+          settings:
+            <<: [*common1, *common2]
+            B: b
+            D: d
+          testsuite: null
+          machine: 32bit
 products:
   opensuse-13.1-DVD-i586:
     distri: opensuse
