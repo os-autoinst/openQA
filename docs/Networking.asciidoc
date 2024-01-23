@@ -261,6 +261,7 @@ The configuration and operation can be checked with the following commands:
 
 [source,sh]
 ----
+cat /proc/sys/net/ipv4/conf/{br1,eth0}/forwarding # check whether IP forwarding is enabled
 ovs-vsctl show # shows the bridge br1, the tap devices are assigned to it
 ovs-ofctl dump-flows br1 # shows the rules installed by os-autoinst-openvswitch in table=0
 ovs-dpctl show # show basic info on all datapaths
