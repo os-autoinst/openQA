@@ -245,7 +245,9 @@ After this it should be possible to reach other hosts. You may also launch a 2nd
 VM to see whether the VMs can talk to each other. You may conduct ping tests
 similar to the `ping_client` test mentioned in the previous section (see the
 https://github.com/os-autoinst/os-autoinst-distri-opensuse/blob/cc3a5b32527c4c8bb810c8bce9b1449a891ef74b/lib/utils.pm#L2901[utility function in openSUSE tests]
-for details).
+for details). When running ping you can add/remove machines to/from the GRE
+network to bisect problematic hosts/connections (via `ovs-vsctl add-port …` and
+`ovs-vsctl del-port …`).
 
 === Debugging Open vSwitch Configuration
 Boot sequence with wicked (version 0.6.23 and newer):
