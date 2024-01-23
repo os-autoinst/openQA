@@ -1,13 +1,5 @@
 extends: default
-ignore: |
-  t/data/job-templates/invalid-yaml-schema.yaml
-  t/data/job-templates/duplicate-key.yaml
-  t/data/08-opensuse-test.yaml
-  t/data/08-opensuse.yaml
-  container/helm/**
-  dbicdh
-  node_modules
-
+ignore-from-file: [.gitignore, .yamlignore]
 
 rules:
   line-length:

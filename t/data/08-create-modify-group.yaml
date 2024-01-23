@@ -1,14 +1,14 @@
 scenarios:
   i586:
     opensuse-13.1-DVD-i586:
-    - foobar  # Test names shouldn't conflict across groups
-    - spam
-    - eggs:
-        machine: 32bit
-        priority: 20
-        settings:
-          FOO: removed later
-          BAR: updated later
+      - foobar  # Test names shouldn't conflict across groups
+      - spam
+      - eggs:
+          machine: 32bit
+          priority: 20
+          settings:
+            FOO: removed later
+            BAR: updated later
 defaults:
   i586:
     machine: 64bit

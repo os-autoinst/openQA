@@ -2,35 +2,35 @@ pull_request_rules:
   - name: automatic merge
     conditions:
       - and: &base_checks
-        - base=master
-        - -label~=^acceptance-tests-needed|not-ready
-        # wait explicitly for one of the final checks to show up to be on the
-        # safe side even in case of checks not reporting back at all
-        - "status-success=codecov/project"
-        - "status-success=codecov/patch"
-        # Multibuild results will not report the "pending" status:
-        # https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.scm_ci_workflow_integration.html#sec.obs.obs_scm_ci_workflow_integration.setup.status_reporting
-        # "unresolvable" is not reported in general:
-        # https://trello.com/c/0N3jHq5M/2257-report-back-to-scm-when-build-results-arent-failed-and-succeeded
-        # So we need to require the number of tests explicitly:
-        - "#check-success>=35"
-        - "status-success=static-check-containers"
-        - "status-success=webui-docker-compose"
-        - "#check-failure=0"
-        - "#check-pending=0"
-        - linear-history
+          - base=master
+          - -label~=^acceptance-tests-needed|not-ready
+          # wait explicitly for one of the final checks to show up to be on the
+          # safe side even in case of checks not reporting back at all
+          - status-success=codecov/project
+          - status-success=codecov/patch
+          # Multibuild results will not report the "pending" status:
+          # https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.scm_ci_workflow_integration.html#sec.obs.obs_scm_ci_workflow_integration.setup.status_reporting
+          # "unresolvable" is not reported in general:
+          # https://trello.com/c/0N3jHq5M/2257-report-back-to-scm-when-build-results-arent-failed-and-succeeded
+          # So we need to require the number of tests explicitly:
+          - "#check-success>=35"
+          - status-success=static-check-containers
+          - status-success=webui-docker-compose
+          - "#check-failure=0"
+          - "#check-pending=0"
+          - linear-history
       - and:
-        - "#approved-reviews-by>=2"
-        - "#changes-requested-reviews-by=0"
-        # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
-        - "#review-requested=0"
+          - "#approved-reviews-by>=2"
+          - "#changes-requested-reviews-by=0"
+          # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
+          - "#review-requested=0"
     actions: &merge
       merge:
         method: merge
   - name: automatic merge on special label
     conditions:
       - and: *base_checks
-      - "label=merge-fast"
+      - label=merge-fast
     actions: *merge
   - name: automatic merge for dependency bot updates
     conditions:

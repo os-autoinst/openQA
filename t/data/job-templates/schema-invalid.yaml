@@ -4,67 +4,67 @@ description: openQA job template
 type: FOO
 additionalProperties: false
 required:
-- products
-- scenarios
+  - products
+  - scenarios
 properties:
   scenarios:
     description: The scenarios to run, i.e. lists of test suites per architecture and medium
     type: object
     additionalProperties: false
     patternProperties:
-      "^[a-z0-9_]+$":
+      ^[a-z0-9_]+$:
         type: object
         description: The architecture of the test suite(s) eg. ppc64le
         patternProperties:
-          "^.*$":
+          ^.*$:
             type: array
             description: The product to run the test suite(s) on
             items:
               anyOf:
-              - type: string
-                description: Name of a test suite name
-              - type: object
-                maxProperties: 1
-                description: A test suite with machine and/or priority value specified, or a custom job template name if testsuite was specified
-                additionalProperties: false
-                patternProperties:
-                  "^[A-Za-z\\s0-9_*.+-]+$":
-                    type: object
-                    additionalProperties: false
-                    properties:
-                      machine:
-                        oneOf:
-                          - type: string
-                          - type: array
-                            items:
+                - type: string
+                  description: Name of a test suite name
+                - type: object
+                  maxProperties: 1
+                  description: A test suite with machine and/or priority value specified, or a custom job template name if testsuite was specified
+                  additionalProperties: false
+                  patternProperties:
+                    ^[A-Za-z\s0-9_*.+-]+$:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        machine:
+                          oneOf:
                             - type: string
-                      priority:
-                        type: number
-                      settings:
-                        type: object
-                        description: Additional test variables to be set
-                        additionalProperties: false
-                        patternProperties:
-                          "^[A-Z_+]+[A-Z0-9_]*$":
-                            type: string
-                      testsuite:
-                        type: string
-                        pattern: "^[A-Za-z\\s0-9_*.+-]+$"
-                        description: The test suite this scenario is based on if a custom job template name was used
-                      description:
-                        type: string
-                        description: The description of the job template
+                            - type: array
+                              items:
+                                - type: string
+                        priority:
+                          type: number
+                        settings:
+                          type: object
+                          description: Additional test variables to be set
+                          additionalProperties: false
+                          patternProperties:
+                            ^[A-Z_+]+[A-Z0-9_]*$:
+                              type: string
+                        testsuite:
+                          type: string
+                          pattern: ^[A-Za-z\s0-9_*.+-]+$
+                          description: The test suite this scenario is based on if a custom job template name was used
+                        description:
+                          type: string
+                          description: The description of the job template
   defaults:
     description: A set of architectures with default configurations
     type: object
     additionalProperties: false
     patternProperties:
-      "^[a-z0-9_]+$":
+      ^[a-z0-9_]+$:
         type: object
         description: The architecture to define a default configuration for eg. ppc64le
         required:
-        - machine
-        - priority
+          - machine
+          - priority
         additionalProperties: false
         properties:
           machine:
@@ -72,7 +72,7 @@ properties:
               - type: string
               - type: array
                 items:
-                - type: string
+                  - type: string
           priority:
             type: number
           settings:
@@ -80,13 +80,13 @@ properties:
             description: Additional test variables to be set
             additionalProperties: false
             patternProperties:
-              "^[A-Z_]+[A-Z0-9_]*$":
+              ^[A-Z_]+[A-Z0-9_]*$:
                 type: string
   products:
     type: object
     additionalProperties: false
     patternProperties:
-      "^[A-Za-z0-9._*-]+$":
+      ^[A-Za-z0-9._*-]+$:
         type: object
         description: The name of a product (medium)
         required:

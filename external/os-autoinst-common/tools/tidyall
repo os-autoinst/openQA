@@ -10,13 +10,13 @@ use Perl::Tidy;
 use Module::CPANfile;
 use FindBin '$Bin';
 
-=item perltidy_version
+=item perltidy_version ()
 
 Grabs the perltidy version from cpanfile using Module::CPANfile.
 
 =cut
 
-sub perltidy_version {
+sub perltidy_version () {
     my $cpanfile_location;
     # Try searching for a cpanfile in:
     # - the current working directory

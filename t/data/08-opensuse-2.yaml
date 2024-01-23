@@ -10,30 +10,30 @@ products:
 scenarios:
   i586:
     opensuse-13.1-DVD-i586:
-    - textmode:
-        machine: 64bit
-    - textmode:
-        description: 32bit textmode prio 40
-        machine: 32bit
-    - kde:
-        machine: 32bit
-    - kde:
-        machine: 64bit
-    - RAID0:
-        priority: 20
-    - client1:
-        machine: 32bit
-    - client1:
-        machine: 64bit
-    - server:
-        machine: 64bit
-    - server:
-        machine: 32bit
-    - client2:
-        machine: 32bit
-    - client2:
-        machine: 64bit
-    - advanced_kde:
-        settings:
-          ADVANCED: '1'
-          DESKTOP: advanced_kde
+      - textmode:
+          machine: 64bit
+      - textmode:
+          description: 32bit textmode prio 40
+          machine: 32bit
+      - kde:
+          machine: 32bit
+      - kde:
+          machine: 64bit
+      - RAID0:
+          priority: 20
+      - client1:
+          machine: 32bit
+      - client1:
+          machine: 64bit
+      - server:
+          machine: 64bit
+      - server:
+          machine: 32bit
+      - client2:
+          machine: 32bit
+      - client2:
+          machine: 64bit
+      - advanced_kde:
+          settings:
+            ADVANCED: '1'
+            DESKTOP: advanced_kde
