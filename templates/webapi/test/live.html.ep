@@ -3,6 +3,7 @@
      id="developer-panel"
      data-developer-url="<%= $ws_developer_url %>"
      data-status-only-url="<%= $ws_status_only_url %>"
+     data-service-port-delta="<%= $service_port_delta %>"
      data-is-accessible="<%= ($is_devel_mode_accessible) ? ('true') : ('false') %>"
      data-own-user-id="<%= $current_user_id %>">
     <div class="card-header">

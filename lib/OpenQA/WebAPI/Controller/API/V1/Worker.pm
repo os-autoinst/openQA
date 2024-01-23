@@ -202,7 +202,10 @@ sub create {
 
     my %event_data = (id => $id, host => $host, instance => $instance);
     $self->emit_event('openqa_worker_register', \%event_data);
-    $self->render(json => {id => $id});
+    $self->render(
+        json => {
+            id => $id,
+            service_port_delta => $self->config->{global}->{service_port_delta}});
 }
 
 =over 4

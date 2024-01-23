@@ -18,7 +18,11 @@ sub ws_console ($self) {
     my $ws_url = $self->determine_os_autoinst_web_socket_url($job);
     $ws_url = $ws_url ? determine_web_ui_web_socket_url($job->id) : undef if $use_proxy;
 
-    return $self->render(job => $job, ws_url => ($ws_url // ''), use_proxy => $use_proxy);
+    return $self->render(
+        job => $job,
+        ws_url => ($ws_url // ''),
+        use_proxy => $use_proxy,
+        service_port_delta => $self->config->{global}->{service_port_delta});
 }
 
 1;

@@ -105,7 +105,7 @@ function setupWebSocketConsole() {
   if (!url.length) {
     return;
   }
-  url = makeWsUrlAbsolute(url);
+  url = makeWsUrlAbsolute(url, form.data('service-port-delta'));
 
   // establish and handle web socket connection
   window.wsUrl = url;

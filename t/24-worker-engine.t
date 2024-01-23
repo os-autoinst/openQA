@@ -51,6 +51,7 @@ use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
     use Mojo::Base -base;
     has worker_id => 1;
     has webui_host => 'localhost';
+    has service_port_delta => 2;
 }
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";

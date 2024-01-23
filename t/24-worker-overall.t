@@ -40,6 +40,7 @@ $ENV{OPENQA_LOGFILE} = undef;
     use Mojo::Base -base;
     has webui_host => 'fake';
     has worker_id => 42;
+    has service_port_delta => 2;
     has api_calls => sub { [] };
     sub send {
         my ($self, $method, $path, %args) = @_;

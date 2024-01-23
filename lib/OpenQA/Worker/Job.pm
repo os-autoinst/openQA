@@ -966,7 +966,7 @@ sub post_upload_progress_to_liveviewhandler {
     my $job_id = $self->id;
     $self->client->send(
         post => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
-        service_port_delta => 2,    # liveviewhandler is supposed to run on web UI port + 2
+        service_port_delta => $self->client->service_port_delta,
         json => \%new_progress_info,
         non_critical => 1,
         callback => sub {

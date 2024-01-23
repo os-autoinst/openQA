@@ -145,13 +145,7 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
     // don't put a port in the URL if there's no explicit port
     port = '';
   } else {
-    if (port !== 80 || port !== 443) {
-      // if not using default ports we assume we're not accessing the web UI via Apache/NGINX
-      // reverse proxy
-      // -> so if not specified otherwise, we're further assuming a connection to the livehandler
-      //    daemon which is supposed to run under the <web UI port> + 2
-      port += servicePortDelta ? servicePortDelta : 2;
-    }
+    if (port !== 80 || port !== 443) port += servicePortDelta;
     port = ':' + port;
   }
 
