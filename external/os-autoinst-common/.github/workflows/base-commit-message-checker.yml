@@ -1,7 +1,6 @@
 ---
 name: 'Commit message check'
 
-# yamllint disable-line rule:truthy
 on:
   workflow_call:
     secrets:

@@ -1,0 +1,25 @@
+extends: default
+ignore-from-file: [.gitignore, .yamlignore]
+
+rules:
+  line-length:
+    max: 160
+  document-start: disable
+  indentation:
+    indent-sequences: true
+    spaces: 2
+
+  # Allows aligning subsequent lines with [] sequences
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: -1
+  commas:
+    max-spaces-after: -1
+
+  # Allows aligning key value pairs
+  colons:
+    max-spaces-after: -1
+
+  truthy:
+    allowed-values: ['true', 'false']
+    check-keys: false
