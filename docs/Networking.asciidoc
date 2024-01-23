@@ -191,8 +191,9 @@ systemctl enable openqa-worker@{1..3}
 === Verify the setup
 Simply run a MM test scenario. For openSUSE, you can find many relevant tests on
 https://openqa.opensuse.org[o3], e.g. look for networking-related tests like
-wicked-tests. To test GRE tunnels, you may want to change the jobs worker
-classes so the different jobs are executed on different workers.
+`ping_server`/`ping_client` or `wicked_basic_ref`/`wicked_basic_sut`. To test
+GRE tunnels, you may want to change the jobs worker classes so the different
+jobs are executed on different workers.
 
 So you could call `openqa-clone-job` like this:
 ```
