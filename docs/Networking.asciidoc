@@ -231,7 +231,7 @@ Within the VM configure the network *like* this (you may need to adjust concrete
 IP addresses, subnets and interface names):
 
 ```
-ip link set dev eth0 up mtu 1458
+ip link set dev eth0 up mtu 1380
 ip a add dev eth0 10.0.2.15/24
 ip r add default via 10.0.2.2
 echo 'nameserver 8.8.8.8' > /etc/resolv.conf
@@ -242,7 +242,10 @@ for MM tests and should be below the MTU set on the Open vSwitch bridge device
 (e.g. via `os-autoinst-setup-multi-machine`).
 
 After this it should be possible to reach other hosts. You may also launch a 2nd
-VM to see whether the VMs can talk to each other.
+VM to see whether the VMs can talk to each other. You may conduct ping tests
+similar to the `ping_client` test mentioned in the previous section (see the
+https://github.com/os-autoinst/os-autoinst-distri-opensuse/blob/cc3a5b32527c4c8bb810c8bce9b1449a891ef74b/lib/utils.pm#L2901[utility function in openSUSE tests]
+for details).
 
 === Debugging Open vSwitch Configuration
 Boot sequence with wicked (version 0.6.23 and newer):
