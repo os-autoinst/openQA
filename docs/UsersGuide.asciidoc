@@ -1389,10 +1389,15 @@ duration unless the files are still being updated. Keep in mind that this
 behavior is also enabled on local instances and affects all cloned jobs
 (unless cloned into a job group).
 
+If an asset is just a symlink then only the symlink is cleaned up (but not
+the file or directory it points to).
+
 'Fixed' assets - those placed in the `fixed` subdirectory of the relevant
 asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
-always be available for a test to work.
+always be available for a test to work. Note that relative symlinks in the
+regular assets directory that point into the `fixed` subdirectory are also
+preserved.
 
 === Configuring limit for assets within job groups ===
 
