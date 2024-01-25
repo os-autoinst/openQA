@@ -6148,10 +6148,16 @@ behavior is also enabled on local instances and affects all cloned jobs
 (unless cloned into a job group).</p>
 </div>
 <div class="paragraph">
+<p>If an asset is just a symlink then only the symlink is cleaned up (but not
+the file or directory it points to).</p>
+</div>
+<div class="paragraph">
 <p>'Fixed' assets - those placed in the <code>fixed</code> subdirectory of the relevant
 asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
-always be available for a test to work.</p>
+always be available for a test to work. Note that relative symlinks in the
+regular assets directory that point into the <code>fixed</code> subdirectory are also
+preserved.</p>
 </div>
 </div>
 <div class="sect2">
@@ -10171,25 +10177,23 @@ number of tap devices should be configured.
 <div class="paragraph">
 <p>Simply run a MM test scenario. For openSUSE, you can find many relevant tests on
 <a href="https://openqa.opensuse.org">o3</a>, e.g. look for networking-related tests like
-wicked-tests. To test GRE tunnels, you may want to change the jobs worker
-classes so the different jobs are executed on different workers.</p>
+<code>ping_server</code>/<code>ping_client</code> or <code>wicked_basic_ref</code>/<code>wicked_basic_sut</code>.</p>
 </div>
 <div class="paragraph">
-<p>So you could call <code>openqa-clone-job</code> like this:</p>
+<p>To test GRE tunnels, you may want to change the jobs worker classes so the
+different jobs are executed on different workers. So you could call
+<code>openqa-clone-job</code> like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span>openqa-clone-job \
-    --skip-download --skip-chained-deps \    # assuming assets are present
-    --max-depth 0 \                          # clone the entire parallel cluster
-    --export-command \                       # only print the API call
-    https://openqa.opensuse.org/tests/250309 # arbitrary job in cluster to clone
-    _GROUP=0 BUILD+=test-mm-setup            # avoid interfering with production jobs</code></pre>
+    --skip-download --skip-chained-deps \        # assuming assets are present
+    --max-depth 0 \                              # clone the entire parallel cluster
+    https://openqa.opensuse.org/tests/3886213 \  # arbitrary job in cluster to clone
+    _GROUP=0 BUILD+=test-mm-setup \              # avoid interfering with production jobs
+    WORKER_CLASS:wicked_basic_ref+=,worker_foo \ # ensure one job runs on `worker_foo`
+    WORKER_CLASS:wicked_basic_sut+=,worker_bar   # ensure other job runs on `worker_bar`</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>It will print an <code>openqa-cli</code> call. You can modify it to change the worker
-classes of the jobs individually and then invoke it.</p>
 </div>
 <div class="paragraph">
 <p>Also be sure to reboot the worker host to make sure the setup is actually
@@ -10225,7 +10229,7 @@ IP addresses, subnets and interface names):</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>ip link set dev eth0 up mtu 1458
+<pre class="pygments highlight"><code><span></span>ip link set dev eth0 up mtu 1380
 ip a add dev eth0 10.0.2.15/24
 ip r add default via 10.0.2.2
 echo &#39;nameserver 8.8.8.8&#39; &gt; /etc/resolv.conf</code></pre>
@@ -10238,7 +10242,12 @@ for MM tests and should be below the MTU set on the Open vSwitch bridge device
 </div>
 <div class="paragraph">
 <p>After this it should be possible to reach other hosts. You may also launch a 2nd
-VM to see whether the VMs can talk to each other.</p>
+VM to see whether the VMs can talk to each other. You may conduct ping tests
+similar to the <code>ping_client</code> test mentioned in the previous section (see the
+<a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse/blob/cc3a5b32527c4c8bb810c8bce9b1449a891ef74b/lib/utils.pm#L2901">utility function in openSUSE tests</a>
+for details). When running ping you can add/remove machines to/from the GRE
+network to bisect problematic hosts/connections (via <code>ovs-vsctl add-port …</code> and
+<code>ovs-vsctl del-port …</code>).</p>
 </div>
 </div>
 </div>
@@ -10269,7 +10278,8 @@ bridge,</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl<span class="tok-w"> </span>show<span class="tok-w"> </span><span class="tok-c1"># shows the bridge br1, the tap devices are assigned to it</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cat<span class="tok-w"> </span>/proc/sys/net/ipv4/conf/<span class="tok-o">{</span>br1,eth0<span class="tok-o">}</span>/forwarding<span class="tok-w"> </span><span class="tok-c1"># check whether IP forwarding is enabled</span>
+ovs-vsctl<span class="tok-w"> </span>show<span class="tok-w"> </span><span class="tok-c1"># shows the bridge br1, the tap devices are assigned to it</span>
 ovs-ofctl<span class="tok-w"> </span>dump-flows<span class="tok-w"> </span>br1<span class="tok-w"> </span><span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span>
 ovs-dpctl<span class="tok-w"> </span>show<span class="tok-w"> </span><span class="tok-c1"># show basic info on all datapaths</span>
 ovs-dpctl<span class="tok-w"> </span>dump-flows<span class="tok-w"> </span><span class="tok-c1"># displays flows in datapaths</span>
@@ -12604,7 +12614,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-01-12 04:44:12 UTC
+Last updated 2024-01-25 04:44:25 UTC
 </div>
 </div>
 </body>

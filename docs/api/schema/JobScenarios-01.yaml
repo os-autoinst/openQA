@@ -4,9 +4,9 @@ description: Definitions for openQA job scenarios
 type: object
 additionalProperties: false
 required:
-- job_templates
+  - job_templates
 patternProperties:
-  '^\.[a-z0-9_]+$':
+  ^\.[a-z0-9_]+$:
     type: object
     description: Definitions that can be re-used
 
@@ -15,7 +15,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      '^[A-Za-z0-9._*-]+$':
+      ^[A-Za-z0-9._*-]+$:
         type: object
         description: The name of a product (medium)
         required:
@@ -40,14 +40,14 @@ properties:
             description: Additional test variables to be set
             additionalProperties: false
             patternProperties:
-              '^[A-Z_+]+[A-Z0-9_]*$':
+              ^[A-Z_+]+[A-Z0-9_]*$:
                 type: string
 
   machines:
     type: object
     additionalProperties: false
     patternProperties:
-      '^[A-Za-z0-9._*-]+$':
+      ^[A-Za-z0-9._*-]+$:
         type: object
         description: The name of a machine
         required:
@@ -66,7 +66,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      '^[A-Za-z\s0-9_*.+-]+$':
+      ^[A-Za-z\s0-9_*.+-]+$:
         type: object
         description: The name of the job template
         additionalProperties: false
