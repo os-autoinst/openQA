@@ -145,7 +145,7 @@ function triggerAssetCleanup(form) {
     success: function () {
       addFlash(
         'info',
-        'Asset cleanup has been triggered. Open the <a href="/minion">Minion dashboard</a> to keep track of the task.'
+        'Asset cleanup has been triggered. Open the <a href="/minion/jobs?task=limit_assets">Minion dashboard</a> to keep track of the task.'
       );
     },
     error: function (xhr, ajaxOptions, thrownError) {
