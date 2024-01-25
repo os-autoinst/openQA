@@ -1,0 +1,10 @@
+[*]
+indent_style = space
+indent_size = 4
+binary_next_line = true
+
+[.bpan/**]
+ignore = true
+
+[*~]
+ignore = true

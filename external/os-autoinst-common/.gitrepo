@@ -6,7 +6,7 @@
 [subrepo]
 	remote = git@github.com:os-autoinst/os-autoinst-common.git
 	branch = master
-	commit = a94b58b23be8ddb5bf85a7b1f87914ba9e71b9e6
-	parent = 1e9bfef6f182ff6e30268174f6414bf48c35b89c
+	commit = ef465670789c9b49ce0e4e1f3da61c2cc313a0e0
+	parent = 6ca685738c5db7ccdd9394dec8d4841a293c65ec
 	method = merge
 	cmdver = 0.4.6
