@@ -237,7 +237,7 @@ sub start {
     # delete settings we better not allow to be set on job-level (and instead should only be set within the
     # worker config)
     my $job_settings = $self->info->{settings} // {};
-    delete $job_settings->{GENERAL_HW_CMD_DIR};
+    delete $job_settings->{$_} for qw(GENERAL_HW_CMD_DIR GIT_CACHE_DIR);
     for my $key (keys %$job_settings) {
         delete $job_settings->{$key} if rindex($key, 'EXTERNAL_VIDEO_ENCODER', 0) == 0;
     }
