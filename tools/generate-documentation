@@ -41,25 +41,25 @@ set -eo pipefail
 
 # exit status 0 if any changes detected
 anything_changed() {
-    echo '*.pdf -diff' >> .gitattributes
+    echo '*.pdf -diff' >>.gitattributes
     git --no-pager diff --shortstat
 
     local lines_changed_in_index lines_changed_in_api other_files_changed
 
     # it looks it is a challenge to ignore lines in git diff
-    lines_changed_in_index="$(git --no-pager diff -U0 -- index.html     | grep -v -e 'Last updated ' -e '^\@\@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
+    lines_changed_in_index="$(git --no-pager diff -U0 -- index.html | grep -v -e 'Last updated ' -e '^\@\@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
     lines_changed_in_api="$(git --no-pager diff -U0 -- api/testapi.html | grep -v -e 'Last updated ' -e '^\@\@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
     other_files_changed="$(git --no-pager diff --name-only -- '(:!index.html)' '(:!api/testapi.html)' '(:!current.pdf)' | wc -l)"
 
     # if any other file changed || any line besides containing 'Last Updated' in .html
-    test "$other_files_changed" -gt 0 || test "$((lines_changed_in_index+lines_changed_in_api))" -gt 0
+    test "$other_files_changed" -gt 0 || test "$((lines_changed_in_index + lines_changed_in_api))" -gt 0
 }
 
 check_branch_exists() {
     local repo=$1
     local branch=$2
 
-    if git ls-remote --exit-code -- "$repo" "$branch" ; then
+    if git ls-remote --exit-code -- "$repo" "$branch"; then
         return
     fi
 
@@ -68,8 +68,8 @@ check_branch_exists() {
 }
 
 update_docs() {
-        mkdir out || exit 1
-        (
+    mkdir out || exit 1
+    (
         cd out
         # shellcheck disable=SC2030
         if [[ -z "${PULL_REQUEST_USER}" ]]; then
@@ -99,9 +99,9 @@ update_docs() {
             git add docs/index.html docs/current.pdf docs/api/testapi.html
             git add docs/api/schema
             topic="Update documentation to commit ${shortref}"
-            echo "$topic" > last.commit
-            echo "" >> last.commit
-            [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >> out/last.commit)
+            echo "$topic" >last.commit
+            echo "" >>last.commit
+            [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >>out/last.commit)
             git commit -F last.commit
             if [[ -n "${PUBLISH}" ]] && [[ "${PUBLISH}" != 0 ]]; then
                 git push "$PUSH_REMOTE_URL" "$PUSH_BRANCH"
@@ -118,35 +118,34 @@ update_docs() {
         else
             echo Documentation is up to date
         fi
-        )
-        [[ $KEEP_OUTPUT ]] || rm -rf out
+    )
+    [[ $KEEP_OUTPUT ]] || rm -rf out
 }
 
 update_api() {
-        mkdir -p api/src
-        response=$(curl -o api/src/testapi.pm -sS -w "%{http_code}\n" https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm)
-        [[ $response != 200 ]] && echo "Download of testapi.pm failed" && exit 1
-        cd api
-        "${scriptroot}"/generate-documentation-genapi
+    mkdir -p api/src
+    response=$(curl -o api/src/testapi.pm -sS -w "%{http_code}\n" https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm)
+    [[ $response != 200 ]] && echo "Download of testapi.pm failed" && exit 1
+    cd api
+    "${scriptroot}"/generate-documentation-genapi
 
-        find . -name '*.asciidoc' -not -name 'header' -exec "${asciidoctor_bin}" {} \;
-        while IFS= read -r -d '' file
-        do
-            header_template "$file" > "$file.tmp"
-            cat "$file" >> "$file.tmp"
-            mv "$file.tmp" "$file"
-        done < <(find . -name '*.html' -print0)
-        cd ..
+    find . -name '*.asciidoc' -not -name 'header' -exec "${asciidoctor_bin}" {} \;
+    while IFS= read -r -d '' file; do
+        header_template "$file" >"$file.tmp"
+        cat "$file" >>"$file.tmp"
+        mv "$file.tmp" "$file"
+    done < <(find . -name '*.html' -print0)
+    cd ..
 }
 
 update_schemas() {
-        mkdir -p api/schema
-        cp "$scriptroot"/../public/schema/* api/schema
+    mkdir -p api/schema
+    cp "$scriptroot"/../public/schema/* api/schema
 }
 
 header_template() {
-filename=$( basename -s .html "$1" )
-cat <<APIFILE
+    filename=$(basename -s .html "$1")
+    cat <<APIFILE
 ---
 layout: null
 categories: [api]
@@ -162,7 +161,10 @@ green="\e[23m\e[1m"
 asciidoctor_bin="/bin/not/set"
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
-scriptroot="$( cd "$(dirname "$0")" ; pwd -P )"
+scriptroot="$(
+    cd "$(dirname "$0")"
+    pwd -P
+)"
 tmpwd=$(mktemp -d -t openqa-doc-XXXX)
 PUSH_REMOTE_URL="${1:-$(git config --get remote.origin.url)}"
 PUSH_BRANCH="${2:-gh-pages}"
@@ -179,8 +181,8 @@ fi
 
 check_asciidoctor() {
     asciidoctor_bin=$(command -v asciidoctor) || true
-    [[ -n "$asciidoctor_bin" ]] || \
-        for asciidoctor_bin in "${GEM_HOME}"/bin/asciidoctor.ruby*; do :; done
+    [[ -n "$asciidoctor_bin" ]] \
+        || for asciidoctor_bin in "${GEM_HOME}"/bin/asciidoctor.ruby*; do :; done
 
     if [[ -z "$asciidoctor_bin" ]] || [[ ! -f $asciidoctor_bin ]]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again:"
@@ -209,7 +211,7 @@ call_asciidoctor() {
     check_asciidoctor
 
     cd docs
-    mkdir "${tmpwd}"/output 2>/dev/null || true  # we don't care if the directory already exists
+    mkdir "${tmpwd}"/output 2>/dev/null || true # we don't care if the directory already exists
     cp -r images "${tmpwd}"/output
 
     [[ ${formats[pdf]} ]] \
@@ -217,7 +219,7 @@ call_asciidoctor() {
     [[ ${formats[html]} ]] \
         && "${asciidoctor_bin}" -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html index.asciidoc -d book
 
-    echo -e  "${green}The output has been generated at ${tmpwd}/output"
+    echo -e "${green}The output has been generated at ${tmpwd}/output"
 
     cd ..
 }

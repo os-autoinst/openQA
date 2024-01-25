@@ -84,6 +84,7 @@ devel_no_selenium_requires:
 devel_requires:
   '%devel_no_selenium_requires':
   chromedriver:
+  shfmt:
 
 main_requires:
   '%assetpack_requires':

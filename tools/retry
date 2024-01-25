@@ -28,6 +28,6 @@ else
             echo "Calling retry hook $HOOK"
             RETRY_ATTEMPT=$n "$HOOK"
         fi
-        n=$((n+1))
+        n=$((n + 1))
     done
 fi

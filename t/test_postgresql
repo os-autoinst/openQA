@@ -7,16 +7,18 @@ else
     DIR=$(readlink -f "$DIR")
 fi
 if test -e "$DIR"/postmaster.pid; then
-  pg_ctl -D "$DIR" stop
+    pg_ctl -D "$DIR" stop
 fi
 if test -d "$DIR"; then
-  rm -r "$DIR"
+    rm -r "$DIR"
 fi
 initdb --auth-local=peer -N "$DIR" -U "$(id -u -n)"
-(echo "listen_addresses=''"
-echo "unix_socket_directories='$DIR'"
-echo "fsync=off"
-echo "full_page_writes=off") >> "$DIR"/postgresql.conf
+(
+    echo "listen_addresses=''"
+    echo "unix_socket_directories='$DIR'"
+    echo "fsync=off"
+    echo "full_page_writes=off"
+) >>"$DIR"/postgresql.conf
 
 LOGDIR="$DIR/log"
 LOGFILE="${LOGFILE:-"$LOGDIR/postgresql-openqa-test.log"}"

@@ -36,7 +36,7 @@ generate() {
     # shellcheck disable=SC2039
     for _ in {1..3}; do
         # shellcheck disable=SC2086
-        env MOJO_MODE="$1" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null && return 0
+        env MOJO_MODE="$1" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" >/dev/null && return 0
         rc=$?
         sleep 1
     done

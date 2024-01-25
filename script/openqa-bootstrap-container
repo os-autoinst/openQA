@@ -33,7 +33,7 @@ PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 ip
 zypper -n install systemd-container
 mkdir -p /var/lib/machines/
 
-cat > /etc/systemd/system/systemd-nspawn-openqa@.service <<EOF
+cat >/etc/systemd/system/systemd-nspawn-openqa@.service <<EOF
 [Unit]
 Description=Container %i
 Documentation=man:systemd-nspawn(1)
@@ -67,7 +67,7 @@ DeviceAllow=block-blkext rw
 WantedBy=machines.target
 EOF
 
-if [ ! -d $CONTAINER_PATH ] ; then
+if [ ! -d $CONTAINER_PATH ]; then
     mkdir -p $CONTAINER_PATH
     zypper -n --root $CONTAINER_PATH addrepo "$DEFAULT_REPO" defaultrepo
     zypper -n --root $CONTAINER_PATH --gpg-auto-import-keys refresh
@@ -84,8 +84,14 @@ systemctl daemon-reload
 systemctl start systemd-nspawn-openqa@$CONTAINER_NAME
 # ensure that the container is really running
 # ignore expected errors about 'Failed to create bus connection: Protocol error' and restarting error
-while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami /dev/null 2>&1 ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service || true ; sleep 3 ; done
+while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami /dev/null 2>&1; do
+    systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service || true
+    sleep 3
+done
 systemd-run "${systemd_run_params[@]}" /bin/bash -c 'update-ca-certificates'
 systemd-run "${systemd_run_params[@]}" /bin/bash -c '/usr/share/openqa/script/openqa-bootstrap'
 
-echo -e "$(tput setaf 2;tput bold)Your openQA container has been created. Run 'systemd-run -tM $CONTAINER_NAME /bin/bash' to get a shell in the container$(tput sgr0)"
+echo -e "$(
+    tput setaf 2
+    tput bold
+)Your openQA container has been created. Run 'systemd-run -tM $CONTAINER_NAME /bin/bash' to get a shell in the container$(tput sgr0)"

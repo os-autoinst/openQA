@@ -37,7 +37,7 @@ run_fullstack_test() {
     if ! prove -l "${PROVE_ARGS}" "$@"; then
         touch tests_failed
         find '/tmp' -path '*/t/full-stack.d/openqa/testresults/*/autoinst-log.txt' \
-            -exec echo 'contents of' {} \; -exec cat {} \; 2> /dev/null > '/opt/openqa/autoinst-log.txt'
+            -exec echo 'contents of' {} \; -exec cat {} \; 2>/dev/null >'/opt/openqa/autoinst-log.txt'
     fi
 }
 
@@ -58,5 +58,5 @@ fi
 
 [ -r tests_failed ] && exit 1
 if test -n "$TRAVIS"; then
-  cp -a assets/cache/* /opt/openqa/assets/cache
+    cp -a assets/cache/* /opt/openqa/assets/cache
 fi

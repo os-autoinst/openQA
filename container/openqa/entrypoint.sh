@@ -10,19 +10,19 @@ export LC_ALL="en_US.UTF-8"
 
 # First, try to upgrade all container dependencies (or we won't catch bugs
 # until a new container image is built)
-[ "$UPGRADE_FROM_ZYPPER" -eq 1 ] && \
-  sudo zypper --gpg-auto-import-keys -n ref --force && \
-  sudo zypper up -l -y
+[ "$UPGRADE_FROM_ZYPPER" -eq 1 ] \
+    && sudo zypper --gpg-auto-import-keys -n ref --force \
+    && sudo zypper up -l -y
 
 cp -rd /opt/openqa /opt/testing_area
 cd /opt/testing_area/openqa
 
 run_as_normal_user() {
     if [ "$INSTALL_FROM_CPAN" -eq 1 ]; then
-       echo ">> Trying to get dependencies from CPAN"
-           cpanm -M https://cpan.metacpan.org --local-lib=~/perl5 local::lib && cpanm -M https://cpan.metacpan.org -n --installdeps .
+        echo ">> Trying to get dependencies from CPAN"
+        cpanm -M https://cpan.metacpan.org --local-lib=~/perl5 local::lib && cpanm -M https://cpan.metacpan.org -n --installdeps .
     else
-           cpanm -n --mirror http://no.where/ --installdeps .
+        cpanm -n --mirror http://no.where/ --installdeps .
     fi
     MOJO_TMPDIR=$(mktemp -d)
     export MOJO_TMPDIR

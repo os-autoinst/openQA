@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 
 usage() {
-    cat << EOF
+    cat <<EOF
 Usage: openqa-auto-update
 Trigger automatic system upgrade and reboot if devel:openQA packages are stable
 
@@ -16,11 +16,14 @@ EOF
 opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
-  case "$1" in
-    -h | --help ) usage 0 ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+    -h | --help) usage 0 ;;
+    --)
+        shift
+        break
+        ;;
+    *) break ;;
+    esac
 done
 
 "$(dirname "${BASH_SOURCE[0]}")"/openqa-check-devel-repo
@@ -28,4 +31,4 @@ done
 zypper -n ref
 zypper -n --no-refresh dup --replacefiles --auto-agree-with-licenses --download-in-advance
 # shellcheck disable=SC2015
-needs-restarting --reboothint >/dev/null || (command -v rebootmgrctl >/dev/null && rebootmgrctl reboot ||:)
+needs-restarting --reboothint >/dev/null || (command -v rebootmgrctl >/dev/null && rebootmgrctl reboot || :)
