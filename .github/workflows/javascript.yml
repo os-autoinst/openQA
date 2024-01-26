@@ -4,17 +4,17 @@ name: javascript
 on: [push, pull_request]
 jobs:
   test:
-    name: Node ${{ matrix.node-version }} and ${{ matrix.os }}
+    name: Lint JavaScript code (using Node version ${{ matrix.node-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        node-version: [16.x]
+        node-version: [20]
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v1
-      - name: Use Node ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+      - name: Setup Node (version ${{ matrix.node-version }})
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - name: npm install
