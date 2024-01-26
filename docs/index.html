@@ -10187,8 +10187,9 @@ different jobs are executed on different workers. So you could call
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span>openqa-clone-job \
-    --skip-download --skip-chained-deps \        # assuming assets are present
+    --skip-chained-deps \                        # assuming assets are present
     --max-depth 0 \                              # clone the entire parallel cluster
+    --within-instance                            # create new jobs on the same instance
     https://openqa.opensuse.org/tests/3886213 \  # arbitrary job in cluster to clone
     _GROUP=0 BUILD+=test-mm-setup \              # avoid interfering with production jobs
     WORKER_CLASS:wicked_basic_ref+=,worker_foo \ # ensure one job runs on `worker_foo`
@@ -12614,7 +12615,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-01-25 04:44:25 UTC
+Last updated 2024-01-26 04:43:56 UTC
 </div>
 </div>
 </body>
