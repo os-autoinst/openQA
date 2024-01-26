@@ -5,7 +5,7 @@ size=1
 cre="${cre:-"podman"}"
 
 usage() {
-    cat <<EOF
+    cat << EOF
 Usage: $0
 To launch a pool of workers with the desired number of workers in individual
 containers.
@@ -21,16 +21,16 @@ eval set -- "$opts"
 
 while true; do
     case "$1" in
-    -h | --help) usage 0 ;;
-    -s | --size)
-        size=$2
-        shift
-        ;;
-    --)
-        shift
-        break
-        ;;
-    *) break ;;
+        -h | --help) usage 0 ;;
+        -s | --size)
+            size=$2
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
     esac
 done
 

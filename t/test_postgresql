@@ -18,7 +18,7 @@ initdb --auth-local=peer -N "$DIR" -U "$(id -u -n)"
     echo "unix_socket_directories='$DIR'"
     echo "fsync=off"
     echo "full_page_writes=off"
-) >>"$DIR"/postgresql.conf
+) >> "$DIR"/postgresql.conf
 
 LOGDIR="$DIR/log"
 LOGFILE="${LOGFILE:-"$LOGDIR/postgresql-openqa-test.log"}"

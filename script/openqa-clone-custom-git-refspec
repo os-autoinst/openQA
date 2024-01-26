@@ -3,7 +3,7 @@
 clone_args="${clone_args:-"--skip-chained-deps --parental-inheritance --within-instance"}"
 
 usage() {
-    cat <<EOF
+    cat << EOF
 Usage:
  openqa-clone-custom-git-refspec <github_pr_url> <openqa_job_url> [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar] ...
  openqa-clone-custom-git-refspec <github_branch_url> <openqa_job_url> [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar] ...
@@ -59,24 +59,24 @@ opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n "$0" -- "$
 eval set -- "$opts"
 while true; do
     case "$1" in
-    -v | --verbose)
-        set -x
-        shift
-        ;;
-    -h | --help) usage 0 ;;
-    -n | --dry-run)
-        dry_run=true
-        shift
-        ;;
-    -c | --clone-job-args)
-        clone_args="$2 $clone_args"
-        shift 2
-        ;;
-    --)
-        shift
-        break
-        ;;
-    *) break ;;
+        -v | --verbose)
+            set -x
+            shift
+            ;;
+        -h | --help) usage 0 ;;
+        -n | --dry-run)
+            dry_run=true
+            shift
+            ;;
+        -c | --clone-job-args)
+            clone_args="$2 $clone_args"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
     esac
 done
 job_list="${job:-"$2"}"
@@ -127,7 +127,7 @@ clone_job() {
         local json_url=${host}/tests/${job}/file/vars.json
         local json_data
         json_data=$(eval "${curl_openqa} -s ${json_url}")
-        echo "$json_data" | jq . &>/dev/null \
+        echo "$json_data" | jq . &> /dev/null \
             || fail "Unreadable openQA job or no valid JSON data encountered. \
 Please try 'curl $json_url' or select another job, e.g. in the same scenario: $host/t$job#next_previous"
         local testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"

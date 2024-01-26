@@ -33,7 +33,7 @@ PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 ip
 zypper -n install systemd-container
 mkdir -p /var/lib/machines/
 
-cat >/etc/systemd/system/systemd-nspawn-openqa@.service <<EOF
+cat > /etc/systemd/system/systemd-nspawn-openqa@.service << EOF
 [Unit]
 Description=Container %i
 Documentation=man:systemd-nspawn(1)

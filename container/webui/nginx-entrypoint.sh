@@ -7,7 +7,7 @@ for i in $(seq "${OPENQA_WEBUI_REPLICAS:-2}"); do
 done
 
 reg="s/REPLICAS/$replicas_cfg/"
-sed "$reg" /etc/nginx/nginx.conf.template >/etc/nginx/nginx.conf
+sed "$reg" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 echo 'NGINX configuration:'
 cat /etc/nginx/nginx.conf
 

@@ -43,7 +43,7 @@ test_webui() {
             && cp -r container/webui "$workspace" \
             && cd "$workspace/webui" \
             && sed -i -e "s/method = OpenID/method = Fake/" conf/openqa.ini
-        printf "[nginx]\nkey = 1234567890ABCDEF\nsecret = 1234567890ABCDEF\n" >conf/client.conf \
+        printf "[nginx]\nkey = 1234567890ABCDEF\nsecret = 1234567890ABCDEF\n" > conf/client.conf \
             && setup_containers \
             && docker-compose exec -T webui openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test \
                 --host http://nginx:9526 || (

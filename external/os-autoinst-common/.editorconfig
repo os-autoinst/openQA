@@ -2,6 +2,8 @@
 indent_style = space
 indent_size = 4
 binary_next_line = true
+switch_case_indent = true
+space_redirects = true
 
 [.bpan/**]
 ignore = true

@@ -10,7 +10,7 @@ mkdir -p "/var/lib/openqa/pool/${OPENQA_WORKER_INSTANCE}/"
 chown -R _openqa-worker /var/lib/openqa/pool/
 
 if [[ -z $qemu_no_kvm ]] || [[ $qemu_no_kvm -eq 0 ]]; then
-    if [ -e "/dev/kvm" ] && getent group kvm >/dev/null; then
+    if [ -e "/dev/kvm" ] && getent group kvm > /dev/null; then
         /root/qemu/kvm-mknod.sh
 
         group=$(ls -lhn /dev/kvm | cut -d ' ' -f 4)

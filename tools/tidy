@@ -4,7 +4,7 @@
 # perltidy rules can be found in ../.perltidyrc
 #
 usage() {
-    cat <<EOF
+    cat << EOF
 Usage:
  tidy [-c|--check] [-f|--force] [-o|--only-changed] [-l|--list] [path/to/file]
 
@@ -33,35 +33,35 @@ opts=$(getopt -o hcfol --long help,check,force,only-changed,list -n "$0" -- "$@"
 eval set -- "$opts"
 while true; do
     case "$1" in
-    -h | --help) usage ;;
-    -c | --check)
-        args+=' --check-only'
-        shift
-        ;;
-    -f | --force)
-        force=true
-        shift
-        ;;
-    -o | --only-changed)
-        selection='--git'
-        shift
-        ;;
-    -l | --list)
-        args+='--list'
-        shift
-        ;;
-    --)
-        shift
-        break
-        ;;
-    *) break ;;
+        -h | --help) usage ;;
+        -c | --check)
+            args+=' --check-only'
+            shift
+            ;;
+        -f | --force)
+            force=true
+            shift
+            ;;
+        -o | --only-changed)
+            selection='--git'
+            shift
+            ;;
+        -l | --list)
+            args+='--list'
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
     esac
 done
 
 shift $((OPTIND - 1))
 filename=${*:-"$selection"}
 
-if ! command -v perltidy >/dev/null 2>&1; then
+if ! command -v perltidy > /dev/null 2>&1; then
     echo "No perltidy found, install it first!"
     exit 1
 fi

@@ -44,7 +44,7 @@ function all_together_apache() {
     # run the database within the container if no database is configured by the user (by making one available via `-v`)
     if [[ ! -e /data/conf/database.ini ]]; then
         mkdir -p /data/conf
-        echo -e "[production]\ndsn = DBI:Pg:dbname=openqa" >/data/conf/database.ini
+        echo -e "[production]\ndsn = DBI:Pg:dbname=openqa" > /data/conf/database.ini
         chown -R postgres:postgres /var/lib/pgsql # ensure right ownership in case `/var/lib/pgsql` is from host via `-v`
         su postgres -c '/usr/share/postgresql/postgresql-script start'
         su postgres -c '/usr/bin/openqa-setup-db'
@@ -63,11 +63,11 @@ usermod --shell /bin/sh geekotest
 
 # run services
 case "$MODE" in
-upgradedb) upgradedb ;;
-scheduler) scheduler ;;
-websockets) websockets ;;
-gru) gru ;;
-livehandler) livehandler ;;
-webui) webui ;;
-*) all_together_apache ;;
+    upgradedb) upgradedb ;;
+    scheduler) scheduler ;;
+    websockets) websockets ;;
+    gru) gru ;;
+    livehandler) livehandler ;;
+    webui) webui ;;
+    *) all_together_apache ;;
 esac

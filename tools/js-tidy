@@ -1,7 +1,7 @@
 #!/bin/bash
 
 usage() {
-    cat <<EOF
+    cat << EOF
 Usage:
  js-tidy
 
@@ -18,12 +18,12 @@ opts=$(getopt -o h --long help -n "$0" -- "$@") || usage
 eval set -- "$opts"
 while true; do
     case "$1" in
-    -h | --help) usage ;;
-    *) break ;;
+        -h | --help) usage ;;
+        *) break ;;
     esac
 done
 
-if ! command -v npm >/dev/null 2>&1; then
+if ! command -v npm > /dev/null 2>&1; then
     echo "No Node.js found, install it first!"
     exit 1
 fi

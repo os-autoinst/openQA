@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-    cat <<EOF
+    cat << EOF
 Usage: openqa-rollback
 Rollback openQA webUI instance and workers connected over salt
 
@@ -16,16 +16,16 @@ opts=$(getopt -o hn --long help,dry-run -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
     case "$1" in
-    -h | --help) usage 0 ;;
-    -n | --dry-run)
-        dry_run="--dry-run"
-        shift
-        ;;
-    --)
-        shift
-        break
-        ;;
-    *) break ;;
+        -h | --help) usage 0 ;;
+        -n | --dry-run)
+            dry_run="--dry-run"
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
     esac
 done
 

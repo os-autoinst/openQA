@@ -3,7 +3,7 @@
 set -e
 
 kvm=$({ [[ -f /proc/config.gz ]] && test "$(zgrep CONFIG_KVM=y /proc/config.gz)"; } || true)
-$kvm || lsmod | grep '\<kvm\>' >/dev/null || {
+$kvm || lsmod | grep '\<kvm\>' > /dev/null || {
     echo >&2 "KVM module not loaded; software emulation will be used"
     exit 1
 }

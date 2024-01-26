@@ -6,7 +6,7 @@ read OPENID
 awk -v openid="$OPENID" '
 /^provider/ {$0 = "provider = " openid}
 {print}
-' /data/conf/openqa.ini >/data/conf/openqa.ini.new
+' /data/conf/openqa.ini > /data/conf/openqa.ini.new
 mv /data/conf/openqa.ini.new /data/conf/openqa.ini
 
 echo "The file now contains:"

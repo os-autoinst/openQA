@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-which helm >/dev/null || echo "Error: Helm is not installed"
-which ct >/dev/null || echo "Error: ct is not installed"
+which helm > /dev/null || echo "Error: Helm is not installed"
+which ct > /dev/null || echo "Error: ct is not installed"
 
 cd container/helm
 

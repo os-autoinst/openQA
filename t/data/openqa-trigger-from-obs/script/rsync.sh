@@ -1,6 +1,6 @@
 #!/bin/bash
 
-thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
 
 function sleep_until_file_created {
     for ((i = 0; i < 20; i += 1)); do

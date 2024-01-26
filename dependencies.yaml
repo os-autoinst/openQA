@@ -84,7 +84,6 @@ devel_no_selenium_requires:
 devel_requires:
   '%devel_no_selenium_requires':
   chromedriver:
-  shfmt:
 
 main_requires:
   '%assetpack_requires':
@@ -182,11 +181,11 @@ test_requires:
   curl:
   jq:
   ShellCheck:
-  shfmt:
   os-autoinst-devel:
   postgresql-server:
   python3-setuptools:
   python3-yamllint:
+  shfmt:
   perl(App::cpanminus):
   perl(Perl::Critic):
   perl(Perl::Critic::Freenode):

@@ -105,20 +105,20 @@ if [ -z "$skip_suse_tests" ]; then
 fi
 
 # ensure that the hostname is mapped to 127.0.0.1 (needed for livehandler)
-grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >>/etc/hosts
+grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 
 # start daemons
 if [ -z "$running_systemd" ]; then
-    pgrep -f openqa-scheduler-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
-    pgrep -f openqa-websockets-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
-    pgrep -f openqa-gru >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-gru &
-    pgrep -f openqa-livehandler-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
+    pgrep -f openqa-scheduler-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
+    pgrep -f openqa-websockets-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
+    pgrep -f openqa-gru > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-gru &
+    pgrep -f openqa-livehandler-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
     if [[ $setup_web_proxy == "nginx" ]]; then
         nginx
     else
         /usr/sbin/start_apache2 -k start
     fi
-    pgrep -f openqa-webui-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-webui-daemon &
+    pgrep -f openqa-webui-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-webui-daemon &
 else
     if [[ $setup_web_proxy == "nginx" ]]; then
         systemctl enable --now nginx
@@ -140,7 +140,7 @@ API_KEY=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
 API_SECRET=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
 echo "INSERT INTO api_keys (key, secret, user_id, t_created, t_updated) VALUES ('${API_KEY}', '${API_SECRET}', 2, NOW(), NOW());" | su postgres -c "psql $dbname"
 
-cat >>/etc/openqa/client.conf <<EOF
+cat >> /etc/openqa/client.conf << EOF
 [localhost]
 key = ${API_KEY}
 secret = ${API_SECRET}

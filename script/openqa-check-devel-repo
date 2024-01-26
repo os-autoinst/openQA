@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 
 usage() {
-    cat <<EOF
+    cat << EOF
 Usage: openqa-check-devel-repo
 Checks whether devel:openQA packages are stable
 
@@ -17,12 +17,12 @@ opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
     case "$1" in
-    -h | --help) usage 0 ;;
-    --)
-        shift
-        break
-        ;;
-    *) break ;;
+        -h | --help) usage 0 ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
     esac
 done
 

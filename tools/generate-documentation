@@ -41,7 +41,7 @@ set -eo pipefail
 
 # exit status 0 if any changes detected
 anything_changed() {
-    echo '*.pdf -diff' >>.gitattributes
+    echo '*.pdf -diff' >> .gitattributes
     git --no-pager diff --shortstat
 
     local lines_changed_in_index lines_changed_in_api other_files_changed
@@ -99,9 +99,9 @@ update_docs() {
             git add docs/index.html docs/current.pdf docs/api/testapi.html
             git add docs/api/schema
             topic="Update documentation to commit ${shortref}"
-            echo "$topic" >last.commit
-            echo "" >>last.commit
-            [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >>out/last.commit)
+            echo "$topic" > last.commit
+            echo "" >> last.commit
+            [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >> out/last.commit)
             git commit -F last.commit
             if [[ -n "${PUBLISH}" ]] && [[ "${PUBLISH}" != 0 ]]; then
                 git push "$PUSH_REMOTE_URL" "$PUSH_BRANCH"
@@ -131,8 +131,8 @@ update_api() {
 
     find . -name '*.asciidoc' -not -name 'header' -exec "${asciidoctor_bin}" {} \;
     while IFS= read -r -d '' file; do
-        header_template "$file" >"$file.tmp"
-        cat "$file" >>"$file.tmp"
+        header_template "$file" > "$file.tmp"
+        cat "$file" >> "$file.tmp"
         mv "$file.tmp" "$file"
     done < <(find . -name '*.html' -print0)
     cd ..
@@ -145,7 +145,7 @@ update_schemas() {
 
 header_template() {
     filename=$(basename -s .html "$1")
-    cat <<APIFILE
+    cat << APIFILE
 ---
 layout: null
 categories: [api]
@@ -211,7 +211,7 @@ call_asciidoctor() {
     check_asciidoctor
 
     cd docs
-    mkdir "${tmpwd}"/output 2>/dev/null || true # we don't care if the directory already exists
+    mkdir "${tmpwd}"/output 2> /dev/null || true # we don't care if the directory already exists
     cp -r images "${tmpwd}"/output
 
     [[ ${formats[pdf]} ]] \
