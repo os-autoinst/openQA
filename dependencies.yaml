@@ -181,6 +181,7 @@ test_requires:
   curl:
   jq:
   ShellCheck:
+  shfmt:
   os-autoinst-devel:
   postgresql-server:
   python3-setuptools:
