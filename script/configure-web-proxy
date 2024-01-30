@@ -17,25 +17,31 @@ opts=$(getopt -o hp: -l help -l proxy: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 web_proxy="apache"
 while true; do
-  case "$1" in
-    -h | --help  ) usage 0 ;;
-    -p | --proxy ) web_proxy=${2#*=}; shift ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -h | --help) usage 0 ;;
+        -p | --proxy)
+            web_proxy=${2#*=}
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
 done
 
 sed -i -e 's/^.*httpsonly.*$/httpsonly = 0/g' /etc/openqa/openqa.ini
 
-if [[ $web_proxy == "nginx" ]] ; then
-	echo "Setting up nginx"
-	sed "s/openqa.example.com/$(hostname)/" /etc/nginx/vhosts.d/openqa.conf.template > /etc/nginx/vhosts.d/openqa.conf
-	sed -i -e "s/\(^[^#]*server_name  localhost;\)/#\1/" /etc/nginx/nginx.conf
-elif [[ $web_proxy == "apache" || $web_proxy == "apache2" ]] ; then
-	echo "Setting up apache"
-	for i in headers proxy proxy_http proxy_wstunnel rewrite ; do a2enmod $i ; done
-	sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf
+if [[ $web_proxy == "nginx" ]]; then
+    echo "Setting up nginx"
+    sed "s/openqa.example.com/$(hostname)/" /etc/nginx/vhosts.d/openqa.conf.template > /etc/nginx/vhosts.d/openqa.conf
+    sed -i -e "s/\(^[^#]*server_name  localhost;\)/#\1/" /etc/nginx/nginx.conf
+elif [[ $web_proxy == "apache" || $web_proxy == "apache2" ]]; then
+    echo "Setting up apache"
+    for i in headers proxy proxy_http proxy_wstunnel rewrite; do a2enmod $i; done
+    sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf
 else
-	echo "No supported proxy: $web_proxy"
-	exit 1
+    echo "No supported proxy: $web_proxy"
+    exit 1
 fi

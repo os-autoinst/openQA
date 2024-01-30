@@ -5,9 +5,9 @@
 
 set -e
 
-thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
 cre="${cre:-"podman"}"
-$cre build -t localtest -f- "$thisdir"<<EOF
+$cre build -t localtest -f- "$thisdir" << EOF
 FROM registry.opensuse.org/devel/openqa/ci/containers/base:latest
 
 RUN sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.5/15.5 openQA

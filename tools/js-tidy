@@ -17,10 +17,10 @@ set -eo pipefail
 opts=$(getopt -o h --long help -n "$0" -- "$@") || usage
 eval set -- "$opts"
 while true; do
-  case "$1" in
-    -h | --help ) usage ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -h | --help) usage ;;
+        *) break ;;
+    esac
 done
 
 if ! command -v npm > /dev/null 2>&1; then

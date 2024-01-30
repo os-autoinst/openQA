@@ -16,17 +16,20 @@ EOF
 opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
-  case "$1" in
-    -h | --help ) usage 0 ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -h | --help) usage 0 ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
 done
 
 trap 'log_error' ERR
 log_error() {
-  echo "devel:openQA looks bad for Leap $VERSION ($ARCH):"
-  echo "${result:-Unable to query OBS}"
+    echo "devel:openQA looks bad for Leap $VERSION ($ARCH):"
+    echo "${result:-Unable to query OBS}"
 }
 
 [[ $VERSION ]] || . /etc/os-release

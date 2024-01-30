@@ -32,15 +32,30 @@ selection='--all'
 opts=$(getopt -o hcfol --long help,check,force,only-changed,list -n "$0" -- "$@") || usage
 eval set -- "$opts"
 while true; do
-  case "$1" in
-    -h | --help ) usage ;;
-    -c | --check ) args+=' --check-only'; shift ;;
-    -f | --force ) force=true; shift ;;
-    -o | --only-changed ) selection='--git'; shift ;;
-    -l | --list ) args+='--list'; shift ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -h | --help) usage ;;
+        -c | --check)
+            args+=' --check-only'
+            shift
+            ;;
+        -f | --force)
+            force=true
+            shift
+            ;;
+        -o | --only-changed)
+            selection='--git'
+            shift
+            ;;
+        -l | --list)
+            args+='--list'
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
 done
 
 shift $((OPTIND - 1))

@@ -20,22 +20,28 @@ opts=$(getopt -o hs: --long help,size: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 
 while true; do
-  case "$1" in
-    -h | --help ) usage 0 ;;
-    -s | --size ) size=$2; shift ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -h | --help) usage 0 ;;
+        -s | --size)
+            size=$2
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
 done
 
 for i in $(seq "$size"); do
-  echo "Creating worker $i"
-  $cre run \
-    --detach --rm \
-    --hostname "openqa_worker_$i" --name "openqa_worker_$i" \
-    -v "$PWD/conf:/data/conf:ro" \
-    -v "$PWD/../webui/workdir/data/factory:/data/factory:rw" \
-    -v "$PWD/../webui/workdir/data/tests:/data/tests:ro" \
-    --privileged openqa_worker \
-    -e OPENQA_WORKER_INSTANCE="$i"
+    echo "Creating worker $i"
+    $cre run \
+        --detach --rm \
+        --hostname "openqa_worker_$i" --name "openqa_worker_$i" \
+        -v "$PWD/conf:/data/conf:ro" \
+        -v "$PWD/../webui/workdir/data/factory:/data/factory:rw" \
+        -v "$PWD/../webui/workdir/data/tests:/data/tests:ro" \
+        --privileged openqa_worker \
+        -e OPENQA_WORKER_INSTANCE="$i"
 done

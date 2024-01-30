@@ -3,56 +3,68 @@
 set -euo pipefail
 
 wait_until() {
-  command=$1
-  timeout=$2
+    command=$1
+    timeout=$2
 
-  i=1
-  until eval "$command"
-  do
-      ((i++))
-      if [[ $i -gt $timeout ]]; then
-          echo "Command '$command' aborted because of timeout"
-          exit 1
-      fi
-      sleep 1
-  done
+    i=1
+    until eval "$command"; do
+        ((i++))
+        if [[ $i -gt $timeout ]]; then
+            echo "Command '$command' aborted because of timeout"
+            exit 1
+        fi
+        sleep 1
+    done
 }
 
 setup_containers() {
-  for retry in {2..0}; do sudo docker-compose build && break; echo "Remaining retries $retry"; done
-  exit_code=""
-  sudo MOJO_CLIENT_DEBUG=1 docker-compose up -d || exit_code=$?
-  if [[ -n $exit_code ]]; then
-    echo "docker-compose exited with non-zero code $exit_code, showing logs:"
-    docker-compose logs
-    exit "$exit_code"
-  fi
-  (docker-compose ps --services --filter status=stopped | grep "^[[:space:]]*$") || (docker-compose logs; sudo docker-compose ps; exit 1)
+    for retry in {2..0}; do
+        sudo docker-compose build && break
+        echo "Remaining retries $retry"
+    done
+    exit_code=""
+    sudo MOJO_CLIENT_DEBUG=1 docker-compose up -d || exit_code=$?
+    if [[ -n $exit_code ]]; then
+        echo "docker-compose exited with non-zero code $exit_code, showing logs:"
+        docker-compose logs
+        exit "$exit_code"
+    fi
+    (docker-compose ps --services --filter status=stopped | grep "^[[:space:]]*$") || (
+        docker-compose logs
+        sudo docker-compose ps
+        exit 1
+    )
 }
 
 test_webui() {
-  (
-    workspace=$(mktemp -d) &&
-    trap 'docker-compose down; sudo rm -r "$workspace"' EXIT &&
-    cp -r container/webui "$workspace" &&
-    cd "$workspace/webui" &&
-    sed -i -e "s/method = OpenID/method = Fake/" conf/openqa.ini
-    printf "[nginx]\nkey = 1234567890ABCDEF\nsecret = 1234567890ABCDEF\n" > conf/client.conf &&
-    setup_containers &&
-    docker-compose exec -T webui openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test \
-    --host http://nginx:9526  || (echo "Error executing a job"; exit 1) &&
-    (wait_until 'docker-compose logs webui | grep "GET /api/wakeup" >/dev/null' 10) || (docker-compose logs webui; exit 1)
-  ) || exit 1;
+    (
+        workspace=$(mktemp -d) \
+            && trap 'docker-compose down; sudo rm -r "$workspace"' EXIT \
+            && cp -r container/webui "$workspace" \
+            && cd "$workspace/webui" \
+            && sed -i -e "s/method = OpenID/method = Fake/" conf/openqa.ini
+        printf "[nginx]\nkey = 1234567890ABCDEF\nsecret = 1234567890ABCDEF\n" > conf/client.conf \
+            && setup_containers \
+            && docker-compose exec -T webui openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test \
+                --host http://nginx:9526 || (
+            echo "Error executing a job"
+            exit 1
+        ) \
+            && (wait_until 'docker-compose logs webui | grep "GET /api/wakeup" >/dev/null' 10) || (
+            docker-compose logs webui
+            exit 1
+        )
+    ) || exit 1
 }
 
 test_worker() {
-  (
-    workspace=$(mktemp -d) &&
-    trap 'docker-compose down; sudo rm -r "$workspace"' EXIT &&
-    cp -r container/worker "$workspace" &&
-    cd "$workspace/worker" &&
-    setup_containers
-  ) || exit 1;
+    (
+        workspace=$(mktemp -d) \
+            && trap 'docker-compose down; sudo rm -r "$workspace"' EXIT \
+            && cp -r container/worker "$workspace" \
+            && cd "$workspace/worker" \
+            && setup_containers
+    ) || exit 1
 }
 
 test_webui

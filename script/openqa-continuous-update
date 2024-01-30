@@ -16,11 +16,14 @@ EOF
 opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
-  case "$1" in
-    -h | --help ) usage 0 ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -h | --help) usage 0 ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
 done
 
 # check for new packages
@@ -30,7 +33,7 @@ repo_name=${DEVEL_OPENQA_REPOSITORY:-devel_openQA}
 ref=$(zypper -n ref -r "$repo_name")
 
 if echo "$ref" | grep -q 'is up to date' && "$(dirname "${BASH_SOURCE[0]}")"/openqa-check-devel-repo; then
-  # call ref independently of dup to avoid unintended vendor changes in case ref fails (see poo#112595)
-  zypper -n ref
-  zypper -n --no-refresh dup --auto-agree-with-licenses --download-in-advance
+    # call ref independently of dup to avoid unintended vendor changes in case ref fails (see poo#112595)
+    zypper -n ref
+    zypper -n --no-refresh dup --auto-agree-with-licenses --download-in-advance
 fi
