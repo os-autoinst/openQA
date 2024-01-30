@@ -49,7 +49,7 @@ throw_json_error() {
 }
 
 extract_urls_from_pr() {
-  urls=$(echo "$pr_content" | jq -r '.body | capture("^(?<marker>.*@openqa: Clone )(?<url>http.*[0-9]*)") | .url')
+    urls=$(echo "$pr_content" | jq -r '.body | capture("^(?<marker>.*@openqa: Clone )(?<url>http.*[0-9]*)") | .url')
     if [[ $urls == *"http"* ]]; then
         echo "$urls"
     fi
@@ -58,14 +58,26 @@ extract_urls_from_pr() {
 opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
-  case "$1" in
-    -v | --verbose ) set -x; shift ;;
-    -h | --help ) usage 0 ;;
-    -n | --dry-run ) dry_run=true; shift ;;
-    -c | --clone-job-args ) clone_args="$2 $clone_args"; shift 2 ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -v | --verbose)
+            set -x
+            shift
+            ;;
+        -h | --help) usage 0 ;;
+        -n | --dry-run)
+            dry_run=true
+            shift
+            ;;
+        -c | --clone-job-args)
+            clone_args="$2 $clone_args"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
 done
 job_list="${job:-"$2"}"
 
@@ -76,7 +88,7 @@ if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
         target_repo_part=${pr_url%%/pull*}
         pr="${pr_url##*pull/}"
         pr="${pr%%/*}"
-    elif [[ $first_arg  == *"tree"* ]]; then
+    elif [[ $first_arg == *"tree"* ]]; then
         #maybe a branch_url is given
         branch_url=$first_arg
         forked_repo_part=${branch_url%%/tree*}
@@ -115,8 +127,8 @@ clone_job() {
         local json_url=${host}/tests/${job}/file/vars.json
         local json_data
         json_data=$(eval "${curl_openqa} -s ${json_url}")
-        echo "$json_data" | jq . &>/dev/null || \
-            fail "Unreadable openQA job or no valid JSON data encountered. \
+        echo "$json_data" | jq . &> /dev/null \
+            || fail "Unreadable openQA job or no valid JSON data encountered. \
 Please try 'curl $json_url' or select another job, e.g. in the same scenario: $host/t$job#next_previous"
         local testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
         local old_productdir
@@ -130,7 +142,7 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
         else
             local productdir="${productdir:-"${repo_name##*/}/${old_productdir#*"${old_casedir##*/}"}"}"
         fi
-        productdir="${productdir/\/\//\/}"  # avoid consecutive slashes
+        productdir="${productdir/\/\//\/}" # avoid consecutive slashes
         local old_needledir
         old_needledir=$(echo "$json_data" | jq -r '.NEEDLES_DIR | select (.!=null)') || throw_json_error "$json_url" "$json_data"
         local needles_dir="${needles_dir:-"$old_needledir"}"
@@ -158,6 +170,7 @@ if [[ -z "$host" ]] && [[ -z "$job_list" ]]; then
     exit 1
 fi
 args=("${@:3}")
-IFS=',' ; for i in $job_list; do
+IFS=','
+for i in $job_list; do
     clone_job "$i"
 done

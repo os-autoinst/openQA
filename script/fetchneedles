@@ -18,9 +18,9 @@
 : "${updateall:="0"}"
 : "${force:="0"}"
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     printf "Get %s tests and needles from:\n\t\t%s\n" "${dist_name}" "${giturl}"
-    if [ "$needles_separate" = 1 ] ; then
+    if [ "$needles_separate" = 1 ]; then
         printf "\tand\t%s\n" "${needles_giturl}"
     fi
     printf "\n(environment variables mentioned in '%s' can be set to change these values)\n" "$0"
@@ -66,7 +66,7 @@ needlesdir() {
 
 deal_with_stale_lockfile() {
     lock_path=.git/index.lock
-    if [ -e "$lock_path" ] && ! fuser --silent "$lock_path"; then  # fuser returns 0 if one or more processes hold the lock
+    if [ -e "$lock_path" ] && ! fuser --silent "$lock_path"; then # fuser returns 0 if one or more processes hold the lock
         echo "removing stale lock $PWD/$lock_path"
         rm "$lock_path"
     fi

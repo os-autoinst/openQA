@@ -5,7 +5,7 @@
 
 set -e
 
-thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
 
 CI_PACKAGES=$thisdir/ci-packages.txt
 DEPS_BEFORE="${DEPS_BEFORE:-"$(mktemp)"}"

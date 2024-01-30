@@ -1,16 +1,16 @@
 #!/bin/bash
 shopt -s nullglob
 if [ $# != 3 ]; then
-	logger -s "invalid number of arguments"
-	exit 1
+    logger -s "invalid number of arguments"
+    exit 1
 fi
 pooldir="/var/lib/openqa/pool"
 dir="$1"
 if [ -e /etc/tmpfiles.d/openqa.conf ]; then
-	/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/openqa.conf
+    /usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/openqa.conf
 fi
 mkdir -p "$dir/openqa-worker.target.wants"
 for i in $pooldir/[0-9]*; do
-	i="${i#$pooldir/}"
-	ln -s "/usr/lib/systemd/system/openqa-worker@.service" "$dir/openqa-worker.target.wants/openqa-worker@$i.service"
+    i="${i#$pooldir/}"
+    ln -s "/usr/lib/systemd/system/openqa-worker@.service" "$dir/openqa-worker.target.wants/openqa-worker@$i.service"
 done

@@ -293,7 +293,7 @@ prepare-and-launch-container-to-run-tests-within: container-test-build launch-co
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-critic
+test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
@@ -316,6 +316,11 @@ test-yaml:
 	@which yamllint >/dev/null 2>&1 || (echo "Command 'yamllint' not found, can not execute YAML syntax checks" && false)
 	@# Fall back to find if there is no git, e.g. in package builds
 	yamllint --strict $$((git ls-files "*.yml" "*.yaml" 2>/dev/null || find -name '*.y*ml') | grep -v ^dbicdh)
+
+.PHONY: test-shfmt
+test-shfmt:
+	@which shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
+	shfmt -d -i 4 -bn -ci -sr $$(shfmt -f .)
 
 .PHONY: test-check-containers
 test-check-containers:
