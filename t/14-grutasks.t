@@ -24,6 +24,7 @@ use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
 use Mojo::Util qw(dumper scope_guard);
+use File::Touch ();
 use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File qw(path tempdir);
@@ -408,6 +409,19 @@ subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     run_gru_job $t->app, 'limit_results_and_logs';
     ok !-e $log_file_for_job, 'log file for job in group got cleaned';
     ok !-e $log_file_for_groupless_job, 'log file for groupless job got cleaned';
+};
+
+subtest 'remove_needle_versions gru task cleans up needle versions' => sub {
+    # Create a temporary needle file older than the configured expiry time (defaults to 30 minutes)
+    my $temp_needle_path = '/tmp/needle_dirs/test_repo/branch/needles';
+    File::Path->make_path($temp_needle_path);
+    my @needle_files = ($temp_needle_path . 'needle.png', $temp_needle_path . 'needle.json');
+    my $ref = File::Touch->new(atime => time - (30 * 60 + 1));
+    $ref->touch(@needle_files);
+
+    # Run cleanup
+    run_gru_job $t->app, 'remove_needle_versions';
+    ok !-e $_ for @needle_files;
 };
 
 subtest 'limit audit events' => sub {
