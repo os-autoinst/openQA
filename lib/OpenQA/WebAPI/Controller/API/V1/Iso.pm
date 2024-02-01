@@ -61,7 +61,7 @@ sub validate_create_parameters ($self) {
     $validation->required($_) for (MANDATORY_PARAMETERS);
     return 1 unless $validation->has_error;
 
-    my $error = "Error: missing parameters:";
+    my $error = 'Error: missing parameters:';
     my $log = $self->log;
     for my $k (MANDATORY_PARAMETERS) {
         $log->debug(@{$validation->error($k)}) if $validation->has_error($k);
@@ -204,9 +204,9 @@ sub destroy {
     $self->emit_event('openqa_iso_delete', {iso => $iso});
 
     my $schema = $self->schema;
-    my $subquery = $schema->resultset("JobSettings")->query_for_settings({ISO => $iso});
+    my $subquery = $schema->resultset('JobSettings')->query_for_settings({ISO => $iso});
     my @jobs
-      = $schema->resultset("Jobs")->search({'me.id' => {-in => $subquery->get_column('job_id')->as_query}})->all;
+      = $schema->resultset('Jobs')->search({'me.id' => {-in => $subquery->get_column('job_id')->as_query}})->all;
 
     for my $job (@jobs) {
         $self->emit_event('openqa_job_delete', {id => $job->id});

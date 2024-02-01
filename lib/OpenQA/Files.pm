@@ -66,7 +66,7 @@ sub verify_chunks ($class, $chunk_path, $verify_file) {
         $chunk->decode_content;
         $sum = $chunk->total_cksum if !$sum;
         return Mojo::Exception->new(
-            "Chunk: " . $chunk->id() . " differs in total checksum, expected $sum given " . $chunk->total_cksum)
+            'Chunk: ' . $chunk->id() . ' differs in total checksum, expected $sum given ' . $chunk->total_cksum)
           if $sum ne $chunk->total_cksum;
         return Mojo::Exception->new("Can't verify written data from chunk")
           unless $chunk->verify_content($verify_file);

@@ -70,7 +70,7 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
     }
     my $details = $tx->res->json;
     if (ref $details ne 'HASH' || !$details->{id} || !$details->{$provider_config->{nickname_from}}) {
-        log_debug("OAuth2 user provider returned: " . dumper($details));
+        log_debug('OAuth2 user provider returned: ' . dumper($details));
         return $controller->render(text => 'User data returned by OAuth2 provider is insufficient', status => 403);
     }
     my $provider_name = $main_config->{provider};

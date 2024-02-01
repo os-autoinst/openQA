@@ -29,14 +29,14 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(product_id key)]);
 
 __PACKAGE__->belongs_to(
-    "product",
-    "OpenQA::Schema::Result::Products",
-    {'foreign.id' => "self.product_id"},
+    'product',
+    'OpenQA::Schema::Result::Products',
+    {'foreign.id' => 'self.product_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_delete => "CASCADE",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_delete => 'CASCADE',
+        on_update => 'CASCADE',
     },
 );
 

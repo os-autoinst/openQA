@@ -33,9 +33,9 @@ sub _add_result {
 
 sub parse {
     my ($self, $xml) = @_;
-    confess "No XML given/loaded" unless $xml;
+    confess 'No XML given/loaded' unless $xml;
     my $dom = Mojo::DOM->new($xml);
-    confess "Failed parsing XML" unless @{$dom->tree} > 2;
+    confess 'Failed parsing XML' unless @{$dom->tree} > 2;
 
     my @tests;
     for my $ts ($dom->find('testsuite')->each) {
@@ -103,7 +103,7 @@ sub parse {
             $text_fn .= '.txt';
             my $content = "# $tc->{name}\n";
             for my $out ($tc->children('system-out, system-err, failure, error, skipped')->each) {
-                $content .= "# " . $out->tag . ": \n\n";
+                $content .= '# ' . $out->tag . ": \n\n";
                 $content .= $out->text . "\n";
             }
             $details->{text} = $text_fn;

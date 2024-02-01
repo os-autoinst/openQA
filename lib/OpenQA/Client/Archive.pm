@@ -23,7 +23,7 @@ sub run ($self, $options) {
     my $code = $res->code;
     die "There's an error openQA client returned $code" unless $code eq 200;
 
-    my $job = $res->json->{job} || die("No job could be retrieved");
+    my $job = $res->json->{job} || die('No job could be retrieved');
 
     # We have a job now, make a directory in $pwd by default
     my $path = path($options->{archive})->make_path;
@@ -193,7 +193,7 @@ sub _progress_monitior ($ua, $tx) {
             $last_updated = time;
             if ($progress < $current) {
                 $progress = $current;
-                print("\rDownloading $filename: ", $size == $len ? 100 : $progress . "%");
+                print("\rDownloading $filename: ", $size == $len ? 100 : $progress . '%');
             }
         });
 }

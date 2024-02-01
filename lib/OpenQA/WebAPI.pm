@@ -51,8 +51,8 @@ sub startup ($self) {
     my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::WebAPI::Controller', 'OpenQA::WebAPI']);
 
     # register basic routes
-    my $logged_in = $r->under('/')->to("session#ensure_user");
-    my $auth = $r->under('/')->to("session#ensure_operator");
+    my $logged_in = $r->under('/')->to('session#ensure_user');
+    my $auth = $r->under('/')->to('session#ensure_operator');
 
     # Routes used by plugins (UI and API)
     my $admin = $r->any('/admin');

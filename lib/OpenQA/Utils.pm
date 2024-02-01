@@ -86,7 +86,7 @@ use constant FLAG_REGEX => qr/\bflag:(?<match>([\w:#]+))\b/;
 
 use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 
-our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
+our $VERSION = sprintf '%d.%03d', q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
   UNCONSTRAINED_BUGREF_REGEX
   BUGREF_REGEX
@@ -286,7 +286,7 @@ sub save_base64_png {
     # sanitize
     $newfile =~ s,\.png,,;
     $newfile =~ tr/a-zA-Z0-9-/_/cs;
-    open(my $fh, ">", $dir . "/$newfile.png") || die "can't open $dir/$newfile.png: $!";
+    open(my $fh, '>', $dir . "/$newfile.png") || die "can't open $dir/$newfile.png: $!";
     use MIME::Base64 'decode_base64';
     $fh->print(decode_base64($png));
     close($fh);
@@ -358,7 +358,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
         return {
             status => 0,
             return_code => undef,
-            stderr => "an internal error occurred",
+            stderr => 'an internal error occurred',
             stdout => '',
         };
     };
@@ -456,7 +456,7 @@ sub bugurl {
     # versa for both an issue as well as pull request
     # for pagure.io it has to be "issue", not "issues"
     $bugref =~ BUGREF_REGEX;
-    my $issuetext = $+{marker} eq "pio" ? "issue" : "issues";
+    my $issuetext = $+{marker} eq 'pio' ? 'issue' : 'issues';
     return $BUGREFS{$+{marker}} . ($+{repo} ? "$+{repo}/$issuetext/" : '') . $+{id};
 }
 
@@ -619,11 +619,11 @@ sub human_readable_size {
     $size = abs($size);
     return "$p$size Byte" if $size < 3000;
     $size /= 1024.;
-    return $p . _round_a_bit($size) . " KiB" if $size < 1024;
+    return $p . _round_a_bit($size) . ' KiB' if $size < 1024;
     $size /= 1024.;
-    return $p . _round_a_bit($size) . " MiB" if $size < 1024;
+    return $p . _round_a_bit($size) . ' MiB' if $size < 1024;
     $size /= 1024.;
-    return $p . _round_a_bit($size) . " GiB";
+    return $p . _round_a_bit($size) . ' GiB';
 }
 
 sub read_test_modules {
@@ -739,7 +739,7 @@ sub detect_current_version {
             my $partial_hash = substr($master_head, 0, 8);
             if ($latest_ref && $partial_hash) {
                 my $tag = (split(/\//, $latest_ref))[-1];
-                $current_version = $tag ? "git-" . $tag . "-" . $partial_hash : undef;
+                $current_version = $tag ? 'git-' . $tag . '-' . $partial_hash : undef;
             }
         }
     }
@@ -758,7 +758,7 @@ sub loaded_modules {
 # Fallback to loaded_modules if no arguments are given.
 # Accepts namespaces as arguments. If supplied, it will filter by them
 sub loaded_plugins {
-    my $ns = join("|", map { quotemeta } @_);
+    my $ns = join('|', map { quotemeta } @_);
     return @_ ? grep { /^$ns/ } loaded_modules() : loaded_modules();
 }
 

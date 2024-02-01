@@ -16,7 +16,7 @@ sub _queue_sub_stats ($query, $state, $result) {
     }
     my $archs = $query->search({}, {select => ['ARCH', {count => 'id'}], as => [qw(ARCH count)], group_by => 'ARCH'});
     while (my $c = $archs->next) {
-        $result->{openqa_jobs_by_arch}->{"arch=" . $c->get_column('ARCH')}->{$state} = $c->get_column('count');
+        $result->{openqa_jobs_by_arch}->{'arch=' . $c->get_column('ARCH')}->{$state} = $c->get_column('count');
     }
 }
 
@@ -26,7 +26,7 @@ sub _queue_output_measure ($url, $key, $tag, $states, $timestamp = undef) {
         $tag =~ s, ,\\ ,g;
         $line .= ",$tag";
     }
-    $line .= " ";
+    $line .= ' ';
     $line .= join(',', map { "$_=$states->{$_}i" } sort keys %$states);
     $line .= ' ' . $timestamp->epoch() * 1e9 if defined $timestamp;
     return $line . "\n";
@@ -55,7 +55,7 @@ sub jobs ($self) {
 
     while (my $c = $rs->next) {
         next unless $c->get_column('count');
-        $result->{openqa_jobs_by_worker}->{"worker=" . $c->get_column('host')}->{running} = $c->get_column('count');
+        $result->{openqa_jobs_by_worker}->{'worker=' . $c->get_column('host')}->{running} = $c->get_column('count');
     }
 
     # map group ids to names (and group by parent)
@@ -72,7 +72,7 @@ sub jobs ($self) {
         $result->{openqa_jobs_by_group}->{"group=$name"} = $merged;
     }
     if (my $group = $result->{by_group}->{0}) {
-        $result->{openqa_jobs_by_group}->{"group=No Group"} = $group;
+        $result->{openqa_jobs_by_group}->{'group=No Group'} = $group;
     }
 
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;

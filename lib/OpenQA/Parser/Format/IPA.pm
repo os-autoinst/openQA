@@ -15,7 +15,7 @@ sub _add_single_result { shift->results->add(OpenQA::Parser::Result::OpenQA->new
 # Parser
 sub parse {
     my ($self, $json) = @_;
-    confess "No JSON given/loaded" unless $json;
+    confess 'No JSON given/loaded' unless $json;
     my $decoded_json = Mojo::JSON::from_json($json);
     my %unique_names;
 

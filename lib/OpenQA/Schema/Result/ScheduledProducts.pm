@@ -674,7 +674,7 @@ sub _check_for_cycle {
     my ($child, $parent, $jobs) = @_;
     $jobs->{$parent} = $child;
     return unless $jobs->{$child};
-    die "CYCLE" if $jobs->{$child} == $parent;
+    die 'CYCLE' if $jobs->{$child} == $parent;
     # go deeper into the graph
     _check_for_cycle($jobs->{$child}, $parent, $jobs);
 }

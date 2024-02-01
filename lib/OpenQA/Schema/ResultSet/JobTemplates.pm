@@ -49,7 +49,7 @@ sub create_or_update_job_template {
             group_id => $group_id,
             product_id => $product->id,
             machine_id => $machine->id,
-            name => $args->{job_template_name} // "",
+            name => $args->{job_template_name} // '',
             test_suite_id => $test_suite->id,
         },
         {

@@ -125,7 +125,7 @@ sub _save_needle {
         $success = 0;
     }
     if ($success) {
-        open(my $J, ">", "$baseneedle.json") or $success = 0;
+        open(my $J, '>', "$baseneedle.json") or $success = 0;
         if ($success) {
             print($J $needle_json);
             close($J);
@@ -141,7 +141,7 @@ sub _save_needle {
         my $error = $git->commit(
             {
                 add => ["$needlename.json", "$needlename.png"],
-                message => ($commit_message || sprintf("%s for %s", $needlename, $openqa_job->name)),
+                message => ($commit_message || sprintf('%s for %s', $needlename, $openqa_job->name)),
             });
         if ($error) {
             $app->log->error($error);

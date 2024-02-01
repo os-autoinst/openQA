@@ -99,7 +99,7 @@ sub update_obs_builds_text {
         my $read_files = Mojo::File->new($helper->home, $project, $batch, 'read_files.sh');
         return $job->finish("Cannot find $read_files") unless -f $read_files;
 
-        my @cmd = ("bash", $read_files);
+        my @cmd = ('bash', $read_files);
         my ($stdin, $stdout, $error);
         my $exit_code = -1;
         eval { IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error); $exit_code = $?; };

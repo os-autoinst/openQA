@@ -28,13 +28,13 @@ sub _write_all {
 
 sub write_output {
     my ($self, $dir) = @_;
-    croak "You need to specify a directory" unless $dir;
+    croak 'You need to specify a directory' unless $dir;
     $self->_write_all(generated_tests_output => $dir);
 }
 
 sub write_test_result {
     my ($self, $dir) = @_;
-    croak "You need to specify a directory" unless $dir;
+    croak 'You need to specify a directory' unless $dir;
     $self->_write_all(generated_tests_results => $dir);
 }
 

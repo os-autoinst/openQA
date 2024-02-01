@@ -292,7 +292,7 @@ sub engine_workit ($job, $callback) {
     log_info(sprintf("Running on $hostname:%d ($sysname $release $version $machine)", $instance),
         channels => 'autoinst');
 
-    log_error("Failed enabling subreaper mode", channels => 'autoinst') unless session->subreaper;
+    log_error('Failed enabling subreaper mode', channels => 'autoinst') unless session->subreaper;
 
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of

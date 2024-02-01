@@ -158,7 +158,7 @@ sub capabilities ($self) {
         $caps->{cpu_arch} = $arch;
     }
     else {
-        open(my $LSCPU, "-|", "LC_ALL=C lscpu");
+        open(my $LSCPU, '-|', 'LC_ALL=C lscpu');
         for my $line (<$LSCPU>) {
             chomp $line;
             if ($line =~ m/Model name:\s+(.+)$/) {
@@ -178,7 +178,7 @@ sub capabilities ($self) {
     }
 
     # determine memory limit
-    open(my $MEMINFO, "<", "/proc/meminfo");
+    open(my $MEMINFO, '<', '/proc/meminfo');
     for my $line (<$MEMINFO>) {
         chomp $line;
         if ($line =~ m/MemTotal:\s+(\d+).+kB/) {

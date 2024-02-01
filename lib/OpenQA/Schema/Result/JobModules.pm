@@ -66,13 +66,13 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
-    "job",
-    "OpenQA::Schema::Result::Jobs",
-    {'foreign.id' => "self.job_id"},
+    'job',
+    'OpenQA::Schema::Result::Jobs',
+    {'foreign.id' => 'self.job_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_update => 'CASCADE',
     },
 );
 __PACKAGE__->add_unique_constraint([qw(job_id name category script)]);

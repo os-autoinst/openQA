@@ -13,7 +13,7 @@ sub register ($self, $app, $config) {
         action_link => sub ($c, $method, $content, @args) {
             my $url = $content;
             return '' unless $c->is_operator;
-            croak "url is not a url" unless blessed $url && $url->isa('Mojo::URL');
+            croak 'url is not a url' unless blessed $url && $url->isa('Mojo::URL');
             return $c->tag('a', href => $url, 'data-method' => $method, @args);
         });
 

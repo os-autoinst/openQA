@@ -221,7 +221,7 @@ preventing it from taking jobs.
 
 sub show {
     my ($self) = @_;
-    my $worker = $self->schema->resultset("Workers")->find($self->param('workerid'));
+    my $worker = $self->schema->resultset('Workers')->find($self->param('workerid'));
     if ($worker) {
         $self->render(json => {worker => $worker->info(1)});
     }
@@ -245,13 +245,13 @@ sub delete {
     my ($self) = @_;
     my $message;
     my $worker_id = $self->param('worker_id');
-    my $worker = $self->schema->resultset("Workers")->find($worker_id);
+    my $worker = $self->schema->resultset('Workers')->find($worker_id);
 
     if (!$worker) {
-        return $self->render(json => {error => "Worker not found."}, status => 404);
+        return $self->render(json => {error => 'Worker not found.'}, status => 404);
     }
     if ($worker->status ne 'dead' || $worker->unfinished_jobs->count) {
-        $message = "Worker " . $worker->name . " status is not offline.";
+        $message = 'Worker ' . $worker->name . ' status is not offline.';
         return $self->render(json => {error => $message}, status => 400);
     }
 
@@ -259,7 +259,7 @@ sub delete {
     if ($@) {
         return $self->render(json => {error => $@}, status => 409);
     }
-    $message = "Delete worker " . $worker->name . " successfully.";
+    $message = 'Delete worker ' . $worker->name . ' successfully.';
     $self->emit_event('openqa_worker_delete', {id => $worker->id, name => $worker->name});
     $self->render(json => {message => $message});
 }

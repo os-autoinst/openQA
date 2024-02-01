@@ -10,7 +10,7 @@ use Mojo::File 'path';
 use Pod::POM;
 use Exporter 'import';
 
-our $VERSION = sprintf "%d.%03d", q$Revision: 0.01 $ =~ /(\d+)/g;
+our $VERSION = sprintf '%d.%03d', q$Revision: 0.01 $ =~ /(\d+)/g;
 our @EXPORT = qw(
   get_pod_from_controllers
   set_api_desc
@@ -52,11 +52,11 @@ sub get_pod_from_controllers ($app, @args) {
         next unless (-e -f $ctrlrpath->child($controllers{$ctrl})->to_string);
         $tree = $parser->parse_file($ctrlrpath->child($controllers{$ctrl})->to_string);
         unless ($tree) {
-            log_warning("get_pod_from_controllers: could not parse file: ["
+            log_warning('get_pod_from_controllers: could not parse file: ['
                   . $ctrlrpath->child($controllers{$ctrl})->to_string
-                  . "] for POD. Error: ["
+                  . '] for POD. Error: ['
                   . $tree->error()
-                  . "]");
+                  . ']');
             next;
         }
         _itemize($tree, $ctrl);
@@ -68,12 +68,12 @@ sub get_pod_from_controllers ($app, @args) {
 
 sub set_api_desc ($api_description, $api_route) {
     if (ref($api_description) ne 'HASH') {
-        log_warning("set_api_desc: expected HASH ref for api_descriptions. Got: " . ref($api_description));
+        log_warning('set_api_desc: expected HASH ref for api_descriptions. Got: ' . ref($api_description));
         return;
     }
 
     if (ref($api_route) ne 'Mojolicious::Routes::Route') {
-        log_warning("set_api_desc: expected Mojolicious::Routes::Route for api_routes. Got: " . ref($api_route));
+        log_warning('set_api_desc: expected Mojolicious::Routes::Route for api_routes. Got: ' . ref($api_route));
         return;
     }
 
@@ -89,7 +89,7 @@ sub set_api_desc ($api_description, $api_route) {
 
 sub _itemize ($node, $controller) {
     if (ref($node) !~ /^Pod::POM::Node/) {
-        log_warning("_itemize() expected Pod::POM::Node::* arg. Got " . ref($node));
+        log_warning('_itemize() expected Pod::POM::Node::* arg. Got ' . ref($node));
         return 0;    # Stop walking the tree
     }
     my $methodname = '';

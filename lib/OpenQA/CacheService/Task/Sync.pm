@@ -36,7 +36,7 @@ sub _cache_tests ($job, $from = undef, $to = undef) {
     my $cmd = join ' ', @cmd;
     $ctx->info("Calling: $cmd");
     my $status;
-    my $full_output = "";
+    my $full_output = '';
     for my $retry (1 .. RSYNC_RETRIES) {
         my $output = `@cmd`;
         $status = $? >> 8;

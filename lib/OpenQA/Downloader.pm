@@ -45,7 +45,7 @@ sub download ($self, $url, $target, $options = {}) {
         last;
     }
 
-    return $err ? $err : "No error message recorded";
+    return $err ? $err : 'No error message recorded';
 }
 
 sub _extract_asset ($self, $to_extract, $target) {
@@ -88,7 +88,7 @@ sub _get ($self, $url, $target, $options) {
     my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
     if ($code eq 304) {
         $options->{on_unchanged}->() if $options->{on_unchanged};
-        return (520, "Unknown error") unless -e $target;    # Avoid race condition between check and removal
+        return (520, 'Unknown error') unless -e $target;    # Avoid race condition between check and removal
         return (undef, undef);
     }
 

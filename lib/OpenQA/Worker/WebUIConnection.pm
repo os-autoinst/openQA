@@ -284,7 +284,7 @@ sub send ($self, $method, $path, %args) {
     my @args = ($method, $ua_url);
     push(@args, 'json', $json_data) if $json_data;
     my $tx = $ua->build_tx(@args);
-    if ($callback eq "no") {
+    if ($callback eq 'no') {
         $ua->start($tx);
         return undef;
     }

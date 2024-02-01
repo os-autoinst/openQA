@@ -19,7 +19,7 @@ sub create ($self) {
 
     my $error;
     if ($validation->has_error) {
-        $error = "Date must be in format " . DateTime::Format::Pg->format_datetime(DateTime->now());
+        $error = 'Date must be in format ' . DateTime::Format::Pg->format_datetime(DateTime->now());
     }
 
     if (!$error && $validation->is_valid('t_expiration')) {
@@ -27,7 +27,7 @@ sub create ($self) {
         $error = $@;
     }
     unless ($error) {
-        eval { $self->schema->resultset("ApiKeys")->create({user_id => $user->id, t_expiration => $expiration}) };
+        eval { $self->schema->resultset('ApiKeys')->create({user_id => $user->id, t_expiration => $expiration}) };
         $error = $@;
     }
     if ($error) {

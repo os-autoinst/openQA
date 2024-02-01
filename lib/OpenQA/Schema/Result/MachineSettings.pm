@@ -29,14 +29,14 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(machine_id key)]);
 
 __PACKAGE__->belongs_to(
-    "machine",
-    "OpenQA::Schema::Result::Machines",
-    {'foreign.id' => "self.machine_id"},
+    'machine',
+    'OpenQA::Schema::Result::Machines',
+    {'foreign.id' => 'self.machine_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_delete => "CASCADE",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_delete => 'CASCADE',
+        on_update => 'CASCADE',
     },
 );
 

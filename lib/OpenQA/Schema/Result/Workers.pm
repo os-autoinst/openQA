@@ -66,7 +66,7 @@ __PACKAGE__->inflate_column(
 
 sub name {
     my ($self) = @_;
-    return $self->host . ":" . $self->instance;
+    return $self->host . ':' . $self->instance;
 }
 
 sub seen ($self, $options = {}) {
@@ -182,7 +182,7 @@ sub unprepare_for_work {
 
 sub info {
     my $self = shift;
-    my ($live) = ref $_[0] eq "HASH" ? @{$_[0]}{qw(live)} : @_;
+    my ($live) = ref $_[0] eq 'HASH' ? @{$_[0]}{qw(live)} : @_;
 
     my $settings = {
         id => $self->id,

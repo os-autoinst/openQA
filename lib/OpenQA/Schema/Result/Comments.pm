@@ -51,38 +51,38 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(user => 'OpenQA::Schema::Result::Users', 'user_id');
 
 __PACKAGE__->belongs_to(
-    "group",
-    "OpenQA::Schema::Result::JobGroups",
-    {'foreign.id' => "self.group_id"},
+    'group',
+    'OpenQA::Schema::Result::JobGroups',
+    {'foreign.id' => 'self.group_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_delete => "CASCADE",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_delete => 'CASCADE',
+        on_update => 'CASCADE',
     },
 );
 
 __PACKAGE__->belongs_to(
-    "parent_group",
-    "OpenQA::Schema::Result::JobGroupParents",
-    {'foreign.id' => "self.parent_group_id"},
+    'parent_group',
+    'OpenQA::Schema::Result::JobGroupParents',
+    {'foreign.id' => 'self.parent_group_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_delete => "CASCADE",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_delete => 'CASCADE',
+        on_update => 'CASCADE',
     },
 );
 
 __PACKAGE__->belongs_to(
-    "job",
-    "OpenQA::Schema::Result::Jobs",
-    {'foreign.id' => "self.job_id"},
+    'job',
+    'OpenQA::Schema::Result::Jobs',
+    {'foreign.id' => 'self.job_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_delete => "CASCADE",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_delete => 'CASCADE',
+        on_update => 'CASCADE',
     },
 );
 
@@ -175,8 +175,8 @@ sub extended_hash ($self, $render_markdown = 1) {
         text => $self->text,
         renderedMarkdown => ($render_markdown) ? $self->rendered_markdown->to_string : undef,
         bugrefs => $self->bugrefs,
-        created => $self->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
-        updated => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
+        created => $self->t_created->strftime('%Y-%m-%d %H:%M:%S %z'),
+        updated => $self->t_updated->strftime('%Y-%m-%d %H:%M:%S %z'),
         userName => $self->user->name
     };
 }

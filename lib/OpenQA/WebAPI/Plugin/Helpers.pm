@@ -18,7 +18,7 @@ sub register ($self, $app, $config) {
         format_time => sub {
             my ($c, $timedate, $format) = @_;
             return unless $timedate;
-            $format ||= "%Y-%m-%d %H:%M:%S %z";
+            $format ||= '%Y-%m-%d %H:%M:%S %z';
             return $timedate->strftime($format);
         });
 
@@ -27,13 +27,13 @@ sub register ($self, $app, $config) {
             my ($c, $timedate) = @_;
             return unless $timedate;
             if ($timedate->days() > 0) {
-                sprintf("%d days %02d:%02d hours", $timedate->days(), $timedate->hours(), $timedate->minutes());
+                sprintf('%d days %02d:%02d hours', $timedate->days(), $timedate->hours(), $timedate->minutes());
             }
             elsif ($timedate->hours() > 0) {
-                sprintf("%02d:%02d hours", $timedate->hours(), $timedate->minutes());
+                sprintf('%02d:%02d hours', $timedate->hours(), $timedate->minutes());
             }
             else {
-                sprintf("%02d:%02d minutes", $timedate->minutes(), $timedate->seconds());
+                sprintf('%02d:%02d minutes', $timedate->minutes(), $timedate->seconds());
             }
         });
 
@@ -48,7 +48,7 @@ sub register ($self, $app, $config) {
             my ($c, $text, $bug) = @_;
             my $css_class = ($text =~ /(poo|gh)#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
             if ($bug && !$bug->open) {
-                $css_class .= " bug_closed";
+                $css_class .= ' bug_closed';
             }
             return $css_class;
         });
@@ -123,7 +123,7 @@ sub register ($self, $app, $config) {
                 $crumbs
                   .= $c->link_to($c->url_for('group_overview', groupid => $group_id) => (class => 'dropdown-item') =>
                       sub { return $job->group->name . ' (current)' });
-                $crumbs .= "</li>";
+                $crumbs .= '</li>';
                 $overview_text = 'Build ' . $job->BUILD;
             }
             else {
@@ -134,7 +134,7 @@ sub register ($self, $app, $config) {
             $crumbs .= "\n<li id='current-build-overview'>";
             $crumbs .= $c->link_to($overview_url => (class => 'dropdown-item') =>
                   sub { '<i class="fa fa-arrow-right"></i> ' . $overview_text });
-            $crumbs .= "</li>";
+            $crumbs .= '</li>';
             $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
             return Mojo::ByteStream->new($crumbs);
         });
@@ -153,7 +153,7 @@ sub register ($self, $app, $config) {
         # allowing partial brands
         include_branding => sub {
             my ($c, $name, %args) = @_;
-            my $path = "branding/" . $c->app->config->{global}->{branding} . "/$name";
+            my $path = 'branding/' . $c->app->config->{global}->{branding} . "/$name";
             my $ret = $c->render_to_string($path, %args);
             if (defined($ret)) {
                 return $ret;

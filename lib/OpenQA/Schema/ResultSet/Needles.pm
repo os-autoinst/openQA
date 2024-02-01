@@ -56,7 +56,7 @@ sub new_needles_since {
     if ($tags && @$tags) {
         my @tags_conds;
         for my $tag (@$tags) {
-            push(@tags_conds, \["? = ANY (tags)", $tag]);
+            push(@tags_conds, \['? = ANY (tags)', $tag]);
         }
         $new_needle_conds{-or} = \@tags_conds;
     }

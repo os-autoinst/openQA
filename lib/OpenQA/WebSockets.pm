@@ -79,7 +79,7 @@ sub ws_send_job {
 
     unless (ref($job_info) eq 'HASH' && exists $job_info->{assigned_worker_id}) {
         # uncoverable statement untested exceptional error
-        $state->{error} = "No workerid assigned";
+        $state->{error} = 'No workerid assigned';
         return $result;    # uncoverable statement
     }
 

@@ -69,7 +69,7 @@ sub save_connect {
     my ($self) = @_;
 
     my $schema = $self->schema;
-    my $group = $schema->resultset("JobGroups")->find($self->param('groupid'));
+    my $group = $schema->resultset('JobGroups')->find($self->param('groupid'));
     if (!$group) {
         $self->flash(error => 'Specified group ID ' . $self->param('groupid') . 'doesn\'t exist.');
         return $self->redirect_to('admin_groups');
@@ -81,7 +81,7 @@ sub save_connect {
         machine_id => $self->param('machine'),
         group_id => $group->id,
         test_suite_id => $self->param('test')};
-    eval { $schema->resultset("JobTemplates")->create($values)->id };
+    eval { $schema->resultset('JobTemplates')->create($values)->id };
     if ($@) {
         $self->flash(error => $@);
         return $self->redirect_to('job_group_new_media', groupid => $group->id);

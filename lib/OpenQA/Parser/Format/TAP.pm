@@ -13,12 +13,12 @@ has [qw(test steps)];
 
 sub parse {
     my ($self, $TAP) = @_;
-    confess "No TAP given/loaded" unless $TAP;
+    confess 'No TAP given/loaded' unless $TAP;
     my $tap = TAP::Parser->new({tap => $TAP});
-    confess "Failed " . $tap->parse_errors if $tap->parse_errors;
+    confess 'Failed ' . $tap->parse_errors if $tap->parse_errors;
     my $test = {
         flags => {},
-        category => "TAP",
+        category => 'TAP',
         name => 'Extra test from TAP',
     };
     my $details;

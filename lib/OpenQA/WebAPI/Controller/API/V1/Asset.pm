@@ -72,7 +72,7 @@ sub list ($self) {
     my $offset = $validation->param('offset') // 0;
 
     # We request one more than the limit to check if there are more results for pagination
-    my $rs = $schema->resultset("Assets")->search({}, {rows => $limit + 1, offset => $offset});
+    my $rs = $schema->resultset('Assets')->search({}, {rows => $limit + 1, offset => $offset});
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
     my @all = $rs->all;
 
@@ -111,7 +111,7 @@ sub get {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
-    my $rs = $schema->resultset("Assets")->search(\%args);
+    my $rs = $schema->resultset('Assets')->search(\%args);
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 
     if ($rs && $rs->single) {
@@ -141,7 +141,7 @@ sub delete {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
-    my $asset = $self->schema->resultset("Assets")->search(\%args);
+    my $asset = $self->schema->resultset('Assets')->search(\%args);
     return $self->render(
         json =>
           {error => 'The asset might have already been removed and only the cached view has not been updated yet.'},

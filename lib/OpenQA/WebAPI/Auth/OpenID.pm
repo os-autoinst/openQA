@@ -38,9 +38,9 @@ sub auth_login ($self) {
         {
             mode => 'fetch_request',
             required => 'email,fullname,nickname,firstname,lastname',
-            'type.email' => "http://schema.openid.net/contact/email",
-            'type.fullname' => "http://axschema.org/namePerson",
-            'type.nickname' => "http://axschema.org/namePerson/friendly",
+            'type.email' => 'http://schema.openid.net/contact/email',
+            'type.fullname' => 'http://axschema.org/namePerson',
+            'type.nickname' => 'http://axschema.org/namePerson/friendly',
             'type.firstname' => 'http://axschema.org/namePerson/first',
             'type.lastname' => 'http://axschema.org/namePerson/last',
         },
@@ -71,7 +71,7 @@ sub auth_response ($self) {
     %params = map { $_ => URI::Escape::uri_unescape($params{$_}) } keys %params;
 
     my $csr = Net::OpenID::Consumer->new(
-        debug => sub { $self->app->log->debug("Net::OpenID::Consumer: " . join(' ', @_)); },
+        debug => sub { $self->app->log->debug('Net::OpenID::Consumer: ' . join(' ', @_)); },
         ua => LWP::UserAgent->new,
         required_root => $url,
         consumer_secret => $self->app->config->{_openid_secret},
@@ -87,7 +87,7 @@ sub auth_response ($self) {
 
     $csr->handle_server_response(
         not_openid => sub {
-            return $err_handler->("Failed to login", "OpenID provider returned invalid data. Please retry again");
+            return $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again');
         },
         setup_needed => sub {
             my $setup_url = shift;

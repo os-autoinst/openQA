@@ -8,7 +8,7 @@ sub register {
     my ($self, $app, $config) = @_;
 
     # replace form_for with our own that puts the csrf token in there
-    die "failed to find form_for" unless my $form_for = delete $app->renderer->helpers->{form_for};
+    die 'failed to find form_for' unless my $form_for = delete $app->renderer->helpers->{form_for};
     $app->helper(
         form_for => sub {
             my $self = shift;
@@ -28,7 +28,7 @@ sub register {
 
             my $validation = $c->validation;
             if ($validation->csrf_protect->has_error('csrf_token')) {
-                $c->app->log->debug("Bad CSRF token");
+                $c->app->log->debug('Bad CSRF token');
                 return 0;
             }
             return 1;
