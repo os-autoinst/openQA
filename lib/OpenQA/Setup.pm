@@ -65,7 +65,7 @@ sub read_config ($app) {
             do_push => 'no',
             do_cleanup => 'no',
         },
-        'scheduler' => {
+        scheduler => {
             max_job_scheduled_time => 7,
             max_running_jobs => -1,
         },
@@ -221,7 +221,7 @@ sub read_config ($app) {
     # Mojo's built in config plugins suck. JSON for example does not
     # support comments
     my $cfg;
-    my $cfgpath = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child("etc", "openqa");
+    my $cfgpath = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child('etc', 'openqa');
     my $cfgfile = $cfgpath->child('openqa.ini');
     my $config = $app->config;
 
@@ -230,7 +230,7 @@ sub read_config ($app) {
         $config->{ini_config} = $cfg;
     }
     else {
-        $app->log->warn("No configuration file supplied, will fallback to default configuration");
+        $app->log->warn('No configuration file supplied, will fallback to default configuration');
     }
 
     for my $section (sort keys %defaults) {
@@ -294,17 +294,17 @@ sub update_config ($config, @namespaces) {
     foreach my $plugin (loaded_plugins(@namespaces)) {
 
         # We take config only if the plugin has the method declared
-        next unless ($plugin->can("configuration_fields"));
+        next unless ($plugin->can('configuration_fields'));
 
         # If it is a Mojo::Base class, it requires to be instantiated
         # because the attributes are not populated until creation.
         my $fields
-          = UNIVERSAL::isa($plugin, "Mojo::Base")
+          = UNIVERSAL::isa($plugin, 'Mojo::Base')
           ? do { $plugin->new->configuration_fields() }
           : $plugin->configuration_fields();
 
         # We expect just hashrefs
-        next unless (ref($fields) eq "HASH");
+        next unless (ref($fields) eq 'HASH');
 
         # Walk the hash with the plugin returns that needs to be fetched
         # by our Ini file parser and fill config from it
@@ -382,7 +382,7 @@ sub load_plugins ($server, $monitoring_root_route = undef, %options) {
     }
 
     # Read configurations expected by plugins.
-    OpenQA::Setup::update_config($server->config, @{$server->plugins->namespaces}, "OpenQA::WebAPI::Auth");
+    OpenQA::Setup::update_config($server->config, @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Auth');
 }
 
 sub set_secure_flag_on_cookies ($c) {

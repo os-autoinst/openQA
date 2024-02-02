@@ -421,7 +421,7 @@ sub settings_hash ($self, $prefetched = undef) {
     for my $column (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
         if (my $value = $self->$column) { $settings->{$column} = $value }
     }
-    $settings->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
+    $settings->{NAME} = sprintf '%08d-%s', $self->id, $self->name;
     if ($settings->{JOB_TEMPLATE_NAME}) {
         my $test = $settings->{TEST};
         my $job_template_name = $settings->{JOB_TEMPLATE_NAME};
@@ -525,7 +525,7 @@ sub can_be_duplicated ($self) {
 }
 
 sub _compute_asset_names_considering_parent_jobs ($parent_job_ids, $asset_name) {
-    [$asset_name, map { sprintf("%08d-%s", $_, $asset_name) } @$parent_job_ids]
+    [$asset_name, map { sprintf('%08d-%s', $_, $asset_name) } @$parent_job_ids]
 }
 
 sub _strip_parent_job_id ($parent_job_ids, $asset_name) {
@@ -1030,10 +1030,10 @@ sub save_screenshot ($self, $screen) {
 
     my $tmpdir = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $tmpdir;    # we can't help
-    my $current = readlink($tmpdir . "/last.png");
+    my $current = readlink($tmpdir . '/last.png');
     my $newfile = OpenQA::Utils::save_base64_png($tmpdir, $screen->{name}, $screen->{png});
-    unlink($tmpdir . "/last.png");
-    symlink("$newfile.png", $tmpdir . "/last.png");
+    unlink($tmpdir . '/last.png');
+    symlink("$newfile.png", $tmpdir . '/last.png');
     # remove old file
     unlink($tmpdir . "/$current") if $current;
 }
@@ -1110,7 +1110,7 @@ sub insert_test_modules ($self, $testmodules) {
 
 sub custom_module ($self, $module, $output) {
     my $parser = parser('Base');
-    $parser->include_results(1) if $parser->can("include_results");
+    $parser->include_results(1) if $parser->can('include_results');
 
     $parser->results->add($module);
     $parser->_add_output($output) if defined $output;
@@ -1199,14 +1199,14 @@ sub exclusively_used_screenshot_ids ($self) {
 }
 
 sub num_prefix_dir ($self, $archived = undef) {
-    my $numprefix = sprintf "%05d", $self->id / 1000;
+    my $numprefix = sprintf '%05d', $self->id / 1000;
     return catfile(resultdir($archived // $self->archived), $numprefix);
 }
 
 sub create_result_dir ($self) {
     my $dir = $self->result_dir;
     if (!$dir) {
-        $dir = sprintf "%08d-%s", $self->id, $self->name;
+        $dir = sprintf '%08d-%s', $self->id, $self->name;
         $dir = substr($dir, 0, 255);
         $self->update({result_dir => $dir});
         $dir = $self->result_dir;
@@ -1298,7 +1298,7 @@ sub parse_extra_tests ($self, $asset, $type, $script = undef) {
     eval {
         my $parser = parser($type);
 
-        $parser->include_results(1) if $parser->can("include_results");
+        $parser->include_results(1) if $parser->can('include_results');
         my $tmp_extra_test = tempfile;
 
         $asset->move_to($tmp_extra_test);
@@ -1316,7 +1316,7 @@ sub parse_extra_tests ($self, $asset, $type, $script = undef) {
     };
 
     if ($@) {
-        log_error("Failed parsing data $type for job " . $self->id . ": " . $@);
+        log_error("Failed parsing data $type for job " . $self->id . ': ' . $@);
         return;
     }
     return 1;
@@ -1340,7 +1340,7 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
     $type = 'hdd' if $fname =~ /\.(?:qcow2|raw|vhd|vhdx)$/;
     $type //= 'other';
 
-    my $job_id = sprintf "%08d", $self->id;
+    my $job_id = sprintf '%08d', $self->id;
     $fname = "$job_id-$fname" if $scope ne 'public';
 
     my $assetdir = assetdir();
@@ -1447,10 +1447,10 @@ sub update_status ($self, $status) {
     my $state = $self->state;
     return {result => 0} unless $state eq RUNNING || $state eq UPLOADING || $state eq CANCELLED;
 
-    $self->append_log($status->{log}, "autoinst-log-live.txt");
-    $self->append_log($status->{serial_log}, "serial-terminal-live.txt");
-    $self->append_log($status->{serial_terminal}, "serial-terminal-live.txt");
-    $self->append_log($status->{serial_terminal_user}, "serial-terminal-live.txt");
+    $self->append_log($status->{log}, 'autoinst-log-live.txt');
+    $self->append_log($status->{serial_log}, 'serial-terminal-live.txt');
+    $self->append_log($status->{serial_terminal}, 'serial-terminal-live.txt');
+    $self->append_log($status->{serial_terminal_user}, 'serial-terminal-live.txt');
     # delete from the hash so it becomes dumpable for debugging
     my $screen = delete $status->{screen};
     $self->save_screenshot($screen) if $screen;
@@ -1549,7 +1549,7 @@ sub reevaluate_children_asset_settings ($self, $include_self = 0, $visited = {})
 sub _asset_find ($name, $type, $parents) {
     # add undef to parents so that we check regular assets too
     for my $parent (@$parents, undef) {
-        my $fname = $parent ? sprintf("%08d-%s", $parent, $name) : $name;
+        my $fname = $parent ? sprintf('%08d-%s', $parent, $name) : $name;
         return $fname if locate_asset($type, $fname, mustexist => 1);
     }
     return undef;
@@ -1628,7 +1628,7 @@ sub _previous_scenario_jobs ($self, $rows = undef) {
         order_by => ['me.id DESC'],
         rows => $rows
     );
-    return $schema->resultset("Jobs")->search({-and => $conds}, \%attrs)->all;
+    return $schema->resultset('Jobs')->search({-and => $conds}, \%attrs)->all;
 }
 
 sub _relevant_module_result_for_carry_over_evaluation ($module_result) {
@@ -1676,7 +1676,7 @@ sub _carry_over_candidate ($self) {
     my $lookup_depth = $config->{lookup_depth};
     my $state_changes_limit = $config->{state_changes_limit};
 
-    my $label = sprintf "_carry_over_candidate(%d)", $self->id;
+    my $label = sprintf '_carry_over_candidate(%d)', $self->id;
     log_debug(sprintf "$label: _failure_reason=%s", $current_failure_reason);
 
     # we only do carryover for jobs with some kind of (soft) failure
@@ -1840,12 +1840,12 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     my $res = run_cmd_with_log_return_error($cmd);
     if ($res->{return_code}) {
         warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
-        return "Cannot display diff because of a git problem";
+        return 'Cannot display diff because of a git problem';
     }
     chomp(my $count = $res->{stdout});
     if ($count =~ tr/0-9//c) {
         warn "Problem with [@$cmd]: returned non-numeric string '$count'";
-        return "Cannot display diff because of a git problem";
+        return 'Cannot display diff because of a git problem';
     }
     return "Too many commits ($count) to create a diff between $refspec_range (maximum: $limit)" if $count > $limit;
 
@@ -1853,7 +1853,7 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     $res = run_cmd_with_log_return_error($cmd, stdout => 'trace');
     if ($res->{return_code}) {
         warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
-        return "Cannot display diff because of a git problem";
+        return 'Cannot display diff because of a git problem';
     }
     return $res->{stdout} . $res->{stderr};
 }

@@ -239,7 +239,7 @@ sub _get_batches {
     my $home = $c->obs_rsync->home;
     my $batches = Mojo::File->new($home, $project)->list({dir => 1})->grep(sub { -d $_ })->map('basename');
     return $batches->to_array() unless $only_first;
-    return "" if !$batches->size;
+    return '' if !$batches->size;
     return $batches->to_array()->[0];
 }
 
@@ -284,7 +284,7 @@ sub _read_test_id {
 
 sub _get_test_result {
     my ($c, $id) = @_;
-    return 'unknown' unless my $job = $c->schema->resultset("Jobs")->find($id);
+    return 'unknown' unless my $job = $c->schema->resultset('Jobs')->find($id);
     return $job->result;
 }
 
@@ -327,9 +327,9 @@ sub _get_run_last_info {
 
 sub _get_first_line {
     my ($file, $with_timestamp) = @_;
-    open(my $fh, '<', $file) or return "";
+    open(my $fh, '<', $file) or return '';
     my $res = readline $fh;
-    return "" unless $res;
+    return '' unless $res;
     chomp $res;
     if ($with_timestamp) {
         my @stats = stat($fh);
@@ -356,7 +356,7 @@ sub _get_dirty_status {
     my ($project, undef) = $helper->split_alias($alias);
     my $home = $helper->home;
     my ($status, $when) = _get_first_line(Mojo::File->new($home, $project, $dirty_status_filename), 1);
-    return "" unless $status;
+    return '' unless $status;
     return "$status on $when";
 }
 
@@ -371,7 +371,7 @@ sub _get_api_repo {
     my $home = $helper->home;
     my $ret = _get_first_line(Mojo::File->new($home, $project, $api_repo_filename));
     return $ret if $ret;
-    return "images";
+    return 'images';
 }
 
 # Which package on OBS should be checked for being published on obs
@@ -391,7 +391,7 @@ sub _get_api_dirty_status_url {
     my ($c, $project) = @_;
     my $helper = $c->obs_rsync;
     my $url_str = $helper->project_status_url;
-    return "" unless $url_str;
+    return '' unless $url_str;
     # need split eventual batch and repository in project name
     ($project, undef) = $helper->split_alias($project);
     my $package = $helper->get_api_package($project);
@@ -448,7 +448,7 @@ sub _get_obs_builds_text {
     $helper->for_every_batch($alias, $sub);
 
     my @builds = sort { $b cmp $a } keys %seen;
-    return "No data" unless @builds;
+    return 'No data' unless @builds;
     return join ', ', @builds;
 }
 

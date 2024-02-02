@@ -90,7 +90,7 @@ sub _search_perl_modules {
             next unless length $match;
             my ($filename, $linenr, $contents) = split(':', $match, 3);
             # Prefix each line with a 5 digit-padded number
-            $contents = sprintf("%5d ", $linenr) . $contents;
+            $contents = sprintf('%5d ', $linenr) . $contents;
             # Merge lines occurring in the same file
             if ($filename eq $last_filename) {
                 $results[-1]->{contents} .= "\n$contents";
@@ -173,9 +173,9 @@ sub query {
     my $lockname = 'webui_query_rate_limit';
     if (my $user = $self->current_user) { $lockname .= $user->username }
     return $self->render(json => {error => 'Rate limit exceeded'}, status => 400)
-      unless $self->app->minion->lock($lockname, 60, {limit => $self->app->config->{'rate_limits'}->{'search'}});
+      unless $self->app->minion->lock($lockname, 60, {limit => $self->app->config->{rate_limits}->{'search'}});
 
-    my $cap = $self->app->config->{'global'}->{'search_results_limit'};
+    my $cap = $self->app->config->{global}->{'search_results_limit'};
     my %results;
     my $keywords = $validation->param('q');
 

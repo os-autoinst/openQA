@@ -104,7 +104,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
             my $dummy = <$log>;
         }
         while (defined(my $l = <$log>)) {
-            $self->write("data: " . encode_json([$l]) . "\n\n");
+            $self->write('data: ' . encode_json([$l]) . "\n\n");
         }
         seek $log, 0, 1;
     }
@@ -140,7 +140,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
                 while (defined(my $l = <$log>)) {
                     $lines .= $l;
                 }
-                $self->write("data: " . encode_json([$lines]) . "\n\n");
+                $self->write('data: ' . encode_json([$lines]) . "\n\n");
                 seek $log, 0, 1;
             }
         });

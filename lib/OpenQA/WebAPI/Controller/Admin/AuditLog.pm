@@ -80,7 +80,7 @@ sub _add_single_query {
         push(@{$query->{$actual_key}}, ($actual_key => {-like => '%' . $search . '%'}));
     }
     elsif ($key eq 'id') {
-        push(@{$query->{$key}}, ("CAST(me.id AS text)" => {-like => '%' . $search . '%'}));
+        push(@{$query->{$key}}, ('CAST(me.id AS text)' => {-like => '%' . $search . '%'}));
     }
     elsif ($key eq 'older' || $key eq 'newer') {
         if ($search eq 'today') {

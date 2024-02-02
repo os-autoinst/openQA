@@ -165,7 +165,7 @@ sub name ($self) {
 }
 
 sub path ($self) {
-    return $self->directory->path . "/" . $self->filename;
+    return $self->directory->path . '/' . $self->filename;
 }
 
 sub remove ($self, $user) {
@@ -180,7 +180,7 @@ sub remove ($self, $user) {
         my $error = $git->commit(
             {
                 rm => [$fname, $screenshot],
-                message => sprintf("Remove %s/%s", $directory->name, $self->filename),
+                message => sprintf('Remove %s/%s', $directory->name, $self->filename),
             });
         return $error if $error;
     }

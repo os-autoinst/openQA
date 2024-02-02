@@ -49,7 +49,7 @@ sub _build_parser {
 
 sub load {
     my ($self, $file) = @_;
-    croak "You need to specify a file" if !$file;
+    croak 'You need to specify a file' if !$file;
     my $file_content = $self->_read_file($file);
     confess "Failed reading file $file" if !$file_content;
     $self->content($file_content) if $self->include_content;
@@ -80,25 +80,25 @@ sub gen_tree_el {
     if ($el->isa('OpenQA::Parser')) {
         $el_ref = $el;
     }
-    elsif ($el->can("gen_tree_el")) {
+    elsif ($el->can('gen_tree_el')) {
         return $el->gen_tree_el;
     }
-    elsif ($el->can("to_hash")) {
+    elsif ($el->can('to_hash')) {
         $el_ref = $el->to_hash;
     }
-    elsif ($el->can("to_array")) {
+    elsif ($el->can('to_array')) {
         $el_ref = $el->to_array;
     }
     elsif (reftype $el eq 'ARRAY') {
-        warn "Serialization is officially supported only if object can be turned into an array with ->to_array()";
+        warn 'Serialization is officially supported only if object can be turned into an array with ->to_array()';
         $el_ref = [@{$el}];
     }
     elsif (reftype $el eq 'HASH') {
-        warn "Serialization is officially supported only if object can be hashified with ->to_hash()";
+        warn 'Serialization is officially supported only if object can be hashified with ->to_hash()';
         $el_ref = {%{$el}};
     }
     else {
-        warn "Data type with format not supported for serialization";
+        warn 'Data type with format not supported for serialization';
         $el_ref = $el;
     }
 

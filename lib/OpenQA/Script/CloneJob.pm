@@ -76,7 +76,7 @@ sub clone_job_get_job ($jobid, $url_handler, $options) {
         die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
     if ($tx->res->code != 200) {
-        warn sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
+        warn sprintf('unexpected return code: %s %s', $tx->res->code, $tx->res->message);
         exit 1;
     }
     my $job = $tx->res->json->{job};
@@ -191,8 +191,8 @@ sub create_url_handler ($options) {
     $local_url->path('/api/v1/jobs');
     my $local = OpenQA::Client->new(
         api => $local_url->host,
-        apikey => $options->{'apikey'},
-        apisecret => $options->{'apisecret'});
+        apikey => $options->{apikey},
+        apisecret => $options->{apisecret});
     die "API key/secret for '$options->{host}' missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
       unless $local->apikey && $local->apisecret;
 

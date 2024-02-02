@@ -446,7 +446,7 @@ sub show ($self) {
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $check_assets = !!$self->param('check_assets');
-    my $job = $self->schema->resultset("Jobs")->find($job_id, {prefetch => 'settings'});
+    my $job = $self->schema->resultset('Jobs')->find($job_id, {prefetch => 'settings'});
     return $self->reply->not_found unless $job;
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
     $self->render(json => {job => $job});
@@ -732,7 +732,7 @@ sub upload_state ($self) {
     my $scope = $validation->param('scope') // 'private';
     my $job_id = $self->stash('jobid');
 
-    $file = sprintf("%08d-%s", $job_id, $file) if $scope ne 'public';
+    $file = sprintf('%08d-%s', $job_id, $file) if $scope ne 'public';
 
     if ($state eq 'fail') {
         $self->app->log->debug("FAIL chunk upload of $file");
@@ -741,7 +741,7 @@ sub upload_state ($self) {
                 $_->remove_tree if -d $_ && $_->basename eq $file . '.CHUNKS';
             });
     }
-    $self->render(text => "OK");
+    $self->render(text => 'OK');
 }
 
 =over 4

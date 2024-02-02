@@ -32,7 +32,7 @@ sub check ($self) {
                 if (my $secret = $api_key->secret) {
                     my $sum = hmac_sha1_sum($self->req->url->to_string . $timestamp, $secret);
                     $user = $api_key->user;
-                    log_trace(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+                    log_trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator);
                 }
             }
         }
@@ -71,7 +71,7 @@ sub auth ($self) {
     }
 
     if ($user) {
-        $log->trace(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+        $log->trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator);
         $self->stash(current_user => {user => $user});
         return 1;
     }

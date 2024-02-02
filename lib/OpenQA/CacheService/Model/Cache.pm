@@ -161,7 +161,7 @@ sub track_asset ($self, $asset) {
         my $db = $self->sqlite->db;
         my $tx = $db->begin('exclusive');
         my $sql = "INSERT INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))"
-          . "ON CONFLICT (filename) DO UPDATE SET pending=1";
+          . 'ON CONFLICT (filename) DO UPDATE SET pending=1';
         $db->query($sql, $asset);
         $tx->commit;
     };
@@ -169,7 +169,7 @@ sub track_asset ($self, $asset) {
 }
 
 sub metrics ($self) {
-    return {map { $_->{name} => $_->{value} } $self->sqlite->db->query("SELECT * FROM metrics")->hashes->each};
+    return {map { $_->{name} => $_->{value} } $self->sqlite->db->query('SELECT * FROM metrics')->hashes->each};
 }
 
 sub _exclusive_query ($self, $sql, @args) {

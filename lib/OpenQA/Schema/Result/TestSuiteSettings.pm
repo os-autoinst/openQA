@@ -29,14 +29,14 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(test_suite_id key)]);
 
 __PACKAGE__->belongs_to(
-    "test_suite",
-    "OpenQA::Schema::Result::TestSuites",
-    {'foreign.id' => "self.test_suite_id"},
+    'test_suite',
+    'OpenQA::Schema::Result::TestSuites',
+    {'foreign.id' => 'self.test_suite_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_delete => "CASCADE",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_delete => 'CASCADE',
+        on_update => 'CASCADE',
     },
 );
 

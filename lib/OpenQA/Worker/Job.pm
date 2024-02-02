@@ -402,8 +402,8 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
     my $pooldir = $self->worker->pool_directory;
 
     # add notes
-    log_info("+++ worker notes +++", channels => 'autoinst');
-    log_info(sprintf("End time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+    log_info('+++ worker notes +++', channels => 'autoinst');
+    log_info(sprintf('End time: %s', strftime('%F %T', gmtime)), channels => 'autoinst');
     log_info("Result: $reason", channels => 'autoinst');
 
     # upload logs and assets
@@ -1020,7 +1020,7 @@ sub _upload_asset {
         });
     $ua->upload->once(
         'upload_chunk.prepare' => sub ($upload, $pieces) {
-            log_info("$filename: " . $pieces->size() . " chunks", channels => \@channels_worker_only, default => 1);
+            log_info("$filename: " . $pieces->size() . ' chunks', channels => \@channels_worker_only, default => 1);
             log_info("$filename: chunks of $chunk_size bytes each", channels => \@channels_worker_only, default => 1);
         });
     my $t_start;

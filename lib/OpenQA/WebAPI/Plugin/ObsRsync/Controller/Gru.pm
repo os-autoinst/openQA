@@ -92,8 +92,8 @@ sub run {
 
     # uncoverable branch true
     if ($repo) {
-        $folder_repo = $project . "::" . $repo;    # uncoverable statement
-        $folder_repo = "" unless -d Mojo::File->new($home, $folder_repo);    # uncoverable statement
+        $folder_repo = $project . '::' . $repo;    # uncoverable statement
+        $folder_repo = '' unless -d Mojo::File->new($home, $folder_repo);    # uncoverable statement
         $project = $folder_repo if $folder_repo;    # uncoverable statement
     }
 

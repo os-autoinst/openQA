@@ -13,7 +13,7 @@ sub query_end {
     my ($self, $sql, @params) = @_;
     $sql = "$sql: " . join(', ', @params) if @params;
     my $elapsed = tv_interval($self->{start}, [gettimeofday()]);
-    log_debug(sprintf("[DBIC] Took %.8f seconds: %s", $elapsed, $sql));
+    log_debug(sprintf('[DBIC] Took %.8f seconds: %s', $elapsed, $sql));
 }
 
 # We need to override print because DBIx::Class::Storage::Statistics::print()
@@ -25,7 +25,7 @@ sub print {
     my ($self, $msg) = @_;
     chomp $msg;
 
-    log_debug(sprintf("[DBIC] %s", $msg));
+    log_debug(sprintf('[DBIC] %s', $msg));
 }
 
 sub enable_sql_debugging {

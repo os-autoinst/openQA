@@ -31,7 +31,7 @@ sub generate_settings ($params) {
     }
 
     # Prevent the MACHINE from being overridden by input args when doing isos post
-    if (my $machine = $params->{'machine'}) {
+    if (my $machine = $params->{machine}) {
         $settings->{BACKEND} = $machine->backend;
         $settings->{MACHINE} = $machine->name;
     }

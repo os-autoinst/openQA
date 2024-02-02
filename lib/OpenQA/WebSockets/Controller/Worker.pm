@@ -63,9 +63,9 @@ sub _message {
     # find relevant worker
     my $worker_status = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$tx};
     unless ($worker_status) {
-        $app->log->warn("A message received from unknown worker connection");
+        $app->log->warn('A message received from unknown worker connection');
         log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', dumper($json)));
-        $self->finish("1008", "Connection terminated from WebSocket server - thought dead");
+        $self->finish('1008', 'Connection terminated from WebSocket server - thought dead');
         return undef;
     }
     my $worker_id = $worker_status->{id};
@@ -157,7 +157,7 @@ sub _message {
         my ($last_seen, $now) = ($worker_status->{last_seen}, time);
         if ($last_seen && ($last_seen + MIN_TIMER) > $now) {
             log_info("Received worker $worker_id status too close to the last update,"
-                  . " websocket server possibly overloaded or worker misconfigured")
+                  . ' websocket server possibly overloaded or worker misconfigured')
               if $current_worker_status ne 'working';
         }
         $worker_status->{last_seen} = $now;

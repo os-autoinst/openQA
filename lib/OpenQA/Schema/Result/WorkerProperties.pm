@@ -27,14 +27,14 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
-    "worker",
-    "OpenQA::Schema::Result::Workers",
-    {'foreign.id' => "self.worker_id"},
+    'worker',
+    'OpenQA::Schema::Result::Workers',
+    {'foreign.id' => 'self.worker_id'},
     {
         is_deferrable => 1,
-        join_type => "LEFT",
-        on_delete => "CASCADE",
-        on_update => "CASCADE",
+        join_type => 'LEFT',
+        on_delete => 'CASCADE',
+        on_update => 'CASCADE',
     },
 );
 

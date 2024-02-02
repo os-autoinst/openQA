@@ -78,7 +78,7 @@ sub needle_url ($self, $distri, $name, $version, $jsonfile) {
 sub view ($self) {
     # Redirect users with the old preview link
     if (!$self->req->is_xhr) {
-        my $anchor = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
+        my $anchor = '#step/' . $self->param('moduleid') . '/' . $self->param('stepid');
         my $target_url = $self->url_for('test', testid => $self->param('testid'));
         return $self->redirect_to($target_url . $anchor);
     }
@@ -298,7 +298,7 @@ sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_di
 
     # Transform string-workaround-properties into HASH-workaround-properties
     $needle->{properties}
-      = [map { ref($_) eq "HASH" ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
+      = [map { ref($_) eq 'HASH' ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
 
     return ($needle, undef);
 }

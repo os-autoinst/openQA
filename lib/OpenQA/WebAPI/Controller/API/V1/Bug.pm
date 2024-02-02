@@ -102,7 +102,7 @@ existing bug or not, and the date when the bug was last updated in the system.
 =cut
 
 sub show ($self) {
-    my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
+    my $bug = $self->schema->resultset('Bugs')->find($self->param('id'));
     return $self->reply->not_found unless $bug;
 
     my %json = map { $_ => $bug->get_column($_) }
@@ -130,10 +130,10 @@ sub create ($self) {
 
     my $schema = $self->schema;
     my $bugid = $validation->param('bugid');
-    my $bug = $schema->resultset("Bugs")->find({bugid => $bugid});
+    my $bug = $schema->resultset('Bugs')->find({bugid => $bugid});
     return $self->render(json => {error => 1}) if $bug;
 
-    $bug = $schema->resultset("Bugs")->create({bugid => $bugid, %{$self->get_bug_values}});
+    $bug = $schema->resultset('Bugs')->create({bugid => $bugid, %{$self->get_bug_values}});
     $self->emit_event('openqa_bug_create', {id => $bug->id, bugid => $bug->bugid, fromapi => 1});
     $self->render(json => {id => $bug->id});
 }
@@ -150,7 +150,7 @@ the id of the bug, or an error if the bug id is not found in the system.
 =cut
 
 sub update ($self) {
-    my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
+    my $bug = $self->schema->resultset('Bugs')->find($self->param('id'));
     return $self->reply->not_found unless $bug;
 
     my $validation = $self->validation;
@@ -173,7 +173,7 @@ Removes a bug from the system given its bug id. Return 1 on success or not found
 =cut
 
 sub destroy ($self) {
-    my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
+    my $bug = $self->schema->resultset('Bugs')->find($self->param('id'));
     return $self->reply->not_found unless $bug;
 
     $self->emit_event('openqa_bug_delete', {id => $bug->id, bugid => $bug->bugid});

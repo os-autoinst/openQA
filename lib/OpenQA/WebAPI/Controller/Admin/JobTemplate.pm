@@ -20,9 +20,9 @@ sub index {
         force_yaml_editor => $force_yaml_editor,
     );
 
-    my @machines = $schema->resultset("Machines")->search(undef, {order_by => 'name'});
+    my @machines = $schema->resultset('Machines')->search(undef, {order_by => 'name'});
     $self->stash(machines => \@machines);
-    my @tests = $schema->resultset("TestSuites")->search(undef, {order_by => 'name'});
+    my @tests = $schema->resultset('TestSuites')->search(undef, {order_by => 'name'});
     $self->stash(tests => \@tests);
 
     $self->render('admin/job_template/index');

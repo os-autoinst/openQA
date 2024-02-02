@@ -83,7 +83,7 @@ sub needle_json_by_id ($self) {
 }
 
 sub _set_test ($self) {
-    $self->{job} = $self->schema->resultset("Jobs")->find({'me.id' => $self->param('testid')});
+    $self->{job} = $self->schema->resultset('Jobs')->find({'me.id' => $self->param('testid')});
     return unless $self->{job};
 
     $self->{testdirname} = $self->{job}->result_dir;
@@ -161,7 +161,7 @@ sub _serve_static ($self, $asset) {
             $headers->content_disposition("attachment; filename=$filename;") if $ext eq 'iso';
         }
         else {
-            $self->res->headers->content_type("application/octet-stream");
+            $self->res->headers->content_type('application/octet-stream');
         }
     }
 
@@ -173,7 +173,7 @@ sub _serve_static ($self, $asset) {
 sub test_thumbnail ($self) {
     return $self->reply->not_found unless $self->_set_test;
 
-    my $asset = $self->static->file(".thumbs/" . $self->param('filename'));
+    my $asset = $self->static->file('.thumbs/' . $self->param('filename'));
     return $self->_serve_static($asset);
 }
 

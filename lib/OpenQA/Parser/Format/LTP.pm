@@ -17,7 +17,7 @@ sub _add_single_result { shift->results->add(OpenQA::Parser::Result::LTP::Test->
 # Parser
 sub parse {
     my ($self, $json) = @_;
-    confess "No JSON given/loaded" unless $json;
+    confess 'No JSON given/loaded' unless $json;
     my $decoded_json = Mojo::JSON::from_json($json);
 
     # may be optional since format result_array:v2

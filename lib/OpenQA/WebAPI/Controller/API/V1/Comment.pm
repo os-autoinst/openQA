@@ -170,7 +170,7 @@ sub update ($self) {
     my $comment_id = $self->param('comment_id');
     my $comment = $comments->find($self->param('comment_id'));
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
-    return $self->render(json => {error => "Forbidden (must be author)"}, status => 403)
+    return $self->render(json => {error => 'Forbidden (must be author)'}, status => 403)
       unless ($comment->user_id == $self->current_user->id);
     my $txn_guard = $self->schema->txn_scope_guard;
     my $res = $comment->update({text => href_to_bugref($text)});

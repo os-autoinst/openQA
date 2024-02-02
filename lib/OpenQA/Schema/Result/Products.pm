@@ -52,9 +52,9 @@ sub name {
 # used in the job groups display
 sub mediagroup {
     my ($self) = @_;
-    my $mediagroup = $self->distri . "-";
+    my $mediagroup = $self->distri . '-';
     if ($self->version ne '*') {
-        $mediagroup .= $self->version . "-";
+        $mediagroup .= $self->version . '-';
     }
     $mediagroup . $self->flavor;
 }

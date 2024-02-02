@@ -348,7 +348,7 @@ sub details ($self) {
     my %tplargs = (moduleid => '$MODULE$', stepid => '$STEP$');
     my $snips = {
         header => $self->render_to_string('test/details'),
-        bug_actions => $self->include_branding("external_reporting", %tplargs),
+        bug_actions => $self->include_branding('external_reporting', %tplargs),
         src_url => $self->url_for('src_step', testid => $job->id, moduleid => '$MODULE$', stepid => 1),
         module_url => $self->url_for('step', testid => $job->id, %tplargs),
         md5thumb_url => $self->url_for('thumb_image', md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
@@ -480,7 +480,7 @@ sub infopanel {
 sub _get_current_job ($self, $with_assets = 0) {
     return $self->reply->not_found unless defined $self->param('testid');
 
-    my $job = $self->schema->resultset("Jobs")
+    my $job = $self->schema->resultset('Jobs')
       ->find($self->param('testid'), {$with_assets ? (prefetch => qw(jobs_assets)) : ()});
     return $job;
 }
@@ -854,7 +854,7 @@ sub _get_latest_job ($self) {
         next unless defined $self->param($key);
         $search_args{$key} = $self->param($key);
     }
-    return $self->schema->resultset("Jobs")->complex_query(%search_args)->first;
+    return $self->schema->resultset('Jobs')->complex_query(%search_args)->first;
 }
 
 sub latest ($self) {
@@ -870,7 +870,7 @@ sub module_fails {
     my ($self) = @_;
 
     return $self->reply->not_found unless defined $self->param('testid') and defined $self->param('moduleid');
-    my $module = $self->app->schema->resultset("JobModules")->search(
+    my $module = $self->app->schema->resultset('JobModules')->search(
         {
             job_id => $self->param('testid'),
             name => $self->param('moduleid'),

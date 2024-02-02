@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my ($self) = @_;
-    my @users = $self->schema->resultset("Users")->search(undef)->all;
+    my @users = $self->schema->resultset('Users')->search(undef)->all;
 
     $self->stash('users', \@users);
     $self->render('admin/user/index');

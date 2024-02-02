@@ -97,8 +97,8 @@ sub setup ($self) {
     # initial schedule
     Mojo::IOLoop->next_tick(
         sub {
-            log_debug("Scheduler default interval(ms): " . SCHEDULE_TICK_MS);
-            log_debug("Max job allocation: " . OpenQA::Scheduler::Model::Jobs::MAX_JOB_ALLOCATION());
+            log_debug('Scheduler default interval(ms): ' . SCHEDULE_TICK_MS);
+            log_debug('Max job allocation: ' . OpenQA::Scheduler::Model::Jobs::MAX_JOB_ALLOCATION());
             OpenQA::Scheduler::Model::Jobs->singleton->schedule;
             _reschedule();
         });

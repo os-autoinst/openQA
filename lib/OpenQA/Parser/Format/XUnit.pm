@@ -13,7 +13,7 @@ sub addproperty { shift->{properties}->add(OpenQA::Parser::Result::XUnit::Proper
 
 sub parse {
     my ($self, $xml) = @_;
-    confess "No XML given/loaded" unless $xml;
+    confess 'No XML given/loaded' unless $xml;
     my $dom = Mojo::DOM->new->xml(1)->parse($xml);
 
     my @tests;
@@ -73,12 +73,12 @@ sub parse {
                 my $text_fn = "$ts_category-$ts_name-$num";
                 $text_fn =~ s/[\/.]/_/g;
                 $text_fn .= '.txt';
-                my $content = "# Test messages ";
+                my $content = '# Test messages ';
                 $content .= "# $tc->{name}\n" if $tc->{name};
 
                 for my $out ($tc->children('skipped, passed, error, failure')->each) {
                     $tc_result = 'fail' if ($out->tag =~ m/failure|error/);
-                    $content .= "# " . $out->tag . ": \n\n";
+                    $content .= '# ' . $out->tag . ": \n\n";
                     $content .= $out->{message} . "\n" if $out->{message};
                     $content .= $out->text . "\n";
                 }

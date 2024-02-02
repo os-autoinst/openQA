@@ -24,7 +24,7 @@ sub auth_login ($self) {
     };
 
     my $user = $self->req->param('user') || 'Demo';
-    my $userinfo = $users{$user} || die "No such user";
+    my $userinfo = $users{$user} || die 'No such user';
     $userinfo->{username} = $user;
 
     $user = $self->schema->resultset('Users')->create_user(

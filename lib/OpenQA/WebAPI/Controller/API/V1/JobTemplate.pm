@@ -52,7 +52,7 @@ sub list {
     my @templates;
     eval {
         if (my $id = $self->param('job_template_id')) {
-            @templates = $schema->resultset("JobTemplates")->search({id => $id});
+            @templates = $schema->resultset('JobTemplates')->search({id => $id});
         }
         else {
             my %cond;
@@ -65,7 +65,7 @@ sub list {
                 if (my $value = $self->param($id)) { $cond{$id} = $value }
             }
             my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
-            @templates = $schema->resultset("JobTemplates")->search(\%cond, \%attrs);
+            @templates = $schema->resultset('JobTemplates')->search(\%cond, \%attrs);
         }
     };
 
@@ -123,7 +123,7 @@ sub _get_job_groups {
     my ($self, $id, $name) = @_;
 
     my %yaml;
-    my $groups = $self->schema->resultset("JobGroups")->search(
+    my $groups = $self->schema->resultset('JobGroups')->search(
         $id ? {id => $id} : ($name ? {name => $name} : undef),
         {select => [qw(id name parent_id default_priority template)]});
     while (my $group = $groups->next) {
@@ -356,7 +356,7 @@ sub create {
 
     my $schema = $self->schema;
     my $group_id = $self->param('group_id');
-    my $group = $schema->resultset("JobGroups")->find({id => $group_id});
+    my $group = $schema->resultset('JobGroups')->find({id => $group_id});
 
     if ($group && $group->template) {
         # An existing group with a YAML template must not be updated manually
@@ -374,7 +374,7 @@ sub create {
             machine_id => $validation->param('machine_id'),
             group_id => $group_id,
             test_suite_id => $validation->param('test_suite_id')};
-        eval { push @ids, $schema->resultset("JobTemplates")->create($values)->id };
+        eval { push @ids, $schema->resultset('JobTemplates')->create($values)->id };
         $error = $@;
     }
     elsif ($validation->param('prio_only')) {
@@ -384,7 +384,7 @@ sub create {
         return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
         eval {
-            my $job_templates = $schema->resultset("JobTemplates")->search(
+            my $job_templates = $schema->resultset('JobTemplates')->search(
                 {
                     group_id => $group_id,
                     test_suite_id => $validation->param('test_suite_id'),
@@ -410,7 +410,7 @@ sub create {
             machine => {name => $validation->param('machine_name')},
             prio => $prio,
             test_suite => {name => $validation->param('test_suite_name')}};
-        eval { push @ids, $schema->resultset("JobTemplates")->create($values)->id };
+        eval { push @ids, $schema->resultset('JobTemplates')->create($values)->id };
         $error = $@;
     }
 

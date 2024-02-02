@@ -61,7 +61,7 @@ sub _allocate_jobs ($self, $free_workers) {
         my @rejected = sort { $rejected{$b} <=> $rejected{$a} || $a cmp $b } keys %rejected;
         splice @rejected, MAX_REPORT_MISSING_WORKER_CLASSES;
         my $stats = join ',', map { "$_:$rejected{$_}" } @rejected;
-        my $info = sprintf "Skipping %d jobs because of no free workers for requested worker classes (%s)",
+        my $info = sprintf 'Skipping %d jobs because of no free workers for requested worker classes (%s)',
           sum(values %rejected), $stats;
         log_debug($info);
     }
@@ -133,7 +133,7 @@ sub _allocate_jobs ($self, $free_workers) {
         my $busy = keys %$allocated_workers;
         if ($busy >= $max_allocate || $busy >= @$free_workers) {
             my $free_worker_count = @$free_workers;
-            log_debug("limit reached, scheduling no additional jobs"
+            log_debug('limit reached, scheduling no additional jobs'
                   . " (max_running_jobs=$limit, free workers=$free_worker_count, running=$running, allocated=$busy)");
             last;
         }
@@ -175,7 +175,7 @@ sub schedule ($self) {
         };
         next unless $worker;
         if ($worker->unfinished_jobs->count) {
-            log_debug "Worker already got jobs, skipping";
+            log_debug 'Worker already got jobs, skipping';
             next;
         }
 
@@ -268,7 +268,7 @@ sub schedule ($self) {
                     });
                 $res = $jobs[0]->ws_send($worker);
             }
-            die "Failed contacting websocket server over HTTP" unless ref($res) eq "HASH" && exists $res->{state};
+            die 'Failed contacting websocket server over HTTP' unless ref($res) eq 'HASH' && exists $res->{state};
         }
         catch {
             log_warning "Failed to send data to websocket server, reason: $_";
@@ -305,10 +305,10 @@ sub schedule ($self) {
         }
     }
 
-    my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
+    my $elapsed_rounded = sprintf('%.5f', (time - $start_time));
     log_debug "Scheduler took ${elapsed_rounded}s to perform operations and allocated "
-      . scalar(@successfully_allocated) . " jobs";
-    log_debug "Allocated: " . pp($_) for @successfully_allocated;
+      . scalar(@successfully_allocated) . ' jobs';
+    log_debug 'Allocated: ' . pp($_) for @successfully_allocated;
     $self->emit('conclude');
 
     return (\@successfully_allocated);
@@ -439,7 +439,7 @@ sub _update_scheduled_jobs ($self) {
     }
     # fetch worker classes
     my $settings
-      = $schema->resultset("JobSettings")->search({key => 'WORKER_CLASS', job_id => {-in => \@missing_worker_class}});
+      = $schema->resultset('JobSettings')->search({key => 'WORKER_CLASS', job_id => {-in => \@missing_worker_class}});
     while (my $line = $settings->next) {
         push(@{$scheduled_jobs->{$line->job_id}->{worker_classes}}, $line->value);
     }

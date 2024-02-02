@@ -188,7 +188,7 @@ sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
         $logfile = catfile($logdir, $logfile) if $logfile && $logdir;
         # So each worker from each host get its own log (as the folder can be shared).
         # Hopefully the machine hostname is already sanitized. Otherwise we need to check
-        $logfile //= catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
+        $logfile //= catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . '.log');
         $log = Mojo::Log->new(%settings, handle => path($logfile)->open('>>'));
         $log->format(\&log_format_callback);
     }

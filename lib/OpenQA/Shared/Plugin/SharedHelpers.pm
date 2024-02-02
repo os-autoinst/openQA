@@ -50,7 +50,7 @@ sub _current_user ($c) {
     my $current_user = $c->stash('current_user');
     unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
         my $id = $c->session->{user};
-        my $user = $id ? $c->schema->resultset("Users")->find({username => $id}) : undef;
+        my $user = $id ? $c->schema->resultset('Users')->find({username => $id}) : undef;
         $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
     }
 

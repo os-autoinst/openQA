@@ -68,7 +68,7 @@ my %TABLES = (
         keys => [['id'], ['distri', 'version', 'arch', 'flavor'],],
         cols => ['id', 'distri', 'version', 'arch', 'flavor', 'description'],
         required => ['distri', 'version', 'arch', 'flavor'],
-        defaults => {description => "", name => ""},
+        defaults => {description => '', name => ''},
         ref_name => 'product'
     },
 );
@@ -170,7 +170,7 @@ OpenQA::WebAPI::Controller::API::V1::Table package documentation.
 
 sub create {
     my ($self) = @_;
-    my $table = $self->param("table");
+    my $table = $self->param('table');
     my %entry = %{$TABLES{$table}->{defaults}};
 
     my ($error_message, $settings, $keys) = $self->_prepare_settings($table, \%entry);
@@ -224,13 +224,13 @@ sub _verify_table_usage {
       ? 'Group'
       . (scalar(keys %groups) > 1 ? 's' : '') . ' '
       . join(', ', sort keys(%groups))
-      . " must be updated through the YAML template"
+      . ' must be updated through the YAML template'
       : undef;
 }
 
 sub update {
     my ($self) = @_;
-    my $table = $self->param("table");
+    my $table = $self->param('table');
 
     my $entry = {};
     my ($error_message, $settings, $keys) = $self->_prepare_settings($table, $entry);
@@ -303,7 +303,7 @@ with the number of deleted tables on success.
 sub destroy {
     my ($self) = @_;
 
-    my $table = $self->param("table");
+    my $table = $self->param('table');
     my $schema = $self->schema;
     my $machines = $schema->resultset('Machines');
     my $ret;
@@ -362,7 +362,7 @@ sub _prepare_settings {
     }
 
     if ($validation->has_error) {
-        return "Missing parameter: " . join(', ', @{$validation->failed});
+        return 'Missing parameter: ' . join(', ', @{$validation->failed});
     }
 
     $entry->{description} = $self->param('description');
