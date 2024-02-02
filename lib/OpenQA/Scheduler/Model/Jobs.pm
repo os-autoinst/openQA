@@ -101,21 +101,7 @@ sub _allocate_jobs ($self, $free_workers) {
                 my $prio = $j->{priority};    # we only consider the priority of the main job
                 for my $worker (keys %taken) {
                     my $ji = $taken{$worker};
-                    if ($prio > 0) {
-                        # this means we will by default increase the offset per half-assigned job,
-                        # so if we miss 1/25 jobs, we'll bump by +24
-                        log_debug "Discarding job $ji->{id} (with priority $prio) due to incomplete parallel cluster"
-                          . ', reducing priority by '
-                          . STARVATION_PROTECTION_PRIORITY_OFFSET;
-                        $j->{priority_offset} += STARVATION_PROTECTION_PRIORITY_OFFSET;
-                    }
-                    else {
-                        # don't "take" the worker, but make sure it's not
-                        # used for another job and stays around
-                        log_debug "Holding worker $worker for job $ji->{id} to avoid starvation";
-                        $allocated_workers->{$worker} = $ji->{id};
-                    }
-
+                    _allocate_worker_with_priority($prio, $ji, $j, $allocated_workers, $worker);
                 }
                 %taken = ();
                 last;
@@ -141,6 +127,22 @@ sub _allocate_jobs ($self, $free_workers) {
     return ($allocated_workers, $allocated_jobs);
 }
 
+sub _allocate_worker_with_priority ($prio, $ji, $j, $allocated_workers, $worker) {
+    if ($prio > 0) {
+        # this means we will by default increase the offset per half-assigned job,
+        # so if we miss 1/25 jobs, we'll bump by +24
+        log_debug "Discarding job $ji->{id} (with priority $prio) due to incomplete parallel cluster"
+          . ', reducing priority by '
+          . STARVATION_PROTECTION_PRIORITY_OFFSET;
+        $j->{priority_offset} += STARVATION_PROTECTION_PRIORITY_OFFSET;
+    }
+    else {
+        # don't "take" the worker, but make sure it's not
+        # used for another job and stays around
+        log_debug "Holding worker $worker for job $ji->{id} to avoid starvation";
+        $allocated_workers->{$worker} = $ji->{id};
+    }
+}
 
 sub schedule ($self) {
     my $start_time = time;
