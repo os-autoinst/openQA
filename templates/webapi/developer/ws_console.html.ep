@@ -10,7 +10,7 @@
 %= include 'layouts/info'
 
 <h2>WebSocket console for job <%= $job->name %></h2>
-<form id="ws_console_form" data-url="<%= $ws_url %>" data-using-proxy="<%= $use_proxy ? 'true' : 'false' %>" action="#">
+<form id="ws_console_form" data-url="<%= $ws_url %>" data-using-proxy="<%= $use_proxy ? 'true' : 'false' %>" data-service-port-delta="<%= $service_port_delta %>" action="#">
 % if ($ws_url) {
     <p>
         % if ($use_proxy) {

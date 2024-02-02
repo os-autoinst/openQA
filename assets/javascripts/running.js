@@ -445,6 +445,7 @@ var developerMode = {
   // state of the page elements and the web socket connection to web UI
   develWsUrl: undefined, // URL for developer session web socket connection
   statusOnlyWsUrl: undefined, // URL for status-only web socket connection
+  servicePortDelta: undefined, // delta from web UI port on which to directly connect to livehandler
   wsConnection: undefined, // current WebSocket object
   hasWsError: false, // whether an web socket error occurred (cleared when we finally receive a message from os-autoinst)
   useDeveloperWsRoute: undefined, // whether the developer web socket route is used
@@ -544,6 +545,7 @@ function setupDeveloperPanel() {
   // find URLs for web socket connections
   developerMode.develWsUrl = panel.data('developer-url');
   developerMode.statusOnlyWsUrl = panel.data('status-only-url');
+  developerMode.servicePortDelta = panel.data('service-port-delta');
 
   // setup toggle for body
   var panelHeader = panel.find('.card-header');
@@ -973,7 +975,7 @@ function setupWebsocketConnection() {
     developerMode.useDeveloperWsRoute = false;
     url = developerMode.statusOnlyWsUrl;
   }
-  url = makeWsUrlAbsolute(url);
+  url = makeWsUrlAbsolute(url, developerMode.servicePortDelta);
 
   // establish ws connection
   console.log('Establishing ws connection to ' + url);

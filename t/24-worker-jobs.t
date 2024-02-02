@@ -91,6 +91,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     package Test::FakeClient;
     use Mojo::Base -base;
     has worker_id => 1;
+    has service_port_delta => 2;
     has webui_host => 'not relevant here';
     has working_directory => 'not relevant here';
     has testpool_server => 'not relevant here';
