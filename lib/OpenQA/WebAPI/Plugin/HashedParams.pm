@@ -3,8 +3,6 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 our $VERSION = '0.04';
 
-## no critic
-
 sub register {
     my ($plugin, $app) = @_;
 
