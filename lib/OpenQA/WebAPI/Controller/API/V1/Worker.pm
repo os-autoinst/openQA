@@ -96,7 +96,7 @@ sub _register {
 
     # update or create database entry for worker
     if ($worker) {
-        $worker->update({t_seen => now()});
+        $worker->update({t_seen => now(), error => undef});
     }
     else {
         $worker = $workers->create(
