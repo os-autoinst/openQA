@@ -40,7 +40,6 @@ sub _build_parser {
         if (my $e = load_class $parser_name) {
             croak ref $e ? "Exception: $e" : 'Parser not found!';
         }
-        no strict 'refs';
         eval { $p_instance = $parser_name->new(@args); };
         croak "Invalid parser supplied: $@" if $@;
     }
@@ -136,7 +135,6 @@ sub restore_el {
     my $data = $obj->{OpenQA::Parser::DATA_FIELD()};
 
     {
-        no strict 'refs';
         return $type->can('new') ? $type->new(ref $data eq 'ARRAY' ? @{$data} : $data) : $data;
     };
 }
@@ -168,7 +166,6 @@ sub _load_tree {
     my @coll = sort keys %{$tree};
 
     {
-        no strict 'refs';
         local $@;
         eval {
             foreach my $collection (@coll) {
