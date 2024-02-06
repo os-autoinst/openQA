@@ -155,17 +155,7 @@ sub create_from_settings {
         for my $id (@$ids) {
             if ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
                 my $parent_worker_class = $job_settings->find({job_id => $id, key => 'WORKER_CLASS'});
-                if ($parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '') {
-                    if (!$settings{WORKER_CLASS}) {
-                        # assume we want to use the worker class from the parent here (and not the default which
-                        # is otherwise assumed)
-                        $settings{WORKER_CLASS} = $parent_worker_class;
-                    }
-                    elsif ($settings{WORKER_CLASS} ne $parent_worker_class) {
-                        die "Specified WORKER_CLASS ($settings{WORKER_CLASS}) does not match the one from"
-                          . " directly chained parent $id ($parent_worker_class)";
-                    }
-                }
+                _handle_directly_chained_dep($parent_worker_class, $id, \%settings);
             }
             push(@{$new_job_args{parents}}, {parent_job_id => $id, dependency => $dependency_type});
         }
@@ -201,6 +191,20 @@ sub create_from_settings {
     $job->calculate_blocked_by;
     $txn_guard->commit;
     return $job;
+}
+
+sub _handle_directly_chained_dep ($parent_worker_class, $id, $settings) {
+    if ($parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '') {
+        if (!$settings->{WORKER_CLASS}) {
+            # assume we want to use the worker class from the parent here (and not the default which
+            # is otherwise assumed)
+            $settings->{WORKER_CLASS} = $parent_worker_class;
+        }
+        elsif ($settings->{WORKER_CLASS} ne $parent_worker_class) {
+            die "Specified WORKER_CLASS ($settings->{WORKER_CLASS}) does not match the one from"
+              . " directly chained parent $id ($parent_worker_class)";
+        }
+    }
 }
 
 sub _search_modules ($self, $module_re) {

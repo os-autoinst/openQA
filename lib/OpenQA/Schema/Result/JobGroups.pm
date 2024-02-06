@@ -338,26 +338,30 @@ sub to_template {
 
         foreach my $product (sort keys %{$group{scenarios}->{$arch}}) {
             my @scenarios;
-            foreach my $test_suite (@{$group{scenarios}->{$arch}->{$product}}) {
-                foreach my $name (sort keys %$test_suite) {
-                    my $attr = $test_suite->{$name};
-                    if ($attr->{machine} eq $default_machine) {
-                        delete $attr->{machine} if $test_suites{$arch}{$name} == 1;
-                    }
-                    if (keys %$attr) {
-                        $test_suite->{$name} = $attr;
-                        push @scenarios, $test_suite;
-                    }
-                    else {
-                        push @scenarios, $name;
-                    }
-                }
-            }
-            $group{scenarios}{$arch}{$product} = \@scenarios;
+            _remove_test_suite_defaults($product, $default_machine, $arch, \%group, \%test_suites, \@scenarios);
         }
     }
 
     return \%group;
+}
+
+sub _remove_test_suite_defaults ($product, $default_machine, $arch, $group, $test_suites, $scenarios) {
+    foreach my $test_suite (@{$group->{scenarios}->{$arch}->{$product}}) {
+        foreach my $name (sort keys %$test_suite) {
+            my $attr = $test_suite->{$name};
+            if ($attr->{machine} eq $default_machine) {
+                delete $attr->{machine} if $test_suites->{$arch}{$name} == 1;
+            }
+            if (keys %$attr) {
+                $test_suite->{$name} = $attr;
+                push @$scenarios, $test_suite;
+            }
+            else {
+                push @$scenarios, $name;
+            }
+        }
+    }
+    $group->{scenarios}{$arch}{$product} = $scenarios;
 }
 
 sub to_yaml {
@@ -382,68 +386,91 @@ sub template_data_from_yaml {
     foreach my $arch (sort keys %$yaml_archs) {
         my $yaml_products_for_arch = $yaml_archs->{$arch};
         my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
-        foreach my $product_name (sort keys %$yaml_products_for_arch) {
-            foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
-                # Get testsuite, machine, prio and job template settings from YAML data
-                my $testsuite_name;
-                my $job_template_name;
-                # Assign defaults
-                my $prio = $yaml_defaults_for_arch->{priority};
-                my $machine_names = $yaml_defaults_for_arch->{machine};
-                my $settings = dclone($yaml_defaults_for_arch->{settings} // {});
-                my $description = '';
-                if (ref $spec eq 'HASH') {
-                    # We only have one key. Asserted by schema
-                    $testsuite_name = (keys %$spec)[0];
-                    my $attr = $spec->{$testsuite_name};
-                    if ($attr->{priority}) {
-                        $prio = $attr->{priority};
-                    }
-                    if ($attr->{machine}) {
-                        $machine_names = $attr->{machine};
-                    }
-                    if (exists $attr->{testsuite}) {
-                        $job_template_name = $testsuite_name;
-                        $testsuite_name = $attr->{testsuite};
-                    }
-                    if ($attr->{settings}) {
-                        %$settings = (%{$settings // {}}, %{$attr->{settings}});
-                    }
-                    if (defined $attr->{description}) {
-                        $description = $attr->{description};
-                    }
-                }
-                else {
-                    $testsuite_name = $spec;
-                }
-
-                $machine_names = [$machine_names] if ref($machine_names) ne 'ARRAY';
-                foreach my $machine_name (@{$machine_names}) {
-                    my $job_template_key
-                      = $arch . $product_name . $machine_name . ($testsuite_name // '') . ($job_template_name // '');
-                    if ($job_template_names{$job_template_key}) {
-                        my $name = $job_template_name // $testsuite_name;
-                        my $error = "Job template name '$name' is defined more than once. "
-                          . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.";
-                        return {error => $error};
-                    }
-                    $job_template_names{$job_template_key} = {
-                        prio => $prio,
-                        machine_name => $machine_name,
-                        arch => $arch,
-                        product_name => $product_name,
-                        product_spec => $yaml_products->{$product_name},
-                        job_template_name => $job_template_name,
-                        testsuite_name => $testsuite_name,
-                        settings => $settings,
-                        length $description ? (description => $description) : (),
-                    };
-                }
-            }
-        }
+        my $ret = _parse_job_template_products($yaml_products_for_arch, $yaml_defaults_for_arch, $arch, $yaml_products,
+            $yaml_defaults, \%job_template_names);
+        return $ret if defined $ret;
     }
 
     return \%job_template_names;
+}
+
+sub _parse_job_template_products ($yaml_products_for_arch, $yaml_defaults_for_arch, $arch, $yaml_products,
+    $yaml_defaults, $job_template_names)
+{
+    foreach my $product_name (sort keys %$yaml_products_for_arch) {
+        foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
+            # Get testsuite, machine, prio and job template settings from YAML data
+            my $testsuite_name;
+            my $job_template_name;
+            # Assign defaults
+            my $prio = $yaml_defaults_for_arch->{priority};
+            my $machine_names = $yaml_defaults_for_arch->{machine};
+            my $settings = dclone($yaml_defaults_for_arch->{settings} // {});
+            my $description = '';
+            if (ref $spec eq 'HASH') {
+                # We only have one key. Asserted by schema
+                $testsuite_name = (keys %$spec)[0];
+                my $attr = $spec->{$testsuite_name};
+                if ($attr->{priority}) {
+                    $prio = $attr->{priority};
+                }
+                if ($attr->{machine}) {
+                    $machine_names = $attr->{machine};
+                }
+                if (exists $attr->{testsuite}) {
+                    $job_template_name = $testsuite_name;
+                    $testsuite_name = $attr->{testsuite};
+                }
+                if ($attr->{settings}) {
+                    %$settings = (%{$settings // {}}, %{$attr->{settings}});
+                }
+                if (defined $attr->{description}) {
+                    $description = $attr->{description};
+                }
+            }
+            else {
+                $testsuite_name = $spec;
+            }
+
+            $machine_names = [$machine_names] if ref($machine_names) ne 'ARRAY';
+            my $ret = _parse_job_template_machines(
+                $machine_names, $job_template_names, $prio, $arch, $product_name,
+                $yaml_products, $job_template_name, $testsuite_name, $settings, $description
+            );
+            return $ret if defined $ret;
+        }
+    }
+    return undef;
+}
+
+sub _parse_job_template_machines (
+    $machine_names, $job_template_names, $prio, $arch, $product_name,
+    $yaml_products, $job_template_name, $testsuite_name, $settings, $description
+  )
+{
+
+    foreach my $machine_name (@{$machine_names}) {
+        my $job_template_key
+          = $arch . $product_name . $machine_name . ($testsuite_name // '') . ($job_template_name // '');
+        if ($job_template_names->{$job_template_key}) {
+            my $name = $job_template_name // $testsuite_name;
+            my $error = "Job template name '$name' is defined more than once. "
+              . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.";
+            return {error => $error};
+        }
+        $job_template_names->{$job_template_key} = {
+            prio => $prio,
+            machine_name => $machine_name,
+            arch => $arch,
+            product_name => $product_name,
+            product_spec => $yaml_products->{$product_name},
+            job_template_name => $job_template_name,
+            testsuite_name => $testsuite_name,
+            settings => $settings,
+            length $description ? (description => $description) : (),
+        };
+    }
+    return undef;
 }
 
 sub expand_yaml {
