@@ -12,8 +12,8 @@ targets:
   spec:     [ assetpack, build, client, common, cover, devel, devel_no_selenium, main, test, worker ]
   cpanfile-targets:
     # target: cpanfile target type (default main)
-    devel: devel
-    devel_no_selenium: devel
+    devel: develop
+    devel_no_selenium: develop
     cover: cover
     test: test
 

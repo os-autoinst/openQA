@@ -115,7 +115,7 @@ on 'test' => sub {
 
 };
 
-on 'devel' => sub {
+on 'develop' => sub {
     requires 'Perl::Tidy', '== 20230912.0.0';
 
 };

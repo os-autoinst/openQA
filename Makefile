@@ -354,7 +354,7 @@ test-helm-install:
 
 .PHONY: update-deps
 update-deps:
-	tools/update-deps --specfile dist/rpm/openQA.spec
+	tools/update-deps --cpanfile cpanfile --specfile dist/rpm/openQA.spec
 
 .PHONY: generate-docs
 generate-docs:
