@@ -477,13 +477,17 @@ sub run () {
 
 By default, any worker can get any job with the matching architecture.
 
-This behavior can be changed by setting job variable `WORKER_CLASS`. Jobs with
-this variable set (typically via machines or test suites configuration) are
-assigned only to workers, which have the same variable in the configuration
-file.
+This behavior can be changed by setting the job variable `WORKER_CLASS` taking
+a comma-separated list of worker class values. The values are combined from
+multiple places where defined. Typically machines and test suite
+configurations set the worker class. Jobs with this variable set are assigned
+only to workers, which have all corresponding worker class values in their
+configuration (and-combination).
 
 For example, the following configuration ensures, that jobs with
 `WORKER_CLASS=desktop` can be assigned _only_ to worker instances 1 and 2.
+Jobs with `WORKER_CLASS=desktop,foo` can only be assigned to worker instance 2
+which has both the values `desktop` _and_ `foo`:
 
 [caption="File: "]
 .workers.ini
@@ -493,10 +497,22 @@ For example, the following configuration ensures, that jobs with
 WORKER_CLASS = desktop
 
 [2]
-WORKER_CLASS = desktop
+WORKER_CLASS = desktop,foo,bar
 
 [3]
 # WORKER_CLASS is not set
+--------------------------------------------------------------------------------
+
+Worker class values can also be set to additionally qualify workers or worker
+instances for informational purposes, for example region and location tags
+based on company conventions:
+
+[caption="File: "]
+.workers.ini
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+WORKER_CLASS = planet-earth,continent-antarctica,location-my_station
 --------------------------------------------------------------------------------
 
 
