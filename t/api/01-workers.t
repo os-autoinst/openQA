@@ -83,10 +83,8 @@ $_->{websocket} = 0 for @workers;
 $t->get_ok('/api/v1/workers')->json_is('' => {workers => \@workers}, "workers present with deprecated websocket flag");
 diag explain $t->tx->res->json unless $t->success;
 
-my %registration_params = (
-    host => 'localhost',
-    instance => 1,
-);
+my %worker_key = (host => 'localhost', instance => 1);
+my %registration_params = %worker_key;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'worker with missing parameters refused')
   ->json_is('/error' => 'Erroneous parameters (cpu_arch missing, mem_max missing, worker_class missing)');
 
@@ -101,10 +99,12 @@ $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'w
 $registration_params{worker_class} = 'bar';
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(426, 'worker informed to upgrade');
 
+$workers->find(\%worker_key)->update({error => 'cache not available'});
 $registration_params{websocket_api_version} = WEBSOCKET_API_VERSION;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register existing worker with token')
   ->json_is('/id' => 1, 'worker id is 1');
 diag explain $t->tx->res->json unless $t->success;
+is $workers->find(\%worker_key)->error, undef, 'possibly still present error from previous connection cleaned';
 
 $registration_params{instance} = 42;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
