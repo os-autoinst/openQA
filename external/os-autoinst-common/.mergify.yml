@@ -7,6 +7,9 @@ pull_request_rules:
       - "#review-requested=0"
       - -label~=^acceptance-tests-needed|not-ready
       - base=master
+      - "#check-failure=0"
+      - "#check-pending=0"
+      - linear-history
     actions:
       merge:
         method: merge
