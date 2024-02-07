@@ -14,20 +14,22 @@ our $VERSION = '0.0.1';
 
 sub default_severity { return $SEVERITY_HIGH }
 sub default_themes { return qw(openqa) }
+# we only want the check quoted expressions
 sub applies_to { return qw(PPI::Token::Quote::Single PPI::Token::Quote::Double) }
 
 # check that hashes are not overly using quotes
 # (os-autoinst coding style)
 sub violates ($self, $elem, $document) {
-    #we only want the check hash keys
-    return if !is_hash_key($elem);
+    # skip anything that's not a hash key
+    return () unless is_hash_key($elem);
 
-    my $c = $elem->content;
-    # special characters
-    return if $c =~ m/[- \/<>.=_:\\\$\|]/;
+    my $k = $elem->literal;
+    # skip anything that has a special symbol in the content
+    return () unless $k =~ m/^\w+$/;
 
+    # report violation
     my $desc = q{Hash key with quotes};
-    my $expl = q{Avoid useless quotes};
+    my $expl = qq{Avoid useless quotes for key "$k"};
     return $self->violation($desc, $expl, $elem);
 }
 

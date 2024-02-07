@@ -1,18 +1,14 @@
 ---
 name: 'Perl static checks'
 
-on:
-  pull_request:
-  push:
-    branches:
-      - 'master'
+on: [push, pull_request]
 
 jobs:
   perl-lint-checks:
     runs-on: ubuntu-latest
     name: "Perltidy"
     container:
-      image: perldocker/perl-tester
+      image: registry.opensuse.org/devel/openqa/containers/os-autoinst_dev
     steps:
       - uses: actions/checkout@v4
       - run: GITHUB_ACTIONS=1 ./tools/tidyall --check-only --all --quiet
