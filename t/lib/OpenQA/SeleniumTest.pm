@@ -314,11 +314,13 @@ sub wait_until_element_gone ($selector, @args) {
 sub wait_for_element (%args) {
     my $selector = $args{selector};
     my $expected_is_displayed = $args{is_displayed};
+    my $trigger_function = $args{trigger_function};
     my $method = $args{method} // $find_method;
 
     my $element;
     wait_until(
         sub {
+            $trigger_function->() if $trigger_function;
             my @elements = $_driver->find_elements($selector, $method);
             if (scalar @elements >= 1
                 && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
