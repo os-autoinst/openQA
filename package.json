@@ -16,5 +16,20 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
     "prettier": "2.3.2"
+  },
+  "dependencies": {
+    "anser": "^2.1.1",
+    "bootstrap": "^4.6.1",
+    "chosen-js": "^1.8.7",
+    "codemirror": "^4.13.0",
+    "d3": "^4.13.0",
+    "dagre-d3": "^0.6.4",
+    "datatables": "^1.10.18",
+    "datatables.net-bs4": "^1.13.8",
+    "fork-awesome": "^1.2.0",
+    "jquery": "^3.7.1",
+    "jquery-ujs": "^1.2.3",
+    "shepherd.js": "^11.2.0",
+    "timeago": "^1.6.7"
   }
 }
