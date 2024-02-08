@@ -380,10 +380,14 @@ Also find more details in
 == Handling of dependencies
 
 === Javascript and CSS
-Add 3rd party JavaScript and CSS file to `assets/assetpack.def`. When
-restarting the web server the new/updated files are pulled automatically. Also
-take care to <<Contributing.asciidoc#update-asset-cache,update the asset cache
-for the openSUSE RPM package>>.
+Install third-party JavaScript and CSS files via their corresponding npm
+packages and add the paths of those files to `assets/assetpack.def`.
+
+If a dependency is not available on npm you may consider adding those files
+under `assets/3rdparty`. Additionally, add the license(s) for the newly added
+third-party code to the root directory of the repository. Do *not* duplicate
+common/existing licenses; extend the `Files:`-section at the beginning of those
+files instead.
 
 === Perl and other packages
 In openQA, there is a `dependencies.yaml` file including a list of
@@ -408,24 +412,6 @@ as part of openSUSE Tumbleweed.
   <<Contributing.asciidoc#circleci-workflow,CircleCI documentation>>).
 * There is an additional check running using OBS to check builds of packages
   against openSUSE Tumbleweed and openSUSE Leap.
-
-[[update-asset-cache]]
-=== Update asset cache for openSUSE RPM package
-1. Clone the repository (or a branch to it if you do not have the rights to
-   push directly) locally, e.g. `osc co devel:openQA/openQA`.
-2. Get the script `update-cache.sh` from the main git repository with
-   `osc service ra`
-3. If you changed a url or added a new asset, you have to run the steps from
-   `update-cache.sh` manually, and instead of running
-   `./tools/generate-packed-assets` from the upstream git, you have to run it
-   on the git checkout that contains the change.
-4. If there are no changes or new urls, run `bash *update-cache.sh` inside the
-   repository folder. Follow the log checking no download errors occurred.
-5. Check the generated `cache.txz`. It usually should not be
-   smaller than before, contain the newly added sources and must not contain
-   any empty files.
-6. Add an entry to the changes file using `osc vc openQA.changes`.
-7. `osc ci -m 'Update asset cache'`
 
 == Managing the database
 
