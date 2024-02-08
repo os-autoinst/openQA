@@ -43,6 +43,5 @@ generate() {
     return "$rc"
 }
 
-# Possibly requires a retry in case of CDN failures
 generate "test" || exit $?
 generate "development" || exit $?
