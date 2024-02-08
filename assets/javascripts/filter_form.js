@@ -31,6 +31,7 @@ function setupFilterForm(options) {
 function parseFilterArguments(paramHandler) {
   var varPairs = window.location.search.substring(1).split('&');
   var filterLabels = [];
+  var hiddenInputs = [];
   for (var j = 0; j < varPairs.length; ++j) {
     var pair = varPairs[j].split('=');
     if (pair.length > 1) {
@@ -47,9 +48,12 @@ function parseFilterArguments(paramHandler) {
         input.attr('value', val);
         input.attr('name', key);
         input.attr('hidden', true);
-        $('#filter-form').append(input);
+        hiddenInputs.push(input);
       }
     }
+  }
+  for (var i = 0; i < hiddenInputs.length; i++) {
+    $('#filter-form').append(hiddenInputs[i]);
   }
   if (filterLabels.length > 0) {
     $('#filter-panel .card-header')

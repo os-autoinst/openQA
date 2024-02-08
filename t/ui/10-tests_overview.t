@@ -332,6 +332,9 @@ subtest 'filtering by distri' => sub {
             'foo/opensuse/bar 13.1',
             'filter also visible in summary'
         );
+        my $form_inputs = $driver->find_elements('#filter-form input');
+        my @distris = grep { $_->get_attribute('name') eq 'distri' && $_->get_attribute('hidden') } @$form_inputs;
+        is scalar(@distris), 3, 'Got expected number of distri form fields';
     };
 
     subtest 'everything filtered out' => sub {
