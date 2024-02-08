@@ -132,6 +132,7 @@ RUN zypper in -y -C \
        perl-Archive-Extract \
        perl-Test-Simple \
        'perl(aliased)' \
+       npm \
        aspell-spell \
        aspell-en \
        systemd-sysvinit \
