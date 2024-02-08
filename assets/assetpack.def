@@ -93,7 +93,7 @@
 << ../node_modules/bootstrap/scss/vendor/_rfs.scss
 << ../node_modules/bootstrap/scss/_print.scss
 < stylesheets/openqa.scss
-< https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
+< 3rdparty/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
 < stylesheets/back_to_top.css
 
 ! dagre-d3.js
@@ -143,7 +143,7 @@
 < javascripts/fullscreen.js
 < javascripts/obs_rsync.js
 < javascripts/parent_group_overview.js
-< https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/js/bootstrap-4-navbar.js
+< 3rdparty/bootstrap-4-multi-dropdown-navbar/beta2.0/js/bootstrap-4-navbar.js
 < ../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js
 < ../node_modules/chosen-js/chosen.jquery.js
 < ../node_modules/jquery-ujs/src/rails.js
