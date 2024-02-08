@@ -84,11 +84,7 @@ Summary:        The openQA web-frontend, scheduler and tools
 License:        GPL-2.0-or-later
 Url:            http://os-autoinst.github.io/openQA/
 Source0:        %{name}-%{version}.tar.xz
-# a workaround for set_version looking at random files (so we can't name it .tar.xz)
-# use update-cache to update it
-Source1:        cache.txz
-Source100:      openQA-rpmlintrc
-Source101:      update-cache.sh
+Source1:        openQA-rpmlintrc
 BuildRequires:  fdupes
 # for install-opensuse in Makefile
 %if 0%{?is_opensuse}
@@ -300,7 +296,7 @@ statistics.
 
 
 %prep
-%setup -q -a1
+%setup -q
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
 
 %build
