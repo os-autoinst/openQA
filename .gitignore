@@ -43,7 +43,6 @@ container/webui/workdir
 base_state.json
 job.json
 node_modules
-package-lock.json
 .tidyall.d/
 openqa-documentation.html
 docs/build/
