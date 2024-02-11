@@ -985,6 +985,14 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </ul>
 </li>
 <li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</a></li>
+<li><a href="#_debugging_gre_tunnels_and_mtu_sizes">Debugging GRE tunnels and MTU sizes</a>
+<ul class="sectlevel3">
+<li><a href="#_initial_setup_for_all_experiments">Initial setup for all experiments</a></li>
+<li><a href="#_simple_scenario">Simple scenario</a></li>
+<li><a href="#_scenario_with_openvswitch">Scenario with openvswitch</a></li>
+<li><a href="#_gre_tunnel_made_in_openvswitch">GRE tunnel made in openvswitch</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_vde_based_network">VDE Based Network</a>
@@ -10420,6 +10428,156 @@ be <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_lin
 </table>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_debugging_gre_tunnels_and_mtu_sizes">Debugging GRE tunnels and MTU sizes</h3>
+<div class="sect3">
+<h4 id="_initial_setup_for_all_experiments">Initial setup for all experiments</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Enable ip forwarding</span>
+sysctl<span class="tok-w"> </span>-w<span class="tok-w"> </span>net.ipv4.ip_forward<span class="tok-o">=</span><span class="tok-m">1</span>
+sysctl<span class="tok-w"> </span>-w<span class="tok-w"> </span>net.ipv6.conf.all.forwarding<span class="tok-o">=</span><span class="tok-m">1</span>
+<span class="tok-c1"># Install and enable openvswitch</span>
+zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openvswitch3
+systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>openvswitch</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 30%;">
+<col style="width: 30%;">
+<col style="width: 30%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Host</th>
+<th class="tableblock halign-left valign-top">Network address</th>
+<th class="tableblock halign-left valign-top">Bridge address</th>
+<th class="tableblock halign-left valign-top">Remote IP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">192.0.2.1/24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">192.168.42.1/24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">192.0.2.2</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">192.0.2.2/24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">192.168.43.1/24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">192.0.2.1</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+instead of having two /24 networks, it is also possible to assign addresses from one bigger network (which have the benefit of not needing explicit route assignment).
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_simple_scenario">Simple scenario</h4>
+<div class="paragraph">
+<p>Two servers with a single bridge on each side connected with GRE tunnel.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Create bridge and tunnel</span>
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>bridge<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>bridge.stp<span class="tok-w"> </span>yes<span class="tok-w"> </span>ipv4.method<span class="tok-w"> </span>manual<span class="tok-w"> </span>ipv4.address<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$bridge_address</span><span class="tok-s2">&quot;</span><span class="tok-w"> </span>ipv4.routes<span class="tok-w"> </span><span class="tok-m">192</span>.168.42.0/23
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ip-tunnel<span class="tok-w"> </span>mode<span class="tok-w"> </span>gretap<span class="tok-w"> </span>con.int<span class="tok-w"> </span>gre1<span class="tok-w"> </span>master<span class="tok-w"> </span>br0<span class="tok-w"> </span>remote<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$remote_ip</span><span class="tok-s2">&quot;</span>
+
+<span class="tok-c1"># Test the tunnel with ping</span>
+<span class="tok-c1">#   -M do   -- prohibit fragmentation</span>
+<span class="tok-c1">#   -s xxxx -- set packet size</span>
+
+ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m">3</span><span class="tok-w"> </span>-M<span class="tok-w"> </span><span class="tok-k">do</span><span class="tok-w"> </span>-s<span class="tok-w"> </span><span class="tok-m">1300</span><span class="tok-w"> </span><span class="tok-m">192</span>.168.42.1
+ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m">3</span><span class="tok-w"> </span>-M<span class="tok-w"> </span><span class="tok-k">do</span><span class="tok-w"> </span>-s<span class="tok-w"> </span><span class="tok-m">1300</span><span class="tok-w"> </span><span class="tok-m">192</span>.168.43.1</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_scenario_with_openvswitch">Scenario with openvswitch</h4>
+<div class="paragraph">
+<p>Two servers with a one virtual bridge connected with GRE tunnel.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Create bridge, port and interface</span>
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-bridge<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>ovs-bridge.stp-enable<span class="tok-w"> </span>yes
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-port<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-interface<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0<span class="tok-w"> </span>ipv4.method<span class="tok-w"> </span>manual<span class="tok-w"> </span>ipv4.address<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$bridge_address</span><span class="tok-s2">&quot;</span><span class="tok-w"> </span>ipv4.routes<span class="tok-w"> </span><span class="tok-m">192</span>.168.42.0/23
+
+<span class="tok-c1"># Create GRE tunnel</span>
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-port<span class="tok-w"> </span>con.int<span class="tok-w"> </span>gre1<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ip-tunnel<span class="tok-w"> </span>mode<span class="tok-w"> </span>gretap<span class="tok-w"> </span>con.int<span class="tok-w"> </span>gre1<span class="tok-w"> </span>master<span class="tok-w"> </span>gre1<span class="tok-w"> </span>remote<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$remote_ip</span><span class="tok-s2">&quot;</span>
+
+<span class="tok-c1"># Test the tunnel</span>
+ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m">3</span><span class="tok-w"> </span>-M<span class="tok-w"> </span><span class="tok-k">do</span><span class="tok-w"> </span>-s<span class="tok-w"> </span><span class="tok-m">1300</span><span class="tok-w"> </span><span class="tok-m">192</span>.168.42.1
+ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m">3</span><span class="tok-w"> </span>-M<span class="tok-w"> </span><span class="tok-k">do</span><span class="tok-w"> </span>-s<span class="tok-w"> </span><span class="tok-m">1300</span><span class="tok-w"> </span><span class="tok-m">192</span>.168.43.1</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>#  ovs-vsctl show
+de1f31e9-1b51-4cc3-954a-4e037191ac07
+    Bridge br0
+        Port br0
+            Interface br0
+                type: internal
+        Port gre1
+            Interface gre1
+                type: system
+    ovs_version: "3.1.0"</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_gre_tunnel_made_in_openvswitch">GRE tunnel made in openvswitch</h4>
+<div class="paragraph">
+<p>openvswitch uses flow-based GRE tunneling, i.e. one interface <code>gre_sys</code> for all tunnels, the tunnel can be created by <code>ovs-vsctl</code>. After that, everything works as expected.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Create bridge, port and interface</span>
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-bridge<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>ovs-bridge.stp-enable<span class="tok-w"> </span>yes
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-port<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-interface<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0<span class="tok-w"> </span>ipv4.method<span class="tok-w"> </span>manual<span class="tok-w"> </span>ipv4.address<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$bridge_address</span><span class="tok-s2">&quot;</span><span class="tok-w"> </span>ipv4.routes<span class="tok-w"> </span><span class="tok-m">192</span>.168.42.0/23
+
+<span class="tok-c1"># Create GRE tunnel</span>
+ovs-vsctl<span class="tok-w"> </span>add-port<span class="tok-w"> </span>br0<span class="tok-w"> </span>gre1<span class="tok-w"> </span>--<span class="tok-w"> </span><span class="tok-nb">set</span><span class="tok-w"> </span>interface<span class="tok-w"> </span>gre1<span class="tok-w"> </span><span class="tok-nv">type</span><span class="tok-o">=</span>gre<span class="tok-w"> </span>options:remote_ip<span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$remote_ip</span><span class="tok-s2">&quot;</span>
+
+<span class="tok-c1"># Test the tunnel</span>
+ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m">3</span><span class="tok-w"> </span>-M<span class="tok-w"> </span><span class="tok-k">do</span><span class="tok-w"> </span>-s<span class="tok-w"> </span><span class="tok-m">1300</span><span class="tok-w"> </span><span class="tok-m">192</span>.168.42.1
+ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m">3</span><span class="tok-w"> </span>-M<span class="tok-w"> </span><span class="tok-k">do</span><span class="tok-w"> </span>-s<span class="tok-w"> </span><span class="tok-m">1300</span><span class="tok-w"> </span><span class="tok-m">192</span>.168.43.1</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>#  ovs-vsctl show
+de1f31e9-1b51-4cc3-954a-4e037191ac07
+    Bridge br0
+        Port br0
+            Interface br0
+                type: internal
+        Port gre1
+            Interface gre1
+                type: gre
+                options: {remote_ip="192.0.2.2"}
+    ovs_version: "3.1.0"</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -12631,7 +12789,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-02-08 04:44:23 UTC
+Last updated 2024-02-11 04:44:29 UTC
 </div>
 </div>
 </body>
