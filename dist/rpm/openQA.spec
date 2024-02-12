@@ -599,6 +599,7 @@ fi
 %{_datadir}/openqa/public
 %{_datadir}/openqa/assets
 %{_datadir}/openqa/dbicdh
+%{_datadir}/openqa/node_modules
 %{_datadir}/openqa/script/configure-web-proxy
 %{_datadir}/openqa/script/create_admin
 %{_datadir}/openqa/script/fetchneedles

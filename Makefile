@@ -63,6 +63,10 @@ install-generic:
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
+	for f in $(shell grep --perl-regexp '\.\.\/node_modules\/.*\.*+' assets/assetpack.def | sed -e 's|<* ../||') \
+		node_modules/fork-awesome/fonts/* node_modules/chosen-js/*.png; do \
+		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
+	done
 
 	for i in db images testresults pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
