@@ -56,7 +56,7 @@ function setEditingAdminTableRow(tdElement, editing, submitted) {
   // get the data table row for the tdElement
   var adminTable = window.adminTable;
   var rowData = adminTable.rowData;
-  var row = adminTable.row(tdElement);
+  var row = adminTable.row(tdElement.parentElement);
   if (!row) {
     addFlash('danger', 'Internal error: invalid table row/cell specified');
     return;
@@ -80,7 +80,7 @@ function setEditingAdminTableRow(tdElement, editing, submitted) {
 }
 
 function refreshAdminTableRow(tdElement) {
-  window.adminTable.row(tdElement).invalidate().draw();
+  window.adminTable.row(tdElement.parentElement).invalidate().draw();
 }
 
 function handleAdminTableApiError(request, status, error) {
@@ -114,7 +114,7 @@ function handleAdminTableSubmit(tdElement, response, id) {
       }
 
       var adminTable = window.adminTable;
-      var row = adminTable.row(tdElement);
+      var row = adminTable.row(tdElement.parentElement);
       var rowIndex = row.index();
       if (rowIndex >= adminTable.rowData.length) {
         return;
@@ -198,7 +198,7 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
 
 function submitAdminTableRow(tdElement, id) {
   var adminTable = window.adminTable;
-  var rowIndex = adminTable.row(tdElement).index();
+  var rowIndex = adminTable.row(tdElement.parentElement).index();
   if (rowIndex === undefined) {
     addFlash('danger', 'Internal error: invalid table cell specified');
     return;
@@ -253,7 +253,7 @@ function submitAdminTableRow(tdElement, id) {
 
 function removeAdminTableRow(tdElement) {
   var adminTable = window.adminTable;
-  var row = adminTable.row(tdElement);
+  var row = adminTable.row(tdElement.parentElement);
   var rowIndex = row.index();
   if (rowIndex !== undefined && rowIndex < adminTable.rowData.length) {
     adminTable.rowData.splice(rowIndex, 1);

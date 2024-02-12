@@ -134,7 +134,7 @@ function loadAuditLogTable() {
 var scheduledProductsTable;
 
 function dataForLink(link) {
-  const rowData = scheduledProductsTable.row(link.parentNode).data();
+  const rowData = scheduledProductsTable.row(link.parentElement?.parentElement).data();
   if (rowData === undefined) {
     console.error('unable to find row data for action link');
   }
