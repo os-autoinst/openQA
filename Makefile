@@ -320,7 +320,7 @@ test-yaml:
 .PHONY: test-shfmt
 test-shfmt:
 	@which shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
-	shfmt -d -i 4 -bn -ci -sr $$(shfmt -f .)
+	shfmt -d -i 4 -bn -ci -sr $$(shfmt -f . | grep --invert-match node_modules)
 
 .PHONY: test-check-containers
 test-check-containers:
