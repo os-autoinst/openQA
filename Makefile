@@ -42,6 +42,7 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 container_env_file := "$(current_dir)/container.env"
 unstables := $(shell cat tools/unstable_tests.txt | tr '\n' :)
+shellfiles := $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
@@ -313,7 +314,7 @@ test-tidy-compile:
 .PHONY: test-shellcheck
 test-shellcheck:
 	@which shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
-	shellcheck -x $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
+	shellcheck -x $(shellfiles)
 
 .PHONY: test-yaml
 test-yaml:
@@ -324,7 +325,7 @@ test-yaml:
 .PHONY: test-shfmt
 test-shfmt:
 	@which shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
-	shfmt -d -i 4 -bn -ci -sr $$(shfmt -f . | grep --invert-match node_modules)
+	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
 .PHONY: test-check-containers
 test-check-containers:
