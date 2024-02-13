@@ -170,7 +170,7 @@ jobs:
       - restore_cache: *restore_npm_cache
       - run:
           name: "Install npm dependencies"
-          command: sudo zypper -n in npm && npm install
+          command: npm install
       - save_cache: *save_npm_cache
 
   checkstyle: &test-template
