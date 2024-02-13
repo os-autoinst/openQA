@@ -40,7 +40,8 @@ single command line using the `podman` container engine is the following:
 
 [source,sh]
 ----
-podman run -p 1080:80 -p 1443:443 --rm -it registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+podman run --name openqa --device /dev/kvm -p 1080:80 -p 1443:443 --rm -it \
+  registry.opensuse.org/devel/openqa/containers/openqa-single-instance
 ----
 
 Once the startup has finished, the web UI is accessible via http://localhost:1080
