@@ -27,6 +27,8 @@ pr:
             paths:
               - target_project: openSUSE:Backports:SLE-15-SP6:Update
                 target_repository: standard
+              - target_project: devel:openQA:Leap:15.6
+                target_repository: '15.6'
             architectures: [ x86_64 ]
   filters:
     event: pull_request

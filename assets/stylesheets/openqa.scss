@@ -7,7 +7,7 @@
 @import url($web-font-path);
 
 // include Bootstrap 4
-@import "../cache/raw.githubusercontent.com/twbs/bootstrap/v4.6.1/scss/bootstrap.scss";
+@import "../node_modules/bootstrap/scss/bootstrap.scss";
 
 // include custom css for various aspects of the pages
 @import "overall.scss";

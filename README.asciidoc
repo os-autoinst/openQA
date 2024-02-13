@@ -56,3 +56,9 @@ http://open.qa/contact/[our contact page].
 openQA is developed on a continuous base where every commit in the git master
 branch is considered stable and a valid and installable version. The old tags
 on github are therefore misleading.
+
+== License
+All code is licensed under link:COPYING[GPL-2-or-later] unless stated otherwise
+in particular files. This does *not* apply to code found in the
+`assets/3rdparty` directory. It contains third-party code and the relevant
+licenses can be found in the root directory of this code repository.

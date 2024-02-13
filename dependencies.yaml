@@ -25,6 +25,7 @@ assetpack_requires:
 
 build_requires:
   rubygem(sass):
+  npm:
   '%assetpack_requires':
 
 common_requires:

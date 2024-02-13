@@ -58,7 +58,7 @@
 # The following line is generated from dependencies.yaml
 %define worker_requires bsdtar openQA-client optipng os-autoinst < 5 perl(Capture::Tiny) perl(File::Map) perl(Minion::Backend::SQLite) >= 5.0.7 perl(Mojo::IOLoop::ReadWriteProcess) >= 0.26 perl(Mojo::SQLite) psmisc sqlite3 >= 3.24.0
 # The following line is generated from dependencies.yaml
-%define build_requires %assetpack_requires rubygem(sass)
+%define build_requires %assetpack_requires npm rubygem(sass)
 
 # All requirements needed by the tests executed during build-time.
 # Do not require on this in individual sub-packages except for the devel
@@ -84,11 +84,9 @@ Summary:        The openQA web-frontend, scheduler and tools
 License:        GPL-2.0-or-later
 Url:            http://os-autoinst.github.io/openQA/
 Source0:        %{name}-%{version}.tar.xz
-# a workaround for set_version looking at random files (so we can't name it .tar.xz)
-# use update-cache to update it
-Source1:        cache.txz
-Source100:      openQA-rpmlintrc
-Source101:      update-cache.sh
+Source1:        openQA-rpmlintrc
+Source2:        node_modules.spec.inc
+%include        %{_sourcedir}/node_modules.spec.inc
 BuildRequires:  fdupes
 # for install-opensuse in Makefile
 %if 0%{?is_opensuse}
@@ -97,6 +95,7 @@ BuildRequires:  openSUSE-release
 BuildRequires:  sles-release
 %endif
 BuildRequires:  %{build_requires}
+BuildRequires:  local-npm-registry
 Requires:       perl(Minion) >= 10.0
 Requires:       %{main_requires}
 Requires:       openQA-client = %{version}
@@ -300,8 +299,10 @@ statistics.
 
 
 %prep
-%setup -q -a1
+%setup -q
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
+rm package-lock.json
+local-npm-registry %{_sourcedir} install --also=dev --legacy-peer-deps
 
 %build
 %make_build
@@ -598,6 +599,7 @@ fi
 %{_datadir}/openqa/public
 %{_datadir}/openqa/assets
 %{_datadir}/openqa/dbicdh
+%{_datadir}/openqa/node_modules
 %{_datadir}/openqa/script/configure-web-proxy
 %{_datadir}/openqa/script/create_admin
 %{_datadir}/openqa/script/fetchneedles
