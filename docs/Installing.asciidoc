@@ -22,7 +22,7 @@ repository].
 
 Continue with the next section <<#container_setup,Container based setup>> to
 setup a simple, ready-to-use container based openQA instance which is useful
-for a single user setup. For a quick boostrapping under openSUSE go to
+for a single user setup. For a quick bootstrapping under openSUSE go to
 <<#bootstrapping,Quick bootstrapping>>. Else, continue with the more
 advanced section about <<#custom_installation,Custom installation>>. For a
 setup suitable to develop openQA itself, have a look at the
