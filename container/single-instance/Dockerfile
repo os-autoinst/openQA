@@ -17,7 +17,8 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 # hadolint ignore=DL3037
 RUN zypper in -y openQA-single-instance openQA-bootstrap \
     qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps && \
-    zypper clean -a
+    zypper clean -a && \
+    sed -i -e 's/# service_port_delta =.*$/service_port_delta = 0/' /etc/openqa/openqa.ini
 EXPOSE 80 443 9526
 ENV skip_suse_specifics=1
 ENV skip_suse_tests=1
