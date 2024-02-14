@@ -52,7 +52,7 @@ sub read_config ($app) {
             auto_clone_limit => 20,
             force_result_regex => '',
             parallel_children_collapsable_results => join(' ', OK_RESULTS),
-            service_port_delta => 2,
+            service_port_delta => $ENV{OPENQA_SERVICE_PORT_DELTA} // 2,
         },
         rate_limits => {
             search => 5,
