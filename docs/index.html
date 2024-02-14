@@ -1036,7 +1036,6 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_javascript_and_css">Javascript and CSS</a></li>
 <li><a href="#_perl_and_other_packages">Perl and other packages</a></li>
 <li><a href="#_remarks_regarding_ci">Remarks regarding CI</a></li>
-<li><a href="#update-asset-cache">Update asset cache for openSUSE RPM package</a></li>
 </ul>
 </li>
 <li><a href="#_managing_the_database">Managing the database</a>
@@ -11272,10 +11271,15 @@ look at the
 <div class="sect2">
 <h3 id="_javascript_and_css">Javascript and CSS</h3>
 <div class="paragraph">
-<p>Add 3rd party JavaScript and CSS file to <code>assets/assetpack.def</code>. When
-restarting the web server the new/updated files are pulled automatically. Also
-take care to <a href="#update-asset-cache">update the asset cache
-for the openSUSE RPM package</a>.</p>
+<p>Install third-party JavaScript and CSS files via their corresponding npm
+packages and add the paths of those files to <code>assets/assetpack.def</code>.</p>
+</div>
+<div class="paragraph">
+<p>If a dependency is not available on npm you may consider adding those files
+under <code>assets/3rdparty</code>. Additionally, add the license(s) for the newly added
+third-party code to the root directory of the repository. Do <strong>not</strong> duplicate
+common/existing licenses; extend the <code>Files:</code>-section at the beginning of those
+files instead.</p>
 </div>
 </div>
 <div class="sect2">
@@ -11316,42 +11320,6 @@ and further dependencies listed in <code>tools/ci/ci-packages.txt</code> (see
 against openSUSE Tumbleweed and openSUSE Leap.</p>
 </li>
 </ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="update-asset-cache">Update asset cache for openSUSE RPM package</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Clone the repository (or a branch to it if you do not have the rights to
-push directly) locally, e.g. <code>osc co devel:openQA/openQA</code>.</p>
-</li>
-<li>
-<p>Get the script <code>update-cache.sh</code> from the main git repository with
-<code>osc service ra</code></p>
-</li>
-<li>
-<p>If you changed a url or added a new asset, you have to run the steps from
-<code>update-cache.sh</code> manually, and instead of running
-<code>./tools/generate-packed-assets</code> from the upstream git, you have to run it
-on the git checkout that contains the change.</p>
-</li>
-<li>
-<p>If there are no changes or new urls, run <code>bash *update-cache.sh</code> inside the
-repository folder. Follow the log checking no download errors occurred.</p>
-</li>
-<li>
-<p>Check the generated <code>cache.txz</code>. It usually should not be
-smaller than before, contain the newly added sources and must not contain
-any empty files.</p>
-</li>
-<li>
-<p>Add an entry to the changes file using <code>osc vc openQA.changes</code>.</p>
-</li>
-<li>
-<p><code>osc ci -m 'Update asset cache'</code></p>
-</li>
-</ol>
 </div>
 </div>
 </div>
@@ -12789,7 +12757,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-02-12 04:43:58 UTC
+Last updated 2024-02-14 04:45:15 UTC
 </div>
 </div>
 </body>
