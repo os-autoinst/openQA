@@ -22,7 +22,7 @@ repository].
 
 Continue with the next section <<#container_setup,Container based setup>> to
 setup a simple, ready-to-use container based openQA instance which is useful
-for a single user setup. For a quick boostrapping under openSUSE go to
+for a single user setup. For a quick bootstrapping under openSUSE go to
 <<#bootstrapping,Quick bootstrapping>>. Else, continue with the more
 advanced section about <<#custom_installation,Custom installation>>. For a
 setup suitable to develop openQA itself, have a look at the
@@ -40,7 +40,8 @@ single command line using the `podman` container engine is the following:
 
 [source,sh]
 ----
-podman run -p 1080:80 -p 1443:443 --rm -it registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+podman run --name openqa --device /dev/kvm -p 1080:80 -p 1443:443 --rm -it \
+  registry.opensuse.org/devel/openqa/containers/openqa-single-instance
 ----
 
 Once the startup has finished, the web UI is accessible via http://localhost:1080
