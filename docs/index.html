@@ -1896,7 +1896,7 @@ repository</a>.</p>
 <div class="paragraph">
 <p>Continue with the next section <a href="#container_setup">Container based setup</a> to
 setup a simple, ready-to-use container based openQA instance which is useful
-for a single user setup. For a quick boostrapping under openSUSE go to
+for a single user setup. For a quick bootstrapping under openSUSE go to
 <a href="#bootstrapping">Quick bootstrapping</a>. Else, continue with the more
 advanced section about <a href="#custom_installation">Custom installation</a>. For a
 setup suitable to develop openQA itself, have a look at the
@@ -1918,7 +1918,8 @@ single command line using the <code>podman</code> container engine is the follow
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1080</span>:80<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1443</span>:443<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers/openqa-single-instance</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>--name<span class="tok-w"> </span>openqa<span class="tok-w"> </span>--device<span class="tok-w"> </span>/dev/kvm<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1080</span>:80<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1443</span>:443<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">  </span>registry.opensuse.org/devel/openqa/containers/openqa-single-instance</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -12757,7 +12758,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-02-14 04:45:15 UTC
+Last updated 2024-02-15 04:44:22 UTC
 </div>
 </div>
 </body>
