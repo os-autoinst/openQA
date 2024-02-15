@@ -17,7 +17,7 @@ TESTS ?=
 # EXTRA_PROVE_ARGS: Additional prove arguments to pass
 EXTRA_PROVE_ARGS ?=
 ifeq ($(TESTS),)
-PROVE_ARGS ?= --trap -r ${EXTRA_PROVE_ARGS}
+PROVE_ARGS ?= --trap -r ${EXTRA_PROVE_ARGS} t
 else
 CHECKSTYLE ?= 0
 PROVE_ARGS ?= --trap ${EXTRA_PROVE_ARGS} $(TESTS)

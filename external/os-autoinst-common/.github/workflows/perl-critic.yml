@@ -11,4 +11,4 @@ jobs:
       image: perldocker/perl-tester
     steps:
       - uses: actions/checkout@v4
-      - run: ./tools/perlcritic --quiet .
+      - run: make test-critic
