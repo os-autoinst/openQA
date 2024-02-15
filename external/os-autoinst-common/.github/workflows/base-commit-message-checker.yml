@@ -15,7 +15,7 @@ jobs:
       - name: Check subject beginning
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^([A-Z]|\S+:|git subrepo pull)'
+          pattern: '^([A-Z]|\S+:|git subrepo (clone|pull))'
           flags: 'g'
           error: 'The subject does not start with a capital or tag.'
           excludeDescription: 'true'

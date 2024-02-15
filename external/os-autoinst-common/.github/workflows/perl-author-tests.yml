@@ -1,14 +1,14 @@
 ---
-name: 'Perl static checks'
+name: 'Perl author tests'
 
 on: [push, pull_request]
 
 jobs:
-  perl-lint-checks:
+  perl-author-tests:
     runs-on: ubuntu-latest
-    name: "Perltidy"
+    name: Perl author tests
     container:
       image: registry.opensuse.org/devel/openqa/containers/os-autoinst_dev
     steps:
       - uses: actions/checkout@v4
-      - run: GITHUB_ACTIONS=1 make test-tidy
+      - run: make test-author
