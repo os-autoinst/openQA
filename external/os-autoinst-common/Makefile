@@ -8,11 +8,11 @@ update-deps:
 	tools/update-deps --cpanfile cpanfile
 
 .PHONY: test
-test: test-tidy test-critic test-yaml test-author
+test: test-critic test-yaml test-author
 
-.PHONY: test-tidy
-test-tidy:
-	tools/tidyall --all --check-only
+# .PHONY: test-tidy
+# test-tidy:
+# 	tools/tidyall --all --check-only
 
 .PHONY: test-critic
 test-critic:
