@@ -70,7 +70,7 @@ sub command ($self, @args) {
         --name <name>              Name of this client, used by openQA to
                                    identify different clients via User-Agent
                                    header, defaults to "openqa-cli"
-    -i, --poll-interval            Specifies the poll interval used with --monitor
+    -i, --poll-interval <seconds>  Specifies the poll interval used with --monitor
     -p, --pretty                   Pretty print JSON content
     -q, --quiet                    Do not print error messages to STDERR
     -v, --verbose                  Print HTTP response headers

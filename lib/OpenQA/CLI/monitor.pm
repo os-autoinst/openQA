@@ -13,7 +13,7 @@ has usage => sub { shift->extract_usage };
 sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
     while (@$job_results < @$job_ids) {
         my $job_id = $job_ids->[@$job_results];
-        my $tx = $client->build_tx(GET => $self->url_for("experimental/jobs/$job_id/status"), {});
+        my $tx = $client->build_tx(GET => $self->url_for("experimental/jobs/$job_id/status"));
         my $res = $self->retry_tx($client, $tx);
         return $res if $res != 0;
         my $job = $tx->res->json;
