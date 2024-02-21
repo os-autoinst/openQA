@@ -10,6 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use OpenQA::Test::TimeLimit '7';
 use OpenQA::CLI;
+use OpenQA::CLI::monitor;
 use OpenQA::CLI::schedule;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
@@ -18,9 +19,10 @@ use Mojo::File qw(tempdir tempfile);
 use Test::Output qw(combined_like);
 use Test::MockModule;
 
-my $schedule = OpenQA::CLI::schedule->new;
 $ENV{OPENQA_CLI_RETRIES} = 0;
-OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
+
+my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
+my $schedule = OpenQA::CLI::schedule->new;
 
 # change API to simulate job state/result changes
 my $job_controller_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Job');
@@ -50,7 +52,8 @@ subtest 'unknown options' => sub {
 };
 
 # define different sets of CLI args to be used in further tests
-my @options = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', '--host', $host, '-m', '-i', 0);
+my @basic_options = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', '--host', $host, '-i', 0);
+my @options = (@basic_options, '-m');
 my @scenarios = ('--param-file', "SCENARIO_DEFINITIONS_YAML=$FindBin::Bin/data/09-schedule_from_file.yaml");
 my @settings1 = (qw(DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 TEST=simple_boot));
 my @settings2 = (qw(DISTRI=opensuse VERSION=13.1 FLAVOR=DVD ARCH=i586 BUILD=0091 TEST=autoyast_btrfs));
@@ -83,6 +86,19 @@ subtest 'scheduling and monitoring set of two jobs' => sub {
     combined_like { $res = $schedule->run(@options, @scenarios, @settings2) } qr/count.*2.*passed.*user_cancelled/s,
       'response logged if one job was cancelled';
     is $res, 2, 'non-zero return-code if at least one job is not ok';
+};
+
+subtest 'monitor jobs as a separate command' => sub {
+    my $res;
+    my $monitor = OpenQA::CLI::monitor->new;
+    my $jobs = $schema->resultset('Jobs');
+    $jobs->create({id => $_, TEST => "test-$_"}) for (100 .. 103);
+    @job_mock_results = (PASSED, SOFTFAILED);
+    combined_like { $res = $monitor->run(@basic_options, 100, 101) } qr/100.*101/s, 'status logged (passing case)';
+    is $res, 0, 'zero return-code if all jobs ok';
+    @job_mock_results = (PASSED, FAILED);
+    combined_like { $res = $monitor->run(@basic_options, 102, 103) } qr/102.*103/s, 'status logged (failing case)';
+    is $res, 2, 'none-zero return-code if one job failed';
 };
 
 done_testing();
