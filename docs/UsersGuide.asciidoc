@@ -1514,6 +1514,9 @@ and have a traceable documentation of the actions taken.
 * In case of known non-sporadic test issues that can not be fixed quickly
   consider overwriting the result of jobs
   http://open.qa/docs/#_overwrite_result_of_job
+* To quickly label and – as desired - restart multiple jobs consider using the
+  command line application `openqa-label-all`. Call `openqa-label-all --help`
+  to see all options.
 * For the SUSE maintenance test workflows a "branding" specific approach is
   provided: In case of needing to urgently release individual maintenance
   updates before test failures can be resolved consider instructing qem-bot,
