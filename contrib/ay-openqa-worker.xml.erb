@@ -60,6 +60,7 @@
       <package>openssh</package>
       <package>sudo</package>
       <package>salt-minion</package>
+      <package>chrony</package>
     </packages>
   </software>
   <timezone t="map">
@@ -99,10 +100,11 @@
     <start_firewall config:type="boolean">true</start_firewall>
     <FW_CONFIGURATIONS_EXT>sshd</FW_CONFIGURATIONS_EXT>
   </firewall>
-  <services-manager>
+  <services-manager t="map">
     <services>
       <enable config:type="list">
         <service>sshd</service>
+        <service>chronyd</service>
       </enable>
     </services>
   </services-manager>
