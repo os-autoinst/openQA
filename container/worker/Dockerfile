@@ -16,7 +16,7 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.5/15.5 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper in -yl ca-certificates-mozilla curl gzip rsync xz && \
-    zypper in -yl openQA-worker os-autoinst-s390-deps && \
+    zypper in -yl openQA-worker os-autoinst-s390-deps os-autoinst-ipmi-deps && \
     zypper in -yl qemu-arm qemu-ppc qemu-x86 qemu-tools && \
     zypper in -yl qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci qemu-hw-display-virtio-vga && \
     zypper in -yl kmod && \
