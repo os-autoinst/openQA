@@ -144,7 +144,7 @@ cat > /etc/wicked/scripts/gre_tunnel_preup.sh <<EOF
 #!/bin/sh
 action="$1"
 bridge="$2"
-ovs-vsctl set bridge $bridge stp_enable=true
+ovs-vsctl set bridge $bridge rstp_enable=true
 ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
 EOF
 ----
@@ -269,7 +269,7 @@ ovs-vsctl show # shows the bridge br1, the tap devices are assigned to it
 ovs-ofctl dump-flows br1 # shows the rules installed by os-autoinst-openvswitch in table=0
 ovs-dpctl show # show basic info on all datapaths
 ovs-dpctl dump-flows # displays flows in datapaths
-ovs-appctl stp/show # show stp information
+ovs-appctl rstp/show # show rstp information
 ovs-appctl fdb/show br1 # show MAC address table
 ----
 
@@ -381,7 +381,7 @@ Two servers with a one virtual bridge connected with GRE tunnel.
 [source,sh]
 ----
 # Create bridge, port and interface
-nmcli con add type ovs-bridge con.int br0 ovs-bridge.stp-enable yes
+nmcli con add type ovs-bridge con.int br0 ovs-bridge.rstp-enable yes
 nmcli con add type ovs-port con.int br0 con.master br0
 nmcli con add type ovs-interface con.int br0 con.master br0 ipv4.method manual ipv4.address "$bridge_address" ipv4.routes 192.168.42.0/23
 
@@ -414,7 +414,7 @@ openvswitch uses flow-based GRE tunneling, i.e. one interface `gre_sys` for all 
 [source,sh]
 ----
 # Create bridge, port and interface
-nmcli con add type ovs-bridge con.int br0 ovs-bridge.stp-enable yes
+nmcli con add type ovs-bridge con.int br0 ovs-bridge.rstp-enable yes
 nmcli con add type ovs-port con.int br0 con.master br0
 nmcli con add type ovs-interface con.int br0 con.master br0 ipv4.method manual ipv4.address "$bridge_address" ipv4.routes 192.168.42.0/23
 
