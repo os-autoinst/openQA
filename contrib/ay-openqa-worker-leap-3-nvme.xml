@@ -54,6 +54,7 @@
     </patterns>
     <packages t="list">
       <package>openssh</package>
+      <package>chrony</package>
       <package>sudo</package>
     </packages>
   </software>
@@ -144,6 +145,7 @@
     <services>
       <enable t="list">
         <service>sshd</service>
+        <service>chronyd</service>
       </enable>
     </services>
   </services-manager>
