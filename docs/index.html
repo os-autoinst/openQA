@@ -8953,6 +8953,13 @@ feature is explained in further detail in the corresponding
 </tr>
 </table>
 </div>
+<div class="paragraph">
+<p>It is also possible to create a GitHub workflow that will clone and monitor an
+openQA job which is mentioned in the PR description. The scripts repository
+contains a pre-defined GitHub action for this. Checkout the documentation of the
+<a href="https://github.com/os-autoinst/scripts/blob/master/openqa-clone-and-monitor-job-from-pr">openqa-clone-and-monitor-job-from-pr</a>
+script for further information and an example configuration.</p>
+</div>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -8960,7 +8967,7 @@ feature is explained in further detail in the corresponding
 <div class="title">Note</div>
 </td>
 <td class="content">
-This example shows how API credentials are supplied. It is important to
+These examples show how API credentials are supplied. It is important to
 note that using <code>on:pull_request</code> would only work for PRs created on the main
 repository but not for PRs created from forks. Therefore
 <code>on:pull_request_target</code> is used instead. To still run the tests on the PR
@@ -10130,7 +10137,7 @@ on both hosts):</p>
 <span class="tok-s">#!/bin/sh</span>
 <span class="tok-s">action=&quot;$1&quot;</span>
 <span class="tok-s">bridge=&quot;$2&quot;</span>
-<span class="tok-s">ovs-vsctl set bridge $bridge stp_enable=true</span>
+<span class="tok-s">ovs-vsctl set bridge $bridge rstp_enable=true</span>
 <span class="tok-s">ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=&lt;IP address of other host&gt;</span>
 <span class="tok-s">EOF</span></code></pre>
 </div>
@@ -10314,7 +10321,7 @@ ovs-vsctl<span class="tok-w"> </span>show<span class="tok-w"> </span><span class
 ovs-ofctl<span class="tok-w"> </span>dump-flows<span class="tok-w"> </span>br1<span class="tok-w"> </span><span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span>
 ovs-dpctl<span class="tok-w"> </span>show<span class="tok-w"> </span><span class="tok-c1"># show basic info on all datapaths</span>
 ovs-dpctl<span class="tok-w"> </span>dump-flows<span class="tok-w"> </span><span class="tok-c1"># displays flows in datapaths</span>
-ovs-appctl<span class="tok-w"> </span>stp/show<span class="tok-w"> </span><span class="tok-c1"># show stp information</span>
+ovs-appctl<span class="tok-w"> </span>rstp/show<span class="tok-w"> </span><span class="tok-c1"># show rstp information</span>
 ovs-appctl<span class="tok-w"> </span>fdb/show<span class="tok-w"> </span>br1<span class="tok-w"> </span><span class="tok-c1"># show MAC address table</span></code></pre>
 </div>
 </div>
@@ -10519,7 +10526,7 @@ ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Create bridge, port and interface</span>
-nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-bridge<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>ovs-bridge.stp-enable<span class="tok-w"> </span>yes
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-bridge<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>ovs-bridge.rstp-enable<span class="tok-w"> </span>yes
 nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-port<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0
 nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-interface<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0<span class="tok-w"> </span>ipv4.method<span class="tok-w"> </span>manual<span class="tok-w"> </span>ipv4.address<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$bridge_address</span><span class="tok-s2">&quot;</span><span class="tok-w"> </span>ipv4.routes<span class="tok-w"> </span><span class="tok-m">192</span>.168.42.0/23
 
@@ -10555,7 +10562,7 @@ de1f31e9-1b51-4cc3-954a-4e037191ac07
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Create bridge, port and interface</span>
-nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-bridge<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>ovs-bridge.stp-enable<span class="tok-w"> </span>yes
+nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-bridge<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>ovs-bridge.rstp-enable<span class="tok-w"> </span>yes
 nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-port<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0
 nmcli<span class="tok-w"> </span>con<span class="tok-w"> </span>add<span class="tok-w"> </span><span class="tok-nb">type</span><span class="tok-w"> </span>ovs-interface<span class="tok-w"> </span>con.int<span class="tok-w"> </span>br0<span class="tok-w"> </span>con.master<span class="tok-w"> </span>br0<span class="tok-w"> </span>ipv4.method<span class="tok-w"> </span>manual<span class="tok-w"> </span>ipv4.address<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$bridge_address</span><span class="tok-s2">&quot;</span><span class="tok-w"> </span>ipv4.routes<span class="tok-w"> </span><span class="tok-m">192</span>.168.42.0/23
 
@@ -12764,7 +12771,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-02-22 04:44:52 UTC
+Last updated 2024-02-28 04:44:28 UTC
 </div>
 </div>
 </body>
