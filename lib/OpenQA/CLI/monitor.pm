@@ -5,6 +5,7 @@ package OpenQA::CLI::monitor;
 use Mojo::Base 'OpenQA::Command', -signatures;
 
 use OpenQA::Jobs::Constants;
+use List::Util qw(all);
 use Mojo::Util qw(encode getopt);
 
 has description => 'Monitors a set of jobs';
@@ -28,10 +29,7 @@ sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
 }
 
 sub _compute_return_code ($self, $job_results) {
-    for my $job_result (@$job_results) {
-        return 2 unless OpenQA::Jobs::Constants::is_ok_result($job_result);
-    }
-    return 0;
+    (all { OpenQA::Jobs::Constants::is_ok_result($_) } @$job_results) ? 0 : 2;
 }
 
 sub _monitor_and_return ($self, $client, $poll_interval, $job_ids) {
