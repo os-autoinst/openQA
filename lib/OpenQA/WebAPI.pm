@@ -78,7 +78,15 @@ sub startup ($self) {
     $self->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > 2.13;
 
     # -> read assets/assetpack.def
-    $self->asset->process;
+    eval { $self->asset->process };
+    if (my $assetpack_error = $@) {    # uncoverable statement
+        $assetpack_error    # uncoverable statement
+          .= 'If you invoked this service for development (from a Git checkout) you probably just need to'
+          . ' invoke "make node_modules" before running this service. If you invoked this service via a packaged binary/service'
+          . " then there is probably a problem with the packaging.\n"
+          if $assetpack_error =~ qr/could not find input asset.*node_modules/i;    # uncoverable statement
+        die $assetpack_error;    # uncoverable statement
+    }
 
     # set cookie timeout to 48 hours (will be updated on each request)
     $self->app->sessions->default_expiration(48 * 60 * 60);
