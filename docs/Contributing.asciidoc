@@ -283,7 +283,7 @@ to be used for saving temporary data from the test, for example the log files
 from individual test job runs within the full stack test.
 
 [id="customize_base_directory"]
-== Customize base directory
+=== Customize base directory
 It is possible to customize the openQA base directory (which is for instance
 used to store test results) by setting the environment variable
 `OPENQA_BASEDIR`. The default value is `/var/lib`. For a development setup, set
@@ -293,7 +293,7 @@ assets can need a big amount of disk space.
 
 WARNING: Be sure to *clear* that variable when running unit tests locally.
 
-== Customize configuration directory
+=== Customize configuration directory
 It can be necessary during development to change the configuration.
 For example you have to edit `etc/openqa/database.ini` to use another database.
 It can also be useful to set the authentication method to `Fake` and increase
@@ -318,7 +318,7 @@ One also needs to setup a PostgreSQL database for openQA manually owned by your 
 1. Install PostgreSQL - under openSUSE the following package are required:
    `postgresql-server postgresql-init`
 2. Start the server: `systemctl start postgresql`
-3. The next two steps need to be done as the user *postgres*: `su - postgres`
+3. The next two steps need to be done as the user *postgres*: `sudo su - postgres`
 4. Create user: `createuser your_username` where `your_username` must be
    the same as the UNIX user you start your local openQA instance with.
 5. Create database: `createdb -O your_username openqa-local` where
@@ -328,7 +328,16 @@ One also needs to setup a PostgreSQL database for openQA manually owned by your 
    User name and password are not required.
 7. openQA will default-initialize the new database on the next startup.
 
-The script `openqa-setup-db` can be used to conduct step 4 and 5.
+The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still
+specify the user and database name and run it as user `postgres`:
+
+[source,sh]
+----
+sudo sudo -u postgres openqa-setup-db your_username openqa-local`
+----
+
+NOTE: To remove the database again, you can use e.g. `dropdb openqa-local` as
+your regular user.
 
 ==== Importing production data
 Assuming you have already followed steps 1. to 4. above:
