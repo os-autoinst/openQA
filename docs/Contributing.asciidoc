@@ -282,6 +282,35 @@ For easier debugging of t/full-stack.t one can set the environment variable
 to be used for saving temporary data from the test, for example the log files
 from individual test job runs within the full stack test.
 
+[id="customize_base_directory"]
+=== Customize base directory
+It is possible to customize the openQA base directory (which is for instance
+used to store test results) by setting the environment variable
+`OPENQA_BASEDIR`. The default value is `/var/lib`. For a development setup, set
+`OPENQA_BASEDIR` to a directory the user you are going to start openQA with has
+write access to. Additionally, take into account that the test results and
+assets can need a big amount of disk space.
+
+WARNING: Be sure to *clear* that variable when running unit tests locally.
+
+=== Customize configuration directory
+It can be necessary during development to change the configuration.
+For example you have to edit `etc/openqa/database.ini` to use another database.
+It can also be useful to set the authentication method to `Fake` and increase
+the log level `etc/openqa/openqa.ini`.
+
+To avoid these changes getting in your Git workflow, copy them to a new
+directory and set the environment variable `OPENQA_CONFIG`:
+
+[source,sh]
+----
+cp -ar etc/openqa etc/mine
+export OPENQA_CONFIG=$PWD/etc/mine
+----
+
+NOTE: `OPENQA_CONFIG` needs to point to the *directory* containing `openqa.ini`,
+`database.ini`, `client.conf` and `workers.ini` (and *not* a specific file).
+
 [[setup-postgresql]]
 === Setting up the PostgreSQL database
 One also needs to setup a PostgreSQL database for openQA manually owned by your regular user:
@@ -289,7 +318,7 @@ One also needs to setup a PostgreSQL database for openQA manually owned by your 
 1. Install PostgreSQL - under openSUSE the following package are required:
    `postgresql-server postgresql-init`
 2. Start the server: `systemctl start postgresql`
-3. The next two steps need to be done as the user *postgres*: `su - postgres`
+3. The next two steps need to be done as the user *postgres*: `sudo su - postgres`
 4. Create user: `createuser your_username` where `your_username` must be
    the same as the UNIX user you start your local openQA instance with.
 5. Create database: `createdb -O your_username openqa-local` where
@@ -299,7 +328,16 @@ One also needs to setup a PostgreSQL database for openQA manually owned by your 
    User name and password are not required.
 7. openQA will default-initialize the new database on the next startup.
 
-The script `openqa-setup-db` can be used to conduct step 4 and 5.
+The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still
+specify the user and database name and run it as user `postgres`:
+
+[source,sh]
+----
+sudo sudo -u postgres openqa-setup-db your_username openqa-local`
+----
+
+NOTE: To remove the database again, you can use e.g. `dropdb openqa-local` as
+your regular user.
 
 ==== Importing production data
 Assuming you have already followed steps 1. to 4. above:
@@ -505,25 +543,6 @@ variable.
 export DBIC_TRACE=1
 ----
 
-== How to overwrite config files
-
-It can be necessary during development to change the config files in `etc/`.
-For example you have to edit etc/openqa/database.ini to use another database.
-Or to increase the log level it's useful to set the loglevel to debug in
-etc/openqa/openqa.ini.
-
-To avoid these changes getting in your git workflow, copy them to a new
-directory and set OPENQA_CONFIG in your shell setup files.
-
-[source,sh]
-----
-cp -ar etc/openqa etc/mine
-export OPENQA_CONFIG=$PWD/etc/mine
-----
-
-Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
-client.conf and workers.ini.
-
 == Adding new authentication module
 
 openQA comes with two authentication modules providing authentication methods:
@@ -556,15 +575,6 @@ Authentication module is expected to return HASH:
 
 Authentication module is expected to create or update user entry in openQA database
 after user validation. See included modules for inspiration.
-
-== Customize base directory
-[id="customize_base_directory"]
-
-It is possible to customize the openQA base directory (which is for instance used to store
-test results) by setting the environment variable `OPENQA_BASEDIR`. The default value
-is `/var/lib`. Be sure to clear that variable when running unit tests locally (see next
-section). Take into account that the test results and assets can need a big amount of disk
-space.
 
 == Running tests of openQA itself
 Beside simply running the testsuite, it is also possible to use containers. Using containers,
