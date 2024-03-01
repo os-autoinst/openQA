@@ -159,6 +159,12 @@ else
 install: install-opensuse
 endif
 
+# Ensure npm packages are installed and up-to-date (unless local-npm-registry is installed; in this case we can
+# assume installing npm packages is taken care of separately, e.g. in builds on OBS)
+node_modules: package-lock.json
+	@which local-npm-registry >/dev/null 2>&1 || npm install --no-audit --no-fund
+	@touch node_modules
+
 .PHONY: test
 ifeq ($(TRAVIS),true)
 test: run-tests-within-container
@@ -185,44 +191,44 @@ endif
 test-checkstyle: test-checkstyle-standalone test-tidy-compile
 
 .PHONY: test-t
-test-t:
+test-t: node_modules
 	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-heavy
-test-heavy:
+test-heavy: node_modules
 	$(MAKE) test-with-database HEAVY=1 TIMEOUT_M=25 PROVE_ARGS="$$HARNESS $$(grep -l HEAVY=1 t/*.t | tr '\n' ' ')"
 
 .PHONY: test-ui
-test-ui:
+test-ui: node_modules
 	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-api
-test-api:
+test-api: node_modules
 	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 # put unstable tests in tools/unstable_tests.txt and uncomment in circle CI config to handle unstables with retries
 .PHONY: test-unstable
-test-unstable:
+test-unstable: node_modules
 	for f in $$(cat tools/unstable_tests.txt); do $(MAKE) test-with-database COVERDB_SUFFIX=$$(echo $${COVERDB_SUFFIX}_$$f | tr '/' '_') TIMEOUT_M=10 PROVE_ARGS="$$HARNESS $$f" RETRY=5 || exit; done
 
 .PHONY: test-fullstack
-test-fullstack:
+test-fullstack: node_modules
 	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=30 PROVE_ARGS="$$HARNESS t/full-stack.t t/33-developer_mode.t"
 
 .PHONY: test-fullstack-unstable
-test-fullstack-unstable:
+test-fullstack-unstable: node_modules
 	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t" RETRY=5
 
 # we have apparently-redundant -I args in PERL5OPT here because Docker
 # only works with one and Fedora's build system only works with the other
 .PHONY: test-with-database
-test-with-database:
+test-with-database: node_modules
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 	$(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-[ $(KEEP_DB) = 1 ] || pg_ctl -D $(TEST_PG_PATH) stop
 
 .PHONY: test-unit-and-integration
-test-unit-and-integration:
+test-unit-and-integration: node_modules
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib -MOpenQA::Test::PatchDeparse";\
