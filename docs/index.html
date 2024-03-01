@@ -1020,6 +1020,8 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#dependencies">Dependencies</a></li>
 <li><a href="#testing">Conducting tests</a></li>
+<li><a href="#customize_base_directory">Customize base directory</a></li>
+<li><a href="#_customize_configuration_directory">Customize configuration directory</a></li>
 <li><a href="#setup-postgresql">Setting up the PostgreSQL database</a>
 <ul class="sectlevel3">
 <li><a href="#_importing_production_data">Importing production data</a></li>
@@ -1046,9 +1048,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_how_to_add_fixtures_to_the_database">How to add fixtures to the database</a></li>
 </ul>
 </li>
-<li><a href="#_how_to_overwrite_config_files">How to overwrite config files</a></li>
 <li><a href="#_adding_new_authentication_module">Adding new authentication module</a></li>
-<li><a href="#_customize_base_directory">Customize base directory</a></li>
 <li><a href="#_running_tests_of_openqa_itself">Running tests of openQA itself</a>
 <ul class="sectlevel2">
 <li><a href="#_run_tests_without_container">Run tests without container</a></li>
@@ -11128,6 +11128,61 @@ from individual test job runs within the full stack test.</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="customize_base_directory">Customize base directory</h3>
+<div class="paragraph">
+<p>It is possible to customize the openQA base directory (which is for instance
+used to store test results) by setting the environment variable
+<code>OPENQA_BASEDIR</code>. The default value is <code>/var/lib</code>. For a development setup, set
+<code>OPENQA_BASEDIR</code> to a directory the user you are going to start openQA with has
+write access to. Additionally, take into account that the test results and
+assets can need a big amount of disk space.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+Be sure to <strong>clear</strong> that variable when running unit tests locally.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_customize_configuration_directory">Customize configuration directory</h3>
+<div class="paragraph">
+<p>It can be necessary during development to change the configuration.
+For example you have to edit <code>etc/openqa/database.ini</code> to use another database.
+It can also be useful to set the authentication method to <code>Fake</code> and increase
+the log level <code>etc/openqa/openqa.ini</code>.</p>
+</div>
+<div class="paragraph">
+<p>To avoid these changes getting in your Git workflow, copy them to a new
+directory and set the environment variable <code>OPENQA_CONFIG</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cp<span class="tok-w"> </span>-ar<span class="tok-w"> </span>etc/openqa<span class="tok-w"> </span>etc/mine
+<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_CONFIG</span><span class="tok-o">=</span><span class="tok-nv">$PWD</span>/etc/mine</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<code>OPENQA_CONFIG</code> needs to point to the <strong>directory</strong> containing <code>openqa.ini</code>,
+<code>database.ini</code>, <code>client.conf</code> and <code>workers.ini</code> (and <strong>not</strong> a specific file).
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
 <h3 id="setup-postgresql">Setting up the PostgreSQL database</h3>
 <div class="paragraph">
 <p>One also needs to setup a PostgreSQL database for openQA manually owned by your regular user:</p>
@@ -11142,7 +11197,7 @@ from individual test job runs within the full stack test.</p>
 <p>Start the server: <code>systemctl start postgresql</code></p>
 </li>
 <li>
-<p>The next two steps need to be done as the user <strong>postgres</strong>: <code>su - postgres</code></p>
+<p>The next two steps need to be done as the user <strong>postgres</strong>: <code>sudo su - postgres</code></p>
 </li>
 <li>
 <p>Create user: <code>createuser your_username</code> where <code>your_username</code> must be
@@ -11163,7 +11218,26 @@ User name and password are not required.</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>The script <code>openqa-setup-db</code> can be used to conduct step 4 and 5.</p>
+<p>The script <code>openqa-setup-db</code> can be used to conduct step 4 and 5. You must still
+specify the user and database name and run it as user <code>postgres</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo<span class="tok-w"> </span>sudo<span class="tok-w"> </span>-u<span class="tok-w"> </span>postgres<span class="tok-w"> </span>openqa-setup-db<span class="tok-w"> </span>your_username<span class="tok-w"> </span>openqa-local<span class="tok-sb">`</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+To remove the database again, you can use e.g. <code>dropdb openqa-local</code> as
+your regular user.
+</td>
+</tr>
+</table>
 </div>
 <div class="sect3">
 <h4 id="_importing_production_data">Importing production data</h4>
@@ -11459,31 +11533,6 @@ variable.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_how_to_overwrite_config_files">How to overwrite config files</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>It can be necessary during development to change the config files in <code>etc/</code>.
-For example you have to edit etc/openqa/database.ini to use another database.
-Or to increase the log level it&#8217;s useful to set the loglevel to debug in
-etc/openqa/openqa.ini.</p>
-</div>
-<div class="paragraph">
-<p>To avoid these changes getting in your git workflow, copy them to a new
-directory and set OPENQA_CONFIG in your shell setup files.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>cp<span class="tok-w"> </span>-ar<span class="tok-w"> </span>etc/openqa<span class="tok-w"> </span>etc/mine
-<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_CONFIG</span><span class="tok-o">=</span><span class="tok-nv">$PWD</span>/etc/mine</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
-client.conf and workers.ini.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_adding_new_authentication_module">Adding new authentication module</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -11522,18 +11571,6 @@ page or none.</p>
 <div class="paragraph">
 <p>Authentication module is expected to create or update user entry in openQA database
 after user validation. See included modules for inspiration.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_customize_base_directory">Customize base directory</h2>
-<div class="sectionbody">
-<div id="customize_base_directory" class="paragraph">
-<p>It is possible to customize the openQA base directory (which is for instance used to store
-test results) by setting the environment variable <code>OPENQA_BASEDIR</code>. The default value
-is <code>/var/lib</code>. Be sure to clear that variable when running unit tests locally (see next
-section). Take into account that the test results and assets can need a big amount of disk
-space.</p>
 </div>
 </div>
 </div>
@@ -12771,7 +12808,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-02-28 04:44:28 UTC
+Last updated 2024-03-01 04:44:01 UTC
 </div>
 </div>
 </body>
