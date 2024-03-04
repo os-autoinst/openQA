@@ -253,11 +253,6 @@ sub sync_tests ($cache_client, $job, $vars, $shared_cache, $rsync_source, $remai
         });
 }
 
-sub _is_job_only_relying_on_git ($vars) {
-    my ($cd, $nd) = ($vars->{CASEDIR}, $vars->{NEEDLES_DIR});
-    return defined($cd) && looks_like_url_with_scheme($cd) && (!defined($nd) || looks_like_url_with_scheme($nd));
-}
-
 sub do_asset_caching ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir, $callback) {
     my $cache_client = OpenQA::CacheService::Client->new;
     cache_assets(
@@ -270,7 +265,7 @@ sub do_asset_caching ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir
         sub ($error) {
             return $callback->($error) if $error;
             my $rsync_source = $job->client->testpool_server;
-            return $callback->(undef) if !$rsync_source || _is_job_only_relying_on_git($vars);
+            return $callback->(undef) unless $rsync_source;
             my $attempts = CACHE_SERVICE_TEST_SYNC_ATTEMPTS;
             my $shared_cache = catdir($cache_dir, base_host($webui_host));
             sync_tests($cache_client, $job, $vars, $shared_cache, $rsync_source, $attempts, $callback);
