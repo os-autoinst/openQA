@@ -8,7 +8,11 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 use Mojo::Base -signatures;
 
-BEGIN { $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} = 0 }
+BEGIN {
+    $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} = 0;
+    delete $ENV{OPENQA_CACHE_MAX_INACTIVE_JOBS};
+    delete $ENV{OPENQA_CACHE_MAX_INACTIVE_JOBS_HARD_LIMIT};
+}
 
 use File::Spec::Functions qw(abs2rel catdir);
 use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
@@ -188,15 +192,30 @@ subtest 'asset caching' => sub {
     is $error, $test_dir, 'Cache directory updated';
 };
 
-sub _mock_cache_service_client ($status_data, $error = undef) {
+sub _mock_cache_service_client ($status_data, $info_data = undef, $error = undef) {
     my $cache_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
+    $info_data //= {active_workers => 1};
     $cache_client_mock->redefine(enqueue => 'some enqueue error');
-    $cache_client_mock->redefine(
-        info => OpenQA::CacheService::Response::Info->new(data => {active_workers => 1}, error => undef));
+    $cache_client_mock->redefine(info => OpenQA::CacheService::Response::Info->new(data => $info_data, error => undef));
     $cache_client_mock->redefine(
         status => OpenQA::CacheService::Response::Status->new(data => $status_data, error => $error));
     return $cache_client_mock;
 }
+
+subtest 'handling availability error' => sub {
+    my %fake_status = (active_workers => 1, inactive_jobs => 46);
+    my $cache_client_mock = _mock_cache_service_client {}, \%fake_status;
+    my $cache_client = OpenQA::CacheService::Client->new;
+    my $cb_res;
+    my $cb = sub ($res) { $cb_res = $res };
+    my @args = ($cache_client, Test::FakeJob->new, {a => 1}, [('a') x 2], {}, 'webuihost', undef, $cb);
+    OpenQA::Worker::Engines::isotovideo::cache_assets @args;
+    like $cb_res->{error}, qr/Cache service queue already full/, 'error when hard-limit exceeded';
+
+    $fake_status{inactive_jobs} = 45;
+    OpenQA::Worker::Engines::isotovideo::cache_assets @args;
+    like $cb_res->{error}, qr/Failed to send asset request/, 'attempt to cache when below hard-limit';
+};
 
 subtest 'problems and special cases when caching assets' => sub {
     my %fake_status = (status => 'processed', output => 'Download of "FOO" failed: 404 Not Found');
@@ -223,7 +242,7 @@ subtest 'problems and special cases when caching assets' => sub {
     is $error->{error}, 'Failed to download FOO to some/path', 'asset not found';
     is $error->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure';
 
-    $cache_client_mock = _mock_cache_service_client {}, 'some severe error';
+    $cache_client_mock = _mock_cache_service_client {}, undef, 'some severe error';
     $cache_client_mock->redefine(asset_request => Test::FakeRequest->new);
     $cache_client_mock->redefine(enqueue => 0);
     @assets = ('ISO_1');

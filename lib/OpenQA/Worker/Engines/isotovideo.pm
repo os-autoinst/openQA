@@ -104,8 +104,8 @@ sub cache_assets ($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $web
     my $asset_uri = trim($asset_value);
     return cache_assets($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir, $callback)
       if ($this_asset eq 'UEFI_PFLASH_VARS' && !$vars->{UEFI});
-    # check cache availability
-    my $error = $cache_client->info->availability_error;
+    # check cache availability but only fail if the hard limit is exceeded
+    my $error = $cache_client->info->availability_error({hard_limit => 1});
     return $callback->({error => $error}) if $error;
     log_debug("Found $this_asset, caching $vars->{$this_asset}", channels => 'autoinst');
 
