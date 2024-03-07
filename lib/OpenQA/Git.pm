@@ -157,4 +157,13 @@ sub is_workdir_clean ($self) {
     return $r->{status};
 }
 
+sub cache_ref ($self, $ref, $relative_path, $output_file) {
+    return undef if -f $output_file;
+    my @git = $self->_prepare_git_command;
+    my $res = run_cmd_with_log_return_error [@git, 'show', "$ref:./$relative_path"], output_file => $output_file;
+    return undef if $res->{status};
+    unlink $output_file;
+    return _format_git_error($res, 'Unable to cache Git ref');
+}
+
 1;
