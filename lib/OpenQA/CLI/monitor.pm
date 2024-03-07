@@ -12,6 +12,7 @@ has description => 'Monitors a set of jobs';
 has usage => sub { shift->extract_usage };
 
 sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
+    my $start = time;
     while (@$job_results < @$job_ids) {
         my $job_id = $job_ids->[@$job_results];
         my $tx = $client->build_tx(GET => $self->url_for("experimental/jobs/$job_id/status"));
@@ -23,7 +24,9 @@ sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
             push @$job_results, $job->{result} // NONE;
             next;
         }
-        print encode('UTF-8', "Job state of job ID $job_id: $job_state, waiting …\n");
+        my $waited = time - $start;
+        print encode('UTF-8',
+            "Job state of job ID $job_id: $job_state, waiting … (delay: $poll_interval; waited ${waited}s)\n");
         sleep $poll_interval;
     }
 }
