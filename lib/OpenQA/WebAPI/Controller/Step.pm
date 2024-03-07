@@ -9,7 +9,9 @@ use Encode 'decode_utf8';
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'decode';
-use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number locate_needle needledir testcasedir);
+use OpenQA::Needles qw(needle_temp_dir locate_needle);
+use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number needledir testcasedir
+  run_cmd_with_log run_cmd_with_log_return_error);
 use OpenQA::Jobs::Constants;
 use File::Basename;
 use File::Path 'make_path';
@@ -92,28 +94,31 @@ sub view ($self) {
     $self->viewimg;
 }
 
-sub _create_tmpdir_for_needles_refspec ($self, $job) {
+sub _determine_needles_dir_for_job ($self, $job) {
     return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
-    my $needle_dir = $job->needle_dir;
-    $needle_dir = realpath($needle_dir) // $needle_dir;
-    my $needles_dir_var = $job->settings->single({key => 'NEEDLES_DIR'});
-    $needles_dir_var = $job->settings->single({key => 'CASEDIR'}) unless $needles_dir_var;
+    return undef unless my $needle_dirs = realpath($job->needle_dir);
+    my $settings = $job->settings;
+    return ($needle_dirs, $settings->single({key => 'NEEDLES_DIR'}) // $settings->single({key => 'CASEDIR'}));
+}
+
+sub _create_tmpdir_for_needles_refspec ($self, $job) {
+    my ($needle_dirs, $needles_dir_var) = $self->_determine_needles_dir_for_job($job);
     return undef unless $needles_dir_var;
     my $needles_url = Mojo::URL->new($needles_dir_var->value);
     return undef unless $needles_url->scheme;
     my $needles_ref = $needles_url->fragment;
     eval {
-        my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
-        my $vars = decode_json($vars_json);
-        $needles_ref = $vars->{NEEDLES_GIT_HASH};
+        my $vars = decode_json(path($job->result_dir, 'vars.json')->slurp);
+        $needles_ref = $vars->{NEEDLES_GIT_HASH} if ref $vars eq 'HASH';
     };
-    chomp($needles_ref);
+    chomp $needles_ref;
     return undef unless $needles_ref;
-    qx{git -C "$needle_dir" fetch --depth 1 origin "$needles_ref" &>/dev/null};
-    $needles_ref = qx{git -C "$needle_dir" rev-parse FETCH_HEAD};
-    my $needle_dir_basename = basename(dirname($needle_dir));
-    my $new_path = "/tmp/needle_dirs/$needle_dir_basename/$needles_ref/needles";
-    make_path($new_path);
+    return undef unless run_cmd_with_log ['git', '-C', $needle_dirs, 'fetch', '--depth', 1, 'origin', $needles_ref];
+    my $rev_parse_res = run_cmd_with_log_return_error ['git', '-C', $needle_dirs, 'rev-parse', 'FETCH_HEAD'];
+    return undef unless $rev_parse_res->{status};
+    $needles_ref = $rev_parse_res->{stdout};
+    chomp $needles_ref;
+    needle_temp_dir($needle_dirs, $needles_ref)->make_path;
     return $needles_ref;
 }
 
@@ -509,7 +514,7 @@ sub viewimg ($self) {
     my $append_needle_info = sub ($tags, $needle_info) {
         # add timestamps and URLs from database
         $self->populate_hash_with_needle_timestamps_and_urls(
-            $needles_rs->find_needle($job->needle_dir, "$needle_info->{name}.json"), $needle_info);
+            $needles_rs->find_needle($real_needle_dir, "$needle_info->{name}.json"), $needle_info);
 
         # handle case when the needle has (for some reason) no tags
         if (!$tags) {

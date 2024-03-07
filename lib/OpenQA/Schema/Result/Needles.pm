@@ -15,7 +15,7 @@ use OpenQA::App;
 use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils qw(locate_needle);
+use OpenQA::Needles qw(locate_needle);
 
 __PACKAGE__->table('needles');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
