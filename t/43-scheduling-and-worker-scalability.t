@@ -100,8 +100,9 @@ sub log_jobs {
     my @job_info
       # uncoverable statement count:1
       # uncoverable statement count:2
-      = map { sprintf("id: %s, state: %s, result: %s, reason: %s", $_->id, $_->state, $_->result, $_->reason // 'none') }
-      $jobs->search({}, {order_by => 'id'});
+      = map {
+        sprintf("id: %s, state: %s, result: %s, reason: %s", $_->id, $_->state, $_->result, $_->reason // 'none')
+      } $jobs->search({}, {order_by => 'id'});
     # uncoverable statement
     diag("All jobs:\n - " . join("\n - ", @job_info));
 }
