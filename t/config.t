@@ -67,6 +67,7 @@ subtest 'Test configuration default modes' => sub {
             do_cleanup => 'no',
             git_auto_clone => 'yes',
             checkout_needles_sha => 'no',
+            temp_needle_refs_retention => 120,
         },
         'scheduler' => {
             max_job_scheduled_time => 7,

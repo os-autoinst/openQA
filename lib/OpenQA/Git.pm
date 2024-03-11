@@ -5,6 +5,7 @@ package OpenQA::Git;
 
 use Mojo::Base -base, -signatures;
 use Cwd 'abs_path';
+use File::Touch;
 use OpenQA::Utils qw(run_cmd_with_log_return_error);
 
 has 'app';
@@ -95,7 +96,10 @@ sub commit ($self, $args = undef) {
 }
 
 sub cache_ref($self, $ref, $relative_path, $output_file) {
-    return undef if -f $output_file;
+    if (-f $output_file) {
+        eval { touch $output_file };
+        return $@ ? $@ : undef;
+    }
     my @git = $self->_prepare_git_command;
     my $res = run_cmd_with_log_return_error [@git, 'show', "$ref:./$relative_path"], output_file => $output_file;
     return undef if $res->{status};
