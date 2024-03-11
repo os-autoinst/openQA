@@ -98,9 +98,9 @@ note("Creating $job_count jobs");
 sub log_jobs {
     # uncoverable sub only used in case of failures
     my @job_info
-      # uncoverable statement count:1
-      # uncoverable statement count:2
+      # uncoverable statement
       = map {
+        # uncoverable statement
         sprintf("id: %s, state: %s, result: %s, reason: %s", $_->id, $_->state, $_->result, $_->reason // 'none')
       } $jobs->search({}, {order_by => 'id'});
     # uncoverable statement
