@@ -1,0 +1,2 @@
+#!/bin/sh -e
+exec "$(dirname "$0")"/openqa eval -m production -V 'app->gru->enqueue(limit_temp_needle_refs => [], {priority => 5, ttl => 172800, limit => 1})' "$@"
