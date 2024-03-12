@@ -156,6 +156,18 @@ subtest 'parent group comments' => sub {
     test_comments(parent_groups => 1);
 };
 
+subtest 'create many comments' => sub {
+    $t->post_ok('/api/v1/comments?job_id=42&job_id=foo')->status_is(400);
+    $t->json_is('/error' => 'Erroneous parameters (job_id invalid, text missing)');
+    $t->post_ok('/api/v1/comments?job_id=42&job_id=80000&text=batch-comment')->status_is(400);
+    $t->json_is('/error' => 'Not all comments could be created.', 'error returned');
+    $t->json_is('/failed' => [{job_id => 42}], 'failed IDs returned');
+    $t->json_is('/created' => [{job_id => 80000, id => 5}], 'created comment returned');
+    ok my $comment = $t->app->schema->resultset('Comments')->find(5), 'comment created' or return;
+    is $comment->text, 'batch-comment', 'comment has expected text';
+    $t->post_ok('/api/v1/comments?job_id=80000&text=batch-comment-2')->status_is(200);
+};
+
 subtest 'server-side limit has precedence over user-specified limit' => sub {
     $t->app->schema->txn_begin;
 
@@ -217,10 +229,10 @@ subtest 'can update job result with special label comment' => sub {
     my $jobs = $schema->resultset('Jobs');
     my $events = $schema->resultset('AuditEvents');
     is $jobs->find($job_id)->result, 'failed', 'job initially is failed';
-    is $events->all, 9, 'only 9 events initially';
+    is $events->all, 11, '11 events emitted so far';
     test_create_comment('jobs', $job_id, 'label:force_result:softfailed:simon_says');
     is $jobs->find($job_id)->result, 'softfailed', 'job is updated to softfailed';
-    is $events->all, 11, 'events for result update emitted';
+    is $events->all, 13, 'events for result update emitted';
     ok $events->find({event => 'job_update_result'}), 'job_update_result event found';
     my $route = "/api/v1/jobs/$job_id/comments";
     my $comments = $schema->resultset('Comments');
@@ -270,6 +282,7 @@ subtest 'unauthorized users can only read' => sub {
     $t->app($app);
     test_get_comment(jobs => 99981, 1, $edited_test_message);
     test_get_comment(groups => 1001, 2, $edited_test_message);
+    $t->post_ok('/api/v1/comments?job_id=80000&text=batch-comment')->status_is(403);
 };
 
 done_testing();

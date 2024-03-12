@@ -147,6 +147,60 @@ sub create ($self) {
 
 =over 4
 
+=item create_many()
+
+Adds new comments to the specified jobs. Returns 200 if all comments have been
+created or 400 if not all comments could be created. Returns a JSON object with
+the created and failed comment IDs or an error message in case a fatal error
+occurred.
+
+All comments will have the same text which is passed via the mandatory C<text>
+parameter.
+
+At this point only job comments are supported. The job IDs are specified by
+passing one or more C<job_id> parameters.
+
+=back
+
+=cut
+
+sub create_many ($self) {
+    my $validation = $self->validation;
+    $validation->required('text')->like(qr/^(?!\s*$).+/);
+    $validation->required('job_id')->num(0, undef);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $text = $validation->param('text');
+    my $job_ids = $validation->every_param('job_id');
+    my $schema = $self->schema;
+    my $comments = $schema->resultset('Comments');
+    my (@created, @failed);
+    for my $job_id (@$job_ids) {
+        my $txn_guard = $schema->txn_scope_guard;
+        eval {
+            my $comment = $comments->create(
+                {
+                    job_id => $job_id,
+                    text => href_to_bugref($text),
+                    user_id => $self->current_user->id
+                });
+            $comment->handle_special_contents($self);
+            $txn_guard->commit;
+            push @created, $comment->event_data;
+        };
+        push @failed, {job_id => $job_id} if $@;
+    }
+
+    # create a single event containing all relevant IDs for this action
+    my %res = (created => \@created, failed => \@failed);
+    $self->emit_event('openqa_comments_create', \%res);
+
+    $res{error} = 'Not all comments could be created.' if @failed;
+    $self->render(json => \%res, status => (@failed ? 400 : 200));
+}
+
+=over 4
+
 =item update()
 
 Updates an existing comment specified by job/group id and comment id. An update text argument

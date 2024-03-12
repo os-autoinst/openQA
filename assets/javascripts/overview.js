@@ -281,3 +281,36 @@ function changeClassOfDependencyJob(array, className, add) {
     add ? classList.add(className) : classList.remove(className);
   }
 }
+
+function showBatchCommentingDialog() {
+  $('#batch-commenting-modal').modal();
+}
+
+function addBatchComment(form) {
+  const text = form.elements.text.value;
+  if (!text.length) {
+    return window.alert("The comment text mustn't be empty.");
+  }
+  const progressIndication = document.getElementById('batch-commenting-progress-indication');
+  const controls = document.getElementById('batch-commenting-controls');
+  progressIndication.style.display = 'flex';
+  controls.style.display = 'none';
+  const done = () => {
+    progressIndication.style.display = 'none';
+    controls.style.display = 'inline';
+    $('#batch-commenting-modal').modal('hide');
+  };
+  $.ajax({
+    url: form.action,
+    method: 'POST',
+    data: $(form).serialize(),
+    success: response => {
+      done();
+      addFlash('info', 'The comments have been created.');
+    },
+    error: (jqXHR, textStatus, errorThrown) => {
+      done();
+      addFlash('danger', 'The comments could not be added: ' + getXhrError(jqXHR, textStatus, errorThrown));
+    }
+  });
+}

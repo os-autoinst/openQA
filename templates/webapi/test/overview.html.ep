@@ -40,6 +40,11 @@
             </div>
         </div>
         <div class="card-body">
+            % if (current_user) {
+            <button type="button" class="btn btn-info btn-circle btn-sm trigger-edit-button" onclick="showBatchCommentingDialog()" title="Batch-comment">
+                <i class="fa fa-comment" aria-hidden="true"></i>
+            </button>
+            % }
             % my @badges = qw(success secondary  warning     danger info      primary light   light);
             % my @labels = qw(Passed  Incomplete Soft-Failed Failed Scheduled Running Aborted None);
             % my $index  = 0;
@@ -206,3 +211,33 @@
         % }
     % }
 </div>
+
+% if (current_user) {
+<div class="modal fade" id="batch-commenting-modal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="<%= url_for('apiv1_post_comments')->query(job_id => $job_ids) %>" method="post" onsubmit="addBatchComment(this); return false;">
+                <div class="modal-header">
+                    <h4 class="modal-title">Add comment on all currently shown jobs</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    %= include 'comments/add_comment_form_groups', group_comment => 0, nosubmit => 1
+                </div>
+                <div class="modal-footer">
+                    <div id="batch-commenting-progress-indication" style="width: 100%; display: none">
+                        <span class="mr-auto"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</span>
+                        <button type="button" class="btn" data-dismiss="modal">Close</button>
+                    </div>
+                    <div id="batch-commenting-controls">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fa fa-comment"></i> Submit comment on all <%= scalar @$job_ids %> jobs
+                        </button>
+                        <button type="button" class="btn" data-dismiss="modal">Discard</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+% }
