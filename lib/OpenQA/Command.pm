@@ -122,6 +122,7 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
     $client->connect_timeout($ENV{MOJO_CONNECT_TIMEOUT} // 30);
     $delay //= $ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3;
     $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
+    my $factor = $ENV{OPENQA_CLI_RETRY_FACTOR} // 1;
     my $start = time;
     for (;; --$retries) {
         $tx = $client->start($tx);
@@ -132,6 +133,7 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
 "Request failed, hit error $res_code, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"
         );
         sleep $delay;
+        $delay *= $factor;
     }
 }
 
