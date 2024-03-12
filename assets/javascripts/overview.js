@@ -217,7 +217,7 @@ function setupOverview() {
   const flags = {result: {}, state: {}};
   const modulesResults = [];
   const formatFilter = filter => {
-    filter.replace(/_/g, ' ');
+    return filter.replace(/_/g, ' ');
   };
   const filterLabels = parseFilterArguments((key, val) => {
     if (key === 'result' || key === 'state') {

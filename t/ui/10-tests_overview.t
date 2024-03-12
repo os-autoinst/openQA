@@ -543,6 +543,15 @@ subtest 'filtering by job group' => sub {
     };
 };
 
+subtest 'filter by result and state' => sub {
+    $driver->get('/tests/overview?state=done&result=incomplete');
+    my $header = $driver->find_element('#filter-panel .card-header');
+    like $header->get_text, qr/Filter.*done.*incomplete/, 'filter parameters shown in header';
+    ok $driver->find_element_by_id('filter-incomplete')->is_selected, 'incomplete checkbox checked';
+    ok $driver->find_element_by_id('filter-done')->is_selected, 'done checkbox checked';
+    ok !$driver->find_element_by_id('filter-failed')->is_selected, 'other checkbox not checked';
+};
+
 subtest "job template names displayed on 'Test result overview' page" => sub {
     $driver->get('/group_overview/1002');
     is($driver->find_element('.progress-bar-failed')->get_text(), '1 failed', 'The number of failed jobs is right');
