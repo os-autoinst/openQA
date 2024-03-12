@@ -168,7 +168,7 @@ function renderModuleRow(module, snippets) {
       if (title === 'wait_serial') {
         const previewLimit = 120;
         // jshint ignore:start
-        let shortText = textData.replace(/.*# Result:\n?/s, '');
+        let shortText = textData.replace(/.*# Result:\n*/s, '');
         // jshint ignore:end
         if (shortText.length > previewLimit) {
           shortText = shortText.substr(0, previewLimit) + '…';
