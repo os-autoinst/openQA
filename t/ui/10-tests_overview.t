@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -497,8 +498,8 @@ subtest 'filtering by job group' => sub {
             name => 'SLE 15 SP5 development'
         });
 
-    my $get_text = sub {
-        $driver->get(shift);
+    my $get_text = sub ($url) {
+        $driver->get($url);
         my @el = $driver->find_element('.card-header');
         return $el[0]->get_text;
     };
