@@ -87,8 +87,8 @@ sub mutex_create {
 =item barrier_wait()
 
 Blocks execution of the calling job until the method is called by all tasks
-using the barrier referenced by "name". Returns a 200 code on success, 410
-on error on 409 when the referenced barrier does not exist.
+using the barrier referenced by "name". Returns a 200 code on success, 409
+on error and 410 when the referenced barrier does not exist.
 
 =back
 
@@ -119,8 +119,8 @@ sub barrier_wait {
 
 =item barrier_create()
 
-Creates a new barrier resource for a group of tasks referenced by the argument "task."
-Returns a code of 200 on success or of 409 on error.
+Creates a new barrier resource for a group of tasks referenced by the argument "tasks".
+Returns 200 on success and 409 on error.
 
 =back
 

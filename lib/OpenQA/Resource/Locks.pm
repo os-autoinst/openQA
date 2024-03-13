@@ -19,7 +19,7 @@ my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 # Sometimes it is useful to let the parent wait for child. The child job
 # can be however killed at any time, while the parent will be still running.
 # So we have to specify, which child job is supposed to create the lock
-# and watch it's state.
+# and watch its state.
 #
 sub _get_lock {
     my ($name, $jobid, $where) = @_;
