@@ -43,18 +43,11 @@ EOM
 
 print($usage->text), exit if $opt->help;
 
-my @files = @ARGV;
+my @files = @ARGV or pass 'Nothing to do';
 
 my $default_schema = "$RealBin/../public/schema/JobTemplates-01.yaml";
 my $schema = $opt->schema_file // $default_schema;
-
-unless (@files) {
-    pass "Nothing to do";
-}
-
-if ($opt->validate_schema) {
-    diag 'Validating schema, too';
-}
+diag 'Validating schema, too' if $opt->validate_schema;
 for my $file (@files) {
     my $data;
     if ($file eq '-') {
