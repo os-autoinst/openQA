@@ -55,13 +55,9 @@ sub lock ($name, $jobid, $where) {
     return 0 unless $lock;
 
     # lock is locked and not by us
-    if ($lock->locked_by) {
-        return 0 if ($lock->locked_by != $jobid);
-        return 1;
-    }
+    return $lock->locked_by == $jobid if $lock->locked_by;
     # we're using optimistic locking, if this succeeded, we were first
-    return 1 if ($locks->update({locked_by => $jobid}) > 0);
-    return 0;
+    return $locks->update({locked_by => $jobid}) > 0;
 }
 
 sub unlock ($name, $jobid, $where) {
@@ -121,15 +117,11 @@ sub barrier_wait ($name = undef, $jobid = undef, $where = undef, $check_dead_job
         }
     }
 
-    if (grep { $_ eq $jobid } @jobs) {
-        return 1 if @jobs == $barrier->count;
-        return 0;
-    }
+    return @jobs == $barrier->count if grep { $_ eq $jobid } @jobs;
 
     push @jobs, $jobid;
     return -1 unless $barriers->update({locked_by => join(',', @jobs)}) > 0;
-    return 1 if @jobs == $barrier->count;
-    return 0;
+    return @jobs == $barrier->count;
 }
 
 sub barrier_destroy ($name = undef, $jobid = undef, $where = undef) {
