@@ -3,11 +3,9 @@
 
 package OpenQA::WebAPI::ServerSideDataTable;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
-sub render_response {
-    my (%args) = @_;
+sub render_response (%args) {
     # mandatory parameter
     my $controller = $args{controller};
     my $resultset_name = $args{resultset};
