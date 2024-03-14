@@ -121,16 +121,12 @@ sub barrier_wait ($name = undef, $jobid = undef, $where = undef, $check_dead_job
         }
     }
 
-    if (grep { $_ eq $jobid } @jobs) {
-        return 1 if @jobs == $barrier->count;
-        return 0;
-    }
+    return @jobs == $barrier->count if grep { $_ eq $jobid } @jobs;
 
     push @jobs, $jobid;
     $barrier->update({locked_by => join(',', @jobs)});
 
-    return 1 if @jobs == $barrier->count;
-    return 0;
+    return @jobs == $barrier->count;
 }
 
 sub barrier_destroy ($name = undef, $jobid = undef, $where = undef) {
