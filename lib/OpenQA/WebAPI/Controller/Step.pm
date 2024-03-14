@@ -19,7 +19,7 @@ use Mojo::JSON 'decode_json';
 sub _init ($self) {
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     my %attrs = (rows => 1, order_by => {-desc => 'id'});
-    my $module = $job->modules->find({name => $self->param('moduleid')}, \%attrs);
+    my $module = $job->modules->find({name => $self->param('moduleid')}, \%attrs) or return 0;
     $self->stash(job => $job);
     $self->stash(testname => $job->name);
     $self->stash(distri => $job->DISTRI);
