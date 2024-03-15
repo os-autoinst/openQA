@@ -43,3 +43,24 @@ pull_request_rules:
     actions:
       comment:
         message: This pull request is now in conflicts. Could you fix it? 🙏
+  - name: automatic merge for dependabot updates
+    conditions:
+      - and: *base_checks
+      - and:
+          # mergify config checks needs at least two rules in "and" so we repeat
+          # one from the base checks
+          - base=main
+          - author=dependabot[bot]
+          - label=waited
+    actions:
+      merge:
+        method: squash
+  - name: Wait for 2 days before validating merge
+    actions:
+      label:
+        add: [ waited ]
+        remove: [ waiting ]
+    conditions:
+      - and:
+          - updated-at<2 days ago
+          - author=dependabot[bot]
