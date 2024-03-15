@@ -261,4 +261,33 @@ sub delete ($self) {
     $self->render(json => {id => $res->id});
 }
 
+=over 4
+
+=item delete_many()
+
+Deletes multiple comments by their IDs which are specified by passing one or
+more C<id> parameters. Returns a JSON object with the number of deleted comments
+or an error message in case a fatal error occurred. Returns a 200 code when all
+comments have been deleted and a 400 code if not all comments could be deleted.
+
+=back
+
+=cut
+
+sub delete_many ($self) {
+    my $validation = $self->validation;
+    $validation->required('id')->num(0, undef);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $ids = $validation->every_param('id');
+    my $comments = $self->schema->resultset('Comments');
+    my $deleted_rows = $comments->search({id => {-in => $ids}, text => {-not_like => '%label:force_result:%'}})->delete;
+    my $ok = $deleted_rows && $deleted_rows == scalar(@$ids);
+
+    my %res = (ids => $ids, deleted => int($deleted_rows));
+    $self->emit_event('openqa_comments_delete', \%res) if $deleted_rows;
+    $res{error} = 'Not all comments could be deleted.' unless $ok;
+    $self->render(json => \%res, status => ($ok ? 200 : 400));
+}
+
 1;
