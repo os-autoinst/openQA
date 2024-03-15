@@ -1,0 +1,15 @@
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+    allow:
+      # Allow both direct and indirect updates for all packages
+      - dependency-type: all
+    open-pull-requests-limit: 15
+    labels:
+      - waiting
+      - dependencies
