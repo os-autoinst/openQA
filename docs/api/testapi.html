@@ -1005,7 +1005,7 @@ console is selected in the guest, but VNC is being used to simulate key presses.
 <div class="paragraph">
 <p>When a serial terminal is selected you will not be able to use functions which
 rely on needles. This sub is not exported by default as most tests <em>will not
-benefit</em>' from changing their behaviour depending on if communication happens
+benefit</em> from changing their behaviour depending on if communication happens
 over serial or VNC.</p>
 </div>
 <div class="paragraph">
@@ -1045,7 +1045,7 @@ over serial or VNC.</p>
 (default).</p>
 </div>
 <div class="paragraph">
-<p>Returns <code>undef</code> or (after timeout) the string that <em>did _not</em> match_' if
+<p>Returns <code>undef</code> or (after timeout) the string that <em>did _not</em> match_ if
 <code>$expect_not_found</code> is true. The default timeout is 90 seconds.</p>
 </div>
 </div>
@@ -1060,7 +1060,7 @@ over serial or VNC.</p>
 <p>Start <code>$program</code> in graphical desktop environment.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1090,7 +1090,7 @@ Use <code>script_run</code> instead if <code>$cmd</code> may fail.</p>
 <p><em>The <code>script_run</code> implementation is distribution specific and not always available.
 For this to work correctly, it must return 0 if and only if <code>$command</code> completes
 successfully. It must NOT return 0 if <code>$command</code> times out. The default implementation
-should work on *nix operating systems with a configured serial device.</em>'</p>
+should work on *nix operating systems with a configured serial device.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1124,11 +1124,11 @@ deprecated behaviour of not throwing an error on timeout set the value to 0.
 This option will be removed in the near future.</p>
 </div>
 <div class="paragraph">
-<p>&lt;Returns&gt; exit code received from <em>$cmd</em>' or undef if <code>$timeout</code> is 0 or timeout
+<p>&lt;Returns&gt; exit code received from <em>$cmd</em> or undef if <code>$timeout</code> is 0 or timeout
 expired and <code>die_on_timeout</code> is not <code>1</code>.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 <div class="paragraph">
 <p>The default implementation should work on *nix operating systems with a configured
@@ -1152,10 +1152,10 @@ otherwise the PID marker may get corrupted.</p>
 the command.</p>
 </div>
 <div class="paragraph">
-<p>&lt;Returns&gt; PID of the <em>$cmd</em>' process running in the background.</p>
+<p>&lt;Returns&gt; PID of the <em>$cmd</em> process running in the background.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 <div class="paragraph">
 <p>The default implementation should work on *nix operating systems with a configured
@@ -1176,7 +1176,7 @@ status is not zero.
 See <code>wait_serial</code> for default timeout.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 <div class="paragraph">
 <p>Make sure the non-root user has permissions to write to the supplied serial device
@@ -1195,7 +1195,7 @@ See <code>wait_serial</code> for default timeout.</p>
 <code>$wait</code> defaults to 2 seconds.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1207,8 +1207,8 @@ See <code>wait_serial</code> for default timeout.</p>
 </div>
 <div class="paragraph">
 <p>Executing script inside SUT with <code>bash -eox</code> (in case of serial console with <code>bash -eo</code>)
-and directs <code>stdout</code> (<em>not</em>' <code>stderr</code>!) to the serial console and returns
-the output <em>if</em>' the script exits with 0. Otherwise the test is set to failed.
+and directs <code>stdout</code> (<em>not</em> <code>stderr</code>!) to the serial console and returns
+the output <em>if</em> the script exits with 0. Otherwise the test is set to failed.
 NOTE: execution result may include extra serial output which was on serial console
 since command was triggered in case serial console is not dedicated for
 the script output only.</p>
@@ -1308,7 +1308,7 @@ validate_script_output "cat /etc/hosts", sub { $_ !~ m/987.*somehost/ };</pre>
 <p>Open a root shell.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1322,7 +1322,7 @@ validate_script_output "cat /etc/hosts", sub { $_ !~ m/987.*somehost/ };</pre>
 <p>Helper to install a package to SUT.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1597,7 +1597,7 @@ any action on the system under test, but only store the parameters.</p>
 console reset and console is persistent during the test execution.</p>
 </div>
 <div class="paragraph">
-<p><em>The implementation is distribution specific and not always available.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1692,7 +1692,7 @@ return <code>undef</code>.</p>
 <p>Tells the backend to record a <code>.wav</code> file of the sound card.</p>
 </div>
 <div class="paragraph">
-<p><em>Only supported by qemu backend.</em>'</p>
+<p><em>Only supported by qemu backend.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1707,7 +1707,7 @@ return <code>undef</code>.</p>
 expected audio. Comparison is performed after conversion to the image.</p>
 </div>
 <div class="paragraph">
-<p><em>Only supported by QEMU backend.</em>'</p>
+<p><em>Only supported by QEMU backend.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1722,7 +1722,7 @@ expected audio. Comparison is performed after conversion to the image.</p>
 expected audio. Comparison is performed after conversion to the image.</p>
 </div>
 <div class="paragraph">
-<p><em>Only supported by QEMU backend.</em>'</p>
+<p><em>Only supported by QEMU backend.</em></p>
 </div>
 </div>
 </div>
@@ -1747,7 +1747,7 @@ expected audio. Comparison is performed after conversion to the image.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Periodically check backend for status until <code>'shutdown'</code>. Does <em>not</em>' initiate shutdown.</p>
+<p>Periodically check backend for status until <code>'shutdown'</code>. Does <em>not</em> initiate shutdown.</p>
 </div>
 <div class="paragraph">
 <p>Returns true on success and false if <code>$timeout</code> timeout is hit. Default timeout is 60s.</p>
@@ -1761,7 +1761,7 @@ expected audio. Comparison is performed after conversion to the image.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Periodically check backend for status until <code>'shutdown'</code>. Does <em>not</em>' initiate shutdown.</p>
+<p>Periodically check backend for status until <code>'shutdown'</code>. Does <em>not</em> initiate shutdown.</p>
 </div>
 <div class="paragraph">
 <p>Returns <code>undef</code> on success, marks the test as failed and throws exception
@@ -1809,7 +1809,7 @@ filename,  the default will be the current test&#8217;s name.</p>
 <p>This method must be called within a post_fail_hook.</p>
 </div>
 <div class="paragraph">
-<p><em>Currently only qemu backend is supported.</em>'</p>
+<p><em>Currently only qemu backend is supported.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1824,7 +1824,7 @@ filename,  the default will be the current test&#8217;s name.</p>
 the default will be the current test&#8217;s name.</p>
 </div>
 <div class="paragraph">
-<p><em>Currently only qemu backend is supported.</em>'</p>
+<p><em>Currently only qemu backend is supported.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1842,7 +1842,7 @@ without any risk of data changing, or in rare cases call it before the tests
 tests have already begun, to avoid unexpected behaviour.</p>
 </div>
 <div class="paragraph">
-<p><em>Currently only qemu backend is supported.</em>'</p>
+<p><em>Currently only qemu backend is supported.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -1857,7 +1857,7 @@ tests have already begun, to avoid unexpected behaviour.</p>
 start virtual machine CPU explicitly if DELAYED_START is set.</p>
 </div>
 <div class="paragraph">
-<p><em>Currently only qemu backend is supported.</em>'</p>
+<p><em>Currently only qemu backend is supported.</em></p>
 </div>
 </div>
 <div class="sect4">
@@ -2079,7 +2079,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-03-10 04:47:25 UTC
+Last updated 2024-03-16 04:47:27 UTC
 </div>
 </div>
 </body>
