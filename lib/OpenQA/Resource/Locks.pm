@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Resource::Locks;
-
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
@@ -19,7 +17,7 @@ my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 # Sometimes it is useful to let the parent wait for child. The child job
 # can be however killed at any time, while the parent will be still running.
 # So we have to specify, which child job is supposed to create the lock
-# and watch it's state.
+# and watch its state.
 #
 sub _get_lock {
     my ($name, $jobid, $where) = @_;
@@ -41,14 +39,14 @@ sub _get_lock {
     else {
         push @maybeowners, map { $_->id } ($job, $job->parents->all);
     }
-    return $schema->resultset('JobLocks')->search({name => $name, owner => {-in => \@maybeowners}})->single;
+    return $schema->resultset('JobLocks')->search({name => $name, owner => {-in => \@maybeowners}});
 }
 
 # returns -1 on unrecoverable error, 1 on have lock, 0 on try later (lock unavailable)
 sub lock {
     my ($name, $jobid, $where) = @_;
 
-    my $lock = _get_lock($name, $jobid, $where);
+    my $lock = _get_lock($name, $jobid, $where)->single;
 
     if (!$lock and $where =~ /^\d+$/) {
         my $schema = OpenQA::Schema->singleton;
@@ -72,7 +70,7 @@ sub lock {
 
 sub unlock {
     my ($name, $jobid, $where) = @_;
-    my $lock = _get_lock($name, $jobid, $where // 'all');
+    my $lock = _get_lock($name, $jobid, $where // 'all')->single;
     return 0 unless $lock;
     # return if not locked
     return 1 unless $lock->locked_by;
@@ -84,7 +82,7 @@ sub unlock {
 
 sub create {
     my ($name, $jobid) = @_;
-    my $lock = _get_lock($name, $jobid, 'all');
+    my $lock = _get_lock($name, $jobid, 'all')->single;
     # nothing if lock already exist
     return 0 if $lock;
     return 0 unless defined $name && defined $jobid;
@@ -99,23 +97,21 @@ sub create {
 ## Barriers
 # barriers are created with number of expected jobs. Then wait call waits until the expected number of jobs is waiting
 
-sub barrier_create {
-    my ($name, $jobid, $expected_jobs) = @_;
+sub barrier_create ($name, $jobid, $expected_jobs) {
     return 0 unless $name && $jobid && $expected_jobs;
-    my $barrier = _get_lock($name, $jobid, 'all');
-    return 0 if $barrier;
-
-    my $schema = OpenQA::Schema->singleton;
-    $barrier = $schema->resultset('JobLocks')->create({name => $name, owner => $jobid, count => $expected_jobs});
-    return 0 unless $barrier;
-    return $barrier;
+    my $barriers = _get_lock($name, $jobid, 'all');
+    return 0 if $barriers && $barriers->single;
+    my $dbh = OpenQA::Schema->singleton->storage->dbh;
+    my $sth = $dbh->prepare('INSERT INTO job_locks (name, owner, count) VALUES (?, ?, ?) ON CONFLICT DO NOTHING');
+    eval { $sth->execute($name, $jobid, $expected_jobs) };
+    die "Unable to create barrier for job $jobid with name '$name': $@" if $@;
+    return $sth->rows > 0;
 }
 
-sub barrier_wait {
-    my ($name, $jobid, $where, $check_dead_job) = @_;
-
+sub barrier_wait ($name, $jobid, $where, $check_dead_job) {
     return -1 unless $name && $jobid;
-    return -1 unless my $barrier = _get_lock($name, $jobid, $where);
+    return -1 unless my $barriers = _get_lock($name, $jobid, $where);
+    return -1 unless my $barrier = $barriers->single;
 
     my $jobschema = OpenQA::Schema->singleton->resultset('Jobs');
     my @jobs = split ',', $barrier->locked_by // '';
@@ -125,7 +121,7 @@ sub barrier_wait {
         my @results = map { $jobschema->find($_)->result } $jobid, @jobs, @related_ids;
         for my $result (@results) {
             next unless $final_states{$result};
-            $barrier->delete;
+            $barriers->delete;
             return -1;
         }
     }
@@ -136,18 +132,15 @@ sub barrier_wait {
     }
 
     push @jobs, $jobid;
-    $barrier->update({locked_by => join(',', @jobs)});
-
+    return -1 unless $barriers->update({locked_by => join(',', @jobs)}) > 0;
     return 1 if @jobs == $barrier->count;
     return 0;
 }
 
-sub barrier_destroy {
-    my ($name, $jobid, $where) = @_;
+sub barrier_destroy ($name, $jobid, $where) {
     return 0 unless $name && $jobid;
-    my $barrier = _get_lock($name, $jobid, $where);
-    return 0 unless $barrier;
-    return $barrier->delete;
+    return 0 unless my $barriers = _get_lock($name, $jobid, $where);
+    return $barriers->delete > 0;
 }
 
 1;
