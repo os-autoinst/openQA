@@ -624,6 +624,7 @@ sub _calculate_preferred_machines {
 sub _prepare_job_results ($self, $all_jobs, $limit) {
     my %archs;
     my %results;
+    my @job_ids;
     my $aggregated = {
         none => 0,
         passed => 0,
@@ -715,11 +716,14 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
         $results{$distri}{$version}{$flavor}{$test} //= {};
         $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
 
+        # populate job IDs for batch-commenting
+        push @job_ids, $id;
+
         # add description
         my $description = $settings_by_job_id{$id}->{JOB_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
-    return ($limit_exceeded, \%archs, \%results, $aggregated);
+    return ($limit_exceeded, \%archs, \%results, \@job_ids, $aggregated);
 }
 
 sub _prepare_groupids ($self) {
@@ -805,7 +809,7 @@ sub overview {
     my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
 
     my $limit = $config->{misc_limits}->{tests_overview_max_jobs};
-    (my $limit_exceeded, $stash{archs}, $stash{results}, $stash{aggregated})
+    (my $limit_exceeded, $stash{archs}, $stash{results}, $stash{job_ids}, $stash{aggregated})
       = $self->_prepare_job_results(\@jobs, $limit);
 
     # determine distri/version from job results if not explicitly specified via search args

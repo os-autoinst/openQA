@@ -501,6 +501,8 @@ sub startup ($self) {
       ->name('apiv1_put_parent_group_comment')->to('comment#update');
     $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
       ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
+    $api_ru->post('/comments')->name('apiv1_post_comments')->to('comment#create_many');
+    $api_ra->delete('/comments')->name('apiv1_delete_comments')->to('comment#delete_many');
 
     $api_ra->delete('/user/<id:num>')->name('apiv1_delete_user')->to('user#delete');
 

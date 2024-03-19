@@ -17,6 +17,7 @@ use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
+my $comments = $t->app->schema->resultset('Comments');
 
 # create a parent group
 $t->app->schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
@@ -156,6 +157,18 @@ subtest 'parent group comments' => sub {
     test_comments(parent_groups => 1);
 };
 
+subtest 'create many comments' => sub {
+    $t->post_ok('/api/v1/comments?job_id=42&job_id=foo')->status_is(400);
+    $t->json_is('/error' => 'Erroneous parameters (job_id invalid, text missing)');
+    $t->post_ok('/api/v1/comments?job_id=42&job_id=80000&text=batch-comment')->status_is(400);
+    $t->json_is('/error' => 'Not all comments could be created.', 'error returned');
+    $t->json_is('/failed' => [{job_id => 42}], 'failed IDs returned');
+    $t->json_is('/created' => [{job_id => 80000, id => 5}], 'created comment returned');
+    ok my $comment = $comments->find(5), 'comment created' or return;
+    is $comment->text, 'batch-comment', 'comment has expected text';
+    $t->post_ok('/api/v1/comments?job_id=80000&text=batch-comment-2')->status_is(200);
+};
+
 subtest 'server-side limit has precedence over user-specified limit' => sub {
     $t->app->schema->txn_begin;
 
@@ -205,6 +218,24 @@ subtest 'admin can delete comments' => sub {
     };
 };
 
+$t->app->schema->txn_begin;
+
+subtest 'delete many comments' => sub {
+    $t->delete_ok('/api/v1/comments?id=42&id=foo')->status_is(400);
+    $t->json_is('/error' => 'Erroneous parameters (id invalid)');
+    $t->delete_ok('/api/v1/comments?id=5')->status_is(200, '200 returned if all comments deleted');
+    $t->json_is('/deleted' => 1, 'one comment deleted');
+    ok !$comments->find(5), 'comment is gone';
+    $comments->create({id => 5, user_id => 1, text => 'foo label:force_result:softfailed'});
+    $t->delete_ok('/api/v1/comments?id=5')->status_is(400, '400 returned if some comments preserved');
+    $t->json_is('/deleted' => 0, 'no comments deleted');
+    ok $comments->find(5), 'comment with "force_result"-label not deleted';
+    $t->delete_ok('/api/v1/comments?id=98765&id=1&id=2')->status_is(400, '400 returned if some comments did not exist');
+    $t->json_is('/deleted' => 2, 'two out of three comments deleted');
+};
+
+$t->app->schema->txn_rollback;
+
 subtest 'can not edit comment by other user' => sub {
     $t->put_ok("/api/v1/jobs/99981/comments/1" => form => {text => $edited_test_message . $another_test_message})
       ->status_is(403, 'editing comments by other users is forbidden');
@@ -217,10 +248,10 @@ subtest 'can update job result with special label comment' => sub {
     my $jobs = $schema->resultset('Jobs');
     my $events = $schema->resultset('AuditEvents');
     is $jobs->find($job_id)->result, 'failed', 'job initially is failed';
-    is $events->all, 9, 'only 9 events initially';
+    is $events->all, 11, '11 events emitted so far';
     test_create_comment('jobs', $job_id, 'label:force_result:softfailed:simon_says');
     is $jobs->find($job_id)->result, 'softfailed', 'job is updated to softfailed';
-    is $events->all, 11, 'events for result update emitted';
+    is $events->all, 13, 'events for result update emitted';
     ok $events->find({event => 'job_update_result'}), 'job_update_result event found';
     my $route = "/api/v1/jobs/$job_id/comments";
     my $comments = $schema->resultset('Comments');
@@ -270,6 +301,9 @@ subtest 'unauthorized users can only read' => sub {
     $t->app($app);
     test_get_comment(jobs => 99981, 1, $edited_test_message);
     test_get_comment(groups => 1001, 2, $edited_test_message);
+    $t->post_ok('/api/v1/comments?job_id=80000&text=batch-comment')->status_is(403);
+    $t->delete_ok('/api/v1/comments?id=1')->status_is(403);
+    ok $comments->find(1), 'comment still exists';
 };
 
 done_testing();

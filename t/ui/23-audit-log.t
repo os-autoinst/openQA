@@ -20,6 +20,10 @@ use OpenQA::SeleniumTest;
 my $schema = OpenQA::Test::Case->new->init_data;
 driver_missing unless my $driver = call_driver;
 
+my $events = $schema->resultset('AuditEvents');
+my %comments_create_event = (event => 'comments_create', event_data => '{"created":[{"id": 20},{"id": 67}]}');
+$events->create(\%comments_create_event);
+
 sub wait_for_data_table_entries ($table, $expected_entry_count) {
     my @entries;
     wait_for_ajax msg => 'DataTable query';
@@ -64,7 +68,7 @@ subtest 'audit log entries' => sub {
     my $search = $driver->find_element('#audit_log_table_filter input.form-control');
     ok($search, 'search box found');
 
-    check_data_table_entries $table, 4, 'four rows without filter';
+    check_data_table_entries $table, 5, 'all rows displayed without filter';
 
     $search->send_keys('QA restart');
     my $entries = check_data_table_entries $table, 2, 'less rows when filtered for event data';
@@ -80,7 +84,7 @@ subtest 'audit log entries' => sub {
     $search->clear;
 
     $search->send_keys('newer:today');
-    check_data_table_entries $table, 4, 'again 4 rows when filtering for only newer than today';
+    check_data_table_entries $table, 5, 'again all rows displayed when filtering for only newer than today';
     $search->clear;
 
     $search->send_keys('older:today');
@@ -111,10 +115,20 @@ subtest 'clickable events' => sub {
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
     my $table = $driver->find_element_by_id('audit_log_table');
-    check_data_table_entries $table, 7, 'seven rows without filter and before posting job/comment';
+    check_data_table_entries $table, 8, 'all rows displayed without filter and before posting job/comment';
+
+    subtest 'undo button' => sub {
+        ok my ($undo_button) = $driver->find_elements('button.undo-event'), 'undo button present' or return;
+        $undo_button->click;
+        like $driver->get_alert_text, qr/want to delete the 2 comment\(s\)/i, 'confirmation prompt shown';
+        $driver->accept_alert;
+        wait_for_ajax msg => 'comment deletion';
+        like $driver->find_element_by_id('flash-messages')->get_text, qr/not all comments.*deleted/i, 'result shown';
+    };
+
     my $search = $driver->find_element('#audit_log_table_filter input.form-control');
     $search->send_keys('event:table_create');
-    my $entries = check_data_table_entries $table, 3, 'three rows for table create events';
+    my $entries = check_data_table_entries $table, 3, 'most rows filtered out when searching for table create events';
     ok($entries->[0]->child('.audit_event_details'), 'event detail link present');
 
     $t->post_ok("$url/api/v1/jobs" => $auth => form => {TEST => 'foo'})->status_is(200)->json_is({id => 1});
@@ -124,10 +138,10 @@ subtest 'clickable events' => sub {
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
     $table = $driver->find_element_by_id('audit_log_table');
-    check_data_table_entries $table, 9, 'nine rows without filter and after posting job/comment';
+    check_data_table_entries $table, 10, 'all rows displayed without filter after posting job/comment';
     $search = $driver->find_element('#audit_log_table_filter input.form-control');
     $search->send_keys('event:comment_create');
-    $entries = check_data_table_entries $table, 1, 'one row for comment create events';
+    $entries = check_data_table_entries $table, 1, 'most rows filtered out when searching for comment create events';
     ok $entries->[0]->child('.audit_event_details'), 'event detail link present';
 
     $entries->[0]->child('.audit_event_details')->click;
