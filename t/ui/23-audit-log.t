@@ -35,7 +35,8 @@ sub wait_for_data_table_entries ($table, $expected_entry_count) {
     return \@entries;
 }
 
-sub check_data_table_entries ($table, $expected_entry_count, $test_name) {
+sub check_data_table_entries ($expected_entry_count, $test_name) {
+    my $table = $driver->find_element_by_id('audit_log_table') or BAIL_OUT 'unable to find DataTable';
     my $entries = wait_for_data_table_entries $table, $expected_entry_count;
     is scalar @$entries, $expected_entry_count, $test_name;
     return $entries;
@@ -61,41 +62,39 @@ $driver->find_element_by_class_name('shepherd-cancel-icon')->click;
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Audit log')->click();
 like($driver->get_title(), qr/Audit log/, 'on audit log');
-my $table = $driver->find_element_by_id('audit_log_table');
-ok $table, 'audit table found' or BAIL_OUT 'unable to find DataTable';
 
 subtest 'audit log entries' => sub {
     # search for name, event, date and combination
     my $search = $driver->find_element('#audit_log_table_filter input.form-control');
     ok($search, 'search box found');
 
-    check_data_table_entries $table, 5, 'all rows displayed without filter';
+    check_data_table_entries 5, 'all rows displayed without filter';
 
     $search->send_keys('QA restart');
-    my $entries = check_data_table_entries $table, 2, 'less rows when filtered for event data';
+    my $entries = check_data_table_entries 2, 'less rows when filtered for event data';
     like $entries->[0]->get_text(), qr/openQA restarted/, 'correct element displayed';
     $search->clear;
 
     $search->send_keys('user:system');
-    check_data_table_entries $table, 2, 'less rows when filtered by user';
+    check_data_table_entries 2, 'less rows when filtered by user';
     $search->clear;
 
     $search->send_keys('event:user_login');
-    check_data_table_entries $table, 2, 'less rows when filtered by event';
+    check_data_table_entries 2, 'less rows when filtered by event';
     $search->clear;
 
     $search->send_keys('newer:today');
-    check_data_table_entries $table, 5, 'again all rows displayed when filtering for only newer than today';
+    check_data_table_entries 5, 'again all rows displayed when filtering for only newer than today';
     $search->clear;
 
     $search->send_keys('older:today');
-    $entries = check_data_table_entries $table, 1, 'one row for empty table when filtering for only older than today';
+    $entries = check_data_table_entries 1, 'one row for empty table when filtering for only older than today';
     is $driver->find_child_element($entries->[0], 'td')->get_attribute('class'), 'dataTables_empty',
       'but DataTable is empty';
     $search->clear;
 
     $search->send_keys('user:system event:startup date:today');
-    check_data_table_entries $table, 2, 'two rows when filtered by combination';
+    check_data_table_entries 2, 'two rows when filtered by combination';
 };
 
 subtest 'clickable events' => sub {
@@ -115,8 +114,7 @@ subtest 'clickable events' => sub {
 
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
-    my $table = $driver->find_element_by_id('audit_log_table');
-    check_data_table_entries $table, 8, 'all rows displayed without filter and before posting job/comment';
+    check_data_table_entries 8, 'all rows displayed without filter and before posting job/comment';
 
     subtest 'undo button' => sub {
         ok my ($undo_button) = $driver->find_elements('button.undo-event'), 'undo button present' or return;
@@ -127,9 +125,13 @@ subtest 'clickable events' => sub {
         like $driver->find_element_by_id('flash-messages')->get_text, qr/not all comments.*deleted/i, 'result shown';
     };
 
+    # restore the page's state
+    $driver->execute_script('document.documentElement.scrollTop = 0');    # scroll back to the top
+    $driver->find_element('#flash-messages button.close')->click;
+
     my $search = $driver->find_element('#audit_log_table_filter input.form-control');
     $search->send_keys('event:table_create');
-    my $entries = check_data_table_entries $table, 3, 'most rows filtered out when searching for table create events';
+    my $entries = check_data_table_entries 3, 'most rows filtered out when searching for table create events';
     ok($entries->[0]->child('.audit_event_details'), 'event detail link present');
 
     $t->post_ok("$url/api/v1/jobs" => $auth => form => {TEST => 'foo'})->status_is(200)->json_is({id => 1});
@@ -138,11 +140,10 @@ subtest 'clickable events' => sub {
 
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
-    $table = $driver->find_element_by_id('audit_log_table');
-    check_data_table_entries $table, 10, 'all rows displayed without filter after posting job/comment';
+    check_data_table_entries 10, 'all rows displayed without filter after posting job/comment';
     $search = $driver->find_element('#audit_log_table_filter input.form-control');
     $search->send_keys('event:comment_create');
-    $entries = check_data_table_entries $table, 1, 'most rows filtered out when searching for comment create events';
+    $entries = check_data_table_entries 1, 'most rows filtered out when searching for comment create events';
     ok $entries->[0]->child('.audit_event_details'), 'event detail link present';
 
     $entries->[0]->child('.audit_event_details')->click;
