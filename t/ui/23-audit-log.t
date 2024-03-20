@@ -50,12 +50,13 @@ $t->get_ok($url . '/admin/auditlog')->status_is(302);
 $t->get_ok($url . '/login')->status_is(302);
 $t->get_ok($url . '/admin/auditlog')->status_is(200);
 
-# Log in as Demo
-$driver->title_is("openQA", "on main page");
+# login-in as Demo and disable tour
+$driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
-# we're back on the main page
-$driver->title_is("openQA", "back on main page");
-is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
+$driver->title_is('openQA', 'back on main page');
+is $driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo';
+$driver->find_element_by_id('dont-notify')->click;
+$driver->find_element_by_class_name('shepherd-cancel-icon')->click;
 
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Audit log')->click();
