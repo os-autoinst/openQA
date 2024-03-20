@@ -627,7 +627,7 @@ sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 
     my $timeout = $args->{timeout} // 60;
     my $interval = $args->{interval} // .1;
 
-    note "Waiting for '$description' to become available";
+    note "Waiting for '$description' to become available (timeout: $timeout)";
     while ($timeout > 0) {
         return 1 if $function->();
         $timeout -= sleep $interval;    # uncoverable statement (function might return early one line up)
