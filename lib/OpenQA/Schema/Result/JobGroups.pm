@@ -409,7 +409,7 @@ sub _parse_job_template_products ($yaml_products_for_arch, $yaml_defaults_for_ar
             my $description = '';
             if (ref $spec eq 'HASH') {
                 # We only have one key. Asserted by schema
-                $testsuite_name = (keys %$spec)[0];
+                next unless $testsuite_name = (keys %$spec)[0];
                 my $attr = $spec->{$testsuite_name};
                 if ($attr->{priority}) {
                     $prio = $attr->{priority};
