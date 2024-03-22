@@ -40,7 +40,8 @@
             </div>
         </div>
         <div class="card-body">
-            % if (current_user) {
+            % my $allow_commenting = @$job_ids && current_user;
+            % if ($allow_commenting) {
             <button type="button" class="btn btn-info btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Add comments">
                 <i class="fa fa-comment" aria-hidden="true"></i>
             </button>
@@ -212,7 +213,7 @@
     % }
 </div>
 
-% if (current_user) {
+% if ($allow_commenting) {
 <div class="modal fade" id="add-comments-modal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
