@@ -568,7 +568,7 @@ subtest 'add comments' => sub {
     is $submit_button->get_text, 'Submit comment on all 2 jobs', 'submit button displayed with number of jobs';
     $submit_button->click;
     wait_for_ajax msg => 'comments created';
-    like $driver->find_element_by_id('flash-messages')->get_text, qr/The comments have been created./,
+    like $driver->find_element_by_id('flash-messages')->get_text, qr/The comments have been created. Reload/,
       'info about success shown';
 
     my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;

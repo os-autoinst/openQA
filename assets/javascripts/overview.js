@@ -306,7 +306,10 @@ function addComments(form) {
     data: $(form).serialize(),
     success: response => {
       done();
-      addFlash('info', 'The comments have been created.');
+      addFlash(
+        'info',
+        'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
+      );
     },
     error: (jqXHR, textStatus, errorThrown) => {
       done();
