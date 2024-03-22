@@ -282,23 +282,23 @@ function changeClassOfDependencyJob(array, className, add) {
   }
 }
 
-function showBatchCommentingDialog() {
-  $('#batch-commenting-modal').modal();
+function showAddCommentsDialog() {
+  $('#add-comments-modal').modal();
 }
 
-function addBatchComment(form) {
+function addComments(form) {
   const text = form.elements.text.value;
   if (!text.length) {
     return window.alert("The comment text mustn't be empty.");
   }
-  const progressIndication = document.getElementById('batch-commenting-progress-indication');
-  const controls = document.getElementById('batch-commenting-controls');
+  const progressIndication = document.getElementById('add-comments-progress-indication');
+  const controls = document.getElementById('add-comments-controls');
   progressIndication.style.display = 'flex';
   controls.style.display = 'none';
   const done = () => {
     progressIndication.style.display = 'none';
     controls.style.display = 'inline';
-    $('#batch-commenting-modal').modal('hide');
+    $('#add-comments-modal').modal('hide');
   };
   $.ajax({
     url: form.action,
@@ -306,7 +306,10 @@ function addBatchComment(form) {
     data: $(form).serialize(),
     success: response => {
       done();
-      addFlash('info', 'The comments have been created.');
+      addFlash(
+        'info',
+        'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
+      );
     },
     error: (jqXHR, textStatus, errorThrown) => {
       done();

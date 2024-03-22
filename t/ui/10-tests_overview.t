@@ -553,22 +553,22 @@ subtest 'filter by result and state' => sub {
     ok !$driver->find_element_by_id('filter-failed')->is_selected, 'other checkbox not checked';
 };
 
-subtest 'batch commenting' => sub {
-    my @buttons = $driver->find_elements('button[title="Batch-comment"]');
-    is @buttons, 0, 'button for batch commenting not present if not logged-in';
+subtest 'add comments' => sub {
+    my @buttons = $driver->find_elements('button[title="Add comments"]');
+    is @buttons, 0, 'button for adding comments not present if not logged-in';
 
     $driver->find_element_by_link_text('Login')->click;
     $driver->get('/tests/overview?state=done&result=failed');
     $driver->find_element_by_class_name('shepherd-cancel-icon')->click;
     disable_bootstrap_animations;
-    $driver->find_element('button[title="Batch-comment"]')->click;
-    my $comment_text = 'comment via batch-commenting';
-    my $submit_button = $driver->find_element('#batch-commenting-controls button[type="submit"]');
+    $driver->find_element('button[title="Add comments"]')->click;
+    my $comment_text = 'comment via add-comments';
+    my $submit_button = $driver->find_element('#add-comments-controls button[type="submit"]');
     $driver->find_element_by_id('text')->send_keys($comment_text);
     is $submit_button->get_text, 'Submit comment on all 2 jobs', 'submit button displayed with number of jobs';
     $submit_button->click;
     wait_for_ajax msg => 'comments created';
-    like $driver->find_element_by_id('flash-messages')->get_text, qr/The comments have been created./,
+    like $driver->find_element_by_id('flash-messages')->get_text, qr/The comments have been created. Reload/,
       'info about success shown';
 
     my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;

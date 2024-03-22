@@ -716,7 +716,7 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
         $results{$distri}{$version}{$flavor}{$test} //= {};
         $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
 
-        # populate job IDs for batch-commenting
+        # populate job IDs for adding multiple comments
         push @job_ids, $id;
 
         # add description
