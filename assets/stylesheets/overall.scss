@@ -35,6 +35,8 @@ body {
     width: 100%;
     // set the fixed height of the footer here
     height: 30px;
+    display: flex;
+    align-content: end;
     background-color: #f5f5f5;
 }
 .darkmode {
