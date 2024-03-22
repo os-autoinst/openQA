@@ -576,7 +576,8 @@ subtest 'parallel pinning' => sub {
     my $ws4 = $workers->create({host => 'host2', instance => 3}) or return fail 'unable to create worker4';
 
     my $slots;
-    my $explain_slots = sub () {
+    my $explain_slots = sub () {    # uncoverable statement
+            # uncoverable statement (only executed when test fails, cannot make one-liner due to tidy)
         diag 'slots: ' . join ', ', map { $_->name } @$slots;
     };
     my @to_be_scheduled = ({id => 1, matching_workers => [$ws1, $ws2]}, {id => 2, matching_workers => [$ws1, $ws2]});
