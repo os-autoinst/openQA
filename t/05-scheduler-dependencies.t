@@ -27,6 +27,8 @@ use Test::MockModule;
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
 my $jobs = $schema->resultset('Jobs');
+my $job_dependencies = $schema->resultset('JobDependencies');
+my $job_settings = $schema->resultset('JobSettings');
 my $workers = $schema->resultset('Workers');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 embed_server_for_testing(
@@ -99,6 +101,7 @@ my %workercaps = (
     websocket_api_version => WEBSOCKET_API_VERSION,
 );
 my @worker_ids = map { $c->_register($schema, 'host', "$_", \%workercaps) } (1 .. 6);
+my $worker_on_different_host_id = $c->_register($schema, 'host2', 1, \%workercaps);
 
 subtest 'assign multiple jobs to worker' => sub {
     my $worker = $workers->first;
@@ -142,9 +145,8 @@ subtest 'cycle in directly chained dependencies is handled' => sub {
     my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
     my $scheduled_jobs = $scheduler->scheduled_jobs;
     my @directly_chained = (dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
-    my $dependencies = $schema->resultset('JobDependencies');
-    $dependencies->create({child_job_id => 99928, parent_job_id => 99927, @directly_chained});
-    $dependencies->create({child_job_id => 99927, parent_job_id => 99928, @directly_chained});
+    $job_dependencies->create({child_job_id => 99928, parent_job_id => 99927, @directly_chained});
+    $job_dependencies->create({child_job_id => 99927, parent_job_id => 99928, @directly_chained});
     $scheduler->_update_scheduled_jobs;
     is($scheduled_jobs->{99927}->{priority}, 45, 'regular prio for job 99927 assumed');
     is($scheduled_jobs->{99928}->{priority}, 46, 'regular prio for job 99928 assumed');
@@ -1134,16 +1136,58 @@ subtest 'skip "ok" children' => sub {
     } or $log_jobs->() or diag explain $new_job_cluster;
 };
 
-subtest 'siblings of running for cluster' => sub {
+
+subtest 'parallel siblings of running jobs are allocated' => sub {
+    ok my $job_99998 = $jobs->search({id => 99998})->single, 'job 99998 exists';
+    ok my $job_99999 = $jobs->search({id => 99999})->single, 'job 99999 exists';
+    isnt $job_99999->assigned_worker_id, $worker_on_different_host_id,
+      'job 99999 has already been assigned but not on host2';
+
+    # assume 99999 is being executed and its parallel sibling 99998 is still scheduled
+    # note: Assigning a worker slot on "host2" (not the host 99999 is being executed on) as single matching
+    #       worker for 99998. This should not make a difference by default.
     my $schedule = OpenQA::Scheduler::Model::Jobs->singleton;
-    $schedule->scheduled_jobs->{99999}->{state} = RUNNING;
-    $schedule->scheduled_jobs->{99999}->{cluster_jobs} = {1 => 1, 2 => 1};
-    my $mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
-    $mock->redefine(_jobs_in_execution => ($jobs->search({id => 99999})->single));
-    my ($allocated_jobs, $allocated_workers) = ({}, {});
-    $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
-    ok $allocated_jobs, 'some jobs are allocated';
-    ok $allocated_workers, 'jobs are allocated to workers';
+    my $scheduled_jobs = $schedule->scheduled_jobs;
+    my %cluster_jobs = (99998 => 1, 99999 => 1);
+    my $scheduled_job = $scheduled_jobs->{99998};
+    $job_99999->update({state => RUNNING});
+    $scheduled_job->{state} = SCHEDULED;
+    $scheduled_job->{cluster_jobs} = \%cluster_jobs;
+    $scheduled_job->{matching_workers} = [$workers->find($worker_on_different_host_id)];
+    my %scheduled_jobs = (99998 => $scheduled_job);
+    $schedule->scheduled_jobs(\%scheduled_jobs);
+
+    subtest 'job allocated despite mismatching worker hosts without dependency pinning' => sub {
+        my ($allocated_jobs, $allocated_workers) = ({}, {});
+        $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
+        ok $allocated_jobs->{99998}, 'job 99998 was allocated' or diag explain $allocated_jobs;
+        ok scalar keys %$allocated_workers, 'jobs are allocated to workers';
+    };
+    subtest 'no jobs allocated with dependency pinning and mismatching hosts' => sub {
+        my ($allocated_jobs, $allocated_workers) = ({}, {});
+        $scheduled_jobs{99998}->{one_host_only} = 1;
+        $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
+        ok !exists $allocated_jobs->{99998}, 'job 99998 not allocated' or diag explain $allocated_jobs;
+    };
+    subtest 'jobs allocated with dependency pinning when hosts matching' => sub {
+        my ($allocated_jobs, $allocated_workers) = ({}, {});
+        $scheduled_jobs{99998}->{matching_workers} = [$workers->find($worker_ids[-1])];
+        $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
+        ok exists $allocated_jobs->{99998}, 'job 99998 allocated' or diag explain $allocated_jobs;
+    };
+};
+
+subtest 'PARALLEL_ONE_HOST_ONLY is taken into account when determining scheduled jobs' => sub {
+    my $schedule = OpenQA::Scheduler::Model::Jobs->singleton;
+    $schedule->scheduled_jobs({});
+    $job_dependencies->create({parent_job_id => 99999, child_job_id => 99998, dependency => PARALLEL});
+    $job_settings->create({job_id => 99999, key => 'PARALLEL_ONE_HOST_ONLY', value => '1'});
+    $jobs->find(99998)->update({state => SCHEDULED});
+    my $scheduled_jobs = $schedule->determine_scheduled_jobs;
+    ok !exists $scheduled_jobs->{99999}, 'running job not considered for scheduling';
+    ok exists $scheduled_jobs->{99998}, 'scheduled job considered for scheduling' or return;
+    ok $scheduled_jobs->{99998}->{one_host_only},
+      '"one_host_only"-flag set for 99998 because parallel sibling has PARALLEL_ONE_HOST_ONLY setting';
 };
 
 # conduct further tests with mocked scheduled jobs and free workers

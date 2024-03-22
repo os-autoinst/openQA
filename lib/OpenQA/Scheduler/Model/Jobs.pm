@@ -15,7 +15,7 @@ use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
 use OpenQA::Scheduler::Model::WorkerSlotPicker;
 use Time::HiRes 'time';
-use List::Util qw(all shuffle min sum);
+use List::Util qw(all any shuffle min sum);
 
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
@@ -432,16 +432,14 @@ sub _update_scheduled_jobs ($self) {
             push(@missing_worker_class, $job->id);
             $info->{worker_classes} = [];
         }
-        $info->{cluster_jobs} ||= $cluster_infos{$job->id};
-        $info->{one_host_only} = $job->settings_hash->{PARALLEL_ONE_HOST_ONLY};
 
-        if (!$info->{cluster_jobs}) {
-            $info->{cluster_jobs} = $job->cluster_jobs;
+        my $cluster_jobs = $info->{cluster_jobs} ||= $cluster_infos{$job->id};
+        if (!$cluster_jobs) {
+            $cluster_jobs = $info->{cluster_jobs} = $job->cluster_jobs;
             # it's the same cluster for all, so share
-            for my $j (keys %{$info->{cluster_jobs}}) {
-                $cluster_infos{$j} = $info->{cluster_jobs};
-            }
+            $cluster_infos{$_} = $cluster_jobs for keys %$cluster_jobs;
         }
+        $info->{one_host_only} = any { $_->{one_host_only} } values %$cluster_jobs;
         $scheduled_jobs->{$job->id} = $info;
     }
     # fetch worker classes
