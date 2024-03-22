@@ -41,7 +41,7 @@
         </div>
         <div class="card-body">
             % if (current_user) {
-            <button type="button" class="btn btn-info btn-circle btn-sm trigger-edit-button" onclick="showBatchCommentingDialog()" title="Batch-comment">
+            <button type="button" class="btn btn-info btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Add comments">
                 <i class="fa fa-comment" aria-hidden="true"></i>
             </button>
             % }
@@ -213,10 +213,10 @@
 </div>
 
 % if (current_user) {
-<div class="modal fade" id="batch-commenting-modal">
+<div class="modal fade" id="add-comments-modal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="<%= url_for('apiv1_post_comments')->query(job_id => $job_ids) %>" method="post" onsubmit="addBatchComment(this); return false;">
+            <form action="<%= url_for('apiv1_post_comments')->query(job_id => $job_ids) %>" method="post" onsubmit="addComments(this); return false;">
                 <div class="modal-header">
                     <h4 class="modal-title">Add comment on all currently shown jobs</h4>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
@@ -225,11 +225,11 @@
                     %= include 'comments/add_comment_form_groups', group_comment => 0, nosubmit => 1
                 </div>
                 <div class="modal-footer">
-                    <div id="batch-commenting-progress-indication" style="width: 100%; display: none">
+                    <div id="add-comments-progress-indication" style="width: 100%; display: none">
                         <span class="mr-auto"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</span>
                         <button type="button" class="btn" data-dismiss="modal">Close</button>
                     </div>
-                    <div id="batch-commenting-controls">
+                    <div id="add-comments-controls">
                         <button type="submit" class="btn btn-danger">
                             <i class="fa fa-comment"></i> Submit comment on all <%= scalar @$job_ids %> jobs
                         </button>
