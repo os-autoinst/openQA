@@ -1502,7 +1502,8 @@ sub register_assets_from_settings ($self) {
     my %updated;
 
     # check assets and fix the file names
-    my $assets = $self->result_source->schema->resultset('Assets');
+    my $schema = $self->result_source->schema;
+    my $assets = $schema->resultset('Assets');
     for my $k (keys %assets) {
         my $asset = $assets{$k};
         my ($name, $type) = ($asset->{name}, $asset->{type});
@@ -1526,16 +1527,27 @@ sub register_assets_from_settings ($self) {
         $updated{$k} = $name;
     }
 
-    # ensure assets are updated in a consistent order across multiple processes to avoid ordering deadlocks
+    # insert assets
+    # note: Ensuring assets are updated in a consistent order across multiple processes to
+    #       avoid ordering deadlocks.
+    # note: Not updating the asset size here as doing it in this big transaction would lead
+    #       to deadlocks (see poo#120891).
+    my $dbh = $schema->storage->dbh;
+    my $sth_asset = $dbh->prepare(<<~'END_SQL');
+        INSERT INTO assets (type, name, t_created, t_updated)
+                    VALUES (?,    ?,    now(),     now())
+            ON CONFLICT DO NOTHING RETURNING id
+        END_SQL
+    my $sth_jobs_assets = $dbh->prepare(<<~'END_SQL');
+        INSERT INTO jobs_assets (job_id, asset_id, t_created, t_updated)
+                        VALUES (?,      ?,        now(),     now())
+            ON CONFLICT DO NOTHING
+        END_SQL
     for my $asset_info (sort { $a->{name} cmp $b->{name} } values %assets) {
-        # avoid plain create or we will get unique constraint problems
-        # in case ISO_1 and ISO_2 point to the same ISO
-        # note: Not updating the asset size here as doing it in this big transaction
-        #       would lead to deadlocks (see poo#120891).
-        my $asset = $assets->find_or_create($asset_info);
-        $self->jobs_assets->find_or_create({asset_id => $asset->id});
+        $sth_asset->execute($asset_info->{type}, $asset_info->{name});
+        my ($asset_id) = $sth_asset->fetchrow_array // $assets->find($asset_info)->id;
+        $sth_jobs_assets->execute($self->id, $asset_id);
     }
-
     return \%updated;
 }
 
