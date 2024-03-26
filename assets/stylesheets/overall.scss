@@ -33,9 +33,9 @@ body {
     position: absolute;
     bottom: 0;
     width: 100%;
-    // set the fixed height of the footer here
-    height: 30px;
+    padding-bottom: 10px;
     background-color: #f5f5f5;
+    z-index: -1;
 }
 .darkmode {
     .footer {
