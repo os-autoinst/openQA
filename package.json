@@ -31,5 +31,10 @@
     "jquery-ujs": "^1.2.3",
     "shepherd.js": "^11.2.0",
     "timeago": "^1.6.7"
+  },
+  "overrides": {
+    "dagre-d3": {
+      "d3": "npm:d3"
+    }
   }
 }
