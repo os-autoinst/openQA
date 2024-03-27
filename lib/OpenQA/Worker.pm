@@ -792,9 +792,7 @@ sub has_pending_jobs ($self) { $self->{_queue} && scalar @{$self->{_queue}->{pen
 
 sub pending_job_ids ($self) { $self->{_queue} ? [sort keys %{$self->{_queue}->{pending_job_ids}}] : [] }
 
-sub _find_job_in_queue {
-    my ($job_id, $queue) = @_;
-
+sub _find_job_in_queue ($job_id, $queue) {
     for my $job_or_sub_sequence (@$queue) {
         if (ref($job_or_sub_sequence) eq 'ARRAY') {
             return _find_job_in_queue($job_id, $job_or_sub_sequence);
