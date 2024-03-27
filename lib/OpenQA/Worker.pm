@@ -737,7 +737,6 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
             $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
     }
-    # FIXME: Avoid so much elsif like in CommandHandler.pm.
 }
 
 sub _setup_pool_directory ($self) {
