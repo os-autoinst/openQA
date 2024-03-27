@@ -192,6 +192,10 @@ sub javascript_console_has_no_warnings_or_errors ($test_name_suffix = '') {
         # and ws_console.js will retry
         next if ($msg =~ qr/ws_console.*Error in connection establishment/);    # uncoverable statement
 
+        # ignore redirections in ws_console.js; this might be a race condition shortly after login and ws_console.js
+        # will retry
+        next if ($msg =~ qr/ws_console.*Unexpected response code.*302/);    # uncoverable statement
+
         # ignore errors when gravatar not found
         next if ($msg =~ qr/gravatar/);    # uncoverable statement
 
