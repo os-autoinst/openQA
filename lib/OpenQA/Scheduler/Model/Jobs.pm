@@ -13,7 +13,7 @@ use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::Utils 'random_string';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
-use OpenQA::Scheduler::Model::WorkerSlotPicker;
+use OpenQA::Scheduler::WorkerSlotPicker;
 use Time::HiRes 'time';
 use List::Util qw(all any shuffle min sum);
 
@@ -80,7 +80,7 @@ sub _allocate_jobs ($self, $free_workers) {
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
         next if defined $allocated_jobs->{$j->{id}};
         next unless $tobescheduled;
-        OpenQA::Scheduler::Model::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
+        OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
         my @tobescheduled = grep { $_->{id} } @$tobescheduled;
         my $parallel_count = scalar(@tobescheduled);
         log_debug "Need to schedule $parallel_count parallel jobs for job $j->{id} (with priority $j->{priority})";

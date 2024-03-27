@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use DateTime;
 use DateTime::Duration;
 use OpenQA::Scheduler::Model::Jobs;
-use OpenQA::Scheduler::Model::WorkerSlotPicker;
+use OpenQA::Scheduler::WorkerSlotPicker;
 use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
@@ -583,7 +583,7 @@ subtest 'parallel pinning' => sub {
     my @to_be_scheduled = ({id => 1, matching_workers => [$ws1, $ws2]}, {id => 2, matching_workers => [$ws1, $ws2]});
 
     subtest 'no slots on common host picked when pinning not explicitly enabled' => sub {
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, undef, 'undef returned if not at least one job has pinning enabled';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws1, $ws2], 'slots of job 1 not altered';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws1, $ws2], 'slots of job 2 not altered';
@@ -591,7 +591,7 @@ subtest 'parallel pinning' => sub {
 
     subtest 'not enough matching slots on single host found' => sub {
         $to_be_scheduled[-1]->{one_host_only} = 1;
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [], 'empty array returned if no single host has enough matching slots';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [], 'no slots assigned to job 1';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [], 'no slots assigned to job 2';
@@ -600,7 +600,7 @@ subtest 'parallel pinning' => sub {
     subtest 'slots on host with enough matching slots picked' => sub {
         $to_be_scheduled[0]->{matching_workers} = [$ws1, $ws2, $ws3];
         $to_be_scheduled[1]->{matching_workers} = [$ws1, $ws2, $ws3];
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [$ws2, $ws3], 'slots on host2 returned';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws2], 'slot 2 assigned to job 1';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws3], 'slot 3 assigned to job 2';
@@ -609,14 +609,14 @@ subtest 'parallel pinning' => sub {
     subtest 'slots on host with enough matching slots picked (jobs with distinct sets of matching slots)' => sub {
         $to_be_scheduled[0]->{matching_workers} = [$ws1, $ws2];
         $to_be_scheduled[1]->{matching_workers} = [$ws1, $ws3];
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [$ws2, $ws3], 'slots on host2 returned';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws2], 'slot 2 assigned to job 1';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws3], 'slot 3 assigned to job 2';
 
         $to_be_scheduled[0]->{matching_workers} = [$ws1, $ws3];
         $to_be_scheduled[1]->{matching_workers} = [$ws1, $ws2];
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [$ws3, $ws2], 'still slots on host2 returned after reversing matching slots';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws3], 'slot 3 now assigned to job 1';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws2], 'slot 2 now assigned to job 2';
@@ -628,7 +628,7 @@ subtest 'parallel pinning' => sub {
             {id => 2, matching_workers => [$ws1, $ws2, $ws3, $ws4], one_host_only => 1},
             {id => 3, matching_workers => [$ws1, $ws2, $ws3, $ws4]},
             {id => 4, matching_workers => [$ws1, $ws2, $ws3, $ws4]});
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [], 'empty array returned as there is one slot too few on host2';
         is_deeply $_->{matching_workers}, [], "no slots assigned to job $_->{id}" for @to_be_scheduled;
     } or diag $explain_slots->();
@@ -642,7 +642,7 @@ subtest 'parallel pinning' => sub {
             {id => 2, matching_workers => [$ws1], one_host_only => 1},    # other jobs need to preserve slot 1
             {id => 3, matching_workers => [$ws3, $ws4]},    # need to preserve slot 3 for job 4
             {id => 4, matching_workers => [$ws1, $ws3]});    # slot 3 remains as only option left
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [$ws2, $ws1, $ws4, $ws3], 'slots on host2 returned';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws2], 'slot 2 assigned to job 1';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws1], 'slot 1 assigned to job 2';
@@ -657,7 +657,7 @@ subtest 'parallel pinning' => sub {
             {id => 2, matching_workers => [$ws2, $ws3]},
             {id => 3, matching_workers => [$ws3, $ws4], one_host_only => 1},
             {id => 4, matching_workers => [$ws1, $ws2]});
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [], 'empty array returned as there is one slot too few on host2';
         is_deeply $_->{matching_workers}, [], "no slots assigned to job $_->{id}" for @to_be_scheduled;
     } or diag $explain_slots->();
@@ -670,7 +670,7 @@ subtest 'parallel pinning' => sub {
         @to_be_scheduled = (
             {id => 1, matching_workers => [$ws2, $ws3, $ws1]},
             {id => 2, matching_workers => [$ws4, $ws2, $ws3], one_host_only => 1});
-        $slots = OpenQA::Scheduler::Model::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
+        $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
         is_deeply $slots, [$ws1, $ws2], 'slots on host1 returned';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws1], 'slot 1 assigned to job 1';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws2], 'slot 2 assigned to job 2';

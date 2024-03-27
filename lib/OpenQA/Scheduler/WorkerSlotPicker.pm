@@ -1,7 +1,7 @@
 # Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-package OpenQA::Scheduler::Model::WorkerSlotPicker;
+package OpenQA::Scheduler::WorkerSlotPicker;
 use Mojo::Base -base, -signatures;
 
 use List::Util qw(any);
