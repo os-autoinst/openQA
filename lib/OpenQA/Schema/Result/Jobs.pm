@@ -783,7 +783,9 @@ sub cluster_jobs ($self, @args) {
             my $cancelwhole = 1;
             # check if the setting to disable cancelwhole is set: the var
             # must exist and be set to something false-y
-            my $cwset = $p->settings_hash->{PARALLEL_CANCEL_WHOLE_CLUSTER};
+            my $settings = $p->settings_hash;
+            my $cwset = $settings->{PARALLEL_CANCEL_WHOLE_CLUSTER};
+            $job->{one_host_only} = 1 if $settings->{PARALLEL_ONE_HOST_ONLY};
             $cancelwhole = 0 if (defined $cwset && !$cwset);
             if ($args{cancelmode} && !$cancelwhole) {
                 # skip calling cluster_jobs (so cancelling it and its other

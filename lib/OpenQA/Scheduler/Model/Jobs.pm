@@ -13,8 +13,9 @@ use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::Utils 'random_string';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
+use OpenQA::Scheduler::WorkerSlotPicker;
 use Time::HiRes 'time';
-use List::Util qw(all shuffle min sum);
+use List::Util qw(all any shuffle min sum);
 
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
@@ -79,6 +80,7 @@ sub _allocate_jobs ($self, $free_workers) {
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
         next if defined $allocated_jobs->{$j->{id}};
         next unless $tobescheduled;
+        OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
         my @tobescheduled = grep { $_->{id} } @$tobescheduled;
         my $parallel_count = scalar(@tobescheduled);
         log_debug "Need to schedule $parallel_count parallel jobs for job $j->{id} (with priority $j->{priority})";
@@ -334,34 +336,36 @@ sub _jobs_in_execution ($need) {
     $jobs_rs->search({id => {-in => $need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]})->all;
 }
 
+sub _worker_host_of_job ($job) {
+    return '' unless my $assigned_worker = $job->assigned_worker;
+    return $assigned_worker->host;
+}
+
 sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
     my $scheduled_jobs = $self->scheduled_jobs;
     my @need;
-    # now fetch the remaining job states of cluster jobs
+    # determine the IDs of unallocated jobs in parallel clusters of currently scheduled jobs
     for my $jobinfo (values %$scheduled_jobs) {
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            next if defined $scheduled_jobs->{$j};
-            push(@need, $j);
+            push @need, $j unless defined $scheduled_jobs->{$j};
         }
     }
 
-    my %clusterjobs = map { $_->id => $_->state } _jobs_in_execution(\@need);
+    # determine all running jobs in parallel clusters of currently scheduled jobs and their worker host
+    my %clusterjobs = map { ($_->id => _worker_host_of_job $_) } _jobs_in_execution(\@need);
 
-    # first pick cluster jobs with running siblings (prio doesn't matter)
+    # pick jobs with running parallel siblings (prio doesn't matter)
     for my $jobinfo (values %$scheduled_jobs) {
-        my $has_cluster_running = 0;
+        my $worker_host;
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            if (defined $clusterjobs{$j}) {
-                $has_cluster_running = 1;
-                last;
-            }
+            last if $worker_host = $clusterjobs{$j};
         }
-        if ($has_cluster_running) {
-            for my $w (@{$jobinfo->{matching_workers}}) {
-                next if $allocated_workers->{$w->id};
-                $allocated_workers->{$w->id} = $jobinfo->{id};
-                $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
-            }
+        last unless $worker_host;
+        for my $w (@{$jobinfo->{matching_workers}}) {
+            next if $allocated_workers->{$w->id};
+            next if $jobinfo->{one_host_only} && $w->host ne $worker_host;
+            $allocated_workers->{$w->id} = $jobinfo->{id};
+            $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
         }
     }
 }
@@ -428,15 +432,14 @@ sub _update_scheduled_jobs ($self) {
             push(@missing_worker_class, $job->id);
             $info->{worker_classes} = [];
         }
-        $info->{cluster_jobs} ||= $cluster_infos{$job->id};
 
-        if (!$info->{cluster_jobs}) {
-            $info->{cluster_jobs} = $job->cluster_jobs;
+        my $cluster_jobs = $info->{cluster_jobs} ||= $cluster_infos{$job->id};
+        if (!$cluster_jobs) {
+            $cluster_jobs = $info->{cluster_jobs} = $job->cluster_jobs;
             # it's the same cluster for all, so share
-            for my $j (keys %{$info->{cluster_jobs}}) {
-                $cluster_infos{$j} = $info->{cluster_jobs};
-            }
+            $cluster_infos{$_} = $cluster_jobs for keys %$cluster_jobs;
         }
+        $info->{one_host_only} = any { $_->{one_host_only} } values %$cluster_jobs;
         $scheduled_jobs->{$job->id} = $info;
     }
     # fetch worker classes
