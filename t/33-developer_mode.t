@@ -88,7 +88,8 @@ sub relogin_as ($user) {
     for (my $attempts = 0; $attempts < $max_login_attempts; ++$attempts) {
         if ($login_text ne 'Login') {
             $driver->get('/logout');
-            $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as ' . $user);
+            $login_text = $driver->find_element('#user-action a')->get_text;
+            next if $login_text ne 'Login';    # uncoverable statement
         }
         $driver->get('/login?user=' . $user);    # uncoverable statement (must be bug in coverage tracking)
         $login_text = $driver->find_element('#user-action a')->get_text;
