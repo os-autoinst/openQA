@@ -829,7 +829,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_declaring_dependencies">Declaring dependencies</a>
 <ul class="sectlevel4">
 <li><a href="#_chained_dependencies">Chained dependencies</a></li>
-<li><a href="#_parallel_dependencies">Parallel dependencies</a></li>
+<li><a href="#_parallel_dependencies">Parallel dependencies</a>
+<ul class="sectlevel5">
+<li><a href="#_dependency_pinning">Dependency pinning</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_inter_machine_dependencies">Inter-machine dependencies</a></li>
@@ -7119,6 +7123,32 @@ eventually workers can be held back for the cluster.
 </tr>
 </table>
 </div>
+<div class="sect5">
+<h6 id="_dependency_pinning">Dependency pinning</h6>
+<div class="paragraph">
+<p>It is possible to ensure that all jobs within the same <em>parallel</em> cluster are
+executed on the same worker host. This is useful for connecting the SUTs without
+having to connect the physical worker hosts. Use <code>PARALLEL_ONE_HOST_ONLY=1</code> to
+enable this. Note that adding this setting in <code>workers.ini</code> has currently <strong>no</strong>
+effect.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+You need to provide enough worker slots on single worker hosts to fit
+an entire cluster. So this feature is mainly intended to workaround situations
+where establishing a physical connection between worker hosts is problematic and
+should not be used needlessly. This feature is also still subject to change as
+we explore ways to make it more flexible.
+</td>
+</tr>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -12808,7 +12838,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-03-16 04:44:03 UTC
+Last updated 2024-03-28 04:46:05 UTC
 </div>
 </div>
 </body>
