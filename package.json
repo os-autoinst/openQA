@@ -15,7 +15,7 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "2.3.2"
+    "prettier": "3.2.5"
   },
   "dependencies": {
     "anser": "^2.1.1",
