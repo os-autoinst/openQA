@@ -30,7 +30,7 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
             # Give Utils.pm a chance to install $SIG{CHLD}
             sleep 1;    # uncoverable statement
             OpenQA::Test::Utils::_setup_sub_process 'test-process-1';    # uncoverable statement
-            '' . undef;  # uncoverable statement: provoke Perl warning "Use of uninitialized value in concatenation …"
+            '' . undef;    # uncoverable statement: provoke Perl warning "Use of uninitialized value in concatenation …"
         };
         note "waiting at most $signal_timeout seconds for SIGCHLD (sleep is supposed to be interrupted by SIGCHLD)";
         sleep $signal_timeout;

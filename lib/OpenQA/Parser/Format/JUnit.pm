@@ -77,7 +77,7 @@ sub parse {
         my $num = 1;
         for my $tc ($ts, $ts->children('testcase')->each) {
 
-       # create extra entry for whole testsuite  if there is any system-out or system-err outside of particular testcase
+            # create extra entry for whole testsuite  if there is any system-out or system-err outside of particular testcase
             next if ($tc->tag eq 'testsuite' && $tc->children('system-out, system-err')->size == 0);
 
             my $tc_result = $ts_result;    # use overall testsuite result as fallback

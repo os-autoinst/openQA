@@ -388,7 +388,7 @@ subtest 'command handler' => sub {
     combined_like { $command_handler->handle_command(undef, {}) }
     qr/Ignoring WS message without type from http:\/\/test-host.*/, 'ignoring non-result message without type';
     combined_like { $command_handler->handle_command(undef, {type => WORKER_COMMAND_LIVELOG_STOP, jobid => 1}) }
-qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID 1 \(currently not executing a job\).*/,
+    qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID 1 \(currently not executing a job\).*/,
       'ignoring job-specific message when no job running';
     $worker->current_error('some error');
     $app->log->level('debug');

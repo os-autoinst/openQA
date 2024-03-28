@@ -521,7 +521,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
         # add expected warnings and needle names for needle
         if ($i >= 2) {
             unshift(@expected_needle_warnings,
-                    "A new needle with matching tags has been created since the job started: $new_needle_name.json"
+                "A new needle with matching tags has been created since the job started: $new_needle_name.json"
                   . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)');
             splice(@expected_needle_names, 2, 0, 'new: ' . $new_needle_name);
         }
@@ -595,7 +595,7 @@ subtest 'open needle editor for running test' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->ua->max_redirects(1);
     warnings { $t->get_ok('/tests/99980/edit') };
-    note(   'ignoring warning "DateTime objects passed to search() are not supported properly"'
+    note('ignoring warning "DateTime objects passed to search() are not supported properly"'
           . ' at lib/OpenQA/WebAPI/Controller/Step.pm line 211');
     $t->status_is(200);
     $t->text_is(title => 'openQA: Needle Editor', 'needle editor shown for running test');
@@ -614,7 +614,7 @@ subtest 'error handling when opening needle editor for running test' => sub {
         $t->text_is(title => 'openQA: Needle Editor', 'title still the same');
         $t->text_like(
             '#content p',
-qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so the page \"Needle Editor\" is not available\./,
+            qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so the page \"Needle Editor\" is not available\./,
             'error message'
         );
 
@@ -623,7 +623,7 @@ qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assi
         $t->text_is(title => 'openQA: Page not found', 'generic title present');
         $t->text_like(
             '#content p',
-qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so this route is not available\./,
+            qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so this route is not available\./,
             'error message'
         );
     };
@@ -656,7 +656,7 @@ subtest '(created) needles can be accessed over API' => sub {
     map { like($_, qr/is not in a subdir of/, 'expected warning') } @warnings;
     @warnings = warnings {
         $t->get_ok(
-'/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/../../../../try/to/break_out.json'
+            '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/../../../../try/to/break_out.json'
         )->status_is(403, 'access to files outside the test directory not granted (relative)');
     };
     map { like($_, qr/cannot contain ../, 'expected warning') } @warnings;

@@ -74,7 +74,7 @@ sub start_driver ($mojoport) {
                 # context but bail out to not have repeated entries for the
                 # same problem exceeded console scrollback buffers easily
                 my ($driver, $exception, $args) = @_;    # uncoverable statement
-                my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;   # uncoverable statement
+                my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;    # uncoverable statement
                 $err .= ' at ' . __FILE__ . ':' . __LINE__;    # uncoverable statement
 
                 # prevent aborting the complete test when interactively debugging

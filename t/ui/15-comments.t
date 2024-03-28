@@ -76,7 +76,7 @@ sub write_comment ($text, $desc) {
             wait_for_ajax msg => $desc;
         };
         return undef unless my $error = $@;
-        die $error if ($error !~ qr/unexpected alert/i) || ($attempts >= $max_write_attempts);   # uncoverable statement
+        die $error if ($error !~ qr/unexpected alert/i) || ($attempts >= $max_write_attempts);    # uncoverable statement
 
         # try to dismiss the alert "The comment text mustn't be empty." that is for some reason possibly shown
         # note: Even waiting until document.forms.commentForm.text.value is not empty anymore before submitting

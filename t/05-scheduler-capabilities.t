@@ -196,7 +196,7 @@ is($job->{id}, $jobH->id, "next job by prio, parent - server");
 
 $job = $sent->{$w8_id}->{job}->to_hash;
 is($job->{id}, $jobJ->id,
-"I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead"
+    "I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead"
 );
 
 $job = $sent->{$w9_id}->{job}->to_hash;

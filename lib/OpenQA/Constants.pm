@@ -69,7 +69,7 @@ use constant WORKER_STOP_REASONS => (
 # Define error categories used alongside the reasons defined above for finer error handling where needed
 use constant {
     WORKER_EC_CACHE_FAILURE => 'cache failure',    # the cache service made problems
-    WORKER_EC_ASSET_FAILURE => 'asset failure',   # a problem occurred when handling assets, e.g. an asset was not found
+    WORKER_EC_ASSET_FAILURE => 'asset failure',    # a problem occurred when handling assets, e.g. an asset was not found
 };
 
 # Time verification to use with the "worker_timeout" configuration.

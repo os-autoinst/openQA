@@ -48,7 +48,7 @@ sub sleep_until_job_start {
         (undef, my $jobs) = _jobs($status);
         for my $other_job (@$jobs) {
             return 1
-              if ( $other_job->{args}
+              if ($other_job->{args}
                 && ($other_job->{args}[0]->{project} eq $project)
                 && $other_job->{notes}{project_lock});
         }

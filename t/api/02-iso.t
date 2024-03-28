@@ -30,7 +30,7 @@ sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
     $t->get_ok('/api/v1/jobs')->status_is(200);    # uncoverable statement
     my $jobs = $t->tx->res->json->{jobs};    # uncoverable statement
-    printf("%d %-10s %s (%s)\n", $_->{id}, $_->{state}, $_->{name}, $_->{priority}) for @$jobs;  # uncoverable statement
+    printf("%d %-10s %s (%s)\n", $_->{id}, $_->{state}, $_->{name}, $_->{priority}) for @$jobs;    # uncoverable statement
 }
 
 sub find_job ($jobs, $newids, $name, $machine) {
@@ -554,7 +554,7 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
         is($res->json->{count}, 0, 'none of the jobs has been scheduled');
         like(
             $_->{error_messages}->[0],
-qr/Worker class of chained-(c|d|e) \(bar\) does not match the worker class of its directly chained parent \(foo\)/,
+            qr/Worker class of chained-(c|d|e) \(bar\) does not match the worker class of its directly chained parent \(foo\)/,
             'error reported'
         ) for @{$res->json->{failed}};
         $schema->txn_rollback;

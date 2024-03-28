@@ -861,7 +861,7 @@ subtest 'Create and modify groups with YAML' => sub {
         )->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
                 error => [
-'Job template name \'textmode\' with opensuse-13.1-DVD-i586 and 64bit is already used in job group \'opensuse\''
+                    'Job template name \'textmode\' with opensuse-13.1-DVD-i586 and 64bit is already used in job group \'opensuse\''
                 ],
                 error_status => 400,
                 id => $job_group_id3,
@@ -930,7 +930,7 @@ subtest 'Create and modify groups with YAML' => sub {
         $t->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
                 error => [
-                        'Job template name \'foobar\' is defined more than once. '
+                    'Job template name \'foobar\' is defined more than once. '
                       . 'Use a unique name and specify \'testsuite\' to re-use test suites in multiple scenarios.'
                 ],
                 error_status => 400,

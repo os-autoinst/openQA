@@ -75,7 +75,7 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
         local $ENV{OPENQA_JOB_DONE_HOOK_FAILED} = 'foo';
 
         my $bugs = $t->app->schema->resultset('Bugs');
-        $bugs->search({bugid => 'bsc#1234'})->delete; # ensure the bugref supposed to be inserted does not exist anyways
+        $bugs->search({bugid => 'bsc#1234'})->delete;    # ensure the bugref supposed to be inserted does not exist anyways
         $t->app->log->level('debug');
         $group->update({carry_over_bugrefs => 1});
         my $output = combined_from {

@@ -172,7 +172,7 @@ subtest 'restart with (directly) chained child' => sub {
         99938 => {is_parent_or_initial_job => 0, @empty_deps, directly_chained_parents => [99937]},
     );
     is_deeply(job_get_rs(99937)->cluster_jobs, \%expected_cluster,
-            '99937 has one directly chained child and one directly chained parent; '
+        '99937 has one directly chained child and one directly chained parent; '
           . 'parent considered for restarting but not siblings');
     $job_before_restart = job_get(99937);
 

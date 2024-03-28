@@ -89,7 +89,7 @@ subtest 'needle download' => sub {
     # getting needle image and json by ID also does not work for needles
     # in subdirectories, but arguably should do and should be tested:
     #$t->get_ok('/needles/2/image')->status_is(200)->content_type_is('image/png')->content_is("png\n");
-  #$t->get_ok('/needles/2/json')->status_is(200)->content_type_is('application/json;charset=UTF-8')->content_is($json2);
+    #$t->get_ok('/needles/2/json')->status_is(200)->content_type_is('application/json;charset=UTF-8')->content_is($json2);
 };
 
 
