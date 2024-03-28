@@ -12,6 +12,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Needles;
 use File::Copy;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
@@ -23,6 +24,7 @@ use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
+use File::Touch ();
 use Mojo::Util qw(dumper);
 use Date::Format 'time2str';
 use Fcntl ':mode';
@@ -399,6 +401,31 @@ subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     run_gru_job $t->app, 'limit_results_and_logs';
     ok !-e $log_file_for_job, 'log file for job in group got cleaned';
     ok !-e $log_file_for_groupless_job, 'log file for groupless job got cleaned';
+};
+
+subtest 'limit_temp_needle_refs task cleans up temp needle refs exceeding retention' => sub {
+    my $temp_dir = path(OpenQA::Needles::temp_dir);
+    is $temp_dir, 't/data/openqa/webui/cache/needle-refs', 'needle temp dir determined as expected';
+    $temp_dir->child($_)->make_path for qw(ref1 ref2);
+    my @old_needle_files = ("$temp_dir/ref1/needle_old.png", "$temp_dir/ref1/needle_old.json");
+    my @new_needle_files = ("$temp_dir/ref2/needle_new.png", "$temp_dir/ref2/needle_new.json");
+    my $now = time;
+    File::Touch->new(time => $now - (120 * ONE_MINUTE + 1))->touch(@old_needle_files);
+    File::Touch->new(time => $now + ONE_MINUTE)->touch(@new_needle_files);
+
+    # enqueue and run cleanup
+    my $minion = $t->app->minion;
+    my $id = $minion->enqueue('limit_temp_needle_refs');
+    ok defined $id, 'job enqueued';
+    perform_minion_jobs $minion;
+    my $job_info = $minion->job($id)->info;
+
+    subtest 'cleanup result' => sub {
+        is $job_info->{state}, 'finished', 'job finished';
+        ok !-e $_, "old file '$_' cleaned up" for @old_needle_files;
+        ok !-e "$temp_dir/ref1", 'empty directory removed';
+        ok -e $_, "new file '$_' preserved" for @new_needle_files;
+    } or diag explain $job_info;
 };
 
 subtest 'limit audit events' => sub {
