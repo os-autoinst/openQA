@@ -16,6 +16,8 @@ use Mojo::Base -signatures;
 use autodie ':all';
 use Encode;
 use File::Copy;
+use Date::Format 'time2str';
+use Time::Seconds;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
@@ -81,6 +83,10 @@ subtest 'latest jobs' => sub {
     # These are the later clones, they should appear
     ok(grep(/^99963$/, @ids), 'cloned jobs appear as latest job');
     ok(grep(/^99946$/, @ids), 'cloned jobs appear as latest job (2nd)');
+
+    # Jobs can optionally be filtered via "until"
+    @latest = $jobs->latest_jobs(time2str('%Y-%m-%d %H:%M:%S', time - 5 * ONE_MINUTE, 'UTC'));
+    @ids = map { $_->id } @latest;
 };
 
 
