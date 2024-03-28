@@ -79,7 +79,6 @@ sub new ($class, $cli_options) {
     $settings->apply_to_app($app);
 
     # setup the isotovideo engine
-    # FIXME: Get rid of the concept of engines in the worker.
     my $isotovideo_interface_version = OpenQA::Worker::Engines::isotovideo::set_engine_exec($cli_options->{isotovideo});
 
     my $self = $class->SUPER::new(
@@ -238,6 +237,24 @@ sub status ($self) {
     return \%status;
 }
 
+# Store the packages list of the environment the worker runs in
+sub _store_package_list ($self, $cmd = undef) {
+    return undef unless $cmd;
+    my $pool_directory = $self->pool_directory;
+    log_info("Gathering package information: $cmd");
+
+    my $packages_filename = $pool_directory . '/worker_packages.txt';
+    if (system("$cmd > $packages_filename") != 0) {
+        log_error('The PACKAGES_CMD command could not be executed');
+        return 1;
+    }
+    unless (-s $packages_filename) {
+        log_error('The PACKAGES_CMD command doesn\'t return any data');
+        return 1;
+    }
+    return undef;
+}
+
 # initializes the worker so it does its thing when the Mojo::IOLoop is started
 # note: Do not change the settings - especially the web UI hosts after calling this function.
 sub init ($self) {
@@ -295,21 +312,7 @@ sub init ($self) {
     my $global_settings = $settings->global_settings;
     my $webui_host_specific_settings = $settings->webui_host_specific_settings;
 
-    # Store the packages list of the environment the worker runs in
-    if (my $cmd = $global_settings->{PACKAGES_CMD}) {
-        my $pool_directory = $self->pool_directory;
-        log_info("Gathering package information: $cmd");
-
-        my $packages_filename = $pool_directory . '/worker_packages.txt';
-        if (system("$cmd > $packages_filename") != 0) {
-            log_error('The PACKAGES_CMD command could not be executed');
-            return 1;
-        }
-        unless (-s $packages_filename) {
-            log_error('The PACKAGES_CMD command doesn\'t return any data');
-            return 1;
-        }
-    }
+    return 1 if $self->_store_package_list($global_settings->{PACKAGES_CMD});
 
     # initialize clients to connect to the web UIs
     for my $host (@$webui_hosts) {
@@ -734,7 +737,6 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
             $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
     }
-    # FIXME: Avoid so much elsif like in CommandHandler.pm.
 }
 
 sub _setup_pool_directory ($self) {
@@ -789,9 +791,7 @@ sub has_pending_jobs ($self) { $self->{_queue} && scalar @{$self->{_queue}->{pen
 
 sub pending_job_ids ($self) { $self->{_queue} ? [sort keys %{$self->{_queue}->{pending_job_ids}}] : [] }
 
-sub _find_job_in_queue {
-    my ($job_id, $queue) = @_;
-
+sub _find_job_in_queue ($job_id, $queue) {
     for my $job_or_sub_sequence (@$queue) {
         if (ref($job_or_sub_sequence) eq 'ARRAY') {
             return _find_job_in_queue($job_id, $job_or_sub_sequence);
