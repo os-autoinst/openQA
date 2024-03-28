@@ -37,10 +37,13 @@ $t->post_ok('/admin/obs_rsync/Proj1/obs_builds_text' => $params)->status_is(200,
   ->content_like(qr/started/);
 is $minion->jobs({tasks => [qw(obs_rsync_update_builds_text)]})->total, 1, 'obs_rsync_update_builds_text job enqueued';
 
+use Data::Dumper;    # XXX
 subtest 'process minion jobs' => sub {
     my $minion_jobs = $minion->jobs;
     while (my $info = $minion_jobs->next) {
         my ($task, $job) = ($info->{task}, FakeMinionJob->new(app => $app));
+        fail Dumper($info->{args});    # XXX
+        is($info->{args}->[0]->{url}, 'XXX', 'Project URL included');
         $minion->tasks->{$task}->($job, @{$info->{args}});
         $minion->job($info->{id})->remove;
         is $job->{state}, 'finished', "$task has been finished";
