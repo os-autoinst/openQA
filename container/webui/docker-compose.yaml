@@ -108,7 +108,7 @@ services:
       retries: 6
       start_period: 5s
 
-  webui_db_init:
+  webui-db-init:
     image: openqa_webui
     build: .
     ports:
