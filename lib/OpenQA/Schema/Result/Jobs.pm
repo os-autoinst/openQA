@@ -2143,13 +2143,15 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
             my $ancestors = $self->incomplete_ancestors($limit + 1);
             # how many of those incomplete ancestors had a reason not matching auto_clone?
             my $unrelated = grep { $_->[2] !~ m/$auto_clone_regex/ } @$ancestors;
-            if (@$ancestors < $limit || $unrelated > 0) {
-                $append_reason = ' [Auto-restarting because reason matches /$auto_clone_regex/]';
+            my $restarts = @$ancestors;
+            if ($restarts < $limit || $unrelated > 0) {
+                $append_reason = ' [Auto-restarting because reason matches the configured "auto_clone_regex".]';
                 $$restart = 1;
             }
             else {
                 $append_reason
-                  = ' [Not restarting because job has been restarted already $auto_clone_limit times and failed with /$auto_clone_regex/]';
+                  = ' [Not restarting job despite failure reason matching the configured "auto_clone_regex". ';
+                $append_reason .= "It has already been restarted $restarts times (limit is $limit).]";
             }
         }
 

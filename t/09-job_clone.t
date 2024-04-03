@@ -142,7 +142,7 @@ subtest 'auto_clone limits' => sub {
         $restart = 0;
         $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
         is $restart, 0, "restart false";
-        like $new{reason}, qr{Not restarting because.*auto_clone_limit}, '$reason is modified';
+        like $new{reason}, qr{Not restarting.*"auto_clone_regex".*3 times.*limit is 3}, '$reason is modified';
     };
 
     subtest 'more than auto_clone_limit incompletes - but less matching auto_clone_regex' => sub {
