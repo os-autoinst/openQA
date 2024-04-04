@@ -620,8 +620,8 @@ sub check_availability ($self) {
         return "A QEMU instance using the current pool directory is still running (PID: $qemu_pid)";
     }
 
-    # ensure pool directory is locked
-    if (my $error = $self->_setup_pool_directory) {
+    # avoid running jobs if system utilization is critical and ensure pool directory is locked
+    if (my $error = $self->_check_system_utilization || $self->_setup_pool_directory) {
         return $error;
     }
 
@@ -737,6 +737,21 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
             $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
     }
+}
+
+sub _load_avg ($field = 2) {
+    my $value = eval { (split(' ', path($ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg')->slurp))[$field] };
+    log_warning "Unable to determine average load: $@" if $@;
+    return looks_like_number($value) ? $value : undef;
+}
+
+sub _check_system_utilization ($self) {
+    my $settings = $self->settings->global_settings;
+    return undef unless my $threshold = $settings->{CRITICAL_LOAD_AVG_THRESHOLD};
+    my $load_avg = _load_avg;
+    return "The average load $load_avg is exceeding the configured threshold of $threshold."
+      if defined $load_avg && $load_avg >= $threshold;
+    return undef;
 }
 
 sub _setup_pool_directory ($self) {
