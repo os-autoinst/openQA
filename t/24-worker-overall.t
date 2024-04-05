@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '10';
 use Data::Dumper;
-use Mojo::File 'tempdir';
+use Mojo::File qw(tempdir tempfile path);
 use Mojo::Util 'scope_guard';
 use Mojolicious;
 use Test::Fatal;
@@ -27,6 +27,12 @@ $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 # note: The worker instantiates OpenQA::Setup which would configure logging to use the output
 #       file specified via OPENQA_LOGFILE instead of stdout/stderr.
 $ENV{OPENQA_LOGFILE} = undef;
+
+# fake "/proc/loadavg"
+my $load_avg_file = tempfile('worker-overall-load-avg-XXXXX');
+my $load_avg_file_realpath = $load_avg_file->realpath;
+$load_avg_file->spew('0.93 0.95 10.25 2/2207 1212');
+$ENV{OPENQA_LOAD_AVG_FILE} = $load_avg_file_realpath;
 
 # define fake isotovideo
 {
@@ -801,9 +807,16 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
             qr/Job 769 from some-host finished - reason: skipped/s, 'assume skipping of job 769 is complete';
             is $worker->status->{status}, 'broken', 'worker still considered broken';
 
-            # assume the error is gone
+            # assume the average load exceeds configured threshold
             $worker_mock->unmock('is_qemu_running');
-            is $worker->status->{status}, 'free', 'worker is free to take another job';
+            $worker->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD} = '10';
+            is $worker->status->{status}, 'broken', 'worker considered broken when average load exceeds threshold';
+            like $worker->current_error, qr/load 10\.25.*exceeding.*10/, 'error shows current load and threshold';
+
+            # assume the error is gone
+            $load_avg_file_realpath->remove;
+            combined_like { is $worker->status->{status}, 'free', 'worker is free to take another job' }
+            qr/unable to determine average load/i, 'warning about not being able to detect average load logged';
             is $worker->current_error, undef, 'current error is cleared by the querying the status';
         };
     };
