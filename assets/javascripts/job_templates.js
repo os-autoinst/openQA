@@ -471,15 +471,15 @@ function submitTemplateEditor(button) {
         $('<strong/>').text(' No changes were made!').appendTo(result);
       }
     })
-    .fail(function (data) {
+    .fail(function (response) {
       result.text('There was a problem applying the changes:');
-      if (!Object.prototype.hasOwnProperty.call(data, 'responseJSON')) {
+      if (!Object.prototype.hasOwnProperty.call(response, 'responseJSON')) {
         $('<p/>')
-          .text('Invalid server response: ' + data.statusText)
+          .text('Invalid server response: ' + response.statusText)
           .appendTo(result);
         return;
       }
-      var data = data.responseJSON;
+      const data = response.responseJSON;
       if (Object.prototype.hasOwnProperty.call(data, 'error')) {
         var errors = data.error;
         var list = $('<ul/>').appendTo(result);

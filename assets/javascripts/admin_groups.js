@@ -1,14 +1,15 @@
 function showAddJobGroup(plusElement) {
+  let parentId, title;
   if (plusElement) {
-    var parentLiElement = $(plusElement).closest('li');
-    var parentId = parentLiElement.prop('id').substr(13);
+    const parentLiElement = $(plusElement).closest('li');
+    parentId = parentLiElement.prop('id').substr(13);
     if (parentId !== 'none') {
       parentId = parseInt(parentId);
     }
-    var title = 'Add job group in ' + parentLiElement.find('.parent-group-name').text().trim();
+    title = 'Add job group in ' + parentLiElement.find('.parent-group-name').text().trim();
   } else {
-    var parentId = 'none';
-    var title = 'Add new job group on top-level';
+    parentId = 'none';
+    title = 'Add new job group on top-level';
   }
 
   var formElement = $('#new_group_form');
@@ -93,20 +94,21 @@ function createGroup(form) {
   $('#new_group_error').hide();
   $('#new_group_creating').show();
 
-  var data = editorForm.serialize();
+  let data = editorForm.serialize();
+  let postUrl, rowUrl, targetElement;
   if (editorForm.data('create-parent')) {
-    var postUrl = editorForm.data('post-parent-group-url');
-    var rowUrl = editorForm.data('parent-group-row-url');
-    var targetElement = $('#job_group_list');
+    postUrl = editorForm.data('post-parent-group-url');
+    rowUrl = editorForm.data('parent-group-row-url');
+    targetElement = $('#job_group_list');
   } else {
-    var postUrl = editorForm.data('post-job-group-url');
-    var rowUrl = editorForm.data('job-group-row-url');
-    var parentId = editorForm.data('parent-id');
+    postUrl = editorForm.data('post-job-group-url');
+    rowUrl = editorForm.data('job-group-row-url');
+    const parentId = editorForm.data('parent-id');
     if (parentId !== 'none') {
-      var targetElement = $('#parent_group_' + parentId).find('ul');
+      targetElement = $('#parent_group_' + parentId).find('ul');
       data += '&parent_id=' + parentId;
     } else {
-      var targetElement = $('#job_group_list');
+      targetElement = $('#job_group_list');
     }
   }
 
@@ -312,19 +314,19 @@ function saveReorganizedGroups() {
 
   // determine what changed to make required AJAX queries
   jobGroupList.children('li').each(function (groupIndex) {
-    var groupLi = $(this);
-
+    const groupLi = $(this);
+    let isParent, groupId, updateGroupUrl;
     if (this.id.indexOf('job_group_') === 0) {
-      var isParent = false;
-      var groupId = parseInt(this.id.substr(10));
-      var updateGroupUrl = updateJobGroupUrl;
+      isParent = false;
+      groupId = parseInt(this.id.substr(10));
+      updateGroupUrl = updateJobGroupUrl;
     } else if (this.id.indexOf('parent_group_') === 0) {
-      var isParent = true;
-      var groupId = parseInt(this.id.substr(13));
-      var updateGroupUrl = updateParentGroupUrl;
+      isParent = true;
+      groupId = parseInt(this.id.substr(13));
+      updateGroupUrl = updateParentGroupUrl;
     }
-    var parentId = groupLi.data('initial-parent');
 
+    const parentId = groupLi.data('initial-parent');
     if (groupIndex != groupLi.data('initial-index') || parentId !== 'none') {
       // index of parent group changed -> update sort order
       ajaxQueries.push({
