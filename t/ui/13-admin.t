@@ -677,17 +677,24 @@ subtest 'Manage API keys' => sub {
     };
 
     subtest 'create key with expiration date' => sub {
-        $driver->find_element('#api-keys-form input[type=submit]')->click;
-        is(scalar @{$driver->find_child_elements($tbody = api_keys_tbody, 'tr')}, 1, 'exactly one key present');
-        like($tbody->get_text, qr/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, 'new key has expiration date');
+        my $row = wait_for_element(
+            trigger_function => sub { $driver->find_element('#api-keys-form input[type=submit]')->click },
+            selector => '#api-keys-tbody > tr',
+            description => 'key row present'
+        ) or return;
+        like($row->get_text, qr/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, 'new key has expiration date');
     };
 
     subtest 'create key without expiration date' => sub {
+        $tbody = api_keys_tbody;
         unlike($tbody->get_text, qr/never/, 'no key without expiration date present so far');
         $driver->find_element_by_id('expiration')->click;
-        $driver->find_element('#api-keys-form input[type=submit]')->click;
-        is(scalar @{$driver->find_child_elements($tbody = api_keys_tbody, 'tr')}, 2, 'two keys present now');
-        like($tbody->get_text, qr/never/, 'new key has expiration date');
+        my $row = wait_for_element(
+            trigger_function => sub { $driver->find_element('#api-keys-form input[type=submit]')->click },
+            selector => '#api-keys-tbody tr:nth-child(2)',
+            description => 'key row present (without expiration)'
+        ) or return;
+        like($row->get_text, qr/never/, 'new key has expiration date');
     };
 };
 
