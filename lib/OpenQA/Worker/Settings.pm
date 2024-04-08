@@ -65,6 +65,10 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
         }
     }
 
+    # Select sensible system CPU load15 threshold to prevent system overload
+    # based on experiences with system stability so far
+    $global_settings{CRITICAL_LOAD_AVG_THRESHOLD} //= 40;
+
     # set some environment variables
     # TODO: This should be sent to the scheduler to be included in the worker's table.
     if (defined $instance_number) {

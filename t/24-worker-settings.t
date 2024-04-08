@@ -20,6 +20,7 @@ my $settings = OpenQA::Worker::Settings->new;
 is_deeply(
     $settings->global_settings,
     {
+        CRITICAL_LOAD_AVG_THRESHOLD => 40,
         GLOBAL => 'setting',
         WORKER_HOSTNAME => '127.0.0.1',
         LOG_LEVEL => 'test',
@@ -82,6 +83,7 @@ subtest 'instance-specific settings' => sub {
     is_deeply(
         $settings1->global_settings,
         {
+            CRITICAL_LOAD_AVG_THRESHOLD => 40,
             GLOBAL => 'setting',
             WORKER_HOSTNAME => '127.0.0.1',
             WORKER_CLASS => 'qemu_i386,qemu_x86_64',
@@ -96,6 +98,7 @@ subtest 'instance-specific settings' => sub {
     is_deeply(
         $settings2->global_settings,
         {
+            CRITICAL_LOAD_AVG_THRESHOLD => 40,
             GLOBAL => 'setting',
             WORKER_HOSTNAME => '127.0.0.1',
             WORKER_CLASS => 'qemu_aarch64',
