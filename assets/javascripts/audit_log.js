@@ -15,6 +15,7 @@ function getURLForType(type, event_data) {
       } else if (event_data.parent_group_id !== undefined) {
         return '/parent_group_overview/' + event_data.parent_group_id + '#comments';
       }
+      break;
     case 'jobtemplate_create':
       if (event_data.job_group_id) {
         return '/admin/job_templates/' + event_data.job_group_id;

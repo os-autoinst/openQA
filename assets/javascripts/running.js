@@ -1186,7 +1186,7 @@ function processWsCommand(obj) {
       }
 
       // handle update of the VNC argument
-      const vncArg = data?.vnc_arg;
+      var vncArg = data?.vnc_arg;
       if (typeof vncArg === 'string' && vncArg !== developerMode.vncArg) {
         developerMode.vncArg = vncArg;
         somethingChanged = true;
