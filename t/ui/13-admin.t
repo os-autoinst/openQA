@@ -56,8 +56,19 @@ $driver->find_element('#user-action a')->click();
 like($driver->find_element_by_id('user-action')->get_text, qr/Operators Menu/, 'demo is operator');
 like($driver->find_element_by_id('user-action')->get_text, qr/Administrators Menu/, 'demo is admin');
 
+subtest 'Minion dashboard' => sub {
+    $driver->find_element_by_link_text('Minion Dashboard')->click;
+    wait_for_ajax msg => 'dashboard contents';
+    $driver->execute_script(q{$('.nav-link:contains("Active")')[0].click()});
+    wait_for_ajax msg => '"Active" table';
+    like $driver->find_element('body')->get_text, qr/No jobs found/i, 'no jobs to show';
+    ok javascript_console_has_no_warnings_or_errors, 'no JavaScript problems';
+    $driver->execute_script(q{$('.nav-link:contains("Back to Site")')[0].click()});
+    $driver->title_is('openQA', 'back on main page');
+};
 
 # open workers page
+$driver->find_element('#user-action a')->click;
 $driver->find_element_by_link_text('Workers')->click;
 $driver->title_is('openQA: Workers', 'on workers overview');
 
