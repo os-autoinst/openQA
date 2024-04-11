@@ -45,24 +45,32 @@ driver_missing unless my $driver = call_driver;
 plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
   unless can_load(modules => {'Selenium::Remote::WDKeys' => undef,});
 
-$driver->title_is("openQA");
-is($driver->find_element('#user-action a')->get_text(), 'Login', "no one logged in");
-$driver->find_element_by_link_text('Login')->click();
-# we're back on the main page
-$driver->title_is("openQA", "back on main page");
-# but ...
-
-is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
+$driver->title_is('openQA');
+is($driver->find_element('#user-action a')->get_text, 'Login', 'no one logged in');
+$driver->find_element_by_link_text('Login')->click;
+$driver->title_is('openQA', 'back on main page');
+is($driver->find_element('#user-action a')->get_text, 'Logged in as Demo', 'logged in as demo');
 
 # expand user menu
 $driver->find_element('#user-action a')->click();
-like($driver->find_element_by_id('user-action')->get_text(), qr/Operators Menu/, 'demo is operator');
-like($driver->find_element_by_id('user-action')->get_text(), qr/Administrators Menu/, 'demo is admin');
+like($driver->find_element_by_id('user-action')->get_text, qr/Operators Menu/, 'demo is operator');
+like($driver->find_element_by_id('user-action')->get_text, qr/Administrators Menu/, 'demo is admin');
 
-# Demo is admin, so go there
-$driver->find_element_by_link_text('Workers')->click();
+subtest 'Minion dashboard' => sub {
+    $driver->find_element_by_link_text('Minion Dashboard')->click;
+    wait_for_ajax msg => 'dashboard contents';
+    $driver->execute_script(q{$('.nav-link:contains("Active")')[0].click()});
+    wait_for_ajax msg => '"Active" table';
+    like $driver->find_element('body')->get_text, qr/No jobs found/i, 'no jobs to show';
+    ok javascript_console_has_no_warnings_or_errors, 'no JavaScript problems';
+    $driver->execute_script(q{$('.nav-link:contains("Back to Site")')[0].click()});
+    $driver->title_is('openQA', 'back on main page');
+};
 
-$driver->title_is("openQA: Workers", "on workers overview");
+# open workers page
+$driver->find_element('#user-action a')->click;
+$driver->find_element_by_link_text('Workers')->click;
+$driver->title_is('openQA: Workers', 'on workers overview');
 
 subtest 'add product' => sub() {
     # go to product first
