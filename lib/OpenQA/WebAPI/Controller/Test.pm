@@ -888,7 +888,7 @@ sub module_fails {
     my $first_failed_step = 0;
     for my $detail (@{$module->results->{details}}) {
         $counter++;
-        next unless $detail->{result} eq 'fail';
+        next unless ($detail->{result} // '') eq 'fail';
         $first_failed_step = $counter if $first_failed_step == 0;
         push @needles, $_->{name} for @{$detail->{needles}};
     }
