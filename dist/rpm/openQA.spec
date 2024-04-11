@@ -664,6 +664,8 @@ fi
 %{_localstatedir}/lib/openqa/script
 %{_localstatedir}/lib/openqa/tests
 %{_datadir}/openqa/script/openqa-check-devel-repo
+%{_unitdir}/openqa-minion-restart.service
+%{_unitdir}/openqa-minion-restart.path
 
 %files worker
 %{_datadir}/openqa/lib/OpenQA/CacheService/
