@@ -69,7 +69,7 @@
                   </span>
               </div>
               <div id='footer-legal' class="text-center">
-                  openQA is licensed
+                  openQA is licensed under
                   %= link_to 'GPL-2.0' => 'https://github.com/os-autoinst/openQA'
                   % if ($current_version) {
                       - Version
