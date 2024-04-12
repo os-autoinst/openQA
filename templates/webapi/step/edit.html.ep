@@ -149,7 +149,7 @@
                                 <span id="workaround_reason" style="display:none;">
                                     <br/>
                                     <label for="input_workaround_desc">Description:</label>
-                                    <input tupe="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
+                                    <input type="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
                                 </span>
                             </p>
                             % if ($git_enabled) {

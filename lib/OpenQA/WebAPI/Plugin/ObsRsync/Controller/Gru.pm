@@ -12,7 +12,7 @@ use Data::Dump qw/dump/;
 # (honouring `concurrency` configuration). (I.e. job `obs_rsync_run` has been created).
 #
 # Request may return status code IGNORED if requests's parameter repository doesn't match configured
-# repostory for the project.
+# repository for the project.
 #
 # If new request comes for a project which already has rsync running - the response will be QUEUED,
 # meaning that rsync for the project will be attempted again once active rsync is finished.

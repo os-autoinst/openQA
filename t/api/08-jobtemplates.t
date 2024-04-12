@@ -931,7 +931,7 @@ subtest 'Create and modify groups with YAML' => sub {
             '' => {
                 error => [
                         'Job template name \'foobar\' is defined more than once. '
-                      . 'Use a unique name and specify \'testsuite\' to re-use test suites in multiple scenarios.'
+                      . 'Use a unique name and specify \'testsuite\' to reuse test suites in multiple scenarios.'
                 ],
                 error_status => 400,
                 id => $job_group_id3,

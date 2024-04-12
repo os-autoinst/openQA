@@ -464,7 +464,7 @@ subtest 'clone and schedule parallel cluster' => sub {
     $jobs->find($_)->done(result => PASSED) for ($jobA2, $jobB2, $jobC2, $jobD2, $jobE2, $jobF2);
 };
 
-subtest 're-use vlan' => sub {
+subtest 'reuse vlan' => sub {
     $jobA = _job_create('A');
     $jobB = _job_create('B');
     $jobC = _job_create('C', [$jobB->id]);

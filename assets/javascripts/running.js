@@ -507,7 +507,7 @@ var developerMode = {
     );
   },
 
-  // returns whether all specified properties/functions eveluate to true
+  // returns whether all specified properties/functions evaluate to true
   allTrue: function (propertyNames) {
     return propertyNames.split(',').every(propertyName => {
       const prop = this[propertyName];

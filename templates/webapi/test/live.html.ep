@@ -126,7 +126,7 @@
                     <label for="developer-pause-on-failure" class="col-form-label">
                         Pause on failure (<strong>except</strong> screen mismatch assertions)
                     </label>
-                    <%= help_popover('Help for <i>pause on failue</i>' => '
+                    <%= help_popover('Help for <i>pause on failure</i>' => '
                         <p>
                             Pauses the test execution in case an assertion fails or the test fails due to an
                             unhandled exception.

@@ -175,7 +175,7 @@ sub _progress_monitior ($ua, $tx) {
             return unless my $len = $msg->headers->content_length;
             if ($limit && $msg->headers->content_length >= $limit) {
                 $msg->error(
-                    {message => path($filename)->basename . " exceeeds maximum size limit of $limit", code => 509});
+                    {message => path($filename)->basename . " exceeds maximum size limit of $limit", code => 509});
             }
         });
 
