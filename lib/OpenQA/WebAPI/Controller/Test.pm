@@ -442,7 +442,7 @@ sub show_filesrc {
         return $self->redirect_to($casedir_url);
     }
     my $setting_file_path = path($testcasedir, $filepath);
-    return $self->reply->not_found unless $setting_file_path && -e $setting_file_path;
+    return $self->reply->not_found unless $setting_file_path && -f $setting_file_path;
     my $context = path($setting_file_path)->slurp;
     $self->render(
         'test/link_context',
@@ -888,7 +888,7 @@ sub module_fails {
     my $first_failed_step = 0;
     for my $detail (@{$module->results->{details}}) {
         $counter++;
-        next unless $detail->{result} eq 'fail';
+        next unless ($detail->{result} // '') eq 'fail';
         $first_failed_step = $counter if $first_failed_step == 0;
         push @needles, $_->{name} for @{$detail->{needles}};
     }

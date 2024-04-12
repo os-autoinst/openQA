@@ -9,6 +9,7 @@ use OpenQA::Utils;
 use OpenQA::WebAPI::ServerSideDataTable;
 use Date::Format 'time2str';
 use DateTime::Format::Pg;
+use List::Util qw(any);
 use Time::Seconds;
 
 sub index ($self) { $self->render('admin/needle/index') }
@@ -109,8 +110,8 @@ sub module ($self) {
 
     my $index = 1;
     for my $detail (@{$module->results->{details}}) {
-        last if $detail->{needle} eq $needle;
-        last if grep { $needle eq $_->{name} } @{$detail->{needles} || []};
+        last if $needle eq ($detail->{needle} // '');
+        last if any { $needle eq ($_->{name} // '') } @{$detail->{needles} || []};
         $index++;
     }
     $self->redirect_to('step', testid => $module->job_id, moduleid => $module->name(), stepid => $index);
@@ -125,17 +126,11 @@ sub delete ($self) {
             user_id => $self->current_user->id,
         }
     )->then(
-        sub {
-            my ($result) = @_;
-
+        sub ($result) {
             my $removed_ids = ($result->{removed_ids} //= []);
-            $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if (@$removed_ids);
+            $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if @$removed_ids;
             $self->render(json => $result);
-        }
-    )->catch(
-        sub {
-            $self->reply->gru_result(@_);
-        });
+        })->catch(sub { $self->reply->gru_result(@_) });
 }
 
 1;

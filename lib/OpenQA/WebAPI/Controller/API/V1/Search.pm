@@ -181,6 +181,7 @@ sub query {
 
     my %json = (total_count => 0, results => \%results);
     my $perl_module_results = $self->_search_perl_modules($keywords, $cap);
+    return undef unless ref $perl_module_results eq 'ARRAY';
     $json{total_count} += @{$perl_module_results};
     $cap -= @{$perl_module_results};
     $results{code} = $perl_module_results;
