@@ -126,17 +126,11 @@ sub delete ($self) {
             user_id => $self->current_user->id,
         }
     )->then(
-        sub {
-            my ($result) = @_;
-
+        sub ($result) {
             my $removed_ids = ($result->{removed_ids} //= []);
-            $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if (@$removed_ids);
+            $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if @$removed_ids;
             $self->render(json => $result);
-        }
-    )->catch(
-        sub {
-            $self->reply->gru_result(@_);
-        });
+        })->catch(sub { $self->reply->gru_result(@_) });
 }
 
 1;
