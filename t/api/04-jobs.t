@@ -773,7 +773,7 @@ subtest 'update job status' => sub {
         combined_like {
             $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400)
         }
-qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
+        qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
           'status update for job that is already considered done rejected';
     };
 

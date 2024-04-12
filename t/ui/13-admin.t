@@ -251,7 +251,7 @@ subtest 'add test suite' => sub() {
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     wait_for_ajax;
-# now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
+    # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
     $elem = $driver->find_element('.admintable tbody tr:nth-child(7)')
       ;    # sorting by name so `t"e\st'Suite\'` is supposed to be the 7th element
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');

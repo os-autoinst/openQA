@@ -1338,7 +1338,7 @@ subtest 'override job reason when qemu terminated with known issues by parsing a
         {
             reason => 'QEMU terminated: Failed to allocate KVM .* Cannot allocate memory',
             log_file_content =>
-'[warn] !!! : qemu-system-ppc64: Failed to allocate KVM HPT of order 25 (try smaller maxmem?): Cannot allocate memory.',
+              '[warn] !!! : qemu-system-ppc64: Failed to allocate KVM HPT of order 25 (try smaller maxmem?): Cannot allocate memory.',
             base_state_content => '{"component": "backend", "msg": "QEMU exited unexpectedly, see log for details"}'
         },
         {
@@ -1349,7 +1349,7 @@ subtest 'override job reason when qemu terminated with known issues by parsing a
         },
         {
             reason =>
-'terminated prematurely: Encountered corrupted state file: No space left on device, see log output for details',
+              'terminated prematurely: Encountered corrupted state file: No space left on device, see log output for details',
             log_file_content =>
 '[debug] Unable to serialize fatal error: Can\'t write to file "base_state.json": No space left on device at /usr/lib/os-autoinst/bmwqemu.pm line 86.',
             base_state_content => 'foo boo',

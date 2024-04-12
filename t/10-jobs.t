@@ -260,7 +260,7 @@ subtest 'job with all modules passed and at least one ignore_failure failed => o
 };
 
 subtest
-'job with important modules passed and at least one softfailed and at least one ignore_failure failed => overall softfailed'
+  'job with important modules passed and at least one softfailed and at least one ignore_failure failed => overall softfailed'
   => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'F';
@@ -282,7 +282,7 @@ subtest
   };
 
 subtest
-'job with one "important" (old flag we now ignore) module failed and at least one ignore_failure passed => overall failed'
+  'job with one "important" (old flag we now ignore) module failed and at least one ignore_failure passed => overall failed'
   => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'G';

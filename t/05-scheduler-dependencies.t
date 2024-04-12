@@ -750,17 +750,17 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     is_deeply(
         $jobW2->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
-'jobW2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
+        'jobW2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or diag explain $jobW2->{parents};
     is_deeply(
         $jobU2->to_hash(deps => 1)->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
-'jobU2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
+        'jobU2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or diag explain $jobU2->to_hash(deps => 1)->{parents};
     is_deeply(
         $jobR2->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
-'jobR2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
+        'jobR2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or diag explain $jobR2->{parents};
 };
 

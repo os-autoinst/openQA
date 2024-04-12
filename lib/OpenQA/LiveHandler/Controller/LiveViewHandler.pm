@@ -376,7 +376,7 @@ sub connect_to_cmd_srv ($self, $job_id, $cmd_srv_raw_url, $data) {
                 error => 'unable to upgrade ws to command server')
               unless $tx->is_websocket;
 
-# assign transaction: don't do this before to prevent regular HTTP connections to be used in send_message_to_os_autoinst
+            # assign transaction: don't do this before to prevent regular HTTP connections to be used in send_message_to_os_autoinst
             $self->cmd_srv_transactions_by_job->{$job_id} = $tx;
 
             # instantly query the os-autoinst status
@@ -499,7 +499,7 @@ sub ws_proxy {
                 error => 'unable to create (further) development session');
         }
         # mark session as active
-        $developer_session->update({ws_connection_count => \'ws_connection_count + 1'});   #'restore syntax highlighting
+        $developer_session->update({ws_connection_count => \'ws_connection_count + 1'});    #'restore syntax highlighting
     }
 
     # add JavaScript transaction to the list of JavaScript transactions for this job

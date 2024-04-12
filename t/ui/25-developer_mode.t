@@ -140,7 +140,7 @@ mock_js_functions(
     updateStatus => '',
     setupWebsocketConnection => '',
     startDeveloperSession =>
-'developerMode.ownSession = true; developerMode.useDeveloperWsRoute = true; handleWebsocketConnectionOpened(developerMode.wsConnection);',
+      'developerMode.ownSession = true; developerMode.useDeveloperWsRoute = true; handleWebsocketConnectionOpened(developerMode.wsConnection);',
     sendWsCommand => 'if (!window.sentCmds) { window.sentCmds = [] } window.sentCmds.push(arg1);',
 );
 
@@ -676,7 +676,7 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         my $ignored_connection_error
           = '{\"type\":\"error\",\"what\":\"ignored error\",\"data\":{\"category\":\"cmdsrv-connection\"}}';
 
- # assume there's no running module (so connection issues with os-autoinst are expected and errors regarding it ignored)
+        # assume there's no running module (so connection issues with os-autoinst are expected and errors regarding it ignored)
         fake_state(testStatus => {running => 'null'});
 
         # let the JavaScript code process those errors
