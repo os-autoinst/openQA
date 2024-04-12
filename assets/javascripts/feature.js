@@ -29,7 +29,7 @@ function newFeature(featureVersion) {
   tour.addSteps([
     {
       title: 'All tests area',
-      text: "<p>In this area all tests are provided and grouped by the current state. You can see which jobs are running, scheduled or finished.</p><div class='checkbox'><lablel><input type='checkbox' id='dont-notify' onchange='dismissPernamently(this)'> Don't notify me anymore (permanent)</label></div>",
+      text: "<p>In this area all tests are provided and grouped by the current state. You can see which jobs are running, scheduled or finished.</p><div class='checkbox'><label><input type='checkbox' id='dont-notify' onchange='dismissPernamently(this)'> Don't notify me anymore (permanent)</label></div>",
       attachTo: {
         element: '#all_tests',
         on: 'bottom'

@@ -140,7 +140,7 @@ scenarios:
     - <b>TESTSUITE</b>:
         machine: [<b>MACHINE1</b>, <b>MACHINE2</b>]
                         </code>
-                        <div>Re-use a test suite with a custom job template name:</div>
+                        <div>Reuse a test suite with a custom job template name:</div>
 <code>scenarios:
   ARCH:
     medium-ARCH:
@@ -149,7 +149,7 @@ scenarios:
         settings:
           <b>ANOTHER_VARIABLE</b>: <b>YET_ANOTHER_VALUE</b>
                         </code>
-                        <div>Re-use test suites with YAML aliases:</div>
+                        <div>Reuse test suites with YAML aliases:</div>
 <code>scenarios:
   <b>i586</b>:
     <i>medium</i>-<b>i586</b>: <b>&amp;tests</b>
@@ -161,7 +161,7 @@ scenarios:
     <i>medium</i>-<b>x86_64</b>:
       <b>*tests</b>
                         </code>
-                        <div>Re-use settings with YAML merge keys:</div>
+                        <div>Reuse settings with YAML merge keys:</div>
 <code>scenarios:
   <b>i586</b>:
     <i>medium</i>-<b>i586</b>:

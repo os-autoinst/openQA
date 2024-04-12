@@ -455,7 +455,7 @@ sub _parse_job_template_machines (
         if ($job_template_names->{$job_template_key}) {
             my $name = $job_template_name // $testsuite_name;
             my $error = "Job template name '$name' is defined more than once. "
-              . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.";
+              . "Use a unique name and specify 'testsuite' to reuse test suites in multiple scenarios.";
             return {error => $error};
         }
         $job_template_names->{$job_template_key} = {

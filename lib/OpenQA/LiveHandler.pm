@@ -11,7 +11,7 @@ use OpenQA::Setup;
 has secrets => sub { shift->schema->read_application_secrets };
 
 # add attributes to store ws connections/transactions by job
-# (see LiveViewHandler.pm for further descriptions of the paricular attributes)
+# (see LiveViewHandler.pm for further descriptions of the particular attributes)
 has [qw(cmd_srv_transactions_by_job devel_java_script_transactions_by_job status_java_script_transactions_by_job)] =>
   sub { {} };
 

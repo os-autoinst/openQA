@@ -41,7 +41,7 @@ sub register {
     my $plugin_api_r = $app->routes->find('api_ensure_operator');
 
     # ssh-keygen is needed for the Build Service authentication.
-    die("ssh-keygen is not availabe. Aborting.\n") unless which('ssh-keygen');
+    die("ssh-keygen is not available. Aborting.\n") unless which('ssh-keygen');
 
     if (!$plugin_r) {
         $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
@@ -111,7 +111,7 @@ sub register {
         # e.g. 'base, 'jeos', 'migration'.
         # * alias - Obs Project name alone or with corresponding batch concatenated with '|': 'projectname|batchname'
         # e.g. 'openSUSE:Factory:ToTest|base', 'openSUSE:Factory:ToTest|microos', 'openSUSE:Factory:ToTest|jeos'
-    # * subfolder - folder, containing artifacts from paricular synch actions. Most often if form `.run_YYYYMMDDhhmmss`.
+    # * subfolder - folder, containing artifacts from particular synch actions. Most often if form `.run_YYYYMMDDhhmmss`.
         #
      # routes which have parameter #alias, can be called for simple project, for batched project or for particular batch
         # routes which have parameter #project, can not be called for single batch

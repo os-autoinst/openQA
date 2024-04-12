@@ -60,7 +60,7 @@ function undoComments(undoButton) {
     url: urlWithBase('/api/v1/comments'),
     method: 'DELETE',
     data: ids.map(id => `id=${id}`).join('&'),
-    success: () => addFlash('info', 'The coments have been deleted.'),
+    success: () => addFlash('info', 'The comments have been deleted.'),
     error: (jqXHR, textStatus, errorThrown) => {
       undoButton.style.display = 'inline';
       addFlash('danger', 'The comments could not be deleted: ' + getXhrError(jqXHR, textStatus, errorThrown));

@@ -151,7 +151,7 @@ sub create {
     my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user);
     my $scheduled_product_id = $scheduled_product->id;
 
-    # only spwan Minion job and return IDs if async flag has been passed
+    # only spawn Minion job and return IDs if async flag has been passed
     return $self->render(json => $scheduled_product->enqueue_minion_job(\%params)) if $async;
 
     # schedule jobs synchronously (hopefully within the timeout)

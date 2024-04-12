@@ -348,7 +348,7 @@ sub handle_disconnect_from_os_autoinst {
     # (the user can just reopen the session to try again manually)
 }
 
-# connects to the os-autoinst command server for the specified job ID; re-uses an existing connection
+# connects to the os-autoinst command server for the specified job ID; reuses an existing connection
 sub connect_to_cmd_srv ($self, $job_id, $cmd_srv_raw_url, $data) {
     log_debug("connecting to os-autoinst command server for job $job_id at $cmd_srv_raw_url");
     $self->send_message_to_java_script_clients(
