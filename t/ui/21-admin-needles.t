@@ -366,6 +366,11 @@ subtest 'custom needles search' => sub {
     is($needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly');
     @needle_tds = $driver->find_child_elements($needle_trs[2], 'td', 'css');
     is($needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly');
+
+    my @last_links = $driver->find_child_elements($needle_trs[0], 'a', 'css');
+    is scalar(@last_links), 1, 'one link for last use of five_month-undef.json present' or return;
+    $last_links[0]->click;
+    $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-kde@32bit test results', 'on job of last use');
 };
 
 $fake_worker->unregister;
