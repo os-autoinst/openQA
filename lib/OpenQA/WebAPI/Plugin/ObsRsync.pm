@@ -107,14 +107,16 @@ sub register {
 
         # terminology:
         # * project - Obs Project name alone, e.g. 'openSUSE:Factory:ToTest'
-# * batch - abstraction used by openqa-trigger-from-obs to split actions, needed to be taken when Obs Project is ready for testing,
-        # e.g. 'base, 'jeos', 'migration'.
-        # * alias - Obs Project name alone or with corresponding batch concatenated with '|': 'projectname|batchname'
-        # e.g. 'openSUSE:Factory:ToTest|base', 'openSUSE:Factory:ToTest|microos', 'openSUSE:Factory:ToTest|jeos'
-    # * subfolder - folder, containing artifacts from particular synch actions. Most often if form `.run_YYYYMMDDhhmmss`.
-        #
-     # routes which have parameter #alias, can be called for simple project, for batched project or for particular batch
-        # routes which have parameter #project, can not be called for single batch
+        # * batch - abstraction used by openqa-trigger-from-obs to split actions, needed to be taken when Obs Project is
+        #   ready for testing, e.g. 'base, 'jeos', 'migration'.
+        # * alias - Obs Project name alone or with corresponding batch concatenated with '|': 'projectname|batchname',
+        #   e.g. 'openSUSE:Factory:ToTest|base', 'openSUSE:Factory:ToTest|microos', 'openSUSE:Factory:ToTest|jeos'
+        # * subfolder - folder, containing artifacts from particular synch actions. Most often if form
+        #   `.run_YYYYMMDDhhmmss`.
+
+        # Routes which have parameter #alias, can be called for simple project. For batched projects or for a particular
+        # batch, routes which have parameter #project, can not be called for single batch.
+
         $plugin_r->get('/obs_rsync/queue')->name('plugin_obs_rsync_queue')
           ->to('Plugin::ObsRsync::Controller::Gru#index');
         $plugin_r->post('/obs_rsync/#project/runs')->name('plugin_obs_rsync_queue_run')
