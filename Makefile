@@ -104,6 +104,7 @@ install-generic:
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -d -m 755 "$(DESTDIR)"/usr/lib/tmpfiles.d
+	eval "$$(perl -V:installvendorlib)" && sed -i -e "s^installvendorlib^$$installvendorlib^" systemd/openqa-minion-restart.path
 	for i in systemd/*.{service,slice,target,timer,path}; do \
 		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
 	done

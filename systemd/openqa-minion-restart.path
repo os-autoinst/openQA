@@ -1,0 +1,5 @@
+[Path]
+PathChanged=installvendorlib/Minion/Backend/resources/migrations/pg.sql
+
+[Install]
+WantedBy=multi-user.target
