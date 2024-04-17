@@ -411,6 +411,21 @@ subtest 'symlink testrepo, logging behavior' => sub {
         is $result->{error}, undef, 'no error occurred (1)';
     };
 
+    subtest 'good case: custom CASEDIR and custom NEEDLES_DIR specified and both are Git repos' => sub {
+        my @needles_dir_settings = (NEEDLES_DIR => 'https://github.com/foo/os-autoinst-needles-example.git');
+        my %job_settings = (id => 12, settings => {@custom_casedir_settings, @needles_dir_settings});
+        my ($job, $result) = OpenQA::Worker::Job->new($worker, $client, \%job_settings);
+        my $log = combined_from { $result = _run_engine($job) };
+        unlike $log, qr/symlink/, 'no symlinks created';
+        my $vars_data = get_job_json_data($pool_directory);
+        is $vars_data->{CASEDIR}, 'https://github.com/foo/os-autoinst-distri-example.git#master',
+          'Git repo for casedir not changed';
+        is $vars_data->{PRODUCTDIR}, undef, 'no default for PRODUCTDIR assigned';
+        is $vars_data->{NEEDLES_DIR}, 'https://github.com/foo/os-autoinst-needles-example.git',
+          'Git repo for needles not changed';
+        is $result->{error}, undef, 'no error occurred (2)';
+    };
+
     subtest 'good case: custom CASEDIR and NEEDLES_DIR where NEEDLES_DIR starts with %CASEDIR%' => sub {
         my %vars = (@custom_casedir_settings, NEEDLES_DIR => '%CASEDIR%/fedora/needles');
         my %job_settings = (id => 12, settings => \%vars);
@@ -421,7 +436,7 @@ subtest 'symlink testrepo, logging behavior' => sub {
           'symlink for needles dir created, %CASEDIR% replaced with checkout folder of custom CASEDIR';
         my $vars_data = get_job_json_data($pool_directory);
         is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to its basename';
-        is $result->{error}, undef, 'no error occurred (2)';
+        is $result->{error}, undef, 'no error occurred (3)';
     };
 
     subtest 'good case: custom CASEDIR specified but no custom NEEDLES_DIR' => sub {
@@ -432,7 +447,7 @@ subtest 'symlink testrepo, logging behavior' => sub {
           'symlink for needles dir also created without NEEDLES_DIR, points to default dir despite custom CASEDIR';
         my $vars_data = get_job_json_data($pool_directory);
         is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to name of symlink';
-        is $result->{error}, undef, 'no error occurred (3)';
+        is $result->{error}, undef, 'no error occurred (4)';
 
     };
 
