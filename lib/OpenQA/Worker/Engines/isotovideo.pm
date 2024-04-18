@@ -404,13 +404,15 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     my $target_name = path($default_casedir)->basename;
     my $has_custom_dir = $vars->{CASEDIR} || $vars->{PRODUCTDIR};
     my $casedir = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
-    if ($casedir eq $target_name) {
-        $vars->{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
-        if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $callback->($error) }
-    }
-    else {
-        $vars->{PRODUCTDIR} //= $absolute_paths
-          && !$has_custom_dir ? $default_productdir : abs2rel($default_productdir, $default_casedir);
+    unless (_is_job_only_relying_on_git($vars)) {
+        if ($casedir eq $target_name) {
+            $vars->{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
+            if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $callback->($error) }
+        }
+        else {
+            $vars->{PRODUCTDIR} //= $absolute_paths
+              && !$has_custom_dir ? $default_productdir : abs2rel($default_productdir, $default_casedir);
+        }
     }
 
     # ensure a NEEDLES_DIR is assigned and create a symlink if required
