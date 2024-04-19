@@ -39,13 +39,12 @@ $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
 $driver->title_is('openQA', 'back on main page');
 is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
-note 'now hack ourselves to be just operator - this is stupid procedure, but we do not have API for user management';
+note 'downgrade our own permissions to operator';
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Users')->click;
-$driver->execute_script('$("#users").off("change")');
-$driver->execute_script(
-    '$("#users").on("change", "input[name=\"role\"]:radio", function() {$(this).parent("form").submit();})');
-$driver->find_element_by_xpath('//tr[./td[@class="nick" and text()="Demo"]]/td[@class="role"]//label[2]')->click;
+my $get_demo_row = "Array.from(document.getElementsByClassName('nick')).filter(e => e.innerText === 'Demo')[0]";
+$driver->execute_script("$get_demo_row.nextElementSibling.querySelectorAll('label')[1].click()");
+$driver->accept_alert;
 note 'refresh and return to admin pages';
 $driver->refresh;
 $driver->get($driver->get_current_url =~ s/users//r);

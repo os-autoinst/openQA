@@ -65,7 +65,7 @@ like($driver->get_title(), qr/Audit log/, 'on audit log');
 
 subtest 'audit log entries' => sub {
     # search for name, event, date and combination
-    my $search = $driver->find_element('#audit_log_table_filter input.form-control');
+    my $search = $driver->find_element('.dt-search input');
     ok($search, 'search box found');
 
     check_data_table_entries 5, 'all rows displayed without filter';
@@ -89,8 +89,7 @@ subtest 'audit log entries' => sub {
 
     $search->send_keys('older:today');
     $entries = check_data_table_entries 1, 'one row for empty table when filtering for only older than today';
-    is $driver->find_child_element($entries->[0], 'td')->get_attribute('class'), 'dataTables_empty',
-      'but DataTable is empty';
+    is $driver->find_child_element($entries->[0], 'td')->get_attribute('class'), 'dt-empty', 'but DataTable is empty';
     $search->clear;
 
     $search->send_keys('user:system event:startup date:today');
@@ -129,7 +128,7 @@ subtest 'clickable events' => sub {
     $driver->execute_script('document.documentElement.scrollTop = 0');    # scroll back to the top
     $driver->find_element('#flash-messages button.close')->click;
 
-    my $search = $driver->find_element('#audit_log_table_filter input.form-control');
+    my $search = $driver->find_element('.dt-search input');
     $search->send_keys('event:table_create');
     my $entries = check_data_table_entries 3, 'most rows filtered out when searching for table create events';
     ok($entries->[0]->child('.audit_event_details'), 'event detail link present');
@@ -141,7 +140,7 @@ subtest 'clickable events' => sub {
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
     check_data_table_entries 10, 'all rows displayed without filter after posting job/comment';
-    $search = $driver->find_element('#audit_log_table_filter input.form-control');
+    $search = $driver->find_element('.dt-search input');
     $search->send_keys('event:comment_create');
     $entries = check_data_table_entries 1, 'most rows filtered out when searching for comment create events';
     ok $entries->[0]->child('.audit_event_details'), 'event detail link present';

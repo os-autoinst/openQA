@@ -119,7 +119,7 @@
 ! bootstrap.js
 < ../node_modules/jquery/dist/jquery.min.js
 < javascripts/openqa.js
-< ../node_modules/datatables/media/js/jquery.dataTables.min.js
+< ../node_modules/datatables.net/js/dataTables.min.js
 < ../node_modules/datatables.net-bs4/js/dataTables.bootstrap4.min.js
 < ../node_modules/timeago/jquery.timeago.js
 < javascripts/index.js

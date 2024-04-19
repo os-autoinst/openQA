@@ -174,7 +174,7 @@ select.form-control {
 }
 
 // fix drop-down arrow floating over text despite `with: auto;` from DataTable's upstream CSS
-div.dataTables_wrapper div.dataTables_length select {
+div.dt-container div.dt-length select {
     background-position: right 0.2rem center;
     padding: 0 1em 0 0.5em;
 }
