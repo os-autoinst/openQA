@@ -80,16 +80,14 @@ disable_timeout;
 sub goto_next_previous_tab {
     wait_for_element(
         trigger_function => sub { $driver->find_element_by_link_text('Next & previous results')->click },
-        selector => '.dataTables_wrapper'
+        selector => '.dt-container'
     );
     wait_for_ajax(msg => 'Next & previous table ready');
 }
 
 # check job next and previous not loaded when open tests/x
-$t->get_ok('/tests/99946')->status_is(200)->element_exists_not(
-    '#job_next_previous_table_wrapper .dataTables_wrapper',
-    'datatable of job next and previous not loaded when open tests/x'
-);
+$t->get_ok('/tests/99946')->status_is(200)->element_exists_not('#job_next_previous_table_wrapper .dt-container',
+    'datatable of job next and previous not loaded when open tests/x');
 
 my $job_header = $t->tx->res->dom->at('#next_previous #scenario .h5');
 like(
@@ -124,7 +122,7 @@ is((shift @tds)->get_text(), '0092', 'build of 99947 is 0092');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99945')},
     1, 'found nearest previous job 99945');
 is(scalar @{$driver->find_elements("//*[\@title='Done: incomplete']", 'xpath')}, 6, 'include 6 incomletes in page 1');
-$driver->find_element_by_link_text('Next')->click();
+$driver->find_element('[aria-label="Next"]')->click();
 is(scalar @{$driver->find_elements("//*[\@title='Done: incomplete']", 'xpath')}, 2, 'include 2 incomletes in page 2');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')},
     1, 'found farmost previous job 99901');
@@ -135,7 +133,7 @@ goto_next_previous_tab;
 
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99901');
-my $init_page = $driver->find_element_by_xpath("//*[\@class='paginate_button page-item active']")->get_text();
+my $init_page = $driver->find_element_by_xpath("//*[\@class='dt-paging-button page-item active']")->get_text();
 is($init_page, 2, 'init page is 2 for 99901');
 my $job99901 = $driver->find_element('#job_next_previous_table #job_result_99901');
 @tds = $driver->find_child_elements($job99901, 'td');
@@ -145,7 +143,7 @@ is($state->get_attribute('title'), 'Done: passed', 'the latest job 99901 was pas
 is((shift @tds)->get_text(), '0091', 'build of 99901 is 0091');
 is((shift @tds)->get_text(), 'about 4 hours ago ( 01:00 hours )', 'finished and duration of 99901');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99902')}, 1, 'found nearest next job 99902');
-$driver->find_element_by_link_text('Previous')->click();
+$driver->find_element('[aria-label="Previous"]')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')}, 1, 'found farmost next job 99946');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1,
     'found next and latest job 99947');
@@ -165,7 +163,7 @@ is((shift @tds)->get_text(), '0092', 'build of 99947 is 0092');
 is((shift @tds)->get_text(), 'about 2 hours ago ( 01:58 hours )', 'finished and duration of 99947');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')},
     1, 'found nearest previous job 99946');
-$driver->find_element_by_link_text('Next')->click();
+$driver->find_element('[aria-label="Next"]')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')},
     1, 'found farmost previous job 99901');
 
@@ -183,7 +181,7 @@ wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99963');
 $driver->find_element('[href="/tests/99963"]')->click();
 goto_next_previous_tab;
 
-($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
+($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)/;
 is($entries, 2, '2 entries found for 99963');
 my $job99963 = $driver->find_element('#job_next_previous_table #job_result_99963');
 @tds = $driver->find_child_elements($job99963, 'td');
@@ -199,7 +197,7 @@ wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99928');
 $driver->find_element('[href="/tests/99928"]')->click();
 goto_next_previous_tab;
 
-($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
+($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
 is($entries, 1, '1 entries found for 99928');
 my $job99928 = $driver->find_element('#job_next_previous_table #job_result_99928');
 @tds = $driver->find_child_elements($job99928, 'td');
@@ -212,7 +210,7 @@ is((shift @tds)->get_text(), 'Not yet: scheduled', '99928 is not yet finished');
 # check job next and previous under tests/latest route
 $driver->get('/tests/latest');
 goto_next_previous_tab;
-($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
+($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)/;
 is($entries, 1, '1 entries found for 99981');
 my $job99981 = $driver->find_element('#job_next_previous_table #job_result_99981');
 @tds = $driver->find_child_elements($job99981, 'td');
@@ -231,7 +229,7 @@ like($scenario_latest_url, qr/version=13.1/, 'latest scenario URL includes versi
 like($scenario_latest_url, qr/machine=32bit/, 'latest scenario URL includes machine');
 like($scenario_latest_url, qr/distri=opensuse/, 'latest scenario URL includes distri');
 goto_next_previous_tab;
-($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
+($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
 is($entries, 19, '19 entries found for 99947');
 $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
 @tds = $driver->find_child_elements($job99947, 'td');
@@ -240,25 +238,25 @@ is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
 # check limit with query parameters of job next & previous
 $driver->get('/tests/99947?previous_limit=10#next_previous');
 wait_for_ajax();
-($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
+($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
 is($entries, 11, '10 previous of 99947 and itself shown');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found current job 99947');
-$driver->find_element_by_link_text('Next')->click();
+$driver->find_element('[aria-label="Next"]')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99909')}, 1, 'found 10th previous job 99909');
 
 $driver->get('/tests/99901?next_limit=10#next_previous');
 wait_for_ajax();
-($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
+($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
 is($entries, 12, '10 next of 99901, itself and the latest shown');
-$init_page = $driver->find_element_by_xpath("//*[\@class='paginate_button page-item active']")->get_text();
+$init_page = $driver->find_element_by_xpath("//*[\@class='dt-paging-button page-item active']")->get_text();
 is($init_page, 2, 'init page is 2 for 99901');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')}, 1, 'found current job 99901');
-$driver->find_element_by_link_text('Previous')->click();
+$driver->find_element('[aria-label="Previous"]')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found the latest job 99947');
 
 $driver->get('/tests/99908?previous_limit=3&next_limit=2#next_previous');
 wait_for_ajax();
-($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
+($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
 is($entries, 7, '3 previous and 2 next of 99901, itself and the latest shown');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99908')}, 1, 'found current job 99908');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found the latest job 99947');

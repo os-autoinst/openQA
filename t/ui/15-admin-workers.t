@@ -119,7 +119,7 @@ subtest 'worker overview' => sub {
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99963/, 'on 99963');
 
     # close the popover and wait until it is actually gone (seems to have a very short animation)
-    $driver->find_element('.paginate_button')->click();
+    $driver->find_element('.dt-paging-button')->click();
     wait_until_element_gone('.popover');
 
     # check worker 2
@@ -128,7 +128,7 @@ subtest 'worker overview' => sub {
     $driver->find_element('tr#worker_2 .help_popover')->click();
     wait_for_element(selector => '.popover', description => 'worker status popover is displayed');
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
-    $driver->find_element('.paginate_button')->click();
+    $driver->find_element('.dt-paging-button')->click();
     wait_until_element_gone('.popover');
 
     # check worker 3 (broken one added in schema hook)

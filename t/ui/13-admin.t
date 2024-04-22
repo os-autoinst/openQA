@@ -206,7 +206,7 @@ subtest 'add test suite' => sub() {
     is(scalar @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 7, '7 edit buttons before');
 
     # search (settings taken into account, cleared when adding new row)
-    my $search_input = $driver->find_element('.dataTables_filter input');
+    my $search_input = $driver->find_element('.dt-search input');
     $search_input->send_keys('DESKTOP=kdeINSTALLONLY=1');
     @cells = $driver->find_child_elements($elem, 'td');
     is(scalar @cells, 1 * $column_count, 'everything filtered out but one row');
@@ -218,8 +218,7 @@ subtest 'add test suite' => sub() {
     );
 
     is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
-    is(element_prop_by_selector('.dataTables_filter input'), '((DESKTOP=kdeINSTALLONLY=1)|(new row))',
-        'search cleared');
+    is(element_prop_by_selector('.dt-search input'), '((DESKTOP=kdeINSTALLONLY=1)|(new row))', 'search cleared');
     @cells = $driver->find_child_elements($elem, 'td');
     is(scalar @cells, 2 * $column_count, 'filtered row and empty row present');
     is($cells[0 * $column_count + 0]->get_text(), 'RAID0', 'filtered row has correct name');
@@ -270,7 +269,7 @@ subtest 'add test suite' => sub() {
     $elem = $driver->find_element('.admintable tbody tr:nth-child(7)');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 
-    $elem = $driver->find_element('#test-suites_filter input[type=search]');
+    $elem = $driver->find_element('.dt-search input');
     $elem->send_keys("^kde");
     @fields = $driver->find_elements('.admintable tbody tr');
     is(@fields, 1, "search using regex");
