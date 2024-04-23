@@ -55,6 +55,7 @@
   /proc/[0-9]*/cgroup r,
   /proc/filesystems r,
   /proc/meminfo r,
+  /proc/loadavg r,
   /proc/sys/vm/overcommit_memory r,
   /proc/sys/fs/pipe-max-size r,
   /proc/sys/vm/nr_hugepages r,
