@@ -110,7 +110,7 @@ sub results {
         my $text_file_name = $step->{text};
         if (!$skip_text_data && $text_file_name && !defined $step->{text_data}) {
             my $text_file = path($dir, $text_file_name);
-            my $text_data = -r $text_file ? decode('UTF-8', $text_file->slurp) : undef;
+            my $text_data = eval { decode('UTF-8', $text_file->slurp) };
             $step->{text_data} = $text_data // "Unable to read $text_file_name.";
         }
 
@@ -225,8 +225,8 @@ sub finalize_results {
     for my $step (@$details) {
         next unless my $text = $step->{text};
         my $txtfile = path($dir, $text);
-        next unless -e $txtfile;
-        $step->{text_data} = decode('UTF-8', $txtfile->slurp);
+        my $txtdata = eval { decode('UTF-8', $txtfile->slurp) };
+        $step->{text_data} = $txtdata if defined $txtdata;
     }
 
     # replace file contents on disk using a temp file to preserve old file if something goes wrong
