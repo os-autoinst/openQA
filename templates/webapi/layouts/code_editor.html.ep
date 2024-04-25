@@ -1,7 +1,7 @@
 % layout 'bootstrap';
 % content_for 'head' => begin
-  %= asset 'codemirror.js'
-  %= asset 'codemirror.css'
+  %= asset 'ace.js'
+  %= asset 'ace.css'
 % end
 %= content_for 'title'
 
@@ -10,9 +10,6 @@
 % end
 
 <div class="container">
-  <p>
-    %= content_for 'src_code'
-  </p>
-
+  %= content_for 'src_code'
   %= include 'layouts/js_editor'
 </div>

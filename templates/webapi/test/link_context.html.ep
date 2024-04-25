@@ -1,7 +1,7 @@
-% layout 'codemirror';
+% layout 'code_editor';
 
 % content_for 'src_code' => begin
   File path:
     <code><%= $contextpath %></code>
-    <textarea class="code" id="script"><%= $context %></textarea>
+    <div class="code" id="script" data-path="<%= $contextpath %>><%= $context %></div>
 % end

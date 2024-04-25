@@ -1,4 +1,4 @@
-% layout 'codemirror';
+% layout 'code_editor';
 
 % content_for 'title' => begin
   % title $moduleid;
@@ -9,5 +9,5 @@
     %= link_to url_for('src_step', format => 'txt') => begin
     <code><%= $scriptpath %></code>
     % end
-    <textarea class="code" id="script"><%= $script %></textarea>
+    <div class="code" id="script" data-path="<%= $scriptpath %>"><%= $script %></div>
 % end

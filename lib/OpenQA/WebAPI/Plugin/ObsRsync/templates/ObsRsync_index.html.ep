@@ -1,7 +1,7 @@
 % layout 'bootstrap';
 % content_for 'head' => begin
-  %= asset 'codemirror.js'
-  %= asset 'codemirror.css'
+  %= asset 'ace.js'
+  %= asset 'ace.css'
 % end
 
 % my $title = 'OBS synchronization folders';

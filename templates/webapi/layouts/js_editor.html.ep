@@ -1,7 +1,13 @@
 <script type="text/javascript">
-var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
-    lineNumbers: true,
+let mode;
+let path = document.getElementById('script').dataset.path;
+if (path && path.endsWith('.pm') || path.endsWith('.pl')) {
+  mode = 'ace/mode/perl';
+}
+var editor = ace.edit("script", {
+    mode: mode,
+    maxLines: Infinity,
     readOnly: true,
-    lineWrapping: true
-  });
+});
+editor.session.setUseWrapMode(true);
 </script>
