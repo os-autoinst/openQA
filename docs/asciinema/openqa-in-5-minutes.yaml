@@ -1,0 +1,71 @@
+---
+settings:
+  width: 80
+  height: 24
+  title: How to run an openQA test in 5 minutes
+  timeout: 300s
+  type_speed: 50ms
+  environment:
+    - name: BAT_THEME
+      value: Solarized (light)
+instructions:
+  - !Command
+    command:
+      - podman rmi
+      - registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+    hidden: true
+  - !Marker Pull openQA container
+  - !Command
+    command: "# Pull and run openQA single instance container"
+  - !Command
+    command:
+      - podman run --rm -ti --name openqa --detach
+      - --env skip_suse_tests="" --env skip_suse_specifics=""
+      - --device /dev/kvm -p 1080:80 -p 1443:443
+      - registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+  - !Command
+    command: podman wait --condition healthy openqa
+  - !Marker Clone job from openqa.opensuse.org
+  - !Command
+    command: "# Clone any job from openqa.opensuse.org"
+  - !Command
+    command:
+      - podman exec openqa
+      - openqa-clone-job https://openqa.opensuse.org/tests/4109159
+  - !Command
+    command:
+      - podman exec -ti openqa
+      - openqa-cli monitor 1
+  - !Wait 3s
+  - !Marker Prepare scenario definition
+  - !Command
+    command: "# Create scenario definition"
+  - !Command
+    command:
+      - wget -qO scenario-definitions.yaml
+      - https://raw.githubusercontent.com/os-autoinst/os-autoinst-distri-example/main/scenario-definitions.yaml
+  - !Command
+    command: bat scenario-definitions.yaml
+  - !Command
+    command: >-
+      podman cp scenario-definitions.yaml openqa:scenario-definitions.yaml
+  - !Marker Schedule product
+  - !Command
+    command: "# Schedule the product"
+  - !Command
+    command:
+      - podman exec -ti openqa
+      - openqa-cli schedule --monitor
+      - --param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml
+      - DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64
+      - TEST=simple_boot _GROUP_ID=0 BUILD=test
+      - CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-example.git
+      - NEEDLES_DIR=%%CASEDIR%%/needles
+  - !Command
+    command: podman exec openqa openqa-cli api jobs/2 | jq -r .job.result
+  - !Wait 3s
+  - !Marker Clean up
+  - !Command
+    command: "# Stop the container to remove all data"
+  - !Command
+    command: podman stop openqa
