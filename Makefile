@@ -67,6 +67,7 @@ install-generic:
 	for f in $(shell perl -Ilib -mOpenQA::Setup -e OpenQA::Setup::list_assets); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
+	rm $(DESTDIR)/usr/share/openqa/node_modules/ace-builds/css/main-1.png
 
 	for i in db images testresults pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
