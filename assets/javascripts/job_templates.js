@@ -356,31 +356,31 @@ function toggleTemplateEditor() {
   form.find('.buttons').hide();
   form.find('.progress-indication').show();
   $('#toggle-yaml-editor').toggleClass('btn-secondary');
-  if (editor == undefined) {
-    editor = CodeMirror.fromTextArea(document.getElementById('editor-template'), {
-      mode: 'yaml',
-      lineNumbers: true,
-      lineWrapping: true,
-      readOnly: 'nocursor',
-      viewportMargin: Infinity
+  if (editor === undefined) {
+    editor = ace.edit('editor-template', {
+      mode: 'ace/mode/yaml',
+      maxLines: Infinity,
+      tabSize: 2,
+      useSoftTabs: true
     });
-    editor.setOption('extraKeys', {
-      Tab: function (editor) {
-        // Convert tabs to spaces
-        editor.replaceSelection(Array(editor.getOption('indentUnit') + 1).join(' '));
+    editor.session.setUseWrapMode(true);
+    document.getElementById('toggle-yaml-guide').onclick = function () {
+      const editorElements = Array.from(document.getElementsByClassName('editor-container'));
+      const yamlGuideElements = Array.from(document.getElementsByClassName('editor-yaml-guide'));
+      if (yamlGuideElements[0].style.display === 'none') {
+        editorElements.forEach(e => {
+          e.classList.add('col-sm-7');
+          e.classList.remove('col-sm-12');
+        });
+        yamlGuideElements.forEach(e => (e.style.display = 'initial'));
+      } else {
+        editorElements.forEach(e => {
+          e.classList.remove('col-sm-7');
+          e.classList.add('col-sm-12');
+        });
+        yamlGuideElements.forEach(e => (e.style.display = 'none'));
       }
-    });
-
-    $('.CodeMirror').css('width', window.innerWidth * 0.9 + 'px');
-    $('.CodeMirror').css('height', window.innerHeight * 0.7 + 'px');
-    $(window).on('resize', function () {
-      $('.CodeMirror').css('height', window.innerHeight * 0.7 + 'px');
-    });
-    $('#toggle-yaml-guide').click(function () {
-      $('.editor-yaml-guide').toggle();
-      var guide_width = $('.editor-yaml-guide').is(':visible') ? $('.editor-yaml-guide').width() : 0;
-      $('.CodeMirror').css('width', window.innerWidth * 0.9 - guide_width + 'px');
-    });
+    };
   }
   $.ajax({
     url: form.data('put-url'),
@@ -389,7 +389,7 @@ function toggleTemplateEditor() {
 }
 
 function prepareTemplateEditor(data) {
-  editor.doc.setValue(data);
+  editor.setValue(data, -1);
   var form = $('#editor-form');
   form.find('.progress-indication').hide();
   form.find('.buttons').show();
@@ -408,17 +408,17 @@ function submitTemplateEditor(button) {
   result.text('Applying changes...');
 
   // Reset to the minimum viable YAML if empty
-  var template = editor.doc.getValue();
-  if (template === '') {
+  var template = editor.getValue();
+  if (!template) {
     template = 'products: {}\nscenarios: {}\n';
-    editor.doc.setValue(template);
+    editor.setValue(template, -1);
   }
 
   // Ensure final linebreak, as files without it often need additional
   // handling elsewhere
   else if (template.substr(-1) !== '\n') {
     template += '\n';
-    editor.doc.setValue(template);
+    editor.setValue(template, -1);
   }
 
   $.ajax({
@@ -438,12 +438,12 @@ function submitTemplateEditor(button) {
       switch (button) {
         case 'expand':
           result.text('Result of expanding the YAML:');
-          mode = 'yaml';
+          mode = 'ace/mode/yaml';
           value = data.result;
           break;
         case 'preview':
           result.text('Preview of the changes:');
-          mode = 'diff';
+          mode = 'ace/mode/diff';
           value = data.changes;
           break;
         case 'save':
@@ -451,22 +451,24 @@ function submitTemplateEditor(button) {
           $('#toggle-yaml-editor').hide();
           $('#media-add').hide();
           // Update the reference to the saved document
-          form.data('reference', editor.doc.getValue());
+          form.data('reference', editor.getValue());
 
           result.text('YAML saved!');
-          mode = 'diff';
+          mode = 'ace/mode/diff';
           value = data.changes;
           break;
       }
 
       if (value) {
-        var preview = CodeMirror($('<pre/>').appendTo(result)[0], {
+        const previewElement = document.createElement('pre');
+        previewElement.appendChild(document.createTextNode(value));
+        const preview = ace.edit(previewElement, {
           mode: mode,
-          lineNumbers: true,
-          lineWrapping: true,
           readOnly: true,
-          value: value
+          maxLines: Infinity
         });
+        editor.session.setUseWrapMode(true);
+        result.append(previewElement);
       } else {
         $('<strong/>').text(' No changes were made!').appendTo(result);
       }
@@ -491,13 +493,15 @@ function submitTemplateEditor(button) {
         });
       }
       if (Object.prototype.hasOwnProperty.call(data, 'changes')) {
-        var preview = CodeMirror($('<pre/>').appendTo(result)[0], {
+        const previewElement = document.createElement('pre');
+        previewElement.appendChild(document.createTextNode(value));
+        const preview = ace.edit(previewElement, {
           mode: 'diff',
-          lineNumbers: true,
-          lineWrapping: true,
           readOnly: true,
-          value: data.changes
+          maxLines: Infinity
         });
+        editor.session.setUseWrapMode(true);
+        result.append(previewElement);
       }
     })
     .always(function (data) {
