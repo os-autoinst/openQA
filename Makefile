@@ -65,7 +65,7 @@ install-generic:
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 	for f in $(shell grep --perl-regexp '\.\.\/node_modules\/.*\.*+' assets/assetpack.def | sed -e 's|<* ../||') \
-		node_modules/fork-awesome/fonts/* node_modules/chosen-js/*.png; do \
+		node_modules/fork-awesome/fonts/* node_modules/chosen-js/*.png node_modules/ace-builds/css/main-*; do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
 
