@@ -4,7 +4,9 @@
 package OpenQA::Setup;
 use Mojo::Base -strict, -signatures;
 
+use Mojolicious;
 use Mojo::File 'path';
+use Mojo::Home;
 use Mojo::Util 'trim';
 use Mojo::Loader 'load_class';
 use Config::IniFiles;
@@ -424,6 +426,15 @@ sub setup_asset_pack ($server) {
           . " then there is probably a problem with the packaging.\n"
           if $assetpack_error =~ qr/could not find input asset.*node_modules/i;    # uncoverable statement
         die $assetpack_error;    # uncoverable statement
+    }
+}
+
+sub list_assets ($server = Mojolicious->new(home => Mojo::Home->new('.'))) {
+    setup_asset_pack $server unless $server->can('asset');
+    my $assets_by_checksum = $server->asset->{by_checksum};
+    for my $checksum (keys %$assets_by_checksum) {
+        my $url = $assets_by_checksum->{$checksum}->url;
+        say path('assets', ref $url eq 'Mojo::URL' ? $url->path : $url)->realpath->to_rel;
     }
 }
 

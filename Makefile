@@ -64,8 +64,7 @@ install-generic:
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
-	for f in $(shell grep --perl-regexp '\.\.\/node_modules\/.*\.*+' assets/assetpack.def | sed -e 's|<* ../||') \
-		node_modules/fork-awesome/fonts/* node_modules/chosen-js/*.png node_modules/ace-builds/css/main-*; do \
+	for f in $(shell perl -Ilib -mOpenQA::Setup -e OpenQA::Setup::list_assets); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
 
