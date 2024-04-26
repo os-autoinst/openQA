@@ -467,7 +467,7 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
         qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
         'on src page for installer_timezone test'
     );
-    is @{$driver->find_elements('.ace_comment')}[0]->get_text, '#!/usr/bin/env perl', 'shebang rendered as comment';
+    is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/env perl', 'we have a perl comment');
 
     # load "Logs & Assets" tab contents directly because accessing the tab within the whole page in a straight forward
     # way lead to unstability (see poo#94060)

@@ -1,7 +1,7 @@
 % layout 'bootstrap';
 % content_for 'head' => begin
-  %= asset 'ace.js'
-  %= asset 'ace.css'
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
 % end
 
 % title 'Job templates for ' . $group->name;
@@ -103,7 +103,7 @@
         <form action="#" id="editor-form" class="form-horizontal" style="display: none;"
               data-put-url="<%= url_for('apiv1_job_templates_schedules' => (id => $group->id)) %>" data-reference="<%= $yaml_template %>">
             <div class="form-group row">
-                <label for="editor-template" class="col-sm-5 control-label editor-yaml-guide" style="display: none">
+                <label for="editor-template" class="col-sm-5 control-label editor-yaml-guide">
                     <div>
                         <div>Basic YAML structure for defining job templates:</div>
 <code>defaults:
@@ -181,17 +181,19 @@ scenarios:
                         </code>
                     </div>
                 </label>
-                <div class="editor-container col-sm-12" id="editor-template" name="template"></div>
+                <div class="col-sm-7">
+                    <textarea class="form-control" id="editor-template" name="template" spellcheck="false"></textarea>
+                </div>
             </div>
             <div class="form-group row">
-                <div class="col-sm-5 editor-yaml-guide" style="display: none">
+                <div class="col-sm-5 editor-yaml-guide">
                     <p class="buttons">
                         <a href="http://open.qa/docs/#_job_group_editor_gh2111" target="blank" class="btn">
                             <i class="fa fa-book"></i>YAML editor documentation
                         </a>
                     </p>
                 </div>
-                <div class="editor-container col-sm-12">
+                <div class="col-sm-7">
                     <p class="buttons">
                         <button id="toggle-yaml-guide" type="button" class="btn btn-help"><i class="fa fa-question-circle"></i>Show YAML guide</button>
                     % if (is_admin) {

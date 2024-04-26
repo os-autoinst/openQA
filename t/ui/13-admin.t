@@ -453,7 +453,7 @@ subtest 'edit job templates' => sub() {
         ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
         is(scalar @{$driver->find_elements('Test new medium as part of this group', 'link_text')},
             0, 'link to add a new medium (via legacy editor) not shown');
-        my $yaml = $driver->execute_script('return editor.getValue();');
+        my $yaml = $driver->execute_script('return editor.doc.getValue();');
         like($yaml, qr/products:\s*{}.*scenarios:\s*{}/s, 'default YAML was fetched') or diag explain $yaml;
     };
 
@@ -466,7 +466,7 @@ subtest 'edit job templates' => sub() {
         wait_for_ajax;
         ok($form->is_displayed(), 'editor form is shown');
         ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
-        $yaml = $driver->execute_script('return editor.getValue();');
+        $yaml = $driver->execute_script('return editor.doc.getValue();');
         like($yaml, qr/scenarios:/, 'YAML was fetched') or diag explain $yaml;
     };
 
@@ -500,7 +500,7 @@ subtest 'edit job templates' => sub() {
     $yaml .= "        testsuite: advanced_kde\n";
     $yaml .= "        priority: 11\n";
     $yaml =~ s/\n/\\n/g;
-    $driver->execute_script("editor.setValue(\"$yaml\");");
+    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
@@ -532,17 +532,17 @@ subtest 'edit job templates' => sub() {
     $yaml .= "        testsuite: advanced_kde\n";
     $yaml .= "        priority: 99\n";
     $yaml =~ s/\n/\\n/g;
-    $driver->execute_script("editor.setValue(\"$yaml\");");
+    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
 
     # Empty the editor
-    $driver->execute_script("editor.setValue('');");
+    $driver->execute_script("editor.doc.setValue('');");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
-    $yaml = $driver->execute_script('return editor.getValue();');
+    $yaml = $driver->execute_script('return editor.doc.getValue();');
     is($yaml, "products: {}\nscenarios: {}\n", 'YAML was reset to default') or diag explain $yaml;
 
     my $first_tab = $driver->get_current_window_handle();
@@ -553,24 +553,24 @@ subtest 'edit job templates' => sub() {
     $result = $form->child('.result');
     $yaml .= " # additional comment";
     my $jsyaml = $yaml =~ s/\n/\\n/gr;
-    $driver->execute_script("editor.setValue(\"$jsyaml\");");
+    $driver->execute_script("editor.doc.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'second tab saved') or diag explain $result->get_text();
-    my $saved_yaml = $driver->execute_script('return editor.getValue();');
+    my $saved_yaml = $driver->execute_script('return editor.doc.getValue();');
     is($saved_yaml, "$yaml\n", 'YAML got a final linebreak') or diag explain $yaml;
     # Try and save, after the database has already been modified
     $driver->switch_to_window($first_tab);
     $form = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
     $jsyaml .= " # one more comment\\n";
-    $driver->execute_script("editor.setValue(\"$jsyaml\");");
+    $driver->execute_script("editor.doc.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Template was modified/, 'conflict reported') or diag explain $result->get_text();
 
     # Make the YAML invalid
-    $driver->execute_script('editor.setValue("invalid: true");');
+    $driver->execute_script('editor.doc.setValue("invalid: true");');
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/There was a problem applying the changes/, 'error shown');

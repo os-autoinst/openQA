@@ -102,15 +102,15 @@
 ! dependency_graph.css
 < stylesheets/dependency_graph.scss
 
-! ace.css
-< ../node_modules/ace-builds/css/ace.css
-< stylesheets/ace.css
+! codemirror.css
+< ../node_modules/codemirror/lib/codemirror.css
+< stylesheets/codemirror_customization.css
 
-! ace.js
-< ../node_modules/ace-builds/src-min/ace.js
-< ../node_modules/ace-builds/src-min/mode-perl.js
-< ../node_modules/ace-builds/src-min/mode-yaml.js
-< ../node_modules/ace-builds/src-min/mode-diff.js
+! codemirror.js
+< ../node_modules/codemirror/lib/codemirror.js
+< ../node_modules/codemirror/mode/perl/perl.js
+< ../node_modules/codemirror/mode/yaml/yaml.js
+< ../node_modules/codemirror/mode/diff/diff.js
 
 ! step_edit.js
 < javascripts/needleeditor.js
