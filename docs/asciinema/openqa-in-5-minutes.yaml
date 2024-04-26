@@ -5,11 +5,21 @@ settings:
   title: How to run an openQA test in 5 minutes
   timeout: 300s
   type_speed: 50ms
-  environment:
-    - name: BAT_THEME
-      value: Solarized (light)
+  environment_capture:
+    - BAT_THEME
 instructions:
   - !Command
+    command: "# Install podman"
+  - !Command
+    command:
+      - zypper in -y podman
+  - !Command
+    # Workaround to hide some warnings due to having podman inside podman
+    command:
+      - alias podman='podman --log-level error'
+    hidden: true
+  - !Command
+    # Make sure the image will be downloaded, because that looks nice in the video
     command:
       - podman rmi
       - registry.opensuse.org/devel/openqa/containers/openqa-single-instance
@@ -23,6 +33,11 @@ instructions:
       - --env skip_suse_tests="" --env skip_suse_specifics=""
       - --device /dev/kvm -p 1080:80 -p 1443:443
       - registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+  - !Command
+    # Workaround for healtchecks not working without systemd inside recording container
+    command: >-
+      ( nohup retry -r 20 -s 10 -- podman healthcheck run openqa &> /dev/null & )
+    hidden: true
   - !Command
     command: podman wait --condition healthy openqa
   - !Marker Clone job from openqa.opensuse.org
@@ -65,6 +80,9 @@ instructions:
     command: podman exec openqa openqa-cli api jobs/2 | jq -r .job.result
   - !Wait 3s
   - !Marker Clean up
+  - !Command
+    command: rm -f scenario-definitions.yaml
+    hidden: true
   - !Command
     command: "# Stop the container to remove all data"
   - !Command
