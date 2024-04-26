@@ -20,6 +20,7 @@ use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
 use OpenQA::Task::Job::Limit;
+use YAML::PP qw(LoadFile);
 
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
 sub carry_over_defaults () { \%CARRY_OVER_DEFAULTS }
@@ -405,6 +406,25 @@ sub setup_validator_check_for_datetime ($server) {
             return 1 if $@;
             return;
         });
+}
+
+sub setup_asset_pack ($server) {
+    # setup asset pack, note that the config file is shared with tools/generate-packed-assets
+    $server->plugin(AssetPack => LoadFile($server->home->child('assets', 'assetpack.yml')));
+
+    # The feature was added in the 2.14 release, the version check can be removed once openQA depends on a newer version
+    $server->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > 2.13;
+
+    # -> read assets/assetpack.def
+    eval { $server->asset->process };
+    if (my $assetpack_error = $@) {    # uncoverable statement
+        $assetpack_error    # uncoverable statement
+          .= 'If you invoked this service for development (from a Git checkout) you probably just need to'
+          . ' invoke "make node_modules" before running this service. If you invoked this service via a packaged binary/service'
+          . " then there is probably a problem with the packaging.\n"
+          if $assetpack_error =~ qr/could not find input asset.*node_modules/i;    # uncoverable statement
+        die $assetpack_error;    # uncoverable statement
+    }
 }
 
 # add build_tx time to the header for HMAC time stamp check to avoid large timeouts on uploads
