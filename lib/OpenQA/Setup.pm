@@ -4,7 +4,9 @@
 package OpenQA::Setup;
 use Mojo::Base -strict, -signatures;
 
+use Mojolicious;
 use Mojo::File 'path';
+use Mojo::Home;
 use Mojo::Util 'trim';
 use Mojo::Loader 'load_class';
 use Config::IniFiles;
@@ -425,6 +427,20 @@ sub setup_asset_pack ($server) {
           if $assetpack_error =~ qr/could not find input asset.*node_modules/i;    # uncoverable statement
         die $assetpack_error;    # uncoverable statement
     }
+}
+
+sub _asset_path ($url) { path('assets', ref $url eq 'Mojo::URL' ? $url->path : $url)->realpath->to_rel }
+
+sub list_assets ($server = Mojolicious->new(home => Mojo::Home->new('.'))) {
+    setup_asset_pack $server unless $server->can('asset');
+    my %asset_urls;
+    my $assets_by_checksum = $server->asset->{by_checksum};
+    $asset_urls{_asset_path($assets_by_checksum->{$_}->url)} = 1 for keys %$assets_by_checksum;
+    my $assets_by_topic = $server->asset->{by_topic};
+    for my $topic (keys %$assets_by_topic) {
+        $asset_urls{_asset_path($_->url)} = 1 for @{$assets_by_topic->{$topic}};
+    }
+    say $_ for keys %asset_urls;
 }
 
 # add build_tx time to the header for HMAC time stamp check to avoid large timeouts on uploads
