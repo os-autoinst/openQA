@@ -6,6 +6,7 @@ settings:
   timeout: 300s
   type_speed: 50ms
   environment_capture:
+    - HOME
     - BAT_THEME
 instructions:
   - !Command
@@ -78,7 +79,19 @@ instructions:
       - NEEDLES_DIR=%%CASEDIR%%/needles
   - !Command
     command: podman exec openqa openqa-cli api jobs/2 | jq -r .job.result
-  - !Wait 3s
+  - !Marker openQA web UI
+  - !Command
+    command: "# We can also use the local web UI"
+  - !Command
+    command: >-
+      alias xdg-open='browsh --time-limit 5 --startup-url'
+    hidden: true
+  - !Command
+    command: >-
+      xdg-open http://localhost:1080/t2
+  - !Command
+    command: pkill firefox
+    hidden: true
   - !Marker Clean up
   - !Command
     command: rm -f scenario-definitions.yaml
