@@ -125,6 +125,8 @@ ExcludeArch:    %{ix86}
 %{?systemd_requires}
 %if %{with tests}
 BuildRequires:  %{test_requires}
+%else
+BuildRequires:  %{common_requires} %{main_requires}
 %endif
 Requires(pre):  group(nogroup)
 %if 0%{?suse_version} > 1500
