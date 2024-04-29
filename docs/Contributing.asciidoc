@@ -435,7 +435,7 @@ and run `make update-deps`.  This will generate the `cpanfile` and
 `dist/rpm/openQA.spec` files.
 
 The same applies to `os-autoinst` where `make update-deps` will generate the
-`cpanfile`, `os-autoinst.spec` and `container/ci/Dockerfile`.
+`cpanfile`, `os-autoinst.spec` and `container/os-autoinst_dev/Dockerfile`.
 
 If changing any package dependencies make sure packages and updated packages
 are available in openSUSE Factory and whatever current Leap version is in
@@ -444,9 +444,9 @@ according change into the main openQA repo the dependency should be published
 as part of openSUSE Tumbleweed.
 
 === Remarks regarding CI
-* The CI of os-autoinst uses the container made using `container/ci/Dockerfile`.
-* The CI of openQA uses the container made using `container/devel:openQA:ci/base/Dockerfile`
-  and further dependencies listed in `tools/ci/ci-packages.txt` (see
+* The CI of os-autoinst and openQA uses the container made using
+  `container/devel:openQA:ci/base/Dockerfile` and further dependencies listed
+  in `tools/ci/ci-packages.txt` (see
   <<Contributing.asciidoc#circleci-workflow,CircleCI documentation>>).
 * There is an additional check running using OBS to check builds of packages
   against openSUSE Tumbleweed and openSUSE Leap.
@@ -793,7 +793,7 @@ project, etc.
 [[circleci-local-container]]
 === Run tests locally using a container
 
-One way is to build an image using the `build_local_docker.sh` script, start a
+One way is to build an image using the `build_local_container.sh` script, start a
 container and then use the same commands one would use to test locally.
 
 Pull the latest base image (otherwise it may be outdated):
@@ -804,7 +804,7 @@ podman pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
 Create an image called `localtest` based on the contents of `ci-packages.txt`
 and `autoinst`:
 ```
-tools/ci/build_local_docker.sh
+tools/ci/build_local_container.sh
 ```
 
 Mount the openQA checkout under `/opt/testing_area` within the container and run
