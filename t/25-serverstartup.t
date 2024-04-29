@@ -24,6 +24,8 @@ use OpenQA::Setup;
 use OpenQA::Utils;
 use Mojolicious;
 use Mojo::File qw(tempfile path);
+use Mojo::Home;
+use Test::Output qw(combined_from);
 
 subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
@@ -167,6 +169,14 @@ subtest 'Update configuration from Plugin requirements' => sub {
     OpenQA::Setup::update_config($app->config, "OpenQA::FakePlugin");
     is $app->config->{foofoo}->{is_there}, "wohoo", "Right config option for OpenQA::FakePlugin::Foofoo";
 };
+
+subtest 'listing assets (for installation/Makefile)' => sub {
+    my $app = Mojolicious->new(home => Mojo::Home->new("$FindBin::Bin/.."));
+    my $output = combined_from { OpenQA::Setup::list_assets($app) };
+    my @expected_extensions = qw(scss css js png svg ttf);
+    like $output, qr{^(assets|node_modules)/.*\.$_$}m, "$_ file listed" for @expected_extensions;
+};
+
 done_testing();
 
 package OpenQA::FakePlugin::Fuzzer;

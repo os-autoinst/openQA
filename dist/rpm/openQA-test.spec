@@ -23,6 +23,11 @@ touch %{_sourcedir}/%{short_name}
 # call one of the components but not openqa itself which would need a valid
 # configuration
 /usr/share/openqa/script/initdb --help
+
+# verify whether assets can be loaded
+perl -I/usr/share/openqa/lib -mMojolicious -mMojo::Home -mOpenQA::Setup \
+    -e 'OpenQA::Setup::setup_asset_pack(Mojolicious->new(home => Mojo::Home->new("/usr/share/openqa")))'
+
 getent passwd geekotest
 
 %install

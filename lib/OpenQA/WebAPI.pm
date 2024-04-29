@@ -12,7 +12,6 @@ use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::File 'path';
 use Try::Tiny;
-use YAML::PP qw(LoadFile);
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
@@ -70,23 +69,8 @@ sub startup ($self) {
     OpenQA::Setup::load_plugins($self, $auth);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
     OpenQA::Setup::prepare_settings_ui_keys($self);
+    OpenQA::Setup::setup_asset_pack($self);
 
-    # setup asset pack, note that the config file is shared with tools/generate-packed-assets
-    $self->plugin(AssetPack => LoadFile($self->home->child('assets', 'assetpack.yml')));
-
-    # The feature was added in the 2.14 release, the version check can be removed once openQA depends on a newer version
-    $self->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > 2.13;
-
-    # -> read assets/assetpack.def
-    eval { $self->asset->process };
-    if (my $assetpack_error = $@) {    # uncoverable statement
-        $assetpack_error    # uncoverable statement
-          .= 'If you invoked this service for development (from a Git checkout) you probably just need to'
-          . ' invoke "make node_modules" before running this service. If you invoked this service via a packaged binary/service'
-          . " then there is probably a problem with the packaging.\n"
-          if $assetpack_error =~ qr/could not find input asset.*node_modules/i;    # uncoverable statement
-        die $assetpack_error;    # uncoverable statement
-    }
 
     # set cookie timeout to 48 hours (will be updated on each request)
     $self->app->sessions->default_expiration(48 * 60 * 60);
