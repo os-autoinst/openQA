@@ -4,6 +4,7 @@
 package OpenQA::WebAPI;
 use Mojo::Base 'Mojolicious', -signatures;
 
+use OpenQA::Assets;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::Log 'setup_log';
@@ -69,7 +70,7 @@ sub startup ($self) {
     OpenQA::Setup::load_plugins($self, $auth);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
     OpenQA::Setup::prepare_settings_ui_keys($self);
-    OpenQA::Setup::setup_asset_pack($self);
+    OpenQA::Assets::setup($self);
 
 
     # set cookie timeout to 48 hours (will be updated on each request)

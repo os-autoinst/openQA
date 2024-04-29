@@ -25,8 +25,8 @@ touch %{_sourcedir}/%{short_name}
 /usr/share/openqa/script/initdb --help
 
 # verify whether assets can be loaded
-perl -I/usr/share/openqa/lib -mMojolicious -mMojo::Home -mOpenQA::Setup \
-    -e 'OpenQA::Setup::setup_asset_pack(Mojolicious->new(home => Mojo::Home->new("/usr/share/openqa")))'
+perl -I/usr/share/openqa/lib -mOpenQA::Assets \
+    -e 'OpenQA::Assets::setup(Mojolicious->new(home => Mojo::Home->new("/usr/share/openqa")))'
 
 getent passwd geekotest
 
