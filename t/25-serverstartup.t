@@ -19,6 +19,7 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '8';
+use OpenQA::Assets;
 use OpenQA::Log 'setup_log';
 use OpenQA::Setup;
 use OpenQA::Utils;
@@ -172,7 +173,7 @@ subtest 'Update configuration from Plugin requirements' => sub {
 
 subtest 'listing assets (for installation/Makefile)' => sub {
     my $app = Mojolicious->new(home => Mojo::Home->new("$FindBin::Bin/.."));
-    my $output = combined_from { OpenQA::Setup::list_assets($app) };
+    my $output = combined_from { OpenQA::Assets::list($app) };
     my @expected_extensions = qw(scss css js png svg ttf);
     like $output, qr{^(assets|node_modules)/.*\.$_$}m, "$_ file listed" for @expected_extensions;
 };
