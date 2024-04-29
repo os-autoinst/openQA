@@ -12,9 +12,5 @@ The script .circeci/build_cache.sh is used inside circleci (both remote and
 local) to create testing environment by installing packages from 
  tools/ci/ci-packages.txt onto base image.
 
-dependency_bot provides an image with a container runtime environment, git and
-few other tools. It is used in tools/ci/config.yml to
-tools/ci/build_dependencies.sh
-
 These files normally don't need to be maintained, unless processes described
 above must be tweaked now and then.
