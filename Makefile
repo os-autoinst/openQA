@@ -285,7 +285,7 @@ public/favicon.ico: assets/images/logo.svg
 
 .PHONY: container-test-build
 container-test-build:
-	${CRE} build --no-cache $(current_dir)/container/openqa -t $(DOCKER_IMG)
+	${CRE} build --no-cache $(current_dir)/container/openqa -t $(CONTAINER_IMG)
 
 .PHONY: $(container_env_file)
 $(container_env_file):
