@@ -46,7 +46,8 @@ sub _get_lock {
 sub lock {
     my ($name, $jobid, $where) = @_;
 
-    my $lock = _get_lock($name, $jobid, $where)->single;
+    my $locks = _get_lock($name, $jobid, $where);
+    my $lock = $locks->single;
 
     if (!$lock and $where =~ /^\d+$/) {
         my $schema = OpenQA::Schema->singleton;
@@ -64,19 +65,20 @@ sub lock {
         return 1;
     }
     # we're using optimistic locking, if this succeeded, we were first
-    return 1 if ($lock->update({locked_by => $jobid}));
+    return 1 if ($locks->update({locked_by => $jobid}) > 0);
     return 0;
 }
 
 sub unlock {
     my ($name, $jobid, $where) = @_;
-    my $lock = _get_lock($name, $jobid, $where // 'all')->single;
+    my $locks = _get_lock($name, $jobid, $where // 'all');
+    my $lock = $locks->single;
     return 0 unless $lock;
     # return if not locked
     return 1 unless $lock->locked_by;
     # return if not locked by us
     return 0 unless ($lock->locked_by == $jobid);
-    return 1 if ($lock->update({locked_by => undef}));
+    return 1 if ($locks->update({locked_by => undef}) > 0);
     return 0;
 }
 
