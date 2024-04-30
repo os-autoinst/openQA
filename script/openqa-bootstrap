@@ -21,6 +21,7 @@ if [ "$NAME" = "openSUSE Leap" ]; then
     # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
     repobase=https://download.opensuse.org/repositories/devel:/openQA
     # remove suffixes like " Beta" so e.g. "15.6 Beta" becomes just "15.6"
+    # shellcheck disable=SC2153
     version=${VERSION%% *}
     zypper -n addrepo -p 95 "$repobase/$version" 'devel:openQA'
     zypper -n addrepo -p 90 "$repobase:/Leap:/$version/$version" "devel:openQA:Leap:$version"
