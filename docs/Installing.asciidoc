@@ -47,6 +47,10 @@ podman run --name openqa --device /dev/kvm -p 1080:80 -p 1443:443 --rm -it \
 Once the startup has finished, the web UI is accessible via http://localhost:1080
 or https://localhost:1443.
 
+==== How to run a test with single-instance container in 5 minutes
+
+image::images/openqa-in-5-minutes.gif[Running openQA job within 5 minutes]
+
 === Separate web UI and worker containers
 As an alternative also separate containers are provided for both the web UI
 and worker.
