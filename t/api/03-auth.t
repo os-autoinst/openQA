@@ -16,8 +16,17 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 
+my $webapi_mock = Test::MockModule->new('OpenQA::WebAPI');
+$webapi_mock->redefine(
+    config => sub (@args) {
+        my $config = $webapi_mock->original('config')->(@args);
+        $config->{global}->{access_control_allow_origin_header} = '*';
+        return $config;
+    });
+
 OpenQA::Test::Case->new->init_data((fixtures_glob => '01-jobs.pl 03-users.pl'));
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+undef $webapi_mock;
 
 # we don't want to *actually* delete any assets when we're testing
 # whether we're allowed to or not, so let's mock that out
@@ -44,6 +53,7 @@ client($t, apikey => undef, apisecret => undef);
 
 subtest 'access limiting for non authenticated users' => sub {
     $t->get_ok('/api/v1/jobs')->status_is(200);
+    is $t->tx->res->headers->access_control_allow_origin, '*', 'CORS header set for non authenticated routes';
     $t->get_ok('/api/v1/products')->status_is(200);
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
     is($t->tx->res->code, 403, 'delete forbidden');
@@ -96,6 +106,7 @@ subtest 'access granted for admins' => sub {
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(200, 'accessible (admin only)');
+    is $t->tx->res->headers->access_control_allow_origin, '*', 'CORS header set for authenticated routes';
     is($mock_asset_remove_callcount, 1, 'asset deletion function was called');
     # reset the call count
     $mock_asset_remove_callcount = 0;
