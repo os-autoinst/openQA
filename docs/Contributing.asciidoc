@@ -933,3 +933,22 @@ node_modules/jshint/bin/jshint path/to/javascript.js
 === Note
 Profiling data is extensive. Remove it if you do not need it anymore and disable the `profiling_enabled`
 configuration again if not needed anymore.
+
+== Making documentation changes
+After changing documentation, consider generating documentation locally to
+verify it is rendered correctly using `tools/generate-docs`. It is possible to
+do that inside the provided development container by invoking:
+
+  podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa openqa_devel:latest make generate-docs
+
+Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
+The documentation will be built inside the container and put into `docs/build/`
+subfolder.
+
+You can also utilize the `make serve-docs` target which will additionally spawn a
+simple Python HTTP server inside the target folder, so you can just point your
+browser to port 8000 to view the documentation. That could be handy for example
+in situations where you do not have the filesystem directly accessible (i.e.
+remote development). The magic line in this case would be:
+
+  podman run --rm -it -p 8000:8000 -v .:/opt/openqa openqa_devel:latest make serve-docs
