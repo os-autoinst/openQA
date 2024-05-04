@@ -435,7 +435,7 @@ and run `make update-deps`.  This will generate the `cpanfile` and
 `dist/rpm/openQA.spec` files.
 
 The same applies to `os-autoinst` where `make update-deps` will generate the
-`cpanfile`, `os-autoinst.spec` and `container/ci/Dockerfile`.
+`cpanfile`, `os-autoinst.spec` and `container/os-autoinst_dev/Dockerfile`.
 
 If changing any package dependencies make sure packages and updated packages
 are available in openSUSE Factory and whatever current Leap version is in
@@ -444,9 +444,9 @@ according change into the main openQA repo the dependency should be published
 as part of openSUSE Tumbleweed.
 
 === Remarks regarding CI
-* The CI of os-autoinst uses the container made using `container/ci/Dockerfile`.
-* The CI of openQA uses the container made using `container/devel:openQA:ci/base/Dockerfile`
-  and further dependencies listed in `tools/ci/ci-packages.txt` (see
+* The CI of os-autoinst and openQA uses the container made using
+  `container/devel:openQA:ci/base/Dockerfile` and further dependencies listed
+  in `tools/ci/ci-packages.txt` (see
   <<Contributing.asciidoc#circleci-workflow,CircleCI documentation>>).
 * There is an additional check running using OBS to check builds of packages
   against openSUSE Tumbleweed and openSUSE Leap.
@@ -615,25 +615,14 @@ To run tests in a container please be sure that a container runtime
 environment, for example podman, is installed.
 To launch the test suite first it is required to pull the container image:
 
-  podman pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+  podman pull registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest
 
-This container image is provided by the OBS repository https://build.opensuse.org/package/show/devel:openQA/openqa_dev
-and based on the `Dockerfile` within the `container/ci` sub directory of the openQA repository.
-
-Build the image using Makefile target:
-
-  make container-test-build
-
-Note that the image created by that target is called `openqa:latest` while the raw container
-pulled from OBS is called `openqa_dev:latest`.
-
-Launch the tests using Makefile target:
-
-  make launch-container-to-run-tests-within
+This container image is provided by the OBS repository https://build.opensuse.org/package/show/devel:openQA/openQA-devel-container
+and based on the `Dockerfile` within the `container/devel` sub directory of the openQA repository.
 
 Run tests by spawning a container manually, e.g.:
 
-  podman run -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container
+  podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa_devel:latest make run-tests-within-container
 
 Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 
@@ -656,26 +645,11 @@ So by replacing VAR1 and VAR2 with those values one can trigger the different te
 Of course it is also possible to run (specific) tests directly via `prove` instead of using the Makefile targets.
 
 ==== Tips
-Commands passed to `podman run` will be executed after the initialization script (which does database creation and so on). So if there is
-the need to run an interactive session after it just do:
-
-  podman run -it -v OPENQA_LOCAL_CODE:/opt/openqa openqa:latest bash
-
-Of course you can also use `make run-tests-within-container \; bash` to run the tests first and then open a shell for further investigation.
-
-There is also the possibility to change the initialization scripts with the `--entrypoint switch`. This allows us to go into an interactive
-session without any initialization script run:
-
-  podman run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev
-
-In case there is the need to follow what is happening in the currently running container (the execution will terminate the session):
-
-  podman exec -ti $(podman ps | awk '!/CONTAINER/{print $1}') /bin/bash
 
 Running UI tests in non-headless mode is also possible, eg.:
 
-  xhost `local:root
-  podman run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa:latest prove -v t/ui/14-dashboard.t
+  xhost +local:root
+  podman run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa_devel:latest prove -v t/ui/14-dashboard.t
   xhost -local:root
 
 It is also possible to use a custom os-autoinst checkout using the following arguments:
@@ -685,9 +659,6 @@ It is also possible to use a custom os-autoinst checkout using the following arg
 By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use,
 set `CUSTOM_OS_AUTOINST_SKIP_BUILD` to prevent this. Be aware that the build produced outside of the container might not work inside the
 container if both environments provide different, incompatible library versions (eg. OpenCV).
-
-It is also important to mention that your local repositories will be copied into the container. This can take very long if those are big,
-e.g. when the openQA repo contains a lot of profiling data because you enabled `Mojolicious::Plugin::NYTProf`.
 
 In general, if starting the tests via a container seems to hang, it is a good idea to inspect the process tree to see which command is currently
 executed.
@@ -793,7 +764,7 @@ project, etc.
 [[circleci-local-container]]
 === Run tests locally using a container
 
-One way is to build an image using the `build_local_docker.sh` script, start a
+One way is to build an image using the `build_local_container.sh` script, start a
 container and then use the same commands one would use to test locally.
 
 Pull the latest base image (otherwise it may be outdated):
@@ -804,7 +775,7 @@ podman pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
 Create an image called `localtest` based on the contents of `ci-packages.txt`
 and `autoinst`:
 ```
-tools/ci/build_local_docker.sh
+tools/ci/build_local_container.sh
 ```
 
 Mount the openQA checkout under `/opt/testing_area` within the container and run
