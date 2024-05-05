@@ -29,6 +29,7 @@ properties:
                 - type: string
                   description: Name of a test suite name
                 - type: object
+                  minProperties: 1
                   maxProperties: 1
                   description: A test suite with machine and/or priority value specified, or a custom job template name if testsuite was specified
                   additionalProperties: false

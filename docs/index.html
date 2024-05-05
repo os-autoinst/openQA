@@ -1081,6 +1081,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_note">Note</a></li>
 </ul>
 </li>
+<li><a href="#_making_documentation_changes">Making documentation changes</a></li>
 </ul>
 </li>
 <li><a href="#branding">openQA branding</a>
@@ -11411,7 +11412,7 @@ and run <code>make update-deps</code>.  This will generate the <code>cpanfile</c
 </div>
 <div class="paragraph">
 <p>The same applies to <code>os-autoinst</code> where <code>make update-deps</code> will generate the
-<code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>container/ci/Dockerfile</code>.</p>
+<code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>container/os-autoinst_dev/Dockerfile</code>.</p>
 </div>
 <div class="paragraph">
 <p>If changing any package dependencies make sure packages and updated packages
@@ -11426,11 +11427,9 @@ as part of openSUSE Tumbleweed.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>The CI of os-autoinst uses the container made using <code>container/ci/Dockerfile</code>.</p>
-</li>
-<li>
-<p>The CI of openQA uses the container made using <code>container/devel:openQA:ci/base/Dockerfile</code>
-and further dependencies listed in <code>tools/ci/ci-packages.txt</code> (see
+<p>The CI of os-autoinst and openQA uses the container made using
+<code>container/devel:openQA:ci/base/Dockerfile</code> and further dependencies listed
+in <code>tools/ci/ci-packages.txt</code> (see
 <a href="#circleci-workflow">CircleCI documentation</a>).</p>
 </li>
 <li>
@@ -11657,39 +11656,19 @@ To launch the test suite first it is required to pull the container image:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>podman pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest</pre>
+<pre>podman pull registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>This container image is provided by the OBS repository <a href="https://build.opensuse.org/package/show/devel:openQA/openqa_dev" class="bare">https://build.opensuse.org/package/show/devel:openQA/openqa_dev</a>
-and based on the <code>Dockerfile</code> within the <code>container/ci</code> sub directory of the openQA repository.</p>
-</div>
-<div class="paragraph">
-<p>Build the image using Makefile target:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>make container-test-build</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Note that the image created by that target is called <code>openqa:latest</code> while the raw container
-pulled from OBS is called <code>openqa_dev:latest</code>.</p>
-</div>
-<div class="paragraph">
-<p>Launch the tests using Makefile target:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>make launch-container-to-run-tests-within</pre>
-</div>
+<p>This container image is provided by the OBS repository <a href="https://build.opensuse.org/package/show/devel:openQA/openQA-devel-container" class="bare">https://build.opensuse.org/package/show/devel:openQA/openQA-devel-container</a>
+and based on the <code>Dockerfile</code> within the <code>container/devel</code> sub directory of the openQA repository.</p>
 </div>
 <div class="paragraph">
 <p>Run tests by spawning a container manually, e.g.:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>podman run -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container</pre>
+<pre>podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa_devel:latest make run-tests-within-container</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11742,41 +11721,12 @@ container and considers a few environment variables defining our test matrix:</p
 <div class="sect3">
 <h4 id="_tips">Tips</h4>
 <div class="paragraph">
-<p>Commands passed to <code>podman run</code> will be executed after the initialization script (which does database creation and so on). So if there is
-the need to run an interactive session after it just do:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>podman run -it -v OPENQA_LOCAL_CODE:/opt/openqa openqa:latest bash</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Of course you can also use <code>make run-tests-within-container \; bash</code> to run the tests first and then open a shell for further investigation.</p>
-</div>
-<div class="paragraph">
-<p>There is also the possibility to change the initialization scripts with the <code>--entrypoint switch</code>. This allows us to go into an interactive
-session without any initialization script run:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>podman run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>In case there is the need to follow what is happening in the currently running container (the execution will terminate the session):</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>podman exec -ti $(podman ps | awk '!/CONTAINER/{print $1}') /bin/bash</pre>
-</div>
-</div>
-<div class="paragraph">
 <p>Running UI tests in non-headless mode is also possible, eg.:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>xhost `local:root
-podman run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa:latest prove -v t/ui/14-dashboard.t
+<pre>xhost +local:root
+podman run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa_devel:latest prove -v t/ui/14-dashboard.t
 xhost -local:root</pre>
 </div>
 </div>
@@ -11792,10 +11742,6 @@ xhost -local:root</pre>
 <p>By default, <code>configure</code> and <code>make</code> are still executed (so a clean checkout is expected). If your checkout is already prepared to use,
 set <code>CUSTOM_OS_AUTOINST_SKIP_BUILD</code> to prevent this. Be aware that the build produced outside of the container might not work inside the
 container if both environments provide different, incompatible library versions (eg. OpenCV).</p>
-</div>
-<div class="paragraph">
-<p>It is also important to mention that your local repositories will be copied into the container. This can take very long if those are big,
-e.g. when the openQA repo contains a lot of profiling data because you enabled <code>Mojolicious::Plugin::NYTProf</code>.</p>
 </div>
 <div class="paragraph">
 <p>In general, if starting the tests via a container seems to hang, it is a good idea to inspect the process tree to see which command is currently
@@ -11930,7 +11876,7 @@ project, etc.</p>
 <div class="sect2">
 <h3 id="circleci-local-container">Run tests locally using a container</h3>
 <div class="paragraph">
-<p>One way is to build an image using the <code>build_local_docker.sh</code> script, start a
+<p>One way is to build an image using the <code>build_local_container.sh</code> script, start a
 container and then use the same commands one would use to test locally.</p>
 </div>
 <div class="paragraph">
@@ -11947,7 +11893,7 @@ and <code>autoinst</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>tools/ci/build_local_docker.sh</code></pre>
+<pre class="pygments highlight"><code><span></span>tools/ci/build_local_container.sh</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -12174,6 +12120,38 @@ node_modules/jshint/bin/jshint<span class="tok-w"> </span>path/to/javascript.js<
 <div class="paragraph">
 <p>Profiling data is extensive. Remove it if you do not need it anymore and disable the <code>profiling_enabled</code>
 configuration again if not needed anymore.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_making_documentation_changes">Making documentation changes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>After changing documentation, consider generating documentation locally to
+verify it is rendered correctly using <code>tools/generate-docs</code>. It is possible to
+do that inside the provided development container by invoking:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa openqa_devel:latest make generate-docs</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Replace <code>OPENQA_LOCAL_CODE</code> with the location where you have the openQA code.
+The documentation will be built inside the container and put into <code>docs/build/</code>
+subfolder.</p>
+</div>
+<div class="paragraph">
+<p>You can also utilize the <code>make serve-docs</code> target which will additionally spawn a
+simple Python HTTP server inside the target folder, so you can just point your
+browser to port 8000 to view the documentation. That could be handy for example
+in situations where you do not have the filesystem directly accessible (i.e.
+remote development). The magic line in this case would be:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>podman run --rm -it -p 8000:8000 -v .:/opt/openqa openqa_devel:latest make serve-docs</pre>
 </div>
 </div>
 </div>
@@ -12838,7 +12816,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-03-28 04:46:05 UTC
+Last updated 2024-05-05 04:44:36 UTC
 </div>
 </div>
 </body>
