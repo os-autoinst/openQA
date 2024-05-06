@@ -83,7 +83,7 @@
                     %>
                 </div>
                 <div class="col-sm-7">
-                    <select class="custom-select" name="pause-at-module" id="developer-pause-at-module">
+                    <select class="form-select" name="pause-at-module" id="developer-pause-at-module">
                         <option selected style="font-style: italic;" id="developer-no-module">Do not pause at a certain module</option>
                     </select>
                 </div>
@@ -101,7 +101,7 @@
                     %>
                 </div>
                 <div class="col-sm-7">
-                    <select class="custom-select" id="developer-pause-on-mismatch">
+                    <select class="form-select" id="developer-pause-on-mismatch">
                         <option value="fail" selected style="font-style: italic;">Fail on mismatch as usual</option>
                         <option value="assert_screen"><code>assert_screen</code> timeout</option>
                         <option value="check_screen"><code>assert_screen</code> and <code>check_screen</code> timeout</option>

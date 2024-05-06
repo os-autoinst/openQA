@@ -20,7 +20,7 @@
                 <div class="col-xl">
                 <div>
                     % if ($job->state eq DONE) {
-                        <div class="position-absolute top-right badge-pill badge-light">
+                        <div class="position-absolute top-right badge rounded-pill text-bg-light">
                             %= $job->passed_module_count
                             <i class='fa module_passed fa-star' title='modules passed'></i>
                             % if ($job->softfailed_module_count) {
