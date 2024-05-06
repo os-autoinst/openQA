@@ -47,8 +47,8 @@ anything_changed() {
     local lines_changed_in_index lines_changed_in_api other_files_changed
 
     # it looks it is a challenge to ignore lines in git diff
-    lines_changed_in_index="$(git --no-pager diff -U0 -- index.html | grep -v -e 'Last updated ' -e '^\@\@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
-    lines_changed_in_api="$(git --no-pager diff -U0 -- api/testapi.html | grep -v -e 'Last updated ' -e '^\@\@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
+    lines_changed_in_index="$(git --no-pager diff -U0 -- index.html | grep -v -e 'Last updated ' -e '^@@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
+    lines_changed_in_api="$(git --no-pager diff -U0 -- api/testapi.html | grep -v -e 'Last updated ' -e '^@@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
     other_files_changed="$(git --no-pager diff --name-only -- '(:!index.html)' '(:!api/testapi.html)' '(:!current.pdf)' | wc -l)"
 
     # if any other file changed || any line besides containing 'Last Updated' in .html
