@@ -34,7 +34,7 @@
             </ul>
           </li>
         </ul>
-        <ul class="navbar-nav ml-auto">
+        <ul class="navbar-nav ms-auto">
             <li class="nav-item">
                 <form method="get" action="<%= url_for('search') %>">
                     <input type="search" name="q" id="global-search" class="form-control navbar-input" value="<%= $self->param('q') %>" placeholder="Type to search" aria-label="Global search input"/>
