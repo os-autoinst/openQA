@@ -55,8 +55,7 @@ subtest 'access limiting for non authenticated users' => sub {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     is $t->tx->res->headers->access_control_allow_origin, '*', 'CORS header set for non authenticated routes';
     $t->get_ok('/api/v1/products')->status_is(200);
-    $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($t->tx->res->code, 403, 'delete forbidden');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403, 'delete forbidden');
     is_deeply(
         $t->tx->res->json,
         {
