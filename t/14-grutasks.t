@@ -12,6 +12,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Task::Git::Clone;
 use File::Copy;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
@@ -633,6 +634,38 @@ subtest 'handling dying GRU task' => sub {
     $associated_job->discard_changes;
     is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
     like $associated_job->reason, qr/^preparation failed: Thrown fail at/, 'reason of associated job set';
+};
+
+subtest 'git clone' => sub {
+    my $openqa_utils = Test::MockModule->new('OpenQA::Task::Git::Clone');
+    my @mocked_git_calls;
+    $openqa_utils->redefine(
+        run_cmd_with_log_return_error => sub ($cmd) {
+            my $stdout = '';
+            $stdout = 'ref: refs/heads/master	HEAD' if $cmd->[3] eq 'ls-remote';
+            $stdout = 'http://localhost/foo.git' if $cmd->[4] eq 'get-url';
+            $stdout = 'master' if $cmd->[3] eq 'branch';
+            my $git_call = join(' ', @$cmd);
+            push @mocked_git_calls, $git_call;
+            return {
+                status => 1,
+                return_code => 0,
+                stderr => '',
+                stdout => $stdout,
+            };
+        });
+    my $clone_dirs = {
+        '/etc/' => 'http://localhost/foo.git',
+        '/root/' => 'http://localhost/foo.git#foobranch',
+        '/this_directory_does_not_exist/' => 'http://localhost/bar.git',
+    };
+    my $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
+    is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
+    like $mocked_git_calls[3], qr'git -C /etc/ fetch origin master', 'fetch origin master for /etc/';
+    like $mocked_git_calls[4], qr'reset --hard origin/master', 'reset origin/master for /etc/';
+    like $mocked_git_calls[8], qr'git -C /root/ fetch origin foobranch:foobranch', 'fetch non-default branch';
+    like $mocked_git_calls[10], qr'git clone http://localhost/bar.git /this_directory_does_not_exist/',
+      'clone to /this_directory_does_not_exist/';
 };
 
 subtest 'download assets with correct permissions' => sub {

@@ -117,6 +117,7 @@ our @EXPORT = qw(
   check_download_passlist
   get_url_short
   create_downloads_list
+  create_git_clone_list
   human_readable_size
   locate_asset
   detect_current_version
@@ -598,6 +599,21 @@ sub create_downloads_list ($job_settings) {
         }
     }
     return \%downloads;
+}
+
+sub create_git_clone_list ($job_settings, $clones = {}) {
+    my $distri = $job_settings->{DISTRI};
+    my $case_url = Mojo::URL->new($job_settings->{CASEDIR} // '');
+    my $needles_url = Mojo::URL->new($job_settings->{NEEDLES_DIR} // '');
+    if ($case_url->scheme) {
+        $case_url->fragment($job_settings->{TEST_GIT_REFSPEC}) if ($job_settings->{TEST_GIT_REFSPEC});
+        $clones->{testcasedir($distri)} = $case_url;
+    }
+    if ($needles_url->scheme) {
+        $needles_url->fragment($job_settings->{NEEDLES_GIT_REFSPEC}) if ($job_settings->{NEEDLES_GIT_REFSPEC});
+        $clones->{needledir($distri)} = $needles_url;
+    }
+    return $clones;
 }
 
 sub _round_a_bit {
