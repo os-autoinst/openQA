@@ -53,6 +53,7 @@ sub read_config ($app) {
             force_result_regex => '',
             parallel_children_collapsable_results => join(' ', OK_RESULTS),
             service_port_delta => $ENV{OPENQA_SERVICE_PORT_DELTA} // 2,
+            access_control_allow_origin_header => undef,
         },
         rate_limits => {
             search => 5,

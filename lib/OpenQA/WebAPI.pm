@@ -74,7 +74,8 @@ sub startup ($self) {
 
 
     # set cookie timeout to 48 hours (will be updated on each request)
-    $self->app->sessions->default_expiration(48 * 60 * 60);
+    my $app = $self->app;
+    $app->sessions->default_expiration(48 * 60 * 60);
 
     # commands
     push @{$self->commands->namespaces}, 'OpenQA::WebAPI::Command';
@@ -515,7 +516,7 @@ sub startup ($self) {
     $self->plugin('OpenQA::WebAPI::Plugin::MemoryLimit');
 
     # add method to be called before rendering
-    $self->app->hook(
+    $app->hook(
         before_render => sub ($c, $args) {
             # return errors as JSON if accepted but HTML not
             if (!$c->accepts('html') && $c->accepts('json') && $args->{status} && $args->{status} != 200) {
@@ -524,6 +525,17 @@ sub startup ($self) {
             }
             $c->stash('api_description', \%api_description);
         });
+
+    # allow configuring Cross-Origin Resource Sharing (CORS)
+    if (my $access_control_allow_origin = $app->config->{global}->{access_control_allow_origin_header}) {
+        $app->hook(
+            after_render => sub ($c, $output, $format) {
+                return undef unless ($c->stash('namespace') // '') eq 'OpenQA::WebAPI::Controller::API::V1';
+                my $headers = $c->res->headers;
+                $headers->vary('Origin');
+                $headers->access_control_allow_origin($access_control_allow_origin);
+            });
+    }
 }
 
 sub schema ($self) { OpenQA::Schema->singleton }
