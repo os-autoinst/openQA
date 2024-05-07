@@ -1,0 +1,102 @@
+---
+settings:
+  width: 80
+  height: 24
+  title: How to run an openQA test in 5 minutes
+  timeout: 300s
+  type_speed: 50ms
+  environment_capture:
+    - HOME
+    - BAT_THEME
+instructions:
+  - !Command
+    command: "# Install podman"
+  - !Command
+    command:
+      - zypper in -y podman
+  - !Command
+    # Workaround to hide some warnings due to having podman inside podman
+    command:
+      - alias podman='podman --log-level error'
+    hidden: true
+  - !Command
+    # Make sure the image will be downloaded, because that looks nice in the video
+    command:
+      - podman rmi
+      - registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+    hidden: true
+  - !Marker Pull openQA container
+  - !Command
+    command: "# Pull and run openQA single instance container"
+  - !Command
+    command:
+      - podman run --rm -ti --name openqa --detach
+      - --env skip_suse_tests="" --env skip_suse_specifics=""
+      - --device /dev/kvm -p 1080:80 -p 1443:443
+      - registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+  - !Command
+    # Workaround for healtchecks not working without systemd inside recording container
+    command: >-
+      ( nohup retry -r 20 -s 10 -- podman healthcheck run openqa &> /dev/null & )
+    hidden: true
+  - !Command
+    command: podman wait --condition healthy openqa
+  - !Marker Clone job from openqa.opensuse.org
+  - !Command
+    command: "# Clone any job from openqa.opensuse.org"
+  - !Command
+    command:
+      - podman exec openqa
+      - openqa-clone-job https://openqa.opensuse.org/tests/4109159
+  - !Command
+    command:
+      - podman exec -ti openqa
+      - openqa-cli monitor 1
+  - !Wait 3s
+  - !Marker Prepare scenario definition
+  - !Command
+    command: "# Create scenario definition"
+  - !Command
+    command:
+      - wget -qO scenario-definitions.yaml
+      - https://raw.githubusercontent.com/os-autoinst/os-autoinst-distri-example/main/scenario-definitions.yaml
+  - !Command
+    command: bat scenario-definitions.yaml
+  - !Command
+    command: >-
+      podman cp scenario-definitions.yaml openqa:scenario-definitions.yaml
+  - !Marker Schedule product
+  - !Command
+    command: "# Schedule the product"
+  - !Command
+    command:
+      - podman exec -ti openqa
+      - openqa-cli schedule --monitor
+      - --param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml
+      - DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64
+      - TEST=simple_boot _GROUP_ID=0 BUILD=test
+      - CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-example.git
+      - NEEDLES_DIR=%%CASEDIR%%/needles
+  - !Command
+    command: podman exec openqa openqa-cli api jobs/2 | jq -r .job.result
+  - !Marker openQA web UI
+  - !Command
+    command: "# We can also use the local web UI"
+  - !Command
+    command: >-
+      alias xdg-open='browsh --time-limit 5 --startup-url'
+    hidden: true
+  - !Command
+    command: >-
+      xdg-open http://localhost:1080/t2
+  - !Command
+    command: pkill firefox
+    hidden: true
+  - !Marker Clean up
+  - !Command
+    command: rm -f scenario-definitions.yaml
+    hidden: true
+  - !Command
+    command: "# Stop the container to remove all data"
+  - !Command
+    command: podman stop openqa
