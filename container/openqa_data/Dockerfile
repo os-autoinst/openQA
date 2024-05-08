@@ -1,4 +1,4 @@
-FROM opensuse/leap:15.5
+FROM opensuse/leap:15.6
 LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
 LABEL version="0.3"
 
