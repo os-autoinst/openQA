@@ -12,6 +12,7 @@ use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::File 'path';
+use Mojo::Util 'trim';
 use Try::Tiny;
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
@@ -528,12 +529,16 @@ sub startup ($self) {
 
     # allow configuring Cross-Origin Resource Sharing (CORS)
     if (my $access_control_allow_origin = $app->config->{global}->{access_control_allow_origin_header}) {
+        my %allowed_origins = map { trim($_) => 1 } split ',', $access_control_allow_origin;
+        my $fallback_origin = delete $allowed_origins{'*'} ? '*' : undef;
         $app->hook(
             after_render => sub ($c, $output, $format) {
-                return undef unless ($c->stash('namespace') // '') eq 'OpenQA::WebAPI::Controller::API::V1';
+                return unless ($c->stash('namespace') // '') eq 'OpenQA::WebAPI::Controller::API::V1';
+                return unless my $req_origin = $c->req->url->base;
+                return unless my $res_origin = exists $allowed_origins{$req_origin} ? $req_origin : $fallback_origin;
                 my $headers = $c->res->headers;
-                $headers->vary('Origin');
-                $headers->access_control_allow_origin($access_control_allow_origin);
+                $headers->append(Vary => 'Origin');
+                $headers->access_control_allow_origin($res_origin);
             });
     }
 }
