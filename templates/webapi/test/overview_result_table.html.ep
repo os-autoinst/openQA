@@ -18,8 +18,8 @@
                 <td class="name">
                     % my $test_label = text_with_title($config);
                     % if (my $description = $config_results->{description}) {
-                        <a data-content="<p><%= href_to_bugref(render_escaped_refs($description)) %></p>"
-                        data-title="<%= $config %>" data-toggle="popover" data-placement="left" data-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
+                        <a data-bs-content="<p><%= href_to_bugref(render_escaped_refs($description)) %></p>"
+                        data-bs-title="<%= $config %>" data-bs-toggle="popover" data-bs-placement="left" data-bs-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
                     % }
                     % else {
                         <%= $test_label %>

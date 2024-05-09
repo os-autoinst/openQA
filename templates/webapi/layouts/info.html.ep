@@ -2,7 +2,7 @@
     % if (my $msg = flash('info')) {
         <div class="alert alert-primary alert-dismissible fade show" role="alert">
             <span><%= $msg %></span>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
@@ -10,7 +10,7 @@
     % if (my $msg = flash('error') || stash('flash_error')) {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <span><%= $msg %></span>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>

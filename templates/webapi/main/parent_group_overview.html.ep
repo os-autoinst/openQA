@@ -47,11 +47,11 @@
     <ul class="nav nav-pills">
       <li>Grouped</li>
       <li class="nav-tabs" style="padding: 0px 0.3em; border-bottom: 0px">
-        <a id="grouped_by_build_tab" data-toggle="pill" href="#grouped_by_build" role="tab" aria-controls="grouped_by_build">by build</a>
+        <a id="grouped_by_build_tab" data-bs-toggle="pill" href="#grouped_by_build" role="tab" aria-controls="grouped_by_build">by build</a>
       </li>
       <li>/</li>
       <li class="nav-tabs" style="padding: 0px 0.3em; border-bottom: 0px">
-        <a id="grouped_by_group_tab" data-toggle="pill" href="#grouped_by_group" role="tab" aria-controls="grouped_by_group">by group</a>
+        <a id="grouped_by_group_tab" data-bs-toggle="pill" href="#grouped_by_group" role="tab" aria-controls="grouped_by_group">by group</a>
       </li>
     </ul>
   </div>

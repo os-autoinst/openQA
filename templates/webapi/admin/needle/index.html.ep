@@ -12,7 +12,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h4 class="modal-title">Needle deletion</h4>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -40,7 +40,7 @@
         </table>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default" id="close_delete" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-default" id="close_delete" data-bs-dismiss="modal">Close</button>
         <button type="button" class="btn btn-primary" id="really_delete">Delete them</button>
       </div>
     </div><!-- /.modal-content -->

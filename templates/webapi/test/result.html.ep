@@ -33,37 +33,37 @@
         <div role="tabpanel">
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="nav-item" id="nav-item-for-details">
-                    <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link">Details</a>
+                    <a href="#details" aria-controls="details" role="tab" data-bs-toggle="tab" class="nav-link">Details</a>
                 </li>
                 <li role="presentation" class="nav-item" id="nav-item-for-external">
-                    <a href="#external" aria-controls="external" role="tab" data-toggle="tab" class="nav-link">External results</a>
+                    <a href="#external" aria-controls="external" role="tab" data-bs-toggle="tab" class="nav-link">External results</a>
                 </li>
                 % if ($show_live_tab) {
                     <li role="presentation" class="nav-item" id="nav-item-for-live">
-                        <a href="#live" aria-controls="live" role="tab" data-toggle="tab" class="nav-link">Live View</a>
+                        <a href="#live" aria-controls="live" role="tab" data-bs-toggle="tab" class="nav-link">Live View</a>
                     </li>
                 % }
                 <li role="presentation" class="nav-item" id="nav-item-for-downloads">
-                    <a href="#downloads" aria-controls="downloads" role="tab" data-toggle="tab" class="nav-link">Logs &amp; Assets</a>
+                    <a href="#downloads" aria-controls="downloads" role="tab" data-bs-toggle="tab" class="nav-link">Logs &amp; Assets</a>
                 </li>
                 <li role="presentation" class="nav-item" id="nav-item-for-settings">
-                    <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab" class="nav-link">Settings</a>
+                    <a href="#settings" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">Settings</a>
                 </li>
                 % if ($show_dependencies) {
                     <li role="presentation" class="nav-item" id="nav-item-for-dependencies">
-                        <a href="#dependencies" aria-controls="dependencies" role="tab" data-toggle="tab" class="nav-link">Dependencies</a>
+                        <a href="#dependencies" aria-controls="dependencies" role="tab" data-bs-toggle="tab" class="nav-link">Dependencies</a>
                     </li>
                 % }
                 % if ($show_investigation) {
                     <li role="presentation" class="nav-itemtab-hidden-by-default" id="nav-item-for-investigation">
-                        <a href="#investigation" aria-controls="investigation" role="tab" data-toggle="tab" class="nav-link">Investigation</a>
+                        <a href="#investigation" aria-controls="investigation" role="tab" data-bs-toggle="tab" class="nav-link">Investigation</a>
                     </li>
                 % }
                 <li role="presentation" class="nav-item" id="nav-item-for-comments">
-                    <a href="#comments" aria-controls="comments" role="tab" data-toggle="tab" class="nav-link">Comments (<%= $job->comments->count %>)</a>
+                    <a href="#comments" aria-controls="comments" role="tab" data-bs-toggle="tab" class="nav-link">Comments (<%= $job->comments->count %>)</a>
                 </li>
                 <li role="presentation" class="nav-item" id="nav-item-for-next_previous">
-                    <a href="#next_previous" aria-controls="next_previous" role="tab" data-toggle="tab" class="nav-link">Next &amp; previous results</a>
+                    <a href="#next_previous" aria-controls="next_previous" role="tab" data-bs-toggle="tab" class="nav-link">Next &amp; previous results</a>
                 </li>
             </ul>
 
