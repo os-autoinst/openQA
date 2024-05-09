@@ -10,7 +10,7 @@
             <span class="h4">
                 % if ($children) {
                     % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
-                    <a data-target="#<%= $group_id %>" href="<%= url_for('tests_overview')->query(@tests_overview_url_data, map { (groupid => $_->{id}) } @{$children});%>" onclick="return toggleChildGroups(this);" data-toggle="collapse" title="Open in new tab to view the entire build"><%= $label %></a>
+                    <a data-bs-target="#<%= $group_id %>" href="<%= url_for('tests_overview')->query(@tests_overview_url_data, map { (groupid => $_->{id}) } @{$children});%>" onclick="return toggleChildGroups(this);" data-bs-toggle="collapse" title="Open in new tab to view the entire build"><%= $label %></a>
                 % } else {
                     %= link_to $label => url_for('tests_overview')->query(@tests_overview_url_data, groupid => $group->{id})
                 % }

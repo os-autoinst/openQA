@@ -146,30 +146,30 @@
                 </a>
                 <a href="#" onclick="resumeTestExecution(); return false;"
                     class="btn btn-secondary developer-mode-element" data-visible-on="isPaused"
-                    data-toggle="tooltip" data-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
                     <i class="fa fa-play-circle-o"></i> Resume test execution
                 </a>
                 <a href="#" onclick="resumeTestExecution(true); return false;"
                     class="btn btn-secondary developer-mode-element" data-visible-on="onFailure"
-                    data-toggle="tooltip" data-placement="bottom" title="Ignores the failure and resumes the test execution">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ignores the failure and resumes the test execution">
                     <i class="fa fa-play-circle-o"></i> Ignore failure and resume
                 </a>
                 <a href="#" onclick="skipTimeout(); return false;"
                     class="btn btn-warning developer-mode-element" data-visible-on="canSkipTimeout"
-                    data-toggle="tooltip" data-placement="bottom" title="Causes the current assert_screen/check_screen to fail immediately (supposed to be combined with pause on assert_screen)">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Causes the current assert_screen/check_screen to fail immediately (supposed to be combined with pause on assert_screen)">
                     <i class="fa fa-play-circle-o"></i> Skip timeout
                 </a>
                 <a href="<%= url_for('edit_test', testid => $testid) %>"
                     class="btn btn-secondary developer-mode-element"
                     data-visible-on="needleEditorReady"
-                    data-toggle="tooltip" data-placement="bottom" title="Allows creating/updating a needle from the latest screenshot/match (going back to the details to select a particular screenshot is of course possible as well)">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Allows creating/updating a needle from the latest screenshot/match (going back to the details to select a particular screenshot is of course possible as well)">
                     <i class="fa fa-thumb-tack"></i>
                     Open needle editor
                 </a>
                 % if (app->mode eq 'development') {
                     <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"
                        class="btn btn-secondary developer-mode-element" data-visible-on="ownSession"
-                       data-toggle="tooltip" data-placement="bottom" title="Opens a console intended for developing the developer mode itself">
+                       data-bs-toggle="tooltip" data-bs-placement="bottom" title="Opens a console intended for developing the developer mode itself">
                         <i class="fa fa-terminal"></i> Open console
                     </a>
                 % }

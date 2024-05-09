@@ -22,7 +22,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Set Area Margin</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -39,7 +39,7 @@
                     </fieldset>
                 </div>
                 <div class="modal-footer">
-                    <button type="reset" class="btn btn-default" id="cancel_margin" data-dismiss="modal">Cancel</button>
+                    <button type="reset" class="btn btn-default" id="cancel_margin" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="set_margin">Set</button>
                 </div>
             </form>
@@ -52,7 +52,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Set Match Level</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -76,7 +76,7 @@
                     </fieldset>
                 </div>
                 <div class="modal-footer">
-                    <button type="reset" class="btn btn-default" id="cancel_match" data-dismiss="modal">Cancel</button>
+                    <button type="reset" class="btn btn-default" id="cancel_match" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="set_match">Set</button>
                 </div>
             </form>
@@ -89,7 +89,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">title</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -98,7 +98,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger" id="modal-overwrite-confirm">Save and Overwrite</button>
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -110,7 +110,7 @@
         % if(@$error_messages) {
             <div class="alert alert-warning alert-dismissible fade show" role="alert" id="editor_warnings">
                 <span><%== '<ul><li>'.join('</li><li>', @$error_messages).'</li></ul>' %></span>
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>

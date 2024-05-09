@@ -283,7 +283,7 @@ function changeClassOfDependencyJob(array, className, add) {
 }
 
 function showAddCommentsDialog() {
-  $('#add-comments-modal').modal();
+  new bootstrap.Modal('#add-comments-modal').show();
 }
 
 function addComments(form) {
@@ -298,7 +298,7 @@ function addComments(form) {
   const done = () => {
     progressIndication.style.display = 'none';
     controls.style.display = 'inline';
-    $('#add-comments-modal').modal('hide');
+    new bootstrap.Modal('#add-comments-modal').hide();;
   };
   $.ajax({
     url: form.action,

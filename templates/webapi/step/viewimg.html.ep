@@ -6,7 +6,7 @@
             <button type="button" class="btn btn-light btn-left" onclick="setNeedle($([]));" id="screenshot_button">
                 <i class="fa fa-image" title="Show only screenshot"></i>
             </button>
-            <button id="candidatesMenu" type="button" aria-haspopup="true" aria-expanded="false" data-toggle="dropdown"
+            <button id="candidatesMenu" type="button" aria-haspopup="true" aria-expanded="false" data-bs-toggle="dropdown"
                 % if ($tag_count) {
                     class="btn btn-light dropdown-toggle"
                 % }
@@ -66,8 +66,8 @@
                                                 </i>
                                                 <i class="fa fa-history show-needle-info"
                                                     title="Last match and last use"
-                                                    data-toggle="popover" data-placement="right"
-                                                    data-content="
+                                                    data-bs-toggle="popover" data-bs-placement="right"
+                                                    data-bs-content="
                                                     <div class='needle-info-table'>
                                                         <div><span>Last match:</span><span><%= popover_link $needle->{last_match}, $needle->{last_match_link} %></span></div>
                                                         <div><span>Last seen:</span><span><%= popover_link $needle->{last_seen}, $needle->{last_seen_link} %></span></div>

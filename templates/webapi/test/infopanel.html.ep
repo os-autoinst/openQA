@@ -139,7 +139,7 @@
                         % my $has_dependencies = $job->has_dependencies;
                         % my $ok_results_explanation = join '/', OK_RESULTS;
                         % if ($has_dependencies) {
-                          <button class="btn btn-secondary dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <button class="btn btn-secondary dropdown-toggle" type="button" id="restart-button-options" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="caret" title="Additional options for restarting jobs with dependencies"></span>
                           </button>
                           <div class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">

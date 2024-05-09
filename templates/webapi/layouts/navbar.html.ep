@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-light">
   <div class="container-fluid">
      <a class="navbar-brand" href="/"><img src="<%= icon_url 'logo.svg'%>" alt="openQA"></a>
-     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
        <span class="navbar-toggler-icon"></span>
      </button>
      <div class="collapse navbar-collapse" id="navbarNav">
@@ -11,7 +11,7 @@
          </li>
 
          <li class="nav-item dropdown" id="job_groups">
-            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups<span class="caret"></span></a>
+            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups<span class="caret"></span></a>
             <ul class="dropdown-menu">
                %= current_job_group
                % for my $parent_or_group (@$job_groups_and_parents) {
@@ -42,7 +42,7 @@
             </li>
         % if (current_user) {
             <li class="nav-item dropdown" id="user-action">
-                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as
+                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as
                     %= current_user->name
                     <span class="caret"></span>
                 </a>
