@@ -3,5 +3,5 @@
 % content_for 'src_code' => begin
   File path:
     <code><%= $contextpath %></code>
-    <div class="code" id="script" data-path="<%= $contextpath %>><%= $context %></div>
+    <div class="code" id="script" data-path="<%= $contextpath %>"><%= $context %></div>
 % end
