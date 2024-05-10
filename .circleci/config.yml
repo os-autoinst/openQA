@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  codecov: codecov/codecov@3.2.4
+  codecov: codecov/codecov@4.1.0
 
 aliases:
   - &restore_cache
@@ -263,7 +263,7 @@ jobs:
       - run: make coverage-report-codecov
       - codecov/upload:
           file: cover_db/codecov.json
-          xtra_args: -v -Z
+          cli_args: -v -Z
 
   build-docs: &docs-template
     docker:
