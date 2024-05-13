@@ -26,6 +26,8 @@ ENV USER squamata
 
 RUN echo "$NORMAL_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 RUN useradd -r -d /home/$NORMAL_USER -m -g users --uid=1000 $NORMAL_USER
+# Create default directory to prevent keyboxd usage for GPG >= 2.4, see https://github.com/codecov/codecov-circleci-orb/issues/157 for details
+RUN sudo -u $NORMAL_USER mkdir -p /home/$NORMAL_USER/.gnupg
 
 RUN mkdir -p /opt/testing_area
 RUN chown -R $NORMAL_USER:users /opt/testing_area
