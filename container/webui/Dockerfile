@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 #!BuildTag: openqa_webui:latest opensuse/openqa-webui:latest opensuse/openqa-webui:%PKG_VERSION% opensuse/openqa-webui:%PKG_VERSION%.%RELEASE%
-FROM opensuse/leap:15.5
+FROM opensuse/leap:15.6
 
 # labelprefix=org.opensuse.openqa-webui
 LABEL org.opencontainers.image.title="openQA webui container"
@@ -12,13 +12,13 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 # endlabelprefix
 
 # hadolint ignore=DL3037
-RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.5 devel_openQA && \
-    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.5/15.5 devel_openQA_Leap && \
+RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.6 devel_openQA && \
+    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.6/15.6 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     # openQA might need rubygem:sass to compile assets in this context due to
     # unknown reasons even though the package should use the precompiled
     # assets from cache.tar
-    zypper in -y ca-certificates-mozilla curl openQA-local-db apache2 hostname which w3m 'rubygem(sass)' && \
+    zypper in -y ca-certificates-mozilla curl openQA-local-db apache2 apache2-utils hostname which w3m 'rubygem(sass)' && \
     zypper clean && \
     gensslcert && \
     a2enmod headers && \
