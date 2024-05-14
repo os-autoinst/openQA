@@ -1957,7 +1957,7 @@ container engine:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1080</span>:80<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1443</span>:443<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.5/openqa_webui:latest</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1080</span>:80<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1443</span>:443<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.6/openqa_webui:latest</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1965,7 +1965,7 @@ container engine:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.5/openqa_worker:latest</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.6/openqa_worker:latest</code></pre>
 </div>
 </div>
 </div>
@@ -1986,7 +1986,7 @@ Example for running openQA with a custom config and certificate:</p>
 <span class="tok-w">  </span>-v<span class="tok-w"> </span>./container/webui/test-key.pem:/etc/apache2/ssl.key/server.key:z<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">  </span>-v<span class="tok-w"> </span>./container/webui/test-cert.pem:/etc/apache2/ssl.crt/ca.crt:z<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">  </span>-v<span class="tok-w"> </span>./container/webui/conf/openqa.ini:/data/conf/openqa.ini:z<span class="tok-w"> </span><span class="tok-se">\</span>
-<span class="tok-w">  </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.5/openqa_webui:latest</code></pre>
+<span class="tok-w">  </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.6/openqa_webui:latest</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1998,7 +1998,7 @@ supply <code>workers.ini</code> and <code>client.conf</code>:</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">  </span>-v<span class="tok-w"> </span>./container/worker/conf/workers.ini:/data/conf/workers.ini:z<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">  </span>-v<span class="tok-w"> </span>./container/worker/conf/client.conf:/data/conf/client.conf:z<span class="tok-w"> </span><span class="tok-se">\</span>
-<span class="tok-w">  </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.5/openqa_worker:latest</code></pre>
+<span class="tok-w">  </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.6/openqa_worker:latest</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2021,7 +2021,7 @@ commands mentioned there can also be invoked within a container, e.g.:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span><span class="tok-se">\</span>
-<span class="tok-w">   </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.5/openqa_webui:latest<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">   </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.6/openqa_webui:latest<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">   </span>openqa-cli<span class="tok-w"> </span>--help</code></pre>
 </div>
 </div>
@@ -12828,7 +12828,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-05-08 04:43:25 UTC
+Last updated 2024-05-14 04:44:18 UTC
 </div>
 </div>
 </body>
