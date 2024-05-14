@@ -570,21 +570,20 @@ sub get_url_short {
     return ($short, $do_extract);
 }
 
-sub create_downloads_list {
-    my ($args) = @_;
-    my %downloads = ();
-    for my $arg (keys %$args) {
-        my $url = $args->{$arg};
+sub create_downloads_list ($job_settings) {
+    my %downloads;
+    for my $arg (keys %$job_settings) {
+        my $url = $job_settings->{$arg};
         my ($short, $do_extract) = get_url_short($arg);
         next unless ($short);
-        my $filename = $args->{$short};
+        my $filename = $job_settings->{$short};
         unless ($filename) {
             log_debug("No target filename set for $url. Ignoring $arg");
             next;
         }
         # We're only going to allow downloading of asset types. We also
         # need this to determine the download location later
-        my $assettype = asset_type_from_setting($short, $args->{$short});
+        my $assettype = asset_type_from_setting($short, $job_settings->{$short});
         unless ($assettype) {
             log_debug("_URL downloading only allowed for asset types! $short is not an asset type");
             next;

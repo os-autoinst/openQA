@@ -569,7 +569,7 @@ subtest 'Gru tasks retry' => sub {
 $t->app->log(Mojo::Log->new(level => 'debug'));
 
 subtest 'handling failing GRU task' => sub {
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail'], undef, [{job_id => 99927}]);
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail'], undef, [99927]);
     ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
     is $associated_job->result, NONE, 'associated job has no result yet';
@@ -584,7 +584,7 @@ subtest 'handling failing GRU task' => sub {
 };
 
 subtest 'handling user error occurring in GRU task' => sub {
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['user_error'], undef, [{job_id => 99928}]);
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['user_error'], undef, [99928]);
     ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
     is $associated_job->result, NONE, 'associated job has no result yet';
@@ -601,7 +601,7 @@ subtest 'handling user error occurring in GRU task' => sub {
 
 subtest 'handling normally finishing GRU task' => sub {
     $jobs->find(99928)->update({state => SCHEDULED, result => NONE, reason => undef});
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['finish'], undef, [{job_id => 99928}]);
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['finish'], undef, [99928]);
     ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
     is $associated_job->result, NONE, 'associated job has no result yet';
@@ -617,7 +617,7 @@ subtest 'handling normally finishing GRU task' => sub {
 
 subtest 'handling dying GRU task' => sub {
     $jobs->find(99928)->update({state => SCHEDULED, result => NONE, reason => undef});
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['die'], undef, [{job_id => 99928}]);
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['die'], undef, [99928]);
     ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
     is $associated_job->result, NONE, 'associated job has no result yet';

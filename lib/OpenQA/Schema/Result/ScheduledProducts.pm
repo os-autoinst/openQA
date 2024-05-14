@@ -399,8 +399,7 @@ sub _schedule_iso {
             $_ => [
                 [keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract},
                 $tmp_downloads{$_}->{blocked_job_id}]
-          }
-          keys %tmp_downloads;
+        } keys %tmp_downloads;
         $gru->enqueue_download_jobs(\%downloads);
     };
 
