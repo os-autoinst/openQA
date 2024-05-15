@@ -249,6 +249,9 @@ Use this package to setup a local instance with all services provided together.
 
 %package bootstrap
 Summary:        Automated openQA setup
+Requires:       curl
+Requires:       iputils
+Requires:       procps
 
 %description bootstrap
 This can automatically setup openQA - either directly on your system
