@@ -1897,7 +1897,8 @@ sub investigate ($self, %args) {
             eval { Mojo::File->new($_->result_dir(), 'vars.json')->slurp }
               // undef
         } ($prev, $self);
-        $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore) // 'Diff of packages not available';
+        $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'worker_packages.txt');
+        $inv{diff_sut_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'sut_packages.txt');
         last unless $self_file && $prev_file;
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
@@ -1927,11 +1928,11 @@ sub investigate ($self, %args) {
     return \%inv;
 }
 
-sub packages_diff ($self, $prev, $ignore) {
-    my $current_file = path($self->result_dir, 'worker_packages.txt');
-    return unless -e $current_file;
-    my $prev_file = path($prev->result_dir, 'worker_packages.txt');
-    return unless -e $prev_file;
+sub packages_diff ($self, $prev, $ignore, $filename, $fallback = 'Diff of packages not available') {
+    my $current_file = path($self->result_dir, $filename);
+    return $fallback unless -e $current_file;
+    my $prev_file = path($prev->result_dir, $filename);
+    return $fallback unless -e $prev_file;
     my @files_packages = map { $_->slurp } ($prev_file, $current_file);
     my $diff_packages = eval { diff(\$files_packages[0], \$files_packages[1], {CONTEXT => 0}) };
     return join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff_packages));

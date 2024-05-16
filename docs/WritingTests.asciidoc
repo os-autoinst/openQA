@@ -473,6 +473,37 @@ sub run () {
 }
 --------------------------------------------------------------
 
+=== Logging package versions used for test
+
+There are two sets of packages that can be included in test logs:
+1. Packages installed on the worker itself - stored as `worker_packages.txt`.
+2. Packages installed on SUT - stored as `sut_packages.txt`.
+
+For both sets, if present, openQA will include the difference to the last good
+job in the "Investigation" tab of a failed job.
+
+To enable logging of worker package versions, set `PACKAGES_CMD` in
+`workers.ini`.  The command should print installed packages with their version
+to stdout. For RPM-based systems it can be for example `rpm -qa`.
+
+To enable logging of SUT package versions, make the test create the file
+`sut_packages.txt` in the current worker directory. If `upload_logs()` is used,
+the resulting file needs to be copied/moved.
+
+[caption="Example: "]
+.Logging SUT package versions
+[source,perl]
+--------------------------------------------------------------
+use Mojo::File qw(path);
+sub run {
+    ...
+    assert_script_run("rpm -qa > sut_packages.txt");
+    my $fname = upload_logs("sut_packages.txt");
+    path("ulogs/$fname")->move_to("sut_packages.txt");
+    ...
+}
+--------------------------------------------------------------
+
 === Assigning jobs to workers
 
 By default, any worker can get any job with the matching architecture.

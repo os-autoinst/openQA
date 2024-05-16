@@ -88,7 +88,7 @@ use constant {
 use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPED, SOFTFAILED);
 
 # common result files to be expected in all jobs
-use constant COMMON_RESULT_LOG_FILES => qw(autoinst-log.txt worker-log.txt worker_packages.txt);
+use constant COMMON_RESULT_LOG_FILES => qw(autoinst-log.txt worker-log.txt worker_packages.txt sut_packages.txt);
 use constant COMMON_RESULT_FILES => COMMON_RESULT_LOG_FILES, qw(vars.json);
 
 # result files handled by the cleanup of logs
