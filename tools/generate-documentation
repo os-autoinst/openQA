@@ -186,7 +186,8 @@ check_asciidoctor() {
 
     if [[ -z "$asciidoctor_bin" ]] || [[ ! -f $asciidoctor_bin ]]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again:"
-        echo "    sudo gem install asciidoctor pygments.rb"
+        echo "    sudo gem install asciidoctor"
+        echo "    sudo gem install pygments.rb -v 2.4.1"
         [[ ${formats[pdf]} ]] && echo "    sudo gem install public_suffix -v 4.0.7"
         [[ ${formats[pdf]} ]] && echo "    sudo gem install css_parser -v 1.12.0"
         [[ ${formats[pdf]} ]] && echo "    sudo gem install asciidoctor-pdf -v 1.6.2"
@@ -198,7 +199,9 @@ check_asciidoctor() {
 
 install_asciidoctor() {
     # install dependencies
-    gem install asciidoctor pygments.rb
+    gem install asciidoctor
+    # Note: pin to 2.4.1 because newer versions of pygments.rb need Ruby 2.6
+    gem install pygments.rb -v 2.4.1
     # Note: pin to 4.0.7 because newer versions of publix_suffix need Ruby 2.6
     # Note: pin to 1.12.0 because newer versions of css_parser need Ruby 2.7
     # Note: pin to 1.6.2 because newer versions of asciidoctor-pdf need Ruby 2.7
