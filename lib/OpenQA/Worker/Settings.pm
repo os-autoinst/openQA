@@ -16,6 +16,8 @@ has 'global_settings';
 has 'webui_hosts';
 has 'webui_host_specific_settings';
 
+use constant VNCPORT_OFFSET => $ENV{VNCPORT_OFFSET} // 90;
+
 sub new ($class, $instance_number = undef, $cli_options = {}) {
     my $settings_file = ($ENV{OPENQA_CONFIG} || '/etc/openqa') . '/workers.ini';
     my $cfg;
@@ -73,7 +75,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     # TODO: This should be sent to the scheduler to be included in the worker's table.
     if (defined $instance_number) {
         $ENV{QEMUPORT} = $instance_number * 10 + 20002;
-        $ENV{VNC} = $instance_number + 90;
+        $ENV{VNC} = $instance_number + VNCPORT_OFFSET;
     }
 
     # assign default retry-delay for web UI connection
