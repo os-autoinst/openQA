@@ -825,6 +825,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#_changing_timeouts">Changing timeouts</a></li>
 <li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
+<li><a href="#_logging_package_versions_used_for_test">Logging package versions used for test</a></li>
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
 <li><a href="#_running_a_custom_worker_engine">Running a custom worker engine</a></li>
 <li><a href="#_automatic_retries_of_jobs">Automatic retries of jobs</a></li>
@@ -6924,6 +6925,41 @@ even if test suites have failed due to different test modules.</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="_logging_package_versions_used_for_test">Logging package versions used for test</h3>
+<div class="paragraph">
+<p>There are two sets of packages that can be included in test logs:
+1. Packages installed on the worker itself - stored as <code>worker_packages.txt</code>.
+2. Packages installed on SUT - stored as <code>sut_packages.txt</code>.</p>
+</div>
+<div class="paragraph">
+<p>For both sets, if present, openQA will include the difference to the last good
+job in the "Investigation" tab of a failed job.</p>
+</div>
+<div class="paragraph">
+<p>To enable logging of worker package versions, set <code>PACKAGES_CMD</code> in
+<code>workers.ini</code>.  The command should print installed packages with their version
+to stdout. For RPM-based systems it can be for example <code>rpm -qa</code>.</p>
+</div>
+<div class="paragraph">
+<p>To enable logging of SUT package versions, make the test create the file
+<code>sut_packages.txt</code> in the current worker directory. If <code>upload_logs()</code> is used,
+the resulting file needs to be copied/moved.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Logging SUT package versions</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::File</span><span class="tok-w"> </span><span class="tok-sx">qw(path)</span><span class="tok-p">;</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-o">...</span>
+<span class="tok-w">    </span><span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s">&quot;rpm -qa &gt; sut_packages.txt&quot;</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-nv">$fname</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">upload_logs</span><span class="tok-p">(</span><span class="tok-s">&quot;sut_packages.txt&quot;</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-n">path</span><span class="tok-p">(</span><span class="tok-s">&quot;ulogs/$fname&quot;</span><span class="tok-p">)</span><span class="tok-o">-&gt;</span><span class="tok-n">move_to</span><span class="tok-p">(</span><span class="tok-s">&quot;sut_packages.txt&quot;</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-o">...</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_assigning_jobs_to_workers">Assigning jobs to workers</h3>
 <div class="paragraph">
 <p>By default, any worker can get any job with the matching architecture.</p>
@@ -12828,7 +12864,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-05-19 04:44:27 UTC
+Last updated 2024-05-20 04:44:15 UTC
 </div>
 </div>
 </body>
