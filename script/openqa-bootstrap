@@ -1,5 +1,5 @@
 #!/bin/bash -e
-[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Setup a working openQA installation, automating the steps mentioned in the 'custom installation' documentation section. Supports to immediately clone an existing job simply by supplying 'openqa-clone-job' parameters directly for a quickstart" && exit
+[[ $1 = "-h" ]] || [[ $1 = "--help" ]] && echo "Setup a working openQA installation, automating the steps mentioned in the 'custom installation' documentation section. Supports to immediately clone an existing job simply by supplying 'openqa-clone-job' parameters directly for a quickstart" && exit
 
 set -xeuo pipefail
 
@@ -10,28 +10,76 @@ skip_suse_specifics="${skip_suse_specifics:=""}"
 skip_suse_tests="${skip_suse_tests:=""}"
 setup_web_proxy="${setup_web_proxy:=""}"
 
-if [ "$(ps --no-headers -o comm 1)" = 'systemd' ]; then
+if [[ $(ps --no-headers -o comm 1) = 'systemd' ]]; then
     running_systemd=1
+fi
+
+start-database() {
+    if [[ -z $running_systemd ]]; then
+        su postgres -c '/usr/share/postgresql/postgresql-script stop' || true
+        su postgres -c '/usr/share/postgresql/postgresql-script start'
+    else
+        systemctl enable --now postgresql
+    fi
+}
+
+start-worker() {
+    if [[ -z $running_systemd ]]; then
+        /usr/bin/install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/1
+        su _openqa-worker -c '/usr/share/openqa/script/worker --instance 1'
+    else
+        systemctl enable --now openqa-worker@1
+    fi
+}
+
+start-daemons() {
+    if [[ -z $running_systemd ]]; then
+        pgrep -f openqa-scheduler-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
+        pgrep -f openqa-websockets-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
+        pgrep -f openqa-gru > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-gru &
+        pgrep -f openqa-livehandler-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
+        if [[ $setup_web_proxy == "nginx" ]]; then
+            nginx
+        else
+            /usr/sbin/start_apache2 -k start
+        fi
+        pgrep -f openqa-webui-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-webui-daemon &
+    else
+        if [[ $setup_web_proxy == "nginx" ]]; then
+            systemctl enable --now nginx
+        else
+            systemctl enable --now apache2
+        fi
+        systemctl enable --now openqa-webui
+        systemctl enable --now openqa-scheduler
+    fi
+}
+
+if [[ $# -gt 0 && $1 == start ]]; then
+    start-database
+    start-daemons
+    start-worker
+    exit
 fi
 
 # add extra repos for leap
 # shellcheck disable=SC1091
 . /etc/os-release
-if [ "$NAME" = "openSUSE Leap" ]; then
+if [[ $NAME = "openSUSE Leap" ]]; then
     # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
     repobase=https://download.opensuse.org/repositories/devel:/openQA
     # remove suffixes like " Beta" so e.g. "15.6 Beta" becomes just "15.6"
     # shellcheck disable=SC2153
     version=${VERSION%% *}
-    zypper -n addrepo -p 95 "$repobase/$version" 'devel:openQA'
-    zypper -n addrepo -p 90 "$repobase:/Leap:/$version/$version" "devel:openQA:Leap:$version"
+    zypper lr -d | grep "$repobase/$version" || zypper -n addrepo -p 95 "$repobase/$version" 'devel:openQA'
+    zypper lr -d | grep "$repobase:/Leap:/$version/$version" || zypper -n addrepo -p 90 "$repobase:/Leap:/$version/$version" "devel:openQA:Leap:$version"
     zypper -n --gpg-auto-import-keys refresh
 fi
 
 # install packages
 pkgs=(qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps)
 
-if [ "$(uname -m)" = "aarch64" ]; then
+if [[ "$(uname -m)" = "aarch64" ]]; then
     pkgs+=(qemu-uefi-aarch64)
 fi
 if [[ $setup_web_proxy == "nginx" ]]; then
@@ -48,11 +96,7 @@ zypper -n install --no-recommends "${pkgs[@]}"
 
 # setup database
 chown -R postgres: /var/lib/pgsql/ # fix broken postgres working dir permissions in the nspawn container
-if [ -z "$running_systemd" ]; then
-    su postgres -c '/usr/share/postgresql/postgresql-script start'
-else
-    systemctl enable --now postgresql
-fi
+start-database
 su postgres -c "/usr/share/openqa/script/setup-db" "$dbuser" "$dbname"
 
 # setup webserver and fake-auth
@@ -66,7 +110,7 @@ else
 fi
 sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 
-if [ -z "$skip_suse_specifics" ] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse); then
+if [[ -z $skip_suse_specifics ]] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse); then
     # add internal CA if executed within suse network
     if ! zypper info ca-certificates-suse | grep -q ':'; then
         # add suse ca repo if needed
@@ -85,13 +129,13 @@ if [ -z "$skip_suse_specifics" ] && ping -c1 download.suse.de. && (! rpm -q ca-c
 fi
 
 # fetch tests and needles
-if [ -z "$skip_suse_tests" ]; then
+if [[ -z $skip_suse_tests ]]; then
     if ping -c1 gitlab.suse.de.; then
         # use faster local mirror if run from within SUSE network
         export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
     fi
     /usr/share/openqa/script/fetchneedles
-    if [ ! -e /var/lib/openqa/tests/sle ]; then
+    if [[ ! -e /var/lib/openqa/tests/sle ]]; then
         ln -s opensuse /var/lib/openqa/tests/sle
     fi
 
@@ -99,7 +143,7 @@ if [ -z "$skip_suse_tests" ]; then
         sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
         sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
         # clone SLE needles if run from within SUSE network
-        if [ ! -d $sles_needles_directory ]; then
+        if [[ ! -d $sles_needles_directory ]]; then
             echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
             git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
         fi
@@ -110,27 +154,7 @@ fi
 # ensure that the hostname is mapped to 127.0.0.1 (needed for livehandler)
 grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 
-# start daemons
-if [ -z "$running_systemd" ]; then
-    pgrep -f openqa-scheduler-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
-    pgrep -f openqa-websockets-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
-    pgrep -f openqa-gru > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-gru &
-    pgrep -f openqa-livehandler-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
-    if [[ $setup_web_proxy == "nginx" ]]; then
-        nginx
-    else
-        /usr/sbin/start_apache2 -k start
-    fi
-    pgrep -f openqa-webui-daemon > /dev/null || su geekotest -c /usr/share/openqa/script/openqa-webui-daemon &
-else
-    if [[ $setup_web_proxy == "nginx" ]]; then
-        systemctl enable --now nginx
-    else
-        systemctl enable --now apache2
-    fi
-    systemctl enable --now openqa-webui
-    systemctl enable --now openqa-scheduler
-fi
+start-daemons
 
 # wait for webui to become available
 while ! curl -sI http://localhost/ | grep 200; do
@@ -149,16 +173,10 @@ key = ${API_KEY}
 secret = ${API_SECRET}
 EOF
 
-# start worker
-if [ -z "$running_systemd" ]; then
-    /usr/bin/install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/1
-    su _openqa-worker -c '/usr/share/openqa/script/worker --instance 1'
-else
-    systemctl enable --now openqa-worker@1
-fi
+start-worker
 
 # clone job if job ID is given passing extra arguments as well
 # e.g.: openqa-bootstrap --from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
-if [ $# -ne 0 ]; then
+if [[ $# -ne 0 ]]; then
     openqa-clone-job "$@"
 fi
