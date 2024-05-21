@@ -52,10 +52,16 @@ Parameters
 * \$[test/module,...] - The modules of your test you want to schedule for.
 * \$TEST_NAME - The Name of your test. (E.g.: TEST=RUST)
 
-Specify your GitHub access token in '~/.config/openqa/gh.conf' like this:
+Specify your GitHub access token in '~/.config/openqa/verification.conf' like this:
 
 ```
 GH_ACCESS_TOKEN="YOUR_TOKEN_HERE"
+```
+
+To specify the URL to your own openQA instance specify it in the same config file like this:
+
+```
+CUSTOM_TARGET="https://openqa.yourdomain.com"
 ```
 
 Default test modules
@@ -80,8 +86,9 @@ test_id="$3"
 modules="$4"
 test_name="$5"
 
-config_file="$HOME/.config/openqa/gh.conf"
+config_file="$HOME/.config/openqa/verification.conf"
 config=""
+custom_target=""
 
 # See help text.
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -98,8 +105,9 @@ fi
 # Read GH token from config file.
 if [[ -f "$config_file" ]]; then
   config=$(grep "^GH_ACCESS_TOKEN=" "$config_file" | cut -d'"' -f2)
+  custom_target=$(grep "^CUSTOM_TARGET=" "$config_file" | cut -d'"' -f2)
 else
-  echo "No GitHub token file found! Run with '-h' for more info."
+  echo "No config file found! Run with '-h' for more info."
   exit 1
 fi
 
@@ -119,8 +127,14 @@ elif [ "$source" = "suse" ]; then
     "https://openqa.suse.de/tests/$test_id" \
     SCHEDULE="tests/installation/bootloader_start,tests/boot/boot_to_desktop,$modules" \
     TEST="$test_name"
+elif [ "$source" = "custom" ]; then
+  echo "Dispatching verification run for your custom target '$custom_target'..."
+  openqa-clone-custom-git-refspec "https://github.com/os-autoinst-distri-opensuse/pull/$pr_id" \
+    "$custom_target/tests/$test_id" \
+    SCHEDULE="tests/installation/bootloader_start,tests/boot/boot_to_desktop,$modules" \
+    TEST="$test_name"
 else
   # NOTE: Technically we could support custom targets via a config file. TBI.
-  echo "Unknown argument '$1'. Must be either 'suse' or 'opensuse'. Custom openqa instances not yet supported."
+  echo "Unknown argument '$1'. Must be either 'suse', 'opensuse' or 'custom'."
   exit 1
 fi
