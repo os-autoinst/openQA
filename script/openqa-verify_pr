@@ -41,7 +41,7 @@ OpenQA verification run scheduler.
 USAGE:
 ======
 
-$ schedule_verification_run \$SOURCE \$PR_ID \$BASE_TEST_ID \$[test/module, test/module,...] \$TEST_NAME
+$ schedule_verification_run $SOURCE $PR_ID $BASE_TEST_ID $[test/module, test/module,...] $TEST_NAME
 
 Parameters
 ----------
