@@ -38,47 +38,37 @@
 help_text=$(cat <<'EOF'
 OpenQA verification run scheduler.
 
-USAGE:
-======
+Usage:
+ schedule_verification_run $SOURCE $PR_ID $BASE_TEST_ID $[test/module, test/module,...] $TEST_NAME
 
-$ schedule_verification_run $SOURCE $PR_ID $BASE_TEST_ID $[test/module, test/module,...] $TEST_NAME
-
-Parameters
-----------
-
-* \$SOURCE - The source you want to schedule a rund for. Can be either opensuse or suse.
-* \$PR_ID - The ID of your GitHub Pull Request.
-* \$BASE_TEST_ID - The ID of the test you want you use as a base.
-* \$[test/module,...] - The modules of your test you want to schedule for.
-* \$TEST_NAME - The Name of your test. (E.g.: TEST=RUST)
+Parameters:
+ SOURCE - The source you want to schedule a run for. Can be either opensuse or suse.
+ PR_ID - The ID of your GitHub Pull Request.
+ BASE_TEST_ID - The ID of the test you want you use as a base.
+ [test/module,...] - The modules of your test you want to schedule for.
+ TEST_NAME - The Name of your test. (E.g.: TEST=RUST)
 
 Specify your GitHub access token in '~/.config/openqa/verification.conf' like this:
 
-```
 GH_ACCESS_TOKEN="YOUR_TOKEN_HERE"
-```
 
 To specify the URL to your own openQA instance specify it in the same config file like this:
 
-```
 CUSTOM_TARGET="https://openqa.yourdomain.com"
-```
 
-Default test modules
---------------------
-
+Default test modules:
 The following modules are automatically selected to load for your run:
 
-* 'tests/installation/bootloader_start'
-* 'tests/boot/boot_to_desktop'
+ 'tests/installation/bootloader_start'
+ 'tests/boot/boot_to_desktop'
 
-Options
--------
-
-* '-h' / '--help' - Display this help text.
+Options:
+ -h, --help        Display this help text.
 
 EOF
 )
+
+set -o pipefail
 
 source="$1"
 pr_id="$2"
