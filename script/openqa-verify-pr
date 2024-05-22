@@ -94,19 +94,19 @@ fi
 
 export GITHUB_TOKEN=$config
 
-if [ "$source" = "opensuse" ]; then
+if [ $source = 'opensuse' ]; then
   echo "Dispatching verification run for opensuse..."
   openqa-clone-custom-git-refspec "https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/$pr_id" \
     "https://openqa.opensuse.org/tests/$test_id" \
     SCHEDULE="tests/installation/bootloader_start,tests/boot/boot_to_desktop,$modules" \
     TEST="$test_name"
-elif [ "$source" = "suse" ]; then
+elif [ $source = 'suse' ]; then
   echo "Dispatching verification run for suse..."
   openqa-clonse-custom-git-refspec "https://github.com/os-autoinst-distri-opensuse/pull/$pr_id" \
     "https://openqa.suse.de/tests/$test_id" \
     SCHEDULE="tests/installation/bootloader_start,tests/boot/boot_to_desktop,$modules" \
     TEST="$test_name"
-elif [ "$source" = "custom" ]; then
+elif [ $source = 'custom' ]; then
   echo "Dispatching verification run for your custom target '$custom_target'..."
   openqa-clone-custom-git-refspec "https://github.com/os-autoinst-distri-opensuse/pull/$pr_id" \
     "$custom_target/tests/$test_id" \
