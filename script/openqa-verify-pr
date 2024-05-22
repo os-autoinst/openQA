@@ -36,14 +36,14 @@
 
 
 help_text=$(cat <<'EOF'
-OpenQA verification run scheduler.
+OpenQA verification run scheduler
 
 Usage:
- schedule_verification_run $SOURCE $PR_ID $BASE_TEST_ID $[test/module, test/module,...] $TEST_NAME
+ openqa-verify-pr $SOURCE $PR_ID $BASE_TEST_ID $[test/module, test/module,...] $TEST_NAME
 
 Parameters:
- SOURCE - The source you want to schedule a run for. Can be either opensuse or suse.
- PR_ID - The ID of your GitHub Pull Request.
+ SOURCE - The source you want to schedule a run for. Can be either 'opensuse' or 'suse'.
+ PR_ID - The ID of your GitHub pull request.
  BASE_TEST_ID - The ID of the test you want you use as a base.
  [test/module,...] - The modules of your test you want to schedule for.
  TEST_NAME - The Name of your test. (E.g.: TEST=RUST)
@@ -70,30 +70,22 @@ EOF
 
 set -o pipefail
 
-source="$1"
-pr_id="$2"
-test_id="$3"
-modules="$4"
-test_name="$5"
+source=$1 pr_id=$2 test_id=$3 modules=$4 test_name=$5
+config_file=$HOME/.config/openqa/verification.conf config= custom_target=
 
-config_file="$HOME/.config/openqa/verification.conf"
-config=""
-custom_target=""
-
-# See help text.
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   echo "$help_text"
   exit 0
 fi
 
-# If too few or too many arguments are supplied -> die.
-if [ "$#" -ne 5 ]; then
+# Validate argument count
+if [ $# -ne 5 ]; then
   echo "Invalid number of arguments. Run with '-h' or '--help' to view usage."
   exit 1
 fi
 
 # Read GH token from config file.
-if [[ -f "$config_file" ]]; then
+if [[ -f $config_file ]]; then
   config=$(grep "^GH_ACCESS_TOKEN=" "$config_file" | cut -d'"' -f2)
   custom_target=$(grep "^CUSTOM_TARGET=" "$config_file" | cut -d'"' -f2)
 else
@@ -101,9 +93,7 @@ else
   exit 1
 fi
 
-GITHUB_TOKEN=$config
-
-export GITHUB_TOKEN
+export GITHUB_TOKEN=$config
 
 if [ "$source" = "opensuse" ]; then
   echo "Dispatching verification run for opensuse..."
