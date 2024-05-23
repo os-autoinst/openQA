@@ -156,6 +156,7 @@
   /usr/bin/tac mrix,
   /usr/bin/tail mrix,
   /usr/bin/wget ix,
+  /usr/bin/sed rix,
 
   owner /var/log/openqa_gru wk,
 
