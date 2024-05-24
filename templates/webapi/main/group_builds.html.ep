@@ -28,7 +28,7 @@
                 % }
             </span>
         </div>
-        <div class="px-2 align-self-stretch flex-grow-1">
+        <div class="px-2 align-self-center flex-grow-1">
             % if ($max_jobs) {
                 %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res, params => \%progress_bar_params
             % }
@@ -47,7 +47,7 @@
                                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-'
                             </span>
                         </div>
-                        <div class="px-2 align-self-stretch flex-grow-1">
+                        <div class="px-2 align-self-center flex-grow-1">
                             %= include 'main/build_progressbar', max_jobs => $child_res->{total}, params => \%child_progress_bar_params, result => $child_res
                         </div>
                     </div>

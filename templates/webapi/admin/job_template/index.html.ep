@@ -102,8 +102,8 @@
         % }
         <form action="#" id="editor-form" class="form-horizontal" style="display: none;"
               data-put-url="<%= url_for('apiv1_job_templates_schedules' => (id => $group->id)) %>" data-reference="<%= $yaml_template %>">
-            <div class="form-group row">
-                <label for="editor-template" class="col-sm-5 control-label editor-yaml-guide" style="display: none">
+            <div class="mb-3 row">
+                <label for="editor-template" class="form-label col-sm-5 control-label editor-yaml-guide" style="display: none">
                     <div>
                         <div>Basic YAML structure for defining job templates:</div>
 <code>defaults:
@@ -183,7 +183,7 @@ scenarios:
                 </label>
                 <div class="editor-container col-sm-12" id="editor-template" name="template"></div>
             </div>
-            <div class="form-group row">
+            <div class="mb-3 row">
                 <div class="col-sm-5 editor-yaml-guide" style="display: none">
                     <p class="buttons">
                         <a href="http://open.qa/docs/#_job_group_editor_gh2111" target="blank" class="btn">

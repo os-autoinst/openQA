@@ -16,10 +16,10 @@ function getCookie(cname) {
 }
 
 function setupForAll() {
-  $('[data-toggle="tooltip"]').tooltip({html: true});
-  $('[data-toggle="popover"]').popover({html: true});
+  $('[data-bs-toggle="tooltip"]').tooltip({html: true});
+  $('[data-bs-toggle="popover"]').popover({html: true});
   // workaround for popover with hover on text for firefox
-  $('[data-toggle="popover"]').on('click', function (e) {
+  $('[data-bs-toggle="popover"]').on('click', function (e) {
     e.target.closest('a').focus();
   });
 

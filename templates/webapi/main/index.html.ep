@@ -32,7 +32,7 @@
     <div class="card-header"><strong>Filter and settings</strong> <span>no filter present, click to toggle filter form</span></div>
     <div class="card-body">
         <form action="#" method="get" id="filter-form">
-            <div class="form-group">
+            <div class="mb-3">
                 <p>
                     <strong>
                         Groups
@@ -46,50 +46,53 @@
                 </p>
                 <p>
                     <input value="1" name="default_expanded" type="checkbox" id="filter-default-expanded">
-                    <label for="filter-default-expanded">Nested groups by default expanded</label>
+                    <label class="form-label" for="filter-default-expanded">Nested groups by default expanded</label>
                     <%= help_popover('Help for <i>default expanded</i>' => '
                         <p>This option allows to show nested groups directly when loading the page.</p>')
                     %>
                 </p>
             </div>
-            <div class="form-group form-inline">
-                <p>
-                    <strong style="display: block;">Limit builds</strong>
-                    Maximum number of builds per group <input type="number" class="form-control" name="limit_builds" value="3" id="filter-limit-builds">
+            <div class="mb-3">
+                <strong style="display: block;">Limit builds</strong>
+                <p class="d-flex flex-row align-items-center p-1">
+                    <label class="form-label">Maximum number of builds per group</label>
+                    <input type="number" class="form-control" name="limit_builds" value="3" id="filter-limit-builds">
                 </p>
-                <p>
-                    Maximum age in days <input type="number" class="form-control" name="time_limit_days" value="14" id="filter-time-limit-days">
+                <p class="d-flex flex-row align-items-center p-1">
+                    <label class="form-label">Maximum age in days</label>
+                    <input type="number" class="form-control" name="time_limit_days" value="14" id="filter-time-limit-days">
                 </p>
             </div>
-            <div class="form-group">
+            <div class="mb-3">
                 <strong>Misc</strong>
                 <input value="1" name="show_tags" type="checkbox" id="filter-show-tags">
-                <label for="filter-show-tags">Show tags</label>
+                <label class="form-label" for="filter-show-tags">Show tags</label>
                 <%= help_popover('Help for <i>Show tags</i>' => '<p>Show tags from the corresponding group overview comments</p>',
                     'https://open.qa/docs/#_build_tagging' => 'the documentation')
                 %>
                 <input value="1" name="only_tagged" type="checkbox" id="filter-only-tagged">
-                <label for="filter-only-tagged">Only tagged</label>
+                <label class="form-label" for="filter-only-tagged">Only tagged</label>
                 <%= help_popover('Help for <i>Only tagged</i>' => '
                     <p>Show only builds that have been tagged in the corresponding group overview comments</p>
                     <p>Implies <i>Show tags</i></p>',
                     'https://open.qa/docs/#_build_tagging' => 'the documentation')
                 %>
                 <input value="1" name="fullscreen" type="checkbox" id="filter-fullscreen">
-                <label for="filter-fullscreen">Full screen</label>
+                <label class="form-label" for="filter-fullscreen">Full screen</label>
                 <%= help_popover('Help for <i>Full screen</i>' => '<p>Show builds in full screen mode</p>')
                 %>
             </div>
 
-            <div class="form-group form-inline">
+            <div class="mb-3">
                 <strong>
                     Auto-refresh interval
                     <%= help_popover('Help for <i>Auto refresh</i>' => '<p>Allows to update the data of this page automatically</p>') %>
                 </strong>
-                <input type="number" class="form-control" name="interval" min="0" placeholder="no auto-refresh" id="filter-autorefresh-interval" onchange="event.target.value == 0 ? event.target.value='' : {} "> seconds
-
+                <p class="d-flex align-items-center">
+                    <input type="number" class="form-control d-flex flex-row align-items-center p-2" name="interval" min="0" placeholder="no auto-refresh" id="filter-autorefresh-interval" onchange="event.target.value == 0 ? event.target.value='' : {}">
+                    <label class="form-label p-2" for="filter-autorefresh-interval">seconds</label>
+                </p>
             </div>
-
             <button type="submit" class="btn btn-default" id="filter-apply-button">Apply</button>
         </form>
     </div>
