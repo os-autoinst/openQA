@@ -61,7 +61,7 @@
                 </form>
             </div>
             <div class="col-xl-4">
-                <label for="last_match_filter">
+                <label class="form-label" for="last_match_filter">
                     Limit Match:
                 </label>
                 <form>
@@ -71,7 +71,7 @@
             <div class="col-xl-4">
                 <div style="width: fit-content; margin-left: auto;">
                     <div>
-                        <label for="select_all">
+                        <label class="form-label" for="select_all">
                             Affects all visible:
                         </label>
                     </div>

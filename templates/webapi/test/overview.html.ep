@@ -81,27 +81,27 @@
         </div>
         <div class="card-body">
             <form action="#" type="get" id="filter-form">
-                <div class="form-group" id="filter-results">
+                <div class="mb-3" id="filter-results">
                     <strong>Job result</strong>
                     % for my $result (OpenQA::Jobs::Constants::RESULTS) {
-                        <label><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
+                        <label class="form-label"><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
                     % }
                 </div>
-                <div class="form-group" id="filter-states">
+                <div class="mb-3" id="filter-states">
                     <strong>Job state</strong>
                     % for my $state (OpenQA::Jobs::Constants::STATES) {
-                        <label><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
+                        <label class="form-label"><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
                     % }
                 </div>
                 <div class="row" id="filter-arch-flavor">
                     <div class="col-5">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <strong>Architecture</strong>
                             <input type="text" class="form-control" name="arch" placeholder="any" id="filter-arch">
                         </div>
                     </div>
                     <div class="col-5">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <strong>Flavor</strong>
                             <input type="text" class="form-control" name="flavor" placeholder="any" id="filter-flavor">
                         </div>
@@ -109,13 +109,13 @@
                 </div>
                 <div class="row" id="filter-machine-test">
                     <div class="col-5">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <strong>Machines</strong>
                             <input type="text" class="form-control" name="machine" placeholder="any" id="filter-machine">
                         </div>
                     </div>
                     <div class="col-5">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <strong>Test</strong>
                             <input type="text" class="form-control" name="test" placeholder="any" id="filter-test">
                         </div>
@@ -123,8 +123,8 @@
                 </div>
                 <div class="row" id="filter-modules">
                     <div class="col-4">
-                        <div class="form-group">
-                            <label for="filter-modules"><strong>Module name</strong></label>
+                        <div class="mb-3">
+                            <label class="form-label" for="filter-modules"><strong>Module name</strong></label>
                             <%= help_popover('Help for the <em>Module name</em> filter' => '
                             <p>Shows jobs that contain the specified modules</p>') %>
                             <input name="modules" type="text" id="modules"
@@ -133,16 +133,16 @@
                         </div>
                     </div>
                     <div class="col-4">
-                        <div class="form-group">
-                            <label for="filter-module-re"><strong>Module code</strong></label>
+                        <div class="mb-3">
+                            <label class="form-label" for="filter-module-re"><strong>Module code</strong></label>
                             <%= help_popover('Help for the <em>Module code</em> filter' => '
                             <p>Shows jobs that contain the modules found by grep command over module source code</p>') %>
                             <input type="text" class="form-control" name="module_re" placeholder="regular expression" id="filter-module-re">
                         </div>
                     </div>
                     <div class="col-2">
-                        <div class="form-group">
-                            <label for="modules_result"><strong>Module result</strong></label>
+                        <div class="mb-3">
+                            <label class="form-label" for="modules_result"><strong>Module result</strong></label>
                             <%= help_popover('Help for the <em>Module result</em> filter' => '
                             <p>Show jobs with selected result.</p>') %>'
                             <select name="modules_result" id="modules_result" data-placeholder="any" class="chosen-select" multiple>
@@ -155,8 +155,8 @@
                 </div>
                 <div class="row" id="filter-job-groups">
                     <div class="col-5">
-                        <div class="form-group">
-                            <label for="group-glob"><strong>Include job groups</strong></label>
+                        <div class="mb-3">
+                            <label class="form-label" for="group-glob"><strong>Include job groups</strong></label>
                             <%= help_popover('Help for the <em>Include job group</em> filter' => '
                             <p>Shows jobs from job groups matching these globs</p>') %>
                             <input name="group_glob" type="text" id="group-glob"
@@ -165,8 +165,8 @@
                         </div>
                     </div>
                     <div class="col-5">
-                        <div class="form-group">
-                            <label for="not-group-glob"><strong>Exclude job groups</strong></label>
+                        <div class="mb-3">
+                            <label class="form-label" for="not-group-glob"><strong>Exclude job groups</strong></label>
                             <%= help_popover('Help for the <em>Exclude job groups</em> filter' => '
                             <p>Do not show jobs matching these globs</p>') %>
                             <input type="text" class="form-control" name="not_group_glob"
@@ -176,8 +176,8 @@
                 </div>
                 <div class="row">
                     <div class="col-5">
-                        <div class="form-group">
-                            <label for="comment-text-filter"><strong>Comment text</strong></label>
+                        <div class="mb-3">
+                            <label class="form-label" for="comment-text-filter"><strong>Comment text</strong></label>
                                 <%= help_popover('Help for the <em>Comment text</em> filter' => '
                                 <p>Show only jobs with comments containing the specified term</p>') %>
                                 <input type="text" class="form-control" name="comment"
@@ -185,9 +185,9 @@
                         </div>
                     </div>
                     <div class="col-5">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <strong>Misc</strong>
-                            <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
+                            <label class="form-label"><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
                             %= help_popover_todo
                         </div>
                     </div>
@@ -227,7 +227,7 @@
                 </div>
                 <div class="modal-footer">
                     <div id="add-comments-progress-indication" style="width: 100%; display: none">
-                        <span class="mr-auto"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</span>
+                        <span class="me-auto mb-2 mb-lg-0"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</span>
                         <button type="button" class="btn-close" data-bs-dismiss="modal">Close</button>
                     </div>
                     <div id="add-comments-controls">

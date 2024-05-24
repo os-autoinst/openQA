@@ -34,7 +34,7 @@
                         of 500 will always search the full screen avoiding having to wait for timeouts.
                     </p>
                     <fieldset>
-                        <label for="margin">Search Margin:</label>
+                        <label class="form-label" for="margin">Search Margin:</label>
                         <input type="text" name="margin" id="margin" class="text ui-widget-content ui-corner-all">
                     </fieldset>
                 </div>
@@ -71,7 +71,7 @@
                         using exclude areas.
                     </p>
                     <fieldset>
-                        <label for="match">Match Level (%):</label>
+                        <label class="form-label" for="match">Match Level (%):</label>
                         <input type="text" name="match" id="match" class="text ui-widget-content ui-corner-all">
                     </fieldset>
                 </div>
@@ -126,7 +126,7 @@
                 <div class="col-md-6">
                     %= form_for save_needle_ajax => (id => 'save_needle_form') => (method => 'POST') => begin
                         <div style="display: none;">
-                            <label>JSON:</label><br/>
+                            <label class="form-label">JSON:</label><br/>
                             <textarea id="needleeditor_textarea" name="json" readOnly="yes"></textarea>
                             <input type="hidden" id="needleeditor_image" name="imagename"/>
                             <input type="hidden" id="needleeditor_imagedistri" name="imagedistri"/>
@@ -195,7 +195,7 @@
                             % }
                         </div>
                         % if (is_operator) {
-                            <div class="form-group row">
+                            <div class="mb-3 row">
                                 <div class="col-sm-10">
                                     <input type="text" class="form-control" id="newtag" placeholder="Add new tags here"
                                             pattern="^[A-Za-z0-9-_]+$" minLength=4 title="[A-Za-z0-9-_], at least 4 characters">
@@ -217,7 +217,7 @@
             <div class="row">
                 <div class="col-lg-9">
                     <p>
-                        Take image from:
+                        <label class="form-label" for="image_select">Take image from:</label>
                         <select id="image_select" class="form-control" style="width: fit-content; display: inline;">
                             % for my $needle (@$needles) {
                                 <option value="<%= $needle->{name} %>">
@@ -231,7 +231,7 @@
                         %>
                     </p>
                     <p>
-                        Copy areas from:
+                        <label class="form-label" for="area_select">Copy areas from:</label>
                         <select id="area_select" class="form-control" style="width: fit-content; display: inline;">
                             <option value="screenshot">None</option>
                             % for my $needle (@$needles) {
@@ -249,13 +249,13 @@
                 <div class="col-lg-3">
                     Selected area:
                     %= tag div => begin
-                        %= tag button => (id => 'change-match') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-match-form' }) => (disabled => undef) => begin
+                        %= tag button => (id => 'change-match') => (class => 'btn btn-default btn-block disabled') => (data => { 'bs-toggle' => 'modal', 'bs-target' => '#change-match-form' }) => (disabled => undef) => begin
                             %= tag i => (class => 'fa fa-bar-chart')
                             Change match level
                         % end
                     % end
                     %= tag div => begin
-                        %= tag button => (id => 'change-margin') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-margin-form' }) => (disabled => undef) => begin
+                        %= tag button => (id => 'change-margin') => (class => 'btn btn-default btn-block disabled') => (data => { 'bs-toggle' => 'modal', 'bs-target' => '#change-margin-form' }) => (disabled => undef) => begin
                             %= tag i => (class => 'fa fa-area-chart')
                             Change margin
                         % end

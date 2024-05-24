@@ -5,7 +5,7 @@
        <span class="navbar-toggler-icon"></span>
      </button>
      <div class="collapse navbar-collapse" id="navbarNav">
-       <ul class="navbar-nav mr-auto">
+       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
          <li class='nav-item' id="all_tests">
             %= link_to 'All Tests' => url_for('tests') => class => 'nav-link'
          </li>

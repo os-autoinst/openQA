@@ -134,7 +134,7 @@ function previewSuccess(stepPreviewContainer, data, force) {
         checkPreviewVisible(stepPreviewContainer, pin);
       }
     });
-  $('[data-toggle="popover"]').popover({html: true});
+  $('[data-bs-toggle="popover"]').popover({html: true});
   // make persistent dropdowns persistent by preventing click-event propagation
   $('.dropdown-persistent').on('click', function (event) {
     event.stopPropagation();
@@ -156,7 +156,7 @@ function previewSuccess(stepPreviewContainer, data, force) {
   });
   // hide needle info popover when hiding drop down
   $('#needlediff_dropdown').on('hide.bs.dropdown', function (event) {
-    $('#needlediff_selector [data-toggle="popover"]').popover('hide');
+    $('#needlediff_selector [data-bs-toggle="popover"]').popover('hide');
   });
 }
 
@@ -378,7 +378,7 @@ function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
 
 function setupTabHandling() {
   // invoke handlers when a tab gets shown or hidden
-  $('#result_tabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+  $('#result_tabs a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
     if (e.target) {
       const tabName = tabNameForNavElement(e.target);
       activateTab(tabName);
@@ -765,7 +765,7 @@ function renderLiveTab(response) {
 function renderCommentsTab(response) {
   const tabPanelElement = this.panelElement;
   tabPanelElement.innerHTML = response;
-  $(tabPanelElement).find('[data-toggle="popover"]').popover({html: true});
+  $(tabPanelElement).find('[data-bs-toggle="popover"]').popover({html: true});
   // Add job status icons to /t123 urls
   const hostname = $(location).attr('host');
   $(tabPanelElement)
@@ -873,7 +873,7 @@ function renderInvestigationTab(response) {
             var collapseSign = document.createElement('a');
             collapseSign.className = 'collapsed';
             collapseSign.setAttribute('href', '#collapse' + key + i);
-            collapseSign.setAttribute('data-toggle', 'collapse');
+            collapseSign.setAttribute('data-bs-toggle', 'collapse');
             collapseSign.setAttribute('aria-expanded', 'false');
             collapseSign.setAttribute('aria-controls', 'collapseEntry');
             collapseSign.innerHTML = '+ ';

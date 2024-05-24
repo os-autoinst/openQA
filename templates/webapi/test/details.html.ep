@@ -10,6 +10,6 @@
     </div>
     <div class="col-sm-12 col-md-6 result-filter-container">
         <input id="details-only-failed-filter" name="relevant" type="checkbox" value="1">
-        <label for="details-only-failed-filter">Show only failures</label>
+        <label class="form-label" for="details-only-failed-filter">Show only failures</label>
     </div>
 </form>
