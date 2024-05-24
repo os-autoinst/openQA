@@ -3,15 +3,6 @@
     background-color: $color-softfailed;
     color: $color-result;
 }
-#restart-result + .help_popover {
-    font-size: 80%;
-    position: relative;
-    top: 5px;
-    left: -3px;
-    margin-left: 0px;
-    padding-left: 0px;
-    opacity: 0.75;
-}
 
 // test result
 .resultok { background-color: $color-ok; color: $color-result; }
@@ -460,19 +451,35 @@ ul.modcategory {
             color: $link-hover-color-darktheme;
         }
     }
-}
-
-.darkmode {
     .card#info_box {
         background-color: $default-bg-color-darktheme;
-
-        .btn-link,.btn-link:hover {
+        .btn-secondary, .btn-secondary:hover {
             color: $default-font-color-darktheme;
-            background-color: $default-bg-color-darktheme;
+            background-color: lighten($default-bg-color-darktheme, 25%);
+        }
+        .btn-warning, .btn-warning:hover {
+            color: $default-bg-color-darktheme;
         }
     }
 
     #settings td {
         border-top-color: rgba(255, 255, 255, 0.03);
+    }
+}
+
+.info-panel-actions .help_popover {
+    margin: 0;
+}
+@include media-breakpoint-up(xl) {
+    .info-panel-actions {
+        border-left: 1px solid #ccc;
+        margin-left: 10px;
+    }
+}
+@include media-breakpoint-down(lg) {
+    .info-panel-actions {
+        border-top: 1px solid #ccc;
+        margin-top: 10px;
+        padding-top: 10px;
     }
 }

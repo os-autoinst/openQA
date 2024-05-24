@@ -12,14 +12,15 @@
                     </span>
                 % }
             </div>
-            <div id="info-box-content" class="card-body"
+            <div id="info-box-content" class="card-body row"
                 % if ($additional_data) {
                     data-favicon-url-16="<%= favicon_url '-16.png' %>" data-favicon-url-svg="<%= favicon_url '.svg' %>"
                 % }
             >
+                <div class="col-xl">
                 <div>
                     % if ($job->state eq DONE) {
-                        <div class="position-absolute top-right pt-2-and-half pr-3">
+                        <div class="position-absolute top-right badge-pill badge-light">
                             %= $job->passed_module_count
                             <i class='fa module_passed fa-star' title='modules passed'></i>
                             % if ($job->softfailed_module_count) {
@@ -53,9 +54,9 @@
                     % if ($job->t_finished) {
                         <%= ', finished' =%>
                         <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
-                        (\
-                        <%= $job->t_started ?  format_time_duration($job->t_finished - $job->t_started) : 0 =%>\
-                        )
+                        % if (my $t_started = $job->t_started) {
+                            (<span>ran for </span><%= format_time_duration($job->t_finished - $t_started) =%>)
+                        % }
                     % }
                     % elsif ($job->t_started) {
                         <%= ', started' =%>
@@ -64,45 +65,6 @@
                     % else {
                         <%= ', created' =%>
                         <abbr class="timeago" title="<%= $job->t_created->datetime() %>Z"><%= format_time($job->t_created) %></abbr>
-                    % }
-                    % if (is_operator && $job->can_be_duplicated) {
-                      <div class = "btn-group btn-group-sm" id="restart-button-group">
-                        %= link_post url_for('apiv1_restart', jobid => $testid) => (class => 'btn btn-link restart-result', 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
-                            <i class="fa fa-2 fa-undo" title="Restart job"></i>
-                        %= end
-                        % my $ok_results_explanation = join '/', OK_RESULTS;
-                        % if ($job->has_dependencies) {
-                        <button class="btn btn-link dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="caret" title="Additional options for restarting jobs with dependencies"></span></button>
-                          <div class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">
-                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_parents => 1}) => (class => 'dropdown-item restart-result', 'data-remote' => 'true', id => 'restart-result-skip-parents', 'data-jobid' => $testid) => begin
-                            <span>Skip parents</span>
-                            %= end
-                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_children => 1}) => (class => 'dropdown-item restart-result', 'data-remote' => 'true', id => 'restart-result-skip-children', 'data-jobid' => $testid) => begin
-                            <span>Skip children</span>
-                            %= end
-                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_ok_result_children => 1}) => (class => 'dropdown-item restart-result', 'data-remote' => 'true', id => 'restart-result-skip-ok-children', 'data-jobid' => $testid) => begin
-                            <span>Skip restarting "OK" (<%= $ok_results_explanation %>) children</span>
-                            %= end
-                          </div>
-                        % }
-                      </div>
-                      <%= help_popover('Restart job' => "
-                          <p>Restarts the job and certain dependent jobs.</p>
-                          <p>Rules for restarting dependencies:</p>
-                          <ul>
-                              <li>If the job is part of a parallel cluster, all jobs within that cluster are restarted.</li>
-                              <li>Any kind of chained child jobs are restarted.</li>
-                              <li>Directly chained parent jobs are restarted.</li>
-                          </ul>
-                          All rules are applied recursively. Advanced restarting options allow changing the behavior, e.g. excluding parents and $ok_results_explanation children.",
-                          'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom');
-                      %>
-                    % }
-                    % if (is_operator && (OpenQA::Jobs::Constants::meta_state($job->state) ne OpenQA::Jobs::Constants::FINAL)) {
-                        %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
-                            <i class="fa fa-2 fa-times-circle-o" title="Cancel Job"></i>
-                        % end
                     % }
                     % if (my $reason = $job->reason) {
                         <br>Reason: <%= $reason %>
@@ -137,21 +99,6 @@
                     % if (my $scheduled_product = $job->scheduled_product) {
                         % my $sp_id = $scheduled_product->id;
                         %= link_to $scheduled_product->to_string, url_for('admin_product_log')->query(id => $sp_id)
-                        % if (is_operator) {
-                            <div class="btn-group btn-group-sm">
-                                <a href="#"
-                                   onclick="return rescheduleProductForJob(this);" \
-                                   class="btn btn-link"\
-                                   data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
-                                     <i class="fa fa-2 fa-refresh" title="Reschedule product from here"></i>
-                                </a>
-                            </div>
-                            <%= help_popover('Partial product re-scheduling' => "
-                                <p>Schedules the product again using the current job as starting point. That means chained parents of
-                                the current job will not be scheduled again but all its children will be.</p>",
-                                undef, undef, 'bottom');
-                            %>
-                        % }
                     % } else {
                         job has not been created by posting an ISO
                         % if ($clone_of) {
@@ -182,5 +129,72 @@
                     <div id="scenario-description">
                             %= $scenario_description
                     </div>
+                % }
+                </div>
+                % if (is_operator) {
+                <div class="info-panel-actions col-xl-auto">
+                    <strong>Actions:</strong><br>
+                    % if ($job->can_be_duplicated) {
+                      <div class = "btn-group btn-group-sm dropleft">
+                        % my $has_dependencies = $job->has_dependencies;
+                        % my $ok_results_explanation = join '/', OK_RESULTS;
+                        % if ($has_dependencies) {
+                          <button class="btn btn-secondary dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="caret" title="Additional options for restarting jobs with dependencies"></span>
+                          </button>
+                          <div class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">
+                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_parents => 1}) => (class => 'dropdown-item restart-result', 'data-remote' => 'true', id => 'restart-result-skip-parents', 'data-jobid' => $testid) => begin
+                            <span>Skip parents</span>
+                            %= end
+                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_children => 1}) => (class => 'dropdown-item restart-result', 'data-remote' => 'true', id => 'restart-result-skip-children', 'data-jobid' => $testid) => begin
+                            <span>Skip children</span>
+                            %= end
+                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_ok_result_children => 1}) => (class => 'dropdown-item restart-result', 'data-remote' => 'true', id => 'restart-result-skip-ok-children', 'data-jobid' => $testid) => begin
+                            <span>Skip restarting "OK" (<%= $ok_results_explanation %>) children</span>
+                            %= end
+                          </div>
+                        % }
+                        % my $restart_text = $has_dependencies ? 'Restart this and dependent jobs' : 'Restart job';
+                        %= link_post url_for('apiv1_restart', jobid => $testid) => (class => 'btn btn-secondary restart-result', 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
+                            <i class="fa fa-2 fa-undo"></i><%= $restart_text %>
+                        %= end
+                        <%= help_popover('Restart job' => "
+                            <p>Restarts the job and certain dependent jobs.</p>
+                            <p>Rules for restarting dependencies:</p>
+                            <ul>
+                                <li>If the job is part of a parallel cluster, all jobs within that cluster are restarted.</li>
+                                <li>Any kind of chained child jobs are restarted.</li>
+                                <li>Directly chained parent jobs are restarted.</li>
+                            </ul>
+                            All rules are applied recursively. Advanced restarting options allow changing the behavior, e.g. excluding parents and $ok_results_explanation children.",
+                            'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom', class => 'help_popover fa fa-question-circle btn btn-secondary');
+                        %>
+                      </div>
+                    % }
+                    % if (OpenQA::Jobs::Constants::meta_state($job->state) ne OpenQA::Jobs::Constants::FINAL) {
+                      <div class = "btn-group btn-group-sm">
+                        %= link_post url_for('apiv1_cancel', jobid => $job->id) => (class => 'btn btn-warning', 'data-remote' => 'true', id => 'cancel_running') => begin
+                            <i class="fa fa-2 fa-times-circle-o"></i>Cancel job
+                        % end
+                      </div>
+                    % }
+                    % if (my $sp_id = $job->scheduled_product_id) {
+                      <div class="btn-group btn-group-sm">
+                        <a href="#"
+                          id="restart-scheduled-product" \
+                          onclick="return rescheduleProductForJob(this);" \
+                          class="btn btn-danger"\
+                           data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
+                             <i class="fa fa-2 fa-refresh"></i>Reschedule product from here
+                        </a>
+                      <%= help_popover('Partial product re-scheduling' => "
+                          <p>Schedules the product again using the current job as starting point. That means chained parents of
+                          the current job will not be scheduled again but all its children will be. The re-scheduling is <strong>not</strong>
+                          limited to the current job group.</p>",
+                          undef, undef, 'bottom', class => 'help_popover fa fa-question-circle btn btn-danger');
+                      %>
+                      </div>
+                    % }
+                </div>
                 % }
             </div>
