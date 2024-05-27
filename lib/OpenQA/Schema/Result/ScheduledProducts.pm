@@ -325,6 +325,7 @@ sub _schedule_iso {
     my @successful_job_ids;
     my @failed_job_info;
     my %tmp_downloads;
+    my %clones;
     my $create_jobs_in_database = sub {
         my $jobs_resultset = $schema->resultset('Jobs');
         my @created_jobs;
@@ -341,6 +342,7 @@ sub _schedule_iso {
                 # Any setting name ending in _URL is special: it tells us to download
                 # the file at that URL before running the job
                 my $download_list = create_downloads_list($settings);
+                create_git_clone_list($settings, \%clones);
                 my $job = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
                 my $j_id = $job->id;
@@ -399,9 +401,9 @@ sub _schedule_iso {
             $_ => [
                 [keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract},
                 $tmp_downloads{$_}->{blocked_job_id}]
-          }
-          keys %tmp_downloads;
+        } keys %tmp_downloads;
         $gru->enqueue_download_jobs(\%downloads);
+        $gru->enqueue_git_clones(\%clones, \@successful_job_ids) if keys %clones;
     };
 
     try {

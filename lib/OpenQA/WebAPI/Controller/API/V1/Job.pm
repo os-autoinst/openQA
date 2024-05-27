@@ -340,6 +340,8 @@ sub _create_job ($self, $global_params, $job_suffix = undef, $job_specific_param
     # enqueue gru jobs and calculate blocked by
     push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
     $self->gru->enqueue_download_jobs($downloads);
+    my $clones = create_git_clone_list($job_settings);
+    $self->gru->enqueue_git_clones($clones, [$job_id]) if keys %$clones;
     return $job_id;
 }
 

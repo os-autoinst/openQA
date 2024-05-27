@@ -1561,6 +1561,37 @@ subtest 'handle FOO_URL' => sub {
       'the download gru tasks were created correctly';
 };
 
+subtest 'handle git CASEDIR' => sub {
+    $testsuites->create(
+        {
+            name => 'handle_foo_casedir',
+            description => '',
+            settings => [
+                {key => 'CASEDIR', value => 'http://localhost/foo.git'},
+                {key => 'DISTRI', value => 'foobar'},
+                {key => 'NEEDLES_DIR', value => 'http://localhost/bar.git'}
+            ],
+        });
+    my $params = {TEST => 'handle_foo_casedir',};
+    OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} = 'yes';
+    $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
+
+    my $job_id = $t->tx->res->json->{id};
+    my $result = $jobs->find($job_id)->settings_hash;
+
+    my $gru_dep = $schema->resultset('GruDependencies')->find({job_id => $job_id});
+    my $gru_task = $gru_dep->gru_task;
+    is $gru_task->taskname, 'git_clone', 'the git clone job was created';
+    my @gru_args = @{$gru_task->args};
+    my $gru_task_values = shift @gru_args;
+    is_deeply $gru_task_values,
+      {
+        't/data/openqa/share/tests/foobar' => 'http://localhost/foo.git',
+        't/data/openqa/share/tests/foobar/needles' => 'http://localhost/bar.git'
+      },
+      'the git clone gru tasks were created correctly';
+};
+
 subtest 'show parent group name and id when getting job details' => sub {
     my $parent_group = $schema->resultset('JobGroupParents')->create({name => 'Foo'});
     my $parent_group_id = $parent_group->id;

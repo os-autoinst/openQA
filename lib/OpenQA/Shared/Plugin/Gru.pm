@@ -26,7 +26,9 @@ sub register_tasks ($self) {
     $app->plugin($_)
       for (
         qw(OpenQA::Task::AuditEvents::Limit),
-        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
+        qw(OpenQA::Task::Asset::Download),
+        qw(OpenQA::Task::Asset::Limit),
+        qw(OpenQA::Task::Git::Clone),
         qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
         qw(OpenQA::Task::Job::Limit),
         qw(OpenQA::Task::Job::ArchiveResults),
@@ -116,13 +118,14 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
 
     my $schema = OpenQA::Schema->singleton;
     my $priority = $options->{priority} // 0;
+    my @jobsarrayhref = map { {job_id => $_} } @$jobs;
     my $gru = $schema->resultset('GruTasks')->create(
         {
             taskname => $task,
             priority => $priority,
             args => $args,
             run_at => $options->{run_at} // now(),
-            jobs => $jobs,
+            jobs => \@jobsarrayhref,
         });
     my $gru_id = $gru->id;
     my @ttl = defined $ttl ? (expire => $ttl) : ();
@@ -143,7 +146,7 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
 }
 
 # enqueues the limit_assets task with the default parameters
-sub enqueue_limit_assets ($self) { $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1}) }
+sub enqueue_limit_assets ($self) { $self->enqueue('limit_assets', [], {priority => 0, ttl => 172800, limit => 1}) }
 
 sub enqueue_download_jobs ($self, $downloads) {
     return unless %$downloads;
@@ -151,9 +154,16 @@ sub enqueue_download_jobs ($self, $downloads) {
     # to create entries in a related table (gru_dependencies)
     for my $url (keys %$downloads) {
         my ($path, $do_extract, $block_job_ids) = @{$downloads->{$url}};
-        my @jobsarray = map +{job_id => $_}, @$block_job_ids;
-        $self->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 10} => \@jobsarray);
+        $self->enqueue('download_asset', [$url, $path, $do_extract], {priority => 10}, $block_job_ids);
     }
+}
+
+sub enqueue_git_clones ($self, $clones, $job_ids) {
+    return unless %$clones;
+    return unless OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} eq 'yes';
+    # $clones is a hashref with paths as keys and git urls as values
+    # $job_id is used to create entries in a related table (gru_dependencies)
+    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids);
 }
 
 sub enqueue_and_keep_track {

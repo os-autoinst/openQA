@@ -117,6 +117,7 @@ our @EXPORT = qw(
   check_download_passlist
   get_url_short
   create_downloads_list
+  create_git_clone_list
   human_readable_size
   locate_asset
   detect_current_version
@@ -570,21 +571,20 @@ sub get_url_short {
     return ($short, $do_extract);
 }
 
-sub create_downloads_list {
-    my ($args) = @_;
-    my %downloads = ();
-    for my $arg (keys %$args) {
-        my $url = $args->{$arg};
+sub create_downloads_list ($job_settings) {
+    my %downloads;
+    for my $arg (keys %$job_settings) {
+        my $url = $job_settings->{$arg};
         my ($short, $do_extract) = get_url_short($arg);
         next unless ($short);
-        my $filename = $args->{$short};
+        my $filename = $job_settings->{$short};
         unless ($filename) {
             log_debug("No target filename set for $url. Ignoring $arg");
             next;
         }
         # We're only going to allow downloading of asset types. We also
         # need this to determine the download location later
-        my $assettype = asset_type_from_setting($short, $args->{$short});
+        my $assettype = asset_type_from_setting($short, $job_settings->{$short});
         unless ($assettype) {
             log_debug("_URL downloading only allowed for asset types! $short is not an asset type");
             next;
@@ -599,6 +599,21 @@ sub create_downloads_list {
         }
     }
     return \%downloads;
+}
+
+sub create_git_clone_list ($job_settings, $clones = {}) {
+    my $distri = $job_settings->{DISTRI};
+    my $case_url = Mojo::URL->new($job_settings->{CASEDIR} // '');
+    my $needles_url = Mojo::URL->new($job_settings->{NEEDLES_DIR} // '');
+    if ($case_url->scheme) {
+        $case_url->fragment($job_settings->{TEST_GIT_REFSPEC}) if ($job_settings->{TEST_GIT_REFSPEC});
+        $clones->{testcasedir($distri)} = $case_url;
+    }
+    if ($needles_url->scheme) {
+        $needles_url->fragment($job_settings->{NEEDLES_GIT_REFSPEC}) if ($job_settings->{NEEDLES_GIT_REFSPEC});
+        $clones->{needledir($distri)} = $needles_url;
+    }
+    return $clones;
 }
 
 sub _round_a_bit {
