@@ -27,7 +27,7 @@ sub register_tasks ($self) {
       for (
         qw(OpenQA::Task::AuditEvents::Limit),
         qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
-        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
+        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete OpenQA::Task::Needle::LimitTempRefs),
         qw(OpenQA::Task::Job::Limit),
         qw(OpenQA::Task::Job::ArchiveResults),
         qw(OpenQA::Task::Job::FinalizeResults),
