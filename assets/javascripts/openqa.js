@@ -119,11 +119,10 @@ function renderDataSize(sizeInByte) {
 }
 
 function alignBuildLabels() {
-  var values = $.map($('.build-label'), function (el, index) {
-    return parseInt($(el).css('width'));
-  });
-  var max = Math.max.apply(null, values);
-  $('.build-label').css('min-width', max + 'px');
+  const max = Math.max(...Array.from(document.getElementsByClassName('build-label')).map(e => e.offsetWidth));
+  const style = document.createElement('style');
+  document.head.appendChild(style);
+  style.sheet.insertRule(`@media (min-width: 1000px) { .build-label { width: ${max}px; } }`);
 }
 
 // reloads the page - this wrapper exists to be able to disable the reload during tests
