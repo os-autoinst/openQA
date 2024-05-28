@@ -32,6 +32,9 @@ set -o pipefail
 if [[ -n "$GITHUB_TOKEN" ]]; then
     AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic"
     echo "Github oauth token provided, performing authenticated requests"
+elif [[ -f "$HOME/.config/openqa/verification.conf" ]]; then
+    AUTHENTICATED_REQUEST=" -u $(get_token_from_file):x-oauth-basic"
+    echo "Github oauth token found in config file, performing authenticated requests"
 fi
 
 curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
@@ -53,6 +56,16 @@ extract_urls_from_pr() {
     if [[ $urls == *"http"* ]]; then
         echo "$urls"
     fi
+}
+
+# Get the Github Token from a config file
+# located at ~/.config/openqa/verification.conf
+get_token_from_file() {
+  local config_file="$HOME/.config/openqa/verification.conf"
+  if [[ -f $config_file ]]; then
+    token=$(grep "^GH_ACCESS_TOKEN=" "$config_file" | cut -d'd' -f2)
+    echo "$token"
+  fi
 }
 
 opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n "$0" -- "$@") || usage 1
@@ -97,8 +110,8 @@ if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
         casedir="${casedir:-"${forked_repo_part}.git#${branch}"}"
         build="${build:-"$repo_name#$branch"}"
     fi
-
 fi
+
 if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     pr_url=${target_repo_part/github.com/api.github.com/repos}/pulls/$pr
     pr_content=$(eval "${curl_github} -s $pr_url")
