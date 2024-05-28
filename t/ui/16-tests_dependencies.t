@@ -52,7 +52,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 driver_missing unless my $driver = call_driver;
 
 sub get_tooltip ($job_id) {
-    $driver->execute_script("return \$('#nodeTable$job_id').closest('.node').data('original-title');");
+    $driver->execute_script("return \$('#nodeTable$job_id').closest('.node').data('bs-original-title');");
 }
 
 sub node_name ($name, $a, $d, $as_child, $pd) {

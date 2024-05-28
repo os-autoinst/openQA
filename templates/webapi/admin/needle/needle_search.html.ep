@@ -1,5 +1,5 @@
 % my $deftime = DateTime->now()->subtract(months => 6);
-<select id="last_<%= $str %>_filter" name="last_<%= $str %>_filter" class="form-control input-sm">
+<select id="last_<%= $str %>_filter" name="last_<%= $str %>_filter" class="form-select input-sm">
     <option value="none">All time</option>
     <option value="min14">Last 2 weeks</option>
     <option value="min28">Last 4 weeks</option>
@@ -11,10 +11,10 @@
 </select>
 <br>
 <div id="custom_last_<%= $str %>" class="custom_needle_range">
-    <select id="sel_custom_last_<%= $str %>" class="form-control">
+    <select id="sel_custom_last_<%= $str %>" class="form-select">
         <option value="min">Last</option>
         <option value="max">Not last</option>
     </select>
     %= datetime_field "text_custom_last_$str", (id => "last_date_$str") => (size => 14) => (class => 'form-control') => (value => $deftime)
-    <button type="button" id="btn_custom_last_<%= $str %>" class="btn" title="Apply"><i class="fa fa-check"></i></button>
+    <button type="button" id="btn_custom_last_<%= $str %>" class="btn btn-light" title="Apply"><i class="fa fa-check"></i></button>
 </div>

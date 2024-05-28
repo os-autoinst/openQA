@@ -1,3 +1,9 @@
+function showModalWithTitle(elementId, title) {
+  const element = document.getElementById(elementId);
+  element.getElementsByClassName('modal-title')[0].textContent = title;
+  new bootstrap.Modal(element).show();
+}
+
 function showAddJobGroup(plusElement) {
   let parentId, title;
   if (plusElement) {
@@ -16,11 +22,7 @@ function showAddJobGroup(plusElement) {
   formElement.data('create-parent', false);
   formElement.data('parent-id', parentId);
   formElement.trigger('reset');
-
-  var addGroupElement = $('#add_group_modal');
-
-  addGroupElement.find('.modal-title').text(title);
-  addGroupElement.modal();
+  showModalWithTitle('add_group_modal', title);
   checkJobGroupForm('#new_group_form');
   return false;
 }
@@ -29,10 +31,7 @@ function showAddParentGroup() {
   var formElement = $('#new_group_form');
   formElement.data('create-parent', true);
   formElement.trigger('reset');
-
-  var addGroupElement = $('#add_group_modal');
-  addGroupElement.find('.modal-title').text('Add new folder');
-  addGroupElement.modal();
+  showModalWithTitle('add_group_modal', 'Add new folder');
   checkJobGroupForm('#new_group_form');
   return false;
 }

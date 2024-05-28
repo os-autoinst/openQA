@@ -126,7 +126,7 @@ subtest 'clickable events' => sub {
 
     # restore the page's state
     $driver->execute_script('document.documentElement.scrollTop = 0');    # scroll back to the top
-    $driver->find_element('#flash-messages button.close')->click;
+    $driver->find_element('#flash-messages .btn-close')->click;
 
     my $search = $driver->find_element('.dt-search input');
     $search->send_keys('event:table_create');

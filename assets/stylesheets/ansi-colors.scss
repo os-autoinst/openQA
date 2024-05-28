@@ -1,6 +1,5 @@
 // formatting of ANSI escape codes in-line with the overall theming
 
-@import "bootswatch_litera_theme.scss";
 @import "openqa_theme.scss";
 
 .ansi-bold          { font-weight: bold; }
@@ -10,17 +9,17 @@
 
 .ansi-white-fg   { color: $default-font-color; }
 .ansi-black-fg   { color: $default-font-color; }
-.ansi-red-fg     { color: darken($red, 25%); }
-.ansi-yellow-fg  { color: darken($yellow, 25%); }
-.ansi-green-fg   { color: darken($green, 25%); }
-.ansi-blue-fg    { color: $blue; }
-.ansi-magenta-fg { color: $pink; }
-.ansi-cyan-fg    { color: $cyan; }
+.ansi-red-fg     { color: darkred; }
+.ansi-yellow-fg  { color: brown; }
+.ansi-green-fg   { color: darkgreen; }
+.ansi-blue-fg    { color: blue; }
+.ansi-magenta-fg { color: pink; }
+.ansi-cyan-fg    { color: cyan; }
 
 .darkmode {
     .ansi-white-fg   { color: $default-font-color-darktheme; }
     .ansi-black-fg   { color: $default-font-color-darktheme; }
-    .ansi-red-fg     { color: $red; }
-    .ansi-yellow-fg  { color: $yellow; }
-    .ansi-green-fg   { color: $green; }
+    .ansi-red-fg     { color: red; }
+    .ansi-yellow-fg  { color: yellow; }
+    .ansi-green-fg   { color: green; }
 }

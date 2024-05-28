@@ -1,12 +1,4 @@
 // form elements
-.btn, .form-control {
-    font-size: 0.94rem;
-    padding: 0.6rem;
-    line-height: 0.8rem;
-}
-.btn .fa {
-    padding-right: 3pt;
-}
 .form-control {
     padding: 0.4rem;
     line-height: normal;
@@ -35,9 +27,6 @@
     .form-group .control-label {
         text-align: right;
     }
-}
-select.form-control {
-    padding: 0rem;
 }
 .form-inline {
     // don't use flexbox here, this would break too much of our forms
@@ -170,10 +159,4 @@ select.form-control {
         color: $default-font-color-darktheme;
         background-color: $default-bg-color-darktheme;
     }
-}
-
-// fix drop-down arrow floating over text despite `with: auto;` from DataTable's upstream CSS
-div.dt-container div.dt-length select {
-    background-position: right 0.2rem center;
-    padding: 0 1em 0 0.5em;
 }

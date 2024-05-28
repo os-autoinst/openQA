@@ -1,4 +1,8 @@
 function setupJobNextPrevious() {
+  if (document.querySelector('#job_next_previous_table > tbody')) {
+    return; // skip if already initialized
+  }
+
   var params = parseQueryParams();
 
   var setPage = function (json) {
@@ -13,9 +17,10 @@ function setupJobNextPrevious() {
     table.page(page).draw('page');
   };
 
-  var table = $('#job_next_previous_table').DataTable({
+  var tableElement = document.getElementById('job_next_previous_table');
+  var table = $(tableElement).DataTable({
     ajax: {
-      url: $('#job_next_previous_table').data('ajax-url'),
+      url: tableElement.dataset.ajaxUrl,
       data: function (d) {
         if (typeof params.previous_limit != 'undefined') {
           d.previous_limit = params.previous_limit.toString();
@@ -47,9 +52,9 @@ function setupJobNextPrevious() {
       setPage(json);
     }
   });
-  $('#job_next_previous_table').on('draw.dt', function () {
+  tableElement.addEventListener('draw.dt', function () {
     setupLazyLoadingFailedSteps();
-    $('[data-toggle="tooltip"]').tooltip({html: true});
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e));
   });
 }
 
@@ -92,7 +97,7 @@ function renderJobResults(data, type, row) {
       }
     }
     var async_url = urlWithBase('/tests/' + row.id + '/modules/' + htmlEscape(row.failedmodules[i]) + '/fails');
-    html += '<a data-toggle="tooltip" data-placement="top" ';
+    html += '<a data-bs-toggle="tooltip" data-placement="top" ';
     html += 'data-container="#res_' + row.id + '" ';
     html += 'data-async="' + async_url + '" ';
     html += "title=\"<i class='fa fa-sync fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>\"";
@@ -133,18 +138,8 @@ function renderFinishTime(data, type, row) {
 }
 
 function triggerJobNextPrevious() {
-  $('a[data-toggle="tab"]').on('show.bs.tab', function (e) {
-    if (e.target.hash === '#next_previous') {
-      if (!$('#job_next_previous_table > tbody').length) {
-        setupJobNextPrevious();
-      }
-    }
-  });
-  // Navigate or refresh #next_previous to show datatable
-  var hash = window.location.hash;
-  if (hash == '#next_previous') {
-    if (!$('#job_next_previous_table > tbody').length) {
-      setupJobNextPrevious();
-    }
+  document.getElementById('next-and-prev-tab-link').addEventListener('show.bs.tab', setupJobNextPrevious);
+  if (window.location.hash === '#next_previous') {
+    setupJobNextPrevious();
   }
 }

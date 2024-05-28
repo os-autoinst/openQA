@@ -11,6 +11,7 @@
     }
     .toggle-parallel-children {
         border-radius: 5rem;
+        padding: 6px;
     }
 }
 .collapse-all-button, .expand-all-button {
@@ -95,4 +96,9 @@
 
 #filter-modules label {
     margin-bottom: 0;
+}
+
+#add-comments-progress-indication {
+    display: none;
+    width: 100%;
 }

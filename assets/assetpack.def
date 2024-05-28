@@ -1,8 +1,7 @@
 ! bootstrap.css
 < ../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css
-< ../node_modules/fork-awesome/css/fork-awesome.min.css
 < ../node_modules/chosen-js/chosen.css
-< ../node_modules/bootstrap/scss/bootstrap.scss
+<< ../node_modules/bootstrap/scss/bootstrap.scss
 << ../node_modules/bootstrap/scss/bootstrap-utilities.scss
 << ../node_modules/bootstrap/scss/bootstrap-grid.scss
 << ../node_modules/bootstrap/scss/_functions.scss
@@ -66,8 +65,10 @@
 << ../node_modules/bootstrap/scss/_utilities.scss
 << ../node_modules/bootstrap/scss/vendor/_rfs.scss
 < stylesheets/openqa.scss
+< ../node_modules/fork-awesome/css/fork-awesome.min.css
 < 3rdparty/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
 < stylesheets/back_to_top.css
+< stylesheets/disable_animations.css [mode==test]
 
 ! dagre-d3.js
 < ../node_modules/d3/dist/d3.min.js

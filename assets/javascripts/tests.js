@@ -498,39 +498,37 @@ function setupLazyLoadingFailedSteps() {
   // lazy-load failed steps when the tooltip is shown
   $('.failedmodule').on('show.bs.tooltip', function () {
     // skip if we have already loaded failed steps before
-    if (this.hasFailedSteps) {
+    const failedModuleElement = this;
+    if (failedModuleElement.hasFailedSteps) {
       return;
     }
-    this.hasFailedSteps = true;
+    failedModuleElement.hasFailedSteps = true;
 
     // query failed steps via AJAX
-    var failedModuleElement = $(this);
-    $.getJSON(failedModuleElement.data('async'), function (fails) {
-      // adjust href
-      var newHref = failedModuleElement.attr('href').replace(/\/1$/, '/' + fails.first_failed_step);
-      failedModuleElement.attr('href', newHref);
-
+    $.getJSON(failedModuleElement.dataset.bsAsync, function (fails) {
       // hide tooltip if we have nothing to show
-      if (!fails.failed_needles.length) {
-        failedModuleElement.attr('data-original-title', '');
-        failedModuleElement.tooltip('hide');
+      if (
+        typeof fails !== 'object' ||
+        fails.first_failed_step === undefined ||
+        !Array.isArray(fails.failed_needles) ||
+        !fails.failed_needles.length
+      ) {
+        failedModuleElement.dataset.bsOriginalTitle = '';
+        $(failedModuleElement).tooltip('hide');
         return;
       }
 
-      // update data for tooltip
-      var newTitle = '<p>Failed needles:</p><ul>';
-      $.each(fails.failed_needles, function (i, needle) {
-        newTitle += '<li>' + needle + '</li>';
-      });
-      newTitle += '</ul>';
-      failedModuleElement.attr('data-original-title', newTitle);
+      // update href to include the first failed step
+      failedModuleElement.href = failedModuleElement.href.replace(/\/1$/, '/' + fails.first_failed_step);
 
-      // update existing tooltip
-      if (failedModuleElement.next('.tooltip').length) {
-        failedModuleElement.tooltip('show');
-      }
+      // show tooltip again with updated data
+      const list = fails.failed_needles.map(needle => `<li>${needle}</li>`).join('');
+      failedModuleElement.dataset.bsOriginalTitle = `<p>Failed needles:</p><ul>${list}</ul>`;
+      $(failedModuleElement).tooltip('show');
     }).fail(function () {
+      // hide tooltip on error
       this.hasFailedSteps = false;
+      $(failedModuleElement).tooltip('hide');
     });
   });
 }

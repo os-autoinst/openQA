@@ -8,7 +8,5 @@
     z-index: 1000;
     width: 2.2rem;
     height: 2.2rem;
-}
-.back-to-top i {
-    padding-left: 3pt !important;
+    padding: 0px;
 }

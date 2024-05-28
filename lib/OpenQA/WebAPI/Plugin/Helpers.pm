@@ -194,9 +194,9 @@ sub register ($self, $app, $config) {
                   . $c->link_to($details_text ? $details_text : here => $details_url, target => 'blank')
                   . ' for details</p>';
             }
-            my $data = {'bs-toggle' => 'popover', 'bs-trigger' => 'focus', 'bs-title' => $title, content => $content};
-            $data->{placement} = $placement if $placement;
-            return $c->t(a => (tabindex => 0, class => $class, role => 'button', data => $data, @args));
+            my %d = ('bs-toggle' => 'popover', 'bs-trigger' => 'focus', 'bs-title' => $title, 'bs-content' => $content);
+            $d{placement} = $placement if $placement;
+            return $c->t(a => (tabindex => 0, class => $class, role => 'button', data => \%d, @args));
         });
 
     $app->helper(
@@ -244,11 +244,11 @@ sub register ($self, $app, $config) {
                 'div',
                 class => "progress-bar progress-bar-$key $class",
                 style => 'width: ' . ($res * 100 / $max) . '%;',
-		role => "progressbar",
-		'aria-label' => "progress-bar-$key",
-		'aria-valuenow' => $res * 100 / $max,
-		'aria-valuemin' => "0",
-		'aria-valuemax' => "100",
+                role => 'progressbar',
+                'aria-label' => "progress-bar-$key",
+                'aria-valuenow' => $res * 100 / $max,
+                'aria-valuemin' => '0',
+                'aria-valuemax' => '100',
                 $link_or_text
             );
         });

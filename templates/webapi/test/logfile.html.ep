@@ -10,10 +10,10 @@
 
 % my $url = url_for('test_file', testid => $testid, filename => $filename);
 <div class="corner-buttons" style="margin-top: -5px;">
-    <a class="btn btn-default" href=".#downloads">
+    <a class="btn btn-light" href=".#downloads">
         <i class="fa fa-chevron-left"></i> Back to job <%= $testid %>
     </a>
-    <a class="btn btn-default" href="<%= $url %>" target="blank">
+    <a class="btn btn-light" href="<%= $url %>" target="blank">
         <i class="fa fa-download"></i> Raw
     </a>
 </div>

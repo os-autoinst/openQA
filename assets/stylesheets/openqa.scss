@@ -1,12 +1,14 @@
 
 // include themes: these set variables for common values
-@import "bootswatch_litera_theme.scss";
 @import "openqa_theme.scss";
 
 // include Roboto font
 @import url($web-font-path);
 
-// include Bootstrap 4
+// prevent bom from disturbing rest of the CSS
+dummy { font-size: 42px; }
+
+// include Bootstrap
 @import "../node_modules/bootstrap/scss/bootstrap.scss";
 
 // include custom css for various aspects of the pages

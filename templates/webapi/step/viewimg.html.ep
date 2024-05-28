@@ -18,7 +18,6 @@
                 <span id="current_needle_label">
                     %= $default_label
                 </span>
-                <span class="caret"></span>
             </button>
             <div id="needlediff_selector" class="dropdown-menu dropdown-persistent" aria-labelledby="candidatesMenu">
                 <ul>

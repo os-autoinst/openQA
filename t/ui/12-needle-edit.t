@@ -244,13 +244,13 @@ sub overwrite_needle {
 
     wait_for_ajax(with_minion => $minion);
     is(
-        $driver->find_element('#flash-messages span')->get_text(),
+        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
         'Needle test-newneedle created/updated - restart job',
         'highlight appears correct'
     );
     ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
 
-    $driver->find_element('#flash-messages span a')->click();
+    $driver->find_element('#flash-messages .alert:last-child span a')->click();
     # restart is an ajax call, for some reason the check/sleep interval must be at least 1 sec for this call
     wait_for_ajax(interval => 1, minion => $minion);
     is(
@@ -263,11 +263,11 @@ sub overwrite_needle {
 sub check_flash_for_saving_logpackages {
     wait_for_ajax(with_minion => $minion);
     like(
-        $driver->find_element('#flash-messages span')->get_text(),
+        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
         qr/Needle logpackages-before-package-selection-\d{8} created\/updated - restart job/,
         'highlight appears correct'
     );
-    $driver->find_element('#flash-messages .close')->click();
+    $driver->find_element('#flash-messages .btn-close')->click();
 }
 
 
@@ -367,7 +367,7 @@ subtest 'Create new needle' => sub {
 
     # check state highlight appears with valid content
     is(
-        $driver->find_element('#flash-messages span')->get_text(),
+        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
         'Needle test-newneedle created/updated - restart job',
         'highlight appears correct'
     );
@@ -420,22 +420,22 @@ subtest 'Saving needle with only OCR areas' => sub {
     $driver->find_element_by_id('save')->click();
     wait_for_ajax(msg => 'wait for needle with only OCR areas created', with_minion => $minion);
     like(
-        $driver->find_element('#flash-messages span')->get_text(),
+        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
         qr/Cannot create a needle with only OCR areas/,
         'error displayed for OCR-only needle'
     );
-    $driver->find_element('#flash-messages .close')->click();
+    $driver->find_element('#flash-messages .alert:last-child .btn-close')->click();
 };
 
+my $decoded_json;
 subtest 'Verify new needle\'s JSON' => sub {
     # parse new needle json
     my $new_needle_file = Mojo::File->new($dir, "$needlename.json");
-    my $decoded_json = decode_json($new_needle_file->slurp);
-    my $new_tags = $decoded_json->{tags};
+    $decoded_json = decode_json($new_needle_file->slurp);
 
     # check new needle json is correct
     my $match = 0;
-    for my $tag (@$new_tags) {
+    for my $tag (@{$decoded_json->{tags}}) {
         $match = 1 if ($tag eq 'test-overwritetag');
     }
     is($match, 1, "found new tag in new needle");
@@ -449,7 +449,7 @@ subtest 'Verify new needle\'s JSON' => sub {
         $decode_textarea->{area}[0]->{ypos} + $yoffset,
         "new ypos stored to new needle"
     );
-};
+} or diag explain $decoded_json;
 
 sub assert_needle_appears_in_selection {
     my ($selection_id, $needlename) = @_;
