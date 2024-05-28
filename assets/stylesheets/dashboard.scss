@@ -79,6 +79,11 @@ td div.progress {
         margin-top: 2px;
     }
 }
+@include media-breakpoint-up(xl) {
+    .build-label {
+        max-width: 50%;
+    }
+}
 .col-lg-4.text-nowrap {
     display: flex;
     align-items: baseline;
