@@ -1132,7 +1132,12 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
 }
 
 function rescheduleProductForJob(link) {
-  if (window.confirm('Do you really want to partially reschedule the product of this job?')) {
+  if (
+    window.confirm(
+      'Do you really want to partially reschedule the product of this job? This will' +
+        ' NOT be limited to the current job group! Click on the help icon for details.'
+    )
+  ) {
     rescheduleProduct(link.dataset.url);
   }
   return false; // avoid usual link handling

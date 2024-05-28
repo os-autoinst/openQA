@@ -249,7 +249,7 @@ subtest 'scheduled product shown' => sub {
         qr/\/admin\/productlog\?id=$expected_scheduled_product_id/,
         'scheduled product href'
     );
-    my $reschedule_link = $driver->find_element('#scheduled-product-info div > a');
+    my $reschedule_link = $driver->find_element('#restart-scheduled-product');
     my $expected_params = qr/scheduled_product_clone_id=$expected_scheduled_product_id&TEST=kde/;
     like $reschedule_link->get_attribute('data-url'), $expected_params, 'reschedule link shown';
     $reschedule_link->click;
