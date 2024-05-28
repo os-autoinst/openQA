@@ -20,7 +20,7 @@
                         </button>
                     % }
                     % if (current_user && (current_user->id eq $user->id)) {
-                        <button class="btn btn-info btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(this.form);">
+                        <button class="btn btn-primary btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(this.form);">
                             <i class="fa fa-fw fa-pencil"></i>
                         </button>
                     % }

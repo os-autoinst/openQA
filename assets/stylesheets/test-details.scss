@@ -3,26 +3,32 @@
     background-color: $color-softfailed;
     color: $color-result;
 }
+.modules-badge {
+    font-size: 85%;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
 
 // test result
-.resultok { background-color: $color-ok; color: $color-result; }
-.resultpassed { background-color: $color-ok; color: $color-result; }
-.resultunknown { background-color: $color-result-missing; color: $color-result; }
-.resultrunning { background-color: $color-result-testing; color: $color-result; }
-.resultwarning { background-color: $color-warning; color: $color-result; }
-.resultsoftfailed { background-color: $color-softfailed; color: $color-result; }
-.resultfailed { background-color: $color-result-failed; color: $color-result; }
-.resultmissing { background-color: $color-result-missing; color: $color-result; }
+.resultok { background-color: $color-ok !important; color: $color-result !important; }
+.resultpassed { background-color: $color-ok !important; color: $color-result !important; }
+.resultunknown { background-color: $color-result-missing !important; color: $color-result !important; }
+.resultrunning { background-color: $color-result-testing !important; color: $color-result !important; }
+.resultwarning { background-color: $color-warning !important; color: $color-result !important; }
+.resultsoftfailed { background-color: $color-softfailed !important; color: $color-result !important; }
+.resultfailed { background-color: $color-result-failed !important; color: $color-result !important; }
+.resultmissing { background-color: $color-result-missing !important; color: $color-result !important; }
 
 .darkmode {
-    .resultok { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
-    .resultpassed { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
-    .resultunknown { background-color: darken($color-result-missing, 75%); color: $color-result-darktheme; }
-    .resultrunning { background-color: darken($color-result-testing, 75%); color: $color-result-darktheme; }
-    .resultwarning { background-color: darken($color-warning, 75%); color: $color-result-darktheme; }
-    .resultsoftfailed { background-color: darken($color-softfailed, 75%); color: $color-result-darktheme; }
-    .resultfailed { background-color: darken($color-result-failed, 75%); color: $color-result-darktheme; }
-    .resultmissing { background-color: darken($color-result-missing, 75%); color: $color-result-darktheme; }
+    .resultok { background-color: darken($color-ok, 75%) !important; color: $color-result-darktheme !important; }
+    .resultpassed { background-color: darken($color-ok, 75%) !important; color: $color-result-darktheme !important; }
+    .resultunknown { background-color: darken($color-result-missing, 75%) !important; color: $color-result-darktheme !important; }
+    .resultrunning { background-color: darken($color-result-testing, 75%) !important; color: $color-result-darktheme !important; }
+    .resultwarning { background-color: darken($color-warning, 75%) !important; color: $color-result-darktheme !important; }
+    .resultsoftfailed { background-color: darken($color-softfailed, 75%) !important; color: $color-result-darktheme !important; }
+    .resultfailed { background-color: darken($color-result-failed, 75%) !important; color: $color-result-darktheme !important; }
+    .resultmissing { background-color: darken($color-result-missing, 75%) !important; color: $color-result-darktheme !important; }
 }
 
 // Live view
@@ -338,6 +344,7 @@ ul.modcategory {
 
 // filter for test details
 .details-filter {
+    margin-bottom: 10px;
     &.hidden {
         display: none;
     }

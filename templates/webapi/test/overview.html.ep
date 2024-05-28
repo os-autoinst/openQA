@@ -42,7 +42,7 @@
         <div class="card-body">
             % my $allow_commenting = @$job_ids && current_user;
             % if ($allow_commenting) {
-            <button type="button" class="btn btn-info btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Add comments">
+            <button type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Add comments">
                 <i class="fa fa-comment" aria-hidden="true"></i>
             </button>
             % }
@@ -80,7 +80,7 @@
             <span>no filter present, click to toggle filter form</span>
         </div>
         <div class="card-body">
-            <form action="#" type="get" id="filter-form">
+            <form action="#" method="get" id="filter-form">
                 <div class="mb-3" id="filter-results">
                     <strong>Job result</strong>
                     % for my $result (OpenQA::Jobs::Constants::RESULTS) {
@@ -124,7 +124,7 @@
                 <div class="row" id="filter-modules">
                     <div class="col-4">
                         <div class="mb-3">
-                            <label class="form-label" for="filter-modules"><strong>Module name</strong></label>
+                            <label class="form-label" for="modules"><strong>Module name</strong></label>
                             <%= help_popover('Help for the <em>Module name</em> filter' => '
                             <p>Shows jobs that contain the specified modules</p>') %>
                             <input name="modules" type="text" id="modules"
@@ -143,8 +143,7 @@
                     <div class="col-2">
                         <div class="mb-3">
                             <label class="form-label" for="modules_result"><strong>Module result</strong></label>
-                            <%= help_popover('Help for the <em>Module result</em> filter' => '
-                            <p>Show jobs with selected result.</p>') %>'
+                            <%= help_popover('Help for the <em>Module result</em> filter' => '<p>Show jobs with selected result.</p>') %>
                             <select name="modules_result" id="modules_result" data-placeholder="any" class="chosen-select" multiple>
                                 % for my $modules_result (OpenQA::Jobs::Constants::MODULE_RESULTS) {
                                     <option><%= $modules_result %></option>
@@ -187,12 +186,13 @@
                     <div class="col-5">
                         <div class="mb-3">
                             <strong>Misc</strong>
-                            <label class="form-label"><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
+                            <input value="1" name="todo" type="checkbox" id="filter-todo">
+                            <label class="form-label" for="filter-todo">TODO</label>
                             %= help_popover_todo
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-default">Apply</button>
+                <button type="submit" class="btn btn-primary">Apply</button>
             </form>
         </div>
     </div>
@@ -220,21 +220,21 @@
             <form action="<%= url_for('apiv1_post_comments')->query(job_id => $job_ids) %>" method="post" onsubmit="addComments(this); return false;">
                 <div class="modal-header">
                     <h4 class="modal-title">Add comment on all currently shown jobs</h4>
-                    <button type="button" class="btn" data-bs-dismiss="modal">&times;</button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     %= include 'comments/add_comment_form_groups', group_comment => 0, nosubmit => 1
                 </div>
                 <div class="modal-footer">
-                    <div id="add-comments-progress-indication" style="width: 100%; display: none">
-                        <span class="me-auto mb-2 mb-lg-0"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</span>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal">Close</button>
+                    <div id="add-comments-progress-indication">
+                        <div class="flex-fill"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                     <div id="add-comments-controls">
                         <button type="submit" class="btn btn-danger">
                             <i class="fa fa-comment"></i> Submit comment on all <%= scalar @$job_ids %> jobs
                         </button>
-                        <button type="button" class="btn" data-bs-dismiss="modal">Discard</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
                     </div>
                 </div>
             </form>

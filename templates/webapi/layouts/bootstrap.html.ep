@@ -53,9 +53,9 @@
       %= include 'layouts/navbar'
       <div class="container-fluid" id="content">
           %= content
-          <a id="back-to-top" href="#" class="btn btn-primary btn-lg back-to-top" role="button">
+          <button id="back-to-top" class="btn btn-primary btn-lg back-to-top">
             <i class="fa fa-angle-up"></i>
-          </a>
+          </button>
       </div>
 
       <footer class='footer'>

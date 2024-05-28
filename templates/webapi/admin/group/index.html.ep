@@ -10,9 +10,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title"></h4>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="#" id="new_group_form" onsubmit="return createGroup(this);"
               data-post-job-group-url="<%= url_for('apiv1_post_job_group') %>"
@@ -37,7 +35,7 @@
                     </p>
                 </div>
                 <div class="modal-footer">
-                    <button type="reset" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+                    <button type="reset" class="btn btn-light" data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary" id="create_group_button">Create</button>
                 </div>
             </form>
@@ -72,7 +70,7 @@
                         </p>
                         <p>
                             <button onclick="saveReorganizedGroups();" class="btn btn-primary">Retry saving</button>
-                            <button onclick="window.location.reload();" class="btn btn-default">Refresh page</button>
+                            <button onclick="window.location.reload();" class="btn btn-light">Refresh page</button>
                         </p>
                     </div>
                 </div>

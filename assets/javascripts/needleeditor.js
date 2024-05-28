@@ -503,9 +503,13 @@ function reactToSaveNeedle(data) {
     addFlash('danger', errorMessage);
   } else if (requiresOverwrite) {
     delete data.requires_overwrite;
-    $('#modal-overwrite .modal-title').text('Sure to overwrite ' + data.needlename + '?');
-    $('#modal-overwrite').data('formdata', data);
-    $('#modal-overwrite').modal();
+    const modalElement = document.getElementById('modal-overwrite');
+    modalElement.dataset.formdata = data;
+    modalElement.getElementsByClassName('modal-title')[0].textContent = `Sure to overwrite ${data.needlename}?`;
+    if (!window.overwriteModal) {
+      window.overwriteModal = new bootstrap.Modal(modalElement);
+    }
+    window.overwriteModal.show();
   }
 
   $('#save').prop('disabled', false);

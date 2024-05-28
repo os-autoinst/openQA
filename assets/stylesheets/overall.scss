@@ -1,6 +1,5 @@
 body {
     font-family: $default-font;
-    line-height: 1.428571429;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -17,6 +16,16 @@ body {
     // always show a scrollbar not to flicker on tabs / long drop downs
     overflow-y: scroll;
 }
+
+// don't underline links except on focus/hover
+a { text-decoration: none; }
+a:focus, a:hover { text-decoration: underline; }
+// don't underline links at all on certain places
+.nav-link { &:focus, &:hover { text-decoration: none; } }
+.dropdown-item { &:focus, &:hover { text-decoration: none; } }
+.page-link { &:focus, &:hover { text-decoration: none; } }
+.btn { &:focus, &:hover { text-decoration: none; } }
+
 .darkmode {
     color: $default-font-color-darktheme;
     background-color: $default-bg-color-darktheme;
@@ -26,6 +35,14 @@ body {
         padding-left: 40px;
         padding-right: 40px;
     }
+}
+
+// buttons
+.btn i.fa + span {
+    padding-left: 8px;
+}
+.btn-group-sm .btn.help_popover, .btn-sm.help_popover {
+    padding-top: 6px;
 }
 
 // footer
@@ -258,9 +275,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         color: $default-font-color-darktheme;
         background-color: $default-bg-color-darktheme;
     }
-}
-
-.darkmode {
     // All tests pagination
     .page-link,.page-item.disabled .page-link {
         background-color: $default-bg-color-darktheme;
@@ -292,11 +306,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     }
 
 
-    .container-fluid .btn-default:hover, .container-fluid .btn-default:active:hover {
+    .container-fluid .btn-light:hover, .container-fluid .btn-light:active:hover {
         background-color: #101010;
         color: #cbc5bf;
     }
-    .container-fluid .btn-default:active {
+    .container-fluid .btn-light:active {
         background-color: #101010;
         background-image: radial-gradient(circle, lighten(#101010, 25%) 10%, #363636 11%);
     }

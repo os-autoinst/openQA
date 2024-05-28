@@ -398,10 +398,7 @@ table#users {
         margin-left: 2px;
         height: 2rem !important;
     }
-    select {
-        width: 50px;
-    }
-    input[type="datetime-local"] {
-        width: 185px;
+    select, input[type="datetime-local"] {
+        width: initial;
     }
 }

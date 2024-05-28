@@ -29,7 +29,6 @@ td div.progress {
         // don' use flex box because it leads to undesired overflow behavior
         display: inline;
         overflow: hidden;
-        padding-top: 10px;
         a {
             display: block;
             width: 100%;

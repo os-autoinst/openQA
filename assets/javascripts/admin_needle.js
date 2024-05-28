@@ -87,7 +87,7 @@ function setupAdminNeedles() {
     });
     if (ids.length > 0) {
       $('#really_delete').data('ids', ids);
-      $('#confirm_delete').modal();
+      new bootstrap.Modal('#confirm_delete').show();
     }
   });
 

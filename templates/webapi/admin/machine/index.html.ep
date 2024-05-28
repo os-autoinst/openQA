@@ -37,7 +37,7 @@
         </table>
         % if (is_admin) {
         <div class="text-center">
-            <input value="New machine" onclick="addAdminTableRow();" type="button" class="btn btn-default"/>
+            <input value="New machine" onclick="addAdminTableRow();" type="button" class="btn btn-primary"/>
         </div>
         % }
         <input type="hidden" id="admintable_api_url" value="/api/v1/machines"/>
