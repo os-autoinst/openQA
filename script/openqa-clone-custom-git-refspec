@@ -32,7 +32,7 @@ set -o pipefail
 if [[ -n "$GITHUB_TOKEN" ]]; then
     AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic"
     echo "Github oauth token provided, performing authenticated requests"
-elif [[ -f "$HOME/.config/openqa/verification.conf" ]]; then
+elif [[ -f "$HOME/.config/openqa/github-token.conf" ]]; then
     AUTHENTICATED_REQUEST=" -u $(get_token_from_file):x-oauth-basic"
     echo "Github oauth token found in config file, performing authenticated requests"
 fi
