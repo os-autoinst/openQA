@@ -17,7 +17,7 @@ Options:
                         The default parameters are '$clone_args' defined in the env variable \$clone_args.
 
 Examples:
- openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529D https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
+ openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529 https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec -n -c '--show-progress' https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec https://github.com/foursixnine/os-autoinst-distri-opensuse/tree/oopsitsbrokenagain https://openqa.opensuse.org/tests/3128467 NEEDLES_DIR='https://github.com/foursixnine/os-autoinst-needles-opensuse.git#oopsitsbrokenagain'
