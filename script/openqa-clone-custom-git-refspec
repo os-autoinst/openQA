@@ -12,16 +12,23 @@ Options:
  -v, --verbose          execute with verbose output
  -h, -?, --help         display this help
  -n, --dry-run          execute in dry-run mode, do not clone any openQA jobs
+ -m, --modules          specify the tets modules you want to load as a comma-separated list of paths to your test files
  -c --clone-job-args    pass additional parameters to 'openqa-clone-job', e.g.  '--clone-job-args="--show-progress"'.
                         The default parameters are '$clone_args' defined in the env variable \$clone_args.
 
 Examples:
- openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529 https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
+ openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529D https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec -n -c '--show-progress' https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec https://github.com/foursixnine/os-autoinst-distri-opensuse/tree/oopsitsbrokenagain https://openqa.opensuse.org/tests/3128467 NEEDLES_DIR='https://github.com/foursixnine/os-autoinst-needles-opensuse.git#oopsitsbrokenagain'
+ openqa-clone-custom-git-refspec -m tests/console/rust_rustup,tests/console/rust_cargo https://github.com/os-autoinst-distri-opensuse/os-autoinst-distri-opensuse/pull/19080 https://openqa.opensuse.org/tests/835060 
 
-You need to set the environment variable GITHUB_TOKEN to use authenticated requests.
+To use authenticated requests, you need to either provide a GitHub token via a configuration file at '~/.config/openqa/github-token.conf' or set
+the GITHUB_TOKEN environment variable.
+
+Example of the config file option:
+
+ GITHUB_ACCESS_TOKEN="you_token_here"
 
 EOF
     exit "$1"
@@ -61,15 +68,16 @@ extract_urls_from_pr() {
 # Get the Github Token from a config file
 # located at ~/.config/openqa/verification.conf
 get_token_from_file() {
-  local config_file="$HOME/.config/openqa/verification.conf"
+  local config_file="$HOME/.config/openqa/github-token.conf"
   if [[ -f $config_file ]]; then
     token=$(grep "^GH_ACCESS_TOKEN=" "$config_file" | cut -d'd' -f2)
     echo "$token"
   fi
 }
 
-opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n "$0" -- "$@") || usage 1
+opts=$(getopt -o vhnm:c: --long verbose,dry-run,help,modules:,clone-job-args: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
+modules=""
 while true; do
     case "$1" in
         -v | --verbose)
@@ -80,6 +88,10 @@ while true; do
         -n | --dry-run)
             dry_run=true
             shift
+            ;;
+        -m | --modules)
+            modules="$2"
+            shift 2
             ;;
         -c | --clone-job-args)
             clone_args="$2 $clone_args"
@@ -170,6 +182,12 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
     local scriptdir
     scriptdir=$(dirname "${BASH_SOURCE[0]}")
     local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST+=\"$test_suffix\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
+    if [[ $cmd =~ (SCHEDULE|YAML_SCHEDULE) ]]; then
+      fail "Error: 'SCHEDULE' and 'YAML_SCHEDULE' are set in '--clone-job-args'. Cannot continue as they are mutually exclusive!"
+    fi
+    if [[ -n "$modules" ]] && [[ $cmd =~ (SCHEDULE|YAML_SCHEDULE) ]]; then
+      fail "Error: '--modules' flag cannot exist when passing 'SCHEDULE' or 'YAML_SCHEDULE' with '--clone-job-args'!"
+    fi
     [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
