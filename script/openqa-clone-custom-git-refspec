@@ -36,17 +36,6 @@ EOF
 
 set -o pipefail
 
-if [[ -n "$GITHUB_TOKEN" ]]; then
-    AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic"
-    echo "Github oauth token provided, performing authenticated requests"
-elif [[ -f "$HOME/.config/openqa/github-token.conf" ]]; then
-    AUTHENTICATED_REQUEST=" -u $(get_token_from_file):x-oauth-basic"
-    echo "Github oauth token found in config file, performing authenticated requests"
-fi
-
-curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
-curl_openqa="${curl_openqa:-"curl"}"
-
 fail() {
     echo "$*" >&2
     exit 1
@@ -74,6 +63,18 @@ get_token_from_file() {
     echo "$token"
   fi
 }
+
+if [[ -n "$GITHUB_TOKEN" ]]; then
+    AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic"
+    echo "Github oauth token provided, performing authenticated requests"
+elif [[ -f "$HOME/.config/openqa/github-token.conf" ]]; then
+    AUTHENTICATED_REQUEST=" -u $(get_token_from_file):x-oauth-basic"
+    echo "Github oauth token found in config file, performing authenticated requests"
+fi
+
+curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
+curl_openqa="${curl_openqa:-"curl"}"
+
 
 opts=$(getopt -o vhnm:c: --long verbose,dry-run,help,modules:,clone-job-args: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
@@ -182,7 +183,8 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
     local scriptdir
     scriptdir=$(dirname "${BASH_SOURCE[0]}")
     local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST+=\"$test_suffix\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
-    if [[ $cmd =~ (SCHEDULE|YAML_SCHEDULE) ]]; then
+    # FIXME: This does not work yet. Maybe I am checking the wrong list of arguments
+    if [[ $cmd =~ "SCHEDULE" ]] && [[ $cmd =~ "YAML_SCHEDULE" ]]; then
       fail "Error: 'SCHEDULE' and 'YAML_SCHEDULE' are set in '--clone-job-args'. Cannot continue as they are mutually exclusive!"
     fi
     if [[ -n "$modules" ]] && [[ $cmd =~ (SCHEDULE|YAML_SCHEDULE) ]]; then
