@@ -184,12 +184,6 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
     scriptdir=$(dirname "${BASH_SOURCE[0]}")
     local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST+=\"$test_suffix\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
     # FIXME: This does not work yet. Maybe I am checking the wrong list of arguments
-    if [[ $cmd =~ "SCHEDULE" ]] && [[ $cmd =~ "YAML_SCHEDULE" ]]; then
-      fail "Error: 'SCHEDULE' and 'YAML_SCHEDULE' are set in '--clone-job-args'. Cannot continue as they are mutually exclusive!"
-    fi
-    if [[ -n "$modules" ]] && [[ $cmd =~ (SCHEDULE|YAML_SCHEDULE) ]]; then
-      fail "Error: '--modules' flag cannot exist when passing 'SCHEDULE' or 'YAML_SCHEDULE' with '--clone-job-args'!"
-    fi
     [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
@@ -203,6 +197,13 @@ if [[ -z "$host" ]] && [[ -z "$job_list" ]]; then
     exit 1
 fi
 args=("${@:3}")
+if [[ $(echo "${args[*]}" | grep -q "SCHEDULE") ]] && [[ $(echo "${args[*]}" | grep -q "YAML_SCHEDULE") ]]; then
+    fail "Error: 'SCHEDULE' and 'YAML_SCHEDULE' are set in '--clone-job-args'. Cannot continue as they are mutually exclusive!"
+fi
+if [[ -n "$modules" ]] && ([[ $(echo "${args[*]}" | grep -q "SCHEDULE") ]] || [[ $(echo "${args[*]}" | grep -q "YAML_SCHEDULE") ]]); then
+    fail "Error: '--modules' flag cannot exist when passing 'SCHEDULE' or 'YAML_SCHEDULE' with '--clone-job-args'!"
+fi
+
 IFS=','
 for i in $job_list; do
     clone_job "$i"

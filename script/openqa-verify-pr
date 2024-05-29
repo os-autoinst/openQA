@@ -84,6 +84,7 @@ if [ $# -ne 5 ]; then
 fi
 
 # Read GH token from config file.
+# TODO: Wrap into function. Call it in clone-custom-refspec when $TOKEN not set.
 if [[ -f $config_file ]]; then
   config=$(grep "^GH_ACCESS_TOKEN=" "$config_file" | cut -d'"' -f2)
   custom_target=$(grep "^CUSTOM_TARGET=" "$config_file" | cut -d'"' -f2)
@@ -99,6 +100,7 @@ if [ $source = 'opensuse' ]; then
   openqa-clone-custom-git-refspec "https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/$pr_id" \
     "https://openqa.opensuse.org/tests/$test_id" \
     SCHEDULE="tests/installation/bootloader_start,tests/boot/boot_to_desktop,$modules" \
+    YAML_SCHEDULE="" \
     TEST="$test_name"
 elif [ $source = 'suse' ]; then
   echo "Dispatching verification run for suse..."
