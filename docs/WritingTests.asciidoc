@@ -2057,8 +2057,9 @@ feature is explained in further detail in the corresponding
 <<UsersGuide.asciidoc#scenarios_yaml,users guide section>>.
 
 It is also possible to create a GitHub workflow that will clone and monitor an
-openQA job which is mentioned in the PR description. The scripts repository
-contains a pre-defined GitHub action for this. Checkout the documentation of the
+openQA job which is mentioned in the PR description or comment. The scripts
+repository contains a pre-defined GitHub action for this. Checkout the
+documentation of the
 https://github.com/os-autoinst/scripts/blob/master/openqa-clone-and-monitor-job-from-pr[openqa-clone-and-monitor-job-from-pr]
 script for further information and an example configuration.
 
