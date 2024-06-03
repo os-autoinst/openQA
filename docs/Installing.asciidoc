@@ -170,6 +170,41 @@ with optional, overridden parameters. More information about
 `openqa-clone-job` can be found in
 <<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>.
 
+You can also run `openqa-bootstrap` repeatedly. For example when you stop a
+container and the openQA daemons and database are stopped, calling
+`openqa-bootstrap start` will start necessary daemons again.
+
+=== openQA in a browser
+
+You can try out `openqa-bootstrap` in a container environment environment like
+https://docs.github.com/en/codespaces[GitHub Codespaces].
+
+On https://github.com/os-autoinst/openQA[GitHub openQA], click on the "Code"
+button and select "Codespaces". Just click on the plus sign to create a new
+Codespace. Or use https://codespaces.new/os-autoinst/openQA?quickstart=1[this
+link] as a quickstart to resume existing instances or create new ones.
+
+It will run `openqa-bootstrap` in the background. If the codespace
+environment is ready, open a new VSCode terminal and type
+
+----
+tail -f /var/log/openqa-bootstrap.log
+----
+
+The Web UI instance can be opened as soon as you get a popup that there is a
+webserver available on port 80.
+
+You can now use `openqa-clone-job` to run jobs in this instance.
+
+After stopping and resuming a codespace instance, run
+----
+/usr/share/openqa/script/openqa-bootstrap start
+----
+to start the openQA daemons again.
+
+Be sure to delete codespace instances if you don't use them anymore, as even
+stopped instances will consume storage of your monthly limit.
+
 === openQA in a container
 
 You can also setup a systemd-nspawn container with openQA with the following
