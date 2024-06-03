@@ -1,0 +1,26 @@
+{
+    "name": "openQA Single Instance",
+    "image": "registry.opensuse.org/devel/openqa/containers15.5/openqa-single-instance",
+    "runArgs": [ "--privileged", "--device", "/dev/kvm", "--entrypoint", "bash" ],
+    "postCreateCommand": "chown root:kvm /dev/kvm",
+    "containerEnv": {
+      "VNCPORT_OFFSET": "100"
+    },
+    "postStartCommand": "/usr/share/openqa/script/openqa-bootstrap >/var/log/openqa-bootstrap.log 2>&1"
+
+
+    // Features to add to the dev container. More info: https://containers.dev/features.
+    // "features": {},
+
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    // "forwardPorts": [],
+
+    // Use 'postCreateCommand' to run commands after the container is created.
+    //"postCreateCommand": "pip3 install --user -r requirements.txt"
+
+    // Configure tool-specific properties.
+    // "customizations": {},
+
+    // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+    // "remoteUser": "root"
+}
