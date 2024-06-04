@@ -33,11 +33,12 @@ link:docs/UsersGuide.asciidoc[Users Guide].
 If you are interested in writing tests using openQA read the
 link:docs/WritingTests.asciidoc[Tests Developer Guide].
 
-Try out running tests without installing openQA in
+Try out running tests with openQA in a browser in
 https://codespaces.new/os-autoinst/openQA?quickstart=1[our Codespace].
 See also: https://docs.github.com/en/codespaces[GitHub Codespaces documentation]
 
-For troubleshooting look into `/var/log/openqa-bootstrap.log`.
+See https://open.qa/docs/#_openqa_in_a_browser[openQA in a browser] for
+documentation on how to use it.
 
 == Contributing
 [id="getting_involved"]
