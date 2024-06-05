@@ -37,7 +37,7 @@
         <ul class="navbar-nav ms-auto">
             <li class="nav-item nav-search-item">
                 <form method="get" action="<%= url_for('search') %>">
-                    <input type="search" name="q" id="global-search" class="form-control navbar-input" value="<%= $self->param('q') %>" placeholder="Type to search" aria-label="Global search input"/>
+                    <input type="search" name="q" id="global-search" class="form-control navbar-input" value="<%= $self->param('q') %>" placeholder="Type to search" aria-label="Global search input">
                 </form>
             </li>
         % if (current_user) {

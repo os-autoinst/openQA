@@ -3,7 +3,7 @@
 
 % content_for 'head' => begin
 %= asset $_ for qw(test_result.js anser.js ansi-colors.css)
-<style type="text/css">
+<style>
     .serial-result-container .text-result .resborder {
         background-image: url("<%= icon_url 'terminal.svg' %>");
     }

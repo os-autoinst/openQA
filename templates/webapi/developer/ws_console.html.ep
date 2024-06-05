@@ -27,7 +27,7 @@
         <textarea id="log" readonly></textarea>
     </p>
     <p>
-        <input type="checkbox" id="follow_log" checked="checked" />
+        <input type="checkbox" id="follow_log" checked="checked">
         <label class="form-label" for="follow_log">Follow log</label>
     </p>
 % }

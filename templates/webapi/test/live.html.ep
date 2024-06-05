@@ -206,7 +206,7 @@
         <pre id="livelog" data-url='<%= url_for("livelog", testid => $testid) %>'></pre>
         <form action="#">
             <div>
-                <input type="checkbox" id="scrolldown" checked="checked" />
+                <input type="checkbox" id="scrolldown" checked="checked">
                 <label class="form-label" for="scrolldown">Autoscroll log</label>
             </div>
         </form>

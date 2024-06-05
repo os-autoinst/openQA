@@ -118,13 +118,13 @@
                 <div class="col-md-6">
                     %= form_for save_needle_ajax => (id => 'save_needle_form') => (method => 'POST') => begin
                         <div style="display: none;">
-                            <label class="form-label">JSON:</label><br/>
+                            <label class="form-label">JSON:</label><br>
                             <textarea id="needleeditor_textarea" name="json" readOnly="yes"></textarea>
-                            <input type="hidden" id="needleeditor_image" name="imagename"/>
-                            <input type="hidden" id="needleeditor_imagedistri" name="imagedistri"/>
-                            <input type="hidden" id="needleeditor_imageversion" name="imageversion"/>
-                            <input type="hidden" id="needleeditor_imagedir" name="imagedir"/>
-                            <input type="hidden" id="needleeditor_overwrite" name="overwrite"/>
+                            <input type="hidden" id="needleeditor_image" name="imagename">
+                            <input type="hidden" id="needleeditor_imagedistri" name="imagedistri">
+                            <input type="hidden" id="needleeditor_imageversion" name="imageversion">
+                            <input type="hidden" id="needleeditor_imagedir" name="imagedir">
+                            <input type="hidden" id="needleeditor_overwrite" name="overwrite">
                         </div>
                         <div>
                             <p>
@@ -140,7 +140,7 @@
                                     a \'soft-fail\'. It is suggested to input the reason in the \'Description\' textbox(e.g. bsc#12345 - summary of ticket).')
                                 %>
                                 <span id="workaround_reason" style="display:none;">
-                                    <br/>
+                                    <br>
                                     <label for="input_workaround_desc">Description:</label>
                                     <input type="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
                                 </span>
