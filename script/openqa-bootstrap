@@ -118,6 +118,8 @@ if [[ -z $skip_suse_specifics ]] && ping -c1 download.suse.de. && (! rpm -q ca-c
         if [ "$NAME" = "openSUSE Leap" ]; then
             # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
             zypper -n addrepo "http://download.suse.de/ibs/SUSE:/CA/${VERSION}" 'SUSE:CA'
+        elif [ "$NAME" = "SLES" ]; then
+            zypper -n addrepo "http://download.suse.de/ibs/SUSE:/CA/SLE_${VERSION/-/_}" 'SUSE:CA'
         else
             zypper -n addrepo obs://SUSE:CA SUSE:CA
         fi
