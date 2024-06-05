@@ -61,12 +61,10 @@
     padding: 2px;
 }
 
-.tab-pane table#results {
-    padding-top: 9px;
-}
-
-.tab-pane .comments {
-    padding-top: 9px;
+html:not([data-bs-theme="dark"]) .tab-pane {
+        table#results, .comments {
+        padding-top: 9px;
+    }
 }
 
 // assets
@@ -232,6 +230,14 @@ a.add-parent-group {
         top: -15px;
         height: 25px;
         margin-bottom: -25px;
+    }
+}
+[data-bs-theme="dark"] {
+    #job_group_list ul li {
+        background-color: $btn-default-bg-dark;
+    }
+    .dragover:after, .parent-dragover:before {
+        border-color: $btn-default-color-dark !important;
     }
 }
 

@@ -16,9 +16,9 @@
 .ansi-magenta-fg { color: pink; }
 .ansi-cyan-fg    { color: cyan; }
 
-.darkmode {
-    .ansi-white-fg   { color: $default-font-color-darktheme; }
-    .ansi-black-fg   { color: $default-font-color-darktheme; }
+[data-bs-theme="dark"] {
+    .ansi-white-fg   { color: $default-font-color-dark; }
+    .ansi-black-fg   { color: $default-font-color-dark; }
     .ansi-red-fg     { color: red; }
     .ansi-yellow-fg  { color: yellow; }
     .ansi-green-fg   { color: green; }

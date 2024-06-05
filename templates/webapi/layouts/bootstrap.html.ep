@@ -81,7 +81,7 @@
       <script>
         let theme = '<%= current_theme %>';
         if (theme === 'detect') theme = window.matchMedia('(prefers-color-scheme: dark)').matches === true ? 'dark' : 'light';
-        if (theme === 'dark') document.body.classList.add('darkmode');
+        document.documentElement.dataset.bsTheme = theme;
       </script>
   </body>
 </html>
