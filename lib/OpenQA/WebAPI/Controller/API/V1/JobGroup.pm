@@ -303,7 +303,8 @@ sub list_jobs ($self) {
 
 =item delete()
 
-Deletes a job group. Verifies that it is not empty before attempting to remove.
+Deletes a job group. Verifies that it is empty before attempting to remove.
+If not empty (there are existing jobs), it will return an error.
 
 =back
 
