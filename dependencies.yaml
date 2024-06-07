@@ -25,7 +25,7 @@ assetpack_requires:
   perl(YAML::PP): '>= 0.026'
 
 build_requires:
-  rubygem(sass):
+  rubygem(sass): '>= 3.7.4'
   npm:
   '%assetpack_requires':
 
