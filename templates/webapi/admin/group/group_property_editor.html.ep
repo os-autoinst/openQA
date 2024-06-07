@@ -1,4 +1,7 @@
 % use OpenQA::Utils 'human_readable_size';
+% content_for 'ready_function' => begin
+    validateJobGroupForm(document.getElementById('group_properties_form'));
+% end
 <div id="properties" class="card"
     % if (!$is_parent) {
         style="display: none;"

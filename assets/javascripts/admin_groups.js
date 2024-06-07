@@ -1,7 +1,13 @@
-function showModalWithTitle(elementId, title) {
-  const element = document.getElementById(elementId);
-  element.getElementsByClassName('modal-title')[0].textContent = title;
-  new bootstrap.Modal(element).show();
+function showAddGroupModal(parentId, title) {
+  const modal = document.getElementById('add_group_modal');
+  const form = document.getElementById('new_group_form');
+  modal.getElementsByClassName('modal-title')[0].textContent = title;
+  form.dataset.createParent = parentId === undefined;
+  form.dataset.parentId = parentId;
+  form.reset();
+  validateJobGroupForm(form);
+  new bootstrap.Modal(modal).show();
+  return false;
 }
 
 function showAddJobGroup(plusElement) {
@@ -17,23 +23,11 @@ function showAddJobGroup(plusElement) {
     parentId = 'none';
     title = 'Add new job group on top-level';
   }
-
-  var formElement = $('#new_group_form');
-  formElement.data('create-parent', false);
-  formElement.data('parent-id', parentId);
-  formElement.trigger('reset');
-  showModalWithTitle('add_group_modal', title);
-  checkJobGroupForm('#new_group_form');
-  return false;
+  return showAddGroupModal(parentId, title);
 }
 
 function showAddParentGroup() {
-  var formElement = $('#new_group_form');
-  formElement.data('create-parent', true);
-  formElement.trigger('reset');
-  showModalWithTitle('add_group_modal', 'Add new folder');
-  checkJobGroupForm('#new_group_form');
-  return false;
+  return showAddGroupModal(undefined, 'Add new folder');
 }
 
 function showError(message) {
@@ -60,49 +54,49 @@ function fetchHtmlEntry(url, targetElement) {
   });
 }
 
-function _checkJobGroupInputs(formID) {
-  var empty = false;
-  $('input', formID).each(function () {
-    var trimmed = jQuery.trim($(this).val());
-    if (!trimmed.length) {
-      empty = true;
-    }
-  });
-  return empty;
+function countEmptyInputs(form) {
+  return Array.from(form.querySelectorAll('input')).reduce(
+    (count, e) => count + (e.type !== 'number' && !jQuery.trim(e.value).length),
+    0
+  );
 }
 
-function checkJobGroupForm(formID) {
-  var empty = _checkJobGroupInputs(formID);
-  if (empty) {
-    $('button[type=submit]', formID).attr('disabled', 'disabled');
+function validateJobGroupForm(form) {
+  const button = form.querySelector('button[type=submit]');
+  let emptyInputs = countEmptyInputs(form);
+  button.disabled = emptyInputs > 0;
+  if (form.dataset.eventHandlersInitialized) {
+    return;
   }
-  $('input, textarea', formID).on('keyup change', function () {
-    var trimmed = jQuery.trim($(this).val());
-    if (!trimmed.length) {
-      $(this).addClass('is-invalid');
-      $('button[type=submit]', formID).attr('disabled', 'disabled');
+  $('input', form).on('keyup change', function () {
+    if (this.type === 'number') {
+      return;
+    }
+    if (!jQuery.trim(this.value).length) {
+      this.classList.add('is-invalid');
+      button.disabled = ++emptyInputs;
     } else {
-      $(this).removeClass('is-invalid');
-      $('button[type=submit]', formID).removeAttr('disabled');
+      this.classList.remove('is-invalid');
+      button.disabled = --emptyInputs > 0;
     }
   });
+  form.dataset.eventHandlersInitialized = true;
 }
 
 function createGroup(form) {
-  var editorForm = $(form);
   $('#new_group_error').hide();
   $('#new_group_creating').show();
 
-  let data = editorForm.serialize();
+  let data = $(form).serialize();
   let postUrl, rowUrl, targetElement;
-  if (editorForm.data('create-parent')) {
-    postUrl = editorForm.data('post-parent-group-url');
-    rowUrl = editorForm.data('parent-group-row-url');
+  if (form.dataset.createParent !== 'false') {
+    postUrl = form.dataset.postParentGroupUrl;
+    rowUrl = form.dataset.parentGroupRowUrl;
     targetElement = $('#job_group_list');
   } else {
-    postUrl = editorForm.data('post-job-group-url');
-    rowUrl = editorForm.data('job-group-row-url');
-    const parentId = editorForm.data('parent-id');
+    postUrl = form.dataset.postJobGroupUrl;
+    rowUrl = form.dataset.jobGroupRowUrl;
+    const parentId = form.dataset.parentId;
     if (parentId !== 'none') {
       targetElement = $('#parent_group_' + parentId).find('ul');
       data += '&parent_id=' + parentId;

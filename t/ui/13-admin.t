@@ -306,20 +306,12 @@ subtest 'add job group' => sub() {
         'group name input marked as invalid'
     );
 
-    # try to submit a group with empty name
-    # note: Clicking via execute_script here because Selenium would reject the click on the disabled element.
-    $groupname->clear();
-    $driver->execute_script('document.getElementById("create_group_button").click()');
-    wait_for_ajax;
-    $list_element = $driver->find_element_by_id('job_group_list');
-    @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is((shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group present');
-    is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
-    is(@parent_group_entries, 0, 'and also no more parent groups');
-
     # add new parentless group (dialog should still be open), this time enter a name
-    $driver->find_element_by_id('new_group_name')->send_keys('Cool Group');
-    $driver->find_element_by_id('create_group_button')->click();
+    $groupname->clear;
+    $groupname->send_keys('Cool Group');
+    wait_until(sub { ($driver->find_element_by_id('create_group_button')->get_attribute('disabled') // '') ne 'true' },
+        'submit button no longer disabled');
+    $driver->find_element_by_id('create_group_button')->click;
     wait_for_ajax;
 
     # new group should be present

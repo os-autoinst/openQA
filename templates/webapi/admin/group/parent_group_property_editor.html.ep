@@ -1,11 +1,5 @@
 % layout 'bootstrap';
-
 % title 'Parent group ' . $group->name;
-
-% content_for 'ready_function' => begin
-    setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
-    checkJobGroupForm('#group_properties_form');
-% end
 
 <div class="row">
     <div class="col-sm-12">
