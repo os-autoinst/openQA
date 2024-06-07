@@ -62,7 +62,7 @@ function fetchHtmlEntry(url, targetElement) {
 
 function _checkJobGroupInputs(formID) {
   var empty = false;
-  $('.form-group input', formID).each(function () {
+  $('input', formID).each(function () {
     var trimmed = jQuery.trim($(this).val());
     if (!trimmed.length) {
       empty = true;
@@ -76,7 +76,7 @@ function checkJobGroupForm(formID) {
   if (empty) {
     $('button[type=submit]', formID).attr('disabled', 'disabled');
   }
-  $('.form-group input, .form-group textarea', formID).on('keyup change', function () {
+  $('input, textarea', formID).on('keyup change', function () {
     var trimmed = jQuery.trim($(this).val());
     if (!trimmed.length) {
       $(this).addClass('is-invalid');
