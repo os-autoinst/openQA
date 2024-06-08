@@ -442,6 +442,22 @@ subtest 'job property editor' => sub() {
         $driver->refresh();
         is element_prop('editor-size-limit'), '', 'size edited';
     };
+
+    subtest 'edit parent group properties' => sub {
+        $driver->find_element('#user-action a')->click();
+        $driver->find_element_by_link_text('Job groups')->click();
+        $driver->find_element('#parent_group_1 span a')->click();
+        $driver->find_element_by_id('editor-name')->send_keys('Cool Parent Group');
+        my $ele = $driver->find_element_by_id('editor-keep-logs-in-days');
+        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $ele->send_keys('123');
+        $driver->find_element('#properties p.buttons button.btn-primary')->click();
+        wait_for_ajax(msg => 'ensure there is no race condition, even though the page is reloaded');
+        $driver->find_element('#user-action a')->click();
+        $driver->find_element_by_link_text('Job groups')->click();
+        $driver->find_element('#parent_group_1 span a')->click();
+        is element_prop('editor-keep-logs-in-days'), '123', 'keep important results in days edited';
+    };
 };
 
 subtest 'edit job templates' => sub() {

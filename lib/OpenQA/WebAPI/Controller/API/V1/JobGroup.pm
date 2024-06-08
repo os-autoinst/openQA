@@ -253,6 +253,10 @@ sub update ($self) {
     # Don't check group name if sorting group by dragging
     $validation->required('name')->like(qr/^(?!\s*$).+/) unless $validation->optional('drag')->num(1)->is_valid;
     $validation->optional('sort_order')->num(0);
+    $validation->optional('default_keep_logs_in_days')->num(0);
+    $validation->optional('default_keep_important_logs_in_days')->num(0);
+    $validation->optional('default_keep_results_in_days')->num(0);
+    $validation->optional('default_keep_important_results_in_days')->num(0);
     $self->_validate_common_properties;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
