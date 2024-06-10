@@ -584,4 +584,15 @@ subtest 'destruction' => sub {
     is_deeply \@removed_timers, [42], 'timer removed on destruction';
 };
 
+subtest 'hostname checks' => sub {
+    $client->worker->worker_hostname('localhost');
+    $client->register;
+    is $client->status, 'disabled', 'ambiguous localhost on remote worker prevented';
+    like $happened_events[-1]->{error_message}, qr/Rejecting.*localhost/, 'clear message about ambiguous localhost';
+    $client->worker->worker_hostname('my_worker');
+    $client->register;
+    is $client->status, 'failed', 'still attempts to register for custom name';
+    like $happened_events[-1]->{error_message}, qr/Failed to register/, 'message about registration attempt';
+};
+
 done_testing();
