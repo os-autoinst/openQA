@@ -21,21 +21,19 @@ Examples:
  openqa-clone-custom-git-refspec -n -c '--show-progress' https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec https://github.com/foursixnine/os-autoinst-distri-opensuse/tree/oopsitsbrokenagain https://openqa.opensuse.org/tests/3128467 NEEDLES_DIR='https://github.com/foursixnine/os-autoinst-needles-opensuse.git#oopsitsbrokenagain'
 
-You need to set the environment variable GITHUB_TOKEN to use authenticated requests.
+To use authenticated requests, you need to either provide a GitHub token by
+adding 'GITHUB_TOKEN=...' to a configuration file at
+'github-token.conf' in your $OPENQA_CONFIG folder or set the GITHUB_TOKEN environment variable.
+
+Use this snippet in your 'github-token.conf' to do so:
+
+ GITHUB_TOKEN="YourTokenHere12345"
 
 EOF
     exit "$1"
 }
 
 set -o pipefail
-
-if [[ -n "$GITHUB_TOKEN" ]]; then
-    AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic"
-    echo "Github oauth token provided, performing authenticated requests"
-fi
-
-curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
-curl_openqa="${curl_openqa:-"curl"}"
 
 fail() {
     echo "$*" >&2
@@ -54,6 +52,22 @@ extract_urls_from_pr() {
         echo "$urls"
     fi
 }
+
+config_file="${OPENQA_CONFIG}/github-token.conf"
+get_token_from_file() {
+    grep "^GITHUB_TOKEN=" "$config_file" | cut -d'"' -f2
+}
+
+if [[ -n "$GITHUB_TOKEN" ]]; then
+    AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic"
+    echo "GitHub OAuth token provided in environment variable, performing authenticated requests."
+elif [[ -f $config_file ]]; then
+    AUTHENTICATED_REQUEST=" -u $(get_token_from_file):x-oauth-basic"
+    echo "GitHub OAuth token found in config file, performing authenticated requests."
+fi
+
+curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
+curl_openqa="${curl_openqa:-"curl"}"
 
 opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
