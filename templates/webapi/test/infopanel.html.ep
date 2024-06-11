@@ -134,7 +134,7 @@
                 % if (is_operator) {
                 <div class="info-panel-actions col-xl-auto">
                     <strong>Actions:</strong><br>
-                    % if ($job->can_be_duplicated) {
+                    % if (!$job->is_pristine) {
                       <div class="btn-group btn-group-sm dropstart">
                         % my $has_dependencies = $job->has_dependencies;
                         % my $ok_results_explanation = join '/', OK_RESULTS;
@@ -155,10 +155,13 @@
                           </div>
                         % }
                         % my $restart_text = $has_dependencies ? 'Restart this and dependent jobs' : 'Restart job';
-                        %= link_post url_for('apiv1_restart', jobid => $testid) => (class => 'btn btn-secondary restart-result', 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
+                        % my $class = 'btn btn-secondary restart-result';
+                        % $class .= ' disabled' if defined $job->clone_id;
+                        %= link_post url_for('apiv1_restart', jobid => $testid) => (class => $class, 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
                             <i class="fa fa-2 fa-undo"></i><span><%= $restart_text %></span>
                         %= end
-                        <%= help_popover('Restart job' => "
+                        % my $disabled_note = defined $job->clone_id ? '<p><strong>This job cannot be restarted because it has already been restarted.</strong></p><hr>' : '';
+                        <%= help_popover('Restart job' => "$disabled_note
                             <p>Restarts the job and certain dependent jobs.</p>
                             <p>Rules for restarting dependencies:</p>
                             <ul>
@@ -166,7 +169,8 @@
                                 <li>Any kind of chained child jobs are restarted.</li>
                                 <li>Directly chained parent jobs are restarted.</li>
                             </ul>
-                            All rules are applied recursively. Advanced restarting options allow changing the behavior, e.g. excluding parents and $ok_results_explanation children.",
+                            All rules are applied recursively. Advanced restarting options allow changing the behavior, e.g. excluding parents and $ok_results_explanation children. You can open the menu of advanced restarting options by clicking on the triangle icon
+                            on the left side of the <em>$restart_text</em> button for jobs with dependencies.",
                             'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom', class => 'help_popover fa fa-question-circle btn btn-secondary');
                         %>
                       </div>
