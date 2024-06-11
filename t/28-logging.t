@@ -14,6 +14,7 @@ use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
 use Test::MockModule qw(strict);
 use Test::Output qw(stdout_like stderr_like stdout_from stderr_from);
+use Test::Fatal;
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 use FindBin;
@@ -579,6 +580,12 @@ subtest 'Formatting settings' => sub {
     like $log, qr/FOO=bar.*THE_PASSWORD.*_SECRET_TOKEN/s, 'all keys and normal values present';
     unlike $log, qr/token/, 'secret token not present';
     unlike $log, qr/123/, 'password not present';
+    $log
+      = format_settings {FOO => 'bar', SNEAKY_TEXT => 'secret', _HIDE_SECRETS_REGEX => 'SNEAK', _SECRET_KEY => 'foo'};
+    like $log, qr/FOO=bar.*SNEAKY.*HIDE.*_SECRET_KEY/s, 'keys and normal values present with customized hiding';
+    unlike $log, qr/secret/, 'value of custom secret key not present';
+    $log = format_settings {_HIDE_SECRETS_REGEX => '['};
+    like $log, qr/invalid regex.*Unmatched \[/, 'invalid hide regex yields non-critical error information';
 };
 
 ok get_channel_handle, 'get_channel_handle returns valid handle from app';
