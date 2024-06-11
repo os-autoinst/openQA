@@ -1,27 +1,12 @@
 // form elements
-.btn, .form-control {
-    font-size: 0.94rem;
-    padding: 0.6rem;
-    line-height: 0.8rem;
-}
-.btn .fa {
-    padding-right: 3pt;
-}
 .form-control {
     padding: 0.4rem;
     line-height: normal;
 }
-.darkmode {
-    .form-control, .form-control:focus {
-        color: $default-font-color-darktheme;
-        background-color: $default-bg-color-darktheme;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-}
 .form-control:invalid {
     background: #ffaaaa80;
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .form-control:invalid {
         background: #ff666680;
     }
@@ -35,9 +20,6 @@
     .form-group .control-label {
         text-align: right;
     }
-}
-select.form-control {
-    padding: 0rem;
 }
 .form-inline {
     // don't use flexbox here, this would break too much of our forms
@@ -66,28 +48,6 @@ select.form-control {
             @include box-shadow(2px 2px 4px rgba(0,0,0,.4));
         }
     }
-}
-@include btn(default,$btn-default-bg);
-@include btn(primary,$btn-primary-bg);
-@include btn(secondary,$btn-secondary-bg);
-@include btn(success,$btn-success-bg);
-@include btn(info,$btn-info-bg);
-@include btn(warning,$btn-warning-bg);
-@include btn(danger,$btn-danger-bg);
-@include btn(light,$btn-light-bg);
-@include btn(dark,$btn-dark-bg);
-@include btn(link,#fff);
-.darkmode {
-    @include btn(default,$btn-default-bg-darktheme);
-    @include btn(primary,$btn-primary-bg-darktheme);
-    @include btn(secondary,$btn-secondary-bg-darktheme);
-    @include btn(success,$btn-success-bg-darktheme);
-    @include btn(info,$btn-info-bg-darktheme);
-    @include btn(warning,$btn-warning-bg-darktheme);
-    @include btn(danger,$btn-danger-bg-darktheme);
-    @include btn(light,$btn-light-bg-darktheme);
-    @include btn(dark,$btn-dark-bg-darktheme);
-    @include btn(link,#000);
 }
 .btn {
     border: none;
@@ -149,11 +109,9 @@ select.form-control {
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
 }
-.darkmode {
-    .well {
-        background-color: $default-bg-color-darktheme;
-        border-color: #1c1c1c;
-    }
+[data-bs-theme="dark"] .well {
+    background-color: $default-bg-color-dark;
+    border-color: #1c1c1c;
 }
 
 // round images (used for comments) and badges inside summary
@@ -167,13 +125,7 @@ select.form-control {
 
 .darkmode {
     .custom-select {
-        color: $default-font-color-darktheme;
-        background-color: $default-bg-color-darktheme;
+        color: $default-font-color-dark;
+        background-color: $default-bg-color-dark;
     }
-}
-
-// fix drop-down arrow floating over text despite `with: auto;` from DataTable's upstream CSS
-div.dt-container div.dt-length select {
-    background-position: right 0.2rem center;
-    padding: 0 1em 0 0.5em;
 }

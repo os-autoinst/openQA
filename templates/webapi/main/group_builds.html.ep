@@ -10,7 +10,7 @@
             <span class="h4">
                 % if ($children) {
                     % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
-                    <a data-target="#<%= $group_id %>" href="<%= url_for('tests_overview')->query(@tests_overview_url_data, map { (groupid => $_->{id}) } @{$children});%>" onclick="return toggleChildGroups(this);" data-toggle="collapse" title="Open in new tab to view the entire build"><%= $label %></a>
+                    <a data-bs-target="#<%= $group_id %>" href="<%= url_for('tests_overview')->query(@tests_overview_url_data, map { (groupid => $_->{id}) } @{$children});%>" onclick="return toggleChildGroups(this);" data-bs-toggle="collapse" title="Open in new tab to view the entire build"><%= $label %></a>
                 % } else {
                     %= link_to $label => url_for('tests_overview')->query(@tests_overview_url_data, groupid => $group->{id})
                 % }
@@ -28,7 +28,7 @@
                 % }
             </span>
         </div>
-        <div class="px-2 align-self-stretch flex-grow-1">
+        <div class="px-2 align-self-center flex-grow-1">
             % if ($max_jobs) {
                 %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res, params => \%progress_bar_params
             % }
@@ -47,7 +47,7 @@
                                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-'
                             </span>
                         </div>
-                        <div class="px-2 align-self-stretch flex-grow-1">
+                        <div class="px-2 align-self-center flex-grow-1">
                             %= include 'main/build_progressbar', max_jobs => $child_res->{total}, params => \%child_progress_bar_params, result => $child_res
                         </div>
                     </div>

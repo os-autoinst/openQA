@@ -366,7 +366,7 @@ function refreshInfoPanel() {
       setInfoPanelClassName(testStatus.state, testStatus.result);
       const infoBoxJQuery = $(infoBoxContent);
       infoBoxJQuery.find('.timeago').timeago();
-      infoBoxJQuery.find('[data-toggle="popover"]').popover({html: true});
+      infoBoxJQuery.find('[data-bs-toggle="popover"]').popover({html: true});
       setupResultButtons();
     },
     error: function (xhr, ajaxOptions, thrownError) {

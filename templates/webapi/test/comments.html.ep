@@ -6,7 +6,7 @@
     <script id="comment-row-template" type="text/template">
         %= include 'comments/comment_row', comment_id => '@comment_id@', comment => 0, user => current_user, context => {type => 'job', id => $job->id}, put_action => 'apiv1_put_comment', delete_action => 'apiv1_delete_comment'
     </script>
-    %= form_for url_for('apiv1_post_comment', job_id => $job->id) => (method => "post", class => "form-horizontal", id => "commentForm", onsubmit => "addComment(this, true); return false;") => begin
+    %= form_for url_for('apiv1_post_comment', job_id => $job->id) => (method => "post", class => "row mb-3", id => "commentForm", onsubmit => "addComment(this, true); return false;") => begin
         %= include 'comments/add_comment_form_groups', group_comment => 0
     % end
 % }

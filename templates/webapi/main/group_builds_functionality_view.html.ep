@@ -1,6 +1,6 @@
 % for my $child (@{$children}) {
   % my $has_jobs = 0;
-  % my $title_class_mod = "text-muted";
+  % my $title_class_mod = "text-body-secondary";
 
   % for my $build_res (@$build_results) {
     % if ($build_res->{children}->{$child->{id}}->{total}) {
@@ -35,7 +35,7 @@
                     </span>
                 % }
             </div>
-            <div class="px-2 text-nowrap smaller-font pl-4">
+            <div class="px-2 text-nowrap smaller-font ps-4">
                 <abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
                     %= $build_res->{oldest}
                 </abbr>
@@ -46,7 +46,7 @@
         </div>
     % }
     % if ($has_jobs eq 0) {
-      <div class="ml-3 text-muted">
+      <div class="ml-3 text-body-secondary">
         No builds
       </div>
     % }

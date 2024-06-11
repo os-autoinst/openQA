@@ -22,7 +22,6 @@
         border: none;
         padding: 0px;
         margin: 0px;
-        color: #000;
     }
 
     .comment-anchor {
@@ -108,11 +107,8 @@
         margin: 0px;
     }
 }
-
-.darkmode {
-    .comment-body .comment-anchor {
-        color: rgb(152, 152, 152);
-    }
+[data-bs-theme="dark"] .comment-body .comment-anchor {
+    color: rgb(152, 152, 152);
 }
 
 .comment-row {
@@ -142,10 +138,4 @@
     display: grid;
     padding: 0.5rem;
     align-items: center;
-}
-
-.darkmode {
-    .input-group-text {
-        background-color: $default-bg-color-darktheme;
-    }
 }

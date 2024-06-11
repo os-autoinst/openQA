@@ -67,9 +67,9 @@
                 </span>
                 For more information, checkout the <a href="https://github.com/os-autoinst/openQA/blob/master/docs/UsersGuide.asciidoc#developer-mode" target="blank">documentation</a>.
             </p>
-            <div class="form-group row">
+            <div class="mb-3 row">
                 <div class="col-sm-5">
-                    <label for="developer-pause-at-module" class="col-form-label">
+                    <label for="developer-pause-at-module" class="form-label col-form-label">
                         Pause at module
                     </label>
                     <%= help_popover('Help for <i>pause test execution</i>' => '
@@ -83,12 +83,12 @@
                     %>
                 </div>
                 <div class="col-sm-7">
-                    <select class="custom-select" name="pause-at-module" id="developer-pause-at-module">
+                    <select class="form-select" name="pause-at-module" id="developer-pause-at-module">
                         <option selected style="font-style: italic;" id="developer-no-module">Do not pause at a certain module</option>
                     </select>
                 </div>
                 <div class="col-sm-5">
-                    <label for="developer-pause-on-timeout" class="col-form-label">
+                    <label for="developer-pause-on-timeout" class="form-label col-form-label">
                         Pause on screen mismatch
                     </label>
                     <%= help_popover('Help for <i>pause test execution</i>' => '
@@ -101,14 +101,14 @@
                     %>
                 </div>
                 <div class="col-sm-7">
-                    <select class="custom-select" id="developer-pause-on-mismatch">
+                    <select class="form-select" id="developer-pause-on-mismatch">
                         <option value="fail" selected style="font-style: italic;">Fail on mismatch as usual</option>
                         <option value="assert_screen"><code>assert_screen</code> timeout</option>
                         <option value="check_screen"><code>assert_screen</code> and <code>check_screen</code> timeout</option>
                     </select>
                 </div>
                 <div class="col-sm-5">
-                    <label for="developer-pause-on-timeout" class="col-form-label">
+                    <label for="developer-pause-on-timeout" class="form-label col-form-label">
                         Pause on next command
                     </label>
                     <%= help_popover('Help for <i>pause on next command</i>' => '
@@ -123,7 +123,7 @@
                     <input type="checkbox" id="developer-pause-on-next-command">
                 </div>
                 <div class="col-sm-5">
-                    <label for="developer-pause-on-failure" class="col-form-label">
+                    <label for="developer-pause-on-failure" class="form-label col-form-label">
                         Pause on failure (<strong>except</strong> screen mismatch assertions)
                     </label>
                     <%= help_popover('Help for <i>pause on failure</i>' => '
@@ -146,30 +146,30 @@
                 </a>
                 <a href="#" onclick="resumeTestExecution(); return false;"
                     class="btn btn-secondary developer-mode-element" data-visible-on="isPaused"
-                    data-toggle="tooltip" data-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
                     <i class="fa fa-play-circle-o"></i> Resume test execution
                 </a>
                 <a href="#" onclick="resumeTestExecution(true); return false;"
                     class="btn btn-secondary developer-mode-element" data-visible-on="onFailure"
-                    data-toggle="tooltip" data-placement="bottom" title="Ignores the failure and resumes the test execution">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ignores the failure and resumes the test execution">
                     <i class="fa fa-play-circle-o"></i> Ignore failure and resume
                 </a>
                 <a href="#" onclick="skipTimeout(); return false;"
                     class="btn btn-warning developer-mode-element" data-visible-on="canSkipTimeout"
-                    data-toggle="tooltip" data-placement="bottom" title="Causes the current assert_screen/check_screen to fail immediately (supposed to be combined with pause on assert_screen)">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Causes the current assert_screen/check_screen to fail immediately (supposed to be combined with pause on assert_screen)">
                     <i class="fa fa-play-circle-o"></i> Skip timeout
                 </a>
                 <a href="<%= url_for('edit_test', testid => $testid) %>"
                     class="btn btn-secondary developer-mode-element"
                     data-visible-on="needleEditorReady"
-                    data-toggle="tooltip" data-placement="bottom" title="Allows creating/updating a needle from the latest screenshot/match (going back to the details to select a particular screenshot is of course possible as well)">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Allows creating/updating a needle from the latest screenshot/match (going back to the details to select a particular screenshot is of course possible as well)">
                     <i class="fa fa-thumb-tack"></i>
                     Open needle editor
                 </a>
                 % if (app->mode eq 'development') {
                     <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"
                        class="btn btn-secondary developer-mode-element" data-visible-on="ownSession"
-                       data-toggle="tooltip" data-placement="bottom" title="Opens a console intended for developing the developer mode itself">
+                       data-bs-toggle="tooltip" data-bs-placement="bottom" title="Opens a console intended for developing the developer mode itself">
                         <i class="fa fa-terminal"></i> Open console
                     </a>
                 % }
@@ -206,8 +206,8 @@
         <pre id="livelog" data-url='<%= url_for("livelog", testid => $testid) %>'></pre>
         <form action="#">
             <div>
-                <input type="checkbox" id="scrolldown" checked="checked" />
-                <label for="scrolldown">Autoscroll log</label>
+                <input type="checkbox" id="scrolldown" checked="checked">
+                <label class="form-label" for="scrolldown">Autoscroll log</label>
             </div>
         </form>
     </div>

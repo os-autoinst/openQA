@@ -3,7 +3,7 @@
     </div>
     <div class="col-sm-12 col-md-6 result-filter-container">
         <input id="external-only-failed-filter" name="relevant" type="checkbox" value="1">
-        <label for="external-only-failed-filter">Show only failures</label>
+        <label class="form-label" for="external-only-failed-filter">Show only failures</label>
     </div>
 </form>
 <table id="external-table" class="display table table-striped" style="width: 100%">

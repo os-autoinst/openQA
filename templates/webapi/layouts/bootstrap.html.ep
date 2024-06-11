@@ -9,8 +9,8 @@
       <meta name="keywords" content="Testing, Linux, Qemu">
       <meta name="author" content="openQA contributors">
 
-      <meta name="csrf-token" content="<%= csrf_token %>" />
-      <meta name="csrf-param" content="csrf_token" />
+      <meta name="csrf-token" content="<%= csrf_token %>">
+      <meta name="csrf-param" content="csrf_token">
 
       % if ($title) {
       <title><%= $appname . ": " . title %></title>
@@ -53,9 +53,9 @@
       %= include 'layouts/navbar'
       <div class="container-fluid" id="content">
           %= content
-          <a id="back-to-top" href="#" class="btn btn-primary btn-lg back-to-top" role="button">
+          <button id="back-to-top" class="btn btn-primary btn-lg back-to-top">
             <i class="fa fa-angle-up"></i>
-          </a>
+          </button>
       </div>
 
       <footer class='footer'>
@@ -78,10 +78,10 @@
               </div>
             </div>
       </footer>
+      <script>
+        let theme = '<%= current_theme %>';
+        if (theme === 'detect') theme = window.matchMedia('(prefers-color-scheme: dark)').matches === true ? 'dark' : 'light';
+        document.documentElement.dataset.bsTheme = theme;
+      </script>
   </body>
-  <script>
-    let theme = '<%= current_theme %>';
-    if (theme === 'detect') theme = window.matchMedia('(prefers-color-scheme: dark)').matches === true ? 'dark' : 'light';
-    if (theme === 'dark') document.body.classList.add('darkmode');
-  </script>
 </html>

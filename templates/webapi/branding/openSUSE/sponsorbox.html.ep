@@ -1,6 +1,6 @@
 <div id="sponsorbox">
     <a href="https://www.suse.com" title="SUSE">
-        <img alt="sponsor_suse" class="icons-sponsor_suse" src="<%= icon_url 'suse.png' %>" />
+        <img alt="sponsor_suse" class="icons-sponsor_suse" src="<%= icon_url 'suse.png' %>">
     </a>
-    <div class="text-muted">Sponsor</div>
+    <div class="text-body-secondary">Sponsor</div>
 </div>

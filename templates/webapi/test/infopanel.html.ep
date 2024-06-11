@@ -20,7 +20,7 @@
                 <div class="col-xl">
                 <div>
                     % if ($job->state eq DONE) {
-                        <div class="position-absolute top-right badge-pill badge-light">
+                        <div class="badge rounded-pill text-bg-light modules-badge">
                             %= $job->passed_module_count
                             <i class='fa module_passed fa-star' title='modules passed'></i>
                             % if ($job->softfailed_module_count) {
@@ -135,11 +135,11 @@
                 <div class="info-panel-actions col-xl-auto">
                     <strong>Actions:</strong><br>
                     % if ($job->can_be_duplicated) {
-                      <div class = "btn-group btn-group-sm dropleft">
+                      <div class="btn-group btn-group-sm dropstart">
                         % my $has_dependencies = $job->has_dependencies;
                         % my $ok_results_explanation = join '/', OK_RESULTS;
                         % if ($has_dependencies) {
-                          <button class="btn btn-secondary dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <button class="btn btn-secondary dropdown-toggle" type="button" id="restart-button-options" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="caret" title="Additional options for restarting jobs with dependencies"></span>
                           </button>
                           <div class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">
@@ -156,7 +156,7 @@
                         % }
                         % my $restart_text = $has_dependencies ? 'Restart this and dependent jobs' : 'Restart job';
                         %= link_post url_for('apiv1_restart', jobid => $testid) => (class => 'btn btn-secondary restart-result', 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
-                            <i class="fa fa-2 fa-undo"></i><%= $restart_text %>
+                            <i class="fa fa-2 fa-undo"></i><span><%= $restart_text %></span>
                         %= end
                         <%= help_popover('Restart job' => "
                             <p>Restarts the job and certain dependent jobs.</p>
@@ -172,9 +172,9 @@
                       </div>
                     % }
                     % if (OpenQA::Jobs::Constants::meta_state($job->state) ne OpenQA::Jobs::Constants::FINAL) {
-                      <div class = "btn-group btn-group-sm">
+                      <div class="btn-group btn-group-sm">
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => (class => 'btn btn-warning', 'data-remote' => 'true', id => 'cancel_running') => begin
-                            <i class="fa fa-2 fa-times-circle-o"></i>Cancel job
+                            <i class="fa fa-2 fa-times-circle-o"></i><span>Cancel job</span>
                         % end
                       </div>
                     % }
@@ -185,7 +185,7 @@
                           onclick="return rescheduleProductForJob(this);" \
                           class="btn btn-danger"\
                            data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
-                             <i class="fa fa-2 fa-refresh"></i>Reschedule product from here
+                             <i class="fa fa-2 fa-refresh"></i><span>Reschedule product from here</span>
                         </a>
                       <%= help_popover('Partial product re-scheduling' => "
                           <p>Schedules the product again using the current job as starting point. That means chained parents of

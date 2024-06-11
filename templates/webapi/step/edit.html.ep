@@ -22,9 +22,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Set Area Margin</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="margin_form">
                 <div class="modal-body">
@@ -34,12 +32,12 @@
                         of 500 will always search the full screen avoiding having to wait for timeouts.
                     </p>
                     <fieldset>
-                        <label for="margin">Search Margin:</label>
+                        <label class="form-label" for="margin">Search Margin:</label>
                         <input type="text" name="margin" id="margin" class="text ui-widget-content ui-corner-all">
                     </fieldset>
                 </div>
                 <div class="modal-footer">
-                    <button type="reset" class="btn btn-default" id="cancel_margin" data-dismiss="modal">Cancel</button>
+                    <button type="reset" class="btn btn-light" id="cancel_margin" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="set_margin">Set</button>
                 </div>
             </form>
@@ -52,9 +50,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Set Match Level</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="match_form">
                 <div class="modal-body">
@@ -71,12 +67,12 @@
                         using exclude areas.
                     </p>
                     <fieldset>
-                        <label for="match">Match Level (%):</label>
+                        <label class="form-label" for="match">Match Level (%):</label>
                         <input type="text" name="match" id="match" class="text ui-widget-content ui-corner-all">
                     </fieldset>
                 </div>
                 <div class="modal-footer">
-                    <button type="reset" class="btn btn-default" id="cancel_match" data-dismiss="modal">Cancel</button>
+                    <button type="reset" class="btn btn-light" id="cancel_match" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="set_match">Set</button>
                 </div>
             </form>
@@ -89,30 +85,26 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">title</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>There is already a needle with that name, be careful not to overwrite someone else's work.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger" id="modal-overwrite-confirm">Save and Overwrite</button>
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abort</button>
             </div>
         </div>
     </div>
 </div>
 
 <div class="container-fluid">
-    <div class="row">
-        %= include 'layouts/info'
+    <div id="flash-messages" class="row">
+        %= include 'layouts/flash_messages';
         % if(@$error_messages) {
             <div class="alert alert-warning alert-dismissible fade show" role="alert" id="editor_warnings">
                 <span><%== '<ul><li>'.join('</li><li>', @$error_messages).'</li></ul>' %></span>
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         % }
     </div>
@@ -126,12 +118,13 @@
                 <div class="col-md-6">
                     %= form_for save_needle_ajax => (id => 'save_needle_form') => (method => 'POST') => begin
                         <div style="display: none;">
-                            <label>JSON:</label><br/>
+                            <label class="form-label">JSON:</label><br>
                             <textarea id="needleeditor_textarea" name="json" readOnly="yes"></textarea>
-                            <input type="hidden" id="needleeditor_image" name="imagename"/>
-                            <input type="hidden" id="needleeditor_imagedistri" name="imagedistri"/>
-                            <input type="hidden" id="needleeditor_imageversion" name="imageversion"/>
-                            <input type="hidden" id="needleeditor_imagedir" name="imagedir"/>
+                            <input type="hidden" id="needleeditor_image" name="imagename">
+                            <input type="hidden" id="needleeditor_imagedistri" name="imagedistri">
+                            <input type="hidden" id="needleeditor_imageversion" name="imageversion">
+                            <input type="hidden" id="needleeditor_imagedir" name="imagedir">
+                            <input type="hidden" id="needleeditor_overwrite" name="overwrite">
                         </div>
                         <div>
                             <p>
@@ -147,7 +140,7 @@
                                     a \'soft-fail\'. It is suggested to input the reason in the \'Description\' textbox(e.g. bsc#12345 - summary of ticket).')
                                 %>
                                 <span id="workaround_reason" style="display:none;">
-                                    <br/>
+                                    <br>
                                     <label for="input_workaround_desc">Description:</label>
                                     <input type="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
                                 </span>
@@ -162,7 +155,7 @@
                             % }
                         </div>
                         <div id="needle_editor_save_buttons">
-                            <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
+                            <button type="button" class="btn btn-light" id="review_json" title="Review JSON">Review JSON</button>
                             <button type="submit" class="btn btn-primary" id="save">Save</button>
                         </div>
                         <div id="needle_editor_loading_indication" class="properties-progress-indication" style="display: none;">
@@ -173,7 +166,7 @@
                 <div class="col-md-6">
                     <p>
                         Needle based on:
-                        <select id="tags_select" class="form-control">
+                        <select id="tags_select" class="form-select">
                             <option value="screenshot">None</option>
                             % for my $needle (@$needles) {
                                 % next if $needle->{name} eq 'screenshot';
@@ -195,7 +188,7 @@
                             % }
                         </div>
                         % if (is_operator) {
-                            <div class="form-group row">
+                            <div class="mb-3 row">
                                 <div class="col-sm-10">
                                     <input type="text" class="form-control" id="newtag" placeholder="Add new tags here"
                                             pattern="^[A-Za-z0-9-_]+$" minLength=4 title="[A-Za-z0-9-_], at least 4 characters">
@@ -217,8 +210,8 @@
             <div class="row">
                 <div class="col-lg-9">
                     <p>
-                        Take image from:
-                        <select id="image_select" class="form-control" style="width: fit-content; display: inline;">
+                        <label class="form-label" for="image_select">Take image from:</label>
+                        <select id="image_select" class="form-select" style="width: fit-content; display: inline;">
                             % for my $needle (@$needles) {
                                 <option value="<%= $needle->{name} %>">
                                     %= $needle->{title}
@@ -231,8 +224,8 @@
                         %>
                     </p>
                     <p>
-                        Copy areas from:
-                        <select id="area_select" class="form-control" style="width: fit-content; display: inline;">
+                        <label class="form-label" for="area_select">Copy areas from:</label>
+                        <select id="area_select" class="form-select" style="width: fit-content; display: inline;">
                             <option value="screenshot">None</option>
                             % for my $needle (@$needles) {
                                 % next if $needle->{name} eq 'screenshot';
@@ -249,19 +242,19 @@
                 <div class="col-lg-3">
                     Selected area:
                     %= tag div => begin
-                        %= tag button => (id => 'change-match') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-match-form' }) => (disabled => undef) => begin
+                        %= tag button => (id => 'change-match') => (class => 'btn btn-light btn-block disabled') => (data => { 'bs-toggle' => 'modal', 'bs-target' => '#change-match-form' }) => (disabled => undef) => begin
                             %= tag i => (class => 'fa fa-bar-chart')
                             Change match level
                         % end
                     % end
                     %= tag div => begin
-                        %= tag button => (id => 'change-margin') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-margin-form' }) => (disabled => undef) => begin
+                        %= tag button => (id => 'change-margin') => (class => 'btn btn-light btn-block disabled') => (data => { 'bs-toggle' => 'modal', 'bs-target' => '#change-margin-form' }) => (disabled => undef) => begin
                             %= tag i => (class => 'fa fa-area-chart')
                             Change margin
                         % end
                     % end
                     %= tag div => begin
-                        %= tag button => (id => 'toggle-click-coordinates') => (class => 'btn btn-default btn-block disabled') => (disabled => undef) => (onclick => 'toggleClickCoordinates()') => begin
+                        %= tag button => (id => 'toggle-click-coordinates') => (class => 'btn btn-light btn-block disabled') => (disabled => undef) => (onclick => 'toggleClickCoordinates()') => begin
                             %= tag i => (class => 'fa fa-mouse-pointer')
                             <span id="toggle-click-coordinates-verb">Add</span> click coordinates for<br> <code>assert_and_click</code>
                         % end

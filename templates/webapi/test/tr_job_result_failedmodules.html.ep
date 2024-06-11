@@ -11,10 +11,10 @@
     % }
 
     <a
-        data-toggle="tooltip"
-        data-placement="top"
-        data-container="#res_<%= $resultid %>"
-        data-async="<%= url_for('test_module_fails', 'testid' => $jobid, 'moduleid' => $failedmodule) %>"
+        data-bs-toggle="tooltip"
+        data-bs-placement="top"
+        data-bs-container="#res_<%= $resultid %>"
+        data-bs-async="<%= url_for('test_module_fails', 'testid' => $jobid, 'moduleid' => $failedmodule) %>"
         title="<i class='fa fa-sync fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>"
         class="failedmodule"
         href="<%= url_for('test', 'testid' => $jobid) . "#step/$failedmodule/1" %>"

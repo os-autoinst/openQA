@@ -11,6 +11,7 @@
     }
     .toggle-parallel-children {
         border-radius: 5rem;
+        padding: 6px;
     }
 }
 .collapse-all-button, .expand-all-button {
@@ -33,11 +34,6 @@
 @include media-breakpoint-up(xl) {
     #summary .time-params {
         float: right;
-    }
-}
-.darkmode {
-    #summary .time-params {
-        font-weight: bold;
     }
 }
 
@@ -68,22 +64,20 @@
         strong {
             display: block;
         }
-        .form-group label {
+        .mb-3 label {
             margin-right: 3px;
             font-weight: normal;
         }
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     #filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
-        .card-header {
-            span {
-                color: rgb(214, 214, 214);
-            }
+        .card-header span {
+            color: rgb(214, 214, 214);
         }
         .card-body, .developer-mode-element {
-            color: $default-font-color-darktheme;
-            background-color: $default-bg-color-darktheme;
+            color: $default-font-color-dark;
+            background-color: $default-bg-color-dark;
         }
     }
 }
@@ -95,4 +89,9 @@
 
 #filter-modules label {
     margin-bottom: 0;
+}
+
+#add-comments-progress-indication {
+    display: none;
+    width: 100%;
 }

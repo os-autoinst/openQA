@@ -1,5 +1,5 @@
-<div class="text-right" id="sponsorbox">
+<div class="text-end" id="sponsorbox">
     <a href="https://www.suse.com" title="SUSE">
-        <img alt="sponsor_suse" class="icons-sponsor_suse" src="<%= icon_url 'suse.png' %>" />
+        <img alt="sponsor_suse" class="icons-sponsor_suse" src="<%= icon_url 'suse.png' %>">
     </a>
 </div>

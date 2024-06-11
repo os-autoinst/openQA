@@ -213,7 +213,7 @@ function buildMediumGroup(group, media) {
   var prioHelpPopover = $(
     '<a href="#" class="help_popover fa fa-question-circle"" data-content="' +
       'The priority can be set for each row specifically. However, the priority might be left empty as well. ' +
-      'In this case default priority for the whole job group is used (displayed in italic font)." data-toggle="popover" ' +
+      'In this case default priority for the whole job group is used (displayed in italic font)." data-bs-toggle="popover" ' +
       'data-trigger="focus" role="button"></a>'
   );
   prioHelpPopover.popover({html: true});
@@ -339,7 +339,7 @@ function alignCols() {
 
 function toggleEdit() {
   $('#properties').toggle(250);
-  checkJobGroupForm('#group_properties_form');
+  validateJobGroupForm('#group_properties_form');
   if ((window.groupPropertiesEditorVisisble = !window.groupPropertiesEditorVisisble)) {
     document.getElementById('job-config-page-heading').innerHTML = 'Job';
     document.getElementById('job-config-templates-heading').style.display = 'inline';

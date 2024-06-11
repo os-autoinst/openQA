@@ -16,15 +16,8 @@ function getCookie(cname) {
 }
 
 function setupForAll() {
-  $('[data-toggle="tooltip"]').tooltip({html: true});
-  $('[data-toggle="popover"]').popover({html: true});
-  // workaround for popover with hover on text for firefox
-  $('[data-toggle="popover"]').on('click', function (e) {
-    e.target.closest('a').focus();
-  });
-
-  //$('[data-submenu]').submenupicker();
-
+  document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => new bootstrap.Popover(e, {html: true}));
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e, {html: true}));
   $.ajaxSetup({
     headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
   });
@@ -42,9 +35,7 @@ function addFlash(status, text, container) {
 
   var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
   div.append(makeFlashElement(text));
-  div.append(
-    '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
-  );
+  div.append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
   div.addClass('alert-' + status);
   container.append(div);
   return div;

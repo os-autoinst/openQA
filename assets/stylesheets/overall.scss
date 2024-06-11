@@ -1,6 +1,5 @@
 body {
     font-family: $default-font;
-    line-height: 1.428571429;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -17,15 +16,33 @@ body {
     // always show a scrollbar not to flicker on tabs / long drop downs
     overflow-y: scroll;
 }
-.darkmode {
-    color: $default-font-color-darktheme;
-    background-color: $default-bg-color-darktheme;
+[data-bs-theme="dark"] body {
+    color: $default-font-color-dark;
+    background-color: $default-bg-color-dark;
 }
+
+// don't underline links except on focus/hover
+a { text-decoration: none; }
+a:focus, a:hover { text-decoration: underline; }
+// don't underline links at all on certain places
+.nav-link { &:focus, &:hover { text-decoration: none; } }
+.dropdown-item { &:focus, &:hover { text-decoration: none; } }
+.page-link { &:focus, &:hover { text-decoration: none; } }
+.btn { &:focus, &:hover { text-decoration: none; } }
+
 @include media-breakpoint-up(md) {
     #content {
         padding-left: 40px;
         padding-right: 40px;
     }
+}
+
+// buttons
+.btn i.fa + span {
+    padding-left: 8px;
+}
+.btn-group-sm .btn.help_popover, .btn-sm.help_popover {
+    padding-top: 6px;
 }
 
 // footer
@@ -36,10 +53,8 @@ body {
     padding-bottom: 10px;
     background-color: #f5f5f5;
 }
-.darkmode {
-    .footer {
-        background-color: $default-bg-color-darktheme;
-    }
+[data-bs-theme="dark"] .footer {
+    background-color: $default-bg-color-dark;
 }
 #footer-links {
     &.left {
@@ -68,10 +83,8 @@ p {
 a {
     @include transition(all 0.2s);
 }
-.darkmode {
-    a {
-        color: $link-color-darktheme;
-    }
+[data-bs-theme="dark"] a:not(.btn) {
+    color: $link-color-dark;
 }
 .links {
     text-align: left;
@@ -90,7 +103,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     line-height: 1.1;
     color: #444;
 }
-.darkmode {
+[data-bs-theme="dark"] {
     h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         color: #bbb;
     }
@@ -100,11 +113,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .card {
     margin-bottom: 15px;
 }
-.darkmode {
-    .card {
-        background-color: $default-bg-color-darktheme;
-        border: $table-border-color-darktheme solid 0.5px;
-    }
+[data-bs-theme="dark"] .card {
+    background-color: $default-bg-color-dark;
+    border: $table-border-color-dark solid 0.5px;
 }
 // colorful card headers (Bootstrap 4 only has colorful borders or fully colored cards)
 .card.border-danger {
@@ -114,7 +125,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         background-color: #f2dede;
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .card.border-danger .card-header {
         color: #cf4644;
         background-color: #450202;
@@ -127,7 +138,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         background-color: #dff0d8;
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .card.border-success .card-header {
         color: #74f476;
         background-color: #144500;
@@ -140,7 +151,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         background-color: #fcf8e3;
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .card.border-warning .card-header {
         color: #fdca71;
         background-color: #1d1800;
@@ -153,7 +164,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         background-color: #d9edf7;
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .card.border-info .card-header {
         color: #64cafd;
         background-color: #000000;
@@ -168,21 +179,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     color: inherit;
     background-color: #f9f9f9;
 }
-.darkmode {
-    .jumbotron {
-        background-color: #111111;
-    }
+[data-bs-theme="dark"] .jumbotron {
+    background-color: #111111;
 }
 .jumbotron p {
     margin-bottom: 15px;
     font-size: 20px;
     font-weight: 200;
-}
-
-// flash messages
-#flash-messages, #editor_warnings {
-    box-sizing: border-box;
-    width: 100%;
 }
 
 // tabs
@@ -200,15 +203,15 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         color: #446E9B;
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .nav-tabs .nav-link {
-        color: $default-font-color-darktheme;
+        color: $default-font-color-dark;
 
         &:hover, &:focus, &.active {
             -webkit-box-shadow: inset 0 -2px 0 #6caef5;
             box-shadow: inset 0 -2px 0 #6caef5;
             color: #6caef5;
-            background-color: $default-bg-color-darktheme;
+            background-color: $default-bg-color-dark;
         }
     }
 }
@@ -253,26 +256,23 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     margin-right: 5px;
 }
 
-.darkmode {
+[data-bs-theme="dark"] {
     .table {
-        color: $default-font-color-darktheme;
-        background-color: $default-bg-color-darktheme;
+        color: $default-font-color-dark;
+        background-color: $default-bg-color-dark;
     }
-}
-
-.darkmode {
     // All tests pagination
     .page-link,.page-item.disabled .page-link {
-        background-color: $default-bg-color-darktheme;
-        color: $default-font-color-darktheme;
+        background-color: $default-bg-color-dark;
+        color: $default-font-color-dark;
         border:rgba(255, 255, 255, 0.3) solid 0.5px;
     }
 
     // All tests search field
     .chosen-container .chosen-drop, .chosen-container .chosen-results li, .chosen-container ul.chosen-choices {
-        background-color: $default-bg-color-darktheme;
+        background-color: $default-bg-color-dark;
         background-image: none;
-        color: $default-font-color-darktheme;
+        color: $default-font-color-dark;
     }
 
      // All tests table rows
@@ -281,31 +281,29 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     }
 
     .modal.show {
-        background-color: lighten($default-bg-color-darktheme, 25%);
+        background-color: lighten($default-bg-color-dark, 25%);
     }
     .modal-content {
-        background-color: $default-bg-color-darktheme;
+        background-color: $default-bg-color-dark;
     }
     .modal-header, .modal-footer {
         border-top: none;
         border-bottom: none;
     }
 
-    .container-fluid .btn {
-        color: $default-font-color-darktheme;
-    }
-    .container-fluid .btn-default:hover, .container-fluid .btn-default:active:hover {
+
+    .container-fluid .btn-light:hover, .container-fluid .btn-light:active:hover {
         background-color: #101010;
         color: #cbc5bf;
     }
-    .container-fluid .btn-default:active {
+    .container-fluid .btn-light:active {
         background-color: #101010;
         background-image: radial-gradient(circle, lighten(#101010, 25%) 10%, #363636 11%);
     }
 
     input, textarea {
-        background-color: $default-bg-color-darktheme;
-        color: $default-font-color-darktheme;
-        border: $table-border-color-darktheme solid 0.5px;
+        background-color: $default-bg-color-dark;
+        color: $default-font-color-dark;
+        border: $table-border-color-dark solid 0.5px;
     }
 }

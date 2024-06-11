@@ -16,14 +16,20 @@
         & > img {
             height: 100%;
             padding: 8px;
+            padding-top: 0px;
             width: auto;
         }
     }
-}
-.darkmode {
-    .navbar {
-        box-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+    .dropdown-menu {
+        margin-top: 0px;
     }
+    .nav-search-item {
+        margin: auto;
+        margin-right: 0.5em;
+    }
+}
+[data-bs-theme="dark"] .navbar {
+    box-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 .navbar-nav {
     @include media-breakpoint-up(lg) {
@@ -39,21 +45,16 @@
         }
     }
 }
-.darkmode {
-    .navbar-light .navbar-nav {
-        @include media-breakpoint-up(lg) {
-            a.nav-link {
-                color: $default-font-color-darktheme;
-            }
-            .nav-link:hover, .nav-link:focus {
-                color: $default-font-color-darktheme;
-                background-color: lighten($default-bg-color-darktheme, 25%);
-            }
+[data-bs-theme="dark"] .navbar-light .navbar-nav {
+    @include media-breakpoint-up(lg) {
+        a.nav-link {
+            color: $default-font-color-dark;
+        }
+        .nav-link:hover, .nav-link:focus {
+            color: $default-font-color-dark;
+            background-color: lighten($default-bg-color-dark, 25%);
         }
     }
-}
-.navbar-input {
-    margin: 1em 0;
 }
 .dropdown-menu {
     font-size: inherit;
@@ -63,23 +64,18 @@
     -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .dropdown-menu, .candidates-selection .dropdown-menu {
-        background-color: $default-bg-color-darktheme;
-        color: $default-font-color-darktheme;
-
+        background-color: $default-bg-color-dark;
+        color: $default-font-color-dark;
         a, h3, td, tr {
-            color: $default-font-color-darktheme;
-            background-color: $default-bg-color-darktheme;
+            color: $default-font-color-dark;
+            background-color: $default-bg-color-dark;
         }
         a:hover, a:focus, h3:hover, h3:focus {
-            color: $default-font-color-darktheme;
-            background-color: lighten($default-bg-color-darktheme, 25%);
+            color: $default-font-color-dark;
+            background-color: lighten($default-bg-color-dark, 25%);
         }
     }
 }
 
-// adjust arrows for submenus
-.dropdown-toggle::after {
-    // maybe later
-}

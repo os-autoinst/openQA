@@ -394,15 +394,14 @@ function setNeedle(sel, kind) {
   }
 
   // set areas/matches
+  document.getElementById('screenshot_button').disabled = !sel.length;
   if (sel.length) {
     // show actual candidate
     window.differ.areas = sel.data('areas');
     window.differ.matches = sel.data('matches');
-    $('#screenshot_button').prop('disabled', false);
   } else {
     // show only a screenshot
     window.differ.areas = window.differ.matches = [];
-    $('#screenshot_button').prop('disabled', true);
   }
 
   // set image
@@ -425,6 +424,6 @@ function setNeedle(sel, kind) {
   var selection = window.getSelection();
   var userSelectedText = !selection.isCollapsed && $.contains(needleDiffSelector, selection.anchorNode);
   if (!userSelectedText && $(needleDiffSelector).is(':visible')) {
-    $('#candidatesMenu').dropdown('toggle');
+    new bootstrap.Dropdown('#candidatesMenu').toggle();
   }
 }

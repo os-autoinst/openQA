@@ -1,17 +1,17 @@
 <nav class="navbar navbar-expand-lg navbar-light">
   <div class="container-fluid">
      <a class="navbar-brand" href="/"><img src="<%= icon_url 'logo.svg'%>" alt="openQA"></a>
-     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
        <span class="navbar-toggler-icon"></span>
      </button>
      <div class="collapse navbar-collapse" id="navbarNav">
-       <ul class="navbar-nav mr-auto">
+       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
          <li class='nav-item' id="all_tests">
             %= link_to 'All Tests' => url_for('tests') => class => 'nav-link'
          </li>
 
          <li class="nav-item dropdown" id="job_groups">
-            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups<span class="caret"></span></a>
+            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups</a>
             <ul class="dropdown-menu">
                %= current_job_group
                % for my $parent_or_group (@$job_groups_and_parents) {
@@ -34,18 +34,15 @@
             </ul>
           </li>
         </ul>
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item nav-search-item">
                 <form method="get" action="<%= url_for('search') %>">
-                    <input type="search" name="q" id="global-search" class="form-control navbar-input" value="<%= $self->param('q') %>" placeholder="Type to search" aria-label="Global search input"/>
+                    <input type="search" name="q" id="global-search" class="form-control navbar-input" value="<%= $self->param('q') %>" placeholder="Type to search" aria-label="Global search input">
                 </form>
             </li>
         % if (current_user) {
             <li class="nav-item dropdown" id="user-action">
-                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as
-                    %= current_user->name
-                    <span class="caret"></span>
-                </a>
+                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as <%= current_user->name %></a>
                 <div class="dropdown-menu">
                   %= tag 'h3' => class => 'dropdown-header' => 'Operators Menu'
                   %= link_to 'Activity View' => url_for('activity_view') => class => 'dropdown-item' => id => 'activity_view'

@@ -2,10 +2,8 @@
     font-weight: bold;
     color: $default-font-color;
 }
-.darkmode {
-    .parent_group_overview_grouping_active {
-        color: $default-font-color-darktheme;
-    }
+[data-bs-theme="dark"] .parent_group_overview_grouping_active {
+    color: $default-font-color-dark;
 }
 
 .parent_group_overview_grouping_by_default {

@@ -3,26 +3,31 @@
     background-color: $color-softfailed;
     color: $color-result;
 }
+.modules-badge {
+    font-size: 85%;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
 
 // test result
-.resultok { background-color: $color-ok; color: $color-result; }
-.resultpassed { background-color: $color-ok; color: $color-result; }
-.resultunknown { background-color: $color-result-missing; color: $color-result; }
-.resultrunning { background-color: $color-result-testing; color: $color-result; }
-.resultwarning { background-color: $color-warning; color: $color-result; }
-.resultsoftfailed { background-color: $color-softfailed; color: $color-result; }
-.resultfailed { background-color: $color-result-failed; color: $color-result; }
-.resultmissing { background-color: $color-result-missing; color: $color-result; }
-
-.darkmode {
-    .resultok { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
-    .resultpassed { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
-    .resultunknown { background-color: darken($color-result-missing, 75%); color: $color-result-darktheme; }
-    .resultrunning { background-color: darken($color-result-testing, 75%); color: $color-result-darktheme; }
-    .resultwarning { background-color: darken($color-warning, 75%); color: $color-result-darktheme; }
-    .resultsoftfailed { background-color: darken($color-softfailed, 75%); color: $color-result-darktheme; }
-    .resultfailed { background-color: darken($color-result-failed, 75%); color: $color-result-darktheme; }
-    .resultmissing { background-color: darken($color-result-missing, 75%); color: $color-result-darktheme; }
+.resultok { background-color: $color-ok !important; color: $color-result !important; }
+.resultpassed { background-color: $color-ok !important; color: $color-result !important; }
+.resultunknown { background-color: $color-result-missing !important; color: $color-result !important; }
+.resultrunning { background-color: $color-result-testing !important; color: $color-result !important; }
+.resultwarning { background-color: $color-warning !important; color: $color-result !important; }
+.resultsoftfailed { background-color: $color-softfailed !important; color: $color-result !important; }
+.resultfailed { background-color: $color-result-failed !important; color: $color-result !important; }
+.resultmissing { background-color: $color-result-missing !important; color: $color-result !important; }
+[data-bs-theme="dark"] {
+    .resultok { background-color: darken($color-ok, 75%) !important; color: $color-result-dark !important; }
+    .resultpassed { background-color: darken($color-ok, 75%) !important; color: $color-result-dark !important; }
+    .resultunknown { background-color: darken($color-result-missing, 75%) !important; color: $color-result-dark !important; }
+    .resultrunning { background-color: darken($color-result-testing, 75%) !important; color: $color-result-dark !important; }
+    .resultwarning { background-color: darken($color-warning, 75%) !important; color: $color-result-dark !important; }
+    .resultsoftfailed { background-color: darken($color-softfailed, 75%) !important; color: $color-result-dark !important; }
+    .resultfailed { background-color: darken($color-result-failed, 75%) !important; color: $color-result-dark !important; }
+    .resultmissing { background-color: darken($color-result-missing, 75%) !important; color: $color-result-dark !important; }
 }
 
 // Live view
@@ -71,10 +76,8 @@ span.status .fa {
     color: $default-font-color !important;
     opacity: .7;
 }
-.darkmode {
-    .action.fa {
-        color: $default-font-color-darktheme !important;
-    }
+[data-bs-theme="dark"] .action.fa {
+    color: $default-font-color-dark !important;
 }
 div.flags {
     min-height: 1em;
@@ -149,8 +152,10 @@ div.flags {
 #settings_box td {
     text-align: left;
 }
-#settings_box, #investigation_status_entry {
-    padding-top: 9px;
+html:not([data-bs-theme="dark"]) {
+    #settings_box, #investigation_status_entry {
+        padding-top: 9px;
+    }
 }
 #investigation_status_entry pre {
     margin: 2px 0px;
@@ -189,7 +194,7 @@ span.thumbnail.current {
 .resborder_softfailed, .resborder_softfail {
     border-color: $color-softfailed;
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .resborder_ok {
         border-color: darken($color-resborder-ok, 15%);
     }
@@ -232,10 +237,8 @@ span.resborder {
         float: right;
     }
 }
-.darkmode {
-    span.resborder {
-        background: #200000;
-    }
+[data-bs-theme="dark"] span.resborder {
+    background: #200000;
 }
 span.resborder_na {
     overflow: hidden;
@@ -271,11 +274,11 @@ span.resborder_na {
         line-height: 1.1;
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .text-result, .serial-result-preview {
         .resborder {
-            background-color: $default-bg-color-darktheme;
-            color: lighten($link-color-darktheme, 25%);
+            background-color: $default-bg-color-dark;
+            color: lighten($link-color-dark, 25%);
         }
     }
 }
@@ -289,10 +292,8 @@ span.resborder_na {
 pre.embedded-logfile {
     white-space: pre-wrap;
 }
-.darkmode {
-    pre.embedded-logfile {
-        color: $default-font-color-darktheme;
-    }
+[data-bs-theme="dark"] pre.embedded-logfile {
+    color: $default-font-color-dark;
 }
 
 h2.modcategory {
@@ -338,6 +339,7 @@ ul.modcategory {
 
 // filter for test details
 .details-filter {
+    margin-bottom: 10px;
     &.hidden {
         display: none;
     }
@@ -442,23 +444,23 @@ ul.modcategory {
         color: $link-hover-color;
     }
 }
-.darkmode {
+[data-bs-theme="dark"] {
     .test-result-overview-link {
         i {
-            color: $link-color-darktheme;
+            color: $link-color-dark;
         }
         i:hover {
-            color: $link-hover-color-darktheme;
+            color: $link-hover-color-dark;
         }
     }
     .card#info_box {
-        background-color: $default-bg-color-darktheme;
+        background-color: $default-bg-color-dark;
         .btn-secondary, .btn-secondary:hover {
-            color: $default-font-color-darktheme;
-            background-color: lighten($default-bg-color-darktheme, 25%);
+            color: $default-font-color-dark;
+            background-color: lighten($default-bg-color-dark, 25%);
         }
         .btn-warning, .btn-warning:hover {
-            color: $default-bg-color-darktheme;
+            color: $default-bg-color-dark;
         }
     }
 

@@ -61,12 +61,10 @@
     padding: 2px;
 }
 
-.tab-pane table#results {
-    padding-top: 9px;
-}
-
-.tab-pane .comments {
-    padding-top: 9px;
+html:not([data-bs-theme="dark"]) .tab-pane {
+        table#results, .comments {
+        padding-top: 9px;
+    }
 }
 
 // assets
@@ -234,6 +232,14 @@ a.add-parent-group {
         margin-bottom: -25px;
     }
 }
+[data-bs-theme="dark"] {
+    #job_group_list ul li {
+        background-color: $btn-default-bg-dark;
+    }
+    .dragover:after, .parent-dragover:before {
+        border-color: $btn-default-color-dark !important;
+    }
+}
 
 // job templates
 .prio input {
@@ -398,10 +404,7 @@ table#users {
         margin-left: 2px;
         height: 2rem !important;
     }
-    select {
-        width: 50px;
-    }
-    input[type="datetime-local"] {
-        width: 185px;
+    select, input[type="datetime-local"] {
+        width: initial;
     }
 }

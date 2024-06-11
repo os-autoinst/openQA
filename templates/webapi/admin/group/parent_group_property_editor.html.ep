@@ -1,17 +1,11 @@
 % layout 'bootstrap';
-
 % title 'Parent group ' . $group->name;
-
-% content_for 'ready_function' => begin
-    setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
-    checkJobGroupForm('#group_properties_form');
-% end
 
 <div class="row">
     <div class="col-sm-12">
         % if (is_admin) {
             <form action="<%= url_for('admin_groups') %>" class="corner-buttons">
-                <button type="submit" class="btn btn-default">
+                <button type="submit" class="btn btn-light">
                     <span><span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> Manage all job groups</span>
                 </button>
             </form>

@@ -38,7 +38,7 @@ function newFeature(featureVersion) {
         {
           text: 'Next',
           action: tour.next,
-          classes: 'btn btn-default '
+          classes: 'btn btn-light '
         }
       ],
       when: {
@@ -59,12 +59,12 @@ function newFeature(featureVersion) {
         {
           text: 'Prev',
           action: tour.back,
-          classes: 'btn btn-default '
+          classes: 'btn btn-light '
         },
         {
           text: 'Next',
           action: tour.next,
-          classes: 'btn btn-default '
+          classes: 'btn btn-light '
         }
       ],
       when: {
@@ -85,12 +85,12 @@ function newFeature(featureVersion) {
         {
           text: 'Prev',
           action: tour.back,
-          classes: 'btn btn-default '
+          classes: 'btn btn-light '
         },
         {
           text: 'Next',
           action: tour.next,
-          classes: 'btn btn-default '
+          classes: 'btn btn-light '
         }
       ],
       when: {
@@ -110,7 +110,7 @@ function newFeature(featureVersion) {
         {
           text: 'Prev',
           action: tour.back,
-          classes: 'btn btn-default '
+          classes: 'btn btn-light '
         }
       ],
       when: {

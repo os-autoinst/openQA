@@ -283,7 +283,8 @@ function changeClassOfDependencyJob(array, className, add) {
 }
 
 function showAddCommentsDialog() {
-  $('#add-comments-modal').modal();
+  const modal = (window.addCommentsModal = new bootstrap.Modal('#add-comments-modal'));
+  modal.show();
 }
 
 function addComments(form) {
@@ -298,22 +299,22 @@ function addComments(form) {
   const done = () => {
     progressIndication.style.display = 'none';
     controls.style.display = 'inline';
-    $('#add-comments-modal').modal('hide');
+    window.addCommentsModal.hide();
   };
   $.ajax({
     url: form.action,
     method: 'POST',
     data: $(form).serialize(),
     success: response => {
-      done();
       addFlash(
         'info',
         'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
       );
+      done();
     },
     error: (jqXHR, textStatus, errorThrown) => {
-      done();
       addFlash('danger', 'The comments could not be added: ' + getXhrError(jqXHR, textStatus, errorThrown));
+      done();
     }
   });
 }

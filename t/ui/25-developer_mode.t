@@ -698,9 +698,11 @@ subtest 'process state changes from os-autoinst/worker' => sub {
           'link to docs present';
 
         subtest 'dismissed message appears again' => sub {
+            # prevent delay due to animation
+            $driver->execute_script(
+                'document.querySelectorAll(".alert-danger").forEach(e => e.classList.remove("fade"))');
             # click "X" button of 2nd flash message
-            $driver->execute_script('$(".alert-danger").removeClass("fade")');    # prevent delay due to animation
-            $driver->execute_script('$($(".alert-danger")[1]).find("button").click();');
+            $driver->execute_script('document.querySelectorAll(".alert-danger .btn-close")[1].click()');
 
             assert_flash_messages(
                 danger => [qr/Unable to parse/, qr/another error/, qr/not ignored error/],

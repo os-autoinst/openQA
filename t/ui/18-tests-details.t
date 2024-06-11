@@ -81,6 +81,7 @@ sub find_candidate_needles {
     # save implicit waiting time as long as we are only looking for elements
     # that should be visible already
     disable_timeout;
+    return {} unless $candidates_menus[0]->is_enabled;
     $candidates_menus[0]->click();
 
     # read the tags/needles from the HTML structure

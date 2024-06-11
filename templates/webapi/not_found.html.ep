@@ -1,7 +1,7 @@
 % layout 'error';
 % title 'Page not found';
 
-<style type="text/css">
+<style>
 table pre {
     border: none;
     background-color: transparent;

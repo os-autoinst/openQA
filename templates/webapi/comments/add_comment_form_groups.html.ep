@@ -36,36 +36,34 @@
         anywhere in the text.
     </p>';
 %>
-<div class="row form-group">
-    <label for="text" class="col-sm-1 control-label">
+<div class="row mb-3 row-cols-lg-auto g-3 align-items-center">
+    <div class="col-auto input-group">
+      <label for="text" class="col-sm-1 col-form-label">
         <img class="img-circle" src="<%= current_user->gravatar(60) %>" alt="Own avatar" title="<%= current_user->name %>">
     </label>
-    <div class="col-sm-11 input-group">
         <textarea class="form-control" name="text" id="text" placeholder="Write your comments here (Markdown and special tags supported)…" rows="5"></textarea>
-        <div class="input-group-append">
-            <span class="input-group-text comment-toolbar">
-                <a class="help_popover fa fa-tag" title="Add generic label" role="button"
-                   data-template="label:keyword" onclick="insertTemplate(this)"></a>
-                <br>
-                % if ($group_comment) {
-                    <a class="help_popover fa fa-map-pin" title="Pin comment" role="button"
-                       data-template="pinned-description" onclick="insertTemplate(this)"></a>
-                % } else {
-                    <a class="help_popover fa fa-ticket" title="Add force result label" role="button"
-                       data-template="label:force_result:new_result[:description_or_bugref]" onclick="insertTemplate(this)"></a>
-                    <br>
-                    <a class="help_popover fa fa-flag" title="Flag this comment for carryover even without issue reference. This is useful for comments containing only a force-result label that won't trigger automatic carryover despite an issue reference being a part of the label." role="button"
-                       data-template="flag:carryover" onclick="insertTemplate(this)"></a>
-                % }
-                <br>
-                %= include_branding 'commenting_tools';
-                %= help_popover 'Help for comments' => $help_text, 'https://open.qa/docs/#_use_of_the_web_interface' => 'the documentation'
-            </span>
-        </div>
+        <span class="input-group-text comment-toolbar">
+          <a class="help_popover fa fa-tag" title="Add generic label" role="button"
+             data-template="label:keyword" onclick="insertTemplate(this)"></a>
+          <br>
+          % if ($group_comment) {
+          <a class="help_popover fa fa-map-pin" title="Pin comment" role="button"
+             data-template="pinned-description" onclick="insertTemplate(this)"></a>
+          % } else {
+          <a class="help_popover fa fa-ticket" title="Add force result label" role="button"
+             data-template="label:force_result:new_result[:description_or_bugref]" onclick="insertTemplate(this)"></a>
+          <br>
+          <a class="help_popover fa fa-flag" title="Flag this comment for carryover even without issue reference. This is useful for comments containing only a force-result label that won't trigger automatic carryover despite an issue reference being a part of the label." role="button"
+             data-template="flag:carryover" onclick="insertTemplate(this)"></a>
+          % }
+          <br>
+          %= include_branding 'commenting_tools';
+          %= help_popover 'Help for comments' => $help_text, 'https://open.qa/docs/#_use_of_the_web_interface' => 'the documentation'
+        </span>
     </div>
 </div>
 % unless (stash('nosubmit')) {
-<div class="row form-group">
+<div class="row mb-3">
     <div class="col-sm-1"></div>
     <div class="col-sm-11">
         <button class="btn btn-success btn-circle" type="submit" id="submitComment">

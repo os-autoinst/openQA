@@ -7,11 +7,11 @@
 % end
 
 <div class="next_previous row" style="margin-bottom: 10px; margin-top: 10px;">
-    <div class="col-12 col-md-8 my-auto" id="scenario">
-        <div class="h5">Next &amp; previous results for <i><%= $scenario %></i> (<%= link_to('latest job for this scenario' => url_for('latest')->query($job->scenario_hash)) %>)</div>
+    <div class="col-11 h5" id="scenario">
+        Next &amp; previous results for <i><%= $scenario %></i> (<%= link_to('latest job for this scenario' => url_for('latest')->query($job->scenario_hash)) %>)
     </div>
-    <div class="col-6 col-md-4">
-        <div class="float-right">
+    <div class="col-1">
+        <div class="float-end">
             <% my $content = '
                     <p>
                         Next & previous results table presents in following form:

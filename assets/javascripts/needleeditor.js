@@ -503,15 +503,18 @@ function reactToSaveNeedle(data) {
     addFlash('danger', errorMessage);
   } else if (requiresOverwrite) {
     delete data.requires_overwrite;
-    $('#modal-overwrite .modal-title').text('Sure to overwrite ' + data.needlename + '?');
-    $('#modal-overwrite').data('formdata', data);
-    $('#modal-overwrite').modal();
+    const modalElement = document.getElementById('modal-overwrite');
+    modalElement.dataset.formdata = data;
+    modalElement.getElementsByClassName('modal-title')[0].textContent = `Sure to overwrite ${data.needlename}?`;
+    if (!window.overwriteModal) {
+      window.overwriteModal = new bootstrap.Modal(modalElement);
+    }
+    window.overwriteModal.show();
   }
-
-  $('#save').prop('disabled', false);
+  document.getElementById('save').disabled = false;
 }
 
-function saveNeedle(e) {
+function saveNeedle(overwrite) {
   var form = $('#save_needle_form');
   var errors = [];
   var tagSelection = window.needles[$('#tags_select').val()];
@@ -528,7 +531,7 @@ function saveNeedle(e) {
     return false;
   }
 
-  if ($('#property_workaround').prop('checked') && !$('#input_workaround_desc').val()) {
+  if (!overwrite && $('#property_workaround').prop('checked') && !$('#input_workaround_desc').val()) {
     var confirmMessage =
       'You set the workaround property for this needle without a description. Are you sure you want to save without a description?';
     if (!confirm(confirmMessage)) {
@@ -536,15 +539,21 @@ function saveNeedle(e) {
     }
   }
 
-  $('#save').prop('disabled', true);
   $('#needle_editor_save_buttons').hide();
   $('#needle_editor_loading_indication').show();
+
+  document.getElementById('save').disabled = true;
+  document.getElementById('needleeditor_overwrite').value = overwrite ? '1' : '0';
+
   $.ajax({
     type: 'POST',
     url: form.attr('action'),
     data: form.serialize(),
     complete: reactToSaveNeedle
   });
+  if (window.overwriteModal) {
+    window.overwriteModal.hide();
+  }
   return false;
 }
 
@@ -624,30 +633,14 @@ function setup_needle_editor(imageurl, default_needle) {
       '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><pre class="popover-body"></pre></div>'
   });
 
-  $('#modal-overwrite').on('hidden.bs.modal', function () {
-    $('#save').prop('disabled', false);
-  });
-  $('#modal-overwrite-confirm').click(function () {
-    var data = $('#modal-overwrite').data('formdata');
-    data.overwrite = 1;
-    $.ajax({
-      type: 'POST',
-      url: $('#save_needle_form').attr('action'),
-      data: data,
-      complete: function (data2, status) {
-        $('#modal-overwrite').modal('hide');
-        reactToSaveNeedle(data2);
-      }
-    });
-    return false;
-  });
+  // invoke "saveNeedle()" when the "Save" button or the "Overrite" button is clicked
+  document.getElementById('save_needle_form').onsubmit = saveNeedle.bind(undefined, false);
+  document.getElementById('modal-overwrite-confirm').onclick = saveNeedle.bind(undefined, true);
 
   $('#newtag').bind('propertychange change click keyup input paste', function () {
     var invalid = !this.value.length || !this.validity.valid;
     $('#tag_add_button').prop('disabled', invalid);
   });
-
-  $('#save_needle_form').submit(saveNeedle);
   $(document).on('click', '.restart-link', function (event) {
     restartJob(event.target.dataset.url, window.jobId);
     event.preventDefault();

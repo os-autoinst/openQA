@@ -89,7 +89,7 @@ sub goto_next_previous_tab {
 $t->get_ok('/tests/99946')->status_is(200)->element_exists_not('#job_next_previous_table_wrapper .dt-container',
     'datatable of job next and previous not loaded when open tests/x');
 
-my $job_header = $t->tx->res->dom->at('#next_previous #scenario .h5');
+my $job_header = $t->tx->res->dom->at('#next_previous #scenario');
 like(
     OpenQA::Test::Case::trim_whitespace($job_header->all_text),
     qr/Next & previous results for opensuse-13\.1-DVD-i586-textmode/,

@@ -6,11 +6,6 @@ div.progress {
     margin-bottom: 9px;
     height: 18px;
 }
-.darkmode {
-    div.progress {
-        background-color: $default-bg-color-darktheme;
-    }
-}
 #build-results .progress {
     min-width: 24.5em;
 }
@@ -29,7 +24,6 @@ td div.progress {
         // don' use flex box because it leads to undesired overflow behavior
         display: inline;
         overflow: hidden;
-        padding-top: 10px;
         a {
             display: block;
             width: 100%;
