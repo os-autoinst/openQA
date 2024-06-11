@@ -108,7 +108,7 @@ if command -v $setup; then
 else
     curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex -s -- "$proxy_args"
 fi
-sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
+sed -i -e 's/#*.*method.*=.*$/method = Fake/' -e 's/#git_auto_clone =.*$/git_auto_clone = yes' /etc/openqa/openqa.ini
 
 if [[ -z $skip_suse_specifics ]] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse); then
     # add internal CA if executed within suse network
