@@ -166,7 +166,8 @@
                                 <li>Any kind of chained child jobs are restarted.</li>
                                 <li>Directly chained parent jobs are restarted.</li>
                             </ul>
-                            All rules are applied recursively. Advanced restarting options allow changing the behavior, e.g. excluding parents and $ok_results_explanation children.",
+                            All rules are applied recursively. Advanced restarting options allow changing the behavior, e.g. excluding parents and $ok_results_explanation children. You can open the menu of advanced restarting options by clicking on the triangle icon
+                            on the left side of the <em>$restart_text</em> button for jobs with dependencies.",
                             'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom', class => 'help_popover fa fa-question-circle btn btn-secondary');
                         %>
                       </div>
