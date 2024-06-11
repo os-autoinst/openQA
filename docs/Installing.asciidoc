@@ -51,6 +51,35 @@ or https://localhost:1443.
 
 image::images/openqa-in-5-minutes.gif[Running openQA job within 5 minutes]
 
+==== Triggering and cloning existing jobs within single-instance container
+
+For triggering new test or cloning existing one you can use `openqa-cli` which
+is conveniently available inside the container. The quickest and easiest way
+would be to enter an interactive session inside the already running
+single-instance container. You can spawn a new shell via:
+
+[source,sh]
+----
+podman exec -ti openqa /bin/bash
+----
+
+From there, you can trigger a new job or clone existing one, e.g.:
+
+[source,sh]
+----
+openqa-cli schedule --monitor \
+    --param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml \
+    DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 \
+    TEST=simple_boot _GROUP_ID=0 BUILD=test \
+    CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-example.git \
+    NEEDLES_DIR=%%CASEDIR%%/needles
+
+openqa-clone-job openqa-clone-job https://openqa.opensuse.org/tests/1896520
+----
+
+More details on triggering tests can also be found in the
+<<UsersGuide.asciidoc#usersguide,Users Guide>>.
+
 === Separate web UI and worker containers
 As an alternative also separate containers are provided for both the web UI
 and worker.
