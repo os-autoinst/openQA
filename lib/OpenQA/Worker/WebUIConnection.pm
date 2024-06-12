@@ -83,6 +83,11 @@ sub register ($self) {
     my $ua = $self->ua;
     my $url = $self->url->clone;
     die 'client not correctly initialized before registration' unless ($webui_host && $working_dir && $ua && $url);
+    if ($worker->worker_hostname eq 'localhost' && !is_host_local($webui_host)) {
+        $self->_set_status(disabled =>
+              {error_message => "Rejecting registration as ambiguous 'localhost' to remote web UI host '$webui_host'"});
+        return undef;
+    }
 
     # finish any existing websocket connection
     $self->finish_websocket_connection;
