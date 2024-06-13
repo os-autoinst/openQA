@@ -26,6 +26,13 @@ sub _retry_or_finish {
         {code => 2, message => "Exceeded retry count $retry_max_count. Consider job will be re-triggered later"});
 }
 
+# runs script/rsync.sh from the OBS rsync home directory for a specific project
+# note: The "project" is the first argument to script/rsync.sh and has a corresponding project on OBS and a corresponding
+#       subdirectory in the OBS rsync home directory. This subdirectory contains many generated scripts/commands which will be
+#       invoked by script/rsync.sh in a certain sequence. This Minion task merely does the top-level invocation and implements
+#       a retry but is otherwise not concerned with any details (such as invoking rsync or creating openQA jobs).
+#       Jobs of this task are enqueued by the "/obs_rsync/#project/runs" route (POST request) which can be triggered via the
+#       "Sync now" button on the web UI (e.g. on a page like "/admin/obs_rsync/openSUSE:Factory:Staging:C").
 sub run {
     my ($job, $args) = @_;
 
