@@ -81,7 +81,7 @@ sub update_caps {
     my ($self, $workercaps) = @_;
 
     for my $cap (keys %{$workercaps}) {
-        $self->set_property(uc $cap, $workercaps->{$cap}) if $workercaps->{$cap};
+        $self->set_property(uc $cap, $workercaps->{$cap}) if exists $workercaps->{$cap};
     }
 }
 
@@ -108,6 +108,7 @@ sub delete_properties {
 sub set_property {
 
     my ($self, $key, $val) = @_;
+    return $self->properties->search({key => $key})->delete unless defined $val;
 
     my $r = $self->properties->find_or_new(
         {
