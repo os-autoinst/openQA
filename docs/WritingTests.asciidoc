@@ -2094,6 +2094,14 @@ from the example distribution for an example. You may append a parameter like
 `SCENARIO_DEFINITIONS_YAML=path/of/yaml` to the query parameters of the webhook
 to change the lookup path of this file.
 
+=== Run isotovideo directly in the CI runner
+It is also possible to avoid using openQA at all and run the backend
+`isotovideo` directly within the CI runner. This simplifies the setup as no
+openQA instance is needed but of course test results cannot be examined using
+a web interface as usual. Checkout the
+https://github.com/os-autoinst/os-autoinst-distri-example/blob/main/README.md#local-testing-and-ci-environment[README of the example test distribution]
+for more information.
+
 ==== Setup a GitHub access token for openQA
 This setup is required for openQA to be able to report the status back to
 GitHub.
