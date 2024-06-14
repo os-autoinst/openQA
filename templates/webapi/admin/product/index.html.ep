@@ -12,7 +12,7 @@
 
     %= include 'layouts/info'
 
-    <table class="admintable table table-striped" id='products'>
+    <table class="admintable table table-striped" id="products" style="width: 100%">
         <thead>
             <tr>
                 <th class="col_value">Distri</th>

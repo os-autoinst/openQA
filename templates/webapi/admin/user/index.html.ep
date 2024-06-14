@@ -13,7 +13,7 @@
 
         %= include 'layouts/info'
 
-        <table id="users" class="display table table-striped">
+        <table id="users" class="display table table-striped" style="width: 100%">
             <thead>
                 <tr>
                     <th>Username</th>

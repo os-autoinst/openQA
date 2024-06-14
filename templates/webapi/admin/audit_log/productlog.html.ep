@@ -26,7 +26,7 @@
     <div class="col-sm-12" = id="scheduled-products">
         <h2><%= title %></h2>
         %= include 'layouts/info'
-        <table id="product_log_table" class="table table-striped">
+        <table id="product_log_table" class="table table-striped" style="width: 100%">
             <thead>
                 <tr>
                     <th>ID</th>

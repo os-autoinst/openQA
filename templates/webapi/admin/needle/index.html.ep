@@ -85,7 +85,7 @@
 
         <p></p>
 
-        <table id="needles" class="table table-striped" data-ajax-url="<%= url_for('admin_needle_ajax') %>">
+        <table id="needles" class="table table-striped" data-ajax-url="<%= url_for('admin_needle_ajax') %>" style="width: 100%">
             <thead>
                 <tr>
                     <th>Directory</th>
