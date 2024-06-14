@@ -178,8 +178,7 @@ function showScheduledProductModalDialog(title, body) {
 }
 
 function renderScheduledProductSettings(settings) {
-  const table = document.createElement('table');
-  table.className = 'table table-striped settings-table';
+  const tbody = document.createElement('tbody');
   for (const [key, value] of Object.entries(settings || {})) {
     const tr = document.createElement('tr');
     const keyTd = document.createElement('td');
@@ -187,8 +186,11 @@ function renderScheduledProductSettings(settings) {
     keyTd.append(key);
     valueTd.append(renderHttpUrlAsLink(value));
     tr.append(keyTd, valueTd);
-    table.append(tr);
+    tbody.append(tr);
   }
+  const table = document.createElement('table');
+  table.className = 'table table-striped settings-table';
+  table.append(tbody);
   return table;
 }
 

@@ -64,11 +64,9 @@
         text-align: center;
     }
 }
-table.settings-table tr {
-    td span {
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
+table.settings-table tr td span {
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 table.dataTable {
     td.name {

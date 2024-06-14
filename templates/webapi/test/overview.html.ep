@@ -52,10 +52,10 @@
             % for my $category (qw(passed not_complete softfailed failed scheduled running aborted none)) {
                 % my ($label, $badge) = ($labels[$index], $badges[$index++]);
                 % next unless my $count = delete $aggregated->{$category};
-                <%= $label %>: <span class="badge badge-<%= $badge %>"><%= $count %></span>
+                <%= $label %>: <span class="badge text-bg-<%= $badge %>"><%= $count %></span>
             % }
             % if (my $unknown_count = sum values %$aggregated) {
-                Unknown: <span class="badge badge-light"><%= $unknown_count %></span>
+                Unknown: <span class="badge text-bg-light"><%= $unknown_count %></span>
             % }
         </div>
     </div>

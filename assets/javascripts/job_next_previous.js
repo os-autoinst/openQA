@@ -59,7 +59,7 @@ function setupJobNextPrevious() {
 }
 
 function renderMarks(data, type, row) {
-  var html = '<span class="badge badge-info float-right" title="';
+  var html = '<span class="badge text-bg-primary float-right" title="';
   if (row.iscurrent == 1 && row.islatest == 1) {
     html += 'Current & Latest job">C&amp;L</span>';
   } else if (row.iscurrent == 1) {

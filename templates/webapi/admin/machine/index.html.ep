@@ -23,7 +23,7 @@
             %>
         </span>
 
-        <table class="admintable table table-striped" id='machines'>
+        <table class="admintable table table-striped" id="machines" style="width: 100%">
             <thead>
                 <tr>
                     <th class="col_value">Name</th>
