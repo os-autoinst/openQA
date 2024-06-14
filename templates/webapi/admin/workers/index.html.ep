@@ -10,16 +10,16 @@
     <div class="card-header">Statistics</div>
     <div class="card-body row">
         <div class="col-sm-3">
-            Online: <span class="badge badge-success"><%= $workers_online ? $workers_online : 0 %></span>
+            Online: <span class="badge text-bg-success"><%= $workers_online ? $workers_online : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Busy: <span class="badge badge-primary"><%= $workers_busy ? $workers_busy : 0 %></span>
+            Busy: <span class="badge text-bg-primary"><%= $workers_busy ? $workers_busy : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Idle: <span class="badge badge-secondary"><%= $workers_active_free ? $workers_active_free : 0 %></span>
+            Idle: <span class="badge text-bg-secondary"><%= $workers_active_free ? $workers_active_free : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Total: <span class="badge badge-dark"><%= $total ? $total : 0 %></span>
+            Total: <span class="badge text-bg-dark"><%= $total ? $total : 0 %></span>
         </div>
     </div>
 </div>

@@ -7,7 +7,7 @@
                 <i><a class="copy-jobid" href="#" data-jobid="<%= $job->id %>">#<%= $job->id %></a></i>
                 %= $job->name
                 % if ($job->archived) {
-                    <span id="job-archived-badge" class="badge badge-pill badge-secondary" title="Job has been archived">
+                    <span id="job-archived-badge" class="badge rounded-pill text-bg-secondary" title="Job has been archived">
                         <i class="fa fa-file-archive-o"></i>
                     </span>
                 % }
