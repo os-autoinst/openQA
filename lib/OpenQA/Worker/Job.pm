@@ -260,7 +260,7 @@ sub start {
     # ensure log files are empty/removed
     if (my $pooldir = $worker->pool_directory) {
         open(my $fd, '>', "$pooldir/worker-log.txt") or log_error("Could not open worker log: $!");
-        foreach my $file (qw(serial0.txt autoinst-log.txt serial_terminal.txt)) {
+        foreach my $file (qw(serial0.txt autoinst-log.txt serial_terminal.txt ipmisol-log.txt)) {
             next unless -e "$pooldir/$file";
             unlink("$pooldir/$file") or log_error("Could not unlink '$file': $!");
         }
@@ -454,7 +454,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
                 # NOTE: serial_terminal.txt is from svirt backend. But also
                 # virtio_console.log from qemu backend is renamed to
                 # serial_terminal.txt below.
-                qw(serial0 video_time.vtt serial_terminal.txt virtio_console.log virtio_console1.log virtio_console_user.log)
+                qw(serial0 video_time.vtt serial_terminal.txt ipmisol-log virtio_console.log virtio_console1.log virtio_console_user.log)
             );
             for my $other (@other) {
                 my $file = "$pooldir/$other";
@@ -463,6 +463,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
 
                 # replace some file names
                 my $ofile = $file;
+                $ofile =~ s/ipmisol-log/ipmisol-log.txt/;
                 $ofile =~ s/serial0/serial0.txt/;
                 $ofile =~ s/virtio_console(.*)\.log/serial_terminal$1.txt/;
                 $ofile =~ s/\.log/.txt/;

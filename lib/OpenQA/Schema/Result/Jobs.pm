@@ -1819,7 +1819,7 @@ sub test_resultfile_list ($self) {
     for my $f (@filelist) {
         push(@$filelist_existing, $f) if -e "$testresdir/$f";
     }
-    for my $f (qw(serial_terminal.txt serial_terminal_user.txt)) {
+    for my $f (qw(serial_terminal.txt serial_terminal_user.txt ipmisol-log.txt)) {
         push(@$filelist_existing, $f) if -s "$testresdir/$f";
     }
 
