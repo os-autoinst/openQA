@@ -205,7 +205,7 @@ container and the openQA daemons and database are stopped, calling
 
 === openQA in a browser
 
-You can try out `openqa-bootstrap` in a container environment environment like
+You can try out `openqa-bootstrap` in a container environment like
 https://docs.github.com/en/codespaces[GitHub Codespaces].
 
 On https://github.com/os-autoinst/openQA[GitHub openQA], click on the "Code"
