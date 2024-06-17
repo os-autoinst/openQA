@@ -404,7 +404,7 @@ tag:<build_id>:<type>[:<description>], e.g. tag:1234:important:Beta1.
 
 The `build_id` should be set to the `BUILD` setting of the jobs (*without* the
 `Build`-prefix shown in dashboard pages). It is also possible to include the
-`VERSION` setting which then needs to be prepended and sparated by a dash
+`VERSION` setting which then needs to be prepended and separated by a dash
 (e.g. `tag:15-SP5-25.1:important:Alpha-202210-1` where `15-SP5` is the `VERSION`
 and `25.1` the `BUILD`).
 
