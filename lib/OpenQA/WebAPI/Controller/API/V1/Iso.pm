@@ -119,9 +119,10 @@ sub create {
         return undef unless $self->validate_create_parameters;
     }
 
+    # add parameters from the product to be cloned to the %params for the new scheduled product
     my %params;
     if (defined $scheduled_product_clone_id) {
-        # clone params from previous scheduled product
+        # add clone params from previous scheduled product
         my $previously_scheduled_product = $scheduled_products->find($scheduled_product_clone_id);
         if (!$previously_scheduled_product) {
             return $self->render(text => 'Scheduled product to clone settings from not found.', status => 404);
@@ -136,14 +137,16 @@ sub create {
             }
         }
         %params = %$settings_to_clone;
-    }
-    else {
-        # job_create expects upper case keys
-        my %up_params = map { uc $_ => $params->{$_} } keys %$params;
-        # restore URL encoded /
-        %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
+
+        # remove parameters from product to be cloned that would conflict with the new arguments
+        if ($params->{TEST}) {    # TEST conflicts with _DEPRIORITIZEBUILD and _OBSOLETE
+            delete $params{$_} for qw(_DEPRIORITIZEBUILD _OBSOLETE);
+        }
     }
 
+    # add user-specified $params to %params for the new scheduled product and validate download parameters
+    # note: keys are converted to upper-case, URL-encoded slashes are restored
+    $params{uc $_} = ($params->{$_} =~ s@%2F@/@gr) for keys %$params;
     return undef unless $self->validate_download_parameters(\%params);
 
     # add entry to ScheduledProducts table and log event
