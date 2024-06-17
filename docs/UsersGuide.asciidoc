@@ -1069,8 +1069,14 @@ to operators from the user menu). The
 details about these tables. Alternatively, these settings can be
 supplied via a <<UsersGuide.asciidoc#scenarios_yaml,YAML document>>.
 
-Additionally to the necessary template matching parameters
-more parameters can be specified which are forwarded to all triggered jobs.
+Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
+`FLAVOR` and `ARCH` more parameters can be specified. Those additional
+parameters will be added as jobs settings in all triggered jobs.
+
+The parameters `MACHINE` and `TEST` additionally act as filters and `TEST`
+supports multiple comma-separated values. So adding e.g. `TEST=foo,bar` will
+only consider the test suites `foo` and `bar`.
+
 There are also special parameters which only have an influence on the way the
 triggering itself is done. These parameters all start with a leading
 underscore but are set as request parameters in the same way as the other
@@ -1098,6 +1104,9 @@ build and have existing jobs for the exact same build obsoleted. Needs `_OBSOLET
 
 _SKIP_CHAINED_DEPS:: Do not schedule parent test suites which are specified in `START_AFTER_TEST`
                      or `START_DIRECTLY_AFTER_TEST`.
+
+_INCLUDE_CHILDREN:: Include children that would otherwise not be considered when
+                    filtering test suites via the `TEST` parameter.
 
 _GROUP:: Job templates *not* matching the given group name are ignored. Does *not*
          affect obsoletion behavior.
