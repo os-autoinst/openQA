@@ -366,7 +366,7 @@ sub _schedule_iso {
         for my $job (@created_jobs) {
             my $error_messages
               = $self->_create_dependencies_for_job($job, \%job_ids_by_test_machine, \%created_jobs, \%cluster_parents,
-                $skip_chained_deps);
+                $skip_chained_deps, $include_children);
             if (!@$error_messages) {
                 push(@successful_job_ids, $job->id);
             }
@@ -625,20 +625,19 @@ defined. Internal method used by the B<_schedule_iso()> method.
 
 =cut
 
-sub _create_dependencies_for_job {
-    my ($self, $job, $job_ids_mapping, $created_jobs, $cluster_parents, $skip_chained_deps) = @_;
-
+sub _create_dependencies_for_job ($self, $job, $job_ids_mapping, $created_jobs, $cluster_parents, $skip_chained_deps,
+    $include_children)
+{
     my @error_messages;
     my $settings = $job->settings_hash;
-    my @dependencies = ([PARALLEL_WITH => OpenQA::JobDependencies::Constants::PARALLEL]);
-    push(@dependencies,
-        [START_AFTER_TEST => OpenQA::JobDependencies::Constants::CHAINED],
-        [START_DIRECTLY_AFTER_TEST => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED])
-      unless $skip_chained_deps;
-    for my $dependency (@dependencies) {
+    my @deps = ([PARALLEL_WITH => PARALLEL]);
+    push @deps, [START_AFTER_TEST => CHAINED], [START_DIRECTLY_AFTER_TEST => DIRECTLY_CHAINED]
+      if !$skip_chained_deps || $include_children;
+    for my $dependency (@deps) {
         my ($depname, $deptype) = @$dependency;
-        next unless defined $settings->{$depname};
-        for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
+        next unless defined(my $depvalue = $settings->{$depname});
+        my $might_be_skipped = $skip_chained_deps && $deptype != PARALLEL;
+        for my $testsuite (_parse_dep_variable($depvalue, $settings)) {
             my ($test, $machine) = @$testsuite;
             my $key = "$test\@$machine";
 
@@ -648,14 +647,13 @@ sub _create_dependencies_for_job {
                   if (!exists $cluster_parents->{$parent_job} && $test eq $parents[0]);
             }
 
-            if (!defined $job_ids_mapping->{$key}) {
-                my $error_msg = "$depname=$key not found - check for dependency typos and dependency cycles";
-                push(@error_messages, $error_msg);
-            }
-            else {
-                my @parents = @{$job_ids_mapping->{$key}};
-                $self->_create_dependencies_for_parents($job, $created_jobs, $deptype, \@parents);
+            if (my $parents = $job_ids_mapping->{$key}) {
+                $self->_create_dependencies_for_parents($job, $created_jobs, $deptype, [@$parents]);
                 $cluster_parents->{$key} = 'depended';
+            }
+            elsif (!$might_be_skipped) {
+                my $error_msg = "$depname=$key not found - check for dependency typos and dependency cycles";
+                push @error_messages, $error_msg;
             }
         }
     }
@@ -672,13 +670,12 @@ Makes sure the job dependencies do not create cycles
 
 =cut
 
-sub _check_for_cycle {
-    my ($child, $parent, $jobs) = @_;
+sub _check_for_cycle ($child, $parent, $jobs) {
     $jobs->{$parent} = $child;
-    return unless $jobs->{$child};
-    die 'CYCLE' if $jobs->{$child} == $parent;
+    return unless my $job = $jobs->{$child};
+    die 'CYCLE' if $job == $parent;
     # go deeper into the graph
-    _check_for_cycle($jobs->{$child}, $parent, $jobs);
+    _check_for_cycle($job, $parent, $jobs);
 }
 
 =over 4
@@ -691,9 +688,7 @@ Internal method used by the B<job_create_dependencies()> method
 
 =cut
 
-sub _create_dependencies_for_parents {
-    my ($self, $job, $created_jobs, $deptype, $parents) = @_;
-
+sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $parents) {
     my $schema = $self->result_source->schema;
     my $job_dependencies = $schema->resultset('JobDependencies');
     my $worker_class;
@@ -702,7 +697,7 @@ sub _create_dependencies_for_parents {
             _check_for_cycle($job->id, $parent, $created_jobs);
         }
         catch {
-            die 'There is a cycle in the dependencies of ' . $job->settings_hash->{TEST};
+            die 'There is a cycle in the dependencies of ' . $job->TEST;
         };
         if ($deptype eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
             unless (defined $worker_class) {
@@ -713,7 +708,7 @@ sub _create_dependencies_for_parents {
               = $schema->resultset('JobSettings')->find({job_id => $parent, key => 'WORKER_CLASS'});
             $parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '';
             if ($worker_class ne $parent_worker_class) {
-                my $test_name = $job->settings_hash->{TEST};
+                my $test_name = $job->TEST;
                 die
 "Worker class of $test_name ($worker_class) does not match the worker class of its directly chained parent ($parent_worker_class)";
             }
