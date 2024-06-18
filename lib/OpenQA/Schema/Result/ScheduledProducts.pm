@@ -670,13 +670,12 @@ Makes sure the job dependencies do not create cycles
 
 =cut
 
-sub _check_for_cycle {
-    my ($child, $parent, $jobs) = @_;
+sub _check_for_cycle ($child, $parent, $jobs) {
     $jobs->{$parent} = $child;
-    return unless $jobs->{$child};
-    die 'CYCLE' if $jobs->{$child} == $parent;
+    return unless my $job = $jobs->{$child};
+    die 'CYCLE' if $job == $parent;
     # go deeper into the graph
-    _check_for_cycle($jobs->{$child}, $parent, $jobs);
+    _check_for_cycle($job, $parent, $jobs);
 }
 
 =over 4
@@ -689,9 +688,7 @@ Internal method used by the B<job_create_dependencies()> method
 
 =cut
 
-sub _create_dependencies_for_parents {
-    my ($self, $job, $created_jobs, $deptype, $parents) = @_;
-
+sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $parents) {
     my $schema = $self->result_source->schema;
     my $job_dependencies = $schema->resultset('JobDependencies');
     my $worker_class;
@@ -700,7 +697,7 @@ sub _create_dependencies_for_parents {
             _check_for_cycle($job->id, $parent, $created_jobs);
         }
         catch {
-            die 'There is a cycle in the dependencies of ' . $job->settings_hash->{TEST};
+            die 'There is a cycle in the dependencies of ' . $job->TEST;
         };
         if ($deptype eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
             unless (defined $worker_class) {
@@ -711,7 +708,7 @@ sub _create_dependencies_for_parents {
               = $schema->resultset('JobSettings')->find({job_id => $parent, key => 'WORKER_CLASS'});
             $parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '';
             if ($worker_class ne $parent_worker_class) {
-                my $test_name = $job->settings_hash->{TEST};
+                my $test_name = $job->TEST;
                 die
 "Worker class of $test_name ($worker_class) does not match the worker class of its directly chained parent ($parent_worker_class)";
             }
