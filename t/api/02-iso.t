@@ -844,20 +844,34 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     add_opensuse_test('child_test_8', @machine);
 
     # schedule with _SKIP_CHAINED_DEPS; no chained parents should be scheduled
-    my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1});
-    is $res->json->{count}, 2, '2 jobs scheduled';
-    my %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
+    my %p = (%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1);
+    my $json_res = schedule_iso($t, \%p)->json;
+    is $json_res->{count}, 2, '2 jobs scheduled';
+    my %created_jobs = map { $jobs->find($_)->settings_hash->{TEST} => 1 } @{$json_res->{ids}};
     is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1}, 'only parallel parent scheduled'
       or diag explain \%created_jobs;
 
     # schedule with _INCLULDE_CHILDREN as well; now also all nested chained children should be included
     my %expected_jobs = map { ("child_test_$_" => 1) } 1 .. 7;
-    $res = schedule_iso($t,
-        {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1});
-    is $res->json->{count}, 7, '7 jobs scheduled';
-    %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
+    %p = (%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1);
+    $json_res = schedule_iso($t, \%p)->json;
+    is $json_res->{count}, 7, '7 jobs scheduled';
+    %created_jobs = map { $jobs->find($_)->settings_hash->{TEST} => 1 } @{$json_res->{ids}};
     is_deeply \%created_jobs, \%expected_jobs, 'only parallel parent and (nested) children scheduled'
       or diag explain \%created_jobs;
+
+    subtest 'params also taken via scheduled_product_clone_id; directly specified params still have precedence' => sub {
+        %p = (scheduled_product_clone_id => $json_res->{scheduled_product_id}, TEST => 'child_test_3', FOO => 'bar');
+        $json_res = schedule_iso($t, \%p)->json;
+        %expected_jobs = map { ("child_test_$_" => 1) } 3 .. 7;
+        %created_jobs = map {
+            my $s = $jobs->find($_)->settings_hash;
+            is $s->{FOO}, 'bar', "directly specified parameter added as job setting ($_)";
+            $s->{TEST} => 1
+        } @{$json_res->{ids}};
+        is_deeply \%created_jobs, \%expected_jobs, 'only the subtree as of the test specified via TEST was scheduled'
+          or diag explain \%created_jobs;
+    };
 
     $schema->txn_rollback;
 };
