@@ -10,6 +10,7 @@ use Mojo::IOLoop;
 use Mojo::Util qw(encode decode getopt);
 use Mojo::URL;
 use Mojo::File qw(path);
+use Mojo::Transaction::HTTP;
 use Term::ANSIColor qw(colored);
 
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
@@ -38,7 +39,7 @@ sub decode_args ($self, @args) {
     return map { decode 'UTF-8', $_ } @args;
 }
 
-sub handle_result ($self, $tx) {
+sub handle_result ($self, $tx, $orig_tx = undef) {
     my $res = $tx->res;
     my $is_json = ($res->headers->content_type // '') =~ m!application/json!;
 
@@ -70,6 +71,7 @@ sub handle_result ($self, $tx) {
     if ($options->{pretty} && $is_json) { print $JSON->encode($res->json) }
     elsif (length(my $body = $res->body)) { say $body }
 
+    $orig_tx->res($tx->res) if $orig_tx;
     return $err ? 1 : 0;
 }
 
@@ -125,9 +127,9 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
     my $factor = $ENV{OPENQA_CLI_RETRY_FACTOR} // 1;
     my $start = time;
     for (;; --$retries) {
-        $tx = $client->start($tx);
-        my $res_code = $tx->res->code // 0;
-        return $self->handle_result($tx) unless $res_code =~ /^(50[23]|0)$/ && $retries > 0;
+        my $new_tx = $client->start(Mojo::Transaction::HTTP->new(req => $tx->req));
+        my $res_code = $new_tx->res->code // 0;
+        return $self->handle_result($new_tx, $tx) unless $res_code =~ /^(50[23]|0)$/ && $retries > 0;
         my $waited = time - $start;
         print encode('UTF-8',
 "Request failed, hit error $res_code, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"

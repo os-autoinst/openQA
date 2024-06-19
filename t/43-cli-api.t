@@ -29,6 +29,7 @@ my $host = "http://127.0.0.1:$port";
 
 # Test routes
 my $op = $app->routes->find('api_ensure_operator');
+my $error_count = 0;
 $op->get(
     '/test/op/hello' => sub ($c) {
         $c->res->headers->links({next => $c->url_with->query({offset => 5})->to_abs});
@@ -48,7 +49,9 @@ $pub->any(
     });
 $pub->any(
     '/test/pub/error' => [format => ['json']] => {format => 'html'} => sub ($c) {
-        my $status = $c->param('status') // 500;
+        my $status_for_error_count = $c->param('status' . ++$error_count);
+        my $status = $status_for_error_count // $c->param('status') // 500;
+        note "returning status $status response (error count is $error_count)";
         $c->respond_to(
             json => {status => $status, json => {error => $status}},
             any => {status => $status, data => "Error: $status"});
@@ -450,7 +453,15 @@ EOF
     is $stdout, "Error: 502\n", 'request body';
 
     ($stdout, $stderr, @result) = capture sub { $api->run('--retries', '1', @params) };
-    like $stdout, qr/failed.*retrying/, 'requests are retried on error if requested';
+    like $stdout, qr/failed.*retrying.*Error: 502/s, 'requests are retried on error if requested';
+    is $result[0], 1, 'exited with non-zero return code after all retries are exhausted';
+
+    $error_count = 0;
+    @params = (@params, 'status2=200');
+    ($stdout, $stderr, @result) = capture sub { $api->run('--retries', '1', @params) };
+    unlike $stdout, qr/Error: 502/, 'response from failing request suppressed';
+    like $stdout, qr/failed, hit error 502.*retrying.*Error: 200/s, 'request can succeed after failing before';
+    is $result[0], 0, 'exited with zero return code after success on 2nd attempt';
 
     @params = ('--host', 'http://localhost:123456', '--retries', 1, 'api', 'test');
     ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
