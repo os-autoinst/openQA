@@ -140,12 +140,14 @@ sub _group_overview ($self, $resultset, $template) {
     my $group_hash = {
         id => $group->id,
         name => $group->name,
+        full_name => $group->name,
         is_parent => $is_parent_group,
         rendered_description => $group->rendered_description
     };
     if (!$is_parent_group && (my $parent = $group->parent)) {
         $group_hash->{parent_id} = $parent->id;
         $group_hash->{parent_name} = $parent->name;
+        $group_hash->{full_name} = $group->full_name;
     }
     $self->stash(
         group => $group_hash,
