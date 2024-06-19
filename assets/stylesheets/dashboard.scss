@@ -111,10 +111,10 @@ h2 .fa {
 }
 
 // highlighting on running table under 'All tests'
-.highlight_parent {
+.highlight_parent td {
     background-color: $color-highlight-parent !important;
 }
-.highlight_child {
+.highlight_child td {
     background-color: $color-highlight-child !important;
 }
 

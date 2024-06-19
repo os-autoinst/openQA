@@ -6,6 +6,8 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
+
 use Date::Format 'time2str';
 use Test::Mojo;
 use Mojo::File qw(tempdir);
@@ -346,20 +348,29 @@ is($parent_e->get_attribute('title'), "1 chained child", "dep info");
 is($parent_e->get_attribute('data-children'), "[99938]", "child");
 is($parent_e->get_attribute('data-parents'), "[]", "no parents");
 
-# no highlighting in first place
-sub no_highlighting {
-    is(scalar @{$driver->find_elements('#results #job_99937.highlight_parent')}, 0, 'parent not highlighted');
-    is(scalar @{$driver->find_elements('#results #job_99938.highlight_child')}, 0, 'child not highlighted');
+sub get_effective_cell_background ($row_id) {
+    $driver->execute_script(
+        "return Array.from(new Set(Array.from(document.getElementById('$row_id').getElementsByTagName('td'))
+            .map(e => getComputedStyle(e).backgroundColor)))"
+    );
 }
-no_highlighting;
+sub check_no_highlighting {
+    is scalar @{$driver->find_elements('#job_99937.highlight_parent')}, 0, 'parent not highlighted';
+    is scalar @{$driver->find_elements('#job_99938.highlight_child')}, 0, 'child not highlighted';
+}
+
+# no highlighting in first place
+check_no_highlighting;
 
 # job dependencies highlighted on hover
 $driver->move_to(element => $child_e);
-is(scalar @{$driver->find_elements('#results #job_99937.highlight_parent')}, 1, 'parent highlighted');
+is scalar(@{$driver->find_elements('#job_99937.highlight_parent')}), 1, 'parent highlighted';
+is_deeply get_effective_cell_background('job_99937'), ['rgb(255, 224, 224)'], 'parent highlighting effective';
 $driver->move_to(element => $parent_e);
-is(scalar @{$driver->find_elements('#results #job_99938.highlight_child')}, 1, 'child highlighted');
+is scalar(@{$driver->find_elements('#job_99938.highlight_child')}), 1, 'child highlighted';
+is_deeply get_effective_cell_background('job_99938'), ['rgb(208, 240, 255)'], 'child highlighting effective';
 $driver->move_to(xoffset => 200, yoffset => 500);
-no_highlighting;
+check_no_highlighting;
 
 # first check the relevant jobs
 my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
