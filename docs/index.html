@@ -4813,7 +4813,7 @@ tag types. Note that openQA does not define further tag types besides the
 <div class="paragraph">
 <p>The <code>build_id</code> should be set to the <code>BUILD</code> setting of the jobs (<strong>without</strong> the
 <code>Build</code>-prefix shown in dashboard pages). It is also possible to include the
-<code>VERSION</code> setting which then needs to be prepended and sparated by a dash
+<code>VERSION</code> setting which then needs to be prepended and separated by a dash
 (e.g. <code>tag:15-SP5-25.1:important:Alpha-202210-1</code> where <code>15-SP5</code> is the <code>VERSION</code>
 and <code>25.1</code> the <code>BUILD</code>).</p>
 </div>
@@ -5718,9 +5718,17 @@ details about these tables. Alternatively, these settings can be
 supplied via a <a href="#scenarios_yaml">YAML document</a>.</p>
 </div>
 <div class="paragraph">
-<p>Additionally to the necessary template matching parameters
-more parameters can be specified which are forwarded to all triggered jobs.
-There are also special parameters which only have an influence on the way the
+<p>Additionally to the necessary template matching parameters <code>DISTRI</code>, <code>VERSION</code>,
+<code>FLAVOR</code> and <code>ARCH</code> more parameters can be specified. Those additional
+parameters will be added as jobs settings in all triggered jobs.</p>
+</div>
+<div class="paragraph">
+<p>The parameters <code>MACHINE</code> and <code>TEST</code> additionally act as filters and <code>TEST</code>
+supports multiple comma-separated values. So adding e.g. <code>TEST=foo,bar</code> will
+only consider the test suites <code>foo</code> and <code>bar</code>.</p>
+</div>
+<div class="paragraph">
+<p>There are also special parameters which only have an influence on the way the
 triggering itself is done. These parameters all start with a leading
 underscore but are set as request parameters in the same way as the other
 parameters.</p>
@@ -5776,6 +5784,15 @@ _SKIP_CHAINED_DEPS
 <td class="hdlist2">
 <p>Do not schedule parent test suites which are specified in <code>START_AFTER_TEST</code>
 or <code>START_DIRECTLY_AFTER_TEST</code>.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+_INCLUDE_CHILDREN
+</td>
+<td class="hdlist2">
+<p>Include children that would otherwise not be considered when
+filtering test suites via the <code>TEST</code> parameter.</p>
 </td>
 </tr>
 <tr>
@@ -12961,7 +12978,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-06-17 04:44:25 UTC
+Last updated 2024-06-19 04:44:53 UTC
 </div>
 </div>
 </body>
