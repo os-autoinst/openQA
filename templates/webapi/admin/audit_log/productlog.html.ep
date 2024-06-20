@@ -1,8 +1,8 @@
 % layout 'bootstrap';
 % title 'Scheduled products log';
 % content_for 'ready_function' => begin
-    loadProductLogTable('<%= url_for('admin_product_log_ajax') %>',
-                        '<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => 'XXXXX', async => 1) %>',
+    loadProductLogTable('<%== url_for('admin_product_log_ajax') %>',
+                        '<%== url_for('apiv1_create_iso')->query(scheduled_product_clone_id => 'XXXXX', async => 1) %>',
                         <%= is_operator_js %>);
 % end
 
