@@ -1,5 +1,5 @@
 % layout 'bootstrap';
-% title '';
+% title $group->{full_name};
 
 %= include 'layouts/info'
 
