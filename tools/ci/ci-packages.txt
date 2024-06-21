@@ -61,7 +61,6 @@ perl-aliased-0.34
 perl-AppConfig-1.71
 perl-App-cpanminus-1.7047
 perl-Archive-Zip-1.60
-perl-B-Debug-1.26
 perl-B-Hooks-EndOfScope-0.21
 perl-B-Keywords-1.26
 perl-BSD-Resource-1.2911
@@ -117,7 +116,7 @@ perl-DBIx-Class-DeploymentHandler-0.002233
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001014
-perl-Devel-Cover-1.420.0
+perl-Devel-Cover-1.440.0
 perl-Devel-Cover-Report-Codecov-0.25
 perl-Devel-Cover-Report-Codecovbash-0.04
 perl-Devel-GlobalDestruction-0.14
