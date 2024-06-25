@@ -1,0 +1,27 @@
+#!/bin/bash -e
+
+usage() {
+    cat << EOF
+Usage: openqa-test-timeout-disable
+Disable the openQA test timeout while calling another command.
+
+Options:
+ -h, --help         display this help
+EOF
+    exit "$1"
+}
+
+opts=$(getopt -o h -l help -n "$0" -- "$@") || usage 1
+eval set -- "$opts"
+while true; do
+    case "$1" in
+        -h | --help) usage 0 ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
+done
+
+env OPENQA_TEST_TIMEOUT_DISABLE=1 $@
