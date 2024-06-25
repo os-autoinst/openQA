@@ -7,7 +7,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use Test::Warnings ':report_warnings';
-use Test::Output 'combined_like';
+use Test::Output   'combined_like';
 use Mojolicious;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::Test::TimeLimit '4';
