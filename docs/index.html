@@ -1755,11 +1755,16 @@ this document should help you to get started faster.</p>
 <div class="sect2">
 <h3 id="_getting_tests">Getting tests</h3>
 <div class="paragraph">
-<p>First you need to get actual tests. You can get openSUSE tests and needles (the
-expected results) from
-<a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">GitHub</a>. It belongs
-into the <code>/var/lib/openqa/tests/opensuse</code> directory. To make it easier, you can just
-run</p>
+<p>Set <code>git_auto_clone = yes</code> in <code>openqa.ini</code>. Then you can point <code>CASEDIR</code> and
+<code>NEEDLES_DIR</code> to Git repositories. openQA will checkout those repositories
+automatically and no manual setup is needed.</p>
+</div>
+<div class="paragraph">
+<p>Otherwise you will need to clone tests and needles manually. First you need to
+get actual tests. You can get openSUSE tests and needles (the expected results)
+from <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">GitHub</a>. It
+belongs into the <code>/var/lib/openqa/tests/opensuse</code> directory. To make it easier,
+you can just run:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -12978,7 +12983,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-06-19 04:44:53 UTC
+Last updated 2024-06-26 04:44:56 UTC
 </div>
 </div>
 </body>
