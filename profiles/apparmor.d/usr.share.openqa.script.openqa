@@ -22,6 +22,7 @@
   /usr/bin/dash ix,
   /usr/bin/perl ix,
   /usr/bin/pwd ix,
+  /usr/bin/sleep rix,
   /usr/bin/ssh rcx,
   /usr/bin/timeout rix,
   /usr/bin/unzip{,-plain} rix,
