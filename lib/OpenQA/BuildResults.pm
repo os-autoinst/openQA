@@ -69,9 +69,9 @@ sub count_job ($job, $jr, $labels) {
 
 sub add_review_badge ($build_res) {
 
-    $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total};
-    $build_res->{reviewed} = $build_res->{labeled} >= $build_res->{failed};
-    $build_res->{commented} = $build_res->{comments} >= $build_res->{failed};
+    $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total} ? 1 : 0;
+    $build_res->{reviewed} = $build_res->{labeled} >= $build_res->{failed} ? 1 : 0;
+    $build_res->{commented} = $build_res->{comments} >= $build_res->{failed} ? 1 : 0;
 }
 
 sub filter_subgroups ($group, $subgroup_filter) {
