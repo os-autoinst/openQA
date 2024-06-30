@@ -833,13 +833,13 @@ subtest 'json representation of group overview (actually not part of the API)' =
     is_deeply(
         $b48,
         {
-            reviewed => '',
-            commented => '',
+            reviewed => 0,
+            commented => 0,
             comments => 0,
             softfailed => 1,
             failed => 1,
             labeled => 0,
-            all_passed => '',
+            all_passed => 0,
             total => 3,
             passed => 0,
             skipped => 0,
