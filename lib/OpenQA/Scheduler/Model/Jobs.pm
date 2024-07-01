@@ -38,6 +38,23 @@ sub determine_scheduled_jobs ($self) {
     return $self->scheduled_jobs;
 }
 
+sub _allocate_worker_slot ($self, $allocated_workers, $worker, $job_info) {
+    $allocated_workers->{$worker->id} = $job_info->{id};
+
+    # set "one_host_only_via_worker"-flag for whole cluster if the allocated worker slot has
+    # the PARALLEL_ONE_HOST_ONLY property
+    # note: This is done so that _pick_siblings_of_running() can take it into account. To be able to reset this flag
+    #       on the next tick a separate flag is used here (and not just "one_host_only").
+    return undef unless $worker->get_property('PARALLEL_ONE_HOST_ONLY');
+    my $scheduled_jobs = $self->scheduled_jobs;
+    my $cluster_jobs = $job_info->{cluster_jobs};
+    $job_info->{one_host_only_via_worker} = 1;
+    for my $job_id (keys %$cluster_jobs) {
+        next unless my $cluster_job = $scheduled_jobs->{$job_id};
+        $cluster_job->{one_host_only_via_worker} = 1;
+    }
+}
+
 sub _allocate_jobs ($self, $free_workers) {
     my ($allocated_workers, $allocated_jobs) = ({}, {});
     my $scheduled_jobs = $self->scheduled_jobs;
@@ -102,19 +119,19 @@ sub _allocate_jobs ($self, $free_workers) {
                 # a bonus on their priority
                 my $prio = $j->{priority};    # we only consider the priority of the main job
                 for my $worker (keys %taken) {
-                    my $ji = $taken{$worker};
-                    _allocate_worker_with_priority($prio, $ji, $j, $allocated_workers, $worker);
+                    my ($picked_worker, $job_info) = @{$taken{$worker}};
+                    $self->_allocate_worker_with_priority($prio, $job_info, $j, $allocated_workers, $picked_worker);
                 }
                 %taken = ();
                 last;
             }
-            $taken{$picked_worker->id} = $sub_job;
+            $taken{$picked_worker->id} = [$picked_worker, $sub_job];
         }
-        for my $worker (keys %taken) {
-            my $ji = $taken{$worker};
-            $allocated_workers->{$worker} = $ji->{id};
-            $allocated_jobs->{$ji->{id}}
-              = {job => $ji->{id}, worker => $worker, priority_offset => \$j->{priority_offset}};
+        for my $picked_worker_id (keys %taken) {
+            my ($picked_worker, $job_info) = @{$taken{$picked_worker_id}};
+            $self->_allocate_worker_slot($allocated_workers, $picked_worker, $job_info);
+            $allocated_jobs->{$job_info->{id}}
+              = {job => $job_info->{id}, worker => $picked_worker_id, priority_offset => \$j->{priority_offset}};
         }
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
@@ -129,11 +146,11 @@ sub _allocate_jobs ($self, $free_workers) {
     return ($allocated_workers, $allocated_jobs);
 }
 
-sub _allocate_worker_with_priority ($prio, $ji, $j, $allocated_workers, $worker) {
+sub _allocate_worker_with_priority ($self, $prio, $job_info, $j, $allocated_workers, $worker) {
     if ($prio > 0) {
         # this means we will by default increase the offset per half-assigned job,
         # so if we miss 1/25 jobs, we'll bump by +24
-        log_debug "Discarding job $ji->{id} (with priority $prio) due to incomplete parallel cluster"
+        log_debug "Discarding job $job_info->{id} (with priority $prio) due to incomplete parallel cluster"
           . ', reducing priority by '
           . STARVATION_PROTECTION_PRIORITY_OFFSET;
         $j->{priority_offset} += STARVATION_PROTECTION_PRIORITY_OFFSET;
@@ -141,8 +158,9 @@ sub _allocate_worker_with_priority ($prio, $ji, $j, $allocated_workers, $worker)
     else {
         # don't "take" the worker, but make sure it's not
         # used for another job and stays around
-        log_debug "Holding worker $worker for job $ji->{id} to avoid starvation";
-        $allocated_workers->{$worker} = $ji->{id};
+        my $worker_id = $worker->id;
+        log_debug "Holding worker $worker_id for job $job_info->{id} to avoid starvation";
+        $self->_allocate_worker_slot($allocated_workers, $worker, $job_info);
     }
 }
 
@@ -363,8 +381,8 @@ sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
         last unless $worker_host;
         for my $w (@{$jobinfo->{matching_workers}}) {
             next if $allocated_workers->{$w->id};
-            next if $jobinfo->{one_host_only} && $w->host ne $worker_host;
-            $allocated_workers->{$w->id} = $jobinfo->{id};
+            $self->_allocate_worker_slot($allocated_workers, $w, $jobinfo);
+            next if ($jobinfo->{one_host_only} || $jobinfo->{one_host_only_via_worker}) && ($w->host ne $worker_host);
             $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
         }
     }
@@ -439,6 +457,7 @@ sub _update_scheduled_jobs ($self) {
             # it's the same cluster for all, so share
             $cluster_infos{$_} = $cluster_jobs for keys %$cluster_jobs;
         }
+        $info->{one_host_only_via_worker} = 0;
         $info->{one_host_only} = any { $_->{one_host_only} } values %$cluster_jobs;
         $scheduled_jobs->{$job->id} = $info;
     }
