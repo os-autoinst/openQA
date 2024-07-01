@@ -75,15 +75,8 @@ sub seen ($self, $options = {}) {
     $self->update($data);
 }
 
-# update worker's capabilities
-# param: workerid , workercaps
-sub update_caps {
-    my ($self, $workercaps) = @_;
-
-    for my $cap (keys %{$workercaps}) {
-        $self->set_property(uc $cap, $workercaps->{$cap}) if exists $workercaps->{$cap};
-    }
-}
+# update the properties of the worker with the specified capabilities
+sub update_caps ($self, $workercaps) { $self->set_property(uc $_, $workercaps->{$_}) for keys %$workercaps }
 
 sub get_property {
     my ($self, $key) = @_;
