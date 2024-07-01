@@ -93,7 +93,6 @@ sub pick_slots_with_common_worker_host ($self) {
     my $matching_worker_slots_by_host = $self->{_matching_worker_slots_by_host};
     my $visited_worker_slots_by_id = $self->{_visited_worker_slots_by_id};
     for my $job (@$to_be_scheduled) {
-        my $matching_workers = $job->{matching_workers};
         # go through the list of matching worker slots and pick one slot per host
         my $visited_worker_slots_by_host = $self->_pick_one_matching_slot_per_host($job);
 
