@@ -112,14 +112,8 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
     # Check for new lines from the logfile using recurring timer
     # Setup utility function to close the connection if something goes wrong
     my $timer_id;
-    my $close_connection = sub {
-        Mojo::IOLoop->remove($timer_id);
-        $close_hook->();
-        $self->finish;
-        close $log;
-    };
     $timer_id = Mojo::IOLoop->recurring(
-        TEXT_STREAMING_INTERVAL() => sub {
+        TEXT_STREAMING_INTERVAL() => sub (@) {
             if (!$ino) {
                 # log file was not yet opened
                 return unless open($log, '<', $logfile);
@@ -127,10 +121,9 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
                 $size = -s $logfile;
             }
 
-            # Zero tolerance for any shenanigans with the logfile, such as
-            # truncation, rotation, etc.
             my @st = stat $logfile;
-            return $close_connection->() unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
+            die "Zero tolerance for any shenanigans with the logfile, such as truncation, rotation, etc."
+              unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
 
             # If there's new data, read it all and send it out. Then
             # seek to the current position to reset EOF.
@@ -147,7 +140,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
 
     # Stop monitoring the logfile when the connection closes
     $self->on(
-        finish => sub {
+        finish => sub (@) {
             Mojo::IOLoop->remove($timer_id);
             $close_hook->($worker, $job);
         });
@@ -158,8 +151,7 @@ sub livelog ($self) {
     $self->streamtext('autoinst-log-live.txt');
 }
 
-sub liveterminal {
-    my ($self) = @_;
+sub liveterminal ($self) {
     return 0 unless $self->init();
     $self->streamtext('serial-terminal-live.txt');
 }
