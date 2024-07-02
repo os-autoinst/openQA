@@ -127,6 +127,7 @@ subtest 'capabilities' => sub {
     delete $capabilities->{cpu_flags};
     delete $capabilities->{cpu_opmode};
     delete $capabilities->{cpu_modelname};
+    delete $capabilities->{parallel_one_host_only};
 
     is_deeply(
         [sort keys %$capabilities],
@@ -142,11 +143,21 @@ subtest 'capabilities' => sub {
     # clear cached capabilities
     delete $worker->{_caps};
 
+    subtest 'capabilities include PARALLEL_ONE_HOST_ONLY setting if present' => sub {
+        $global_settings->{PARALLEL_ONE_HOST_ONLY} = 1;
+        $capabilities = $worker->capabilities;
+        is $capabilities->{parallel_one_host_only}, 1, 'capabilities contain expected information';
+        delete $global_settings->{PARALLEL_ONE_HOST_ONLY};
+    };
+    delete $worker->{_caps};
+
     subtest 'deduce worker class from CPU architecture' => sub {
         delete $global_settings->{WORKER_CLASS};
         $global_settings->{ARCH} = 'aarch64';
 
         my $capabilities = $worker->capabilities;
+        delete $capabilities->{parallel_one_host_only};
+
         is_deeply(
             [sort keys %$capabilities],
             [

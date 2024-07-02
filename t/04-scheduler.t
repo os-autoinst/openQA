@@ -584,7 +584,7 @@ subtest 'parallel pinning' => sub {
 
     subtest 'no slots on common host picked when pinning not explicitly enabled' => sub {
         $slots = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled)->pick_slots_with_common_worker_host;
-        is_deeply $slots, undef, 'undef returned if not at least one job has pinning enabled';
+        is_deeply $slots, undef, 'slots not reduced if not at least one job has pinning enabled';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws1, $ws2], 'slots of job 1 not altered';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws1, $ws2], 'slots of job 2 not altered';
     } or diag $explain_slots->();
@@ -674,6 +674,42 @@ subtest 'parallel pinning' => sub {
         is_deeply $slots, [$ws1, $ws2], 'slots on host1 returned';
         is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws1], 'slot 1 assigned to job 1';
         is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws2], 'slot 2 assigned to job 2';
+    } or diag $explain_slots->();
+
+    subtest 'setting PARALLEL_ONE_HOST_ONLY as worker property prevents cross-host scheduling' => sub {
+        $ws1->update({host => 'host1', instance => 1});
+        $ws2->update({host => 'host2', instance => 1});
+        $ws2->set_property(PARALLEL_ONE_HOST_ONLY => 1);
+        @to_be_scheduled = ({id => 1, matching_workers => [$ws1, $ws2]}, {id => 2, matching_workers => [$ws1, $ws2]});
+
+        my $picker = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled);
+        $slots = $picker->pick_slots_with_common_worker_host;
+        is_deeply $slots, [], 'empty array returned because no single host has enough matching slots';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [], 'no slots assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [], 'no slots assigned to job 2';
+    } or diag $explain_slots->();
+
+    subtest 'scheduling on one host still possible when PARALLEL_ONE_HOST_ONLY set as worker property' => sub {
+        my @slots = ($ws1, $ws2, $ws3);
+        @to_be_scheduled = ({id => 1, matching_workers => [@slots]}, {id => 2, matching_workers => [@slots]});
+
+        my $picker = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled);
+        $slots = $picker->pick_slots_with_common_worker_host;
+        is_deeply $slots, [$ws2, $ws3], 'slots from host with enough matching slots picked';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws2], 'slot 2 assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws3], 'slot 3 assigned to job 2';
+        is $picker->{_one_host_only}, 1, 'picking slots on one host only';
+    } or diag $explain_slots->();
+
+    subtest 'PARALLEL_ONE_HOST_ONLY worker property does not prevent other worker slots to be used' => sub {
+        $ws3->update({host => 'host3', instance => 1});
+        @to_be_scheduled = ({id => 1, matching_workers => [$ws2, $ws1, $ws3]}, {id => 2, matching_workers => [$ws3]});
+
+        my $picker = OpenQA::Scheduler::WorkerSlotPicker->new(\@to_be_scheduled);
+        $slots = $picker->pick_slots_with_common_worker_host;
+        is_deeply $slots, [$ws1, $ws3], 'slots from host without PARALLEL_ONE_HOST_ONLY picked';
+        is_deeply $to_be_scheduled[0]->{matching_workers}, [$ws1], 'slot 2 assigned to job 1';
+        is_deeply $to_be_scheduled[1]->{matching_workers}, [$ws3], 'slot 3 assigned to job 2';
     } or diag $explain_slots->();
 };
 

@@ -75,15 +75,8 @@ sub seen ($self, $options = {}) {
     $self->update($data);
 }
 
-# update worker's capabilities
-# param: workerid , workercaps
-sub update_caps {
-    my ($self, $workercaps) = @_;
-
-    for my $cap (keys %{$workercaps}) {
-        $self->set_property(uc $cap, $workercaps->{$cap}) if $workercaps->{$cap};
-    }
-}
+# update the properties of the worker with the specified capabilities
+sub update_caps ($self, $workercaps) { $self->set_property(uc $_, $workercaps->{$_}) for keys %$workercaps }
 
 sub get_property {
     my ($self, $key) = @_;
@@ -108,6 +101,7 @@ sub delete_properties {
 sub set_property {
 
     my ($self, $key, $val) = @_;
+    return $self->properties->search({key => $key})->delete unless defined $val;
 
     my $r = $self->properties->find_or_new(
         {

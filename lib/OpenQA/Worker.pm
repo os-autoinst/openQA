@@ -212,7 +212,7 @@ sub capabilities ($self) {
           = join(',', map { 'qemu_' . $_ } @{$supported_archs_by_cpu_archs{$caps->{cpu_arch}} // [$caps->{cpu_arch}]});
         # TODO: check installed qemu and kvm?
     }
-
+    $caps->{parallel_one_host_only} = $global_settings->{PARALLEL_ONE_HOST_ONLY};
     return $self->{_caps} = $caps;
 }
 
