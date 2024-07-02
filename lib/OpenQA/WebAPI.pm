@@ -379,10 +379,7 @@ sub startup ($self) {
     $api_description{'apiv1_worker'}
       = 'Each entry contains the "hostname", the boolean flag "connected" which can be 0 or 1 depending on the connection to the websockets server and the field "status" which can be "dead", "idle", "running". A worker can be considered "up" when "connected=1" and "status!=dead"';
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
-    my $worker_r = $api_ro->any('/workers/<workerid:num>');
-    push @api_routes, $worker_r;
     $api_public_r->any('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
-    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
     $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
 
     # api/v1/mutex
