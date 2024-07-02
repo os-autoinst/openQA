@@ -2146,3 +2146,32 @@ created or updated.
    it could be delivered. If you have gotten a 200 response then everything
    is setup correctly. Otherwise, checkout the response of the delivery to
    investigate what is wrong.
+
+== Integrating test results from external systems
+
+The openQA web UI is suitable as a test management and reporting platform.
+Next to the automated openQA tests one can integrate test results from
+external systems or manual test results by selecting a worker class without a
+worker assigned to it. The following call to `openqa-cli` creates a test job
+with the name "my_manual_test" on a local openQA instance:
+
+----
+id=$(openqa-cli api -X post jobs test=my_manual_test worker_class=::manual | jq -r .id)
+----
+
+As necessary the test can be set to an according status. To link to external
+test results a comment can be added using the `$id` we have from the above
+call:
+
+----
+openqa-cli api -X post jobs/$id/comments text="Details on http://external.tests/$id"
+----
+
+After test completion an according result can be set, for example:
+
+----
+openqa-cli api -X post jobs/$id/set_done result=passed
+----
+
+Additional information can be provided on such jobs, e.g. clickable URLs
+pointing to other resources in the settings or uploaded test reports and logs.
