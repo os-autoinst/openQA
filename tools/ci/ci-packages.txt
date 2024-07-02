@@ -326,6 +326,7 @@ sshpass-1.10
 tcl-8.6.12
 tesseract-ocr-traineddata-eng-4.1.0+git.20191030.6572757
 tk-8.6.12
+tree-1.7.0
 wallpaper-branding-openSUSE-15.6.20240408
 xauth-1.0.10
 xbitmaps-1.1.1
