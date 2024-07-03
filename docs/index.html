@@ -917,6 +917,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
+<li><a href="#_integrating_test_results_from_external_systems">Integrating test results from external systems</a></li>
 </ul>
 </li>
 <li><a href="#installing_harness">openQA test harness result processing</a>
@@ -9307,6 +9308,45 @@ investigate what is wrong.</p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_integrating_test_results_from_external_systems">Integrating test results from external systems</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The openQA web UI is suitable as a test management and reporting platform.
+Next to the automated openQA tests one can integrate test results from
+external systems or manual test results by selecting a worker class without a
+worker assigned to it. The following call to <code>openqa-cli</code> creates a test job
+with the name "my_manual_test" on a local openQA instance:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>id=$(openqa-cli api -X post jobs test=my_manual_test worker_class=::manual | jq -r .id)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As necessary the test can be set to an according status. To link to external
+test results a comment can be added using the <code>$id</code> we have from the above
+call:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>openqa-cli api -X post jobs/$id/comments text="Details on http://external.tests/$id"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After test completion an according result can be set, for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>openqa-cli api -X post jobs/$id/set_done result=passed</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Additional information can be provided on such jobs, e.g. clickable URLs
+pointing to other resources in the settings or uploaded test reports and logs.</p>
+</div>
+</div>
+</div>
 <h1 id="installing_harness" class="sect0">openQA test harness result processing</h1>
 <div class="sect1">
 <h2 id="_introduction_5">Introduction</h2>
@@ -12983,7 +13023,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-06-26 04:44:56 UTC
+Last updated 2024-07-03 04:44:01 UTC
 </div>
 </div>
 </body>
