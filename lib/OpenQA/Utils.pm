@@ -76,7 +76,7 @@ BEGIN {
     $MARKER_URLS = join('|', keys %BUGURLS);
 
     # <marker>[#<project/repo>]#<id>
-    $BUGREF_REGEX = qr{(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[a-zA-Z/_-]+)?\#(?<id>([A-Z]+-)?\d+))};
+    $BUGREF_REGEX = qr{(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[^#\s<>,]+)?\#(?<id>([A-Z]+-)?\d+))};
 }
 
 use constant UNCONSTRAINED_BUGREF_REGEX => $BUGREF_REGEX;
