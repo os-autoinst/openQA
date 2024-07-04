@@ -112,10 +112,12 @@ is(find_bugref('bsc#1234 poo#4321'), 'bsc#1234', 'first bugres found');
 is_deeply(find_bugrefs('bsc#1234 poo#4321'), ['bsc#1234', 'poo#4321'], 'multiple bugrefs found');
 is_deeply(find_bugrefs('bc#1234 #4321'), [], 'no bugrefs found');
 is bugurl('gh#os-autoinst/openQA#1234'), 'https://github.com/os-autoinst/openQA/issues/1234';
+is bugurl('gh#another_repo/openQA#1234'), 'https://github.com/another_repo/openQA/issues/1234';
 is bugurl('poo#1234'), 'https://progress.opensuse.org/issues/1234';
 is href_to_bugref('https://progress.opensuse.org/issues/1234'), 'poo#1234';
 is bugref_to_href('boo#9876'), '<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=9876">boo#9876</a>';
 is href_to_bugref('https://github.com/foo/bar/issues/1234'), 'gh#foo/bar#1234';
+is href_to_bugref('https://github.com/foo/bar_bar/issues/1234'), 'gh#foo/bar_bar#1234';
 is href_to_bugref('https://github.com/os-autoinst/os-autoinst/pull/960'), 'gh#os-autoinst/os-autoinst#960',
   'github pull are also transformed same as issues';
 is bugref_to_href('gh#foo/bar#1234'), '<a href="https://github.com/foo/bar/issues/1234">gh#foo/bar#1234</a>';
