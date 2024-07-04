@@ -7286,8 +7286,8 @@ eventually workers can be held back for the cluster.
 <p>It is possible to ensure that all jobs within the same <em>parallel</em> cluster are
 executed on the same worker host. This is useful for connecting the SUTs without
 having to connect the physical worker hosts. Use <code>PARALLEL_ONE_HOST_ONLY=1</code> to
-enable this. Note that adding this setting in <code>workers.ini</code> has currently <strong>no</strong>
-effect.</p>
+enable this. This setting can be applied as a test variable during the time
+of scheduling as well as in the worker configuration file <code>workers.ini</code>.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -13023,7 +13023,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-07-03 04:44:01 UTC
+Last updated 2024-07-04 04:44:03 UTC
 </div>
 </div>
 </body>
