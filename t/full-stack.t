@@ -22,6 +22,7 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
+use List::Util qw(any);
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
@@ -99,13 +100,11 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     # note: After all this is a test so it might uncover problems and then it is useful to have further
     #       information to know what's wrong.
     my @scheduled_jobs = values %{OpenQA::Scheduler::Model::Jobs->singleton->determine_scheduled_jobs};
-    my $has_relevant_job = 0;
+    my $relevant_jobs = 0;
     for my $job (@scheduled_jobs) {
-        next unless grep { $_ eq $worker_class } @{$job->{worker_classes}};    # uncoverable statement
-        $has_relevant_job = 1;
-        last;
+        ++$relevant_jobs if any { $_ eq $worker_class } @{$job->{worker_classes}};
     }
-    Test::More::ok $has_relevant_job, "job with worker class $worker_class scheduled"
+    Test::More::ok $relevant_jobs, "$relevant_jobs job(s) with worker class $worker_class scheduled"
       or Test::More::diag explain 'scheduled jobs: ', \@scheduled_jobs;
 
     # wait until there's not only a free worker but also one with matching worker properties
@@ -114,17 +113,18 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     my ($elapsed, $free_workers) = (0, []);
     for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {
         for my $worker (@{$free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers}) {
-            return pass "at least one free worker with class $worker_class registered"
-              if $worker->check_class($worker_class);
+            next unless $worker->check_class($worker_class);
+            pass "at least one free worker with class $worker_class registered";
+            return ($relevant_jobs, $elapsed);
         }
     }
     Test::More::fail "no worker with class $worker_class showed up after $elapsed seconds";
     Test::More::diag explain 'free workers: ', [map { $_->info } @$free_workers];
+    return ($relevant_jobs, $elapsed);
 }
 
-sub show_job_info {
-    # uncoverable subroutine
-    my ($job_id) = @_;    # uncoverable statement
+sub show_job_info ($job_id) {    # uncoverable statement
+                                 # uncoverable subroutine
     my $job = $schema->resultset('Jobs')->find($job_id);    # uncoverable statement
     Test::More::diag explain 'job info: ', $job ? $job->to_hash : undef;    # uncoverable statement
 }
@@ -137,8 +137,12 @@ like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
 ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings after test 1 was scheduled');
 
 sub assign_jobs ($worker_class = undef) {
-    check_scheduled_job_and_wait_for_free_worker $worker_class // 'qemu_i386';
-    OpenQA::Scheduler::Model::Jobs->singleton->schedule;
+    my ($to_be_scheduled, $elapsed) = check_scheduled_job_and_wait_for_free_worker $worker_class // 'qemu_i386';
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
+    for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {
+        return if @{$scheduler->schedule} >= $to_be_scheduled;
+    }
+    fail "Unable to assign $to_be_scheduled jobs after $elapsed seconds";    # uncoverable statement
 }
 sub start_worker_and_assign_jobs ($worker_class = undef) {
     $worker = start_worker get_connect_args;
