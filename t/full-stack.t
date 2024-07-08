@@ -26,6 +26,7 @@ use List::Util qw(any);
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
+use Test::Exception;
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';
@@ -123,10 +124,9 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     return ($relevant_jobs, $elapsed);
 }
 
-sub show_job_info ($job_id) {    # uncoverable statement
-                                 # uncoverable subroutine
-    my $job = $schema->resultset('Jobs')->find($job_id);    # uncoverable statement
-    Test::More::diag explain 'job info: ', $job ? $job->to_hash : undef;    # uncoverable statement
+sub show_job_info ($job_id) {
+    my $job = $schema->resultset('Jobs')->find($job_id);
+    Test::More::diag explain 'job info: ', $job ? $job->to_hash : undef;
 }
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
@@ -180,6 +180,8 @@ subtest 'testhelper' => sub {
     $test_most_mock->redefine(ok => 0);
     check_scheduled_job_and_wait_for_free_worker 'bar';
     like $fail_msg, qr/no worker with class bar showed up after .* seconds/, 'fail invoked';
+
+    lives_ok { show_job_info(42) } 'helper for showing job info';
 };
 
 $setup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_FULLSTACK_SETUP_TIMEOUT} // 2);
