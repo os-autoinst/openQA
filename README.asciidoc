@@ -2,6 +2,8 @@
 :codecov: image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA]
 :appliance: image:https://openqa.opensuse.org/tests/latest/badge?arch=x86_64&distri=openqa&flavor=dev&machine=64bit-2G&test=openqa_install%2Bpublish&version=Tumbleweed[link="https://openqa.opensuse.org/tests/latest?arch=x86_64&distri=openqa&flavor=dev&machine=64bit-2G&test=openqa_install%2Bpublish&version=Tumbleweed"]
 
+test
+
 = openQA
 
 {codecov} {circleci} {appliance}
