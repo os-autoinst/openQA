@@ -126,15 +126,9 @@ sub dead {
     $t_seen < $dt;
 }
 
-sub websocket_api_version {
-    my ($self) = @_;
-
-    # Cache this value. To avoid keeping querying the DB.
-    unless ($self->{_websocket_api_version_}) {
-        $self->{_websocket_api_version_} = $self->get_property('WEBSOCKET_API_VERSION');
-    }
-
-    return $self->{_websocket_api_version_};
+sub websocket_api_version ($self) {
+    return $self->{_websocket_api_version} if exists $self->{_websocket_api_version};
+    return $self->{_websocket_api_version} = $self->get_property('WEBSOCKET_API_VERSION');
 }
 
 sub check_class {
