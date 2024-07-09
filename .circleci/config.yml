@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  codecov: codecov/codecov@4.1.0
-
 aliases:
   - &restore_cache
     keys:
@@ -265,9 +262,12 @@ jobs:
           # https://github.com/codecov/codecov-circleci-orb/issues/157
           name: codecov gpg workaround for gpg 2.4 as included in Leap 15.6
           command: mkdir -p ~/.gnupg
-      - codecov/upload:
-          file: cover_db/codecov.json
-          cli_args: -v
+      - run:
+          name: Upload coverage report to Codecov
+          command: |
+            curl -LOs https://uploader.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov -v -f cover_db/codecov.json
 
   build-docs: &docs-template
     docker:
