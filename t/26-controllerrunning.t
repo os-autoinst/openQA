@@ -14,7 +14,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use DateTime;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '6';
-use OpenQA::WebAPI::Controller::Running;
+use OpenQA::Shared::Controller::Running;
 use OpenQA::Jobs::Constants;
 use Test::MockModule;
 use Test::Output qw(combined_is combined_like);
@@ -59,7 +59,9 @@ subtest streaming => sub {
     $id = Mojo::IOLoop->stream($stream);
     my $log = Mojo::Log->new;
     my $contapp = Mojolicious->new(log => $log);
-    my $controller = OpenQA::WebAPI::Controller::Running->new(app => $contapp);
+    push @{$contapp->plugins->namespaces}, 'OpenQA::Shared::Plugin';
+    $contapp->plugin('SharedHelpers');
+    my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
     my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
     $log->unsubscribe('message');
     $log->on(message => sub { my ($log, $level, @lines) = @_; $log_messages .= join "\n", @lines, '' });
@@ -89,7 +91,7 @@ subtest streaming => sub {
 
     # test image streaming
     $contapp->attr(schema => sub { FakeSchema->new() });
-    $controller = OpenQA::WebAPI::Controller::Running->new(app => $contapp);
+    $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
     $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
     $controller->tx($faketx);
     monkey_patch 'FakeSchema::Find', find => sub { Job->new };
@@ -122,13 +124,13 @@ subtest init => sub {
     my $not_found;
     my $render_specific_not_found;
     my $render;
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', not_found => sub { $not_found = 1 };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running',
+    monkey_patch 'OpenQA::Shared::Controller::Running', not_found => sub { $not_found = 1 };
+    monkey_patch 'OpenQA::Shared::Controller::Running',
       render_specific_not_found => sub { $render_specific_not_found = 1 };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply => sub { shift };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', render => sub { shift; $render = [@_] };
+    monkey_patch 'OpenQA::Shared::Controller::Running', reply => sub { shift };
+    monkey_patch 'OpenQA::Shared::Controller::Running', render => sub { shift; $render = [@_] };
 
-    my $c = OpenQA::WebAPI::Controller::Running->new(app => $app);
+    my $c = OpenQA::Shared::Controller::Running->new(app => $app);
     $c->param(testid => 'foobar');
 
     # No job could be found
@@ -170,15 +172,15 @@ subtest edit => sub {
     my $not_found;
     my $render_specific_not_found;
     my $found;
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', init => sub { 1 };
+    monkey_patch 'OpenQA::Shared::Controller::Running', init => sub { 1 };
     monkey_patch 'FakeSchema::Find', find => sub { undef };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', not_found => sub { $not_found = 1 };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running',
+    monkey_patch 'OpenQA::Shared::Controller::Running', not_found => sub { $not_found = 1 };
+    monkey_patch 'OpenQA::Shared::Controller::Running',
       render_specific_not_found => sub { $render_specific_not_found = 1 };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply => sub { shift };
+    monkey_patch 'OpenQA::Shared::Controller::Running', reply => sub { shift };
 
     # No results
-    my $c = OpenQA::WebAPI::Controller::Running->new(app => $app);
+    my $c = OpenQA::Shared::Controller::Running->new(app => $app);
     $c->param('testid', "foobar");
     $c->stash("job", Job->new);
     $c->edit();
@@ -187,8 +189,8 @@ subtest edit => sub {
     # Check if we can get the fake results
     my $details_count;
     monkey_patch 'FakeSchema::Find', find => sub { Job->new };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', redirect_to => sub { $found = 1; $details_count = $_[5]; };
-    $c = OpenQA::WebAPI::Controller::Running->new(app => $app);
+    monkey_patch 'OpenQA::Shared::Controller::Running', redirect_to => sub { $found = 1; $details_count = $_[5]; };
+    $c = OpenQA::Shared::Controller::Running->new(app => $app);
     $c->param('testid', "foobar");
     $c->stash("job", Job->new);
     $c->edit();
@@ -229,6 +231,7 @@ package Mojo::Transaction::Fake;
 use Mojo::Base 'Mojo::Transaction';
 sub resume { ++$_[0]{writing} and return $_[0]->emit('resume') }
 sub connection { shift->{fakestream} }
+sub remote_address { '::1' }
 
 package FakeSchema;
 sub new {

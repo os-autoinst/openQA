@@ -221,7 +221,7 @@ function addDataListener(elem, callback) {
   // ensure any previously added event source is removed
   removeDataListener(elem);
 
-  // define callback function for response of OpenQA::WebAPI::Controller::Running::streamtext
+  // define callback function for response of OpenQA::Shared::Controller::Running::streamtext
   if (!elem.eventCallback) {
     elem.eventCallback = function (event) {
       // define max size of the live log
@@ -241,7 +241,7 @@ function addDataListener(elem, callback) {
         var catData = currentData + newData;
         var newStartIndex = newLength - maxLiveLogLength;
 
-        // discard one (probably) partial line (in accordance with OpenQA::WebAPI::Controller::Running::streamtext)
+        // discard one (probably) partial line (in accordance with OpenQA::Shared::Controller::Running::streamtext)
         for (; newStartIndex < catData.length && catData[newStartIndex] !== '\n'; ++newStartIndex);
 
         firstElement.innerHTML = catData.substr(newStartIndex);
@@ -309,13 +309,13 @@ var last_event;
 
 // loads a data-url img into a canvas
 function loadCanvas(canvas, dataURL) {
-  var context = canvas[0].getContext('2d');
+  var context = canvas.getContext('2d');
 
   // load image from data url
   var scrn = new Image();
   scrn.onload = function () {
-    canvas[0].width = this.width;
-    canvas[0].height = this.height;
+    canvas.width = this.width;
+    canvas.height = this.height;
     context.clearRect(0, 0, this.width, this.width);
     context.drawImage(this, 0, 0);
   };
@@ -324,12 +324,16 @@ function loadCanvas(canvas, dataURL) {
 
 function initLivestream() {
   // setup callback for livestream
-  var livestream = $('#livestream');
-  livestream.eventCallback = function (event) {
+  const livestream = document.getElementById('livestream');
+  const servicePortDelta = Number.parseInt(document.getElementById('developer-panel').dataset.servicePortDelta);
+  const url = makeUrlAbsolute(livestream.dataset.url, servicePortDelta);
+  livestream.dataset.url = url;
+  const elements = $(livestream);
+  elements.eventCallback = function (event) {
     loadCanvas(livestream, event.data);
     last_event = event;
   };
-  liveViewElements.push({log: livestream});
+  liveViewElements.push({log: elements});
 }
 
 function disableLivestream() {
@@ -1125,7 +1129,7 @@ function processWsCommand(obj) {
     case 'error':
       // handle errors
 
-      // ignore connection errors if there's no running module according to OpenQA::WebAPI::Controller::Running::status
+      // ignore connection errors if there's no running module according to OpenQA::Shared::Controller::Running::status
       // or the test execution is stopped
       if ((!testStatus.running || developerMode.stoppingTestExecution) && category === 'cmdsrv-connection') {
         console.log('ignoring error from ws proxy: ' + what);

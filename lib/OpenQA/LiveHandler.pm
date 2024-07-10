@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious', -signatures;
 use OpenQA::Schema;
 use OpenQA::Log 'setup_log';
 use OpenQA::Setup;
+use OpenQA::Utils qw(service_port);
 
 has secrets => sub { shift->schema->read_application_secrets };
 
@@ -55,6 +56,9 @@ sub startup ($self) {
     my $job_r = $api_ro->any('/jobs/<testid:num>');
     $job_r->post('/upload_progress')->name('developer_post_upload_progress')
       ->to('live_view_handler#post_upload_progress');
+
+    # register route for live streaming of image
+    $test_r->get('/streaming')->name('streaming')->to('running#streaming');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
 }
