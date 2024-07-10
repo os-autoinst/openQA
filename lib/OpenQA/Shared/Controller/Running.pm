@@ -1,7 +1,7 @@
 # Copyright 2014-2021 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-package OpenQA::WebAPI::Controller::Running;
+package OpenQA::Shared::Controller::Running;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Mojo::Util 'b64_encode';
@@ -178,8 +178,16 @@ sub streaming ($self) {
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     my $res = $self->res;
+    my $headers = $res->headers;
     $res->code(200);
-    $res->headers->content_type('text/event-stream');
+    $headers->content_type('text/event-stream');
+
+    # set CORS headers required when not using a reverse proxy (so the port differs)
+    if ($self->is_local_request) {
+        my $req_origin = $self->req->url->base->clone->port(undef);
+        $headers->append(Vary => 'Origin');
+        $headers->access_control_allow_origin("$req_origin:" . service_port('webui'));
+    }
 
     # setup a function to stop streaming again
     my $timer_id;

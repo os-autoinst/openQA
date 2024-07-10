@@ -121,16 +121,9 @@ function reloadPage() {
   location.reload();
 }
 
-// returns an absolute "ws://" URL for the specified URL which might be relative
-function makeWsUrlAbsolute(url, servicePortDelta) {
-  // don't adjust URLs which are already absolute
-  if (url.indexOf('ws:') === 0) {
-    return url;
-  }
-
-  // read port from the page's current URL
-  var location = window.location;
-  var port = Number.parseInt(location.port);
+function makeUrlPort(servicePortDelta) {
+  // read port from the location of the current page
+  let port = Number.parseInt(window.location.port);
   if (Number.isNaN(port)) {
     // don't put a port in the URL if there's no explicit port
     port = '';
@@ -138,7 +131,24 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
     if (port !== 80 || port !== 443) port += servicePortDelta;
     port = ':' + port;
   }
+  return port;
+}
 
+function makeUrlAbsolute(url, servicePortDelta) {
+  const location = window.location;
+  const port = makeUrlPort(servicePortDelta);
+  return location.protocol + '//' + location.hostname + port + (url.indexOf('/') !== 0 ? '/' : '') + url;
+}
+
+// returns an absolute "ws://" URL for the specified URL which might be relative
+function makeWsUrlAbsolute(url, servicePortDelta) {
+  // don't adjust URLs which are already absolute
+  if (url.indexOf('ws:') === 0) {
+    return url;
+  }
+
+  const location = window.location;
+  const port = makeUrlPort(servicePortDelta);
   return (
     (location.protocol == 'https:' ? 'wss://' : 'ws:/') +
     location.hostname +
