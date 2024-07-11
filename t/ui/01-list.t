@@ -15,7 +15,7 @@ use Test::Warnings ':report_warnings';
 use Time::Seconds;
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use OpenQA::Jobs::Constants qw(NONE RUNNING);
 

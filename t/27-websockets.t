@@ -19,7 +19,7 @@ use OpenQA::WebSockets;
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::FakeWebSocketTransaction;
 use Test::Output;
 use Test::MockModule;

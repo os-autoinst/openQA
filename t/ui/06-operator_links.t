@@ -9,7 +9,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;

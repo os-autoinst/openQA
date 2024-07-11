@@ -8,7 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Log qw(log_error);
 use OpenQA::Test::TimeLimit '10';
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
 use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
 use OpenQA::Test::Utils qw(perform_minion_jobs run_gru_job);

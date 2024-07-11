@@ -10,7 +10,7 @@ use Test::MockModule;
 use Test::Mojo;
 use Test::Output 'combined_like';
 use Test::Warnings;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::WebAPI::Auth::OAuth2;
 use Mojo::File qw(tempdir path);

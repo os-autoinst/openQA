@@ -4,7 +4,7 @@
 package OpenQA::Test::Case;
 use Mojo::Base -base;
 
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
 use OpenQA::Schema::Result::Users;
 use OpenQA::Schema;

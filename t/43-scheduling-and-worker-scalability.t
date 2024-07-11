@@ -17,7 +17,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils qw(service_port);
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(setup_log);
 use OpenQA::Test::Utils

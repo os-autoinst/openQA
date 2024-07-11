@@ -12,7 +12,7 @@ use OpenQA::JobDependencies::Constants;
 use OpenQA::Resource::Jobs qw(job_restart);
 use OpenQA::Resource::Locks;
 use OpenQA::Utils;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing);
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::WebSockets::Client;

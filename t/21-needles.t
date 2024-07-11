@@ -11,7 +11,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Cwd 'abs_path';
 use OpenQA::Schema;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Task::Needle::Scan;
 use File::Find;

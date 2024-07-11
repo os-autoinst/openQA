@@ -14,7 +14,7 @@ use OpenQA::App;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(redirect_output);
 use OpenQA::Test::TimeLimit '10';
 
