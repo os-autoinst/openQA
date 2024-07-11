@@ -35,6 +35,9 @@ openqa-cli - provides command-line access to the openQA API
     # Show details for OSD job (prettified JSON)
     openqa-cli api --osd --pretty jobs/4160811
 
+    # Trigger a product using a hook script
+    openqa-cli api --o3 --hook-script foo -X POST isos
+
     # Archive job from O3
     openqa-cli archive --o3 408 /tmp/job_408
 

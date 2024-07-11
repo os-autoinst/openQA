@@ -26,6 +26,7 @@ sub command ($self, @args) {
       'd|data=s' => \$data,
       'f|form' => \my $form,
       'j|json' => \my $json,
+      'H|hook-scripts=s' => \my $hooksrc,
       'param-file=s' => \my @param_file,
       'r|retries=i' => \my $retries,
       'X|method=s' => \(my $method = 'GET');
@@ -33,9 +34,22 @@ sub command ($self, @args) {
     @args = $self->decode_args(@args);
     die $self->usage unless my $path = shift @args;
 
-    $data = path($data_file)->slurp if $data_file;
-    my @data = ($data);
-    my $params = $form ? decode_json($data) : $self->parse_params(\@args, \@param_file);
+    my $params;
+    my @data;
+    if ($hooksrc) {
+	# if $hooksrc is a json  
+        my $hookdata = path("hook/$hooksrc.json")->slurp;
+	$data = ($hookdata);
+	my $hookparams = decode_json($data);
+	my $argsparams = $self->parse_params(\@args, \@param_file);
+	$params = {%$hookparams, %$argsparams};
+	# otherwise try to run a script
+	# here
+    } else {
+	$data = path($data_file)->slurp if $data_file;
+	@data = ($data);
+	$params = $form ? decode_json($data) : $self->parse_params(\@args, \@param_file);
+    }
     @data = (form => $params) if keys %$params;
 
     my $headers = $self->parse_headers(@headers);
@@ -114,18 +128,20 @@ sub command ($self, @args) {
       schema=JobTemplates-01.yaml preview=0 --param-file template=foo.yaml
 
     # Post job template (from JSON file)
-    openqa-cli api --data-file form.json -X POST job_templates_scheduling/1
+    openqa-cli api -f --data-file form.json -X POST job_templates_scheduling/1
 
   Options:
         --apibase <path>          API base, defaults to /api/v1
         --apikey <key>            API key
         --apisecret <secret>      API secret
     -a, --header <name:value>     One or more additional HTTP headers
-    -D, --data-file <path>        Load content to send with request from file
+    -D, --data-file <path>        Load content to send with request from file.
+                                  Works with when -f is provided
     -d, --data <string>           Content to send with request, alternatively
                                   you can also pipe data to openqa-cli
     -f, --form                    Turn JSON object into form parameters
         --host <host>             Target host, defaults to http://localhost
+    -H, --hook-scripts            Use a hook script!! TDB
     -h, --help                    Show this summary of available options
     -j, --json                    Request content is JSON
         --osd                     Set target host to http://openqa.suse.de
