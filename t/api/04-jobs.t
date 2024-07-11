@@ -222,47 +222,38 @@ subtest 'validation of IDs' => sub {
 };
 
 subtest 'job overview' => sub {
+    # define expected jobs
+    my %job_99940 = (id => 99940, name => 'opensuse-Factory-DVD-x86_64-Build0048@0815-doc@64bit');
+    my %job_99939 = (id => 99939, name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit');
+    my %job_99938 = (id => 99938, name => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit');
+    my %job_99936 = (id => 99936, name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit-uefi');
+    my %job_99981 = (id => 99981, name => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit');
+
     my $query = Mojo::URL->new('/api/v1/jobs/overview');
 
-    # overview for latest build in group 1001
-    $query->query(
-        distri => 'opensuse',
-        version => 'Factory',
-        groupid => '1001',
-    );
-    $t->get_ok($query->path_query)->status_is(200);
-    is_deeply(
-        $t->tx->res->json,
-        [
-            {
-                id => 99940,
-                name => 'opensuse-Factory-DVD-x86_64-Build0048@0815-doc@64bit',
-            }
-        ],
-        'latest build present'
-    );
+    subtest 'specific distri/version within job group' => sub {
+        $query->query(distri => 'opensuse', version => 'Factory', groupid => '1001');
+        $t->get_ok($query->path_query)->status_is(200);
+        $t->json_is('' => [\%job_99940], 'latest build present');
+    };
 
-    # overview for build 0048
-    $query->query(build => '0048');
-    $t->get_ok($query->path_query)->status_is(200);
-    is_deeply(
-        $t->tx->res->json,
-        [
-            {
-                id => 99939,
-                name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit',
-            },
-            {
-                id => 99938,
-                name => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
-            },
-            {
-                id => 99936,
-                name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit-uefi',
-            },
-        ],
-        'latest build present'
-    );
+    subtest 'specific build without additional parameters' => sub {
+        $query->query(build => '0048');
+        $t->get_ok($query->path_query)->status_is(200);
+        $t->json_is('' => [\%job_99939, \%job_99938, \%job_99936], 'latest build present');
+    };
+
+    subtest 'additional parameters' => sub {
+        $query->query(build => '0048', machine => '64bit');
+        $t->get_ok($query->path_query)->status_is(200);
+        $t->json_is('' => [\%job_99939, \%job_99938], 'only 64-bit jobs present');
+        $query->query(arch => 'i686');
+        $t->get_ok($query->path_query)->status_is(200);
+        $t->json_is('' => [\%job_99981], 'only i686 jobs present');
+        $query->query(build => '0048', state => DONE, result => SOFTFAILED);
+        $t->get_ok($query->path_query)->status_is(200);
+        $t->json_is('' => [\%job_99939, \%job_99936], 'only softfailed jobs present');
+    };
 
     subtest 'limit parameter' => sub {
         $query->query(build => '0048', limit => 1);
