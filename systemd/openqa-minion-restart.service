@@ -4,3 +4,4 @@ Description=Restarts services which are using Minion
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/systemctl try-restart openqa-webui.service openqa-gru.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
+SuccessExitStatus=5
