@@ -13,7 +13,6 @@ use OpenQA::Utils;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use Try::Tiny;
 
 use constant IMAGE_STREAMING_INTERVAL => $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} // 0.3;
 use constant TEXT_STREAMING_INTERVAL => $ENV{OPENQA_TEXT_STREAMING_INTERVAL} // 1.0;
@@ -164,6 +163,18 @@ sub liveterminal {
     $self->streamtext('serial-terminal-live.txt');
 }
 
+sub _send_livestream_command_to_worker ($client, $command, $verb, $worker_id, $job_id, $cb = undef) {
+    log_debug "Asking worker $worker_id to $verb providing livestream for job $job_id";
+    my $txn_cb = sub ($ua, $tx) {
+        return $cb ? $cb->(undef) : 1 unless my $err = $tx->error;
+        my $msg = $err->{code} ? "$err->{code} response: $err->{message}" : $err->{message};
+        $msg = "Unable to ask worker $worker_id to $verb providing livestream for $job_id: $msg";
+        log_error $msg;
+        $cb->($msg) if $cb;
+    };
+    $client->send_msg($worker_id, $command, $job_id, undef, $txn_cb);
+}
+
 sub streaming ($self) {
     return 0 unless $self->init();
 
@@ -246,23 +257,11 @@ sub streaming ($self) {
             return undef unless defined $worker->job_id && $worker->job_id == $job_id;
 
             # ask worker to stop live stream
-            log_debug("Asking worker $worker_id to stop providing livestream for job $job_id");
-            try {
-                $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_STOP, $job_id);
-            }
-            catch {
-                log_error("Unable to ask worker $worker_id to stop providing livestream for $job_id: $_");
-            };
+            _send_livestream_command_to_worker($client, WORKER_COMMAND_LIVELOG_STOP, 'stop', $worker_id, $job_id);
         },
     );
-    try {
-        $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_START, $job_id);
-    }
-    catch {
-        my $error = "Unable to ask worker $worker_id to start providing livestream for $job_id: $_";
-        $self->write("data: $error\n\n", $close_connection);
-        log_error($error);
-    };
+    my $cb = sub ($error) { $self->write("data: $error\n\n", $close_connection) if defined $error };
+    _send_livestream_command_to_worker($client, WORKER_COMMAND_LIVELOG_START, 'start', $worker_id, $job_id, $cb);
 }
 
 1;
