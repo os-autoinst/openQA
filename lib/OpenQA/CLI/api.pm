@@ -7,13 +7,18 @@ use Mojo::Base 'OpenQA::Command', -signatures;
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json);
 use Mojo::Util qw(getopt);
+use File::stat;
+use File::Basename;
 use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
+use OpenQA::Log qw(log_info log_debug log_warning log_error);
+use IPC::Run3 qw(run3);
 
 has description => 'Issue an arbitrary request to the API';
 has usage => sub {
     my $search_criteria = join(', ', JOBS_OVERVIEW_SEARCH_CRITERIA);
     shift->extract_usage =~ s/\$search_criteria/$search_criteria/r;
 };
+
 
 sub command ($self, @args) {
 
@@ -26,7 +31,8 @@ sub command ($self, @args) {
       'd|data=s' => \$data,
       'f|form' => \my $form,
       'j|json' => \my $json,
-      'H|hook-scripts=s' => \my $hooksrc,
+      'pre-script-hook=s' => \my $prehooksrc,
+      'post-script-hook=s' => \my $posthooksrc,
       'param-file=s' => \my @param_file,
       'r|retries=i' => \my $retries,
       'X|method=s' => \(my $method = 'GET');
@@ -36,32 +42,61 @@ sub command ($self, @args) {
 
     my $params;
     my @data;
-    if ($hooksrc) {
-	# if $hooksrc is a json  
-        my $hookdata = path("hook/$hooksrc.json")->slurp;
-	$data = ($hookdata);
-	my $hookparams = decode_json($data);
-	my $argsparams = $self->parse_params(\@args, \@param_file);
-	$params = {%$hookparams, %$argsparams};
-	# otherwise try to run a script
-	# here
-    } else {
-	$data = path($data_file)->slurp if $data_file;
-	@data = ($data);
-	$params = $form ? decode_json($data) : $self->parse_params(\@args, \@param_file);
-    }
-    @data = (form => $params) if keys %$params;
+    if ($prehooksrc) {
 
+	$self->_run_script ($_) for path($posthooksrc)->list->grep(qr/post_/)->each;
+	#my $hookdata = path($prehooksrc)->slurp;
+	#$data = ($hookdata);
+	#my $hookparams = decode_json($data);
+	#my $argsparams = $self->parse_params(\@args, \@param_file);
+	#$params = {%$hookparams, %$argsparams};
+    }
+    
+    $data = path($data_file)->slurp if $data_file;
+    @data = ($data);
+    $params = $form ? decode_json($data) : $self->parse_params(\@args, \@param_file);
+    use Data::Dumper;
+    @data = (form => $params) if keys %$params;
+    print Dumper(@data[1]);
+    if ($posthooksrc) {
+	use Data::Dumper;
+	# say for path('/home/sri/myapp')->list->each;
+	# run_script check exec permissions
+	$self->_run_script ($_, $data[1]) for path($posthooksrc)->list->grep(qr/post_/)->each;
+	say '_run_script returns ' . Dumper @data;
+    }
+    die "we got to the end";
     my $headers = $self->parse_headers(@headers);
     $headers->{Accept} //= 'application/json';
     $headers->{'Content-Type'} = 'application/json' if $json;
-
     my $url = $self->url_for($path);
     my $client = $self->client($url);
     my $tx = $client->build_tx($method, $url, $headers, @data);
     $self->retry_tx($client, $tx, $retries);
 }
 
+
+sub _run_script ($self, $hook_path, $data) {
+    my $hook_fl = basename($hook_path);
+    return unless ($hook_fl =~ /^(pre|post)_/);
+    my $info    = stat($hook_path) or die "path doesnt exist $hook_path : $!";
+    unless (-x $info) {
+	log_info $_ . ' is not executable';
+	return;
+    }
+    log_info $_ . ' is called';
+    eval {
+	print 'TST ';
+	# https://stackoverflow.com/a/54500161/1462096
+	#my @out = qx($hook_path);
+	#print '@out ';
+	my ($out, $err);
+	my @out = run3([$hook_path, $data], \$out, \$err);
+	print 'This is out ' . Dumper $out;
+	print 'This is err ' . Dumper $err;
+    };
+    log_error "$@" if $@;
+}
 1;
 
 =encoding utf8
