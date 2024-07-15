@@ -20,6 +20,7 @@ sub register ($self, $app, @) {
     $app->helper(is_operator => \&_is_operator);
     $app->helper(is_admin => \&_is_admin);
     $app->helper(is_local_request => \&_is_local_request);
+    $app->helper(render_specific_not_found => \&_render_specific_not_found);
 }
 
 # returns the isotovideo command server web socket URL and the VNC argument for the given job or undef if not available
@@ -71,6 +72,11 @@ sub _is_local_request ($c) {
     # IPv4 and IPv6 should be treated the same
     my $address = $c->tx->remote_address;
     return $address eq '127.0.0.1' || $address eq '::1';
+}
+
+sub _render_specific_not_found ($c, $title, $error_message) {
+    $c->stash(title => $title, error_message => $error_message);
+    return $c->render(template => 'main/specific_not_found', status => 404);
 }
 
 1;
