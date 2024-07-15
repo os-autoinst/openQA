@@ -287,20 +287,6 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(
-        render_specific_not_found => sub {
-            my ($c, $title, $error_message) = @_;
-
-            $c->stash(
-                title => $title,
-                error_message => $error_message,
-            );
-            return $c->render(
-                template => 'main/specific_not_found',
-                status => 404,
-            );
-        });
-
-    $app->helper(
         populate_hash_with_needle_timestamps_and_urls => sub {
             my ($c, $needle, $hash) = @_;
 
