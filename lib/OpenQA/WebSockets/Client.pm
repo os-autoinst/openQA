@@ -35,9 +35,11 @@ sub send_jobs ($self, $job_info) {
     return $res->json->{result};
 }
 
-sub send_msg ($self, $worker_id, $msg, $job_id, $retry = undef) {
+sub send_msg ($self, $worker_id, $msg, $job_id, $retry = undef, $cb = undef) {
     my $data = {worker_id => $worker_id, msg => $msg, job_id => $job_id, retry => $retry};
-    my $res = $self->client->post($self->_api('send_msg'), json => $data)->result;
+    my $tx = $self->client->post($self->_api('send_msg'), json => $data, (defined $cb ? ($cb) : ()));
+    return undef if defined $cb;
+    my $res = $tx->result;
     croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
     return $res->json->{result};
 }

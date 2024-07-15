@@ -28,7 +28,12 @@ my $log_messages = '';
 
 my $client_mock = Test::MockModule->new('OpenQA::WebSockets::Client');
 my @messages;
-$client_mock->redefine(send_msg => sub ($client, @args) { push @messages, \@args });
+my $fake_error;
+$client_mock->redefine(
+    send_msg => sub ($client, $worker_id, $msg, $job_id, $retry = undef, $cb = undef) {
+        push @messages, [$worker_id, $msg, $job_id];
+        $cb->(undef, Mojo::Transaction::Fake->new(error => $fake_error)) if $cb;
+    });
 
 subtest streaming => sub {
     # setup server/client via Mojo::IOLoop
@@ -115,6 +120,15 @@ subtest streaming => sub {
     combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (2)';
     like $controller->res->content->{body_buffer}, qr/data: Unable to read image: Can't open file.*\n\n/,
       'error sent if PNG does not exist';
+
+    @messages = ();
+    $fake_error = {message => 'fake error'};
+    $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+    $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
+    $controller->tx($faketx);
+    combined_like { $controller->streaming } qr/Unable to ask .* providing livestream .*: fake error/,
+      'error sending livestream command is logged';
+    like $controller->res->content->{body_buffer}, qr/data: .* fake error/, 'error written as stream data';
 
 } or diag explain $log_messages;
 
@@ -232,6 +246,7 @@ use Mojo::Base 'Mojo::Transaction';
 sub resume { ++$_[0]{writing} and return $_[0]->emit('resume') }
 sub connection { shift->{fakestream} }
 sub remote_address { '::1' }
+sub error { $fake_error }
 
 package FakeSchema;
 sub new {
