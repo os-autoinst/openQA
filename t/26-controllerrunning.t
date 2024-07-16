@@ -137,6 +137,19 @@ subtest streaming => sub {
           'error sending livestream command is logged';
         like $controller->res->content->{body_buffer}, qr/data: .* fake error/, 'error written as stream data';
     };
+
+    subtest 'no worker' => sub {
+        @messages = ();
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
+        $controller->tx($faketx);
+        my $orig = \&Job::worker;
+        monkey_patch 'Job', worker => sub { undef };
+        $controller->streaming;
+        is $controller->res->code, 404, 'no worker';
+        is_deeply \@messages, [], 'no worker' or diag explain \@messages;
+        monkey_patch 'Job', worker => $orig;
+    };
 } or diag explain $log_messages;
 
 subtest init => sub {
