@@ -1,7 +1,7 @@
 [Unit]
 Description=Handler for live view in openQA's web UI
 After=postgresql.service nss-lookup.target remote-fs.target
-Requires=openqa-webui.service
+Requires=openqa-websockets.service
 
 [Service]
 User=geekotest
