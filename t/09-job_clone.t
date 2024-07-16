@@ -11,7 +11,7 @@ use Mojo::File 'tempdir';
 use OpenQA::Jobs::Constants;
 use OpenQA::Script::CloneJob;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(create_webapi stop_service);
 use OpenQA::Test::TimeLimit '20';
 use Test::Mojo;

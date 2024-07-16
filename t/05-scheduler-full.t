@@ -28,7 +28,7 @@ use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Utils;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(
   mock_service_ports setup_mojo_app_with_default_worker_timeout
   setup_fullstack_temp_dir create_user_for_workers

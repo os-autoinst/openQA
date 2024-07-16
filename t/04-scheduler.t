@@ -15,7 +15,7 @@ use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
 use OpenQA::Utils 'assetdir';
 use Test::Mojo;

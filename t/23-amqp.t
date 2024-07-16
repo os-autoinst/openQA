@@ -9,7 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use Test::Output qw(combined_like combined_unlike);
 use Test::MockModule;

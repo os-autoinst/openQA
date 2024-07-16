@@ -14,7 +14,7 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Task::Git::Clone;
 use File::Copy;
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '160';
 use Test::MockModule;

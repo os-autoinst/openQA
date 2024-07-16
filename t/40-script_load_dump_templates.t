@@ -7,7 +7,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use File::Temp qw(tempfile);
 use Mojo::File qw(path curfile);
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils;
 use Test::Output;
 use Test::Warnings ':report_warnings';

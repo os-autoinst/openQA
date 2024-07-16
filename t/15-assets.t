@@ -14,7 +14,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::WebSockets::Client;

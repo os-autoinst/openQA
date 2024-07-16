@@ -8,7 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
-use OpenQA::Test::Database;
+require OpenQA::Test::Database;
 use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use Test::Mojo;
