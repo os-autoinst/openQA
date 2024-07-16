@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
+
 wait_until() {
     command=$1
     timeout=$2
@@ -18,12 +20,9 @@ wait_until() {
 }
 
 setup_containers() {
-    for retry in {2..0}; do
-        sudo docker compose build && break
-        echo "Remaining retries $retry"
-    done
+    "$thisdir"/retry sudo docker compose build
     exit_code=""
-    sudo MOJO_CLIENT_DEBUG=1 docker compose up -d || exit_code=$?
+    "$thisdir"/retry sudo MOJO_CLIENT_DEBUG=1 docker compose up -d || exit_code=$?
     if [[ -n $exit_code ]]; then
         echo "docker compose exited with non-zero code $exit_code, showing logs:"
         docker compose logs
