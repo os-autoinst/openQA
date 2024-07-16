@@ -9,19 +9,19 @@ use LWP::UserAgent;
 use Net::OpenID::Consumer;
 use MIME::Base64 qw(encode_base64url decode_base64url);
 
-sub auth_login ($self) {
-    my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
+sub auth_login ($c) {
+    my $url = $c->app->config->{global}->{base_url} || $c->req->url->base->to_string;
 
     # force secure connection after login
-    $url =~ s,^http://,https://, if $self->app->config->{openid}->{httpsonly};
+    $url =~ s,^http://,https://, if $c->app->config->{openid}->{httpsonly};
 
     my $csr = Net::OpenID::Consumer->new(
         ua => LWP::UserAgent->new,
         required_root => $url,
-        consumer_secret => $self->app->config->{_openid_secret},
+        consumer_secret => $c->app->config->{_openid_secret},
     );
 
-    my $claimed_id = $csr->claimed_identity($self->config->{openid}->{provider});
+    my $claimed_id = $csr->claimed_identity($c->config->{openid}->{provider});
     if (!defined $claimed_id) {
         log_error("Claiming OpenID identity for URL '$url' failed: " . $csr->err);
         return;
@@ -47,7 +47,7 @@ sub auth_login ($self) {
     );
 
     my $return_url = Mojo::URL->new(qq{$url/response});
-    if (my $return_page = $self->param('return_page') || $self->req->headers->referrer) {
+    if (my $return_page = $c->param('return_page') || $c->req->headers->referrer) {
         $return_page = Mojo::URL->new($return_page)->path_query;
         # return_page is encoded using base64 (in a version that avoids / and + symbol)
         # as any special characters like / or ? when urlencoded via % symbols,
@@ -63,77 +63,63 @@ sub auth_login ($self) {
     return (error => $csr->err);
 }
 
-sub auth_response ($self) {
-    my %params = @{$self->req->params->pairs};
-    my $url = $self->app->config->{global}->{base_url} || $self->req->url->base;
+sub _first_last_name ($ax) { join(' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '') }
+
+sub _create_user ($c, $id, $email, $nickname, $fullname) {
+    $c->schema->resultset('Users')->create_user($id, email => $email, nickname => $nickname, fullname => $fullname);
+}
+
+sub _handle_verified ($c, $vident) {
+    my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
+    my $ax = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
+
+    my $email = $sreg->{email} || $ax->{'value.email'} || 'nobody@example.com';
+    my $nickname = $sreg->{nickname} || $ax->{'value.nickname'} || $ax->{'value.firstname'};
+    unless ($nickname) {
+        my @a = split(/\/([^\/]+)$/, $vident->{identity});
+        $nickname = $a[1];
+    }
+
+    my $fullname = $sreg->{fullname} || $ax->{'value.fullname'} || _first_last_name($ax) || $nickname;
+
+    _create_user($c, $vident->{identity}, $email, $nickname, $fullname);
+    $c->session->{user} = $vident->{identity};
+}
+
+sub auth_response ($c) {
+    my %params = @{$c->req->params->pairs};
+    my $url = $c->app->config->{global}->{base_url} || $c->req->url->base;
     return (error => 'Got response on http but https is forced. MOJO_REVERSE_PROXY not set?')
-      if ($self->app->config->{openid}->{httpsonly} && $url !~ /^https:\/\//);
+      if ($c->app->config->{openid}->{httpsonly} && $url !~ /^https:\/\//);
     %params = map { $_ => URI::Escape::uri_unescape($params{$_}) } keys %params;
 
     my $csr = Net::OpenID::Consumer->new(
-        debug => sub { $self->app->log->debug('Net::OpenID::Consumer: ' . join(' ', @_)); },
+        debug => sub (@args) { $c->app->log->debug('Net::OpenID::Consumer: ' . join(' ', @args)) },
         ua => LWP::UserAgent->new,
         required_root => $url,
-        consumer_secret => $self->app->config->{_openid_secret},
+        consumer_secret => $c->app->config->{_openid_secret},
         args => \%params,
     );
 
-    my $err_handler = sub {
-        my ($err, $txt) = @_;
-        $self->app->log->error("OpenID: $err: $txt");
-        $self->flash(error => "$err: $txt");
+    my $err_handler = sub ($err, $txt) {
+        $c->app->log->error("OpenID: $err: $txt");
+        $c->flash(error => "$err: $txt");
         return (error => 0);
     };
 
     $csr->handle_server_response(
-        not_openid => sub {
-            return $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again');
-        },
-        setup_needed => sub {
-            my $setup_url = shift;
-
+        not_openid =>
+          sub () { $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again') },
+        setup_needed => sub ($setup_url) {
             # Redirect the user to $setup_url
             $setup_url = URI::Escape::uri_unescape($setup_url);
-            $self->app->log->debug(qq{setup_url[$setup_url]});
+            $c->app->log->debug(qq{setup_url[$setup_url]});
 
             return (redirect => $setup_url, error => 0);
         },
-        cancelled => sub { },    # Do something appropriate when the user hits "cancel" at the OP
-        verified => sub {
-            my $vident = shift;
-            my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
-            my $ax = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
-
-            my $email = $sreg->{email} || $ax->{'value.email'} || 'nobody@example.com';
-            my $nickname = $sreg->{nickname} || $ax->{'value.nickname'} || $ax->{'value.firstname'};
-            unless ($nickname) {
-                my @a = split(/\/([^\/]+)$/, $vident->{identity});
-                $nickname = $a[1];
-            }
-            my $fullname = $sreg->{fullname} || $ax->{'value.fullname'};
-            unless ($fullname) {
-                if ($ax->{'value.firstname'}) {
-                    $fullname = $ax->{'value.firstname'};
-                    if ($ax->{'value.lastname'}) {
-                        $fullname .= ' ' . $ax->{'value.lastname'};
-                    }
-                }
-                else {
-                    $fullname = $nickname;
-                }
-            }
-
-            my $user = $self->schema->resultset('Users')->create_user(
-                $vident->{identity},
-                email => $email,
-                nickname => $nickname,
-                fullname => $fullname
-            );
-            $self->session->{user} = $vident->{identity};
-        },
-        error => sub {
-            return $err_handler->(@_);
-        },
+        cancelled => sub () { },    # Do something appropriate when the user hits "cancel" at the OP
+        verified => sub ($vident) { _handle_verified($c, $vident) },
+        error => sub (@args) { $err_handler->(@args) },
     );
 
     return (redirect => decode_base64url($csr->args('return_page'), error => 0)) if $csr->args('return_page');
