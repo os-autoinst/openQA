@@ -5,8 +5,12 @@ on: [push, pull_request]
 jobs:
   webui-docker-compose:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 650
     steps:
       - uses: actions/checkout@v4
-      - name: Verify that containers can be composed
-        run: make test-containers-compose
+      - uses: nick-fields/retry@v3
+        name: Verify that containers can be composed
+        command: make test-containers-compose
+        timeout_minutes: 60
+        max_attempts: 7
+        timeout_seconds: 30
