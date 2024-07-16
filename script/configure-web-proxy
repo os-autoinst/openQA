@@ -9,19 +9,25 @@ Options:
  -h, --help         display this help
  -p, --proxy=PROXY  web proxy to configure (default: apache)
                     choose from: nginx, apache
+ -P, --port=PORT    port to configure
 EOF
     exit "$1"
 }
 
-opts=$(getopt -o hp: -l help -l proxy: -n "$0" -- "$@") || usage 1
+opts=$(getopt -o hp:P: -l help,proxy:,port: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 web_proxy="apache"
+web_port=""
 while true; do
     case "$1" in
         -h | --help) usage 0 ;;
         -p | --proxy)
             web_proxy=${2#*=}
-            shift
+            shift 2
+            ;;
+        -P | --port)
+            web_port=${2#*=}
+            shift 2
             ;;
         --)
             shift
@@ -36,11 +42,16 @@ sed -i -e 's/^.*httpsonly.*$/httpsonly = 0/g' /etc/openqa/openqa.ini
 if [[ $web_proxy == "nginx" ]]; then
     echo "Setting up nginx"
     sed "s/openqa.example.com/$(hostname)/" /etc/nginx/vhosts.d/openqa.conf.template > /etc/nginx/vhosts.d/openqa.conf
+    # IPv6 uses [::]:80 syntax instead of just a port
+    if [[ -n "$web_port" ]]; then
+        sed -Ei "s@(.*listen.*)80@\1${web_port}@g" /etc/nginx/vhosts.d/openqa.conf /etc/nginx/nginx.conf
+    fi
     sed -i -e "s/\(^[^#]*server_name  localhost;\)/#\1/" /etc/nginx/nginx.conf
 elif [[ $web_proxy == "apache" || $web_proxy == "apache2" ]]; then
     echo "Setting up apache"
     for i in headers proxy proxy_http proxy_wstunnel rewrite; do a2enmod $i; done
     sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf
+    test -n "$web_port" && sed -i "s/^Listen.*$/Listen $web_port/" /etc/apache2/listen.conf
 else
     echo "No supported proxy: $web_proxy"
     exit 1
