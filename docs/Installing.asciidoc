@@ -374,8 +374,10 @@ For a local instance setup you can simply execute the script:
 /usr/share/openqa/script/configure-web-proxy
 ----
 
-This will automatically setup a local Apache http proxy. Read on for more
-detailed setup instructions with all the details.
+This will automatically setup a local Apache http proxy. The script
+also supports NGINX and a custom port to listen on. Try `--help` to
+learn about the available options. Read on for more detailed setup
+instructions with all the details.
 
 If you wish to run openQA behind an http proxy (Apache, NGINX, …) then see the
 *openqa.conf.template* config file in */etc/apache2/vhosts.d* (openSUSE) or
