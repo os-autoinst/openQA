@@ -66,70 +66,77 @@ subtest streaming => sub {
     my $contapp = Mojolicious->new(log => $log);
     push @{$contapp->plugins->namespaces}, 'OpenQA::Shared::Plugin';
     $contapp->plugin('SharedHelpers');
-    my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
-    my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
-    $log->unsubscribe('message');
-    $log->on(message => sub { my ($log, $level, @lines) = @_; $log_messages .= join "\n", @lines, '' });
-    $controller->tx($faketx);
-    $controller->stash("job", Job->new);
 
-    # setup fake textfile
-    my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
-    my $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
-    my $t_file = $tmpdir->child('test.txt');
-    $t_file->spew(join '', @fake_data);
+    subtest textfile => sub {
 
-    # test text streaming
-    $controller->streamtext('test.txt');
-    ok !!Mojo::IOLoop->stream($id), 'stream exists';
-    like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo bar\\n"\]/, 'body buffer contains "Foo bar"';
-    like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo baz\\n"\]/, 'body buffer contains "Foo baz"';
-    like $controller->tx->res->content->{body_buffer}, qr/data: \["bar\\n"\]/, 'body buffer contains "bar"';
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
+        $log->unsubscribe('message');
+        $log->on(message => sub { my ($log, $level, @lines) = @_; $log_messages .= join "\n", @lines, '' });
+        $controller->tx($faketx);
+        $controller->stash("job", Job->new);
 
-    my $fake_data = "A\n" x (12 * 1024);
-    $t_file->spew($fake_data);
-    $controller->streamtext("test.txt");
+        # setup fake textfile
+        my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
+        my $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
+        my $t_file = $tmpdir->child('test.txt');
+        $t_file->spew(join '', @fake_data);
 
-    my $size = -s $t_file;
-    ok $size > (10 * 1024), "test file size is greater than 10 * 1024";
-    like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
+        # test text streaming
+        $controller->streamtext('test.txt');
+        ok !!Mojo::IOLoop->stream($id), 'stream exists';
+        like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo bar\\n"\]/, 'body buffer contains "Foo bar"';
+        like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo baz\\n"\]/, 'body buffer contains "Foo baz"';
+        like $controller->tx->res->content->{body_buffer}, qr/data: \["bar\\n"\]/, 'body buffer contains "bar"';
 
-    # test image streaming
-    $contapp->attr(schema => sub { FakeSchema->new() });
-    $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
-    $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
-    $controller->tx($faketx);
-    monkey_patch 'FakeSchema::Find', find => sub { Job->new };
-    combined_like { $controller->streaming } qr/Asking the worker 43 to start providing livestream for job 42/,
-      'reached code for enabling livestream';
-    is $controller->res->code, 200, 'tempdir not found';
-    is_deeply \@messages, [[43, 'livelog_start', 42]], 'livelog started' or diag explain \@messages;
-    Mojo::IOLoop->one_tick;
-    is $controller->res->body, '', 'body still empty as there is no image yet';
+        my $fake_data = "A\n" x (12 * 1024);
+        $t_file->spew($fake_data);
+        $controller->streamtext("test.txt");
 
-    $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
-    my $fake_png = $tmpdir->child('01-fake.png');
-    my $last_png = $tmpdir->child('last.png');
-    $fake_png->spew('not actually a PNG');
-    symlink $fake_png->basename, $last_png or die "Unable to symlink: $!";
-    combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (1)';
-    is $controller->res->content->{body_buffer}, "data: data:image/png;base64,bm90IGFjdHVhbGx5IGEgUE5H\n\n",
-      'base64-encoded fake PNG sent';
-    $last_png->remove;
-    symlink '02-fake.png', $last_png or die "Unable to symlink: $!";
-    combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (2)';
-    like $controller->res->content->{body_buffer}, qr/data: Unable to read image: Can't open file.*\n\n/,
-      'error sent if PNG does not exist';
+        my $size = -s $t_file;
+        ok $size > (10 * 1024), "test file size is greater than 10 * 1024";
+        like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
+    };
 
-    @messages = ();
-    $fake_error = {message => 'fake error'};
-    $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
-    $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
-    $controller->tx($faketx);
-    combined_like { $controller->streaming } qr/Unable to ask .* providing livestream .*: fake error/,
-      'error sending livestream command is logged';
-    like $controller->res->content->{body_buffer}, qr/data: .* fake error/, 'error written as stream data';
+    subtest image => sub {
+        # test image streaming
+        $contapp->attr(schema => sub { FakeSchema->new() });
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
+        $controller->tx($faketx);
+        monkey_patch 'FakeSchema::Find', find => sub { Job->new };
+        combined_like { $controller->streaming } qr/Asking the worker 43 to start providing livestream for job 42/,
+          'reached code for enabling livestream';
+        is $controller->res->code, 200, 'tempdir not found';
+        is_deeply \@messages, [[43, 'livelog_start', 42]], 'livelog started' or diag explain \@messages;
+        Mojo::IOLoop->one_tick;
+        is $controller->res->body, '', 'body still empty as there is no image yet';
 
+        my $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
+        my $fake_png = $tmpdir->child('01-fake.png');
+        my $last_png = $tmpdir->child('last.png');
+        $fake_png->spew('not actually a PNG');
+        symlink $fake_png->basename, $last_png or die "Unable to symlink: $!";
+        combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (1)';
+        is $controller->res->content->{body_buffer}, "data: data:image/png;base64,bm90IGFjdHVhbGx5IGEgUE5H\n\n",
+          'base64-encoded fake PNG sent';
+        $last_png->remove;
+        symlink '02-fake.png', $last_png or die "Unable to symlink: $!";
+        combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (2)';
+        like $controller->res->content->{body_buffer}, qr/data: Unable to read image: Can't open file.*\n\n/,
+          'error sent if PNG does not exist';
+    };
+
+    subtest fake => sub {
+        @messages = ();
+        $fake_error = {message => 'fake error'};
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
+        $controller->tx($faketx);
+        combined_like { $controller->streaming } qr/Unable to ask .* providing livestream .*: fake error/,
+          'error sending livestream command is logged';
+        like $controller->res->content->{body_buffer}, qr/data: .* fake error/, 'error written as stream data';
+    };
 } or diag explain $log_messages;
 
 subtest init => sub {
