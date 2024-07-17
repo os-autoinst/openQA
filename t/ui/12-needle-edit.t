@@ -611,28 +611,23 @@ subtest 'error handling when opening needle editor for running test' => sub {
 
     subtest 'no worker assigned' => sub {
         $t->get_ok('/tests/99946/edit')->status_is(404);
-        $t->text_is(title => 'openQA: Needle Editor', 'title still the same');
-        $t->text_like(
-            '#content p',
-qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so the page \"Needle Editor\" is not available\./,
+        $t->content_like(
+qr/Needle Editor.*The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so the page \"Needle Editor\" is not available\./,
             'error message'
         );
 
         # test error handling for other 'Running.pm' routes as well
         $t->get_ok('/tests/99946/livelog')->status_is(404);
-        $t->text_is(title => 'openQA: Page not found', 'generic title present');
-        $t->text_like(
-            '#content p',
-qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so this route is not available\./,
+        $t->content_like(
+qr/Page not found.*The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so this route is not available\./,
             'error message'
         );
     };
 
     subtest 'no running module' => sub {
         $t->get_ok('/tests/99963/edit')->status_is(404);
-        $t->text_like(
-            '#content p',
-qr/The test has no currently running module so opening the needle editor is not possible\. Likely results have not been uploaded yet so reloading the page might help\./,
+        $t->content_like(
+qr/Needle Editor.*The test has no currently running module so opening the needle editor is not possible\. Likely results have not been uploaded yet so reloading the page might help\./,
             'error message'
         );
     };

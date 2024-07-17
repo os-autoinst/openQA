@@ -75,8 +75,8 @@ sub _is_local_request ($c) {
 }
 
 sub _render_specific_not_found ($c, $title, $error_message) {
-    $c->stash(title => $title, error_message => $error_message);
-    return $c->render(template => 'main/specific_not_found', status => 404);
+    $c->res->headers->content_type('text/plain');
+    return $c->render(status => 404, text => "$title - $error_message");
 }
 
 1;
