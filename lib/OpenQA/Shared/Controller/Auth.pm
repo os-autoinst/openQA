@@ -122,8 +122,8 @@ sub _token_auth ($self, $reason, $userinfo) {
                 my $user = $api_key->user;
                 my $name = $user->name;
                 $self->stash(webhook_validation_secret => join(':', $name, $key, $secret));
-                if ($user && secure_compare($name, $username)) {
-                    return ($user, undef) if secure_compare($api_key->secret, $secret);
+                if ($user && secure_compare($username, $name)) {
+                    return ($user, undef) if secure_compare($secret, $api_key->secret);
                     $log->debug("$reject_msg, wrong secret");
                 }
                 else { $log->debug(qq{$reject_msg, wrong username, expected "$name"}) }
@@ -183,7 +183,7 @@ sub _valid_hmac ($self, $hash, $request, $build_tx_timestamp, $timestamp, $api_k
     my $base_url = $self->app->config->{global}->{base_url};
     my $base_path = $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
     my $sum = hmac_sha1_sum($base_path . $request . $timestamp, $api_key->secret);
-    return $sum eq $hash;
+    return secure_compare($hash, $sum);
 }
 
 1;
