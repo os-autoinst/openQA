@@ -1,5 +1,5 @@
 upstream webui {
-    zone upstream_webui 64k;
+    zone upstream_webui 128k;
     server [::1]:9526;
 }
 
