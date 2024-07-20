@@ -2425,6 +2425,11 @@ for <code>localhost</code> in <strong>nginx.conf</strong> will take precedence w
 via <code>localhost</code>. You might want to disable it.</p>
 </div>
 <div class="paragraph">
+<p>If you use the openqa-upstreams.inc which is included with the upstream
+sources and openQA packages, you may want to customize the size of the shared
+memory segment according to the formula: page_size * 8</p>
+</div>
+<div class="paragraph">
 <p>For openQA you need to set <code>httpsonly = 0</code> as described in the TLS/SSL section
 below, if you do not setup NGINX for SSL.</p>
 </div>
@@ -13023,7 +13028,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-07-12 04:43:51 UTC
+Last updated 2024-07-20 04:44:24 UTC
 </div>
 </div>
 </body>
