@@ -18,19 +18,19 @@ sub check ($self) {
     my $headers = $req->headers;
     my $key = $headers->header('X-API-Key');
     my $hash = $headers->header('X-API-Hash');
-    my $timestamp = $headers->header('X-API-Microtime');
+    my $remote_timestamp = $headers->header('X-API-Microtime');
     my $user;
     log_trace($key ? "API key from client: *$key*" : 'No API key from client');
 
     my $schema = OpenQA::Schema->singleton;
     my $api_key = $schema->resultset('ApiKeys')->find({key => $key});
     if ($api_key) {
-        if (time - $timestamp <= 300) {
+        if ($self->_is_timestamp_valid(time, $remote_timestamp)) {
             my $exp = $api_key->t_expiration;
             # It has no expiration date or it's in the future
             if (!$exp || $exp->epoch > time) {
                 if (my $secret = $api_key->secret) {
-                    my $sum = hmac_sha1_sum($self->req->url->to_string . $timestamp, $secret);
+                    my $sum = hmac_sha1_sum($self->req->url->to_string . $remote_timestamp, $secret);
                     $user = $api_key->user;
                     log_trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator);
                 }
@@ -96,8 +96,14 @@ sub auth_admin ($self) {
     return 0;
 }
 
-sub _is_timestamp_valid ($build_tx_timestamp, $timestamp) {
-    return ($build_tx_timestamp - $timestamp <= 300);
+sub _is_timestamp_valid ($self, $our_timestamp, $remote_timestamp) {
+    my $log = $self->app->log;
+
+    return 1 if ($our_timestamp - $remote_timestamp <= 300);
+    $log->debug(
+qq{Timestamp mismatch over 300s; our_timestamp: $our_timestamp, X-API-Microtime (from worker): $remote_timestamp}
+    );
+    return 0;
 }
 
 sub _is_expired ($api_key) {
@@ -150,16 +156,17 @@ sub _key_auth ($self, $reason, $key) {
         my $msg = $self->req->url->to_string;
         my $headers = $self->req->headers;
         my $hash = $headers->header('X-API-Hash');
-        my $timestamp = $headers->header('X-API-Microtime');
-        my $build_tx_timestamp = $headers->header('X-Build-Tx-Time');
+        my $remote_timestamp = $headers->header('X-API-Microtime');
+        my $our_timestamp = time;
         my $username = $api_key->user->username;
 
-        return ($api_key->user, $reason) if $self->_valid_hmac($hash, $msg, $build_tx_timestamp, $timestamp, $api_key);
+        return ($api_key->user, $reason)
+          if $self->_valid_hmac($hash, $msg, $our_timestamp, $remote_timestamp, $api_key);
 
         my $reject_msg
           = sprintf 'Rejecting authentication for user "%s" with ip "%s", valid key "%s", secret "%s"',
           $username, $self->tx->remote_address, $api_key->key, $api_key->secret;
-        if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
+        if (!$self->_is_timestamp_valid($our_timestamp, $remote_timestamp)) {
             $reason = 'timestamp mismatch - check whether clocks on the local host and the web UI host are in sync';
         }
         elsif (_is_expired($api_key)) {
@@ -175,14 +182,14 @@ sub _key_auth ($self, $reason, $key) {
     return (undef, $reason);
 }
 
-sub _valid_hmac ($self, $hash, $request, $build_tx_timestamp, $timestamp, $api_key) {
-    return 0 unless _is_timestamp_valid($build_tx_timestamp, $timestamp);
+sub _valid_hmac ($self, $hash, $request, $our_timestamp, $remote_timestamp, $api_key) {
+    return 0 unless $self->_is_timestamp_valid($our_timestamp, $remote_timestamp);
     return 0 if _is_expired($api_key);
     return 0 unless $api_key->secret;
 
     my $base_url = $self->app->config->{global}->{base_url};
     my $base_path = $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
-    my $sum = hmac_sha1_sum($base_path . $request . $timestamp, $api_key->secret);
+    my $sum = hmac_sha1_sum($base_path . $request . $remote_timestamp, $api_key->secret);
     return secure_compare($hash, $sum);
 }
 
