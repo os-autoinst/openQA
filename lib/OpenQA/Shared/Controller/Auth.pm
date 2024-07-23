@@ -98,10 +98,12 @@ sub auth_admin ($self) {
 
 sub _is_timestamp_valid ($self, $our_timestamp, $remote_timestamp) {
     my $log = $self->app->log;
+    my $tolerance = $self->config->{api_hmac_time_tolerance}
+      // 300;    # make extra sure this value is never empty to avoid security issues
 
-    return 1 if ($our_timestamp - $remote_timestamp <= 300);
+    return 1 if (abs($our_timestamp - $remote_timestamp) <= $tolerance);
     $log->debug(
-qq{Timestamp mismatch over 300s; our_timestamp: $our_timestamp, X-API-Microtime (from worker): $remote_timestamp}
+qq{Timestamp mismatch over ${tolerance}s; our_timestamp: $our_timestamp, X-API-Microtime (from worker): $remote_timestamp}
     );
     return 0;
 }
