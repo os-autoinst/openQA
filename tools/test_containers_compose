@@ -4,6 +4,13 @@ set -euo pipefail
 
 thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
 
+# longer, exponential sleep between retries to retry on infrastructure issues
+EXPONENTIAL="${EXPONENTIAL:-5}"
+SLEEP="${SLEEP:-30}"
+
+export EXPONENTIAL
+export SLEEP
+
 wait_until() {
     command=$1
     timeout=$2
