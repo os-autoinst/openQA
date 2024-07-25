@@ -20,8 +20,6 @@ BEGIN {
 }
 
 use Test::Warnings ':report_warnings';
-use FindBin;
-use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use List::Util ();
 use Test::Mojo;
@@ -30,15 +28,20 @@ use Test::Exception;
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';
-use OpenQA::CacheService::Client;
 use Fcntl ':mode';
 use DBI;
 use Time::HiRes 'sleep';
 use Mojo::File 'path';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+
+use FindBin;
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+
+use OpenQA::CacheService::Client;
 use OpenQA::Jobs::Constants qw(INCOMPLETE);
 use OpenQA::Utils qw(service_port);
 use OpenQA::SeleniumTest;
+
 session->enable;
 
 use File::Path qw(make_path remove_tree);
