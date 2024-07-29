@@ -1,4 +1,4 @@
-# Copyright 2015-2019 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Resource::Locks;
@@ -19,9 +19,7 @@ my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 # So we have to specify, which child job is supposed to create the lock
 # and watch its state.
 #
-sub _get_lock {
-    my ($name, $jobid, $where) = @_;
-    return 0 unless defined $name && defined $jobid;
+sub _get_lock ($name, $jobid, $where) {
     my $schema = OpenQA::Schema->singleton;
     my $job = $schema->resultset('Jobs')->single({id => $jobid});
     return 0 unless $job;
@@ -43,12 +41,9 @@ sub _get_lock {
 }
 
 # returns -1 on unrecoverable error, 1 on have lock, 0 on try later (lock unavailable)
-sub lock {
-    my ($name, $jobid, $where) = @_;
-
+sub lock ($name, $jobid, $where) {
     my $locks = _get_lock($name, $jobid, $where);
     my $lock = $locks->single;
-
     if (!$lock and $where =~ /^\d+$/) {
         my $schema = OpenQA::Schema->singleton;
         # prevent deadlock - job that is supposed to create the lock already finished
@@ -60,17 +55,12 @@ sub lock {
     return 0 unless $lock;
 
     # lock is locked and not by us
-    if ($lock->locked_by) {
-        return 0 if ($lock->locked_by != $jobid);
-        return 1;
-    }
+    return $lock->locked_by == $jobid if $lock->locked_by;
     # we're using optimistic locking, if this succeeded, we were first
-    return 1 if ($locks->update({locked_by => $jobid}) > 0);
-    return 0;
+    return $locks->update({locked_by => $jobid}) > 0;
 }
 
-sub unlock {
-    my ($name, $jobid, $where) = @_;
+sub unlock ($name, $jobid, $where) {
     my $locks = _get_lock($name, $jobid, $where // 'all');
     my $lock = $locks->single;
     return 0 unless $lock;
@@ -82,8 +72,7 @@ sub unlock {
     return 0;
 }
 
-sub create {
-    my ($name, $jobid) = @_;
+sub create ($name, $jobid) {
     my $lock = _get_lock($name, $jobid, 'all')->single;
     # nothing if lock already exist
     return 0 if $lock;
@@ -99,7 +88,7 @@ sub create {
 ## Barriers
 # barriers are created with number of expected jobs. Then wait call waits until the expected number of jobs is waiting
 
-sub barrier_create ($name, $jobid, $expected_jobs) {
+sub barrier_create ($name = undef, $jobid = undef, $expected_jobs = undef) {
     return 0 unless $name && $jobid && $expected_jobs;
     my $barriers = _get_lock($name, $jobid, 'all');
     return 0 if $barriers && $barriers->single;
@@ -110,7 +99,7 @@ sub barrier_create ($name, $jobid, $expected_jobs) {
     return $sth->rows > 0;
 }
 
-sub barrier_wait ($name, $jobid, $where, $check_dead_job) {
+sub barrier_wait ($name = undef, $jobid = undef, $where = undef, $check_dead_job = 0) {
     return -1 unless $name && $jobid;
     return -1 unless my $barriers = _get_lock($name, $jobid, $where);
     return -1 unless my $barrier = $barriers->single;
@@ -128,18 +117,14 @@ sub barrier_wait ($name, $jobid, $where, $check_dead_job) {
         }
     }
 
-    if (grep { $_ eq $jobid } @jobs) {
-        return 1 if @jobs == $barrier->count;
-        return 0;
-    }
+    return @jobs == $barrier->count if grep { $_ eq $jobid } @jobs;
 
     push @jobs, $jobid;
     return -1 unless $barriers->update({locked_by => join(',', @jobs)}) > 0;
-    return 1 if @jobs == $barrier->count;
-    return 0;
+    return @jobs == $barrier->count;
 }
 
-sub barrier_destroy ($name, $jobid, $where) {
+sub barrier_destroy ($name = undef, $jobid = undef, $where = undef) {
     return 0 unless $name && $jobid;
     return 0 unless my $barriers = _get_lock($name, $jobid, $where);
     return $barriers->delete > 0;

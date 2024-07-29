@@ -1,10 +1,9 @@
-# Copyright 2017-2020 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Resource::Jobs;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
@@ -26,8 +25,7 @@ Handle job restart by user (using API or WebUI). Job is only restarted when eith
 or done. Scheduled jobs can't be restarted.
 
 =cut
-sub job_restart {
-    my ($jobids, %args) = @_;
+sub job_restart ($jobids, %args) {
     my (@duplicates, @processed, @errors, @warnings);
     my %res = (duplicates => \@duplicates, errors => \@errors, warnings => \@warnings, enforceable => 0);
     unless (ref $jobids eq 'ARRAY' && @$jobids) {
