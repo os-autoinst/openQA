@@ -575,7 +575,8 @@ sub is_ok ($self) {
 sub is_ok_to_retry ($self) {
     return 1 unless my $result = $self->result;
     return 0 if grep { $_ eq $result } OK_RESULTS;    # retry is not needed if job is ok
-    return 0 if $result eq USER_CANCELLED;    # retry is not needed if job is user-cancelled
+    return 0 if $result eq USER_CANCELLED;    # retry is not needed if job is user-cancelled...
+    return 0 if $result eq OBSOLETED;    # ...or obsoleted
     return 1;
 }
 
