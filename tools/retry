@@ -5,6 +5,8 @@ RETRY="${RETRY:-3}"
 STABILITY_TEST="${STABILITY_TEST:-0}"
 # Pass a hook command which is executed if a retry occurs
 HOOK="${HOOK:-}"
+EXPONENTIAL=${EXPONENTIAL:-1}
+SLEEP="${SLEEP:-0}"
 
 run_once() {
     "$@"
@@ -29,5 +31,8 @@ else
             RETRY_ATTEMPT=$n "$HOOK"
         fi
         n=$((n + 1))
+        echo "Retrying after sleeping ${SLEEP}s …" >&2
+        sleep "$SLEEP"
+        [ -n "$EXPONENTIAL" ] && SLEEP=$((SLEEP * EXPONENTIAL))
     done
 fi
