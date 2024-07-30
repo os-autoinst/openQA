@@ -666,6 +666,20 @@ subtest 'git clone' => sub {
     like $mocked_git_calls[8], qr'git -C /root/ fetch origin foobranch:foobranch', 'fetch non-default branch';
     like $mocked_git_calls[10], qr'git clone http://localhost/bar.git /this_directory_does_not_exist/',
       'clone to /this_directory_does_not_exist/';
+
+    subtest 'git clone retried on failure' => sub {
+        $ENV{OPENQA_GIT_CLONE_RETRIES} = 1;
+        $openqa_utils->redefine(_git_clone => sub (@) { die "fake error\n" });
+        $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
+        is $res->{retries}, 1, 'job retries incremented';
+        is $res->{state}, 'inactive', 'job set back to inactive';
+    };
+    subtest 'git clone fails when all retry attempts exhausted' => sub {
+        $ENV{OPENQA_GIT_CLONE_RETRIES} = 0;
+        $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
+        is $res->{retries}, 0, 'job retries not incremented';
+        is $res->{state}, 'failed', 'job considered failed';
+    };
 };
 
 subtest 'download assets with correct permissions' => sub {
