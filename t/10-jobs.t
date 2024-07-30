@@ -831,6 +831,10 @@ subtest 'job setting based retriggering' => sub {
     $job->done(result => USER_CANCELLED);
     perform_minion_jobs($minion);
     is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if USER_CANCELLED (with retry)';
+    $job->update({state => SCHEDULED, result => NONE});
+    $job->done(result => OBSOLETED);
+    perform_minion_jobs($minion);
+    is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if OBSOLETED (with retry)';
     my $get_jobs = sub ($task) {
         $minion->backend->pg->db->query(q{select * from minion_jobs where task = $1 order by id asc}, $task)->hashes;
         # note: Querying DB directly as `$minion->jobs({tasks => [$task]})` does not return parents.
