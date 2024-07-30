@@ -1972,16 +1972,14 @@ supplied as new, unambiguous download target file names.
 
 === Triggering tests based on an any remote Git refspec or open GitHub pull request
 
-openQA also supports to trigger tests using test code from an open pull
-request on GitHub or any branch or Git refspec. That means that code changes
-that are not yet available on a production instance of openQA can be tested
-safely to ensure the code changes work as expected before merging the code
-into a production repository and branch. This works by setting the
-`CASEDIR` parameter of os-autoinst to a valid Git repository path including
-an optional branch/refspec specifier. It is also possible to set `NEEDLES_DIR`
-to a valid Git repository path to use custom needles.
-See
-https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc
+openQA also supports to trigger tests using test code from a pull request or
+any branch or Git refspec. That means that code changes that are not yet
+available on a production instance of openQA can be tested safely to ensure the
+code changes work as expected before merging the code into a production
+repository and branch. This works by setting the `CASEDIR` parameter of
+os-autoinst to a valid Git repository path including an optional branch/refspec
+specifier. `NEEDLES_DIR` can be set in the same way to use custom needles. See
+https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc[the os-autoinst documentation]
 for details.
 
 [NOTE]
