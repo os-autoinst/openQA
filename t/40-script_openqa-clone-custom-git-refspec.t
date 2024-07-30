@@ -35,11 +35,10 @@ isnt run_once($args), 0, 'without network we fail (without error)';
 # mock any external access with all arguments
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my/branch"}, "body": "Lorem ipsum"}'; true};
 $ENV{curl_openqa}
-  = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/case/dir", "PRODUCTDIR": "/my/case/dir/product", "NEEDLES_DIR": "/my/case/dir/product/needles"}'; true};
+  = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/case/dir", "PRODUCTDIR": "/my/case/dir/product"}'; true};
 my $clone_job
   = 'openqa-clone-job --skip-chained-deps --parental-inheritance --within-instance https://openqa.opensuse.org ';
-my $dirs
-  = 'CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/product NEEDLES_DIR=/my/case/dir/product/needles';
+my $dirs = 'CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/product';
 my $expected = $clone_job . '1234 _GROUP=0 TEST\+=\@user/repo#my/branch BUILD=user/repo#9128 ' . $dirs;
 my $expected_re = qr/${expected}/;
 test_once $args, $expected_re, 'clone-job command line is correct';
@@ -53,7 +52,7 @@ my $prefix = 'env repo_name=user/repo pr=9128 host=https://openqa.opensuse.org j
 combined_like { $ret = run_once('', $prefix) } $expected_re, 'environment variables can be used instead';
 is $ret, 0, 'exits successfully';
 $prefix .= ' testsuite=new_test needles_dir=/my/needles productdir=my/product';
-$dirs = 'PRODUCTDIR=my/product NEEDLES_DIR=/my/needles';
+$dirs = 'PRODUCTDIR=my/product';
 my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 .*${dirs}};
 combined_like { $ret = run_once('', $prefix) } $expected_custom_re, 'testsuite and dirs can be overridden';
 is $ret, 0, 'exits successfully';
@@ -103,26 +102,22 @@ $expected_re = qr/${expected}/s;
 test_once $args, $expected_re, 'clone-job command with multiple URLs in PR and job URL';
 
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my/branch"}, "body": "Lorem ipsum"}'; true};
-my $needles = 'my/distri/products/sle/needles';
 $ENV{curl_openqa}
-  = qq{echo -e '{"TEST": "my_test", "CASEDIR": "my/distri", "PRODUCTDIR": "distri/products/sle", "NEEDLES_DIR": "$needles"}'; true};
-$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle NEEDLES_DIR=$needles";
+  = qq{echo -e '{"TEST": "my_test", "CASEDIR": "my/distri", "PRODUCTDIR": "distri/products/sle"}'; true};
+$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle";
 $expected = $clone_job . '1169326 _GROUP=0 TEST\+=\@user/repo#my/branch BUILD=user/repo#9539 ';
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, "PRODUCTDIR is correct when the source job's PRODUCTDIR is a relative directory";
 
-$needles = "/$needles";
-$ENV{curl_openqa}
-  = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/distri", "PRODUCTDIR": "products/sle", "NEEDLES_DIR": "$needles"}'; true};
-$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle NEEDLES_DIR=$needles";
+$ENV{curl_openqa} = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/distri", "PRODUCTDIR": "products/sle"}'; true};
+$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle";
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, 'Correct PRODUCTDIR for relative non-prefixed dir';
 
 my $casedir = '/openqa/cache/openqa1-opensuse/tests/opensuse';
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "$casedir", "PRODUCTDIR": "$casedir/products/opensuse"}'; true};
-$dirs
-  = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/opensuse NEEDLES_DIR=$casedir/products/opensuse/needles";
+$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/opensuse";
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, "PRODUCTDIR is correct when the source job's PRODUCTDIR includes specific word";
 
