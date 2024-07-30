@@ -52,7 +52,7 @@ sub _git_clone_all ($job, $clones) {
 
 sub _get_current_branch ($path) {
     my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'branch', '--show-current']);
-    die "Error detecting current branch for '$path'" unless $r->{status};
+    die "Error detecting current branch for '$path': $r->{stderr}" unless $r->{status};
     return trim($r->{stdout});
 }
 
@@ -62,30 +62,30 @@ sub _ssh_git_cmd($git_args) {
 
 sub _get_remote_default_branch ($url) {
     my $r = run_cmd_with_log_return_error(_ssh_git_cmd(['ls-remote', '--symref', $url, 'HEAD']));
-    die "Error detecting remote default branch name for '$url'"
+    die "Error detecting remote default branch name for '$url': $r->{stderr}"
       unless $r->{status} && $r->{stdout} =~ /refs\/heads\/(\S+)\s+HEAD/;
     return $1;
 }
 
 sub _git_clone_url_to_path ($url, $path) {
     my $r = run_cmd_with_log_return_error(_ssh_git_cmd(['clone', $url, $path]));
-    die "Failed to clone $url into '$path'" unless $r->{status};
+    die "Failed to clone $url into '$path': $r->{stderr}" unless $r->{status};
 }
 
 sub _git_get_origin_url ($path) {
     my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'remote', 'get-url', 'origin']);
-    die "Failed to get origin url for '$path'" unless $r->{status};
+    die "Failed to get origin url for '$path': $r->{stderr}" unless $r->{status};
     return trim($r->{stdout});
 }
 
 sub _git_fetch ($path, $branch_arg) {
     my $r = run_cmd_with_log_return_error(_ssh_git_cmd(['-C', $path, 'fetch', 'origin', $branch_arg]));
-    die "_git_fetch: Failed with error '$r->{stderr}'" unless $r->{status};
+    die "Failed to fetch from '$branch_arg': $r->{stderr}" unless $r->{status};
 }
 
 sub _git_reset_hard ($path, $branch) {
     my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'reset', '--hard', "origin/$branch"]);
-    die "_git_reset_hard: Failed with error '$r->{stderr}'" unless $r->{status};
+    die "Failed to reset to 'origin/$branch': $r->{stderr}" unless $r->{status};
 }
 
 sub _git_clone ($job, $ctx, $path, $url) {
