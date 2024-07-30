@@ -1984,10 +1984,12 @@ for details.
 
 [NOTE]
 ====
-The openQA worker normally default-initializes `CASEDIR` and `NEEDLES_DIR` to
-point to default repositories provided by the openQA instance. This behavior
-interacts with specifying a custom `CASEDIR` or `NEEDLES_DIR` in the following
-way:
+The openQA worker initializes `CASEDIR` and `NEEDLES_DIR` to point to
+repositories provided by the openQA instance (usually under
+`/var/lib/openqa/share/tests`).
+
+When the variables `CASEDIR` and `NEEDLES_DIR` are set, the behavior is as
+follows:
 
 * If `CASEDIR` or `NEEDLES_DIR` is customized the customized location is used
   instead of the default repository.
@@ -2020,9 +2022,10 @@ For example:
 openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6649 https://openqa.opensuse.org/tests/839191
 ----
 
-Note that customizing `CASEDIR` does *not* mean needles will be loaded from
-there, even if the repository specified as `CASEDIR` contains needles. To load
-needles from that repository, it needs to be specified as `NEEDLES_DIR` as well.
+As noted above, customizing `CASEDIR` does *not* mean needles will be loaded
+from there, even if the repository specified as `CASEDIR` contains needles. To
+load needles from that repository, it needs to be specified as `NEEDLES_DIR` as
+described in the note above.
 
 Keep in mind that if `PRODUCTDIR` is overwritten as well, it might not relate to
 the state of the specified git refspec that is passed via the command line
