@@ -168,7 +168,7 @@ sub _send_livestream_command_to_worker ($client, $command, $verb, $worker_id, $j
         return $cb ? $cb->(undef) : 1 unless my $err = $tx->error;
         my $msg = $err->{code} ? "$err->{code} response: $err->{message}" : $err->{message};
         $msg = "Unable to ask worker $worker_id to $verb providing livestream for $job_id: $msg";
-        log_error $msg;
+        log_debug $msg;
         $cb->($msg) if $cb;
     };
     $client->send_msg($worker_id, $command, $job_id, undef, $txn_cb);
