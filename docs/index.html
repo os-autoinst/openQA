@@ -9019,16 +9019,14 @@ supplied as new, unambiguous download target file names.</p>
 <div class="sect2">
 <h3 id="_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote Git refspec or open GitHub pull request</h3>
 <div class="paragraph">
-<p>openQA also supports to trigger tests using test code from an open pull
-request on GitHub or any branch or Git refspec. That means that code changes
-that are not yet available on a production instance of openQA can be tested
-safely to ensure the code changes work as expected before merging the code
-into a production repository and branch. This works by setting the
-<code>CASEDIR</code> parameter of os-autoinst to a valid Git repository path including
-an optional branch/refspec specifier. It is also possible to set <code>NEEDLES_DIR</code>
-to a valid Git repository path to use custom needles.
-See
-<a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc" class="bare">https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc</a>
+<p>openQA also supports to trigger tests using test code from a pull request or
+any branch or Git refspec. That means that code changes that are not yet
+available on a production instance of openQA can be tested safely to ensure the
+code changes work as expected before merging the code into a production
+repository and branch. This works by setting the <code>CASEDIR</code> parameter of
+os-autoinst to a valid Git repository path including an optional branch/refspec
+specifier. <code>NEEDLES_DIR</code> can be set in the same way to use custom needles. See
+<a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc">the os-autoinst documentation</a>
 for details.</p>
 </div>
 <div class="admonitionblock note">
@@ -9039,10 +9037,13 @@ for details.</p>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The openQA worker normally default-initializes <code>CASEDIR</code> and <code>NEEDLES_DIR</code> to
-point to default repositories provided by the openQA instance. This behavior
-interacts with specifying a custom <code>CASEDIR</code> or <code>NEEDLES_DIR</code> in the following
-way:</p>
+<p>The openQA worker initializes <code>CASEDIR</code> and <code>NEEDLES_DIR</code> to point to
+repositories provided by the openQA instance (usually under
+<code>/var/lib/openqa/share/tests</code>).</p>
+</div>
+<div class="paragraph">
+<p>When the variables <code>CASEDIR</code> and <code>NEEDLES_DIR</code> are set, the behavior is as
+follows:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -9093,9 +9094,10 @@ the following syntax can be used:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Note that customizing <code>CASEDIR</code> does <strong>not</strong> mean needles will be loaded from
-there, even if the repository specified as <code>CASEDIR</code> contains needles. To load
-needles from that repository, it needs to be specified as <code>NEEDLES_DIR</code> as well.</p>
+<p>As noted above, customizing <code>CASEDIR</code> does <strong>not</strong> mean needles will be loaded
+from there, even if the repository specified as <code>CASEDIR</code> contains needles. To
+load needles from that repository, it needs to be specified as <code>NEEDLES_DIR</code> as
+described in the note above.</p>
 </div>
 <div class="paragraph">
 <p>Keep in mind that if <code>PRODUCTDIR</code> is overwritten as well, it might not relate to
@@ -13030,7 +13032,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-07-27 04:44:37 UTC
+Last updated 2024-07-31 04:44:40 UTC
 </div>
 </div>
 </body>
