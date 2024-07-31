@@ -610,8 +610,7 @@ subtest 'test candidate list' => sub {
         \%expected_candidates, 'needles appear twice, each time under different tag');
 
     $driver->get('/tests/99946#step/installer_timezone/1');
-    wait_for_ajax_and_animations(msg => 'step preview');
-    $driver->find_element_by_id('candidatesMenu')->click();
+    wait_for_element(selector => '#candidatesMenu', is_displayed => 1)->click();
     wait_for_element(selector => '#needlediff_selector .show-needle-info', is_displayed => 1)->click();
     like(
         $driver->find_element('.needle-info-table')->get_text(),
