@@ -69,15 +69,15 @@ $ua->connect_timeout(0.25)->inactivity_timeout(0.25);
 
 subtest 'Connection refused' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
-    like $downloader->download($from, $to), qr/Download of "$to" failed: 521/, 'Failed';
+    like $downloader->download($from, $to), qr/Download of "$to" failed: Connection refused/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
     like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 521/, 'Real error is logged';
-    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
-    unlike $cache_log, qr/Download error 521, waiting .* seconds for next try \(3 remaining\)/, 'only 3 attempts';
+    like $cache_log, qr/Download of "$to" failed: Connection refused/, 'Real error is logged';
+    like $cache_log, qr/Download error, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
+    unlike $cache_log, qr/Download error, waiting .* seconds for next try \(3 remaining\)/, 'only 3 attempts';
     $cache_log = '';
 };
 
@@ -112,14 +112,14 @@ subtest 'Success' => sub {
 
 subtest 'Connection closed early' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_close@64bit.qcow2";
-    like $downloader->download($from, $to), qr/Download of "$to" failed: 521 Premature connection close/, 'Failed';
+    like $downloader->download($from, $to), qr/Download of "$to" failed: Premature connection close/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
     like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 521 Premature connection close/, 'Real error is logged';
-    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Download of "$to" failed: Premature connection close/, 'Real error is logged';
+    like $cache_log, qr/Download error, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
@@ -144,8 +144,8 @@ subtest 'Size differs' => sub {
 
     like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
     like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/, 'Incomplete download logged';
-    like $cache_log, qr/Download error 598, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 598, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Download error, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 

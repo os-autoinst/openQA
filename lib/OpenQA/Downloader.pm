@@ -23,29 +23,26 @@ sub download ($self, $url, $target, $options = {}) {
 
     local $ENV{MOJO_TMPDIR} = $self->tmpdir;
 
-    my $n = $self->attempts;
-    my ($err, $ret);
+    my $remaining_attempts = $self->attempts;
+    my ($code, $err);
     while (1) {
         $options->{on_attempt}->() if $options->{on_attempt};
+        ($code, $err) = $self->_get($url, $target, $options);
+        return undef unless defined $err;
 
-        ($ret, $err) = $self->_get($url, $target, $options);
-        return undef unless $ret;
-
-        if ($ret =~ /^5[0-9]{2}$/ && --$n) {
+        if ((--$remaining_attempts) && (!defined $code || ($code =~ /^5[0-9]{2}$/))) {
             my $time = $self->sleep_time;
-            $log->info("Download error $ret, waiting $time seconds for next try ($n remaining)");
+            my $short_error_message = $code ? "Download error $code" : 'Download error';
+            $log->info("$short_error_message, waiting $time seconds for next try ($remaining_attempts remaining)");
             sleep $time;
             next;
         }
-        elsif (!$n) {
+        elsif (!$remaining_attempts) {
             $options->{on_failed}->() if $options->{on_failed};
-            last;
         }
-
         last;
     }
-
-    return $err ? $err : 'No error message recorded';
+    return $err;
 }
 
 sub _extract_asset ($self, $to_extract, $target) {
@@ -85,19 +82,18 @@ sub _get ($self, $url, $target, $options) {
     my $res = $tx->res;
     $self->res($res);
 
-    my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
-    if ($code eq 304) {
+    my $code = $res->code;
+    my $error = $res->error // {message => 'Unknown error'};
+    if (defined $code && $code == 304) {
         $options->{on_unchanged}->() if $options->{on_unchanged};
-        return (520, 'Unknown error') unless -e $target;    # Avoid race condition between check and removal
-        return (undef, undef);
+        return (undef, -e $target ? undef : $error->{message});
     }
 
     if (!$res->is_success) {
-        my $error = $res->error;
-        my $message = ref $error eq 'HASH' ? " $error->{message}" : '';
-        my $log_err = qq{Download of "$target" failed: $code$message};
-        $log->info($log_err);
-        return ($code, $log_err);
+        my $error_message = defined $code ? "$code $error->{message}" : $error->{message};
+        my $log_message = qq{Download of "$target" failed: $error_message};
+        $log->info($log_message);
+        return ($code, $log_message);
     }
 
     unlink $target;
@@ -106,8 +102,7 @@ sub _get ($self, $url, $target, $options) {
     my $asset = $res->content->asset;
     my $size = $asset->size;
     my $headers = $res->headers;
-    my $ret;
-    my $err;
+    my ($ret, $err);
     if ($size == $headers->content_length) {
         if ($options->{extract}) {
             my $tempfile = path($ENV{MOJO_TMPDIR}, Mojo::URL->new($url)->path->parts->[-1])->to_string;
@@ -131,7 +126,6 @@ sub _get ($self, $url, $target, $options) {
         my $actual_size = human_readable_size($size);
         $err = qq{Size of "$target" differs, expected $header_size but downloaded $actual_size};
         $log->info($err);
-        $ret = 598;    # 598 (Informal convention) Network read timeout error
     }
 
     return ($ret, $err);
