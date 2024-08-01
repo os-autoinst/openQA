@@ -366,9 +366,8 @@ to play deeper, you can configure the whole openQA manually from scratch, but
 this document should help you to get started faster.
 
 === Getting tests
-Set `git_auto_clone = yes` in `openqa.ini`. Then you can point `CASEDIR` and
-`NEEDLES_DIR` to Git repositories. openQA will checkout those repositories
-automatically and no manual setup is needed.
+You can point `CASEDIR` and `NEEDLES_DIR` to Git repositories. openQA will
+checkout those repositories automatically and no manual setup is needed.
 
 Otherwise you will need to clone tests and needles manually. First you need to
 get actual tests. You can get openSUSE tests and needles (the expected results)

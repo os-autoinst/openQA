@@ -34,6 +34,7 @@ my $test_payload = decode_json(path("$FindBin::Bin/../data/example-webhook-paylo
 my $ua = $app->ua->ioloop($ioloop);
 my %headers = ('X-GitHub-Event' => 'pull_request');
 my $validation_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Webhook');
+$app->config->{'scm git'}->{git_auto_clone} = 'no';
 
 subtest 'signature validation' => sub {
     my $payload = 'some text';
