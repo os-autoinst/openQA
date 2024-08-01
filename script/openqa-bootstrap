@@ -26,7 +26,7 @@ start-database() {
 start-worker() {
     if [[ -z $running_systemd ]]; then
         /usr/bin/install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/1
-        su _openqa-worker -c '/usr/share/openqa/script/worker --instance 1'
+        su _openqa-worker -c '/usr/share/openqa/script/worker --instance 1' &
     else
         systemctl enable --now openqa-worker@1
     fi
@@ -182,3 +182,7 @@ start-worker
 if [[ $# -ne 0 ]]; then
     openqa-clone-job "$@"
 fi
+
+# wait forever without systemd (assuming we are running as container entrypoint)
+# see https://progress.opensuse.org/issues/164595?#note-5
+[[ -n $running_systemd ]] || wait
