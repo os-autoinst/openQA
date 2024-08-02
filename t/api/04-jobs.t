@@ -1564,7 +1564,6 @@ subtest 'handle git CASEDIR' => sub {
             ],
         });
     my $params = {TEST => 'handle_foo_casedir',};
-    OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} = 'yes';
     $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
 
     my $job_id = $t->tx->res->json->{id};
