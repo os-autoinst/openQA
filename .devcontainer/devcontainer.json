@@ -1,6 +1,6 @@
 {
     "name": "openQA Single Instance",
-    "image": "registry.opensuse.org/devel/openqa/containers15.5/openqa-single-instance",
+    "image": "registry.opensuse.org/devel/openqa/containers/openqa-single-instance-codespaces",
     "runArgs": [ "--privileged", "--device", "/dev/kvm", "--entrypoint", "bash" ],
     "postCreateCommand": "chown root:kvm /dev/kvm",
     "containerEnv": {
