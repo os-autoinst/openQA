@@ -704,14 +704,7 @@ sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $par
                 $worker_class = $job->settings->find({key => 'WORKER_CLASS'});
                 $worker_class = $worker_class ? $worker_class->value : '';
             }
-            my $parent_worker_class
-              = $schema->resultset('JobSettings')->find({job_id => $parent, key => 'WORKER_CLASS'});
-            $parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '';
-            if ($worker_class ne $parent_worker_class) {
-                my $test_name = $job->TEST;
-                die
-"Worker class of $test_name ($worker_class) does not match the worker class of its directly chained parent ($parent_worker_class)";
-            }
+            my $parent_worker_class = $schema->resultset('JobSettings')->parent_worker_class($parent, $worker_class);
         }
         $job_dependencies->create(
             {

@@ -68,4 +68,14 @@ sub query_for_settings ($self, $args) {
     return $self->search({-and => \@conds});
 }
 
+sub parent_worker_class ($self, $parent_job_id, $worker_class) {
+    my $result = $self->search({parent_job_id => $job_id, key => 'WORKER_CLASS'})->next;
+    my $parent_worker_class = $result ? $result->value : '';
+    die
+      "Worker class $worker_class does not match the worker class of its directly chained parent ($parent_worker_class)"
+      unless $worker_class eq $parent_worker_class;
+    die "Ambiguous job settings for dependent jobs" if $result->next;
+    return $parent_worker_class;
+}
+
 1;
