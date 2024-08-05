@@ -1,8 +1,7 @@
 [Unit]
 Description=The openQA web UI
-Wants=openqa-setup-db.service
+Wants=openqa-setup-db.service openqa-livehandler.service openqa-websockets.service openqa-gru.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.timer openqa-minion-restart.path
 After=postgresql.service openqa-setup-db.service openqa-scheduler.service nss-lookup.target remote-fs.target
-Requires=openqa-livehandler.service openqa-websockets.service openqa-gru.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.timer openqa-minion-restart.path
 
 [Service]
 User=geekotest
