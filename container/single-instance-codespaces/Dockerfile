@@ -14,6 +14,8 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 # endlabelprefix
 
 # install Codespaces requirements
+# install openQA-single-instance which is supposed to be already installed but we need to specify it anyway for the replace_using_package_version buildtime service
 # hadolint ignore=DL3037
-RUN zypper in -y awk tar && \
+RUN zypper in -y awk tar \
+    openQA-single-instance && \
     zypper clean -a
