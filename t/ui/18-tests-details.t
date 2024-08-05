@@ -610,8 +610,16 @@ subtest 'test candidate list' => sub {
         \%expected_candidates, 'needles appear twice, each time under different tag');
 
     $driver->get('/tests/99946#step/installer_timezone/1');
-    wait_for_element(selector => '#candidatesMenu', is_displayed => 1)->click();
-    wait_for_element(selector => '#needlediff_selector .show-needle-info', is_displayed => 1)->click();
+    my $clicks = 0;
+    wait_for_element(
+        selector => '#needlediff_selector .show-needle-info',
+        is_displayed => 1,
+        trigger_function => sub () {
+            # open the candidates menu at the beginning and try again before every second check
+            return if $clicks != 0 && ($clicks % 2) == 1;
+            wait_for_element(selector => '#candidatesMenu', is_displayed => 1)->click;
+            ++$clicks;
+        })->click;
     like(
         $driver->find_element('.needle-info-table')->get_text(),
         qr/Last match.*T.*Last seen.*T.*/s,
