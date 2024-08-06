@@ -8,7 +8,7 @@
                  <i class="action fa fa-undo" title="Restart the job"></i>
                  % end
              % }
-             % elsif ($state eq RUNNING || $state eq SCHEDULED) {
+             % elsif (any { $_ eq $state } PENDING_STATES) {
                  %= link_post url_for('apiv1_cancel', jobid => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
                      <i class="action fa fa-times-circle-o" title="Cancel the job"></i>
                  % end
