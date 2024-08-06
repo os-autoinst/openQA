@@ -2,7 +2,7 @@
 % layout 'bootstrap';
 % title 'Test summary';
 % use OpenQA::Jobs::Constants;
-% use List::Util qw(sum);
+% use List::Util qw(any sum);
 
 % content_for 'ready_function' => begin
   window.overviewParallelChildrenCollapsableResultsSel = '<%= $parallel_children_collapsable_results_sel %>';
