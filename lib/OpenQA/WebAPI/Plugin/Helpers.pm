@@ -389,6 +389,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional($_, 'not_empty') for JOBS_OVERVIEW_SEARCH_CRITERIA;
     $v->optional('comment');
     $v->optional('groupid')->num(0, undef);
+    $v->optional('not_groupid')->num(0, undef);
     $v->optional('modules', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(0, undef);
 
@@ -479,6 +480,15 @@ sub _compose_job_overview_search_args ($c) {
 
     # allow filtering by group ID or group name
     $search_args{groupids} = [map { $_->id } @groups] if @groups;
+
+    # allow excluding jobs by group ID (0 to exclude groupless jobs)
+    if ($v->is_valid('not_groupid')) {
+        my @not_group_ids = @{$v->every_param('not_groupid')};
+        $search_args{groupid} = {-not_in => \@not_group_ids};
+        if (grep { $_ == 0 } @not_group_ids) {
+            $search_args{groupid} = {-not_in => \@not_group_ids, '!=' => undef};
+        }
+    }
 
     # allow filtering by comment text
     if (my $c = $v->param('comment')) { $search_args{comment_text} = $c }
