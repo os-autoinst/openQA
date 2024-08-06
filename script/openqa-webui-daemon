@@ -1,3 +1,38 @@
-#!/bin/sh -e
-# Our API commands are very expensive, so the default timeouts are too tight
-exec "$(dirname "$0")"/openqa prefork -m production --proxy -i 100 -H 900 -w 30 -c 1 -G 800 "$@"
+#!/bin/bash
+set -e
+
+pid=
+pid_idx=0
+pid_dir=${OPENQA_BASEDIR:-/var/lib}/openqa/webui
+openqa_args=("$@")
+openqa_dir=$(dirname "$0")
+
+function start_service {
+    # keep track of the previous and next PID
+    pid_last=$pid
+    pid_file=$pid_dir/prefork-$pid_idx.pid
+    pid_idx=$(((pid_idx + 1) % 2))
+    rm -f "$pid_file"
+
+    # start openQA in the background
+    # note: Our API commands are very expensive, so the default timeouts are too tight.
+    "$openqa_dir"/openqa prefork -m production --proxy -i 100 -H 900 -w 30 -c 1 -G 800 -P "$pid_file" "${openqa_args[@]}" &
+    pid=$!
+
+    # wait until openQA is ready to accept requests by waiting for its PID file
+    while [[ ! -e $pid_file ]] && [[ -e /proc/$pid ]]; do sleep 1; done
+
+    # terminate a previously started openQA instance
+    [[ $pid_last ]] && kill -s TERM "$pid_last"
+
+    # keep running until openQA terminates (with the "wait"-builtin so bash can handle SIGHUP)
+    wait "$pid"
+}
+
+# create directory for PID file but ignore errors at this point as the dir is not required by all sub commands
+mkdir -p "$pid_dir" || true
+
+# start service now and restart it gracefully when we receive SIGHUP
+# see https://docs.mojolicious.org/Mojolicious/Guides/Cookbook#Zero-downtime-software-upgrades
+trap start_service SIGHUP
+start_service

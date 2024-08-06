@@ -840,10 +840,10 @@ sub set_listen_address {
     my $port = shift;
 
     return if $ENV{MOJO_LISTEN};
-    my @listen_addresses = ("http://127.0.0.1:$port");
+    my @listen_addresses = ("http://127.0.0.1:$port?reuse=1");
 
     # Check for IPv6
-    push @listen_addresses, "http://[::1]:$port" if IO::Socket::IP->new(Listen => 5, LocalAddr => '::1');
+    push @listen_addresses, "http://[::1]:$port?reuse=1" if IO::Socket::IP->new(Listen => 5, LocalAddr => '::1');
 
     $ENV{MOJO_LISTEN} = join ',', @listen_addresses;
 }
