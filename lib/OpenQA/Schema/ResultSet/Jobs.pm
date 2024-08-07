@@ -16,6 +16,8 @@ use OpenQA::Utils 'testcasedir';
 use Mojo::File 'path';
 use Mojo::JSON 'encode_json';
 use Mojo::URL;
+use Mojolicious::Validator;
+use Mojolicious::Validator::Validation;
 use Time::HiRes 'time';
 use DateTime;
 
@@ -119,13 +121,21 @@ sub create_from_settings {
 
     my @invalid_keys = grep { $_ =~ /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
       keys %settings;
-    die 'The ' . join(',', @invalid_keys) . ' cannot include / in value' if @invalid_keys;
+    die 'The ' . join(',', @invalid_keys) . " cannot include / in value\n" if @invalid_keys;
+
+    # validate special settings
+    my %special_settings = (_PRIORITY => delete $settings{_PRIORITY});
+    my $validator = Mojolicious::Validator->new;
+    my $v = Mojolicious::Validator::Validation->new(validator => $validator, input => \%special_settings);
+    my $prio = $v->optional('_PRIORITY')->num->param;
+    die 'The following settings are invalid: ' . join(', ', @{$v->failed}) . "\n" if $v->has_error;
 
     # assign group ID and priority
     my ($group_args, $group) = OpenQA::Schema::Result::Jobs::extract_group_args_from_settings(\%settings);
+    $new_job_args{priority} = $prio if defined $prio;
     if ($group) {
         $new_job_args{group_id} = $group->id;
-        $new_job_args{priority} = $group->default_priority;
+        $new_job_args{priority} //= $group->default_priority;
     }
 
     # handle dependencies

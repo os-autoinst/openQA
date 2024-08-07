@@ -487,11 +487,12 @@ Sets priority for a given job.
 
 sub prio ($self) {
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $res = $job->set_prio($self->param('prio'));
+    my $v = $self->validation;
+    my $prio = $v->required('prio')->num->param;
+    return $self->reply->validation_error({format => 'json'}) if $v->has_error;
 
-    # Referencing the scalar will result in true or false
-    # (see http://mojolicio.us/perldoc/Mojo/JSON)
-    $self->render(json => {result => \$res});
+    # Referencing the scalar will result in true or false (see http://mojolicio.us/perldoc/Mojo/JSON)
+    $self->render(json => {result => \$job->set_prio($prio)});
 }
 
 =over 4
