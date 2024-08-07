@@ -578,20 +578,117 @@ function setupResult(jobid, state, result, status_url) {
   setInfoPanelClassName(state, result);
 }
 
-function loadEmbeddedLogFiles() {
+function delay(callback, ms) {
+  let timer;
+  return function () {
+    clearTimeout(timer);
+    timer = setTimeout(callback.bind(this, ...arguments), ms || 0);
+  };
+}
+
+function filterLogLines(input) {
+  if (input === undefined) {
+    return;
+  }
+  const string = input.value;
+  let regex = undefined;
+  const match = string.match(/^\/(.*)\/([i]*)$/);
+  if (match) {
+    regex = new RegExp(match[1], match[2]);
+  }
+  displaySearchInfo('Searching…');
+  $('.embedded-logfile').each(function (index, logFileElement) {
+    let content = logFileElement.dataset.content;
+    if (content === undefined) {
+      return;
+    }
+    if (string.length > 0) {
+      const lines = content.split(/\r?\n/);
+      const wanted = [];
+      for (const line of lines) {
+        if (regex) {
+          // For searching for /^something/ we need to remove ansi control characters
+          const text = ansiToText(line);
+          if (text.match(regex)) {
+            wanted.push(line);
+          }
+          continue;
+        }
+        if (line.includes(string)) {
+          wanted.push(line);
+        }
+      }
+      content = wanted.join('\n');
+      displaySearchInfo(`Showing ${wanted.length} / ${lines.length} lines`);
+    } else {
+      displaySearchInfo('');
+    }
+    logFileElement.innerHTML = ansiToHtml(content);
+  });
+  const fullCurrentUrl = window.location.href;
+  const urlParts = fullCurrentUrl.split('#');
+  const currentUrl = urlParts[0];
+  const fragment = urlParts[1];
+  if (string.length > 0) {
+    window.location.href = `${currentUrl}#filter=${encodeURIComponent(string)}`;
+  } else if (fragment) {
+    // leaving off the # here would reload the page
+    window.location.href = currentUrl + '#';
+  }
+}
+
+function filterEmbeddedLogFiles() {
+  const searchBox = document.getElementById('filter-log-file');
+  if (searchBox) {
+    const currentUrl = window.location.href;
+    const fragment = currentUrl.split('#')[1];
+    if (fragment) {
+      const params = fragment.split('&');
+      for (let i = 0; i < params.length; i++) {
+        const keyval = params[i].split('=');
+        if (keyval[0] === 'filter') {
+          searchBox.value = decodeURIComponent(keyval[1]);
+        }
+      }
+    }
+  }
+  const filter = filterLogLines.bind(null, searchBox);
+  loadEmbeddedLogFiles(filter);
+}
+
+function loadEmbeddedLogFiles(filter) {
   $('.embedded-logfile').each(function (index, logFileElement) {
     if (logFileElement.dataset.contentsLoaded) {
       return;
     }
     $.ajax(logFileElement.dataset.src)
       .done(function (response) {
-        logFileElement.innerHTML = ansiToHtml(response);
+        logFileElement.dataset.content = response;
+        if (filter) {
+          filter();
+        } else {
+          logFileElement.innerHTML = ansiToHtml(response);
+        }
         logFileElement.dataset.contentsLoaded = true;
       })
       .fail(function (jqXHR, textStatus, errorThrown) {
         logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
       });
   });
+}
+
+window.onload = function () {
+  const searchBox = document.getElementById('filter-log-file');
+  if (!searchBox) {
+    return;
+  }
+  const filter = filterLogLines.bind(null, searchBox);
+  searchBox.addEventListener('keyup', delay(filter), 1000);
+  searchBox.addEventListener('change', filter, false);
+};
+
+function displaySearchInfo(text) {
+  document.getElementById('filter-info').innerHTML = text;
 }
 
 function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
