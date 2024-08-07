@@ -137,7 +137,7 @@ clone_job() {
         local host=${job_url%%/t*}
         local job=${job_url##*/}
     fi
-    if [[ -z "$testsuite" ]] || [[ -z "$needles_dir" ]] || [[ -z "$productdir" ]]; then
+    if [[ -z "$testsuite" ]] || [[ -z "$productdir" ]]; then
         local json_url=${host}/tests/${job}/file/vars.json
         local json_data
         json_data=$(eval "${curl_openqa} -s ${json_url}")
@@ -157,10 +157,6 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
             local productdir="${productdir:-"${repo_name##*/}/${old_productdir#*"${old_casedir##*/}"}"}"
         fi
         productdir="${productdir/\/\//\/}" # avoid consecutive slashes
-        local old_needledir
-        old_needledir=$(echo "$json_data" | jq -r '.NEEDLES_DIR | select (.!=null)') || throw_json_error "$json_url" "$json_data"
-        local needles_dir="${needles_dir:-"$old_needledir"}"
-        needles_dir="${needles_dir:-"$old_productdir/needles"}"
     fi
     local repo_branch="${repo_branch:-"$repo_name#$branch"}"
     local test_suffix="${test_suffix:-"@$repo_branch"}"
@@ -170,7 +166,7 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
     local dry_run="${dry_run:-""}"
     local scriptdir
     scriptdir=$(dirname "${BASH_SOURCE[0]}")
-    local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST+=\"$test_suffix\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
+    local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST+=\"$test_suffix\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\""
     [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
