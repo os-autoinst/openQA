@@ -915,16 +915,16 @@ subtest 'default priority correctly assigned when posting job' => sub {
     # post new job and check default priority
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-    $t->json_is('/job/group', 'opensuse');
-    $t->json_is('/job/priority', 50);
+    $t->json_is('/job/group', 'opensuse', 'group assigned (1)');
+    $t->json_is('/job/priority', 50, 'global default priority assigned');
 
     # post new job in job group with customized default priority
     $schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
     $jobs_post_params{_GROUP} = 'opensuse test';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-    $t->json_is('/job/group', 'opensuse test');
-    $t->json_is('/job/priority', 42);
+    $t->json_is('/job/group', 'opensuse test', 'group assigned (2)');
+    $t->json_is('/job/priority', 42, 'default priority from group assigned');
 };
 
 subtest 'specifying group by ID' => sub {
