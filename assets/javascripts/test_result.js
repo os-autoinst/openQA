@@ -578,20 +578,118 @@ function setupResult(jobid, state, result, status_url) {
   setInfoPanelClassName(state, result);
 }
 
-function loadEmbeddedLogFiles() {
+function delay(callback, ms) {
+  var timer = 0;
+  return function () {
+    const input = this;
+    const args = arguments;
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      callback.apply(input, args);
+    }, ms || 0);
+  };
+}
+
+function filterLogLines(input) {
+  if (input === undefined) {
+    return;
+  }
+  const string = input.value;
+  let regex = undefined;
+  const match = string.match(/^\/(.*)\/([i]*)$/);
+  if (match) {
+    regex = new RegExp(match[1], match[2]);
+  }
+  displaySearchInfo('Searching...');
+  $('.embedded-logfile').each(function (index, logFileElement) {
+    let content = logFileElement.dataset.content;
+    if (content === undefined) {
+      return;
+    }
+    if (string.length > 0) {
+      const lines = content.split(/\r?\n/);
+      const wanted = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (regex) {
+          if (lines[i].match(regex)) {
+            wanted.push(lines[i]);
+          }
+          continue;
+        }
+        if (lines[i].includes(string)) {
+          wanted.push(lines[i]);
+        }
+      }
+      content = wanted.join('\n');
+      displaySearchInfo('Showing ' + wanted.length + ' / ' + lines.length + ' lines');
+    } else {
+      displaySearchInfo('');
+    }
+    logFileElement.innerHTML = ansiToHtml(content);
+  });
+  const fullCurrentUrl = window.location.href;
+  const currentUrl = fullCurrentUrl.split('#')[0];
+  const fragment = fullCurrentUrl.split('#')[1];
+  if (string.length > 0) {
+    window.location.href = `${currentUrl}#${string}`;
+  } else {
+    if (fragment) {
+      // leaving off the # here would reload the page
+      window.location.href = currentUrl + '#';
+    }
+  }
+}
+
+function filterEmbeddedLogFiles() {
+  var searchBox = document.getElementById('search-log-file');
+  if (searchBox) {
+    const currentUrl = window.location.href;
+    const fragment = currentUrl.split('#')[1];
+    if (fragment) {
+      searchBox.value = fragment;
+    }
+  }
+  const filter = function () {
+    filterLogLines(searchBox);
+  };
+  loadEmbeddedLogFiles(filter);
+}
+
+function loadEmbeddedLogFiles(filter) {
   $('.embedded-logfile').each(function (index, logFileElement) {
     if (logFileElement.dataset.contentsLoaded) {
       return;
     }
     $.ajax(logFileElement.dataset.src)
       .done(function (response) {
-        logFileElement.innerHTML = ansiToHtml(response);
+        logFileElement.dataset.content = response;
+        if (filter) {
+          filter();
+        } else {
+          logFileElement.innerHTML = ansiToHtml(response);
+        }
         logFileElement.dataset.contentsLoaded = true;
       })
       .fail(function (jqXHR, textStatus, errorThrown) {
         logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
       });
   });
+}
+
+window.onload = function () {
+  var searchBox = document.getElementById('search-log-file');
+  if (!searchBox) {
+    return;
+  }
+  const filter = function () {
+    filterLogLines(searchBox);
+  };
+  searchBox.addEventListener('keyup', delay(filter), 1000);
+  searchBox.addEventListener('change', filter, false);
+};
+
+function displaySearchInfo(text) {
+  document.getElementById('search-info').innerHTML = text;
 }
 
 function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
