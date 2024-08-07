@@ -35,7 +35,7 @@
                         <td>-</td>
                         % next;
                     % }
-                    % my $resultid = join('_', $type, $arch, $config);
+                    % my $resultid = join('_', $type, $arch, $config) =~ tr/ /_/r;
                     %= include 'test/tr_job_result', resultid => $resultid, res => $res, state => $state, jobid => $jobid
                 % }
             </tr>
