@@ -334,7 +334,6 @@ sub _schedule_iso {
         my %job_ids_by_test_machine;    # key: "TEST@MACHINE", value: "array of job ids"
 
         for my $settings (@{$jobs || []}) {
-            my $prio = delete $settings->{PRIO};
             $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
@@ -348,10 +347,6 @@ sub _schedule_iso {
                 my $j_id = $job->id;
                 $job_ids_by_test_machine{_job_ref($settings)} //= [];
                 push @{$job_ids_by_test_machine{_job_ref($settings)}}, $j_id;
-
-                # set prio if defined explicitly (otherwise default prio is used)
-                $job->update({priority => $prio}) if (defined($prio));
-
                 $self->_create_download_lists(\%tmp_downloads, $download_list, $j_id);
             }
             catch {
@@ -603,7 +598,7 @@ sub _generate_jobs {
             my $error = OpenQA::JobSettings::generate_settings(\%params);
             $error_message .= $error if defined $error;
 
-            $settings{PRIO} = defined($priority) ? $priority : $job_template->prio;
+            $settings{_PRIORITY} = $priority // $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
             _populate_wanted_jobs_for_test_arg($args, \%settings, \%wanted);
@@ -793,13 +788,13 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
                 my $machine_settings = $mach->{settings} // {};
                 _merge_settings_and_worker_classes($machine_settings, $settings, \@worker_class);
                 $settings->{BACKEND} = $mach->{backend} if $mach->{backend};
-                $settings->{PRIO} = $mach->{priority} // DEFAULT_JOB_PRIORITY;
+                $settings->{_PRIORITY} = $mach->{priority} // DEFAULT_JOB_PRIORITY;
             }
         }
 
         # set priority of job if specified
         if (my $priority = $job_template->{priority}) {
-            $settings->{PRIO} = $priority;
+            $settings->{_PRIORITY} = $priority;
         }
 
         # handle further settings
