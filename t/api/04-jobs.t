@@ -911,7 +911,7 @@ subtest 'WORKER_CLASS correctly assigned when posting job' => sub {
     is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'svirt', 'specified WORKER_CLASS assigned';
 };
 
-subtest 'default priority correctly assigned when posting job' => sub {
+subtest 'priority correctly assigned when posting job' => sub {
     # post new job and check default priority
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
@@ -925,10 +925,25 @@ subtest 'default priority correctly assigned when posting job' => sub {
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
     $t->json_is('/job/group', 'opensuse test', 'group assigned (2)');
     $t->json_is('/job/priority', 42, 'default priority from group assigned');
+
+    # post new job with explicitely specified _PRIORITY setting
+    $jobs_post_params{_PRIORITY} = 43;
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+    $t->json_is('/job/group', 'opensuse test', 'group assigned (3)');
+    $t->json_is('/job/priority', 43, 'explicitely specified priority assigned');
+    $t->json_is('/job/settings/_PRIORITY', undef, 'priority not added as setting');
+
+    # post new job with invalid explicitely specified _PRIORITY setting
+    $jobs_post_params{_PRIORITY} = 43.5;
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(400);
+    $t->json_like('/error', qr/settings.*invalid.*_PRIORITY/, 'error returned');
+    $t->json_is('/id', undef, 'no job ID returned');
 };
 
 subtest 'specifying group by ID' => sub {
     delete $jobs_post_params{_GROUP};
+    delete $jobs_post_params{_PRIORITY};
     $jobs_post_params{_GROUP_ID} = 1002;
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
