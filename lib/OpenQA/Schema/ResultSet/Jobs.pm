@@ -121,7 +121,7 @@ sub create_from_settings {
 
     my @invalid_keys = grep { $_ =~ /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
       keys %settings;
-    die 'The ' . join(',', @invalid_keys) . ' cannot include / in value' if @invalid_keys;
+    die 'The ' . join(',', @invalid_keys) . " cannot include / in value\n" if @invalid_keys;
 
     # validate special settings
     my %special_settings = (_PRIORITY => delete $settings{_PRIORITY});
