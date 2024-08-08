@@ -139,7 +139,15 @@
   <firewall>
     <enable_firewall t="boolean">true</enable_firewall>
     <start_firewall t="boolean">true</start_firewall>
-    <FW_CONFIGURATIONS_EXT>sshd</FW_CONFIGURATIONS_EXT>
+    <default_zone>public</default_zone>
+    <zones config:type="list">
+      <zone>
+	<name>public</name>
+	<services config:type="list">
+          <service>ssh</service>
+	</services>
+      </zone>
+    </zones>
   </firewall>
   <services-manager>
     <services>
