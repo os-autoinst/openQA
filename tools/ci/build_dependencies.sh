@@ -30,5 +30,5 @@ newtidyver="$(git diff "$CI_PACKAGES" | grep perl-Perl-Tidy | grep '^+' | grep -
 [ -z "$newtidyver" ] || {
     sed -i -e "s/\(Perl::Tidy):\s\+'==\s\)\([0-9.]\+\)\(.*\)/\1$newtidyver\3/g" dependencies.yaml
     make update-deps
-    tools/tidy
+    tools/tidyall -a
 }

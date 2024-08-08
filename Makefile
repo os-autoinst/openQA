@@ -322,7 +322,7 @@ tidy-js:
 
 .PHONY: tidy-perl
 tidy-perl:
-	tools/tidy
+	tools/tidyall -a
 
 .PHONY: tidy
 tidy: tidy-js tidy-perl
