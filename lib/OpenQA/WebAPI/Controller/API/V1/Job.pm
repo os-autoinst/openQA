@@ -85,6 +85,7 @@ sub list ($self) {
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
     $validation->optional('groupid')->num;
+    $validation->optional('not_groupid')->num; 
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
@@ -124,6 +125,11 @@ sub list ($self) {
     my $latest = $validation->param('latest');
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
+
+    if (defined(my $not_groupid = $self->param('not_groupid'))) {
+        $rs = $rs->search({group_id => {-not_in => [$not_groupid]}});
+    }
+
     my @jobarray = defined $latest ? $rs->latest_jobs : $rs->all;
 
     # Pagination
