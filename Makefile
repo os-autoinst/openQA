@@ -290,7 +290,7 @@ endif
 
 .PHONY: test-critic
 test-critic:
-	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
+	perlcritic lib
 
 .PHONY: test-tidy-compile
 test-tidy-compile:
