@@ -1,7 +1,0 @@
-#!/bin/bash
-
-mapfile -t files < <(file --mime-type -- script/* | (grep text/x-perl || true) | awk -F':' '{ print $1 }')
-files+=('**.p[ml]' '**.t')
-
-selection="$(git ls-files "${files[@]}")"
-echo "${selection[@]}"

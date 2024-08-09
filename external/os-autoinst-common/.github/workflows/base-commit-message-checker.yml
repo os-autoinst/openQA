@@ -26,7 +26,7 @@ jobs:
       - name: Check subject line length
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^.{1,72}(\n|$)'
+          pattern: '^(Revert "?)?.{1,72}(\n|$)'
           flags: 'g'
           error: 'The maximum subject line length of 72 characters is exceeded.'
           excludeDescription: 'true'

@@ -7,6 +7,6 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '80';
 
-is(system('tools/tidy', '--check'), 0, "tidy");
+is(system('tools/tidyall', '--check-only', '-a'), 0, "tidy");
 
 done_testing();

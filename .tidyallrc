@@ -1,6 +1,11 @@
-[PerlTidy]
-; Notice that this does include also non-Perl files in script/ so it is
-; suggested to use tools/tidy to cover all appropriate files. "tidyall -a"
-; will try to cover too much and fail on the non-Perl files
-select = {tools,lib,t}/**/*.{pl,pm,t} script/*
+; We split into modules and scripts because the scripts have no file
+; extension, so we detect them by their shebang
+
+[PerlTidy modules]
+select = {lib,t}/**/*.{pl,pm,t}
 argv = --profile=$ROOT/.perltidyrc
+
+[PerlTidy scripts]
+select = tools/* script/*
+argv = --profile=$ROOT/.perltidyrc
+shebang = perl

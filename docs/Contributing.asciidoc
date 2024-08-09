@@ -273,7 +273,7 @@ There are some ways to save some time when executing local tests:
 * Set the make variable `KEEP_DB=1` to keep the test database process spawned
   for tests for faster re-runs or run tests with `prove` manually after the
   test database has been created.
-* Run `tools/tidy --only-changed` to tidy up code before committing in git
+* Run `tools/tidyall --git` to tidy up modified code before committing in git
 * Set the environment variable `DIE_ON_FAIL=1` from `Test::Most` for faster
   aborts from failed tests.
 
