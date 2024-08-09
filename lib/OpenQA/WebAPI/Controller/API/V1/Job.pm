@@ -85,6 +85,7 @@ sub list ($self) {
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
     $validation->optional('groupid')->num;
+    $validation->optional('not_groupid')->num;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
@@ -99,7 +100,7 @@ sub list ($self) {
     $args{limit} = $limit + 1;
     $args{offset} = $offset;
     my @args = qw(build iso distri version flavor scope group groupid
-      before after arch hdd_1 test machine worker_class
+      not_groupid before after arch hdd_1 test machine worker_class
       modules modules_result);
     for my $arg (@args) {
         next unless defined(my $value = $self->param($arg));

@@ -284,6 +284,15 @@ sub _prepare_complex_query_search_args ($self, $args) {
         push @conds, {'me.group_id' => {-in => $subquery}};
     }
 
+    if (defined $args->{not_groupid}) {
+        my $id = $args->{not_groupid};
+        if ($id) {
+            push @conds, {-or => [{'me.group_id' => {-not_in => $id}}, {'me.group_id' => undef},]};
+        }
+        else {
+            push @conds, {'me.group_id' => {-not => undef}};
+        }
+    }
     if ($args->{ids}) {
         push @conds, {'me.id' => {-in => $args->{ids}}};
     }
