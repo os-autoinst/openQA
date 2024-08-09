@@ -13,6 +13,8 @@ sub jobs_for_setting ($self, $options) {
     $key_like =~ s/\*/\%/g;
     my $list_value = $options->{list_value};
     my $list_value_like = "%${list_value}%";
+    my $filter_results = $options->{filter_results} if $options->{filter_results};
+    my $groupids = $options->{gids} if $options->{gids};
 
     # Get the highest job id to limit the number of jobs that need to be considered (to improve performance)
     my $dbh = $self->result_source->schema->storage->dbh;
@@ -25,10 +27,15 @@ sub jobs_for_setting ($self, $options) {
 
     # Instead of limiting the number of jobs, this query could also use a trigram gin index to achieve even better
     # performance (at the cost of disk space and setup complexity)
-    $sth = $dbh->prepare(
+    if ($filter_results && $groupids) {
+	$sth = $dbh->prepare(
+        'SELECT job_id, value FROM job_settings INNER JOIN jobs ON jobs.id=job_settings.job_id WHERE key LIKE ? AND value LIKE ? AND jobs.result = ? AND jobs.group_id = ? AND job_id > ? ORDER BY job_settings.job_id DESC');
+	$sth->execute($key_like, $list_value_like, $filter_results, $groupids, $min_id);
+    } else {
+	$sth = $dbh->prepare(
         'SELECT job_id, value FROM job_settings WHERE key LIKE ? AND value LIKE ? AND job_id > ? ORDER BY job_id DESC');
-    $sth->execute($key_like, $list_value_like, $min_id);
-
+	$sth->execute($key_like, $list_value_like, $min_id);
+    }
     # Match list values
     my @jobs;
     for my $row (@{$sth->fetchall_arrayref}) {
