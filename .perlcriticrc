@@ -1,9 +1,1 @@
-theme = freenode
-severity = 4
-
-# TODO: Remove once Perl::Critic::Freenode 0.028 is widely available
-[Freenode::DiscouragedModules]
-severity = 3
-
-[Perl::Critic::Policy::HashKeyQuotes]
-severity = 5
+external/os-autoinst-common/.perlcriticrc

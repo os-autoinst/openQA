@@ -1,0 +1,14 @@
+---
+name: 'Perl critic'
+
+on: [push, pull_request]
+
+jobs:
+  perl-critic-checks:
+    runs-on: ubuntu-latest
+    name: "Perlcritic"
+    container:
+      image: perldocker/perl-tester
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test-critic
