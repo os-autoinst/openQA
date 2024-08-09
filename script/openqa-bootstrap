@@ -76,6 +76,9 @@ if [[ $NAME = "openSUSE Leap" ]]; then
     zypper -n --gpg-auto-import-keys refresh
 fi
 
+# Ensure we have retry available to handle temporary package issues later
+command -v retry > /dev/null || zypper -n --gpg-auto-import-keys in retry
+
 # install packages
 pkgs=(qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps)
 
@@ -92,7 +95,8 @@ fi
 if zypper -n search -x qemu-hw-display-virtio-gpu-pci; then
     pkgs+=(qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci)
 fi
-zypper -n install --no-recommends "${pkgs[@]}"
+packages="${pkgs[*]}"
+retry -e -s 30 -r 7 -- sh -c "zypper -n --gpg-auto-import-keys ref && zypper -n in --no-recommends $packages"
 
 # setup database
 chown -R postgres: /var/lib/pgsql/ # fix broken postgres working dir permissions in the nspawn container
