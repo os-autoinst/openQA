@@ -57,7 +57,7 @@ sub _id_or_skip ($self, $worker, $visited_worker_slots_by_id) {
     return $id;
 }
 
-sub _pick_one_matching_slot_per_host($self, $job) {
+sub _pick_one_matching_slot_per_host ($self, $job) {
     my $visited_worker_slots_by_id = $self->{_visited_worker_slots_by_id};
     my %visited_worker_slots_by_host;
     for my $matching_worker (@{$job->{matching_workers}}) {

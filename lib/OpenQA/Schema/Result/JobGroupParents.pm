@@ -88,32 +88,32 @@ sub _get_column_or_default {
     return OpenQA::App->singleton->config->{default_group_limits}->{$setting};
 }
 
-around 'default_keep_logs_in_days' => sub {
+around default_keep_logs_in_days => sub {
     my ($orig, $self) = @_;
     return $self->_get_column_or_default('default_keep_logs_in_days', 'log_storage_duration');
 };
 
-around 'default_keep_important_logs_in_days' => sub {
+around default_keep_important_logs_in_days => sub {
     my ($orig, $self) = @_;
     return $self->_get_column_or_default('default_keep_important_logs_in_days', 'important_log_storage_duration');
 };
 
-around 'default_keep_results_in_days' => sub {
+around default_keep_results_in_days => sub {
     my ($orig, $self) = @_;
     return $self->_get_column_or_default('default_keep_results_in_days', 'result_storage_duration');
 };
 
-around 'default_keep_important_results_in_days' => sub {
+around default_keep_important_results_in_days => sub {
     my ($orig, $self) = @_;
     return $self->_get_column_or_default('default_keep_important_results_in_days', 'important_result_storage_duration');
 };
 
-around 'default_priority' => sub {
+around default_priority => sub {
     my ($orig, $self) = @_;
     return $self->get_column('default_priority') // OpenQA::JobGroupDefaults::PRIORITY;
 };
 
-around 'carry_over_bugrefs' => sub {
+around carry_over_bugrefs => sub {
     my ($orig, $self) = @_;
     return $self->get_column('carry_over_bugrefs') // OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS;
 };

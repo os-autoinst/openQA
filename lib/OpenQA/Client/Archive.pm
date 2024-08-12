@@ -46,7 +46,7 @@ sub _download_test_result_details ($self, $url, $path, $module, $options) {
         # Check if module has images
         return 0 unless @dirnames;
 
-        my $dir = $module->{'md5_dirname'} || ($module->{'md5_1'} . '/' . $module->{'md5_2'});
+        my $dir = $module->{md5_dirname} || ($module->{md5_1} . '/' . $module->{md5_2});
         $url->path("/image/$dir/$module->{md5_basename}");
 
         my $destination = $path->child('testresults', $module->{screenshot});
