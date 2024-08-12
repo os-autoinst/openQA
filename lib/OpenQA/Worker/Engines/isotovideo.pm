@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Worker::Engines::isotovideo;
-use Mojo::Base -base, -signatures;
-
 use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
