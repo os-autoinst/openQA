@@ -23,7 +23,9 @@ sub violates ($self, $elem, $document) {
     # skip anything that's not a hash key
     return () unless is_hash_key($elem);
 
-    my $k = $elem->literal;
+    # only some PPI::Token::Quote::* classes implement literal
+    my $k = $elem->can('literal') ? $elem->literal : $elem->string;
+
     # skip anything that has a special symbol in the content
     return () unless $k =~ m/^\w+$/;
 
