@@ -30,7 +30,7 @@ use Time::HiRes qw(usleep);
 # define attributes for public properties
 has 'worker';
 has 'client';
-has 'isotovideo_client' => sub { OpenQA::Worker::Isotovideo::Client->new(job => shift) };
+has isotovideo_client => sub { OpenQA::Worker::Isotovideo::Client->new(job => shift) };
 has 'developer_session_running';
 has 'upload_results_interval';
 
@@ -252,7 +252,7 @@ sub start {
     my $webui_host = $client->webui_host;
     ($ENV{OPENQA_HOSTNAME}) = $webui_host =~ m|([^/]+:?\d*)/?$|;
 
-    $job_settings->{'OPENQA_HOSTNAME'} = $webui_host;
+    $job_settings->{OPENQA_HOSTNAME} = $webui_host;
 
     $self->{_settings} = $job_settings;
     $self->{_name} = $job_settings->{NAME};

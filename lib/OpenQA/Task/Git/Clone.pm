@@ -56,7 +56,7 @@ sub _get_current_branch ($path) {
     return trim($r->{stdout});
 }
 
-sub _ssh_git_cmd($git_args) {
+sub _ssh_git_cmd ($git_args) {
     return ['env', 'GIT_SSH_COMMAND="ssh -oBatchMode=yes"', 'git', @$git_args];
 }
 
