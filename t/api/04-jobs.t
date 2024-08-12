@@ -123,6 +123,21 @@ subtest 'check job group' => sub {
     is(scalar(@{$t->tx->res->json->{jobs}}), 0);
 };
 
+subtest 'exclude groupless jobs' => sub {
+    my %jobs = map { $_->{id} => $_ } @jobs;
+    is($jobs{99928}->{state}, 'scheduled', 'groupless job is listed');
+    $t->get_ok('/api/v1/jobs?not_groupid=0')->status_is(200);
+    @jobs = @{$t->tx->res->json->{jobs}};
+    is scalar @jobs, 15, 'groupless jobs are excluded';
+};
+
+subtest 'exclude specific group' => sub {
+    my %jobs = map { $_->{id} => $_ } @jobs;
+    $t->get_ok('/api/v1/jobs?not_groupid=1001')->status_is(200);
+    @jobs = @{$t->tx->res->json->{jobs}};
+    is scalar @jobs, 4, 'jobs of specified groups are excluded';
+};
+
 subtest 'restricted query' => sub {
     $t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
     is(scalar(@{$t->tx->res->json->{jobs}}), 6, 'query for existing jobs by iso');
