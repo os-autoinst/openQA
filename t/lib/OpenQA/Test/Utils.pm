@@ -47,15 +47,16 @@ BEGIN {
 }
 
 our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK = (
-    qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
-    qw(redirect_output create_user_for_workers),
-    qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
-    qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
-    qw(stop_service start_worker unstable_worker fake_asset_server),
-    qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
-    qw(run_cmd test_cmd wait_for wait_for_or_bail_out perform_minion_jobs),
-    qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop assume_all_assets_exist schedule_iso)
+@EXPORT_OK = qw(
+  mock_service_ports setup_mojo_app_with_default_worker_timeout
+  redirect_output create_user_for_workers
+  create_webapi create_websocket_server create_scheduler create_live_view_handler
+  unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job
+  stop_service start_worker unstable_worker fake_asset_server
+  cache_minion_worker cache_worker_service shared_hash embed_server_for_testing
+  run_cmd test_cmd wait_for wait_for_or_bail_out perform_minion_jobs
+  prepare_clean_needles_dir prepare_default_needle mock_io_loop assume_all_assets_exist schedule_iso
+  simulate_load
 );
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
@@ -665,6 +666,14 @@ sub assume_all_assets_exist { OpenQA::Schema->singleton->resultset('Assets')->se
 
 sub schedule_iso ($t, $args, $status = 200, $query_params = {}, $msg = undef) {
     $t->post_ok(Mojo::URL->new('/api/v1/isos')->query($query_params), form => $args)->status_is($status, $msg)->tx->res;
+}
+
+sub simulate_load ($load, $from) {
+    # fake "/proc/loadavg"
+    my $load_avg_file = tempfile("$from-XXXXX", TMPDIR => 1);
+    $load_avg_file->spew($load);
+    $ENV{OPENQA_LOAD_AVG_FILE} = $load_avg_file;
+    return $load_avg_file;
 }
 
 1;

@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::Utils qw(simulate_load);
 use Data::Dumper;
 use Mojo::File qw(tempdir tempfile path);
 use Mojo::Util 'scope_guard';
@@ -28,11 +29,7 @@ $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 #       file specified via OPENQA_LOGFILE instead of stdout/stderr.
 $ENV{OPENQA_LOGFILE} = undef;
 
-# fake "/proc/loadavg"
-my $load_avg_file = tempfile('worker-overall-load-avg-XXXXX');
-my $load_avg_file_realpath = $load_avg_file->realpath;
-$load_avg_file->spew('0.93 0.95 10.25 2/2207 1212');
-$ENV{OPENQA_LOAD_AVG_FILE} = $load_avg_file_realpath;
+my $load_avg_file = simulate_load('0.93 0.95 10.25 2/2207 1212', 'worker-overall-load-avg');
 
 # define fake isotovideo
 {
@@ -825,7 +822,7 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
             like $worker->current_error, qr/load 10\.25.*exceeding.*10/, 'error shows current load and threshold';
 
             # assume the error is gone
-            $load_avg_file_realpath->remove;
+            $load_avg_file->remove;
             combined_like { is $worker->status->{status}, 'free', 'worker is free to take another job' }
             qr/unable to determine average load/i, 'warning about not being able to detect average load logged';
             is $worker->current_error, undef, 'current error is cleared by the querying the status';
