@@ -1,0 +1,19 @@
+my %h;
+## name Passing
+## failures 0
+## cut
+
+$h{bare} = 1;
+$h{"line\nbreak"} = 2;
+$h{'special!'} = 3;
+$h{'concatenate_' . 'strings'} = 4;
+$h{bare2 } = 5;
+
+## name Failing
+## failures 4
+## cut
+
+$h{'single'} = 1;
+$h{  'single'  } = 2;
+$h{"double"} = 3;
+$h{"double2" } = 4;
