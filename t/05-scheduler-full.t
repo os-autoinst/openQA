@@ -45,6 +45,12 @@ plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 setup_mojo_app_with_default_worker_timeout;
 OpenQA::Setup::read_config(OpenQA::App->singleton);
 
+# fake "/proc/loadavg" to ensure the test works under a heavy load
+my $load_avg_file = tempfile('worker-overall-load-avg-XXXXX');
+my $load_avg_file_realpath = $load_avg_file->realpath;
+$load_avg_file->spew('0.93 0.95 3.25 2/2207 1212');
+$ENV{OPENQA_LOAD_AVG_FILE} = $load_avg_file_realpath;
+
 # setup directories and database
 my $tempdir = setup_fullstack_temp_dir('scheduler');
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl');
