@@ -5,6 +5,7 @@
 # perlcritic with auto-injection of custom perlcritic rules.
 use strict;
 use warnings;
+use v5.10;
 use experimental 'signatures';
 use FindBin '$Bin';
 
@@ -16,5 +17,8 @@ sub extra_include_paths (@extra_paths) {
 }
 
 $ENV{PERL5LIB} = join(':', (extra_include_paths('lib/perlcritic'), $ENV{PERL5LIB} // ''));
-
+unless (@ARGV) {
+    say "Usage: $0 files-or-directories";
+    exit;
+}
 exec 'perlcritic', @ARGV;

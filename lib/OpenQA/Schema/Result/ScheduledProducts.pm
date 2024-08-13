@@ -3,7 +3,7 @@
 
 package OpenQA::Schema::Result::ScheduledProducts;
 
-
+## no critic (OpenQA::RedundantStrictWarning)
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use Mojo::Base -base, -signatures;

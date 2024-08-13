@@ -41,9 +41,9 @@ severity = 1
 
 # == Custom Policies
 # -- Useless quotes on hashes
-[HashKeyQuotes]
+[OpenQA::HashKeyQuotes]
 severity = 5
 
 # -- Superfluous use strict/warning.
-[RedundantStrictWarning]
+[OpenQA::RedundantStrictWarning]
 equivalent_modules = Test::Most

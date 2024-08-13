@@ -1,7 +1,7 @@
 # Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-package Perl::Critic::Policy::RedundantStrictWarning;
+package Perl::Critic::Policy::OpenQA::RedundantStrictWarning;
 
 use strict;
 use warnings;

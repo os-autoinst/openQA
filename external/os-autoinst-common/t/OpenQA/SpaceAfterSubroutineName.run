@@ -1,0 +1,31 @@
+## name Passing
+## failures 0
+## cut
+
+sub long ($self, $jobid, $job_labels, $aggregated, $failed_modules, $actually_failed_modules,
+    $todo = undef)
+{
+}
+
+sub long2
+($x, $y) {
+}
+
+sub a ($x) {
+}
+
+## name Failing
+## failures 4
+## cut
+
+sub foo($x) {
+}
+
+sub foo ($x){
+}
+
+sub foo  ($x) {
+}
+
+sub foo ($x)  {
+}

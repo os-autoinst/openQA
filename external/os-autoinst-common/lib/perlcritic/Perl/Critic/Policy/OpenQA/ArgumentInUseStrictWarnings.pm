@@ -1,7 +1,7 @@
 # Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-package Perl::Critic::Policy::ArgumentInUseStrictWarnings;
+package Perl::Critic::Policy::OpenQA::ArgumentInUseStrictWarnings;
 
 use strict;
 use warnings;
