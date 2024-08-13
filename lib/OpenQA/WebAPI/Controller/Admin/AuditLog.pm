@@ -3,6 +3,7 @@
 
 
 package OpenQA::WebAPI::Controller::Admin::AuditLog;
+## no critic (OpenQA::RedundantStrictWarning)
 use Mojo::Base 'Mojolicious::Controller';
 
 use 5.018;
