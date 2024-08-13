@@ -220,8 +220,7 @@ test-fullstack-unstable: node_modules
 # we have apparently-redundant -I args in PERL5OPT here because Docker
 # only works with one and Fedora's build system only works with the other
 .PHONY: test-with-database
-test-with-database: node_modules
-	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
+test-with-database: node_modules setup-database
 	$(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-[ $(KEEP_DB) = 1 ] || pg_ctl -D $(TEST_PG_PATH) stop
 
@@ -231,6 +230,10 @@ test-unit-and-integration: node_modules
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib -MOpenQA::Test::PatchDeparse";\
 	RETRY=${RETRY} HOOK=./tools/delete-coverdb-folder timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+
+.PHONY: setup-database
+setup-database:
+	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 
 # prepares running the tests within a container (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables
