@@ -249,8 +249,8 @@ is(
 $assets->update({size => 26 * $gib});
 run_gru_job($t->app, 'limit_assets');
 
-is(scalar @{mock_removed()}, 1, "one asset should have been 'removed' at size 26GiB");
-is(scalar @{mock_deleted()}, 1, "one asset should have been 'deleted' at size 26GiB");
+is(scalar @{mock_removed()}, 1, "asset is 'removed' at size 26GiB");
+is(scalar @{mock_deleted()}, 1, "asset is 'deleted' at size 26GiB");
 
 is_deeply(
     find_kept_assets_with_last_jobs,
@@ -283,8 +283,8 @@ reset_mocked_asset_deletions;
 $assets->update({size => 34 * $gib});
 run_gru_job($t->app, 'limit_assets');
 
-is(scalar @{mock_removed()}, 1, "two assets should have been 'removed' at size 34GiB");
-is(scalar @{mock_deleted()}, 1, "two assets should have been 'deleted' at size 34GiB");
+is(scalar @{mock_removed()}, 1, "asset is 'removed' at size 34GiB");
+is(scalar @{mock_deleted()}, 1, "asset is 'deleted' at size 34GiB");
 
 is_deeply(
     find_kept_assets_with_last_jobs,
