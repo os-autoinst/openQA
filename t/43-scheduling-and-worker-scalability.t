@@ -20,10 +20,10 @@ use OpenQA::Utils qw(service_port);
 require OpenQA::Test::Database;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(setup_log);
-use OpenQA::Test::Utils
-  qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
-  qw(create_user_for_workers create_webapi create_websocket_server),
-  qw(stop_service setup_fullstack_temp_dir);
+use OpenQA::Test::Utils qw(
+  mock_service_ports setup_mojo_app_with_default_worker_timeout
+  create_user_for_workers create_webapi create_websocket_server
+  stop_service setup_fullstack_temp_dir simulate_load);
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Utils 'testcasedir';
 
@@ -41,11 +41,7 @@ BEGIN {
 setup_mojo_app_with_default_worker_timeout;
 OpenQA::Setup::read_config(OpenQA::App->singleton);
 
-# fake "/proc/loadavg" to ensure the test works under a heavy load
-my $load_avg_file = tempfile('worker-overall-load-avg-XXXXX');
-my $load_avg_file_realpath = $load_avg_file->realpath;
-$load_avg_file->spew('0.93 0.95 3.25 2/2207 1212');
-$ENV{OPENQA_LOAD_AVG_FILE} = $load_avg_file_realpath;
+my $load_avg_file = simulate_load('0.93 0.95 3.25 2/2207 1212', '43-scheduling-and-worker-scalability');
 
 # read number of workers to spawn from environment variable; skip test entirely if variable not present
 # similar to other fullstack tests
