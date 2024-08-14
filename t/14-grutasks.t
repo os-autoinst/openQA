@@ -24,7 +24,7 @@ use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
-use Mojo::Util qw(dumper);
+use Mojo::Util qw(dumper scope_guard);
 use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File qw(path tempdir);
@@ -33,15 +33,23 @@ use Mojo::Message::Response;
 use Storable qw(store retrieve);
 use Mojo::IOLoop;
 use Cwd qw(getcwd);
+use File::Copy::Recursive qw(dircopy);
 use utf8;
 use Time::Seconds;
 
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
+# Avoid tampering with git checkout
+my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+my $guard = scope_guard sub { chdir $FindBin::Bin };
+chdir $workdir;
+mkdir 't';
+dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data testresults fixtures);
+
 # mock asset deletion
 # * prevent removing assets from database and file system
 # * keep track of calls to OpenQA::Schema::Result::Assets::delete and OpenQA::Schema::Result::Assets::remove_from_disk
-my $tempdir = tempdir;
+my $tempdir = tempdir("assets-XXXX", TMPDIR => 1);
 my $deleted = $tempdir->child('deleted');
 my $removed = $tempdir->child('removed');
 sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
