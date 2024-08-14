@@ -1179,7 +1179,10 @@ instance.
 
 If the YAML document already exists on the openQA host, you can also use
 `SCENARIO_DEFINITIONS_YAML_FILE` which expects the file path of the YAML document
-on the openQA host.
+on the openQA host. One can also specify an HTTP/HTTPs URL via that variable
+when `async=1` is used (see
+<<UsersGuide.asciidoc#_spawning_multiple_jobs_based_on_templates_isos_post>>
+for details). Then this file is downloaded by the openQA host.
 
 The YAML document itself should define at least one product, machine and job
 template like this:
