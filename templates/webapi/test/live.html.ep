@@ -181,13 +181,13 @@
         <div class="developer-mode-element" data-visible-on="isConnecting">
             <i class="fa fa-spinner fa-spin fa-lg"></i> <span id="developer-loading-info">establishing connection to backend ...</span>
             <p>
-                See <a href="http://open.qa/docs/#_steps_to_debug_developer_mode_setup" target="blank">steps to debug developer mode setup</a> if the connection can
+                See <a href="http://open.qa/docs/#debugdevelmode" target="blank">steps to debug developer mode setup</a> if the connection can
                 not be established in a reasonable time.
             </p>
         </div>
         <div id="developer-config-issue-note" class="developer-mode-element" data-visible-on="badConfiguration">
             The developer mode is not available because of a configuration issue.
-            See <a href="http://open.qa/docs/#_steps_to_debug_developer_mode_setup" target="blank">steps to debug developer mode setup</a>.
+            See <a href="http://open.qa/docs/#debugdevelmode" target="blank">steps to debug developer mode setup</a>.
         </div>
     </div>
 </div>
