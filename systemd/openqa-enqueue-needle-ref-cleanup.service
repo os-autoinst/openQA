@@ -1,0 +1,9 @@
+[Unit]
+Description=Enqueues a needle ref cleanup task for openQA.
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
+
+[Service]
+Type=oneshot
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa-enqueue-needle-ref-cleanup
