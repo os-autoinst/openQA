@@ -9,7 +9,7 @@ use Test::MockModule;
 use Time::HiRes 'sleep';
 use File::Path 'make_path';
 use Scalar::Util 'looks_like_number';
-use Mojo::File 'path';
+use Mojo::File qw(path tempfile);
 use Mojo::Util 'dumper';
 use IPC::Run qw(start);
 use FindBin;
@@ -40,6 +40,12 @@ BEGIN {
 
 setup_mojo_app_with_default_worker_timeout;
 OpenQA::Setup::read_config(OpenQA::App->singleton);
+
+# fake "/proc/loadavg" to ensure the test works under a heavy load
+my $load_avg_file = tempfile('worker-overall-load-avg-XXXXX');
+my $load_avg_file_realpath = $load_avg_file->realpath;
+$load_avg_file->spew('0.93 0.95 3.25 2/2207 1212');
+$ENV{OPENQA_LOAD_AVG_FILE} = $load_avg_file_realpath;
 
 # read number of workers to spawn from environment variable; skip test entirely if variable not present
 # similar to other fullstack tests

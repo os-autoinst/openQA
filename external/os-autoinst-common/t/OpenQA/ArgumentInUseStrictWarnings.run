@@ -1,0 +1,12 @@
+## name Passing
+## failures 0
+## cut
+
+use strict;
+use warnings;
+
+## name Failing
+## failures 1
+## cut
+
+use warnings 'redefined';

@@ -1,7 +1,7 @@
 # Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-package Perl::Critic::Policy::SpaceAfterSubroutineName;
+package Perl::Critic::Policy::OpenQA::SpaceAfterSubroutineName;
 
 use strict;
 use warnings;
@@ -68,6 +68,8 @@ sub check_complete_sub ($self, $elem, @tokens) {
     #   5. Whitespace - must be 1
     #   6. Structure - the actual code block
 
+    my $nsib = $elem->snext_sibling;
+    my $psib = $elem->sprevious_sibling;
     return () if _is_surrounded_by_one_space($tokens[2]) && _is_surrounded_by_one_space($tokens[4]);
     return $self->report_violation($elem);
 }
@@ -77,7 +79,8 @@ sub _is_block ($token) {
 }
 
 sub _is_only_one_space ($token) {
-    return $token->isa('PPI::Token::Whitespace') && $token->content eq ' ';
+    # We also allow line breaks, e.g. perltidy forces to break up long subroutine headers
+    return $token->isa('PPI::Token::Whitespace') && $token->content =~ m/^[ \n]$/;
 }
 
 sub _is_surrounded_by_one_space ($token) {

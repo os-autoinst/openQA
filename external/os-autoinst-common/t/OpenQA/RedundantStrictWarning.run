@@ -1,0 +1,16 @@
+## name Passing
+## failures 0
+## cut
+
+use Mojo::Base 'DBIx::Class::Core';
+
+## name Passing
+## failures 0
+## TODO It can be neessary to use two modules that both enable strict
+## cut
+
+use Mojo::Base 'DBIx::Class::Core';
+
+use Moose;
+extends 'OpenQA::Schema::Result::Jobs';
+
