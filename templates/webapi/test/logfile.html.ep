@@ -5,11 +5,13 @@
 %= asset $_ for qw(test_result.js anser.js ansi-colors.css)
 % end
 % content_for 'ready_function' => begin
-    loadEmbeddedLogFiles();
+    filterEmbeddedLogFiles();
 % end
 
 % my $url = url_for('test_file', testid => $testid, filename => $filename);
 <div class="corner-buttons" style="margin-top: -5px;">
+<span id="filter-info"></span>
+<input id="filter-log-file" placeholder="substring or /regex/i" type="search">
     <a class="btn btn-light" href=".#downloads">
         <i class="fa fa-chevron-left"></i> Back to job <%= $testid %>
     </a>
