@@ -22,8 +22,8 @@ function start_service {
     # wait until openQA is ready to accept requests by waiting for its PID file
     while [[ ! -e $pid_file ]] && [[ -e /proc/$pid ]]; do sleep 1; done
 
-    # terminate a previously started openQA instance
-    [[ $pid_last ]] && kill -s TERM "$pid_last"
+    # terminate the previously started openQA instance gracefully
+    [[ $pid_last ]] && kill -s SIGQUIT "$pid_last"
 
     # keep running until openQA terminates (with the "wait"-builtin so bash can handle SIGHUP)
     wait "$pid"
