@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -57,20 +58,20 @@ subtest 'make git commit (error handling)' => sub {
 
 # setup mocking
 my @executed_commands;
-my $utils_mock = Test::MockModule->new('OpenQA::Git');
 my %mock_return_value = (
     status => 1,
     stderr => undef,
 );
-$utils_mock->redefine(
-    run_cmd_with_log_return_error => sub {
-        my ($cmd) = @_;
-        push(@executed_commands, $cmd);
-        return \%mock_return_value;
-    });
+
+sub _run_cmd_mock ($cmd) {
+    push @executed_commands, $cmd;
+    return \%mock_return_value;
+}
 
 subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     # check default config
+    my $utils_mock = Test::MockModule->new('OpenQA::Git');
+    $utils_mock->redefine(run_cmd_with_log_return_error => \&_run_cmd_mock);
     my $git = OpenQA::Git->new(app => $t->app, dir => 'foo/bar', user => $first_user);
     is($git->app, $t->app, 'app is set');
     is($git->dir, 'foo/bar', 'dir is set');
@@ -128,7 +129,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is(
         $git->dir('/repo/path')->commit(
             {
-                message => 'some test',
+                message => 'add rm test',
                 add => [qw(foo.png foo.json)],
                 rm => [qw(bar.png bar.json)],
             }
@@ -143,16 +144,35 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
             [qw(git -C /repo/path rm bar.png bar.json)],
             [
                 qw(git -C /repo/path commit -q -m),
-                'some test',
+                'add rm test',
                 '--author=openQA system user <noemail@open.qa>',
                 qw(foo.png foo.json bar.png bar.json)
             ],
         ],
         'changes staged and committed',
     ) or diag explain \@executed_commands;
+
+    $git->config->{do_push} = 'yes';
+
+    local $mock_return_value{status} = 1;
+    local $mock_return_value{stderr} = 'mocked push error';
+    local $mock_return_value{stdout} = '';
+
+    $utils_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd) {
+            push @executed_commands, $cmd;
+            if ($cmd->[3] eq 'push') {
+                $mock_return_value{status} = 0;
+            }
+            return \%mock_return_value;
+        });
+    like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/, 'error handled during push';
+    $git->config->{do_push} = '';
 };
 
 subtest 'saving needle via Git' => sub {
+    my $utils_mock = Test::MockModule->new('OpenQA::Git');
+    $utils_mock->redefine(run_cmd_with_log_return_error => \&_run_cmd_mock);
     {
         package Test::FakeMinionJob;    # uncoverable statement
         sub finish { }
