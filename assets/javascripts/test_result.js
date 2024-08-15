@@ -685,6 +685,7 @@ window.onload = function () {
   const filter = filterLogLines.bind(null, searchBox);
   searchBox.addEventListener('keyup', delay(filter), 1000);
   searchBox.addEventListener('change', filter, false);
+  searchBox.addEventListener('search', filter, false);
 };
 
 function displaySearchInfo(text) {
