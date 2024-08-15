@@ -5926,7 +5926,10 @@ instance.</p>
 <div class="paragraph">
 <p>If the YAML document already exists on the openQA host, you can also use
 <code>SCENARIO_DEFINITIONS_YAML_FILE</code> which expects the file path of the YAML document
-on the openQA host.</p>
+on the openQA host. One can also specify an HTTP/HTTPs URL via that variable
+when <code>async=1</code> is used (see
+<a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a>
+for details). Then this file is downloaded by the openQA host.</p>
 </div>
 <div class="paragraph">
 <p>The YAML document itself should define at least one product, machine and job
@@ -13031,7 +13034,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-08-10 04:44:00 UTC
+Last updated 2024-08-15 04:44:36 UTC
 </div>
 </div>
 </body>
