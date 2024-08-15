@@ -12,6 +12,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Git;
 use OpenQA::Task::Git::Clone;
 use File::Copy;
 require OpenQA::Test::Database;
@@ -644,10 +645,12 @@ subtest 'handling dying GRU task' => sub {
     like $associated_job->reason, qr/^preparation failed: Thrown fail at/, 'reason of associated job set';
 };
 
+
+
 subtest 'git clone' => sub {
-    my $openqa_utils = Test::MockModule->new('OpenQA::Task::Git::Clone');
+    my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @mocked_git_calls;
-    $openqa_utils->redefine(
+    $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd) {
             my $stdout = '';
             $stdout = 'ref: refs/heads/master	HEAD' if $cmd->[3] eq 'ls-remote';
@@ -677,7 +680,8 @@ subtest 'git clone' => sub {
 
     subtest 'git clone retried on failure' => sub {
         $ENV{OPENQA_GIT_CLONE_RETRIES} = 1;
-        $openqa_utils->redefine(_git_clone => sub (@) { die "fake error\n" });
+        my $openqa_clone = Test::MockModule->new('OpenQA::Task::Git::Clone');
+        $openqa_clone->redefine(_git_clone => sub (@) { die "fake error\n" });
         $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
         is $res->{retries}, 1, 'job retries incremented';
         is $res->{state}, 'inactive', 'job set back to inactive';

@@ -1,11 +1,12 @@
 # Copyright 2019 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
-
 package OpenQA::Git;
 
 use Mojo::Base -base, -signatures;
+use Mojo::Util 'trim';
 use Cwd 'abs_path';
 use OpenQA::Utils qw(run_cmd_with_log_return_error);
+use Mojo::File;
 
 has 'app';
 has 'dir';
@@ -92,6 +93,46 @@ sub commit ($self, $args = undef) {
     }
 
     return undef;
+}
+
+# Moved functions from Clone.pm
+
+sub get_current_branch ($self, $path) {
+    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'branch', '--show-current']);
+    die "Error detecting current branch for '$path': $r->{stderr}" unless $r->{status};
+    return Mojo::Util::trim($r->{stdout});
+}
+
+sub _ssh_git_cmd ($self, $git_args) {
+    return ['env', 'GIT_SSH_COMMAND="ssh -oBatchMode=yes"', 'git', @$git_args];
+}
+
+sub get_remote_default_branch ($self, $url) {
+    my $r = run_cmd_with_log_return_error($self->_ssh_git_cmd(['ls-remote', '--symref', $url, 'HEAD']));
+    die "Error detecting remote default branch name for '$url': $r->{stderr}"
+      unless $r->{status} && $r->{stdout} =~ /refs\/heads\/(\S+)\s+HEAD/;
+    return $1;
+}
+
+sub git_clone_url_to_path ($self, $url, $path) {
+    my $r = run_cmd_with_log_return_error($self->_ssh_git_cmd(['clone', $url, $path]));
+    die "Failed to clone $url into '$path': $r->{stderr}" unless $r->{status};
+}
+
+sub git_get_origin_url ($self, $path) {
+    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'remote', 'get-url', 'origin']);
+    die "Failed to get origin url for '$path': $r->{stderr}" unless $r->{status};
+    return Mojo::Util::trim($r->{stdout});
+}
+
+sub git_fetch ($self, $path, $branch_arg) {
+    my $r = run_cmd_with_log_return_error($self->_ssh_git_cmd(['-C', $path, 'fetch', 'origin', $branch_arg]));
+    die "Failed to fetch from '$branch_arg': $r->{stderr}" unless $r->{status};
+}
+
+sub git_reset_hard ($self, $path, $branch) {
+    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'reset', '--hard', "origin/$branch"]);
+    die "Failed to reset to 'origin/$branch': $r->{stderr}" unless $r->{status};
 }
 
 1;
