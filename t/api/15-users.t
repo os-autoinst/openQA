@@ -31,4 +31,7 @@ $t->ua(OpenQA::Client->new(apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKN
 $t->app($app);
 $t->delete_ok('/api/v1/user/99904')->status_is(403, 'non-admins cannot delete users');
 
+$t->post_ok('/api/v1/feature?version=42')->status_is(200, 'can set the feature version of current user');
+is $app->schema->resultset('Users')->find(99902)->feature_version, 42, 'feature version was updated';
+
 done_testing();

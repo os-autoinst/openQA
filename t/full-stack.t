@@ -88,10 +88,6 @@ $driver->click_element_ok('Login', 'link_text', 'Login clicked');
 # we're back on the main page
 $driver->title_is('openQA', 'back on main page');
 
-# click away the tour
-$driver->click_element_ok('dont-notify', 'id', 'disable tour permanently');
-$driver->click_element_ok('shepherd-cancel-icon', 'class_name', 'confirm dismissing tour');
-
 schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_setup(PAUSE_AT => 'shutdown'));
 
 sub status_text { find_status_text($driver) }

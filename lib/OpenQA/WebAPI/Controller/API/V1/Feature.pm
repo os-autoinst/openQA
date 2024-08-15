@@ -21,7 +21,7 @@ Implements feature API.
 
 =item informed()
 
-Post integer value to save feature tour progress of current user in the database
+Post integer value to save feature version of current user in the database
 
 =back
 
