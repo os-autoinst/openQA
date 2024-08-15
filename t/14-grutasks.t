@@ -688,6 +688,14 @@ subtest 'git clone' => sub {
         is $res->{retries}, 0, 'job retries not incremented';
         is $res->{state}, 'failed', 'job considered failed';
     };
+
+    subtest 'minion guard' => sub {
+        my $guard = $t->app->minion->guard('limit_needle_task', ONE_HOUR);
+        my $start = time;
+        $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
+        is $res->{state}, 'inactive', 'job is inactive';
+        ok(($res->{delayed} - $start) > 5, 'job delayed as expected');
+    };
 };
 
 subtest 'download assets with correct permissions' => sub {
