@@ -13,7 +13,6 @@ sub register ($self, $app, @) {
     $app->minion->add_task(git_clone => \&_git_clone_all);
 }
 
-
 # $clones is a hashref with paths as keys and urls to git repos as values.
 # The urls may also refer to a branch via the url fragment.
 # If no branch is set, the default branch of the remote (if target path doesn't exist yet)
@@ -45,7 +44,7 @@ sub _git_clone_all ($job, $clones) {
     for my $path (sort { length($a) <=> length($b) } keys %$clones) {
         my $url = $clones->{$path};
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
-        eval { _git_clone($job, $ctx, $path, $url) };
+        eval { _git_clone($app, $job, $ctx, $path, $url) };
         next unless my $error = $@;
         my $max_retries = $ENV{OPENQA_GIT_CLONE_RETRIES} // 10;
         return $job->retry($retry_delay) if $job->retries < $max_retries;
@@ -53,69 +52,32 @@ sub _git_clone_all ($job, $clones) {
     }
 }
 
-sub _get_current_branch ($path) {
-    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'branch', '--show-current']);
-    die "Error detecting current branch for '$path': $r->{stderr}" unless $r->{status};
-    return trim($r->{stdout});
-}
-
-sub _ssh_git_cmd ($git_args) {
-    return ['env', 'GIT_SSH_COMMAND="ssh -oBatchMode=yes"', 'git', @$git_args];
-}
-
-sub _get_remote_default_branch ($url) {
-    my $r = run_cmd_with_log_return_error(_ssh_git_cmd(['ls-remote', '--symref', $url, 'HEAD']));
-    die "Error detecting remote default branch name for '$url': $r->{stdout} $r->{stderr}"
-      unless $r->{status} && $r->{stdout} =~ m{refs/heads/(\S+)\s+HEAD};
-    return $1;
-}
-
-sub _git_clone_url_to_path ($url, $path) {
-    my $r = run_cmd_with_log_return_error(_ssh_git_cmd(['clone', $url, $path]));
-    die "Failed to clone $url into '$path': $r->{stderr}" unless $r->{status};
-}
-
-sub _git_get_origin_url ($path) {
-    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'remote', 'get-url', 'origin']);
-    die "Failed to get origin url for '$path': $r->{stderr}" unless $r->{status};
-    return trim($r->{stdout});
-}
-
-sub _git_fetch ($path, $branch_arg) {
-    my $r = run_cmd_with_log_return_error(_ssh_git_cmd(['-C', $path, 'fetch', 'origin', $branch_arg]));
-    die "Failed to fetch from '$branch_arg': $r->{stderr}" unless $r->{status};
-}
-
-sub _git_reset_hard ($path, $branch) {
-    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'reset', '--hard', "origin/$branch"]);
-    die "Failed to reset to 'origin/$branch': $r->{stderr}" unless $r->{status};
-}
-
-sub _git_clone ($job, $ctx, $path, $url) {
+sub _git_clone ($app, $job, $ctx, $path, $url) {
+    my $git = OpenQA::Git->new(app => $app, dir => $path);
     $ctx->debug(qq{Updating $path to $url});
     $url = Mojo::URL->new($url);
     my $requested_branch = $url->fragment;
     $url->fragment(undef);
 
     # An initial clone fetches all refs, we are done
-    return _git_clone_url_to_path($url, $path) unless -d $path;
+    return $git->clone_url($url) unless -d $path;
 
-    my $origin_url = _git_get_origin_url($path);
+    my $origin_url = $git->get_origin_url;
     if ($url ne $origin_url) {
         $ctx->warn("Local checkout at $path has origin $origin_url but requesting to clone from $url");
         return;
     }
 
     unless ($requested_branch) {
-        my $remote_default = _get_remote_default_branch($url);
+        my $remote_default = $git->get_remote_default_branch($url);
         $requested_branch = $remote_default;
         $ctx->debug(qq{Remote default branch $remote_default});
     }
 
-    my $current_branch = _get_current_branch($path);
+    my $current_branch = $git->get_current_branch;
     # updating default branch (including checkout)
-    _git_fetch($path, $requested_branch);
-    _git_reset_hard($path, $requested_branch) if ($requested_branch eq $current_branch);
+    $git->fetch($requested_branch);
+    $git->reset_hard($requested_branch) if ($requested_branch eq $current_branch);
 }
 
 1;
