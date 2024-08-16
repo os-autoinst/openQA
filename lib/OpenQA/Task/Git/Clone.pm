@@ -22,7 +22,7 @@ sub _git_clone_all ($job, $clones) {
     my $retry_delay = {delay => 30 + int(rand(10))};
     for my $path (sort keys %$clones) {
         $path = Mojo::File->new($path)->realpath if (-e $path);    # resolve symlinks
-        my $guard = $app->minion->guard(  "git_clone_${path}_task", 2 * ONE_HOUR);
+        my $guard = $app->minion->guard("git_clone_${path}_task", 2 * ONE_HOUR);
         return $job->retry($retry_delay) unless $guard;
         push(@guards, $guard);
     }
@@ -32,7 +32,7 @@ sub _git_clone_all ($job, $clones) {
 
     # iterate clones sorted by path length to ensure that a needle dir is always cloned after the corresponding casedir
     for my $path (sort { length($a) <=> length($b) } keys %$clones) {
-        my $git = OpenQA::Git->new(app => $app);
+        my $git = OpenQA::Git->new(app => $app, dir => $path);
         my $url = $clones->{$path};
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
         eval { _git_clone($git, $job, $ctx, $path, $url) };
@@ -66,7 +66,7 @@ sub _git_clone ($git, $job, $ctx, $path, $url) {
         return;
     }
 
-    my $current_branch = $git->get_current_branch($path);
+    my $current_branch = $git->get_current_branch;
     if ($requested_branch eq $current_branch) {
         # updating default branch (including checkout)
         $git->git_fetch($path, $requested_branch);

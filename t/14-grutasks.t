@@ -687,6 +687,8 @@ subtest 'git clone' => sub {
         is $res->{state}, 'inactive', 'job set back to inactive';
     };
     subtest 'git clone fails when all retry attempts exhausted' => sub {
+        my $openqa_clone = Test::MockModule->new('OpenQA::Task::Git::Clone');
+        $openqa_clone->redefine(_git_clone => sub (@) { die "fake error\n" });
         $ENV{OPENQA_GIT_CLONE_RETRIES} = 0;
         $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
         is $res->{retries}, 0, 'job retries not incremented';
