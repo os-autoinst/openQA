@@ -23,9 +23,6 @@ $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 
-# remove tour
-$driver->find_element_by_class_name('shepherd-cancel-icon')->click();
-
 my @texts = map { $_->get_text() } wait_for_element(selector => '.progress-bar-softfailed');
 is_deeply(\@texts, ['2 softfailed'], 'Progress bars show soft fails');
 

@@ -559,7 +559,6 @@ subtest 'add comments' => sub {
 
     $driver->find_element_by_link_text('Login')->click;
     $driver->get('/tests/overview?state=done&result=failed');
-    $driver->find_element_by_class_name('shepherd-cancel-icon')->click;
     disable_bootstrap_animations;
     $driver->find_element('button[title="Add comments"]')->click;
     my $comment_text = 'comment via add-comments';

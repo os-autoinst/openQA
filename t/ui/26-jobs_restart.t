@@ -85,8 +85,6 @@ disable_timeout;
 
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
-$driver->find_element_by_id('dont-notify')->click;
-$driver->find_element_by_class_name('shepherd-cancel-icon')->click;
 
 subtest 'restart job from info panel in test results' => sub {
     subtest 'parent job shows options for advanced restart' => sub {

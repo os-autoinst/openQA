@@ -141,7 +141,6 @@
 < javascripts/filter_form.js
 < javascripts/comments.js
 < javascripts/keyevent.js
-< javascripts/feature.js
 < javascripts/fullscreen.js
 < javascripts/obs_rsync.js
 < javascripts/parent_group_overview.js
@@ -150,7 +149,6 @@
 < ../node_modules/chosen-js/chosen.jquery.js
 < ../node_modules/jquery-ujs/src/rails.js
 < javascripts/disable_animations.js [mode==test]
-< ../node_modules/shepherd.js/dist/js/shepherd.min.js
 
 ! anser.js
 < javascripts/anser-import.js

@@ -39,9 +39,6 @@
             setupForAll();
             backToTop();
             %= content_for 'ready_function'
-            % if (current_user) {
-              newFeature(<%= current_user->feature_version %>);
-            % }
           });
       % end
 

@@ -7,11 +7,13 @@
      <div class="collapse navbar-collapse" id="navbarNav">
        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
          <li class='nav-item' id="all_tests">
-            %= link_to 'All Tests' => url_for('tests') => class => 'nav-link'
+            %= link_to 'All Tests' => url_for('tests') => class => 'nav-link', title => 'Lists all tests grouped by state'
          </li>
 
          <li class="nav-item dropdown" id="job_groups">
-            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups</a>
+            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+               aria-haspopup="true" aria-expanded="false" data-submenu
+               title="Shows test results for a specific group (usually a specific product)">Job Groups</a>
             <ul class="dropdown-menu">
                %= current_job_group
                % for my $parent_or_group (@$job_groups_and_parents) {
@@ -42,10 +44,12 @@
             </li>
         % if (current_user) {
             <li class="nav-item dropdown" id="user-action">
-                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as <%= current_user->name %></a>
+                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+                   aria-haspopup="true" aria-expanded="false"
+                   title="Contains the Activity View and various configuration pages">Logged in as <%= current_user->name %></a>
                 <div class="dropdown-menu">
                   %= tag 'h3' => class => 'dropdown-header' => 'Operators Menu'
-                  %= link_to 'Activity View' => url_for('activity_view') => class => 'dropdown-item' => id => 'activity_view'
+                  %= link_to 'Activity View' => url_for('activity_view') => class => 'dropdown-item' => id => 'activity_view', title => 'Gives you an overview of your current jobs'
                   %= link_to 'Medium types' => url_for('admin_products') => class => 'dropdown-item'
                   %= link_to 'Machines' => url_for('admin_machines') => class => 'dropdown-item'
                   %= link_to 'Test suites' => url_for('admin_test_suites') => class => 'dropdown-item'

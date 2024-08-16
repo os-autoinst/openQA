@@ -54,9 +54,6 @@ $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 
-# disable tour
-$driver->find_element_by_class_name('shepherd-cancel-icon')->click();
-
 sub goto_admin_needle_table {
     my $login_link = $driver->find_element('#user-action > a');
     is($login_link->get_text(), 'Logged in as Demo', 'logged in as demo');
