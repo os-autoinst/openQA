@@ -13,7 +13,7 @@ coverage:
       default:
         target: 98
       tests:
-        target: 99.48
+        target: 99.6
         paths:
           - t/
     patch:
