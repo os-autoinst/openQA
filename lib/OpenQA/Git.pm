@@ -32,7 +32,7 @@ sub _prepare_git_command ($self, $args = undef) {
 }
 
 sub _format_git_error ($self, $result, $error_message) {
-    
+
     my $path = $self->dir;
     if ($result->{stderr} or $result->{stdout}) {
         $error_message .= "($path): " . $result->{stdout} . $result->{stderr};
@@ -97,45 +97,49 @@ sub commit ($self, $args = undef) {
     return undef;
 }
 
-# Moved functions from Clone.pm
-
-sub get_current_branch ($self) {#
+sub get_current_branch ($self) {    #
     my @git = $self->_prepare_git_command();
     my $r = run_cmd_with_log_return_error([@git, 'branch', '--show-current']);
-    die "Error detecting current branch for : $r->{stderr}" unless $r->{status};
+    die $self->_format_git_error($r, "Error detecting current branch") unless $r->{status};
     return Mojo::Util::trim($r->{stdout});
 }
 
 sub _ssh_git_cmd ($self, $git_args) {
+    my @git = $self->_prepare_git_command();
     return ['env', 'GIT_SSH_COMMAND="ssh -oBatchMode=yes"', 'git', @$git_args];
 }
 
 sub get_remote_default_branch ($self, $url) {
+    my @git = $self->_prepare_git_command();
     my $r = run_cmd_with_log_return_error($self->_ssh_git_cmd(['ls-remote', '--symref', $url, 'HEAD']));
-    die "Error detecting remote default branch name for '$url': $r->{stderr}"
+    die $self->_format_git_error($r, "Error detecting remote default branch name for '$url'")
       unless $r->{status} && $r->{stdout} =~ /refs\/heads\/(\S+)\s+HEAD/;
     return $1;
 }
 
-sub git_clone_url_to_path ($self, $url, $path) {  
+sub git_clone_url_to_path ($self, $url, $path) {
+    my @git = $self->_prepare_git_command();
     my $r = run_cmd_with_log_return_error($self->_ssh_git_cmd(['clone', $url, $path]));
-    die "Failed to clone $url into '$path': $r->{stderr}" unless $r->{status};
+    die $self->_format_git_error($r, "Failed to clone $url into '$path'") unless $r->{status};
 }
 
-sub git_get_origin_url ($self, $path) {
-    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'remote', 'get-url', 'origin']);
-    die "Failed to get origin url for '$path': $r->{stderr}" unless $r->{status};
+sub git_get_origin_url ($self) {
+    my @git = $self->_prepare_git_command();
+    my $r = run_cmd_with_log_return_error([@git, 'remote', 'get-url', 'origin']);
+    die $self->_format_git_error($r, "Failed to get origin url") unless $r->{status};
     return Mojo::Util::trim($r->{stdout});
 }
 
-sub git_fetch ($self, $path, $branch_arg) {
-    my $r = run_cmd_with_log_return_error($self->_ssh_git_cmd(['-C', $path, 'fetch', 'origin', $branch_arg]));
-    die "Failed to fetch from '$branch_arg': $r->{stderr}" unless $r->{status};
+sub git_fetch ($self, $branch_arg) {
+    my @git = $self->_prepare_git_command();
+    my $r = run_cmd_with_log_return_error($self->_ssh_git_cmd([@git, 'fetch', 'origin', $branch_arg]));
+    die $self->_format_git_error($r, "Failed to fetch from '$branch_arg'") unless $r->{status};
 }
 
-sub git_reset_hard ($self, $path, $branch) {
-    my $r = run_cmd_with_log_return_error(['git', '-C', $path, 'reset', '--hard', "origin/$branch"]);
-    die "Failed to reset to 'origin/$branch': $r->{stderr}" unless $r->{status};
+sub git_reset_hard ($self, $branch) {
+    my @git = $self->_prepare_git_command();
+    my $r = run_cmd_with_log_return_error([@git, 'reset', '--hard', "origin/$branch"]);
+    die $self->_format_git_error($r, "Failed to reset to 'origin/$branch'") unless $r->{status};
 }
 
 1;

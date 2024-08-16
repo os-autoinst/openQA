@@ -56,11 +56,11 @@ sub _git_clone ($git, $job, $ctx, $path, $url) {
     if (!-d $path) {
         $git->git_clone_url_to_path($url, $path);
         # update local branch to latest remote branch version
-        $git->git_fetch($path, "$requested_branch:$requested_branch")
+        $git->git_fetch("$requested_branch:$requested_branch")
           if ($requested_branch ne $remote_default_branch);
     }
 
-    my $origin_url = $git->git_get_origin_url($path);
+    my $origin_url = $git->git_get_origin_url;
     if ($url ne $origin_url) {
         $ctx->warn("Local checkout at $path has origin $origin_url but requesting to clone from $url");
         return;
@@ -69,14 +69,13 @@ sub _git_clone ($git, $job, $ctx, $path, $url) {
     my $current_branch = $git->get_current_branch;
     if ($requested_branch eq $current_branch) {
         # updating default branch (including checkout)
-        $git->git_fetch($path, $requested_branch);
-        $git->git_reset_hard($path, $requested_branch);
+        $git->git_fetch($requested_branch);
+        $git->git_reset_hard($requested_branch);
     }
     else {
         # updating local branch to latest remote branch version
-        $git->git_fetch($path, "$requested_branch:$requested_branch");
+        $git->git_fetch("$requested_branch:$requested_branch");
     }
 }
 
 1;
-
