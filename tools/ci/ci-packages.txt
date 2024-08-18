@@ -141,7 +141,6 @@ perl-File-Path-2.150000
 perl-File-pushd-1.014
 perl-File-ShareDir-1.104
 perl-Filesys-Df-0.92
-perl-File-Touch-0.11
 perl-File-Which-1.22
 perl-Furl-3.14
 perl-Getopt-Long-Descriptive-0.111
@@ -156,8 +155,6 @@ perl-HTTP-Message-6.14
 perl-HTTP-Negotiate-6.01
 perl-HTTP-Parser-XS-0.17
 perl-Import-Into-1.002005
-perl-Inline-0.86
-perl-Inline-Python-0.57
 perl-IO-HTML-1.001
 perl-IO-Socket-SSL-2.84.0
 perl-IO-String-1.08
