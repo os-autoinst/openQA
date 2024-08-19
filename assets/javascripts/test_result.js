@@ -358,7 +358,7 @@ function handleKeyDownOnTestDetails(e) {
 function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
   // don't mess with #step hashes within details tab
   const currentHash = window.location.hash;
-  if (tabNameOrHash === 'details' && currentHash.search('#step/') === 0) {
+  if (tabNameOrHash === 'details' && (currentHash.startsWith('#step/') || currentHash.startsWith('#line-'))) {
     return;
   }
 
@@ -459,15 +459,18 @@ function activateTabAccordingToHashChange() {
   }
 
   // check for tabs, steps or comments matching the hash
-  var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
-  var tabName = hash.substr(1);
-  if (hash.search('#step/') === 0) {
-    setCurrentPreviewFromStepLinkIfPossible(link);
+  let link = $(`[href='${hash}'], [data-href='${hash}']`);
+  let tabName = hash.substr(1);
+  let isStep = hash.startsWith('#step/');
+  if (hash.startsWith('#line-') || isStep) {
+    if (isStep) {
+      setCurrentPreviewFromStepLinkIfPossible(link);
+      // note: It is not a problem if the details haven't been loaded so far. Once the details become available the hash
+      //       is checked again and the exact step preview will be shown.
+    }
     link = $("[href='#details']");
     tabName = 'details';
-    // note: It is not a problem if the details haven't been loaded so far. Once the details become available the hash
-    //       is checked again and the exact step preview will be shown.
-  } else if (hash.search('#comment-') === 0) {
+  } else if (hash.startsWith('#comment-')) {
     link = $("[href='#comments']");
     tabName = 'comments';
   } else if (link.attr('role') !== 'tab' || link.prop('aria-expanded')) {
@@ -586,74 +589,117 @@ function delay(callback, ms) {
   };
 }
 
-function filterLogLines(input) {
+function filterLogLines(input, viaSearchBox = true) {
   if (input === undefined) {
     return;
   }
   const string = input.value;
-  let regex = undefined;
-  const match = string.match(/^\/(.*)\/([i]*)$/);
-  if (match) {
-    regex = new RegExp(match[1], match[2]);
+  if (string === input.dataset.lastString) {
+    // abort if the value does not change which can happen because there are multiple event handlers calling this function
+    return;
   }
+  const match = string.match(/^\/(.*)\/([i]*)$/);
+  const regex = match ? new RegExp(match[1], match[2]) : undefined;
+  input.dataset.lastString = string;
   displaySearchInfo('Searching…');
   $('.embedded-logfile').each(function (index, logFileElement) {
-    let content = logFileElement.dataset.content;
+    const content = logFileElement.content;
     if (content === undefined) {
       return;
     }
+    const lines = Array.from(content);
+    let lineNumber = 0;
+    let matchingLines = 0;
     if (string.length > 0) {
-      const lines = content.split(/\r?\n/);
-      const wanted = [];
       for (const line of lines) {
-        if (regex) {
-          // For searching for /^something/ we need to remove ansi control characters
-          const text = ansiToText(line);
-          if (text.match(regex)) {
-            wanted.push(line);
-          }
-          continue;
+        const lineAsText = ansiToText(line);
+        if (regex ? lineAsText.match(regex) : lineAsText.includes(string)) {
+          ++matchingLines;
+        } else {
+          lines[lineNumber] = undefined;
         }
-        if (line.includes(string)) {
-          wanted.push(line);
-        }
+        ++lineNumber;
       }
-      content = wanted.join('\n');
-      displaySearchInfo(`Showing ${wanted.length} / ${lines.length} lines`);
+      displaySearchInfo(`Showing ${matchingLines} / ${lineNumber} lines`);
     } else {
       displaySearchInfo('');
     }
-    logFileElement.innerHTML = ansiToHtml(content);
+    showLogLines(logFileElement, lines, viaSearchBox);
   });
-  const fullCurrentUrl = window.location.href;
-  const urlParts = fullCurrentUrl.split('#');
-  const currentUrl = urlParts[0];
-  const fragment = urlParts[1];
-  if (string.length > 0) {
-    window.location.href = `${currentUrl}#filter=${encodeURIComponent(string)}`;
-  } else if (fragment) {
-    // leaving off the # here would reload the page
-    window.location.href = currentUrl + '#';
-  }
+  const params = parseQueryParams();
+  string.length > 0 ? (params.filter = [string]) : delete params.filter;
+  updateQueryParams(params);
 }
 
 function filterEmbeddedLogFiles() {
   const searchBox = document.getElementById('filter-log-file');
   if (searchBox) {
-    const currentUrl = window.location.href;
-    const fragment = currentUrl.split('#')[1];
-    if (fragment) {
-      const params = fragment.split('&');
-      for (let i = 0; i < params.length; i++) {
-        const keyval = params[i].split('=');
-        if (keyval[0] === 'filter') {
-          searchBox.value = decodeURIComponent(keyval[1]);
-        }
-      }
+    const filterParam = parseQueryParams().filter?.[0];
+    if (filterParam !== undefined) {
+      searchBox.value = filterParam;
     }
   }
-  const filter = filterLogLines.bind(null, searchBox);
-  loadEmbeddedLogFiles(filter);
+  loadEmbeddedLogFiles(filterLogLines.bind(null, searchBox, false));
+}
+
+function showLogLines(logFileElement, lines, viaSearchBox = false) {
+  const tableElement = document.createElement('table');
+  const currentHash = document.location.hash;
+  let lineNumber = 0;
+  let currentLineElement = undefined;
+  logFileElement.innerHTML = '';
+  for (const line of lines) {
+    ++lineNumber;
+    if (line === undefined) {
+      continue;
+    }
+    const lineElement = document.createElement('tr');
+    const lineNumberElement = document.createElement('td');
+    const lineNumberLinkElement = document.createElement('a');
+    const lineContentElement = document.createElement('td');
+    const hash = '#' + (lineElement.id = 'line-' + lineNumber);
+    lineNumberLinkElement.href = hash;
+    lineNumberLinkElement.onclick = () => {
+      if (currentLineElement !== undefined) {
+        currentLineElement.classList.remove('line-current');
+      }
+      lineContentElement.classList.add('line-current');
+      currentLineElement = lineContentElement;
+    };
+    lineNumberLinkElement.append(lineNumber);
+    lineNumberElement.className = 'line-number';
+    lineContentElement.className = 'line-content';
+    if (hash === currentHash) {
+      lineNumberLinkElement.onclick();
+    }
+    lineContentElement.innerHTML = ansiToHtml(line);
+    lineNumberElement.appendChild(lineNumberLinkElement);
+    lineElement.append(lineNumberElement, lineContentElement);
+    tableElement.appendChild(lineElement);
+  }
+  logFileElement.appendChild(tableElement);
+
+  // trigger the current hash again or delete it if no longer valid
+  if (currentLineElement && !viaSearchBox) {
+    currentLineElement.scrollIntoView();
+  } else if (currentHash.startsWith('line-') && !currentLineElement) {
+    document.location.hash = '';
+  }
+
+  // setup event handler to update the current line when the hash changes
+  if (window.hasHandlerForUpdatingCurrentLine) {
+    return;
+  }
+  addEventListener('hashchange', event => {
+    const hash = document.location.hash;
+    if (hash.startsWith('#line-')) {
+      const lineNumberLinkElement = document.querySelector(hash + ' .line-number a');
+      if (lineNumberLinkElement) {
+        lineNumberLinkElement.onclick();
+      }
+    }
+  });
+  window.hasHandlerForUpdatingCurrentLine = true;
 }
 
 function loadEmbeddedLogFiles(filter) {
@@ -663,12 +709,8 @@ function loadEmbeddedLogFiles(filter) {
     }
     $.ajax(logFileElement.dataset.src)
       .done(function (response) {
-        logFileElement.dataset.content = response;
-        if (filter) {
-          filter();
-        } else {
-          logFileElement.innerHTML = ansiToHtml(response);
-        }
+        const lines = (logFileElement.content = response.split(/\r?\n/));
+        filter ? filter() : showLogLines(logFileElement, lines, false);
         logFileElement.dataset.contentsLoaded = true;
       })
       .fail(function (jqXHR, textStatus, errorThrown) {
@@ -682,7 +724,7 @@ window.onload = function () {
   if (!searchBox) {
     return;
   }
-  const filter = filterLogLines.bind(null, searchBox);
+  const filter = filterLogLines.bind(null, searchBox, true);
   searchBox.addEventListener('keyup', delay(filter), 1000);
   searchBox.addEventListener('change', filter, false);
   searchBox.addEventListener('search', filter, false);

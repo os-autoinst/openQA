@@ -83,7 +83,8 @@ function updateQueryParams(params) {
   if (!history.replaceState) {
     return; // skip if not supported
   }
-  var search = [];
+  const search = [];
+  const hash = document.location.hash;
   $.each(params, function (key, values) {
     $.each(values, function (index, value) {
       if (value === undefined) {
@@ -93,7 +94,7 @@ function updateQueryParams(params) {
       }
     });
   });
-  history.replaceState({}, document.title, window.location.pathname + '?' + search.join('&'));
+  history.replaceState({}, document.title, `?${search.join('&')}${hash}`);
 }
 
 function renderDataSize(sizeInByte) {

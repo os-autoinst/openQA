@@ -13,6 +13,7 @@ use Test::Warnings qw(:all :report_warnings);
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;
+use Mojo::URL;
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(prepare_clean_needles_dir prepare_default_needle);
@@ -277,7 +278,8 @@ subtest 'reason and log details on incomplete jobs' => sub {
     is(current_tab, 'Details', 'starting on Details tab also for incomplete jobs');
     like($driver->find_element('#info_box')->get_text(), qr/Reason: just a test/, 'reason shown');
     wait_for_ajax(msg => 'test details tab for job 99926 loaded');
-    my $log_element = $driver->find_element_by_xpath('//*[@id="details"]//pre[string-length(text()) > 0]');
+    my $log_element_path = '//*[@id="details"]//*[contains(@class, "embedded-logfile")][table]';
+    my $log_element = $driver->find_element_by_xpath($log_element_path);
     like($log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded');
     like($log_element->get_text(), qr/Crashed\?/, 'log contents loaded');
     $driver->find_element_by_link_text('Investigation')->click;
@@ -495,6 +497,20 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     $driver->find_element('#filter-log-file')->send_keys('/kate-[12]/');
     like $driver->find_element('#filter-info')->get_text, qr{Showing 2 / 1292 lines},
       'Showing filter result info for regex';
+
+    my $url = Mojo::URL->new($driver->execute_script('return document.location.toString()'));
+    is $url->query->param('filename'), 'autoinst-log.txt', 'URL still contains filename after filtering';
+    is $url->query->param('filter'), '/kate-[12]/', 'URL contains filter';
+    is $url->fragment, undef, 'URL contains no fragment';
+    wait_for_element
+      selector => '#line-68 .line-current',
+      is_displayed => 1,
+      description => 'clicked line highlighted',
+      trigger_function => sub () { $driver->find_element('#line-68 a')->click };
+    $url = Mojo::URL->new($driver->execute_script('return document.location.toString()'));
+    is $url->query->param('filename'), 'autoinst-log.txt', 'URL still contains filename after clicking on line number';
+    is $url->query->param('filter'), '/kate-[12]/', 'URL still contains filter after clicking on line number';
+    is $url->fragment, 'line-68', 'URL fragment points to clicked line';
 };
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -731,7 +747,7 @@ subtest 'additional investigation notes provided on new failed' => sub {
     wait_for_ajax(msg => 'details tab for job 99947 loaded to test investigation');
     $driver->find_element('#clones a')->click;    # navigates to 99982
     $driver->find_element_by_link_text('Investigation')->click;
-    $driver->find_element('table#investigation_status_entry')
+    $driver->find_element('#investigation_status_entry')
       ->text_like(qr/No result dir/, 'investigation status content shown as table');
 };
 
@@ -748,7 +764,7 @@ subtest 'alert box shown if not already on first bad' => sub {
 
     $driver->find_element_by_xpath("//div[\@class='alert alert-info']/a[\@class='alert-link']")->click;
     wait_for_ajax(msg => 'details tab for job 99938 loaded to test investigation');
-    $driver->find_element('table#investigation_status_entry')
+    $driver->find_element('#investigation_status_entry')
       ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/,
         'linked to investigation tab directly');
     $driver->find_element_by_xpath("//div[\@class='tab-content']")

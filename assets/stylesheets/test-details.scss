@@ -289,10 +289,30 @@ span.resborder_na {
     max-height: none;
     box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.2);
 }
-pre.embedded-logfile {
+
+.embedded-logfile {
     white-space: pre-wrap;
+    font-family: var(--bs-font-monospace);
+    font-size: 0.875em;
+    overflow: auto;
+
+    .line-number {
+        background-color: rgba(var(--dt-row-stripe), 0.05);
+        border-right: 1px solid rgba(var(--dt-row-stripe), 0.15);
+        text-align: right;
+        vertical-align: top;
+        padding-left: 3px;
+        padding-right: 3px;
+        user-select: none;
+    }
+    .line-content {
+        padding-left: 10px;
+    }
+    .line-current {
+        background-color: var(--bs-warning-bg-subtle);
+    }
 }
-[data-bs-theme="dark"] pre.embedded-logfile {
+[data-bs-theme="dark"] .embedded-logfile {
     color: $default-font-color-dark;
 }
 
