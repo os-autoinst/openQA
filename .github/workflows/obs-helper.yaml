@@ -1,0 +1,22 @@
+---
+# yamllint disable rule:line-length
+name: OBS Helper
+
+on: [pull_request_target]
+
+jobs:
+  obs-url:
+    name: Report OBS Url
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comment
+        # Only run once on pull request creation
+        if: github.run_number == 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment ${{ github.event.pull_request.number }} \
+            --body "You might want to check the OBS project created for this PR: https://build.opensuse.org/project/show/devel:openQA:GitHub:os-autoinst:openQA:${{ github.event.pull_request.number }}"$'\n'"Here you can find all pull requests: https://build.opensuse.org/project/subprojects/devel:openQA:GitHub"$'\n'"_(This is just a little helper in case the OBS workflow fails and does not report the URL yet.)_"
