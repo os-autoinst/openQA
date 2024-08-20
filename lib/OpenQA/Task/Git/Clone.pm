@@ -115,15 +115,9 @@ sub _git_clone ($job, $ctx, $path, $url) {
     }
 
     my $current_branch = _get_current_branch($path);
-    if ($requested_branch eq $current_branch) {
-        # updating default branch (including checkout)
-        _git_fetch($path, $requested_branch);
-        _git_reset_hard($path, $requested_branch);
-    }
-    else {
-        # updating local branch to latest remote branch version
-        _git_fetch($path, "$requested_branch:$requested_branch");
-    }
+    # updating default branch (including checkout)
+    _git_fetch($path, $requested_branch);
+    _git_reset_hard($path, $requested_branch) if ($requested_branch eq $current_branch);
 }
 
 1;
