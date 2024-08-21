@@ -1,0 +1,38 @@
+---
+name: Redeliver failed webhooks
+
+# This workflow runs every 6 hours or when manually triggered.
+on:
+  schedule:
+    - cron: '20 */6 * * *'
+  workflow_dispatch:
+
+# This workflow will use the built in `GITHUB_TOKEN` to check out the repository contents. This grants `GITHUB_TOKEN` permission to do that.
+permissions:
+  contents: read
+
+jobs:
+  redeliver:
+    name: Redeliver failed webhooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      - run: npm install octokit
+      - name: Run script
+        env:
+          TOKEN: ${{ secrets.GH_TOKEN_FOR_ACTIONS }}
+          REPO_OWNER: 'os-autoinst'
+          REPO_NAME: 'openQA'
+          HOOK_ID: 'https://build.opensuse.org/trigger/workflow?id=5857'
+          # This variable will be updated with the last timestamp
+          # to avoid running the same hooks again
+          LAST_WEBHOOK_REDELIVERY: 'LAST_WEBHOOK_REDELIVERY'
+
+          WORKFLOW_REPO_NAME: ${{ github.event.repository.name }}
+          WORKFLOW_REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          node .github/workflows/scripts/redeliver.js
+
