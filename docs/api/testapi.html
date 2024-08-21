@@ -1028,7 +1028,8 @@ over serial or VNC.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Wait for <code>$regex</code> or anyone of <code>$regexes</code> to appear on serial output.</p>
+<p>Wait for <code>$regex</code> or anyone of <code>$regexes</code> to appear on serial output.
+A regex object has to be created with the <code>qr</code> operator.</p>
 </div>
 <div class="paragraph">
 <p>Setting <code>$no_regex</code> will cause it to do a plain string search.</p>
@@ -1047,6 +1048,15 @@ over serial or VNC.</p>
 <div class="paragraph">
 <p>Returns <code>undef</code> or (after timeout) the string that <em>did _not</em> match_ if
 <code>$expect_not_found</code> is true. The default timeout is 90 seconds.</p>
+</div>
+<div class="paragraph">
+<p>Examples:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>wait_serial qr/Password:\s*$/i;
+wait_serial 'substring', no_regex =&gt; 1, timeout =&gt; 30;</pre>
+</div>
 </div>
 </div>
 <div class="sect4">
@@ -2079,7 +2089,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-08-15 04:47:48 UTC
+Last updated 2024-08-21 04:47:10 UTC
 </div>
 </div>
 </body>
