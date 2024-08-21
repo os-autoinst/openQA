@@ -1,0 +1,27 @@
+---
+# yamllint disable rule:line-length
+name: OBS Helper
+
+on: [pull_request]
+
+jobs:
+  obs-url:
+    name: Report OBS URL
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: debug
+        run: |
+          env | sort
+      - name: Create Status
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN_FOR_ACTIONS }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/os-autoinst/openQA/statuses/${{ github.event.pull_request.head.sha }} \
+            -f "state=success" -f "target_url=https://build.opensuse.org/project/show/devel:openQA:GitHub:os-autoinst:openQA:PR-${{ github.event.pull_request.number }}" -f "description=Check OBS SCM URL" -f "context=continuous-integration/obs-helper"
