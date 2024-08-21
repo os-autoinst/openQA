@@ -1,0 +1,28 @@
+---
+name: Redeliver failed webhooks
+
+# This workflow runs every 6 hours or when manually triggered.
+on:
+  schedule:
+    - cron: '20 */6 * * *'
+  workflow_dispatch:
+
+# This workflow will use the built in `GITHUB_TOKEN` to check out the repository contents. This grants `GITHUB_TOKEN` permission to do that.
+permissions:
+  contents: read
+
+jobs:
+  redeliver:
+  - name: Redeliver failed webhooks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    # Using a commit as the action isn't currently versioned
+    - uses: gateixeira/retrigger-webhook-action@9383944
+      env:
+        token: ${{ secrets.GH_TOKEN_FOR_ACTIONS }}
+        owner: ${{ github.repository_owner }}
+        repo: ${{ github.event.repository.name }}
+        # This variable will be updated with the last timestamp
+        # to avoid running the same hooks again
+        last_redelivery_variable_name: 'LAST_WEBHOOK_REDELIVERY'
