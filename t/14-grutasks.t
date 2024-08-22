@@ -671,7 +671,7 @@ subtest 'git clone' => sub {
     is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
     like $mocked_git_calls[3], qr'git -C /etc/ fetch origin master', 'fetch origin master for /etc/';
     like $mocked_git_calls[4], qr'reset --hard origin/master', 'reset origin/master for /etc/';
-    like $mocked_git_calls[8], qr'git -C /root/ fetch origin foobranch:foobranch', 'fetch non-default branch';
+    like $mocked_git_calls[8], qr'git -C /root/ fetch origin foobranch', 'fetch non-default branch';
     like $mocked_git_calls[10], qr'git clone http://localhost/bar.git /this_directory_does_not_exist/',
       'clone to /this_directory_does_not_exist/';
 
