@@ -249,20 +249,10 @@ subtest 'available comments shown' => sub {
         "Bug referenced: bsc#4\nclosed bugzilla bug",
         'available bugref (bsc#4) shown for finished jobs'
     );
-
-  SKIP: {
-        skip 'comment icon for running and scheduled jobs skipped to imporove performance', 2;
-        is(
-            $driver->find_element('#job_99963 .fa-comment')->get_attribute('title'),
-            '2 comments available',
-            'available comments shown for running jobs'
-        );
-        is(
-            $driver->find_element('#job_99928 .fa-comment')->get_attribute('title'),
-            '1 comment available',
-            'available comments shown for scheduled jobs'
-        );
-    }
+    is_deeply([$driver->find_elements('#job_99963 .fa-comment')],
+        [], 'available comments not shown for running jobs (for performance reasons)');
+    is_deeply([$driver->find_elements('#job_99928 .fa-comment')],
+        [], 'available comments not shown for scheduled jobs (for performance reasons)');
 };
 
 $driver->find_element_by_link_text('Build0091')->click();

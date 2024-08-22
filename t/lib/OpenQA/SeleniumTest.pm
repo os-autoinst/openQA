@@ -215,7 +215,7 @@ sub javascript_console_has_no_warnings_or_errors ($test_name_suffix = '') {
         # ignore when server replied with 400 response; this may be provoked when testing error cases and if it is
         # not expected tests would fail anyways
         next if ($msg =~ qr/server responded with a status of 400/);    # uncoverable statement
-        push(@errors, $log_entry);
+        push(@errors, $log_entry);    # uncoverable statement
     }
 
     diag "Unexpected Javascript console errors$test_name_suffix: " . pp(\@errors) if @errors;

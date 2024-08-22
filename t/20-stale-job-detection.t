@@ -10,12 +10,13 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use DateTime;
 use Test::Warnings ':report_warnings';
 use Test::Output qw(combined_like stderr_like);
+use Test::MockModule;
 use OpenQA::App;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
+use OpenQA::Scheduler;
 require OpenQA::Test::Database;
-use OpenQA::Test::Utils qw(redirect_output);
 use OpenQA::Test::TimeLimit '10';
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 06-job_dependencies.pl');

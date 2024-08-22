@@ -48,8 +48,7 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = qw(
-  mock_service_ports setup_mojo_app_with_default_worker_timeout
-  redirect_output create_user_for_workers
+  setup_mojo_app_with_default_worker_timeout create_user_for_workers
   create_webapi create_websocket_server create_scheduler create_live_view_handler
   unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job
   stop_service start_worker unstable_worker fake_asset_server
@@ -70,18 +69,6 @@ our (@EXPORT, @EXPORT_OK);
 #
 # Potentially this approach can also be used in production code.
 
-sub mock_service_ports {
-    my %ports;
-    Test::MockModule->new('OpenQA::Utils')->redefine(
-        service_port => sub {
-            my ($service) = @_;
-            my $port = $ports{$service} //= Mojo::IOLoop::Server->generate_port;
-            note("Mocking service port for $service to be $port");
-            return $port;
-        });
-    note('Used ports: ' . dumper(\%ports));
-}
-
 sub setup_mojo_app_with_default_worker_timeout {
     OpenQA::App->set_singleton(
         Mojolicious->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef));
@@ -92,13 +79,13 @@ sub cache_minion_worker {
         sub {
 
             # this service can be very noisy
-            require OpenQA::CacheService;
-            local $ENV{MOJO_MODE} = 'test';
-            note('Starting cache minion worker');
-            OpenQA::CacheService::run(qw(run --dequeue-timeout 1));
-            note('Cache minion worker stopped');
-            Devel::Cover::report() if Devel::Cover->can('report');
-            _exit(0);
+            require OpenQA::CacheService;    # uncoverable statement
+            local $ENV{MOJO_MODE} = 'test';    # uncoverable statement
+            note('Starting cache minion worker');    # uncoverable statement
+            OpenQA::CacheService::run(qw(run --dequeue-timeout 1));    # uncoverable statement
+            note('Cache minion worker stopped');    # uncoverable statement
+            Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
+            _exit(0);    # uncoverable statement
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
 }
 
@@ -107,14 +94,14 @@ sub cache_worker_service {
         sub {
 
             # this service can be very noisy
-            require OpenQA::CacheService;
-            local $ENV{MOJO_MODE} = 'test';
-            my $port = service_port 'cache_service';
-            note("Starting worker cache service on port $port");
-            OpenQA::CacheService::run('daemon', '-l', "http://*:$port");
-            note("Worker cache service on port $port stopped");
-            Devel::Cover::report() if Devel::Cover->can('report');
-            _exit(0);
+            require OpenQA::CacheService;    # uncoverable statement
+            local $ENV{MOJO_MODE} = 'test';    # uncoverable statement
+            my $port = service_port 'cache_service';    # uncoverable statement
+            note("Starting worker cache service on port $port");    # uncoverable statement
+            OpenQA::CacheService::run('daemon', '-l', "http://*:$port");    # uncoverable statement
+            note("Worker cache service on port $port stopped");    # uncoverable statement
+            Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
+            _exit(0);    # uncoverable statement
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
 }
 
@@ -203,20 +190,7 @@ sub fake_asset_server {
                 $c->rendered(200);
             }
         });
-
-    $mock->routes->get(
-        '/' => sub {
-            my $c = shift;
-            return $c->render(status => 200, text => "server is running");
-        });
     return $mock;
-}
-
-sub redirect_output {
-    my ($buf) = @_;
-    open my $FD, '>', $buf;
-    *STDOUT = $FD;
-    *STDERR = $FD;
 }
 
 # define internal helper functions to keep track of Perl warnings produced by sub processes spawned by
@@ -227,12 +201,12 @@ sub _setup_sub_process {
     my ($process_name) = @_;
     $0 = $process_name;
     note "PID of $process_name: $$";
-    $SIG{__WARN__} = sub {
-        log_error "Stopping $process_name process because a Perl warning occurred: @_";
-        _exit 42;
+    $SIG{__WARN__} = sub {    # uncoverable statement
+        log_error "Stopping $process_name process because a Perl warning occurred: @_";    # uncoverable statement
+        _exit 42;    # uncoverable statement
     };
 }
-sub _fail_and_exit { fail shift; done_testing; exit shift }
+sub _fail_and_exit { fail shift; done_testing; exit shift }    # uncoverable statement
 my %RELEVANT_CHILD_PIDS;
 my $SIGCHLD_HANDLER = sub {
     # produces a test failure in case any relevant sub process terminated with a non-zero exit code
@@ -303,14 +277,9 @@ sub create_webapi ($port = undef, $no_cover = undef) {
     return $h;
 }
 
-sub create_websocket_server {
-    my ($port, $bogus, $nowait, $with_embedded_scheduler, $no_cover) = @_;
-    $port //= service_port 'websocket';
-
-    note("Starting WebSocket service. Port: $port");
-    note("Bogus: $bogus | No wait: $nowait");
-
-    OpenQA::WebSockets::Client->singleton->port($port);
+sub create_websocket_server ($port, $bogus, $with_embedded_scheduler = undef, $no_cover = undef) {
+    OpenQA::WebSockets::Client->singleton->port($port //= service_port 'websocket');
+    note "Starting WebSocket service (port: $port, bogus: $bogus)";
     my $h = _setup_sigchld_handler 'openqa-websocket', start sub {
         _setup_sub_process 'openqa-websocket';
         local $ENV{MOJO_LISTEN} = "http://127.0.0.1:$port";
@@ -350,22 +319,6 @@ sub create_websocket_server {
         OpenQA::WebSockets::run;
         Devel::Cover::report() if !$no_cover && Devel::Cover->can('report');
     };
-    if (!defined $nowait) {
-        # wait for websocket server
-        my $limit = 20;
-        my $wait = time + $limit;
-        while (time < $wait) {
-            my $t = time;
-            my $socket = IO::Socket::INET->new(
-                PeerHost => '127.0.0.1',
-                PeerPort => $port,
-                Proto => 'tcp'
-            );
-            last if $socket;
-            sleep 1 if time - $t < 1;
-        }
-        die("websocket server is not responsive after '$limit' seconds") unless time < $wait;
-    }
     return $h;
 }
 
@@ -462,21 +415,13 @@ sub start_worker {
     start \@cmd;
 }
 
-sub unstable_worker {
-    # the help of the Doctor would be really appreciated here.
-    my ($apikey, $apisecret, $host, $instance, $ticks, $sleep) = @_;
-    note("Starting unstable worker. Instance: $instance for host $host");
-    $ticks = 1 unless defined $ticks;
+sub unstable_worker ($apikey, $apisecret, $host, $instance, $ticks, $sleep = undef) {
+    my %worker_params = (apikey => $apikey, apisecret => $apisecret, instance => $instance, verbose => 1);
+    note "Starting unstable worker. Instance: $instance for host $host";
 
     my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {    # uncoverable statement
         _setup_sub_process 'openqa-worker-unstable';    # uncoverable statement
-        my $worker = OpenQA::Worker->new(    # uncoverable statement
-            {    # uncoverable statement
-                apikey => $apikey,    # uncoverable statement
-                apisecret => $apisecret,    # uncoverable statement
-                instance => $instance,    # uncoverable statement
-                verbose => 1    # uncoverable statement
-            });    # uncoverable statement
+        my $worker = OpenQA::Worker->new(\%worker_params);    # uncoverable statement
         setup_worker($worker, $host);    # uncoverable statement
         $worker->init();    # uncoverable statement
         if ($ticks < 0) {    # uncoverable statement
@@ -513,44 +458,37 @@ sub rejective_worker {
     c_worker($apikey, $apisecret, $host, $instance, 1, rejection_reason => $reason);
 }
 
-sub c_worker {
-    my ($apikey, $apisecret, $host, $instance, $bogus, %options) = @_;
-    $bogus //= 1;
+sub c_worker ($apikey, $apisecret, $host, $instance, $bogus, %options) {
+    my %worker_params = (apikey => $apikey, apisecret => $apisecret, instance => $instance, verbose => 1);
 
-    _setup_sigchld_handler 'openqa-worker', start sub {
-        _setup_sub_process 'openqa-worker';
-        my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
-        if ($bogus) {
+    _setup_sigchld_handler 'openqa-worker', start sub {    # uncoverable statement
+        _setup_sub_process 'openqa-worker';    # uncoverable statement
+        my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');    # uncoverable statement
+        if ($bogus) {    # uncoverable statement
             $command_handler_mock->redefine(
-                handle_command => sub {
-                    my ($self, $tx, $json) = @_;
-                    log_debug('Received ws message: ' . Dumper($json));
+                handle_command => sub {    # uncoverable statement
+                    my ($self, $tx, $json) = @_;    # uncoverable statement
+                    log_debug('Received ws message: ' . Dumper($json));    # uncoverable statement
 
                     # if we've got a single job ID and a rejection reason simulate a worker
                     # which rejects the job
-                    my $rejection_reason = $options{rejection_reason};
-                    return undef unless defined $rejection_reason;
-                    my $job_id = $json->{job}->{id};
-                    return undef unless defined $job_id;
-                    log_debug("Rejecting job $job_id");
-                    $self->client->reject_jobs([$job_id], $rejection_reason);
-                });
+                    my $rejection_reason = $options{rejection_reason};    # uncoverable statement
+                    return undef unless defined $rejection_reason;    # uncoverable statement
+                    my $job_id = $json->{job}->{id};    # uncoverable statement
+                    return undef unless defined $job_id;    # uncoverable statement
+                    log_debug("Rejecting job $job_id");    # uncoverable statement
+                    $self->client->reject_jobs([$job_id], $rejection_reason);    # uncoverable statement
+                });    # uncoverable statement
         }
-        my $error = $options{error};
-        my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-        $worker_mock->redefine(check_availability => $error) if defined $error;
-        my $worker = OpenQA::Worker->new(
-            {
-                apikey => $apikey,
-                apisecret => $apisecret,
-                instance => $instance,
-                verbose => 1
-            });
-        $worker->current_error($error) if defined $error;
-        setup_worker($worker, $host);
-        $worker->exec();
+        my $error = $options{error};    # uncoverable statement
+        my $worker_mock = Test::MockModule->new('OpenQA::Worker');    # uncoverable statement
+        $worker_mock->redefine(check_availability => $error) if defined $error;    # uncoverable statement
+        my $worker = OpenQA::Worker->new(\%worker_params);    # uncoverable statement
+        $worker->current_error($error) if defined $error;    # uncoverable statement
+        setup_worker($worker, $host);    # uncoverable statement
+        $worker->exec();    # uncoverable statement
 
-        Devel::Cover::report() if Devel::Cover->can('report');
+        Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
     };
 }
 

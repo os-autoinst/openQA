@@ -265,9 +265,9 @@ $job3 = job_get($round5->id);
 
 sub _print_job_cluster ($jobs) {
     return undef unless $ENV{HARNESS_IS_VERBOSE};
-    my $cluster_jobs = $jobs->[0]->cluster_jobs;    # uncoverable
-    note 'job ' . $_->TEST . ': ' . $_->id for @$jobs;    # uncoverable
-    diag explain $cluster_jobs;    # uncoverable
+    my $cluster_jobs = $jobs->[0]->cluster_jobs;    # uncoverable statement
+    note 'job ' . $_->TEST . ': ' . $_->id for @$jobs;    # uncoverable statement
+    diag explain $cluster_jobs;    # uncoverable statement
 }
 
 subtest 'restarting one of two independent root jobs (only related indirectly via parallel dependency)' => sub {

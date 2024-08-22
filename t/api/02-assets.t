@@ -18,11 +18,9 @@ my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apise
 
 sub la {
     return unless $ENV{HARNESS_IS_VERBOSE};
-    $t->get_ok('/api/v1/assets')->status_is(200);
-    my @assets = @{$t->tx->res->json->{assets}};
-    for my $asset (@assets) {
-        printf "%d %-5s %s\n", $asset->{id}, $asset->{type}, $asset->{name};
-    }
+    $t->get_ok('/api/v1/assets')->status_is(200);    # uncoverable statement
+    my @assets = @{$t->tx->res->json->{assets}};    # uncoverable statement
+    note "asset: $_->{id}: $_->{type}/$_->{name}\n" for @assets;    # uncoverable statement
 }
 
 sub iso_path {

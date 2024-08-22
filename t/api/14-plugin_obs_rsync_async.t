@@ -18,11 +18,11 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 sub start_gru {
-    start sub {
-        note('starting gru');
-        $0 = 'openqa-gru';
-        $ENV{MOJO_MODE} = 'test';
-        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');
+    start sub {    # uncoverable because we do not track coverage of this sub process
+        note('starting gru');    # uncoverable statement
+        $0 = 'openqa-gru';    # uncoverable statement
+        $ENV{MOJO_MODE} = 'test';    # uncoverable statement
+        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');    # uncoverable statement
     };
 }
 
@@ -52,11 +52,10 @@ sub sleep_until_job_start {
                 && ($other_job->{args}[0]->{project} eq $project)
                 && $other_job->{notes}{project_lock});
         }
-
-        sleep .2;
-        $retries--;
+        sleep .2;    # uncoverable statement
+        $retries--;    # uncoverable statement
     }
-    die 'Timeout reached';
+    die 'Timeout reached';    # uncoverable statement
 }
 
 sub sleep_until_all_jobs_finished {
@@ -66,11 +65,10 @@ sub sleep_until_all_jobs_finished {
     while ($retries > 0) {
         my ($cnt, $jobs) = _jobs('inactive', 'active');
         return 1 unless $cnt;
-
-        sleep .2;
-        $retries--;
+        sleep .2;    # uncoverable statement
+        $retries--;    # uncoverable statement
     }
-    die 'Timeout reached';
+    die 'Timeout reached';    # uncoverable statement
 }
 
 # this function communicates with t/data/openqa-trigger-from-obs/script/rsync.sh

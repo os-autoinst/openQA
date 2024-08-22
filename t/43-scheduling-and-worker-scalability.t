@@ -21,7 +21,7 @@ require OpenQA::Test::Database;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(setup_log);
 use OpenQA::Test::Utils qw(
-  mock_service_ports setup_mojo_app_with_default_worker_timeout
+  setup_mojo_app_with_default_worker_timeout
   create_user_for_workers create_webapi create_websocket_server
   stop_service setup_fullstack_temp_dir simulate_load);
 use OpenQA::Test::TimeLimit '20';
@@ -52,8 +52,6 @@ BAIL_OUT 'invalid SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT'
 note("Running scalability test with $worker_count worker(s) and $job_count job(s).");
 note('Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust this.');
 
-mock_service_ports;
-
 # setup basedir, config dir and database
 my $tempdir = setup_fullstack_temp_dir('scalability');
 my $schema = OpenQA::Test::Database->new->create;
@@ -61,7 +59,7 @@ my $workers = $schema->resultset('Workers');
 my $jobs = $schema->resultset('Jobs');
 
 # create web UI and websocket server
-my $web_socket_server = create_websocket_server(undef, 0, 1, 1, 1);
+my $web_socket_server = create_websocket_server(undef, 0, 1, 1);
 my $webui = create_webapi(undef, 1);
 
 # prepare spawning workers

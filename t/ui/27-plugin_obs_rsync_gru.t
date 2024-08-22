@@ -15,7 +15,9 @@ my $app = $t->app;
 my $minion = $app->minion;
 
 {
-    package FakeMinionJob;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package FakeMinionJob;
     use Mojo::Base -base, -signatures;
     has id => 0;
     has app => sub { $app };
