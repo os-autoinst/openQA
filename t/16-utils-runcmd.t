@@ -53,8 +53,7 @@ subtest 'make git commit (error handling)' => sub {
     my $res;
     stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
     qr/.*\[warn\].*fatal: Not a git repository/i, 'git message found';
-    like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: (N|n)ot a git repository \(or any",
-      'Git error message returned';
+    like $res, qr'^Unable to commit via Git: fatal: (N|n)ot a git repository \(or any', 'Git error message returned';
 };
 
 # setup mocking
@@ -118,7 +117,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     $mock_return_value{stdout} = '';
     is(
         $git->set_to_latest_master,
-        'Unable to fetch from origin master (foo/bar): mocked error',
+        'Unable to fetch from origin master: mocked error',
         'an error occurred on remote update'
     );
     is_deeply(\@executed_commands, [[qw(git -C foo/bar remote update origin)],], 'git reset not attempted',)
