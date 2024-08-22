@@ -1,12 +1,6 @@
 #!/bin/bash
 set -ex
 target="${1:?"Specify a makefile target"}"
-
-# downgrade chromedriver from problematic version to last good version, see
-# https://progress.opensuse.org/issues/164239
-# ignore if zypper fails to refresh some repos and try to continue
-rpm -q chromedriver | grep -v 126.0.6478. || (sudo tools/retry zypper -n refresh; sudo zypper --no-refresh -n in --oldpackage chromium-125.0.6422.141-bp156.2.3.1 chromedriver-125.0.6422.141-bp156.2.3.1)
-
 # Set to 1 to temporarily ignore warnings
 export PERL_TEST_WARNINGS_ONLY_REPORT_WARNINGS=0
 export COVERAGE=1
