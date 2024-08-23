@@ -21,6 +21,6 @@
 </div>
 <p><%= $filename %></p>
 <hr>
-<pre class="embedded-logfile" data-src="<%= $url %>">
+<div class="embedded-logfile" data-src="<%= $url %>">
 Loading log contents …
-</pre>
+</div>
