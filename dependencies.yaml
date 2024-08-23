@@ -8,12 +8,13 @@
 #######################################################
 ---
 targets:
-  cpanfile: [ assetpack,        client, common, cover, devel, devel_no_selenium, main, test, worker ]
-  spec:     [ assetpack, build, client, common, cover, devel, devel_no_selenium, main, test, worker ]
+  cpanfile: [ assetpack,        client, common, cover, devel, devel_no_selenium, main, test, style_check, worker ]
+  spec:     [ assetpack, build, client, common, cover, devel, devel_no_selenium, main, test, style_check, worker ]
   cpanfile-targets:
     # target: cpanfile target type (default main)
     devel: develop
     devel_no_selenium: develop
+    style_check: develop
     cover: cover
     test: test
 
@@ -73,6 +74,7 @@ client_requires:
 devel_no_selenium_requires:
   '%build_requires':
   '%test_requires':
+  '%style_check_requires':
   '%qemu':
   '%cover_requires':
   curl:
@@ -182,15 +184,11 @@ test_requires:
   openssh-common:
   curl:
   jq:
-  ShellCheck:
-  shfmt:
   os-autoinst-devel:
   postgresql-server:
   python3-setuptools:
   python3-yamllint:
   perl(App::cpanminus):
-  perl(Perl::Critic):
-  perl(Perl::Critic::Freenode):
   perl(Selenium::Remote::Driver): '>= 1.23'
   perl(Selenium::Remote::WDKeys):
   perl(Test::Exception):
@@ -203,3 +201,9 @@ test_requires:
   perl(Test::Output):
   perl(Test::Pod):
   perl(Test::Warnings): '>= 0.029'
+
+style_check_requires:
+  perl(Perl::Critic):
+  perl(Perl::Critic::Freenode):
+  ShellCheck:
+  shfmt:
