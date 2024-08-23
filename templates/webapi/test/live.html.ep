@@ -103,8 +103,8 @@
                 <div class="col-sm-7">
                     <select class="form-select" id="developer-pause-on-mismatch">
                         <option value="fail" selected style="font-style: italic;">Fail on mismatch as usual</option>
-                        <option value="assert_screen"><code>assert_screen</code> timeout</option>
-                        <option value="check_screen"><code>assert_screen</code> and <code>check_screen</code> timeout</option>
+                        <option value="assert_screen">assert_screen timeout</option>
+                        <option value="check_screen">assert_screen and check_screen timeout</option>
                     </select>
                 </div>
                 <div class="col-sm-5">
