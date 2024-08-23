@@ -2,7 +2,7 @@
 # yamllint disable rule:line-length
 name: OBS Helper
 
-on: [pull_request]
+on: [pull_request_target]
 
 jobs:
   obs-url:
