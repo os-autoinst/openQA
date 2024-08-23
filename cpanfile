@@ -98,8 +98,6 @@ requires 'warnings';
 
 on 'test' => sub {
     requires 'App::cpanminus';
-    requires 'Perl::Critic';
-    requires 'Perl::Critic::Freenode';
     requires 'Selenium::Remote::Driver', '>= 1.23';
     requires 'Selenium::Remote::WDKeys';
     requires 'Test::Exception';
@@ -116,6 +114,8 @@ on 'test' => sub {
 };
 
 on 'develop' => sub {
+    requires 'Perl::Critic';
+    requires 'Perl::Critic::Freenode';
     requires 'Perl::Tidy', '== 20240511.0.0';
 
 };
