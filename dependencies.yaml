@@ -187,7 +187,6 @@ test_requires:
   os-autoinst:
   postgresql-server:
   python3-setuptools:
-  python3-yamllint:
   perl(App::cpanminus):
   perl(Selenium::Remote::Driver): '>= 1.23'
   perl(Selenium::Remote::WDKeys):
@@ -203,6 +202,7 @@ test_requires:
   perl(Test::Warnings): '>= 0.029'
 
 style_check_requires:
+  python3-yamllint:
   perl(Perl::Critic):
   perl(Perl::Critic::Freenode):
   ShellCheck:
