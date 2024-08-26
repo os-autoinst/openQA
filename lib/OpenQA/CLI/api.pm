@@ -118,8 +118,8 @@ sub command ($self, @args) {
         --apisecret <secret>      API secret
     -a, --header <name:value>     One or more additional HTTP headers
     -D, --data-file <path>        Load content to send with request from file
-    -d, --data <string>           Content to send with request, alternatively
-                                  you can also pipe data to openqa-cli
+                                  or from stdin by specifying "-" as path
+    -d, --data <string>           Content to send with request
     -f, --form                    Turn JSON object into form parameters
         --host <host>             Target host, defaults to http://localhost
     -h, --help                    Show this summary of available options
