@@ -507,7 +507,7 @@ subtest 'PIPE input' => sub {
     my $file = tempfile;
     my $fh = $file->spew('Hello openQA!')->open('<');
     local *STDIN = $fh;
-    my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http') };
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, '--data-file', '-', 'test/pub/http') };
     is decode_json($stdout)->{body}, 'Hello openQA!', 'request body';
 };
 
