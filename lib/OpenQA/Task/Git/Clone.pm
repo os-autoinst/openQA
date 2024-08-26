@@ -65,8 +65,8 @@ sub _ssh_git_cmd ($git_args) {
 
 sub _get_remote_default_branch ($url) {
     my $r = run_cmd_with_log_return_error(_ssh_git_cmd(['ls-remote', '--symref', $url, 'HEAD']));
-    die "Error detecting remote default branch name for '$url': $r->{stderr}"
-      unless $r->{status} && $r->{stdout} =~ /refs\/heads\/(\S+)\s+HEAD/;
+    die "Error detecting remote default branch name for '$url': $r->{stdout} $r->{stderr}"
+      unless $r->{status} && $r->{stdout} =~ m{refs/heads/(\S+)\s+HEAD};
     return $1;
 }
 
@@ -96,22 +96,20 @@ sub _git_clone ($job, $ctx, $path, $url) {
     $url = Mojo::URL->new($url);
     my $requested_branch = $url->fragment;
     $url->fragment(undef);
-    my $remote_default_branch = _get_remote_default_branch($url);
-    $requested_branch ||= $remote_default_branch;
-    $ctx->debug(qq{Remote default branch $remote_default_branch});
-    die "Unable to detect remote default branch for '$url'" unless $remote_default_branch;
 
-    if (!-d $path) {
-        _git_clone_url_to_path($url, $path);
-        # update local branch to latest remote branch version
-        _git_fetch($path, "$requested_branch:$requested_branch")
-          if ($requested_branch ne $remote_default_branch);
-    }
+    # An initial clone fetches all refs, we are done
+    return _git_clone_url_to_path($url, $path) unless -d $path;
 
     my $origin_url = _git_get_origin_url($path);
     if ($url ne $origin_url) {
         $ctx->warn("Local checkout at $path has origin $origin_url but requesting to clone from $url");
         return;
+    }
+
+    unless ($requested_branch) {
+        my $remote_default = _get_remote_default_branch($url);
+        $requested_branch = $remote_default;
+        $ctx->debug(qq{Remote default branch $remote_default});
     }
 
     my $current_branch = _get_current_branch($path);
