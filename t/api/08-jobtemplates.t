@@ -955,11 +955,9 @@ subtest 'Create and modify groups with YAML' => sub {
         $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
         $t->status_is(200);
         return diag explain $t->tx->res->body unless $t->success;
-        if (!is($job_templates->search({prio => 16})->count, 2, 'two distinct job templates')) {
-            my $jt = $job_templates->search({prio => 16});
-            while (my $j = $jt->next) {
-                diag explain dump_yaml(string => $j->to_hash);
-            }
+        my $templates = $job_templates->search({prio => 16});
+        if (!is $templates->count, 2, 'two distinct job templates') {
+            diag explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
         }
         my %new_isos_post_params = (
             _GROUP => 'foo',
@@ -1010,11 +1008,9 @@ subtest 'Create and modify groups with YAML' => sub {
                 schema => $schema_filename,
                 template => dump_yaml(string => $yaml)});
         return diag explain $t->tx->res->body unless $t->success;
-        if (!is($job_templates->search({prio => 7})->count, 4, 'four job templates created')) {
-            my $jt = $job_templates->search({prio => 7});
-            while (my $j = $jt->next) {
-                diag explain dump_yaml(string => $j->to_hash);
-            }
+        my $templates = $job_templates->search({prio => 7});
+        if (!is $templates->count, 4, 'four job templates created') {
+            diag explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
         }
     };
 

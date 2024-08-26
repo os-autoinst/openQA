@@ -23,7 +23,7 @@ use Test::Mojo;
 use Test::Warnings qw(:report_warnings warning);
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json encode_json);
-use OpenQA::Test::Utils qw(perform_minion_jobs redirect_output);
+use OpenQA::Test::Utils qw(perform_minion_jobs);
 use OpenQA::Test::TimeLimit '30';
 
 my $schema_name = OpenQA::Test::Database::generate_schema_name;

@@ -29,8 +29,8 @@ sub send {
     my ($self, $message, $callback) = @_;
 
     if ($self->finish_called) {
-        fail('attempt to send message via finished connection');
-        return undef;
+        fail('attempt to send message via finished connection');    # uncoverable statement
+        return undef;    # uncoverable statement
     }
 
     push @{$self->sent_messages}, $message;

@@ -280,4 +280,3 @@ sub resultset { FakeSchema::Find->new }
 
 package FakeSchema::Find;
 sub new { bless({}, shift) }
-sub find { undef }

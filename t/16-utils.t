@@ -22,7 +22,6 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils (qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex),
     qw(download_rate download_speed usleep_backoff));
 use OpenQA::Task::SignalGuard;
-use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
 use Test::MockObject;

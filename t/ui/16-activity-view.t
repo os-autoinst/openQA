@@ -133,7 +133,7 @@ subtest 'Current jobs' => sub {
         my $href = $links[0]->get_attribute('href');
         unless ($href =~ m{/tests/(\d+)}) {
             fail("Link '$href' is not a test url");    # uncoverable statement
-            next;
+            next;    # uncoverable statement
         }
         my $id = $1;
         my $exp = delete $state_result{$id};
@@ -145,7 +145,7 @@ subtest 'Current jobs' => sub {
     }
     if (keys %state_result) {
         fail "Missed the following jobs in the list:";    # uncoverable statement
-        diag(Data::Dumper->Dump([\%state_result], ['state_result']));
+        diag(Data::Dumper->Dump([\%state_result], ['state_result']));    # uncoverable statement
     }
 
     my $first = wait_for_element(selector => '#results .list-group-item:first-child .timeago:not(:empty)');

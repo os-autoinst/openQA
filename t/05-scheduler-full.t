@@ -30,7 +30,7 @@ use OpenQA::Worker::WebUIConnection;
 use OpenQA::Utils;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(
-  mock_service_ports setup_mojo_app_with_default_worker_timeout
+  setup_mojo_app_with_default_worker_timeout
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
@@ -55,9 +55,8 @@ my $api_key = $api_credentials->key;
 my $api_secret = $api_credentials->secret;
 
 # create web UI and websocket server
-mock_service_ports;
 my $mojoport = service_port 'webui';
-my $ws = create_websocket_server(undef, 0, 1, 1);
+my $ws = create_websocket_server(undef, 0, 1);
 my $webapi = create_webapi($mojoport, sub { });
 my @workers;
 
@@ -272,7 +271,7 @@ subtest 'Websocket server - close connection test' => sub {
 
     my $log;
     # create unstable ws
-    $ws = create_websocket_server(undef, 1, 0);
+    $ws = create_websocket_server(undef, 1);
     @workers = create_worker(@$worker_settings, 2, \$log);
 
     my $found_connection_closed_in_log = 0;

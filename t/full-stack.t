@@ -48,7 +48,7 @@ use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
-  qw(cache_minion_worker cache_worker_service mock_service_ports setup_fullstack_temp_dir),
+  qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
   qw(start_worker stop_service wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '200';
 use OpenQA::Test::FullstackUtils;
@@ -73,9 +73,8 @@ my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 # initialize database, start daemons
 my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
-mock_service_ports;
 my $mojoport = service_port 'websocket';
-$ws = create_websocket_server($mojoport, 0, 0);
+$ws = create_websocket_server($mojoport, 0);
 my $driver = call_driver({mojoport => service_port 'webui'});
 $livehandler = create_live_view_handler;
 
