@@ -400,8 +400,7 @@ sub setup_worker {    # uncoverable statement
     $worker->log_setup_info;    # uncoverable statement
 }
 
-sub start_worker {
-    my ($connect_args) = @_;
+sub start_worker ($connect_args) {
     my $os_autoinst_path = '../os-autoinst';
     my $isotovideo_path = $os_autoinst_path . '/isotovideo';
 
@@ -439,21 +438,15 @@ sub unstable_worker ($apikey, $apisecret, $host, $instance, $ticks, $sleep = und
     return $h;
 }
 
-sub unresponsive_worker {
-    my ($apikey, $apisecret, $host, $instance) = @_;
-
+sub unresponsive_worker ($apikey, $apisecret, $host, $instance) {
     note("Starting unresponsive worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 1);
 }
-sub broken_worker {
-    my ($apikey, $apisecret, $host, $instance, $error) = @_;
-
+sub broken_worker ($apikey, $apisecret, $host, $instance, $error) {
     note("Starting broken worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 0, error => $error);
 }
-sub rejective_worker {
-    my ($apikey, $apisecret, $host, $instance, $reason) = @_;
-
+sub rejective_worker ($apikey, $apisecret, $host, $instance, $reason) {
     note("Starting rejective worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 1, rejection_reason => $reason);
 }
