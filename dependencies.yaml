@@ -184,7 +184,7 @@ test_requires:
   openssh-common:
   curl:
   jq:
-  os-autoinst-devel:
+  os-autoinst:
   postgresql-server:
   python3-setuptools:
   python3-yamllint:
