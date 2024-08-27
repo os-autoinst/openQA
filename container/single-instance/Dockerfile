@@ -16,7 +16,9 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 # installing more of packages that are selected in openqa-bootstrap.  Combining here saves installation time
 # hadolint ignore=DL3037
 RUN zypper in -y openQA-single-instance openQA-bootstrap \
-    qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps && \
+    retry \
+    qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps \
+    qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci && \
     zypper clean -a
 EXPOSE 80 443 9526
 ENV skip_suse_specifics=1
