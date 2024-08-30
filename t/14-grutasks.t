@@ -645,14 +645,14 @@ subtest 'handling dying GRU task' => sub {
 };
 
 subtest 'git clone' => sub {
-    my $openqa_utils = Test::MockModule->new('OpenQA::Task::Git::Clone');
+    my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @mocked_git_calls;
     my $clone_dirs = {
         '/etc/' => 'http://localhost/foo.git',
         '/root/' => 'http://localhost/foo.git#foobranch',
         '/this_directory_does_not_exist/' => 'http://localhost/bar.git',
     };
-    $openqa_utils->redefine(
+    $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd) {
             push @mocked_git_calls, "@$cmd";
             my $stdout = '';
@@ -675,21 +675,21 @@ subtest 'git clone' => sub {
     is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
     #<<< no perltidy
     my $expected_calls = [
-        # /etc/
-        ['get-url' => 'git -C /etc/ remote get-url origin'],
-        ['default remote' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git ls-remote --symref http://localhost/foo.git HEAD'],
-        ['current branch' => 'git -C /etc/ branch --show-current'],
-        ['fetch default' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /etc/ fetch origin master'],
-        ['reset' => 'git -C /etc/ reset --hard origin/master'],
+    # /etc/
+    ['get-url' => 'git -C /etc/ remote get-url origin'],
+    ['default remote' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git ls-remote --symref http://localhost/foo.git HEAD'],
+    ['current branch' => 'git -C /etc/ branch --show-current'],
+    ['fetch default' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /etc/ fetch origin master'],
+    ['reset' => 'git -C /etc/ reset --hard origin/master'],
 
-        # /root
-        ['get-url' => 'git -C /root/ remote get-url origin'],
-        ['current branch' => 'git -C /root/ branch --show-current'],
-        ['fetch branch' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /root/ fetch origin foobranch'],
+    # /root
+    ['get-url' => 'git -C /root/ remote get-url origin'],
+    ['current branch' => 'git -C /root/ branch --show-current'],
+    ['fetch branch' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /root/ fetch origin foobranch'],
 
-        # /this_directory_does_not_exist/
-        ['clone' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git clone http://localhost/bar.git /this_directory_does_not_exist/'],
-    ];
+    # /this_directory_does_not_exist/
+    ['clone' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git clone http://localhost/bar.git /this_directory_does_not_exist/'],
+];
     #>>> no perltidy
     for my $i (0 .. $#$expected_calls) {
         my $test = $expected_calls->[$i];
@@ -706,13 +706,16 @@ subtest 'git clone' => sub {
 
     subtest 'git clone retried on failure' => sub {
         $ENV{OPENQA_GIT_CLONE_RETRIES} = 1;
-        $openqa_utils->redefine(_git_clone => sub (@) { die "fake error\n" });
+        my $openqa_clone = Test::MockModule->new('OpenQA::Task::Git::Clone');
+        $openqa_clone->redefine(_git_clone => sub (@) { die "fake error\n" });
         $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
         is $res->{retries}, 1, 'job retries incremented';
         is $res->{state}, 'inactive', 'job set back to inactive';
     };
     subtest 'git clone fails when all retry attempts exhausted' => sub {
         $ENV{OPENQA_GIT_CLONE_RETRIES} = 0;
+        my $openqa_clone = Test::MockModule->new('OpenQA::Task::Git::Clone');
+        $openqa_clone->redefine(_git_clone => sub (@) { die "fake error\n" });
         $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
         is $res->{retries}, 0, 'job retries not incremented';
         is $res->{state}, 'failed', 'job considered failed';
