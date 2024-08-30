@@ -10,6 +10,12 @@ sub execute {
     my $self = shift;
 
     my $gru_id = $self->info->{notes}{gru_id};
+    if ($gru_id and not $self->info->{finished}) {
+        # We have a gru_id and this is the first run of the job
+        my $gru = $self->minion->app->schema->resultset('GruTasks')->find($gru_id);
+        # GruTask might not yet have landed in database due to open transaction
+        return $self->retry({delay => 2}) unless $gru;
+    }
     my $err = $self->SUPER::execute;
 
     # Non-Gru tasks

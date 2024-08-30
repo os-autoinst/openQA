@@ -127,6 +127,7 @@ $t->app->minion->add_task(
         return $job->retry({delay => 30})
           unless my $guard = $job->minion->guard('limit_gru_retry_task', ONE_HOUR);
     });
+$t->app->minion->add_task(wait_for_grutask => sub (@) { undef });
 
 # Gru task that reached failed/finished manually
 # uncoverable statement
@@ -572,6 +573,18 @@ subtest 'Gru tasks retry' => sub {
 
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
+};
+
+subtest 'waiting gru job' => sub {
+    my $enq = $app->gru->enqueue(wait_for_grutask => {});
+    # Simulate that the gru task is not yet visible for the minion server
+    $schema->resultset('GruTasks')->find($enq->{gru_id})->delete;
+    my $worker = $app->minion->worker->register;
+    my $job = $worker->dequeue(0, {id => $enq->{minion_id}});
+    $job->execute;
+    is $job->info->{retries}, 1, 'job retried because there is no GruTasks entry';
+    is $job->info->{state}, 'inactive', 'state inactive because there is no GruTasks entry';
+    is $job->info->{finished}, undef, 'finished is not defined';
 };
 
 # prevent writing to a log file to enable use of combined_like in the following tests
