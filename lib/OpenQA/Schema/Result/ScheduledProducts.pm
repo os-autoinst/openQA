@@ -232,6 +232,78 @@ sub _delete_prefixed_args_storing_info_about_product_itself ($args) {
     }
 }
 
+sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps, $include_children,
+    $successful_job_ids)
+{
+    my $schema = $self->result_source->schema;
+    my $jobs_resultset = $schema->resultset('Jobs');
+    my @created_jobs;
+    my %tmp_downloads;
+    my %clones;
+
+    # remember ids of created parents
+    my %job_ids_by_test_machine;    # key: "TEST@MACHINE", value: "array of job ids"
+
+    for my $settings (@{$jobs || []}) {
+        $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
+
+        # create a new job with these parameters and count if successful, do not send job notifies yet
+        try {
+            # Any setting name ending in _URL is special: it tells us to download
+            # the file at that URL before running the job
+            my $download_list = create_downloads_list($settings);
+            create_git_clone_list($settings, \%clones);
+            my $job = $jobs_resultset->create_from_settings($settings, $self->id);
+            push @created_jobs, $job;
+            my $j_id = $job->id;
+            $job_ids_by_test_machine{_job_ref($settings)} //= [];
+            push @{$job_ids_by_test_machine{_job_ref($settings)}}, $j_id;
+            $self->_create_download_lists(\%tmp_downloads, $download_list, $j_id);
+        }
+        catch {
+            push @$failed_job_info, {job_name => $settings->{TEST}, error_message => $_};
+        }
+    }
+    # keep track of ...
+    my %created_jobs;    # ... for cycle detection
+    my %cluster_parents;    # ... for checking wrong parents
+
+    # jobs are created, now recreate dependencies and extract ids
+    for my $job (@created_jobs) {
+        my $error_messages
+          = $self->_create_dependencies_for_job($job, \%job_ids_by_test_machine, \%created_jobs, \%cluster_parents,
+            $skip_chained_deps, $include_children);
+        if (!@$error_messages) {
+            push @$successful_job_ids, $job->id;
+        }
+        else {
+            push @$failed_job_info, {job_id => $job->id, error_messages => $error_messages};
+        }
+    }
+
+    # log wrong parents
+    for my $parent_test_machine (sort keys %cluster_parents) {
+        my $job_id = $cluster_parents{$parent_test_machine};
+        next if $job_id eq 'depended';
+        my $error_msg = "$parent_test_machine has no child, check its machine placed or dependency setting typos";
+        log_warning($error_msg);
+        push @$failed_job_info, {job_id => $job_id, error_messages => [$error_msg]};
+    }
+
+    # now calculate blocked_by state
+    for my $job (@created_jobs) {
+        $job->calculate_blocked_by;
+    }
+    my %downloads = map {
+        $_ => [
+            [keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract},
+            $tmp_downloads{$_}->{blocked_job_id}]
+    } keys %tmp_downloads;
+    my $gru = OpenQA::App->singleton->gru;
+    $gru->enqueue_download_jobs(\%downloads);
+    $gru->enqueue_git_clones(\%clones, $successful_job_ids) if keys %clones;
+}
+
 =over 4
 
 =item _schedule_iso()
@@ -246,7 +318,6 @@ sub _schedule_iso {
     my ($self, $args) = @_;
 
     my @notes;
-    my $gru = OpenQA::App->singleton->gru;
     my $schema = $self->result_source->schema;
     my $user_id = $self->user_id;
 
@@ -324,85 +395,13 @@ sub _schedule_iso {
     # define function to create jobs in the database; executed as transaction
     my @successful_job_ids;
     my @failed_job_info;
-    my %tmp_downloads;
-    my %clones;
-    my $create_jobs_in_database = sub {
-        my $jobs_resultset = $schema->resultset('Jobs');
-        my @created_jobs;
-
-        # remember ids of created parents
-        my %job_ids_by_test_machine;    # key: "TEST@MACHINE", value: "array of job ids"
-
-        for my $settings (@{$jobs || []}) {
-            $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
-
-            # create a new job with these parameters and count if successful, do not send job notifies yet
-            try {
-                # Any setting name ending in _URL is special: it tells us to download
-                # the file at that URL before running the job
-                my $download_list = create_downloads_list($settings);
-                create_git_clone_list($settings, \%clones);
-                my $job = $jobs_resultset->create_from_settings($settings, $self->id);
-                push @created_jobs, $job;
-                my $j_id = $job->id;
-                $job_ids_by_test_machine{_job_ref($settings)} //= [];
-                push @{$job_ids_by_test_machine{_job_ref($settings)}}, $j_id;
-                $self->_create_download_lists(\%tmp_downloads, $download_list, $j_id);
-            }
-            catch {
-                push(@failed_job_info, {job_name => $settings->{TEST}, error_message => $_});
-            }
-        }
-        # keep track of ...
-        my %created_jobs;    # ... for cycle detection
-        my %cluster_parents;    # ... for checking wrong parents
-
-        # jobs are created, now recreate dependencies and extract ids
-        for my $job (@created_jobs) {
-            my $error_messages
-              = $self->_create_dependencies_for_job($job, \%job_ids_by_test_machine, \%created_jobs, \%cluster_parents,
-                $skip_chained_deps, $include_children);
-            if (!@$error_messages) {
-                push(@successful_job_ids, $job->id);
-            }
-            else {
-                push(
-                    @failed_job_info,
-                    {
-                        job_id => $job->id,
-                        error_messages => $error_messages
-                    });
-            }
-        }
-
-        # log wrong parents
-        for my $parent_test_machine (sort keys %cluster_parents) {
-            my $job_id = $cluster_parents{$parent_test_machine};
-            next if $job_id eq 'depended';
-            my $error_msg = "$parent_test_machine has no child, check its machine placed or dependency setting typos";
-            log_warning($error_msg);
-            push(
-                @failed_job_info,
-                {
-                    job_id => $job_id,
-                    error_messages => [$error_msg]});
-        }
-
-        # now calculate blocked_by state
-        for my $job (@created_jobs) {
-            $job->calculate_blocked_by;
-        }
-        my %downloads = map {
-            $_ => [
-                [keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract},
-                $tmp_downloads{$_}->{blocked_job_id}]
-        } keys %tmp_downloads;
-        $gru->enqueue_download_jobs(\%downloads);
-        $gru->enqueue_git_clones(\%clones, \@successful_job_ids) if keys %clones;
-    };
 
     try {
-        $schema->txn_do($create_jobs_in_database);
+        $schema->txn_do(
+            sub {
+                $self->_create_jobs_in_database($jobs, \@failed_job_info, $skip_chained_deps, $include_children,
+                    \@successful_job_ids);
+            });
     }
     catch {
         my $error = shift;
