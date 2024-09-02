@@ -150,4 +150,11 @@ sub reset_hard ($self, $branch) {
     die $self->_format_git_error($r, "Failed to reset to 'origin/$branch'") unless $r->{status};
 }
 
+sub is_workdir_clean ($self) {
+    my $r = $self->_run_cmd(['diff-index', 'HEAD', '--exit-code']);
+    die $self->_format_git_error($r, 'Internal Git error: Unexpected exit code ' . $r->{return_code})
+      if $r->{return_code} > 1;
+    return $r->{status};
+}
+
 1;
