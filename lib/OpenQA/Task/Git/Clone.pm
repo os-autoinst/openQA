@@ -68,6 +68,8 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
         return;
     }
 
+    die "NOT updating dirty git checkout at $path" if !$git->is_workdir_clean();
+
     unless ($requested_branch) {
         my $remote_default = $git->get_remote_default_branch($url);
         $requested_branch = $remote_default;

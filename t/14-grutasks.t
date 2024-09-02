@@ -664,9 +664,14 @@ subtest 'git clone' => sub {
             $stdout = $clone_dirs->{$path} =~ s/#.*//r if $cmd->[2] eq 'get-url';
             $stdout = 'master' if $action eq 'branch';
             $stdout = 'ref: something' if $action eq 'ls-remote' && "@$cmd" =~ m/nodefault/;
+            my $return_code = 0;
+            $return_code = 1 if ($path eq '/opt/' and $action eq 'diff-index');    # /opt/ simulates dirty checkout
+            $return_code = 2
+              if ($path eq '/lib/' and $action eq 'diff-index')
+              ;    # /lib/ simulates error when checking checkout dirty status
             return {
-                status => 1,
-                return_code => 0,
+                status => $return_code == 0,
+                return_code => $return_code,
                 stderr => '',
                 stdout => $stdout,
             };
@@ -677,6 +682,7 @@ subtest 'git clone' => sub {
     my $expected_calls = [
     # /etc/
     ['get-url' => 'git -C /etc/ remote get-url origin'],
+    ['check dirty' => 'git -C /etc/ diff-index HEAD --exit-code'],
     ['default remote' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git ls-remote --symref http://localhost/foo.git HEAD'],
     ['current branch' => 'git -C /etc/ branch --show-current'],
     ['fetch default' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /etc/ fetch origin master'],
@@ -684,6 +690,7 @@ subtest 'git clone' => sub {
 
     # /root
     ['get-url' => 'git -C /root/ remote get-url origin'],
+    ['check dirty' => 'git -C /root/ diff-index HEAD --exit-code'],
     ['current branch' => 'git -C /root/ branch --show-current'],
     ['fetch branch' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /root/ fetch origin foobranch'],
 
@@ -719,6 +726,22 @@ subtest 'git clone' => sub {
         $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
         is $res->{retries}, 0, 'job retries not incremented';
         is $res->{state}, 'failed', 'job considered failed';
+    };
+
+    subtest 'dirty git checkout' => sub {
+        # /opt/ is mocked to be always reported as dirty
+        $clone_dirs = {'/opt/' => 'http://localhost/foo.git'};
+        my $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
+        is $res->{state}, 'failed', 'minion job failed';
+        like $res->{result}, qr/NOT updating dirty git checkout/, 'error message';
+    };
+
+    subtest 'error testing dirty git checkout' => sub {
+        # /lib/ is mocked to be always reported as dirty
+        $clone_dirs = {'/lib/' => 'http://localhost/foo.git'};
+        my $res = run_gru_job($t->app, 'git_clone', $clone_dirs, {priority => 10});
+        is $res->{state}, 'failed', 'minion job failed';
+        like $res->{result}, qr/Internal Git error: Unexpected exit code 2/, 'error message';
     };
 
     subtest 'minion guard' => sub {
