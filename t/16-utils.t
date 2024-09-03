@@ -499,4 +499,14 @@ subtest 'signal handling in Minion jobs' => sub {
 is $SIG{TERM}, $current_term_handler, 'SIGTERM handler restored after signal guard goes out of scope';
 is $SIG{INT}, $current_int_handler, 'SIGINT handler restored after signal guard goes out of scope';
 
+subtest 'human readable size' => sub {
+    is(human_readable_size(0), '0 Byte', 'zero');
+    is(human_readable_size(1), '1 Byte', 'one');
+    is(human_readable_size(13443399680), '13 GiB', 'two digits GB');
+    is(human_readable_size(8007188480), '7.5 GiB', 'smaller GB');
+    is(human_readable_size(-8007188480), '-7.5 GiB', 'negative smaller GB');
+    is(human_readable_size(717946880), '685 MiB', 'large MB');
+    is(human_readable_size(245760), '240 KiB', 'less than a MB');
+};
+
 done_testing;
