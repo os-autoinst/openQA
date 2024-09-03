@@ -42,8 +42,9 @@
         <div class="card-body">
             % my $allow_commenting = @$job_ids && current_user;
             % if ($allow_commenting) {
-            <button type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Add comments">
-                <i class="fa fa-comment" aria-hidden="true"></i>
+            <button type="button" id="add-comments" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()">
+                <i class="fa fa-comment"></i>
+                Add a comment to all jobs
             </button>
             % }
             % my @badges = qw(success secondary  warning     danger info      primary light   light);

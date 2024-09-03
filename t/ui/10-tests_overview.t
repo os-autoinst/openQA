@@ -554,13 +554,13 @@ subtest 'filter by result and state' => sub {
 };
 
 subtest 'add comments' => sub {
-    my @buttons = $driver->find_elements('button[title="Add comments"]');
+    my @buttons = $driver->find_elements('button#add-comments');
     is @buttons, 0, 'button for adding comments not present if not logged-in';
 
     $driver->find_element_by_link_text('Login')->click;
     $driver->get('/tests/overview?state=done&result=failed');
     disable_bootstrap_animations;
-    $driver->find_element('button[title="Add comments"]')->click;
+    $driver->find_element('button#add-comments')->click;
     my $comment_text = 'comment via add-comments';
     my $submit_button = $driver->find_element('#add-comments-controls button[type="submit"]');
     $driver->find_element_by_id('text')->send_keys($comment_text);
