@@ -1,0 +1,126 @@
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'ace.js'
+  %= asset 'ace.css'
+% end
+
+% title 'New job';
+<div>
+  <h2><%= title %></h2>
+  
+  %= include 'layouts/info'
+  
+  <form class="row g-3" id="form">
+    <div class="col-md-6">
+      <label for="distri" class="form-label">Distri</label>
+      <input type="text" class="form-control" id="distri"
+	     placeholder="example" name="distri">
+    </div>
+    <div class="col-md-6">
+      <label for="version" class="form-label">Version</label>
+      <input type="text" class="form-control" id="version" placeholder="0"  name="version">
+    </div>
+    <div class="col-6">
+      <label for="flavor" class="form-label">Flavor</label>
+      <input type="text" class="form-control" id="flavor" placeholder="DVD"  name="Flavor">
+    </div>
+    <div class="col-12">
+      <label for="arch" class="form-label">Arch</label>
+      <select id="arch" class="form-select"  name="arch">
+	<option selected>Choose...</option>
+	<option>x86_64</option>
+	<option>arch64</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label for="test" class="form-label">Test Name</label>
+      <input type="text" class="form-control" id="test" placeholder="simple_boot" name="TEST">
+      </div>
+    <div class="col-md-6">
+      <label for="build" class="form-label">Build</label>
+      <input type="text" class="form-control" id="build" name="BUILD">
+    </div>
+    <div class="col-md-6">
+      <label for="casedir" class="form-label">CASEDIR</label>
+      <input type="text" class="form-control" id="casedir"
+	     placeholder="https://github.com/os-autoinst/os-autoinst-distri-example.git"
+	     name="casedir"  name="CASEDIR">
+    </div>
+    <div class="col-md-6">
+      <label for="needles_dir" class="form-label">NEEDLES_DIR=</label>
+      <input type="text" class="form-control" id="needles_dir" placeholder="%%CASEDIR%%/needles" name="NEEDLES_DIR">
+    </div>
+    
+    <div class="md-12">
+      <label for="scenario_definition" class="form-label col-sm-2 control-label">scenario definition</label>
+      <textarea type="text" class="form-control" id="scenario_definition"
+		rows="15">
+---
+products:
+  example:
+    distri: "example"
+    flavor: "DVD"
+    arch: "x86_64"
+    version: '0'
+machines:
+  64bit:
+    backend: "qemu"
+job_templates:
+  simple_boot:
+    product: "example"
+    machine: "64bit"
+      </textarea>
+    </div>
+    
+    <div class="col-12">
+      <button type="submit" class="btn btn-light">
+        <span><span class="glyphicon glyphicon-th-list"
+		    aria-hidden="true"></span> Trigger os-autoinst-distri-example test</span>
+      </button>
+    </div>
+  </form>
+  <!-- %= include 'admin/group/group_property_editor', group => $group, --
+  -- is_parent => 1 -->
+</div>
+
+<p><b>Hint:</b> Calling any non-existent route from your browser will show an
+  error page with all available routes as help. E.g. try <%= link_to 'this
+								      link' => url_for('not_found') %>.
+</p>
+</div>
+
+<script type="text/javascript">
+  
+  const form = document.querySelector('form');
+  
+  console.log("log: " + form);
+  form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fs = require('fs')
+      var textToWrite = document.getElementById('textarea').innerHTML;
+      //var textFileAsBlob = new Blob([ textToWrite ], { type: 'text/plain' });
+      var fileNameToSaveAs = "scenario-definitions.yaml";
+      fs.writeFile(fileNameToSaveAs, textToWrite, (err) => {
+	  // In case of a error throw err.
+	  if (err) throw err;
+      })
+      
+      const formData = new FormData(form);
+      const fdata = Object.fromEntries(formData);
+      const payload = JSON.stringify(fdata);
+      console.log(payload);
+      //formData.append('SCENARIO_DEFINITIONS_YAML', fileNameToSaveAs);
+      for (item of formData) {
+	  console.log(item);
+      }
+      fetch("http://localhost/api/v1/isos", {
+	  method: 'POST',
+	  body: payload,
+	  headers: {
+	      'Content-Type': 'application/json',
+	  }
+      })
+	  .then(res => res.json())
+	  .then(res => console.log(res));
+  })
+</script>
