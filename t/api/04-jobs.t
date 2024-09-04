@@ -1546,6 +1546,7 @@ subtest 'marking job as done' => sub {
 };
 
 subtest 'handle FOO_URL' => sub {
+    OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} = 'no';
     $testsuites->create(
         {
             name => 'handle_foo_url',
@@ -1582,7 +1583,8 @@ subtest 'handle FOO_URL' => sub {
       'the download gru tasks were created correctly';
 };
 
-subtest 'handle git CASEDIR' => sub {
+subtest 'handle git_clone with CASEDIR' => sub {
+    OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} = 'yes';
     $testsuites->create(
         {
             name => 'handle_foo_casedir',
@@ -1610,6 +1612,41 @@ subtest 'handle git CASEDIR' => sub {
         't/data/openqa/share/tests/foobar/needles' => 'http://localhost/bar.git'
       },
       'the git clone gru tasks were created correctly';
+};
+
+subtest 'handle git_clone without CASEDIR' => sub {
+    OpenQA::App->singleton->config->{'scm git'}->{git_auto_update} = 'yes';
+    $testsuites->create(
+        {
+            name => 'handle_git_clone',
+            description => '',
+            settings => [],
+        });
+    my $params = {
+        TEST => 'handle_git_clone',
+        MACHINE => '64bit',
+    };
+    $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
+
+    my $job_id = $t->tx->res->json->{id};
+    my $result = $jobs->find($job_id)->settings_hash;
+
+    my @gru_task_values;
+    foreach my $gru_dep ($schema->resultset('GruDependencies')->search({job_id => $job_id})) {
+        my $gru_task = $gru_dep->gru_task;
+        my $task = $gru_task->taskname;
+        is $task, 'git_clone', 'git_clone task was scheduled';
+        push @gru_task_values, $gru_task->args;
+    }
+    is_deeply \@gru_task_values,
+      [
+        [
+            {
+                't/data/openqa/share/tests/needles' => undef,
+                't/data/openqa/share/tests' => undef,
+            }]
+      ],
+      'the git_clone gru tasks was created correctly';
 };
 
 subtest 'show parent group name and id when getting job details' => sub {

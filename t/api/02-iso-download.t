@@ -28,6 +28,7 @@ my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD'
 my @tasks = $gru_tasks->search({taskname => 'download_asset'});
 is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 $t->app->config->{global}->{download_domains} = 'localhost';
+$t->app->config->{'scm git'}->{git_auto_clone} = 'no';
 my $rsp;
 
 # we keep checking gru task count and args over and over in this next bit,
