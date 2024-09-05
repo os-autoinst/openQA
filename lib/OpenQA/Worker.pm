@@ -582,6 +582,8 @@ sub is_stopping ($self) {
     return $current_job->status eq 'stopping';
 }
 
+sub is_qemu ($executable_path) { defined $executable_path && $executable_path =~ /\/qemu-[^\/]+$/ }
+
 # checks whether a qemu instance using the current pool directory is running and returns its PID if that's the case
 sub is_qemu_running ($self) {
     return undef unless my $pool_directory = $self->pool_directory;
@@ -592,16 +594,11 @@ sub is_qemu_running ($self) {
     close($fh);
     return undef unless $pid;
 
-    my $link = readlink("/proc/$pid/exe");
-    if (!$link || !($link =~ /\/qemu-[^\/]+$/)) {
-        # delete the obsolete PID file (it might have been spared on cleanup if QEMU was still running)
-        unlink($pid_file) unless $self->no_cleanup;
-        return undef;
-    }
-    return undef unless $link;
-    return undef unless $link =~ /\/qemu-[^\/]+$/;
+    return $pid if is_qemu(readlink("/proc/$pid/exe"));
 
-    return $pid;
+    # delete the obsolete PID file (it might have been spared on cleanup if QEMU was still running)
+    unlink($pid_file) unless $self->no_cleanup;
+    return undef;
 }
 
 # checks whether the worker is available

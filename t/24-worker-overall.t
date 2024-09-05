@@ -470,7 +470,10 @@ subtest 'stopping' => sub {
     $worker->{_shall_terminate} = 0;
 };
 
-subtest 'check negative cases for is_qemu_running' => sub {
+subtest 'is_qemu_running' => sub {
+    ok OpenQA::Worker::is_qemu('/usr/bin/qemu-system-x86_64'), 'QEMU executable considered to be QEMU';
+    ok !OpenQA::Worker::is_qemu('/usr/bin/true'), 'other executable not considered to be QEMU';
+
     my $pool_directory = tempdir('poolXXXX');
     $worker->pool_directory($pool_directory);
 
@@ -483,6 +486,12 @@ subtest 'check negative cases for is_qemu_running' => sub {
     $pool_directory->child('qemu.pid')->spew($$);
     is($worker->is_qemu_running, undef, 'QEMU not considered running if PID is not a qemu process');
     ok(-f $pool_directory->child('qemu.pid'), 'PID file is not cleaned up when --no-cleanup is enabled');
+
+    my $worker_mock = Test::MockModule->new('OpenQA::Worker');
+    $worker_mock->redefine(is_qemu => 1);    # pretend our PID is QEMU
+    $worker->no_cleanup(0);
+    is $worker->is_qemu_running, $$, 'PID returned if QEMU is considered running';
+    ok -f $pool_directory->child('qemu.pid'), 'PID file is not cleaned up if QEMU is still running';
 };
 
 subtest 'checking and cleaning pool directory' => sub {
@@ -498,7 +507,7 @@ subtest 'checking and cleaning pool directory' => sub {
 
     # pretend QEMU is still running
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-    $worker_mock->redefine(is_qemu_running => sub { return 1; });
+    $worker_mock->redefine(is_qemu_running => 1);
 
     my $pid_file = $pool_directory->child('qemu.pid')->spew($$);
     my $other_file = $pool_directory->child('other-file')->spew('foo');
