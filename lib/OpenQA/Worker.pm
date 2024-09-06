@@ -582,7 +582,7 @@ sub is_stopping ($self) {
     return $current_job->status eq 'stopping';
 }
 
-sub is_qemu ($executable_path) { defined $executable_path && $executable_path =~ /\/qemu-[^\/]+$/ }
+sub is_qemu ($executable_path) { defined $executable_path && $executable_path =~ m{/qemu-[^/]+$} }
 
 # checks whether a qemu instance using the current pool directory is running and returns its PID if that's the case
 sub is_qemu_running ($self) {
