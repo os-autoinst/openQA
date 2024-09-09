@@ -176,6 +176,9 @@
 ! ws_console.js
 < javascripts/ws_console.js
 
+! run_example.js
+< javascripts/run_example.js
+
 ! logo-16.png
 < images/logo-16.png
 

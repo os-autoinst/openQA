@@ -99,8 +99,9 @@ created, their job ids and the information for jobs that could not be scheduled.
 
 sub create {
     my ($self) = @_;
-
     my $params = $self->req->params->to_hash;
+    use Data::Dumper;
+    print(">>>>>> " . Dumper($params) . " <<<<<<<<<<n");
     my $async = delete $params->{async};    # whether to run the operation as a Minion job
     my $scheduled_product_clone_id
       = delete $params->{scheduled_product_clone_id};    # ID of a previous product to clone settings from

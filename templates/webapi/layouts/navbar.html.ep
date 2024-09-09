@@ -35,8 +35,8 @@
                 % }
             </ul>
          </li>
-	 <li class='nav-item' id="new_tests">
-            %= link_to 'Start New Test' => url_for('new_test_case') => class =>'nav-link', title => 'Run a new Test Case'
+	 <li class='nav-item' id="run_test">
+            %= link_to 'Run an Example' => url_for('run_test_case') => class =>'nav-link', title => 'Run a Test Case'
          </li>
         </ul>
         <ul class="navbar-nav ms-auto">
