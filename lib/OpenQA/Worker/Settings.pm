@@ -132,4 +132,9 @@ sub is_local_worker ($self) {
     return $self->{_local} = 1;
 }
 
+sub has_class ($self, $worker_class) {
+    my $c = $self->{_worker_classes} //= {map { $_ => 1 } split(',', $self->global_settings->{WORKER_CLASS} // '')};
+    return exists $c->{$worker_class};
+}
+
 1;
