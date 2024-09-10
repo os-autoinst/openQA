@@ -2075,21 +2075,14 @@ This works only when uploading where the output is not lately used.</p>
 <a href="https://progress.opensuse.org/issues/60566" class="bare">https://progress.opensuse.org/issues/60566</a> which is that typing too fast into
 the here-document input can yield invalid script content.
 This function returns the value to be used by <code>wait_still_screen</code> before
-starting to write the script into the here document.
-=cut
-sub backend_get_wait_still_screen_on_here_doc_input () {
-    state $ret;
-    $ret = query_isotovideo('backend_get_wait_still_screen_on_here_doc_input', {}) unless defined($ret);
-    return get_var(_WAIT_STILL_SCREEN_ON_HERE_DOC_INPUT &#8658; $ret);
-}
-1;</p>
+starting to write the script into the here document.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-08-21 04:47:10 UTC
+Last updated 2024-09-10 04:47:12 UTC
 </div>
 </div>
 </body>
