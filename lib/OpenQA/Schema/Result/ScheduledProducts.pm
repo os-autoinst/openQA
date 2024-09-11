@@ -232,6 +232,14 @@ sub _delete_prefixed_args_storing_info_about_product_itself ($args) {
     }
 }
 
+sub _log_wrong_parents ($self, $parent, $cluster_parents, $failed_job_info) {
+    my $job_id = $cluster_parents->{$parent};
+    return undef if $job_id eq 'depended';
+    my $error_msg = "$parent has no child, check its machine placed or dependency setting typos";
+    log_warning($error_msg);
+    push @$failed_job_info, {job_id => $job_id, error_messages => [$error_msg]};
+}
+
 sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps, $include_children,
     $successful_job_ids)
 {
@@ -281,19 +289,8 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
         }
     }
 
-    # log wrong parents
-    for my $parent_test_machine (sort keys %cluster_parents) {
-        my $job_id = $cluster_parents{$parent_test_machine};
-        next if $job_id eq 'depended';
-        my $error_msg = "$parent_test_machine has no child, check its machine placed or dependency setting typos";
-        log_warning($error_msg);
-        push @$failed_job_info, {job_id => $job_id, error_messages => [$error_msg]};
-    }
-
-    # now calculate blocked_by state
-    for my $job (@created_jobs) {
-        $job->calculate_blocked_by;
-    }
+    $self->_log_wrong_parents($_, \%cluster_parents, $failed_job_info) for sort keys %cluster_parents;
+    $_->calculate_blocked_by for @created_jobs;
     my %downloads = map {
         $_ => [
             [keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract},
