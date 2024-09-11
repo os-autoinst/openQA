@@ -124,14 +124,14 @@ sub get_current_branch ($self) {
 
 sub get_remote_default_branch ($self, $url) {
     my $r = $self->_run_cmd(['ls-remote', '--symref', $url, 'HEAD'], {include_git_path => 0, ssh_batchmode => 1});
-    die "Error detecting remote default branch name for '$url': $r->{stdout} $r->{stderr}"
+    die qq/Error detecting remote default branch name for "$url": $r->{stdout} $r->{stderr}/
       unless $r->{status} && $r->{stdout} =~ m{refs/heads/(\S+)\s+HEAD};
     return $1;
 }
 
 sub clone_url ($self, $url) {
     my $r = $self->_run_cmd(['clone', $url, $self->dir], {include_git_path => 0, ssh_batchmode => 1});
-    die $self->_format_git_error($r, "Failed to clone $url") unless $r->{status};
+    die $self->_format_git_error($r, qq/Failed to clone "$url"/) unless $r->{status};
 }
 
 sub get_origin_url ($self) {
