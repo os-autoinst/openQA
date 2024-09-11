@@ -95,6 +95,7 @@ sub new ($class, $cli_options) {
     $self->{_pool_directory_lock_fd} = undef;
     $self->{_shall_terminate} = 0;
     $self->{_finishing_off} = undef;
+    $self->{_ovs_dbus_service_name} = $ENV{OVS_DBUS_SERVICE_NAME} // 'org.opensuse.os_autoinst.switch';
 
     return $self;
 }
@@ -601,6 +602,14 @@ sub is_qemu_running ($self) {
     return undef;
 }
 
+sub is_ovs_dbus_service_running ($self) {
+    eval { defined &Net::DBus::system or require Net::DBus };
+    return 0 if $@;
+    my $bus = ($self->{_system_dbus} //= Net::DBus->system(nomainloop => 1));
+    my $service = eval { defined $bus->get_service('org.opensuse.os_autoinst.switch') };
+    return !$@ && $service;
+}
+
 # checks whether the worker is available
 # note: This is used to check certain error conditions *before* starting a job to prevent incompletes and
 #       being able to propagate the brokenness to the web UIs.
@@ -623,7 +632,12 @@ sub check_availability ($self) {
     }
 
     # auto-detect worker address if not specified explicitly
-    return 'Unable to determine worker address (WORKER_HOSTNAME)' unless $self->settings->auto_detect_worker_address;
+    my $settings = $self->settings;
+    return 'Unable to determine worker address (WORKER_HOSTNAME)' unless $settings->auto_detect_worker_address;
+
+    # check org.opensuse.os_autoinst.switch if it is a MM-capable worker slot
+    return "D-Bus service '$self->{_ovs_dbus_service_name}' is not running"
+      if $settings->has_class('tap') && !$self->is_ovs_dbus_service_running;
 
     return undef;
 }

@@ -78,7 +78,15 @@ my $load_avg_file = simulate_load('0.93 0.95 10.25 2/2207 1212', 'worker-overall
     use Mojo::Base -base;
     has availability_error => 'Cache service info error: Connection refused';
 }
+{
+    package Test::FakeDBus;    # uncoverable statement count:2
+    use Mojo::Base -base, -signatures;
+    has mock_service_value => 1;
+    sub get_service ($self, $service_name) { $self->mock_service_value }
+}
 
+my $dbus_mock = Test::MockModule->new('Net::DBus', no_auto => 1);
+$dbus_mock->define(system => sub (@) { Test::FakeDBus->new });
 my $cache_service_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
 $cache_service_client_mock->redefine(info => sub { Test::FakeCacheServiceClientInfo->new });
 
@@ -544,6 +552,20 @@ subtest 'checking worker address' => sub {
     $settings->{_local} = 1;    # and that it is a local worker
     is $worker->check_availability, undef, 'a local worker does not require auto-detection to work';
     is $global_settings->{WORKER_HOSTNAME}, 'localhost', '"localhost" assumed as WORKER_HOSTNAME for local worker';
+};
+
+subtest 'check availability of Open vSwitch related D-Bus service' => sub {
+    delete $worker->settings->{_worker_classes};
+    $worker->settings->global_settings->{WORKER_CLASS} = 'foo,tap,bar';
+    ok $worker->settings->has_class('tap'), 'worker has tap class';
+    is $worker->check_availability, undef, 'worker considered available if D-Bus service available';
+
+    $worker->{_system_dbus}->mock_service_value(undef);
+    like $worker->check_availability, qr/D-Bus/, 'worker considered broken if D-Bus service not available';
+
+    delete $worker->settings->{_worker_classes};
+    $worker->settings->global_settings->{WORKER_CLASS} = 'foo,bar';
+    is $worker->check_availability, undef, 'worker considered always available if not a tap worker';
 };
 
 subtest 'handle client status changes' => sub {
