@@ -5,7 +5,6 @@ package OpenQA::Task::Git::Clone;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Mojo::Util 'trim';
 
-use OpenQA::Utils qw(run_cmd_with_log_return_error);
 use Mojo::File;
 use Time::Seconds 'ONE_HOUR';
 
