@@ -1,0 +1,2 @@
+#!/bin/sh -e
+exec "$(dirname "$0")"/openqa eval -m production -V 'app->gru->enqueue_git_update_all()' "$@"

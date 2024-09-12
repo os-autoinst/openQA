@@ -192,6 +192,23 @@ subtest 'git clone' => sub {
     };
 };
 
+subtest 'git_update_all' => sub {
+    OpenQA::App->singleton->config->{'scm git'}->{git_auto_update} = 'yes';
+    my $testdir = $workdir->child('openqa/share/tests');
+    $testdir->make_path;
+    my @clones;
+    for my $path (qw(archlinux archlinux/products/archlinux/needles example opensuse opensuse/needles)) {
+        push @clones, $testdir->child($path)->make_path . '';
+        $testdir->child("$path/.git")->make_path;
+    }
+    local $ENV{OPENQA_BASEDIR} = $workdir;
+    my $minion = $t->app->minion;
+    my $result = $t->app->gru->enqueue_git_update_all;
+    my $job = $minion->job($result->{minion_id});
+    my $args = $job->info->{args}->[0];
+    is_deeply [sort keys %$args], \@clones, 'job args as expected';
+};
+
 done_testing();
 
 # clear gru task queue at end of execution so no 'dangling' tasks

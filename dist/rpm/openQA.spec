@@ -18,7 +18,7 @@
 
 # can't use linebreaks here!
 %define openqa_main_service openqa-webui.service
-%define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer
+%define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-git-auto-update.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer openqa-enqueue-git-auto-update.timer
 %define openqa_services %{openqa_main_service} %{openqa_extra_services}
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
 %if %{undefined tmpfiles_create}
@@ -603,6 +603,8 @@ fi
 %{_unitdir}/openqa-enqueue-audit-event-cleanup.timer
 %{_unitdir}/openqa-enqueue-asset-cleanup.service
 %{_unitdir}/openqa-enqueue-asset-cleanup.timer
+%{_unitdir}/openqa-enqueue-git-auto-update.service
+%{_unitdir}/openqa-enqueue-git-auto-update.timer
 %{_unitdir}/openqa-enqueue-result-cleanup.service
 %{_unitdir}/openqa-enqueue-result-cleanup.timer
 %{_unitdir}/openqa-enqueue-bug-cleanup.service
@@ -636,6 +638,7 @@ fi
 %{_datadir}/openqa/script/openqa-enqueue-asset-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-audit-event-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-bug-cleanup
+%{_datadir}/openqa/script/openqa-enqueue-git-auto-update
 %{_datadir}/openqa/script/openqa-enqueue-result-cleanup
 %{_datadir}/openqa/script/openqa-gru
 %{_datadir}/openqa/script/openqa-rollback
