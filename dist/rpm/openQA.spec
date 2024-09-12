@@ -42,6 +42,14 @@
 %else
 %bcond_without python_scripts
 %endif
+# exclude additional sub packages that would pull in a lot of extra dependencies on SLE
+%if 0%{?sle_version} && !0%{?is_opensuse}
+%bcond_with devel_package
+%bcond_with munin_package
+%else
+%bcond_without devel_package
+%bcond_without munin_package
+%endif
 # runtime requirements that also the testsuite needs
 %if %{with python_scripts}
 %define python_scripts_requires python3-base python3-requests openQA-client
@@ -155,6 +163,7 @@ revision of the operating system, reporting the errors detected for each
 combination of hardware configuration, installation options and variant of the
 operating system.
 
+%if %{with devel_package}
 %package no-selenium-devel
 Summary:        Development package pulling in all build+test dependencies except chromedriver for Selenium based tests
 Requires:       %{devel_no_selenium_requires}
@@ -168,6 +177,7 @@ Requires:       %{devel_requires}
 
 %description devel
 Development package pulling in all build+test dependencies.
+%endif
 
 %package common
 Summary:        The openQA common tools for web-frontend and workers
@@ -289,6 +299,7 @@ upgrading the system if devel:openQA packages are stable and contain updates. It
 is complementary to auto-update which also reboots the system and does updates
 regardless of whether devel:openQA contains updates.
 
+%if %{with munin_package}
 %package munin
 Summary:        Munin scripts
 Requires:       munin
@@ -299,6 +310,7 @@ Requires:       perl
 %description munin
 Use this package to install munin scripts that allow to monitor some openQA
 statistics.
+%endif
 
 
 %prep
@@ -386,10 +398,12 @@ ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-l
 %endif
 
 # munin
+%if %{with munin_package}
 install -d -m 755 %{buildroot}/%{_prefix}/lib/munin/plugins
 install -m 755 contrib/munin/plugins/minion %{buildroot}/%{_prefix}/lib/munin/plugins/openqa_minion_
 install -d -m 755 %{buildroot}/%{_sysconfdir}/munin/plugin-conf.d
 install -m 644 contrib/munin/config/minion.config %{buildroot}/%{_sysconfdir}/munin/plugin-conf.d/openqa-minion
+%endif
 
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
@@ -649,7 +663,9 @@ fi
 %{_sysusersdir}/geekotest.conf
 %endif
 
+%if %{with devel_package}
 %files devel
+%endif
 
 %files common
 %dir %{_datadir}/openqa
@@ -783,6 +799,7 @@ fi
 %{_unitdir}/openqa-continuous-update.*
 %{_datadir}/openqa/script/openqa-continuous-update
 
+%if %{with munin_package}
 %files munin
 %defattr(-,root,root)
 %doc contrib/munin/config/minion.config
@@ -792,5 +809,6 @@ fi
 %dir %{_sysconfdir}/munin/plugin-conf.d
 %{_prefix}/lib/munin/plugins/openqa_minion_
 %config(noreplace) %{_sysconfdir}/munin/plugin-conf.d/openqa-minion
+%endif
 
 %changelog
