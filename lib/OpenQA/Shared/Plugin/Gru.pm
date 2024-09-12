@@ -23,21 +23,20 @@ sub new ($class, $app = undef) {
 
 sub register_tasks ($self) {
     my $app = $self->app;
-    $app->plugin($_)
-      for (
-        qw(OpenQA::Task::AuditEvents::Limit),
-        qw(OpenQA::Task::Asset::Download),
-        qw(OpenQA::Task::Asset::Limit),
-        qw(OpenQA::Task::Git::Clone),
-        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
-        qw(OpenQA::Task::Job::Limit),
-        qw(OpenQA::Task::Job::ArchiveResults),
-        qw(OpenQA::Task::Job::FinalizeResults),
-        qw(OpenQA::Task::Job::HookScript),
-        qw(OpenQA::Task::Job::Restart),
-        qw(OpenQA::Task::Iso::Schedule),
-        qw(OpenQA::Task::Bug::Limit),
-      );
+    $app->plugin($_) for qw(
+      OpenQA::Task::AuditEvents::Limit
+      OpenQA::Task::Asset::Download
+      OpenQA::Task::Asset::Limit
+      OpenQA::Task::Git::Clone
+      OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete
+      OpenQA::Task::Job::Limit
+      OpenQA::Task::Job::ArchiveResults
+      OpenQA::Task::Job::FinalizeResults
+      OpenQA::Task::Job::HookScript
+      OpenQA::Task::Job::Restart
+      OpenQA::Task::Iso::Schedule
+      OpenQA::Task::Bug::Limit
+    );
 }
 
 # allow the continuously polled stats to be available on an
