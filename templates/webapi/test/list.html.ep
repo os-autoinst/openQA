@@ -8,6 +8,10 @@
   renderTestLists();
 % end
 
+<div id="flash-messages">
+    %= include 'layouts/flash_messages';
+</div>
+
 <div>
     <h2 id="running_jobs_heading">Running jobs</h2>
     <table id="running" class="display table table-striped" style="width: 100%">
