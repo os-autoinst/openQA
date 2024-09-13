@@ -566,6 +566,9 @@ subtest 'last error' => sub {
     $client->reset_last_error;
     $client->add_context_to_last_error('setup');
     is($client->last_error, undef, 'add_context_to_last_error does nothing if there is no last error');
+
+    $client->_set_status(failed => {error_message => 'foo'});
+    is $client->last_error, 'foo', 'error message set as last error if no other error recorded';
 };
 
 subtest 'tear down' => sub {
