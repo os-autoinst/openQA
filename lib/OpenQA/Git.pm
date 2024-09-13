@@ -32,40 +32,28 @@ sub _run_cmd ($self, $args, $options = {}) {
     my $include_git_path = $options->{include_git_path} // 1;
     my $ssh_batchmode = $options->{ssh_batchmode} // 0;
     my @cmd;
-
-    if ($ssh_batchmode) {
-        push @cmd, 'env', 'GIT_SSH_COMMAND="ssh -oBatchMode=yes"';
-    }
-
+    push @cmd, 'env', 'GIT_SSH_COMMAND="ssh -oBatchMode=yes"' if $ssh_batchmode;
     push @cmd, $self->_prepare_git_command($include_git_path), @$args;
 
     my $result = run_cmd_with_log_return_error(\@cmd);
-    if (!$result->{status}) {
-        $self->app->log->error("Git command failed: @cmd - Error: $result->{stderr}");
-    }
+    $self->app->log->error("Git command failed: @cmd - Error: $result->{stderr}") unless $result->{status};
     return $result;
 }
 
 sub _prepare_git_command ($self, $include_git_path) {
-    if ($include_git_path) {
-        my $dir = $self->dir;
-        die 'no valid directory was found during git preparation' unless $dir;
-        if ($dir !~ /^\//) {
-            my $absolute_path = abs_path($dir);
-            $dir = $absolute_path if ($absolute_path);
-        }
-        return ('git', '-C', $dir);
+    return 'git' unless $include_git_path;
+    my $dir = $self->dir;
+    die 'no valid directory was found during git preparation' unless $dir;
+    if ($dir !~ /^\//) {
+        my $absolute_path = abs_path($dir);
+        $dir = $absolute_path if $absolute_path;
     }
-    else {
-        return 'git';
-    }
+    return ('git', '-C', $dir);
 }
 
 sub _format_git_error ($self, $result, $error_message) {
     my $dir = $self->dir;
-    if ($result->{stderr} or $result->{stdout}) {
-        $error_message .= " ($dir): " . $result->{stdout} . $result->{stderr};
-    }
+    $error_message .= " ($dir): " . $result->{stdout} . $result->{stderr} if $result->{stderr} or $result->{stdout};
     return $error_message;
 }
 
