@@ -121,37 +121,42 @@ function reloadAssetsTable() {
 }
 
 function deleteAsset(assetId) {
-  $.ajax({
-    url: urlWithBase('/api/v1/assets/' + assetId),
-    method: 'DELETE',
-    dataType: 'json',
-    success: function () {
+  fetchWithCSRF(urlWithBase(`/api/v1/assets/${assetId}`), {method: 'DELETE'})
+    .then(response => {
+      // not checking for status code as 404 case also returns proper json
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
       addFlash(
         'info',
-        'The asset was deleted successfully. The asset table\'s contents are cached. Hence the removal is not immediately visible. To update the view use the "Trigger asset cleanup" button. Note that this is an expensive operation which might take a while.'
+        "The asset was deleted successfully. The asset table's contents are cached." +
+          'Hence the removal is not immediately visible. To update the view use the "Trigger asset cleanup" button.' +
+          'Note that this is an expensive operation which might take a while.'
       );
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      var error_message = xhr.responseJSON.error;
-      addFlash('danger', error_message);
-    }
-  });
+    })
+    .catch(error => {
+      console.error(error);
+      addFlash('danger', `Error deleting asset: ${error}`);
+    });
 }
 
 function triggerAssetCleanup(form) {
-  $.ajax({
-    url: form.action,
-    method: form.method,
-    success: function () {
+  fetchWithCSRF(form.action, {method: form.method})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(response => {
       addFlash(
         'info',
-        'Asset cleanup has been triggered. Open the <a href="/minion/jobs?task=limit_assets">Minion dashboard</a> to keep track of the task.'
+        `Asset cleanup has been triggered. Open the <a href="/minion/jobs?task=limit_assets">Minion dashboard</a> to keep track of the task (gru_id #${response.gru_id}).`
       );
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      addFlash('danger', 'Unable to trigger the asset cleanup: ' + thrownError);
-    }
-  });
+    })
+    .catch(error => {
+      console.error(error);
+      addFlash('danger', `Unable to trigger the asset cleanup: ${error}`);
+    });
 }
 
 function showLastAssetStatusUpdate(assetStatus) {

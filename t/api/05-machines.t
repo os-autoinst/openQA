@@ -137,6 +137,33 @@ is_deeply(
     "Delete machine variable"
 ) || diag explain $t->tx->res->json;
 
+$t->put_ok("/api/v1/machines/$machine_id", json => {name => "testmachine", "settings" => {"TEST2" => "val0"}})
+  ->status_is(400)->json_is('/error', 'Missing parameter: backend');
+
+$t->put_ok("/api/v1/machines/$machine_id", => {'Content-Type' => 'application/json'} => '{BROKEN JSON')
+  ->status_is(400)->json_like('/error', qr/expected, at character offset/);
+
+$t->put_ok("/api/v1/machines/$machine_id",
+    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST2" => "val2"}})->status_is(200);
+
+$t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
+is_deeply(
+    $t->tx->res->json,
+    {
+        'Machines' => [
+            {
+                'backend' => 'qemu',
+                'id' => $machine_id,
+                'name' => 'testmachine',
+                'settings' => [
+                    {
+                        'key' => 'TEST2',
+                        'value' => 'val2'
+                    }]}]
+    },
+    "Update settings via JSON request"
+) || diag explain $t->tx->res->json;
+
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not found
 

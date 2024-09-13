@@ -83,13 +83,6 @@ function refreshAdminTableRow(tdElement) {
   window.adminTable.row(tdElement.parentElement).invalidate().draw();
 }
 
-function handleAdminTableApiError(request, status, error) {
-  if (request.responseJSON.error) {
-    error += ': ' + request.responseJSON.error;
-  }
-  addFlash('danger', error);
-}
-
 function adminTableApiUrl() {
   return urlWithBase(document.getElementById('admintable_api_url').value);
 }
@@ -99,12 +92,13 @@ function handleAdminTableSubmit(tdElement, response, id) {
   setEditingAdminTableRow(tdElement, false, true);
 
   // query affected row again so changes applied by the server (removing invalid chars from settings keys) are visible
-  $.ajax({
-    url: adminTableApiUrl() + '/' + id,
-    type: 'GET',
-    dataType: 'json',
-    success: function (resp) {
-      var rowData = resp[Object.keys(resp)[0]];
+  fetch(adminTableApiUrl() + '/' + id)
+    .then(response => {
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
+      var rowData = response[Object.keys(response)[0]];
       if (rowData) {
         rowData = rowData[0];
       }
@@ -121,9 +115,10 @@ function handleAdminTableSubmit(tdElement, response, id) {
       }
       row.data((adminTable.rowData[rowIndex] = rowData)).draw(false);
       showAdminTableRow(row);
-    },
-    error: handleAdminTableApiError
-  });
+    })
+    .catch(error => {
+      addFlash('danger', error);
+    });
 }
 
 function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
@@ -223,31 +218,38 @@ function submitAdminTableRow(tdElement, id) {
   const url = adminTableApiUrl();
   if (id) {
     // update
-    $.ajax({
-      url: url + '/' + id,
-      type: 'POST',
-      dataType: 'json',
-      data: dataToSubmit,
-      headers: {
-        'X-HTTP-Method-Override': 'PUT'
-      },
-      success: function (response) {
+    fetchWithCSRF(url + '/' + id, {
+      method: 'PUT',
+      body: JSON.stringify(dataToSubmit),
+      headers: {'Content-Type': 'application/json'}
+    })
+      .then(response => {
+        return response.json();
+      })
+      .then(response => {
+        if (response.error) throw response.error;
         handleAdminTableSubmit(tdElement, response, id);
-      },
-      error: handleAdminTableApiError
-    });
+      })
+      .catch(error => {
+        addFlash('danger', error);
+      });
   } else {
     // create new
-    $.ajax({
-      url: url,
-      type: 'POST',
-      dataType: 'json',
-      data: dataToSubmit,
-      success: function (response) {
+    fetchWithCSRF(url, {
+      method: 'POST',
+      body: JSON.stringify(dataToSubmit),
+      headers: {'Content-Type': 'application/json'}
+    })
+      .then(response => {
+        return response.json();
+      })
+      .then(response => {
+        if (response.error) throw response.error;
         handleAdminTableSubmit(tdElement, response, response.id);
-      },
-      error: handleAdminTableApiError
-    });
+      })
+      .catch(error => {
+        addFlash('danger', error);
+      });
   }
 }
 
@@ -272,15 +274,17 @@ function deleteTableRow(tdElement, id) {
     return;
   }
 
-  $.ajax({
-    url: adminTableApiUrl() + '/' + id,
-    type: 'DELETE',
-    dataType: 'json',
-    success: function () {
+  fetchWithCSRF(adminTableApiUrl() + '/' + id, {method: 'DELETE'})
+    .then(response => {
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
       removeAdminTableRow(tdElement);
-    },
-    error: handleAdminTableApiError
-  });
+    })
+    .catch(error => {
+      addFlash('danger', error);
+    });
 }
 
 function renderAdminTableValue(data, type, row, meta) {

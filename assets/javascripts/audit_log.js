@@ -56,16 +56,23 @@ function undoComments(undoButton) {
     return;
   }
   undoButton.style.display = 'none';
-  $.ajax({
-    url: urlWithBase('/api/v1/comments'),
-    method: 'DELETE',
-    data: ids.map(id => `id=${id}`).join('&'),
-    success: () => addFlash('info', 'The comments have been deleted.'),
-    error: (jqXHR, textStatus, errorThrown) => {
+  var data = new FormData();
+  for (const id of ids) {
+    data.append('id', id);
+  }
+  fetchWithCSRF(urlWithBase('/api/v1/comments'), {method: 'DELETE', body: data})
+    .then(response => {
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
+      addFlash('info', 'The comments have been deleted.');
+    })
+    .catch(error => {
+      console.error(error);
       undoButton.style.display = 'inline';
-      addFlash('danger', 'The comments could not be deleted: ' + getXhrError(jqXHR, textStatus, errorThrown));
-    }
-  });
+      addFlash('danger', `The comments could not be deleted: ${error}`);
+    });
 }
 
 function getElementForEventType(type, eventData) {

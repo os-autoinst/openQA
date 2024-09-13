@@ -22,46 +22,43 @@ function setup_admin_user() {
       return;
     }
 
-    var data = form.serializeArray();
-    var newRole = data[1].value;
+    var data = new FormData(form[0]);
+    var newRole = data.get('role');
 
-    $.ajax({
-      type: 'POST',
-      url: form.attr('action'),
-      data: jQuery.param(data),
-      success: function (data) {
+    fetch(form.attr('action'), {method: 'POST', body: data})
+      .then(response => {
+        if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
         findDefault(form).removeClass('default');
         form.find('input[value="' + newRole + '"]').addClass('default');
-      },
-      error: function (err) {
+      })
+      .catch(error => {
+        console.error(error);
         rollback(form);
-        addFlash('danger', 'An error occurred when changing the user role');
-      }
-    });
+        addFlash('danger', `An error occurred when changing the user role: ${error}`);
+      });
   });
 
   window.deleteUser = function (id) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
-    $.ajax({
-      url: urlWithBase('/api/v1/user/' + id),
-      method: 'DELETE',
-      dataType: 'json',
-      success: function () {
+    fetchWithCSRF(urlWithBase('/api/v1/user/' + id), {method: 'DELETE'})
+      .then(response => {
+        if (response.status >= 500 && response.status < 600)
+          throw 'An internal server error has occurred. Maybe there are unsatisfied foreign key restrictions in the DB for this user.';
+        if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+        return response.json();
+      })
+      .then(response => {
+        if (response.error) throw response.error;
         addFlash('info', 'The user was deleted successfully.');
         window.admin_user_table
           .row($('#user_' + id))
           .remove()
           .draw();
-      },
-      error: function (xhr, ajaxOptions, thrownError) {
-        if (xhr.responseJSON && xhr.responseJSON.error) addFlash('danger', xhr.responseJSON.error);
-        else
-          addFlash(
-            'danger',
-            'An error has occurred. Maybe there are unsatisfied foreign key restrictions in the DB for this user.'
-          );
-      }
-    });
+      })
+      .catch(error => {
+        console.error(error);
+        addFlash('danger', error);
+      });
   };
 }

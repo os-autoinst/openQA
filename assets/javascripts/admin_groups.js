@@ -37,21 +37,23 @@ function showError(message) {
 }
 
 function fetchHtmlEntry(url, targetElement) {
-  $.ajax({
-    url: url,
-    method: 'GET',
-    success: function (response) {
+  fetch(url)
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.text();
+    })
+    .then(response => {
       var element = $(response);
       element.hide();
       targetElement.prepend(element);
       $('#new_group_creating').hide();
       $('#add_group_modal').modal('hide');
       element.fadeIn('slow');
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      showError(thrownError + ' (requesting entry HTML, group probably added though! - reload page to find out)');
-    }
-  });
+    })
+    .catch(error => {
+      console.error(error);
+      showError(`${error} (requesting entry HTML, group probably added though! - reload page to find out)`);
+    });
 }
 
 function countEmptyInputs(form) {
@@ -87,7 +89,7 @@ function createGroup(form) {
   $('#new_group_error').hide();
   $('#new_group_creating').show();
 
-  let data = $(form).serialize();
+  let data = new FormData(form);
   let postUrl, rowUrl, targetElement;
   if (form.dataset.createParent !== 'false') {
     postUrl = form.dataset.postParentGroupUrl;
@@ -99,36 +101,26 @@ function createGroup(form) {
     const parentId = form.dataset.parentId;
     if (parentId !== 'none') {
       targetElement = $('#parent_group_' + parentId).find('ul');
-      data += '&parent_id=' + parentId;
+      data.set('parent_id', parentId);
     } else {
       targetElement = $('#job_group_list');
     }
   }
 
-  $.ajax({
-    url: postUrl,
-    method: 'POST',
-    data: data,
-    success: function (response) {
-      if (!response) {
-        showError('Server returned no response');
-        return;
-      }
-      var id = response.id;
-      if (!id) {
-        showError('Server returned no ID');
-        return;
-      }
+  fetchWithCSRF(postUrl, {method: 'POST', body: data})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(response => {
+      if (!response) throw 'Server returned no response';
+      if (!response.id) throw 'Server returned no ID';
       fetchHtmlEntry(rowUrl + response.id, targetElement);
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      if (xhr.responseJSON.error) {
-        showError(xhr.responseJSON.error);
-      } else {
-        showError(thrownError);
-      }
-    }
-  });
+    })
+    .catch(error => {
+      console.error(error);
+      showError(error);
+    });
 
   return false;
 }
@@ -262,24 +254,25 @@ function saveReorganizedGroups() {
   var updateJobGroupUrl = jobGroupList.data('put-job-group-url');
 
   // event handlers for AJAX queries
-  var handleError = function (xhr, ajaxOptions, thrownError) {
+  var handleError = function (error) {
+    console.error(error);
     $('#reorganize_groups_panel').show();
     $('#reorganize_groups_error').show();
     $('#reorganize_groups_progress').hide();
-    $('#reorganize_groups_error_message').text(thrownError ? thrownError : 'something went wrong');
+    $('#reorganize_groups_error_message').text(error ? error : 'something went wrong');
     $('html, body').animate({scrollTop: 0}, 1000);
   };
 
   var handleSuccess = function (response, groupLi, index, parentId) {
     if (!response) {
-      handleError(undefined, undefined, 'Server returned nothing');
+      handleError('Server returned nothing');
       return;
     }
 
     if (!response.nothingToDo) {
       var id = response.id;
       if (!id) {
-        handleError(undefined, undefined, 'Server returned no ID');
+        handleError('Server returned no ID');
         return;
       }
 
@@ -292,7 +285,7 @@ function saveReorganizedGroups() {
 
     if (ajaxQueries.length) {
       // do next query
-      $.ajax(ajaxQueries.shift());
+      handleQuery(ajaxQueries.shift());
     } else {
       // all queries done
       if (showPanelTimeout) {
@@ -325,7 +318,7 @@ function saveReorganizedGroups() {
       ajaxQueries.push({
         url: updateGroupUrl + groupId,
         method: 'PUT',
-        data: {
+        body: {
           sort_order: groupIndex,
           parent_id: 'none',
           drag: 1
@@ -350,7 +343,7 @@ function saveReorganizedGroups() {
             ajaxQueries.push({
               url: updateJobGroupUrl + jobGroupId,
               method: 'PUT',
-              data: {
+              body: {
                 sort_order: childGroupIndex,
                 parent_id: groupId,
                 drag: 1
@@ -366,9 +359,30 @@ function saveReorganizedGroups() {
   });
 
   if (ajaxQueries.length) {
-    $.ajax(ajaxQueries.shift());
+    handleQuery(ajaxQueries.shift());
   } else {
     handleSuccess({nothingToDo: true});
   }
   return false;
+}
+
+function handleQuery(query) {
+  const url = query.url;
+  delete query.url;
+  const success = query.success;
+  delete query.success;
+  const error = query.error;
+  delete query.error;
+  const body = new FormData();
+  for (const key in query.body) {
+    body.append(key, query.body[key]);
+  }
+  query.body = body;
+  fetchWithCSRF(url, query)
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(success)
+    .catch(error);
 }

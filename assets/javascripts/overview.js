@@ -301,20 +301,17 @@ function addComments(form) {
     controls.style.display = 'inline';
     window.addCommentsModal.hide();
   };
-  $.ajax({
-    url: form.action,
-    method: 'POST',
-    data: $(form).serialize(),
-    success: response => {
+  fetchWithCSRF(form.action, {method: 'POST', body: new FormData(form)})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       addFlash(
         'info',
         'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
       );
       done();
-    },
-    error: (jqXHR, textStatus, errorThrown) => {
-      addFlash('danger', 'The comments could not be added: ' + getXhrError(jqXHR, textStatus, errorThrown));
+    })
+    .catch(error => {
+      addFlash('danger', `The comments could not be added: ${error}`);
       done();
-    }
-  });
+    });
 }

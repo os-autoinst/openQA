@@ -93,28 +93,25 @@ function loadBuildResults(queryParams) {
   };
 
   // query build results via AJAX using parameters from filter form
-  $.ajax({
-    url: buildResultsElement.data('build-results-url'),
-    data: queryParams ? queryParams : window.location.search.substr(1),
-    success: function (response) {
-      showBuildResults(response);
+  var url = new URL(buildResultsElement.data('build-results-url'), window.location.href);
+  url.search = queryParams ? queryParams : window.location.search.substr(1);
+  fetch(url)
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.text();
+    })
+    .then(responsetext => {
+      showBuildResults(responsetext);
       window.buildResultStatus = 'success';
-    },
-    error: function (xhr, textStatus, thrownError) {
-      // ignore error if just navigating away
-      if (textStatus !== 'timeout' && !xhr.getAllResponseHeaders()) {
-        return;
-      }
-      const error = xhr.responseJSON?.error;
+    })
+    .catch(error => {
       const message = error ? htmlEscape(error) : 'Unable to fetch build results.';
       showBuildResults(
         '<div class="alert alert-danger" role="alert">' +
           message +
           '<a href="javascript:loadBuildResults();" style="float: right;">Try again</a></div>'
       );
-      window.buildResultStatus = 'error: ' + thrownError;
-    }
-  });
+    });
 }
 
 function autoRefreshRestart() {

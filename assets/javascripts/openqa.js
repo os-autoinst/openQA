@@ -23,6 +23,17 @@ function setupForAll() {
   });
 }
 
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
+function fetchWithCSRF(resource, options) {
+  options ??= {};
+  options.headers ??= {};
+  options.headers['X-CSRF-TOKEN'] ??= getCSRFToken();
+  return window.fetch(resource, options);
+}
+
 function makeFlashElement(text) {
   return typeof text === 'string' ? '<span>' + text + '</span>' : text;
 }
@@ -238,11 +249,12 @@ function restartJob(ajaxUrl, jobId) {
     addFlash('danger', errorMessage);
   };
 
-  return $.ajax({
-    type: 'POST',
-    url: ajaxUrl,
-    success: function (data, res, xhr) {
-      var responseJSON = xhr.responseJSON;
+  return fetchWithCSRF(ajaxUrl, {method: 'POST'})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(responseJSON => {
       var newJobUrl;
       try {
         newJobUrl = responseJSON.test_url[0][jobId];
@@ -261,13 +273,12 @@ function restartJob(ajaxUrl, jobId) {
       if (newJobUrl) {
         window.location.replace(newJobUrl);
       } else {
-        showError('URL for new job not available');
+        throw 'URL for new job not available';
       }
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      showError(xhr.responseJSON ? xhr.responseJSON.error : undefined);
-    }
-  });
+    })
+    .catch(error => {
+      showError(error);
+    });
 }
 
 function htmlEscape(str) {

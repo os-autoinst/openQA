@@ -34,10 +34,6 @@ function renderCommentHeading(comment, commentId) {
   return heading;
 }
 
-function showXhrError(context, jqXHR, textStatus, errorThrown) {
-  window.alert(context + getXhrError(jqXHR, textStatus, errorThrown));
-}
-
 function updateNumerOfComments() {
   const commentsLink = document.querySelector('a[href="#comments"]');
   if (commentsLink) {
@@ -51,15 +47,15 @@ function deleteComment(deleteButton) {
   if (!window.confirm('Do you really want to delete the comment written by ' + author + '?')) {
     return;
   }
-  $.ajax({
-    url: deleteButton.dataset.deleteUrl,
-    method: 'DELETE',
-    success: () => {
+  fetchWithCSRF(deleteButton.dataset.deleteUrl, {method: 'DELETE'})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
       updateNumerOfComments();
-    },
-    error: showXhrError.bind(undefined, "The comment couldn't be deleted: ")
-  });
+    })
+    .catch(error => {
+      window.alert(`The comment couldn't be deleted: ${error}`);
+    });
 }
 
 function updateComment(form) {
@@ -75,31 +71,30 @@ function updateComment(form) {
   displayElements([textElement, form.applyChanges, form.discardChanges], 'none');
   markdownElement.style.display = '';
   markdownElement.innerHTML = '<em>Loading…</em>';
-  $.ajax({
-    url: url,
-    method: 'PUT',
-    data: $(form).serialize(),
-    success: () => {
-      $.ajax({
-        url: url,
-        method: 'GET',
-        success: response => {
+  fetchWithCSRF(url, {method: 'PUT', body: new FormData(form)})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      // get rendered markdown
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+          return response.json();
+        })
+        .then(comment => {
           const commentId = headingElement.querySelector('.comment-anchor').href.split('#comment-')[1];
-          headingElement.replaceWith(renderCommentHeading(response, commentId));
-          textElement.value = response.text;
-          markdownElement.innerHTML = response.renderedMarkdown;
+          headingElement.replaceWith(renderCommentHeading(comment, commentId));
+          textElement.value = comment.text;
+          markdownElement.innerHTML = comment.renderedMarkdown;
           hideCommentEditor(form);
-        },
-        error: () => location.reload()
-      });
-    },
-    error: (jqXHR, textStatus, errorThrown) => {
-      textElement.value = text;
-      markdownElement.innerHTML = markdown;
-      showCommentEditor(form);
-      window.alert("The comment couldn't be updated: " + getXhrError(jqXHR, textStatus, errorThrown));
-    }
-  });
+        })
+        .catch(error => {
+          console.error(error);
+          location.reload();
+        });
+    })
+    .catch(error => {
+      window.alert(`The comment couldn't be updated : ${error}`);
+    });
 }
 
 function addComment(form, insertAtBottom) {
@@ -109,22 +104,26 @@ function addComment(form, insertAtBottom) {
     return window.alert("The comment text mustn't be empty.");
   }
   const url = form.action;
-  $.ajax({
-    url: url,
-    method: 'POST',
-    data: $(form).serialize(),
-    success: response => {
-      const commentId = response.id;
+  fetch(url, {method: 'POST', body: new FormData(form)})
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      if (data.error) throw data.error;
+      const commentId = data.id;
+      console.log(`Created comment #${commentId}`);
       // get rendered markdown
-      $.ajax({
-        url: url + '/' + commentId,
-        method: 'GET',
-        success: response => {
+      fetch(`${url}/${commentId}`)
+        .then(response => {
+          if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+          return response.json();
+        })
+        .then(comment => {
           const templateElement = document.getElementById('comment-row-template');
           const commentRow = $(templateElement.innerHTML.replace(/@comment_id@/g, commentId))[0];
-          commentRow.querySelector('[name="text"]').value = response.text;
-          commentRow.querySelector('h4').replaceWith(renderCommentHeading(response, commentId));
-          commentRow.querySelector('.markdown').innerHTML = response.renderedMarkdown;
+          commentRow.querySelector('[name="text"]').value = comment.text;
+          commentRow.querySelector('h4').replaceWith(renderCommentHeading(comment, commentId));
+          commentRow.querySelector('.markdown').innerHTML = comment.renderedMarkdown;
           let nextElement;
           if (!insertAtBottom) {
             nextElement = document.querySelectorAll('.comment-row')[0];
@@ -136,12 +135,15 @@ function addComment(form, insertAtBottom) {
           $('html, body').animate({scrollTop: commentRow.offsetTop}, 1000);
           textElement.value = '';
           updateNumerOfComments();
-        },
-        error: () => location.reload()
-      });
-    },
-    error: showXhrError.bind(undefined, "The comment couldn't be added: ")
-  });
+        })
+        .catch(error => {
+          console.error(error);
+          location.reload();
+        });
+    })
+    .catch(error => {
+      window.alert(`The comment couldn't be added: ${error}`);
+    });
 }
 
 function insertTemplate(button) {

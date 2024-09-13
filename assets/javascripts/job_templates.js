@@ -421,19 +421,35 @@ function submitTemplateEditor(button) {
     editor.setValue(template, -1);
   }
 
-  $.ajax({
-    url: form.data('put-url'),
-    type: 'POST',
-    dataType: 'json',
-    data: {
+  var data = fetchWithCSRF(form.data('put-url'), {
+    method: 'POST',
+    headers: {Accept: 'application/json'},
+    body: new URLSearchParams({
       schema: 'JobTemplates-01.yaml',
       preview: button !== 'save' ? 1 : 0,
       expand: button === 'expand' ? 1 : 0,
       template: template,
       reference: form.data('reference')
-    }
+    })
   })
-    .done(function (data) {
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      // handle errors with YAML syntax
+      if (Object.prototype.hasOwnProperty.call(data, 'error')) {
+        result.text('There was a problem applying the changes:');
+        var errors = data.error;
+        var list = $('<ul/>').appendTo(result);
+        $.each(errors, function (i) {
+          var message = Object.prototype.hasOwnProperty.call(errors[i], 'message')
+            ? errors[i].message + ': ' + errors[i].path
+            : errors[i];
+          $('<li/>').text(message).appendTo(list);
+        });
+        return;
+      }
+
       var mode, value;
       switch (button) {
         case 'expand':
@@ -473,38 +489,11 @@ function submitTemplateEditor(button) {
         $('<strong/>').text(' No changes were made!').appendTo(result);
       }
     })
-    .fail(function (response) {
+    .catch(error => {
       result.text('There was a problem applying the changes:');
-      if (!Object.prototype.hasOwnProperty.call(response, 'responseJSON')) {
-        $('<p/>')
-          .text('Invalid server response: ' + response.statusText)
-          .appendTo(result);
-        return;
-      }
-      const data = response.responseJSON;
-      if (Object.prototype.hasOwnProperty.call(data, 'error')) {
-        var errors = data.error;
-        var list = $('<ul/>').appendTo(result);
-        $.each(errors, function (i) {
-          var message = Object.prototype.hasOwnProperty.call(errors[i], 'message')
-            ? errors[i].message + ': ' + errors[i].path
-            : errors[i];
-          $('<li/>').text(message).appendTo(list);
-        });
-      }
-      if (Object.prototype.hasOwnProperty.call(data, 'changes')) {
-        const previewElement = document.createElement('pre');
-        previewElement.appendChild(document.createTextNode(value));
-        const preview = ace.edit(previewElement, {
-          mode: 'diff',
-          readOnly: true,
-          maxLines: Infinity
-        });
-        editor.session.setUseWrapMode(true);
-        result.append(previewElement);
-      }
+      $('<p/>').text(error).appendTo(result);
     })
-    .always(function (data) {
+    .finally(() => {
       form.find('.buttons').show();
       form.find('.progress-indication').hide();
     });
@@ -520,11 +509,13 @@ function submitProperties(form) {
   var editorForm = $(form);
   editorForm.find('.buttons').hide();
   editorForm.find('.progress-indication').show();
-  $.ajax({
-    url: editorForm.data('put-url'),
-    method: 'PUT',
-    data: editorForm.serialize(),
-    success: function () {
+  fetchWithCSRF(editorForm.data('put-url'), {method: 'PUT', body: new FormData(form)})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(data => {
+      if (data.error) throw data.error;
       showSubmitResults(editorForm, '<i class="fa fa-save"></i> Changes applied');
 
       // show new name
@@ -536,18 +527,13 @@ function submitProperties(form) {
       var defaultPrio = defaultPrioInput.val();
       defaultPrioInput.data('initial-value', defaultPrio);
       $('td.prio input').attr('placeholder', defaultPrio);
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      var errmsg = '';
-      if (xhr.responseJSON.error) {
-        errmsg = xhr.responseJSON.error;
-      }
+    })
+    .catch(error => {
       showSubmitResults(
         editorForm,
-        '<i class="fa fa-trash"></i> Unable to apply changes ' + '<strong>' + errmsg + '</strong>'
+        '<i class="fa fa-trash"></i> Unable to apply changes ' + '<strong>' + error + '</strong>'
       );
-    }
-  });
+    });
 
   return false;
 }
