@@ -67,6 +67,8 @@ sub _set_status ($self, $status, $event_data) {
     $event_data->{client} = $self;
     $event_data->{status} = $status;
     $self->status($status);
+    # set the error message from the event data as last error so it can added to the reason when setting the job done
+    if (my $event_error_message = $event_data->{error_message}) { $self->{_last_error} = $event_error_message }
     $self->emit(status_changed => $event_data);
 }
 
@@ -108,7 +110,6 @@ sub register ($self) {
         $status = 'failed'
           if $error_message
           =~ /timestamp mismatch - check whether clocks on the local host and the web UI host are in sync/;
-        $self->{_last_error} = $error_message;
         $self->_set_status($status => {error_message => $error_message});
         return undef;
     }
