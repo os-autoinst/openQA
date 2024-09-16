@@ -69,3 +69,4 @@ unless ($detected_version eq $required_version) {
 }
 
 exec 'tidyall', @tidyall_argv;
+exit 1;
