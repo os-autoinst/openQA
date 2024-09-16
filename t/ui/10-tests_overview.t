@@ -450,7 +450,7 @@ subtest "filtering by machine" => sub {
         $driver->find_element('#filter-machine')->send_keys('uefi');
         $driver->find_element('#filter-panel button[type="submit"]')->click();
 
-        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
+        like wait_for_element(selector => '#flavor_DVD_arch_x86_64')->get_text, qr/x86_64/, 'DVD/x86_64 present';
         element_not_present('#flavor_DVD_arch_i586');
         element_not_present('#flavor_GNOME-Live_arch_i686');
         element_not_present('#flavor_NET_arch_x86_64');
@@ -466,8 +466,8 @@ subtest "filtering by machine" => sub {
         $driver->find_element('#filter-machine')->send_keys('64bit,uefi');
         $driver->find_element('#filter-panel button[type="submit"]')->click();
 
-        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
-        element_visible('#flavor_NET_arch_x86_64', qr/x86_64/);
+        like wait_for_element(selector => '#flavor_DVD_arch_x86_64')->get_text, qr/x86_64/, 'DVD/x86_64 still present';
+        like wait_for_element(selector => '#flavor_NET_arch_x86_64')->get_text, qr/x86_64/, 'NET/x86_64 present';
         element_not_present('#flavor_GONME-Live_arch_i686');
         element_not_present('#flavor_DVD_arch_i586');
 
