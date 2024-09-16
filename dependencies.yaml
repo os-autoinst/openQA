@@ -205,5 +205,6 @@ style_check_requires:
   python3-yamllint:
   perl(Perl::Critic):
   perl(Perl::Critic::Freenode):
+  perl(Code::TidyAll):
   ShellCheck:
   shfmt:
