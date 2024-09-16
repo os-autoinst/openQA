@@ -514,15 +514,11 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
 };
 
 subtest ansiToHtml => sub {
-    my @links = (
-        'https://bar/?x=%20&y=@;z=!#ab(c)',
-        'https://bar/',
-        "https://bar/with'quote",
-    );
+    my @links = ('https://bar/?x=%20&y=@;z=!#ab(c)', 'https://bar/', "https://bar/with'quote");
     my $text = qq{\e[34mfoo "$links[0]" <$links[1]> $links[2]\e[0m} =~ s/'/\\'/gr;
     my $html = $driver->execute_script(qq{return ansiToHtml('$text')});
     my @matched = $html =~ m/href="(.*?)"/g;
-    is $matched[$_], $links[$_] =~ s/&/&amp;/gr, "linkify $_: $links[$_]" for (0..$#links);
+    is $matched[$_], $links[$_] =~ s/&/&amp;/gr, "linkify $_: $links[$_]" for (0 .. $#links);
 };
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
