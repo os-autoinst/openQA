@@ -451,26 +451,20 @@ subtest "filtering by machine" => sub {
         $driver->find_element('#filter-panel button[type="submit"]')->click();
 
         like wait_for_element(selector => '#flavor_DVD_arch_x86_64')->get_text, qr/x86_64/, 'DVD/x86_64 present';
-        element_not_present('#flavor_DVD_arch_i586');
-        element_not_present('#flavor_GNOME-Live_arch_i686');
-        element_not_present('#flavor_NET_arch_x86_64');
+        element_not_present("#$_") for qw(flavor_DVD_arch_i586 flavor_GNOME-Live_arch_i686 flavor_NET_arch_x86_64);
+        is element_prop('filter-machine'), 'uefi', 'machine filter still visible in form';
 
-        my @row = $driver->find_element('#content tbody tr');
-        is(scalar @row, 1, 'The job its machine is uefi is shown');
+        my @job_rows = map { $_->get_text } @{$driver->find_elements('#content tbody tr')};
+        is_deeply \@job_rows, ['kde@uefi'], 'only the job with machine uefi is shown' or diag explain \@job_rows;
 
-        is($driver->find_element('#content tbody .name span')->get_text(), 'kde@uefi', 'Test suite name is shown');
         $driver->find_element('#filter-panel .card-header')->click();
-        is(element_prop('filter-machine'), 'uefi', 'machine text is correct');
-
         $driver->find_element('#filter-machine')->clear();
         $driver->find_element('#filter-machine')->send_keys('64bit,uefi');
         $driver->find_element('#filter-panel button[type="submit"]')->click();
 
         like wait_for_element(selector => '#flavor_DVD_arch_x86_64')->get_text, qr/x86_64/, 'DVD/x86_64 still present';
         like wait_for_element(selector => '#flavor_NET_arch_x86_64')->get_text, qr/x86_64/, 'NET/x86_64 present';
-        element_not_present('#flavor_GONME-Live_arch_i686');
-        element_not_present('#flavor_DVD_arch_i586');
-
+        element_not_present("#$_") for qw(flavor_DVD_arch_i586 flavor_GNOME-Live_arch_i686);
     };
 };
 
