@@ -119,6 +119,7 @@ sub startup ($self) {
     $r->get('/search')->name('search')->to(template => 'search/search');
 
     $r->get('/tests')->name('tests')->to('test#list');
+    $r->get('/tests/create')->name('tests_create')->to('test#create');
     # we have to set this and some later routes up differently on Mojo
     # < 9 and Mojo >= 9.11
     if ($Mojolicious::VERSION > 9.10) {

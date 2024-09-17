@@ -198,8 +198,15 @@ sub read_config ($app) {
         influxdb => {
             ignored_failed_minion_jobs => '',
         },
-        carry_over => \%CARRY_OVER_DEFAULTS
-    );
+        carry_over => \%CARRY_OVER_DEFAULTS,
+        'test_preset example' => {
+            title => 'Create example test',
+            info => 'Parameters to create an example test have been pre-filled in the following form. '
+              . 'You can simply submit the form as-is to test your openQA setup.',
+            casedir => 'https://github.com/os-autoinst/os-autoinst-distri-example.git',
+            distri => 'example',
+            build => 'openqa',
+        });
 
     # in development mode we use fake auth and log to stderr
     my %mode_defaults = (

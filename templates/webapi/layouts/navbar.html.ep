@@ -1,3 +1,4 @@
+% my $current_user = current_user;
 <nav class="navbar navbar-expand-lg navbar-light">
   <div class="container-fluid">
      <a class="navbar-brand" href="/"><img src="<%= icon_url 'logo.svg'%>" alt="openQA"></a>
@@ -9,7 +10,17 @@
          <li class='nav-item' id="all_tests">
             %= link_to 'All Tests' => url_for('tests') => class => 'nav-link', title => 'Lists all tests grouped by state'
          </li>
-
+          % if ($current_user && $current_user->is_operator) {
+          <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+                 id="create-tests-action" title="Creates one or multiple tests"
+                 aria-haspopup="true" aria-expanded="false">Create …</a>
+              <div class="dropdown-menu">
+                %= link_to 'Example test' => url_for('tests_create')->query({preset => 'example'}) => class => 'dropdown-item'
+                %= link_to 'Tests from scenario definitions' => url_for('tests_create') => class => 'dropdown-item'
+              </div>
+         </li>
+          % }
          <li class="nav-item dropdown" id="job_groups">
             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
                aria-haspopup="true" aria-expanded="false" data-submenu
@@ -42,11 +53,11 @@
                     <input type="search" name="q" id="global-search" class="form-control navbar-input" value="<%= $self->param('q') %>" placeholder="Type to search" aria-label="Global search input">
                 </form>
             </li>
-        % if (current_user) {
+        % if ($current_user) {
             <li class="nav-item dropdown" id="user-action">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
                    aria-haspopup="true" aria-expanded="false"
-                   title="Contains the Activity View and various configuration pages">Logged in as <%= current_user->name %></a>
+                   title="Contains the Activity View and various configuration pages">Logged in as <%= $current_user->name %></a>
                 <div class="dropdown-menu">
                   %= tag 'h3' => class => 'dropdown-header' => 'Operators Menu'
                   %= link_to 'Activity View' => url_for('activity_view') => class => 'dropdown-item' => id => 'activity_view', title => 'Gives you an overview of your current jobs'

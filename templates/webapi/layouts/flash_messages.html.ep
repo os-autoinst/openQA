@@ -1,4 +1,4 @@
-% if (my $msg = flash('info')) {
+% if (my $msg = flash('info') || stash('flash_info')) {
     <div class="alert alert-primary alert-dismissible fade show" role="alert">
         <span><%= $msg %></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
