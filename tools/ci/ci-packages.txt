@@ -37,8 +37,10 @@ perl-Class-Tiny-1.006
 perl-Class-XSAccessor-1.19
 perl-Clone-0.46
 perl-Clone-Choose-0.010
+perl-Code-TidyAll-0.83
 perl-CommonMark-0.290000
 perl-Config-Any-0.33
+perl-Config-INI-0.029
 perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.28
 perl-Context-Preserve-0.03
@@ -114,17 +116,20 @@ perl-JSON-MaybeXS-1.004000
 perl-JSON-Validator-5.14
 perl-libwww-perl-6.31
 perl-Lingua-EN-Inflect-1.905
+perl-List-Compare-0.55
 perl-List-MoreUtils-0.428
 perl-List-MoreUtils-XS-0.428
 perl-List-SomeUtils-0.56
 perl-List-SomeUtils-XS-0.56
 perl-local-lib-2.000024
+perl-Log-Any-1.705
 perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.004
 perl-Minion-10.300.0
 perl-Minion-Backend-SQLite-5.0.7
+perl-Mixin-Linewise-0.111
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
 perl-Module-Implementation-0.09
@@ -167,6 +172,7 @@ perl-Perl-Critic-1.150
 perl-Perl-Critic-Community-1.0.3
 perl-Perl-Critic-Policy-Variables-ProhibitLoopOnHash-0.008
 perl-Perl-Critic-Pulp-99
+perl-PerlIO-utf8_strict-0.008
 perl-Perl-Tidy-20240511.0.0
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
@@ -184,6 +190,7 @@ perl-Socket6-0.28
 perl-Socket-MsgHdr-0.05
 perl-Sort-Versions-1.62
 perl-Specio-0.42
+perl-Specio-Library-Path-Tiny-0.05
 perl-SQL-Abstract-2.000001
 perl-SQL-Abstract-Classic-1.91
 perl-SQL-Abstract-Pg-1.0
@@ -219,6 +226,7 @@ perl-Text-Brew-0.02
 perl-Text-Diff-1.45
 perl-Text-Glob-0.11
 perl-TimeDate-2.30
+perl-Time-Duration-Parse-0.16
 perl-Time-modules-2013.0912
 perl-Time-Moment-0.44
 perl-Try-Tiny-0.30
