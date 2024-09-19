@@ -61,3 +61,22 @@ function createTests(form) {
     }
   });
 }
+
+function cloneTests(link) {
+  const loadingIndication = document.createElement('span');
+  loadingIndication.append('Cloning test distribution …');
+  link.parentNode.replaceWith(loadingIndication);
+  $.ajax({
+    url: document.getElementById('flash-messages').dataset.cloneUrl,
+    method: 'POST',
+    success: function (response) {
+      location.reload();
+    },
+    error: function (xhr, ajaxOptions, thrownError) {
+      const retryButton = '<br/><a class="btn btn-primary" href="#" onclick="cloneTests(this)">Retry</a>';
+      const error = xhr.responseJSON?.error ?? xhr.responseText ?? thrownError;
+      loadingIndication.parentNode.classList.replace('alert-primary', 'alert-danger');
+      loadingIndication.innerHTML = `Unable to clone: ${error} ${retryButton}`;
+    }
+  });
+}

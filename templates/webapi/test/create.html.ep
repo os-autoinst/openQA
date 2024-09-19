@@ -11,7 +11,7 @@
 
 <h2><%= title %></h2>
 
-<div id="flash-messages">
+<div id="flash-messages" data-clone-url="<%= url_for('tests_clone')->query(preset => param('preset')) %>">
     %= include 'layouts/flash_messages';
 </div>
 

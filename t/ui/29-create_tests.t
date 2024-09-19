@@ -71,13 +71,18 @@ subtest 'preset not found' => sub {
     like $flash_messages->get_text, qr/'foo' does not exist/i, 'error if preset does not exist';
 };
 
-subtest 'preset information can be loaded from INI file, error about non-existing scenario definitions' => sub {
+subtest 'preset information can be loaded from INI file, note about non-existing scenario definitions' => sub {
     $driver->get("$url/tests/create?preset=bar");
     my $flash_messages = $driver->find_element_by_id('flash-messages')->get_text;
     unlike $flash_messages, qr/does not exist/i, 'preset defined in INI file is available';
+
     like $flash_messages,
-      qr|can't open.*tests/does-not-exist/scenario-definitions\.yaml|i,
-      'error about missing scneario definitions, senario definitions looked up under expected location';
+      qr|You first need to clone the does-not-exist test distribution|i,
+      'note about cloning test distribution shown';
+
+    $driver->find_element_by_link_text('clone the does-not-exist test distribution')->click;
+    my $error_message = wait_for_element selector => '#flash-messages .alert-danger', description => 'error message';
+    like $error_message->get_text, qr/No Minion worker available/i, 'expected error shown';
 };
 
 kill_driver;
