@@ -119,6 +119,9 @@
 < javascripts/needleeditor.js
 < javascripts/shapes.js
 
+! htmx.js
+< ../node_modules/htmx.org/dist/htmx.min.js
+
 ! bootstrap.js
 < ../node_modules/jquery/dist/jquery.min.js
 < javascripts/openqa.js

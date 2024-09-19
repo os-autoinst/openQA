@@ -38,7 +38,7 @@ function showXhrError(context, jqXHR, textStatus, errorThrown) {
   window.alert(context + getXhrError(jqXHR, textStatus, errorThrown));
 }
 
-function updateNumerOfComments() {
+function updateNumberOfComments() {
   const commentsLink = document.querySelector('a[href="#comments"]');
   if (commentsLink) {
     const linkText = 'Comments (' + document.getElementsByClassName('comment-row').length + ')';
@@ -46,21 +46,21 @@ function updateNumerOfComments() {
   }
 }
 
-function deleteComment(deleteButton) {
-  const author = deleteButton.dataset.author;
-  if (!window.confirm('Do you really want to delete the comment written by ' + author + '?')) {
-    return;
-  }
-  $.ajax({
-    url: deleteButton.dataset.deleteUrl,
-    method: 'DELETE',
-    success: () => {
-      $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
-      updateNumerOfComments();
-    },
-    error: showXhrError.bind(undefined, "The comment couldn't be deleted: ")
-  });
-}
+//function deleteComment(deleteButton) {
+//  const author = deleteButton.dataset.author;
+//  if (!window.confirm('Do you really want to delete the comment written by ' + author + '?')) {
+//    return;
+//  }
+//  $.ajax({
+//    url: deleteButton.dataset.deleteUrl,
+//    method: 'DELETE',
+//    success: () => {
+//      $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
+//      updateNumberOfComments();
+//    },
+//    error: showXhrError.bind(undefined, "The comment couldn't be deleted: ")
+//  });
+//}
 
 function updateComment(form) {
   const textElement = form.text;
@@ -135,7 +135,7 @@ function addComment(form, insertAtBottom) {
           nextElement.parentNode.insertBefore(commentRow, nextElement);
           $('html, body').animate({scrollTop: commentRow.offsetTop}, 1000);
           textElement.value = '';
-          updateNumerOfComments();
+          updateNumberOfComments();
         },
         error: () => location.reload()
       });
@@ -148,4 +148,21 @@ function insertTemplate(button) {
   const textarea = document.getElementById('text');
   const template = button.dataset.template;
   textarea.value += textarea.value ? '\n' + template : template;
+  throw new Error("DELETION ATTEMPT");
 }
+
+function getCSRFToken() {
+  const metaTag = document.querySelector('meta[name="csrf-token"]');
+  return metaTag ? metaTag.getAttribute('content') : '';
+}
+
+htmx.logger = function(elt, event, data) {
+    if(console) {
+        console.log(event, elt, data);
+    }
+}
+
+htmx.on('htmx:configRequest', function(event) {
+  event.detail.headers['X-CSRF-Token'] = getCSRFToken();
+});
+
