@@ -27,7 +27,7 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     exit
 fi
 
-dir="/var/lib/openqa/share/tests"
+dir="${OPENQA_BASEDIR:-/var/lib}/openqa/share/tests"
 if [ -w / ]; then
     if [ ! -e "$dir/$dist" ]; then
         mkdir -p "$dir/$dist"
