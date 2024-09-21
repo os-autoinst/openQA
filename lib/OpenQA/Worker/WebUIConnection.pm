@@ -287,7 +287,7 @@ sub send ($self, $method, $path, %args) {
             $ua_url->port($webui_port + $service_port_delta);
         }
     }
-    log_debug("REST-API call: $method $ua_url");
+    log_debug(qq{REST-API call: $method "$ua_url"});
 
     my @args = ($method, $ua_url);
     push(@args, 'json', $json_data) if $json_data;
@@ -305,7 +305,7 @@ sub send ($self, $method, $path, %args) {
         return $callback->($tx->res->json) if !$error_msg && $tx->res->json;
         return $callback->() if $ignore_errors;
         $self->{_last_error} = $error_msg;
-        log_error("REST-API error ($method $ua_url): $error_msg (remaining tries: $tries)");
+        log_error(qq{REST-API error ($method "$ua_url"): $error_msg (remaining tries: $tries)});
 
         # handle critical error when no more attempts remain
         if ($tries <= 0 && !$non_critical) {
