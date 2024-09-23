@@ -700,12 +700,7 @@ sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $par
                   . "directly chained parent ($parent_worker_classes)";
             }
         }
-        $job_dependencies->create(
-            {
-                child_job_id => $job->id,
-                parent_job_id => $parent,
-                dependency => $deptype,
-            });
+        $job_dependencies->create({child_job_id => $job->id, parent_job_id => $parent, dependency => $deptype});
     }
 }
 
