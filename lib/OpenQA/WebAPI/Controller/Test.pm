@@ -9,7 +9,8 @@ use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
-use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
+use OpenQA::YAML qw(load_yaml);
+use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url testcasedir);
 use Mojo::ByteStream;
 use Mojo::Util 'xml_escape';
 use Mojo::File 'path';
@@ -114,6 +115,71 @@ sub referer_check ($self) {
 
 sub list {
     my ($self) = @_;
+}
+
+sub _load_test_preset ($self, $preset_key) {
+    return undef unless defined $preset_key;
+    # avoid reading INI file again on subsequent calls
+    state %presets;
+    return $presets{$preset_key} if exists $presets{$preset_key};
+    $presets{$preset_key} = undef;
+    # read preset from an INI section [test_presets/…] or fallback to defaults assigned on setup
+    my $config = $self->app->config;
+    return undef unless my $ini_config = $config->{ini_config};
+    my $ini_key = "test_preset $preset_key";
+    return $presets{$preset_key}
+      = $ini_config->SectionExists($ini_key)
+      ? {map { ($_ => $ini_config->val($ini_key, $_)) } $ini_config->Parameters($ini_key)}
+      : $config->{$ini_key};
+}
+
+sub _load_scenario_definitions ($self, $preset) {
+    return undef if exists $preset->{scenario_definitions};
+    return undef unless my $distri = $preset->{distri};
+    return undef unless my $casedir = testcasedir($distri, $preset->{version});
+    my $defs_yaml = eval { path($casedir, 'scenario-definitions.yaml')->slurp('UTF-8') };
+    if (my $error = $@) {
+        return $self->stash(flash_error => "Unable to read scenario definitions for the specified preset: $error")
+          unless $error =~ /no.*file/i;
+        my $info = Mojo::ByteStream->new(
+            qq(You first need to <a href="#" onclick="cloneTests(this)">clone the $distri test distribution</a>.));
+        return $self->stash(flash_info => $info);
+    }
+    my $defs = eval { load_yaml(string => $defs_yaml) };
+    return $self->stash(flash_error => "Unable to parse scenario definitions for the specified preset: $@") if $@;
+    my $e = join("\n", @{$self->app->validate_yaml($defs, 'JobScenarios-01.yaml')});
+    return $self->stash(flash_error => "Unable to validate scenarios definitions of the specified preset:\n$e") if $e;
+    $preset->{scenario_definitions} = $defs_yaml;
+    return undef unless my @products = values %{$defs->{products}};
+    return undef unless my @job_templates = keys %{$defs->{job_templates}};
+    $preset->{$_} //= $products[0]->{$_} for qw(distri version flavor arch);
+    $preset->{test} //= $job_templates[0];
+}
+
+sub create ($self) {
+    my $preset_key = $self->param('preset');
+    my $preset = $self->_load_test_preset($preset_key);
+    if (defined $preset) {
+        $self->stash(flash_info => $preset->{info});
+        $self->_load_scenario_definitions($preset);
+    }
+    elsif (defined $preset_key) {
+        $self->stash(flash_error => "The specified preset '$preset_key' does not exist.");
+    }
+    $self->stash(preset => ($preset // {}));
+}
+
+sub clone ($self) {
+    my $preset = $self->_load_test_preset($self->param('preset'));
+    return $self->render(status => 400, text => 'unable to find preset') unless defined $preset;
+    return $self->render(status => 400, text => 'preset has no distri') unless my $distri = $preset->{distri};
+    return $self->render(status => 400, text => 'preset has no casedir') unless my $casedir = $preset->{casedir};
+    $self->gru->enqueue_and_keep_track(
+        task_name => 'git_clone',
+        task_description => 'cloning test distribution',
+        task_args => {testcasedir($distri, $preset->{version}) => $casedir}    # uncoverable statement
+      )->then(sub ($result) { $self->render(json => $result) })    # uncoverable statement
+      ->catch(sub ($error, @) { $self->reply->gru_result($error, 400) });
 }
 
 sub get_match_param {

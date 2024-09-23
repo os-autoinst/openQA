@@ -110,26 +110,29 @@ subtest 'tag on non-existent build does not show up' => sub {
     is(scalar @tags, 1, 'only first build tagged');
 };
 
+my $tags_on_group = '#content a[href^=/tests/]';
+my $tags_on_dashboard = 'a[href^=/tests/]';
+
 subtest 'builds first tagged important, then unimportant disappear (poo#12028)' => sub {
     post_comment_1001 'tag:0091:important';
     post_comment_1001 'tag:0091:-important';
     $t->get_ok('/group_overview/1001?limit_builds=1')->status_is(200);
-    my @tags = $t->tx->res->dom->find('a[href^=/tests/]')->map('text')->each;
+    my @tags = $t->tx->res->dom->find($tags_on_group)->map('text')->each;
     is(scalar @tags, 2, 'only one build');
     is($tags[0], 'Build87.5011', 'only newest build present');
 };
 
 subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
     $t->get_ok('/group_overview/1001?only_tagged=1')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 3, 'only one tagged build is shown (on group overview)');
+    is(scalar @{$t->tx->res->dom->find($tags_on_group)}, 3, 'three tagged builds shown (on group overview)');
     $t->get_ok('/group_overview/1001?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 13, 'all builds shown again (on group overview)');
+    is(scalar @{$t->tx->res->dom->find($tags_on_group)}, 13, 'all builds shown again (on group overview)');
 
     $t->get_ok('/dashboard_build_results?only_tagged=1')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 3, 'only one tagged build is shown (on index page)');
+    is(scalar @{$t->tx->res->dom->find($tags_on_dashboard)}, 3, 'three tagged builds shown (on index page)');
     is(scalar @{$t->tx->res->dom->find('h2')}, 1, 'only one group shown anymore');
     $t->get_ok('/dashboard_build_results?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 9, 'all builds shown again (on index page)');
+    is(scalar @{$t->tx->res->dom->find($tags_on_dashboard)}, 9, 'all builds shown again (on index page)');
     is(scalar @{$t->tx->res->dom->find('h2')}, 2, 'two groups shown again');
 };
 

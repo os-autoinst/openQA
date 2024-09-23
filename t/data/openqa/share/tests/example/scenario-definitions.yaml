@@ -1,0 +1,10 @@
+---
+products:
+  example:
+    distri: "example"
+    flavor: "DVD"
+    arch: "x86_64"
+    version: '0'
+job_templates:
+  simple_boot:
+    product: "example"

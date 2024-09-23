@@ -5,7 +5,7 @@
 : "${dist_name:=${dist:-"openSUSE"}}" # the display name, for the help message
 : "${dist:="opensuse"}"
 : "${giturl:="https://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}"
-: "${branch:="master"}"
+: "${branch:=""}"
 : "${email:="openqa@$HOST"}"
 : "${username:="openQA web UI"}"
 : "${product:="$dist"}"
@@ -13,7 +13,7 @@
 : "${git_lfs:="0"}"
 : "${needles_separate:="1"}"
 : "${needles_giturl:="https://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}"
-: "${needles_branch:="master"}"
+: "${needles_branch:=""}"
 
 : "${updateall:="0"}"
 : "${force:="0"}"
@@ -27,7 +27,7 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     exit
 fi
 
-dir="/var/lib/openqa/share/tests"
+dir="${OPENQA_BASEDIR:-/var/lib}/openqa/share/tests"
 if [ -w / ]; then
     if [ ! -e "$dir/$dist" ]; then
         mkdir -p "$dir/$dist"
@@ -72,14 +72,28 @@ deal_with_stale_lockfile() {
     fi
 }
 
+# Determine the "main branch" for the remote origin unless a branch has been specified explicitly
+# note: This relies on a file called `refs/remotes/origin/HEAD` with contents like `ref: refs/remotes/origin/master` being
+#       present under the `.git` directory. This should be the case for all recently cloned Git repositories. Otherwise
+#       one can just create the file making it point to the desired branch.
+get_git_base() {
+    branch=$1
+    if [ "$branch" ]; then
+        echo "origin/$branch"
+    else
+        git rev-parse --abbrev-ref refs/remotes/origin/HEAD
+    fi
+}
+
 git_update() {
-    branch="${1:-"master"}"
     deal_with_stale_lockfile
     git gc --auto --quiet
     git fetch -q origin
+
     # Clear any uncommitted changes that would prevent a rebase
     [ "$force" = 1 ] && git reset -q --hard HEAD
-    git rebase -q origin/"$branch" || fail 'Use force=1 to discard uncommitted changes before rebasing'
+    base=$(get_git_base "$1")
+    git rebase -q "$base" || fail 'Use force=1 to discard uncommitted changes before rebasing'
 }
 
 # For needles repos because of needle saving we might end up in conflict, i.e.
@@ -87,9 +101,11 @@ git_update() {
 git_update_needles() {
     git_update "$needles_branch"
     if [ "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD)" = "HEAD" ]; then
+        base=$(get_git_base "$needles_branch")
+        needles_branch=${base#origin/}
         git branch -D "$needles_branch"
         git checkout -b "$needles_branch"
-        git branch "--set-upstream-to=origin/$needles_branch" "$needles_branch"
+        git branch "--set-upstream-to=$base" "$needles_branch"
         git push origin "HEAD:$needles_branch"
     fi
 }

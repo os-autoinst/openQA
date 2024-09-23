@@ -114,6 +114,7 @@
 < ../node_modules/ace-builds/src-min/mode-perl.js
 < ../node_modules/ace-builds/src-min/mode-yaml.js
 < ../node_modules/ace-builds/src-min/mode-diff.js
+< ../node_modules/ace-builds/src-min/mode-ini.js
 
 ! step_edit.js
 < javascripts/needleeditor.js
@@ -160,6 +161,9 @@
 < javascripts/needlediff.js
 < javascripts/running.js
 < javascripts/disable_status_updates.js [mode==test]
+
+! create_tests.js
+< javascripts/create_tests.js
 
 ! job_next_previous.js
 < javascripts/job_next_previous.js

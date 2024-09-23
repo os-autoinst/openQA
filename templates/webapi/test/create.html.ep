@@ -1,0 +1,78 @@
+% layout 'bootstrap';
+% title $preset->{title} // 'Create tests';
+% content_for 'head' => begin
+  %= asset 'ace.js'
+  %= asset 'ace.css'
+  %= asset 'create_tests.js'
+% end
+% content_for 'ready_function' => begin
+  setupCreateTestsForm();
+% end
+
+<h2><%= title %></h2>
+
+<div id="flash-messages" data-clone-url="<%= url_for('tests_clone')->query(preset => param('preset')) %>">
+    %= include 'layouts/flash_messages';
+</div>
+
+<form id="create-tests-form" class="row g-3" method="post" onsubmit="createTests(this)" onreset="resetCreateTestsForm(this)" data-post-url="<%= url_for('apiv1_create_iso') %>" data-productlog-url="<%= url_for('admin_product_log') %>">
+    <div class="col-md-6">
+      <label for="create-tests-distri" class="form-label"><strong>Distribution (<code>DISTRI</code>)</strong></label>
+      <%= help_popover('Distribution' => '<p>Creates only tests for the specified distribution. This is a mandatory parameter.</p>', undef, undef, 'left') %>
+      <input type="text" class="form-control" id="create-tests-distri" value="<%= $preset->{distri} // '' %>" name="DISTRI">
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-version" class="form-label"><strong>Version (<code>VERSION</code>)</strong></label>
+      <%= help_popover('Version' => '<p>Creates only tests with the specified version. This is a mandatory parameter.</p>', undef, undef, 'left') %>
+      <input type="text" class="form-control" id="create-tests-version" value="<%= $preset->{version} // '' %>" name="VERSION">
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-flavor" class="form-label"><strong>Flavor (<code>FLAVOR</code>)</strong></label>
+      <%= help_popover('Flavor' => '<p>Creates only tests with the specified flavor (e.g. "DVD" or "NET"). This is a mandatory parameter.</p>', undef, undef, 'left') %>
+      <input type="text" class="form-control" id="create-tests-flavor" value="<%= $preset->{flavor} // '' %>" name="FLAVOR">
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-arch" class="form-label"><strong>Architecture (<code>ARCH</code>)</strong></label>
+      <%= help_popover('Architecture' => '<p>Creates only tests with the specified architecture. This is a mandatory parameter.</p>', undef, undef, 'left') %>
+      <input type="text" class="form-control" id="create-tests-arch" value="<%= $preset->{arch} // '' %>" name="ARCH">
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-build" class="form-label"><strong>Build (<code>BUILD</code>)</strong></label>
+      <%= help_popover('Build' => '<p>Sets the <code>BUILD</code> setting of all created tests.</p>', undef, undef, 'left') %>
+      <input type="text" class="form-control" id="create-tests-build" value="<%= $preset->{build} // '' %>" name="BUILD">
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-test" class="form-label"><strong>Test names (comman-separated, <code>TEST</code>)</strong></label>
+      <%= help_popover('Test names' => '<p>This setting allows to creates only a specific set of tests from the scenario definitions by specifying the names of the tests to create specifically.</p>', undef, undef, 'left') %>
+      <input type="text" class="form-control" id="create-tests-test" value="<%= $preset->{test} // '' %>" name="TEST">
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-casedir" class="form-label"><strong>Test repository (<code>CASEDIR</code>)</strong></label>
+      <%= help_popover('Test repository' => '<p>Specifies the URL of the Git repository containing tests. May also be left blank or point to a local directory.</p>',
+        'https://open.qa/docs/#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request', 'the documentation', 'left') %>
+      <input type="text" class="form-control" id="create-tests-casedir" value="<%= $preset->{casedir} // '' %>" name="CASEDIR">
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-needlesdir" class="form-label"><strong>Needles repository (<code>NEEDLES_DIR</code>)</strong></label>
+      <%= help_popover('Test repository' => '<p>Specifies the URL of the Git repository containing needles if those are provided in a separate repository.  The same rules as for the test repository apply.</p>',
+        undef, undef, 'left') %>
+      <input type="text" class="form-control" id="create-tests-needlesdir" value="<%= $preset->{needles_dir} // '' %>" name="NEEDLES_DIR">
+    </div>
+    <div class="col-md-6" id="create-tests-settings-container">
+      <label for="create-tests-settings" class="form-label"><strong>Additional settings</strong></label>
+      <%= help_popover('Test repository' => '<p>Specifies additional settings as <code>KEY=value</code>-pairs that will be assigned to each job. ' .
+        'Some settings also influence the job creation itself, e.g. <code>_OBSOLETE</code>.</p>',
+        'https://open.qa/docs/#_spawning_multiple_jobs_based_on_templates_isos_post', 'the documentation', 'left') %>
+      <textarea type="text" class="form-control key-value-pairs" id="create-tests-settings" rows="15"></textarea>
+    </div>
+    <div class="col-md-6">
+      <label for="create-tests-scenario-definitions" class="form-label"><strong>Scenario definitions</strong></label>
+      <%= help_popover('Scenario definitions' => '<p>A YAML document that defines sets of settings. These settings are then combined to create one or more test jobs.</p>',
+        'https://open.qa/docs/#scenarios_yaml', 'the documentation', 'left') %>
+      <textarea type="text" class="form-control" id="create-tests-scenario-definitions" rows="15"><%= $preset->{scenario_definitions} // '' %></textarea>
+    </div>
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">Create tests</button>
+      <button type="reset" class="btn btn-light">Reset form</button>
+    </div>
+</form>
