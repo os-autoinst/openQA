@@ -3,12 +3,6 @@ var job_group_id;
 var user_is_admin;
 var editor;
 
-function setupJobTemplates(url, id) {
-  job_templates_url = url;
-  job_group_id = id;
-  $.ajax(url + '?group_id=' + id).done(loadJobTemplates);
-}
-
 function loadJobTemplates(data) {
   var mediagroups = {};
   var groups = [];

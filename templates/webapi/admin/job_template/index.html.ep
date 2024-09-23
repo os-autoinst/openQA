@@ -6,41 +6,15 @@
 
 % title 'Job templates for ' . $group->name;
 
-% unless ($force_yaml_editor) {
-    <div class="alert alert-danger">
-        The old job group view is deprecated and will be removed from
-        future versions of openQA. Please save the job templates in YAML
-        format as soon as possible.
-    </div>
-% }
-
 % content_for 'ready_function' => begin
     user_is_admin = <%= is_admin_js %>;
-    % if ($force_yaml_editor) {
         toggleTemplateEditor();
-    % }
-    % else {
-        setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
-    % }
     $('#expand-template').click(function() { submitTemplateEditor('expand'); });
     $('#preview-template').click(function() { submitTemplateEditor('preview'); });
     $('#save-template').click(function() { submitTemplateEditor('save'); });
 % end
 
         <form action="<%= url_for('admin_groups') %>" class="corner-buttons">
-            % if (!$force_yaml_editor) {
-            <button type="button" id="toggle-yaml-editor" class="btn btn-light" onclick="toggleTemplateEditor();">
-                <span>
-                    <i class="fa fa-edit"></i>
-                    % if (is_admin) {
-                        Edit YAML
-                    % }
-                    % else {
-                        Show YAML
-                    % }
-                </span>
-            </button>
-            % }
             <button type="button" id="toggle-group-properties" class="btn btn-light" onclick="toggleEdit();">
                 <span>
                     <i class="fa fa-edit"></i>
@@ -74,30 +48,6 @@
             <a href="http://open.qa/docs/#_using_job_templates_to_automate_jobs_creation" target="blank">the documentation</a>
             for more details.
         </p>
-        % if (!$force_yaml_editor) {
-            <div id="media">
-                <p id="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
-
-                <select id="machines-template" multiple="true" disabled data-placeholder="None" style="display: none">
-                    % for my $machine (@$machines) {
-                        <option value="<%= $machine->name %>"
-                                data-machine-id="<%= $machine->id %>" >
-                            %= $machine->name
-                        </option>
-                    % }
-                </select>
-
-                <select id="tests-template" disabled style="display: none">
-                    <option value="">Select…</option>
-                    % for my $test (@$tests) {
-                        <option value="<%= $test->name %>" data-test-id="<%= $test->id %>">
-                            %= $test->name
-                        </option>
-                    % }
-                </select>
-
-            </div>
-        % }
         <form action="#" id="editor-form" class="form-horizontal" style="display: none;"
               data-put-url="<%= url_for('apiv1_job_templates_schedules' => (id => $group->id)) %>" data-reference="<%= $yaml_template %>">
             <div class="row">
@@ -204,9 +154,3 @@ scenarios:
                 </div>
             </div>
         </form>
-
-        % if (!$force_yaml_editor && is_admin) {
-            <p>
-                <i class="fa fa-plus-square"></i> Please save as YAML to add new medium as part of this group
-            </p>
-        % }
