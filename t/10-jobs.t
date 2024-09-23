@@ -999,4 +999,11 @@ subtest 'git log diff' => sub {
     like $ok, qr{2 files changed}, 'expected git_diff output';
 };
 
+subtest 'get all setting values for a job/key in a sorted array' => sub {
+    my $job_settings = $schema->resultset('JobSettings');
+    is_deeply $job_settings->all_values_sorted(99926, 'WORKER_CLASS'), [], 'empty array if key does not exist';
+    $job_settings->create({job_id => 99926, key => 'WORKER_CLASS', value => $_}) for qw(foo bar bar baz);
+    is_deeply $job_settings->all_values_sorted(99926, 'WORKER_CLASS'), [qw(bar baz foo)], 'all values returned';
+};
+
 done_testing();

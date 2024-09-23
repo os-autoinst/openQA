@@ -682,7 +682,8 @@ Internal method used by the B<job_create_dependencies()> method
 sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $parents) {
     my $schema = $self->result_source->schema;
     my $job_dependencies = $schema->resultset('JobDependencies');
-    my $worker_class;
+    my $job_settings = $schema->resultset('JobSettings');
+    my $worker_classes;
     for my $parent (@$parents) {
         try {
             _check_for_cycle($job->id, $parent, $created_jobs);
@@ -691,17 +692,12 @@ sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $par
             die 'There is a cycle in the dependencies of ' . $job->TEST;
         };
         if ($deptype eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-            unless (defined $worker_class) {
-                $worker_class = $job->settings->find({key => 'WORKER_CLASS'});
-                $worker_class = $worker_class ? $worker_class->value : '';
-            }
-            my $parent_worker_class
-              = $schema->resultset('JobSettings')->find({job_id => $parent, key => 'WORKER_CLASS'});
-            $parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '';
-            if ($worker_class ne $parent_worker_class) {
+            $worker_classes //= join(',', @{$job_settings->all_values_sorted($job->id, 'WORKER_CLASS')});
+            my $parent_worker_classes = join(',', @{$job_settings->all_values_sorted($parent, 'WORKER_CLASS')});
+            if ($worker_classes ne $parent_worker_classes) {
                 my $test_name = $job->TEST;
-                die
-"Worker class of $test_name ($worker_class) does not match the worker class of its directly chained parent ($parent_worker_class)";
+                die "Worker class of $test_name ($worker_classes) does not match the worker class of its "
+                  . "directly chained parent ($parent_worker_classes)";
             }
         }
         $job_dependencies->create(

@@ -547,17 +547,14 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
         $schema->txn_begin;
         add_opensuse_test('chained-a', WORKER_CLASS => 'foo');
         add_opensuse_test('chained-b', START_DIRECTLY_AFTER_TEST => 'chained-a', WORKER_CLASS => 'foo');
-        add_opensuse_test('chained-c', START_DIRECTLY_AFTER_TEST => 'chained-b', WORKER_CLASS => 'bar');
-        add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar');
-        add_opensuse_test('chained-e', START_DIRECTLY_AFTER_TEST => 'chained-d', WORKER_CLASS => 'bar');
+        add_opensuse_test('chained-c', START_DIRECTLY_AFTER_TEST => 'chained-b', WORKER_CLASS => 'bar,baz');
+        add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar,baz');
+        add_opensuse_test('chained-e', START_DIRECTLY_AFTER_TEST => 'chained-d', WORKER_CLASS => 'bar,baz');
 
         my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test'});
         is($res->json->{count}, 0, 'none of the jobs has been scheduled');
-        like(
-            $_->{error_messages}->[0],
-qr/Worker class of chained-(c|d|e) \(bar\) does not match the worker class of its directly chained parent \(foo\)/,
-            'error reported'
-        ) for @{$res->json->{failed}};
+        like($_->{error_messages}->[0], qr/chained-(c|d|e) \(bar,baz\) does not match .* \(foo\)/, 'error reported')
+          for @{$res->json->{failed}};
         $schema->txn_rollback;
     };
 };
