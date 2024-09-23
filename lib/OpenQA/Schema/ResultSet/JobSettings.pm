@@ -6,6 +6,11 @@ use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use OpenQA::App;
 
+sub all_values_sorted ($self, $job_id, $key) {
+    state $options = {distinct => 1, columns => 'value', order_by => 'value'};
+    [map { $_->value } $self->search({job_id => $job_id, key => $key}, $options)];
+}
+
 sub jobs_for_setting ($self, $options) {
     my $limit = OpenQA::App->singleton->config->{misc_limits}{job_settings_max_recent_jobs};
 

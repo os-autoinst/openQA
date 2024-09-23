@@ -1083,9 +1083,10 @@ subtest 'WORKER_CLASS validated when creating directly chained dependencies' => 
         'bar', 'job B has different class bar (ok for regularly chained dependencies)');
     $jobC = _job_create({%default_job_settings, TEST => 'chained-C'}, undef, [], [$jobB->id]);
     is($jobC->settings->find({key => 'WORKER_CLASS'})->value, 'bar', 'job C inherits worker class from B');
+    $job_settings->create({job_id => $jobC->id, key => 'WORKER_CLASS', value => 'baz'});
     throws_ok(
         sub { _job_create({%default_job_settings, TEST => 'chained-D', WORKER_CLASS => 'foo'}, [], [], [$jobC->id]) },
-        qr/Specified WORKER_CLASS \(foo\) does not match the one from directly chained parent .* \(bar\)/,
+        qr/Specified WORKER_CLASS \(foo\) does not match the one from directly chained parent .* \(bar,baz\)/,
         'creation of job with mismatching worker class prevented'
     );
 };
