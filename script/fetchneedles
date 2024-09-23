@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 : "${dbuser:="geekotest"}"
 : "${dbgroup:="nogroup"}"
 
@@ -140,14 +140,16 @@ else
     cd "$target"
     if [ ! -d .git ]; then
         echo "cloning $giturl shallow. Call 'git fetch --unshallow' for full history"
-        git clone --depth 1 -b "$branch" "$giturl" .
+        [[ $branch ]] && branch_args=(-b "$branch")
+        git clone --depth 1 "${branch_args[@]}" "$giturl" .
         git config user.email "$email"
         git config user.name "$username"
         if [ "$needles_separate" = 1 ]; then
             needlesdir=$(needlesdir)
             [ -d "$needlesdir" ] || mkdir "$needlesdir"
+            [[ $needles_branch ]] && needles_branch_args=(-b "$needles_branch")
             cd "$needlesdir"
-            git clone --depth 1 -b "$needles_branch" "$needles_giturl" .
+            git clone --depth 1 "${needles_branch_args[@]}" "$needles_giturl" .
             git config user.email "$email"
             git config user.name "$username"
         fi
