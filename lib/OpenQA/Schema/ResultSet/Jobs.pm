@@ -164,8 +164,8 @@ sub create_from_settings {
         my $dependency_type = $dependency_definition->{dependency_type};
         for my $id (@$ids) {
             if ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-                my $parent_worker_class = $job_settings->find({job_id => $id, key => 'WORKER_CLASS'});
-                _handle_directly_chained_dep($parent_worker_class, $id, \%settings);
+                my $parent_worker_classes = join(',', @{$job_settings->all_values_sorted($id, 'WORKER_CLASS')});
+                _handle_directly_chained_dep($parent_worker_classes, $id, \%settings);
             }
             push(@{$new_job_args{parents}}, {parent_job_id => $id, dependency => $dependency_type});
         }
@@ -203,18 +203,13 @@ sub create_from_settings {
     return $job;
 }
 
-sub _handle_directly_chained_dep ($parent_worker_class, $id, $settings) {
-    if ($parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '') {
-        if (!$settings->{WORKER_CLASS}) {
-            # assume we want to use the worker class from the parent here (and not the default which
-            # is otherwise assumed)
-            $settings->{WORKER_CLASS} = $parent_worker_class;
-        }
-        elsif ($settings->{WORKER_CLASS} ne $parent_worker_class) {
-            die "Specified WORKER_CLASS ($settings->{WORKER_CLASS}) does not match the one from"
-              . " directly chained parent $id ($parent_worker_class)";
-        }
-    }
+sub _handle_directly_chained_dep ($parent_classes, $id, $settings) {
+    # assume we want to use the worker class from the parent here (and not the default which is otherwise assumed)
+    return $settings->{WORKER_CLASS} = $parent_classes unless defined(my $classes = $settings->{WORKER_CLASS});
+
+    # raise error if the directly chained child has a different set of worker classes assigned than its parent
+    die "Specified WORKER_CLASS ($classes) does not match the one from directly chained parent $id ($parent_classes)"
+      unless $parent_classes eq join(',', sort split(m/,/, $classes));
 }
 
 sub _search_modules ($self, $module_re) {
