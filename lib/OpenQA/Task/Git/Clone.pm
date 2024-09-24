@@ -5,7 +5,6 @@ package OpenQA::Task::Git::Clone;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Mojo::Util 'trim';
 
-use OpenQA::Utils qw(run_cmd_with_log_return_error);
 use Mojo::File;
 use Time::Seconds 'ONE_HOUR';
 
@@ -54,18 +53,24 @@ sub _git_clone_all ($job, $clones) {
 
 sub _git_clone ($app, $job, $ctx, $path, $url) {
     my $git = OpenQA::Git->new(app => $app, dir => $path);
-    $ctx->debug(qq{Updating $path to $url});
-    $url = Mojo::URL->new($url);
-    my $requested_branch = $url->fragment;
-    $url->fragment(undef);
+    $ctx->debug(sprintf q{Updating '%s' to '%s'}, $path, ($url // 'n/a'));
+    my $requested_branch;
+    if ($url) {
+        $url = Mojo::URL->new($url);
+        $requested_branch = $url->fragment;
+        $url->fragment(undef);
 
-    # An initial clone fetches all refs, we are done
-    return $git->clone_url($url) unless -d $path;
+        # An initial clone fetches all refs, we are done
+        return $git->clone_url($url) unless -d $path;
 
-    my $origin_url = $git->get_origin_url;
-    if ($url ne $origin_url) {
-        $ctx->warn("Local checkout at $path has origin $origin_url but requesting to clone from $url");
-        return;
+        my $origin_url = $git->get_origin_url;
+        if ($url ne $origin_url) {
+            $ctx->warn("Local checkout at $path has origin $origin_url but requesting to clone from $url");
+            return;
+        }
+    }
+    else {
+        $url = $git->get_origin_url;
     }
 
     die "NOT updating dirty git checkout at $path" if !$git->is_workdir_clean();

@@ -10,8 +10,10 @@ use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::Shared::GruJob;
 use OpenQA::Log 'log_info';
+use OpenQA::Utils qw(sharedir);
 use Mojo::Pg;
 use Mojo::Promise;
+use Mojo::File qw(path);
 
 has app => undef, weak => 1;
 has 'dsn';
@@ -23,21 +25,20 @@ sub new ($class, $app = undef) {
 
 sub register_tasks ($self) {
     my $app = $self->app;
-    $app->plugin($_)
-      for (
-        qw(OpenQA::Task::AuditEvents::Limit),
-        qw(OpenQA::Task::Asset::Download),
-        qw(OpenQA::Task::Asset::Limit),
-        qw(OpenQA::Task::Git::Clone),
-        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
-        qw(OpenQA::Task::Job::Limit),
-        qw(OpenQA::Task::Job::ArchiveResults),
-        qw(OpenQA::Task::Job::FinalizeResults),
-        qw(OpenQA::Task::Job::HookScript),
-        qw(OpenQA::Task::Job::Restart),
-        qw(OpenQA::Task::Iso::Schedule),
-        qw(OpenQA::Task::Bug::Limit),
-      );
+    $app->plugin($_) for qw(
+      OpenQA::Task::AuditEvents::Limit
+      OpenQA::Task::Asset::Download
+      OpenQA::Task::Asset::Limit
+      OpenQA::Task::Git::Clone
+      OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete
+      OpenQA::Task::Job::Limit
+      OpenQA::Task::Job::ArchiveResults
+      OpenQA::Task::Job::FinalizeResults
+      OpenQA::Task::Job::HookScript
+      OpenQA::Task::Job::Restart
+      OpenQA::Task::Iso::Schedule
+      OpenQA::Task::Bug::Limit
+    );
 }
 
 # allow the continuously polled stats to be available on an
@@ -164,6 +165,32 @@ sub enqueue_download_jobs ($self, $downloads) {
         my ($path, $do_extract, $block_job_ids) = @{$downloads->{$url}};
         $self->enqueue('download_asset', [$url, $path, $do_extract], {priority => 10}, $block_job_ids);
     }
+}
+
+sub enqueue_git_update_all ($self) {
+    my $conf = OpenQA::App->singleton->config->{'scm git'};
+    return if $conf->{git_auto_clone} ne 'yes' || $conf->{git_auto_update} ne 'yes';
+    my %clones;
+    my $testdir = path(sharedir() . '/tests');
+    for my $distri ($testdir->list({dir => 1})->each) {
+        next unless -d $distri;    # no symlinks
+        next unless -e $distri->child('.git');
+        $clones{$distri} = undef;
+        if (-e $distri->child('products')) {
+            for my $product ($distri->child('products')->list({dir => 1})->each) {
+                next unless -d $product;    # no symlinks
+                my $needle = $product->child('needles');
+                next unless -e $needle->child('.git');
+                $clones{$needle} = undef;
+            }
+        }
+        else {
+            my $needle = $distri->child('needles');
+            next unless -e $needle->child('.git');
+            $clones{$needle} = undef;
+        }
+    }
+    $self->enqueue('git_clone', \%clones, {priority => 10});
 }
 
 sub enqueue_git_clones ($self, $clones, $job_ids) {

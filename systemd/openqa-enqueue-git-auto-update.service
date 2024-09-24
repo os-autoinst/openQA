@@ -1,0 +1,9 @@
+[Unit]
+Description=Ensure a git update of all test code and needles regardless of test execution.
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
+
+[Service]
+Type=oneshot
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa-enqueue-git-update-all

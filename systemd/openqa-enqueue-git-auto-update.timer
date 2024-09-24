@@ -1,0 +1,9 @@
+[Unit]
+Description=Ensure a git update of all test code and needles regardless of test execution.
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
