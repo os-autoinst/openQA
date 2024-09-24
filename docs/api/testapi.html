@@ -1107,7 +1107,7 @@ should work on *nix operating systems with a configured serial device.</em></p>
 <h5 id="_script_run">script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet] [, die_on_timeout =&gt; 1]);</pre>
+<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1128,14 +1128,10 @@ execution to complete.</p>
 the command.</p>
 </div>
 <div class="paragraph">
-<p>By default <code>script_run</code> will throw an exception if the timeout has expired.
-This is equivalent to use of <code>die_on_timeout</code> equal to 1. To use the
-deprecated behaviour of not throwing an error on timeout set the value to 0.
-This option will be removed in the near future.</p>
+<p><code>script_run</code> will throw an exception if the timeout has expired.</p>
 </div>
 <div class="paragraph">
-<p>&lt;Returns&gt; exit code received from <em>$cmd</em> or undef if <code>$timeout</code> is 0 or timeout
-expired and <code>die_on_timeout</code> is not <code>1</code>.</p>
+<p>&lt;Returns&gt; exit code received from <em>$cmd</em> or undef if <code>$timeout</code> is 0.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em></p>
@@ -2082,7 +2078,7 @@ starting to write the script into the here document.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-09-10 04:47:12 UTC
+Last updated 2024-09-24 04:47:05 UTC
 </div>
 </div>
 </body>
