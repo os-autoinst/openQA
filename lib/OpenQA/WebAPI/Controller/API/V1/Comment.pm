@@ -168,13 +168,15 @@ sub create_many ($self) {
     my $validation = $self->validation;
     $validation->required('text')->like(qr/^(?!\s*$).+/);
     $validation->required('job_id')->num(0, undef);
+    $validation->optional('restartRequested')->in(0, 1);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $text = $validation->param('text');
     my $job_ids = $validation->every_param('job_id');
+    my $wanna_restart = $validation->param('restartRequested');
     my $schema = $self->schema;
     my $comments = $schema->resultset('Comments');
-    my (@created, @failed);
+    my (@created, @failed, @failed_restart);
     for my $job_id (@$job_ids) {
         my $txn_guard = $schema->txn_scope_guard;
         eval {
@@ -191,12 +193,22 @@ sub create_many ($self) {
         push @failed, {job_id => $job_id} if $@;
     }
 
-    # create a single event containing all relevant IDs for this action
-    my %res = (created => \@created, failed => \@failed);
-    $self->emit_event('openqa_comments_create', \%res);
+    if ($wanna_restart && $wanna_restart == 1) {
+        for my $job_id (@$job_ids) {
+            my ($res, $jobs, $auto, $single_job_id, $dup_route);
+            my %args = (jobs => $job_id);
+            $self->param('jobid', $job_id);
+            eval { ($res, $jobs, $auto, $single_job_id, $dup_route) = $self->restart_job(\%args); };
+            push @failed_restart, {job_id => $job_id, error => "Failed to restart job: $@"} if ($@);
+            $self->emit_event(openqa_job_restart => {id => $single_job_id, result => $res, auto => $auto});
+        }
+    }
 
+    # create a single event containing all relevant IDs for this action
+    my %res = (created => \@created, failed => \@failed, failed_restart => \@failed_restart);
+    $self->emit_event('openqa_comments_create', \%res);
     $res{error} = 'Not all comments could be created.' if @failed;
-    $self->render(json => \%res, status => (@failed ? 400 : 200));
+    $self->render(json => \%res, status => (@failed || @failed_restart ? 400 : 200));
 }
 
 =over 4

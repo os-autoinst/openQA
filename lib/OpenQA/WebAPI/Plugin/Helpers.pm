@@ -10,6 +10,8 @@ use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
 use OpenQA::Jobs::Constants qw(EXECUTION_STATES PRE_EXECUTION_STATES ABORTED_RESULTS FAILED NOT_COMPLETE_RESULTS);
+use OpenQA::Resource::Jobs;
+use OpenQA::Scheduler::Client;
 use Text::Glob qw(glob_to_regex_string);
 use List::Util qw(any);
 
@@ -222,6 +224,45 @@ sub register ($self, $app, $config) {
         text_with_title => sub {
             my ($c, $text) = @_;
             return $c->tag('span', title => $text, $text);
+        });
+
+    $app->helper(
+        restart_job => sub ($c, $args) {
+            my $dup_route = $args->{duplicate_route_compatibility};
+            my @flags = qw(force skip_aborting_jobs skip_parents skip_children skip_ok_result_children);
+            my $validation = $c->validation;
+            $validation->optional('clone')->num(0);
+            $validation->optional('prio')->num;
+            $validation->optional('dup_type_auto')->num(0);    # recorded within the event; for informal purposes only
+            $validation->optional('jobid')->num(0);
+            $validation->optional('jobs');
+            $validation->optional('set')->like(qr/.+=.*/);
+            $validation->optional($_)->num(0) for @flags;
+            return undef if $validation->has_error;
+
+            my $jobs = $c->param('jobid');
+            my $single_job_id;
+            if ($jobs) {
+                $c->app->log->debug("Restarting job $jobs");
+                $jobs = [$jobs];
+                $single_job_id = $jobs->[0];
+            }
+            else {
+                $jobs = $c->every_param('jobs');
+                $c->app->log->debug("Restarting jobs @$jobs");
+            }
+
+            my $auto = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
+            my %settings = map { split('=', $_, 2) } @{$validation->every_param('set')};
+            my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
+            push @params, clone => !defined $validation->param('clone') || $validation->param('clone');
+            push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');
+            push @params, skip_aborting_jobs => 1 if $dup_route && !defined $validation->param('skip_aborting_jobs');
+            push @params, force => 1 if $dup_route && !defined $validation->param('force');
+            push @params, settings => \%settings;
+            my $res = OpenQA::Resource::Jobs::job_restart($jobs, @params);
+            OpenQA::Scheduler::Client->singleton->wakeup;
+            return ($res, $jobs, $auto, $single_job_id, $dup_route);
         });
 
     my %progress_bar_query_by_key = (

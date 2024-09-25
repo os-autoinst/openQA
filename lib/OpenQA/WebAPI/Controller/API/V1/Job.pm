@@ -808,42 +808,8 @@ sub done ($self) {
 }
 
 sub _restart ($self, %args) {
-    my $dup_route = $args{duplicate_route_compatibility};
-    my @flags = qw(force skip_aborting_jobs skip_parents skip_children skip_ok_result_children);
-    my $validation = $self->validation;
-    $validation->optional('clone')->num(0);
-    $validation->optional('prio')->num;
-    $validation->optional('dup_type_auto')->num(0);    # recorded within the event; for informal purposes only
-    $validation->optional('jobid')->num(0);
-    $validation->optional('jobs');
-    $validation->optional('set')->like(qr/.+=.*/);
-    $validation->optional($_)->num(0) for @flags;
-    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
-
-    my $jobs = $self->param('jobid');
-    my $single_job_id;
-    if ($jobs) {
-        $self->app->log->debug("Restarting job $jobs");
-        $jobs = [$jobs];
-        $single_job_id = $jobs->[0];
-    }
-    else {
-        $jobs = $self->every_param('jobs');
-        $self->app->log->debug("Restarting jobs @$jobs");
-    }
-
-    my $auto = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
-    my %settings = map { split('=', $_, 2) } @{$validation->every_param('set')};
-    my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
-    push @params, clone => !defined $validation->param('clone') || $validation->param('clone');
-    push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');
-    push @params, skip_aborting_jobs => 1 if $dup_route && !defined $validation->param('skip_aborting_jobs');
-    push @params, force => 1 if $dup_route && !defined $validation->param('force');
-    push @params, settings => \%settings;
-
-    my $res = OpenQA::Resource::Jobs::job_restart($jobs, @params);
-    OpenQA::Scheduler::Client->singleton->wakeup;
-
+    my ($res, $jobs, $auto, $single_job_id, $dup_route) = $self->restart_job(\%args);
+    return $self->reply->validation_error({format => 'json'}) unless defined $res;
     my $duplicates = $res->{duplicates};
     my @urls;
     for (my $i = 0; $i < @$duplicates; $i++) {
