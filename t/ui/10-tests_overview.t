@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Date::Format 'time2str';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '25';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use OpenQA::Jobs::Constants;
@@ -170,10 +170,10 @@ is(scalar @open_bugs, 1, 'open bug correctly shown, and only once despite the 2 
 is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
 
 sub check_build_0091_defaults {
-    element_visible('#flavor_DVD_arch_i586', qr/i586/);
-    element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
-    element_visible('#flavor_GNOME-Live_arch_i686', qr/i686/);
-    element_visible('#flavor_NET_arch_x86_64', qr/x86_64/);
+    wait_for_element selector => '#flavor_DVD_arch_i586', is_displayed => 1, like => qr/i586/;
+    wait_for_element selector => '#flavor_DVD_arch_x86_64', is_displayed => 1, like => qr/x86_64/;
+    wait_for_element selector => '#flavor_GNOME-Live_arch_i686', is_displayed => 1, like => qr/i686/;
+    wait_for_element selector => '#flavor_NET_arch_x86_64', is_displayed => 1, like => qr/x86_64/;
 }
 
 subtest 'stacking of parallel children' => sub {
@@ -278,14 +278,17 @@ subtest 'filtering by flavor' => sub {
     };
 };
 
+sub check_textmode_test ($test_row) {
+    wait_for_element selector => '#flavor_DVD_arch_i586', like => qr/i586/;
+    my @job_rows = map { $_->get_text } @{$driver->find_elements('#content tbody tr')};
+    is_deeply \@job_rows, [$test_row], 'only the textmode job is present' or diag explain \@job_rows;
+}
+
 subtest 'filtering by test' => sub {
 
     subtest 'request for specific test' => sub {
         $driver->get('/tests/overview?test=textmode');
-
-        my @rows = $driver->find_elements('#content tbody tr');
-        is(scalar @rows, 1, 'exactly one row present');
-        like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+        check_textmode_test 'textmode';
         like(
             OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
             qr/Overall Summary of opensuse 13\.1 build 0092/,
@@ -294,19 +297,12 @@ subtest 'filtering by test' => sub {
     };
 
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
-
-    subtest 'by default, all tests present' => sub {
-        check_build_0091_defaults;
-    };
-
+    subtest 'by default, all tests present' => sub { check_build_0091_defaults };
     subtest 'filter for specific test' => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-test')->send_keys('textmode');
         $driver->find_element('#filter-panel button[type="submit"]')->click();
-
-        my @rows = $driver->find_elements('#content tbody tr');
-        is(scalar @rows, 1, 'exactly one row present');
-        like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+        check_textmode_test 'textmode zypper_up';
     };
 };
 

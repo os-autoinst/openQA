@@ -337,6 +337,7 @@ sub wait_for_element (%args) {
         $args{timeout},
         $args{check_interval},
     );
+    like $element->get_text, $args{like}, "$selector text" if $element && $args{like};
     return $element;
 }
 
