@@ -94,18 +94,18 @@ subtest 'git clone' => sub {
         ['get-url'        => 'git -C /branch/ remote get-url origin'],
         ['check dirty'    => 'git -C /branch/ diff-index HEAD --exit-code'],
         ['current branch' => 'git -C /branch/ branch --show-current'],
-        ['fetch branch'   => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /branch/ fetch origin foobranch'],
+        ['fetch branch'   => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git -C /branch/ fetch origin foobranch'],
 
         # /default/
         ['get-url'        => 'git -C /default/ remote get-url origin'],
         ['check dirty'    => 'git -C /default/ diff-index HEAD --exit-code'],
-        ['default remote' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git ls-remote --symref http://localhost/foo.git HEAD'],
+        ['default remote' => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git ls-remote --symref http://localhost/foo.git HEAD'],
         ['current branch' => 'git -C /default/ branch --show-current'],
-        ['fetch default'  => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /default/ fetch origin master'],
+        ['fetch default'  => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git -C /default/ fetch origin master'],
         ['reset'          => 'git -C /default/ reset --hard origin/master'],
 
         # /this_directory_does_not_exist/
-        ['clone' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git clone http://localhost/bar.git /this_directory_does_not_exist/'],
+        ['clone' => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git clone http://localhost/bar.git /this_directory_does_not_exist/'],
     ];
     #>>> no perltidy
     for my $i (0 .. $#$expected_calls) {
@@ -174,17 +174,17 @@ subtest 'git clone' => sub {
             # /opensuse
             ['get-url'        => 'git -C /opensuse remote get-url origin'],
             ['check dirty'    => 'git -C /opensuse diff-index HEAD --exit-code'],
-            ['default remote' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git ls-remote --symref http://osado HEAD'],
+            ['default remote' => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git ls-remote --symref http://osado HEAD'],
             ['current branch' => 'git -C /opensuse branch --show-current'],
-            ['fetch default ' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /opensuse fetch origin master'],
+            ['fetch default ' => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git -C /opensuse fetch origin master'],
             ['reset'          => 'git -C /opensuse reset --hard origin/master'],
 
             # /opensuse/needles
             ['get-url'        => 'git -C /opensuse/needles remote get-url origin'],
             ['check dirty'    => 'git -C /opensuse/needles diff-index HEAD --exit-code'],
-            ['default remote' => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git ls-remote --symref http://osado HEAD'],
+            ['default remote' => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git ls-remote --symref http://osado HEAD'],
             ['current branch' => 'git -C /opensuse/needles branch --show-current'],
-            ['fetch branch'   => 'env GIT_SSH_COMMAND="ssh -oBatchMode=yes" git -C /opensuse/needles fetch origin master'],
+            ['fetch branch'   => 'env GIT_SSH_COMMAND=ssh -oBatchMode=yes git -C /opensuse/needles fetch origin master'],
             ['reset'          => 'git -C /opensuse/needles reset --hard origin/master'],
         ];
         #>>> no perltidy
