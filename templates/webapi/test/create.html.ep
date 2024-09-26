@@ -69,7 +69,28 @@
       <label for="create-tests-scenario-definitions" class="form-label"><strong>Scenario definitions</strong></label>
       <%= help_popover('Scenario definitions' => '<p>A YAML document that defines sets of settings. These settings are then combined to create one or more test jobs.</p>',
         'https://open.qa/docs/#scenarios_yaml', 'the documentation', 'left') %>
-      <textarea type="text" class="form-control" id="create-tests-scenario-definitions" rows="15"><%= $preset->{scenario_definitions} // '' %></textarea>
+      <textarea type="text" class="form-control" id="create-tests-scenario-definitions" rows="15"><%= $preset->{scenario_definitions} // q(---
+# example
+
+products: {}
+
+machines:
+  64bit:
+    backend: qemu
+    settings:
+      WORKER_CLASS: qemu_x86_64
+
+job_templates:
+  create_hdd:
+    machine: 64bit
+    settings:
+      PUBLISH_HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
+  boot_from_hdd:
+    machine: 64bit
+    settings:
+      HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
+      START_AFTER_TEST: 'create_hdd'
+      WORKER_CLASS: 'job-specific-class') %></textarea>
     </div>
     <div class="col-12">
       <button type="submit" class="btn btn-primary">Create tests</button>
