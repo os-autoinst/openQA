@@ -1657,7 +1657,8 @@ subtest 'handle git_clone without CASEDIR' => sub {
     $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
 
     my $job_id = $t->tx->res->json->{id};
-    my $result = $jobs->find($job_id)->settings_hash;
+    my $job = $jobs->find($job_id);
+    my $result = $job->settings_hash;
 
     my @gru_task_values;
     foreach my $gru_dep ($schema->resultset('GruDependencies')->search({job_id => $job_id})) {
@@ -1675,6 +1676,17 @@ subtest 'handle git_clone without CASEDIR' => sub {
             }]
       ],
       'the git_clone gru tasks was created correctly';
+
+    subtest 'enqueue git_clone for job restarts' => sub {
+        $job->update({state => 'done'});
+        $params = {jobid => $job_id};
+        $t->post_ok('/api/v1/jobs/restart', form => $params)->status_is(200)->json_has('/result/0');
+        my $new_job_id = $t->tx->res->json->{result}->[0]->{$job_id};
+        ok $new_job_id > $job_id, 'got a new job id';
+        my $gru_dep = $schema->resultset('GruDependencies')->find({job_id => $new_job_id});
+        my $gru_task = $gru_dep->gru_task;
+        is $gru_task->taskname, 'git_clone', 'the git clone job was created for the restarted job';
+    };
 };
 
 subtest 'show parent group name and id when getting job details' => sub {
