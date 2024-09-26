@@ -146,13 +146,11 @@ sub wait_for_ajax (%args) {
 
     while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests')) {
         if ($timeout <= 0) {
-            $msg .= ' (jQuery.active='    # uncoverable statement
-              . $_driver->execute_script('window.jQuery && jQuery.active');    # uncoverable statement
-            $msg    # uncoverable statement
-              .= ',runningFetchRequests='
-              . $_driver->execute_script('window.runningFetchRequests')
-              . ')';    # uncoverable statement
-            fail("Wait for jQuery timed out$msg");    # uncoverable statement
+            #<<< no perltidy
+            my $s = '`(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests})`'; # uncoverable statement
+            #>>> no perltidy
+            $msg .= $_driver->execute_script($s);    # uncoverable statement
+            fail("Wait for AJAX timed out $msg");    # uncoverable statement
             return undef;    # uncoverable statement
         }
 
@@ -162,7 +160,7 @@ sub wait_for_ajax (%args) {
         sleep $check_interval;
         $slept = 1;
     }
-    note "Wait for jQuery successful$msg";
+    note "Wait for AJAX successful$msg";
     return $slept;
 }
 
