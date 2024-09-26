@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Mojo::Util 'trim';
 
 use Mojo::File;
+use OpenQA::Log qw(log_debug);
 use Time::Seconds 'ONE_HOUR';
 
 sub register ($self, $app, @) {
@@ -24,15 +25,16 @@ sub _git_clone_all ($job, $clones) {
     my $job_id = $job->id;
 
     my $retry_delay = {delay => 30 + int(rand(10))};
-    # Don't interfere with any needle task
-    return $job->retry({delay => 5})
-      unless my $needle_guard = $app->minion->guard('limit_needle_task', 2 * ONE_HOUR);
     # Prevent multiple git_clone tasks for the same path to run in parallel
     my @guards;
     for my $path (sort keys %$clones) {
         $path = Mojo::File->new($path)->realpath if -e $path;    # resolve symlinks
-        my $guard = $app->minion->guard("git_clone_${path}_task", 2 * ONE_HOUR);
-        return $job->retry($retry_delay) unless $guard;
+        my $guard_name = "git_clone_${path}_task";
+        my $guard = $app->minion->guard($guard_name, 2 * ONE_HOUR);
+        unless ($guard) {
+            log_debug("Could not get guard for $guard_name, retrying in $retry_delay->{delay}s");
+            return $job->retry($retry_delay);
+        }
         push @guards, $guard;
     }
 

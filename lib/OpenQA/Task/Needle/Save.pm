@@ -10,6 +10,7 @@ use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils;
 use Mojo::JSON 'decode_json';
+use Time::Seconds 'ONE_HOUR';
 
 sub register {
     my ($self, $app) = @_;
@@ -53,10 +54,6 @@ sub _format_git_error {
 sub _save_needle {
     my ($app, $minion_job, $args) = @_;
 
-    # prevent multiple save_needle and delete_needles tasks to run in parallel
-    return $minion_job->finish({error => 'Another save or delete needle job is ongoing. Try again later.'})
-      unless my $guard = $app->minion->guard('limit_needle_task', 7200);
-
     my $schema = $app->schema;
     my $openqa_job = $schema->resultset('Jobs')->find($args->{job_id});
     my $user = $schema->resultset('Users')->find($args->{user_id});
@@ -99,6 +96,8 @@ sub _save_needle {
     if (!$needledir || !(-d $needledir)) {
         return $minion_job->fail({error => $needledir ? "$needledir is not a directory" : 'no needle directory'});
     }
+    return $minion_job->finish({error => 'Another git task is ongoing. Try again later.'})
+      unless my $git_clone_guard = $app->minion->guard("git_clone_${needledir}_task", 2 * ONE_HOUR);
 
     # ensure needle dir is up-to-date
     my $git = OpenQA::Git->new({app => $app, dir => $needledir, user => $user});

@@ -206,11 +206,11 @@ subtest 'git clone' => sub {
     };
 
     subtest 'minion guard' => sub {
-        my $guard = $t->app->minion->guard('limit_needle_task', ONE_HOUR);
+        my $guard = $t->app->minion->guard("git_clone_${git_clones}/opensuse_task", ONE_HOUR);
         my $start = time;
         $res = run_gru_job(@gru_args);
         is $res->{state}, 'inactive', 'job is inactive';
-        ok(($res->{delayed} - $start) > 5, 'job delayed as expected');
+        ok(($res->{delayed} - $start) > 30, 'job delayed as expected');
     };
 };
 
@@ -284,8 +284,15 @@ subtest 'delete_needles' => sub {
     is $res->{state}, 'finished', 'git job finished';
     $error = $res->{result}->{errors}->[0];
     like $error->{message}, qr{Unable to rm via Git}, 'expected error from git';
-};
 
+    subtest 'minion guard' => sub {
+        my $guard = $t->app->minion->guard("git_clone_t/data/openqa/share/tests/fedora/needles_task", ONE_HOUR);
+        $res = run_gru_job(@gru_args);
+        is $res->{state}, 'finished', 'job finished';
+        $error = $res->{result}->{errors}->[0];
+        like $error->{message}, qr{Another git task for.*fedora.*is ongoing}, 'expected error message';
+    };
+};
 
 done_testing();
 
