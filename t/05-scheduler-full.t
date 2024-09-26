@@ -97,7 +97,7 @@ sub wait_for_worker {
     note "No worker with ID $id active";    # uncoverable statement
 }
 
-sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
+sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }    # uncoverable statement
 
 my $worker_settings = [$api_key, $api_secret, "http://localhost:$mojoport"];
 
