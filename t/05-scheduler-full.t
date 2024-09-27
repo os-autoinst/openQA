@@ -97,13 +97,12 @@ sub wait_for_worker {
     note "No worker with ID $id active";    # uncoverable statement
 }
 
-sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }    # uncoverable statement
-
+my $job_model = OpenQA::Scheduler::Model::Jobs->singleton;
 my $worker_settings = [$api_key, $api_secret, "http://localhost:$mojoport"];
 
 subtest 'Scheduler worker job allocation' => sub {
     note 'try to allocate to previous worker (supposed to fail)';
-    my $allocated = scheduler_step();
+    my $allocated = $job_model->schedule;
     is @$allocated, 0, 'no jobs allocated for no active workers';
 
     note 'starting two workers';
@@ -112,7 +111,7 @@ subtest 'Scheduler worker job allocation' => sub {
     wait_for_worker($schema, 4);
 
     note 'assigning one job to each worker';
-    $allocated = scheduler_step();
+    $allocated = $job_model->schedule;
     my $job_id1 = $allocated->[0]->{job};
     my $job_id2 = $allocated->[1]->{job};
     my $wr_id1 = $allocated->[0]->{worker};
@@ -121,7 +120,7 @@ subtest 'Scheduler worker job allocation' => sub {
     my $different_jobs = isnt($job_id1, $job_id2, 'each of the two jobs allocated to one of the workers');
     diag explain $allocated unless $different_workers && $different_jobs;
 
-    $allocated = scheduler_step();
+    $allocated = $job_model->schedule;
     is @$allocated, 0, 'no more jobs need to be allocated';
 
     stop_workers;
@@ -138,13 +137,13 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     shift(@latest)->auto_duplicate();
 
     # try to allocate to previous worker and fail!
-    my $allocated = scheduler_step();
+    my $allocated = $job_model->schedule;
     is @$allocated, 0, 'no jobs can be allocated to previous workers';
 
     # simulate a worker in broken state; it will register itself but declare itself as broken
     @workers = broken_worker(@$worker_settings, 3, 'out of order');
     wait_for_worker($schema, 5);
-    $allocated = scheduler_step();
+    $allocated = $job_model->schedule;
     is @$allocated, 0, 'scheduler does not consider broken worker for allocating job';
     stop_workers;
     dead_workers($schema);
@@ -157,7 +156,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     # the loop is needed as the scheduler sometimes needs a second
     # cycle before the worker is seen as unusable
     for (1 .. 2) {
-        $allocated = scheduler_step();
+        $allocated = $job_model->schedule;
         last if $allocated && @$allocated >= 1;
         note "scheduler could not yet assign to rejective worker, try: $_";    # uncoverable statement
     }
@@ -187,7 +186,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
     for (1 .. 2) {
-        $allocated = scheduler_step();
+        $allocated = $job_model->schedule;
         last if $allocated && @$allocated >= 1;
         note "scheduler could not yet assign to broken worker, try: $_";    # uncoverable statement
     }
@@ -223,7 +222,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     my $i = 2;
     wait_for_worker($schema, ++$i) for 1 .. $nr;
 
-    my $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
+    my $allocated = $job_model->schedule;    # Will try to allocate to previous worker and fail!
     is @$allocated, 10, 'Allocated maximum number of jobs that could have been allocated' or die;
     my %jobs;
     my %w;
@@ -249,7 +248,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     $i = 5;
     wait_for_worker($schema, ++$i) for 0 .. 12;
 
-    $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
+    $allocated = $job_model->schedule;    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, 'All failed allocation on second step - workers were killed';
     for my $dup (@duplicated) {
         for (0 .. 2000) {
