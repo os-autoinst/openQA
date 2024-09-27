@@ -36,7 +36,7 @@ my $mojo_port = Mojo::IOLoop::Server->generate_port;
 my $webapi = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 
 # prevent writing to a log file to enable use of combined_like in the following tests
-$t->app->log(Mojo::Log->new(level => 'warn'));
+$t->app->log(Mojo::Log->new(level => 'info'));
 
 subtest 'git clone' => sub {
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
