@@ -126,7 +126,8 @@ services:
       start_period: 5s
 
   db:
-    image: postgres
+    # Teporary fix version https://progress.opensuse.org/issues/167524
+    image: postgres:16
     restart: always
     environment:
       POSTGRES_PASSWORD: openqa
