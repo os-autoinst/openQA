@@ -173,12 +173,12 @@ sub enqueue_git_update_all ($self) {
     my %clones;
     my $testdir = path(sharedir() . '/tests');
     for my $distri ($testdir->list({dir => 1})->each) {
-        next unless -d $distri;    # no symlinks
+        next if -l $distri;    # no symlinks
         next unless -e $distri->child('.git');
         $clones{$distri} = undef;
         if (-e $distri->child('products')) {
             for my $product ($distri->child('products')->list({dir => 1})->each) {
-                next unless -d $product;    # no symlinks
+                next if -l $product;    # no symlinks
                 my $needle = $product->child('needles');
                 next unless -e $needle->child('.git');
                 $clones{$needle} = undef;
