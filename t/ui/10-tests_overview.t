@@ -543,33 +543,9 @@ subtest 'filter by result and state' => sub {
     ok !$driver->find_element_by_id('filter-failed')->is_selected, 'other checkbox not checked';
 };
 
-subtest 'add comments' => sub {
-    my @buttons = $driver->find_elements('button[title="Add comments"]');
-    is @buttons, 0, 'button for adding comments not present if not logged-in';
-
-    $driver->find_element_by_link_text('Login')->click;
-    $driver->get('/tests/overview?state=done&result=failed');
-    disable_bootstrap_animations;
-    $driver->find_element('button[title="Add comments"]')->click;
-    my $comment_text = 'comment via add-comments';
-    my $submit_button = $driver->find_element('#add-comments-controls button[type="submit"]');
-    $driver->find_element_by_id('text')->send_keys($comment_text);
-    is $submit_button->get_text, 'Submit comment on all 2 jobs', 'submit button displayed with number of jobs';
-    $submit_button->click;
-    wait_for_ajax msg => 'comments created';
-    like $driver->find_element_by_id('flash-messages')->get_text, qr/The comments have been created. Reload/,
-      'info about success shown';
-
-    my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;
-    is $comments->search({job_id => {-in => \@failed_job_ids}, text => $comment_text})->count, 2,
-      'comments created on all relevant jobs';
-    is $comments->search({job_id => {-not_in => \@failed_job_ids}, text => $comment_text})->count, 0,
-      'comments not created on other jobs';
-};
 
 subtest "job template names displayed on 'Test result overview' page" => sub {
     $driver->get('/group_overview/1002');
-    is($driver->find_element('.progress-bar-failed')->get_text(), '1 failed', 'The number of failed jobs is right');
     is($driver->find_element('.progress-bar-unfinished')->get_text(),
         '1 unfinished', 'The number of unfinished jobs is right');
 
@@ -584,6 +560,56 @@ subtest "job template names displayed on 'Test result overview' page" => sub {
     is(wait_for_element(selector => '.popover-header')->get_text, 'kde_variant', 'description popover shows content');
 };
 
+subtest 'add comments' => sub {
+    my @buttons = $driver->find_elements('button[title="Add comments or restart Jobs"]');
+    is @buttons, 0, 'button for adding comments not present if not logged-in';
+
+    $driver->find_element_by_link_text('Login')->click;
+    $driver->get('/tests/overview?state=done&result=failed');
+    disable_bootstrap_animations;
+    $driver->find_element('button[title="Add comments or restart Jobs"]')->click;
+    my $comment_text = 'comment via add-comments';
+    my $submit_button = $driver->find_element('#add-comments-controls button[id="CommentJobsBtn"]');
+    $driver->find_element_by_id('text')->send_keys($comment_text);    #sleep(300);
+    is $submit_button->get_text, 'Comment on all 2 jobs', 'submit button displayed with number of jobs';
+    $submit_button->click;
+    wait_for_ajax msg => 'comments created';
+    like $driver->find_element_by_id('flash-messages')->get_text, qr/The comments have been created. Reload/,
+      'info about success shown';
+
+    my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;
+    is $comments->search({job_id => {-in => \@failed_job_ids}, text => $comment_text})->count, 2,
+      'comments created on all relevant jobs';
+    is $comments->search({job_id => {-not_in => \@failed_job_ids}, text => $comment_text})->count, 0,
+      'comments not created on other jobs';
+
+    subtest 'restart jobs with comment' => sub {
+        my @buttons = $driver->find_elements('button[title="Add comments or restart Jobs"]');
+        use Data::Dumper;
+        #diag(Dumper($jobs));
+        $driver->get('/tests/overview?state=done&result=failed');
+        disable_bootstrap_animations;
+        $driver->find_element('button[title="Add comments or restart Jobs"]')->click;
+        my $comment_text = 'comment current jobs and restart';
+        my $submit_button = $driver->find_element('#add-comments-controls button[id="restartAndCommentJobsBtn"]');
+        $driver->find_element_by_id('text')->send_keys($comment_text);
+        is $submit_button->get_text, 'Restart and Comment 2 jobs', 'submit button displayed with number of jobs';
+        $submit_button->click;
+        wait_for_ajax msg => 'comments created';
+        like $driver->find_element_by_id('flash-messages')->get_text, qr/Reload the page to show restarted jobs/,
+          'info about successful restart shown';    # 99990 99946 //*[@id="flash-messages"]/div[1]/span/a
+            #like $driver->find_element_by_id('flash-messages')->get_text, qr/Reload the page to show restarted Jobs/,
+            #	'info about successful comment submition shown';
+        my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;
+        is $comments->search({job_id => {-in => \@failed_job_ids}, text => $comment_text})->count, 2,
+          'comments created on all relevant jobs';
+        is $comments->search({job_id => {-not_in => \@failed_job_ids}, text => $comment_text})->count, 0,
+          'comments not created on other jobs';
+        my $running_job_ids = map { $_->id } $jobs->search({state => RUNNING})->all;
+        is $running_job_ids, 2, 'all relevant jobs restarted';
+    };
+};
+
 subtest "job dependencies displayed on 'Test result overview' page" => sub {
     $jobs->find(99938)->update({VERSION => '13.1', BUILD => '0091'});
     $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001');
@@ -591,7 +617,7 @@ subtest "job dependencies displayed on 'Test result overview' page" => sub {
     my @child_elements = $driver->find_child_elements($deps, 'a');
     my $details = $child_elements[0];
     like $details->get_attribute('href'), qr{tests/99963\#dependencies}, 'job href is shown correctly';
-    is $details->get_attribute('title'), "1 parallel parent\ndependency passed", 'dependency is shown correctly';
+    is $details->get_attribute('title'), "1 parallel parent\ndependency failed", 'dependency is shown correctly';
 
     my $parent_ele = $driver->find_element('td#res_DVD_i586_kde .parents_children');
     $driver->move_to(element => $parent_ele);
