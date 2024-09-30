@@ -469,53 +469,8 @@ function updateToggleClickCoordinatesButton(hasClickCoorinates) {
   }
 }
 
-function reactToSaveNeedle(data) {
-  $('#needle_editor_loading_indication').hide();
-  $('#needle_editor_save_buttons').show();
-
-  var failed =
-    data.status !== 200 || !data.responseJSON || (!data.responseJSON.success && !data.responseJSON.requires_overwrite);
-  var defaultErrorMessage = '<strong>Fatal error when saving needle.</strong>';
-  if (failed && (!data.responseJSON || typeof data.responseJSON.error !== 'string')) {
-    data = {error: defaultErrorMessage};
-  } else {
-    data = data.responseJSON;
-  }
-
-  var successMessage = data.success;
-  var requiresOverwrite = data.requires_overwrite;
-  var errorMessage = data.error;
-  if (successMessage) {
-    // add note to go back or restart
-    if (data.developer_session_job_id) {
-      successMessage +=
-        " - <a href='" + urlWithBase('/tests/' + data.developer_session_job_id) + "#live'>back to live view</a>";
-    } else if (data.restart) {
-      successMessage += " - <a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>";
-    }
-    addFlash('info', successMessage);
-  } else if (errorMessage) {
-    // add context to the error message unless it starts with an HTML tag (and is therefore assumed to be
-    // already nicely formatted)
-    if (errorMessage.indexOf('<') !== 0) {
-      errorMessage = [defaultErrorMessage, errorMessage].join('<br>');
-    }
-    addFlash('danger', errorMessage);
-  } else if (requiresOverwrite) {
-    delete data.requires_overwrite;
-    const modalElement = document.getElementById('modal-overwrite');
-    modalElement.dataset.formdata = data;
-    modalElement.getElementsByClassName('modal-title')[0].textContent = `Sure to overwrite ${data.needlename}?`;
-    if (!window.overwriteModal) {
-      window.overwriteModal = new bootstrap.Modal(modalElement);
-    }
-    window.overwriteModal.show();
-  }
-  document.getElementById('save').disabled = false;
-}
-
 function saveNeedle(overwrite) {
-  var form = $('#save_needle_form');
+  var form = document.getElementById('save_needle_form');
   var errors = [];
   var tagSelection = window.needles[$('#tags_select').val()];
   if (!tagSelection.tags.length) {
@@ -545,12 +500,49 @@ function saveNeedle(overwrite) {
   document.getElementById('save').disabled = true;
   document.getElementById('needleeditor_overwrite').value = overwrite ? '1' : '0';
 
-  $.ajax({
-    type: 'POST',
-    url: form.attr('action'),
-    data: form.serialize(),
-    complete: reactToSaveNeedle
-  });
+  fetchWithCSRF(form.action, {method: 'POST', body: new FormData(form)})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
+      if (response.requires_overwrite) {
+        delete response.requires_overwrite;
+        const modalElement = document.getElementById('modal-overwrite');
+        modalElement.dataset.formdata = response;
+        modalElement.getElementsByClassName('modal-title')[0].textContent = `Sure to overwrite ${response.needlename}?`;
+        if (!window.overwriteModal) {
+          window.overwriteModal = new bootstrap.Modal(modalElement);
+        }
+        window.overwriteModal.show();
+      } else if (response.success) {
+        // add note to go back or restart
+        if (response.developer_session_job_id) {
+          response.success +=
+            " - <a href='" +
+            urlWithBase('/tests/' + response.developer_session_job_id) +
+            "#live'>back to live view</a>";
+        } else if (response.restart) {
+          response.success += " - <a href='#' data-url='" + response.restart + "' class='restart-link'>restart job</a>";
+        }
+        addFlash('info', response.success);
+      } else {
+        throw `<b>Unknown Error:</b><code>${response}</code>`;
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      // add context to the error message unless it starts with an HTML tag (and is therefore assumed to be
+      // already nicely formatted)
+      if (!`${error}`.startsWith('<')) error = `<b>Fatal error when saving needle.</b><br>${error}`;
+      addFlash('danger', error);
+    })
+    .finally(() => {
+      $('#needle_editor_loading_indication').hide();
+      $('#needle_editor_save_buttons').show();
+      document.getElementById('save').disabled = false;
+    });
   if (window.overwriteModal) {
     window.overwriteModal.hide();
   }

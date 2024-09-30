@@ -191,16 +191,15 @@ function changeJobPrio(jobId, delta, linkElement) {
   }
 
   var newPrio = currentPrio + delta;
-  $.ajax({
-    url: urlWithBase('/api/v1/jobs/' + jobId + '/prio?prio=' + newPrio),
-    method: 'POST',
-    success: function (result) {
+
+  fetchWithCSRF(urlWithBase(`/api/v1/jobs/${jobId}/prio?prio=${newPrio}`), {method: 'POST'})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       prioValueElement.text(newPrio);
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      addFlash('danger', 'Unable to set the priority value of job ' + jobId + '.');
-    }
-  });
+    })
+    .catch(error => {
+      addFlash('danger', `Unable to set the priority value of job ${jobId}: ${error}`);
+    });
 }
 
 function renderTestSummary(data) {

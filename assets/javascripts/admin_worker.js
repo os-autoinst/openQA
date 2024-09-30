@@ -61,18 +61,17 @@ function loadWorkerTable() {
 
 function deleteWorker(deleteBtn) {
   var post_url = $(deleteBtn).attr('post_delete_url');
-  $.ajax({
-    url: post_url,
-    method: 'DELETE',
-    dataType: 'json',
-    success: function (data) {
+  fetchWithCSRF(post_url, {method: 'DELETE'})
+    .then(response => {
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
       var table = $('#workers').DataTable();
       table.row($(deleteBtn).parents('tr')).remove().draw();
-      addFlash('info', data.message);
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
-      var message = xhr.responseJSON.error;
-      addFlash('danger', "The worker couldn't be deleted: " + message);
-    }
-  });
+      addFlash('info', response.message);
+    })
+    .catch(error => {
+      addFlash('danger', "The worker couldn't be deleted: " + error);
+    });
 }

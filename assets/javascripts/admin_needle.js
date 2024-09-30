@@ -158,10 +158,12 @@ function setupAdminNeedles() {
         deleteBunchOfNeedles();
       };
 
-      $.ajax({
-        url: url + nextIDs.join('&id='),
-        type: 'DELETE',
-        success: function (response) {
+      fetchWithCSRF(url + nextIDs.join('&id='), {method: 'DELETE'})
+        .then(response => {
+          if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+          return response.json();
+        })
+        .then(response => {
           // add error affecting all deletions
           var singleError = response.error;
           if (singleError) {
@@ -191,11 +193,11 @@ function setupAdminNeedles() {
           });
 
           deleteBunchOfNeedles();
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-          handleSingleError(thrownError);
-        }
-      });
+        })
+        .catch(error => {
+          console.error(error);
+          handleSingleError(error);
+        });
 
       return true;
     };

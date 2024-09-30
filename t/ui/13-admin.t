@@ -666,7 +666,7 @@ subtest 'asset list' => sub {
     wait_for_ajax;
     is(
         $driver->find_element("div#flash-messages .alert-danger span")->get_text,
-        'The asset might have already been removed and only the cached view has not been updated yet.',
+'Error deleting asset: The asset might have already been removed and only the cached view has not been updated yet.',
         'The asset has been removed'
     );
 

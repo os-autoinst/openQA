@@ -497,27 +497,30 @@ function loadTabPanelElement(tabName, tabConfig) {
     return false;
   }
   tabConfig.panelElement = tabPanelElement; // for easier access in custom renderers
-  $.ajax({
-    url: ajaxUrl,
-    method: 'GET',
-    success: function (response) {
+  fetch(ajaxUrl, {method: 'GET'})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      if (response.headers.get('Content-Type').includes('application/json')) return response.json();
+      return response.text();
+    })
+    .then(response => {
       const customRenderer = tabConfig.renderContents;
       if (customRenderer) {
         return customRenderer.call(tabConfig, response);
       }
       tabPanelElement.innerHTML = response;
-    },
-    error: function (xhr, ajaxOptions, thrownError) {
+    })
+    .catch(error => {
+      console.error(error);
       const customRenderer = tabConfig.renderError;
       if (customRenderer) {
-        return customRenderer.call(tabConfig, xhr, ajaxOptions, thrownError);
+        return customRenderer.call(tabConfig, error);
       }
       tabPanelElement.innerHTML = '';
       tabPanelElement.appendChild(
-        document.createTextNode('Unable to load ' + (tabConfig.descriptiveName || tabName) + '.')
+        document.createTextNode(`Unable to load ${tabConfig.descriptiveName || tabName}: ${error}`)
       );
-    }
-  });
+    });
   tabPanelElement.innerHTML =
     '<p style="text-align: center;"><i class="fa fa-spinner fa-spin fa-lg"></i> Loading ' +
     (tabConfig.descriptiveName || tabName) +
@@ -707,14 +710,19 @@ function loadEmbeddedLogFiles(filter) {
     if (logFileElement.dataset.contentsLoaded) {
       return;
     }
-    $.ajax(logFileElement.dataset.src)
-      .done(function (response) {
+    fetch(logFileElement.dataset.src)
+      .then(response => {
+        if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+        return response.text();
+      })
+      .then(response => {
         const lines = (logFileElement.content = response.split(/\r?\n/));
         filter ? filter() : showLogLines(logFileElement, lines, false);
         logFileElement.dataset.contentsLoaded = true;
       })
-      .fail(function (jqXHR, textStatus, errorThrown) {
-        logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
+      .catch(error => {
+        log.error(error);
+        logFileElement.appendChild(document.createTextNode(`Unable to load logfile: ${error}`));
       });
   });
 }
@@ -922,12 +930,16 @@ function renderCommentsTab(response) {
       }
       const id = found[1];
       const url = urlWithBase('/api/v1/experimental/jobs/' + id + '/status');
-      $.ajax(url)
-        .done(function (response) {
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+          return response.json();
+        })
+        .then(job => {
+          if (job.error) throw job.error;
           const span = document.createElement('span');
           span.className = 'openqa-testref';
           const i = document.createElement('i');
-          const job = response;
           const stateHTML = testStateHTML(job);
           i.className = stateHTML[0];
           span.title = stateHTML[1];
@@ -935,7 +947,9 @@ function renderCommentsTab(response) {
           element.parentNode.replaceChild(span, element);
           span.appendChild(element);
         })
-        .fail(function (jqXHR, textStatus, errorThrown) {});
+        .catch(error => {
+          console.error(error);
+        });
     });
 }
 

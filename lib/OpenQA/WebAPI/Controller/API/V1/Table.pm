@@ -10,6 +10,7 @@ use OpenQA::App;
 use OpenQA::Log 'log_debug';
 use List::Util qw(min);
 use Try::Tiny;
+use Mojo::JSON 'decode_json';
 
 =pod
 
@@ -352,6 +353,32 @@ Use by both B<create()> and B<update()> method.
 sub _prepare_settings {
     my ($self, $table, $entry) = @_;
     my $validation = $self->validation;
+    my $hp;
+    # accept both traditional application/x-www-form-urlencoded parameters
+    # with hash entries having key names encoded like settings[value1]
+    # (see doc at the end of HashedParams.pm)
+    # as well as modern application/json encoded hashes
+    my $error;
+    if ($self->req->headers->content_type =~ /^application\/json/) {
+        try {
+            $hp = decode_json($self->req->body);
+        }
+        catch {
+            $error = $_;
+        };
+        # of course stupid perl doesn't let you return directly from catch
+        # as that would actually lead to readable code
+        return $error if (defined $error);
+        for my $k (keys %{$hp}) {
+            # populate json hash entries as params
+            $self->param($k, $hp->{$k});
+        }
+        # make validation work with json request
+        $validation->input($hp);
+    }
+    else {
+        $hp = $self->hparams();
+    }
 
     for my $par (@{$TABLES{$table}->{required}}) {
         $validation->required($par);
@@ -366,13 +393,13 @@ sub _prepare_settings {
     }
 
     $entry->{description} = $self->param('description');
-    my $hp = $self->hparams();
     my @settings;
     my @keys;
     if ($hp->{settings}) {
         for my $k (keys %{$hp->{settings}}) {
             $k = trim $k;
             my $value = trim $hp->{settings}->{$k};
+            $k =~ s/[^\]\[0-9a-zA-Z_\+]//g;
             push @settings, {key => $k, value => $value};
             push @keys, $k;
         }

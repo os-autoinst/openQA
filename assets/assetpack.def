@@ -150,6 +150,7 @@
 < ../node_modules/chosen-js/chosen.jquery.js
 < ../node_modules/jquery-ujs/src/rails.js
 < javascripts/disable_animations.js [mode==test]
+< javascripts/fetch_status.js [mode==test]
 
 ! anser.js
 < javascripts/anser-import.js

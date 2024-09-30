@@ -36,7 +36,15 @@ foreach my $proj (sort keys %params) {
     $driver->execute_script('
         window.skipObsRsyncDelay = true;
         window.ajaxRequests = [];
-        $.ajax = function(data) { window.ajaxRequests.push(data); data.success({message: "fake response"}) };
+        window.fetch = function(url, options) {
+            options ??= {};
+            delete options?.headers?.["X-CSRF-TOKEN"];
+            if (Object.keys(options.headers ?? {}).length === 0) delete options.headers;
+            options.url = url; window.ajaxRequests.push(options);
+            return new Promise((resolve, reject) => {
+                resolve(new Response(\'{"message": "fake response"}\'));
+            });
+        };
     ');
 
     # check project name and other fields are displayed properly
@@ -69,14 +77,13 @@ foreach my $proj (sort keys %params) {
 
         my $actual_requests = $driver->execute_script('return window.ajaxRequests;');
         my @expected_requests = (
-            {method => 'POST', url => '/admin/obs_rsync/BatchedProj%7CBatch1/obs_builds_text', dataType => 'json'},
-            {method => 'GET', url => '/admin/obs_rsync/BatchedProj%7CBatch1/obs_builds_text'},
-            {method => 'POST', url => '/admin/obs_rsync/BatchedProj%7CBatch1/run_last', dataType => 'json'},
-            {method => 'GET', url => '/admin/obs_rsync/BatchedProj%7CBatch1/run_last'},
-            {method => 'POST', url => '/admin/obs_rsync/BatchedProj/dirty_status', dataType => 'json'},
-            {method => 'GET', url => '/admin/obs_rsync/BatchedProj/dirty_status'},
+            {method => 'POST', url => '/admin/obs_rsync/BatchedProj%7CBatch1/obs_builds_text'},
+            {url => '/admin/obs_rsync/BatchedProj%7CBatch1/obs_builds_text'},
+            {method => 'POST', url => '/admin/obs_rsync/BatchedProj%7CBatch1/run_last'},
+            {url => '/admin/obs_rsync/BatchedProj%7CBatch1/run_last'},
+            {method => 'POST', url => '/admin/obs_rsync/BatchedProj/dirty_status'},
+            {url => '/admin/obs_rsync/BatchedProj/dirty_status'},
         );
-        ok delete $_->{success} && delete $_->{error}, 'request has success and error handlers' for @$actual_requests;
         is_deeply $actual_requests, \@expected_requests, 'ajax requests done as expected'
           or diag explain $actual_requests;
     }
@@ -86,7 +93,12 @@ foreach my $proj (sort keys %params) {
         my $sync_button = $driver->find_element_by_class('btn-warning');
         is $sync_button->get_attribute('data-posturl'), '/admin/obs_rsync/Proj1/runs', 'post URL for sync as expected';
         $sync_button->click;
-        wait_for_ajax msg => 'redirection target loaded';
+        wait_until(
+            sub {
+                return ($driver->get_title eq 'openQA: OBS synchronization jobs');
+            },
+            'redirection target loaded'
+        );
         is $driver->get_title, 'openQA: OBS synchronization jobs', 'redirected to obs gru jobs page';
     }
 }

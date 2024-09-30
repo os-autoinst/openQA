@@ -1,25 +1,23 @@
-function handleObsRsyncAjaxError(xhr, ajaxOptions, thrownError) {
-  const message = xhr.responseJSON?.error ?? thrownError ?? 'no message';
-  addFlash('danger', `Error: ${message}`);
-}
-
 function fetchValue(url, element, controlToShow) {
-  $.ajax({
-    url: url,
-    method: 'GET',
-    success: response => {
+  fetch(url)
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
       element.innerText = response?.message ?? '';
       if (controlToShow) {
         $(controlToShow).show();
       }
-    },
-    error: (xhr, ajaxOptions, thrownError) => {
-      handleObsRsyncAjaxError(xhr, ajaxOptions, thrownError);
+    })
+    .catch(error => {
+      console.error(error);
+      addFlash('danger', `Error: ${error}`);
       if (controlToShow) {
         $(controlToShow).show();
       }
-    }
-  });
+    });
 }
 
 function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
@@ -37,11 +35,13 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
     addFlash('danger', 'Internal error: Unable to find GET URL.');
     return;
   }
-  $.ajax({
-    url: btn.dataset.posturl,
-    method: 'POST',
-    dataType: 'json',
-    success: data => {
+  fetchWithCSRF(btn.dataset.posturl, {method: 'POST'})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
       if (!delay || window.skipObsRsyncDelay) {
         fetchValue(getUrl, cell);
         return;
@@ -49,21 +49,27 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
       setTimeout(() => {
         fetchValue(getUrl, cell, btn);
       }, delay);
-    },
-    error: handleObsRsyncAjaxError
-  });
+    })
+    .catch(error => {
+      console.error(error);
+      addFlash('danger', `Error: ${error}`);
+    });
 }
 
 function postAndRedirect(btn, redir = '') {
-  $.ajax({
-    url: btn.dataset.posturl,
-    method: 'POST',
-    dataType: 'json',
-    success: data => {
+  fetchWithCSRF(btn.dataset.posturl, {method: 'POST'})
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.json();
+    })
+    .then(response => {
+      if (response.error) throw response.error;
       if (redir) {
         location.href = redir;
       }
-    },
-    error: handleObsRsyncAjaxError
-  });
+    })
+    .catch(error => {
+      console.error(error);
+      addFlash('danger', `Error: ${error}`);
+    });
 }
