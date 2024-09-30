@@ -289,6 +289,7 @@ function showAddCommentsDialog() {
 
 function addComments(form) {
   const text = form.elements.text.value;
+  let restartRequested = document.getElementById('restartRequestedCheck').checked ? 1 : 0;
   if (!text.length) {
     return window.alert("The comment text mustn't be empty.");
   }
@@ -301,10 +302,15 @@ function addComments(form) {
     controls.style.display = 'inline';
     window.addCommentsModal.hide();
   };
+  const formData = new FormData(form);
+  formData.append('restartRequested', restartRequested);
+
   $.ajax({
     url: form.action,
     method: 'POST',
-    data: $(form).serialize(),
+    data: formData,
+    processData: false, // Important to prevent jQuery from processing the data
+    contentType: false,
     success: response => {
       addFlash(
         'info',

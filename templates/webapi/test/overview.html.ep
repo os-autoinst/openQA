@@ -231,10 +231,17 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                     <div id="add-comments-controls">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fa fa-comment"></i> Submit comment on all <%= scalar @$job_ids %> jobs
-                        </button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+		      <div class="form-check my-1">
+		      <input class="form-check-input"
+			     type="checkbox" value="" id="restartRequestedCheck">
+		      <label class="form-check-label" for="restartRequestedCheck">
+			Restart on Submit
+		      </label>
+		      </div>
+                      <button type="submit" class="btn btn-danger">
+                        <i class="fa fa-comment"></i> Submit comment on all <%= scalar @$job_ids %> jobs
+                      </button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
                     </div>
                 </div>
             </form>
