@@ -158,6 +158,7 @@ sub test_comment_editing {
     };
 
     subtest 'remove' => sub {
+
         # try to remove the first displayed comment (the one which has just been edited)
         $driver->find_element('button.remove-edit-button')->click();
 

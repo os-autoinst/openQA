@@ -1,54 +1,63 @@
 % use OpenQA::Constants;
 
 % if (!$context->{pinned}) {
-    <div class="row comment-row">
+    <div class="row comment-row comment-container">
         <div class="col-sm-1">
             <img class="media-object img-circle" src="<%= $user->gravatar(60) %>" alt="profile" title="<%= $user->name %>">
         </div>
     <div class="col-sm-11">
 % }
 % else {
-    <div class="row pinned-comment-row">
+    <meta name="csrf-token" content="<%= csrf_token %>">
+    <div class="row pinned-comment-row comment-container">
         <div class="col-sm-12">
 % }
         <div class="media-body comment-body" id="comment-<%= $comment_id %>">
             <div class="well well-lg">
                 <form onsubmit="updateComment(this); return false;" onreset="hideCommentEditor(this); return true;" data-put-url="<%= url_for($put_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>">
                     % if (current_user && current_user->is_admin) {
-                        <button class="btn btn-danger btn-circle btn-sm remove-edit-button" type="button" name="removeComment" onclick="deleteComment(this);" data-author="<%= $user->name %>" data-delete-url="<%= url_for($delete_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>">
+                        <button class="btn btn-danger btn-circle btn-sm remove-edit-button"
+                                type="button"
+                                name="removeComment"
+                                data-author="<%= $user->name %>"
+                                hx-delete="<%= url_for($delete_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>"
+                                onclick="return confirm('Do you really want to delete the comment written by <%= $user->name %>?')"
+                                hx-target="closest .comment-container"
+                                hx-swap="delete"
+                                hx-on:htmx:afterSwap="updateNumberOfComments()">
                             <i class="fa fa-fw fa-trash"></i>
                         </button>
                     % }
-                    % if (current_user && (current_user->id eq $user->id)) {
-                        <button class="btn btn-primary btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(this.form);">
-                            <i class="fa fa-fw fa-pencil"></i>
-                        </button>
-                    % }
-                    <h4 class="media-heading">
-                        % if($comment) {
-                            <%= $user->name %> wrote
-                            <a href="#comment-<%= $comment_id %>" class="comment-anchor"><abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></a>
-                            % if ($comment->t_updated->subtract(seconds => OpenQA::Constants::DB_TIMESTAMP_ACCURACY) >= $comment->t_created) {
-                                (last edited <abbr class="timeago" title="<%= $comment->t_updated->datetime() %>Z"><%= format_time($comment->t_updated) %></abbr>)
-                            % }
-                        % }
-                    </h4>
-                    <div class="media-comment markdown">
-                        % if($comment) {
-                            %= $comment->rendered_markdown
-                        % }
-                    </div>
-                    % if (current_user && ((current_user->id eq $user->id))) {
-                        <textarea class="form-control comment-editing-control" name="text" rows="5"><%= $comment ? $comment->text : '' %></textarea>
-                        <button class="btn btn-success btn-circle comment-editing-control" type="submit" name="applyChanges">
-                            <i class="fa fa-check-circle"></i> Apply changes
-                        </button>
-                        <button class="btn btn-warning btn-circle comment-editing-control" type="reset" name="discardChanges">
-                            <i class="fa fa-trash"></i> Discard changes
-                        </button>
-                    % }
-                </form>
-            </div>
-        </div>
-    </div>
+                      % if (current_user && (current_user->id eq $user->id)) {
+                          <button class="btn btn-primary btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(this.form);">
+                              <i class="fa fa-fw fa-pencil"></i>
+                          </button>
+                      % }
+                      <h4 class="media-heading">
+                          % if($comment) {
+                              <%= $user->name %> wrote
+                              <a href="#comment-<%= $comment_id %>" class="comment-anchor"><abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></a>
+                              % if ($comment->t_updated->subtract(seconds => OpenQA::Constants::DB_TIMESTAMP_ACCURACY) >= $comment->t_created) {
+                                  (last edited <abbr class="timeago" title="<%= $comment->t_updated->datetime() %>Z"><%= format_time($comment->t_updated) %></abbr>)
+                              % }
+                          % }
+                      </h4>
+                      <div class="media-comment markdown">
+                          % if($comment) {
+                              %= $comment->rendered_markdown
+                      % }
+                  </div>
+                  % if (current_user && ((current_user->id eq $user->id))) {
+                      <textarea class="form-control comment-editing-control" name="text" rows="5"><%= $comment ? $comment->text : '' %></textarea>
+                      <button class="btn btn-success btn-circle comment-editing-control" type="submit" name="applyChanges">
+                          <i class="fa fa-check-circle"></i> Apply changes
+                      </button>
+                      <button class="btn btn-warning btn-circle comment-editing-control" type="reset" name="discardChanges">
+                          <i class="fa fa-trash"></i> Discard changes
+                      </button>
+                  % }
+              </form>
+          </div>
+      </div>
+  </div>
 </div>
