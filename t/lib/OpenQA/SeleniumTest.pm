@@ -212,9 +212,9 @@ sub javascript_console_has_no_warnings_or_errors ($test_name_suffix = '') {
             # WebSocket connection
         next if ($msg =~ qr/Data frame received after close/);    # uncoverable statement
 
-        # ignore when server replied with 400 response; this may be provoked when testing error cases and if it is
+        # ignore when server replied with 4xx response; this may be provoked when testing error cases and if it is
         # not expected tests would fail anyways
-        next if ($msg =~ qr/server responded with a status of 400/);    # uncoverable statement
+        next if ($msg =~ qr/server responded with a status of 4\d\d/);    # uncoverable statement
         push(@errors, $log_entry);    # uncoverable statement
     }
 
