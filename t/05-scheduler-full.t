@@ -92,7 +92,7 @@ sub wait_for_worker {
     for (0 .. 40) {
         my $worker = $schema->resultset('Workers')->find($id);
         return undef if defined $worker && !$worker->dead;
-        sleep .5;
+        sleep .5;    # uncoverable statement
     }
     note "No worker with ID $id active";    # uncoverable statement
 }
