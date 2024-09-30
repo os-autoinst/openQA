@@ -1184,22 +1184,30 @@ when `async=1` is used (see
 <<UsersGuide.asciidoc#_spawning_multiple_jobs_based_on_templates_isos_post>>
 for details). Then this file is downloaded by the openQA host.
 
-The YAML document itself should define at least one product, machine and job
-template like this:
+The YAML document itself should define at least one or more job templates:
 
 [source,sh]
 --------------------------------------------------------------------------------
 job_templates:
   create_hdd:
+    machine: 64bit
     settings:
       PUBLISH_HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
   boot_from_hdd:
+    machine: 64bit
     settings:
       HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
       START_AFTER_TEST: 'create_hdd'
       WORKER_CLASS: 'job-specific-class'
 
 --------------------------------------------------------------------------------
+
+This example would create two jobs. They will run in sequence. The first job
+will upload an HDD image that will then be consumed by the second job.
+
+Note that you can also specify products and machine settings. An example showing
+the full structure can be found in the
+https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml[example distribution].
 
 These definitions are used like their openQA-instance-wide counterparts (so continue
 reading the next section for more details on job templates).
