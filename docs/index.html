@@ -5932,21 +5932,31 @@ when <code>async=1</code> is used (see
 for details). Then this file is downloaded by the openQA host.</p>
 </div>
 <div class="paragraph">
-<p>The YAML document itself should define at least one product, machine and job
-template like this:</p>
+<p>The YAML document itself should define at least one or more job templates:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>job_templates:
 <span class="tok-w">  </span>create_hdd:
+<span class="tok-w">    </span>machine:<span class="tok-w"> </span>64bit
 <span class="tok-w">    </span>settings:
 <span class="tok-w">      </span>PUBLISH_HDD_1:<span class="tok-w"> </span><span class="tok-s1">&#39;example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2&#39;</span>
 <span class="tok-w">  </span>boot_from_hdd:
+<span class="tok-w">    </span>machine:<span class="tok-w"> </span>64bit
 <span class="tok-w">    </span>settings:
 <span class="tok-w">      </span>HDD_1:<span class="tok-w"> </span><span class="tok-s1">&#39;example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2&#39;</span>
 <span class="tok-w">      </span>START_AFTER_TEST:<span class="tok-w"> </span><span class="tok-s1">&#39;create_hdd&#39;</span>
 <span class="tok-w">      </span>WORKER_CLASS:<span class="tok-w"> </span><span class="tok-s1">&#39;job-specific-class&#39;</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>This example would create two jobs. They will run in sequence. The first job
+will upload an HDD image that will then be consumed by the second job.</p>
+</div>
+<div class="paragraph">
+<p>Note that you can also specify products and machine settings. An example showing
+the full structure can be found in the
+<a href="https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml">example distribution</a>.</p>
 </div>
 <div class="paragraph">
 <p>These definitions are used like their openQA-instance-wide counterparts (so continue
@@ -13034,7 +13044,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-09-24 04:43:58 UTC
+Last updated 2024-10-01 04:44:30 UTC
 </div>
 </div>
 </body>
