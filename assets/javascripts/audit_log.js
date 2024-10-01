@@ -191,6 +191,7 @@ function renderScheduledProductSettings(settings) {
     const keyTd = document.createElement('td');
     const valueTd = document.createElement('td');
     keyTd.append(key);
+    valueTd.style.whiteSpace = 'pre-wrap';
     valueTd.append(renderHttpUrlAsLink(value));
     tr.append(keyTd, valueTd);
     tbody.append(tr);

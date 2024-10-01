@@ -577,19 +577,38 @@ function renderComments(row) {
 }
 
 function renderHttpUrlAsLink(value) {
-  const span = document.createElement('span');
-  for (let match; (match = value.match(/https?:\/\/[^\s,]*/)); ) {
-    const url = match[0];
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = 'blank';
-    link.appendChild(document.createTextNode(url));
-    span.appendChild(document.createTextNode(value.substr(0, match.index)));
-    span.appendChild(link);
-    value = value.substr(match.index + url.length);
+  if (!value) {
+    return document.createTextNode('');
   }
-  span.appendChild(document.createTextNode(value));
-  return span;
+  const fragment = document.createDocumentFragment();
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      fragment.appendChild(renderHttpUrlAsLink(item));
+      if (index < value.length - 1) {
+        fragment.appendChild(document.createTextNode(', ')); // seperator between items
+      }
+    });
+    return fragment;
+  }
+  if (typeof value !== 'string') {
+    value = String(value);
+  }
+  const urlRegex = /https?:\/\/[^\s,]*/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = urlRegex.exec(value)) !== null) {
+    if (match.index > lastIndex) {
+      fragment.appendChild(document.createTextNode(value.substring(lastIndex, match.index)));
+    }
+    const a = document.createElement('a');
+    a.href = a.textContent = match[0];
+    fragment.appendChild(a);
+    lastIndex = urlRegex.lastIndex;
+  }
+  if (lastIndex < value.length) {
+    fragment.appendChild(document.createTextNode(value.substring(lastIndex)));
+  }
+  return fragment.hasChildNodes() ? fragment : document.createTextNode(value);
 }
 
 function getXhrError(jqXHR, textStatus, errorThrown) {
