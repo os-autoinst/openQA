@@ -208,7 +208,7 @@ my $jobid;
 
 sub usage ($r) {
     eval { require Pod::Usage; Pod::Usage::pod2usage(-exitval => $r, -verbose => 99) };
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
 }
 
 sub parse_options () {

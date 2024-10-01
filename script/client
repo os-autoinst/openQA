@@ -152,21 +152,19 @@ Download all assets and test logs and images from job B<42> with asset limit of 
 =back
 =cut
 
-use strict;
-use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
 
+use Mojo::Base -strict, -signatures;
 use OpenQA::Script::Client;
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
 my %options;
 
-sub usage($) {
-    my $r = shift;
+sub usage ($r) {
     eval { require Pod::Usage; Pod::Usage::pod2usage($r); };
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
 }
 
 GetOptions(

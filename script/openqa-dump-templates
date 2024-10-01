@@ -114,8 +114,7 @@ my %options;
 
 sub usage ($r) {
     eval "use Pod::Usage; pod2usage($r);";
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;
-    exit $r;
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
 }
 
 GetOptions(

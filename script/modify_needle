@@ -31,15 +31,12 @@ print help
 
 =cut
 
-use strict;
-use warnings;
-
+use Mojo::Base -strict, -signatures;
 use Mojo::File qw(path);
 use Cpanel::JSON::XS ();
 use Getopt::Long;
 
-sub usage($) {
-    my $r = shift;
+sub usage ($r) {
     eval "use Pod::Usage; pod2usage($r);";
     die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
 }

@@ -71,9 +71,6 @@ L<OpenQA::Client>
 
 =cut
 
-use strict;
-use warnings;
-
 BEGIN {
     $ENV{MOJO_MAX_MESSAGE_SIZE} = 0;    # no limit for uploads
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
@@ -85,6 +82,7 @@ BEGIN {
     #$ENV{MOJO_IOLOOP_DEBUG} = 1;
 }
 
+use Mojo::Base -strict, -signatures;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 use Carp::Always;
@@ -96,12 +94,9 @@ use OpenQA::Log 'log_info';
 
 my %options;
 
-sub usage($) {
-    my $r = shift;
+sub usage ($r) {
     eval "use Pod::Usage; pod2usage($r);";
-    if ($@) {
-        die "cannot display help, install perl(Pod::Usage)\n";
-    }
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
 }
 
 GetOptions(

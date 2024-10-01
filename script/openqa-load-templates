@@ -71,7 +71,7 @@ my %options;
 
 sub usage ($r) {
     eval "use Pod::Usage; pod2usage($r);";
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
 }
 
 GetOptions(\%options, "apibase=s", "apikey=s", "apisecret=s", "clean", "host=s", "update", "help|h",) or usage(1);
