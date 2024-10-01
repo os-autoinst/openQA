@@ -30,7 +30,7 @@ function setupAdminNeedles() {
           if (type === 'display' && data != 'never') {
             var ri = 'last_seen_link';
             if (data == row['last_match']) ri = 'last_match_link';
-            return "<a href='" + row[ri] + "'>" + jQuery.timeago(new Date(data)) + '</a>';
+            return "<a href='" + row[ri] + "' title='" + data + "Z'>" + jQuery.timeago(new Date(data)) + '</a>';
           } else {
             return data;
           }
