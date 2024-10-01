@@ -205,6 +205,7 @@ Recommends:     pngquant
 Recommends:     openssh-common
 %if 0%{?suse_version} >= 1330
 Requires(pre):  group(nogroup)
+Requires(pre):  group(kvm)
 %endif
 
 %description worker
