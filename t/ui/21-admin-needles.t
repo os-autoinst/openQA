@@ -165,6 +165,11 @@ subtest 'dereference symlink when displaying needles info' => sub {
     is((shift @symlink_needle_tds)->get_text(), 'bootloader.json', 'symlink needle file name is displayed correctly');
     my $last_used_td = shift @symlink_needle_tds;
     is($last_used_td->get_text(), 'a day ago', 'symlink needle last use is displayed correctly');
+    is(
+        $last_used_td->child('a')->get_attribute('title'),
+        $real_needle->last_seen_time . 'Z',
+        'symlink needle last use tooltip is displayed correctly'
+    );
     like(
         $driver->find_child_element($last_used_td, 'a')->get_attribute('href'),
         qr/admin\/needles\/$last_seen_module_id\/$real_needle_id/,
