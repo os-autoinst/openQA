@@ -11,6 +11,8 @@ require OpenQA::Test::Database;
 use OpenQA::Test::Utils;
 use Test::Output;
 use Test::Warnings ':report_warnings';
+use Test::Mojo;
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);
 use Mojo::JSON;    # booleans
@@ -59,6 +61,33 @@ $args = "$base_args $filename";
 my $expected = qr/JobGroups.+=> \{ added => 1, of => 1 \}/;
 test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded templates';
 test_once $args, qr/group with existing name/, 'Duplicate job group', 255, 'failed on duplicate job group';
+
+subtest 'test changing existing entries' => sub {
+    # delete job group so that we can load the template again without running into duplicate job group error
+    my $t = client(Test::Mojo->new(), apikey => $apikey, apisecret => $apisecret);
+    $t->get_ok("http://$host/api/v1/job_groups")->status_is(200);
+    my $jobgroup_id = (grep { $_->{name} eq 'openSUSE Leap 42.3 Updates' } @{$t->tx->res->json})[0]->{id};
+    $t->delete_ok("http://$host/api/v1/job_groups/$jobgroup_id")->status_is(200);
+    $t->get_ok("http://$host/api/v1/test_suites?name=uefi")->status_is(200);
+    my $test_suite_id = $t->tx->res->json->{TestSuites}->[0]->{id};
+
+    # overwrite testsuite settings
+    $t->put_ok("http://$host/api/v1/test_suites/$test_suite_id", json => {name => "uefi", settings => {UEFI => '42'}})
+      ->status_is(200);
+
+    # check overwriting testsuite settings
+    $t->get_ok("http://$host/api/v1/test_suites/$test_suite_id")->status_is(200)
+      ->json_is('/TestSuites/0/settings/0/value', '42');
+
+    # change testsuite settings back by reimporting template
+    $args = "$base_args --update $filename";
+    test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded templates with update flag';
+
+    # check overwriting testsuite settings
+    $t->get_ok("http://$host/api/v1/test_suites/$test_suite_id")->status_is(200);
+    is((grep { $_->{key} eq 'UEFI' } @{$t->tx->res->json->{TestSuites}->[0]->{settings}})[0]->{value},
+        '1', 'value changed back during update');
+};
 
 my $fh;
 my $tempfilename;
