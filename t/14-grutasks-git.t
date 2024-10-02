@@ -18,6 +18,7 @@ use Test::Warnings qw(:report_warnings);
 use Mojo::Util qw(dumper scope_guard);
 use Mojo::File qw(path tempdir);
 use Time::Seconds;
+use File::Copy::Recursive qw(dircopy);
 
 # Avoid tampering with git checkout
 my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
@@ -27,6 +28,8 @@ path('t/data/openqa/db')->make_path;
 my $git_clones = "$workdir/git-clones";
 mkdir $git_clones;
 mkdir "$git_clones/$_" for qw(default branch dirty-error dirty-status nodefault wrong-url);
+mkdir 't';
+dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
 
 my $schema = OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -212,7 +215,7 @@ subtest 'git clone' => sub {
 };
 
 subtest 'git_update_all' => sub {
-    OpenQA::App->singleton->config->{'scm git'}->{git_auto_update} = 'yes';
+    $t->app->config->{'scm git'}->{git_auto_update} = 'yes';
     my $testdir = $workdir->child('openqa/share/tests');
     $testdir->make_path;
     my @clones;
@@ -227,6 +230,62 @@ subtest 'git_update_all' => sub {
     my $args = $job->info->{args}->[0];
     is_deeply [sort keys %$args], \@clones, 'job args as expected';
 };
+
+subtest 'delete_needles' => sub {
+    my $needledirs = $schema->resultset('NeedleDirs');
+    my $needles = $schema->resultset('Needles');
+    $needledirs->create({id => 1, path => 't/data/openqa/share/tests/archlinux/needles', 'name' => 'test'});
+    $needledirs->create({id => 2, path => 't/data/openqa/share/tests/fedora/needles', 'name' => 'test'});
+    $needles->create({dir_id => 1, filename => 'test-rootneedle.json'});
+    $needles->create({dir_id => 2, filename => 'test-duplicate-needle.json'});
+    $needles->create({dir_id => 2, filename => 'test-rootneedle.json'});
+    $needles->create({dir_id => 2, filename => 'test-nestedneedle-1.json'});
+    $needles->create({dir_id => 2, filename => 'test-nestedneedle-2.json'});
+
+    my %args = (needle_ids => [1, 2], user_id => 1);
+    my @gru_args = ($t->app, 'delete_needles', \%args, {priority => 10});
+    my $res = run_gru_job(@gru_args);
+    is $res->{state}, 'finished', 'finished';
+    is $#{$res->{result}->{errors}}, -1, 'no errors';
+    is_deeply $res->{result}->{removed_ids}, [1, 2], 'removed expected ids';
+
+    unlink 't/data/openqa/share/tests/fedora/needles/test-rootneedle.png';
+    $args{needle_ids} = [3];
+    $res = run_gru_job(@gru_args);
+    my $error = $res->{result}->{errors}->[0];
+    is $error->{display_name}, 'test-rootneedle.json', 'expected error for missing png';
+
+    $args{needle_ids} = [99];
+    $res = run_gru_job(@gru_args);
+    $error = $res->{result}->{errors}->[0];
+    like $error->{message}, qr{Unable to find needle.*99}, 'expected error for not existing needle';
+
+    $t->app->config->{global}->{scm} = 'git';
+    my $openqa_git = Test::MockModule->new('OpenQA::Git');
+    my @cmds;
+    $openqa_git->redefine(
+        run_cmd_with_log_return_error => sub ($cmd) {
+            push @cmds, "@$cmd";
+            return {status => 1};
+        });
+    $args{needle_ids} = [4];
+    $res = run_gru_job(@gru_args);
+    is $res->{state}, 'finished', 'git job finished';
+    like $cmds[0], qr{git.*rm.*test-nestedneedle-1.json}, 'git rm was executed';
+    like $cmds[1], qr{git.*commit.*Remove.*test-nestedneedle-1.json}, 'git commit was executed';
+
+    $openqa_git->redefine(
+        run_cmd_with_log_return_error => sub ($cmd) {
+            push @cmds, "@$cmd";
+            return {status => 0, stderr => 'lala', stdout => ''};
+        });
+    $args{needle_ids} = [5];
+    stderr_like { $res = run_gru_job(@gru_args) } qr{Git command failed.*git.*rm}, 'expected stderr';
+    is $res->{state}, 'finished', 'git job finished';
+    $error = $res->{result}->{errors}->[0];
+    like $error->{message}, qr{Unable to rm via Git}, 'expected error from git';
+};
+
 
 done_testing();
 
