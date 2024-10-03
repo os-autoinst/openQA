@@ -108,8 +108,10 @@ sub auth_response ($c) {
     };
 
     $csr->handle_server_response(
-        not_openid =>
-          sub () { $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again') },
+        not_openid => sub () {
+            my $op_uri = $params{'openid.op_endpoint'} // '';
+            $err_handler->('Failed to login', "OpenID provider '$op_uri' returned invalid data. Please retry again");
+        },
         setup_needed => sub ($setup_url) {
             # Redirect the user to $setup_url
             $setup_url = URI::Escape::uri_unescape($setup_url);
@@ -117,9 +119,10 @@ sub auth_response ($c) {
 
             return (redirect => $setup_url, error => 0);
         },
-        cancelled => sub () { },    # Do something appropriate when the user hits "cancel" at the OP
-        verified => sub ($vident) { _handle_verified($c, $vident) },
-        error => sub (@args) { $err_handler->(@args) },
+        # Do something appropriate when the user hits "cancel" at the OP
+        cancelled => sub () { },    # uncoverable statement
+        verified => sub ($vident) { _handle_verified($c, $vident) },    # uncoverable statement
+        error => sub (@args) { $err_handler->(@args) },    # uncoverable statement
     );
 
     return (redirect => decode_base64url($csr->args('return_page'), error => 0)) if $csr->args('return_page');

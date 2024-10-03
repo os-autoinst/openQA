@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::MockObject;
@@ -26,11 +27,30 @@ ok OpenQA::WebAPI::Auth::OpenID::_handle_verified($c, $vident), 'can call _handl
 $users->called_ok('create_user', 'new user is created for initial login');
 is(($users->call_args(2))[1], 'mordred', 'new user created with details');
 $c->set_always(
-    req => Test::MockObject->new->set_always(params => Test::MockObject->new->set_always(pairs => [1, 2]))
-      ->set_always(url => Test::MockObject->new->set_always(base => 'openqa')))
-  ->set_always(app => Test::MockObject->new->set_always(config => {})
-      ->set_always(log => Test::MockObject->new->set_true('error', 'debug')))->set_true('flash');
+    req => Test::MockObject->new->set_always(
+        params => Test::MockObject->new->set_always(pairs => ['openid.op_endpoint', 'https://www.opensuse.org/openid/'])
+    )->set_always(url => Test::MockObject->new->set_always(base => 'openqa')))
+  ->set_always(
+    app => Test::MockObject->new->set_always(config => {})->set_always(log => Test::MockObject->new->set_true('error')))
+  ->set_true('flash');
 is OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can call auth_response';
 $c->app->log->called_ok('error', 'an error was logged for call without proper config');
 
+my $mock_openid_consumer = Test::MockModule->new('Net::OpenID::Consumer');
+$mock_openid_consumer->redefine(
+    'handle_server_response',
+    sub ($self, %res_handlers) {
+        return $res_handlers{setup_needed}
+          ? $res_handlers{setup_needed}->("https://www.opensuse.org/openid/setup")
+          : undef;
+    });
+$c->set_always(
+    req => Test::MockObject->new->set_always(
+        params => Test::MockObject->new->set_always(pairs => ['openid.op_endpoint', 'https://www.opensuse.org/openid/'])
+    )->set_always(url => Test::MockObject->new->set_always(base => 'openqa')))
+  ->set_always(
+    app => Test::MockObject->new->set_always(config => {})->set_always(log => Test::MockObject->new->set_true('debug')))
+  ->set_true('flash');
+is OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can handle setup_needed response';
+$c->app->log->called_ok('debug', 'a debug messgae is logged when setup_needed respond');
 done_testing;
