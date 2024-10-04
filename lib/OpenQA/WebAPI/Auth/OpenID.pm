@@ -102,15 +102,16 @@ sub auth_response ($c) {
     );
 
     my $err_handler = sub ($err, $txt) {
-        $c->app->log->error("OpenID: $err: $txt");
-        $c->flash(error => "$err: $txt");
+        $c->app->log->error("OpenID: $err: $txt. Consider a report to the authentication server administrators.");
+        $c->flash(error => "$err: $txt. Please retry again. "
+              . 'If this reproduces please report the problem to the system administrators.');
         return (error => 0);
     };
 
     $csr->handle_server_response(
         not_openid => sub () {
             my $op_uri = $params{'openid.op_endpoint'} // '';
-            $err_handler->('Failed to login', "OpenID provider '$op_uri' returned invalid data. Please retry again");
+            $err_handler->('Failed to login', "OpenID provider '$op_uri' returned invalid data on a login attempt.");
         },
         setup_needed => sub ($setup_url) {
             # Redirect the user to $setup_url
