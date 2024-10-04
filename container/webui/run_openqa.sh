@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-function wait_for_db_creation() {
-    echo "Waiting for DB creation"
-    while ! su geekotest -c 'PGPASSWORD=openqa psql -h db -U openqa --list | grep -qe openqa'; do sleep .1; done
-}
-
 function upgradedb() {
-    wait_for_db_creation
     su geekotest -c '/usr/share/openqa/script/upgradedb --upgrade_database'
 }
 
@@ -20,17 +14,14 @@ function websockets() {
 }
 
 function gru() {
-    wait_for_db_creation
     su geekotest -c /usr/share/openqa/script/openqa-gru
 }
 
 function livehandler() {
-    wait_for_db_creation
     su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon
 }
 
 function webui() {
-    wait_for_db_creation
     su geekotest -c /usr/share/openqa/script/openqa-webui-daemon
 }
 
