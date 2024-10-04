@@ -77,13 +77,12 @@ sub current_tab { $driver->find_element('.nav.nav-tabs .active')->get_text }
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
 sub find_candidate_needles {
     # ensure the candidates menu is visible
-    my @candidates_menus = $driver->find_elements('#candidatesMenu');
-    is(scalar @candidates_menus, 1, 'exactly one candidates menu present at a time');
+    my $candidates_menu = wait_for_element(selector => '#candidatesMenu', is_displayed => 1) or return {};
     # save implicit waiting time as long as we are only looking for elements
     # that should be visible already
     disable_timeout;
-    return {} unless $candidates_menus[0]->is_enabled;
-    $candidates_menus[0]->click();
+    return {} unless $candidates_menu->is_enabled;
+    $candidates_menu->click;
 
     # read the tags/needles from the HTML structure
     my @section_elements = $driver->find_elements('#needlediff_selector ul table');
@@ -152,7 +151,6 @@ subtest 'show job modules execution time' => sub {
 
 subtest 'displaying image result with candidates' => sub {
     $driver->find_element('[href="#step/bootloader/1"]')->click();
-    wait_for_ajax;
     my $needles = find_candidate_needles;
     is_deeply($needles, {'inst-bootmenu' => []}, 'correct tags displayed') or diag explain $needles;
 };
@@ -611,7 +609,6 @@ sub test_with_error {
     # check whether candidates are displayed as expected
     my $random_number = int(rand(100000));
     $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/1");
-    wait_for_ajax_and_animations;
     is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
 }
 
