@@ -126,8 +126,7 @@ services:
       start_period: 5s
 
   db:
-    # Teporary fix version https://progress.opensuse.org/issues/167524
-    image: postgres:16
+    image: postgres
     restart: always
     environment:
       POSTGRES_PASSWORD: openqa
@@ -136,7 +135,12 @@ services:
     volumes:
       - ./workdir/db:/var/lib/postgresql/data:Z
     healthcheck:
-      test: ["CMD", "sh", "-c", "echo 'select * from api_keys;' | psql -U openqa -v 'ON_ERROR_STOP=1' openqa"]
+      test:
+        - CMD-SHELL
+        - >-
+          pg_isready -U openqa -d openqa
+          && echo 'select * from api_keys;'
+          | psql -U openqa -v 'ON_ERROR_STOP=1' openqa
       interval: 10s
       timeout: 10s
       retries: 3
