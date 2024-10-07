@@ -379,6 +379,19 @@ startup (the main web UI port is 9625 by default). Local workers need to be
 configured to connect to the main web UI port (add `HOST =
 http://localhost:9526+ to `workers.ini`).
 
+Note that you can also start services using a temporary database using the unit
+test database setup and data directory:
+
+[source,sh]
+----
+t/test_postgresql /dev/shm/tpg
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_DATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
+----
+
+This creates an empty temporary database and starts the web application using
+that specific database (ignoring the configuration from `database.ini`). Be
+aware that this may cause unwanted changes in the `t/data` directory.
+
 Also find more details in
 <<Contributing.asciidoc#_run_tests_without_container,Run tests without Container>>.
 
