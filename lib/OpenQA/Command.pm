@@ -131,7 +131,7 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
         my $res_code = $new_tx->res->code // 0;
         return $self->handle_result($new_tx, $tx) unless $res_code =~ /^(50[23]|0)$/ && $retries > 0;
         my $waited = time - $start;
-        print encode('UTF-8',
+        print STDERR encode('UTF-8',
 "Request failed, hit error $res_code, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"
         );
         sleep $delay;
