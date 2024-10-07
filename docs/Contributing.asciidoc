@@ -313,19 +313,22 @@ NOTE: `OPENQA_CONFIG` needs to point to the *directory* containing `openqa.ini`,
 
 [[setup-postgresql]]
 === Setting up the PostgreSQL database
-One also needs to setup a PostgreSQL database for openQA manually owned by your regular user:
+Setting up a PostgreSQL database for openQA takes the following steps:
 
 1. Install PostgreSQL - under openSUSE the following package are required:
    `postgresql-server postgresql-init`
 2. Start the server: `systemctl start postgresql`
 3. The next two steps need to be done as the user *postgres*: `sudo su - postgres`
 4. Create user: `createuser your_username` where `your_username` must be
-   the same as the UNIX user you start your local openQA instance with.
+   the same as the UNIX user you start your local openQA instance with. For a
+   development instance that is normally your regular user.
 5. Create database: `createdb -O your_username openqa-local` where
    `openqa-local` is the name you want to use for the database
 6. Configure openQA to use PostgreSQL as described in the section
    <<Installing.asciidoc#database,Database>> of the installation guide.
-   User name and password are not required.
+   User name and password are not required. Of course you need to change the
+   `database.ini` file under your custom config directory (as you have probably
+   done that in the previous section).
 7. openQA will default-initialize the new database on the next startup.
 
 The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still
@@ -353,8 +356,9 @@ Assuming you have already followed steps 1. to 4. above:
 4. Configure openQA to use that database as in step 7. above.
 
 === Manual daemon setup
-This section should give you a general idea how to start up daemons manually
-for development.
+This section should give you a general idea how to start daemons manually for
+development after you setup a PostgreSQL database as mentioned in the previous
+section.
 
 You have to install/update web-related dependencies first using `npm install`.
 To start the webserver for development, use `scripts/openqa daemon`. The other
