@@ -337,7 +337,8 @@ subtest 'restarting one of two independent root jobs (only related indirectly vi
         my $cloned = $duplicates->[0];
         ok exists $cloned->{$_->id}, $_->TEST . ' has been cloned' for @should_have_been_cloned;
         ok !exists $cloned->{$_->id}, $_->TEST . ' has not been cloned' for @should_not_have_been_cloned;
-        is_deeply $res, {enforceable => 0, errors => [], warnings => []}, 'no warnings or errors' or expain $res;
+        is_deeply $res, {enforceable => 0, comments => [], errors => [], warnings => []}, 'no warnings or errors'
+          or explain $res;
 
         $_->discard_changes for @jobs;
         is $root_1->state, RUNNING,

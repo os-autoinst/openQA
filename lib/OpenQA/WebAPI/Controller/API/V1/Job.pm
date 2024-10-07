@@ -859,6 +859,7 @@ sub _restart ($self, %args) {
         $self->emit_event(openqa_job_restart => \%event_data);
         push @urls, {map { $_ => $self->url_for('test', testid => $result->{$_}) } keys %$result};
     }
+    $self->emit_event(openqa_comment_create => $_) for @{$res->{comments}};
 
     my $clone_id = ($dup_route && $single_job_id) ? ($duplicates->[0] // {})->{$single_job_id} : undef;
     $self->render(

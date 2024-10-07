@@ -657,7 +657,7 @@ sub _create_clone_with_child ($res, $clones, $c, $dependency) {
     $res->children->find_or_create({child_job_id => $c, dependency => $dependency});
 }
 
-sub _create_clones ($self, $jobs, $comment, $comment_user_id, @clone_args) {
+sub _create_clones ($self, $jobs, $comments, $comment_text, $comment_user_id, @clone_args) {
     # create the clones
     my $result_source = $self->result_source;
     my $rset = $result_source->resultset;
@@ -703,8 +703,9 @@ sub _create_clones ($self, $jobs, $comment, $comment_user_id, @clone_args) {
     }
 
     # create comments on original jobs
-    $result_source->schema->resultset('Comments')->create_for_jobs(\@original_job_ids, $comment, $comment_user_id)
-      if defined $comment;
+    $result_source->schema->resultset('Comments')
+      ->create_for_jobs(\@original_job_ids, $comment_text, $comment_user_id, $comments)
+      if defined $comment_text;
 }
 
 # internal (recursive) function for duplicate - returns hash of all jobs in the
@@ -916,7 +917,8 @@ sub duplicate ($self, $args = {}) {
     }
     log_debug('Duplicating jobs: ' . dump($jobs));
     my @args = (
-        $jobs, $args->{comment},
+        $jobs, $args->{comments} //= [],
+        $args->{comment},
         $args->{comment_user_id},
         $args->{clone} // 1,
         $args->{prio},
@@ -986,6 +988,7 @@ sub auto_duplicate ($self, $args = {}) {
     my $clone_id = $clones->{$job_id}->{clone};
     my $dup = $rsource->resultset->find($clone_id);
     $dup->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } keys %$clones};
+    $dup->{comments_created} = $args->{comments};
     log_debug("Job $job_id duplicated as $clone_id");
     return $dup;
 }

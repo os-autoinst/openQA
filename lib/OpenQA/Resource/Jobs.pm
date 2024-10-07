@@ -29,8 +29,14 @@ or done. Scheduled jobs can't be restarted.
 
 =cut
 sub job_restart ($jobids, %args) {
-    my (@duplicates, @processed, @errors, @warnings);
-    my %res = (duplicates => \@duplicates, errors => \@errors, warnings => \@warnings, enforceable => 0);
+    my (@duplicates, @comments, @processed, @errors, @warnings);
+    my %res = (
+        duplicates => \@duplicates,
+        comments => \@comments,
+        errors => \@errors,
+        warnings => \@warnings,
+        enforceable => 0
+    );
     unless (ref $jobids eq 'ARRAY' && @$jobids) {
         push @errors, 'No job IDs specified';
         return \%res;
@@ -68,6 +74,7 @@ sub job_restart ($jobids, %args) {
         my $cloned_job_or_error = $job->auto_duplicate(\%duplication_args);
         if (ref $cloned_job_or_error) {
             push @duplicates, $cloned_job_or_error->{cluster_cloned};
+            push @comments, @{$cloned_job_or_error->{comments_created}};
         }
         else {
             $res{enforceable} = 1 if index($cloned_job_or_error, 'Direct parent ') == 0;

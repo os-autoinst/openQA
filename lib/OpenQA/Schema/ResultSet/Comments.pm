@@ -51,14 +51,15 @@ Creates comments on the specified jobs handling special contents.
 
 =cut
 
-sub create_for_jobs ($self, $job_ids, $text, $user_id) {
+sub create_for_jobs ($self, $job_ids, $text, $user_id, $events = undef) {
     for my $job_id (@$job_ids) {
         my %data = (job_id => $job_id, text => href_to_bugref($text), user_id => $user_id);
-        eval { $self->create(\%data)->handle_special_contents };
+        my $comment = eval { $self->create(\%data)->handle_special_contents };
         if (my $error = $@) {
             chomp $error;
             die "Comment creation on job $job_id failed: $error\n";
         }
+        push @$events, $comment->event_data if defined $events;
     }
 }
 

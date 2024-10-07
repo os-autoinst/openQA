@@ -413,6 +413,11 @@ subtest 'restart jobs with commenting' => sub {
     is_deeply \@restarted_jobs, \@expected_jobs, 'expected set of jobs has been restarted' or diag explain $res;
     is _count_restart_comments($_), 0, "job $_ was not restarted and thus also not commented on" for @unexpected_jobs;
     is _count_restart_comments($_), 1, "job $_ was commented on" for @expected_jobs;
+
+    my $restart_event = OpenQA::Test::Case::find_most_recent_event($schema, 'job_restart');
+    my $comment_create_event = OpenQA::Test::Case::find_most_recent_event($schema, 'comment_create');
+    is $restart_event->{comment}, 'via restart', 'restart event contains comment text';
+    is $comment_create_event->{job_id}, [keys %{$res->{result}->[-1]}]->[0], 'comment event contains job ID';
 };
 
 subtest 'restart single job passing settings' => sub {
