@@ -42,7 +42,7 @@
       <input type="text" class="form-control" id="create-tests-build" value="<%= $preset->{build} // '' %>" name="BUILD">
     </div>
     <div class="col-md-6">
-      <label for="create-tests-test" class="form-label"><strong>Test names (comman-separated, <code>TEST</code>)</strong></label>
+      <label for="create-tests-test" class="form-label"><strong>Test names (comma-separated, <code>TEST</code>)</strong></label>
       <%= help_popover('Test names' => '<p>This setting allows to creates only a specific set of tests from the scenario definitions by specifying the names of the tests to create specifically.</p>', undef, undef, 'left') %>
       <input type="text" class="form-control" id="create-tests-test" value="<%= $preset->{test} // '' %>" name="TEST">
     </div>
