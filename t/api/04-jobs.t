@@ -66,6 +66,7 @@ is($t->app->config->{audit}->{blocklist}, 'job_grab', 'blocklist updated');
 my $schema = $t->app->schema;
 my $assets = $schema->resultset('Assets');
 my $jobs = $schema->resultset('Jobs');
+my $comments = $schema->resultset('Comments');
 my $products = $schema->resultset('Products');
 my $testsuites = $schema->resultset('TestSuites');
 
@@ -365,6 +366,7 @@ subtest 'prevent restarting parents' => sub {
 };
 
 $schema->txn_rollback;
+$schema->txn_begin;
 
 subtest 'restart jobs (forced)' => sub {
     $t->post_ok('/api/v1/jobs/restart?force=1', form => {jobs => [99981, 99963, 99946, 99945, 99927, 99939]})
@@ -390,6 +392,27 @@ subtest 'restart jobs (forced)' => sub {
 
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
     is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
+};
+
+$schema->txn_rollback;
+
+sub _count_restart_comments ($job_id) { $comments->search({job_id => $job_id, text => 'via restart'})->count }
+
+subtest 'restart jobs with commenting' => sub {
+    my @args = (form => {jobs => [99981, 99963, 99946, 99945, 99927, 99939]});
+    $t->post_ok('/api/v1/jobs/restart?comment=label%3Aforce_result%3Afoo%3Abar', @args)->status_is(200);
+    my $res = $t->tx->res->json;
+    is_deeply $res->{result}, [], 'no jobs restarted when commenting fails' or diag explain $res->{result};
+    like join("\n", @{$res->{errors}}), qr/Invalid result 'foo' for force_result/, 'error about comment creation';
+
+    $t->post_ok('/api/v1/jobs/restart?comment=via restart', @args)->status_is(200);
+    $res = $t->tx->res->json;
+    my @unexpected_jobs = (99939, 99945);
+    my @expected_jobs = (99946, 99963, 99981);
+    my @restarted_jobs = sort map { keys %$_ } @{$res->{result}};
+    is_deeply \@restarted_jobs, \@expected_jobs, 'expected set of jobs has been restarted' or diag explain $res;
+    is _count_restart_comments($_), 0, "job $_ was not restarted and thus also not commented on" for @unexpected_jobs;
+    is _count_restart_comments($_), 1, "job $_ was commented on" for @expected_jobs;
 };
 
 subtest 'restart single job passing settings' => sub {

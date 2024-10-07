@@ -11,6 +11,9 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(job_restart);
 
+my @DUPLICATION_ARG_KEYS
+  = (qw(clone prio skip_parents skip_children skip_ok_result_children settings comment comment_user_id));
+
 =head2 job_restart
 
 =over
@@ -35,8 +38,7 @@ sub job_restart ($jobids, %args) {
 
     # duplicate all jobs that are either running or done
     my $force = $args{force};
-    my @duplication_arg_keys = (qw(clone prio skip_parents skip_children skip_ok_result_children settings));
-    my %duplication_args = map { ($_ => $args{$_}) } @duplication_arg_keys;
+    my %duplication_args = map { ($_ => $args{$_}) } @DUPLICATION_ARG_KEYS;
     my $schema = OpenQA::Schema->singleton;
     my $jobs_rs = $schema->resultset('Jobs');
     my $jobs = $jobs_rs->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
