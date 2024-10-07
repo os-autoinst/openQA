@@ -353,25 +353,13 @@ Assuming you have already followed steps 1. to 4. above:
 4. Configure openQA to use that database as in step 7. above.
 
 === Manual daemon setup
-
 This section should give you a general idea how to start up daemons manually
 for development.
 
-For basic development it is recommended to start the openQA services from a
-regular user account using a local "openQA base directory" included within the
-source repository folder. For example to start the webserver for development
-together with the required test database for development within your working
-copy call:
-
-[source,sh]
-----
-t/test_postgresql /dev/shm/tpg
-TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_DATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
-----
-
-The other daemons (mentioned in the link:images/architecture.svg[architecture diagram])
-are started in the same way when required, e.g.
-`script/openqa-scheduler daemon`.
+You have to install/update web-related dependencies first using `npm install`.
+To start the webserver for development, use `scripts/openqa daemon`. The other
+daemons (mentioned in the link:images/architecture.svg[architecture diagram])
+are started in the same way, e.g. `script/openqa-scheduler daemon`.
 
 You can also have a look at the systemd unit files. Although it likely makes
 not much sense to use them directly you can have a look at them to see how the
@@ -384,10 +372,6 @@ start everything as your regular user as mentioned above. However, you need to
 ensure that your user has the permission to the "openQA base directory". That
 is not the case by default so it makes sense to
 <<Contributing.asciidoc#_customize_base_directory,customize it>>.
-
-Note that the web UI daemon will pull required JavaScript/CSS libraries
-automatically when started the first time.  This might take a while and
-requires an internet connection.
 
 You do *not* need to setup an additional web server because the daemons
 already provide one. The port under which a service is available is logged on
