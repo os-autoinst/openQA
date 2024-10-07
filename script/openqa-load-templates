@@ -126,43 +126,46 @@ sub post_yaml_templates ($group_name, $template) {
         })->res;
 }
 
+sub handle_job_groups ($entry) {
+    # Try to create the group first
+    my $job_groups_url = $url->clone->path($options{apibase} . '/job_groups');
+    my $create_res = $client->post($job_groups_url, form => {name => $entry->{group_name}})->res;
+    # this is what we get from the API if the group exists
+    my $exists = ($create_res->code == 500 && $create_res->json->{already_exists});
+    # return 0 (indicating no change) unless --clean or --update passed
+    return 0 if ($exists && !$options{update} && !$options{clean});
+    print_error($create_res) unless ($create_res->is_success || $exists);
+    # Post the job template YAML
+
+    my $yaml_res = post_yaml_templates($entry->{group_name}, $entry->{template});
+    print_error($yaml_res) unless $yaml_res->is_success;
+    return 1;
+}
+
+sub handle_job_templates ($entry) {
+    unless (defined($entry->{prio})) {
+        # we have to migrate the prio from the TestSuite to the JobTemplate
+        for my $ts (@{$info->{TestSuites}}) {
+            if ($ts->{name} eq $entry->{test_suite}{name}) {
+                $entry->{prio} = $ts->{prio};
+            }
+        }
+    }
+    unless (defined($entry->{group_name})) {
+        # we have to create a group_name from the Product
+        my $gn = $entry->{product}{distri};
+        if ($entry->{product}{version} ne '*') {
+            $gn .= "-" . $entry->{product}{version};
+        }
+        $entry->{group_name} = $gn;
+    }
+}
+
 sub post_entry ($table, $entry) {
     my %param;
 
-    if ($table eq 'JobGroups') {
-        # Try to create the group first
-        my $job_groups_url = $url->clone->path($options{apibase} . '/job_groups');
-        my $create_res = $client->post($job_groups_url, form => {name => $entry->{group_name}})->res;
-        # this is what we get from the API if the group exists
-        my $exists = ($create_res->code == 500 && $create_res->json->{already_exists});
-        # return 0 (indicating no change) unless --clean or --update passed
-        return 0 if ($exists && !$options{update} && !$options{clean});
-        print_error($create_res) unless ($create_res->is_success || $exists);
-        # Post the job template YAML
-
-        my $yaml_res = post_yaml_templates($entry->{group_name}, $entry->{template});
-        print_error($yaml_res) unless $yaml_res->is_success;
-        return 1;
-    }
-
-    if ($table eq 'JobTemplates') {
-        unless (defined($entry->{prio})) {
-            # we have to migrate the prio from the TestSuite to the JobTemplate
-            for my $ts (@{$info->{TestSuites}}) {
-                if ($ts->{name} eq $entry->{test_suite}{name}) {
-                    $entry->{prio} = $ts->{prio};
-                }
-            }
-        }
-        unless (defined($entry->{group_name})) {
-            # we have to create a group_name from the Product
-            my $gn = $entry->{product}{distri};
-            if ($entry->{product}{version} ne '*') {
-                $gn .= "-" . $entry->{product}{version};
-            }
-            $entry->{group_name} = $gn;
-        }
-    }
+    return handle_job_groups($entry) if $table eq 'JobGroups';
+    handle_job_templates($entry) if $table eq 'JobTemplates';
 
     for my $key (keys %{$entry}) {
         if ($key eq 'machine' && defined $entry->{machine}{name}) {
