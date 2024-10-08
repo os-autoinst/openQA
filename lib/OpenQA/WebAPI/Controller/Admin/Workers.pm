@@ -13,7 +13,7 @@ sub _extend_info ($w, $live = undef) {
     my $info = $w->info($live);
     $info->{name} = $w->name;
     my $error = $info->{error};
-    if ($live && $error && ($error =~ qr/(graceful disconnect) at (.*)/)) {
+    if ($live && $error && ($error =~ qr/(graceful disconnect|limited) at (.*)/)) {
         $info->{offline_note} = $1;
         $info->{t_seen} = $2 . 'Z';
         $info->{alive} = undef;
@@ -40,7 +40,7 @@ sub index ($self) {
     my %workers;
     while (my $w = $workers_db->next) {
         next unless $w->id;
-        $workers{$w->name} = _extend_info($w);
+        $workers{$w->name} = _extend_info($w, 1);
     }
     $self->stash(
         workers_online => $total_online,

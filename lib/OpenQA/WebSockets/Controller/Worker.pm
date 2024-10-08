@@ -21,19 +21,17 @@ use constant LOG_WORKER_STATUS_MESSAGES => $ENV{OPENQA_LOG_WORKER_STATUS_MESSAGE
 sub ws {
     my ($self) = @_;
     my $status = $self->status;
-    my $transaction = $self->tx;
 
     # add worker connection
     my $worker_id = $self->param('workerid');
     return $self->render(text => 'No worker ID', status => 400) unless $worker_id;
-    my $worker = $status->add_worker_connection($worker_id, $transaction);
-    return $self->render(text => 'Unknown worker', status => 400) unless $worker;
+    return undef unless defined $status->add_worker_connection($worker_id, $self);
 
     # upgrade connection to websocket by subscribing to events
     $self->on(json => \&_message);
     $self->on(finish => \&_finish);
     $self->inactivity_timeout(0);    # Do not force connection close due to inactivity
-    $transaction->max_websocket_size(10485760);
+    $self->tx->max_websocket_size(10485760);
 }
 
 sub _finish {
