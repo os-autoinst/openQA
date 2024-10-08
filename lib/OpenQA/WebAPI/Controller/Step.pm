@@ -355,6 +355,7 @@ sub src ($self) {
                 my $vars = decode_json($vars_json);
                 $refspec = $vars->{TEST_GIT_HASH};
             };
+            $refspec ||= 'HEAD';
             my $module_path = '/blob/' . $refspec . '/' . $module->script;
             # github treats '.git' as optional extension which needs to be stripped
             $casedir_url->path($casedir_url->path =~ s/\.git//r . $module_path);
