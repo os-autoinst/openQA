@@ -313,19 +313,22 @@ NOTE: `OPENQA_CONFIG` needs to point to the *directory* containing `openqa.ini`,
 
 [[setup-postgresql]]
 === Setting up the PostgreSQL database
-One also needs to setup a PostgreSQL database for openQA manually owned by your regular user:
+Setting up a PostgreSQL database for openQA takes the following steps:
 
 1. Install PostgreSQL - under openSUSE the following package are required:
    `postgresql-server postgresql-init`
 2. Start the server: `systemctl start postgresql`
 3. The next two steps need to be done as the user *postgres*: `sudo su - postgres`
 4. Create user: `createuser your_username` where `your_username` must be
-   the same as the UNIX user you start your local openQA instance with.
+   the same as the UNIX user you start your local openQA instance with. For a
+   development instance that is normally your regular user.
 5. Create database: `createdb -O your_username openqa-local` where
    `openqa-local` is the name you want to use for the database
 6. Configure openQA to use PostgreSQL as described in the section
    <<Installing.asciidoc#database,Database>> of the installation guide.
-   User name and password are not required.
+   User name and password are not required. Of course you need to change the
+   `database.ini` file under your custom config directory (as you have probably
+   done that in the previous section).
 7. openQA will default-initialize the new database on the next startup.
 
 The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still
@@ -353,25 +356,14 @@ Assuming you have already followed steps 1. to 4. above:
 4. Configure openQA to use that database as in step 7. above.
 
 === Manual daemon setup
+This section should give you a general idea how to start daemons manually for
+development after you setup a PostgreSQL database as mentioned in the previous
+section.
 
-This section should give you a general idea how to start up daemons manually
-for development.
-
-For basic development it is recommended to start the openQA services from a
-regular user account using a local "openQA base directory" included within the
-source repository folder. For example to start the webserver for development
-together with the required test database for development within your working
-copy call:
-
-[source,sh]
-----
-t/test_postgresql /dev/shm/tpg
-TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_DATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
-----
-
-The other daemons (mentioned in the link:images/architecture.svg[architecture diagram])
-are started in the same way when required, e.g.
-`script/openqa-scheduler daemon`.
+You have to install/update web-related dependencies first using `npm install`.
+To start the webserver for development, use `scripts/openqa daemon`. The other
+daemons (mentioned in the link:images/architecture.svg[architecture diagram])
+are started in the same way, e.g. `script/openqa-scheduler daemon`.
 
 You can also have a look at the systemd unit files. Although it likely makes
 not much sense to use them directly you can have a look at them to see how the
@@ -385,15 +377,24 @@ ensure that your user has the permission to the "openQA base directory". That
 is not the case by default so it makes sense to
 <<Contributing.asciidoc#_customize_base_directory,customize it>>.
 
-Note that the web UI daemon will pull required JavaScript/CSS libraries
-automatically when started the first time.  This might take a while and
-requires an internet connection.
-
 You do *not* need to setup an additional web server because the daemons
 already provide one. The port under which a service is available is logged on
 startup (the main web UI port is 9625 by default). Local workers need to be
 configured to connect to the main web UI port (add `HOST =
 http://localhost:9526+ to `workers.ini`).
+
+Note that you can also start services using a temporary database using the unit
+test database setup and data directory:
+
+[source,sh]
+----
+t/test_postgresql /dev/shm/tpg
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_DATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
+----
+
+This creates an empty temporary database and starts the web application using
+that specific database (ignoring the configuration from `database.ini`). Be
+aware that this may cause unwanted changes in the `t/data` directory.
 
 Also find more details in
 <<Contributing.asciidoc#_run_tests_without_container,Run tests without Container>>.
