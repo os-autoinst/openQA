@@ -453,20 +453,22 @@ EOF
     is $stdout, "Error: 502\n", 'request body';
 
     ($stdout, $stderr, @result) = capture sub { $api->run('--retries', '1', @params) };
-    like $stdout, qr/failed.*retrying.*Error: 502/s, 'requests are retried on error if requested';
+    like $stdout, qr/Error: 502/s, '(stdout) requests are retried on error if requested';
+    like $stderr, qr/failed.*retrying/s, '(stderr) requests are retried on error if requested';
     is $result[0], 1, 'exited with non-zero return code after all retries are exhausted';
 
     $error_count = 0;
     @params = (@params, 'status2=200');
     ($stdout, $stderr, @result) = capture sub { $api->run('--retries', '1', @params) };
     unlike $stdout, qr/Error: 502/, 'response from failing request suppressed';
-    like $stdout, qr/failed, hit error 502.*retrying.*Error: 200/s, 'request can succeed after failing before';
+    like $stdout, qr/Error: 200/s, '(stdout) request can succeed after failing before';
+    like $stderr, qr/failed, hit error 502.*retrying/s, '(stderr) request can succeed after failing before';
     is $result[0], 0, 'exited with zero return code after success on 2nd attempt';
 
     @params = ('--host', 'http://localhost:123456', '--retries', 1, 'api', 'test');
     ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
     like $stderr, qr/Connection refused/, 'aborts on connection refused';
-    like $stdout, qr/failed.*retrying/, 'requests are retried on error if requested';
+    like $stderr, qr/failed.*retrying/, 'requests are retried on error if requested';
 };
 
 subtest 'Pretty print JSON' => sub {
