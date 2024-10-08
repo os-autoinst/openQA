@@ -184,6 +184,7 @@ sub extended_hash ($self, $render_markdown = 1) {
 sub handle_special_contents ($self, $c = undef) {
     $self->_insert_bugs;
     $self->_control_job_result($c);
+    return $self;
 }
 
 sub _control_job_result ($self, $c) {

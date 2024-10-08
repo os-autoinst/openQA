@@ -657,13 +657,15 @@ sub _create_clone_with_child ($res, $clones, $c, $dependency) {
     $res->children->find_or_create({child_job_id => $c, dependency => $dependency});
 }
 
-sub _create_clones ($self, $jobs, @clone_args) {
+sub _create_clones ($self, $jobs, $comments, $comment_text, $comment_user_id, @clone_args) {
     # create the clones
-    my $rset = $self->result_source->resultset;
+    my $result_source = $self->result_source;
+    my $rset = $result_source->resultset;
     my %clones = map { $rset->find($_)->_create_clone($jobs->{$_}, @clone_args) } sort keys %$jobs;
 
     # create dependencies
-    for my $job (sort keys %clones) {
+    my @original_job_ids = sort keys %clones;
+    for my $job (@original_job_ids) {
         my $info = $jobs->{$job};
         my $res = $clones{$job};
 
@@ -692,13 +694,18 @@ sub _create_clones ($self, $jobs, @clone_args) {
     }
 
     # calculate blocked_by
-    $clones{$_}->calculate_blocked_by for keys %clones;
+    $clones{$_}->calculate_blocked_by for @original_job_ids;
 
     # add a reference to the clone within $jobs
-    for my $job (keys %clones) {
+    for my $job (@original_job_ids) {
         my $clone = $clones{$job};
         $jobs->{$job}->{clone} = $clone->id if $clone;
     }
+
+    # create comments on original jobs
+    $result_source->schema->resultset('Comments')
+      ->create_for_jobs(\@original_job_ids, $comment_text, $comment_user_id, $comments)
+      if defined $comment_text;
 }
 
 # internal (recursive) function for duplicate - returns hash of all jobs in the
@@ -909,7 +916,14 @@ sub duplicate ($self, $args = {}) {
         return $error;
     }
     log_debug('Duplicating jobs: ' . dump($jobs));
-    my @args = ($jobs, $args->{clone} // 1, $args->{prio}, $args->{skip_ok_result_children}, $args->{settings} // {});
+    my @args = (
+        $jobs, $args->{comments} //= [],
+        $args->{comment},
+        $args->{comment_user_id},
+        $args->{clone} // 1,
+        $args->{prio},
+        $args->{skip_ok_result_children},
+        $args->{settings} // {});
     eval {
         $self->result_source->schema->txn_do(sub { $self->_create_clones(@args) });
     };
@@ -919,6 +933,9 @@ sub duplicate ($self, $args = {}) {
         if ($error =~ /Rollback failed/) {
             log_error("Unable to roll back after duplication error: $error");
             return "Rollback failed after failure to clone cluster of job $orig_id";
+        }
+        elsif ($error =~ /Comment creation on job .* failed/) {
+            return $error;
         }
         return $error if $error =~ /already has clone/;
         log_warning("Duplication rolled back after error: $error");
@@ -971,6 +988,7 @@ sub auto_duplicate ($self, $args = {}) {
     my $clone_id = $clones->{$job_id}->{clone};
     my $dup = $rsource->resultset->find($clone_id);
     $dup->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } keys %$clones};
+    $dup->{comments_created} = $args->{comments};
     log_debug("Job $job_id duplicated as $clone_id");
     return $dup;
 }

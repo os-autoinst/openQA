@@ -11,6 +11,9 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(job_restart);
 
+my @DUPLICATION_ARG_KEYS
+  = (qw(clone prio skip_parents skip_children skip_ok_result_children settings comment comment_user_id));
+
 =head2 job_restart
 
 =over
@@ -26,8 +29,14 @@ or done. Scheduled jobs can't be restarted.
 
 =cut
 sub job_restart ($jobids, %args) {
-    my (@duplicates, @processed, @errors, @warnings);
-    my %res = (duplicates => \@duplicates, errors => \@errors, warnings => \@warnings, enforceable => 0);
+    my (@duplicates, @comments, @processed, @errors, @warnings);
+    my %res = (
+        duplicates => \@duplicates,
+        comments => \@comments,
+        errors => \@errors,
+        warnings => \@warnings,
+        enforceable => 0
+    );
     unless (ref $jobids eq 'ARRAY' && @$jobids) {
         push @errors, 'No job IDs specified';
         return \%res;
@@ -35,8 +44,7 @@ sub job_restart ($jobids, %args) {
 
     # duplicate all jobs that are either running or done
     my $force = $args{force};
-    my @duplication_arg_keys = (qw(clone prio skip_parents skip_children skip_ok_result_children settings));
-    my %duplication_args = map { ($_ => $args{$_}) } @duplication_arg_keys;
+    my %duplication_args = map { ($_ => $args{$_}) } @DUPLICATION_ARG_KEYS;
     my $schema = OpenQA::Schema->singleton;
     my $jobs_rs = $schema->resultset('Jobs');
     my $jobs = $jobs_rs->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
@@ -66,6 +74,7 @@ sub job_restart ($jobids, %args) {
         my $cloned_job_or_error = $job->auto_duplicate(\%duplication_args);
         if (ref $cloned_job_or_error) {
             push @duplicates, $cloned_job_or_error->{cluster_cloned};
+            push @comments, @{$cloned_job_or_error->{comments_created}};
         }
         else {
             $res{enforceable} = 1 if index($cloned_job_or_error, 'Direct parent ') == 0;

@@ -6,7 +6,7 @@ package OpenQA::Schema::ResultSet::Comments;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use DBIx::Class::Timestamps;
 use OpenQA::App;
-use OpenQA::Utils qw(find_bugrefs);
+use OpenQA::Utils qw(find_bugrefs href_to_bugref);
 
 =over 4
 
@@ -39,6 +39,28 @@ sub create_with_event ($self, $comment_data, $event_data = {}) {
     my $comment = $self->create($comment_data);
     OpenQA::App->singleton->emit_event(openqa_comment_create => {%{$comment->event_data}, %$event_data});
     return $comment;
+}
+
+=over 4
+
+=item create_for_jobs()
+
+Creates comments on the specified jobs handling special contents.
+
+=back
+
+=cut
+
+sub create_for_jobs ($self, $job_ids, $text, $user_id, $events = undef) {
+    for my $job_id (@$job_ids) {
+        my %data = (job_id => $job_id, text => href_to_bugref($text), user_id => $user_id);
+        my $comment = eval { $self->create(\%data)->handle_special_contents };
+        if (my $error = $@) {
+            chomp $error;
+            die "Comment creation on job $job_id failed: $error\n";
+        }
+        push @$events, $comment->event_data if defined $events;
+    }
 }
 
 =over 4
