@@ -45,14 +45,12 @@ websocket status.
 sub list ($self) {
     my $validation = $self->validation;
     $validation->optional('limit')->num;
-    $validation->optional('live')->num(1);
     $validation->optional('offset')->num;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
     my $offset = $validation->param('offset') // 0;
-    my $live = $validation->param('live');
 
     my @all = $self->schema->resultset('Workers')->search({}, {rows => $limit + 1, offset => $offset})->all;
 
@@ -63,7 +61,7 @@ sub list ($self) {
     my $ret = [];
     for my $worker (@all) {
         next unless $worker->id;
-        push @$ret, $worker->info($live);
+        push @$ret, $worker->info;
     }
 
     $self->render(json => {workers => $ret});
@@ -225,7 +223,7 @@ sub show {
     my ($self) = @_;
     my $worker = $self->schema->resultset('Workers')->find($self->param('workerid'));
     if ($worker) {
-        $self->render(json => {worker => $worker->info(1)});
+        $self->render(json => {worker => $worker->info});
     }
     else {
         $self->reply->not_found;

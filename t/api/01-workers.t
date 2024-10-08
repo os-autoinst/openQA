@@ -76,10 +76,6 @@ my @workers = (
         instance => 1
     });
 
-$t->get_ok('/api/v1/workers?live=1')
-  ->json_is('' => {workers => \@workers}, 'workers present with deprecated live flag');
-diag explain $t->tx->res->json unless $t->success;
-$_->{websocket} = 0 for @workers;
 $t->get_ok('/api/v1/workers')->json_is('' => {workers => \@workers}, "workers present with deprecated websocket flag");
 diag explain $t->tx->res->json unless $t->success;
 
