@@ -180,6 +180,7 @@ sub enqueue_git_update_all ($self) {
             for my $product ($distri->child('products')->list({dir => 1})->each) {
                 next if -l $product;    # no symlinks
                 my $needle = $product->child('needles');
+                next if -l $needle;    # no symlinks
                 next unless -e $needle->child('.git');
                 $clones{$needle} = undef;
             }
