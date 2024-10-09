@@ -22,6 +22,7 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
+use OpenQA::Test::TimeLimit '60';
 use Test::Mojo;
 use IO::Socket::INET;
 use Mojo::File 'path';
@@ -36,7 +37,6 @@ use OpenQA::Test::Utils qw(
   start_worker stop_service
 );
 use OpenQA::Test::FullstackUtils;
-use OpenQA::Test::TimeLimit '60';
 use OpenQA::SeleniumTest;
 
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};

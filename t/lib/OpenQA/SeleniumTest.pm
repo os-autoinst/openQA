@@ -11,7 +11,7 @@ our @EXPORT = qw(driver_missing check_driver_modules enable_timeout
   wait_for_ajax_and_animations
   open_new_tab mock_js_functions element_visible element_hidden
   element_not_present javascript_console_has_no_warnings_or_errors
-  wait_until wait_until_element_gone wait_for_element
+  wait_until wait_until_element_gone wait_for_element wait_for_data_table_entries
   element_prop element_prop_by_selector map_elements);
 
 use Carp;
@@ -24,7 +24,7 @@ use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
 use OpenQA::Log 'log_info';
 use OpenQA::Utils;
-use OpenQA::Test::Utils;
+use OpenQA::Test::Utils qw(wait_for);
 use POSIX '_exit';
 
 our $_driver;
@@ -343,6 +343,18 @@ sub wait_for_element (%args) {
     );
     like $element->get_text, $args{like}, "$selector text" if $element && $args{like};
     return $element;
+}
+
+sub wait_for_data_table_entries ($table, $expected_entry_count) {
+    my @entries;
+    wait_for_ajax msg => 'DataTable query';
+    wait_for {
+        @entries = $_driver->find_child_elements($table, 'tbody/tr', 'xpath');
+        scalar @entries == $expected_entry_count;
+    }
+    "$expected_entry_count rows present", {timeout => OpenQA::Test::TimeLimit::scale_timeout(10)};
+    is scalar @entries, $expected_entry_count, 'DataTable shows expected number of rows';
+    return \@entries;
 }
 
 sub kill_driver () {
