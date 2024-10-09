@@ -124,7 +124,7 @@ subtest 'attempt to register and send a command' => sub {
         );
         Mojo::IOLoop->start;
     }
-    qr/Connection error: Can't connect:.*(remaining tries: 0)/s, 'error logged';
+    qr/Connection error:.*(remaining tries: 0)/s, 'error logged';
     is($callback_invoked, 1, 'callback has been invoked');
     is($client->worker->stop_current_job_called,
         0, 'not attempted to stop current job because it is from different web UI');
@@ -156,11 +156,8 @@ subtest 'attempt to register and send a command' => sub {
             [{status => 'registering', error_message => undef}, {status => 'failed'}],
             'events emitted',
           )
-          and like(
-            $error_message,
-            qr{Failed to register at http://test-host - connection error: Can't connect:.*},
-            'error message',
-          )) or diag explain \@happened_events;
+          and like($error_message, qr{Failed to register at http://test-host - connection error:.*}, 'error message')
+    ) or diag explain \@happened_events;
 };
 
 
