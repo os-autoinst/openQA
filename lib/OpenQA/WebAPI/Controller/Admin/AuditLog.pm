@@ -3,10 +3,7 @@
 
 
 package OpenQA::WebAPI::Controller::Admin::AuditLog;
-## no critic (OpenQA::RedundantStrictWarning)
-use Mojo::Base 'Mojolicious::Controller';
-
-use 5.018;
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Time::Piece;
 use Time::Seconds;
@@ -105,12 +102,11 @@ sub _add_single_query {
     }
 }
 
-sub _get_search_query {
-    my ($raw_search) = @_;
+sub _get_search_query ($self) {
 
     # construct query only from allowed columns
     my $query = {};
-    my @subsearch = split(/ /, $raw_search);
+    my @subsearch = split(/ /, $self->param('search[value]') // '');
     my $current_key = 'data';
     my @current_search;
     for my $s (@subsearch) {
@@ -139,14 +135,12 @@ sub _get_search_query {
     return \@filter_conds;
 }
 
-sub ajax {
-    my ($self) = @_;
-
+sub ajax ($self, $filter_conds = undef) {
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
         resultset => 'AuditEvents',
         columns => [qw(me.t_created connection_id owner.nickname event_data event)],
-        filter_conds => _get_search_query($self->param('search[value]') // ''),
+        filter_conds => ($filter_conds // $self->_get_search_query),
         additional_params => {
             prefetch => 'owner',
             cache => 1
@@ -169,6 +163,11 @@ sub ajax {
             return \@events;
         },
     );
+}
+
+sub ajax_current_user ($self) {
+    return $self->render(json => {data => []}) unless my $current_user = $self->current_user;
+    $self->ajax([{user_id => $current_user->id}, $self->_get_search_query]);
 }
 
 1;

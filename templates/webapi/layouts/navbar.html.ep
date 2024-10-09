@@ -60,7 +60,9 @@
                    title="Contains the Activity View and various configuration pages">Logged in as <%= $current_user->name %></a>
                 <div class="dropdown-menu">
                   %= tag 'h3' => class => 'dropdown-header' => 'Operators Menu'
-                  %= link_to 'Activity View' => url_for('activity_view') => class => 'dropdown-item' => id => 'activity_view', title => 'Gives you an overview of your current jobs'
+                  % if (is_operator) {
+                    %= link_to 'Activity View' => url_for('activity_view') => class => 'dropdown-item' => id => 'activity_view', title => 'Gives you an overview of your current jobs'
+                  % }
                   %= link_to 'Medium types' => url_for('admin_products') => class => 'dropdown-item'
                   %= link_to 'Machines' => url_for('admin_machines') => class => 'dropdown-item'
                   %= link_to 'Test suites' => url_for('admin_test_suites') => class => 'dropdown-item'

@@ -480,12 +480,12 @@ function renderJobStatus(item, id) {
   request.send();
 }
 
-function renderActivityView(ajaxUrl, currentUser) {
+function renderActivityView(ajaxUrl) {
   const spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
   const request = new XMLHttpRequest();
   const query = new URLSearchParams();
-  query.append('search[value]', 'user:' + encodeURIComponent(currentUser) + ' event:job_');
+  query.append('search[value]', 'event:job_');
   query.append('order[0][column]', '0'); // t_created
   query.append('order[0][dir]', 'desc');
   request.open('GET', ajaxUrl + '?' + query.toString());

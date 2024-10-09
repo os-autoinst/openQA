@@ -20,7 +20,10 @@ use Time::Seconds;
 
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl');
+my $test_case = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '01-jobs.pl');
+my $demo_user;
 
 driver_missing unless my $driver = call_driver;
 
@@ -32,6 +35,11 @@ subtest 'Access activity view via the menu' => sub {
     $driver->find_element_by_link_text('Login')->click();
     $driver->title_is('openQA', 'on main page');
     is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
+
+    # revoke admin rights as those are not supposed to be required
+    $demo_user = $schema->resultset('Users')->find({username => 'Demo'});
+    $demo_user->update({is_admin => 0});
+
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Activity View')->click();
     $driver->title_is('openQA: Personal Activity View', 'on activity view');
@@ -79,7 +87,6 @@ subtest 'Current jobs' => sub {
             map { $_ => 'job_create' } 99981,
             99928, 99963, 99938, 80001, 80002, 80003, 80004, 80005, 80006, 80007, 80008, 80009, 80010
         ));
-    my $user = $schema->resultset('Users')->find({is_admin => 1});
     my $jobs = $schema->resultset('Jobs');
 
 
@@ -105,7 +112,7 @@ subtest 'Current jobs' => sub {
 
     $events->create(
         {
-            user_id => $user->id,
+            user_id => $demo_user->id,
             connection_id => 'foo',
             event => $fake_events{$_},
             event_data => "{\"id\": $_}",
@@ -114,7 +121,7 @@ subtest 'Current jobs' => sub {
     # Multiple events for the same job amount to one item
     $events->create(
         {
-            user_id => $user->id,
+            user_id => $demo_user->id,
             connection_id => 'foo',
             event => 'job_restart',
             event_data => "{\"id\": 99936}",

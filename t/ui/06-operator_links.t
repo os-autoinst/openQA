@@ -50,14 +50,17 @@ $driver->refresh;
 $driver->get($driver->get_current_url =~ s/users//r);
 
 $driver->find_element('#user-action a')->click();
-note 'we should see test templates, groups, machines';
-for my $item ('Medium types', 'Machines', 'Workers', 'Assets', 'Scheduled products') {
-    ok($driver->find_element_by_link_text($item), "can see $item");
-}
-note 'we should not see users, audit';
-for my $item ('Users', 'Needles', 'Audit log') {
-    ok(!scalar @{$driver->find_elements($item, 'link_text')}, "can not see $item");
-}
+
+subtest 'we see activity view, test templates, groups, machines' => sub {
+    for my $item ('Activity View', 'Medium types', 'Machines', 'Workers', 'Assets', 'Scheduled products') {
+        ok $driver->find_element_by_link_text($item), "can see $item";
+    }
+};
+subtest 'we do not see users, audit' => sub {
+    for my $item ('Users', 'Needles', 'Audit log') {
+        ok !scalar @{$driver->find_elements($item, 'link_text')}, "can not see $item";
+    }
+};
 
 kill_driver();
 done_testing();
