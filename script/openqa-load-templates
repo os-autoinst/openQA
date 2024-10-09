@@ -166,9 +166,8 @@ sub post_entry ($table, $entry) {
             $param{version} = $entry->{product}{version};
         }
         elsif ($key eq 'settings' && ref($entry->{settings}) eq "ARRAY") {
-            $param{settings} = {};
             for my $var (@{$entry->{settings}}) {
-                $param{settings}{$var->{key}} = $var->{value};
+                $param{'settings[' . $var->{key} . ']'} = $var->{value};
             }
         }
         else {
@@ -184,7 +183,7 @@ sub post_entry ($table, $entry) {
             {    # there is nothing to update in JobTemplates, the entry just exists or not
                 my $id = $res->json->{$table}[0]{id};
                 my $table_url_id = $url->clone->path($options{apibase} . '/' . decamelize($table) . "/$id");
-                my $res = $client->put($table_url_id, json => \%param)->res;
+                my $res = $client->put($table_url_id, form => \%param)->res;
                 print_error $res unless $res->is_success;
                 return 1;
             }
@@ -194,7 +193,7 @@ sub post_entry ($table, $entry) {
         }
     }
 
-    my $res = $client->post($table_url, json => \%param)->res;
+    my $res = $client->post($table_url, form => \%param)->res;
     print_error $res unless $res->is_success;
     return 1;
 }
