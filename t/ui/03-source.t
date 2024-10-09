@@ -40,6 +40,12 @@ subtest 'source view for jobs using VCS based tests' => sub {
         $settings_rs->find({key => 'CASEDIR'})->update({value => $casedir});
         $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
     };
+    subtest 'link to default branch without a refspec' => sub {
+        my $expected = qr@github.com/me/repo/blob/HEAD/tests.*/installer_timezone@;
+        $casedir = 'https://github.com/me/repo.git';
+        $settings_rs->find({key => 'CASEDIR'})->update({value => $casedir});
+        $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
+    };
 
     subtest 'unique git hash is read from vars.json if existant' => sub {
         $vars_file->spew('
