@@ -71,9 +71,11 @@
                   <!-- Sure this is not the proper place for the workers view,
                   but the previous one was even more annoying -->
                   %= link_to 'Workers' => url_for('admin_workers') => class => 'dropdown-item'
-                  % my $operator_links = config->{plugin_links}{operator};
-                  % for my $name (sort keys %$operator_links) {
-                    %= link_to $name => url_for($operator_links->{$name}) => class => 'dropdown-item'
+                  % if (is_operator) {
+                    % my $operator_links = config->{plugin_links}{operator};
+                    % for my $name (sort keys %$operator_links) {
+                      %= link_to $name => url_for($operator_links->{$name}) => class => 'dropdown-item'
+                    % }
                   % }
                   % if (is_admin) {
                       %= tag 'div' => class => 'dropdown-divider'
