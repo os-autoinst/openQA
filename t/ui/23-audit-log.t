@@ -12,7 +12,6 @@ use Test::Warnings ':report_warnings';
 
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
-use OpenQA::Test::Utils 'wait_for';
 use OpenQA::Client;
 
 use OpenQA::SeleniumTest;
@@ -23,17 +22,6 @@ driver_missing unless my $driver = call_driver;
 my $events = $schema->resultset('AuditEvents');
 my %comments_create_event = (event => 'comments_create', event_data => '{"created":[{"id": 20},{"id": 67}]}');
 $events->create(\%comments_create_event);
-
-sub wait_for_data_table_entries ($table, $expected_entry_count) {
-    my @entries;
-    wait_for_ajax msg => 'DataTable query';
-    wait_for {
-        @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-        scalar @entries == $expected_entry_count;
-    }
-    "$expected_entry_count entries present", {timeout => OpenQA::Test::TimeLimit::scale_timeout 10};
-    return \@entries;
-}
 
 sub check_data_table_entries ($expected_entry_count, $test_name) {
     my $table = $driver->find_element_by_id('audit_log_table') or BAIL_OUT 'unable to find DataTable';
