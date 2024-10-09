@@ -50,7 +50,7 @@
         <h2><%= title %></h2>
 
         <div class="row">
-            <div class="col-xl-4">
+            <div class="col-xl-5">
                 <label class="form-label" for="last_seen_filter">
                     Limit Use:
                 </label>
@@ -58,7 +58,7 @@
                     %= include 'admin/needle/needle_search', str => 'seen'
                 </form>
             </div>
-            <div class="col-xl-4">
+            <div class="col-xl-5">
                 <label class="form-label" for="last_match_filter">
                     Limit Match:
                 </label>
@@ -66,18 +66,12 @@
                     %= include 'admin/needle/needle_search', str => 'match'
                 </form>
             </div>
-            <div class="col-xl-4">
-                <div style="width: fit-content; margin-left: auto;">
-                    <div>
-                        <label class="form-label" for="select_all">
-                            Affects all visible:
-                        </label>
-                    </div>
-                    <div>
-                        <button class="btn btn-primary" id="select_all">Select</button>
-                        <button class="btn btn-secondary" id="unselect_all">Unselect</button>
-                        <button class="btn btn-danger" id="delete_all">Delete</button>
-                    </div>
+            <div class="col-xl-2">
+                <label class="form-label" for="select_all">Affects all visible:</label>
+                <div>
+                    <button class="btn btn-primary" id="select_all">Select</button>
+                    <button class="btn btn-secondary" id="unselect_all">Unselect</button>
+                    <button class="btn btn-danger" id="delete_all">Delete</button>
                 </div>
             </div>
         </div>
