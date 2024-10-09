@@ -160,6 +160,17 @@ subtest 'attempt to register and send a command' => sub {
     ) or diag explain \@happened_events;
 };
 
+subtest 'attempt to setup websocket connection' => sub {
+    my @expected_events = (
+        {status => 'establishing_ws', error_message => undef},
+        {status => 'failed', error_message => 'Unable to upgrade to ws connection via http://test-host/api/v1/ws/42'},
+    );
+    @happened_events = ();
+    $client->_setup_websocket_connection;
+    $client->once(status_changed => sub ($status, @) { Mojo::IOLoop->stop if $status eq 'failed' });
+    Mojo::IOLoop->start;
+    is_deeply \@happened_events, \@expected_events, 'events emitted' or diag explain \@happened_events;
+};
 
 subtest 'retry behavior' => sub {
     # use fake Mojo::UserAgent and Mojo::Transaction
