@@ -97,11 +97,11 @@ subtest 'audit log entries' => sub {
 subtest 'clickable events' => sub {
     # Populate database via the API to add events without hard-coding the format here
     my $auth = {'X-CSRF-Token' => $t->ua->get($url . '/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
-    $t->post_ok($url . '/api/v1/machines', $auth, json => {name => 'foo', backend => 'qemu'})->status_is(200);
-    $t->post_ok($url . '/api/v1/test_suites', $auth, json => {name => 'testsuite'})->status_is(200);
+    $t->post_ok($url . '/api/v1/machines', $auth => form => {name => 'foo', backend => 'qemu'})->status_is(200);
+    $t->post_ok($url . '/api/v1/test_suites', $auth => form => {name => 'testsuite'})->status_is(200);
     $t->post_ok(
         $url . '/api/v1/products',
-        $auth => json => {
+        $auth => form => {
             arch => 'x86_64',
             distri => 'opensuse',
             flavor => 'DVD',

@@ -354,7 +354,10 @@ sub _prepare_settings {
     my ($self, $table, $entry) = @_;
     my $validation = $self->validation;
     my $hp;
-    # accept modern application/json encoded hashes
+    # accept both traditional application/x-www-form-urlencoded parameters
+    # with hash entries having key names encoded like settings[value1]
+    # (see doc at the end of HashedParams.pm)
+    # as well as modern application/json encoded hashes
     my $error;
     if ($self->req->headers->content_type =~ /^application\/json/) {
         try {
@@ -374,7 +377,7 @@ sub _prepare_settings {
         $validation->input($hp);
     }
     else {
-        return 'Invalid request Content-Type ' . $self->req->headers->content_type . '. Expecting application/json.';
+        $hp = $self->hparams();
     }
 
     for my $par (@{$TABLES{$table}->{required}}) {
@@ -394,8 +397,8 @@ sub _prepare_settings {
     my @keys;
     if ($hp->{settings}) {
         for my $k (keys %{$hp->{settings}}) {
-            my $value = trim $hp->{settings}->{$k};
             $k = trim $k;
+            my $value = trim $hp->{settings}->{$k};
             $k =~ s/[^\]\[0-9a-zA-Z_\+]//g;
             push @settings, {key => $k, value => $value};
             push @keys, $k;
