@@ -563,8 +563,8 @@ for my $machine_separator (qw(@ :)) {
     $schema->txn_begin;
     subtest "Create dependency for jobs on different machines"
       . " - dependency setting are correct (using machine separator '$machine_separator')" => sub {
-        $t->post_ok('/api/v1/machines',
-            json => {name => '64bit-ipmi', backend => 'ipmi', settings => {'TEST' => 'ipmi'}})->status_is(200);
+        $t->post_ok('/api/v1/machines', form => {name => '64bit-ipmi', backend => 'ipmi', 'settings[TEST]' => 'ipmi'})
+          ->status_is(200);
         add_opensuse_test('supportserver1');
         add_opensuse_test('supportserver2', MACHINE => ['64bit-ipmi']);
         add_opensuse_test(
@@ -615,7 +615,7 @@ for my $machine_separator (qw(@ :)) {
 
 subtest 'Create dependency for jobs on different machines - best match and log error dependency' => sub {
     $schema->txn_begin;
-    $t->post_ok('/api/v1/machines', json => {name => 'powerpc', backend => 'qemu', settings => {'TEST' => 'power'}})
+    $t->post_ok('/api/v1/machines', form => {name => 'powerpc', backend => 'qemu', 'settings[TEST]' => 'power'})
       ->status_is(200);
 
     add_opensuse_test('install_ltp', MACHINE => ['powerpc']);
@@ -669,7 +669,7 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
     $schema->txn_begin;
     my @machines = qw(ppc ppc-6G ppc-1G ppc-2G s390x);
     for my $m (@machines) {
-        $t->post_ok('/api/v1/machines', json => {name => $m, backend => 'qemu', settings => {'TEST' => 'test'}})
+        $t->post_ok('/api/v1/machines', form => {name => $m, backend => 'qemu', 'settings[TEST]' => 'test'})
           ->status_is(200);
     }
     add_opensuse_test('supportserver', MACHINE => ['ppc', '64bit', 's390x']);
