@@ -2,8 +2,7 @@
 % title 'Personal Activity View';
 
 % content_for ready_function => begin
-  % my $user = $self->current_user;
-  renderActivityView("<%= url_for('audit_ajax') %>", "<%= $user ? $user->nickname : '' %>");
+  renderActivityView("<%= url_for('activity_view_ajax') %>");
 % end
 
 <div>
