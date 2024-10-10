@@ -251,6 +251,23 @@ subtest 'add test suite' => sub() {
     # leave the ajax some time
     wait_for_ajax;
 # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
+    $elem = $driver->find_element('.alert span');
+    like($elem->get_text(), qr/Invalid characters/, 'error shown for invalid chars in settings key');
+
+    # reload page to clear any form fields or flash messages
+    $driver->find_element('#user-action a')->click();
+    $driver->find_element_by_link_text('Test suites')->click();
+
+    $suiteKey = 'testKey';    # now try it again with a valid key
+    is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
+    $elem = $driver->find_element('.admintable tbody tr:last-child');
+    is($elem->get_text(), '', 'new row empty');
+    $driver->find_child_element($elem, '//input[@type="text"]', 'xpath')->send_keys($suiteName);
+    $driver->find_child_element($elem, '//textarea', 'xpath')->send_keys("$suiteKey=$suiteValue");
+    is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
+    # leave the ajax some time
+    wait_for_ajax;
+
     $elem = $driver->find_element('.admintable tbody tr:nth-child(7)')
       ;    # sorting by name so `t"e\st'Suite\'` is supposed to be the 7th element
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
