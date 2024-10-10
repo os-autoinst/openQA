@@ -3,6 +3,7 @@
 
 package OpenQA::CacheService::Task::Sync;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use OpenQA::Task::SignalGuard;
 
 use Mojo::URL;
 use Time::Seconds;
@@ -14,6 +15,8 @@ use constant RSYNC_RETRY_PERIOD => $ENV{OPENQA_RSYNC_RETRY_PERIOD} // 3;
 sub register ($self, $app, $conf) { $app->minion->add_task(cache_tests => \&_cache_tests) }
 
 sub _cache_tests ($job, $from = undef, $to = undef) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
+
     my $app = $job->app;
     my $job_id = $job->id;
     my $lock = $job->info->{notes}{lock};
