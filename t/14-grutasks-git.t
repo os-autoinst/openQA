@@ -231,6 +231,61 @@ subtest 'git_update_all' => sub {
     is_deeply [sort keys %$args], \@clones, 'job args as expected';
 };
 
+subtest 'enqueue_git_clones' => sub {
+    my $minion = $t->app->minion;
+    my $clones = {x => 'y'};
+    my @j = map { $schema->resultset('Jobs')->create({state => 'scheduled', TEST => "t$_"}); } 1 .. 5;
+    my $jobs = [$j[0]->id, $j[1]->id];
+    my $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
+    my $minion_job = $minion->job($result->{minion_id});
+    my $job_id = $minion_job->id;
+    my $task = $schema->resultset('GruTasks')->find($result->{gru_id});
+    my @deps = $task->jobs;
+    is_deeply [map $_->job_id, @deps], $jobs, 'expected GruDependencies created';
+
+    subtest 'add to existing GruTask' => sub {
+        my $enq = 0;
+        my $mocked_gru = Test::MockModule->new('OpenQA::Shared::Plugin::Gru');
+        $mocked_gru->redefine(enqueue => sub (@) { $enq++; });
+        my $jobs = [$j[2]->id];
+        my $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
+        is_deeply $jobs, [], 'job array was emptied';
+        my @deps = $task->jobs;
+        is scalar @deps, 3, 'job was added to GruTask';
+        is $deps[2]->job_id, $j[2]->id, 'third job was added to existing GruTask';
+        is $enq, 0, 'enqueue was not called';
+    };
+
+    subtest 'skip GruTask for finished minion job' => sub {
+        my $dbh = $schema->storage->dbh;
+        my $sql = q{UPDATE minion_jobs set state = 'finished' WHERE id = ?};
+        my $sth = $dbh->prepare($sql);
+        $sth->execute($job_id);
+        my $enq = 0;
+        my $mocked_gru = Test::MockModule->new('OpenQA::Shared::Plugin::Gru');
+        $mocked_gru->redefine(enqueue => sub (@) { $enq++; });
+        my $jobs = [$j[3]->id];
+        my $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
+        is_deeply $jobs, [], 'job array was emptied';
+        my @deps = $task->jobs;
+        is scalar @deps, 3, 'no job was added to GruTask';
+        is $enq, 0, 'enqueue was not called';
+    };
+
+    subtest 'skip GruTask because task done during assigning' => sub {
+        $t->app->log(Mojo::Log->new(level => 'debug'));
+        my $jobs = [$j[4]->id];
+        stderr_like { $t->app->gru->_add_jobs_to_gru_task(999, $jobs) }
+qr{GruTask 999 already gone.*insert or update on table "gru_dependencies" violates foreign key constraint "gru_dependencies_fk_gru_task_id"},
+          'expected log output if GruTask deleted in between';
+        is_deeply $jobs, [], 'job array was emptied';
+        my @deps = $task->jobs;
+        is scalar @deps, 3, 'no job was added to GruTask';
+    };
+};
+
+$t->app->log(Mojo::Log->new(level => 'info'));
+
 subtest 'delete_needles' => sub {
     my $needledirs = $schema->resultset('NeedleDirs');
     my $needles = $schema->resultset('Needles');
