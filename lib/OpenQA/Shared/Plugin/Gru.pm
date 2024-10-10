@@ -115,11 +115,53 @@ sub is_task_active ($self, $task) {
 # checks if there are worker registered
 sub has_workers ($self) { !!$self->app->minion->backend->list_workers(0, 1)->{total} }
 
+sub _find_existing_gru_task ($self, $task, $args, $jobs) {
+    #    warn __PACKAGE__ . ':' . __LINE__ . ": ================ _find_existing_gru_task($task)\n";
+    #    warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$args], ['args']);
+    my $schema = OpenQA::Schema->singleton;
+    my $minion = $self->app->minion;
+    my $existing = $minion->jobs({tasks => [$task], states => [qw(inactive active)]});
+    my $num = $existing->total;
+    #    warn __PACKAGE__ . ':' . __LINE__ . ": ???????? existing: $num\n";
+    while (my $job = $existing->next) {
+        my $gru_id = $job->{notes}->{gru_id} or next;
+        #        warn __PACKAGE__.':'.__LINE__.": ========= existing $job->{id} gru_id=$gru_id\n";
+        my $created = $job->{created};
+        next if time - 60 > $created;
+        my $existing_args = $job->{args}->[0];
+        my @keys = sort keys %$args;
+        my @e_keys = sort keys %$existing_args;
+        no warnings 'uninitialized';
+        next unless "@keys @$args{@keys}" eq "@e_keys @$existing_args{@e_keys}";
+        #        warn __PACKAGE__.':'.__LINE__.": !!!!!!!! same args as existing task\n";
+        my $grutask = $schema->resultset('GruTasks')->find($gru_id);
+        while (@$jobs) {
+            my $id = $jobs->[0];
+            # Add job to existing gru task with the same args
+            #            warn __PACKAGE__ . ':' . __LINE__ . ": !!! assigning job $id to gru $gru_id\n";
+            my $gru_dep
+              = eval { $schema->resultset('GruDependencies')->create({job_id => $id, gru_task_id => $gru_id}); };
+            unless ($gru_dep) {
+                # warn __PACKAGE__.':'.__LINE__.": ???????????? ERROR: $@\n";
+                # if the GruTask is already deleted, we can skip the rest of the
+                # jobs, since the wanted task was done
+                @$jobs = ();
+                last;
+            }
+            shift @$jobs;
+        }
+        #        warn __PACKAGE__.':'.__LINE__.": !! gru $gru_id=$grutask\n";
+        last;
+    }
+}
+
 sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
+    #    warn __PACKAGE__ . ':' . __LINE__ . ": ================ enqueue($task)\n";
     my $ttl = $options->{ttl};
     my $limit = $options->{limit} ? $options->{limit} : undef;
     my $notes = $options->{notes} ? $options->{notes} : undef;
     return undef if defined $limit && $self->count_jobs($task, ['inactive']) >= $limit;
+
 
     $args = [$args] if ref $args eq 'HASH';
 
@@ -199,7 +241,8 @@ sub enqueue_git_clones ($self, $clones, $job_ids) {
     return unless OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} eq 'yes';
     # $clones is a hashref with paths as keys and git urls as values
     # $job_id is used to create entries in a related table (gru_dependencies)
-    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids);
+    $self->_find_existing_gru_task('git_clone', $clones, $job_ids);
+    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids) if @$job_ids;
 }
 
 sub enqueue_and_keep_track {
