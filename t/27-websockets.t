@@ -29,6 +29,12 @@ use Mojo::JSON;
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $t = Test::Mojo->new('OpenQA::WebSockets');
 my $t2 = client(Test::Mojo->new('OpenQA::WebSockets'));
+my $misc_limits = $t->app->config->{misc_limits} //= {};
+my $workers = $schema->resultset('Workers');
+my $jobs = $schema->resultset('Jobs');
+my $worker = $workers->find({host => 'localhost', instance => 1});
+my $worker_id = $worker->id;
+my $status = OpenQA::WebSockets::Model::Status->singleton->workers;
 
 subtest 'Authentication' => sub {
     my $app = $t->app;
@@ -59,14 +65,20 @@ subtest 'Exception' => sub {
 };
 
 subtest 'API' => sub {
-    $t->tx($t->ua->start($t->ua->build_websocket_tx('/ws/23')))->status_is(400)->content_like(qr/Unknown worker/);
+    $t->tx($t->ua->start($t->ua->build_websocket_tx('/ws/23')));
+    $t->status_is(400, 'no ws connection for unregistered worker');
+    $t->content_like(qr/Unknown worker/, 'error about unknown worker');
+
+    $worker->update({job_id => undef});
+    $misc_limits->{max_online_workers} = 0;
+    $misc_limits->{worker_limit_retry_delay} = 42;
+    $t->tx($t->ua->start($t->ua->build_websocket_tx('/ws/1')));
+    $t->status_is(429, 'no ws connection for limited worker')->content_like(qr/Limit.*exceeded/, 'error about limit');
+    $worker->discard_changes;
+    like $worker->error, qr/^limited at .*/, 'worker flagged as limited via error field excluding it from assignments';
 };
 
-my $workers = $schema->resultset('Workers');
-my $jobs = $schema->resultset('Jobs');
-my $worker = $workers->find({host => 'localhost', instance => 1});
-my $worker_id = $worker->id;
-my $status = OpenQA::WebSockets::Model::Status->singleton->workers;
+$misc_limits->{max_online_workers} = undef;
 $status->{$worker_id} = {id => $worker_id, db => $worker};
 
 subtest 'web socket message handling' => sub {

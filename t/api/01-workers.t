@@ -76,12 +76,13 @@ my @workers = (
         instance => 1
     });
 
-$t->get_ok('/api/v1/workers?live=1')
-  ->json_is('' => {workers => \@workers}, 'workers present with deprecated live flag');
+$t->get_ok('/api/v1/workers')->status_is(200, 'listing of all workers');
+$t->json_is('' => {workers => \@workers}, 'workers present with deprecated websocket flag');
 diag explain $t->tx->res->json unless $t->success;
-$_->{websocket} = 0 for @workers;
-$t->get_ok('/api/v1/workers')->json_is('' => {workers => \@workers}, "workers present with deprecated websocket flag");
-diag explain $t->tx->res->json unless $t->success;
+
+$t->get_ok('/api/v1/workers/2')->status_is(200, 'info for existing individual worker');
+$t->json_is('' => {worker => $workers[1]}, 'info for correct worker returned');
+$t->get_ok('/api/v1/workers/3')->status_is(404, 'no info for non-existing worker');
 
 my %worker_key = (host => 'localhost', instance => 1);
 my %registration_params = %worker_key;

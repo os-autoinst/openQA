@@ -162,6 +162,8 @@ subtest 'Test configuration default modes' => sub {
             job_settings_max_recent_jobs => 20000,
             assets_default_limit => 100000,
             assets_max_limit => 200000,
+            max_online_workers => 1000,
+            worker_limit_retry_delay => ONE_HOUR / 4,
         },
         archiving => {
             archive_preserved_important_jobs => 0,

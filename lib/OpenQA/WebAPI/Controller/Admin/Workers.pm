@@ -8,12 +8,11 @@ use OpenQA::Utils;
 use OpenQA::WebAPI::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
 
-sub _extend_info ($w, $live = undef) {
-    $live //= 0;
-    my $info = $w->info($live);
+sub _extend_info ($w) {
+    my $info = $w->info;
     $info->{name} = $w->name;
     my $error = $info->{error};
-    if ($live && $error && ($error =~ qr/(graceful disconnect) at (.*)/)) {
+    if ($error && ($error =~ qr/(graceful disconnect|limited) at (.*)/)) {
         $info->{offline_note} = $1;
         $info->{t_seen} = $2 . 'Z';
         $info->{alive} = undef;
@@ -60,7 +59,7 @@ sub index ($self) {
 sub show ($self) {
     my $w = $self->schema->resultset('Workers')->find($self->param('worker_id'))
       or return $self->reply->not_found;
-    $self->stash(worker => _extend_info($w, 1));
+    $self->stash(worker => _extend_info($w));
 
     $self->render('admin/workers/show');
 }

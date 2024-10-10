@@ -124,7 +124,7 @@ subtest 'attempt to register and send a command' => sub {
         );
         Mojo::IOLoop->start;
     }
-    qr/Connection error: Can't connect:.*(remaining tries: 0)/s, 'error logged';
+    qr/Connection error:.*(remaining tries: 0)/s, 'error logged';
     is($callback_invoked, 1, 'callback has been invoked');
     is($client->worker->stop_current_job_called,
         0, 'not attempted to stop current job because it is from different web UI');
@@ -156,13 +156,21 @@ subtest 'attempt to register and send a command' => sub {
             [{status => 'registering', error_message => undef}, {status => 'failed'}],
             'events emitted',
           )
-          and like(
-            $error_message,
-            qr{Failed to register at http://test-host - connection error: Can't connect:.*},
-            'error message',
-          )) or diag explain \@happened_events;
+          and like($error_message, qr{Failed to register at http://test-host - connection error:.*}, 'error message')
+    ) or diag explain \@happened_events;
 };
 
+subtest 'attempt to setup websocket connection' => sub {
+    my @expected_events = (
+        {status => 'establishing_ws', error_message => undef},
+        {status => 'failed', error_message => 'Unable to upgrade to ws connection via http://test-host/api/v1/ws/42'},
+    );
+    @happened_events = ();
+    $client->_setup_websocket_connection;
+    $client->once(status_changed => sub ($status, @) { Mojo::IOLoop->stop if $status eq 'failed' });
+    Mojo::IOLoop->start;
+    is_deeply \@happened_events, \@expected_events, 'events emitted' or diag explain \@happened_events;
+};
 
 subtest 'retry behavior' => sub {
     # use fake Mojo::UserAgent and Mojo::Transaction

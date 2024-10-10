@@ -168,10 +168,7 @@ sub unprepare_for_work {
     return $self;
 }
 
-sub info {
-    my $self = shift;
-    my ($live) = ref $_[0] eq 'HASH' ? @{$_[0]}{qw(live)} : @_;
-
+sub info ($self) {
     my $settings = {
         id => $self->id,
         host => $self->host,
@@ -190,14 +187,8 @@ sub info {
         my $cs = $self->currentstep;
         $settings->{currentstep} = $cs if $cs;
     }
-    my $alive = $settings->{alive} = $settings->{connected} = $self->dead ? 0 : 1;
-    $settings->{websocket} = $live ? $alive : 0;
-
-    # note: The keys "connected" and "websocket" are only provided for compatibility. The "live"
-    #       parameter makes no actual difference anymore. (`t_seen` is decreased when a worker
-    #       disconnects from the ws server so relying on it is as live as it gets.)
-
-    return $settings;
+    $settings->{alive} = $settings->{connected} = $settings->{websocket} = $self->dead ? 0 : 1;
+    return $settings;    # The keys "connected" and "websocket" are only provided for compatibility.
 }
 
 sub send_command {
