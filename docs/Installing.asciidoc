@@ -305,7 +305,7 @@ zypper dup --from devel_openQA_Leap --allow-vendor-change
 
 ==== Preparations on SLE
 
-On SLE some repositories have to be added.
+On SLE certain modules have to be enabled.
 Afterwards the instructions for openSUSE apply.
 
 [source,sh]
