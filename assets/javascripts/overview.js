@@ -287,11 +287,13 @@ function showAddCommentsDialog() {
   modal.show();
 }
 
-function addComments(form) {
+function bulkJobsAction(form) {
   const text = form.elements.text.value;
   if (!text.length) {
     return window.alert("The comment text mustn't be empty.");
   }
+  const actionBtn = form.clickedButton.value;
+  let reqUrl = form.clickedButton.dataset.url || form.action;
   const progressIndication = document.getElementById('add-comments-progress-indication');
   const controls = document.getElementById('add-comments-controls');
   progressIndication.style.display = 'flex';
@@ -301,17 +303,38 @@ function addComments(form) {
     controls.style.display = 'inline';
     window.addCommentsModal.hide();
   };
-  fetchWithCSRF(form.action, {method: 'POST', body: new FormData(form)})
+
+  let infoTxt =
+    'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.';
+  let errTxt = 'The comments could not be added:';
+  if (actionBtn == 'restartAndCommentJobs') {
+    infoTxt = '<a href="javascript: location.reload()">Reload</a> the page to show restarted jobs.';
+    errTx = 'Failed to restart jobs: ';
+  }
+  fetchWithCSRF(reqUrl, {method: 'POST', body: new FormData(form)})
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      addFlash(
-        'info',
-        'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
-      );
+      addFlash('info', infoTxt);
       done();
     })
     .catch(error => {
-      addFlash('danger', `The comments could not be added: ${error}`);
+      addFlash('danger', `${errTxt} ${error}`);
       done();
     });
+
+  if (actionBtn == 'restartAndCommentJobs') {
+    //const commenttUrl = document.getElementById('CommentJobsBtn').dataset.url;
+    reqUrl = document.getElementById('CommentJobsBtn').dataset.url;
+    console.log('iob ' + reqUrl);
+    fetchWithCSRF(reqUrl, {method: 'POST', body: new FormData(form)})
+      .then(response => {
+        if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+        addFlash('info', 'The comments have been created on the previous jobs');
+        done();
+      })
+      .catch(error => {
+        addFlash('danger', `The comments could not be added: ${error}`);
+        done();
+      });
+  }
 }
