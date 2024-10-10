@@ -114,11 +114,12 @@ function renderModuleRow(module, snippets) {
     const tplargs = {MODULE: encodeURIComponent(module.name), STEP: step.num};
     const alt = step.name || '';
 
+    const textData = step.text_data;
     if (step.is_parser_text_result) {
       const elements = [];
-      const stepActions = E('span', [], {class: 'step_actions'});
-      stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
-      const stepFrame = E('span', [stepActions, step.text_data], {class: 'resborder ' + step.resborder});
+      const template = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
+      const stepFrame = E('span', [], {class: 'resborder ' + step.resborder});
+      stepFrame.innerHTML = '<span class="step_actions">' + template + '</span>' + textData;
       const textResult = E('span', [stepFrame], {
         title: step.is_parser_text_result ? title : undefined,
         'data-href': href,
@@ -136,7 +137,6 @@ function renderModuleRow(module, snippets) {
 
     const url = renderTemplate(snippets.module_url, tplargs);
     const box = [];
-    const textData = step.text_data;
     let resborder = step.resborder;
     if (step.screenshot) {
       let thumb;
@@ -181,16 +181,12 @@ function renderModuleRow(module, snippets) {
       const content = step.title || E('i', [], {class: 'fa fa fa-question'});
       box.push(E('span', [content], {class: 'resborder ' + resborder}));
     }
-    if (step.text && title !== 'Soft Failed') {
+    if (step.text) {
       const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
-      const textresult = E('pre', [textData]);
-      var html = stepActions.outerHTML;
-      html += textresult.outerHTML;
-      const txt = escape(html);
       const link = E('a', box, {
         class: 'no_hover' + (title === 'wait_serial' ? ' serial-result-preview' : ''),
-        'data-text': txt,
+        'data-text': escape(stepActions.outerHTML + '<pre>' + textData + '</pre>'),
         title: title,
         href: href
       });
