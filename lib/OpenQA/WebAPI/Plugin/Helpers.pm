@@ -290,8 +290,8 @@ sub register ($self, $app, $config) {
         populate_hash_with_needle_timestamps_and_urls => sub {
             my ($c, $needle, $hash) = @_;
 
-            $hash->{last_seen} = $needle ? $needle->last_seen_time || 'never' : 'unknown';
-            $hash->{last_match} = $needle ? $needle->last_matched_time || 'never' : 'unknown';
+            $hash->{last_seen} = $needle ? $needle->last_seen_time_fmt : 'unknown';
+            $hash->{last_match} = $needle ? $needle->last_matched_time_fmt : 'unknown';
             return $hash unless $needle;
             if (my $last_seen_module_id = $needle->last_seen_module_id) {
                 $hash->{last_seen_link} = $c->url_for(
