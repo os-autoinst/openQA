@@ -302,19 +302,28 @@ zypper dup --from devel_openQA_Leap --allow-vendor-change
 
 
 === Installation
-You can install the main openQA server package using these commands.
+
+==== Preparations on SLE
+
+On SLE certain modules have to be enabled.
+Afterwards the instructions for openSUSE apply.
 
 [source,sh]
 -------------------------------------------------------------------------------
-# openSUSE
-zypper in openQA
-
-# SLE
 . /etc/os-release
 SUSEConnect -p sle-module-desktop-applications/$VERSION_ID/$CPU
 SUSEConnect -p sle-module-development-tools/$VERSION_ID/$CPU
 SUSEConnect -p sle-we/$VERSION_ID/$CPU -r $sled_key
 SUSEConnect -p PackageHub/$VERSION_ID/$CPU
+-------------------------------------------------------------------------------
+
+==== Installing openQA
+
+You can install the main openQA server package using these commands.
+
+[source,sh]
+-------------------------------------------------------------------------------
+# openSUSE
 zypper in openQA
 
 # Fedora
@@ -629,6 +638,8 @@ recommended.
 
 The openQA worker is distributed as a separate package which be installed on
 multiple machines while still using only one web UI.
+
+If you are using SLE make sure to <<_preparations_on_sle,add the required repos>> first.
 
 [source,sh]
 --------------------------------------------------------------------------------
