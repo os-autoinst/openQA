@@ -5,7 +5,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Table;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-use Mojo::Util 'trim';
+use Mojo::Util qw(trim xml_escape);
 use OpenQA::App;
 use OpenQA::Log 'log_debug';
 use List::Util qw(min);
@@ -397,9 +397,16 @@ sub _prepare_settings {
     my @keys;
     if ($hp->{settings}) {
         for my $k (keys %{$hp->{settings}}) {
-            $k = trim $k;
             my $value = trim $hp->{settings}->{$k};
-            $k =~ s/[^\]\[0-9a-zA-Z_\+]//g;
+            $k = trim $k;
+            my $invalid_chars_in_key = $k;
+            # Remove any allowed chars so that only invalid chars remain
+            $invalid_chars_in_key =~ s/[\]\[0-9a-zA-Z_\+]//g;
+            $invalid_chars_in_key =~ s/(.)(?=.*\1)//g;    # Remove any chars that occurs more than once
+            if ($invalid_chars_in_key ne '') {
+                my $eick = join(', ', map { '<b>' . xml_escape($_) . '</b>' } split('', $invalid_chars_in_key));
+                return sprintf('Invalid characters %s in settings key <b>%s</b>', $eick, xml_escape($k));
+            }
             push @settings, {key => $k, value => $value};
             push @keys, $k;
         }
