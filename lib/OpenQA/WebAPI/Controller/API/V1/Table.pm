@@ -399,12 +399,10 @@ sub _prepare_settings {
         for my $k (keys %{$hp->{settings}}) {
             my $value = trim $hp->{settings}->{$k};
             $k = trim $k;
-            my $invalid_chars_in_key = $k;
-            # Remove any allowed chars so that only invalid chars remain
-            $invalid_chars_in_key =~ s/[\]\[0-9a-zA-Z_\+]//g;
-            $invalid_chars_in_key =~ s/(.)(?=.*\1)//g;    # Remove any chars that occurs more than once
-            if ($invalid_chars_in_key ne '') {
-                my $eick = join(', ', map { '<b>' . xml_escape($_) . '</b>' } split('', $invalid_chars_in_key));
+            my %invalid;
+            @invalid{$k =~ m/([^\]\[0-9a-zA-Z_\+])/g} = ();
+            if (keys %invalid) {
+                my $eick = join ', ', map { '<b>' . xml_escape($_) . '</b>' } sort keys %invalid;
                 return sprintf('Invalid characters %s in settings key <b>%s</b>', $eick, xml_escape($k));
             }
             push @settings, {key => $k, value => $value};
