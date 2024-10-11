@@ -25,7 +25,7 @@ $events->create(\%comments_create_event);
 
 sub check_data_table_entries ($expected_entry_count, $test_name) {
     my $table = $driver->find_element_by_id('audit_log_table') or BAIL_OUT 'unable to find DataTable';
-    my $entries = wait_for_data_table_entries $table, $expected_entry_count;
+    my $entries = wait_for_data_table $table, $expected_entry_count;
     is scalar @$entries, $expected_entry_count, $test_name;
     return $entries;
 }
