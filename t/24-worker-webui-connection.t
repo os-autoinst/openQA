@@ -517,10 +517,8 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     is($accepted_job->developer_session_running, 1, 'developer session running');
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_LIVELOG_STOP, jobid => 25});
     is($accepted_job->livelog_viewers, 0, 'livelog stopped');
-
-    combined_like { $command_handler->handle_command(undef, {type => WORKER_COMMAND_QUIT, jobid => 27}) }
-    qr/Ignoring job cancel from http:\/\/test-host because there's no job with ID 27/,
-      'ignoring commands for different job';
+    combined_like { $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 21}) }
+    qr/Ignoring WS message.*for job 21.*not running/, 'livelog command for other job ignored';
 
     # stopping job
     is($accepted_job->status, 'new',
@@ -555,11 +553,29 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     # test incompatible (so far the worker stops when receiving this message; there are likely better ways to handle it)
     is($worker->is_stopping, 0, 'not already stopping');
-    combined_like {
-        $command_handler->handle_command(undef, {type => 'incompatible'})
-    }
+    combined_like { $command_handler->handle_command(undef, {type => 'incompatible'}) }
     qr/running a version incompatible with web UI host http:\/\/test-host and therefore stopped/, 'problem is logged';
     is($worker->is_stopping, 1, 'worker is stopping on incompatible message');
+
+    $client->webui_host('foo');
+    $worker->current_webui_host('bar');
+    $worker->current_job(OpenQA::Worker::Job->new($worker, $client, {id => 42}));
+    combined_like { $command_handler->handle_command(undef, {type => 'quit'}) }
+    qr/Ignoring job cancel from foo.*currently working for bar/, 'stop command from other web UI host ignored';
+    combined_like { $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 42}) }
+    qr/Ignoring job-specific WS message.*foo.*currently occupied by bar/, 'live command from other web UI host ignored';
+
+    $worker->current_webui_host('foo');
+    combined_like { $command_handler->handle_command(undef, {type => 'quit'}) }
+    qr/Ignoring job cancel from foo.*no job ID/, 'stop command without job ID ignored';
+
+    combined_like { $command_handler->handle_command(undef, {type => 'quit', jobid => 21}) }
+    qr/Ignoring job cancel from foo.*no job with ID 21/, 'stop command for unknown job ignored';
+
+    $worker->pending_job(OpenQA::Worker::Job->new($worker, $client, {id => 43}));
+    combined_like { $command_handler->handle_command(undef, {type => 'quit', jobid => 43}) }
+    qr/Will quit job 43 later as requested by the web UI/, 'stop command for pending job executed later';
+    is_deeply $worker->skipped_jobs, [[43, 'quit']], 'pending job is going to be skipped';
 };
 
 $client->worker_id(undef);
