@@ -76,14 +76,12 @@ sub handle_command {
                 return undef;
             }
         }
-        else {
+        elsif (defined $job_id) {
             # ignore messages which belong to a job
-            if (defined $job_id) {
-                log_warning("Ignoring WS message from $webui_host with type $type and job ID $job_id "
-                      . "(currently not executing a job):\n"
-                      . pp($json));
-                return undef;
-            }
+            log_warning("Ignoring WS message from $webui_host with type $type and job ID $job_id "
+                  . "(currently not executing a job):\n"
+                  . pp($json));
+            return undef;
         }
         # verify that the web UI host for the job ID matches as well
         if ($job_id && $webui_host ne $current_webui_host) {
