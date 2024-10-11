@@ -573,6 +573,8 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_development_version_repository">Development version repository</a></li>
 <li><a href="#_installation">Installation</a>
 <ul class="sectlevel3">
+<li><a href="#_preparations_on_sle">Preparations on SLE</a></li>
+<li><a href="#_installing_openqa">Installing openQA</a></li>
 <li><a href="#_installation_from_sources">Installation from sources</a></li>
 </ul>
 </li>
@@ -2269,20 +2271,30 @@ zypper<span class="tok-w"> </span>dup<span class="tok-w"> </span>--from<span cla
 </div>
 <div class="sect2">
 <h3 id="_installation">Installation</h3>
+<div class="sect3">
+<h4 id="_preparations_on_sle">Preparations on SLE</h4>
+<div class="paragraph">
+<p>On SLE certain modules have to be enabled.
+Afterwards the instructions for openSUSE apply.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>.<span class="tok-w"> </span>/etc/os-release
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-module-desktop-applications/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span>
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-module-development-tools/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span>
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-we/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span><span class="tok-w"> </span>-r<span class="tok-w"> </span><span class="tok-nv">$sled_key</span>
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>PackageHub/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_installing_openqa">Installing openQA</h4>
 <div class="paragraph">
 <p>You can install the main openQA server package using these commands.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
-zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA
-
-<span class="tok-c1"># SLE</span>
-.<span class="tok-w"> </span>/etc/os-release
-SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-module-desktop-applications/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span>
-SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-module-development-tools/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span>
-SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-we/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span><span class="tok-w"> </span>-r<span class="tok-w"> </span><span class="tok-nv">$sled_key</span>
-SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>PackageHub/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span>
 zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA
 
 <span class="tok-c1"># Fedora</span>
@@ -2304,6 +2316,7 @@ zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-
 PostgreSQL database or <code>openQA-single-instance</code> which sets up a web UI server,
 a web proxy as well as a local worker. Install <code>openQA-client</code> if you only
 want to interact with existing, external openQA instances.</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_installation_from_sources">Installation from sources</h4>
@@ -2661,6 +2674,9 @@ recommended.</p>
 <div class="paragraph">
 <p>The openQA worker is distributed as a separate package which be installed on
 multiple machines while still using only one web UI.</p>
+</div>
+<div class="paragraph">
+<p>If you are using SLE make sure to <a href="#_preparations_on_sle">add the required repos</a> first.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -13046,7 +13062,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-10-09 04:43:33 UTC
+Last updated 2024-10-11 04:44:34 UTC
 </div>
 </div>
 </body>
