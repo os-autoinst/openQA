@@ -83,9 +83,27 @@ $job_mock->redefine(start_livelog => sub { shift->{_livelog_viewers} = 1 });
 $job_mock->redefine(stop_livelog => sub { shift->{_livelog_viewers} = 0 });
 
 subtest 'attempt to register and send a command' => sub {
-    # test registration failure
-    $client->register;
-    is($client->status, 'failed', 'client failed to register');
+    my @expected_events;
+    subtest 'handling registration failure on connection error' => sub {
+        $client->register;
+        is $client->status, 'failed', 'client failed to register after connection error';
+        push @expected_events, {status => 'registering', error_message => undef}, {status => 'failed'};
+    };
+    subtest 'handling registration failure due to validation error' => sub {
+        my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
+        my $fake_tx = Mojo::Transaction::HTTP->new;
+        $fake_tx->res->code(200);
+        $fake_tx->res->headers->content_type('text/json');
+        $fake_tx->res->body('{}');
+        $ua_mock->redefine(post => $fake_tx);
+        $client->register;
+        is $client->status, 'disabled', 'client failed to register after validation error';
+        push @expected_events, {status => 'registering', error_message => undef},
+          {
+            error_message => 'Failed to register at http://test-host: host did not return a worker ID',
+            status => 'disabled'
+          };
+    };
 
     # note: Successful registration is tested in e.g. `05-scheduler-full.t`.
 
@@ -149,23 +167,30 @@ subtest 'attempt to register and send a command' => sub {
     is($client->worker->stop_current_job_called,
         WORKER_SR_API_FAILURE, 'attempted to stop current job with reason "api-failure"');
 
-    my $error_message = ref($happened_events[1]) eq 'HASH' ? delete $happened_events[1]->{error_message} : undef;
-    (
-        is_deeply(
-            \@happened_events,
-            [{status => 'registering', error_message => undef}, {status => 'failed'}],
-            'events emitted',
-          )
-          and like($error_message, qr{Failed to register at http://test-host - connection error:.*}, 'error message')
-    ) or diag explain \@happened_events;
+    subtest 'emitted events' => sub {
+        my $error_message = ref($happened_events[1]) eq 'HASH' ? delete $happened_events[1]->{error_message} : undef;
+        is_deeply \@happened_events, \@expected_events, 'expected events emitted';
+        like $error_message, qr{Failed to register at http://test-host - connection error:.*}, 'error message';
+    } or diag explain \@happened_events;
 };
 
 subtest 'attempt to setup websocket connection' => sub {
     my @expected_events = (
+        {
+            status => 'disabled',
+            error_message => 'Unable to establish ws connection to http://test-host without worker ID'
+        },
         {status => 'establishing_ws', error_message => undef},
         {status => 'failed', error_message => 'Unable to upgrade to ws connection via http://test-host/api/v1/ws/42'},
     );
     @happened_events = ();
+
+    # attempt to connect without worker ID
+    $client->worker_id(undef);
+    $client->_setup_websocket_connection;
+
+    # attempt to connect running into connection error
+    $client->worker_id(42);
     $client->_setup_websocket_connection;
     $client->once(status_changed => sub ($status, @) { Mojo::IOLoop->stop if $status eq 'failed' });
     Mojo::IOLoop->start;

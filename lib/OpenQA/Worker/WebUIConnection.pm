@@ -140,6 +140,7 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
                 disabled => {
                     error_message => "Unable to establish ws connection to $webui_host without worker ID"
                 });
+            return undef;
         }
         $websocket_url = $self->url->clone;
         my %ws_scheme = (http => 'ws', https => 'wss');
