@@ -368,9 +368,8 @@ sub _configure_cgroupv2 ($job_info) {
     my $cgroup;
     eval {
         $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice)->child($job_info->{id})->create;
-        if (my $query_cgroup_path = $cgroup->can('_cgroup')) {
-            log_info('Using cgroup ' . $query_cgroup_path->($cgroup));
-        }
+        my $query_cgroup_path = $cgroup->can('_cgroup');
+        log_info('Using cgroup ' . $query_cgroup_path->($cgroup)) if $query_cgroup_path;
     };
     if (my $error = $@) {
         $cgroup = c();
@@ -484,7 +483,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
             # Allow to override isotovideo executable with an arbitrary
             # command line based on a config option
             exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
-            die "exec failed: $!\n";
+            die "exec failed: $!\n";    # uncoverable statement
         });
     $child->on(
         collected => sub {

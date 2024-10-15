@@ -83,9 +83,27 @@ $job_mock->redefine(start_livelog => sub { shift->{_livelog_viewers} = 1 });
 $job_mock->redefine(stop_livelog => sub { shift->{_livelog_viewers} = 0 });
 
 subtest 'attempt to register and send a command' => sub {
-    # test registration failure
-    $client->register;
-    is($client->status, 'failed', 'client failed to register');
+    my @expected_events;
+    subtest 'handling registration failure on connection error' => sub {
+        $client->register;
+        is $client->status, 'failed', 'client failed to register after connection error';
+        push @expected_events, {status => 'registering', error_message => undef}, {status => 'failed'};
+    };
+    subtest 'handling registration failure due to validation error' => sub {
+        my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
+        my $fake_tx = Mojo::Transaction::HTTP->new;
+        $fake_tx->res->code(200);
+        $fake_tx->res->headers->content_type('text/json');
+        $fake_tx->res->body('{}');
+        $ua_mock->redefine(post => $fake_tx);
+        $client->register;
+        is $client->status, 'disabled', 'client failed to register after validation error';
+        push @expected_events, {status => 'registering', error_message => undef},
+          {
+            error_message => 'Failed to register at http://test-host: host did not return a worker ID',
+            status => 'disabled'
+          };
+    };
 
     # note: Successful registration is tested in e.g. `05-scheduler-full.t`.
 
@@ -149,23 +167,30 @@ subtest 'attempt to register and send a command' => sub {
     is($client->worker->stop_current_job_called,
         WORKER_SR_API_FAILURE, 'attempted to stop current job with reason "api-failure"');
 
-    my $error_message = ref($happened_events[1]) eq 'HASH' ? delete $happened_events[1]->{error_message} : undef;
-    (
-        is_deeply(
-            \@happened_events,
-            [{status => 'registering', error_message => undef}, {status => 'failed'}],
-            'events emitted',
-          )
-          and like($error_message, qr{Failed to register at http://test-host - connection error:.*}, 'error message')
-    ) or diag explain \@happened_events;
+    subtest 'emitted events' => sub {
+        my $error_message = ref($happened_events[1]) eq 'HASH' ? delete $happened_events[1]->{error_message} : undef;
+        is_deeply \@happened_events, \@expected_events, 'expected events emitted';
+        like $error_message, qr{Failed to register at http://test-host - connection error:.*}, 'error message';
+    } or diag explain \@happened_events;
 };
 
 subtest 'attempt to setup websocket connection' => sub {
     my @expected_events = (
+        {
+            status => 'disabled',
+            error_message => 'Unable to establish ws connection to http://test-host without worker ID'
+        },
         {status => 'establishing_ws', error_message => undef},
         {status => 'failed', error_message => 'Unable to upgrade to ws connection via http://test-host/api/v1/ws/42'},
     );
     @happened_events = ();
+
+    # attempt to connect without worker ID
+    $client->worker_id(undef);
+    $client->_setup_websocket_connection;
+
+    # attempt to connect running into connection error
+    $client->worker_id(42);
     $client->_setup_websocket_connection;
     $client->once(status_changed => sub ($status, @) { Mojo::IOLoop->stop if $status eq 'failed' });
     Mojo::IOLoop->start;
@@ -492,10 +517,8 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     is($accepted_job->developer_session_running, 1, 'developer session running');
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_LIVELOG_STOP, jobid => 25});
     is($accepted_job->livelog_viewers, 0, 'livelog stopped');
-
-    combined_like { $command_handler->handle_command(undef, {type => WORKER_COMMAND_QUIT, jobid => 27}) }
-    qr/Ignoring job cancel from http:\/\/test-host because there's no job with ID 27/,
-      'ignoring commands for different job';
+    combined_like { $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 21}) }
+    qr/Ignoring WS message.*for job 21.*not running/, 'livelog command for other job ignored';
 
     # stopping job
     is($accepted_job->status, 'new',
@@ -530,11 +553,29 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     # test incompatible (so far the worker stops when receiving this message; there are likely better ways to handle it)
     is($worker->is_stopping, 0, 'not already stopping');
-    combined_like {
-        $command_handler->handle_command(undef, {type => 'incompatible'})
-    }
+    combined_like { $command_handler->handle_command(undef, {type => 'incompatible'}) }
     qr/running a version incompatible with web UI host http:\/\/test-host and therefore stopped/, 'problem is logged';
     is($worker->is_stopping, 1, 'worker is stopping on incompatible message');
+
+    $client->webui_host('foo');
+    $worker->current_webui_host('bar');
+    $worker->current_job(OpenQA::Worker::Job->new($worker, $client, {id => 42}));
+    combined_like { $command_handler->handle_command(undef, {type => 'quit'}) }
+    qr/Ignoring job cancel from foo.*currently working for bar/, 'stop command from other web UI host ignored';
+    combined_like { $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 42}) }
+    qr/Ignoring job-specific WS message.*foo.*currently occupied by bar/, 'live command from other web UI host ignored';
+
+    $worker->current_webui_host('foo');
+    combined_like { $command_handler->handle_command(undef, {type => 'quit'}) }
+    qr/Ignoring job cancel from foo.*no job ID/, 'stop command without job ID ignored';
+
+    combined_like { $command_handler->handle_command(undef, {type => 'quit', jobid => 21}) }
+    qr/Ignoring job cancel from foo.*no job with ID 21/, 'stop command for unknown job ignored';
+
+    $worker->pending_job(OpenQA::Worker::Job->new($worker, $client, {id => 43}));
+    combined_like { $command_handler->handle_command(undef, {type => 'quit', jobid => 43}) }
+    qr/Will quit job 43 later as requested by the web UI/, 'stop command for pending job executed later';
+    is_deeply $worker->skipped_jobs, [[43, 'quit']], 'pending job is going to be skipped';
 };
 
 $client->worker_id(undef);

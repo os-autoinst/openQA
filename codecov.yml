@@ -12,6 +12,10 @@ coverage:
     project:
       default:
         target: 98
+      fully_covered:
+        target: 100.0
+        paths:
+          - lib/openQA/Worker
       tests:
         target: 100.0
         paths:
