@@ -2,8 +2,6 @@
 # Copyright 2014-2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-BEGIN { $ENV{TZ} = 'UTC' }    # make sure Selenium uses the same timezone as the server
-
 use Test::Most;
 
 use FindBin;
