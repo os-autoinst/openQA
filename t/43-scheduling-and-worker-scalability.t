@@ -9,6 +9,7 @@ use Test::MockModule;
 use Time::HiRes 'sleep';
 use File::Path 'make_path';
 use Scalar::Util 'looks_like_number';
+use List::Util qw(max);
 use Mojo::File qw(path tempfile);
 use Mojo::Util 'dumper';
 use IPC::Run qw(start);
@@ -166,7 +167,7 @@ subtest 'assign and run jobs' => sub {
         is(scalar @$allocated, $job_count, 'each job has a worker assigned');
     }
     else {
-        # uncoverable statement only executed when the number of workers is # jobs are equal based on config parameters
+        # uncoverable statement only executed when the number of workers and jobs are equal based on config parameters
         is(scalar @$allocated, $job_count, 'all jobs assigned and all workers busy');
         # uncoverable statement count:1
         # uncoverable statement count:2
@@ -187,7 +188,7 @@ subtest 'assign and run jobs' => sub {
     }
     for my $try (1 .. $polling_tries_jobs) {
         last if $jobs->search({state => DONE})->count == $job_count;
-        if ($jobs->search({state => SCHEDULED})->count > $remaining_jobs) {
+        if ($jobs->search({state => SCHEDULED})->count > max(0, $remaining_jobs)) {
             # uncoverable statement
             note('At least one job has been set back to scheduled; aborting to wait until all jobs are done');
             last;    # uncoverable statement
