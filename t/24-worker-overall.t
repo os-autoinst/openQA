@@ -30,8 +30,6 @@ $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 #       file specified via OPENQA_LOGFILE instead of stdout/stderr.
 $ENV{OPENQA_LOGFILE} = undef;
 
-my $load_avg_file = simulate_load('0.93 0.95 10.25 2/2207 1212', 'worker-overall-load-avg');
-
 # define fake isotovideo
 {
     package Test::FakeProcess;    # uncoverable statement count:1
@@ -90,6 +88,7 @@ my $dbus_mock = Test::MockModule->new('Net::DBus', no_auto => 1);
 $dbus_mock->define(system => sub (@) { Test::FakeDBus->new });
 my $cache_service_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
 $cache_service_client_mock->redefine(info => sub { Test::FakeCacheServiceClientInfo->new });
+my $load_avg_file = simulate_load('10.93 10.91 10.25 2/2207 1212', 'worker-overall-load-avg');
 
 like(
     exception {
@@ -119,6 +118,21 @@ push(@{$worker->settings->parse_errors}, 'foo', 'bar');
 combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors occurred.*foo.*bar.*/s,
   'setup info with parse errors';
+
+subtest 'worker load' => sub {
+    my $load = OpenQA::Worker::_load_avg();
+    is scalar @$load, 3, 'expected number of load values';
+    is $load->[0], 10.93, 'expected load';
+    is_deeply $load, [10.93, 10.91, 10.25], 'expected computed system load, rising flank';
+    is_deeply OpenQA::Worker::_load_avg(path($ENV{OPENQA_CONFIG}, 'invalid_loadavg')), [], 'error on invalid load';
+    ok !$worker->_check_system_utilization, 'default threshold not exceeded';
+    ok $worker->_check_system_utilization(10), 'stricter threshold exceeded by load';
+    ok !$worker->_check_system_utilization(10, [3, 9, 11]), 'load ok on falling flank';
+    ok $worker->_check_system_utilization(10, [12, 9, 3]), 'load exceeded on rising flank';
+    ok $worker->_check_system_utilization(10, [12, 3, 9]), 'load exceeded on rising flank and old load';
+    ok $worker->_check_system_utilization(10, [11, 13, 12]), 'load still exceeded on short load dip';
+    ok $worker->_check_system_utilization(10, [11, 12, 13]), 'load still exceeded on falling flank but high';
+};
 
 subtest 'delay and exec' => sub {
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
@@ -854,7 +868,7 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
             $worker_mock->unmock('is_qemu_running');
             $worker->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD} = '10';
             is $worker->status->{status}, 'broken', 'worker considered broken when average load exceeds threshold';
-            like $worker->current_error, qr/load 10\.25.*exceeding.*10/, 'error shows current load and threshold';
+            like $worker->current_error, qr/load \(.*10\.25.*exceeding.*10/, 'error shows current load and threshold';
 
             # assume the error is gone
             $load_avg_file->remove;
