@@ -1626,7 +1626,7 @@ subtest 'handle git_clone with CASEDIR' => sub {
     my $params = {TEST => 'handle_foo_casedir',};
     $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
 
-    my $job_id = $t->tx->res->json->{id};
+    my $job_id = $t->tx->res->json->{id} or explain $t->tx->res->json;
     my $result = $jobs->find($job_id)->settings_hash;
 
     my $gru_dep = $schema->resultset('GruDependencies')->find({job_id => $job_id});

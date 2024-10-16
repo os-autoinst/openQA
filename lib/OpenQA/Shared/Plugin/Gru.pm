@@ -9,11 +9,12 @@ use Minion;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::Shared::GruJob;
-use OpenQA::Log 'log_info';
+use OpenQA::Log qw(log_debug log_info);
 use OpenQA::Utils qw(sharedir);
 use Mojo::Pg;
 use Mojo::Promise;
 use Mojo::File qw(path);
+use Mojo::JSON qw(decode_json);
 
 has app => undef, weak => 1;
 has 'dsn';
@@ -115,6 +116,52 @@ sub is_task_active ($self, $task) {
 # checks if there are worker registered
 sub has_workers ($self) { !!$self->app->minion->backend->list_workers(0, 1)->{total} }
 
+# For some tasks with the same args we don't need to repeat them if they were
+# enqueued less than a minute ago, like 'git fetch'
+sub _find_existing_minion_job ($self, $task, $args, $job_ids) {
+    my $schema = OpenQA::Schema->singleton;
+    $args = [$args] if ref $args eq 'HASH';
+    my $dtf = $schema->storage->datetime_parser;
+    my $dbh = $schema->storage->dbh;
+    my $sql = q{SELECT id, args, created, state, retries, notes, result FROM minion_jobs
+                WHERE state IN ('inactive', 'active', 'finished')
+                AND created >= ? AND task = ? AND args = ?
+                ORDER BY array_position(array['finished'::varchar, 'inactive'::varchar, 'active'::varchar], state::varchar)
+                LIMIT 1};
+    my $sth = $dbh->prepare($sql);
+    my @args = (
+        $dtf->format_datetime(DateTime->now()->subtract(minutes => 1)),
+        'git_clone', OpenQA::Schema::Result::GruTasks->encode_json_to_db($args));
+    $sth->execute(@args);
+    return unless my $job = $sth->fetchrow_hashref;
+    my $notes = decode_json $job->{notes};
+    if ($job->{state} eq 'finished') {
+        # same task was run less than 1 minute ago and finished, nothing to do
+        @$job_ids = ();
+        return;
+    }
+    $self->_add_jobs_to_gru_task($notes->{gru_id}, $job_ids);
+}
+
+sub _add_jobs_to_gru_task ($self, $gru_id, $job_ids) {
+    my $schema = OpenQA::Schema->singleton;
+    for my $id (@$job_ids) {
+        # Add job to existing gru task with the same args
+        my $gru_dep = eval { $schema->resultset('GruDependencies')->create({job_id => $id, gru_task_id => $gru_id}); };
+        unless ($gru_dep) {
+            my $error = $@;
+            die $error
+              unless $error
+              =~ m/insert or update on table "gru_dependencies" violates foreign key constraint "gru_dependencies_fk_gru_task_id"/i;
+            # if the GruTask was already deleted meanwhile, we can skip
+            # the rest of the jobs, since the wanted task was done
+            log_debug("GruTask $gru_id already gone, skip assigning jobs (message: $error)");
+            last;
+        }
+    }
+    @$job_ids = ();
+}
+
 sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
     my $ttl = $options->{ttl};
     my $limit = $options->{limit} ? $options->{limit} : undef;
@@ -199,7 +246,8 @@ sub enqueue_git_clones ($self, $clones, $job_ids) {
     return unless OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} eq 'yes';
     # $clones is a hashref with paths as keys and git urls as values
     # $job_id is used to create entries in a related table (gru_dependencies)
-    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids);
+    $self->_find_existing_minion_job('git_clone', $clones, $job_ids);
+    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids) if @$job_ids;
 }
 
 sub enqueue_and_keep_track {
