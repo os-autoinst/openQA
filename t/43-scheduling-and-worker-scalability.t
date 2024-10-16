@@ -4,11 +4,13 @@
 
 use Test::Most;
 
+use Mojo::Base -signatures;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Time::HiRes 'sleep';
 use File::Path 'make_path';
 use Scalar::Util 'looks_like_number';
+use List::Util qw(min max);
 use Mojo::File qw(path tempfile);
 use Mojo::Util 'dumper';
 use IPC::Run qw(start);
@@ -39,7 +41,7 @@ BEGIN {
 }
 
 setup_mojo_app_with_default_worker_timeout;
-OpenQA::Setup::read_config(OpenQA::App->singleton);
+OpenQA::Setup::read_config(my $app = OpenQA::App->singleton);
 
 my $load_avg_file = simulate_load('0.93 0.95 3.25 2/2207 1212', '43-scheduling-and-worker-scalability');
 
@@ -57,6 +59,18 @@ my $tempdir = setup_fullstack_temp_dir('scalability');
 my $schema = OpenQA::Test::Database->new->create;
 my $workers = $schema->resultset('Workers');
 my $jobs = $schema->resultset('Jobs');
+
+# configure websocket server to apply SCALABILITY_TEST_WORKER_LIMIT
+my $worker_limit = $ENV{SCALABILITY_TEST_WORKER_LIMIT} // 100;
+my $web_socket_server_mock = Test::MockModule->new('OpenQA::WebSockets');
+my $configure_web_socket_server = sub ($self, @args) {
+    my $original_function = $web_socket_server_mock->original('_setup');
+    my $original_return_value = $original_function->($self, @args);
+    $self->config->{misc_limits}->{max_online_workers} = $worker_limit;
+    return $original_return_value;
+};
+$web_socket_server_mock->redefine(_setup => $configure_web_socket_server);
+$configure_web_socket_server->($app);    # invoke this function here for the sake of tracking coverage
 
 # create web UI and websocket server
 my $web_socket_server = create_websocket_server(undef, 0, 1, 1);
@@ -130,20 +144,36 @@ my $polling_tries_workers = $seconds_to_wait_per_worker / $polling_interval * $w
 my $polling_tries_jobs = $seconds_to_wait_per_job / $polling_interval * $job_count;
 
 subtest 'wait for workers to be idle' => sub {
+    # wait for all workers to register
     my @worker_search_args = ({'properties.key' => 'WEBSOCKET_API_VERSION'}, {join => 'properties'});
+    my $actual_count = 0;
     for my $try (1 .. $polling_tries_workers) {
-        last if $workers->search(@worker_search_args)->count == $worker_count;
-        note("Waiting until all workers are registered, try $try");
-        sleep $polling_interval;
+        last if ($actual_count = $workers->search(@worker_search_args)->count) == $worker_count;
+        note("Waiting until all workers are registered, try $try");    # uncoverable statement
+        sleep $polling_interval;    # uncoverable statement
     }
-    is($workers->count, $worker_count, 'all workers registered');
+    is $actual_count, $worker_count, 'all workers registered';
+
+    # wait for expected number of workers to become limited
+    my $limited_workers = max(0, $worker_count - $worker_limit);
+    $worker_count = min($worker_count, $worker_limit);
+    for my $try (1 .. $polling_tries_workers) {
+        last if ($actual_count = $workers->search({error => {-like => '%limited%'}})->count) == $limited_workers;
+        note("Waiting until $limited_workers workers are limited, try $try");    # uncoverable statement
+        sleep $polling_interval;    # uncoverable statement
+    }
+    is $actual_count, $limited_workers, 'expected number of workers limited';
+
+    # check that no workers are in unexpected offline/error states
     my @non_idle_workers;
     for my $worker ($workers->all) {
-        $worker_ids{$worker->id} = 1;
-        push(@non_idle_workers, $worker->info)
-          if $worker->status ne 'idle' || ($worker->websocket_api_version || 0) != WEBSOCKET_API_VERSION;
+        my $is_idle = $worker->status eq 'idle';
+        my $is_idle_or_limited = $is_idle || $worker->error =~ qr/limited/;
+        $worker_ids{$worker->id} = 1 if $is_idle;
+        push(@non_idle_workers, $worker->info)    # uncoverable statement
+          if !$is_idle_or_limited || ($worker->websocket_api_version || 0) != WEBSOCKET_API_VERSION;
     }
-    ok(!@non_idle_workers, 'all workers idling') or diag explain \@non_idle_workers;
+    is scalar @non_idle_workers, 0, 'all workers idling/limited' or diag explain \@non_idle_workers;
 };
 
 subtest 'assign and run jobs' => sub {
@@ -166,7 +196,7 @@ subtest 'assign and run jobs' => sub {
         is(scalar @$allocated, $job_count, 'each job has a worker assigned');
     }
     else {
-        # uncoverable statement only executed when the number of workers is # jobs are equal based on config parameters
+        # uncoverable statement only executed when the number of workers and jobs are equal based on config parameters
         is(scalar @$allocated, $job_count, 'all jobs assigned and all workers busy');
         # uncoverable statement count:1
         # uncoverable statement count:2
@@ -187,7 +217,7 @@ subtest 'assign and run jobs' => sub {
     }
     for my $try (1 .. $polling_tries_jobs) {
         last if $jobs->search({state => DONE})->count == $job_count;
-        if ($jobs->search({state => SCHEDULED})->count > $remaining_jobs) {
+        if ($jobs->search({state => SCHEDULED})->count > max(0, $remaining_jobs)) {
             # uncoverable statement
             note('At least one job has been set back to scheduled; aborting to wait until all jobs are done');
             last;    # uncoverable statement

@@ -19,6 +19,9 @@ sub startup {
     $self->_setup if $RUNNING;
 
     $self->defaults(appname => 'openQA Websocket Server');
+    if (defined(my $max_online_workers = $self->config->{misc_limits}->{max_online_workers})) {
+        $self->log->info("Limiting number of online worker slots to $max_online_workers");
+    }
 
     # no cookies for worker, no secrets to protect
     $self->secrets(['nosecretshere']);
