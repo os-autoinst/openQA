@@ -133,14 +133,13 @@ sub _find_existing_minion_job ($self, $task, $args, $job_ids) {
         $dtf->format_datetime(DateTime->now()->subtract(minutes => 1)),
         'git_clone', OpenQA::Schema::Result::GruTasks->encode_json_to_db($args));
     $sth->execute(@args);
-    return unless my $job = $sth->fetchrow_hashref;
+    return 0 unless my $job = $sth->fetchrow_hashref;
+    # same task was run less than 1 minute ago and finished, nothing to do
+    return 1 if $job->{state} eq 'finished';
+
     my $notes = decode_json $job->{notes};
-    if ($job->{state} eq 'finished') {
-        # same task was run less than 1 minute ago and finished, nothing to do
-        @$job_ids = ();
-        return;
-    }
     $self->_add_jobs_to_gru_task($notes->{gru_id}, $job_ids);
+    return 1;
 }
 
 sub _add_jobs_to_gru_task ($self, $gru_id, $job_ids) {
@@ -159,7 +158,6 @@ sub _add_jobs_to_gru_task ($self, $gru_id, $job_ids) {
             last;
         }
     }
-    @$job_ids = ();
 }
 
 sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
@@ -246,8 +244,8 @@ sub enqueue_git_clones ($self, $clones, $job_ids) {
     return unless OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} eq 'yes';
     # $clones is a hashref with paths as keys and git urls as values
     # $job_id is used to create entries in a related table (gru_dependencies)
-    $self->_find_existing_minion_job('git_clone', $clones, $job_ids);
-    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids) if @$job_ids;
+    my $found = $self->_find_existing_minion_job('git_clone', $clones, $job_ids);
+    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids) unless $found;
 }
 
 sub enqueue_and_keep_track {
