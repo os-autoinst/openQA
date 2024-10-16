@@ -21,6 +21,7 @@ use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DIE
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::WebUIConnection;
+use Socket qw(getaddrinfo);
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 
@@ -415,7 +416,8 @@ subtest 'stopping' => sub {
         my $fake_job = OpenQA::Worker::Job->new($worker, undef, {some => 'info'});
         $worker->current_job($fake_job);
         $worker->stop_current_job;
-        is($fake_job->status, 'stopped', 'job stopped');
+        is $fake_job->status, 'stopped', 'job stopped';
+        ok !$worker->is_stopping, 'worker is not considered stopping as job has already stopped';
     };
 
     subtest 'stop worker gracefully' => sub {
@@ -726,6 +728,7 @@ subtest 'handle job status changes' => sub {
         $worker->current_webui_host('some-host');
         $worker->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE} = 1;
         $worker->_init_queue([$fake_job]);    # assume there's another job in the queue
+        is $worker->find_current_or_pending_job(42), $fake_job, 'queued job can be found';
         combined_like {
             $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
         }
@@ -738,6 +741,7 @@ subtest 'handle job status changes' => sub {
         }
         qr/Job 42 from some-host finished - reason: yet another/, 'status of 2nd job logged';
         is($stop_called, WORKER_COMMAND_QUIT, 'worker stopped after no more jobs left in the queue');
+        is $worker->find_current_or_pending_job(42), undef, 'queued job no longer pending';
 
         $worker->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE} = 0;
 
@@ -897,6 +901,28 @@ subtest 'handle critical error' => sub {
       'log for initial critical error and forcefull kill after second error';
     is $stop_called, 1, 'worker tried to stop the job';
     is $kill_called, 1, 'worker tried to kill itself in the end';
+};
+
+subtest 'resolving 127.0.0.1 without relying on getaddrinfo()' => sub {
+    combined_like {
+        is_deeply [sort keys %{getaddrinfo('127.0.0.1', 1)}],
+        [qw(addr canonname family protocol socktype)],
+        'got expected fields'
+      } qr/Running patched getaddrinfo/s,
+      'using patched getaddrinfo()';
+};
+
+subtest 'storing package list' => sub {
+    $worker->pool_directory(tempdir('pool-dir-XXXXX'));
+    combined_like { $worker->_store_package_list('echo foo') }
+    qr/Gathering package information/, 'log message about command invocation';
+    is $worker->pool_directory->child('worker_packages.txt')->slurp('UTF-8'), "foo\n", 'package list written';
+
+    combined_like { $worker->_store_package_list('false') }
+    qr/could not be executed/, 'log message about error';
+
+    combined_like { $worker->_store_package_list('true') }
+    qr/doesn't return any data/, 'log message about no data';
 };
 
 done_testing();

@@ -783,9 +783,7 @@ sub _lock_pool_directory ($self) {
 
     chdir $pool_directory || die "cannot change directory to $pool_directory: $!\n";
     open(my $lockfd, '>>', '.locked') or die "cannot open lock file in $pool_directory: $!\n";
-    unless (fcntl($lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
-        die "$pool_directory already locked\n";
-    }
+    die "$pool_directory already locked\n" unless fcntl $lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$);
     $lockfd->autoflush(1);
     truncate($lockfd, 0);
     print $lockfd "$$\n";
