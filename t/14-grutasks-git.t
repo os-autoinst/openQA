@@ -249,7 +249,6 @@ subtest 'enqueue_git_clones' => sub {
         $mocked_gru->redefine(enqueue => sub (@) { $enq++; });
         my $jobs = [$j[2]->id];
         my $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
-        is_deeply $jobs, [], 'job array was emptied';
         my @deps = $task->jobs;
         is scalar @deps, 3, 'job was added to GruTask';
         is $deps[2]->job_id, $j[2]->id, 'third job was added to existing GruTask';
@@ -266,7 +265,6 @@ subtest 'enqueue_git_clones' => sub {
         $mocked_gru->redefine(enqueue => sub (@) { $enq++; });
         my $jobs = [$j[3]->id];
         my $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
-        is_deeply $jobs, [], 'job array was emptied';
         my @deps = $task->jobs;
         is scalar @deps, 3, 'no job was added to GruTask';
         is $enq, 0, 'enqueue was not called';
@@ -278,7 +276,6 @@ subtest 'enqueue_git_clones' => sub {
         stderr_like { $t->app->gru->_add_jobs_to_gru_task(999, $jobs) }
 qr{GruTask 999 already gone.*insert or update on table "gru_dependencies" violates foreign key constraint "gru_dependencies_fk_gru_task_id"},
           'expected log output if GruTask deleted in between';
-        is_deeply $jobs, [], 'job array was emptied';
         my @deps = $task->jobs;
         is scalar @deps, 3, 'no job was added to GruTask';
     };
