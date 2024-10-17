@@ -36,40 +36,16 @@ $client_mock->redefine(
     });
 
 subtest streaming => sub {
-    # setup server/client via Mojo::IOLoop
-    my $buffer = '';
-    my $id = Mojo::IOLoop->server(
-        (address => '127.0.0.1') => sub {
-            my ($loop, $stream) = @_;
-            $buffer .= 'accepted';
-            $stream->on(
-                read => sub {
-                    my ($stream, $chunk) = @_;    # uncoverable statement
-                    $buffer .= $chunk;    # uncoverable statement
-                });
-        });
-    my $port = Mojo::IOLoop->acceptor($id)->port;
-    my $promise = Mojo::Promise->new;
-    my $handle = undef;
-    Mojo::IOLoop->client(
-        {port => $port} => sub {
-            my ($loop, $err, $stream) = @_;
-            $handle = $stream->steal_handle;
-            $promise->resolve;
-        });
-    $promise->wait;
-
     # setup controller
-    my $stream = Mojo::IOLoop::Stream->new($handle);
-    $id = Mojo::IOLoop->stream($stream);
+    my $stream = Mojo::IOLoop::Stream->new;
+    my $id = Mojo::IOLoop->stream($stream);
     my $log = Mojo::Log->new;
-    my $contapp = Mojolicious->new(log => $log);
-    push @{$contapp->plugins->namespaces}, 'OpenQA::Shared::Plugin';
-    $contapp->plugin('SharedHelpers');
+    my $app = Mojolicious->new(log => $log);
+    push @{$app->plugins->namespaces}, 'OpenQA::Shared::Plugin';
+    $app->plugin('SharedHelpers');
 
     subtest textfile => sub {
-
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $log->unsubscribe('message');
         $log->on(message => sub { my ($log, $level, @lines) = @_; $log_messages .= join "\n", @lines, '' });
@@ -99,9 +75,8 @@ subtest streaming => sub {
     };
 
     subtest image => sub {
-        # test image streaming
-        $contapp->attr(schema => sub { FakeSchema->new() });
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        $app->attr(schema => sub { FakeSchema->new() });
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
         monkey_patch 'FakeSchema::Find', find => sub { Job->new };
@@ -130,7 +105,7 @@ subtest streaming => sub {
     subtest fake => sub {
         @messages = ();
         $fake_error = {message => 'fake error'};
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
         combined_like { $controller->streaming } qr/Unable to ask .* providing livestream .*: fake error/,
@@ -140,7 +115,7 @@ subtest streaming => sub {
 
     subtest 'no worker' => sub {
         @messages = ();
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
         my $orig = \&Job::worker;
@@ -199,8 +174,6 @@ subtest init => sub {
 };
 
 subtest edit => sub {
-    use Mojo::Util 'monkey_patch';
-
     my $app = Mojolicious->new();
     $app->attr("schema", sub { FakeSchema->new() });
     my $not_found;
