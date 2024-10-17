@@ -21,6 +21,7 @@ use Test::Output qw(combined_is combined_like);
 use Mojolicious;
 use Mojo::File 'path';
 use Mojo::IOLoop;
+use Mojo::IOLoop::Stream;
 use Mojo::Promise;
 use Mojo::Util 'monkey_patch';
 
@@ -36,6 +37,16 @@ $client_mock->redefine(
     });
 
 subtest streaming => sub {
+    # mock controller to invoke drain callback and be able to check whether finish is called
+    my $c_mock = Test::MockModule->new('OpenQA::Shared::Controller::Running');
+    my $c_finished = 0;
+    $c_mock->redefine(finish => sub { $c_finished = 1 });
+    $c_mock->redefine(
+        write => sub ($self, $data, $drain_cb = undef) {
+            $c_mock->original('write')->($self, $data);
+            Mojo::IOLoop->next_tick(sub ($loop) { $drain_cb->($self) }) if defined $drain_cb;
+        });
+
     # setup controller
     my $stream = Mojo::IOLoop::Stream->new;
     my $id = Mojo::IOLoop->stream($stream);
@@ -97,9 +108,12 @@ subtest streaming => sub {
           'base64-encoded fake PNG sent';
         $last_png->remove;
         symlink '02-fake.png', $last_png or die "Unable to symlink: $!";
+        ok !$c_finished, 'controller has not been finished yet';
         combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (2)';
         like $controller->res->content->{body_buffer}, qr/data: Unable to read image: Can't open file.*\n\n/,
           'error sent if PNG does not exist';
+        Mojo::IOLoop->one_tick;
+        ok $c_finished, 'controller has been finished';
     };
 
     subtest fake => sub {
