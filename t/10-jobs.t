@@ -14,7 +14,6 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use autodie ':all';
-use Encode;
 use File::Copy;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
@@ -25,6 +24,8 @@ use Mojo::File 'path';
 use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Utils qw(perform_minion_jobs);
 use OpenQA::Test::TimeLimit '30';
+
+binmode(STDOUT, ":encoding(UTF-8)");
 
 my $schema_name = OpenQA::Test::Database::generate_schema_name;
 my $schema = OpenQA::Test::Case->new->init_data(
@@ -1004,6 +1005,18 @@ subtest 'get all setting values for a job/key in a sorted array' => sub {
     is_deeply $job_settings->all_values_sorted(99926, 'WORKER_CLASS'), [], 'empty array if key does not exist';
     $job_settings->create({job_id => 99926, key => 'WORKER_CLASS', value => $_}) for qw(foo bar bar baz);
     is_deeply $job_settings->all_values_sorted(99926, 'WORKER_CLASS'), [qw(bar baz foo)], 'all values returned';
+};
+
+subtest 'handling of array and unicode settings' => sub {
+    my %s = %settings;
+    $s{TEST} = 'array_setting_test';
+    $s{ARRAY_SETTING} = ['value1', 'ä', '…'];
+    my $job = _job_create(\%s);
+    my $entry = $job->settings->find({key => 'ARRAY_SETTING'});
+    ok $entry, 'ARRAY_SETTING exists in job settings';
+    my $v = $entry->value;
+    is ref($v), '', 'ARRAY_SETTING value is stored as a string';
+    is $v, '["value1","ä","…"]', 'retrieved correctly encoded JSON array as string';
 };
 
 done_testing();

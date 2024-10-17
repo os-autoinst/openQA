@@ -6,6 +6,7 @@ package OpenQA::Schema::ResultSet::Jobs;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
+use Encode qw(decode_utf8);
 use File::Basename 'basename';
 use IPC::Run;
 use OpenQA::App;
@@ -112,7 +113,7 @@ sub create_from_settings {
     my ($self, $settings, $scheduled_product_id) = @_;
 
     my %settings = %$settings;
-    my %new_job_args = (TEST => $settings{TEST});
+    my %new_job_args;
 
     my $result_source = $self->result_source;
     my $schema = $result_source->schema;
@@ -170,6 +171,12 @@ sub create_from_settings {
             push(@{$new_job_args{parents}}, {parent_job_id => $id, dependency => $dependency_type});
         }
     }
+
+    for my $key (keys %settings) {
+        my $value = $settings{$key};
+        $settings{$key} = decode_utf8 encode_json $value if (ref $value eq 'ARRAY' || ref $value eq 'HASH');
+    }
+    $new_job_args{TEST} = $settings{TEST};
 
     # move important keys from the settings directly to the job
     for my $key (OpenQA::Schema::Result::Jobs::MAIN_SETTINGS) {
