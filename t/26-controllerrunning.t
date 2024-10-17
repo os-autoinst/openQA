@@ -4,6 +4,7 @@
 
 BEGIN {
     $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} = 0.0;
+    $ENV{OPENQA_TEXT_STREAMING_INTERVAL} = 0.0;
 }
 
 use Test::Most;
@@ -83,6 +84,7 @@ subtest streaming => sub {
         my $size = -s $t_file;
         ok $size > (10 * 1024), "test file size is greater than 10 * 1024";
         like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
+        Mojo::IOLoop->one_tick;
     };
 
     subtest image => sub {
