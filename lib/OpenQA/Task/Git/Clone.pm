@@ -77,6 +77,8 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
         $url = $git->get_origin_url;
     }
 
+    return if ($requested_branch and $requested_branch !~ tr/a-f0-9//c and $git->check_sha($requested_branch));
+
     die "NOT updating dirty git checkout at $path" if !$git->is_workdir_clean();
 
     unless ($requested_branch) {

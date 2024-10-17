@@ -27,7 +27,8 @@ chdir $workdir;
 path('t/data/openqa/db')->make_path;
 my $git_clones = "$workdir/git-clones";
 mkdir $git_clones;
-mkdir "$git_clones/$_" for qw(default branch dirty-error dirty-status nodefault wrong-url);
+mkdir "$git_clones/$_"
+  for qw(default branch dirty-error dirty-status nodefault wrong-url sha1 sha2 sha-error sha-branchname);
 mkdir 't';
 dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
 
@@ -48,6 +49,9 @@ subtest 'git clone' => sub {
         "$git_clones/default/" => 'http://localhost/foo.git',
         "$git_clones/branch/" => 'http://localhost/foo.git#foobranch',
         "$git_clones/this_directory_does_not_exist/" => 'http://localhost/bar.git',
+        "$git_clones/sha1" => 'http://localhost/present.git#abc',
+        "$git_clones/sha2" => 'http://localhost/not-present.git#def',
+        "$git_clones/sha-branchname" => 'http://localhost/present.git#a123',
     };
     $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd) {
@@ -81,6 +85,18 @@ subtest 'git clone' => sub {
                 $return_code = 2
                   if $path =~ m/dirty-error/;
             }
+            elsif ($action eq 'rev-parse') {
+                if ($path =~ m/sha1/) {
+                    $return_code = 0;
+                    $stdout = 'abcdef123456';
+                }
+                if ($path =~ m/sha-branchname/) {
+                    $return_code = 0;
+                    $stdout = 'abcdef123456789';
+                }
+                $return_code = 128 if $path =~ m/sha2/;
+                $return_code = 1 if $path =~ m/sha-error/;
+            }
             return {
                 status => $return_code == 0,
                 return_code => $return_code,
@@ -93,6 +109,17 @@ subtest 'git clone' => sub {
     is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
     #<<< no perltidy
     my $expected_calls = [
+        # /sha1
+        ['get-url'        => 'git -C /sha1 remote get-url origin'],
+        ['rev-parse'      => 'git -C /sha1 rev-parse --verify -q abc'],
+
+        # /sha2
+        ['get-url'        => 'git -C /sha2 remote get-url origin'],
+        ['rev-parse'      => 'git -C /sha2 rev-parse --verify -q def'],
+        ['check dirty'    => 'git -C /sha2 diff-index HEAD --exit-code'],
+        ['current branch' => 'git -C /sha2 branch --show-current'],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /sha2 fetch origin def"],
+
         # /branch
         ['get-url'        => 'git -C /branch/ remote get-url origin'],
         ['check dirty'    => 'git -C /branch/ diff-index HEAD --exit-code'],
@@ -106,6 +133,13 @@ subtest 'git clone' => sub {
         ['current branch' => 'git -C /default/ branch --show-current'],
         ['fetch default'  => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /default/ fetch origin master"],
         ['reset'          => 'git -C /default/ reset --hard origin/master'],
+
+        # /sha-branchname
+        ['get-url'        => 'git -C /sha-branchname remote get-url origin'],
+        ['rev-parse'      => 'git -C /sha-branchname rev-parse --verify -q a123'],
+        ['check dirty'    => 'git -C /sha-branchname diff-index HEAD --exit-code'],
+        ['current branch' => 'git -C /sha-branchname branch --show-current'],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /sha-branchname fetch origin a123"],
 
         # /this_directory_does_not_exist/
         ['clone' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git clone http://localhost/bar.git /this_directory_does_not_exist/"],
@@ -157,6 +191,14 @@ subtest 'git clone' => sub {
         qr(Unexpected exit code 2), 'error message on stderr';
         is $res->{state}, 'failed', 'minion job failed';
         like $res->{result}, qr/Internal Git error: Unexpected exit code 2/, 'error message';
+    };
+
+    subtest 'error testing local sha' => sub {
+        %$clone_dirs = ("$git_clones/sha-error/" => 'http://localhost/foo.git#abc');
+        stderr_like { $res = run_gru_job(@gru_args) }
+        qr(Unexpected exit code 1), 'error message on stderr';
+        is $res->{state}, 'failed', 'minion job failed';
+        like $res->{result}, qr/Internal Git error: Unexpected exit code 1/, 'error message';
     };
 
     subtest 'error because of different url' => sub {
