@@ -251,7 +251,7 @@ sub streaming ($self) {
             # skip if the worker is not present anymore or already working on a different job
             # note: This is of course not entirely race-free. The worker will ignore messages which
             #       are not relevant anymore. This is merely to keep those messages to a minimum.
-            my $worker = OpenQA::Schema->singleton->resultset('Workers')->find($worker_id);
+            my $worker = $self->app->schema->resultset('Workers')->find($worker_id);
             return undef unless $worker;
             return undef unless defined $worker->job_id && $worker->job_id == $job_id;
 

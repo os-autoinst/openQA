@@ -4,6 +4,7 @@
 
 BEGIN {
     $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} = 0.0;
+    $ENV{OPENQA_TEXT_STREAMING_INTERVAL} = 0.0;
 }
 
 use Test::Most;
@@ -21,6 +22,7 @@ use Test::Output qw(combined_is combined_like);
 use Mojolicious;
 use Mojo::File 'path';
 use Mojo::IOLoop;
+use Mojo::IOLoop::Stream;
 use Mojo::Promise;
 use Mojo::Util 'monkey_patch';
 
@@ -36,40 +38,26 @@ $client_mock->redefine(
     });
 
 subtest streaming => sub {
-    # setup server/client via Mojo::IOLoop
-    my $buffer = '';
-    my $id = Mojo::IOLoop->server(
-        (address => '127.0.0.1') => sub {
-            my ($loop, $stream) = @_;
-            $buffer .= 'accepted';
-            $stream->on(
-                read => sub {
-                    my ($stream, $chunk) = @_;    # uncoverable statement
-                    $buffer .= $chunk;    # uncoverable statement
-                });
+    # mock controller to invoke drain callback and be able to check whether finish is called
+    my $c_mock = Test::MockModule->new('OpenQA::Shared::Controller::Running');
+    my $c_finished = 0;
+    $c_mock->redefine(finish => sub ($self) { $self->tx->finish; $c_finished = 1 });
+    $c_mock->redefine(
+        write => sub ($self, $data, $drain_cb = undef) {
+            $c_mock->original('write')->($self, $data);
+            Mojo::IOLoop->next_tick(sub ($loop) { $drain_cb->($self) }) if defined $drain_cb;
         });
-    my $port = Mojo::IOLoop->acceptor($id)->port;
-    my $promise = Mojo::Promise->new;
-    my $handle = undef;
-    Mojo::IOLoop->client(
-        {port => $port} => sub {
-            my ($loop, $err, $stream) = @_;
-            $handle = $stream->steal_handle;
-            $promise->resolve;
-        });
-    $promise->wait;
 
     # setup controller
-    my $stream = Mojo::IOLoop::Stream->new($handle);
-    $id = Mojo::IOLoop->stream($stream);
+    my $stream = Mojo::IOLoop::Stream->new;
+    my $id = Mojo::IOLoop->stream($stream);
     my $log = Mojo::Log->new;
-    my $contapp = Mojolicious->new(log => $log);
-    push @{$contapp->plugins->namespaces}, 'OpenQA::Shared::Plugin';
-    $contapp->plugin('SharedHelpers');
+    my $app = Mojolicious->new(log => $log);
+    push @{$app->plugins->namespaces}, 'OpenQA::Shared::Plugin';
+    $app->plugin('SharedHelpers');
 
     subtest textfile => sub {
-
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $log->unsubscribe('message');
         $log->on(message => sub { my ($log, $level, @lines) = @_; $log_messages .= join "\n", @lines, '' });
@@ -96,15 +84,15 @@ subtest streaming => sub {
         my $size = -s $t_file;
         ok $size > (10 * 1024), "test file size is greater than 10 * 1024";
         like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
+        Mojo::IOLoop->one_tick;
     };
 
     subtest image => sub {
-        # test image streaming
-        $contapp->attr(schema => sub { FakeSchema->new() });
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        $app->attr(schema => sub { FakeSchema->new() });
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
-        monkey_patch 'FakeSchema::Find', find => sub { Job->new };
+        monkey_patch 'FakeSchema::Find', find => sub ($self, @) { $self->{name} eq 'Workers' ? Worker->new : Job->new };
         combined_like { $controller->streaming } qr/Asking the worker 43 to start providing livestream for job 42/,
           'reached code for enabling livestream';
         is $controller->res->code, 200, 'tempdir not found';
@@ -122,15 +110,18 @@ subtest streaming => sub {
           'base64-encoded fake PNG sent';
         $last_png->remove;
         symlink '02-fake.png', $last_png or die "Unable to symlink: $!";
+        ok !$c_finished, 'controller has not been finished yet';
         combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (2)';
         like $controller->res->content->{body_buffer}, qr/data: Unable to read image: Can't open file.*\n\n/,
           'error sent if PNG does not exist';
+        Mojo::IOLoop->one_tick;
+        ok $c_finished, 'controller has been finished';
     };
 
     subtest fake => sub {
         @messages = ();
         $fake_error = {message => 'fake error'};
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
         combined_like { $controller->streaming } qr/Unable to ask .* providing livestream .*: fake error/,
@@ -140,7 +131,7 @@ subtest streaming => sub {
 
     subtest 'no worker' => sub {
         @messages = ();
-        my $controller = OpenQA::Shared::Controller::Running->new(app => $contapp);
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
         my $orig = \&Job::worker;
@@ -199,8 +190,6 @@ subtest init => sub {
 };
 
 subtest edit => sub {
-    use Mojo::Util 'monkey_patch';
-
     my $app = Mojolicious->new();
     $app->attr("schema", sub { FakeSchema->new() });
     my $not_found;
@@ -259,16 +248,19 @@ sub new {
 }
 
 sub id { 43 }
+sub job_id { 42 }
 sub get_property { shift->{WORKER_TMPDIR} }
 
 package Mojo::Transaction::Fake;
-use Mojo::Base 'Mojo::Transaction';
+use Mojo::Base 'Mojo::Transaction', -signatures;
 sub resume { ++$_[0]{writing} and return $_[0]->emit('resume') }
 sub connection { shift->{fakestream} }
 sub remote_address { '::1' }
 sub error { $fake_error }
+sub finish ($self) { $self->emit(finish => $self) }
 
 package FakeSchema;
+use Mojo::Base -signatures;
 sub new {
     my ($class) = @_;
     my $self = bless({}, $class);
@@ -276,7 +268,8 @@ sub new {
     return $self;
 }
 
-sub resultset { FakeSchema::Find->new }
+sub resultset ($self, $name) { FakeSchema::Find->new($name) }
 
 package FakeSchema::Find;
-sub new { bless({}, shift) }
+use Mojo::Base -signatures;
+sub new($class, $name = '') { bless({name => $name}, $class) }
