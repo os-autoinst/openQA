@@ -40,7 +40,7 @@ subtest streaming => sub {
     # mock controller to invoke drain callback and be able to check whether finish is called
     my $c_mock = Test::MockModule->new('OpenQA::Shared::Controller::Running');
     my $c_finished = 0;
-    $c_mock->redefine(finish => sub { $c_finished = 1 });
+    $c_mock->redefine(finish => sub ($self) { $self->tx->finish; $c_finished = 1 });
     $c_mock->redefine(
         write => sub ($self, $data, $drain_cb = undef) {
             $c_mock->original('write')->($self, $data);
@@ -90,7 +90,7 @@ subtest streaming => sub {
         my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
-        monkey_patch 'FakeSchema::Find', find => sub { Job->new };
+        monkey_patch 'FakeSchema::Find', find => sub ($self, @) { $self->{name} eq 'Workers' ? Worker->new : Job->new };
         combined_like { $controller->streaming } qr/Asking the worker 43 to start providing livestream for job 42/,
           'reached code for enabling livestream';
         is $controller->res->code, 200, 'tempdir not found';
@@ -246,16 +246,19 @@ sub new {
 }
 
 sub id { 43 }
+sub job_id { 42 }
 sub get_property { shift->{WORKER_TMPDIR} }
 
 package Mojo::Transaction::Fake;
-use Mojo::Base 'Mojo::Transaction';
+use Mojo::Base 'Mojo::Transaction', -signatures;
 sub resume { ++$_[0]{writing} and return $_[0]->emit('resume') }
 sub connection { shift->{fakestream} }
 sub remote_address { '::1' }
 sub error { $fake_error }
+sub finish ($self) { $self->emit(finish => $self) }
 
 package FakeSchema;
+use Mojo::Base -signatures;
 sub new {
     my ($class) = @_;
     my $self = bless({}, $class);
@@ -263,7 +266,8 @@ sub new {
     return $self;
 }
 
-sub resultset { FakeSchema::Find->new }
+sub resultset ($self, $name) { FakeSchema::Find->new($name) }
 
 package FakeSchema::Find;
-sub new { bless({}, shift) }
+use Mojo::Base -signatures;
+sub new($class, $name = '') { bless({name => $name}, $class) }
