@@ -42,7 +42,7 @@ sub _git_clone_all ($job, $clones) {
     my $ctx = $log->context("[#$job_id]");
 
     # iterate clones sorted by path length to ensure that a needle dir is always cloned after the corresponding casedir
-    for my $path (sort { length($a) <=> length($b) } keys %$clones) {
+    for my $path (sort { length($a) <=> length($b) || $a cmp $b } keys %$clones) {
         my $url = $clones->{$path};
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
         eval { _git_clone($app, $job, $ctx, $path, $url) };
@@ -76,6 +76,8 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
     else {
         $url = $git->get_origin_url;
     }
+
+    return if ($requested_branch and $requested_branch !~ tr/a-f0-9//c and $git->check_sha($requested_branch));
 
     die "NOT updating dirty git checkout at $path" if !$git->is_workdir_clean();
 
