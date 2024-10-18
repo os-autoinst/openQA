@@ -104,9 +104,7 @@ sub print_error ($res) {
     if (my $err = $res->error) {
         if (my $json = $res->json) {
             if (my $json_err = $json->{error}) {
-                die "$err->{message}: " . join("\n", @{$json_err})
-                  if ref $json_err eq 'ARRAY';
-                die "$err->{message}: $json_err";
+                die "$err->{message}: " . (ref $json_err eq 'ARRAY' ? join("\n", @{$json_err}) : $json_err);
             }
         }
         die "ERROR: $err->{code} - $err->{message}" if $err->{code};
@@ -114,43 +112,41 @@ sub print_error ($res) {
     die "unknown error code - host $url->{host} unreachable?";
 }
 
+sub handle_job_groups ($entry) {
+    # Create the group first
+    my $job_groups_url = $url->clone->path($options{apibase} . '/job_groups');
+    my $res = $client->post($job_groups_url, form => {name => $entry->{group_name}})->res;
+    print_error $res unless $res->is_success;
+
+    # Post the job template YAML
+    my $job_templates_url = $url->clone->path($options{apibase} . '/job_templates_scheduling');
+    $res
+      = $client->post($job_templates_url,
+        form => {name => $entry->{group_name}, template => $entry->{template}, schema => 'JobTemplates-01.yaml'})->res;
+    print_error $res unless $res->is_success;
+    return 1;
+}
+
+sub handle_job_templates ($entry) {
+    unless (defined($entry->{prio})) {
+        # we have to migrate the prio from the TestSuite to the JobTemplate
+        for my $ts (@{$info->{TestSuites}}) {
+            $entry->{prio} = $ts->{prio} if $ts->{name} eq $entry->{test_suite}{name};
+        }
+    }
+    unless (defined($entry->{group_name})) {
+        # we have to create a group_name from the Product
+        my $gn = $entry->{product}{distri};
+        $gn .= "-" . $entry->{product}{version} if $entry->{product}{version} ne '*';
+        $entry->{group_name} = $gn;
+    }
+}
+
 sub post_entry ($table, $entry) {
     my %param;
 
-    if ($table eq 'JobGroups') {
-        # Create the group first
-        my $job_groups_url = $url->clone->path($options{apibase} . '/job_groups');
-        my $res = $client->post($job_groups_url, form => {name => $entry->{group_name}})->res;
-        print_error $res unless $res->is_success;
-
-        # Post the job template YAML
-        my $job_templates_url = $url->clone->path($options{apibase} . '/job_templates_scheduling');
-        $res
-          = $client->post($job_templates_url,
-            form => {name => $entry->{group_name}, template => $entry->{template}, schema => 'JobTemplates-01.yaml'})
-          ->res;
-        print_error $res unless $res->is_success;
-        return 1;
-    }
-
-    if ($table eq 'JobTemplates') {
-        unless (defined($entry->{prio})) {
-            # we have to migrate the prio from the TestSuite to the JobTemplate
-            for my $ts (@{$info->{TestSuites}}) {
-                if ($ts->{name} eq $entry->{test_suite}{name}) {
-                    $entry->{prio} = $ts->{prio};
-                }
-            }
-        }
-        unless (defined($entry->{group_name})) {
-            # we have to create a group_name from the Product
-            my $gn = $entry->{product}{distri};
-            if ($entry->{product}{version} ne '*') {
-                $gn .= "-" . $entry->{product}{version};
-            }
-            $entry->{group_name} = $gn;
-        }
-    }
+    return handle_job_groups($entry) if $table eq 'JobGroups';
+    handle_job_templates($entry) if $table eq 'JobTemplates';
 
     for my $key (keys %{$entry}) {
         if ($key eq 'machine' && defined $entry->{machine}{name}) {
@@ -167,9 +163,7 @@ sub post_entry ($table, $entry) {
         }
         elsif ($key eq 'settings' && ref($entry->{settings}) eq "ARRAY") {
             $param{settings} = {};
-            for my $var (@{$entry->{settings}}) {
-                $param{settings}{$var->{key}} = $var->{value};
-            }
+            $param{settings}{$_->{key}} = $_->{value} for @{$entry->{settings}};
         }
         else {
             $param{$key} = $entry->{$key};
