@@ -110,6 +110,13 @@ sub get_current_branch ($self) {
     return trim($r->{stdout});
 }
 
+sub check_sha ($self, $sha) {
+    my $r = $self->_run_cmd(['rev-parse', '--verify', '-q', $sha]);
+    return 1 if $r->{return_code} == 0;
+    return 0 if $r->{return_code} == 128;
+    die $self->_format_git_error($r, "Internal Git error: Unexpected exit code $r->{return_code}") unless $r->{status};
+}
+
 sub get_remote_default_branch ($self, $url) {
     my $r = $self->_run_cmd(['ls-remote', '--symref', $url, 'HEAD'], {include_git_path => 0, ssh_batchmode => 1});
     die qq/Error detecting remote default branch name for "$url": $r->{stdout} $r->{stderr}/
