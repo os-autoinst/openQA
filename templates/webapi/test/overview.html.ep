@@ -42,8 +42,12 @@
         <div class="card-body">
             % my $allow_commenting = @$job_ids && current_user;
             % if ($allow_commenting) {
-            <button type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Add comments">
-                <i class="fa fa-comment" aria-hidden="true"></i>
+            <button type="button" class="btn btn-secondary btn-circle btn-sm
+            trigger-edit-button" onclick="showAddCommentsDialog()" title="Restart or comment jobs">
+                <span class="fa-stack" style="font-size: 0.9em" >
+		  <i class="fa fa-comment fa-stack-2x text-danger-info" aria-hidden="true"></i>
+		  <i class="fa fa-undo fa-stack-1x" style="color: #0c4374;" aria-hidden="true"></i>
+		</span>
             </button>
             % }
             % my @badges = qw(success secondary  warning     danger info      primary light   light);
@@ -217,7 +221,7 @@
 <div class="modal fade" id="add-comments-modal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="<%= url_for('apiv1_post_comments')->query(job_id => $job_ids) %>" method="post" onsubmit="addComments(this); return false;">
+            <form method="post" onsubmit="restartOrCommentJobs(this); return false;">
                 <div class="modal-header">
                     <h4 class="modal-title">Add comment on all currently shown jobs</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -231,10 +235,20 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                     <div id="add-comments-controls">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fa fa-comment"></i> Submit comment on all <%= scalar @$job_ids %> jobs
-                        </button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                      <button type="submit" name="bulkAction" class="btn btn-warning"
+                              value="commentJobs" id="commentJobsBtn"
+                              formaction="<%= url_for('apiv1_post_comments')->query(job_id=>$job_ids) %>"
+                              onclick="form.clickedButton = this;">
+                        <i class="fa fa-comment"></i> Comment on all <%= scalar @$job_ids %> jobs
+                      </button>
+                      <button type="submit" name="bulkAction" class="btn btn-danger"
+                              value="restartAndCommentJobs"
+                              id="restartAndCommentJobsBtn"
+                              formaction="<%= url_for('apiv1_restart_jobs')->query(jobs => $job_ids) %>"
+                              onclick="form.clickedButton = this;">
+                        <i class="fa fa-play-circle-o"></i> Restart and comment on <%= scalar @$job_ids %> jobs
+                      </button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
                     </div>
                 </div>
             </form>
