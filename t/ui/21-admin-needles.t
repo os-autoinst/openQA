@@ -2,8 +2,6 @@
 # Copyright 2014-2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-BEGIN { $ENV{TZ} = 'UTC' }    # make sure Selenium uses the same timezone as the server
-
 use Test::Most;
 
 use FindBin;
@@ -147,12 +145,12 @@ subtest 'dereference symlink when displaying needles info' => sub {
             dir_id => $real_needle_dir_id,
             filename => 'bootloader.json',
             last_seen_module_id => 10,
-            last_seen_time => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
+            last_seen_time => time2str('%Y-%m-%d %H:%M:%S', time - 100000, 'UTC'),
             last_matched_module_id => 9,
-            last_matched_time => time2str('%Y-%m-%d %H:%M:%S', time - 50000),
+            last_matched_time => time2str('%Y-%m-%d %H:%M:%S', time - 50000, 'UTC'),
             file_present => 1,
-            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
-            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 200000, 'UTC'),
         });
     push @need_deleted_needles, $real_needle;
 
@@ -170,7 +168,7 @@ subtest 'dereference symlink when displaying needles info' => sub {
     is($last_used_td->get_text(), 'a day ago', 'symlink needle last use is displayed correctly');
     is(
         $last_used_td->child('a')->get_attribute('title'),
-        $real_needle->last_seen_time . 'Z',
+        $real_needle->last_seen_time . '+0000Z',
         'symlink needle last use tooltip is displayed correctly'
     );
     like(

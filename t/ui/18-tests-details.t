@@ -658,8 +658,9 @@ subtest 'test candidate list' => sub {
         qr/Last match.*T.*Last seen.*T.*/s,
         'last match and last seen shown',
     );
-    $driver->find_element_by_id('candidatesMenu')->click();
+    $driver->find_element('#needlediff_selector .show-needle-info')->click();
     wait_until_element_gone('.needle-info-table');
+    $driver->find_element('#candidatesMenu')->click();
 };
 
 # set job 99963 to done via API to tests whether worker is still displayed then
