@@ -1216,34 +1216,33 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
     my $job_templates = $job_templates->search({id => $job_template_id1});
     while (my $job_template = $job_templates->next) {
         $t->post_ok('/api/v1/products/' . $job_template->product_id,
-            form => {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => 13.2})->json_is(
+            json => {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => 13.2})->json_is(
             '' =>
               {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
             'Attempt to rename product used in group was blocked'
             );
         $t->post_ok(
             '/api/v1/products/' . $job_template->product_id,
-            form => {
+            json => {
                 arch => $job_template->product->arch,
                 distri => $job_template->product->distri,
                 flavor => $job_template->product->flavor,
                 version => $job_template->product->version,
-                'settings[TEST]' => '1'
-            })->status_is(200, 'Product settings are not locked');
+                settings => {TEST => '1'}})->status_is(200, 'Product settings are not locked');
         diag explain $t->tx->res->body if !$t->success;
         $t->delete_ok('/api/v1/products/' . $job_template->product_id)->json_is(
             '' =>
               {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
             'Attempt to delete product used in group was blocked'
         );
-        $t->post_ok('/api/v1/machines/' . $job_template->machine_id, form => {name => 'deadbeef', backend => 'kde/usb'})
+        $t->post_ok('/api/v1/machines/' . $job_template->machine_id, json => {name => 'deadbeef', backend => 'kde/usb'})
           ->json_is(
             '' =>
               {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
             'Attempt to rename machine used in group was blocked'
           );
         $t->post_ok('/api/v1/machines/' . $job_template->machine_id,
-            form => {name => $job_template->machine->name, backend => 'kde/usb', 'settings[TEST]' => '1'})
+            json => {name => $job_template->machine->name, backend => 'kde/usb', settings => {TEST => '1'}})
           ->status_is(200, 'Machine settings are not locked');
         diag explain $t->tx->res->body if !$t->success;
         $t->delete_ok('/api/v1/machines/' . $job_template->machine_id)->json_is(
@@ -1251,17 +1250,18 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
               {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
             'Attempt to delete machine used in group was blocked'
         );
-        $t->post_ok('/api/v1/test_suites/' . $job_template->test_suite_id, form => {name => 'deadbeef'})->json_is(
+        $t->post_ok('/api/v1/test_suites/' . $job_template->test_suite_id, json => {name => 'deadbeef'})->json_is(
             '' => {error_status => 400, error => 'Group opensuse must be updated through the YAML template'},
             'Attempt to rename test suite used in group was blocked'
         );
         $t->post_ok('/api/v1/test_suites/' . $job_template->test_suite_id,
-            form => {name => $job_template->test_suite->name, description => 'Lorem ipsum'})
+            json => {name => $job_template->test_suite->name, description => 'Lorem ipsum'})
           ->status_is(200, 'Description is not locked');
         diag explain $t->tx->res->body if !$t->success;
-        $t->post_ok('/api/v1/test_suites/' . $job_template->test_suite_id,
-            form => {name => $job_template->test_suite->name, description => 'Lorem ipsum', 'settings[TEST]' => '1'})
-          ->status_is(200, 'Test suite settings are not locked');
+        $t->post_ok(
+            '/api/v1/test_suites/' . $job_template->test_suite_id,
+            json => {name => $job_template->test_suite->name, description => 'Lorem ipsum', settings => {TEST => '1'}}
+        )->status_is(200, 'Test suite settings are not locked');
         diag explain $t->tx->res->body if !$t->success;
         $t->delete_ok('/api/v1/test_suites/' . $job_template->test_suite_id)->json_is(
             '' => {error_status => 400, error => 'Group opensuse must be updated through the YAML template'},
