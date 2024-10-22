@@ -219,15 +219,17 @@ is_deeply(
     "Initial test suites"
 ) || diag explain $t->tx->res->json;
 
-$t->post_ok('/api/v1/test_suites', form => {})->status_is(400);    #no name
+$t->post_ok('/api/v1/test_suites', json => {})->status_is(400);    #no name
 
 
 $t->post_ok(
     '/api/v1/test_suites',
-    form => {
+    json => {
         name => "testsuite",
-        "settings[TEST]" => "val1",
-        "settings[TEST2]" => "val1",
+        settings => {
+            "TEST" => "val1",
+            "TEST2" => "val1"
+        },
         description => "this is a new testsuite"
     })->status_is(200);
 my $test_suite_id = $t->tx->res->json->{id};
@@ -238,7 +240,7 @@ is_deeply(
     'testsuite event was logged correctly'
 );
 
-$t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(400);    #already exists
+$t->post_ok('/api/v1/test_suites', json => {name => "testsuite"})->status_is(400);    #already exists
 
 $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
@@ -262,7 +264,7 @@ is_deeply(
     "Add test_suite"
 ) || diag explain $t->tx->res->json;
 
-$t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})
+$t->put_ok("/api/v1/test_suites/$test_suite_id", json => {name => "testsuite", settings => {"TEST2" => "val1"}})
   ->status_is(200);
 
 $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
@@ -287,8 +289,8 @@ $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not fou
 
 # switch to operator (default client) and try some modifications
 client($t);
-$t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(403);
-$t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})
+$t->post_ok('/api/v1/test_suites', json => {name => "testsuite"})->status_is(403);
+$t->put_ok("/api/v1/test_suites/$test_suite_id", json => {name => "testsuite", settings => {"TEST2" => "val1"}})
   ->status_is(403);
 $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(403);
 
