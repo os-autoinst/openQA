@@ -34,6 +34,7 @@ BEGIN {
 use Fcntl;
 use File::Path qw(make_path remove_tree);
 use File::Spec::Functions 'catdir';
+use List::Util qw(all max min);
 use Mojo::IOLoop;
 use Mojo::File 'path';
 use POSIX;
@@ -750,18 +751,24 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
     }
 }
 
-sub _load_avg ($field = 2) {
-    my $value = eval { (split(' ', path($ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg')->slurp))[$field] };
+sub _load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
+    my @load = eval { split(' ', path($path)->slurp) };
     log_warning "Unable to determine average load: $@" if $@;
-    return looks_like_number($value) ? $value : undef;
+    splice @load, 3;    # remove non-load numbers
+    log_error "Unable to parse system load from file '$path'" and return [] unless all { looks_like_number $_ } @load;
+    return \@load;
 }
 
-sub _check_system_utilization ($self) {
-    my $settings = $self->settings->global_settings;
-    return undef unless my $threshold = $settings->{CRITICAL_LOAD_AVG_THRESHOLD};
-    my $load_avg = _load_avg;
-    return "The average load $load_avg is exceeding the configured threshold of $threshold."
-      if defined $load_avg && $load_avg >= $threshold;
+sub _check_system_utilization (
+    $self,
+    $threshold = $self->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD},
+    $load = _load_avg())
+{
+    return undef unless $threshold && @$load >= 3;
+    # look at the load evolution over time to react quick enough if the load
+    # rises but accept a falling edge
+    return "The average load (@$load) is exceeding the configured threshold of $threshold."
+      if max(@$load) > $threshold && ($load->[0] > $load->[1] || $load->[0] > $load->[2] || min(@$load) > $threshold);
     return undef;
 }
 
