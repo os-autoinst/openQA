@@ -25,7 +25,6 @@ use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
 use Mojo::Util qw(dumper scope_guard);
-use File::Touch ();
 use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File qw(path tempdir);
@@ -419,8 +418,16 @@ subtest 'limit_temp_needle_refs task cleans up temp needle refs exceeding retent
     my @old_needle_files = ("$temp_dir/ref1/needle_old.png", "$temp_dir/ref1/needle_old.json");
     my @new_needle_files = ("$temp_dir/ref2/needle_new.png", "$temp_dir/ref2/needle_new.json");
     my $now = time;
-    File::Touch->new(time => $now - (120 * ONE_MINUTE + 1))->touch(@old_needle_files);
-    File::Touch->new(time => $now + ONE_MINUTE)->touch(@new_needle_files);
+    my $old_timestamp = $now - (120 * ONE_MINUTE + 1);
+    my $new_timestamp = $now - ONE_MINUTE + 1;
+    foreach my $file (@old_needle_files) {
+        path($file)->touch;
+        utime $old_timestamp, $old_timestamp, $file;
+    }
+    foreach my $file (@new_needle_files) {
+        path($file)->touch;
+        utime $new_timestamp, $new_timestamp, $file;
+    }
 
     # enqueue and run cleanup
     my $minion = $t->app->minion;

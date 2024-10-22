@@ -6,7 +6,7 @@ package OpenQA::Git;
 use Mojo::Base -base, -signatures;
 use Mojo::Util 'trim';
 use Cwd 'abs_path';
-use File::Touch;
+use Mojo::File 'path';
 use OpenQA::Utils qw(run_cmd_with_log_return_error);
 
 has 'app';
@@ -160,7 +160,7 @@ sub is_workdir_clean ($self) {
 
 sub cache_ref ($self, $ref, $relative_path, $output_file) {
     if (-f $output_file) {
-        eval { touch $output_file };
+        eval { path($output_file)->touch };
         return $@ ? $@ : undef;
     }
     my @git = $self->_prepare_git_command;
