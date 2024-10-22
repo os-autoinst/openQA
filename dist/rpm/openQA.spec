@@ -103,7 +103,8 @@ BuildRequires:  fdupes
 # for install-opensuse in Makefile
 %if 0%{?is_opensuse}
 BuildRequires:  openSUSE-release
-%else
+%endif
+%if 0%{?sle_version} && !0%{?is_opensuse}
 BuildRequires:  sles-release
 %endif
 BuildRequires:  %{build_requires}
