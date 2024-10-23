@@ -592,7 +592,7 @@ subtest 'add comments' => sub {
         is $submit_button->get_text, 'Restart and comment on 2 jobs', 'submit button displayed with number of jobs';
         $submit_button->click;
         wait_for_ajax msg => 'comments created';
-        like $driver->find_element_by_id('flash-messages')->get_text, qr/Reload the page to show restarted jobs/,
+        like $driver->find_element_by_id('flash-messages')->get_text, qr/Overview will be reloaded/,
           'info about successful restart shown';
         my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;
         is $comments->search({job_id => {-not_in => \@failed_job_ids}, text => $comment_text})->count, 0,
