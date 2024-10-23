@@ -42,11 +42,10 @@
         <div class="card-body">
             % my $allow_commenting = @$job_ids && current_user;
             % if ($allow_commenting) {
-            <button type="button" class="btn btn-secondary btn-circle btn-sm
-            trigger-edit-button" onclick="showAddCommentsDialog()" title="Restart or comment jobs">
-                <span class="fa-stack" style="font-size: 0.9em" >
+            <button type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Restart or comment jobs">
+                <span class="fa-stack group-comment-icon-stack">
 		  <i class="fa fa-comment fa-stack-2x text-danger-info" aria-hidden="true"></i>
-		  <i class="fa fa-undo fa-stack-1x" style="color: #0c4374;" aria-hidden="true"></i>
+		  <i class="fa fa-undo fa-stack-1x" aria-hidden="true"></i>
 		</span>
             </button>
             % }
@@ -219,40 +218,39 @@
 
 % if ($allow_commenting) {
 <div class="modal fade" id="add-comments-modal">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="post" onsubmit="restartOrCommentJobs(this); return false;">
-                <div class="modal-header">
-                    <h4 class="modal-title">Add comment on all currently shown jobs</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    %= include 'comments/add_comment_form_groups', group_comment => 0, nosubmit => 1
-                </div>
-                <div class="modal-footer">
-                    <div id="add-comments-progress-indication">
-                        <div class="flex-fill"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</div>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                    <div id="add-comments-controls">
-                      <button type="submit" name="bulkAction" class="btn btn-warning"
-                              value="commentJobs" id="commentJobsBtn"
-                              formaction="<%= url_for('apiv1_post_comments')->query(job_id=>$job_ids) %>"
-                              onclick="form.clickedButton = this;">
-                        <i class="fa fa-comment"></i> Comment on all <%= scalar @$job_ids %> jobs
-                      </button>
-                      <button type="submit" name="bulkAction" class="btn btn-danger"
-                              value="restartAndCommentJobs"
-                              id="restartAndCommentJobsBtn"
-                              formaction="<%= url_for('apiv1_restart_jobs')->query(jobs => $job_ids) %>"
-                              onclick="form.clickedButton = this;">
-                        <i class="fa fa-play-circle-o"></i> Restart and comment on <%= scalar @$job_ids %> jobs
-                      </button>
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
-                    </div>
-                </div>
-            </form>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header">
+          <h4 class="modal-title">Add comment on all currently shown jobs</h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+        <div class="modal-body">
+          %= include 'comments/add_comment_form_groups', group_comment => 0, nosubmit => 1
+        </div>
+        <div class="modal-footer">
+          <div id="add-comments-progress-indication">
+            <div class="flex-fill"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+          <div id="add-comments-controls">
+            <button type="button" class="btn btn-warning" id="commentJobsBtn"
+                    data-url="<%= url_for('apiv1_post_comments')->query(job_id=>$job_ids) %>"
+                    onclick="addComments(this);">
+              <i class="fa fa-comment"></i> Comment on all <%= scalar @$job_ids %> jobs
+            </button>
+            <button type="button" class="btn btn-danger" id="restartAndCommentJobsBtn"
+                    data-jobs="<%= join(',', @$job_ids) %>"
+                    data-url="<%= url_for('apiv1_restart_jobs')->query(jobs=>$job_ids) %>"
+                    onclick="restartJobsWithComment(this);">
+              <i class="fa fa-play-circle-o"></i> Restart and comment on <%= scalar @$job_ids %> jobs
+            </button>
+            <button type="button" class="btn btn-secondary"
+                    data-bs-dismiss="modal">Discard</button>
+          </div>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 % }

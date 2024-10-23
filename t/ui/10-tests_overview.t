@@ -156,7 +156,6 @@ like($driver->find_elements('.failedmodule', 'css')->[1]->get_attribute('href'),
 
 my @descriptions = $driver->find_elements('td.name a', 'css');
 is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
-disable_bootstrap_animations;
 $descriptions[0]->click();
 is($driver->find_element('.popover-header')->get_text, 'kde', 'description popover shows content');
 
@@ -546,7 +545,7 @@ subtest 'filter by result and state' => sub {
 subtest "job template names displayed on 'Test result overview' page" => sub {
     $driver->get('/group_overview/1002');
     is($driver->find_element('.progress-bar-unfinished')->get_text(),
-        '1 unfinished', 'The number of unfinished jobs is right');
+        '1 unfinished', 'expected number of unfinished jobs');
 
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002');
     my @tds = $driver->find_elements('#results_DVD tbody tr .name');
@@ -554,7 +553,6 @@ subtest "job template names displayed on 'Test result overview' page" => sub {
 
     my @descriptions = $driver->find_elements('td.name a', 'css');
     is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
-    disable_bootstrap_animations;
     $descriptions[0]->click();
     is(wait_for_element(selector => '.popover-header')->get_text, 'kde_variant', 'description popover shows content');
 };
@@ -565,7 +563,6 @@ subtest 'add comments' => sub {
 
     $driver->find_element_by_link_text('Login')->click;
     $driver->get('/tests/overview?state=done&result=failed');
-    disable_bootstrap_animations;
     $driver->find_element('button[title="Restart or comment jobs"]')->click;
     my $comment_text = 'comment via add-comments';
     my $submit_button = $driver->find_element('#add-comments-controls button[id="commentJobsBtn"]');
@@ -584,17 +581,18 @@ subtest 'add comments' => sub {
 
     subtest 'restart jobs with comment' => sub {
         $driver->get('/tests/overview?state=done&result=failed');
-        disable_bootstrap_animations;
         $driver->find_element('button[title="Restart or comment jobs"]')->click;
         my $comment_text = 'comment current jobs and restart';
-        my $submit_button = $driver->find_element('#add-comments-controls button[id="restartAndCommentJobsBtn"]');
+        my $submit_button = $driver->find_element('#restartAndCommentJobsBtn');
         $driver->find_element_by_id('text')->send_keys($comment_text);
         is $submit_button->get_text, 'Restart and comment on 2 jobs', 'submit button displayed with number of jobs';
         $submit_button->click;
         wait_for_ajax msg => 'comments created';
-        like $driver->find_element_by_id('flash-messages')->get_text, qr/Reload the page to show restarted jobs/,
+        like $driver->find_element_by_id('flash-messages')->get_text, qr/Reload the page to show changes/,
           'info about successful restart shown';
         my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;
+        is $comments->search({job_id => {-in => \@failed_job_ids}, text => $comment_text})->count, 2,
+          'comments created on all relevant jobs';
         is $comments->search({job_id => {-not_in => \@failed_job_ids}, text => $comment_text})->count, 0,
           'comments not created on other jobs';
         my $running_job_ids = map { $_->id } $jobs->search({state => RUNNING})->all;

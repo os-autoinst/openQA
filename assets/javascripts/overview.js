@@ -287,16 +287,37 @@ function showAddCommentsDialog() {
   modal.show();
 }
 
-function restartOrCommentJobs(form) {
+function restartJobsWithComment(btn) {
+  const form = btn.form;
   const text = form.elements.text.value;
+  const jobs = btn.dataset.jobs
+    .split(',')
+    .map(Number)
+    .filter(n => !isNaN(n));
+  const apiUrl = btn.dataset.url;
   if (!text.length) {
     return window.alert("The comment text mustn't be empty.");
   }
-    const actionBtn = form.clickedButton ? form.clickedButton.value : null;
-    console.log(actionBtn);
-    let reqUrl = form.clickedButton.getAttribute('formaction');
-    console.log(form.clickedButton.getAttribute('formaction'));
-    const progressIndication = document.getElementById('add-comments-progress-indication');
+
+  const progressIndication = document.getElementById('add-comments-progress-indication');
+  const controls = document.getElementById('add-comments-controls');
+  progressIndication.style.display = 'flex';
+  controls.style.display = 'none';
+  restartJob(apiUrl, jobs, text).finally(() => {
+    progressIndication.style.display = 'none';
+    controls.style.display = 'inline';
+    window.addCommentsModal.hide();
+  });
+}
+
+function addComments(btn) {
+  const form = btn.form;
+  const text = form.elements.text.value;
+  const apiUrl = btn.dataset.url;
+  if (!text.length) {
+    return window.alert("The comment text mustn't be empty.");
+  }
+  const progressIndication = document.getElementById('add-comments-progress-indication');
   const controls = document.getElementById('add-comments-controls');
   progressIndication.style.display = 'flex';
   controls.style.display = 'none';
@@ -305,31 +326,17 @@ function restartOrCommentJobs(form) {
     controls.style.display = 'inline';
     window.addCommentsModal.hide();
   };
-
-  let infoText =
-    'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.';
-  let errText = 'The comments could not be added:';
-  if (actionBtn === 'restartAndCommentJobs') {
-    infoText = '<a href="javascript: location.reload()">Reload</a> the page to show restarted jobs.';
-    errText = 'Failed to restart jobs: ';
-  }
-  fetchWithCSRF(reqUrl, {method: 'POST', body: new FormData(form)})
+  fetchWithCSRF(apiUrl, {method: 'POST', body: new FormData(form)})
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      addFlash('info', infoText);
+      addFlash(
+        'info',
+        'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
+      );
       done();
-      return response.json();
-    })
-        .then(resData => {
-            console.log(resData);
-      if (resData.errors && resData.errors.length > 0) {
-        for (let i in resData.errors) {
-          addFlash('warning', 'Warning: Errors found in Response:\n' + resData.errors[i].trim());
-        }
-      }
     })
     .catch(error => {
-      addFlash('danger', `${errText} ${error}`);
+      addFlash('danger', `The comments could not be added: ${error}`);
       done();
     });
 }
