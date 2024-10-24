@@ -238,7 +238,12 @@ function forceJobRestartViaRestartLink(restartLink) {
   restartLink.click();
 }
 
-function restartJob(ajaxUrl, jobId) {
+function restartJob(ajaxUrl, jobIds, comment) {
+  let singleJobId;
+  if (!Array.isArray(jobIds)) {
+    singleJobId = jobIds;
+    jobIds = [jobIds];
+  }
   var showError = function (reason) {
     var errorMessage = '<strong>Unable to restart job';
     if (reason) {
@@ -248,8 +253,11 @@ function restartJob(ajaxUrl, jobId) {
     }
     addFlash('danger', errorMessage);
   };
-
-  return fetchWithCSRF(ajaxUrl, {method: 'POST'})
+  const body = {
+    jobs: jobIds,
+    comment: comment
+  };
+  return fetchWithCSRF(ajaxUrl, {method: 'POST', body: JSON.stringify(body)})
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       return response.json();
@@ -257,7 +265,14 @@ function restartJob(ajaxUrl, jobId) {
     .then(responseJSON => {
       var newJobUrl;
       try {
-        newJobUrl = responseJSON.test_url[0][jobId];
+        if (singleJobId) {
+          newJobUrl = responseJSON.test_url[0][singleJobId];
+        } else {
+          var testUrlData = responseJSON.test_url;
+          if (testUrlData && Array.isArray(testUrlData)) {
+            newJobUrl = testUrlData.map(item => Object.values(item)[0]);
+          }
+        }
       } catch {
         // Intentionally ignore all errors
       }
@@ -265,13 +280,20 @@ function restartJob(ajaxUrl, jobId) {
         showJobRestartResults(
           responseJSON,
           newJobUrl,
-          restartJob.bind(undefined, addParam(ajaxUrl, 'force', '1'), jobId)
+          restartJob.bind(undefined, addParam(ajaxUrl, 'force', '1'), jobIds, comment)
         )
       ) {
         return;
       }
       if (newJobUrl) {
-        window.location.replace(newJobUrl);
+        if (Array.isArray(newJobUrl)) {
+          addFlash('info', 'Overview will be reloaded');
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          window.location.replace(newJobUrl);
+        }
       } else {
         throw 'URL for new job not available';
       }
