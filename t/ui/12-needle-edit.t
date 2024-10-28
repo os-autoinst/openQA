@@ -334,6 +334,18 @@ my $needlename = 'test-newneedle';
 my $xoffset = my $yoffset = 200;
 
 subtest 'Create new needle' => sub {
+    subtest 'invalid needle tag is rejected' => sub {
+        $elem = $driver->find_element_by_id('newtag');
+        $elem->send_keys('123');
+        my $button = $driver->find_element_by_id('tag_add_button');
+        ok !$button->is_enabled, 'tag too short, Add button not enabled';
+        $elem->send_keys('4');
+        ok $button->is_enabled, 'tag valid, Add button enabled';
+        $elem->send_keys('!');
+        ok !$button->is_enabled, 'tag invalid, Add button not enabled';
+        $elem->clear;
+    };
+
     add_needle_tag();
 
     # check needle name input
