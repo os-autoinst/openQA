@@ -1552,6 +1552,91 @@ SSH and salt, e.g. to be used with
 https://github.com/os-autoinst/salt-states-openqa/, can be found in
 https://github.com/os-autoinst/openQA/blob/master/contrib/ay-openqa-worker.xml
 
+== Special network conditions
+There might be certain situations where the openQA workers cannot reach the openQA webui directly.
+In this case a reverse connection via SSH or WireGuard might be useful allowing the openQA webui
+to connect to a worker opening a backchannel.
+
+=== WireGuard
+For WireGuard using wg-quick is recommended.
+
+To generate a private (first line) and a public (second line) key for each peer use this command:
+
+[source,sh]
+--------------------------------------------------------------------------------
+wg genkey | tee /dev/stderr | wg pubkey
+--------------------------------------------------------------------------------
+
+Create a config in `/etc/wireguard/openqa.conf` on the webui host:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[Interface]
+Address = fd0a::1/128
+PrivateKey = +++ INSERT PRIVATE KEY of webui +++
+
+[Peer]
+# Name = worker1
+PublicKey = +++ INSERT PUBLIC KEY OF worker1 +++
+Endpoint = worker1:51820
+AllowedIPs = fd0a::2/128
+PersistentKeepalive = 60
+
+[Peer]
+# Name = worker2
+PublicKey = +++ INSERT PUBLIC KEY OF worker2 +++
+Endpoint = worker2:51820
+AllowedIPs = fd0a::3/128
+PersistentKeepalive = 60
+--------------------------------------------------------------------------------
+
+Create a config in `/etc/wireguard/openqa.conf` on the worker1 host (and analog on other worker hosts):
+
+[source,ini]
+--------------------------------------------------------------------------------
+[Interface]
+Address = fd0a::2/128
+PrivateKey = +++ INSERT PRIVATE KEY HERE +++
+ListenPort = 51820
+
+[Peer]
+# Name = webui
+PublicKey = +++ INSERT PUBLIC KEY OF webui +++
+AllowedIPs = fd0a::1/128
+--------------------------------------------------------------------------------
+
+On all peers run now:
+
+[source,sh]
+--------------------------------------------------------------------------------
+zypper -n in wireguard-tools
+systemctl enable --now wg-quick@openqa
+--------------------------------------------------------------------------------
+
+Then update `/etc/openqa/workers.ini` on the workers like this:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+HOST=[fd0a::1]
+
+[[fd0a::1]]
+TESTPOOLSERVER = rsync://[fd0a::1]/tests
+--------------------------------------------------------------------------------
+
+Same for `/etc/openqa/client.conf`
+
+[source,ini]
+--------------------------------------------------------------------------------
+[[fd0a::1]]
+key = FOO
+secret = BAR
+--------------------------------------------------------------------------------
+
+NOTE: The IPv6 address is written in square brackets as it is internally
+converted to a URL which requires this notation.
+This is also the reason why host specific section headers need to
+have double brackets (one for the ini format, one for the IPv6 host notation).
 
 == Troubleshooting
 [id="troubleshooting"]
