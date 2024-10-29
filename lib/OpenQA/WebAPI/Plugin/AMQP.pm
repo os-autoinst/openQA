@@ -87,7 +87,8 @@ sub on_job_event {
 
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     my $jobs = $self->{app}->schema->resultset('Jobs');
-    my $job = $jobs->find({id => $event_data->{id}});
+    my $job = $jobs->find({id => $event_data->{id}})
+      or die "Could not find job '$event_data->{id}' in database";
 
     # find count of pending jobs for the same build to know whether all tests for a build are done
     $event_data->{remaining} = $jobs->search(
