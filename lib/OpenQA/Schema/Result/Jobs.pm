@@ -2233,7 +2233,12 @@ sub dependencies ($self, $children_list = undef, $parents_list = undef) {
         push(@{$children{$s->to_string}}, $s->child_job_id);
     }
 
-    return {parents => \%parents, has_parents => $has_parents, parents_ok => $parents_ok, children => \%children};
+    return {
+        parents => \%parents,
+        has_parents => $has_parents,
+        parents_ok => ($parents_ok ? 1 : 0),
+        children => \%children,
+    };
 }
 
 sub result_stats ($self) {
