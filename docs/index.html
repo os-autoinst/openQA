@@ -653,6 +653,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </ul>
 </li>
 <li><a href="#_automatic_installation_of_the_operating_systems_for_openqa_machines">Automatic installation of the operating systems for openQA machines</a></li>
+<li><a href="#_special_network_conditions">Special network conditions</a>
+<ul class="sectlevel2">
+<li><a href="#_wireguard">WireGuard</a></li>
+</ul>
+</li>
 <li><a href="#_troubleshooting">Troubleshooting</a>
 <ul class="sectlevel2">
 <li><a href="#troubleshooting">Tests fail quickly</a></li>
@@ -4092,6 +4097,116 @@ example template that provides the bare basics of installing a machine with
 SSH and salt, e.g. to be used with
 <a href="https://github.com/os-autoinst/salt-states-openqa/" class="bare">https://github.com/os-autoinst/salt-states-openqa/</a>, can be found in
 <a href="https://github.com/os-autoinst/openQA/blob/master/contrib/ay-openqa-worker.xml" class="bare">https://github.com/os-autoinst/openQA/blob/master/contrib/ay-openqa-worker.xml</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_special_network_conditions">Special network conditions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There might be certain situations where the openQA workers cannot reach the openQA webui directly.
+In this case a reverse connection via SSH or WireGuard might be useful allowing the openQA webui
+to connect to a worker opening a backchannel.</p>
+</div>
+<div class="sect2">
+<h3 id="_wireguard">WireGuard</h3>
+<div class="paragraph">
+<p>For WireGuard using wg-quick is recommended.</p>
+</div>
+<div class="paragraph">
+<p>To generate a private (first line) and a public (second line) key for each peer use this command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>wg<span class="tok-w"> </span>genkey<span class="tok-w"> </span><span class="tok-p">|</span><span class="tok-w"> </span>tee<span class="tok-w"> </span>/dev/stderr<span class="tok-w"> </span><span class="tok-p">|</span><span class="tok-w"> </span>wg<span class="tok-w"> </span>pubkey</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Create a config in <code>/etc/wireguard/openqa.conf</code> on the webui host:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[Interface]</span>
+<span class="tok-na">Address</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">fd0a::1/128</span>
+<span class="tok-na">PrivateKey</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">+++ INSERT PRIVATE KEY of webui +++</span>
+
+<span class="tok-k">[Peer]</span>
+<span class="tok-c1"># Name = worker1</span>
+<span class="tok-na">PublicKey</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">+++ INSERT PUBLIC KEY OF worker1 +++</span>
+<span class="tok-na">Endpoint</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">worker1:51820</span>
+<span class="tok-na">AllowedIPs</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">fd0a::2/128</span>
+<span class="tok-na">PersistentKeepalive</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">60</span>
+
+<span class="tok-k">[Peer]</span>
+<span class="tok-c1"># Name = worker2</span>
+<span class="tok-na">PublicKey</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">+++ INSERT PUBLIC KEY OF worker2 +++</span>
+<span class="tok-na">Endpoint</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">worker2:51820</span>
+<span class="tok-na">AllowedIPs</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">fd0a::3/128</span>
+<span class="tok-na">PersistentKeepalive</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">60</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Create a config in <code>/etc/wireguard/openqa.conf</code> on the worker1 host (and analog on other worker hosts):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[Interface]</span>
+<span class="tok-na">Address</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">fd0a::2/128</span>
+<span class="tok-na">PrivateKey</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">+++ INSERT PRIVATE KEY HERE +++</span>
+<span class="tok-na">ListenPort</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">51820</span>
+
+<span class="tok-k">[Peer]</span>
+<span class="tok-c1"># Name = webui</span>
+<span class="tok-na">PublicKey</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">+++ INSERT PUBLIC KEY OF webui +++</span>
+<span class="tok-na">AllowedIPs</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">fd0a::1/128</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On all peers run now:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>wireguard-tools
+systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>wg-quick@openqa</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then update <code>/etc/openqa/workers.ini</code> on the workers like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
+<span class="tok-na">HOST</span><span class="tok-o">=</span><span class="tok-s">[fd0a::1]</span>
+
+<span class="tok-k">[[fd0a::1]]</span>
+<span class="tok-na">TESTPOOLSERVER</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">rsync://[fd0a::1]/tests</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Same for <code>/etc/openqa/client.conf</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[[fd0a::1]]</span>
+<span class="tok-na">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">FOO</span>
+<span class="tok-na">secret</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">BAR</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The IPv6 address is written in square brackets as it is internally
+converted to a URL which requires this notation.
+This is also the reason why host specific section headers need to
+have double brackets (one for the ini format, one for the IPv6 host notation).
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
@@ -13062,7 +13177,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-10-11 04:44:34 UTC
+Last updated 2024-10-30 04:45:08 UTC
 </div>
 </div>
 </body>
