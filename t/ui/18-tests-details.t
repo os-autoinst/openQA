@@ -78,10 +78,11 @@ sub current_tab { $driver->find_element('.nav.nav-tabs .active')->get_text }
 sub find_candidate_needles {
     # ensure the candidates menu is visible
     my $candidates_menu = wait_for_element(selector => '#candidatesMenu', is_displayed => 1) or return {};
+    return {} unless $candidates_menu->is_enabled;
+
     # save implicit waiting time as long as we are only looking for elements
     # that should be visible already
     disable_timeout;
-    return {} unless $candidates_menu->is_enabled;
     $candidates_menu->click;
 
     # read the tags/needles from the HTML structure
@@ -609,6 +610,7 @@ sub test_with_error {
     # check whether candidates are displayed as expected
     my $random_number = int(rand(100000));
     $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/1");
+    wait_for_ajax(msg => 'step of yast2_lan test module loaded');
     is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
 }
 
@@ -643,6 +645,7 @@ subtest 'test candidate list' => sub {
         \%expected_candidates, 'needles appear twice, each time under different tag');
 
     $driver->get('/tests/99946#step/installer_timezone/1');
+    wait_for_ajax(msg => 'step of installer_timezone test module loaded');
     my $clicks = 0;
     wait_for_element(
         selector => '#needlediff_selector .show-needle-info',
