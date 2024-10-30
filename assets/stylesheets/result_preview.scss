@@ -84,6 +84,7 @@
 }
 
 #canholder {
+    position: relative;
     text-align: center;
     width: 100%;
     margin-top: 10pt;
@@ -93,6 +94,14 @@
         max-width: 100%;
         border: #ddd 1px solid;
     }
+}
+
+#liveview-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10; /* Ensure it's above the canvas */
 }
 
 .needle-info-table {

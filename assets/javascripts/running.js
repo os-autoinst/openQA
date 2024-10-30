@@ -321,13 +321,16 @@ var last_event;
 function loadCanvas(canvas, dataURL) {
   var context = canvas.getContext('2d');
 
-  // load image from data url
+  // load image from data URL
   var scrn = new Image();
   scrn.onload = function () {
     canvas.width = this.width;
     canvas.height = this.height;
     context.clearRect(0, 0, this.width, this.width);
     context.drawImage(this, 0, 0);
+
+    // hide loading animation after the first image is loaded
+    document.getElementById('liveview-loading').style.display = 'none';
   };
   scrn.src = dataURL;
 }
