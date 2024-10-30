@@ -1636,7 +1636,7 @@ subtest 'handle git_clone with CASEDIR' => sub {
     my $gru_task_values = shift @gru_args;
     is_deeply $gru_task_values,
       {
-        't/data/openqa/share/tests/foobar' => 'http://localhost/foo.git',
+        path('t/data/openqa/share/tests/foobar')->realpath => 'http://localhost/foo.git',
         't/data/openqa/share/tests/foobar/needles' => 'http://localhost/bar.git'
       },
       'the git clone gru tasks were created correctly';
@@ -1671,8 +1671,8 @@ subtest 'handle git_clone without CASEDIR' => sub {
       [
         [
             {
-                't/data/openqa/share/tests/needles' => undef,
-                't/data/openqa/share/tests' => undef,
+                path('t/data/openqa/share/tests')->realpath => undef,
+                path('t/data/openqa/share/tests/needles')->realpath => undef,
             }]
       ],
       'the git_clone gru tasks was created correctly';
