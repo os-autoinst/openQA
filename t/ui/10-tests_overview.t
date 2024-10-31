@@ -607,6 +607,19 @@ subtest "job dependencies displayed on 'Test result overview' page" => sub {
       'parent job was highlighted correctly';
 };
 
+subtest 'result filter does not affect scheduled and running jobs' => sub {
+    $driver->get('/tests?resultfilter=Failed');
+
+    my @running_jobs = $driver->find_elements('#running tbody tr');
+    is scalar @running_jobs, 2, 'Running jobs are displayed';
+
+    my @scheduled_jobs = $driver->find_elements('#scheduled tbody tr');
+    is scalar @scheduled_jobs, 4, 'Scheduled jobs are displayed';
+
+    my @finished_jobs = $driver->find_elements('#results tbody tr');
+    is scalar @finished_jobs, 6, 'Finished jobs table is correctly filtered';
+};
+
 kill_driver();
 
 done_testing();
