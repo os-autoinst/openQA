@@ -253,8 +253,16 @@ sub enqueue_git_clones ($self, $clones, $job_ids) {
     return unless OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} eq 'yes';
     # $clones is a hashref with paths as keys and git urls as values
     # $job_id is used to create entries in a related table (gru_dependencies)
-    my $found = $self->_find_existing_minion_job('git_clone', $clones, $job_ids);
-    $self->enqueue('git_clone', $clones, {priority => 10}, $job_ids) unless $found;
+
+    # resolve all symlinks in keys of $clones to allow _find_existing_minion_job find and skip identical jobs
+    my $clones_sr = {};
+    for my $path (keys %$clones) {
+        my $path_sr = eval { path($path)->realpath } // $path;
+        $clones_sr->{$path_sr} = $clones->{$path};
+    }
+
+    my $found = $self->_find_existing_minion_job('git_clone', $clones_sr, $job_ids);
+    $self->enqueue('git_clone', $clones_sr, {priority => 10}, $job_ids) unless $found;
 }
 
 sub enqueue_and_keep_track {
