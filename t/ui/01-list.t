@@ -29,7 +29,8 @@ use OpenQA::SeleniumTest;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 $ENV{OPENQA_CONFIG} = my $config_dir = tempdir("$FindBin::Script-XXXX");
-$config_dir->child('openqa.ini')->spew("[scheduler]\nmax_running_jobs = 3");
+my $cfg = "[scheduler]\nmax_running_jobs = 3\n[scm git]\ngit_auto_update = no";
+$config_dir->child('openqa.ini')->spew($cfg);
 
 my @job_params = (
     group_id => 1002,

@@ -39,6 +39,7 @@ my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $app = $t->app;
 my $schema = $app->schema;
 my $comments = $schema->resultset('Comments');
+$app->config->{'scm git'}->{git_auto_update} = 'no';
 
 # create a parent group
 my $parent_groups = $schema->resultset('JobGroupParents');

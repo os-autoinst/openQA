@@ -61,7 +61,9 @@ sub calculate_file_md5 ($file) {
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-is($t->app->config->{audit}->{blocklist}, 'job_grab', 'blocklist updated');
+my $cfg = $t->app->config;
+$cfg->{'scm git'}->{git_auto_update} = 'no';
+is $cfg->{audit}->{blocklist}, 'job_grab', 'blocklist updated';
 
 my $schema = $t->app->schema;
 my $assets = $schema->resultset('Assets');

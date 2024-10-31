@@ -111,6 +111,10 @@ distri:: a test distribution but also sometimes referring to a _product_
 multiple _test modules_ in a folder structure that compose _test suites_, e.g.
 "opensuse" (test distribution, short for "os-autoinst-distri-opensuse")
 
+needles:: reference images to assert whether what is on the screen matches
+expectations and to locate elements on the screen the tests needs to interact
+with (e.g. to locate a button to click on it)
+
 product:: the main "system under test" (SUT), e.g. "openSUSE", also called
 "Medium Types" in the web interface of openQA
 
@@ -369,22 +373,23 @@ this document should help you to get started faster.
 You can point `CASEDIR` and `NEEDLES_DIR` to Git repositories. openQA will
 checkout those repositories automatically and no manual setup is needed.
 
-Otherwise you will need to clone tests and needles manually. First you need to
-get actual tests. You can get openSUSE tests and needles (the expected results)
-from https://github.com/os-autoinst/os-autoinst-distri-opensuse[GitHub]. It
-belongs into the `/var/lib/openqa/tests/opensuse` directory. To make it easier,
-you can just run:
+Otherwise you will need to clone tests and needles manually. For this,
+clone a subdirectory under `/var/lib/openqa/tests` for each test distribution
+you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests.
 
-[source,sh]
---------------------------------------------------------------------------------
-/usr/share/openqa/script/fetchneedles
---------------------------------------------------------------------------------
+The repositories will be kept up-to-date if `git_auto_update` is enabled in
+`openqa.ini` (which is the default). The updating is triggered when new tests
+are scheduled. For a periodic update (to avoid getting too far behind) you can
+enable the systemd unit `openqa-enqueue-git-auto-update.timer`.
 
-Which will download the tests to the correct location and will set the correct
-rights as well.
+You can get openSUSE tests and needles from
+https://github.com/os-autoinst/os-autoinst-distri-opensuse[GitHub]. To make it
+easier, you can just run `/usr/share/openqa/script/fetchneedles`. It will
+download tests and needles to the correct location with the correct permissions.
 
-Fedora's tests are also in https://pagure.io/fedora-qa/os-autoinst-distri-fedora[git]. To
-use them, you may do:
+Fedora's tests are also in
+https://pagure.io/fedora-qa/os-autoinst-distri-fedora[git]. To use them, you may
+do:
 
 [source,sh]
 --------------------------------------------------------------------------------
