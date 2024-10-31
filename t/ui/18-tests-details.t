@@ -312,6 +312,40 @@ subtest 'running job' => sub {
     # waiting for the periodic call anyways
     $driver->execute_script('window.enableStatusUpdates = false');
 
+    subtest 'liveview loading animation is displayed' => sub {
+        $driver->find_element_by_link_text('Details')->click();
+        like current_tab, qr/details/i, 'switched to details tab';
+        $driver->find_element_by_link_text('Live View')->click();
+        like current_tab, qr/live/i, 'switched back to live tab';
+        my $loading_element = $driver->find_element('#liveview-loading');
+        ok $loading_element, 'liveview-loading element exists after tab switch';
+        ok $loading_element->is_displayed(), 'liveview-loading is visible after tab switch';
+    };
+    subtest 'liveview loading animation hides after live view starts' => sub {
+        my $loading_element = $driver->find_element('#liveview-loading');
+        ok $loading_element->is_displayed(), 'liveview-loading is initially visible';
+        # simulate the live view starting
+        $driver->execute_script(
+            q{
+            var canvas = document.getElementById('livestream');
+            var dataURL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=';
+            loadCanvas(canvas, dataURL);
+        }
+        );
+        wait_until sub {
+            !$loading_element->is_displayed();
+        }, 'liveview-loading is hidden after live view starts', 5;
+        my $canvas = $driver->find_element('#livestream');
+        ok $canvas->is_displayed(), 'livestream canvas is displayed';
+        $driver->find_element_by_link_text('Details')->click();
+        like current_tab, qr/details/i, 'switched to details tab';
+        $driver->find_element_by_link_text('Live View')->click();
+        like current_tab, qr/live/i, 'switched back to live tab';
+        $loading_element = $driver->find_element('#liveview-loading');
+        ok $loading_element, 'liveview-loading element exists after tab switch';
+        ok !$loading_element->is_displayed(), 'liveview-loading is still hidden after tab switch';
+    };
+
     subtest 'info panel contents' => sub {
         like(
             $driver->find_element('#assigned-worker')->get_text,
