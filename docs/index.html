@@ -1324,6 +1324,16 @@ multiple <em>test modules</em> in a folder structure that compose <em>test suite
 </tr>
 <tr>
 <td class="hdlist1">
+needles
+</td>
+<td class="hdlist2">
+<p>reference images to assert whether what is on the screen matches
+expectations and to locate elements on the screen the tests needs to interact
+with (e.g. to locate a button to click on it)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
 product
 </td>
 <td class="hdlist2">
@@ -1767,24 +1777,26 @@ this document should help you to get started faster.</p>
 checkout those repositories automatically and no manual setup is needed.</p>
 </div>
 <div class="paragraph">
-<p>Otherwise you will need to clone tests and needles manually. First you need to
-get actual tests. You can get openSUSE tests and needles (the expected results)
-from <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">GitHub</a>. It
-belongs into the <code>/var/lib/openqa/tests/opensuse</code> directory. To make it easier,
-you can just run:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/fetchneedles</code></pre>
-</div>
+<p>Otherwise you will need to clone tests and needles manually. For this,
+clone a subdirectory under <code>/var/lib/openqa/tests</code> for each test distribution
+you need, e.g. <code>/var/lib/openqa/tests/opensuse</code> for openSUSE tests.</p>
 </div>
 <div class="paragraph">
-<p>Which will download the tests to the correct location and will set the correct
-rights as well.</p>
+<p>The repositories will be kept up-to-date if <code>git_auto_update</code> is enabled in
+<code>openqa.ini</code> (which is the default). The updating is triggered when new tests
+are scheduled. For a periodic update (to avoid getting too far behind) you can
+enable the systemd unit <code>openqa-enqueue-git-auto-update.timer</code>.</p>
 </div>
 <div class="paragraph">
-<p>Fedora&#8217;s tests are also in <a href="https://pagure.io/fedora-qa/os-autoinst-distri-fedora">git</a>. To
-use them, you may do:</p>
+<p>You can get openSUSE tests and needles from
+<a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">GitHub</a>. To make it
+easier, you can just run <code>/usr/share/openqa/script/fetchneedles</code>. It will
+download tests and needles to the correct location with the correct permissions.</p>
+</div>
+<div class="paragraph">
+<p>Fedora&#8217;s tests are also in
+<a href="https://pagure.io/fedora-qa/os-autoinst-distri-fedora">git</a>. To use them, you may
+do:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -13177,7 +13189,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-10-30 04:45:08 UTC
+Last updated 2024-11-01 04:43:36 UTC
 </div>
 </div>
 </body>
