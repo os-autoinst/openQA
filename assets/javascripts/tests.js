@@ -402,6 +402,10 @@ function renderTestLists() {
 
   // add a handler for the actual filtering
   $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+    if (settings.nTable.getAttribute('id') !== 'results') {
+      return true; // Do not filter other tables
+    }
+
     var selectedResults = finishedJobsResultFilter.find('option:selected');
     // don't apply filter if no result is selected
     if (!selectedResults.length) {
