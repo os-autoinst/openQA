@@ -193,19 +193,22 @@ by different means:
 
 
 === Variable expansion
+Any job setting can refer to another variable using this syntax: `%NAME%`. When
+the test job is created, the string will be substituted with the value of the
+specified variable at that time.
 
-Any variable defined in Test Suite, Machine, Product or Job Template table can
-refer to another variable using this syntax: `%NAME%`. When the test job is created,
-the string will be substituted with the value of the specified variable at that time.
+The variable expansion applies to job settings defined in test suites, machines,
+products and job templates. It also applies to job settings specified when
+creating a single set of jobs.
 
-For example this variable defined for Test Suite:
+Consider this example where a variable is defined within a test suite:
 
 [source,sh]
 --------------------------------------------------------------------------------
 PUBLISH_HDD_1 = %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2
 --------------------------------------------------------------------------------
 
-may be expanded to this job variable:
+It may expanded to this job setting:
 
 [source,sh]
 --------------------------------------------------------------------------------
