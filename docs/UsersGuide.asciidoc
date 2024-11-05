@@ -199,7 +199,7 @@ specified variable at that time.
 
 The variable expansion applies to job settings defined in test suites, machines,
 products and job templates. It also applies to job settings specified when
-creating a single set of jobs.
+creating a single set of jobs and to variables specified in the worker config.
 
 Consider this example where a variable is defined within a test suite:
 
@@ -214,6 +214,12 @@ It may expanded to this job setting:
 --------------------------------------------------------------------------------
 PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
 --------------------------------------------------------------------------------
+
+NOTE: Variables from the worker config are not considered if such a variable is
+also present in any of the other mentioned places. To give variable values from
+the worker config precedence, use double percentage signs. Expansions by the
+worker will *not* be shown in the "Settings" tab on the web UI. They are only
+present in `vars.json` and `worker-log.txt`.
 
 === Variable precedence
 It is possible to define the same variable in multiple places that would all be

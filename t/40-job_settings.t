@@ -121,4 +121,17 @@ subtest 'handle_plus_in_settings' => sub {
     is_deeply($settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly');
 };
 
+subtest 'two-pass variable expansion' => sub {
+    my %settings = (FOO => 'http://%BAR%/', NEEDLES_DIR => '%%CASEDIR%%/needles');
+
+    OpenQA::JobSettings::expand_placeholders(\%settings);    # web UI pass
+    is $settings{FOO}, 'http://%BAR%/', 'placeholder referring to non-existing key not removed during web UI pass';
+    is $settings{NEEDLES_DIR}, '%CASEDIR%/needles', 'one level of %-signs stripped during web UI pass';
+
+    OpenQA::JobSettings::expand_placeholders(\%settings, 0);    # worker pass
+    is $settings{FOO}, 'http:///', 'placeholder referring to non-existing key finally removed by worker';
+    is $settings{NEEDLES_DIR}, '%CASEDIR%/needles',
+      '%CASEDIR% preserved during worker pass (handled instead by _engine_workit_step_2)';
+};
+
 done_testing;

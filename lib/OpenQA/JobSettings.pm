@@ -52,29 +52,32 @@ sub generate_settings ($params) {
 }
 
 # replace %NAME% with $settings{NAME} (but not %%NAME%%)
-sub expand_placeholders ($settings) {
+sub expand_placeholders ($settings, $on_web_ui = 1) {
     for my $value (values %$settings) {
         next unless defined $value;
         my %visited_placeholders;
-        eval { $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders)/eg };
+        eval {
+            $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders, $on_web_ui)/eg;
+        };
         return "Error: $@" if $@;
     }
     return undef;
 }
 
-sub _expand_placeholder ($settings, $key, $start, $end, $visited_placeholders_in_parent_scope) {
-    return '' unless defined $settings->{$key};
+sub _expand_placeholder ($settings, $key, $start, $end, $visited_placeholders_in_parent_scope, $on_web_ui) {
+    # handle %CASEDIR% only on web UI; on the worker it is handled by _engine_workit_step_2 separately
+    return "$start$key$end" if !$on_web_ui && $key eq 'CASEDIR';
 
-    my %visited_placeholders = %$visited_placeholders_in_parent_scope;
-    die "The key $key contains a circular reference, its value is $settings->{$key}.\n"
-      if $visited_placeholders{$key}++;
-
-    # if the key is surrounded by more than one % on any side, return the key itself and strip one level of %
+    # return the key itself and strip one level of % if the key is surrounded by more than one % on any side
     return substr($start, 1) . ($key) . substr($end, 0, -1) unless $start eq '%' && $end eq '%';
 
-    # otherwise, substitute the whole %…% expression with the value of the other setting
-    my $value = $settings->{$key};
-    $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders)/eg;
+    # do not replace non-existing keys on web UI level to leave them to the worker
+    return $on_web_ui ? "$start$key$end" : '' unless defined(my $value = $settings->{$key});
+
+    # substitute the whole %…% expression with the value of the other setting
+    my %visited_placeholders = %$visited_placeholders_in_parent_scope;
+    die "The key $key contains a circular reference, its value is $value.\n" if $visited_placeholders{$key}++;
+    $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders, $on_web_ui)/eg;
     return $value;
 }
 
