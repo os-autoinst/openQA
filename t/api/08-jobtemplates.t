@@ -24,7 +24,6 @@ $log_mock->redefine(error => sub { push @logged_errors, $_[1] });
 
 my $accept_yaml = {Accept => 'text/yaml'};
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
-$t->app->config->{'scm git'}->{git_auto_update} = 'no';
 
 my $schema = $t->app->schema;
 my $job_groups = $schema->resultset('JobGroups');

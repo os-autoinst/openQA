@@ -44,9 +44,7 @@ ok($schema = OpenQA::Test::Database->new->create, 'create database')
   || BAIL_OUT('failed to create database');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-my $cfg = $t->app->config;
-$cfg->{global}->{hide_asset_types} = 'repo  foo ';
-$cfg->{'scm git'}->{git_auto_update} = 'no';
+$t->app->config->{global}->{hide_asset_types} = 'repo  foo ';
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',

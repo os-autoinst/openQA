@@ -42,7 +42,6 @@ my $app = $daemon->build_app('OpenQA::WebAPI');
 my $port = $daemon->start->ports->[0];
 my $host = "http://127.0.0.1:$port";
 $app->log->level($ENV{HARNESS_IS_VERBOSE} ? 'debug' : 'error');
-$app->config->{'scm git'}->{git_auto_update} = 'no';
 
 combined_like { OpenQA::CLI->new->run('help', 'schedule') } qr/Usage: openqa-cli schedule/, 'help';
 subtest 'unknown options' => sub {
