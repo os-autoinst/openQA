@@ -216,8 +216,7 @@ PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
 --------------------------------------------------------------------------------
 
 === Variable precedence
-
-It's possible to define the same variable in multiple places that would all be
+It is possible to define the same variable in multiple places that would all be
 used for a single job - for instance, you may have a variable defined in both
 a test suite and a product that appear in the same job template. The precedence
 order for variables is as follows (from lowest to highest):
