@@ -693,13 +693,12 @@ sub _create_clones ($self, $jobs, $comments, $comment_text, $comment_user_id, @c
         $res->register_assets_from_settings;
     }
 
-    # calculate blocked_by
-    $clones{$_}->calculate_blocked_by for @original_job_ids;
-
-    # add a reference to the clone within $jobs
-    for my $job (@original_job_ids) {
-        my $clone = $clones{$job};
-        $jobs->{$job}->{clone} = $clone->id if $clone;
+    for my $original_job_id (@original_job_ids) {
+        my $cloned_job = $clones{$original_job_id};
+        # calculate blocked_by
+        $cloned_job->calculate_blocked_by;
+        # add a reference to the clone within $jobs
+        $jobs->{$original_job_id}->{clone} = $cloned_job->id;
     }
 
     # create comments on original jobs
