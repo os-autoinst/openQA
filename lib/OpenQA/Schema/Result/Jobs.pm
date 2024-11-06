@@ -11,7 +11,7 @@ use DateTime;
 use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
 use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error);
 use OpenQA::Utils (
-    qw(parse_assets_from_settings locate_asset),
+    qw(create_git_clone_list parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
     qw(run_cmd_with_log_return_error needledir testcasedir gitrepodir find_video_files)
 );
@@ -693,18 +693,26 @@ sub _create_clones ($self, $jobs, $comments, $comment_text, $comment_user_id, @c
         $res->register_assets_from_settings;
     }
 
+    my $app = OpenQA::App->singleton;
+    my %git_clones;
+    my @clone_ids;
     for my $original_job_id (@original_job_ids) {
         my $cloned_job = $clones{$original_job_id};
         # calculate blocked_by
         $cloned_job->calculate_blocked_by;
         # add a reference to the clone within $jobs
-        $jobs->{$original_job_id}->{clone} = $cloned_job->id;
+        push @clone_ids, $jobs->{$original_job_id}->{clone} = $cloned_job->id;
+        # add Git repositories to clone
+        create_git_clone_list($cloned_job->settings_hash, \%git_clones) if $app;
     }
 
     # create comments on original jobs
     $result_source->schema->resultset('Comments')
       ->create_for_jobs(\@original_job_ids, $comment_text, $comment_user_id, $comments)
       if defined $comment_text;
+
+    # enqueue Minion jobs to clone required Git repositories
+    $app->gru->enqueue_git_clones(\%git_clones, \@clone_ids) if $app;
 }
 
 # internal (recursive) function for duplicate - returns hash of all jobs in the

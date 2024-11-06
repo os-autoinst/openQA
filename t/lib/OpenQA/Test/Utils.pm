@@ -25,7 +25,6 @@ use Mojo::Util 'dumper';
 use Mojo::URL;
 use Cwd qw(abs_path getcwd);
 use IPC::Run qw(start);
-use Mojolicious;
 use Mojo::Util qw(b64_decode gzip);
 use Test::Output 'combined_like';
 use Mojo::IOLoop;
@@ -70,9 +69,8 @@ our (@EXPORT, @EXPORT_OK);
 #
 # Potentially this approach can also be used in production code.
 
-sub setup_mojo_app_with_default_worker_timeout {
-    OpenQA::App->set_singleton(
-        Mojolicious->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef));
+sub setup_mojo_app_with_default_worker_timeout ($class = 'Mojolicious') {
+    OpenQA::App->set_singleton($class->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef));
 }
 
 sub cache_minion_worker {
