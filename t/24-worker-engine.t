@@ -353,7 +353,7 @@ subtest 'syncing tests' => sub {
     is $result, 'cache-dir/webuihost/tests', 'returns synced test directory on success' or diag explain $result;
 };
 
-subtest 'symlink testrepo, logging behavior' => sub {
+subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
     my $pool_directory = tempdir('poolXXXX');
     my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
@@ -393,7 +393,8 @@ subtest 'symlink testrepo, logging behavior' => sub {
     };
 
     my @custom_casedir_settings = (
-        CASEDIR => 'https://github.com/foo/os-autoinst-distri-example.git#master',
+        CASEDIR_DOMAIN => 'github.com',
+        CASEDIR => 'https://%CASEDIR_DOMAIN%/foo/os-autoinst-distri-example.git#master',
         NEEDLES_DIR => 'fedora/needles',
         DISTRI => 'fedora',
         JOBTOKEN => 'token99916',

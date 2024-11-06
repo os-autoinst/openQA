@@ -4,6 +4,7 @@
 package OpenQA::Worker::Engines::isotovideo;
 use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
+use OpenQA::JobSettings;
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
 use OpenQA::Utils
   qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir needledir);
@@ -319,6 +320,10 @@ sub engine_workit ($job, $callback) {
         WORKER_ID => $workerid,
         %$job_settings
     );
+
+    # do final variable expansion so placeholders of variables defined in worker config are replaced as well
+    OpenQA::JobSettings::expand_placeholders(\%vars, 0);
+
     log_debug "Job settings:\n" . format_settings(\%vars);
 
     # cache/locate assets, set ASSETDIR
