@@ -1278,4 +1278,18 @@ subtest 'starvation of parallel jobs prevented' => sub {
     ok $_ >= 1 && $_ <= 3, "worker held for expected job ($_)" for values %$allocated_workers;
 };
 
+subtest 'partially blocked clusters are not scheduled' => sub {
+    # assume parallel child with ID 2 is blocked by removing it from the set of mocked jobs
+    delete $mocked_jobs{2};
+
+    my ($allocated_workers, $allocated_jobs);
+    my $free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers();
+    combined_like {
+        ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs($free_workers)
+    }
+    qr/Skipping job .* because dependent jobs are not ready/, 'skipping job if dependent jobs not ready';
+    is_deeply $allocated_jobs, {}, 'no jobs allocated' or diag explain $allocated_jobs;
+    is_deeply $allocated_workers, {}, 'no workers allocated' or diag explain $allocated_workers;
+};
+
 done_testing();

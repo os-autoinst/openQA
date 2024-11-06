@@ -95,8 +95,11 @@ sub _allocate_jobs ($self, $free_workers) {
         next if $checked_jobs{$j->{id}};
         next unless @{$j->{matching_workers}};
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
+        if (!defined $tobescheduled) {
+            log_debug "Skipping job $j->{id} because dependent jobs are not ready";
+            next;
+        }
         next if defined $allocated_jobs->{$j->{id}};
-        next unless $tobescheduled;
         OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
         my @tobescheduled = grep { $_->{id} } @$tobescheduled;
         my $parallel_count = scalar(@tobescheduled);
@@ -388,30 +391,24 @@ sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
     }
 }
 
-sub _to_be_scheduled_recurse ($j, $scheduled, $taken) {
-    return undef unless $j;
-    return undef unless $j->{id};
-    return undef if $taken->{$j->{id}};
-    # if we were called with undef, this is a sign that
-    # the cluster is not fully scheduled (e.g. blocked_by), so
-    # take that as mark but return
-    $taken->{$j->{id}} = $j;
+sub _to_be_scheduled_recurse ($job_info, $scheduled, $visited) {
+    # return falsy value if the cluster is not fully scheduled (e.g. blocked_by is set or there are Gru dependencies)
+    return 0 unless defined($job_info) && defined(my $job_id = $job_info->{id});
 
-    my $ci = $j->{cluster_jobs}->{$j->{id}};
-    return undef unless $ci;
-    for my $s (@{$ci->{parallel_children}}) {
-        _to_be_scheduled_recurse($scheduled->{$s}, $scheduled, $taken);
-    }
-    for my $s (@{$ci->{parallel_parents}}) {
-        _to_be_scheduled_recurse($scheduled->{$s}, $scheduled, $taken);
-    }
+    # keep track of visited jobs; return early if already visited
+    return 1 if $visited->{$job_id};
+    $visited->{$job_id} = $job_info;
+
+    # traverse further through the dependency tree
+    return 0 unless defined(my $ci = $job_info->{cluster_jobs}->{$job_id});
+    _to_be_scheduled_recurse($scheduled->{$_}, $scheduled, $visited) or return 0 for @{$ci->{parallel_children}};
+    _to_be_scheduled_recurse($scheduled->{$_}, $scheduled, $visited) or return 0 for @{$ci->{parallel_parents}};
+    return 1;
 }
 
-sub _to_be_scheduled ($j, $scheduled) {
-    my %taken;
-    _to_be_scheduled_recurse($j, $scheduled, \%taken);
-    return undef if defined $taken{undef};
-    return [values %taken];
+sub _to_be_scheduled ($job_info, $scheduled) {
+    my %visited;
+    _to_be_scheduled_recurse($job_info, $scheduled, \%visited) ? [values %visited] : undef;
 }
 
 sub _update_scheduled_jobs ($self) {
