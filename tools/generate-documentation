@@ -200,18 +200,13 @@ check_asciidoctor() {
 install_asciidoctor() {
     # install dependencies
     gem install asciidoctor
-    # Note: pin to 2.4.1 because newer versions of pygments.rb need Ruby 2.6
-    gem install pygments.rb -v 2.4.1
-    # Note: pin to 4.0.7 because newer versions of publix_suffix need Ruby 2.6
-    # Note: pin to 1.12.0 because newer versions of css_parser need Ruby 2.7
-    # Note: pin to 1.1.1 because newer versions of Ascii85 need Ruby 2.7
-    # Note: pin to 1.6.2 because newer versions of asciidoctor-pdf need Ruby 2.7
+    gem install pygments.rb -v 2.4.1 # newer versions need Ruby 2.6
     [[ ${formats[pdf]} ]] && {
-        gem install public_suffix -v 4.0.7
-        gem install css_parser -v 1.12.0
+        gem install public_suffix -v 4.0.7 # newer versions need Ruby 2.6
+        gem install css_parser -v 1.12.0   # newer versions need Ruby 2.7
         gem install ttfunk -v 1.7.0
-        gem install Ascii85 -v 1.1.1
-        gem install asciidoctor-pdf -v 1.6.2
+        gem install Ascii85 -v 1.1.1         # newer versions need Ruby 2.7
+        gem install asciidoctor-pdf -v 1.6.2 # newer versions need Ruby 2.7
     }
     cpanm -M https://cpan.metacpan.org --install Pod::AsciiDoctor
 }
