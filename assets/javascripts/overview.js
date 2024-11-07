@@ -287,8 +287,33 @@ function showAddCommentsDialog() {
   modal.show();
 }
 
-function addComments(form) {
+function restartJobsWithComment(btn) {
+  const form = btn.form;
   const text = form.elements.text.value;
+  const jobs = btn.dataset.jobs
+    .split(',')
+    .map(Number)
+    .filter(n => !isNaN(n));
+  const apiUrl = btn.dataset.url;
+  if (!text.length) {
+    return window.alert("The comment text mustn't be empty.");
+  }
+
+  const progressIndication = document.getElementById('add-comments-progress-indication');
+  const controls = document.getElementById('add-comments-controls');
+  progressIndication.style.display = 'flex';
+  controls.style.display = 'none';
+  restartJob(apiUrl, jobs, text).finally(() => {
+    progressIndication.style.display = 'none';
+    controls.style.display = 'inline';
+    window.addCommentsModal.hide();
+  });
+}
+
+function addComments(btn) {
+  const form = btn.form;
+  const text = form.elements.text.value;
+  const apiUrl = btn.dataset.url;
   if (!text.length) {
     return window.alert("The comment text mustn't be empty.");
   }
@@ -301,7 +326,7 @@ function addComments(form) {
     controls.style.display = 'inline';
     window.addCommentsModal.hide();
   };
-  fetchWithCSRF(form.action, {method: 'POST', body: new FormData(form)})
+  fetchWithCSRF(apiUrl, {method: 'POST', body: new FormData(form)})
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       addFlash(
