@@ -426,6 +426,19 @@ subtest 'filter-finished' => sub {
     cmp_ok scalar $driver->find_elements('#results tbody tr', 'css'), '>', scalar @jobs, 'all jobs shown again';
 };
 
+subtest 'result filter does not affect scheduled and running jobs' => sub {
+    $driver->get('/tests?resultfilter=Failed');
+
+    my @running_jobs = $driver->find_elements('#running tbody tr');
+    is scalar @running_jobs, 3, 'Running jobs are displayed';
+
+    my @scheduled_jobs = $driver->find_elements('#scheduled tbody tr');
+    is scalar @scheduled_jobs, 3, 'Scheduled jobs are displayed';
+
+    my @finished_jobs = $driver->find_elements('#results tbody tr');
+    is scalar @finished_jobs, 3, 'Finished jobs table is correctly filtered';
+};
+
 subtest 'match parameter' => sub {
     $driver->get('/tests?match=staging_e');
     wait_for_ajax msg => '"All tests" with match parameter';
