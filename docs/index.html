@@ -1783,9 +1783,9 @@ you need, e.g. <code>/var/lib/openqa/tests/opensuse</code> for openSUSE tests.</
 </div>
 <div class="paragraph">
 <p>The repositories will be kept up-to-date if <code>git_auto_update</code> is enabled in
-<code>openqa.ini</code> (which is the default). The updating is triggered when new tests
-are scheduled. For a periodic update (to avoid getting too far behind) you can
-enable the systemd unit <code>openqa-enqueue-git-auto-update.timer</code>.</p>
+<code>openqa.ini</code>. The updating is triggered when new tests are scheduled. For a
+periodic update (to avoid getting too far behind) you can enable the systemd
+unit <code>openqa-enqueue-git-auto-update.timer</code>.</p>
 </div>
 <div class="paragraph">
 <p>You can get openSUSE tests and needles from
@@ -4633,12 +4633,17 @@ routes or an online-editor within the web UI including a syntax checker.</p>
 <div class="sect2">
 <h3 id="_variable_expansion">Variable expansion</h3>
 <div class="paragraph">
-<p>Any variable defined in Test Suite, Machine, Product or Job Template table can
-refer to another variable using this syntax: <code>%NAME%</code>. When the test job is created,
-the string will be substituted with the value of the specified variable at that time.</p>
+<p>Any job setting can refer to another variable using this syntax: <code>%NAME%</code>. When
+the test job is created, the string will be substituted with the value of the
+specified variable at that time.</p>
 </div>
 <div class="paragraph">
-<p>For example this variable defined for Test Suite:</p>
+<p>The variable expansion applies to job settings defined in test suites, machines,
+products and job templates. It also applies to job settings specified when
+creating a single set of jobs and to variables specified in the worker config.</p>
+</div>
+<div class="paragraph">
+<p>Consider this example where a variable is defined within a test suite:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -4646,18 +4651,34 @@ the string will be substituted with the value of the specified variable at that 
 </div>
 </div>
 <div class="paragraph">
-<p>may be expanded to this job variable:</p>
+<p>It may expanded to this job setting:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PUBLISH_HDD_1</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>opensuse-13.1-i586-kde.qcow2</code></pre>
 </div>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Variables from the worker config are not considered if such a variable is
+also present in any of the other mentioned places. To give variable values from
+the worker config precedence, use double percentage signs. Expansions by the
+worker will <strong>not</strong> be shown in the "Settings" tab on the web UI. They are only
+present in <code>vars.json</code> and <code>worker-log.txt</code>.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_variable_precedence">Variable precedence</h3>
 <div class="paragraph">
-<p>It&#8217;s possible to define the same variable in multiple places that would all be
+<p>It is possible to define the same variable in multiple places that would all be
 used for a single job - for instance, you may have a variable defined in both
 a test suite and a product that appear in the same job template. The precedence
 order for variables is as follows (from lowest to highest):</p>
@@ -13189,7 +13210,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-11-01 04:43:36 UTC
+Last updated 2024-11-08 04:44:50 UTC
 </div>
 </div>
 </body>
