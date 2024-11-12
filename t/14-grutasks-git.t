@@ -33,6 +33,9 @@ mkdir 't';
 dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
 
 my $schema = OpenQA::Test::Database->new->create();
+my $gru_tasks = $schema->resultset('GruTasks');
+my $gru_dependencies = $schema->resultset('GruDependencies');
+my $jobs = $schema->resultset('Jobs');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # launch an additional app to serve some file for testing blocking downloads
@@ -266,11 +269,33 @@ subtest 'git_update_all' => sub {
         $testdir->child("$path/.git")->make_path;
     }
     local $ENV{OPENQA_BASEDIR} = $workdir;
+    local $ENV{OPENQA_GIT_CLONE_RETRIES} = 4;
+    local $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} = 2;
     my $minion = $t->app->minion;
     my $result = $t->app->gru->enqueue_git_update_all;
     my $job = $minion->job($result->{minion_id});
     my $args = $job->info->{args}->[0];
+    my $gru_id = $result->{gru_id};
+    my $gru_task = $gru_tasks->find($gru_id);
     is_deeply [sort keys %$args], \@clones, 'job args as expected';
+    isnt $gru_task, undef, 'gru task created' or return;
+
+    # assume an openQA job is blocked on the Gru task
+    my $blocked_job = $jobs->create({TEST => 'blocked-job'});
+    $gru_task->jobs->create({job_id => $blocked_job->id});
+
+    # perform job, it'll fail because $testdir is no actual Git repo
+    $minion->foreground($job->id);    # already counts as retry
+    is $job->info->{state}, 'inactive', 'job failed but set to inactive to be retried';
+    is $gru_task->jobs->count, 1, 'openQA job not unblocked after first try';
+
+    # retry the job now
+    $minion->foreground($job->id);
+    is $job->info->{state}, 'inactive', 'job failed but again set to inactive to be retried';
+    is $gru_task->jobs->count, 0, 'openQA job unblocked after second try';
+
+    $minion->foreground($job->id);
+    is $job->info->{state}, 'failed', 'job failed for real after retries exhausted';
 };
 
 subtest 'enqueue_git_clones' => sub {
