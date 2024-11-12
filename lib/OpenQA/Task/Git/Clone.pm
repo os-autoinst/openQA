@@ -51,7 +51,7 @@ sub _git_clone_all ($job, $clones) {
         eval { _git_clone($app, $job, $ctx, $path, $url) };
         next unless my $error = $@;
 
-        # unblock openQA jobs despite the error under best-effort configuration
+        # unblock openQA jobs despite network errors under best-effort configuration
         my $retries = $job->retries;
         my $git_config = $app->config->{'scm git'};
         my $max_retries = $ENV{OPENQA_GIT_CLONE_RETRIES} // 10;
@@ -59,6 +59,7 @@ sub _git_clone_all ($job, $clones) {
         my $gru_task_id = $job->info->{notes}->{gru_id};
         if (   $is_path_only
             && defined($gru_task_id)
+            && ($error =~ m/disconnect|curl|stream.*closed|/i)
             && $git_config->{git_auto_update_method} eq 'best-effort'
             && $retries >= $max_best_effort_retries)
         {

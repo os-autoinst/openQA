@@ -11,7 +11,7 @@ use OpenQA::Task::Git::Clone;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '20';
-use Test::Output qw(stderr_like);
+use Test::Output qw(combined_like stderr_like);
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings qw(:report_warnings);
@@ -260,6 +260,9 @@ subtest 'git clone' => sub {
 };
 
 subtest 'git_update_all' => sub {
+    my $clone_mock = Test::MockModule->new('OpenQA::Task::Git::Clone');
+    $clone_mock->redefine(_git_clone => sub (@args) { die 'fake disconnect' });
+
     $t->app->config->{'scm git'}->{git_auto_update} = 'yes';
     my $testdir = $workdir->child('openqa/share/tests');
     $testdir->make_path;
@@ -278,24 +281,27 @@ subtest 'git_update_all' => sub {
     my $gru_id = $result->{gru_id};
     my $gru_task = $gru_tasks->find($gru_id);
     is_deeply [sort keys %$args], \@clones, 'job args as expected';
-    isnt $gru_task, undef, 'gru task created' or return;
+    isnt $gru_task, undef, 'gru task created';
 
-    # assume an openQA job is blocked on the Gru task
-    my $blocked_job = $jobs->create({TEST => 'blocked-job'});
-    $gru_task->jobs->create({job_id => $blocked_job->id});
+    subtest 'error handling and retry behavior' => sub {
+        # assume an openQA job is blocked on the Gru task
+        my $blocked_job = $jobs->create({TEST => 'blocked-job'});
+        $gru_task->jobs->create({job_id => $blocked_job->id});
 
-    # perform job, it'll fail because $testdir is no actual Git repo
-    $minion->foreground($job->id);    # already counts as retry
-    is $job->info->{state}, 'inactive', 'job failed but set to inactive to be retried';
-    is $gru_task->jobs->count, 1, 'openQA job not unblocked after first try';
+        # perform job, it'll fail via the mocked _git_clone function
+        $minion->foreground($job->id);    # already counts as retry
+        is $job->info->{state}, 'inactive', 'job failed but set to inactive to be retried';
+        is $gru_task->jobs->count, 1, 'openQA job not unblocked after first try';
 
-    # retry the job now
-    $minion->foreground($job->id);
-    is $job->info->{state}, 'inactive', 'job failed but again set to inactive to be retried';
-    is $gru_task->jobs->count, 0, 'openQA job unblocked after second try';
+        # retry the job now
+        $minion->foreground($job->id);
+        is $job->info->{state}, 'inactive', 'job failed but again set to inactive to be retried';
+        is $gru_task->jobs->count, 0, 'openQA job unblocked after second try';
 
-    $minion->foreground($job->id);
-    is $job->info->{state}, 'failed', 'job failed for real after retries exhausted';
+        combined_like { $minion->foreground($job->id) } qr/fake disconnect/, 'error logged';
+        is $job->info->{state}, 'failed', 'job failed for real after retries exhausted';
+      }
+      if $gru_task;
 };
 
 subtest 'enqueue_git_clones' => sub {
