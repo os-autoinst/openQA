@@ -191,7 +191,7 @@
                             <div class="mb-3 row">
                                 <div class="col-sm-10">
                                     <input type="text" class="form-control" id="newtag" placeholder="Add new tags here"
-                                            pattern="^[A-Za-z0-9\-_]+$" minLength=4 title="[A-Za-z0-9-_], at least 4 characters">
+                                            pattern="^[A-Za-z0-9\-_.]+$" minLength=4 title="[A-Za-z0-9_.-], at least 4 characters">
                                 </div>
                                 <div class="col-sm-2">
                                     <button type="button" class="btn btn-secondary form-control" id="tag_add_button" disabled>Add</button>
