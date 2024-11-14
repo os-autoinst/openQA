@@ -263,7 +263,8 @@ subtest 'git_update_all' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Task::Git::Clone');
     $clone_mock->redefine(_git_clone => sub (@args) { die 'fake disconnect' });
 
-    $t->app->config->{'scm git'}->{git_auto_update} = 'yes';
+    my $git_config = $t->app->config->{'scm git'};
+    $git_config->{git_auto_update} = 'yes';
     my $testdir = $workdir->child('openqa/share/tests');
     $testdir->make_path;
     my @clones;
@@ -300,6 +301,18 @@ subtest 'git_update_all' => sub {
 
         combined_like { $minion->foreground($job->id) } qr/fake disconnect/, 'error logged';
         is $job->info->{state}, 'failed', 'job failed for real after retries exhausted';
+
+        subtest 'method "strict"' => sub {
+            local $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} = 1;
+            $git_config->{git_auto_update_method} = 'strict';
+            $result = $t->app->gru->enqueue_git_update_all;
+            $job = $minion->job($result->{minion_id});
+            $gru_task = $gru_tasks->find($result->{gru_id});
+            $gru_task->jobs->create({job_id => $blocked_job->id});
+            $minion->foreground($job->id);
+            is $job->info->{state}, 'inactive', 'job failed but again set to inactive to be retried';
+            is $gru_task->jobs->count, 1, 'openQA job not unblocked with method "strict"';
+        };
       }
       if $gru_task;
 };
