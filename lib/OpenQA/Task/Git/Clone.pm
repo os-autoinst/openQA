@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Mojo::Util 'trim';
 
 use Mojo::File;
+use List::Util qw(min);
 use OpenQA::Log qw(log_debug);
 use Time::Seconds 'ONE_HOUR';
 
@@ -27,8 +28,10 @@ sub _git_clone_all ($job, $clones) {
     my $retry_delay = {delay => 30 + int(rand(10))};
     # Prevent multiple git_clone tasks for the same path to run in parallel
     my @guards;
+    my $is_path_only = 1;
     for my $path (sort keys %$clones) {
         $path = Mojo::File->new($path)->realpath if -e $path;    # resolve symlinks
+        $is_path_only &&= !(defined $clones->{$path});
         my $guard_name = "git_clone_${path}_task";
         my $guard = $app->minion->guard($guard_name, 2 * ONE_HOUR);
         unless ($guard) {
@@ -47,8 +50,23 @@ sub _git_clone_all ($job, $clones) {
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
         eval { _git_clone($app, $job, $ctx, $path, $url) };
         next unless my $error = $@;
+
+        # unblock openQA jobs despite network errors under best-effort configuration
+        my $retries = $job->retries;
+        my $git_config = $app->config->{'scm git'};
         my $max_retries = $ENV{OPENQA_GIT_CLONE_RETRIES} // 10;
-        return $job->retry($retry_delay) if $job->retries < $max_retries;
+        my $max_best_effort_retries = min($max_retries, $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} // 2);
+        my $gru_task_id = $job->info->{notes}->{gru_id};
+        if (   $is_path_only
+            && defined($gru_task_id)
+            && ($error =~ m/disconnect|curl|stream.*closed|/i)
+            && $git_config->{git_auto_update_method} eq 'best-effort'
+            && $retries >= $max_best_effort_retries)
+        {
+            $app->schema->resultset('GruDependencies')->search({gru_task_id => $gru_task_id})->delete;
+        }
+
+        return $job->retry($retry_delay) if $retries < $max_retries;
         return $job->fail($error);
     }
 }

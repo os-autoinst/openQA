@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::GruTasks;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Parser::Result::OpenQA;
@@ -63,8 +63,7 @@ sub encode_json_to_db {
     encode_json($args);
 }
 
-sub fail {
-    my ($self, $reason) = @_;
+sub fail ($self, $reason = undef) {
     $reason //= 'Unknown';
     my $deps = $self->jobs->search;
     my $detail_text = 'Minion-GRU.txt';
