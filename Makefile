@@ -99,6 +99,11 @@ build-manpages: $(man_dir) $(manpages) ## Build manpages for the scripts
 clean: ## Remove build artifacts
 	-rm -r build
 
+.PHONY: generate-completions
+generate-completions: ## Regenerate shell completion scripts from public/openqa-cli.yaml
+	mkdir -p contrib/completions
+	tools/generate-cli-completions
+
 .PHONY: generate-assets
 generate-assets: ## Generate packed assets and copy to DESTDIR
 	./tools/generate-packed-assets
@@ -108,7 +113,7 @@ generate-assets: ## Generate packed assets and copy to DESTDIR
 	done
 
 .PHONY: install-generic
-install-generic: generate-assets ## Install generic components
+install-generic: generate-assets generate-completions ## Install generic components
 	for f in $(shell perl -Ilib -mOpenQA::Assets -e OpenQA::Assets::list); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
@@ -180,6 +185,8 @@ install-generic: generate-assets ## Install generic components
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires
 	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires/postgresql.service
 	install -D -m 644 usr/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf "$(DESTDIR)"/usr/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf
+	install -D -m 644 contrib/completions/openqa-cli-completion.bash "$(DESTDIR)"/usr/share/bash-completion/completions/openqa-cli
+	install -D -m 644 contrib/completions/openqa-cli-completion.zsh "$(DESTDIR)"/usr/share/zsh/site-functions/_openqa-cli
 #
 # install openQA apparmor profile
 	install -d -m 755 "$(DESTDIR)"/etc/apparmor.d

@@ -331,6 +331,20 @@ Use this package to install munin scripts that allow to monitor some openQA
 statistics.
 %endif
 
+%package client-bash-completion
+Summary:        Bash Completion for %{name}
+Requires:       bash-completion
+Supplements:    (%{name}-client and bash)
+
+%description client-bash-completion
+The official bash completion script for openqa-cli.
+
+%package client-zsh-completion
+Summary:        Zsh Completion for %{name}
+Supplements:    (%{name}-client and zsh)
+
+%description client-zsh-completion
+The official zsh completion script for openqa-cli.
 
 %prep
 %setup -q
@@ -700,6 +714,12 @@ fi
 %if %{with devel_package}
 %files devel
 %endif
+
+%files client-bash-completion
+%{_datadir}/bash-completion/completions/openqa-cli
+
+%files client-zsh-completion
+%{_datadir}/zsh/site-functions/_openqa-cli
 
 %files common
 %if 0%{?suse_version} < 1550
