@@ -254,7 +254,9 @@ function restartJob(ajaxUrl, jobIds, comment) {
     addFlash('danger', errorMessage);
   };
   const body = new FormData();
-  body.append('comment', comment);
+  if (comment !== undefined) {
+    body.append('comment', comment);
+  }
   return fetchWithCSRF(ajaxUrl, {method: 'POST', body: body})
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
