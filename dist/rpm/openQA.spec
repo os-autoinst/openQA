@@ -314,6 +314,20 @@ Use this package to install munin scripts that allow to monitor some openQA
 statistics.
 %endif
 
+%package client-bash-completion
+Summary:        Bash Completion for %{name}
+Requires:       bash-completion
+Supplements:    (%{name}-client and bash)
+
+%description client-bash-completion
+The official bash completion script for openqa-cli.
+
+%package client-zsh-completion
+Summary:        Zsh Completion for %{name}
+Supplements:    (%{name}-client and zsh)
+
+%description client-zsh-completion
+The official zsh completion script for openqa-cli.
 
 %prep
 %setup -q
@@ -407,6 +421,10 @@ install -d -m 755 %{buildroot}/%{_sysconfdir}/munin/plugin-conf.d
 install -m 644 contrib/munin/config/minion.config %{buildroot}/%{_sysconfdir}/munin/plugin-conf.d/openqa-minion
 install -m 755 contrib/munin/utils/munin-mail %{buildroot}/%{_datadir}/openqa/script/munin-mail
 %endif
+
+# completion
+install -Dm 0644 contrib/completions/openqa-cli-completion.bash %{buildroot}%{_datadir}/bash-completion/completions/openqa-cli
+install -Dm 0644 contrib/completions/openqa-cli-completion.zsh %{buildroot}%{_datadir}/zsh/site-functions/_openqa-cli
 
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
@@ -672,6 +690,11 @@ fi
 %if %{with devel_package}
 %files devel
 %endif
+
+%files client-bash-completion
+%{_datadir}/bash-completion/completions/openqa-cli
+%files client-zsh-completion
+%{_datadir}/zsh/site-functions/_openqa-cli
 
 %files common
 %dir %{_datadir}/openqa

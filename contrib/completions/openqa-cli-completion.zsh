@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+#compdef openqa-cli
 
 _openqa_cli_completions() {
     local curcontext="$curcontext" state line
@@ -62,10 +62,10 @@ _openqa_cli_completions() {
                 _arguments '*:option:->options' $main_options $archive_options
                 ;;
             monitor)
-                _arguments '*:option:->options' $main_options $archive_options
+                _arguments '*:option:->options' $main_options $monitor_options
             ;;
             schedule)
-                _arguments '*:option:->options' $main_options $archive_options
+                _arguments '*:option:->options' $main_options $schedule_options
                 ;;
         *)
             _values 'subcommand' api archive monitor schedule

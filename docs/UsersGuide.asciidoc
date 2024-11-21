@@ -963,13 +963,12 @@ without needing to install openQA itself. Call `openqa-cli --help` for help.
 The sub-commands provide further help, e.g. `openqa-cli api --help` contains
 a lot of examples.
 
-`openqa-cli` supports auto completion for `bash` and `zsh`.
-If you use `bash` run or add the line below on your `.bashrc` profile.
-
-[source,sh]
-----
-source openqa-cli-completion.bash
-----
+`openqa-cli` supports auto completion for `bash` and `zsh` with openSUSE/SLE.
+We distribute two packages `openQA-client-bash-completion` and
+`openQA-client-zsh-completion` as part of openQA-client. In case the installed
+system differs or source repo is used, you may still have auto-completion via
+`make install`, which will install and source the completion script for one of
+the above shells.
 
 This section focuses on particular API use-cases. Checkout the
 <<Client.asciidoc#client,openQA client>> section for further information about
