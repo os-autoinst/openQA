@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 _openqa_cli_completions() {
     local cur prev subcommands main_options api_options archive_options monitor_options schedule_options
     cur="${COMP_WORDS[COMP_CWORD]}"
