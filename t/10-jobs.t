@@ -538,21 +538,24 @@ subtest 'carry over, including soft-fails' => sub {
             });
         $job->done;
         perform_minion_jobs($t->app->minion);
+        $job->update({state => RUNNING});
         $job->discard_changes;
         is($job->reason, undef, 'no hook is called by default');
         $ENV{OPENQA_JOB_DONE_HOOK_INCOMPLETE} = 'should not be called';
         $job->done;
         perform_minion_jobs($t->app->minion);
         $job->discard_changes;
+
         is($job->reason, undef, 'hook not called if result does not match');
         $ENV{OPENQA_JOB_DONE_HOOK_FAILED} = 'true';
         $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} = '10m';
         $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} = '5s';
+        $job->update({state => RUNNING});
         $job->done;
         perform_minion_jobs($t->app->minion);
         $job->discard_changes;
         is($job->reason, 'timeout --kill-after=5s 10m true', 'hook called if result matches');
-        $job->update({reason => undef});
+        $job->update({reason => undef, state => RUNNING});
 
         delete $ENV{OPENQA_JOB_DONE_HOOK_FAILED};
         delete $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT};
@@ -567,6 +570,7 @@ subtest 'carry over, including soft-fails' => sub {
         is($notes->{hook_id}, undef, 'hook not called despite matching result due to _TRIGGER_JOB_DONE_HOOK=0');
 
         $job->settings->search({key => '_TRIGGER_JOB_DONE_HOOK'})->delete;
+        $job->update({state => RUNNING});
         $job->discard_changes;
         $job->done;
         perform_minion_jobs($t->app->minion);
@@ -579,6 +583,7 @@ subtest 'carry over, including soft-fails' => sub {
         is $notes->{hook_job}, $job_info->{id}, 'hook_script job is linked to finalize_result job';
 
         $hooks->{job_done_hook_failed} = 'echo oops && exit 23;';
+        $job->update({state => RUNNING});
         $job->done;
         perform_minion_jobs($t->app->minion);
         $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
@@ -590,12 +595,19 @@ subtest 'carry over, including soft-fails' => sub {
 
         delete $hooks->{job_done_hook_failed};
         $hooks->{job_done_hook} = 'echo generic hook';
+        $job->update({state => RUNNING});
         $job->done;
         perform_minion_jobs($t->app->minion);
         $notes = $t->app->minion->jobs({tasks => ['finalize_job_results']})->next->{notes};
         is($notes->{hook_job}, undef, 'generic hook not called by default');
 
         $hooks->{job_done_hook_enable_failed} = 1;
+        $t->app->minion->reset({all => 1});
+        $job->done;
+        perform_minion_jobs($t->app->minion);
+        is $t->app->minion->jobs({tasks => ['hook_script']})->total, 0, 'hook script only executed once';
+
+        $job->update({state => UPLOADING});
         $job->done;
         perform_minion_jobs($t->app->minion);
         $notes = $t->app->minion->jobs({tasks => ['hook_script']})->next->{notes};
@@ -603,6 +615,7 @@ subtest 'carry over, including soft-fails' => sub {
         like($notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled for result');
 
         delete $hooks->{job_done_hook_enable_failed};
+        $job->update({state => UPLOADING});
         $job->settings->create({key => '_TRIGGER_JOB_DONE_HOOK', value => '1'});
         $job->done;
         perform_minion_jobs($t->app->minion);
@@ -613,6 +626,7 @@ subtest 'carry over, including soft-fails' => sub {
         subtest 'Retry hook script with exit code 142' => sub {
             # Defaults (no retry)
             $hooks->{job_done_hook_failed} = 'echo retried && exit 143;';
+            $job->update({state => UPLOADING});
             $job->discard_changes;
             $job->done;
             perform_minion_jobs($t->app->minion);
@@ -629,6 +643,7 @@ subtest 'carry over, including soft-fails' => sub {
             local $ENV{OPENQA_JOB_DONE_HOOK_DELAY} = 0;
             local $ENV{OPENQA_JOB_DONE_HOOK_RETRIES} = 2;
             local $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC} = 143;
+            $job->update({state => UPLOADING});
             $job->discard_changes;
             $job->done;
             perform_minion_jobs($t->app->minion);
@@ -645,6 +660,7 @@ subtest 'carry over, including soft-fails' => sub {
             delete $ENV{OPENQA_JOB_DONE_HOOK_DELAY};
             delete $ENV{OPENQA_JOB_DONE_HOOK_RETRIES};
             delete $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC};
+            $job->update({state => UPLOADING});
             $job->discard_changes;
             $job->done;
             $job->settings->create({key => '_TRIGGER_JOB_DONE_DELAY', value => '0'});
@@ -666,6 +682,7 @@ subtest 'carry over, including soft-fails' => sub {
             $job->settings->search({key => '_TRIGGER_JOB_DONE_RETRIES'})->delete;
             $job->settings->search({key => '_TRIGGER_JOB_DONE_SKIP_RC'})->delete;
             $hooks->{job_done_hook_failed} = 'echo delayed && exit 142;';
+            $job->update({state => UPLOADING});
             $job->discard_changes;
             $job->done;
             perform_minion_jobs($t->app->minion);

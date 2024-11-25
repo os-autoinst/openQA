@@ -2129,6 +2129,7 @@ sub done ($self, %args) {
     my $reason = $args{reason};
     my $restart = 0;
     $self->_compute_result_and_reason(\%new_val, $result, $reason, \$restart);
+    my $state = $self->state;
     $self->update(\%new_val);
     $self->unblock;
     my %finalize_opts = (lax => 1);
@@ -2146,7 +2147,7 @@ sub done ($self, %args) {
 
     # enqueue the finalize job only after stopping the cluster so in case the job should be restarted the cluster
     # appears cancelled and thus its jobs in (pre-)execution are not set to PARALLEL_RESTARTED by `auto_duplicate`
-    $self->enqueue_finalize_job_results([$carried_over], \%finalize_opts);
+    $self->enqueue_finalize_job_results([$carried_over, $state], \%finalize_opts);
 
     return $new_val{result} // $self->result;
 }
