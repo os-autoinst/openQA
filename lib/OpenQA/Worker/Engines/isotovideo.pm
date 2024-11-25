@@ -372,7 +372,7 @@ sub _configure_cgroupv2 ($job_info) {
     }
     my $cgroup;
     eval {
-        $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice)->child($job_info->{id})->create;
+        $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice // '')->child($job_info->{id})->create;
         my $query_cgroup_path = $cgroup->can('_cgroup');
         log_info('Using cgroup ' . $query_cgroup_path->($cgroup)) if $query_cgroup_path;
     };
