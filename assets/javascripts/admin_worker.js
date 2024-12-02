@@ -46,7 +46,7 @@ function loadWorkerTable() {
           select.append('<option value="Idle">Idle</option>');
           select.append('<option value="Offline">Offline</option>');
           select.append('<option value="Working">Working</option>');
-          select.append('<option value="Broken">Broken</option>');
+          select.append('<option value="Unavailable">Unavailable</option>');
           select.val('Idle');
         });
       this.api().column(4).search('Idle').draw();
