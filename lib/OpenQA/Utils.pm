@@ -49,7 +49,7 @@ BEGIN {
         gh => 'https://github.com/',
         kde => 'https://bugs.kde.org/show_bug.cgi?id=',
         fdo => 'https://bugs.freedesktop.org/show_bug.cgi?id=',
-        jsc => 'https://jira.suse.de/browse/',
+        jsc => 'https://jira.suse.com/browse/',
         pio => 'https://pagure.io/',
         ggo => 'https://gitlab.gnome.org/',
         gfs => 'https://gitlab.com/fedora/sigs/',

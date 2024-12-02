@@ -166,7 +166,7 @@ subtest 'bugrefs to markdown' => sub {
       '<a href="https://bugs.freedesktop.org/show_bug.cgi?id=9876" title="Bug referenced: fdo#9876">fdo#9876</a>',
       'right markdown for fdo';
     is bugref_to_html('jsc#9876'),
-      '<a href="https://jira.suse.de/browse/9876" title="Bug referenced: jsc#9876">jsc#9876</a>',
+      '<a href="https://jira.suse.com/browse/9876" title="Bug referenced: jsc#9876">jsc#9876</a>',
       'right markdown for jsc';
     is bugref_to_html('pio#foo#1234'),
       '<a href="https://pagure.io/foo/issue/1234" title="Bug referenced: pio#foo#1234">pio#foo#1234</a>',
