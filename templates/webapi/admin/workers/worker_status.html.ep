@@ -15,7 +15,7 @@
         )
     %>
 % } elsif ($worker->{status} eq 'broken') {
-    Broken <%= help_popover(Error => $worker->{error}) %>
+    Unavailable <%= help_popover(Details => $worker->{error}) %>
 % } elsif ($worker->{alive}) {
     Idle
 % } else {

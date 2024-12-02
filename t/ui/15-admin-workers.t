@@ -136,9 +136,9 @@ subtest 'worker overview' => sub {
     $driver->find_element("tr#worker_$broken_worker_id .help_popover")->click();
     is(
         $driver->find_element("tr#worker_$broken_worker_id .status")->get_text(),
-        'Broken', "worker $broken_worker_id is broken",
+        'Unavailable', "worker $broken_worker_id is broken and displayed as unavailable",
     );
-    like($driver->find_element('.popover')->get_text(), qr/Error\nout of order/, 'reason for brokenness shown');
+    like($driver->find_element('.popover')->get_text(), qr/Details\nout of order/, 'reason for brokenness shown');
 };
 
 # test delete offline worker function

@@ -767,7 +767,8 @@ sub _check_system_utilization (
     return undef unless $threshold && @$load >= 3;
     # look at the load evolution over time to react quick enough if the load
     # rises but accept a falling edge
-    return "The average load (@$load) is exceeding the configured threshold of $threshold."
+    return
+"The average load (@$load) is exceeding the configured threshold of $threshold. The worker will temporarily not accept new jobs until the load is lower again."
       if max(@$load) > $threshold && ($load->[0] > $load->[1] || $load->[0] > $load->[2] || min(@$load) > $threshold);
     return undef;
 }
