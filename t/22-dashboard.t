@@ -108,6 +108,9 @@ subtest 'Changelog' => sub {
 
 $t->get_ok('/health')->status_is(200)->content_is('ok', 'health check route just returns plain ok');
 
+$t->get_ok('/api/v1/routes')->status_is(200)
+  ->json_is('/routes/1/path', '/admin', 'simple check for listing WebAPI routes');
+
 $t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown');
