@@ -59,6 +59,7 @@ subtest 'Test configuration default modes' => sub {
         },
         auth => {
             method => 'Fake',
+            require_for_assets => 0,
         },
         'scm git' => {
             update_remote => '',
