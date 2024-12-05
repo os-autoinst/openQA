@@ -330,6 +330,7 @@ sub startup ($self) {
     my $api_r_job = $api_job_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     push @api_routes, $api_job_auth, $api_r_job;
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
+    $api_ru->get('/auth' => sub ($c) { $c->render(text => 'ok') })->name('apiv1_jobauth_whoami');
 
     # api/v1/job_groups
     $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
