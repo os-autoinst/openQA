@@ -61,6 +61,7 @@ sub read_config ($app) {
         },
         auth => {
             method => 'OpenID',
+            require_for_assets => 0,
         },
         'scm git' => {
             update_remote => '',
