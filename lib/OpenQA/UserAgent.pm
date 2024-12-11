@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::UserAgent;
-use Mojo::Base 'Mojo::UserAgent';
+use Mojo::Base 'Mojo::UserAgent', -signatures;
 
 use Mojo::Util 'hmac_sha1_sum';
 use Config::IniFiles;
@@ -20,25 +20,8 @@ sub new {
         $self->$i($args{$i});
     }
 
-    if ($args{api}) {
-        my @cfgpaths = ($ENV{OPENQA_CONFIG} // glob('~/.config/openqa'), '/etc/openqa');
-        for my $path (@cfgpaths) {
-            my $file = $path . '/client.conf';
-            next unless $file && -r $file;
-            my $cfg = Config::IniFiles->new(-file => $file) || last;
-            last unless $cfg->SectionExists($args{api});
-            for my $i (qw(key secret)) {
-                my $attr = "api$i";
-                next if $self->$attr;
-                # Fetch all the values in the file and keep the last one
-                my @values = $cfg->val($args{api}, $i);
-                next unless my $val = $values[-1];
-                $val =~ s/\s+$//;    # remove trailing whitespace
-                $self->$attr($val);
-            }
-            last;
-        }
-    }
+    $self->configure_credentials($args{api});
+
     # Scheduling a couple of hundred jobs takes quite some time - so we better wait a couple of minutes
     # (default is 20 seconds)
     $self->inactivity_timeout(600);
@@ -54,6 +37,27 @@ sub new {
     $self->proxy->detect;
 
     return $self;
+}
+
+sub configure_credentials ($self, $host) {
+    return undef unless $host;
+    my @cfgpaths = ($ENV{OPENQA_CONFIG} // glob('~/.config/openqa'), '/etc/openqa');
+    for my $path (@cfgpaths) {
+        my $file = $path . '/client.conf';
+        next unless $file && -r $file;
+        my $cfg = Config::IniFiles->new(-file => $file) || last;
+        last unless $cfg->SectionExists($host);
+        for my $i (qw(key secret)) {
+            my $attr = "api$i";
+            next if $self->$attr;
+            # Fetch all the values in the file and keep the last one
+            my @values = $cfg->val($host, $i);
+            next unless my $val = $values[-1];
+            $val =~ s/\s+$//;    # remove trailing whitespace
+            $self->$attr($val);
+        }
+        last;
+    }
 }
 
 sub _add_auth_headers {

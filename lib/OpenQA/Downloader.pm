@@ -5,9 +5,9 @@ package OpenQA::Downloader;
 use Mojo::Base -base, -signatures;
 
 use Mojo::Loader 'load_class';
-use Mojo::UserAgent;
 use Mojo::File 'path';
 use Mojo::URL;
+use OpenQA::UserAgent;
 use OpenQA::Utils 'human_readable_size';
 use Try::Tiny;
 use Time::HiRes 'sleep';
@@ -15,7 +15,7 @@ use Time::HiRes 'sleep';
 has attempts => 5;
 has [qw(log tmpdir)];
 has sleep_time => 5;
-has ua => sub { Mojo::UserAgent->new(max_redirects => 5, max_response_size => 0) };
+has ua => sub { OpenQA::UserAgent->new(max_redirects => 5, max_response_size => 0) };
 has res => undef;
 
 sub download ($self, $url, $target, $options = {}) {
