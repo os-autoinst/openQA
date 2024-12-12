@@ -19,13 +19,17 @@ use Mojo::URL;
 use MIME::Base64 qw(encode_base64url decode_base64url);
 use Mojolicious;
 
+my $file_api_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::File');
+$file_api_mock->redefine(download_asset => sub ($self) { $self->render(text => 'asset-ok') });
+$file_api_mock->redefine(test_asset => sub ($self) { $self->render(text => 'test-asset-ok') });
+
 my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
 $ENV{OPENQA_CONFIG} = $tempdir;
 OpenQA::Test::Database->new->create;
 
 sub test_auth_method_startup ($auth, @options) {
-    my @conf = ("[auth]\n", "method = \t  $auth \t\n", "[openid]\n", "httpsonly = 0\n");
-    $tempdir->child('openqa.ini')->spew(join('', @conf, @options));
+    my @conf = ("[auth]\n", "method = \t  $auth \t\n");
+    $tempdir->child('openqa.ini')->spew(join('', @conf, @options, "[openid]\n", "httpsonly = 0\n"));
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
     $t->get_ok('/login' => {Referer => 'http://open.qa/tests/42'});
@@ -35,6 +39,21 @@ sub mojo_has_request_debug { $Mojolicious::VERSION <= 9.21 }
 
 combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_request_debug ? qr/302 Found/ : qr//,
   'Plugin loaded';
+
+subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`' => sub {
+    my $t = test_auth_method_startup('Fake', "require_for_assets = 1\n");
+    my $expected_redirect = '/login?return_page=%2Fassets%2Fiso%2Ftest.iso';
+    $t->get_ok('/assets/iso/test.iso')->status_is(200)->content_is('asset-ok', 'can access asset when logged in');
+    $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(200);
+    $t->content_is('test-asset-ok', 'can access test asset when logged in');
+    $t->get_ok('/logout')->status_is(302)->get_ok('/assets/iso/test.iso')->status_is(302);
+    $t->content_unlike(qr/asset-ok/, 'asset not accessible when logged out');
+    $t->header_is('Location', $expected_redirect, 'redirect to login when accessing asset');
+    $t->get_ok('/logout')->status_is(302);
+    $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(302);
+    $t->header_like('Location', qr|/login\?return_page=.*test.iso|, 'redirect to login when accessing test asset');
+    $t->content_unlike(qr/asset-ok/, 'test asset not accessible when logged out');
+};
 
 subtest OpenID => sub {
     # OpenID relies on external server which we mock to not rely on external dependencies

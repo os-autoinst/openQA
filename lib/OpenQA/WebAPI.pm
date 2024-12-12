@@ -141,11 +141,15 @@ sub startup ($self) {
     $r->get('/tests/list_scheduled_ajax')->name('tests_ajax')->to('test#list_scheduled_ajax');
 
     # only provide a URL helper - this is overtaken by apache
-    $r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
+    my $config = $app->config;
+    my $require_auth_for_assets = $config->{auth}->{require_for_assets};
+    my $assets_r = $require_auth_for_assets ? $logged_in : $r;
+    $assets_r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
     my $test_r = $r->any('/tests/<testid:num>');
     $test_r = $test_r->under('/')->to('test#referer_check');
     my $test_auth = $auth->any('/tests/<testid:num>' => {format => 0});
+    my $test_asset_r = $require_auth_for_assets ? $test_auth : $test_r;
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
@@ -171,9 +175,9 @@ sub startup ($self) {
     $test_r->get('/video' => sub ($c) { $c->render_testfile('test/video') })->name('video');
     $test_r->get('/logfile' => sub ($c) { $c->render_testfile('test/logfile') })->name('logfile');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
-    $test_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');
-    $test_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
-    $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
+    $test_asset_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');
+    $test_asset_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
+    $test_asset_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
     $developer_auth->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
@@ -413,11 +417,13 @@ sub startup ($self) {
     $api_ro->post('/webhooks/product')->name('apiv1_evaluate_webhook_product')->to('webhook#product');
 
     # api/v1/assets
+
+    my $api_assets_readonly = $require_auth_for_assets ? $api_ru : $api_public_r;
     $api_ro->post('/assets')->name('apiv1_post_asset')->to('asset#register');
-    $api_public_r->get('/assets')->name('apiv1_get_asset')->to('asset#list');
+    $api_assets_readonly->get('/assets')->name('apiv1_get_asset')->to('asset#list');
     $api_ra->post('/assets/cleanup')->name('apiv1_trigger_asset_cleanup')->to('asset#trigger_cleanup');
-    $api_public_r->get('/assets/<id:num>')->name('apiv1_get_asset_id')->to('asset#get');
-    $api_public_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
+    $api_assets_readonly->get('/assets/<id:num>')->name('apiv1_get_asset_id')->to('asset#get');
+    $api_assets_readonly->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
     $api_ra->delete('/assets/<id:num>')->name('apiv1_delete_asset')->to('asset#delete');
     $api_ra->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
 
@@ -529,7 +535,7 @@ sub startup ($self) {
         });
 
     # allow configuring Cross-Origin Resource Sharing (CORS)
-    if (my $access_control_allow_origin = $app->config->{global}->{access_control_allow_origin_header}) {
+    if (my $access_control_allow_origin = $config->{global}->{access_control_allow_origin_header}) {
         my %allowed_origins = map { trim($_) => 1 } split ',', $access_control_allow_origin;
         my $fallback_origin = delete $allowed_origins{'*'} ? '*' : undef;
         $app->hook(
