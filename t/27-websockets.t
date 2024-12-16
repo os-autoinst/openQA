@@ -117,6 +117,13 @@ subtest 'web socket message handling' => sub {
         qr/Received unknown message type "foo" from worker 1/s, 'unknown type logged';
     };
 
+    subtest 'upgrade failure' => sub {
+        $t->tx($t->ua->start($t->ua->build_websocket_tx('ws://invalid')));
+        $t->status_is(101, 'Initial HTTP handshake for WebSocket returns a valid protocol switch');
+        $t->finished_ok(1006, 'WebSocket closed with status code 1006 (abnormal closure)');
+        $t->content_like(qr/Unable to upgrade to WebSocket connection/, 'Error message logged on WebSocket upgrade failure');
+    };
+
     $schema->txn_begin;
 
     subtest 'accepted' => sub {
