@@ -11,6 +11,8 @@ LABEL org.openbuildservice.disturl="%DISTURL%"
 LABEL org.opencontainers.image.created="%BUILDTIME%"
 # endlabelprefix
 
+ENV LC_ALL C.UTF-8
+
 # hadolint ignore=DL3037
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.6 devel_openQA && \
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.6/15.6 devel_openQA_Leap && \
