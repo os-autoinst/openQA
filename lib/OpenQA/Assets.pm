@@ -20,6 +20,7 @@ sub setup ($server) {
     $server->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > 2.13;
 
     # -> read assets/assetpack.def
+    local $SIG{CHLD};
     eval { $server->asset->process };
     if (my $assetpack_error = $@) {    # uncoverable statement
         $assetpack_error    # uncoverable statement
