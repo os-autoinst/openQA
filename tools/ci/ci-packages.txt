@@ -127,7 +127,7 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.004
-perl-Minion-10.300.0
+perl-Minion-10.310.0
 perl-Minion-Backend-SQLite-5.0.7
 perl-Mixin-Linewise-0.111
 perl-Module-Build-0.422400
