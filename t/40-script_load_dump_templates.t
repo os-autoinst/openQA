@@ -60,7 +60,9 @@ my $base_args = "--host $host --apikey $apikey --apisecret $apisecret";
 $args = "$base_args $filename";
 my $expected = qr/JobGroups.+=> \{ added => 1, of => 1 \}/;
 test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded templates';
-test_once $args, qr/group with existing name/, 'Duplicate job group', 255, 'failed on duplicate job group';
+test_once $args, qr/Use --update to modify/, 'Duplicate job group', 255, 'failed on duplicate job group';
+$args = "$base_args --update $filename";
+test_once $args, $expected, 'Update with existing job group', 0, 'updated template with existing job group';
 
 subtest 'test changing existing entries' => sub {
     # delete job group so that we can load the template again without running into duplicate job group error
