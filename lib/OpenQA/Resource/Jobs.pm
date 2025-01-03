@@ -7,7 +7,6 @@ use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
-use OpenQA::Utils qw(create_git_clone_list);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(job_restart);
@@ -50,8 +49,6 @@ sub job_restart ($jobids, %args) {
     my $jobs_rs = $schema->resultset('Jobs');
     my $jobs = $jobs_rs->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
     $duplication_args{no_directly_chained_parent} = 1 unless $force;
-    my %clones;
-    my @clone_ids;
     while (my $job = $jobs->next) {
         my $job_id = $job->id;
         my $missing_assets = $job->missing_assets;
@@ -76,10 +73,8 @@ sub job_restart ($jobids, %args) {
 
         my $cloned_job_or_error = $job->auto_duplicate(\%duplication_args);
         if (ref $cloned_job_or_error) {
-            create_git_clone_list($job->settings_hash, \%clones);
             push @duplicates, $cloned_job_or_error->{cluster_cloned};
             push @comments, @{$cloned_job_or_error->{comments_created}};
-            push @clone_ids, $cloned_job_or_error->{cluster_cloned}->{$job_id};
         }
         else {
             $res{enforceable} = 1 if index($cloned_job_or_error, 'Direct parent ') == 0;
@@ -87,7 +82,6 @@ sub job_restart ($jobids, %args) {
         }
         push @processed, $job_id;
     }
-    OpenQA::App->singleton->gru->enqueue_git_clones(\%clones, \@clone_ids) if keys %clones;
 
     # abort running jobs
     return \%res if $args{skip_aborting_jobs};
