@@ -1,0 +1,9 @@
+[Unit]
+Description=Enqueues a needle refs task for openQA every hour.
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

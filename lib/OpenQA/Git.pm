@@ -6,6 +6,7 @@ package OpenQA::Git;
 use Mojo::Base -base, -signatures;
 use Mojo::Util 'trim';
 use Cwd 'abs_path';
+use Mojo::File 'path';
 use OpenQA::Utils qw(run_cmd_with_log_return_error);
 
 has 'app';
@@ -155,6 +156,18 @@ sub is_workdir_clean ($self) {
     die $self->_format_git_error($r, 'Internal Git error: Unexpected exit code ' . $r->{return_code})
       if $r->{return_code} > 1;
     return $r->{status};
+}
+
+sub cache_ref ($self, $ref, $relative_path, $output_file) {
+    if (-f $output_file) {
+        eval { path($output_file)->touch };
+        return $@ ? $@ : undef;
+    }
+    my @git = $self->_prepare_git_command;
+    my $res = run_cmd_with_log_return_error [@git, 'show', "$ref:./$relative_path"], output_file => $output_file;
+    return undef if $res->{status};
+    unlink $output_file;
+    return _format_git_error($res, 'Unable to cache Git ref');
 }
 
 1;
