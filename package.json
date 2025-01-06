@@ -18,7 +18,7 @@
     "prettier": "3.4.2"
   },
   "dependencies": {
-    "ace-builds": "^1.37.1",
+    "ace-builds": "^1.37.2",
     "anser": "^2.3.0",
     "bootstrap": "^5.3.3",
     "chosen-js": "^1.8.7",
