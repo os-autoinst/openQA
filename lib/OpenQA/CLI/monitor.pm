@@ -23,6 +23,11 @@ sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
         if (OpenQA::Jobs::Constants::meta_state($job_state) eq OpenQA::Jobs::Constants::FINAL) {
             push @$job_results, $job->{result} // NONE;
             next;
+        } elsif (OpenQA::Jobs::Constants::meta_state($job_state) eq OpenQA::Jobs::Constants::ABORTED_RESULTS) {
+            print encode('UTF-8',
+                "Job $job_id was aborted but did not fail ($job_state), hence skipping)\n");
+            push @$job_results, $job->{result} // NONE;
+            next;
         }
         my $waited = time - $start;
         print encode('UTF-8',
