@@ -1234,7 +1234,9 @@ This triggers a nightly system upgrade which first looks into configured openQA
 repositories for stable packages, then conducts the upgrade and schedules
 reboots during the configured reboot maintenance windows using `rebootmgr`.
 As an alternative to the systemd timer the script
-`/usr/share/openqa/script/openqa-auto-update` can be called when desired.
+`/usr/share/openqa/script/openqa-auto-update` can be called when desired. The
+script also supports cache cleanup preserving a certain number of versions per
+package. Check its helptext for details.
 
 The distribution package `openQA-continuous-update` can be used to continuously
 upgrade the system. It will frequently check whether `devel:openQA` contains
