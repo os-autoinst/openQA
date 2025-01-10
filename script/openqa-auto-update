@@ -2,10 +2,28 @@
 set -e
 set -o pipefail
 
+keep=${OPENQA_PACKAGE_CACHE_RETENTION_KEEP:-10}
+min_mtime=${OPENQA_PACKAGE_CACHE_RETENTION_MIN_MTIME:-100}
+glob=${OPENQA_PACKAGE_CACHE_REPO_GLOB:-*devel*openQA*}
 usage() {
     cat << EOF
 Usage: openqa-auto-update
 Trigger automatic system upgrade and reboot if devel:openQA packages are stable
+
+Set OPENQA_PACKAGE_CACHE_RETENTION to also clean the zypper cache from packages
+of the openQA development repository. This is useful in conjunction with the
+zypper repository setting "keeppackages=1" to allow for a more fine-tuned
+descicion on what packages to keep. This cleanup is influenced by further
+environment variables:
+  ZYPPER_PACKAGES_CACHE_DIR: the zypper cache dir in case a non-standard
+    location is used
+  OPENQA_PACKAGE_CACHE_RETENTION_KEEP: the number of versions of the same
+    package to keep (default: $keep)
+  OPENQA_PACKAGE_CACHE_RETENTION_MIN_MTIME: the minimum age of packages in days
+    to be considered (default: $min_mtime)
+  OPENQA_PACKAGE_CACHE_REPO_GLOB: the glob to find relevant packages
+    (default: $glob)
+Checkout "openqa-clean-repo-cache --help" for details.
 
 Options:
  -h, --help         display this help
@@ -30,5 +48,11 @@ done
 # call ref independently of dup to avoid unintended mass-removals in case ref fails (see poo#150845)
 zypper -n ref
 zypper -n --no-refresh dup --replacefiles --auto-agree-with-licenses --download-in-advance
+
+if [[ $OPENQA_PACKAGE_CACHE_RETENTION ]]; then
+    echo 'Cleaning repository cache'
+    "$(dirname "${BASH_SOURCE[0]}")"/openqa-clean-repo-cache --remove --keep "$keep" --min-mtime "$min_mtime" --glob "$glob"
+fi
+
 # shellcheck disable=SC2015
 needs-restarting --reboothint > /dev/null || (command -v rebootmgrctl > /dev/null && rebootmgrctl reboot || :)

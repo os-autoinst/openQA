@@ -1,0 +1,105 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+# define defaults for CLI arguments
+dryrun='' remove='' keep=3 min_mtime='' glob=''
+cache_dir=${ZYPPER_PACKAGES_CACHE_DIR:-/var/cache/zypp/packages}
+
+# parse CLI arguments
+usage() {
+    cat << EOF
+Cleans packages from the zypper cache directory.
+
+This script can be automatically invoked via openqa-auto-update by setting the
+environment variable OPENQA_PACKAGE_CACHE_RETENTION.
+
+Usage: openqa-clean-repo-cache <operation> [options]
+
+Operations:
+ -d, --dryrun            display what files are considered/kept/removed
+ -r, --remove            remove files matching the criteria specified via options
+ -h, --help              display this help
+
+ Options:
+ -h, --help              display this help
+ -k, --keep <num>        the number of versions to keep per package (default: $keep)
+     --min-mtime <days>  keep packages with an mtime that is not older than the
+                         specified number of days, even if this means keeping more
+                         than specified through the '--keep' option
+ -c, --cache-dir <path>  specifies the zypper cache directory
+                         (default: $cache_dir)
+ -g, --glob <pattern>    specifies the glob used to filter relevant repos/packages
+EOF
+    exit "$1"
+}
+opts=$(getopt -o drhk:c:g: --long dryrun,remove,help,keep:,min-mtime:,cache-dir:,glob: -n "$0" -- "$@") || usage 1
+eval set -- "$opts"
+while true; do
+    case "$1" in
+        -d | --dryrun)
+            dryrun=1
+            shift
+            ;;
+        -r | --remove)
+            remove=1
+            shift
+            ;;
+        -h | --help) usage 0 ;;
+        -k | --keep)
+            keep=$2
+            shift 2
+            ;;
+        --min-mtime)
+            min_mtime=$2
+            shift 2
+            ;;
+        -c | --cache-dir)
+            cache_dir=$2
+            shift 2
+            ;;
+        -g | --glob)
+            glob=$2
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            shift
+            break
+            ;;
+    esac
+done
+
+# make commands for on specified operation
+[[ $dryrun && $remove ]] && echo 'Specify either --dryrun OR --remove.' && exit 1
+if [[ $dryrun ]]; then
+    remove_cmd=(echo 'remove') keep_cmd=(echo 'keep  ')
+elif [[ $remove ]]; then
+    remove_cmd=(rm --verbose --force) keep_cmd=()
+else
+    echo 'No operation specified.' && exit 1
+fi
+
+# find relevant packages, sort them so newest are first
+IFS=$'\n'
+find_cmd=(find "$cache_dir" -type f -name '*.rpm')
+[[ $glob ]] && find_cmd+=(-ipath "$glob")
+[[ $min_mtime ]] && find_cmd+=(-mtime "+$min_mtime")
+# shellcheck disable=SC2207
+package_files=($("${find_cmd[@]}" | sort --reverse --version-sort))
+previous_package_name='' package_count=0
+
+# run commands for relevant packages considering specified number of versions to keep
+for package_file in "${package_files[@]}"; do
+    package_name=$(rpm -q --qf "%{NAME}\n" "$package_file")
+    [[ $package_name != "$previous_package_name" ]] && previous_package_name=$package_name package_count=0
+    package_count=$((package_count + 1))
+    if [[ $package_count -gt "$keep" ]]; then
+        "${remove_cmd[@]}" "$package_file"
+    elif [[ ${#keep_cmd[@]} -gt 0 ]]; then
+        "${keep_cmd[@]}" "$package_file"
+    fi
+done
