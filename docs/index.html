@@ -3516,7 +3516,9 @@ upgrades and reboots of openQA hosts. To use that feature install the package
 repositories for stable packages, then conducts the upgrade and schedules
 reboots during the configured reboot maintenance windows using <code>rebootmgr</code>.
 As an alternative to the systemd timer the script
-<code>/usr/share/openqa/script/openqa-auto-update</code> can be called when desired.</p>
+<code>/usr/share/openqa/script/openqa-auto-update</code> can be called when desired. The
+script also supports cache cleanup preserving a certain number of versions per
+package. Check its helptext for details.</p>
 </div>
 <div class="paragraph">
 <p>The distribution package <code>openQA-continuous-update</code> can be used to continuously
@@ -13210,7 +13212,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-11-08 04:44:50 UTC
+Last updated 2025-01-11 04:44:26 UTC
 </div>
 </div>
 </body>
