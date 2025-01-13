@@ -315,14 +315,9 @@ sub _handle_engine_startup ($self, $engine, $max_job_time) {
     $self->_set_status(running => {});
 }
 
-sub kill {
-    my ($self) = @_;
-
-    my $engine = $self->engine;
-    return unless $engine;
-
-    my $child = $engine->{child};
-    $child->stop if $child && $child->is_running;
+sub kill ($self) {
+    return undef unless my $engine = $self->engine;
+    if (my $child = $engine->{child}) { $child->stop }
 }
 
 sub skip {
