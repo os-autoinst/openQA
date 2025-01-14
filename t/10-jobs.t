@@ -874,7 +874,7 @@ subtest 'job setting based retriggering' => sub {
     is @$finalize_jobs, $finalize_job_count_before + 1, 'one finalize job has been triggered';
     ok $finalize_jobs->[-1]->{lax}, 'finalize job would also run if restart job fails';
     is_deeply $finalize_jobs->[-1]->{parents}, [$restart_jobs->[-1]->{id}], 'finalize job triggered after restart job'
-      or diag explain $finalize_jobs;
+      or always_explain $finalize_jobs;
     my $first_job = $job;
     my $next_job_id = $job->id + 1;
     for (1 .. 2) {

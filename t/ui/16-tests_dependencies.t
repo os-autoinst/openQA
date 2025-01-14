@@ -75,7 +75,7 @@ subtest 'dependency json' => sub {
     my %expected = (cluster => \%cluster, edges => \@edges, nodes => \@nodes);
     $t->get_ok($baseurl . 'tests/99981/dependencies_ajax')->status_is(200);
     $t->json_is('' => \%expected, 'single node for job without dependencies');
-    diag explain $t->tx->res->json unless $t->success;
+    always_explain $t->tx->res->json unless $t->success;
 
     %cluster = (cluster_99963 => [99963, 99961]);
     @edges = ({from => 99937, to => 99938}, {from => 99961, to => 99927}, {from => 99938, to => 99963});
@@ -126,7 +126,7 @@ subtest 'dependency json' => sub {
         });
     $t->get_ok($baseurl . 'tests/99938/dependencies_ajax')->status_is(200);
     $t->json_is('' => \%expected, 'nodes, edges and cluster computed');
-    diag explain $t->tx->res->json unless $t->success;
+    always_explain $t->tx->res->json unless $t->success;
 };
 
 subtest 'dependency JSON after duplicating jobs' => sub {
@@ -152,14 +152,14 @@ subtest 'dependency JSON after duplicating jobs' => sub {
             @new_jobs    # because those are indirect dependencies
         );
         is_deeply \@rendered_nodes, \@expected_nodes, 'all original jobs are present as well'
-          or diag explain \@rendered_nodes, $duplicates;
+          or always_explain \@rendered_nodes, $duplicates;
 
         $json = $t->get_ok('/tests/99961/dependencies_ajax')->status_is(200)->tx->res->json;
         @rendered_nodes = sort map { $_->{id} } @{$json->{nodes}};
         @expected_nodes = grep { $_ != $directly_chained_child_dup } @expected_nodes;
         is_deeply \@rendered_nodes, \@expected_nodes,
           'same outcome for parallel sibling except that directly chained child is not indirectly added'
-          or diag explain \@rendered_nodes, $duplicates;
+          or always_explain \@rendered_nodes, $duplicates;
     };
 
     subtest 'graph for the duplicated jobs' => sub {
@@ -171,7 +171,7 @@ subtest 'dependency JSON after duplicating jobs' => sub {
             @new_jobs    # because those are the duplicated jobs
         );
         is_deeply \@rendered_nodes, \@expected_nodes, 'only the latest jobs are shown'
-          or diag explain \@rendered_nodes;
+          or always_explain \@rendered_nodes;
     };
 
     $schema->txn_rollback;

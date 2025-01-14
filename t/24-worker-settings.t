@@ -30,13 +30,13 @@ is_deeply(
         TERMINATE_AFTER_JOBS_DONE => 1,
     },
     'global settings, spaces trimmed'
-) or diag explain $settings->global_settings;
+) or always_explain $settings->global_settings;
 
 is($settings->file_path, "$FindBin::Bin/data/24-worker-settings/workers.ini", 'file path set');
 is_deeply($settings->parse_errors, [], 'no parse errors occurred');
 
 is_deeply($settings->webui_hosts, ['http://localhost:9527', 'https://remotehost'], 'web UI hosts, spaces trimmed')
-  or diag explain $settings->webui_hosts;
+  or always_explain $settings->webui_hosts;
 
 is_deeply(
     $settings->webui_host_specific_settings,
@@ -49,7 +49,7 @@ is_deeply(
         },
     },
     'web UI host specific settings'
-) or diag explain $settings->webui_host_specific_settings;
+) or always_explain $settings->webui_host_specific_settings;
 
 delete $ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE};
 
@@ -93,7 +93,7 @@ subtest 'instance-specific settings' => sub {
             RETRY_DELAY_IF_WEBUI_BUSY => 60,
         },
         'global settings (instance 1)'
-    ) or diag explain $settings1->global_settings;
+    ) or always_explain $settings1->global_settings;
     my $settings2 = OpenQA::Worker::Settings->new(2);
     is_deeply(
         $settings2->global_settings,
@@ -109,14 +109,14 @@ subtest 'instance-specific settings' => sub {
             RETRY_DELAY_IF_WEBUI_BUSY => 120,
         },
         'global settings (instance 2)'
-    ) or diag explain $settings2->global_settings;
+    ) or always_explain $settings2->global_settings;
 };
 
 subtest 'settings file with errors' => sub {
     $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings-error";
     my $settings = OpenQA::Worker::Settings->new(1);
     is_deeply($settings->parse_errors, ['3: parameter found outside a section'], 'error logged')
-      or diag explain $settings->parse_errors;
+      or always_explain $settings->parse_errors;
 };
 
 subtest 'settings file not found' => sub {
@@ -125,7 +125,7 @@ subtest 'settings file not found' => sub {
     is($settings->file_path, undef, 'no file path present');
     is_deeply($settings->parse_errors, ["Config file not found at '$FindBin::Bin/data/24-worker-setting/workers.ini'."],
         'error logged')
-      or diag explain $settings->parse_errors;
+      or always_explain $settings->parse_errors;
 };
 
 done_testing();

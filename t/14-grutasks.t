@@ -337,10 +337,10 @@ subtest 'assets associated with pending jobs are preserved' => sub {
         my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
         is_deeply($removed_assets, [$other_asset_name],
             "only other asset $other_asset_name has been removed with 99947 pending")
-          or diag explain $removed_assets;
+          or always_explain $removed_assets;
         is_deeply($deleted_assets, [$other_asset_name],
             "only other asset $other_asset_name has been deleted with 99947 pending")
-          or diag explain $deleted_assets;
+          or always_explain $deleted_assets;
     };
 
     reset_mocked_asset_deletions;
@@ -355,10 +355,10 @@ subtest 'assets associated with pending jobs are preserved' => sub {
         my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
         is_deeply($removed_assets, [$other_asset_name],
             "only other asset $other_asset_name has been removed with 99947 pending")
-          or diag explain $removed_assets;
+          or always_explain $removed_assets;
         is_deeply($deleted_assets, [$other_asset_name],
             "only other asset $other_asset_name has been deleted with 99947 pending")
-          or diag explain $deleted_assets;
+          or always_explain $deleted_assets;
         $another_associated_job->discard_changes;
         $another_associated_job->delete;
     };
@@ -373,12 +373,12 @@ subtest 'assets associated with pending jobs are preserved' => sub {
             [sort @$removed_assets],
             [$pending_asset_name, $other_asset_name],
             "asset $pending_asset_name has been removed with 99947 no longer pending"
-        ) or diag explain $removed_assets;
+        ) or always_explain $removed_assets;
         is_deeply(
             [sort @$deleted_assets],
             [$pending_asset_name, $other_asset_name],
             "asset $pending_asset_name has been deleted with 99947 no longer pending"
-        ) or diag explain $deleted_assets;
+        ) or always_explain $deleted_assets;
     # note: The main purpose of this subtest is to cross-check whether this test is actually working. If the asset would
       #       still not be cleaned up here that would mean the pending state makes no difference for this test and it is
         #       therefore meaningless.
@@ -404,7 +404,7 @@ subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     my $log_file_for_groupless_job = create_temp_job_log_file($groupless_job->result_dir);
     my $no_group = $schema->resultset('JobGroups')->new({});
     my %expired_jobs = map { $_->id => 1 } @{$no_group->find_jobs_with_expired_logs};
-    is $expired_jobs{$groupless_job->id}, 1, 'groupless job considered expired' or diag explain \%expired_jobs;
+    is $expired_jobs{$groupless_job->id}, 1, 'groupless job considered expired' or always_explain \%expired_jobs;
     run_gru_job $t->app, 'limit_results_and_logs';
     ok !-e $log_file_for_job, 'log file for job in group got cleaned';
     ok !-e $log_file_for_groupless_job, 'log file for groupless job got cleaned';
@@ -444,10 +444,10 @@ subtest 'labeled jobs considered important' => sub {
         my ($mock, @retry) = Test::MockModule->new('OpenQA::Task::SignalGuard');
         $mock->redefine(retry => sub ($job, @args) { push @retry, [@args]; $mock->original('retry')->($job, @args) });
         run_gru_job($app, 'limit_results_and_logs');
-        is_deeply \@retry, [[0]], 'retry disabled by limit task' or diag explain \@retry;
+        is_deeply \@retry, [[0]], 'retry disabled by limit task' or always_explain \@retry;
         @retry = ();
         perform_minion_jobs($t->app->minion);
-        is_deeply \@retry, [[0]], 'retry disabled by archiving task' or diag explain \@retry;
+        is_deeply \@retry, [[0]], 'retry disabled by archiving task' or always_explain \@retry;
     };
     my $minion_jobs = $minion->jobs({tasks => ['archive_job_results']});
     if (is $minion_jobs->total, 1, 'archiving job enqueued') {
@@ -455,7 +455,7 @@ subtest 'labeled jobs considered important' => sub {
         my $expected_archive_path
           = 't/data/openqa/archive/testresults/00099/00099938-opensuse-Factory-DVD-x86_64-Build0048-doc';
         is_deeply $archiving_job->{args}, [99938], 'archiving job is for right openQA job'
-          or diag explain $archiving_job->{args};
+          or always_explain $archiving_job->{args};
         is $archiving_job->{state}, 'finished', 'archiving job succeeded';
         is $archiving_job->{notes}->{archived_path}, $expected_archive_path, 'archive path noted';
         $job->discard_changes;
@@ -530,7 +530,7 @@ subtest 'Gru tasks TTL' => sub {
 
     # Depending on logging options, gru task output can differ
     like $result, qr/Removing asset|Job successfully executed/i, 'job has not expired'
-      or diag explain $result;
+      or always_explain $result;
 
     my @ids;
     push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 0})->{minion_id};
@@ -802,7 +802,7 @@ subtest 'finalize job results' => sub {
             my $info = $minion_jobs->next;
             is($info->{state}, 'failed', 'the minion job failed');
             like($info->{notes}->{failed_modules}->{a}, qr/malformed JSON string/, 'the minion job failed')
-              or diag explain $info->{notes};
+              or always_explain $info->{notes};
         }
     };
 };

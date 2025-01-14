@@ -471,7 +471,7 @@ sub check_builds {
     my $div_class = $parent ? 'children-expanded' : 'no-children';
     $t->get_ok("/$route/" . $group->id . '?limit_builds=100')->status_is(200);
     my @h4 = $t->tx->res->dom->find("div.$div_class .h4 a")->map('text')->each;
-    is_deeply(\@h4, $build_names, $msg) || diag explain @h4;
+    is_deeply(\@h4, $build_names, $msg) || always_explain @h4;
 }
 
 subtest 'proper build sorting for dotted build number' => sub {

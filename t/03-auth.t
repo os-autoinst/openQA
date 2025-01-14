@@ -95,7 +95,7 @@ subtest OpenID => sub {
         }
         qr/OpenID: some error: error message/, 'error logged';
         my $flash = $t->tx->res->dom->at('#flash-messages')->all_text;
-        like $flash, qr/some error: error message/, 'error shown as flash message' or diag explain $t->tx->res->body;
+        like $flash, qr/some error: error message/, 'error shown as flash message' or always_explain $t->tx->res->body;
     };
 };
 
@@ -128,7 +128,7 @@ subtest OAuth2 => sub {
         is $c->res->body, '500 response: Internal server error', 'error message';
         is $c->session->{user}, undef, 'user not set';
         is_deeply \@get_args, [['http://does-not-exist', {Authorization => 'bar some-token'}]], 'args for get request'
-          or diag explain \@get_args;
+          or always_explain \@get_args;
     };
 
     subtest 'OAuth provider does not provide all mandatory user details' => sub {

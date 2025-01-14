@@ -139,7 +139,7 @@ subtest 'scheduled product created via webhook' => sub {
         SCENARIO_DEFINITIONS_YAML_FILE => $expected_url,
       },
       'expected settings assigned'
-      or diag explain $scheduled_product_settings;
+      or always_explain $scheduled_product_settings;
 } or BAIL_OUT 'unable to created scheduled product';
 
 subtest 'triggering the scheduled product will download scenario definitions YAML file from GitHub' => sub {
@@ -153,7 +153,7 @@ subtest 'triggering the scheduled product will download scenario definitions YAM
     my $minion_job = $minion->jobs->next;
     is $minion_job->{state}, 'finished', 'Minion job finished (not failed, we do not want alerts for these errors)';
     like $minion_job->{result}->{error}, $expected_error, 'error assigned as Minion job result'
-      or diag explain $minion_job;
+      or always_explain $minion_job;
     is $status_reports, 2, 'the status has been reported back to GitHub';
     $minion_job_id = $minion_job->{id};
     is $jobs->count, 0, 'no jobs have been created yet';
@@ -182,7 +182,7 @@ subtest 'triggering the scheduled product will report status back to GitHub' => 
     my $minion_job = $minion->jobs->next;
     my %expected_res = (failed_job_info => [], successful_job_ids => [1, 2]);
     is $minion_job->{state}, 'finished', 'Minion job finished';
-    is_deeply $minion_job->{result}, \%expected_res, 'expected result' or diag explain $minion_job;
+    is_deeply $minion_job->{result}, \%expected_res, 'expected result' or always_explain $minion_job;
 
     # set the jobs to done; this should lead to reporting back to GitHub
     $expected_ci_check_state = 'pending';

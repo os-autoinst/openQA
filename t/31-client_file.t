@@ -21,7 +21,7 @@ subtest 'base' => sub {
     $file->read;
     my $content = $file->content();
     $file->encode_content();
-    isnt $file->content(), $content or die diag explain $file;
+    isnt $file->content(), $content or die always_explain $file;
     $file->decode_content();
     is $file->content(), $content, 'decoded content match to original one' or die 'Horrible thing would happen';
 };
@@ -42,18 +42,18 @@ subtest 'split/join' => sub {
     is $pieces->last->end, $size, 'Last piece end must match with size';
 
     is $pieces->join(), path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp, 'Content match'
-      or die diag explain $pieces;
+      or die always_explain $pieces;
 
     is $pieces->generate_sum(), sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp),
       'SHA-1 match'
-      or die diag explain $pieces;
+      or die always_explain $pieces;
 
     my $t_file = tempfile();
     $pieces->write($t_file);
 
     is $t_file->slurp, path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp,
       'Composed content is same as original'
-      or die diag explain $pieces;
+      or die always_explain $pieces;
 
     my @serialized = $pieces->serialize();
     is scalar @serialized, $pieces->size(), 'Serialized number of files match';
@@ -61,14 +61,14 @@ subtest 'split/join' => sub {
     my $des_pieces = OpenQA::Files->deserialize(@serialized);    #recompose
 
 
-    is_deeply $des_pieces, $pieces or die diag explain $des_pieces;
+    is_deeply $des_pieces, $pieces or die always_explain $des_pieces;
 
     is $des_pieces->join(), path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp, 'Content match'
-      or die diag explain $des_pieces;
+      or die always_explain $des_pieces;
 
     is $des_pieces->generate_sum(),
       sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp), 'SHA-1 match'
-      or die diag explain $des_pieces;
+      or die always_explain $des_pieces;
 
     ok $des_pieces->is_sum(sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp));
 };

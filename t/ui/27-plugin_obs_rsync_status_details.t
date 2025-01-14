@@ -85,7 +85,7 @@ foreach my $proj (sort keys %params) {
             {url => '/admin/obs_rsync/BatchedProj/dirty_status'},
         );
         is_deeply $actual_requests, \@expected_requests, 'ajax requests done as expected'
-          or diag explain $actual_requests;
+          or always_explain $actual_requests;
     }
     elsif ($proj eq 'Proj1') {
         # follow link to project page and click the sync button

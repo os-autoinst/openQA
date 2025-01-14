@@ -139,13 +139,13 @@ subtest 'scheduled products added' => sub {
             successful_job_ids => [],
         },
         'empty result stored correctly, 1'
-    ) or diag explain $empty_result;
+    ) or always_explain $empty_result;
 
     my $product_1 = $scheduled_products[1];
     my $product_1_id = $product_1->id;
     my $non_empty_result = $product_1->results;
     is(scalar @{$non_empty_result->{successful_job_ids}}, 1, 'successful job ID stored correctly, 2')
-      or diag explain $non_empty_result;
+      or always_explain $non_empty_result;
 
     my $stored_settings = $scheduled_products[1]->settings;
     my %expected_settings = (
@@ -160,7 +160,7 @@ subtest 'scheduled products added' => sub {
         _FOO => 'bar',
         __FOO_URL => 'bar',
     );
-    is_deeply($stored_settings, \%expected_settings, 'settings stored correctly, 3') or diag explain $stored_settings;
+    is_deeply($stored_settings, \%expected_settings, 'settings stored correctly, 3') or always_explain $stored_settings;
 
     ok(my $scheduled_job_id = $non_empty_result->{successful_job_ids}->[0], 'scheduled job ID present');
     ok(my $scheduled_job = $jobs->find($scheduled_job_id), 'job actually scheduled');
@@ -197,7 +197,7 @@ subtest 'scheduled products added' => sub {
                 settings => \%expected_settings,
             },
             'scheduled product serialized as expected'
-        ) or diag explain $json;
+        ) or always_explain $json;
     };
 };
 
@@ -299,7 +299,7 @@ is_deeply(
         TEST_SUITE_NAME => 'advanced_kde'
     },
     'settings assigned as expected, variable expansion applied, taking job template settings into account'
-) or diag explain $advanced_kde_64->{settings};
+) or always_explain $advanced_kde_64->{settings};
 
 # variable precedence
 is($client1_32->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
@@ -540,7 +540,7 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
 
         my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test'});
         is($res->json->{count}, 5, 'all jobs scheduled');
-        is_deeply($res->json->{failed}, [], 'no jobs failed') or diag explain $res->json->{failed};
+        is_deeply($res->json->{failed}, [], 'no jobs failed') or always_explain $res->json->{failed};
         $schema->txn_rollback;
     };
     subtest 'different worker classes in the same direct chain are rejected' => sub {
@@ -602,12 +602,12 @@ for my $machine_separator (qw(@ :)) {
             $test3_64->{parents},
             {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}], 'Directly chained' => []},
             "test1_64 and test2_ipmi are the parents of test3"
-        ) or diag explain $test3_64->{parents};
+        ) or always_explain $test3_64->{parents};
         is_deeply(
             $test4_64->{parents},
             {Parallel => [], Chained => [], 'Directly chained' => [$test3_64->{id}]},
             "test1_64 and test2_ipmi are the parents of test3"
-        ) or diag explain $test4_64->{parents};
+        ) or always_explain $test4_64->{parents};
 
       };
     $schema->txn_rollback;
@@ -783,7 +783,7 @@ subtest 'async flag' => sub {
         ['textmode@32bit has no child, check its machine placed or dependency setting typos'],
         'there is one error message, though'
     ) or $ok = 0;
-    diag explain $json unless $ok;
+    always_explain $json unless $ok;
 
 };
 
@@ -847,7 +847,7 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     is $json_res->{count}, 2, '2 jobs scheduled';
     my %created_jobs = map { $jobs->find($_)->settings_hash->{TEST} => 1 } @{$json_res->{ids}};
     is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1}, 'only parallel parent scheduled'
-      or diag explain \%created_jobs;
+      or always_explain \%created_jobs;
 
     # schedule with _INCLULDE_CHILDREN as well; now also all nested chained children should be included
     my %expected_jobs = map { ("child_test_$_" => 1) } 1 .. 7;
@@ -856,7 +856,7 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     is $json_res->{count}, 7, '7 jobs scheduled';
     %created_jobs = map { $jobs->find($_)->settings_hash->{TEST} => 1 } @{$json_res->{ids}};
     is_deeply \%created_jobs, \%expected_jobs, 'only parallel parent and (nested) children scheduled'
-      or diag explain \%created_jobs, $json_res;
+      or always_explain \%created_jobs, $json_res;
 
     subtest 'params also taken via scheduled_product_clone_id; directly specified params still have precedence' => sub {
         %p = (scheduled_product_clone_id => $json_res->{scheduled_product_id}, TEST => 'child_test_3', FOO => 'bar');
@@ -867,7 +867,7 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
         is $_->settings_hash->{FOO}, 'bar', 'directly specified parameter added as job setting of ' . $_->id
           for values %created_jobs;
         is_deeply \@created_tests, \@expected_tests, 'only the subtree as of the test specified via TEST was scheduled'
-          or return diag explain \@created_tests, $json_res;
+          or return always_explain \@created_tests, $json_res;
 
         my $query_children = sub ($test, $type) {
             [sort map { $_->child->TEST } $created_jobs{$test}->children->search({dependency => $type})->all];
@@ -878,19 +878,19 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
         my $existing_deps = $query_children->(child_test_3 => CHAINED);
         my @expected_deps = (qw(child_test_4 child_test_5));
         is_deeply $existing_deps, \@expected_deps, 'chained dependencies of child_test_3'
-          or diag explain $existing_deps;
+          or always_explain $existing_deps;
         $existing_deps = $query_parents->(child_test_3 => CHAINED);
         is_deeply $existing_deps, [], 'chained parent of child_test_3 skipped; thus no dependency'
-          or diag explain $existing_deps;
+          or always_explain $existing_deps;
         $existing_deps = $query_parents->(child_test_6 => CHAINED);
         is_deeply $existing_deps, [qw(child_test_5)], 'chained dependencies of child_test_6'
-          or diag explain $existing_deps;
+          or always_explain $existing_deps;
         $existing_deps = $query_parents->(child_test_6 => PARALLEL);
         is_deeply $existing_deps, [qw(child_test_7)], 'parallel dependencies of child_test_6'
-          or diag explain $existing_deps;
+          or always_explain $existing_deps;
         $existing_deps = $query_parents->(child_test_7 => CHAINED);
         is_deeply $existing_deps, [], 'chained dependencies of child_test_7'
-          or diag explain $existing_deps;
+          or always_explain $existing_deps;
     };
 
     $schema->txn_rollback;

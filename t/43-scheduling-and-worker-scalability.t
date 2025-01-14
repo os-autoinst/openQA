@@ -173,15 +173,15 @@ subtest 'wait for workers to be idle' => sub {
         push(@non_idle_workers, $worker->info)    # uncoverable statement
           if !$is_idle_or_limited || ($worker->websocket_api_version || 0) != WEBSOCKET_API_VERSION;
     }
-    is scalar @non_idle_workers, 0, 'all workers idling/limited' or diag explain \@non_idle_workers;
+    is scalar @non_idle_workers, 0, 'all workers idling/limited' or always_explain \@non_idle_workers;
 };
 
 subtest 'assign and run jobs' => sub {
     my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
     my $allocated = $scheduler->schedule;
     unless (ref($allocated) eq 'ARRAY' && @$allocated > 0) {
-        diag explain 'Allocated: ', $allocated;    # uncoverable statement
-        diag explain 'Scheduled: ', $scheduler->scheduled_jobs;    # uncoverable statement
+        always_explain 'Allocated: ', $allocated;    # uncoverable statement
+        always_explain 'Scheduled: ', $scheduler->scheduled_jobs;    # uncoverable statement
         BAIL_OUT('Unable to assign jobs to (idling) workers');    # uncoverable statement
     }
 
@@ -250,7 +250,7 @@ subtest 'stop all workers' => sub {
         note("Waiting until all workers are offline, try $try");    # uncoverable statement
         sleep $polling_interval;    # uncoverable statement
     }
-    ok(!@non_offline_workers, 'all workers offline') or diag explain \@non_offline_workers;
+    ok(!@non_offline_workers, 'all workers offline') or always_explain \@non_offline_workers;
 };
 
 done_testing;

@@ -482,7 +482,7 @@ subtest 'edit job templates' => sub() {
         is(scalar @{$driver->find_elements('Test new medium as part of this group', 'link_text')},
             0, 'link to add a new medium (via legacy editor) not shown');
         my $yaml = $driver->execute_script('return editor.getValue();');
-        like($yaml, qr/products:\s*{}.*scenarios:\s*{}/s, 'default YAML was fetched') or diag explain $yaml;
+        like($yaml, qr/products:\s*{}.*scenarios:\s*{}/s, 'default YAML was fetched') or always_explain $yaml;
     };
 
     my ($yaml, $form);
@@ -495,33 +495,33 @@ subtest 'edit job templates' => sub() {
         ok($form->is_displayed(), 'editor form is shown');
         ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
         $yaml = $driver->execute_script('return editor.getValue();');
-        like($yaml, qr/scenarios:/, 'YAML was fetched') or diag explain $yaml;
+        like($yaml, qr/scenarios:/, 'YAML was fetched') or always_explain $yaml;
     };
 
     # Preview
     $driver->find_element_by_id('preview-template')->click();
     my $result = $form->child('.result');
     wait_for_ajax;
-    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or always_explain $result->get_text();
     like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
-      or diag explain $result->get_text();
+      or always_explain $result->get_text();
 
     # Expansion
     $driver->find_element_by_id('expand-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Result of expanding the YAML/, 'expansion shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/Result of expanding the YAML/, 'expansion shown') or always_explain $result->get_text();
     like($result->get_text(), qr/settings: \{\}/, 'expanded YAML has empty settings')
-      or diag explain $result->get_text();
+      or always_explain $result->get_text();
     unlike($result->get_text(), qr/defaults:/, 'expanded YAML has no defaults')
-      or diag explain $result->get_text();
+      or always_explain $result->get_text();
 
     # Save
     $driver->find_element_by_id('save-template')->click();
     $result = $form->child('.result');
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
     like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
-      or diag explain $result->get_text();
+      or always_explain $result->get_text();
 
     # Make changes to existing YAML
     $yaml .= "    - advanced_kde_low_prio:\n";
@@ -531,25 +531,25 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$yaml\");");
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or always_explain $result->get_text();
     ok(index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown')
-      or diag explain $result->get_text();
+      or always_explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
     ok(index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown')
-      or diag explain $result->get_text();
+      or always_explain $result->get_text();
 
     # No changes
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or always_explain $result->get_text();
     like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
-      or diag explain $result->get_text();
+      or always_explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/, 'saved, nothing changed') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
+    like($result->get_text(), qr/No changes were made!/, 'saved, nothing changed') or always_explain $result->get_text();
 
     # Legacy UI is hidden and no longer available
     ok($driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden');
@@ -563,15 +563,15 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$yaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
 
     # Empty the editor
     $driver->execute_script("editor.setValue('');");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
     $yaml = $driver->execute_script('return editor.getValue();');
-    is($yaml, "products: {}\nscenarios: {}\n", 'YAML was reset to default') or diag explain $yaml;
+    is($yaml, "products: {}\nscenarios: {}\n", 'YAML was reset to default') or always_explain $yaml;
 
     my $first_tab = $driver->get_current_window_handle();
     # Make changes in a separate tab
@@ -584,9 +584,9 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'second tab saved') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/, 'second tab saved') or always_explain $result->get_text();
     my $saved_yaml = $driver->execute_script('return editor.getValue();');
-    is($saved_yaml, "$yaml\n", 'YAML got a final linebreak') or diag explain $yaml;
+    is($saved_yaml, "$yaml\n", 'YAML got a final linebreak') or always_explain $yaml;
     # Try and save, after the database has already been modified
     $driver->switch_to_window($first_tab);
     $form = $driver->find_element_by_id('editor-form');
@@ -595,7 +595,7 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Template was modified/, 'conflict reported') or diag explain $result->get_text();
+    like($result->get_text(), qr/Template was modified/, 'conflict reported') or always_explain $result->get_text();
 
     # Make the YAML invalid
     $driver->execute_script('editor.setValue("invalid: true");');

@@ -37,7 +37,7 @@ subtest 'Refreshable' => sub {
     $t->get_ok('/api/v1/bugs?refreshable=1')->json_is('/bugs', {}, 'All bugs are refreshed');
     $t->post_ok('/api/v1/bugs', form => {title => "foobar2", bugid => 'poo#201', existing => 1, refreshed => 1})
       ->json_is('/id' => 2, 'Bug #2 created');
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
     $t->get_ok('/api/v1/bugs/2')->json_is('/title' => 'foobar2', 'Bug #2 has correct title');
 
     $t->delete_ok('/api/v1/bugs/2');
@@ -53,7 +53,7 @@ subtest 'Comments' => sub {
 
 subtest 'Created since' => sub {
     $t->post_ok('/api/v1/bugs', form => {title => "new", bugid => 'bsc#123'});
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
     ok(my $bugid = $t->tx->res->json->{id}, "Bug ID returned") or return;
     my $update_time = time;
     ok(my $bug = $bugs->find($bugid), "Bug $bugid found in the database") or return;

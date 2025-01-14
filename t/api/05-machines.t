@@ -56,7 +56,7 @@ is_deeply(
                     }]}]
     },
     "Initial machines"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 
 $t->post_ok('/api/v1/machines', json => {name => "testmachine"})->status_is(400)
@@ -114,7 +114,7 @@ is_deeply(
                     }]}]
     },
     "Add machine"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/machines/$machine_id",
     json => {name => "testmachine", backend => "qemu", settings => {"TEST2" => "val1"}})->status_is(200);
@@ -135,7 +135,7 @@ is_deeply(
                     }]}]
     },
     "Delete machine variable"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/machines/$machine_id", json => {name => "testmachine", "settings" => {"TEST2" => "val0"}})
   ->status_is(400)->json_is('/error', 'Missing parameter: backend');
@@ -169,7 +169,7 @@ is_deeply(
                     }]}]
     },
     "Update settings via JSON request"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not found
@@ -204,7 +204,7 @@ subtest 'trim whitespace characters' => sub {
                         }]}]
         },
         'trim whitespace characters when create table'
-    )->or(sub { diag explain $t->tx->res->json });
+    )->or(sub { always_explain $t->tx->res->json });
 
     $t->put_ok(
         "/api/v1/machines/$id",
@@ -234,7 +234,7 @@ subtest 'trim whitespace characters' => sub {
                         }]}]
         },
         'trim whitespace characters when update table'
-    )->or(sub { diag explain $t->tx->res->json });
+    )->or(sub { always_explain $t->tx->res->json });
 };
 
 # switch to operator (default client) and try some modifications

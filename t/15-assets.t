@@ -57,7 +57,7 @@ my $jobs = $schema->resultset('Jobs');
 my $job_without_assets
   = $jobs->create_from_settings({map { $_ => 1 } qw(TEST DISTRI VERSION FLAVOR BUILD UEFI_PFLASH_VARS)});
 my $missing_assets = $job_without_assets->missing_assets;
-is_deeply $missing_assets, [], 'no assets missing if job has no relevant assets' or diag explain $missing_assets;
+is_deeply $missing_assets, [], 'no assets missing if job has no relevant assets' or always_explain $missing_assets;
 
 my $assets = $schema->resultset('Assets');
 my $not_actually_fixed_asset = $assets->create({type => 'iso', name => 'not actually fixed', fixed => 1});
@@ -92,9 +92,9 @@ my $workercaps = {
 
 my $jobA = $jobs->create_from_settings(\%settings);
 my @assets = map { $_->asset->name } $jobA->jobs_assets->all;
-is_deeply \@assets, ['whatever.iso'], 'one asset assigned before grabbing (1)' or diag explain \@assets;
+is_deeply \@assets, ['whatever.iso'], 'one asset assigned before grabbing (1)' or always_explain \@assets;
 $missing_assets = $jobA->missing_assets;
-is_deeply $missing_assets, [], 'all assets present' or diag explain $missing_assets;
+is_deeply $missing_assets, [], 'all assets present' or always_explain $missing_assets;
 my $theasset = $assets[0];
 $jobA->set_prio(1);
 
@@ -119,7 +119,7 @@ OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 my $job = $sent->{$w}->{job}->to_hash;
 is($job->{id}, $jobA->id, 'jobA grabbed');
 @assets = map { $_->asset->name } $jobA->jobs_assets->all;
-is(scalar @assets, 1, 'job still has only one asset assigned after grabbing') or diag explain \@assets;
+is(scalar @assets, 1, 'job still has only one asset assigned after grabbing') or always_explain \@assets;
 is($assets[0], $theasset, 'the assigned asset is the same');
 
 note 'assume worker picked up the job';
@@ -129,13 +129,13 @@ $jobA->update({state => SETUP});
 my $jobA_id = $jobA->id;
 my $res = job_restart([$jobA_id]);
 is(@{$res->{duplicates}}, 1, 'one duplicate');
-is(@{$res->{errors}}, 0, 'no errors') or diag explain $res->{errors};
-is(@{$res->{warnings}}, 0, 'no warnings') or diag explain $res->{warnings};
+is(@{$res->{errors}}, 0, 'no errors') or always_explain $res->{errors};
+is(@{$res->{warnings}}, 0, 'no warnings') or always_explain $res->{warnings};
 
 my $duplicate_id = $res->{duplicates}->[0]->{$jobA_id} or BAIL_OUT "unable to restart $jobA_id";
 my $cloneA = $schema->resultset('Jobs')->find($duplicate_id);
 @assets = map { $_->asset->name } $cloneA->jobs_assets->all;
-is $assets[0], $theasset, 'clone has the same asset assigned' or diag explain \@assets;
+is $assets[0], $theasset, 'clone has the same asset assigned' or always_explain \@assets;
 
 my $jabasename = 'jobasset.raw';
 my $janame = sprintf('%08d-%s', $cloneA->id, $jabasename);
@@ -150,7 +150,7 @@ $settings{TEST} = 'testB';
 my $jobB = $schema->resultset('Jobs')->create_from_settings(\%settings);
 @assets = sort map { $_->asset->name } $jobB->jobs_assets->all;
 is_deeply \@assets, [$jabasename, $theasset], 'both assets are assigned, jobasset.raw assumed to be public asset'
-  or diag explain \@assets;
+  or always_explain \@assets;
 # set jobA (normally this is done by worker after abort) and cloneA to done
 # needed for job grab to fulfill dependencies
 $jobA->discard_changes;
@@ -168,7 +168,7 @@ OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 $job = $sent->{$w}->{job}->to_hash;
 is($job->{id}, $jobB->id, 'jobB grabbed');
 @assets = sort map { $_->asset->name } $jobB->jobs_assets->all;
-is_deeply \@assets, [$janame, $theasset], 'using correct assets after grabbing' or diag explain \@assets;
+is_deeply \@assets, [$janame, $theasset], 'using correct assets after grabbing' or always_explain \@assets;
 
 ## test job is duped when depends on asset created by duping job
 # clone cloneA
@@ -291,10 +291,10 @@ subtest 'check for missing assets' => sub {
         @assets = sort map { $_->asset->name } $job_with_2_assets->jobs_assets;
         is_deeply \@assets, [qw(not_existent whatever.iso whatever.sha256)],
           'two existing and one missing assets assigned'
-          or diag explain \@assets;
+          or always_explain \@assets;
         is_deeply $job_with_2_assets->missing_assets,
           ['hdd/not_existent'], 'assets are considered missing if at least one is missing'
-          or diag explain $job_with_2_assets->missing_assets;
+          or always_explain $job_with_2_assets->missing_assets;
     };
     subtest 'repo assets are ignored' => sub {
         $settings{REPO_0} = delete $settings{HDD_1};
@@ -321,7 +321,7 @@ subtest 'check for missing assets' => sub {
           ->create({type => 'hdd', name => sprintf("%08d-disk_from_parent", $parent_job->id), size => 0});
         $missing_assets = $job_with_2_assets->missing_assets;
         is_deeply $missing_assets, [], 'private asset created by parent so no asset missing'
-          or diag explain $missing_assets;
+          or always_explain $missing_assets;
     };
     subtest 'private assets not reported besides others missing' => sub {
         my $parent_job = $jobs->create_from_settings(\%settings);
@@ -339,7 +339,7 @@ subtest 'check for missing assets' => sub {
         $missing_assets = $job_with_2_assets->missing_assets;
         is_deeply $missing_assets, ['hdd/non_existent'],
           'private assets correctly detected also when other asset is missing'
-          or diag explain $missing_assets;
+          or always_explain $missing_assets;
     };
 };
 

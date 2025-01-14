@@ -389,7 +389,7 @@ subtest 'Create new needle' => sub {
     my $commit_args = shared_hash;
     like delete $commit_args->{message}, qr/Example.*\n.*Multi.*\n.*line/s, 'commit message matches';
     is_deeply $commit_args, {add => [qw(test-newneedle.json test-newneedle.png)]}, 'files added to commit'
-      or diag explain $commit_args;
+      or always_explain $commit_args;
 
     # test overwrite needle
     add_needle_tag('test-overwritetag');
@@ -461,7 +461,7 @@ subtest 'Verify new needle\'s JSON' => sub {
         $decode_textarea->{area}[0]->{ypos} + $yoffset,
         "new ypos stored to new needle"
     );
-} or diag explain $decoded_json;
+} or always_explain $decoded_json;
 
 sub assert_needle_appears_in_selection {
     my ($selection_id, $needlename) = @_;
@@ -542,7 +542,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
     $driver->get($driver->get_current_url);
     my @needle_names = map { $_->get_text() } $driver->find_elements('#tags_select option');
     is_deeply(\@needle_names, \@expected_needle_names, 'new needles limited to 5 most recent')
-      or diag explain \@needle_names;
+      or always_explain \@needle_names;
 };
 
 my $hash = '{ "name": "workaround", "value": "workaround for bsc#123456" }';
@@ -566,7 +566,7 @@ subtest 'Broken needle is handled gracefully' => sub {
         $warnings[0],
         qr/Could not parse needle inst-timezone-text for opensuse 13\.1: .+ at character offset/,
         'warning about broken needle displayed'
-    ) or diag explain \@warnings;
+    ) or always_explain \@warnings;
 };
 
 subtest 'Deletion of needle is handled gracefully' => sub {
@@ -578,7 +578,7 @@ subtest 'Deletion of needle is handled gracefully' => sub {
         $warnings[0],
         'Could not parse needle inst-timezone-text for opensuse 13.1: File not found',
         'warning about missing needle displayed'
-    ) or diag explain \@warnings;
+    ) or always_explain \@warnings;
 };
 
 subtest 'areas/tags verified via JavaScript' => sub {

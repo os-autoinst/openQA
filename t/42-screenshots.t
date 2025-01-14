@@ -37,10 +37,10 @@ my @screenshots = $screenshots->search({id => {-in => \@screenshot_ids}})->searc
 my @screenshot_data = map { {filename => $_->filename} } @screenshots;
 is(scalar @screenshot_links, 2, '2 screenshot links for job 99926 created');
 is_deeply(\@screenshot_data, [{filename => 'foo'}, {filename => 'bar'}], 'two screenshots created')
-  or diag explain \@screenshot_data;
+  or always_explain \@screenshot_data;
 my $exclusive_screenshot_ids = $jobs->find(99926)->exclusively_used_screenshot_ids;
 is_deeply([sort @$exclusive_screenshot_ids], \@screenshot_ids, 'screenshots are considered exclusively used')
-  or diag explain $exclusive_screenshot_ids;
+  or always_explain $exclusive_screenshot_ids;
 
 # add one of the screenshots to another job
 $screenshots->populate_images_to_job([qw(foo)], 99927);
@@ -50,7 +50,7 @@ is_deeply(
     $jobs->find(99926)->exclusively_used_screenshot_ids,
     [$screenshots->find({filename => 'bar'})->id],
     'only bar is considered exclusively used by 99926 anymore'
-) or diag explain $exclusive_screenshot_ids;
+) or always_explain $exclusive_screenshot_ids;
 
 # delete the first job
 $jobs->find(99926)->delete;
@@ -63,7 +63,7 @@ is_deeply(
     \@screenshot_data,
     [{filename => 'foo'}, {filename => 'bar'}],
     'screenshot not directly cleaned up after deleting job'
-) or diag explain \@screenshot_data;
+) or always_explain \@screenshot_data;
 
 # limit screenshots
 my %args = (
@@ -76,7 +76,7 @@ qr/Removing screenshot batch 1/, 'removing screenshot logged';
 @screenshots = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
 @screenshot_data = map { {filename => $_->filename} } @screenshots;
 is_deeply(\@screenshot_data, [{filename => 'foo'}], 'foo still present (used in 99927), bar removed (no longer used)')
-  or diag explain \@screenshot_data;
+  or always_explain \@screenshot_data;
 
 subtest 'screenshots are unique' => sub {
     $screenshots->populate_images_to_job(['whatever'], 99927);
@@ -129,11 +129,11 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
             [{min_screenshot_id => 201, max_screenshot_id => 206, screenshots_per_batch => 20}],
         ],
         'limit_screenshots tasks enqueued'
-    ) or diag explain $enququed_minion_job_args;
+    ) or always_explain $enququed_minion_job_args;
     $enqueued_minion_jobs
       = get_enqueued_minion_jobs($minion, {states => ['inactive'], tasks => ['ensure_results_below_threshold']});
     is_deeply($enqueued_minion_jobs->{enqueued_job_args}, [], 'ensure_results_below_threshold not enqueued by default')
-      or diag explain $enqueued_minion_jobs;
+      or always_explain $enqueued_minion_jobs;
 
     # perform the job for the 2nd screenshot range first to check whether it really only removes screenshots in
     # the expected range
@@ -155,7 +155,7 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
 
     my @remaining_screenshots = map { $_->filename } $screenshots->search(undef, {order_by => 'filename'});
     is_deeply(\@remaining_screenshots, [qw(foo whatever)], 'all screenshots removed except foo and whatever')
-      or diag explain \@remaining_screenshots;
+      or always_explain \@remaining_screenshots;
 
     subtest 'run a limit_results_and_logs job with batch parameters from config' => sub {
         run_gru_job($app, limit_results_and_logs => [{}]);
@@ -166,7 +166,7 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
             $enququed_minion_job_args,
             [[{min_screenshot_id => 1, max_screenshot_id => 4, screenshots_per_batch => 200000}]],
             'limit_screenshots task with default batch size from config enqueued'
-        ) or diag explain $enququed_minion_job_args;
+        ) or always_explain $enququed_minion_job_args;
     };
 
 };

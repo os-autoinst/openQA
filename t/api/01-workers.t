@@ -78,7 +78,7 @@ my @workers = (
 
 $t->get_ok('/api/v1/workers')->status_is(200, 'listing of all workers');
 $t->json_is('' => {workers => \@workers}, 'workers present with deprecated websocket flag');
-diag explain $t->tx->res->json unless $t->success;
+always_explain $t->tx->res->json unless $t->success;
 
 $t->get_ok('/api/v1/workers/2')->status_is(200, 'info for existing individual worker');
 $t->json_is('' => {worker => $workers[1]}, 'info for correct worker returned');
@@ -104,13 +104,13 @@ $workers->find(\%worker_key)->update({error => 'cache not available'});
 $registration_params{websocket_api_version} = WEBSOCKET_API_VERSION;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register existing worker with token')
   ->json_is('/id' => 1, 'worker id is 1');
-diag explain $t->tx->res->json unless $t->success;
+always_explain $t->tx->res->json unless $t->success;
 is $workers->find(\%worker_key)->error, undef, 'possibly still present error from previous connection cleaned';
 
 $registration_params{instance} = 42;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
   ->json_is('/id' => 3, 'new worker id is 3');
-diag explain $t->tx->res->json unless $t->success;
+always_explain $t->tx->res->json unless $t->success;
 is_deeply(
     OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_register'),
     {
@@ -142,7 +142,7 @@ subtest 'incompleting previous job on worker registration' => sub {
         $t->post_ok('/api/v1/workers', form => \%registration_params)
           ->status_is(200, 'register existing worker passing job ID')
           ->json_is('/id' => $worker_id, 'worker ID returned');
-        return diag explain $t->tx->res->json unless $t->success;
+        return always_explain $t->tx->res->json unless $t->success;
         is($jobs->find($running_job_id)->state, RUNNING, 'assigned job still running');
     };
 
@@ -151,12 +151,12 @@ subtest 'incompleting previous job on worker registration' => sub {
         $t->post_ok('/api/v1/workers', form => \%registration_params)
           ->status_is(200, 'register existing worker passing no job ID')
           ->json_is('/id' => $worker_id, 'worker ID returned');
-        return diag explain $t->tx->res->json unless $t->success;
+        return always_explain $t->tx->res->json unless $t->success;
         my $incomplete_job = $jobs->find($running_job_id);
         is($incomplete_job->state, DONE, 'assigned job set to done');
         ok($incomplete_job->result eq INCOMPLETE || $incomplete_job->result eq PARALLEL_RESTARTED,
             'assigned job considered incomplete or parallel restarted')
-          or diag explain 'actual job result: ' . $incomplete_job->result;
+          or always_explain 'actual job result: ' . $incomplete_job->result;
     };
 };
 
@@ -172,7 +172,7 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
         $registration_params{instance} = $id;
         $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
           ->json_is('/id' => $id, "new worker id is $id");
-        diag explain $t->tx->res->json unless $t->success;
+        always_explain $t->tx->res->json unless $t->success;
         $id++;
     }
 
