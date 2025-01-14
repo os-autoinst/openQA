@@ -7,6 +7,8 @@ Wants=openqa-setup-db.service
 User=geekotest
 ExecStart=/usr/share/openqa/script/openqa-gru
 Nice=19
+# Longer stopping time foreseen due to niceness
+TimeoutStopSec=5min
 Restart=on-failure
 
 [Install]
