@@ -33,9 +33,11 @@ $schema->resultset('Jobs')->find($job_id)->settings->create({key => 'SOME_URLS',
 driver_missing unless my $driver = call_driver;
 my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
-$t->get_ok($uri_path_from_root_dir)->status_is(200)
+$t->get_ok($uri_path_from_root_dir)
+  ->status_is(200)
   ->content_like(qr|test|i, 'setting file source found from the root of the test distribution');
-$t->get_ok($uri_path_from_default_data_dir)->status_is(200)
+$t->get_ok($uri_path_from_default_data_dir)
+  ->status_is(200)
   ->content_like(qr|test|i, 'setting file source found in default_data_dir');
 
 $driver->get("/tests/$job_id#settings");

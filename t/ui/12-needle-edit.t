@@ -655,7 +655,8 @@ subtest '(created) needles can be accessed over API' => sub {
 
     $t->get_ok(
         '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
-      ->status_is(200, 'needle accessible')->content_type_is('image/png');
+      ->status_is(200, 'needle accessible')
+      ->content_type_is('image/png');
     @warnings = warnings {
         $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')
           ->status_is(403, 'access to files outside the test directory not granted (absolute)');
@@ -674,7 +675,8 @@ subtest '(created) needles can be accessed over API' => sub {
     symlink(abs_path($tmp_dir), $dir);
     $t->get_ok(
         '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
-      ->status_is(200, 'needle also accessible when containing directory is a symlink')->content_type_is('image/png');
+      ->status_is(200, 'needle also accessible when containing directory is a symlink')
+      ->content_type_is('image/png');
     unlink($dir);
     File::Copy::move($tmp_dir, $dir);
 };

@@ -17,7 +17,9 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $name = 'installer_timezone';
 my $id = 99938;
 my $src_url = "/tests/$id/modules/$name/steps/1/src";
-$t->get_ok($src_url)->status_is(200)->content_like(qr|installation/.*$name.pm|i, "$name test source found")
+$t->get_ok($src_url)
+  ->status_is(200)
+  ->content_like(qr|installation/.*$name.pm|i, "$name test source found")
   ->content_like(qr/assert_screen.*timezone/i, "$name test source shown");
 
 subtest 'source view for jobs using VCS based tests' => sub {

@@ -124,7 +124,8 @@ sub startup ($self) {
     # we have to set this and some later routes up differently on Mojo
     # < 9 and Mojo >= 9.11
     if ($Mojolicious::VERSION > 9.10) {
-        $r->get('/tests/overview' => [format => ['json', 'html']])->name('tests_overview')
+        $r->get('/tests/overview' => [format => ['json', 'html']])
+          ->name('tests_overview')
           ->to('test#overview', format => undef);
     }
     elsif ($Mojolicious::VERSION < 9) {
@@ -200,14 +201,17 @@ sub startup ($self) {
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
 
     if ($Mojolicious::VERSION > 9.10) {
-        $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
+        $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])
+          ->name('group_overview')
           ->to('main#job_group_overview', format => undef);
-        $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
+        $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])
+          ->name('parent_group_overview')
           ->to('main#parent_group_overview', format => undef);
     }
     elsif ($Mojolicious::VERSION < 9) {
         $r->get('/group_overview/<groupid:num>')->name('group_overview')->to('main#job_group_overview');
-        $r->get('/parent_group_overview/<groupid:num>')->name('parent_group_overview')
+        $r->get('/parent_group_overview/<groupid:num>')
+          ->name('parent_group_overview')
           ->to('main#parent_group_overview');
     }
     else {
@@ -218,7 +222,8 @@ sub startup ($self) {
     $r->get('/favicon.ico' => sub ($c) { $c->render_static('favicon.ico') });
     $r->get('/index' => sub ($c) { $c->render('main/index') });
     if ($Mojolicious::VERSION > 9.10) {
-        $r->get('/dashboard_build_results' => [format => ['json', 'html']])->name('dashboard_build_results')
+        $r->get('/dashboard_build_results' => [format => ['json', 'html']])
+          ->name('dashboard_build_results')
           ->to('main#dashboard_build_results', format => undef);
     }
     elsif ($Mojolicious::VERSION < 9) {
@@ -260,7 +265,8 @@ sub startup ($self) {
     $pub_admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
     $pub_admin_r->get('/job_group/<groupid:num>')->name('admin_job_group_row')->to('job_group#job_group_row');
     $pub_admin_r->get('/parent_group/<groupid:num>')->name('admin_parent_group_row')->to('job_group#parent_group_row');
-    $pub_admin_r->get('/edit_parent_group/<groupid:num>')->name('admin_edit_parent_group')
+    $pub_admin_r->get('/edit_parent_group/<groupid:num>')
+      ->name('admin_edit_parent_group')
       ->to('job_group#edit_parent_group');
     $pub_admin_r->get('/groups/connect/<groupid:num>')->name('job_group_new_media')->to('job_group#connect');
 
@@ -268,7 +274,8 @@ sub startup ($self) {
     $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
 
     if ($Mojolicious::VERSION > 9.10) {
-        $pub_admin_r->get('/workers' => [format => ['json', 'html']])->name('admin_workers')
+        $pub_admin_r->get('/workers' => [format => ['json', 'html']])
+          ->name('admin_workers')
           ->to('workers#index', format => undef);
     }
     elsif ($Mojolicious::VERSION < 9) {
@@ -278,7 +285,8 @@ sub startup ($self) {
         die "Unsupported Mojolicious version $Mojolicious::VERSION!";
     }
     $pub_admin_r->get('/workers/<worker_id:num>')->name('admin_worker_show')->to('workers#show');
-    $pub_admin_r->get('/workers/<worker_id:num>/ajax')->name('admin_worker_previous_jobs_ajax')
+    $pub_admin_r->get('/workers/<worker_id:num>/ajax')
+      ->name('admin_worker_previous_jobs_ajax')
       ->to('workers#previous_jobs_ajax');
 
     $pub_admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
@@ -333,7 +341,8 @@ sub startup ($self) {
     $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
     $api_public_r->get('/job_groups/<group_id:num>')->name('apiv1_get_job_group')->to('job_group#list');
     $api_public_r->get('/job_groups/<group_id:num>/jobs')->name('apiv1_get_job_group_jobs')->to('job_group#list_jobs');
-    $api_public_r->get('/job_groups/<group_id:num>/build_results')->name('apiv1_get_job_group_jobs')
+    $api_public_r->get('/job_groups/<group_id:num>/build_results')
+      ->name('apiv1_get_job_group_jobs')
       ->to('job_group#build_results');
     $api_ra->post('/job_groups')->name('apiv1_post_job_group')->to('job_group#create');
     $api_ra->put('/job_groups/<group_id:num>')->name('apiv1_put_job_group')->to('job_group#update');
@@ -401,13 +410,15 @@ sub startup ($self) {
     # api/v1/mm
     my $mm_api = $api_r_job->any('/mm');
     push @api_routes, $mm_api;
-    $mm_api->get('/children/:state' => [state => [qw(running scheduled done)]])->name('apiv1_mm_running_children')
+    $mm_api->get('/children/:state' => [state => [qw(running scheduled done)]])
+      ->name('apiv1_mm_running_children')
       ->to('mm#get_children_status');
     $mm_api->get('/children')->name('apiv1_mm_children')->to('mm#get_children');
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');
 
     # api/v1/isos
-    $api_ro->get('/isos/<scheduled_product_id:num>')->name('apiv1_show_scheduled_product')
+    $api_ro->get('/isos/<scheduled_product_id:num>')
+      ->name('apiv1_show_scheduled_product')
       ->to('iso#show_scheduled_product');
     $api_ro->post('/isos')->name('apiv1_create_iso')->to('iso#create');
     $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');
@@ -461,12 +472,14 @@ sub startup ($self) {
     $api_ra->delete('job_templates/<:job_template_id:num>')->to('job_template#destroy');
 
     # api/v1/job_templates_scheduling
-    $api_public_r->get('job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
+    $api_public_r->get('job_templates_scheduling/<id:num>')
+      ->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef);
     $api_public_r->get('job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
     $api_ra->post('job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
     # Deprecated experimental aliases for the above routes
-    $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
+    $api_public_r->get('experimental/job_templates_scheduling/<id:num>')
+      ->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef);
     $api_public_r->get('experimental/job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
     $api_ra->post('experimental/job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
@@ -478,23 +491,31 @@ sub startup ($self) {
     $api_ru->put('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_put_comment')->to('comment#update');
     $api_ra->delete('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_delete_comment')->to('comment#delete');
     $api_public_r->get('/groups/<group_id:num>/comments')->name('apiv1_list_group_comment')->to('comment#list');
-    $api_public_r->get('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_get_group_comment')
+    $api_public_r->get('/groups/<group_id:num>/comments/<comment_id:num>')
+      ->name('apiv1_get_group_comment')
       ->to('comment#text');
     $api_ru->post('/groups/<group_id:num>/comments')->name('apiv1_post_group_comment')->to('comment#create');
-    $api_ru->put('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_put_group_comment')
+    $api_ru->put('/groups/<group_id:num>/comments/<comment_id:num>')
+      ->name('apiv1_put_group_comment')
       ->to('comment#update');
-    $api_ra->delete('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_delete_group_comment')
+    $api_ra->delete('/groups/<group_id:num>/comments/<comment_id:num>')
+      ->name('apiv1_delete_group_comment')
       ->to('comment#delete');
-    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_list_parent_group_comment')
+    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments')
+      ->name('apiv1_list_parent_group_comment')
       ->to('comment#list');
     $api_public_r->get('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
-      ->name('apiv1_get_parent_group_comment')->to('comment#text');
-    $api_ru->post('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_post_parent_group_comment')
+      ->name('apiv1_get_parent_group_comment')
+      ->to('comment#text');
+    $api_ru->post('/parent_groups/<parent_group_id:num>/comments')
+      ->name('apiv1_post_parent_group_comment')
       ->to('comment#create');
     $api_ru->put('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
-      ->name('apiv1_put_parent_group_comment')->to('comment#update');
+      ->name('apiv1_put_parent_group_comment')
+      ->to('comment#update');
     $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
-      ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
+      ->name('apiv1_delete_parent_group_comment')
+      ->to('comment#delete');
     $api_ru->post('/comments')->name('apiv1_post_comments')->to('comment#create_many');
     $api_ra->delete('/comments')->name('apiv1_delete_comments')->to('comment#delete_many');
 

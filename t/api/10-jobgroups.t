@@ -63,7 +63,8 @@ subtest 'build results' => sub {
 
         my $comment = 'tag:0091:published:published';
         $t->post_ok("/api/v1/groups/$opensuse_group/comments" => form => {text => $comment})
-          ->status_is(200, 'comment can be created')->or(sub { diag 'error: ' . $t->tx->res->json->{error} });
+          ->status_is(200, 'comment can be created')
+          ->or(sub { diag 'error: ' . $t->tx->res->json->{error} });
         my $cid = $t->tx->res->json->{id};
         $t->get_ok("/api/v1/job_groups/$opensuse_group/build_results?time_limit_days=99999&only_tagged=1&show_tags=1")
           ->status_is(200);
@@ -131,7 +132,8 @@ subtest 'create parent group' => sub() {
     for my $form (@forms) {
         my $parameter = (keys %$form)[0];
         $form->{name} = 'Cool parent group';
-        $t->post_ok('/api/v1/parent_groups', form => $form)->status_is(400, "Create group with invalid $parameter")
+        $t->post_ok('/api/v1/parent_groups', form => $form)
+          ->status_is(400, "Create group with invalid $parameter")
           ->json_is(
             '/error' => "Erroneous parameters ($parameter invalid)",
             'Invalid parameter types caught'
@@ -191,7 +193,8 @@ subtest 'create job group' => sub() {
     for my $form (@forms) {
         my $parameter = (keys %$form)[0];
         $form->{name} = 'Cold group';
-        $t->post_ok('/api/v1/job_groups', form => $form)->status_is(400, "Create group with invalid $parameter")
+        $t->post_ok('/api/v1/job_groups', form => $form)
+          ->status_is(400, "Create group with invalid $parameter")
           ->json_is(
             '/error' => "Erroneous parameters ($parameter invalid)",
             'Invalid parameter types caught'
@@ -274,7 +277,8 @@ subtest 'update job group' => sub() {
         my $parameter = (keys %$form)[0];
         $form->{name} = 'Cold group';
         $t->put_ok("/api/v1/job_groups/$opensuse_group", form => $form)
-          ->status_is(400, "Update group with invalid $parameter")->json_is(
+          ->status_is(400, "Update group with invalid $parameter")
+          ->json_is(
             '/error' => "Erroneous parameters ($parameter invalid)",
             'Invalid parameter types caught'
           );

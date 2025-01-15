@@ -78,7 +78,8 @@ subtest 'test changing existing entries' => sub {
       ->status_is(200);
 
     # check overwriting testsuite settings
-    $t->get_ok("http://$host/api/v1/test_suites/$test_suite_id")->status_is(200)
+    $t->get_ok("http://$host/api/v1/test_suites/$test_suite_id")
+      ->status_is(200)
       ->json_is('/TestSuites/0/settings/0/value', '42');
 
     # change testsuite settings back by reimporting template

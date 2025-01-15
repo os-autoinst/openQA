@@ -29,13 +29,15 @@ $t->post_ok('/admin/obs_rsync/Proj1/runs' => $params)->status_is(201, 'trigger r
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/Proj1/, 'get project queue');
 
 $t->get_ok('/admin/obs_rsync/Proj1/dirty_status')->status_is(200, 'get dirty status')->content_like(qr/dirty on/);
-$t->post_ok('/admin/obs_rsync/Proj1/dirty_status' => $params)->status_is(200, 'dirty status update enqueued')
+$t->post_ok('/admin/obs_rsync/Proj1/dirty_status' => $params)
+  ->status_is(200, 'dirty status update enqueued')
   ->content_like(qr/started/);
 is $minion->jobs({tasks => [qw(obs_rsync_update_dirty_status)]})->total, 1,
   'obs_rsync_update_dirty_status job enqueued';
 
 $t->get_ok('/admin/obs_rsync/Proj1/obs_builds_text')->status_is(200, 'get builds text')->content_like(qr/No data/);
-$t->post_ok('/admin/obs_rsync/Proj1/obs_builds_text' => $params)->status_is(200, 'builds text update enqueued')
+$t->post_ok('/admin/obs_rsync/Proj1/obs_builds_text' => $params)
+  ->status_is(200, 'builds text update enqueued')
   ->content_like(qr/started/);
 is $minion->jobs({tasks => [qw(obs_rsync_update_builds_text)]})->total, 1, 'obs_rsync_update_builds_text job enqueued';
 

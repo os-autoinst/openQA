@@ -17,8 +17,13 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 # just check that all projects are mentioned
-$t->get_ok('/api/v1/obs_rsync')->status_is(200, 'project list')->content_like(qr/Proj1/)->content_like(qr/Proj2/)
-  ->content_like(qr/Proj3/)->content_unlike(qr/Proj3::standard/)->content_like(qr/BatchedProj/);
+$t->get_ok('/api/v1/obs_rsync')
+  ->status_is(200, 'project list')
+  ->content_like(qr/Proj1/)
+  ->content_like(qr/Proj2/)
+  ->content_like(qr/Proj3/)
+  ->content_unlike(qr/Proj3::standard/)
+  ->content_like(qr/BatchedProj/);
 
 subtest 'smoke' => sub {
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
@@ -75,29 +80,55 @@ my $helper = $t->app->obs_rsync;
 
 subtest 'latest_test' => sub {
     is($helper->get_last_test_id('Proj1'), 99937);
-    $t->get_ok('/api/v1/obs_rsync/Proj1/latest_test')->status_is(200, 'status')->content_like(qr/99937/, 'correct id')
-      ->content_unlike(qr/passed/)->json_like('/id' => qr/^99937$/)->json_hasnt('/result');
-    $t->get_ok('/api/v1/obs_rsync/Proj1/latest_test?full=1')->status_is(200, 'status')
-      ->content_like(qr/99937/, 'correct id')->content_like(qr/passed/)->json_like('/id' => qr/^99937$/)
-      ->json_has('/result')->json_like('/result' => qr/^passed$/);
+    $t->get_ok('/api/v1/obs_rsync/Proj1/latest_test')
+      ->status_is(200, 'status')
+      ->content_like(qr/99937/, 'correct id')
+      ->content_unlike(qr/passed/)
+      ->json_like('/id' => qr/^99937$/)
+      ->json_hasnt('/result');
+    $t->get_ok('/api/v1/obs_rsync/Proj1/latest_test?full=1')
+      ->status_is(200, 'status')
+      ->content_like(qr/99937/, 'correct id')
+      ->content_like(qr/passed/)
+      ->json_like('/id' => qr/^99937$/)
+      ->json_has('/result')
+      ->json_like('/result' => qr/^passed$/);
 };
 
 subtest 'test_result' => sub {
     is($helper->get_version_test_id('Proj1', '468.2'), 99926);
     is($helper->get_version_test_id('Proj1', '469.1'), 99937);
 
-    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=468.2')->status_is(200, 'status')
-      ->content_like(qr/99926/, 'correct id')->content_unlike(qr/passed/)->content_unlike(qr/incomplete/)
-      ->json_like('/id' => qr/^99926$/)->json_hasnt('/result');
-    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=468.2&full=1')->status_is(200, 'status')
-      ->content_like(qr/99926/, 'correct id')->content_unlike(qr/passed/)->content_like(qr/incomplete/)
-      ->json_like('/id' => qr/^99926$/)->json_has('/result')->json_like('/result' => qr/^incomplete$/);
-    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=469.1')->status_is(200, 'status')
-      ->content_like(qr/99937/, 'correct id')->content_unlike(qr/passed/)->content_unlike(qr/incomplete/)
-      ->json_like('/id' => qr/^99937$/)->json_hasnt('/result');
-    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=469.1&full=1')->status_is(200, 'status')
-      ->content_like(qr/99937/, 'correct id')->content_like(qr/passed/)->content_unlike(qr/incomplete/)
-      ->json_like('/id' => qr/^99937$/)->json_has('/result')->json_like('/result' => qr/^passed$/);
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=468.2')
+      ->status_is(200, 'status')
+      ->content_like(qr/99926/, 'correct id')
+      ->content_unlike(qr/passed/)
+      ->content_unlike(qr/incomplete/)
+      ->json_like('/id' => qr/^99926$/)
+      ->json_hasnt('/result');
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=468.2&full=1')
+      ->status_is(200, 'status')
+      ->content_like(qr/99926/, 'correct id')
+      ->content_unlike(qr/passed/)
+      ->content_like(qr/incomplete/)
+      ->json_like('/id' => qr/^99926$/)
+      ->json_has('/result')
+      ->json_like('/result' => qr/^incomplete$/);
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=469.1')
+      ->status_is(200, 'status')
+      ->content_like(qr/99937/, 'correct id')
+      ->content_unlike(qr/passed/)
+      ->content_unlike(qr/incomplete/)
+      ->json_like('/id' => qr/^99937$/)
+      ->json_hasnt('/result');
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=469.1&full=1')
+      ->status_is(200, 'status')
+      ->content_like(qr/99937/, 'correct id')
+      ->content_like(qr/passed/)
+      ->content_unlike(qr/incomplete/)
+      ->json_like('/id' => qr/^99937$/)
+      ->json_has('/result')
+      ->json_like('/result' => qr/^passed$/);
 };
 
 sub lock_test {

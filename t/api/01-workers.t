@@ -37,7 +37,8 @@ $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'})
-  ->status_is(403, 'register worker without API key fails (403)')->json_is(
+  ->status_is(403, 'register worker without API key fails (403)')
+  ->json_is(
     '' => {
         error => 'no api key',
         error_status => 403,
@@ -86,15 +87,18 @@ $t->get_ok('/api/v1/workers/3')->status_is(404, 'no info for non-existing worker
 
 my %worker_key = (host => 'localhost', instance => 1);
 my %registration_params = %worker_key;
-$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'worker with missing parameters refused')
+$t->post_ok('/api/v1/workers', form => \%registration_params)
+  ->status_is(400, 'worker with missing parameters refused')
   ->json_is('/error' => 'Erroneous parameters (cpu_arch missing, mem_max missing, worker_class missing)');
 
 $registration_params{cpu_arch} = 'foo';
-$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'worker with missing parameters refused')
+$t->post_ok('/api/v1/workers', form => \%registration_params)
+  ->status_is(400, 'worker with missing parameters refused')
   ->json_is('/error' => 'Erroneous parameters (mem_max missing, worker_class missing)');
 
 $registration_params{mem_max} = '4711';
-$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'worker with missing parameters refused')
+$t->post_ok('/api/v1/workers', form => \%registration_params)
+  ->status_is(400, 'worker with missing parameters refused')
   ->json_is('/error' => 'Erroneous parameters (worker_class missing)');
 
 $registration_params{worker_class} = 'bar';
@@ -102,13 +106,15 @@ $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(426, 'w
 
 $workers->find(\%worker_key)->update({error => 'cache not available'});
 $registration_params{websocket_api_version} = WEBSOCKET_API_VERSION;
-$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register existing worker with token')
+$t->post_ok('/api/v1/workers', form => \%registration_params)
+  ->status_is(200, 'register existing worker with token')
   ->json_is('/id' => 1, 'worker id is 1');
 diag explain $t->tx->res->json unless $t->success;
 is $workers->find(\%worker_key)->error, undef, 'possibly still present error from previous connection cleaned';
 
 $registration_params{instance} = 42;
-$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
+$t->post_ok('/api/v1/workers', form => \%registration_params)
+  ->status_is(200, 'register new worker')
   ->json_is('/id' => 3, 'new worker id is 3');
 diag explain $t->tx->res->json unless $t->success;
 is_deeply(
@@ -170,7 +176,8 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     my $id = 4;
     for (1 .. 4) {
         $registration_params{instance} = $id;
-        $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
+        $t->post_ok('/api/v1/workers', form => \%registration_params)
+          ->status_is(200, 'register new worker')
           ->json_is('/id' => $id, "new worker id is $id");
         diag explain $t->tx->res->json unless $t->success;
         $id++;
@@ -191,9 +198,11 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
 
 subtest 'server-side limit with pagination' => sub {
     subtest 'input validation' => sub {
-        $t->get_ok('/api/v1/workers?limit=a')->status_is(400)
+        $t->get_ok('/api/v1/workers?limit=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
-        $t->get_ok('/api/v1/workers?offset=a')->status_is(400)
+        $t->get_ok('/api/v1/workers?offset=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
     };
 
@@ -201,7 +210,10 @@ subtest 'server-side limit with pagination' => sub {
         my $links;
 
         subtest 'first page' => sub {
-            $t->get_ok('/api/v1/workers?limit=3')->status_is(200)->json_has('/workers/0')->json_has('/workers/2')
+            $t->get_ok('/api/v1/workers?limit=3')
+              ->status_is(200)
+              ->json_has('/workers/0')
+              ->json_has('/workers/2')
               ->json_hasnt('/workers/3');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
@@ -210,7 +222,10 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'second page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/workers/0')->json_has('/workers/2')
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_has('/workers/0')
+              ->json_has('/workers/2')
               ->json_hasnt('/workers/3');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
@@ -227,8 +242,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'second page (prev link)' => sub {
-            $t->get_ok($links->{prev}{link})->status_is(200)->status_is(200)->json_has('/workers/0')
-              ->json_has('/workers/2')->json_hasnt('/workers/3');
+            $t->get_ok($links->{prev}{link})
+              ->status_is(200)
+              ->status_is(200)
+              ->json_has('/workers/0')
+              ->json_has('/workers/2')
+              ->json_hasnt('/workers/3');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -236,8 +255,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'first page (first link)' => sub {
-            $t->get_ok($links->{first}{link})->status_is(200)->status_is(200)->json_has('/workers/0')
-              ->json_has('/workers/2')->json_hasnt('/workers/3');
+            $t->get_ok($links->{first}{link})
+              ->status_is(200)
+              ->status_is(200)
+              ->json_has('/workers/0')
+              ->json_has('/workers/2')
+              ->json_hasnt('/workers/3');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';

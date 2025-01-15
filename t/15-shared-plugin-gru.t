@@ -24,8 +24,12 @@ my $log = Test::MockObject->new->set_true('level', 'info');
 my $under = Test::MockObject->new->set_true('to');
 my $routes = Test::MockObject->new->set_always(under => $under);
 my $app
-  = Test::MockObject->new->set_always(schema => $schema)->set_always(config => \%config)->set_always(minion => $minion)
-  ->set_always(log => $log)->set_always(routes => $routes)->set_true('plugin', 'helper');
+  = Test::MockObject->new->set_always(schema => $schema)
+  ->set_always(config => \%config)
+  ->set_always(minion => $minion)
+  ->set_always(log => $log)
+  ->set_always(routes => $routes)
+  ->set_true('plugin', 'helper');
 OpenQA::App->set_singleton($app);
 my $mock = Test::MockModule->new('OpenQA::Shared::Plugin::Gru');
 $mock->noop('_allow_unauthenticated_minion_stats');

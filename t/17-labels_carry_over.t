@@ -30,7 +30,7 @@ assume_all_assets_exist;
 my $comment_must
   = Mojo::DOM->new(
 '<span class="openqa-bugref" title="Bug referenced: bsc#1234"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span>(Automatic carryover from <a href="/tests/99962">t#99962</a>)'
-)->to_string;
+  )->to_string;
 my $carry_over_note = "\n(The hook script will not be executed.)";
 sub comments ($url) {
     $t->get_ok("$url/comments_ajax")->status_is(200)->tx->res->dom->find('.media-comment > p')->map('content');

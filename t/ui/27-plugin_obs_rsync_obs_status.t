@@ -207,16 +207,29 @@ $t->post_ok('/admin/obs_rsync/Proj3/runs?repository=standard' => $params)->statu
 $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/inactive/);
 
 # at start job is added as inactive
-$t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
-  ->content_unlike(qr/\bactive\b/)->content_like(qr/Proj1/)->content_like(qr/Proj2/)->content_like(qr/Proj3/);
+$t->get_ok('/admin/obs_rsync/queue')
+  ->status_is(200, 'jobs list')
+  ->content_like(qr/inactive/)
+  ->content_unlike(qr/\bactive\b/)
+  ->content_like(qr/Proj1/)
+  ->content_like(qr/Proj2/)
+  ->content_like(qr/Proj3/);
 
 perform_minion_jobs($t->app->minion);
 
 # Proj1 and Proj2 must be still in queue, but Proj3 must gone now
-$t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
-  ->content_unlike(qr/\bactive\b/)->content_like(qr/Proj1/)->content_like(qr/Proj2/)->content_unlike(qr/Proj3/);
+$t->get_ok('/admin/obs_rsync/queue')
+  ->status_is(200, 'jobs list')
+  ->content_like(qr/inactive/)
+  ->content_unlike(qr/\bactive\b/)
+  ->content_like(qr/Proj1/)
+  ->content_like(qr/Proj2/)
+  ->content_unlike(qr/Proj3/);
 
-$t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/published/)->content_like(qr/dirty/)
+$t->get_ok('/admin/obs_rsync/')
+  ->status_is(200, 'project list')
+  ->content_like(qr/published/)
+  ->content_like(qr/dirty/)
   ->content_like(qr/publishing/);
 
 subtest 'build service ssh authentication' => sub {

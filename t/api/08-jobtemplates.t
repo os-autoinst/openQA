@@ -450,8 +450,8 @@ subtest 'Changing priority' => sub {
                 test_suite_id => 1002,
                 prio => $prio,
                 prio_only => 1,
-            }
-        )->status_is(400)
+            })
+          ->status_is(400)
           ->json_is('/error' => 'Erroneous parameters (prio invalid)', "setting prio to '$prio' is an error");
         is($job_templates->search({prio => $prio})->count, 0, 'no rows affected');
     }
@@ -527,31 +527,36 @@ my $yaml2 = load_yaml(file => "$FindBin::Bin/../data/08-opensuse-2.yaml");
 is_deeply($yaml, $yaml2, 'YAML for opensuse group') || diag explain $t->tx->res->body;
 
 subtest 'content-type' => sub {
-    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, $accept_yaml)->status_is(200)
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, $accept_yaml)
+      ->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->body),
         $yaml, '[Accept: text/yaml] Test suite with unicode characters encoded correctly')
       || diag explain $t->tx->res->body;
 
-    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => '*/*'})->status_is(200)
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => '*/*'})
+      ->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->body),
         $yaml, '[Accept: */*] Test suite with unicode characters encoded correctly')
       || diag explain $t->tx->res->body;
 
-    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => 'application/json'})->status_is(200)
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => 'application/json'})
+      ->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->json),
         $yaml, '[Accept: application/json] Test suite with unicode characters encoded correctly')
       || diag explain $t->tx->res->body;
 
-    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200)
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)
+      ->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->json),
         $yaml, '[no explicit Accept header] Test suite with unicode characters encoded correctly')
       || diag explain $t->tx->res->body;
 
-    $t->get_ok('/api/v1/job_templates_scheduling', $accept_yaml)->status_is(200)
+    $t->get_ok('/api/v1/job_templates_scheduling', $accept_yaml)
+      ->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     my $yaml = load_yaml(string => $t->tx->res->body);
     is_deeply(
@@ -560,7 +565,8 @@ subtest 'content-type' => sub {
         '[Accept: text/yaml] YAML of all groups contains names'
     ) || diag explain $t->tx->res->body;
 
-    $t->get_ok('/api/v1/job_templates_scheduling', {Accept => '*/*'})->status_is(200)
+    $t->get_ok('/api/v1/job_templates_scheduling', {Accept => '*/*'})
+      ->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     $yaml = load_yaml(string => $t->tx->res->body);
     is_deeply(
@@ -569,7 +575,8 @@ subtest 'content-type' => sub {
         '[Accept: text/yaml] YAML of all groups contains names'
     ) || diag explain $t->tx->res->body;
 
-    $t->get_ok('/api/v1/job_templates_scheduling', {Accept => 'application/json'})->status_is(200)
+    $t->get_ok('/api/v1/job_templates_scheduling', {Accept => 'application/json'})
+      ->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
     $yaml = $t->tx->res->json;
     is_deeply(

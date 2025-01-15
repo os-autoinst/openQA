@@ -29,9 +29,11 @@ sub register_common_routes {
     $prefix .= $suffix . '_' if $suffix;
 
     # These routes will be as well accessible without authorization!!
-    $r->get('/obs_rsync/#alias/latest_test')->name($prefix . 'latest_test')
+    $r->get('/obs_rsync/#alias/latest_test')
+      ->name($prefix . 'latest_test')
       ->to('Plugin::ObsRsync::Controller::Folders#test_result');
-    $r->get('/obs_rsync/#alias/test_result')->name($prefix . 'test_result')
+    $r->get('/obs_rsync/#alias/test_result')
+      ->name($prefix . 'test_result')
       ->to('Plugin::ObsRsync::Controller::Folders#test_result');
 }
 
@@ -117,34 +119,48 @@ sub register {
         # Routes which have parameter #alias, can be called for simple project. For batched projects or for a particular
         # batch, routes which have parameter #project, can not be called for single batch.
 
-        $plugin_r->get('/obs_rsync/queue')->name('plugin_obs_rsync_queue')
+        $plugin_r->get('/obs_rsync/queue')
+          ->name('plugin_obs_rsync_queue')
           ->to('Plugin::ObsRsync::Controller::Gru#index');
-        $plugin_r->post('/obs_rsync/#project/runs')->name('plugin_obs_rsync_queue_run')
+        $plugin_r->post('/obs_rsync/#project/runs')
+          ->name('plugin_obs_rsync_queue_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
-        $plugin_r->get('/obs_rsync/#project/dirty_status')->name('plugin_obs_rsync_get_dirty_status')
+        $plugin_r->get('/obs_rsync/#project/dirty_status')
+          ->name('plugin_obs_rsync_get_dirty_status')
           ->to('Plugin::ObsRsync::Controller::Gru#get_dirty_status');
-        $plugin_r->post('/obs_rsync/#project/dirty_status')->name('plugin_obs_rsync_update_dirty_status')
+        $plugin_r->post('/obs_rsync/#project/dirty_status')
+          ->name('plugin_obs_rsync_update_dirty_status')
           ->to('Plugin::ObsRsync::Controller::Gru#update_dirty_status');
-        $plugin_r->get('/obs_rsync/#alias/obs_builds_text')->name('plugin_obs_rsync_get_builds_text')
+        $plugin_r->get('/obs_rsync/#alias/obs_builds_text')
+          ->name('plugin_obs_rsync_get_builds_text')
           ->to('Plugin::ObsRsync::Controller::Gru#get_obs_builds_text');
-        $plugin_r->post('/obs_rsync/#alias/obs_builds_text')->name('plugin_obs_rsync_update_builds_text')
+        $plugin_r->post('/obs_rsync/#alias/obs_builds_text')
+          ->name('plugin_obs_rsync_update_builds_text')
           ->to('Plugin::ObsRsync::Controller::Gru#update_obs_builds_text');
 
-        $plugin_r->get('/obs_rsync/#alias/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
+        $plugin_r->get('/obs_rsync/#alias/runs/#subfolder/download/#filename')
+          ->name('plugin_obs_rsync_download_file')
           ->to('Plugin::ObsRsync::Controller::Folders#download_file');
-        $plugin_r->get('/obs_rsync/#alias/runs/#subfolder')->name('plugin_obs_rsync_run')
+        $plugin_r->get('/obs_rsync/#alias/runs/#subfolder')
+          ->name('plugin_obs_rsync_run')
           ->to('Plugin::ObsRsync::Controller::Folders#run');
-        $plugin_r->get('/obs_rsync/#alias/runs')->name('plugin_obs_rsync_runs')
+        $plugin_r->get('/obs_rsync/#alias/runs')
+          ->name('plugin_obs_rsync_runs')
           ->to('Plugin::ObsRsync::Controller::Folders#runs');
-        $plugin_r->get('/obs_rsync/#alias')->name('plugin_obs_rsync_folder')
+        $plugin_r->get('/obs_rsync/#alias')
+          ->name('plugin_obs_rsync_folder')
           ->to('Plugin::ObsRsync::Controller::Folders#folder');
-        $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')
+        $plugin_r->get('/obs_rsync/')
+          ->name('plugin_obs_rsync_index')
           ->to('Plugin::ObsRsync::Controller::Folders#index');
-        $plugin_r->get('/obs_rsync_list')->name('plugin_obs_rsync_list')
+        $plugin_r->get('/obs_rsync_list')
+          ->name('plugin_obs_rsync_list')
           ->to('Plugin::ObsRsync::Controller::Folders#list');
-        $plugin_r->get('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_get_run_last')
+        $plugin_r->get('/obs_rsync/#alias/run_last')
+          ->name('plugin_obs_rsync_get_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#get_run_last');
-        $plugin_r->post('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_forget_run_last')
+        $plugin_r->post('/obs_rsync/#alias/run_last')
+          ->name('plugin_obs_rsync_forget_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#forget_run_last');
 
         $self->register_common_routes($plugin_r);
@@ -158,9 +174,11 @@ sub register {
         $app->log->error('API routes not configured, plugin ObsRsync will not have API configured') unless $plugin_r;
     }
     else {
-        $plugin_api_r->get('/obs_rsync')->name('plugin_obs_rsync_api_list')
+        $plugin_api_r->get('/obs_rsync')
+          ->name('plugin_obs_rsync_api_list')
           ->to('Plugin::ObsRsync::Controller::Folders#list');
-        $plugin_api_r->put('/obs_rsync/#project/runs')->name('plugin_obs_rsync_api_run')
+        $plugin_api_r->put('/obs_rsync/#project/runs')
+          ->name('plugin_obs_rsync_api_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
 
         $self->register_common_routes($plugin_api_r, 'api');
@@ -294,8 +312,14 @@ sub _get_version_test_id {
     my ($c, $project, $version) = @_;
     return undef unless $version;
     my $home = $c->obs_rsync->home;
-    my $runs = Mojo::File->new($home, $project)->list({dir => 1, hidden => 1})->map('basename')->grep(qr/\.run_.*/)
-      ->grep(qr/_$version$/)->sort(sub { $b cmp $a })->to_array;
+    my $runs
+      = Mojo::File->new($home, $project)
+      ->list({dir => 1, hidden => 1})
+      ->map('basename')
+      ->grep(qr/\.run_.*/)
+      ->grep(qr/_$version$/)
+      ->sort(sub { $b cmp $a })
+      ->to_array;
     return undef unless $runs && @$runs;
     return _read_test_id(Mojo::File->new($home, $project, $runs->[0]));
 }

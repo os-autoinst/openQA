@@ -279,7 +279,8 @@ subtest 'expired jobs' => sub {
 
         is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
 
-        $t->app->schema->resultset('Jobs')->find(99938)
+        $t->app->schema->resultset('Jobs')
+          ->find(99938)
           ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
         is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
         $jg->update({"keep_${file_type}_in_days" => 5});
@@ -360,10 +361,12 @@ subtest 'version tagging' => sub {
 subtest 'content negotiation' => sub {
     $t->get_ok('/group_overview/1001')->status_is(200)->content_type_is('text/html;charset=UTF-8');
     $t->get_ok('/group_overview/1001.html')->status_is(200)->content_type_is('text/html;charset=UTF-8');
-    $t->get_ok('/group_overview/1001' => {Accept => 'text/html'})->status_is(200)
+    $t->get_ok('/group_overview/1001' => {Accept => 'text/html'})
+      ->status_is(200)
       ->content_type_is('text/html;charset=UTF-8');
     $t->get_ok('/group_overview/1001.json')->status_is(200)->content_type_is('application/json;charset=UTF-8');
-    $t->get_ok('/group_overview/1001' => {Accept => 'application/json'})->status_is(200)
+    $t->get_ok('/group_overview/1001' => {Accept => 'application/json'})
+      ->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
 };
 

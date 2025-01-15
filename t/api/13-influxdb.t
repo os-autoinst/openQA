@@ -31,7 +31,8 @@ openqa_jobs_by_arch,url=http://example.com,arch=x86_64 running=2i
 "
 );
 
-$t->get_ok('/admin/influxdb/minion')->status_is(200)
+$t->get_ok('/admin/influxdb/minion')
+  ->status_is(200)
   ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=0i,failed=0i,inactive=0i!)
   ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=0i \d+!)
   ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=0i,registered=0i!);
@@ -40,19 +41,23 @@ my $job_id = $t->app->minion->enqueue('test');
 my $job_id2 = $t->app->minion->enqueue('test');
 my $worker = $t->app->minion->worker->register;
 my $job = $worker->dequeue(0);
-$t->get_ok('/admin/influxdb/minion')->status_is(200)
+$t->get_ok('/admin/influxdb/minion')
+  ->status_is(200)
   ->content_like(qr!openqa_minion_jobs,url=http://example.com active=1i,delayed=0i,failed=0i,inactive=1i!)
   ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=0i \d+!)
   ->content_like(qr!openqa_minion_workers,url=http://example.com active=1i,inactive=0i,registered=1i!);
 $job->fail('test');
-$t->get_ok('/admin/influxdb/minion')->status_is(200)
+$t->get_ok('/admin/influxdb/minion')
+  ->status_is(200)
   ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=0i,failed=1i,inactive=1i!)
   ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=0i \d+!)
   ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
-$t->get_ok('/admin/influxdb/minion?rc_fail_timespan_minutes=23')->status_is(200)
+$t->get_ok('/admin/influxdb/minion?rc_fail_timespan_minutes=23')
+  ->status_is(200)
   ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_23min=0i \d+!);
 $job->retry({delay => ONE_HOUR});
-$t->get_ok('/admin/influxdb/minion')->status_is(200)
+$t->get_ok('/admin/influxdb/minion')
+  ->status_is(200)
   ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=0i,inactive=2i!)
   ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=0i \d+!)
   ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
@@ -68,7 +73,8 @@ q!INSERT INTO minion_jobs (id, args, created, delayed, finished, priority, resul
     $sth->execute("$rc_fail_finished+0");
     my $mock_dt = Test::MockModule->new('DateTime');
     $mock_dt->mock(now => sub { $static_now->clone });
-    $t->get_ok('/admin/influxdb/minion')->status_is(200)
+    $t->get_ok('/admin/influxdb/minion')
+      ->status_is(200)
       ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=0i,inactive=2i!)
       ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=1i 3600000000000!)
       ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
@@ -77,7 +83,8 @@ q!INSERT INTO minion_jobs (id, args, created, delayed, finished, priority, resul
 };
 
 subtest 'input validation' => sub {
-    $t->get_ok('/admin/influxdb/minion?rc_fail_timespan_minutes=blub')->status_is(400)
+    $t->get_ok('/admin/influxdb/minion?rc_fail_timespan_minutes=blub')
+      ->status_is(400)
       ->json_is({error => 'Erroneous parameters (rc_fail_timespan_minutes invalid)'});
 };
 
@@ -88,7 +95,8 @@ subtest 'filter specified minion tasks' => sub {
     }
     while (my $tmp_job = $worker->dequeue(0)) { $tmp_job->fail('this is a test'); }
 
-    $t->get_ok('/admin/influxdb/minion')->status_is(200)
+    $t->get_ok('/admin/influxdb/minion')
+      ->status_is(200)
       ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=3i,inactive=1i!)
       ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=0i \d+!)
       ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
@@ -96,7 +104,8 @@ subtest 'filter specified minion tasks' => sub {
     # Define the filter list, so failed jobs for blocklisted tasks will not be
     # counted towards the total of failed jobs, i.e. failed=1i instead of failed=3i
     $t->app->config->{influxdb}->{ignored_failed_minion_jobs} = ['obs_rsync_run', 'obs_rsync_update_builds_text'];
-    $t->get_ok('/admin/influxdb/minion')->status_is(200)
+    $t->get_ok('/admin/influxdb/minion')
+      ->status_is(200)
       ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=1i,inactive=1i!)
       ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=0i \d+!)
       ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);

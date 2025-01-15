@@ -40,20 +40,26 @@ is($t->tx->res->dom->at('#user_99903 .role')->attr('data-order'), '01');
 
 # Click on "+ admin" for Lancelot
 $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role => 'admin'})->status_is(302);
-$t->get_ok('/admin/users')->status_is(200)->content_like(qr/User lance updated/)
+$t->get_ok('/admin/users')
+  ->status_is(200)
+  ->content_like(qr/User lance updated/)
   ->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '11');
 
 
 # We can even update both fields in one request
 $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role => 'operator'})->status_is(302);
-$t->get_ok('/admin/users')->status_is(200)->content_like(qr/User lance updated/)
+$t->get_ok('/admin/users')
+  ->status_is(200)
+  ->content_like(qr/User lance updated/)
   ->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '01');
 
 # not giving a role, makes it a user
 $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {})->status_is(302);
-$t->get_ok('/admin/users')->status_is(200)->content_like(qr/User lance updated/)
+$t->get_ok('/admin/users')
+  ->status_is(200)
+  ->content_like(qr/User lance updated/)
   ->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '00');
 

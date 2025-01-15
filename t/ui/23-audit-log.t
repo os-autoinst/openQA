@@ -120,7 +120,8 @@ subtest 'clickable events' => sub {
     ok($entries->[0]->child('.audit_event_details'), 'event detail link present');
 
     $t->post_ok("$url/api/v1/jobs" => $auth => form => {TEST => 'foo'})->status_is(200)->json_is({id => 1});
-    $t->post_ok("$url/api/v1/jobs/1/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
+    $t->post_ok("$url/api/v1/jobs/1/comments" => $auth => form => {text => 'Just a job test'})
+      ->status_is(200)
       ->json_is({id => 1});
 
     $driver->refresh;

@@ -18,12 +18,16 @@ $schema->resultset('Assets')->search({size => undef})->update({size => 0});
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # Exact size of logpackages-1.png
-$t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')
+$t->get_ok('/tests/99938/images/logpackages-1.png')
+  ->status_is(200)
+  ->content_type_is('image/png')
   ->header_is('Content-Length' => '48019');
 
 $t->get_ok('/tests/99937/../99938/images/logpackages-1.png')->status_is(404);
 
-$t->get_ok('/tests/99938/images/thumb/logpackages-1.png')->status_is(200)->content_type_is('image/png')
+$t->get_ok('/tests/99938/images/thumb/logpackages-1.png')
+  ->status_is(200)
+  ->content_type_is('image/png')
   ->header_is('Content-Length' => '6769');
 
 # Not the same logpackages-1.png
@@ -67,7 +71,9 @@ subtest 'needle download' => sub {
     path("$needle_subdir/inst-subdirectory.png")->spew("png\n");
     path("$needle_subdir/inst-subdirectory.json")->spew($json2);
 
-    $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(200)->content_type_is('image/png')
+    $t->get_ok('/needles/opensuse/inst-timezone-text.png')
+      ->status_is(200)
+      ->content_type_is('image/png')
       ->content_is("png\n");
     $t->get_ok('/needles/1/image')->status_is(200)->content_type_is('image/png')->content_is("png\n");
     $t->get_ok('/needles/1/json')->status_is(200)->content_type_is('application/json;charset=UTF-8')->content_is($json);
@@ -81,10 +87,14 @@ subtest 'needle download' => sub {
     # currently you can only find a needle in a subdirectory by passing the
     # jsonfile query parameter like this:
     $t->get_ok("/needles/opensuse/inst-subdirectory.png?jsonfile=$needle_path/subdirectory/inst-subdirectory.json")
-      ->status_is(200)->content_type_is('image/png')->content_is("png\n");
+      ->status_is(200)
+      ->content_type_is('image/png')
+      ->content_is("png\n");
     # also test with jsonfile as absolute path (as usual in production)
     $t->get_ok("/needles/opensuse/inst-subdirectory.png?jsonfile=$abs_needle_path/subdirectory/inst-subdirectory.json")
-      ->status_is(200)->content_type_is('image/png')->content_is("png\n");
+      ->status_is(200)
+      ->content_type_is('image/png')
+      ->content_is("png\n");
 
     # getting needle image and json by ID also does not work for needles
     # in subdirectories, but arguably should do and should be tested:
@@ -101,29 +111,36 @@ is($t->tx->res->dom->at('#asset_1')->{href}, '/tests/99946/asset/iso/openSUSE-13
 $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#asset_5')->text);
 is($res, 'openSUSE-13.1-x86_64.hda');
 is($t->tx->res->dom->at('#asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda');
-$t->get_ok('/tests/99938/downloads_ajax')->status_is(200)
+$t->get_ok('/tests/99938/downloads_ajax')
+  ->status_is(200)
   ->element_exists('a[href=/tests/99938/video?filename=video.ogv]', 'link to video player contains filename');
 
 # downloads are currently redirects
-$t->get_ok('/tests/99946/asset/1')->status_is(302)
+$t->get_ok('/tests/99946/asset/1')
+  ->status_is(302)
   ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
-$t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(302)
+$t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')
+  ->status_is(302)
   ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 
-$t->get_ok('/tests/99946/asset/5')->status_is(302)
+$t->get_ok('/tests/99946/asset/5')
+  ->status_is(302)
   ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/hdd\/fixed\/openSUSE-13.1-x86_64.hda/);
 
 # verify error on invalid downloads
 $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
 
-$t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302)
+$t->get_ok('/tests/99961/asset/repo/testrepo/README')
+  ->status_is(302)
   ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/repo\/testrepo\/README/);
-$t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)
+$t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')
+  ->status_is(400)
   ->content_is('invalid character in path');
 
 # download_asset is handled by apache normally, but make sure it works - important for fullstack test
 $t->get_ok('/assets/repo/testrepo/README')->status_is(200);
-$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200)
+$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')
+  ->status_is(200)
   ->content_type_is('application/octet-stream');
 $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
 # created with `qemu-img create -f qcow2 t/data/openqa/share/factory/hdd/foo.qcow2 0`

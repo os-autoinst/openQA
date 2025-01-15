@@ -175,9 +175,11 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
 
 subtest 'server-side limit with pagination' => sub {
     subtest 'input validation' => sub {
-        $t->get_ok('/api/v1/products?limit=a')->status_is(400)
+        $t->get_ok('/api/v1/products?limit=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
-        $t->get_ok('/api/v1/products?offset=a')->status_is(400)
+        $t->get_ok('/api/v1/products?offset=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
     };
 
@@ -220,8 +222,12 @@ subtest 'server-side limit with pagination' => sub {
         my $links;
 
         subtest 'first page' => sub {
-            $t->get_ok('/api/v1/products?limit=2')->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2')
-              ->json_like('/Products/0/version', qr/13\.1/)->json_like('/Products/1/version', qr/12-SP1/);
+            $t->get_ok('/api/v1/products?limit=2')
+              ->status_is(200)
+              ->json_has('/Products/1')
+              ->json_hasnt('/Products/2')
+              ->json_like('/Products/0/version', qr/13\.1/)
+              ->json_like('/Products/1/version', qr/12-SP1/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -229,8 +235,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'second page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2')
-              ->json_like('/Products/0/version', qr/13\.1/)->json_like('/Products/1/version', qr/13\.2/);
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_has('/Products/1')
+              ->json_hasnt('/Products/2')
+              ->json_like('/Products/0/version', qr/13\.1/)
+              ->json_like('/Products/1/version', qr/13\.2/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -246,7 +256,10 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'fourth page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/Products/0')->json_hasnt('/Products/1')
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_has('/Products/0')
+              ->json_hasnt('/Products/1')
               ->json_like('/Products/0/version', qr/13\.2/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
@@ -255,8 +268,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'first page (first link)' => sub {
-            $t->get_ok($links->{first}{link})->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2')
-              ->json_like('/Products/0/version', qr/13\.1/)->json_like('/Products/1/version', qr/12-SP1/);
+            $t->get_ok($links->{first}{link})
+              ->status_is(200)
+              ->json_has('/Products/1')
+              ->json_hasnt('/Products/2')
+              ->json_like('/Products/0/version', qr/13\.1/)
+              ->json_like('/Products/1/version', qr/12-SP1/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';

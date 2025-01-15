@@ -25,7 +25,8 @@ $t->app->schema->resultset('JobGroupParents')->create({id => 1, name => 'Test pa
 sub test_get_comment ($in, $id, $comment_id, $supposed_text) {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->json_is('/id', $comment_id, 'comment id is correct')
+    $t->get_ok("/api/v1/$in/$id/comments/$comment_id")
+      ->json_is('/id', $comment_id, 'comment id is correct')
       ->json_is('/text' => $supposed_text, 'comment text is correct');
 }
 
@@ -60,7 +61,8 @@ sub test_get_comment_invalid_comment ($in, $id, $comment_id) {
 
 sub test_create_comment ($in, $id, $text) {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    $t->post_ok("/api/v1/$in/$id/comments" => form => {text => $text})->status_is(200, 'comment can be created')
+    $t->post_ok("/api/v1/$in/$id/comments" => form => {text => $text})
+      ->status_is(200, 'comment can be created')
       ->or(sub { diag 'error: ' . $t->tx->res->json->{error} });
     return $t->tx->res->json->{id};
 }
@@ -121,8 +123,10 @@ sub test_comments ($in, $id) {
     };
 
     subtest 'list multiple comments' => sub {
-        $t->get_ok("/api/v1/$in/$id/comments?render_markdown=1")->status_is(200)
-          ->json_is('/0/text' => $edited_test_message, 'text correct')->json_is(
+        $t->get_ok("/api/v1/$in/$id/comments?render_markdown=1")
+          ->status_is(200)
+          ->json_is('/0/text' => $edited_test_message, 'text correct')
+          ->json_is(
             '/0/renderedMarkdown' =>
 "<p>This is a cool test \x{2620} - <a href=\"http://open.qa\">http://open.qa</a> - this message will be\\nappended if editing works \x{2620}</p>\n",
             'markdown correct'

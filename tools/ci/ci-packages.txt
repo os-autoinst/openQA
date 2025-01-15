@@ -173,7 +173,7 @@ perl-Perl-Critic-Community-1.0.3
 perl-Perl-Critic-Policy-Variables-ProhibitLoopOnHash-0.008
 perl-Perl-Critic-Pulp-99
 perl-PerlIO-utf8_strict-0.008
-perl-Perl-Tidy-20240903.0.0
+perl-Perl-Tidy-20250105.0.0
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
 perl-Pod-Spell-1.26

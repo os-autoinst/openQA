@@ -321,11 +321,14 @@ $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job =
 # input validation
 $t->post_ok($m_prefix)->status_is(400)->content_is('Erroneous parameters (name missing)');
 $t->post_ok("$m_prefix/foo")->status_is(400)->content_is('Erroneous parameters (action missing)');
-$t->post_ok($b_prefix => form => {tasks => 'abc'})->status_is(400)
+$t->post_ok($b_prefix => form => {tasks => 'abc'})
+  ->status_is(400)
   ->content_is('Erroneous parameters (name missing, tasks invalid)');
-$t->post_ok("$b_prefix/foo" => form => {where => 'abc'})->status_is(400)
+$t->post_ok("$b_prefix/foo" => form => {where => 'abc'})
+  ->status_is(400)
   ->content_is('Erroneous parameters (where invalid)');
-$t->delete_ok("$b_prefix/foo" => form => {where => 'abc'})->status_is(400)
+$t->delete_ok("$b_prefix/foo" => form => {where => 'abc'})
+  ->status_is(400)
   ->content_is('Erroneous parameters (where invalid)');
 
 done_testing();

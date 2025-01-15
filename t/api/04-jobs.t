@@ -106,13 +106,15 @@ subtest 'only 9 are current and only 10 are relevant' => sub {
     $t->get_ok('/api/v1/jobs' => form => {latest => 1});
     is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'Latest flag yields latest builds');
     for my $scope (qw(public private)) {
-        $t->get_ok('/api/v1/jobs' => form => {scope => $scope})->status_is(400, "$scope is rejected")
+        $t->get_ok('/api/v1/jobs' => form => {scope => $scope})
+          ->status_is(400, "$scope is rejected")
           ->json_is('/error' => 'Erroneous parameters (scope invalid)', "$scope fails validation");
     }
 };
 
 subtest 'check limit quantity' => sub {
-    $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 'foo'})->status_is(400)
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 'foo'})
+      ->status_is(400)
       ->json_is({error => 'Erroneous parameters (limit invalid)', error_status => 400});
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5})->status_is(200);
     is(scalar(@{$t->tx->res->json->{jobs}}), 5);
@@ -165,9 +167,11 @@ subtest 'argument combinations' => sub {
 
 subtest 'server-side limit with pagination' => sub {
     subtest 'input validation' => sub {
-        $t->get_ok('/api/v1/jobs?limit=a')->status_is(400)
+        $t->get_ok('/api/v1/jobs?limit=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
-        $t->get_ok('/api/v1/jobs?offset=a')->status_is(400)
+        $t->get_ok('/api/v1/jobs?offset=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
     };
 
@@ -175,7 +179,9 @@ subtest 'server-side limit with pagination' => sub {
         $t->get_ok('/api/v1/jobs?limit=5')->json_has('/jobs/4')->json_hasnt('/jobs/5');
         $t->get_ok('/api/v1/jobs?limit=1')->json_has('/jobs/0')->json_hasnt('/jobs/1')->json_is('/jobs/0/id' => 99981);
 
-        $t->get_ok('/api/v1/jobs?limit=1&offset=1')->json_has('/jobs/0')->json_hasnt('/jobs/1')
+        $t->get_ok('/api/v1/jobs?limit=1&offset=1')
+          ->json_has('/jobs/0')
+          ->json_hasnt('/jobs/1')
           ->json_is('/jobs/0/id' => 99963);
 
         $t->get_ok('/api/v1/jobs?before=99928')->json_has('/jobs/3')->json_hasnt('/jobs/5');
@@ -185,8 +191,12 @@ subtest 'server-side limit with pagination' => sub {
 
         my $links;
         subtest 'first page' => sub {
-            $t->get_ok('/api/v1/jobs?limit=5')->status_is(200)->json_is('/jobs/0/id' => 99947)
-              ->json_is('/jobs/3/id' => 99963)->json_is('/jobs/4/id' => 99981)->json_hasnt('/jobs/5');
+            $t->get_ok('/api/v1/jobs?limit=5')
+              ->status_is(200)
+              ->json_is('/jobs/0/id' => 99947)
+              ->json_is('/jobs/3/id' => 99963)
+              ->json_is('/jobs/4/id' => 99981)
+              ->json_hasnt('/jobs/5');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -194,8 +204,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'second page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_is('/jobs/0/id' => 99939)
-              ->json_is('/jobs/3/id' => 99945)->json_is('/jobs/4/id' => 99946)->json_hasnt('/jobs/5');
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_is('/jobs/0/id' => 99939)
+              ->json_is('/jobs/3/id' => 99945)
+              ->json_is('/jobs/4/id' => 99946)
+              ->json_hasnt('/jobs/5');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -203,8 +217,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'third page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_is('/jobs/0/id' => 99927)
-              ->json_is('/jobs/3/id' => 99937)->json_is('/jobs/4/id' => 99938)->json_hasnt('/jobs/5');
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_is('/jobs/0/id' => 99927)
+              ->json_is('/jobs/3/id' => 99937)
+              ->json_is('/jobs/4/id' => 99938)
+              ->json_hasnt('/jobs/5');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -212,8 +230,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'first page (first link)' => sub {
-            $t->get_ok($links->{first}{link})->status_is(200)->json_is('/jobs/0/id' => 99947)
-              ->json_is('/jobs/3/id' => 99963)->json_is('/jobs/4/id' => 99981)->json_hasnt('/jobs/5');
+            $t->get_ok($links->{first}{link})
+              ->status_is(200)
+              ->json_is('/jobs/0/id' => 99947)
+              ->json_is('/jobs/3/id' => 99963)
+              ->json_is('/jobs/4/id' => 99981)
+              ->json_hasnt('/jobs/5');
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page link';
@@ -282,43 +304,59 @@ subtest 'job overview' => sub {
 };
 
 subtest 'jobs for job settings' => sub {
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26102})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26102})
+      ->status_is(200)
       ->json_is({jobs => []});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '_TEST_ISSUES', list_value => 26103})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '_TEST_ISSUES', list_value => 26103})
+      ->status_is(200)
       ->json_is({jobs => []});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_', list_value => 26103})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_', list_value => 26103})
+      ->status_is(200)
       ->json_is({jobs => []});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '%test%', list_value => '%test%'})->status_is(400)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '%test%', list_value => '%test%'})
+      ->status_is(400)
       ->json_is({error_status => 400, error => 'Erroneous parameters (key invalid, list_value invalid)'});
 
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})
+      ->status_is(200)
       ->json_is({jobs => [99926]});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26104})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26104})
+      ->status_is(200)
       ->json_is({jobs => [99927]});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26105})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26105})
+      ->status_is(200)
       ->json_is({jobs => [99928, 99927]});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26106})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26106})
+      ->status_is(200)
       ->json_is({jobs => [99928, 99927]});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})
+      ->status_is(200)
       ->json_is({jobs => [99981]});
 
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 261042})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 261042})
+      ->status_is(200)
       ->json_is({jobs => []});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 2610})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 2610})
+      ->status_is(200)
       ->json_is({jobs => []});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 2})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 2})
+      ->status_is(200)
       ->json_is({jobs => []});
 
     local $t->app->config->{misc_limits}{job_settings_max_recent_jobs} = 5;
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})
+      ->status_is(200)
       ->json_is({jobs => [99981]});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})
+      ->status_is(200)
       ->json_is({jobs => []});
 
     local $t->app->config->{misc_limits}{job_settings_max_recent_jobs} = 1000000000;
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})
+      ->status_is(200)
       ->json_is({jobs => [99981]});
-    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})
+      ->status_is(200)
       ->json_is({jobs => [99926]});
 };
 
@@ -655,7 +693,8 @@ subtest 'Chunks uploaded correctly, private asset registered and associated with
 
     # check whether private asset is registered and correctly associated with the parent and child job
     my @expected_assets = (qw(00099963-hdd_image.qcow2 openSUSE-13.1-DVD-x86_64-Build0091-Media.iso));
-    $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200)
+    $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')
+      ->status_is(200)
       ->json_is('/name' => '00099963-hdd_image.qcow2', 'asset is registered');
     is_deeply _asset_names($parent_job), \@expected_assets, 'asset associated with job it has been created by';
     pop @expected_assets;    # child only requires hdd
@@ -817,11 +856,16 @@ qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected n
 };
 
 subtest 'get job status' => sub {
-    $t->get_ok('/api/v1/experimental/jobs/80000/status')->status_is(200)->json_is('/id' => 80000, 'id present')
-      ->json_is('/state' => 'done', 'status done')->json_is('/result' => 'passed', 'result passed')
+    $t->get_ok('/api/v1/experimental/jobs/80000/status')
+      ->status_is(200)
+      ->json_is('/id' => 80000, 'id present')
+      ->json_is('/state' => 'done', 'status done')
+      ->json_is('/result' => 'passed', 'result passed')
       ->json_is('/blocked_by_id' => undef, 'blocked_by_id undef');
-    $t->get_ok('/api/v1/experimental/jobs/999999999/status')->status_is(404)
-      ->json_is('/error_status' => 404, 'Status code correct')->json_is('/error' => 'Job does not exist');
+    $t->get_ok('/api/v1/experimental/jobs/999999999/status')
+      ->status_is(404)
+      ->json_is('/error_status' => 404, 'Status code correct')
+      ->json_is('/error' => 'Job does not exist');
 };
 
 subtest 'cancel job' => sub {

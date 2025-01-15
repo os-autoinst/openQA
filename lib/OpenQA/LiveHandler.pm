@@ -54,7 +54,8 @@ sub startup ($self) {
 
     # register API routes
     my $job_r = $api_ro->any('/jobs/<testid:num>');
-    $job_r->post('/upload_progress')->name('developer_post_upload_progress')
+    $job_r->post('/upload_progress')
+      ->name('developer_post_upload_progress')
       ->to('live_view_handler#post_upload_progress');
 
     # register route for live streaming of image

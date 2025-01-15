@@ -12,8 +12,10 @@ sub job_groups_and_parents {
 
     my @parents = $self->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
     my $schema = $self->result_source->schema;
-    my @groups_without_parent = $schema->resultset('JobGroups')
-      ->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
+    my @groups_without_parent
+      = $schema->resultset('JobGroups')
+      ->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})
+      ->all;
     my @res;
     my $first_parent = shift @parents;
     my $first_group = shift @groups_without_parent;

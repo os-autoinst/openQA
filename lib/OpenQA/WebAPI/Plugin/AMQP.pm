@@ -71,7 +71,8 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
 
     $remaining_attempts //= $config->{publish_attempts};
     $retry_delay //= $config->{publish_retry_delay};
-    $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(sub { log_debug "$topic published" })
+    $publisher->publish_p($event_data, $headers, routing_key => $topic)
+      ->then(sub { log_debug "$topic published" })
       ->catch(
         sub ($error) {
             my $left = looks_like_number $remaining_attempts && $remaining_attempts > 1 ? $remaining_attempts - 1 : 0;

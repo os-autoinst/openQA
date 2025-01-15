@@ -47,7 +47,8 @@ $driver->title_is("openQA", "back on main page");
 
 # check 'reviewed' labels
 
-$t->get_ok('/dashboard_build_results?limit_builds=10')->status_is(200)
+$t->get_ok('/dashboard_build_results?limit_builds=10')
+  ->status_is(200)
   ->element_count_is('.review', 2, 'exactly two builds marked as \'reviewed\'')
   ->element_exists('.badge-all-passed', 'one build is marked as \'reviewed-all-passed\' because all tests passed');
 

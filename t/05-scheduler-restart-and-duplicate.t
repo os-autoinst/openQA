@@ -158,7 +158,8 @@ subtest 'restart with (directly) chained child' => sub {
 
     # roll back and do the same once more for directly chained dependencies (which should not make a difference)
     $schema->txn_rollback;
-    $schema->resultset('JobDependencies')->search({parent_job_id => 99937, child_job_id => 99938})
+    $schema->resultset('JobDependencies')
+      ->search({parent_job_id => 99937, child_job_id => 99938})
       ->update({dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED});
     create_parent_and_sibling_for_99973(OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
     %expected_cluster = (

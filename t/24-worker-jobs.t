@@ -1411,8 +1411,12 @@ subtest 'asset upload' => sub {
     my $upload_mock = Test::MockModule->new('OpenQA::Client::Upload');
     my @params;
     my $mock_failure;
-    my $chunk = Test::MockObject->new->set_always(index => 2)->set_always(total => 20)->set_always(end => 50)
-      ->set_always(start => 25)->set_always(is_last => 0);
+    my $chunk
+      = Test::MockObject->new->set_always(index => 2)
+      ->set_always(total => 20)
+      ->set_always(end => 50)
+      ->set_always(start => 25)
+      ->set_always(is_last => 0);
     my $normal_res = Test::MockObject->new->set_always(is_server_error => 0);
     my $failure_res
       = Test::MockObject->new->set_always(is_server_error => 1)->set_always(json => {error => 'fake error'});

@@ -59,9 +59,11 @@ is_deeply(
 ) || diag explain $t->tx->res->json;
 
 
-$t->post_ok('/api/v1/machines', json => {name => "testmachine"})->status_is(400)
+$t->post_ok('/api/v1/machines', json => {name => "testmachine"})
+  ->status_is(400)
   ->json_is('/error', 'Missing parameter: backend');
-$t->post_ok('/api/v1/machines', json => {backend => "kde/usb"})->status_is(400)
+$t->post_ok('/api/v1/machines', json => {backend => "kde/usb"})
+  ->status_is(400)
   ->json_is('/error', 'Missing parameter: name');
 $t->post_ok('/api/v1/machines', json => {})->status_is(400)->json_is('/error', 'Missing parameter: backend, name');
 
@@ -138,16 +140,20 @@ is_deeply(
 ) || diag explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/machines/$machine_id", json => {name => "testmachine", "settings" => {"TEST2" => "val0"}})
-  ->status_is(400)->json_is('/error', 'Missing parameter: backend');
+  ->status_is(400)
+  ->json_is('/error', 'Missing parameter: backend');
 
-$t->put_ok("/api/v1/machines/$machine_id", => {'Content-Type' => 'application/json'} => '{BROKEN JSON')->status_is(400)
+$t->put_ok("/api/v1/machines/$machine_id", => {'Content-Type' => 'application/json'} => '{BROKEN JSON')
+  ->status_is(400)
   ->json_like('/error', qr/expected, at character offset/);
 
-$t->put_ok("/api/v1/machines/$machine_id", => {'Content-Type' => 'text/html'})->status_is(400)
+$t->put_ok("/api/v1/machines/$machine_id", => {'Content-Type' => 'text/html'})
+  ->status_is(400)
   ->json_like('/error', qr/Invalid request Content-Type/);
 
 $t->put_ok("/api/v1/machines/$machine_id",
-    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST2'" => "val2"}})->status_is(400)
+    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST2'" => "val2"}})
+  ->status_is(400)
   ->json_like('/error', qr(Invalid characters <b>&#39;</b> in settings key <b>TEST2&#39;</b>));
 
 $t->put_ok("/api/v1/machines/$machine_id",
@@ -269,9 +275,11 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
 
 subtest 'server-side limit with pagination' => sub {
     subtest 'input validation' => sub {
-        $t->get_ok('/api/v1/machines?limit=a')->status_is(400)
+        $t->get_ok('/api/v1/machines?limit=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
-        $t->get_ok('/api/v1/machines?offset=a')->status_is(400)
+        $t->get_ok('/api/v1/machines?offset=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
     };
 
@@ -314,8 +322,12 @@ subtest 'server-side limit with pagination' => sub {
     subtest 'navigation with low limit' => sub {
         my $links;
         subtest 'first page' => sub {
-            $t->get_ok('/api/v1/machines?limit=2')->status_is(200)->json_has('/Machines/1')->json_hasnt('/Machines/2')
-              ->json_like('/Machines/0/name', qr/32bit/)->json_like('/Machines/1/name', qr/64bit/);
+            $t->get_ok('/api/v1/machines?limit=2')
+              ->status_is(200)
+              ->json_has('/Machines/1')
+              ->json_hasnt('/Machines/2')
+              ->json_like('/Machines/0/name', qr/32bit/)
+              ->json_like('/Machines/1/name', qr/64bit/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -323,8 +335,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'second page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/Machines/1')->json_hasnt('/Machines/2')
-              ->json_like('/Machines/0/name', qr/Laptop_64/)->json_like('/Machines/1/name', qr/testmachineQ/);
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_has('/Machines/1')
+              ->json_hasnt('/Machines/2')
+              ->json_like('/Machines/0/name', qr/Laptop_64/)
+              ->json_like('/Machines/1/name', qr/testmachineQ/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';
@@ -340,8 +356,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'first page (first link)' => sub {
-            $t->get_ok($links->{first}{link})->status_is(200)->json_has('/Machines/1')->json_hasnt('/Machines/2')
-              ->json_like('/Machines/0/name', qr/32bit/)->json_like('/Machines/1/name', qr/64bit/);
+            $t->get_ok($links->{first}{link})
+              ->status_is(200)
+              ->json_has('/Machines/1')
+              ->json_hasnt('/Machines/2')
+              ->json_like('/Machines/0/name', qr/32bit/)
+              ->json_like('/Machines/1/name', qr/64bit/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok $links->{next}, 'has next page';

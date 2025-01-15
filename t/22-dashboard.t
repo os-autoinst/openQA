@@ -44,39 +44,52 @@ my $test_parent = $parent_groups->create({name => 'Test parent', sort_order => 2
 
 subtest 'Validation errors' => sub {
     $t->get_ok('/dashboard_build_results/?group=opensuse')->status_is(200)->content_like(qr{/group_overview/1002});
-    $t->get_ok('/dashboard_build_results/?group=[')->status_is(400)
+    $t->get_ok('/dashboard_build_results/?group=[')
+      ->status_is(400)
       ->json_like('/error', qr/group parameter is invalid: Unmatched \[ in regex/i);
 
-    $t->get_ok('/group_overview/1002?limit_builds=a')->status_is(400)
+    $t->get_ok('/group_overview/1002?limit_builds=a')
+      ->status_is(400)
       ->content_like(qr/Erroneous parameters.*limit_builds/);
-    $t->get_ok('/group_overview/1002.json?limit_builds=a')->status_is(400)
+    $t->get_ok('/group_overview/1002.json?limit_builds=a')
+      ->status_is(400)
       ->json_like('/error', qr/Erroneous parameters.*limit_builds/);
-    $t->get_ok('/group_overview/1002?comments_page=a')->status_is(400)
+    $t->get_ok('/group_overview/1002?comments_page=a')
+      ->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_page/);
-    $t->get_ok('/group_overview/1002?comments_limit=a')->status_is(400)
+    $t->get_ok('/group_overview/1002?comments_limit=a')
+      ->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
-    $t->get_ok('/group_overview/1002?group=$*')->status_is(400)
+    $t->get_ok('/group_overview/1002?group=$*')
+      ->status_is(400)
       ->content_like(qr/group parameter is invalid.*matches null string many times/i);
 
     my $id = $test_parent->id;
-    $t->get_ok("/parent_group_overview/$id?limit_builds=a")->status_is(400)
+    $t->get_ok("/parent_group_overview/$id?limit_builds=a")
+      ->status_is(400)
       ->content_like(qr/Erroneous parameters.*limit_builds/);
-    $t->get_ok("/parent_group_overview/$id.json?limit_builds=a")->status_is(400)
+    $t->get_ok("/parent_group_overview/$id.json?limit_builds=a")
+      ->status_is(400)
       ->json_like('/error', qr/Erroneous parameters.*limit_builds/);
-    $t->get_ok("/parent_group_overview/$id?comments_page=a")->status_is(400)
+    $t->get_ok("/parent_group_overview/$id?comments_page=a")
+      ->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_page/);
-    $t->get_ok("/parent_group_overview/$id?comments_limit=a")->status_is(400)
+    $t->get_ok("/parent_group_overview/$id?comments_limit=a")
+      ->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
-    $t->get_ok("/parent_group_overview/$id?group=\$*")->status_is(400)
+    $t->get_ok("/parent_group_overview/$id?group=\$*")
+      ->status_is(400)
       ->content_like(qr/group parameter is invalid.*matches null string many times/i);
 
     my $groups_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
     $groups_mock->redefine(regex_match => sub { die 'invalid regex: fake regex error after validation' });
-    $t->get_ok('/dashboard_build_results/?group=opensuse')->status_is(400)
+    $t->get_ok('/dashboard_build_results/?group=opensuse')
+      ->status_is(400)
       ->json_like('/error', qr/invalid regex: fake regex error after validation/i);
     my $build_results_mock = Test::MockModule->new('OpenQA::BuildResults');
     $build_results_mock->redefine(filter_subgroups => sub { die 'invalid regex: fake regex error after validation' });
-    $t->get_ok("/parent_group_overview/$id?group=opensuse")->status_is(400)
+    $t->get_ok("/parent_group_overview/$id?group=opensuse")
+      ->status_is(400)
       ->content_like(qr/invalid regex: fake regex error after validation/i);
 };
 
@@ -98,7 +111,9 @@ subtest 'Regex-specific validation' => sub {
 subtest 'Changelog' => sub {
     my $global_cfg = $t->app->config->{global};
     $global_cfg->{changelog_file} = 'does not exist';
-    $t->get_ok('/changelog')->status_is(200)->content_like(qr/No changelog available/)
+    $t->get_ok('/changelog')
+      ->status_is(200)
+      ->content_like(qr/No changelog available/)
       ->content_unlike(qr/Custom changelog works/);
     my $changelog = tempfile;
     $changelog->spew('Custom changelog works!');
@@ -108,7 +123,8 @@ subtest 'Changelog' => sub {
 
 $t->get_ok('/health')->status_is(200)->content_is('ok', 'health check route just returns plain ok');
 
-$t->get_ok('/api/v1/routes')->status_is(200)
+$t->get_ok('/api/v1/routes')
+  ->status_is(200)
   ->json_is('/routes/1/path', '/admin', 'simple check for listing WebAPI routes');
 
 $t->get_ok('/dashboard_build_results')->status_is(200);
@@ -203,7 +219,8 @@ sub check_test_parent {
     @h4 = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .h4 a')->map('text')->each;
     is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both child groups shown under common build');
     @progress_bars
-      = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .progress')->map('attr', 'title')
+      = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .progress')
+      ->map('attr', 'title')
       ->each;
     is_deeply(
         \@progress_bars,
@@ -579,11 +596,16 @@ subtest 'job parent groups with multiple version and builds' => sub {
 subtest 'extra plugin links' => sub {
     $t->app->config->{plugin_links}{operator}{Test1} = 'tests_overview';
     $t->app->config->{plugin_links}{operator}{Test2} = 'latest';
-    $t->get_ok('/')->status_is(200)->element_exists('a[href*="/tests/overview"]')
-      ->text_like('a[href*="/tests/overview"]', qr/Test1/)->element_exists('a[href*="/tests/latest"]')
+    $t->get_ok('/')
+      ->status_is(200)
+      ->element_exists('a[href*="/tests/overview"]')
+      ->text_like('a[href*="/tests/overview"]', qr/Test1/)
+      ->element_exists('a[href*="/tests/latest"]')
       ->text_like('a[href*="/tests/latest"]', qr/Test2/);
     $t->app->schema->resultset('Users')->search({username => 'percival'})->next->update({is_admin => 1});
-    $t->get_ok('/')->status_is(200)->element_exists('a[href*="/tests/overview"]')
+    $t->get_ok('/')
+      ->status_is(200)
+      ->element_exists('a[href*="/tests/overview"]')
       ->element_exists('a[href*="/tests/latest"]');
 };
 

@@ -412,13 +412,19 @@ like(get_summary, qr/current time$/i, 'Job was successful, so failed_modules doe
 $t->element_exists_not('#res-99946', 'no module has failed');
 
 subtest 'Maximum jobs limit' => sub {
-    $t->get_ok('/tests/overview')->status_is(200)->element_exists_not('#max-jobs-limit')
+    $t->get_ok('/tests/overview')
+      ->status_is(200)
+      ->element_exists_not('#max-jobs-limit')
       ->element_count_is('table.overview td.name', 7);
     local OpenQA::App->singleton->config->{misc_limits}->{tests_overview_max_jobs} = 2;
-    $t->get_ok('/tests/overview')->status_is(200)->element_exists('#max-jobs-limit')
+    $t->get_ok('/tests/overview')
+      ->status_is(200)
+      ->element_exists('#max-jobs-limit')
       ->text_like('#max-jobs-limit', qr/Only 2 results included, please narrow down your search parameters/)
       ->element_count_is('table.overview td.name', 2);
-    $t->get_ok('/tests/overview?result=incomplete')->status_is(200)->element_exists_not('#max-jobs-limit')
+    $t->get_ok('/tests/overview?result=incomplete')
+      ->status_is(200)
+      ->element_exists_not('#max-jobs-limit')
       ->element_count_is('table.overview td.name', 0);
 };
 

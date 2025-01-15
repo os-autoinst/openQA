@@ -62,7 +62,8 @@ la;
 
 $t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'iso registered');
 $listing->[0]->{id} = $t->tx->res->json->{id};
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'register iso again')
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})
+  ->status_is(200, 'register iso again')
   ->json_is('/id' => $listing->[0]->{id}, 'iso has the same ID, no duplicate');
 
 la;
@@ -111,9 +112,11 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
 
 subtest 'server-side limit with pagination' => sub {
     subtest 'input validation' => sub {
-        $t->get_ok('/api/v1/assets?limit=a')->status_is(400)
+        $t->get_ok('/api/v1/assets?limit=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
-        $t->get_ok('/api/v1/assets?offset=a')->status_is(400)
+        $t->get_ok('/api/v1/assets?offset=a')
+          ->status_is(400)
           ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
     };
 
@@ -157,7 +160,10 @@ subtest 'server-side limit with pagination' => sub {
         my $links;
 
         subtest 'first page' => sub {
-            $t->get_ok('/api/v1/assets?limit=2')->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
+            $t->get_ok('/api/v1/assets?limit=2')
+              ->status_is(200)
+              ->json_has('/assets/1')
+              ->json_hasnt('/assets/2')
               ->json_like('/assets/0/name', qr/openSUSE-13.1-DVD-i586-Build0091-Media\.iso/)
               ->json_like('/assets/1/name', qr/openSUSE-13.1-DVD-x86_64-Build0091-Media\.iso/);
             $links = $t->tx->res->headers->links;
@@ -167,7 +173,10 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'second page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_has('/assets/1')
+              ->json_hasnt('/assets/2')
               ->json_like('/assets/0/name', qr/openSUSE-13.1-GNOME-Live-i686-Build0091-Media\.iso/)
               ->json_like('/assets/1/name', qr/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media\.iso/);
             $links = $t->tx->res->headers->links;
@@ -185,8 +194,12 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'fourth page' => sub {
-            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
-              ->json_like('/assets/0/name', qr/test-dvd-1\.iso/)->json_like('/assets/1/name', qr/test-dvd-2\.iso/);
+            $t->get_ok($links->{next}{link})
+              ->status_is(200)
+              ->json_has('/assets/1')
+              ->json_hasnt('/assets/2')
+              ->json_like('/assets/0/name', qr/test-dvd-1\.iso/)
+              ->json_like('/assets/1/name', qr/test-dvd-2\.iso/);
             $links = $t->tx->res->headers->links;
             ok $links->{first}, 'has first page';
             ok !$links->{next}, 'no next page';
@@ -194,7 +207,10 @@ subtest 'server-side limit with pagination' => sub {
         };
 
         subtest 'first page (first link)' => sub {
-            $t->get_ok($links->{first}{link})->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
+            $t->get_ok($links->{first}{link})
+              ->status_is(200)
+              ->json_has('/assets/1')
+              ->json_hasnt('/assets/2')
               ->json_like('/assets/0/name', qr/openSUSE-13.1-DVD-i586-Build0091-Media\.iso/)
               ->json_like('/assets/1/name', qr/openSUSE-13.1-DVD-x86_64-Build0091-Media\.iso/);
             $links = $t->tx->res->headers->links;
@@ -210,7 +226,8 @@ la;
 # test delete operation
 $t->delete_ok('/api/v1/assets/1a')->status_is(404, 'assert with invalid ID');
 $t->delete_ok('/api/v1/assets/99')->status_is(404, 'asset does not exist');
-$t->delete_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200, 'asset deleted')
+$t->delete_ok('/api/v1/assets/' . $listing->[0]->{id})
+  ->status_is(200, 'asset deleted')
   ->json_is('/count' => 1, "one asset deleted");
 
 $t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(404, 'asset was deleted');
@@ -219,7 +236,8 @@ $t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200, 'second asse
 ok(-e iso_path($iso2), 'iso file 2 is still there');
 
 touch_isos [$iso1];
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'registering again works')
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})
+  ->status_is(200, 'registering again works')
   ->json_is('/id' =>, $listing->[1]->{id} + 1, "asset has next id");
 
 $t->delete_ok('/api/v1/assets/iso/' . $iso2)->status_is(200, 'delete asset by name');
@@ -247,7 +265,9 @@ $t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok'
 is($gru_tasks->count, 1, 'gru task added')
   and is($gru_tasks->first->taskname, 'limit_assets', 'right gru task added');
 is($gru->count_jobs(limit_assets => ['inactive']), 1, 'is_task_active returns 1 after task enqueued');
-$t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok', 'status ok')
+$t->post_ok('/api/v1/assets/cleanup')
+  ->status_is(200)
+  ->json_is('/status' => 'ok', 'status ok')
   ->json_is('/gru_id' => undef);
 is($gru_tasks->count, 1, 'no further task if one was already enqueued');
 

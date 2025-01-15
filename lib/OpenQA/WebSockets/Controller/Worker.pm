@@ -129,7 +129,8 @@ sub _message {
         }
 
         # assume the job setup is done by the worker
-        $schema->resultset('Jobs')->search({id => $job_id, state => ASSIGNED, t_finished => undef})
+        $schema->resultset('Jobs')
+          ->search({id => $job_id, state => ASSIGNED, t_finished => undef})
           ->update({state => SETUP});
 
         # update the worker's current job, log that we 'saw' the worker

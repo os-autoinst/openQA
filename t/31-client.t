@@ -60,8 +60,12 @@ my $code = 200;
 my $content_type = 'application/json';
 my $headers_mock = Test::MockObject->new()->set_bound(content_type => \$content_type);
 my $json = {my => 'json'};
-my $code_mock = Test::MockObject->new()->set_bound(code => \$code)->mock(headers => sub { $headers_mock })
-  ->set_always(json => $json)->set_always(body => 'my: yaml');
+my $code_mock
+  = Test::MockObject->new()
+  ->set_bound(code => \$code)
+  ->mock(headers => sub { $headers_mock })
+  ->set_always(json => $json)
+  ->set_always(body => 'my: yaml');
 my $res = Test::MockObject->new()->mock(res => sub { $code_mock });
 $client_mock->redefine(
     new => sub {

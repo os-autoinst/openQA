@@ -33,7 +33,10 @@ sub index {
     my %folder_info_by_name;
     if (!$folders) {
         $folders
-          = Mojo::File->new($helper->home, $obs_project // '')->list({dir => 1})->grep(sub { -d $_ })->map('basename')
+          = Mojo::File->new($helper->home, $obs_project // '')
+          ->list({dir => 1})
+          ->grep(sub { -d $_ })
+          ->map('basename')
           ->to_array;
         @$folders = grep { !/$non_project_folders/ } @$folders;
     }
