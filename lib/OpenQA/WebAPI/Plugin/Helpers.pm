@@ -197,7 +197,7 @@ sub register ($self, $app, $config) {
             my %d = ('bs-toggle' => 'popover', 'bs-trigger' => 'focus', 'bs-title' => $title, 'bs-content' => $content);
             $d{placement} = $placement if $placement;
             return $c->t(a => (tabindex => 0, class => $class, role => 'button', data => \%d, @args));
-        });
+          });
 
     $app->helper(
         help_popover_todo => sub ($c) {

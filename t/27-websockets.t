@@ -186,7 +186,7 @@ subtest 'web socket message handling' => sub {
         }
         qr/Job 42 reset to state scheduled/s, 'info logged when worker rejects job';
         is($jobs->find(42)->state, SCHEDULED,
-                'job is immediately set back to scheduled if assigned worker goes offline '
+            'job is immediately set back to scheduled if assigned worker goes offline '
               . 'gracefully before starting to work on the job');
         $worker->discard_changes;
         ok($worker->dead, 'worker considered immediately dead when it goes offline gracefully');
