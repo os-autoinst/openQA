@@ -49,7 +49,7 @@ sub auth ($self) {
     # Browser with a logged in user
     my ($user, $reason) = (undef, 'Not authorized');
     if ($user = $self->current_user) {
-        ($user, $reason) = (undef, 'Bad CSRF token!') unless $self->valid_csrf;
+        ($user, $reason) = (undef, 'Bad CSRF token!') unless $self->req->method eq 'GET' || $self->valid_csrf;
     }
 
     # No session (probably not a browser)

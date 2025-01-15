@@ -46,13 +46,11 @@ subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`
     $t->get_ok('/assets/iso/test.iso')->status_is(200)->content_is('asset-ok', 'can access asset when logged in');
     $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(200);
     $t->content_is('test-asset-ok', 'can access test asset when logged in');
-    $t->get_ok('/logout')->status_is(302)->get_ok('/assets/iso/test.iso')->status_is(302);
-    $t->content_unlike(qr/asset-ok/, 'asset not accessible when logged out');
-    $t->header_is('Location', $expected_redirect, 'redirect to login when accessing asset');
     $t->get_ok('/logout')->status_is(302);
-    $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(302);
-    $t->header_like('Location', qr|/login\?return_page=.*test.iso|, 'redirect to login when accessing test asset');
-    $t->content_unlike(qr/asset-ok/, 'test asset not accessible when logged out');
+    $t->get_ok('/assets/iso/test.iso')->status_is(403, '403 response when logged out');
+    $t->content_unlike(qr/asset-ok/, 'asset not accessible when logged out');
+    $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(403, '403 response via test when logged out');
+    $t->content_unlike(qr/asset-ok/, 'asset via test not accessible when logged out');
 };
 
 subtest OpenID => sub {

@@ -53,6 +53,7 @@ sub startup ($self) {
 
     # register basic routes
     my $logged_in = $r->under('/')->to('session#ensure_user');
+    my $auth_any_user = $r->under('/')->to('Auth#auth');
     my $auth = $r->under('/')->to('session#ensure_operator');
 
     # Routes used by plugins (UI and API)
@@ -143,13 +144,14 @@ sub startup ($self) {
     # only provide a URL helper - this is overtaken by apache
     my $config = $app->config;
     my $require_auth_for_assets = $config->{auth}->{require_for_assets};
-    my $assets_r = $require_auth_for_assets ? $logged_in : $r;
+    my $assets_r = $require_auth_for_assets ? $auth_any_user : $r;
     $assets_r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
-    my $test_r = $r->any('/tests/<testid:num>');
+    my $test_path = '/tests/<testid:num>';
+    my $test_r = $r->any($test_path);
     $test_r = $test_r->under('/')->to('test#referer_check');
-    my $test_auth = $auth->any('/tests/<testid:num>' => {format => 0});
-    my $test_asset_r = $require_auth_for_assets ? $test_auth : $test_r;
+    my $test_auth = $auth->any($test_path => {format => 0});
+    my $test_asset_r = $require_auth_for_assets ? $auth_any_user->any($test_path) : $test_r;
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
@@ -328,6 +330,7 @@ sub startup ($self) {
     my $api_r_job = $api_job_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     push @api_routes, $api_job_auth, $api_r_job;
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
+    $api_ru->get('/auth' => sub ($c) { $c->render(text => 'ok') })->name('apiv1_jobauth_whoami');
 
     # api/v1/job_groups
     $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
