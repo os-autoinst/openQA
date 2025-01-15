@@ -14,10 +14,8 @@ has [qw(apikey apisecret base_url)];
 sub new {
     my $self = shift->SUPER::new(@_);
     my %args = @_;
-
     for my $i (qw(apikey apisecret)) {
-        next unless $args{$i};
-        $self->$i($args{$i});
+        $self->$i($args{$i}) if $args{$i};
     }
 
     $self->configure_credentials($args{api});
@@ -29,10 +27,8 @@ sub new {
     # Some urls might redirect to https and then there are internal redirects for assets
     $self->max_redirects(3);
 
-    $self->on(
-        start => sub {
-            $self->_add_auth_headers(@_);
-        });
+    $self->on(start => sub ($ua, $tx) { $self->_add_auth_headers($ua, $tx) });
+
     #read proxy environment variables
     $self->proxy->detect;
 
@@ -60,9 +56,7 @@ sub configure_credentials ($self, $host) {
     }
 }
 
-sub _add_auth_headers {
-    my ($self, $ua, $tx) = @_;
-
+sub _add_auth_headers ($self, $ua, $tx) {
     my $timestamp = time;
     my %headers = (
         Accept => 'application/json',
