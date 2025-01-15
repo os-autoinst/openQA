@@ -58,19 +58,12 @@ sub configure_credentials ($self, $host) {
 
 sub _add_auth_headers ($self, $ua, $tx) {
     my $timestamp = time;
-    my %headers = (
-        Accept => 'application/json',
-        'X-API-Microtime' => $timestamp,
-    );
+    my $headers = $tx->req->headers;
+    $headers->accept('application/json') unless defined $headers->accept;
+    $headers->header('X-API-Microtime', $timestamp);
     if ($self->apisecret && $self->apikey) {
-        $headers{'X-API-Key'} = $self->apikey;
-        $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
-    }
-
-    my $set_headers = $tx->req->headers;
-    foreach my $key (keys %headers) {
-        # don't overwrite headers that were set manually
-        $set_headers->header($key, $headers{$key}) unless defined $set_headers->header($key);
+        $headers->header('X-API-Key', $self->apikey);
+        $headers->header('X-API-Hash', hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret));
     }
 }
 
