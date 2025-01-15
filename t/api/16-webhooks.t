@@ -108,7 +108,7 @@ $vcs_mock->redefine(
         is $params->{description}, $expected_ci_check_desc, 'check description';
         ++$status_reports;
         $callback ? $callback->($ua, $tx) : $tx;
-    });
+      });
 
 subtest 'scheduled product created via webhook' => sub {
     $t->post_ok($url, \%headers, json => $test_payload)->status_is(200, 'scheduled product has been created');

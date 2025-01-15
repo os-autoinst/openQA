@@ -972,7 +972,7 @@ sub _generate_job_setting ($self, $args) {
     my %params = (input_args => $args, settings => \%settings);
 
     # Populated with Product settings if there are DISTRI, VERSION, FLAVOR, ARCH in arguments.
-    if (   defined $args->{DISTRI}
+    if (defined $args->{DISTRI}
         && defined $args->{VERSION}
         && defined $args->{FLAVOR}
         && defined $args->{ARCH})
