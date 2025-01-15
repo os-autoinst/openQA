@@ -2,6 +2,9 @@
 # # See <https://github.com/houseabsolute/perl-code-tidyall/issues/84>.
 --character-encoding=none
 --no-valign
+# Prevent excessive line-wrapping
+# See https://github.com/perltidy/perltidy/issues/171
+--freeze-newlines
 -l=120   # 120 characters per line
 -fbl     # don't change blank lines
 -nsfs    # no spaces before semicolons
