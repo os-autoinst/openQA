@@ -759,7 +759,7 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
             next unless defined $products;
             next unless my $product = $products->{$product_name};
             next
-              if ( $product->{distri} ne _distri_key($args)
+              if ($product->{distri} ne _distri_key($args)
                 || $product->{flavor} ne $args->{FLAVOR}
                 || ($product->{version} ne '*' && $product->{version} ne $args->{VERSION})
                 || $product->{arch} ne $args->{ARCH});

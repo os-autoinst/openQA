@@ -533,7 +533,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
         # add expected warnings and needle names for needle
         if ($i >= 2) {
             unshift(@expected_needle_warnings,
-                    "A new needle with matching tags has been created since the job started: $new_needle_name.json"
+                "A new needle with matching tags has been created since the job started: $new_needle_name.json"
                   . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)');
             splice(@expected_needle_names, 2, 0, 'new: ' . $new_needle_name);
         }
@@ -607,7 +607,7 @@ subtest 'open needle editor for running test' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->ua->max_redirects(1);
     warnings { $t->get_ok('/tests/99980/edit') };
-    note(   'ignoring warning "DateTime objects passed to search() are not supported properly"'
+    note('ignoring warning "DateTime objects passed to search() are not supported properly"'
           . ' at lib/OpenQA/WebAPI/Controller/Step.pm line 211');
     $t->status_is(200);
     $t->text_is(title => 'openQA: Needle Editor', 'needle editor shown for running test');
