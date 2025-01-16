@@ -155,8 +155,9 @@ sub _key_auth ($self, $reason, $key) {
     if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
         $log->trace(sprintf 'Key is for user "%s"', $api_key->user->username);
 
-        my $msg = $self->req->url->to_string;
         my $headers = $self->req->headers;
+        my $url = $self->req->url;
+        my $msg = $url->path eq '/api/v1/auth' ? ($headers->header('X-Original-URI') // $url) : $url;
         my $hash = $headers->header('X-API-Hash');
         my $remote_timestamp = $headers->header('X-API-Microtime');
         my $our_timestamp = time;
