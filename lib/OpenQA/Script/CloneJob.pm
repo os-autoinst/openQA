@@ -181,12 +181,24 @@ sub split_jobid ($url_string) {
     return ($host_url, $jobid);
 }
 
-sub create_url_handler ($options) {
+sub create_lwp_user_agent ($host, $options) {
     my $ua = LWP::UserAgent->new;
     $ua->timeout(10);
     $ua->env_proxy;
-    $ua->show_progress(1) if ($options->{'show-progress'});
+    $ua->show_progress(1) if $options->{'show-progress'};
+    return $ua unless my $cfg = OpenQA::UserAgent::open_config_file($host);
 
+    my $apikey = ($cfg->val($host, 'key'))[-1];
+    my $apisecret = ($cfg->val($host, 'secret'))[-1];
+    $ua->add_handler(request_prepare => sub ($request, $ua, $handler) {
+            OpenQA::UserAgent::add_auth_headers($request, Mojo::URL->new($request->uri), $apikey, $apisecret);
+    }) if $apikey && $apisecret;
+
+    return $ua;
+}
+
+sub create_url_handler ($options) {
+    # configure user agent for destination host (usually localhost)
     my $local_url = OpenQA::Client::url_from_host($options->{host});
     $local_url->path('/api/v1/jobs');
     my $local = OpenQA::Client->new(
@@ -196,10 +208,11 @@ sub create_url_handler ($options) {
     die "API key/secret for '$options->{host}' missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
       if !$options->{'export-command'} && !($local->apikey && $local->apisecret);
 
+    # configure user agents for the source host (usually a remote host)
     my $remote_url = OpenQA::Client::url_from_host($options->{from});
     $remote_url->path('/api/v1/jobs');
-    my $remote = OpenQA::Client->new(api => $options->{host});
-
+    my $remote = OpenQA::Client->new(api => $remote_url->host);
+    my $ua = create_lwp_user_agent($remote_url->host, $options);
     return {ua => $ua, local => $local, local_url => $local_url, remote => $remote, remote_url => $remote_url};
 }
 

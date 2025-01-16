@@ -15,6 +15,7 @@ use Mojo::Util qw(encode hmac_sha1_sum);
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
+use OpenQA::UserAgent;
 
 my $webapi_mock = Test::MockModule->new('OpenQA::WebAPI');
 $webapi_mock->redefine(
@@ -154,17 +155,12 @@ subtest 'wrong api key - replay attack' => sub {
     $t->ua->unsubscribe('start');
     $t->ua->on(
         start => sub ($ua, $tx) {
-
             my $timestamp = 0;
-            my %headers = (
-                'X-API-Key' => $ua->apikey,
-                'X-API-Microtime' => $timestamp,
-                'X-API-Hash' => hmac_sha1_sum($ua->_path_query($tx) . $timestamp, $ua->apisecret),
-            );
-
-            foreach my $key (keys %headers) {
-                $tx->req->headers->header($key, $headers{$key});
-            }
+            my $headers = $tx->req->headers;
+            my $hash = hmac_sha1_sum(OpenQA::UserAgent::_path_query($tx->req->url)) . $timestamp, $ua->apisecret;
+            $headers->header('X-API-Microtime', $timestamp);
+            $headers->header('X-API-Key', $ua->apikey);
+            $headers->header('X-API-Hash', $hash);
         });
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->post_ok('/api/v1/products/1')->status_is(403)->json_is(

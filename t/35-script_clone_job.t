@@ -13,10 +13,12 @@ use Test::Output qw(combined_like combined_unlike output_from);
 use Test::MockObject;
 use Test::MockModule;
 use OpenQA::Script::CloneJob;
+use HTTP::Response;
 use Mojo::JSON qw(decode_json);
 use Mojo::URL;
 use Mojo::File 'tempdir';
 use Mojo::Transaction;
+use Scalar::Util qw(looks_like_number);
 
 # define fake client
 {
@@ -424,6 +426,18 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
             ok !$params->{'CLONED_FROM:41'}, 'parent job has not been cloned';
         } or always_explain \@post_args;
     };
+};
+
+subtest 'auth with lwp' => sub {
+    note 'config path: ' . ($ENV{OPENQA_CONFIG} = "$FindBin::Bin/data");
+    my $ua = OpenQA::Script::CloneJob::create_lwp_user_agent('testapi', {});
+    $ua->add_handler(request_send => sub ($request, $ua, $handler) {
+            ok looks_like_number($request->header('X-API-Microtime')), 'microtime set';
+            is $request->header('X-API-Key'), 'PERCIVALKEY02', 'api key set';
+            is length($request->header('X-API-Hash')), 40, 'hash set';
+            return HTTP::Response->new(200);    # terminate the processing
+    });
+    $ua->get('http://foobar/some/path');
 };
 
 done_testing();
