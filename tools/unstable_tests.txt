@@ -1,4 +1,3 @@
-t/full-stack.t
 t/25-cache-service.t
 t/43-scheduling-and-worker-scalability.t
 t/ui/01-list.t
