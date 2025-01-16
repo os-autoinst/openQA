@@ -222,7 +222,7 @@
 
 <div class="card filter-panel-bottom" id="live-terminal-panel">
     <div class="card-header">
-        <strong>Serial output</strong> (serial0.txt, serial_terminal.txt and serial_terminal_user.txt)
+        <strong>Serial output</strong> (serial0.txt, serial_terminal.txt/virtio_console.log and serial_terminal_user.txt)
         <span>click to toggle</span>
     </div>
     <div class="card-body">
