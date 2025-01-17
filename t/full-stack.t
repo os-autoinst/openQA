@@ -104,7 +104,7 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
         ++$relevant_jobs if List::Util::any { $_ eq $worker_class } @{$job->{worker_classes}};
     }
     Test::More::ok $relevant_jobs, "$relevant_jobs job(s) with worker class $worker_class scheduled"
-      or Test::More::diag explain 'scheduled jobs: ', \@scheduled_jobs;
+      or always_explain 'scheduled jobs: ', \@scheduled_jobs;
 
     # wait until there's not only a free worker but also one with matching worker properties
     # note: Populating the database is not done atomically so a worker might already show up but relevant
@@ -118,13 +118,13 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
         }
     }
     Test::More::fail "no worker with class $worker_class showed up after $elapsed seconds";
-    Test::More::diag explain 'free workers: ', [map { $_->info } @$free_workers];
+    always_explain 'free workers: ', [map { $_->info } @$free_workers];
     return ($relevant_jobs, $elapsed);
 }
 
 sub show_job_info ($job_id) {
     my $job = $schema->resultset('Jobs')->find($job_id);
-    Test::More::diag explain 'job info: ', $job ? $job->to_hash : undef;
+    always_explain 'job info: ', $job ? $job->to_hash : undef;
 }
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';

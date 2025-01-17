@@ -88,7 +88,7 @@ sub assert_sent_commands {
 
     my $sent_cmds
       = $driver->execute_script('var sentCmds = window.sentCmds; window.sentCmds = undefined; return sentCmds;');
-    is_deeply $sent_cmds, $expected, $test_name or diag explain $sent_cmds;
+    is_deeply $sent_cmds, $expected, $test_name or always_explain $sent_cmds;
 }
 
 # checks whether the flash messages of the specified kind are present
@@ -208,7 +208,7 @@ subtest 'state shown when connected' => sub {
         'e.style.display, e.value || ""');
     subtest 'only modules after the current module displayed' => sub {
         is $_->[0], ($_->[1] =~ qr/boot|welcome/) ? 'none' : '', "option $_->[1]" for @$options_state;
-    } or diag explain $options_state;
+    } or always_explain $options_state;
 
     # will pause at certain module
     fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
@@ -218,7 +218,7 @@ subtest 'state shown when connected' => sub {
     subtest 'only foo selected' => sub {
         is scalar @$options_state, 5, '5 options in module to pause at selection present';
         is $_->[0], $_->[1] eq 'foo' ? 1 : 0, "option $_->[1]" for @$options_state;
-    } or diag explain $options_state;
+    } or always_explain $options_state;
 
     # has already completed the module to pause at
     fake_state(developerMode => {moduleToPauseAt => '"installation-boot"'});
@@ -227,7 +227,7 @@ subtest 'state shown when connected' => sub {
     $options_state = options_state;
     subtest 'only boot selected' => sub {
         is $_->[0], $_->[1] eq 'boot' ? 1 : 0, "option $_->[1]" for @$options_state;
-    } or diag explain $options_state;
+    } or always_explain $options_state;
 
     # currently paused
     fake_state(developerMode => {isPaused => '"some reason"'});
@@ -320,7 +320,7 @@ subtest 'expand developer panel' => sub {
         my $options_state = options_state;
         subtest 'still only bar selected' => sub {
             is $_->[0], $_->[1] eq 'bar' ? 1 : 0, "option $_->[1]" for @$options_state;
-        } or diag explain $options_state;
+        } or always_explain $options_state;
     };
 
     my $popover_icon = $driver->find_element('#developer-form .help_popover');
@@ -440,7 +440,7 @@ subtest 'start developer session' => sub {
         my $options_state = options_state;
         subtest 'only foo selected' => sub {
             is $_->[0], $_->[1] eq 'foo' ? 1 : 0, "option $_->[1]" for @$options_state;
-        } or diag explain $options_state;
+        } or always_explain $options_state;
 
         ok $options[3], 'option #4 present' or return undef;
         $options[3]->click();    # select installation-foo
@@ -582,7 +582,7 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/);
         my $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
-        ok $options_state->[1]->[0], 'selection for pausing on screen mismatch updated' or diag explain $options_state;
+        ok $options_state->[1]->[0], 'selection for pausing on screen mismatch updated' or always_explain $options_state;
     };
 
     subtest 'upload progress handled' => sub {

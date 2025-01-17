@@ -179,7 +179,7 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
     ok($expected_json{t_created} = $actual_json->{t_created}, 'needle json has t_created');
     ok($expected_json{t_updated} = $actual_json->{t_updated}, 'needle json has t_updated');
     is_deeply($actual_json, \%expected_json, 'needle json as expected')
-      or diag explain $actual_json;
+      or always_explain $actual_json;
 
     # test call via LiveViewHandler
     my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
@@ -187,7 +187,7 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
     $live_view_handler->app($t_livehandler->app);
     $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
     is_deeply(\%command_json, {new_needles => [\%expected_json]}, 'attach JSON in livehandler')
-      or diag explain \%command_json;
+      or always_explain \%command_json;
 
     subtest 'limit' => sub {
         for my $i (002 ... 120) {
@@ -204,8 +204,8 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
         my %command_json;
         $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
         my $new_needles = $command_json{new_needles};
-        is(ref $new_needles, 'ARRAY', 'new needles array present') or diag explain \%command_json;
-        is(scalar @$new_needles, 100, 'new needles limited to 100') or diag explain \%command_json;
+        is(ref $new_needles, 'ARRAY', 'new needles array present') or always_explain \%command_json;
+        is(scalar @$new_needles, 100, 'new needles limited to 100') or always_explain \%command_json;
         is($new_needles->[0]->{name}, 'new_needle-120', 'most recently changed needle is first');
     };
 };
@@ -507,7 +507,7 @@ subtest 'register developer session' => sub {
     $db->txn_rollback;
 
     is_deeply(\@ipc_messages_for_websocket_server, [], 'so far no IPC messages for worker')
-      or diag explain \@ipc_messages_for_websocket_server;
+      or always_explain \@ipc_messages_for_websocket_server;
 
     my $session = $developer_sessions->register(99963, 99901);
     ok($session, 'session created');
@@ -522,7 +522,7 @@ subtest 'register developer session' => sub {
         \@ipc_messages_for_websocket_server,
         [[1, WORKER_COMMAND_DEVELOPER_SESSION_START, 99963]],
         'worker notified exactly once about developer session'
-    ) or diag explain \@ipc_messages_for_websocket_server;
+    ) or always_explain \@ipc_messages_for_websocket_server;
     @ipc_messages_for_websocket_server = ();
     ok $client_called, 'mocked send_msg method has been called';
 
@@ -678,7 +678,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         prepare_waiting_for_finished_handled();
 
         is_deeply(\@ipc_messages_for_websocket_server, [], 'so far no IPC messages for worker')
-          or diag explain \@ipc_messages_for_websocket_server;
+          or always_explain \@ipc_messages_for_websocket_server;
 
         my $worker = $workers->create(
             {
@@ -717,7 +717,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             \@ipc_messages_for_websocket_server,
             [[$worker_id, WORKER_COMMAND_DEVELOPER_SESSION_START, 99962]],
             'worker about devel session notified'
-        ) or diag explain \@ipc_messages_for_websocket_server;
+        ) or always_explain \@ipc_messages_for_websocket_server;
     };
 
     subtest 'job with assigned worker, but os-autoinst not reachable' => sub {

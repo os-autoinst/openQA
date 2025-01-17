@@ -190,7 +190,7 @@ subtest 'tagging builds via parent group comments' => sub {
     # check whether the build is not considered important yet
     my $important_builds = query_important_builds;
     is_deeply($important_builds, \%expected_important_builds, 'build initially not considered important')
-      or diag explain $important_builds;
+      or always_explain $important_builds;
 
     # create a tag for the job via parent group comments to mark it as important
     post_parent_group_comment($parent_group_id => 'tag:Arch-2018-08:important:fromparent');
@@ -213,7 +213,7 @@ subtest 'tagging builds via parent group comments' => sub {
     $expected_important_builds{1002} = [[qw(Arch-2018-08)], []];
     $important_builds = query_important_builds;
     is_deeply($important_builds, \%expected_important_builds, 'tag on parent level marks build as important')
-      or diag explain $important_builds;
+      or always_explain $important_builds;
 
     $schema->txn_begin;
     subtest 'the version of "important" tags is considered when determining expired jobs' => sub {
@@ -232,7 +232,7 @@ subtest 'tagging builds via parent group comments' => sub {
         # determine and check expired jobs
         my @expired_jobs = sort map { $_->id } @{$group->find_jobs_with_expired_results};
         is_deeply \@expired_jobs, [$expired_job->id], 'only job with mismatching VERSION is expired'
-          or diag explain \@expired_jobs;
+          or always_explain \@expired_jobs;
     };
     $schema->txn_rollback;
 
@@ -254,7 +254,7 @@ subtest 'tagging builds via parent group comments' => sub {
 
     $important_builds = query_important_builds;
     is_deeply($important_builds, \%expected_important_builds, 'build is still considered important')
-      or diag explain $important_builds;
+      or always_explain $important_builds;
 };
 
 sub _map_expired ($jg, $method) {

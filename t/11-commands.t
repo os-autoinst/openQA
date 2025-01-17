@@ -55,7 +55,7 @@ subtest 'ws server does not try to query itself' => sub {
     $worker->send_command(command => $valid_commands[0], job_id => 0);
     is($last_command, undef, 'command not sent via client');
     is_deeply($last_ws_params, [$worker->id, $valid_commands[0], 0, undef], 'ws_send called directly')
-      or diag explain $last_ws_params;
+      or always_explain $last_ws_params;
 };
 
 done_testing();

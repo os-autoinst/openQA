@@ -92,7 +92,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     # test set_to_latest_master effectively being a no-op because no update remote and branch have been configured
     is($git->set_to_latest_master, undef, 'no error if no update remote and branch configured');
     is_deeply(\@executed_commands, [], 'no commands executed if no update remote and branch configured')
-      or diag explain \@executed_commands;
+      or always_explain \@executed_commands;
 
     # configure update branch and remote
     $git->config->{update_remote} = 'origin';
@@ -109,7 +109,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
             [qw(git -C foo/bar rebase origin/master)],
         ],
         'git remote update and rebase executed',
-    ) or diag explain \@executed_commands;
+    ) or always_explain \@executed_commands;
 
     # test set_to_latest_master (error case)
     @executed_commands = ();
@@ -122,7 +122,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
         'an error occurred on remote update'
     );
     is_deeply(\@executed_commands, [[qw(git -C foo/bar remote update origin)],], 'git reset not attempted',)
-      or diag explain \@executed_commands;
+      or always_explain \@executed_commands;
 
     # test commit
     @executed_commands = ();
@@ -151,7 +151,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
             ],
         ],
         'changes staged and committed',
-    ) or diag explain \@executed_commands;
+    ) or always_explain \@executed_commands;
 
     $git->config->{do_push} = 'yes';
 
@@ -217,7 +217,7 @@ subtest 'saving needle via Git' => sub {
             ],
         ],
         'commands executed as expected'
-    ) or diag explain \@executed_commands;
+    ) or always_explain \@executed_commands;
 
     # note: Saving needles is already tested in t/ui/12-needle-edit.t. However, Git is disabled in that UI test so
     #       it is tested here explicitly.

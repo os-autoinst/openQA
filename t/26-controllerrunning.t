@@ -96,7 +96,7 @@ subtest streaming => sub {
         combined_like { $controller->streaming } qr/Asking the worker 43 to start providing livestream for job 42/,
           'reached code for enabling livestream';
         is $controller->res->code, 200, 'tempdir not found';
-        is_deeply \@messages, [[43, 'livelog_start', 42]], 'livelog started' or diag explain \@messages;
+        is_deeply \@messages, [[43, 'livelog_start', 42]], 'livelog started' or always_explain \@messages;
         Mojo::IOLoop->one_tick;
         is $controller->res->body, '', 'body still empty as there is no image yet';
 
@@ -138,10 +138,10 @@ subtest streaming => sub {
         monkey_patch 'Job', worker => sub { undef };
         $controller->streaming;
         is $controller->res->code, 404, 'no worker';
-        is_deeply \@messages, [], 'no worker' or diag explain \@messages;
+        is_deeply \@messages, [], 'no worker' or always_explain \@messages;
         monkey_patch 'Job', worker => $orig;
     };
-} or diag explain $log_messages;
+} or always_explain $log_messages;
 
 subtest init => sub {
     my $app = Mojolicious->new();
@@ -180,13 +180,13 @@ subtest init => sub {
     is $ret, 0, 'init returns 0';
     is $render_specific_not_found, 0, 'no 404 despite no worker';
     is_deeply $render, [json => {state => RUNNING, result => NONE}], 'job state rendered without worker'
-      or diag explain $render;
+      or always_explain $render;
     # other routes
     $render_specific_not_found = $render = 0;
     $ret = $c->init();
     is $ret, 0, 'init returns 0';
     is $render_specific_not_found, 1, 'specific 404 error rendered';
-    is $render, 0, 'not rendering job state' or diag explain $render;
+    is $render, 0, 'not rendering job state' or always_explain $render;
 };
 
 subtest edit => sub {

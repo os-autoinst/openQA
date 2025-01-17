@@ -147,7 +147,7 @@ subtest 'mark job with taken over bugref as done' => sub {
             reason => undef,
         },
         'carried over bugref and resolved URL present in AMQP event'
-    ) or diag explain $job_event;
+    ) or always_explain $job_event;
     ok delete $comment_event->{created}, 'carryover comment creation date present';
     ok delete $comment_event->{updated}, 'carryover comment update date present';
     is_deeply(
@@ -163,7 +163,7 @@ subtest 'mark job with taken over bugref as done' => sub {
             taken_over_from_job_id => 99962,
         },
         'AMQP event for carry-over comment'
-    ) or diag explain $comment_event;
+    ) or always_explain $comment_event;
 };
 
 subtest 'duplicate and cancel job' => sub {

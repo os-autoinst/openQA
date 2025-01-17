@@ -132,7 +132,7 @@ subtest 'Current jobs' => sub {
     like $driver->get_title(), qr/Activity View/, 'search shown' or return;
     my $results = $driver->find_element_by_id('results');
     my @entries = $results->children('.list-group-item');
-    is scalar @entries, 19, '19 jobs' or return diag explain $results->get_text;
+    is scalar @entries, 19, '19 jobs' or return always_explain $results->get_text;
 
     my @rows = $driver->find_elements('#results .list-group-item');
     for my $row (@rows) {

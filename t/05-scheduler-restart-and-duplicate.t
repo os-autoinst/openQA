@@ -87,15 +87,15 @@ is_deeply($job1, $job2, 'duplicated job equal');
 
 subtest 'restart job which is still scheduled' => sub {
     my $res = OpenQA::Resource::Jobs::job_restart([99927]);
-    is_deeply($res->{duplicates}, [], 'scheduled job not considered') or diag explain $res->{duplicates};
+    is_deeply($res->{duplicates}, [], 'scheduled job not considered') or always_explain $res->{duplicates};
 };
 
 subtest 'restart job which has already been cloned' => sub {
     my $res = OpenQA::Resource::Jobs::job_restart([99926]);
-    is_deeply($res->{duplicates}, [], 'no job ids returned') or diag explain $res->{duplicates};
+    is_deeply($res->{duplicates}, [], 'no job ids returned') or always_explain $res->{duplicates};
     is_deeply($res->{errors}, ['Specified job 99926 has already been cloned as 99982'], 'error returned')
-      or diag explain $res->{errors};
-    is_deeply($res->{warnings}, [], 'no warnings') or diag explain $res->{warnings};
+      or always_explain $res->{errors};
+    is_deeply($res->{warnings}, [], 'no warnings') or always_explain $res->{warnings};
 };
 
 $jobs = list_jobs();
@@ -182,19 +182,19 @@ subtest 'restart with (directly) chained child' => sub {
         $res = OpenQA::Resource::Jobs::job_restart([99937]);
         like($res->{errors}->[0], qr/Direct parent 99926 needs to be cloned as well/, 'error message');
         is(scalar @{$res->{duplicates}}, 0, 'no duplicates');
-    } or diag explain $res;
+    } or always_explain $res;
     subtest 'restarting direct parent not prevented' => sub {
         $schema->txn_begin;
         $res = OpenQA::Resource::Jobs::job_restart([99926]);
         is(scalar @{$res->{errors}}, 0, 'no errors');
         is(scalar @{$res->{duplicates}}, 1, 'one duplicate');
         $schema->txn_rollback;
-    } or diag explain $res;
+    } or always_explain $res;
     subtest 'restart enforced despite directly chained parent' => sub {
         $res = OpenQA::Resource::Jobs::job_restart([99937], force => 1);
         is(scalar @{$res->{errors}}, 0, 'no errors');
         is(scalar @{$res->{duplicates}}, 1, 'one duplicate');
-    } or diag explain $res;
+    } or always_explain $res;
 
     # check new job and whether clone is tracked
     $job_after_restart = job_get(99937);
@@ -267,7 +267,7 @@ sub _print_job_cluster ($jobs) {
     return undef unless $ENV{HARNESS_IS_VERBOSE};
     my $cluster_jobs = $jobs->[0]->cluster_jobs;    # uncoverable statement
     note 'job ' . $_->TEST . ': ' . $_->id for @$jobs;    # uncoverable statement
-    diag explain $cluster_jobs;    # uncoverable statement
+    always_explain $cluster_jobs;    # uncoverable statement
 }
 
 subtest 'restarting one of two independent root jobs (only related indirectly via parallel dependency)' => sub {
@@ -302,9 +302,9 @@ subtest 'restarting one of two independent root jobs (only related indirectly vi
     # note: In production this happens via a Minion job enqueued by `done` when the job is automatically restarted
     #       or if a user restarts the job manually.
     my $res = $root_1->auto_duplicate;
-    is ref $res, 'OpenQA::Schema::Result::Jobs', 'no error when duplicating root1' or diag explain $res;
+    is ref $res, 'OpenQA::Schema::Result::Jobs', 'no error when duplicating root1' or always_explain $res;
     my $cloned = $res->{cluster_cloned};
-    diag explain $cloned;
+    always_explain $cloned;
     my @should_have_been_cloned = ($root_1, $parallel_parent, $parallel_child, $nested_chained_child);
     my @should_not_have_been_cloned = ($root_2, $chained_child);
     ok exists $cloned->{$_->id}, $_->TEST . ' has been cloned' for @should_have_been_cloned;
@@ -322,7 +322,7 @@ subtest 'restarting one of two independent root jobs (only related indirectly vi
 
     subtest 'restarting 2nd root after all is possible' => sub {
         $res = $root_2->auto_duplicate;
-        is ref $res, 'OpenQA::Schema::Result::Jobs', 'no error when duplicating root2' or diag explain $res;
+        is ref $res, 'OpenQA::Schema::Result::Jobs', 'no error when duplicating root2' or always_explain $res;
         $cloned = $res->{cluster_cloned};
         ok exists $cloned->{$_->id}, $_->TEST . ' has been cloned after all' for @should_not_have_been_cloned;
     };

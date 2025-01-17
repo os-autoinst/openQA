@@ -136,20 +136,20 @@ subtest 'asset settings' => sub {
     };
 
     my $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
-    is_deeply($got, $expected, 'Asset settings are correct (relative PFLASH)') or diag explain $got;
+    is_deeply($got, $expected, 'Asset settings are correct (relative PFLASH)') or always_explain $got;
 
     # if UEFI_PFLASH_VARS is an absolute path, we should not treat it as an asset
     $settings->{UEFI_PFLASH_VARS} = '/absolute/path/OVMF_VARS.fd';
     delete($expected->{UEFI_PFLASH_VARS});
 
     $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
-    is_deeply($got, $expected, 'Asset settings are correct (absolute PFLASH)') or diag explain $got;
+    is_deeply($got, $expected, 'Asset settings are correct (absolute PFLASH)') or always_explain $got;
 
     delete($settings->{UEFI_PFLASH_VARS});
     delete($settings->{NUMDISKS});
 
     $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
-    is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or diag explain $got;
+    is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or always_explain $got;
 };
 
 subtest 'caching' => sub {
@@ -350,7 +350,7 @@ subtest 'syncing tests' => sub {
     $cache_client_mock->redefine(status => $status_response);
     OpenQA::Worker::Engines::isotovideo::sync_tests(OpenQA::CacheService::Client->new, @args);
     Mojo::IOLoop->start;
-    is $result, 'cache-dir/webuihost/tests', 'returns synced test directory on success' or diag explain $result;
+    is $result, 'cache-dir/webuihost/tests', 'returns synced test directory on success' or always_explain $result;
 };
 
 subtest 'symlink testrepo, logging behavior, variable expansion' => sub {

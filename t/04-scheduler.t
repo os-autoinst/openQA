@@ -442,9 +442,9 @@ subtest 'worker re-registration' => sub {
 
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
-    isnt($job->id, $grabbed->{id}, 'new job grabbed') or die diag explain $grabbed;
+    isnt($job->id, $grabbed->{id}, 'new job grabbed') or die always_explain $grabbed;
     isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, 'job token differs')
-      or die diag explain $grabbed->to_hash;
+      or die always_explain $grabbed->to_hash;
 
     # update refs for is_deeply compare
     $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
@@ -525,14 +525,14 @@ subtest 'allocating network' => sub {
     subtest 'networks allocated when preparing job for work' => sub {
         $job->prepare_for_work($worker);
         my $networks = _get_job_networks($job_networks);
-        is_deeply $networks, \@expected_networks, 'created 2 job networks' or diag explain $networks;
+        is_deeply $networks, \@expected_networks, 'created 2 job networks' or always_explain $networks;
         is delete $job->{_settings}->{NICVLAN}, '1,2', 'NICVLAN assigned';
     };
 
     subtest 'invoking preparation again without prior cleanup does not fail' => sub {
         $job->prepare_for_work($worker);
         my $networks = _get_job_networks($job_networks);
-        is_deeply $networks, \@expected_networks, 'still just 2 job networks' or diag explain $networks;
+        is_deeply $networks, \@expected_networks, 'still just 2 job networks' or always_explain $networks;
         is delete $job->{_settings}->{NICVLAN}, '1,2', 'the same NICVLAN simply assigned again';
 
         # try again, this time assume _find_network did not reveal any results although we later encounter some
@@ -545,7 +545,7 @@ subtest 'allocating network' => sub {
         throws_ok { $job->prepare_for_work($worker) } qr/unable to alloc.*foo.*already exists/i,
           'explicit error if network to be created already exists';
         $networks = _get_job_networks($job_networks);
-        is_deeply $networks, \@expected_networks, 'still only 2 job networks' or diag explain $networks;
+        is_deeply $networks, \@expected_networks, 'still only 2 job networks' or always_explain $networks;
     };
 
     $schema->txn_rollback;
@@ -556,7 +556,7 @@ subtest 'allocating network' => sub {
         push @expected_networks, [$parallel_job_id, 'bar', 2], [$parallel_job_id, 'foo', 1];
         $job->prepare_for_work($worker);
         my $networks = _get_job_networks($job_networks);
-        is_deeply $networks, \@expected_networks, 'now 4 job networks have been assigned' or diag explain $networks;
+        is_deeply $networks, \@expected_networks, 'now 4 job networks have been assigned' or always_explain $networks;
         is delete $job->{_settings}->{NICVLAN}, '1,2', 'the same NICVLAN simply assigned again';
     };
 
@@ -564,7 +564,7 @@ subtest 'allocating network' => sub {
         $job->release_networks;
         $parallel_job->release_networks;
         my $networks = _get_job_networks($job_networks);
-        is_deeply $networks, [], 'all networks have been deleted again' or diag explain $networks;
+        is_deeply $networks, [], 'all networks have been deleted again' or always_explain $networks;
     }
 };
 

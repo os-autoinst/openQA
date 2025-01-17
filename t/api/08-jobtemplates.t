@@ -250,7 +250,7 @@ is_deeply(
             }]
     },
     "Initial job templates"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 subtest 'to_yaml' => sub {
     my $yaml1 = path("$FindBin::Bin/../data/08-opensuse.yaml")->slurp;
@@ -279,7 +279,7 @@ subtest 'missing-linebreak' => sub {
     $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
     my $yaml = $t->tx->res->json;
     is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
 };
 
 $t->post_ok(
@@ -341,7 +341,7 @@ subtest 'Lookup job templates' => sub {
         '/JobTemplates/0' => $job_template1,
         "Found job template $job_template_id1 by its ID"
     );
-    diag explain $t->tx->res->json unless $t->success;
+    always_explain $t->tx->res->json unless $t->success;
 
     my $job_template2 = {
         'group_name' => 'opensuse',
@@ -368,7 +368,7 @@ subtest 'Lookup job templates' => sub {
         '/JobTemplates/0' => $job_template2,
         "Found job template $job_template_id2 by its ID"
     );
-    diag explain $t->tx->res->json unless $t->success;
+    always_explain $t->tx->res->json unless $t->success;
 
     $t->get_ok(
         "/api/v1/job_templates",
@@ -384,13 +384,13 @@ subtest 'Lookup job templates' => sub {
         '/JobTemplates/0' => $job_template2,
         'Found job template by name'
     );
-    diag explain $t->tx->res->json unless $t->success;
+    always_explain $t->tx->res->json unless $t->success;
 
     $t->get_ok("/api/v1/job_templates", form => {test_suite_name => 'kde'})->status_is(200)->json_is(
         '/JobTemplates' => [$job_template3, $job_template1],
         'Found job templates with test suite kde'
     );
-    diag explain $t->tx->res->json unless $t->success;
+    always_explain $t->tx->res->json unless $t->success;
 };
 
 subtest 'server-side limit has precedence over user-specified limit' => sub {
@@ -461,36 +461,36 @@ my $product = 'open-*.SUSE1';
 my $yaml = {};
 my $schema_filename = 'JobTemplates-01.yaml';
 is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)}, 2, 'Empty YAML is an error')
-  or diag explain dump_yaml(string => $yaml);
+  or always_explain dump_yaml(string => $yaml);
 $yaml->{scenarios}{'x86_64'}{$product} = ['spam', 'eggs'];
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), ["/products: Missing property."], 'No products defined')
-  or diag explain dump_yaml(string => $yaml);
+  or always_explain dump_yaml(string => $yaml);
 $yaml->{products}{$product} = {version => '42.1', flavor => 'DVD'};
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product/distri: Missing property.",
     'No distri specified'
-) or diag explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml(string => $yaml);
 $yaml->{products}{$product}{distri} = 'sle';
 delete $yaml->{products}{$product}{flavor};
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product/flavor: Missing property.",
     'No flavor specified'
-) or diag explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml(string => $yaml);
 $yaml->{products}{$product}{flavor} = 'DVD';
 delete $yaml->{products}{$product}{version};
 is_deeply(
     $t->app->validate_yaml($yaml, $schema_filename, 1),
     ["/products/$product/version: Missing property."],
     'No version specified'
-) or diag explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml(string => $yaml);
 $yaml->{products}{$product}{distribution} = 'sle';
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product: Properties not allowed: distribution.",
     'Invalid product property specified'
-) or diag explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml(string => $yaml);
 delete $yaml->{products}{$product}{distribution};
 $yaml->{products}{$product}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
@@ -507,7 +507,7 @@ $yaml->{scenarios}{'x86_64'}{$product} = [
         },
     }];
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML valid as expected')
-  or diag explain dump_yaml(string => $yaml);
+  or always_explain dump_yaml(string => $yaml);
 my $opensuse = $job_groups->find({name => 'opensuse'});
 # Make 40 our default priority, which matters when we look at the "defaults" key later
 $opensuse->update({default_priority => 40});
@@ -515,7 +515,7 @@ $opensuse->update({default_priority => 40});
 $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
 $yaml = $t->tx->res->json;
 is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
-  || diag explain $t->tx->res->body;
+  || always_explain $t->tx->res->body;
 # Get one group with defined scenarios, products and defaults
 $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200);
 #$yaml = $t->tx->res->body;
@@ -524,32 +524,32 @@ $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200);
 $yaml = load_yaml(string => $t->tx->res->json);
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML of single group is valid');
 my $yaml2 = load_yaml(file => "$FindBin::Bin/../data/08-opensuse-2.yaml");
-is_deeply($yaml, $yaml2, 'YAML for opensuse group') || diag explain $t->tx->res->body;
+is_deeply($yaml, $yaml2, 'YAML for opensuse group') || always_explain $t->tx->res->body;
 
 subtest 'content-type' => sub {
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, $accept_yaml)->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->body),
         $yaml, '[Accept: text/yaml] Test suite with unicode characters encoded correctly')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => '*/*'})->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->body),
         $yaml, '[Accept: */*] Test suite with unicode characters encoded correctly')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => 'application/json'})->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->json),
         $yaml, '[Accept: application/json] Test suite with unicode characters encoded correctly')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
     is_deeply(load_yaml(string => $t->tx->res->json),
         $yaml, '[no explicit Accept header] Test suite with unicode characters encoded correctly')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling', $accept_yaml)->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
@@ -558,7 +558,7 @@ subtest 'content-type' => sub {
         ['opensuse', 'opensuse test'],
         [sort keys %$yaml],
         '[Accept: text/yaml] YAML of all groups contains names'
-    ) || diag explain $t->tx->res->body;
+    ) || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling', {Accept => '*/*'})->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
@@ -567,7 +567,7 @@ subtest 'content-type' => sub {
         ['opensuse', 'opensuse test'],
         [sort keys %$yaml],
         '[Accept: text/yaml] YAML of all groups contains names'
-    ) || diag explain $t->tx->res->body;
+    ) || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling', {Accept => 'application/json'})->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
@@ -576,7 +576,7 @@ subtest 'content-type' => sub {
         ['opensuse', 'opensuse test'],
         [sort keys %$yaml],
         '[Accept: application/json] YAML of all groups contains names'
-    ) || diag explain $t->tx->res->body;
+    ) || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling')->status_is(200)->content_type_is('application/json;charset=UTF-8');
     $yaml = $t->tx->res->json;
@@ -584,7 +584,7 @@ subtest 'content-type' => sub {
         ['opensuse', 'opensuse test'],
         [sort keys %$yaml],
         '[no explicit Accept header] YAML of all groups contains names'
-    ) || diag explain $t->tx->res->body;
+    ) || always_explain $t->tx->res->body;
 };
 
 subtest 'Migration' => sub {
@@ -599,7 +599,7 @@ subtest 'Migration' => sub {
             schema => $schema_filename,
             template => $yaml
         })->status_is(200, 'YAML added to the database');
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
     $opensuse->discard_changes;
     is($opensuse->template, $yaml, 'YAML stored in the database');
     $yaml = "# comments help readability\n$yaml# or in the end\n";
@@ -655,9 +655,9 @@ subtest 'Conflicts' => sub {
             reference => $yaml,
             template => $yaml,
         })->status_is(200, 'posting with correct reference succeeds');
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
     my $saved_yaml = $t->tx->res->json->{template};
-    ok($saved_yaml =~ m/\n\z/, 'Saved YAML has trailing line-break') or diag explain $saved_yaml;
+    ok($saved_yaml =~ m/\n\z/, 'Saved YAML has trailing line-break') or always_explain $saved_yaml;
 
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
@@ -666,7 +666,7 @@ subtest 'Conflicts' => sub {
             reference => $saved_yaml,
             template => $yaml,
         })->status_is(200, 're-posting the result as a reference succeeds');
-    diag explain $t->tx->res->body unless $t->success;
+    always_explain $t->tx->res->body unless $t->success;
 };
 
 my $template = {};
@@ -674,7 +674,7 @@ subtest 'Schema handling' => sub {
     for my $schema_filename (undef, 'NoSuchSchema', '../test.yaml', '/home/test.yaml', 'NoSuchSchema.yaml') {
         is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)},
             1, 'Validating with schema ' . ($schema_filename // 'undefined') . ' is an error')
-          or diag explain dump_yaml(string => $yaml);
+          or always_explain dump_yaml(string => $yaml);
     }
 
     for my $schema_filename ('NoSuchSchema', '../test.yaml', '/home/test.yaml') {
@@ -688,7 +688,7 @@ subtest 'Schema handling' => sub {
             '/error' => 'Erroneous parameters (schema invalid)',
             "posting YAML template with schema $schema_filename fails"
         );
-        diag explain $t->tx->res->body unless $t->success;
+        always_explain $t->tx->res->body unless $t->success;
     }
 
     $t->post_ok(
@@ -700,7 +700,7 @@ subtest 'Schema handling' => sub {
         '/error' => 'Erroneous parameters (schema missing)',
         'posting YAML template with no schema fails'
     );
-    diag explain $t->tx->res->body unless $t->success;
+    always_explain $t->tx->res->body unless $t->success;
 
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
@@ -717,13 +717,13 @@ my $json = $t->tx->res->json;
 my @errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
 is $json->{error_status}, 400, 'posting invalid YAML (schema validation fails) template results in error';
 my @e = ({path => '/products', message => 'Missing property.'}, {path => '/scenarios', message => 'Missing property.'});
-is_deeply \@errors, \@e, 'validation error messages returned' or diag explain $json;
+is_deeply \@errors, \@e, 'validation error messages returned' or always_explain $json;
 $form{template} = '}{';
 $t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
 $json = $t->tx->res->json;
 @errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
 is $json->{error_status}, 400, 'posting invalid YAML (broken syntax) template results in error';
-like join('', @errors), qr/.*line.*column.*\}\{.*/is, 'parsing error messages returned' or diag explain $json;
+like join('', @errors), qr/.*line.*column.*\}\{.*/is, 'parsing error messages returned' or always_explain $json;
 
 # Assure that testsuite hashes with more than one key are detected as invalid
 $form{template} = path("$FindBin::Bin/../data/08-testsuite-multiple-keys.yaml")->slurp;
@@ -763,7 +763,7 @@ subtest 'Create and modify groups with YAML' => sub {
         },
         'Invalid testsuite'
     );
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
 
     # Add required testsuites
     for my $test_suite_name (qw(foobar spam eggs)) {
@@ -813,13 +813,13 @@ subtest 'Create and modify groups with YAML' => sub {
             },
         },
         'Expected result returned in response'
-    ) || diag explain $t->tx->res->body;
+    ) || always_explain $t->tx->res->body;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
     is_deeply(
         load_yaml(string => $t->tx->res->json),
         {scenarios => {}, products => {}},
         'No job group and templates added to the database'
-    ) || diag explain $t->tx->res->body;
+    ) || always_explain $t->tx->res->body;
     is($audit_events->count, $audit_event_count, 'no audit event emitted in preview mode');
 
     $t->post_ok(
@@ -828,10 +828,10 @@ subtest 'Create and modify groups with YAML' => sub {
             schema => $schema_filename,
             template => dump_yaml(string => $yaml)});
     $t->status_is(200, 'Changes applied to the database');
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
     is_deeply(load_yaml(string => $t->tx->res->json), $yaml, 'Added job template reflected in the database')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
 
     subtest 'Modify test attributes in group according to YAML template' => sub {
         $yaml->{defaults}{i586}{settings} = {BAR => 'unused default', FOO => 'default'};
@@ -922,7 +922,7 @@ subtest 'Create and modify groups with YAML' => sub {
             load_yaml(string => $t->tx->res->json),
             load_yaml(string => $exp_yaml),
             'YAML with merge keys equals YAML with resolved merge keys'
-        ) || diag explain $t->tx->res->body;
+        ) || always_explain $t->tx->res->body;
 
         $schema->txn_rollback;
     };
@@ -955,10 +955,10 @@ subtest 'Create and modify groups with YAML' => sub {
         $form{template} = dump_yaml(string => $yaml);
         $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
         $t->status_is(200);
-        return diag explain $t->tx->res->body unless $t->success;
+        return always_explain $t->tx->res->body unless $t->success;
         my $templates = $job_templates->search({prio => 16});
         if (!is $templates->count, 2, 'two distinct job templates') {
-            diag explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
+            always_explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
         }
         my %new_isos_post_params = (
             _GROUP => 'foo',
@@ -968,7 +968,7 @@ subtest 'Create and modify groups with YAML' => sub {
             ARCH => 'i586',
         );
         $t->post_ok('/api/v1/isos', form => \%new_isos_post_params)->status_is(200, 'ISO posted');
-        return diag explain $t->tx->res->body unless $t->success;
+        return always_explain $t->tx->res->body unless $t->success;
         my $jobs = $schema->resultset('Jobs');
         my %tests = map { $_ => $jobs->find($_)->settings_hash->{'NAME'} } @{$t->tx->res->json->{ids}};
         is_deeply(
@@ -994,7 +994,7 @@ subtest 'Create and modify groups with YAML' => sub {
         );
         $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
         is_deeply(load_yaml(string => $t->tx->res->json), $yaml, 'Unmodified group should not result in any changes')
-          || diag explain $t->tx->res->body;
+          || always_explain $t->tx->res->body;
     };
 
     subtest 'Single scenario with multiple machines' => sub {
@@ -1008,10 +1008,10 @@ subtest 'Create and modify groups with YAML' => sub {
             form => {
                 schema => $schema_filename,
                 template => dump_yaml(string => $yaml)});
-        return diag explain $t->tx->res->body unless $t->success;
+        return always_explain $t->tx->res->body unless $t->success;
         my $templates = $job_templates->search({prio => 7});
         if (!is $templates->count, 4, 'four job templates created') {
-            diag explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
+            always_explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
         }
     };
 
@@ -1091,14 +1091,14 @@ subtest 'References' => sub {
             schema => $schema_filename,
             template => dump_yaml(string => $yaml)});
     $t->status_is(200, 'New group with references was added to the database');
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
 
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id4");
     # Prepare expected result
     @{$yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'}} = qw(spam eggs);
     is_deeply(load_yaml(string => $t->tx->res->json),
         $yaml, 'Added group with references should be reflected in the database')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
 
     # Event reflects changes to the YAML
     @{$yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'}} = qw(spam foobar);
@@ -1107,7 +1107,7 @@ subtest 'References' => sub {
         form => {
             schema => $schema_filename,
             template => dump_yaml(string => $yaml)})->status_is(200);
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
 
     is_deeply(
         OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
@@ -1140,7 +1140,7 @@ subtest 'Hidden keys' => sub {
             expand => 1,
             template => dump_yaml(string => $yaml)});
     $t->status_is(200, 'New group with hidden keys was added to the database');
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
 
     # Prepare expected result
     $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'}
@@ -1149,7 +1149,7 @@ subtest 'Hidden keys' => sub {
     delete $yaml->{'.kde_template'};
     is_deeply(load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
         $yaml, 'Added group with hidden keys should be reflected in the database')
-      || diag explain $t->tx->res->body;
+      || always_explain $t->tx->res->body;
     # Clean up to avoid affecting other subtests
     $job_group->delete;
 };
@@ -1184,7 +1184,7 @@ subtest 'Staging' => sub {
             schema => $schema_filename,
             template => dump_yaml(string => $yaml)});
     $t->status_is(200, 'New group with references and variables was added to the database');
-    return diag explain $t->tx->res->body unless $t->success;
+    return always_explain $t->tx->res->body unless $t->success;
     $t->get_ok(
         "/api/v1/job_templates",
         form => {
@@ -1230,7 +1230,7 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
                 flavor => $job_template->product->flavor,
                 version => $job_template->product->version,
                 settings => {TEST => '1'}})->status_is(200, 'Product settings are not locked');
-        diag explain $t->tx->res->body if !$t->success;
+        always_explain $t->tx->res->body if !$t->success;
         $t->delete_ok('/api/v1/products/' . $job_template->product_id)->json_is(
             '' =>
               {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
@@ -1245,7 +1245,7 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
         $t->post_ok('/api/v1/machines/' . $job_template->machine_id,
             json => {name => $job_template->machine->name, backend => 'kde/usb', settings => {TEST => '1'}})
           ->status_is(200, 'Machine settings are not locked');
-        diag explain $t->tx->res->body if !$t->success;
+        always_explain $t->tx->res->body if !$t->success;
         $t->delete_ok('/api/v1/machines/' . $job_template->machine_id)->json_is(
             '' =>
               {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
@@ -1258,12 +1258,12 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
         $t->post_ok('/api/v1/test_suites/' . $job_template->test_suite_id,
             json => {name => $job_template->test_suite->name, description => 'Lorem ipsum'})
           ->status_is(200, 'Description is not locked');
-        diag explain $t->tx->res->body if !$t->success;
+        always_explain $t->tx->res->body if !$t->success;
         $t->post_ok(
             '/api/v1/test_suites/' . $job_template->test_suite_id,
             json => {name => $job_template->test_suite->name, description => 'Lorem ipsum', settings => {TEST => '1'}}
         )->status_is(200, 'Test suite settings are not locked');
-        diag explain $t->tx->res->body if !$t->success;
+        always_explain $t->tx->res->body if !$t->success;
         $t->delete_ok('/api/v1/test_suites/' . $job_template->test_suite_id)->json_is(
             '' => {error_status => 400, error => 'Group opensuse must be updated through the YAML template'},
             'Attempt to delete test suite used in group was blocked'
@@ -1310,6 +1310,6 @@ $t->post_ok(
     })->status_is(403);
 $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(403);
 
-is_deeply \@logged_errors, [], 'no errors logged' or diag explain \@logged_errors;
+is_deeply \@logged_errors, [], 'no errors logged' or always_explain \@logged_errors;
 
 done_testing();

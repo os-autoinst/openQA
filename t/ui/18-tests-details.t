@@ -153,7 +153,7 @@ subtest 'show job modules execution time' => sub {
 subtest 'displaying image result with candidates' => sub {
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     my $needles = find_candidate_needles;
-    is_deeply($needles, {'inst-bootmenu' => []}, 'correct tags displayed') or diag explain $needles;
+    is_deeply($needles, {'inst-bootmenu' => []}, 'correct tags displayed') or always_explain $needles;
 };
 
 subtest 'filtering' => sub {
@@ -708,7 +708,7 @@ $t->ua(
 $t->app($app);
 my $post
   = $t->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => FAILED})->status_is(200, 'set job as done');
-diag explain $t->tx->res->body unless $t->success;
+always_explain $t->tx->res->body unless $t->success;
 
 $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 my @worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
@@ -778,11 +778,11 @@ subtest 'helper functions of investigation tab' => sub {
         {link => '<a href="test/a54a4bb34">a54a4bb34</a>', msg => 'Remove select…', stat => [' stat3', ' stat4']},
     );
     my $links = $driver->execute_script("return githashToLink(\"$value\", 'test/')");
-    is_deeply $links, \@expected_links, 'links returned for valid value' or diag explain $links;
+    is_deeply $links, \@expected_links, 'links returned for valid value' or always_explain $links;
 
     $value = '9b8aaf060 Containers: Inc…\n stat1\n stat2\na54a4bb34Remove select…\n stat3\n stat4\n';
     $links = $driver->execute_script("return githashToLink(\"$value\", 'test/')");
-    is_deeply $links, undef, 'null returned as second line is invalid' or diag explain $links;
+    is_deeply $links, undef, 'null returned as second line is invalid' or always_explain $links;
 };
 
 subtest 'additional investigation notes provided on new failed' => sub {

@@ -46,7 +46,7 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     $t->get_ok('/tests/' . $job->id => {Referer => $test_referer})->status_is(200);
     $linked = job_is_linked($job);
     is($linked, 1, 'job linked after accessed from known referer');
-    is(scalar @comment_events, 1, 'exactly one comment event emitted') or diag explain \@comment_events;
+    is(scalar @comment_events, 1, 'exactly one comment event emitted') or always_explain \@comment_events;
     $openqa_events->unsubscribe($cb);
 
     $_settings{TEST} = 'refJobTest-step';

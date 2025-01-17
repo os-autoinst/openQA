@@ -255,7 +255,7 @@ subtest 'cache purging after successful download' => sub {
         _check_limits => sub ($self, $needed, $to_preserve) {
             is($needed, 256, 'correct number of bytes would be freed');
             like(join('', keys %$to_preserve), qr/$asset$/, 'downloaded asset would have been preserved')
-              or diag explain $to_preserve;
+              or always_explain $to_preserve;
             $cache_mock->original('_check_limits')->($self, $needed, $to_preserve);
         });
     $cache->get_asset($host, {id => 922756}, 'hdd', $asset);
@@ -277,7 +277,7 @@ like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_#:.*" successful \
   'Asset with special characters was downloaded successfully';
 like $cache_log, qr/Size of .* is 20 Byte, with ETag "123456789"/, 'Etag and size are logged';
 $cache_log = '';
-is $res, undef, 'no error returned for successful download' or diag explain $res;
+is $res, undef, 'no error returned for successful download' or always_explain $res;
 
 $cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';

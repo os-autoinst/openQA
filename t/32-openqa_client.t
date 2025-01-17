@@ -165,7 +165,7 @@ subtest 'upload retries' => sub {
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image4.xml', asset => 'other'});
     };
     ok !$@, 'No upload errors';
-    is $fail_chunk, 1, 'One chunk failed uploading, but we recovered' or diag explain "\$fail_chunk: $fail_chunk";
+    is $fail_chunk, 1, 'One chunk failed uploading, but we recovered' or always_explain "\$fail_chunk: $fail_chunk";
     is $responses, OpenQA::File::_chunk_size(-s $filename, $chunk_size) + 1, 'responses as expected';
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
     ok -e $rp, 'Asset exists after upload';

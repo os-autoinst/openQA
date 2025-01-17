@@ -56,7 +56,7 @@ is_deeply(
             }]
     },
     "Initial products"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 
 # no arch
@@ -117,7 +117,7 @@ is_deeply(
             }]
     },
     "Add product"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/products/$product_id",
     json =>
@@ -144,7 +144,7 @@ is_deeply(
             }]
     },
     "Delete product variable"
-) || diag explain $t->tx->res->json;
+) || always_explain $t->tx->res->json;
 
 subtest 'server-side limit has precedence over user-specified limit' => sub {
     my $limits = OpenQA::App->singleton->config->{misc_limits};

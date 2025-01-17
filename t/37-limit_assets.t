@@ -368,12 +368,12 @@ subtest 'tracked assets' => sub {
     for my $name (qw(iso/whatever.sha256 other/misc.xml repo/otherrepo-CURRENT)) {
         ok(-e assetdir() . '/' . $name, "$name exists in the test folder");
         ok(grep(/$name$/, @tracked_assets), "$name picked up for cleanup")
-          || diag explain join(' ', sort @tracked_assets);
+          || always_explain join(' ', sort @tracked_assets);
     }
     # Ignored assets include repo links, file links
     for my $name (qw(repo/somethingrepo other/misc2.xml)) {
         ok(-e assetdir() . '/' . $name, "$name exists in the test folder");
-        ok(!grep(/$name$/, @tracked_assets), "$name ignored") || diag explain join(' ', sort @tracked_assets);
+        ok(!grep(/$name$/, @tracked_assets), "$name ignored") || always_explain join(' ', sort @tracked_assets);
     }
 };
 
@@ -417,7 +417,7 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
     my @expected_assets = map { $_ . $expected_asset_base_name } ('00099937-', '');
     my $child_job = $schema->resultset('Jobs')->find(99938);
     $child_job->register_assets_from_settings;
-    is_deeply(\@located_assets, \@expected_assets, 'chained parent considered') or diag explain \@located_assets;
+    is_deeply(\@located_assets, \@expected_assets, 'chained parent considered') or always_explain \@located_assets;
 
     # assume there's one directly chained parent
     @located_assets = ();
@@ -425,7 +425,7 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
     $child_job->discard_changes;
     $child_job->register_assets_from_settings;
     is_deeply(\@located_assets, \@expected_assets, 'directly chained parent considered')
-      or diag explain \@located_assets;
+      or always_explain \@located_assets;
 
     # assume there's one parallel parent
     @located_assets = ();
@@ -433,7 +433,7 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
     $child_job->discard_changes;
     $child_job->register_assets_from_settings;
     is_deeply(\@located_assets, [$expected_asset_base_name], 'parallel parent not considered')
-      or diag explain \@located_assets;
+      or always_explain \@located_assets;
 };
 
 subtest 'asset status with pending state, max_job and max_job by group' => sub {
@@ -482,7 +482,7 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     $assets_with_max_job->[5]->{id} = undef;    # might vary
     is_deeply($assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job')
-      or diag explain $assets_with_max_job;
+      or always_explain $assets_with_max_job;
     is(
         join(' ', sort keys %$assets_without_max_job),
         join(' ', sort keys %expected_assets_without_max_job),
@@ -499,7 +499,7 @@ subtest 'size of exclusively kept assets tracked' => sub {
             '1001' => 12,
             '1002' => 0,    # value not present because 1002 is in parent group 1
             '1' => 16,    # everything from 1002
-        }) or diag explain \%exclusively_kept_assets;
+        }) or always_explain \%exclusively_kept_assets;
 };
 
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {

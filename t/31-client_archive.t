@@ -36,7 +36,7 @@ subtest 'OpenQA::Client:Archive tests' => sub {
         );
         my $command = $t->ua->archive->run(\%options);
     };
-    is($@, '', 'Archive functionality works as expected would perform correctly') or diag explain $@;
+    is($@, '', 'Archive functionality works as expected would perform correctly') or always_explain $@;
 
     my $file = $destination->child('testresults', 'details-zypper_up.json');
     ok(-e $file, 'details-zypper_up.json file exists') or diag $file;

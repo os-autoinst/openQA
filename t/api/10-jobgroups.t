@@ -136,7 +136,7 @@ subtest 'create parent group' => sub() {
             '/error' => "Erroneous parameters ($parameter invalid)",
             'Invalid parameter types caught'
           );
-        return diag explain $t->tx->res->json unless $t->success;
+        return always_explain $t->tx->res->json unless $t->success;
     }
 
     $t->post_ok(
@@ -146,7 +146,7 @@ subtest 'create parent group' => sub() {
             size_limit_gb => 200,
             default_keep_important_logs_in_days => 45
         })->status_is(200);
-    return diag explain $t->tx->res->json unless $t->success;
+    return always_explain $t->tx->res->json unless $t->success;
 
     my $new_id = $t->tx->res->json->{id};
     $t->get_ok('/api/v1/parent_groups/' . $new_id)->status_is(200);
@@ -196,7 +196,7 @@ subtest 'create job group' => sub() {
             '/error' => "Erroneous parameters ($parameter invalid)",
             'Invalid parameter types caught'
           );
-        return diag explain $t->tx->res->json unless $t->success;
+        return always_explain $t->tx->res->json unless $t->success;
     }
 
     @forms = (
@@ -210,7 +210,7 @@ subtest 'create job group' => sub() {
     for my $form (@forms) {
         $t->post_ok('/api/v1/job_groups', form => $form)
           ->status_is(200, "Create group $form->{name} with different properties");
-        return diag explain $t->tx->res->json unless $t->success;
+        return always_explain $t->tx->res->json unless $t->success;
     }
 
     $cool_group_id = $t->tx->res->json->{id};
@@ -257,7 +257,7 @@ subtest 'update job group' => sub() {
             default_keep_results_in_days => 222,
             default_keep_important_results_in_days => 333
         })->tx->res->json->{id};
-    return diag explain $t->tx->res->json unless $t->success;
+    return always_explain $t->tx->res->json unless $t->success;
 
     my @forms = (
         {size_limit_gb => '-300GB'},
@@ -278,7 +278,7 @@ subtest 'update job group' => sub() {
             '/error' => "Erroneous parameters ($parameter invalid)",
             'Invalid parameter types caught'
           );
-        return diag explain $t->tx->res->json unless $t->success;
+        return always_explain $t->tx->res->json unless $t->success;
     }
 
     $t->put_ok(
@@ -303,7 +303,7 @@ subtest 'update job group' => sub() {
             sort_order => 123,
             parent_id => $new_id,
         })->status_is(200, 'Name is optional if drag is specified');
-    return diag explain $t->tx->res->json unless $t->success;
+    return always_explain $t->tx->res->json unless $t->success;
 
     $t->get_ok("/api/v1/job_groups/$opensuse_group")->status_is(200);
     $t->json_is('/0/keep_logs_in_days' => 22, 'inherited logs expiry from parent');

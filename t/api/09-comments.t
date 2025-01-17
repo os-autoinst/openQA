@@ -182,7 +182,7 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     $t->get_ok('/api/v1/jobs/99981/comments?limit=10', 'query with exceeding user-specified limit for comments')
       ->status_is(200);
     my $jobs = $t->tx->res->json;
-    diag explain $jobs;
+    always_explain $jobs;
     is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 5, 'maximum limit for comments is effective';
 
     $t->get_ok('/api/v1/jobs/99981/comments?limit=3', 'query with exceeding user-specified limit for comments')

@@ -28,8 +28,8 @@ subtest 'schedule from yaml file: error cases' => sub {
     like $json->{error},
       qr/Unable to load YAML:.*Could not open 'does-not-exist.yaml' for reading: No such file or directory/,
       'error when YAML file does not exist'
-      or diag explain $json;
-    is $json->{count}, 0, 'no jobs are scheduled when loading YAML fails' or diag explain $json;
+      or always_explain $json;
+    is $json->{count}, 0, 'no jobs are scheduled when loading YAML fails' or always_explain $json;
 
     $file = "$FindBin::Bin/../data/09-schedule_from_file_incomplete.yaml";
     my @expected_errors
@@ -38,14 +38,14 @@ subtest 'schedule from yaml file: error cases' => sub {
     %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs');
     $res = schedule_iso($t, \%args, 400);
     $json = $res->json;
-    like $json->{error}, qr|$expected_errors|s, 'error when YAML file is invalid' or diag explain $json;
-    is $json->{count}, 0, 'no jobs are scheduled when validating YAML file fails' or diag explain $json;
+    like $json->{error}, qr|$expected_errors|s, 'error when YAML file is invalid' or always_explain $json;
+    is $json->{count}, 0, 'no jobs are scheduled when validating YAML file fails' or always_explain $json;
 
     %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'autoyast_btrfs');
     $res = schedule_iso($t, \%args, 400);
     $json = $res->json;
-    like $json->{error}, qr|$expected_errors|s, 'error when YAML is invalid' or diag explain $json;
-    is $json->{count}, 0, 'no jobs are scheduled when validating YAML fails' or diag explain $json;
+    like $json->{error}, qr|$expected_errors|s, 'error when YAML is invalid' or always_explain $json;
+    is $json->{count}, 0, 'no jobs are scheduled when validating YAML fails' or always_explain $json;
 };
 
 subtest 'schedule from yaml file: case with machines/products and job dependencies' => sub {
@@ -53,9 +53,9 @@ subtest 'schedule from yaml file: case with machines/products and job dependenci
     my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs');
     my $res = schedule_iso($t, \%args, 200);
     my $json = $res->json;
-    is $json->{count}, 2, 'two jobs were scheduled' or return diag explain $json;
+    is $json->{count}, 2, 'two jobs were scheduled' or return always_explain $json;
     my $job_ids = $json->{ids};
-    is @$job_ids, 2, 'two job IDs returned' or return diag explain $json;
+    is @$job_ids, 2, 'two job IDs returned' or return always_explain $json;
     my $parent_job = $jobs->find($job_ids->[0]);
     is $parent_job->TEST, 'create_hdd', 'parent job for creating HDD created';
     my $parent_job_settings = $parent_job->settings_hash;
@@ -79,7 +79,7 @@ subtest 'schedule from yaml file: case with machines/products and job dependenci
             is $job_settings->{QEMURAM}, 3072, "QEMURAM ($job_settings->{TEST})";
             is $job_settings->{UEFI}, 1, "UEFI ($job_settings->{TEST})";
         }
-    } or diag explain \@settings;
+    } or always_explain \@settings;
     subtest 'settings from product definition present' => sub {
         for my $job_settings (@settings) {
             is $job_settings->{PRODUCT_SETTING}, 'foo', "PRODUCT_SETTING ($job_settings->{TEST})";
@@ -88,7 +88,7 @@ subtest 'schedule from yaml file: case with machines/products and job dependenci
             is $job_settings->{FLAVOR}, 'DVD', "FLAVOR ($job_settings->{TEST})";
             is $job_settings->{ARCH}, 'i586', "ARCH ($job_settings->{TEST})";
         }
-    } or diag explain \@settings;
+    } or always_explain \@settings;
     subtest 'worker class merged from different places' => sub {
         is $parent_job_settings->{WORKER_CLASS}, 'merged-with-machine-settings,qemu_aarch64', 'WORKER_CLASS (parent)';
         is $child_job_settings->{WORKER_CLASS}, 'job-specific-class,merged-with-machine-settings,qemu_aarch64',
@@ -102,9 +102,9 @@ subtest 'schedule from yaml file: most simple case of two explicitly specified j
     my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'job1,job2');
     my $res = schedule_iso($t, \%args, 200);
     my $json = $res->json;
-    is $json->{count}, 2, 'two jobs were scheduled without products/machines' or diag explain $json;
+    is $json->{count}, 2, 'two jobs were scheduled without products/machines' or always_explain $json;
     my $job_ids = $json->{ids};
-    is @$job_ids, 2, 'two job IDs returned' or return diag explain $json;
+    is @$job_ids, 2, 'two job IDs returned' or return always_explain $json;
     $iso{DISTRI} = lc $iso{DISTRI};    # distri is expected to be converted to lower-case
     for my $i (1, 2) {
         my $job_id = $job_ids->[$i - 1];
@@ -117,7 +117,7 @@ subtest 'schedule from yaml file: most simple case of two explicitly specified j
             WORKER_CLASS => 'qemu_i586',
             "FOO_$i" => "bar$i",
         );
-        is_deeply $job_settings, \%expected, "job$i scheduled with expected settings" or diag explain $job_settings;
+        is_deeply $job_settings, \%expected, "job$i scheduled with expected settings" or always_explain $job_settings;
         is $job->priority, $i, 'priority was set correctly';
     }
 };
@@ -127,9 +127,9 @@ subtest 'schedule from yaml file: wildcard version' => sub {
     my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'job1');
     my $res = schedule_iso($t, \%args, 200);
     my $json = $res->json;
-    is $json->{count}, 1, 'one job was scheduled' or diag explain $json;
+    is $json->{count}, 1, 'one job was scheduled' or always_explain $json;
     my $job_ids = $json->{ids};
-    is @$job_ids, 1, 'one job ID returned' or return diag explain $json;
+    is @$job_ids, 1, 'one job ID returned' or return always_explain $json;
     $iso{DISTRI} = lc $iso{DISTRI};    # distri is expected to be converted to lower-case
     my $job_id = $job_ids->[0];
     my $job_settings = $jobs->find($job_id)->settings_hash;
@@ -141,7 +141,7 @@ subtest 'schedule from yaml file: wildcard version' => sub {
         FOO => 'bar',
         PRODUCT_SETTING => 'foo',
     );
-    is_deeply $job_settings, \%expected, "job1 scheduled with expected settings" or diag explain $job_settings;
+    is_deeply $job_settings, \%expected, "job1 scheduled with expected settings" or always_explain $job_settings;
 };
 
 done_testing();

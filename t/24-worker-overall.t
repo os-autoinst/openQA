@@ -108,7 +108,7 @@ qr/Ignoring host.*Working directory does not exist/,
 is($worker->app->level, 'debug', 'log level set to debug with verbose switch');
 my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
 is_deeply(\@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client for each web UI host')
-  or diag explain \@webui_hosts;
+  or always_explain \@webui_hosts;
 
 
 combined_like { $worker->log_setup_info }
@@ -158,7 +158,7 @@ subtest 'capabilities' => sub {
             )
         ],
         'capabilities contain expected information'
-    ) or diag explain $capabilities;
+    ) or always_explain $capabilities;
 
     # clear cached capabilities
     delete $worker->{_caps};
@@ -187,7 +187,7 @@ subtest 'capabilities' => sub {
                 )
             ],
             'capabilities contain expected information'
-        ) or diag explain $capabilities;
+        ) or always_explain $capabilities;
         is($capabilities->{worker_class}, 'qemu_aarch64', 'default worker class for architecture assigned');
     };
 
@@ -273,7 +273,7 @@ subtest 'accept or skip next job' => sub {
             my $next_job = OpenQA::Worker::_grab_next_job(\@pending_jobs, \%queue_info);
             my @actual_step_results = ($next_job, $queue_info{parent_chain});
             my $ok = is_deeply \@actual_step_results, $expected_step, "iteration step $step_index";
-            $ok or diag explain $_ for @actual_step_results;
+            $ok or always_explain $_ for @actual_step_results;
             $step_index += 1;
         }
         is scalar @pending_jobs, 0, 'no pending jobs left';
@@ -388,7 +388,7 @@ subtest 'accept or skip next job' => sub {
         $worker->enqueue_jobs_and_accept_first($client, \%job_info);
         ok($worker->current_job, 'current job assigned');
         is_deeply($worker->current_job->info, $job_info{data}->{26}, 'the current job is the first job in the sequence')
-          or diag explain $worker->current_job->info;
+          or always_explain $worker->current_job->info;
 
         ok($worker->has_pending_jobs, 'worker has pending jobs');
         is_deeply($worker->pending_job_ids, [27, 28], 'pending job IDs returned as expected');
@@ -416,7 +416,7 @@ subtest 'accept or skip next job' => sub {
             $client->api_calls,
             [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped', worker_id => 42}],
             'API call for skipping done'
-        ) or diag explain $client->api_calls;
+        ) or always_explain $client->api_calls;
     };
 };
 
