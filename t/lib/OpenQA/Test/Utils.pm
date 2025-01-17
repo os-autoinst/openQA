@@ -44,6 +44,7 @@ BEGIN {
         require OpenQA::Utils;
         $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
     }
+    $ENV{OS_AUTOINST_BASEDIR} //= '../os-autoinst';
 }
 
 our (@EXPORT, @EXPORT_OK);
@@ -352,14 +353,14 @@ sub setup_share_dir {
     $sharedir = path($sharedir, 'openqa', 'share')->make_path;
 
     path($sharedir, 'factory', 'iso')->make_path;
-
-    my $iso_file_path = abs_path('../os-autoinst/t/data/Core-7.2.iso') or die 'Core-7.2.iso not found';
+    my $iso_file_path = abs_path($ENV{OS_AUTOINST_BASEDIR} . '/t/data/Core-7.2.iso') or die 'Core-7.2.iso not found';
     my $iso_link_path = path($sharedir, 'factory', 'iso')->child('Core-7.2.iso')->to_string();
     symlink($iso_file_path, $iso_link_path) || die "can't symlink $iso_link_path -> $iso_file_path: $!";
 
     path($sharedir, 'tests')->make_path;
 
-    my $tests_dir_path = abs_path('../os-autoinst/t/data/tests/') or die 'tests dir not found';
+    my $tests_dir_path = abs_path($ENV{OS_AUTOINST_BASEDIR} . '/t/data/tests/')
+      or die 'tests dir not found';
     my $tests_link_path = path($sharedir, 'tests')->child('tinycore');
     symlink $tests_dir_path, $tests_link_path or die "can't symlink '$tests_link_path' -> '$tests_dir_path': $!";
     note "using tests and needles from $tests_dir_path";
@@ -405,7 +406,7 @@ sub setup_worker {    # uncoverable statement
 }
 
 sub start_worker ($connect_args) {
-    my $os_autoinst_path = '../os-autoinst';
+    my $os_autoinst_path = $ENV{OS_AUTOINST_BASEDIR};
     my $isotovideo_path = $os_autoinst_path . '/isotovideo';
 
     # save testing time as we do not test a webUI host being down for
@@ -413,7 +414,7 @@ sub start_worker ($connect_args) {
     $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
     # enable additional diagnostics for serialization errors
     $ENV{DEBUG_JSON} = 1;
-    my @cmd = qw(perl ./script/worker --isotovideo=../os-autoinst/isotovideo --verbose);
+    my @cmd = ("perl", "./script/worker", "--isotovideo=$isotovideo_path", "--verbose");
     push @cmd, @$connect_args;
     start \@cmd;
 }
