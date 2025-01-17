@@ -11,11 +11,13 @@ use Mojo::Util qw(encode getopt);
 has description => 'Monitors a set of jobs';
 has usage => sub { shift->extract_usage };
 
-sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
+sub _monitor_jobs ($self, $client, $follow, $poll_interval, $job_ids, $job_results) {
     my $start = time;
     while (@$job_results < @$job_ids) {
         my $job_id = $job_ids->[@$job_results];
-        my $tx = $client->build_tx(GET => $self->url_for("experimental/jobs/$job_id/status"));
+        my $url = $self->url_for("experimental/jobs/$job_id/status");
+        $url->query(follow => 1) if $follow;
+        my $tx = $client->build_tx(GET => $url);
         my $res = $self->retry_tx($client, $tx);
         return $res if $res != 0;
         my $job = $tx->res->json;
@@ -35,17 +37,19 @@ sub _compute_return_code ($self, $job_results) {
     (all { OpenQA::Jobs::Constants::is_ok_result($_) } @$job_results) ? 0 : 2;
 }
 
-sub _monitor_and_return ($self, $client, $poll_interval, $job_ids) {
+sub _monitor_and_return ($self, $client, $follow, $poll_interval, $job_ids) {
     my @job_results;
-    my $monitor_res = $self->_monitor_jobs($client, $poll_interval // 10, $job_ids, \@job_results);
+    my $monitor_res = $self->_monitor_jobs($client, $follow, $poll_interval // 10, $job_ids, \@job_results);
     return $monitor_res if $monitor_res != 0;
     return $self->_compute_return_code(\@job_results);
 }
 
 sub command ($self, @args) {
-    die $self->usage unless getopt \@args, 'i|poll-interval=i' => \my $poll_interval;
+    die $self->usage unless getopt \@args,
+      'f|follow' => \my $follow,
+      'i|poll-interval=i' => \my $poll_interval;
     @args = $self->decode_args(@args);
-    $self->_monitor_and_return($self->client($self->url_for('tests')), $poll_interval, \@args);
+    $self->_monitor_and_return($self->client($self->url_for('tests')), $follow, $poll_interval, \@args);
 }
 
 1;
@@ -67,6 +71,7 @@ sub command ($self, @args) {
         --name <name>              Name of this client, used by openQA to
                                    identify different clients via User-Agent
                                    header, defaults to "openqa-cli"
+    -f, --follow                   Use the newest clone of each monitored job
     -i, --poll-interval <seconds>  Specifies the poll interval
     -p, --pretty                   Pretty print JSON content
     -q, --quiet                    Do not print error messages to STDERR

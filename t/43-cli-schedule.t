@@ -100,6 +100,11 @@ subtest 'monitor jobs as a separate command' => sub {
     @job_mock_results = (PASSED, FAILED);
     combined_like { $res = $monitor->run(@basic_options, 102, 103) } qr/102.*103/s, 'status logged (failing case)';
     is $res, 2, 'none-zero return-code if one job failed';
+    $jobs->create({id => 105, TEST => "test-105", result => PASSED, state => DONE});
+    $jobs->create({id => 104, TEST => "test-104", clone_id => 105, result => INCOMPLETE, state => DONE});
+    $job_controller_mock->unmock('get_status');
+    combined_like { $res = $monitor->run(@basic_options, '-f', 104) } qr/105/s, 'followed job via clone';
+    is $res, 0, 'zero return-code if clone of followed jobs ok';
 };
 
 done_testing();
