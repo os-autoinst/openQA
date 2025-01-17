@@ -27,7 +27,7 @@ sub new {
     # Some urls might redirect to https and then there are internal redirects for assets
     $self->max_redirects(3);
 
-    $self->on(start => sub ($ua, $tx) { $self->_add_auth_headers($ua, $tx) });
+    $self->on(start => sub ($ua, $tx) { $self->_add_headers($tx) });
 
     #read proxy environment variables
     $self->proxy->detect;
@@ -35,41 +35,48 @@ sub new {
     return $self;
 }
 
-sub configure_credentials ($self, $host) {
+sub open_config_file ($host) {
     return undef unless $host;
     my @cfgpaths = ($ENV{OPENQA_CONFIG} // glob('~/.config/openqa'), '/etc/openqa');
     for my $path (@cfgpaths) {
         my $file = $path . '/client.conf';
-        next unless $file && -r $file;
-        my $cfg = Config::IniFiles->new(-file => $file) || last;
-        last unless $cfg->SectionExists($host);
-        for my $i (qw(key secret)) {
-            my $attr = "api$i";
-            next if $self->$attr;
-            # Fetch all the values in the file and keep the last one
-            my @values = $cfg->val($host, $i);
-            next unless my $val = $values[-1];
-            $val =~ s/\s+$//;    # remove trailing whitespace
-            $self->$attr($val);
-        }
-        last;
+        next unless -r $file;
+        my $cfg = Config::IniFiles->new(-file => $file);
+        return $cfg && $cfg->SectionExists($host) ? $cfg : undef;
+    }
+    return undef;
+}
+
+sub configure_credentials ($self, $host) {
+    return undef unless my $cfg = open_config_file($host);
+    for my $i (qw(key secret)) {
+        my $attr = "api$i";
+        next if $self->$attr;
+        # Fetch all the values in the file and keep the last one
+        my @values = $cfg->val($host, $i);
+        next unless my $val = $values[-1];
+        $val =~ s/\s+$//;    # remove trailing whitespace
+        $self->$attr($val);
     }
 }
 
-sub _add_auth_headers ($self, $ua, $tx) {
+sub add_auth_headers ($headers, $url, $apikey, $apisecret) {
     my $timestamp = time;
-    my $headers = $tx->req->headers;
-    $headers->accept('application/json') unless defined $headers->accept;
     $headers->header('X-API-Microtime', $timestamp);
-    if ($self->apisecret && $self->apikey) {
-        $headers->header('X-API-Key', $self->apikey);
-        $headers->header('X-API-Hash', hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret));
+    if ($apikey && $apisecret) {
+        $headers->header('X-API-Key', $apikey);
+        $headers->header('X-API-Hash', hmac_sha1_sum(_path_query($url) . $timestamp, $apisecret));
     }
 }
 
-sub _path_query {
-    my $self = shift;
-    my $url = shift->req->url;
+sub _add_headers ($self, $tx) {
+    my $req = $tx->req;
+    my $headers = $req->headers;
+    $headers->accept('application/json') unless defined $headers->accept;
+    add_auth_headers($headers, $req->url, $self->apikey, $self->apisecret);
+}
+
+sub _path_query ($url) {
     my $query = $url->query->to_string;
     # as use this for hashing, we need to make sure the query is escaping
     # space the same as the mojo url parser.
