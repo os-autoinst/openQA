@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::UserAgent;
-use Mojo::Base 'Mojo::UserAgent';
+use Mojo::Base 'Mojo::UserAgent', -signatures;
 
 use Mojo::Util 'hmac_sha1_sum';
 use Config::IniFiles;
@@ -14,31 +14,12 @@ has [qw(apikey apisecret base_url)];
 sub new {
     my $self = shift->SUPER::new(@_);
     my %args = @_;
-
     for my $i (qw(apikey apisecret)) {
-        next unless $args{$i};
-        $self->$i($args{$i});
+        $self->$i($args{$i}) if $args{$i};
     }
 
-    if ($args{api}) {
-        my @cfgpaths = ($ENV{OPENQA_CONFIG} // glob('~/.config/openqa'), '/etc/openqa');
-        for my $path (@cfgpaths) {
-            my $file = $path . '/client.conf';
-            next unless $file && -r $file;
-            my $cfg = Config::IniFiles->new(-file => $file) || last;
-            last unless $cfg->SectionExists($args{api});
-            for my $i (qw(key secret)) {
-                my $attr = "api$i";
-                next if $self->$attr;
-                # Fetch all the values in the file and keep the last one
-                my @values = $cfg->val($args{api}, $i);
-                next unless my $val = $values[-1];
-                $val =~ s/\s+$//;    # remove trailing whitespace
-                $self->$attr($val);
-            }
-            last;
-        }
-    }
+    $self->configure_credentials($args{api});
+
     # Scheduling a couple of hundred jobs takes quite some time - so we better wait a couple of minutes
     # (default is 20 seconds)
     $self->inactivity_timeout(600);
@@ -46,33 +27,43 @@ sub new {
     # Some urls might redirect to https and then there are internal redirects for assets
     $self->max_redirects(3);
 
-    $self->on(
-        start => sub {
-            $self->_add_auth_headers(@_);
-        });
+    $self->on(start => sub ($ua, $tx) { $self->_add_auth_headers($ua, $tx) });
+
     #read proxy environment variables
     $self->proxy->detect;
 
     return $self;
 }
 
-sub _add_auth_headers {
-    my ($self, $ua, $tx) = @_;
-
-    my $timestamp = time;
-    my %headers = (
-        Accept => 'application/json',
-        'X-API-Microtime' => $timestamp,
-    );
-    if ($self->apisecret && $self->apikey) {
-        $headers{'X-API-Key'} = $self->apikey;
-        $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
+sub configure_credentials ($self, $host) {
+    return undef unless $host;
+    my @cfgpaths = ($ENV{OPENQA_CONFIG} // glob('~/.config/openqa'), '/etc/openqa');
+    for my $path (@cfgpaths) {
+        my $file = $path . '/client.conf';
+        next unless $file && -r $file;
+        my $cfg = Config::IniFiles->new(-file => $file) || last;
+        last unless $cfg->SectionExists($host);
+        for my $i (qw(key secret)) {
+            my $attr = "api$i";
+            next if $self->$attr;
+            # Fetch all the values in the file and keep the last one
+            my @values = $cfg->val($host, $i);
+            next unless my $val = $values[-1];
+            $val =~ s/\s+$//;    # remove trailing whitespace
+            $self->$attr($val);
+        }
+        last;
     }
+}
 
-    my $set_headers = $tx->req->headers;
-    foreach my $key (keys %headers) {
-        # don't overwrite headers that were set manually
-        $set_headers->header($key, $headers{$key}) unless defined $set_headers->header($key);
+sub _add_auth_headers ($self, $ua, $tx) {
+    my $timestamp = time;
+    my $headers = $tx->req->headers;
+    $headers->accept('application/json') unless defined $headers->accept;
+    $headers->header('X-API-Microtime', $timestamp);
+    if ($self->apisecret && $self->apikey) {
+        $headers->header('X-API-Key', $self->apikey);
+        $headers->header('X-API-Hash', hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret));
     }
 }
 
