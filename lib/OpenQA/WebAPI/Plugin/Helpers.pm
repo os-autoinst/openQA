@@ -522,10 +522,8 @@ sub _param_hash ($c, $name) {
     return @$values ? {map { $_ => 1 } @$values} : undef;
 }
 
-sub _find_job_or_render_not_found {
-    my ($c, $job_id) = @_;
-
-    my $job = $c->schema->resultset('Jobs')->find(int($job_id));
+sub _find_job_or_render_not_found ($c, $job_id, $query_settings = {}) {
+    my $job = $c->schema->resultset('Jobs')->find(int($job_id), $query_settings);
     return $job if $job;
     $c->render(json => {error => 'Job does not exist'}, status => 404);
     return undef;

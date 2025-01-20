@@ -444,6 +444,7 @@ sub create ($self) {
 Shows details for a specific job, such as the assets associated, assigned worker id,
 children and parents, job id, group id, name, parent group id and name, priority, result,
 settings, state and times of startup and finish of the job.
+Pass follow=1 as query param to follow job clones and report most recent result for given id.
 
 =back
 
@@ -453,9 +454,11 @@ sub show ($self) {
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $check_assets = !!$self->param('check_assets');
-    my $job = $self->schema->resultset('Jobs')->find($job_id, {prefetch => 'settings'});
-    return $self->reply->not_found unless $job;
+    my $follow = $self->param('follow');
+    return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
+    $job = $job->latest_job if $follow;
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
+    $job->{followed_id} = $job_id if ($job_id != $job->{id});
     $self->render(json => {job => $job});
 }
 
@@ -591,15 +594,21 @@ sub update_status ($self) {
 Retrieve status of a job. Returns id, state, result, blocked_by_id.
 Preferable over /job/<id> for performance and payload size, if you are only
 interested in the status.
+Pass follow=1 as query param to follow job clones and report most recent result for given id.
 
 =back
 
 =cut
 
 sub get_status ($self) {
+    my $follow = $self->param('follow');    # follow job clones and report most recent result for given id
     my @fields = qw(id state result blocked_by_id);
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    $self->render(json => {map { $_ => $job->$_ } @fields});
+    my $jobid = $self->stash('jobid');
+    return unless my $job = $self->find_job_or_render_not_found($jobid);
+    $job = $job->latest_job if $follow;
+    my $json = {map { $_ => $job->$_ } @fields};
+    $json->{followed_id} = $jobid if $jobid != $job->id;
+    $self->render(json => $json);
 }
 
 =over 4
