@@ -49,6 +49,9 @@ OPENQA_SCHEDULER_HOST =
 OPENQA_WEB_SOCKETS_HOST =
 OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET =
 
+# change if os-autoinst project root is different from '../os-autoinst'
+OS_AUTOINST_BASEDIR =
+
 .PHONY: help
 help:
 	@echo Call one of the available targets:
