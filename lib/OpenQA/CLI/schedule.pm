@@ -52,6 +52,8 @@ sub command ($self, @args) {
 
   Usage: openqa-cli schedule [OPTIONS] DISTRI=… VERSION=… FLAVOR=… ARCH=… [ISO=… …]
 
+  Schedule a set of jobs creating a scheduled product on the web UI ("posts an ISO").
+
   Options:
         --apibase <path>           API base, defaults to /api/v1
         --apikey <key>             API key

@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious::Commands';
 
 has hint => <<EOF;
 
-See 'openqa-cli help COMMAND' for more information on a specific command.
+See 'openqa-cli COMMAND --help' for more information on a specific command.
 EOF
 has message => sub { shift->extract_usage . "\nCommands:\n" };
 has namespaces => sub { ['OpenQA::CLI'] };
