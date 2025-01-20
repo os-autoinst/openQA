@@ -56,6 +56,9 @@ sub command ($self, @args) {
 
   Usage: openqa-cli monitor [OPTIONS] [JOB_IDS]
 
+  Wait until all specified jobs have reached a final state and return a non-zero
+  exit code if at least one job is not ok (is not passed or softfailed).
+
   Options:
         --apibase <path>           API base, defaults to /api/v1
         --apikey <key>             API key
