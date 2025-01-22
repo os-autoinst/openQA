@@ -38,23 +38,6 @@ sub determine_scheduled_jobs ($self) {
     return $self->scheduled_jobs;
 }
 
-sub _allocate_worker_slot ($self, $allocated_workers, $worker, $job_info) {
-    $allocated_workers->{$worker->id} = $job_info->{id};
-
-    # set "one_host_only_via_worker"-flag for whole cluster if the allocated worker slot has
-    # the PARALLEL_ONE_HOST_ONLY property
-    # note: This is done so that _pick_siblings_of_running() can take it into account. To be able to reset this flag
-    #       on the next tick a separate flag is used here (and not just "one_host_only").
-    return undef unless $worker->get_property('PARALLEL_ONE_HOST_ONLY');
-    my $scheduled_jobs = $self->scheduled_jobs;
-    my $cluster_jobs = $job_info->{cluster_jobs};
-    $job_info->{one_host_only_via_worker} = 1;
-    for my $job_id (keys %$cluster_jobs) {
-        next unless my $cluster_job = $scheduled_jobs->{$job_id};
-        $cluster_job->{one_host_only_via_worker} = 1;
-    }
-}
-
 sub _allocate_jobs ($self, $free_workers) {
     my ($allocated_workers, $allocated_jobs) = ({}, {});
     my $scheduled_jobs = $self->scheduled_jobs;
@@ -86,24 +69,24 @@ sub _allocate_jobs ($self, $free_workers) {
 
     # before we start looking at sorted jobs, we try to repair half scheduled clusters
     # note: This can happen e.g. with workers connected to multiple web UIs or when jobs are scheduled
-    #       non-atomically via openqa-clone-job.
+    #       non-atomically via openqa-clone-job or if a worker simply does not pick up the job (e.g. goes
+    #       instead into the broken state for some reason).
     $self->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
 
     my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %$scheduled_jobs;
     my %checked_jobs;
     for my $j (@sorted) {
-        next if $checked_jobs{$j->{id}};
-        next unless @{$j->{matching_workers}};
+        my $job_id = $j->{id};
+        next if $checked_jobs{$job_id} || defined $allocated_jobs->{$job_id} || !@{$j->{matching_workers}};
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
         if (!defined $tobescheduled) {
-            log_debug "Skipping job $j->{id} because dependent jobs are not ready";
+            log_debug "Skipping job $job_id because dependent jobs are not ready";
             next;
         }
-        next if defined $allocated_jobs->{$j->{id}};
         OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
         my @tobescheduled = grep { $_->{id} } @$tobescheduled;
         my $parallel_count = scalar(@tobescheduled);
-        log_debug "Need to schedule $parallel_count parallel jobs for job $j->{id} (with priority $j->{priority})";
+        log_debug "Need to schedule $parallel_count parallel jobs for job $job_id (with priority $j->{priority})";
         next unless @tobescheduled;
         my %taken;
         for my $sub_job (sort { $a->{id} <=> $b->{id} } @tobescheduled) {
@@ -132,9 +115,9 @@ sub _allocate_jobs ($self, $free_workers) {
         }
         for my $picked_worker_id (keys %taken) {
             my ($picked_worker, $job_info) = @{$taken{$picked_worker_id}};
-            $self->_allocate_worker_slot($allocated_workers, $picked_worker, $job_info);
-            $allocated_jobs->{$job_info->{id}}
-              = {job => $job_info->{id}, worker => $picked_worker_id, priority_offset => \$j->{priority_offset}};
+            my $job_id = $job_info->{id};
+            $allocated_workers->{$picked_worker_id} = $job_id;
+            $allocated_jobs->{$job_id} = {job => $job_id, worker => $picked_worker_id, priority_offset => \$j->{priority_offset}};
         }
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
@@ -161,9 +144,9 @@ sub _allocate_worker_with_priority ($self, $prio, $job_info, $j, $allocated_work
     else {
         # don't "take" the worker, but make sure it's not
         # used for another job and stays around
-        my $worker_id = $worker->id;
-        log_debug "Holding worker $worker_id for job $job_info->{id} to avoid starvation";
-        $self->_allocate_worker_slot($allocated_workers, $worker, $job_info);
+        my ($worker_id, $job_id) = ($worker->id, $job_info->{id});
+        log_debug "Holding worker $worker_id for job $job_id to avoid starvation";
+        $allocated_workers->{$worker_id} = $job_id;
     }
 }
 
@@ -357,9 +340,22 @@ sub _jobs_in_execution ($need) {
     $jobs_rs->search({id => {-in => $need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]})->all;
 }
 
-sub _worker_host_of_job ($job) {
-    return '' unless my $assigned_worker = $job->assigned_worker;
-    return $assigned_worker->host;
+sub _worker_info_of_job ($job) {
+    return undef unless my $assigned_worker = $job->assigned_worker;
+    return {host => $assigned_worker->host, one_host_only => $assigned_worker->get_property('PARALLEL_ONE_HOST_ONLY')};
+}
+
+sub _worker_info_of_cluster ($jobinfo, $running_cluster_jobs) {
+    my $worker_info;
+    my $worker_one_host_only = 0;
+    for my $j (keys %{$jobinfo->{cluster_jobs}}) {
+        if (my $worker_info_for_cluster_job = $running_cluster_jobs->{$j}) {
+            $worker_one_host_only = 1 if $worker_info_for_cluster_job->{one_host_only};
+            $worker_info //= $worker_info_for_cluster_job;
+        }
+        last if $worker_one_host_only;
+    }
+    return ($worker_info, $worker_one_host_only);
 }
 
 sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
@@ -373,21 +369,32 @@ sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
     }
 
     # determine all running jobs in parallel clusters of currently scheduled jobs and their worker host
-    my %clusterjobs = map { ($_->id => _worker_host_of_job $_) } _jobs_in_execution(\@need);
+    my %running_cluster_jobs = map { ($_->id => _worker_info_of_job $_) } _jobs_in_execution(\@need);
 
     # pick jobs with running parallel siblings (prio doesn't matter)
     for my $jobinfo (values %$scheduled_jobs) {
-        my $worker_host;
-        for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            last if $worker_host = $clusterjobs{$j};
+        # check on what host the cluster is running and whether the cluster is pinned to one host only
+        my ($worker_info, $worker_one_host_only) = _worker_info_of_cluster($jobinfo, \%running_cluster_jobs);
+        next unless $worker_info;
+
+        #  allocate job on a matching worker ensuring it is on the same host if "one_host_only" is enabled
+        my $job_id = $jobinfo->{id};
+        my $worker_host = $worker_info->{host};
+        for my $matching_worker (@{$jobinfo->{matching_workers}}) {
+            my $matching_worker_id = $matching_worker->id;
+            next if $allocated_workers->{$matching_worker_id};
+            if (($worker_one_host_only || $jobinfo->{one_host_only} || $matching_worker->get_property('PARALLEL_ONE_HOST_ONLY'))
+                && ($matching_worker->host ne $worker_host)) {
+                log_debug "Cannot assign job $job_id on $matching_worker_id, cluster already runs on host $worker_host";
+                next;
+            }
+            $allocated_workers->{$matching_worker_id} = $job_id;
+            $allocated_jobs->{$job_id} = {job => $job_id, worker => $matching_worker_id};
+            last;
         }
-        last unless $worker_host;
-        for my $w (@{$jobinfo->{matching_workers}}) {
-            next if $allocated_workers->{$w->id};
-            $self->_allocate_worker_slot($allocated_workers, $w, $jobinfo);
-            next if ($jobinfo->{one_host_only} || $jobinfo->{one_host_only_via_worker}) && ($w->host ne $worker_host);
-            $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
-        }
+
+        # skip $jobinfo in _allocate_jobs, it would lead to "Skipping job … because dependent jobs are not ready"
+        $jobinfo->{matching_workers} = [];
     }
 }
 
@@ -454,7 +461,6 @@ sub _update_scheduled_jobs ($self) {
             # it's the same cluster for all, so share
             $cluster_infos{$_} = $cluster_jobs for keys %$cluster_jobs;
         }
-        $info->{one_host_only_via_worker} = 0;
         $info->{one_host_only} = any { $_->{one_host_only} } values %$cluster_jobs;
         $scheduled_jobs->{$job->id} = $info;
     }
