@@ -15,6 +15,7 @@ use OpenQA::Test::Client 'client';
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;
+use Test::MockObject;
 use Test::Mojo;
 use DBIx::Class::Timestamps 'now';
 use Test::Warnings ':report_warnings';
@@ -112,15 +113,20 @@ sub lj {
 lj;
 
 my $form = {DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'};
-my $ret = $schema->resultset('Jobs')->cancel_by_settings($form);
-# 99963 and the new cluster of 2
-is($ret, 3, "two jobs cancelled by hash");
+my $jobs = $schema->resultset('Jobs');
+$schema->txn_begin;
+my $ret = $jobs->cancel_by_settings($form);
+is $ret, 3, 'three jobs cancelled by settings (99963 and the new cluster of 2)';
 $job = job_get(99963);
-is($job->reason, 'cancelled based on job settings', "jobs reason points to settings");
-is_deeply(OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
-    $form, 'Cancellation was logged with settings');
-
-$job = $new_job;
+is $job->reason, 'cancelled based on job settings', 'jobs reason points to settings';
+my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings');
+is_deeply $event, $form, 'recent event about cancelled job by settings created';
+$schema->txn_rollback;
+my $scheduled_product = Test::MockObject->new->set_always(id => 42);
+$ret = $jobs->cancel_by_settings($form, undef, undef, undef, $scheduled_product);
+$job = job_get(99963);
+is $ret, 3, 'three jobs cancelled again';
+is $job->reason, 'cancelled by scheduled product 42', 'jobs cancellation reason points to product';
 
 lj;
 

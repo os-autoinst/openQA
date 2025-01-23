@@ -380,7 +380,7 @@ sub _schedule_iso {
                     data => {scheduled_product_id => $self->id},
                     user_id => $user_id
                 );
-                $schema->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit);
+                $schema->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit, $self);
             }
             catch {
                 my $error = shift;
