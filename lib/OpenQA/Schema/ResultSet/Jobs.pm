@@ -10,6 +10,7 @@ use Encode qw(decode_utf8);
 use File::Basename 'basename';
 use IPC::Run;
 use OpenQA::App;
+use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(log_trace log_debug log_info);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
@@ -351,10 +352,7 @@ sub complex_query ($self, %args) {
     return $jobs;
 }
 
-sub cancel_by_settings {
-    my ($self, $settings, $newbuild, $deprioritize, $deprio_limit) = @_;
-    $newbuild //= 0;
-    $deprioritize //= 0;
+sub cancel_by_settings ($self, $settings, $newbuild = undef, $deprioritize = undef, $deprio_limit = undef, $related_scheduled_product = undef) {
     $deprio_limit //= 100;
     my $rsource = $self->result_source;
     my $schema = $rsource->schema;
@@ -397,32 +395,29 @@ sub cancel_by_settings {
         $jobs_to_cancel = $jobs;
     }
     my $cancelled_jobs = 0;
+    my $priority_increment = 10;
+    my $job_result = $newbuild ? OBSOLETED : USER_CANCELLED;
+    my $reason = $related_scheduled_product
+      ? 'cancelled by scheduled product ' . $related_scheduled_product->id
+      : 'cancelled based on job settings';
+    my $cancel_or_deprioritize = sub ($job) {
+        if ($deprioritize) {
+            my $prio = $job->priority + $priority_increment;
+            if ($prio < $deprio_limit) {
+                $job->set_prio($prio);
+                return 0;
+            }
+        }
+        return $job->cancel($job_result, $reason) // 0;
+    };
     # first scheduled to avoid worker grab
-    my $scheduled = $jobs_to_cancel->search({state => OpenQA::Jobs::Constants::SCHEDULED});
-    while (my $j = $scheduled->next) {
-        $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
-    }
+    my $scheduled = $jobs_to_cancel->search({state => SCHEDULED});
+    $cancelled_jobs += $cancel_or_deprioritize->($_) for $scheduled->all;
     # then the rest
     my $executing = $jobs_to_cancel->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    while (my $j = $executing->next) {
-        $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
-    }
-    OpenQA::App->singleton->emit_event(openqa_job_cancel_by_settings => $settings) if ($cancelled_jobs);
+    $cancelled_jobs += $cancel_or_deprioritize->($_) for $executing->all;
+    OpenQA::App->singleton->emit_event(openqa_job_cancel_by_settings => $settings) if $cancelled_jobs;
     return $cancelled_jobs;
-}
-
-sub _cancel_or_deprioritize {
-    my ($job, $newbuild, $deprioritize, $limit, $step) = @_;
-    $step //= 10;
-    if ($deprioritize) {
-        my $prio = $job->priority + $step;
-        if ($prio < $limit) {
-            $job->set_prio($prio);
-            return 0;
-        }
-    }
-    return $job->cancel($newbuild ? OpenQA::Jobs::Constants::OBSOLETED : OpenQA::Jobs::Constants::USER_CANCELLED,
-        'cancelled based on job settings') // 0;
 }
 
 sub next_previous_jobs_query {
