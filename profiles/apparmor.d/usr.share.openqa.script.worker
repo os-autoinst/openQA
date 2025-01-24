@@ -132,7 +132,7 @@
   /usr/lib{,exec}/git{,-core}/git-remote-https rix,
   /usr/lib{,exec}/git{,-core}/git-write-tree rix,
   /usr/lib/os-autoinst/videoencoder rix,
-  /usr/lib/os-autoinst/check_qemu_oom arCx,
+  /usr/lib/os-autoinst/script/check_qemu_oom arCx,
   /usr/bin/ffmpeg rix,
   /usr/lib/utempter/utempter rix,
   /usr/sbin/smbd rix,
@@ -182,7 +182,7 @@
 
   }
 
-  profile /usr/lib/os-autoinst/check_qemu_oom {
+  profile /usr/lib/os-autoinst/script/check_qemu_oom {
     #include <abstractions/base>
     #include <abstractions/perl>
     /usr/bin/dmesg rix,
