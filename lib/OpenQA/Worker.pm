@@ -281,7 +281,7 @@ sub init ($self) {
     #       a job while broken. The error is propagated to the web UIs.
     $self->configure_cache_client;
     $self->current_error($self->check_availability);
-    log_error $self->current_error if $self->current_error;
+    log_error 'Unavailable: ' . $self->current_error if $self->current_error;
 
     # register error handler to stop the current job when a critical/unhandled error occurs
     Mojo::IOLoop->singleton->reactor->on(
