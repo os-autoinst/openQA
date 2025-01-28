@@ -15,7 +15,6 @@ sub register {
 
 sub _delete_needles {
     my ($app, $minion_job, $args) = @_;
-
     my $schema = $app->schema;
     my $needles = $schema->resultset('Needles');
     my $user = $schema->resultset('Users')->find($args->{user_id});

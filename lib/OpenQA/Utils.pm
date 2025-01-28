@@ -7,7 +7,7 @@ use Mojo::Base -strict, -signatures;
 use Carp;
 use Cwd 'abs_path';
 use Filesys::Df qw(df);
-use IPC::Run();
+use IPC::Run qw(run timeout);
 use Mojo::URL;
 use Regexp::Common 'URI';
 use Time::Seconds;
@@ -333,13 +333,17 @@ sub run_cmd_with_log {
 sub run_cmd_with_log_return_error ($cmd, %args) {
     my $stdout_level = $args{stdout} // 'debug';
     my $stderr_level = $args{stderr} // 'debug';
+    my $timeout_duration = 30;
     log_info('Running cmd: ' . join(' ', @$cmd));
+    my ($stdin, $stdout_err, $stdout, $stderr) = ('') x 4;
     try {
-        my ($stdin, $stdout_err, $stdout, $stderr) = ('') x 4;
-        my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, \$stdout, \$stderr);
+        my $ipc_run = run($cmd, \$stdin, \$stdout, \$stderr, timeout($timeout_duration));
         my $return_code = $?;
         chomp $stderr;
-        if ($ipc_run_succeeded) {
+        #my $return_code = $?;
+       # use Data::Dumper;
+        #print "***";print Dumper($@);
+        if ($ipc_run) {
             OpenQA::Log->can("log_$stdout_level")->($stdout);
             OpenQA::Log->can("log_$stderr_level")->($stderr);
             log_info("cmd returned $return_code");
@@ -349,20 +353,30 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
             log_error("cmd returned $return_code");
         }
         return {
-            status => $ipc_run_succeeded,
+            status => $ipc_run,
             return_code => $return_code,
             stdout => $stdout,
             stderr => $stderr,
         };
     }
     catch {
-        return {
-            status => 0,
-            return_code => undef,
-            stderr => 'an internal error occurred',
-            stdout => '',
+        my $additional_info = "If you use http for CASEDIR or NEEDLES_DIR is adviced to
+        configure git with the insteadof option in the .gitconfig file.
+        Run the following command to:
+        git config [--global] url.\"git://github.com\".insteadOf https://github.com";
+        my $stderr_msg = ($_ =~ /timeout/)
+            ? join(' ', @$cmd) . " timed out after $timeout_duration seconds \nNote:\n$additional_info"
+            : 'an internal error occurred';
+        #$stderr_msg .= "prompt detected" if $stdout =~ /Username.*:/;
+        log_error($stderr_msg);
+            return {
+                status      => 0,
+                return_code => undef,
+                stderr      => $stderr_msg,
+                stdout      => '',
+            };
         };
-    };
+
 }
 
 sub asset_type_from_setting {
