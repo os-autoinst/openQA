@@ -30,9 +30,9 @@ sub _validate_attributes ($self) {
 
 sub _run_cmd ($self, $args, $options = {}) {
     my $include_git_path = $options->{include_git_path} // 1;
-    my $ssh_batchmode = $options->{ssh_batchmode} // 0;
+    my $batchmode = $options->{batchmode} // 0;
     my @cmd;
-    push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' if $ssh_batchmode;
+    push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' if $batchmode;
     push @cmd, $self->_prepare_git_command($include_git_path), @$args;
 
     my $result = run_cmd_with_log_return_error(\@cmd);
@@ -123,14 +123,14 @@ sub check_sha ($self, $sha) {
 }
 
 sub get_remote_default_branch ($self, $url) {
-    my $r = $self->_run_cmd(['ls-remote', '--symref', $url, 'HEAD'], {include_git_path => 0, ssh_batchmode => 1});
+    my $r = $self->_run_cmd(['ls-remote', '--symref', $url, 'HEAD'], {include_git_path => 0, batchmode => 1});
     die qq/Error detecting remote default branch name for "$url": $r->{stdout} $r->{stderr}/
       unless $r->{status} && $r->{stdout} =~ m{refs/heads/(\S+)\s+HEAD};
     return $1;
 }
 
 sub clone_url ($self, $url) {
-    my $r = $self->_run_cmd(['clone', $url, $self->dir], {include_git_path => 0, ssh_batchmode => 1});
+    my $r = $self->_run_cmd(['clone', $url, $self->dir], {include_git_path => 0, batchmode => 1});
     die $self->_format_git_error($r, qq/Failed to clone "$url"/) unless $r->{status};
 }
 
@@ -141,7 +141,7 @@ sub get_origin_url ($self) {
 }
 
 sub fetch ($self, $branch_arg) {
-    my $r = $self->_run_cmd(['fetch', 'origin', $branch_arg], {ssh_batchmode => 1});
+    my $r = $self->_run_cmd(['fetch', 'origin', $branch_arg], {batchmode => 1});
     die $self->_format_git_error($r, "Failed to fetch from '$branch_arg'") unless $r->{status};
 }
 
