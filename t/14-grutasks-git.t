@@ -60,7 +60,7 @@ subtest 'git clone' => sub {
         run_cmd_with_log_return_error => sub ($cmd) {
             push @mocked_git_calls, join(' ', map { tr/ // ? "'$_'" : $_ } @$cmd) =~ s/\Q$git_clones//r;
             my $stdout = '';
-            splice @$cmd, 0, 2 if $cmd->[0] eq 'env';
+            splice @$cmd, 0, 4 if $cmd->[0] eq 'env';
             my $path = '';
             (undef, $path) = splice @$cmd, 1, 2 if $cmd->[1] eq '-C';
             my $action = $cmd->[1];
@@ -109,6 +109,7 @@ subtest 'git clone' => sub {
         });
     my @gru_args = ($t->app, 'git_clone', $clone_dirs, {priority => 10});
     my $res = run_gru_job(@gru_args);
+
     is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
     #<<< no perltidy
     my $expected_calls = [
@@ -121,20 +122,20 @@ subtest 'git clone' => sub {
         ['rev-parse'      => 'git -C /sha2 rev-parse --verify -q def'],
         ['check dirty'    => 'git -C /sha2 diff-index HEAD --exit-code'],
         ['current branch' => 'git -C /sha2 branch --show-current'],
-        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /sha2 fetch origin def"],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /sha2 fetch origin def"],
 
         # /branch
         ['get-url'        => 'git -C /branch/ remote get-url origin'],
         ['check dirty'    => 'git -C /branch/ diff-index HEAD --exit-code'],
         ['current branch' => 'git -C /branch/ branch --show-current'],
-        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /branch/ fetch origin foobranch"],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /branch/ fetch origin foobranch"],
 
         # /default/
         ['get-url'        => 'git -C /default/ remote get-url origin'],
         ['check dirty'    => 'git -C /default/ diff-index HEAD --exit-code'],
-        ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git ls-remote --symref http://localhost/foo.git HEAD"],
+        ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git ls-remote --symref http://localhost/foo.git HEAD"],
         ['current branch' => 'git -C /default/ branch --show-current'],
-        ['fetch default'  => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /default/ fetch origin master"],
+        ['fetch default'  => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /default/ fetch origin master"],
         ['reset'          => 'git -C /default/ reset --hard origin/master'],
 
         # /sha-branchname
@@ -142,10 +143,10 @@ subtest 'git clone' => sub {
         ['rev-parse'      => 'git -C /sha-branchname rev-parse --verify -q a123'],
         ['check dirty'    => 'git -C /sha-branchname diff-index HEAD --exit-code'],
         ['current branch' => 'git -C /sha-branchname branch --show-current'],
-        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /sha-branchname fetch origin a123"],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /sha-branchname fetch origin a123"],
 
         # /this_directory_does_not_exist/
-        ['clone' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git clone http://localhost/bar.git /this_directory_does_not_exist/"],
+        ['clone' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git clone http://localhost/bar.git /this_directory_does_not_exist/"],
     ];
     #>>> no perltidy
     for my $i (0 .. $#$expected_calls) {
@@ -222,17 +223,17 @@ subtest 'git clone' => sub {
             # /opensuse
             ['get-url'        => 'git -C /opensuse remote get-url origin'],
             ['check dirty'    => 'git -C /opensuse diff-index HEAD --exit-code'],
-            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git ls-remote --symref http://osado HEAD"],
+            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
             ['current branch' => 'git -C /opensuse branch --show-current'],
-            ['fetch default ' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /opensuse fetch origin master"],
+            ['fetch default ' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /opensuse fetch origin master"],
             ['reset'          => 'git -C /opensuse reset --hard origin/master'],
 
             # /opensuse/needles
             ['get-url'        => 'git -C /opensuse/needles remote get-url origin'],
             ['check dirty'    => 'git -C /opensuse/needles diff-index HEAD --exit-code'],
-            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git ls-remote --symref http://osado HEAD"],
+            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
             ['current branch' => 'git -C /opensuse/needles branch --show-current'],
-            ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' git -C /opensuse/needles fetch origin master"],
+            ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /opensuse/needles fetch origin master"],
             ['reset'          => 'git -C /opensuse/needles reset --hard origin/master'],
         ];
         #>>> no perltidy
