@@ -98,7 +98,13 @@ sub commit ($self, $args = undef) {
     # push changes
     if (($self->config->{do_push} || '') eq 'yes') {
         $res = $self->_run_cmd(['push'], {batchmode => 1});
-        return $self->_format_git_error($res, 'Unable to push Git commit') unless $res->{status};
+        return undef if $res->{status};
+
+        my $msg = 'Unable to push Git commit';
+        if ($res->{return_code} == 128 and $res->{stderr} =~ m/Authentication failed for .http/) {
+            $msg .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
+        }
+        return $self->_format_git_error($res, $msg);
     }
 
     return undef;

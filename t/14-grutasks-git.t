@@ -108,7 +108,8 @@ subtest 'git clone' => sub {
             };
         });
     my @gru_args = ($t->app, 'git_clone', $clone_dirs, {priority => 10});
-    my $res = run_gru_job(@gru_args);
+    my $res;
+    stderr_like { $res = run_gru_job(@gru_args) } qr{Git command failed.*verify};
 
     is $res->{result}, 'Job successfully executed', 'minion job result indicates success';
     #<<< no perltidy
@@ -400,14 +401,28 @@ subtest 'delete_needles' => sub {
     like $error->{message}, qr{Unable to find needle.*99}, 'expected error for not existing needle';
 
     $t->app->config->{global}->{scm} = 'git';
+    $t->app->config->{'scm git'}->{do_push} = 'yes';
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @cmds;
     $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd) {
             push @cmds, "@$cmd";
+            if (grep m/push/, @$cmd) {
+                return {status => 0, return_code => 128, stderr => q{fatal: Authentication failed for 'https://github.com/lala}, stdout => ''};
+            }
             return {status => 1};
         });
     $args{needle_ids} = [4];
+    stderr_like { $res = run_gru_job(@gru_args) } qr{Git command failed: .*push}, 'Got error on stderr';
+    is $res->{state}, 'finished', 'git job finished';
+    like $res->{result}->{errors}->[0]->{message}, qr{Unable to push Git commit. See .*_setting_up_git_support on how to setup}, 'Got error for push';
+    $t->app->config->{'scm git'}->{do_push} = '';
+
+    $openqa_git->redefine(
+        run_cmd_with_log_return_error => sub ($cmd) {
+            push @cmds, "@$cmd";
+            return {status => 1};
+        });
     $res = run_gru_job(@gru_args);
     is $res->{state}, 'finished', 'git job finished';
     like $cmds[0], qr{git.*rm.*test-nestedneedle-1.json}, 'git rm was executed';
