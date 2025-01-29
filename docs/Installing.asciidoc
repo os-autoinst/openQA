@@ -767,6 +767,28 @@ your openqa.ini (along with the previous snippet):
 do_cleanup = yes
 --------------------------------------------------------------------------------
 
+If you clone the needle repository via HTTP, you can still make `geekotest`
+able to push via SSH with a git configuration. For GitHub, it would look like
+this:
+
+[source,sh]
+--------------------------------------------------------------------------------
+git config --global url."git@github.com:".pushInsteadOf https://github.com/
+--------------------------------------------------------------------------------
+
+This way `git push` will automatically rewrite HTTP urls to SSH for every
+repository, even if it's already cloned.
+
+Or put it in the `~/.gitconfig` file manually:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[url "git@github.com:"]
+  pushInsteadOf = https://github.com/
+--------------------------------------------------------------------------------
+
+You can apply the same kind of thing for any other git hosting provider.
+
 === Referer settings to auto-mark important jobs
 
 Automatic cleanup of old results (see GRU jobs) can sometimes render important
