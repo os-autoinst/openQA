@@ -162,7 +162,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     $utils_mock->redefine(
         run_cmd_with_log_return_error => sub ($cmd) {
             push @executed_commands, $cmd;
-            if ($cmd->[3] eq 'push') {
+            if ($cmd->[7] eq 'push') {
                 $mock_return_value{status} = 0;
             }
             return \%mock_return_value;
