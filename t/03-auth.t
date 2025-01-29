@@ -21,7 +21,7 @@ use Mojolicious;
 
 my $file_api_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::File');
 $file_api_mock->redefine(download_asset => sub ($self) { $self->render(text => 'asset-ok') });
-$file_api_mock->redefine(test_asset => sub ($self) { $self->render(text => 'test-asset-ok') });
+$file_api_mock->redefine(test_asset => sub ($self) { $self->redirect_to('/assets/iso/test.iso') });
 
 my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
 $ENV{OPENQA_CONFIG} = $tempdir;
@@ -42,11 +42,12 @@ combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_requ
 
 subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`' => sub {
     my $t = test_auth_method_startup('Fake', "require_for_assets = 1\n");
+    $t->ua->max_redirects(1);    # follow redirection from `/tests/…/asset/…` to `/assets/…`
     my $expected_redirect = '/login?return_page=%2Fassets%2Fiso%2Ftest.iso';
     $t->get_ok('/assets/iso/test.iso')->status_is(200)->content_is('asset-ok', 'can access asset when logged in');
     $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(200);
-    $t->content_is('test-asset-ok', 'can access test asset when logged in');
-    $t->get_ok('/logout')->status_is(302);
+    $t->content_is('asset-ok', 'can access test asset when logged in');
+    $t->get_ok('/logout')->status_is(200, 'logged out');
     $t->get_ok('/assets/iso/test.iso')->status_is(403, '403 response when logged out');
     $t->content_unlike(qr/asset-ok/, 'asset not accessible when logged out');
     $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(403, '403 response via test when logged out');

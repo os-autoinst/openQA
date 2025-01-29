@@ -151,7 +151,6 @@ sub startup ($self) {
     my $test_r = $r->any($test_path);
     $test_r = $test_r->under('/')->to('test#referer_check');
     my $test_auth = $auth->any($test_path => {format => 0});
-    my $test_asset_r = $require_auth_for_assets ? $auth_any_user->any($test_path) : $test_r;
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
@@ -177,9 +176,9 @@ sub startup ($self) {
     $test_r->get('/video' => sub ($c) { $c->render_testfile('test/video') })->name('video');
     $test_r->get('/logfile' => sub ($c) { $c->render_testfile('test/logfile') })->name('logfile');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
-    $test_asset_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');
-    $test_asset_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
-    $test_asset_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
+    $test_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');
+    $test_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
+    $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
     $developer_auth->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
