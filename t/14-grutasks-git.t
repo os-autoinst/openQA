@@ -123,20 +123,20 @@ subtest 'git clone' => sub {
         ['rev-parse'      => 'git -C /sha2 rev-parse --verify -q def'],
         ['check dirty'    => 'git -C /sha2 diff-index HEAD --exit-code'],
         ['current branch' => 'git -C /sha2 branch --show-current'],
-        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /sha2 fetch origin def"],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /sha2 fetch origin def"],
 
         # /branch
         ['get-url'        => 'git -C /branch/ remote get-url origin'],
         ['check dirty'    => 'git -C /branch/ diff-index HEAD --exit-code'],
         ['current branch' => 'git -C /branch/ branch --show-current'],
-        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /branch/ fetch origin foobranch"],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /branch/ fetch origin foobranch"],
 
         # /default/
         ['get-url'        => 'git -C /default/ remote get-url origin'],
         ['check dirty'    => 'git -C /default/ diff-index HEAD --exit-code'],
-        ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git ls-remote --symref http://localhost/foo.git HEAD"],
+        ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git ls-remote --symref http://localhost/foo.git HEAD"],
         ['current branch' => 'git -C /default/ branch --show-current'],
-        ['fetch default'  => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /default/ fetch origin master"],
+        ['fetch default'  => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /default/ fetch origin master"],
         ['reset'          => 'git -C /default/ reset --hard origin/master'],
 
         # /sha-branchname
@@ -144,10 +144,10 @@ subtest 'git clone' => sub {
         ['rev-parse'      => 'git -C /sha-branchname rev-parse --verify -q a123'],
         ['check dirty'    => 'git -C /sha-branchname diff-index HEAD --exit-code'],
         ['current branch' => 'git -C /sha-branchname branch --show-current'],
-        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /sha-branchname fetch origin a123"],
+        ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /sha-branchname fetch origin a123"],
 
         # /this_directory_does_not_exist/
-        ['clone' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git clone http://localhost/bar.git /this_directory_does_not_exist/"],
+        ['clone' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git clone http://localhost/bar.git /this_directory_does_not_exist/"],
     ];
     #>>> no perltidy
     for my $i (0 .. $#$expected_calls) {
@@ -224,17 +224,17 @@ subtest 'git clone' => sub {
             # /opensuse
             ['get-url'        => 'git -C /opensuse remote get-url origin'],
             ['check dirty'    => 'git -C /opensuse diff-index HEAD --exit-code'],
-            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
+            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
             ['current branch' => 'git -C /opensuse branch --show-current'],
-            ['fetch default ' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /opensuse fetch origin master"],
+            ['fetch default ' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /opensuse fetch origin master"],
             ['reset'          => 'git -C /opensuse reset --hard origin/master'],
 
             # /opensuse/needles
             ['get-url'        => 'git -C /opensuse/needles remote get-url origin'],
             ['check dirty'    => 'git -C /opensuse/needles diff-index HEAD --exit-code'],
-            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
+            ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
             ['current branch' => 'git -C /opensuse/needles branch --show-current'],
-            ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS=echo GIT_TERMINAL_PROMPT=false git -C /opensuse/needles fetch origin master"],
+            ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /opensuse/needles fetch origin master"],
             ['reset'          => 'git -C /opensuse/needles reset --hard origin/master'],
         ];
         #>>> no perltidy
@@ -416,7 +416,6 @@ subtest 'delete_needles' => sub {
     stderr_like { $res = run_gru_job(@gru_args) } qr{Git command failed: .*push}, 'Got error on stderr';
     is $res->{state}, 'finished', 'git job finished';
     like $res->{result}->{errors}->[0]->{message}, qr{Unable to push Git commit. See .*_setting_up_git_support on how to setup}, 'Got error for push';
-    $t->app->config->{'scm git'}->{do_push} = '';
 
     $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd) {
@@ -427,6 +426,7 @@ subtest 'delete_needles' => sub {
     is $res->{state}, 'finished', 'git job finished';
     like $cmds[0], qr{git.*rm.*test-nestedneedle-1.json}, 'git rm was executed';
     like $cmds[1], qr{git.*commit.*Remove.*test-nestedneedle-1.json}, 'git commit was executed';
+    like $cmds[2], qr{git.*push}, 'git push was executed';
 
     $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd) {

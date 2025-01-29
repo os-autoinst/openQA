@@ -32,7 +32,7 @@ sub _run_cmd ($self, $args, $options = {}) {
     my $include_git_path = $options->{include_git_path} // 1;
     my $batchmode = $options->{batchmode} // 0;
     my @cmd;
-    push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes', 'GIT_ASKPASS=echo', 'GIT_TERMINAL_PROMPT=false' if $batchmode;
+    push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes', 'GIT_ASKPASS=', 'GIT_TERMINAL_PROMPT=false' if $batchmode;
     push @cmd, $self->_prepare_git_command($include_git_path), @$args;
 
     my $result = run_cmd_with_log_return_error(\@cmd);
