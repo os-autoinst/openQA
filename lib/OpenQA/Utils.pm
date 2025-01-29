@@ -335,7 +335,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
     my $stderr_level = $args{stderr} // 'debug';
     log_info('Running cmd: ' . join(' ', @$cmd));
     try {
-        my ($stdin, $stdout_err, $stdout, $stderr) = ('') x 4;
+        my ($stdin, $stdout, $stderr) = ('') x 3;
         my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, \$stdout, \$stderr);
         my $return_code = $?;
         chomp $stderr;
