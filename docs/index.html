@@ -2844,6 +2844,32 @@ your openqa.ini (along with the previous snippet):</p>
 <span class="tok-na">do_cleanup</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">yes</span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>If you clone the needle repository via HTTP, you can still make <code>geekotest</code>
+able to push via SSH with a git configuration. For GitHub, it would look like
+this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>git<span class="tok-w"> </span>config<span class="tok-w"> </span>--global<span class="tok-w"> </span>url.<span class="tok-s2">&quot;git@github.com:&quot;</span>.pushInsteadOf<span class="tok-w"> </span>https://github.com/</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This way <code>git push</code> will automatically rewrite HTTP urls to SSH for every
+repository, even if it&#8217;s already cloned.</p>
+</div>
+<div class="paragraph">
+<p>Or put it in the <code>~/.gitconfig</code> file manually:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[url &quot;git@github.com:&quot;]</span>
+<span class="tok-w">  </span><span class="tok-na">pushInsteadOf</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">https://github.com/</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can apply the same kind of thing for any other git hosting provider.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_referer_settings_to_auto_mark_important_jobs">Referer settings to auto-mark important jobs</h3>
@@ -13212,7 +13238,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-01-11 04:44:26 UTC
+Last updated 2025-01-30 04:44:06 UTC
 </div>
 </div>
 </body>
