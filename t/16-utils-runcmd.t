@@ -62,6 +62,7 @@ my @executed_commands;
 my %mock_return_value = (
     status => 1,
     stderr => undef,
+    return_code => 0,
 );
 
 sub _run_cmd_mock ($cmd) {

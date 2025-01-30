@@ -32,7 +32,7 @@ sub _run_cmd ($self, $args, $options = {}) {
     my $include_git_path = $options->{include_git_path} // 1;
     my $batchmode = $options->{batchmode} // 0;
     my @cmd;
-    push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes', 'GIT_ASKPASS=echo', 'GIT_TERMINAL_PROMPT=false' if $batchmode;
+    push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes', 'GIT_ASKPASS=', 'GIT_TERMINAL_PROMPT=false' if $batchmode;
     push @cmd, $self->_prepare_git_command($include_git_path), @$args;
 
     my $result = run_cmd_with_log_return_error(\@cmd);
@@ -98,7 +98,13 @@ sub commit ($self, $args = undef) {
     # push changes
     if (($self->config->{do_push} || '') eq 'yes') {
         $res = $self->_run_cmd(['push'], {batchmode => 1});
-        return $self->_format_git_error($res, 'Unable to push Git commit') unless $res->{status};
+        return undef if $res->{status};
+
+        my $msg = 'Unable to push Git commit';
+        if ($res->{return_code} == 128 and $res->{stderr} =~ m/Authentication failed for .http/) {
+            $msg .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
+        }
+        return $self->_format_git_error($res, $msg);
     }
 
     return undef;
