@@ -940,7 +940,7 @@ After changing documentation, consider generating documentation locally to
 verify it is rendered correctly using `tools/generate-docs`. It is possible to
 do that inside the provided development container by invoking:
 
-  podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa openqa_devel:latest make generate-docs
+  podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest make generate-docs
 
 Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 The documentation will be built inside the container and put into `docs/build/`
