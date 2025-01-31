@@ -176,10 +176,10 @@ An example usage:
 
 [source,perl]
 -------------------------------------------------------------------
-sub post_fail_hook () {
+sub post_run_hook () {
     send_key 'ctrl-alt-f3';
 
-    assert_script_run 'openqa-cli api experimental/search q=shutdown.pm' ;    
+    assert_script_run 'openqa-cli api experimental/search q=shutdown.pm' ;
 }
 -------------------------------------------------------------------
 
