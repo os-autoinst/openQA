@@ -6926,7 +6926,7 @@ determine the state of the machine.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_run_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">send_key</span><span class="tok-w"> </span><span class="tok-s">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">;</span>
 
 <span class="tok-w">    </span><span class="tok-n">assert_script_run</span><span class="tok-w"> </span><span class="tok-s">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-w"> </span><span class="tok-p">;</span>
@@ -12556,7 +12556,7 @@ do that inside the provided development container by invoking:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa openqa_devel:latest make generate-docs</pre>
+<pre>podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest make generate-docs</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -13238,7 +13238,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-01-30 04:44:06 UTC
+Last updated 2025-02-01 04:44:31 UTC
 </div>
 </div>
 </body>
