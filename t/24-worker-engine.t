@@ -27,6 +27,7 @@ use OpenQA::Test::FakeWorker;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
 use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
+use Cwd qw(getcwd);
 
 # define fake packages for testing asset caching
 {
@@ -511,14 +512,18 @@ subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
 };
 
 subtest 'link asset' => sub {
+    my $cwd = getcwd;
     my $pool_directory = tempdir('poolXXXX');
     my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
+    # just in case cleanup the symlink to really check if it gets re-created
+    unlink 't/data/openqa/share/factory/hdd/symlink.qcow2' if -e 't/data/openqa/share/factory/hdd/symlink.qcow2';
     my $settings = {
         JOBTOKEN => 'token000',
         ISO => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
         HDD_1 => 'foo.qcow2',
         HDD_2 => 'symlink.qcow2',
+        SYNC_ASSETS_HOOK => "ln -s foo.qcow2 $cwd/t/data/openqa/share/factory/hdd/symlink.qcow2"
     };
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
     combined_like { my $result = _run_engine($job) }
@@ -537,6 +542,7 @@ subtest 'link asset' => sub {
     is $vars_data->{ISO}, 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
       'the value of ISO is basename when doing link';
     is $vars_data->{HDD_1}, 'foo.qcow2', 'the value of HDD_1 is basename when doing link';
+    unlink 't/data/openqa/share/factory/hdd/symlink.qcow2';
 };
 
 subtest 'using cgroupv2' => sub {
