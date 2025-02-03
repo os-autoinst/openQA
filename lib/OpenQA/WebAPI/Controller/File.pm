@@ -29,10 +29,22 @@ sub needle ($self) {
 
     # make sure the directory of the file parameter is a real subdir of testcasedir before
     # using it to find needle subdirectory, to prevent access outside of the zoo
-    if ($jsonfile && !is_in_tests($jsonfile)) {
+    # Also allow the json file to be under /tmp
+    if ($jsonfile && !is_in_tests($jsonfile) && index($jsonfile, '/tmp') != 0) {
         my $prjdir = prjdir();
         warn "$jsonfile is not in a subdir of $prjdir/share/tests or $prjdir/tests";
         return $self->render(text => 'Forbidden', status => 403);
+    }
+    # If the json file in not in the tests we may be using a temporary
+    # directory for needles from a different git SHA
+    # Allow only if the jsonfile is under /tmp
+    if (!is_in_tests($jsonfile) && index($jsonfile, '/tmp') == 0) {
+        $needledir = dirname($jsonfile);
+        # In case we're in a subdirectory, keep taking the dirname until we
+        # have the path of the `needles` directory
+        while (basename($needledir) ne 'needles') {
+            $needledir = dirname($needledir);
+        }
     }
     # Reject directory traversal breakouts here...
     if (index($jsonfile, '..') != -1) {
