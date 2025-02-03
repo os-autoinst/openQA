@@ -72,6 +72,7 @@ sub read_config ($app) {
             git_auto_update => 'no',
             git_auto_update_method => 'best-effort',
             checkout_needles_sha => 'no',
+            minimum_needle_retention_time => undef,
         },
         scheduler => {
             max_job_scheduled_time => 7,
