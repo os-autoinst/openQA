@@ -186,7 +186,7 @@ subtest 'git clone' => sub {
         stderr_like { $res = run_gru_job(@gru_args) }
         qr(git diff-index HEAD), 'error about diff on stderr';
         is $res->{state}, 'failed', 'minion job failed';
-        like $res->{result}, qr/NOT updating dirty git checkout/, 'error message';
+        like $res->{result}, qr/NOT updating dirty Git checkout.*can disable.*details/s, 'error message';
     };
 
     subtest 'error testing dirty git checkout' => sub {

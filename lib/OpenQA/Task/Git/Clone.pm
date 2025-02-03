@@ -97,7 +97,11 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
 
     return if ($requested_branch and $requested_branch !~ tr/a-f0-9//c and $git->check_sha($requested_branch));
 
-    die "NOT updating dirty git checkout at $path" if !$git->is_workdir_clean();
+    die <<~"END_OF_MESSAGE" unless $git->is_workdir_clean;
+        NOT updating dirty Git checkout at '$path'.
+        In case this is expected (e.g. on a development openQA instance) you can disable auto-updating.
+        Then the Git checkout will no longer be kept up-to-date, though. Checkout http://open.qa/docs/#_getting_tests for details.
+        END_OF_MESSAGE
 
     unless ($requested_branch) {
         my $remote_default = $git->get_remote_default_branch($url);
