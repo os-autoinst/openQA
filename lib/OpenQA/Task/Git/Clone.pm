@@ -85,9 +85,9 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
 
         my $origin_url = $git->get_origin_url;
         if ($url ne $origin_url) {
-            $ctx->info(
-"Local checkout at $path has origin $origin_url but requesting to clone from $url. Be aware that the requested URL will not be cloned. This is fine.🔥"
-            );
+            $ctx->info(<<~"END_OF_MESSAGE");
+                Local checkout at $path has origin $origin_url but requesting to clone from $url. The requested URL will not be cloned.
+                END_OF_MESSAGE
             return;
         }
     }
