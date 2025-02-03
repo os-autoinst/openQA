@@ -118,7 +118,7 @@ sub get_current_branch ($self) {
 
 sub check_sha ($self, $sha) {
     my $r = $self->_run_cmd(['rev-parse', '--verify', '-q', $sha]);
-    return 0 if $r->{return_code} == 128;
+    return 0 if $r->{return_code} == 1;
     if ($r->{return_code} == 0) {
         # rev-parse returns a sha, $sha could be a branchname. if $sha matches
         # the beginning of the returned sha, we're good

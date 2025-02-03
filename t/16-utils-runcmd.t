@@ -17,7 +17,7 @@ use Mojo::File 'tempdir';
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use Test::Output 'stdout_like';
+use Test::Output qw(stdout_like stdout_unlike);
 
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
@@ -32,11 +32,22 @@ subtest 'run (arbitrary) command' => sub {
     stdout_like { is(run_cmd_with_log([qw(false)]), '') } qr/[WARN].*[ERROR]/i;
 
     my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
-    ok($res->{status}, 'status ok');
-    is($res->{stdout}, "Hallo Welt\n", 'cmd output returned');
+    is $res->{return_code}, 0, 'correct zero exit code returned ($? >> 8)';
+    ok $res->{status}, 'status ok';
+    is $res->{stdout}, "Hallo Welt\n", 'cmd output returned';
 
     stdout_like { $res = run_cmd_with_log_return_error([qw(false)]) } qr/.*\[error\].*cmd returned [1-9][0-9]*/i;
-    ok(!$res->{status}, 'status not ok (non-zero status returned)');
+    is $res->{return_code}, 1, 'correct non-zero exit code returned ($? >> 8)';
+    ok !$res->{status}, 'status not ok (non-zero status returned)';
+
+    stdout_unlike { $res = run_cmd_with_log_return_error([qw(falße)]) } qr/.*cmd returned [1-9][0-9]*/i;
+    is $res->{return_code}, undef, 'no exit code returned if command cannot be executed';
+    is $res->{stderr}, 'an internal error occurred', 'error message returned as stderr';
+    ok !$res->{status}, 'status not ok if command cannot be executed';
+
+    stdout_like { $res = run_cmd_with_log_return_error(['bash', '-c', 'kill -s KILL $$']) } qr/.*cmd died with signal 9\n.*/i;
+    is $res->{return_code}, undef, 'no exit code returned if command dies with a signal';
+    ok !$res->{status}, 'status not ok if command dies with a signal';
 };
 
 subtest 'make git commit (error handling)' => sub {

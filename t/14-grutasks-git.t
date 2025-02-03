@@ -85,8 +85,7 @@ subtest 'git clone' => sub {
             }
             elsif ($action eq 'diff-index') {
                 $return_code = 1 if $path =~ m/dirty-status/;
-                $return_code = 2
-                  if $path =~ m/dirty-error/;
+                $return_code = 2 if $path =~ m/dirty-error/;
             }
             elsif ($action eq 'rev-parse') {
                 if ($path =~ m/sha1/) {
@@ -97,8 +96,8 @@ subtest 'git clone' => sub {
                     $return_code = 0;
                     $stdout = 'abcdef123456789';
                 }
-                $return_code = 128 if $path =~ m/sha2/;
-                $return_code = 1 if $path =~ m/sha-error/;
+                $return_code = 1 if $path =~ m/sha2/;
+                $return_code = 2 if $path =~ m/sha-error/;
             }
             return {
                 status => $return_code == 0,
@@ -201,9 +200,9 @@ subtest 'git clone' => sub {
     subtest 'error testing local sha' => sub {
         %$clone_dirs = ("$git_clones/sha-error/" => 'http://localhost/foo.git#abc');
         stderr_like { $res = run_gru_job(@gru_args) }
-        qr(Unexpected exit code 1), 'error message on stderr';
+        qr(Unexpected exit code 2), 'error message on stderr';
         is $res->{state}, 'failed', 'minion job failed';
-        like $res->{result}, qr/Internal Git error: Unexpected exit code 1/, 'error message';
+        like $res->{result}, qr/Internal Git error: Unexpected exit code 2/, 'error message';
     };
 
     subtest 'error because of different url' => sub {
