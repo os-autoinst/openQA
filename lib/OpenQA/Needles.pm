@@ -13,9 +13,11 @@ use OpenQA::Log qw(log_error);
 use OpenQA::Utils qw(prjdir sharedir);
 use Mojo::File qw(path);
 
-our @EXPORT = qw(is_in_temp_dir needle_temp_dir locate_needle);
+our @EXPORT = qw(temp_dir is_in_temp_dir needle_temp_dir locate_needle);
 
 my $tmp_dir = prjdir() . '/webui/cache/needle-refs';
+
+sub temp_dir () { $tmp_dir }
 
 sub is_in_temp_dir ($file_path) { index($file_path, $tmp_dir) == 0 }
 
