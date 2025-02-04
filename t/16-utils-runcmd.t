@@ -17,7 +17,7 @@ use Mojo::File 'tempdir';
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use Test::Output qw(stdout_like stdout_unlike);
+use Test::Output qw(stdout_like stdout_unlike combined_like);
 
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
@@ -50,22 +50,39 @@ subtest 'run (arbitrary) command' => sub {
     ok !$res->{status}, 'status not ok if command dies with a signal';
 };
 
-subtest 'make git commit (error handling)' => sub {
-    throws_ok(
-        sub {
-            OpenQA::Git->new({app => $t->app, dir => 'foo/bar'})->commit();
-        },
-        qr/no user specified/,
-        'OpenQA::Git throws an exception if parameter missing'
-    );
+subtest 'invoke Git commands for real testing error handling' => sub {
+    throws_ok { OpenQA::Git->new({app => $t->app, dir => 'foo/bar'})->commit } qr/no user specified/, 'exception if user missing';
 
-    my $empty_tmp_dir = tempdir();
+    my $empty_tmp_dir = tempdir;
     my $git = OpenQA::Git->new({app => $t->app, dir => $empty_tmp_dir, user => $first_user});
     my $res;
-    stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
-    qr/.*\[warn\].*fatal: Not a git repository/i, 'git message found';
-    like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: (N|n)ot a git repository \(or any",
-      'Git error message returned';
+
+    subtest 'invoking Git command outside of a Git repo' => sub {
+        stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) } qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged';
+        like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: (N|n)ot a git repository \(or any", 'Git error returned';
+        combined_like {
+            throws_ok { $git->check_sha('this-sha-does-not-exist') } qr/internal Git error/i, 'check throws an exception'
+        } qr/\[error\].*cmd returned [1-9][0-9]*/, 'Git error logged for check as well';
+    };
+
+    combined_like {
+        $git->invoke_command($_) for ['init'], ['config', 'user.email', 'foo@bar'], ['config', 'user.name', 'Foo'];
+    } qr/\[info\].*cmd returned 0\n/, 'initialized Git repo; successful command exit logged as info';
+
+    subtest 'error handling when checking sha' => sub {
+        stdout_like { ok !$git->check_sha('this-sha-does-not-exist'), 'return code 1 interpreted correctly' } qr/\[info\].*cmd returned 1\n/i,
+          'no error logged if check returns false (despite Git returning 1)';
+    };
+
+    subtest 'error handling when checking whether working directory is clean' => sub {
+        my $test_file = $empty_tmp_dir->child('foo')->touch;
+        combined_like { $git->commit({add => ['foo'], message => 'test'}) } qr/commit.*foo.*cmd returned 0/is, 'commit created';
+        stdout_like { ok $git->is_workdir_clean, 'return code 0 interpreted correctly' } qr/\[info\].*cmd returned 0\n/i,
+          'no error (only info) logged if check returns true';
+        $test_file->spew('test');
+        stdout_like { ok !$git->is_workdir_clean, 'return code 1 interpreted correctly' } qr/\[info\].*cmd returned 1\n/i,
+          'no error (only info) logged if check returns false (despite Git returning 1)';
+    };
 };
 
 # setup mocking
@@ -76,7 +93,7 @@ my %mock_return_value = (
     return_code => 0,
 );
 
-sub _run_cmd_mock ($cmd) {
+sub _run_cmd_mock ($cmd, %args) {
     push @executed_commands, $cmd;
     return \%mock_return_value;
 }
@@ -172,7 +189,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     local $mock_return_value{stdout} = '';
 
     $utils_mock->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @executed_commands, $cmd;
             if ($cmd->[7] eq 'push') {
                 $mock_return_value{status} = 0;

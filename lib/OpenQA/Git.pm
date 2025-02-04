@@ -12,6 +12,8 @@ has 'app';
 has 'dir';
 has 'user';
 
+my %CHECK_OPTIONS = (expected_return_codes => {0 => 1, 1 => 1});
+
 sub enabled ($self, $args = undef) {
     die 'no app assigned' unless my $app = $self->app;
     return ($app->config->{global}->{scm} || '') eq 'git';
@@ -35,7 +37,7 @@ sub _run_cmd ($self, $args, $options = {}) {
     push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes', 'GIT_ASKPASS=', 'GIT_TERMINAL_PROMPT=false' if $batchmode;
     push @cmd, $self->_prepare_git_command($include_git_path), @$args;
 
-    my $result = run_cmd_with_log_return_error(\@cmd);
+    my $result = run_cmd_with_log_return_error(\@cmd, expected_return_codes => $options->{expected_return_codes});
     $self->app->log->error("Git command failed: @cmd - Error: $result->{stderr}") unless $result->{status};
     return $result;
 }
@@ -116,8 +118,13 @@ sub get_current_branch ($self) {
     return trim($r->{stdout});
 }
 
+sub invoke_command ($self, $command_and_args) {
+    my $r = $self->_run_cmd($command_and_args);
+    $r->{status} or die $self->_format_git_error($r, "Failed to invoke Git command $command_and_args->[0]");
+}
+
 sub check_sha ($self, $sha) {
-    my $r = $self->_run_cmd(['rev-parse', '--verify', '-q', $sha]);
+    my $r = $self->_run_cmd(['rev-parse', '--verify', '-q', $sha], \%CHECK_OPTIONS);
     return 0 if $r->{return_code} == 1;
     if ($r->{return_code} == 0) {
         # rev-parse returns a sha, $sha could be a branchname. if $sha matches
@@ -157,7 +164,7 @@ sub reset_hard ($self, $branch) {
 }
 
 sub is_workdir_clean ($self) {
-    my $r = $self->_run_cmd(['diff-index', 'HEAD', '--exit-code']);
+    my $r = $self->_run_cmd(['diff-index', 'HEAD', '--exit-code'], \%CHECK_OPTIONS);
     die $self->_format_git_error($r, 'Internal Git error: Unexpected exit code ' . $r->{return_code})
       if $r->{return_code} > 1;
     return $r->{status};

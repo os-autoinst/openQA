@@ -57,7 +57,7 @@ subtest 'git clone' => sub {
         "$git_clones/sha-branchname" => 'http://localhost/present.git#a123',
     };
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @mocked_git_calls, join(' ', map { tr/ // ? "'$_'" : $_ } @$cmd) =~ s/\Q$git_clones//r;
             my $stdout = '';
             splice @$cmd, 0, 4 if $cmd->[0] eq 'env';
@@ -404,7 +404,7 @@ subtest 'delete_needles' => sub {
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @cmds;
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
             if (grep m/push/, @$cmd) {
                 return {status => 0, return_code => 128, stderr => q{fatal: Authentication failed for 'https://github.com/lala}, stdout => ''};
@@ -417,7 +417,7 @@ subtest 'delete_needles' => sub {
     like $res->{result}->{errors}->[0]->{message}, qr{Unable to push Git commit. See .*_setting_up_git_support on how to setup}, 'Got error for push';
 
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
             return {status => 1};
         });
@@ -428,7 +428,7 @@ subtest 'delete_needles' => sub {
     like $cmds[2], qr{git.*push}, 'git push was executed';
 
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
             return {status => 0, stderr => 'lala', stdout => ''};
         });
