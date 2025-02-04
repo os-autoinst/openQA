@@ -57,7 +57,7 @@ subtest 'git clone' => sub {
         "$git_clones/sha-branchname" => 'http://localhost/present.git#a123',
     };
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @mocked_git_calls, join(' ', map { tr/ // ? "'$_'" : $_ } @$cmd) =~ s/\Q$git_clones//r;
             my $stdout = '';
             splice @$cmd, 0, 4 if $cmd->[0] eq 'env';
@@ -85,8 +85,7 @@ subtest 'git clone' => sub {
             }
             elsif ($action eq 'diff-index') {
                 $return_code = 1 if $path =~ m/dirty-status/;
-                $return_code = 2
-                  if $path =~ m/dirty-error/;
+                $return_code = 2 if $path =~ m/dirty-error/;
             }
             elsif ($action eq 'rev-parse') {
                 if ($path =~ m/sha1/) {
@@ -97,8 +96,8 @@ subtest 'git clone' => sub {
                     $return_code = 0;
                     $stdout = 'abcdef123456789';
                 }
-                $return_code = 128 if $path =~ m/sha2/;
-                $return_code = 1 if $path =~ m/sha-error/;
+                $return_code = 1 if $path =~ m/sha2/;
+                $return_code = 2 if $path =~ m/sha-error/;
             }
             return {
                 status => $return_code == 0,
@@ -187,7 +186,7 @@ subtest 'git clone' => sub {
         stderr_like { $res = run_gru_job(@gru_args) }
         qr(git diff-index HEAD), 'error about diff on stderr';
         is $res->{state}, 'failed', 'minion job failed';
-        like $res->{result}, qr/NOT updating dirty git checkout/, 'error message';
+        like $res->{result}, qr/NOT updating dirty Git checkout.*can disable.*details/s, 'error message';
     };
 
     subtest 'error testing dirty git checkout' => sub {
@@ -201,9 +200,9 @@ subtest 'git clone' => sub {
     subtest 'error testing local sha' => sub {
         %$clone_dirs = ("$git_clones/sha-error/" => 'http://localhost/foo.git#abc');
         stderr_like { $res = run_gru_job(@gru_args) }
-        qr(Unexpected exit code 1), 'error message on stderr';
+        qr(Unexpected exit code 2), 'error message on stderr';
         is $res->{state}, 'failed', 'minion job failed';
-        like $res->{result}, qr/Internal Git error: Unexpected exit code 1/, 'error message';
+        like $res->{result}, qr/Internal Git error: Unexpected exit code 2/, 'error message';
     };
 
     subtest 'error because of different url' => sub {
@@ -405,7 +404,7 @@ subtest 'delete_needles' => sub {
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @cmds;
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
             if (grep m/push/, @$cmd) {
                 return {status => 0, return_code => 128, stderr => q{fatal: Authentication failed for 'https://github.com/lala}, stdout => ''};
@@ -418,7 +417,7 @@ subtest 'delete_needles' => sub {
     like $res->{result}->{errors}->[0]->{message}, qr{Unable to push Git commit. See .*_setting_up_git_support on how to setup}, 'Got error for push';
 
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
             return {status => 1};
         });
@@ -429,7 +428,7 @@ subtest 'delete_needles' => sub {
     like $cmds[2], qr{git.*push}, 'git push was executed';
 
     $openqa_git->redefine(
-        run_cmd_with_log_return_error => sub ($cmd) {
+        run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
             return {status => 0, stderr => 'lala', stdout => ''};
         });
