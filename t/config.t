@@ -87,6 +87,7 @@ subtest 'Test configuration default modes' => sub {
             user_url => '',
             token_scope => '',
             token_label => '',
+            id_from => 'id',
             nickname_from => '',
             unique_name => '',
         },
