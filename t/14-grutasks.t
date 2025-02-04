@@ -418,7 +418,7 @@ subtest 'limit_temp_needle_refs task cleans up temp needle refs exceeding retent
     my @old_needle_files = ("$temp_dir/ref1/needle_old.png", "$temp_dir/ref1/needle_old.json");
     my @new_needle_files = ("$temp_dir/ref2/needle_new.png", "$temp_dir/ref2/needle_new.json");
     my $now = time;
-    my $old_timestamp = $now - (120 * ONE_MINUTE + 1);
+    my $old_timestamp = $now - (2 * ONE_HOUR + 1);
     my $new_timestamp = $now - ONE_MINUTE + 1;
     foreach my $file (@old_needle_files) {
         path($file)->touch;
