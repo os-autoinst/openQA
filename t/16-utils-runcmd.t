@@ -145,13 +145,10 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     $mock_return_value{status} = 0;
     $mock_return_value{stderr} = 'mocked error';
     $mock_return_value{stdout} = '';
-    is(
-        $git->set_to_latest_master,
-        'Unable to fetch from origin master (foo/bar): mocked error',
-        'an error occurred on remote update'
-    );
-    is_deeply(\@executed_commands, [[qw(git -C foo/bar remote update origin)],], 'git reset not attempted',)
-      or always_explain \@executed_commands;
+    combined_like {
+        is $git->set_to_latest_master, 'Unable to fetch from origin master (foo/bar): mocked error', 'an error occurred on remote update';
+    } qr/Error: mocked error/, 'error logged';
+    is_deeply \@executed_commands, [[qw(git -C foo/bar remote update origin)]], 'git reset not attempted' or always_explain \@executed_commands;
 
     # test commit
     @executed_commands = ();
@@ -196,7 +193,9 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
             }
             return \%mock_return_value;
         });
-    like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/, 'error handled during push';
+    combined_like {
+        like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/, 'error handled during push';
+    } qr/Error: mocked push error/, 'push error logged';
     $git->config->{do_push} = '';
 };
 
