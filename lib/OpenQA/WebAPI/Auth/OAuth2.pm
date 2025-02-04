@@ -44,6 +44,7 @@ sub auth_setup ($server) {
                 user_url => $config->{user_url},
                 token_scope => $config->{token_scope},
                 token_label => $config->{token_label},
+                id_from => $config->{id_from},
                 nickname_from => $config->{nickname_from},
                 unique_name => $config->{unique_name},
             },
@@ -69,16 +70,18 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
         return $controller->render(text => $msg, status => 403);    # return always 403 for consistency
     }
     my $details = $tx->res->json;
-    if (ref $details ne 'HASH' || !$details->{id} || !$details->{$provider_config->{nickname_from}}) {
+    my $id_field = $provider_config->{id_from};
+    my $nickname_field = $provider_config->{nickname_from};
+    if (ref $details ne 'HASH' || !$details->{$id_field} || !$details->{$nickname_field}) {
         log_debug('OAuth2 user provider returned: ' . dumper($details));
         return $controller->render(text => 'User data returned by OAuth2 provider is insufficient', status => 403);
     }
     my $provider_name = $main_config->{provider};
     $provider_name = $provider_config->{unique_name} || $provider_name if $provider_name eq 'custom';
     my $user = $controller->schema->resultset('Users')->create_user(
-        $details->{id},
+        $details->{$id_field},
         provider => "oauth2\@$provider_name",
-        nickname => $details->{$provider_config->{nickname_from}},
+        nickname => $details->{$nickname_field},
         fullname => $details->{name},
         email => $details->{email});
 
