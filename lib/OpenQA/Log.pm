@@ -213,8 +213,8 @@ sub redact_settings ($vars) {
     my $hide_re = '^_SECRET_|_PASSWORD';
     my $custom_hide_re = eval { qr/$vars->{_HIDE_SECRETS_REGEX}/ } if $vars->{_HIDE_SECRETS_REGEX};
     $vars->{_HIDE_SECRETS_REGEX} = "(invalid regex specified: $@)" if $@;
-    $hide_re .= "|$custom_hide_re" if $custom_hide_re;
-    return {map { /($hide_re)/ ? ($_ => '[redacted]') : ($_ => $vars->{$_}) } keys %$vars};
+    $hide_re = $custom_hide_re ? qr/($hide_re|$custom_hide_re)/ : qr/($hide_re)/;
+    return {map { ($_ =~ $hide_re) ? ($_ => '[redacted]') : ($_ => $vars->{$_}) } keys %$vars};
 }
 
 sub redact_settings_in_file ($file) {
