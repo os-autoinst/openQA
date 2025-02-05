@@ -4,6 +4,7 @@
 package OpenQA::Schema::Result::Comments;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
+use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils qw(find_labels find_flags find_bugref find_bugrefs);
 use OpenQA::Markdown qw(markdown_to_html);

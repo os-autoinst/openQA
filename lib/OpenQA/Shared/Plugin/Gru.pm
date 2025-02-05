@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
+use OpenQA::App;
 use OpenQA::Schema;
 use OpenQA::Shared::GruJob;
 use OpenQA::Log qw(log_debug log_info);
@@ -249,7 +250,7 @@ sub enqueue_git_update_all ($self) {
 }
 
 sub enqueue_git_clones ($self, $clones, $job_ids) {
-    return unless %$clones;
+    return unless keys %$clones;
     return unless OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} eq 'yes';
     # $clones is a hashref with paths as keys and git urls as values
     # $job_id is used to create entries in a related table (gru_dependencies)

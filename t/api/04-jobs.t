@@ -62,6 +62,7 @@ $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $cfg = $t->app->config;
+$cfg->{'scm git'}->{git_auto_clone} = 'no';
 $cfg->{'scm git'}->{git_auto_update} = 'no';
 is $cfg->{audit}->{blocklist}, 'job_grab', 'blocklist updated';
 
@@ -1614,7 +1615,7 @@ subtest 'handle FOO_URL' => sub {
 };
 
 subtest 'handle git_clone with CASEDIR' => sub {
-    OpenQA::App->singleton->config->{'scm git'}->{git_auto_clone} = 'yes';
+    $cfg->{'scm git'}->{git_auto_clone} = 'yes';
     $testsuites->create(
         {
             name => 'handle_foo_casedir',
@@ -1645,7 +1646,7 @@ subtest 'handle git_clone with CASEDIR' => sub {
 };
 
 subtest 'handle git_clone without CASEDIR' => sub {
-    OpenQA::App->singleton->config->{'scm git'}->{git_auto_update} = 'yes';
+    $cfg->{'scm git'}->{git_auto_update} = 'yes';
     $testsuites->create(
         {
             name => 'handle_git_clone',
