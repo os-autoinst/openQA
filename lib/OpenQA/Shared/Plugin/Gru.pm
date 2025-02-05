@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
+use OpenQA::App;
 use OpenQA::Schema;
 use OpenQA::Shared::GruJob;
 use OpenQA::Log qw(log_debug log_info);
