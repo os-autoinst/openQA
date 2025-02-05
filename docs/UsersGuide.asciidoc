@@ -1407,8 +1407,7 @@ If the size limit for assets of a group is exceeded, openQA will remove
 assets which belong to that group:
 
 * Assets belonging to old jobs are preferred.
-* Assets belonging to jobs which are still scheduled or running are not
-  considered.
+* Assets belonging to jobs which are still pending are not considered.
 * Assets which have been accounted to another group that has still space
   left are not considered.
 

@@ -78,11 +78,13 @@ function renderTestName(data, type, row) {
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '">';
   if (row.result !== 'none') {
     html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
-  } else if (row.state === 'scheduled') {
+  } else if (row.state === 'new' || row.state === 'scheduled') {
     if (typeof row.blocked_by_id === 'number') {
       html += '<i class="status fa fa-circle state_blocked" title="Blocked"></i>';
-    } else {
+    } else if (row.state === 'scheduled') {
       html += '<i class="status fa fa-circle state_scheduled" title="Scheduled"></i>';
+    } else {
+      html += '<i class="status fa fa-circle state_new" title="New"></i>';
     }
   } else if (row.state === 'assigned') {
     html += '<i class="status fa fa-circle state_running" title="Assigned"></i>';
@@ -255,7 +257,7 @@ function renderTestLists() {
     }
   });
 
-  // initialize data tables for running, scheduled and finished jobs
+  // initialize data tables for running, new/scheduled/blocked and finished jobs
   var runningTable = $('#running').DataTable({
     order: [], // no initial resorting
     ajax: {
@@ -307,7 +309,7 @@ function renderTestLists() {
             ++blockedCount;
           }
         });
-        var text = json.data.length + ' scheduled jobs';
+        var text = json.data.length + ' new or scheduled jobs';
         if (blockedCount > 0) {
           text += ' (' + blockedCount + ' blocked by other jobs)';
         }

@@ -150,8 +150,9 @@ Every job is labeled with a numeric identifier and has several associated
 A job goes through several states. Here is (an incomplete list) of these
 states:
 
-* *scheduled* Initial state for newly created jobs. Queued for future
-  execution.
+* *new* Initial state for newly created jobs. Those jobs will transition to the
+  scheduled state as soon as all required preparation tasks have been completed.
+* *scheduled* Queued for future execution.
 * *setup*/*running*/*uploading* In progress.
 * *cancelled* The job was explicitly cancelled by the user or was
   replaced by a clone (see below) and the worker has not acknowledged the
@@ -378,7 +379,7 @@ clone a subdirectory under `/var/lib/openqa/tests` for each test distribution
 you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests.
 
 The repositories will be kept up-to-date if `git_auto_update` is enabled in
-`openqa.ini`. The updating is triggered when new tests are scheduled. For a
+`openqa.ini`. The updating is triggered when new tests are created. For a
 periodic update (to avoid getting too far behind) you can enable the systemd
 unit `openqa-enqueue-git-auto-update.timer`.
 

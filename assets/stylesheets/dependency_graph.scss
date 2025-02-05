@@ -75,7 +75,7 @@
                 color: white;
                 background-color: $color-incomplete;
             }
-            &.blocked {
+            &.new, &.blocked {
                 background-color: $color-state-blocked;
             }
             &.scheduled {

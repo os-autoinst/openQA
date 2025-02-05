@@ -126,6 +126,7 @@ function setupOverview() {
   $('.cancel').bind('ajax:success', function (event, xhr, status) {
     $(this).text(''); // hide the icon
     var icon = $(this).parents('td').find('.status');
+    // FIXME
     icon.removeClass('state_scheduled').removeClass('state_running');
     icon.addClass('state_cancelled');
     icon.attr('title', 'Cancelled');
@@ -147,6 +148,7 @@ function setupOverview() {
       restarted.text(''); // hide the icon
       var icon = restarted.parents('td').find('.status');
       icon.removeClass('state_done').removeClass('state_cancelled');
+      // FIXME
       icon.addClass('state_scheduled');
       icon.attr('title', 'Scheduled');
       // remove the result class

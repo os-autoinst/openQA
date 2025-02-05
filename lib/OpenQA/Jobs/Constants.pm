@@ -8,7 +8,9 @@ use Exporter 'import';
 
 # job states
 use constant {
-    # initial job state; the job is supposed to be assigned to a worker by the scheduler
+    # initial job state; the job has been created but not ready to be scheduled due to pending tasks
+    NEW => 'new',
+    # the job is supposed to be assigned to a worker by the scheduler
     SCHEDULED => 'scheduled',
     # the job has been sent to worker but worker has not acknowledged yet; the state might be reverted to
     # SCHEDULED in some conditions
@@ -27,7 +29,7 @@ use constant {
     # or the job has been cancelled due to failed parallel dependencies (result PARALLEL_FAILED is set)
     DONE => 'done',
 };
-use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CANCELLED);
+use constant STATES => (NEW, SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CANCELLED);
 
 # note regarding CANCELLED vs. DONE:
 # There is an overlap between CANCELLED and DONE (considering that some results are possibly assigned in either of these
@@ -37,10 +39,10 @@ use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CA
 # That is usually the case for jobs SKIPPED due to failed chained dependencies (*not* directly chained dependencies).
 
 # "meta" states
-use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING);
+use constant PENDING_STATES => (NEW, SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING);
 use constant EXECUTION_STATES => (ASSIGNED, SETUP, RUNNING, UPLOADING);
-use constant PRE_EXECUTION_STATES => (SCHEDULED);
-use constant PRISTINE_STATES => (SCHEDULED, ASSIGNED);    # no worker reported any updates/results so far
+use constant PRE_EXECUTION_STATES => (NEW, SCHEDULED);
+use constant PRISTINE_STATES => (NEW, SCHEDULED, ASSIGNED);    # no worker reported any updates/results so far
 use constant FINAL_STATES => (DONE, CANCELLED);
 use constant {
     PRE_EXECUTION => 'pre_execution',
@@ -135,6 +137,7 @@ our @EXPORT = qw(
   USER_CANCELLED
   USER_RESTARTED
   MODULE_RESULTS
+  NEW
   COMMON_RESULT_FILES
   TIMEOUT_EXCEEDED
   DEFAULT_JOB_PRIORITY

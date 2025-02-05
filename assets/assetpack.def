@@ -190,6 +190,9 @@
 ! logo-scheduled-16.png
 < images/logo-scheduled-16.png
 
+! logo-new-16.png
+< images/logo-blocked-16.png
+
 ! logo-blocked-16.png
 < images/logo-blocked-16.png
 
@@ -222,6 +225,9 @@
 
 ! logo-scheduled.svg
 < images/logo-scheduled.svg
+
+! logo-new.svg
+< images/logo-blocked.svg
 
 ! logo-blocked.svg
 < images/logo-blocked.svg

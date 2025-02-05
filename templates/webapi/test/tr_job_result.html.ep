@@ -21,8 +21,8 @@
                      <i class="status fa fa-circle result_<%= $res->{overall} %>" title="Done: <%= $res->{overall} %>"></i>
                  </a>
          % }
-         % elsif ($state eq SCHEDULED) {
-             % my $substate = $res->{blocked} ? 'blocked' : 'scheduled';
+         % elsif ($state eq NEW || $state eq SCHEDULED) {
+             % my $substate = $res->{blocked} ? 'blocked' : $state;
              <a href="<%= url_for('test', 'testid' => $jobid) %>">
                  <i class="status state_<%= $substate %> fa fa-circle" title="<%= $substate %>@<%= $res->{priority} %>"></i>
              </a>

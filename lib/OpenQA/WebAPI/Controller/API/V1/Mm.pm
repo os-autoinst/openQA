@@ -45,7 +45,7 @@ sub get_children_status {
         $state = OpenQA::Jobs::Constants::RUNNING;
     }
     elsif ($state eq 'scheduled') {
-        $state = OpenQA::Jobs::Constants::SCHEDULED;
+        $state = OpenQA::Jobs::Constants::SCHEDULED; # FIXME: does this need adjustment?
     }
     else {
         $state = OpenQA::Jobs::Constants::DONE;

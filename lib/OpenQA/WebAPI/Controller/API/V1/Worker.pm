@@ -136,7 +136,7 @@ sub _incomplete_previous_job {
     my $job_id = $job->id;
     return 0 if $jobs_worker_says_it_works_on->{$job_id};
     my $job_state = $job->state;
-    return 1 if $job_state eq OpenQA::Jobs::Constants::SCHEDULED;
+    return 1 if $job_state eq NEW || $job_state eq SCHEDULED;
 
     # set jobs which were only assigned anyways back to scheduled
     if ($job_state eq OpenQA::Jobs::Constants::ASSIGNED) {

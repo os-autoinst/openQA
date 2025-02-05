@@ -90,7 +90,7 @@ div.flags {
 .state_scheduled.fa {
     color: $color-state-scheduled;
 }
-.state_blocked.fa {
+.state_new.fa, .state_blocked.fa {
     color: $color-state-blocked;
 }
 .state_obsolete.fa, .state_cancelled.fa {

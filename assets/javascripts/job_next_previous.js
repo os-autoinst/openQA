@@ -75,7 +75,7 @@ function renderJobResults(data, type, row) {
   // job status
   html += '<span id="res-' + row.id + '">';
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '">';
-  if (row.result == 'none' && (row.state == 'running' || row.state == 'scheduled')) {
+  if (row.result == 'none' && (row.state === 'running' || row.state === 'scheduled' || row.state === 'new')) {
     html += '<i class="status fa fa-circle state_' + row.state + '" title="' + row.state + '"></i>';
   } else {
     html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
@@ -130,7 +130,7 @@ function renderFinishTime(data, type, row) {
     html += '<abbr class="timeago" title="' + data + '">' + jQuery.timeago(data) + ' </abbr>';
     html += '( ' + row.duration + ' )';
   } else {
-    if (row.state == 'running' || row.state == 'scheduled') {
+    if (row.state === 'running' || row.state === 'scheduled' || row.state === 'new') {
       html += 'Not yet: ' + row.state;
     }
   }

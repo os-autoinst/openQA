@@ -67,7 +67,7 @@ __PACKAGE__->add_columns(
     },
     state => {
         data_type => 'varchar',
-        default_value => SCHEDULED,
+        default_value => NEW,
     },
     priority => {
         data_type => 'integer',
@@ -975,7 +975,8 @@ sub auto_duplicate ($self, $args = {}) {
     while (my $j = $jobs->next) {
         if (my $sp_id = $j->related_scheduled_product_id) { $related_scheduled_product_ids{$sp_id} = 1 }
         next if $j->abort;
-        next unless $j->state eq SCHEDULED || $j->state eq ASSIGNED;
+        my $state = $j->state;
+        next unless any { $_ eq $state } PRISTINE_STATES;
         $j->release_networks;
         $j->update({state => CANCELLED});
     }
@@ -1809,7 +1810,8 @@ sub _job_stop_cluster ($self, $job) {
     $job = $rset->search({id => $job, result => NONE}, {rows => 1})->first;
     return 0 unless $job;
 
-    if ($job->state eq SCHEDULED || $job->state eq ASSIGNED) {
+    my $state = $j->state;
+    if (any { $_ eq $state } PRISTINE_STATES) {
         $job->release_networks;
         $job->update({result => SKIPPED, state => CANCELLED});
     }
@@ -2349,22 +2351,20 @@ sub _overview_result_done ($self, $jobid, $job_labels, $aggregated, $failed_modu
 
 sub overview_result ($self, $job_labels, $aggregated, $failed_modules, $actually_failed_modules, $todo = undef) {
     my $jobid = $self->id;
-    if ($self->state eq OpenQA::Jobs::Constants::DONE) {
+    my $state = $self->state;
+    if ($state eq DONE) {
         return $self->_overview_result_done($jobid, $job_labels, $aggregated, $failed_modules,
             $actually_failed_modules, $todo);
     }
     return undef if $todo;
-    my $result = {
-        state => $self->state,
-        jobid => $jobid,
-    };
-    if ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
+    my $result = {state => $state, jobid => $jobid};
+    if ($state eq RUNNING) {
         $aggregated->{running}++;
     }
     else {
         $result->{priority} = $self->priority;
-        if ($self->state eq OpenQA::Jobs::Constants::SCHEDULED) {
-            $aggregated->{scheduled}++;
+        if ($state eq NEW || $state eq SCHEDULED) {
+            $aggregated->{$state}++;
             $result->{blocked} = 1 if defined $self->blocked_by_id;
         }
         else {

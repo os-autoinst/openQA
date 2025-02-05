@@ -54,7 +54,7 @@ function createTests(form) {
     success: function (response) {
       const id = response.scheduled_product_id;
       const url = `${form.dataset.productlogUrl}?id=${id}`;
-      addFlash('info', `Tests have been scheduled, checkout the <a href="${url}">product log</a> for details.`);
+      addFlash('info', `Tests have been created, checkout the <a href="${url}">product log</a> for details.`);
     },
     error: function (xhr, ajaxOptions, thrownError) {
       addFlash('danger', 'Unable to create tests: ' + (xhr.responseJSON?.error ?? xhr.responseText ?? thrownError));

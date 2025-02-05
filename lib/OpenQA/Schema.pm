@@ -19,6 +19,8 @@ use OpenQA::Utils qw(:DEFAULT prjdir);
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
 our $VERSION = $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} // 100;
+# FIXME: bump this and generate deployment files
+#        to change `state character varying DEFAULT 'scheduled' NOT NULL,` to `state character varying DEFAULT 'new' NOT NULL,`
 
 __PACKAGE__->load_namespaces;
 

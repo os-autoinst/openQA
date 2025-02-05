@@ -32,6 +32,7 @@ my %BADGE_RESULT_COLORS = (
     incomplete => '#AF1E11',
     timeout_exceeded => '#AF1E11',
     blocked => '#9167b7',
+    new => '#9167b7',
     scheduled => '#67A2B7',
     cancelled => '#aaaaaa',
     user_cancelled => '#aaaaaa',
@@ -697,6 +698,7 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
         failed => 0,
         not_complete => 0,
         aborted => 0,
+        new => 0,
         scheduled => 0,
         running => 0,
         unknown => 0

@@ -399,7 +399,7 @@ function renderSearchResults(query, url) {
 function testStateHTML(job) {
   var className = 'status fa fa-circle';
   var title;
-  if (job.state === 'running' || job.state === 'scheduled') {
+  if (job.state === 'running' || job.state === 'scheduled' || job.state === 'new') {
     if (job.state === 'scheduled' && job.blocked_by_id) {
       className += ' state_blocked';
       title = 'blocked';

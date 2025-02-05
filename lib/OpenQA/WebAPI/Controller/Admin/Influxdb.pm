@@ -38,9 +38,11 @@ sub jobs ($self) {
 
     my $schema = $self->schema;
     my $jobs = $schema->resultset('Jobs');
-    my $rs = $jobs->search({state => OpenQA::Jobs::Constants::SCHEDULED, blocked_by_id => undef});
+    my $rs = $jobs->search({state => NEW, blocked_by_id => undef});
+    _queue_sub_stats($rs, 'new', $result);
+    $rs = $jobs->search({state => SCHEDULED, blocked_by_id => undef});
     _queue_sub_stats($rs, 'scheduled', $result);
-    $rs = $jobs->search({state => OpenQA::Jobs::Constants::SCHEDULED, -not => {blocked_by_id => undef}});
+    $rs = $jobs->search({state => [NEW, SCHEDULED], -not => {blocked_by_id => undef}});
     _queue_sub_stats($rs, 'blocked', $result);
     $rs = $jobs->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     _queue_sub_stats($rs, 'running', $result);

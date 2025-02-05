@@ -29,7 +29,7 @@
 </div>
 
 <div>
-    <h2 id="scheduled_jobs_heading">Scheduled jobs</h2>
+    <h2 id="scheduled_jobs_heading">New and Scheduled jobs</h2>
     <table id="scheduled" class="display table table-striped" style="width: 100%">
         <thead>
             <tr>
