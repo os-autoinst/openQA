@@ -96,6 +96,7 @@ sub read_config ($app) {
             token_label => '',
             nickname_from => '',
             unique_name => '',
+            id_from => 'id',
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
