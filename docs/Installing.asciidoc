@@ -1049,6 +1049,27 @@ comment = openQA test distributions
 systemctl enable --now rsyncd
 --------------------------------------------------------------------------------
 
+=== Alternative caching implementations
+
+Caching described above works well for a single worker host, but in case of
+several hosts in a single site (that is remote from the main openQA webui
+instance) it results in downloading the same assets several times. In
+such case, one can setup local cache on their own (without using
+openqa-worker-cacheservice service) and share it with workers using
+some network filesystem (see <<Installing.asciidoc#Configuring remote workers>>
+section above).
+Such setups can use `SYNC_ASSETS_HOOK` in `/etc/openqa/workers.ini` to ensure
+the cache is up to date before starting the job (or resuming test in developer
+mode). The setting takes a shell command that is executed just before
+evaluating assets. It is up to the system administrator to decide what it
+should do, but there are few suggestions:
+
+* Call rsync, possibly via ssh on the cache host
+* Wait for a lock file signaling that cache download is in progress to disappear
+
+If the command exits with code 32, re-downloading needles in developer mode
+will be skipped.
+
 === Enable linking files referred by job settings
 
 Specific job settings might refer to files within the test distribution.

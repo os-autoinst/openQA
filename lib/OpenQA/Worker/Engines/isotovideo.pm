@@ -326,6 +326,12 @@ sub engine_workit ($job, $callback) {
 
     log_debug "Job settings:\n" . format_settings(\%vars);
 
+    # start pre-job hook if any
+    if ($job_settings->{SYNC_ASSETS_HOOK}) {
+        log_debug 'Running SYNC_ASSETS_HOOK';
+        system($job_settings->{SYNC_ASSETS_HOOK});
+    }
+
     # cache/locate assets, set ASSETDIR
     my $assetkeys = detect_asset_keys(\%vars);
     if (my $cache_dir = $global_settings->{CACHEDIRECTORY}) {
