@@ -17,7 +17,7 @@ use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
-use List::Util qw(min);
+use List::Util qw(first min);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
 
@@ -125,10 +125,10 @@ sub _load_test_preset ($self, $preset_key) {
     $presets{$preset_key} = undef;
     # read preset from an INI section [test_presets/…] or fallback to defaults assigned on setup
     my $config = $self->app->config;
-    return undef unless my $ini_config = $config->{ini_config};
     my $ini_key = "test_preset $preset_key";
+    my $ini_config = first { $_->SectionExists($ini_key) } @{$config->{ini_configs}};
     return $presets{$preset_key}
-      = $ini_config->SectionExists($ini_key)
+      = defined($ini_config)
       ? {map { ($_ => $ini_config->val($ini_key, $_)) } $ini_config->Parameters($ini_key)}
       : $config->{$ini_key};
 }
