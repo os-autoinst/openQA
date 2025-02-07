@@ -264,14 +264,12 @@ subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
         recognized_referers =   bugzilla.suse.com   progress.opensuse.org github.com
     ';
     $t_dir->child('openqa.ini')->spew($data);
-    OpenQA::Setup::read_config($app);
-    ok($app->config->{global}->{appname} eq 'openQA', 'appname');
-    ok($app->config->{global}->{hide_asset_types} eq 'repo iso', 'hide_asset_types');
-    is_deeply(
-        $app->config->{global}->{recognized_referers},
-        [qw(bugzilla.suse.com progress.opensuse.org github.com)],
-        'recognized_referers'
-    );
+    my $global_config = OpenQA::Setup::read_config($app)->{global};
+    is $global_config->{appname}, 'openQA', 'appname';
+    is $global_config->{hide_asset_types}, 'repo iso', 'hide_asset_types';
+    is_deeply $global_config->{recognized_referers},
+      [qw(bugzilla.suse.com progress.opensuse.org github.com)],
+      'recognized_referers';
 };
 
 subtest 'Validation of worker timeout' => sub {
