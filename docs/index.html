@@ -619,6 +619,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_configuring_amqp_message_emission">Configuring AMQP message emission</a></li>
 <li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">Configuring worker to use more than one openQA server</a></li>
 <li><a href="#asset-caching">Asset and test/needle caching</a></li>
+<li><a href="#_alternative_caching_implementations">Alternative caching implementations</a></li>
 <li><a href="#_enable_linking_files_referred_by_job_settings">Enable linking files referred by job settings</a></li>
 <li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</a></li>
 <li><a href="#_automatic_cloning_of_incomplete_jobs">Automatic cloning of incomplete jobs</a></li>
@@ -3220,6 +3221,37 @@ on the worker host:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>rsyncd</code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_alternative_caching_implementations">Alternative caching implementations</h3>
+<div class="paragraph">
+<p>Caching described above works well for a single worker host, but in case of
+several hosts in a single site (that is remote from the main openQA webui
+instance) it results in downloading the same assets several times. In
+such case, one can setup local cache on their own (without using
+openqa-worker-cacheservice service) and share it with workers using
+some network filesystem (see <a href="#Configuring remote workers">[Configuring remote workers]</a>
+section above).
+Such setups can use <code>SYNC_ASSETS_HOOK</code> in <code>/etc/openqa/workers.ini</code> to ensure
+the cache is up to date before starting the job (or resuming test in developer
+mode). The setting takes a shell command that is executed just before
+evaluating assets. It is up to the system administrator to decide what it
+should do, but there are few suggestions:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Call rsync, possibly via ssh on the cache host</p>
+</li>
+<li>
+<p>Wait for a lock file signaling that cache download is in progress to disappear</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If the command exits with code 32, re-downloading needles in developer mode
+will be skipped.</p>
 </div>
 </div>
 <div class="sect2">
@@ -13238,7 +13270,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-01 04:44:31 UTC
+Last updated 2025-02-07 04:44:53 UTC
 </div>
 </div>
 </body>
