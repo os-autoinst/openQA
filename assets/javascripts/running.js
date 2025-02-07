@@ -189,11 +189,21 @@ function updateStatus() {
 
   fetch(testStatus.status_url)
     .then(response => {
-      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      return response.json();
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
     })
-    .then(status => {
-      updateTestStatus(status);
+    .then(({response, json}) => {
+      if (!response.ok || json.error)
+        throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
+      updateTestStatus(json);
       // continue polling for job state updates until the job state is done
       if (testStatus.state !== 'done') {
         setTimeout(updateStatus, 5000);

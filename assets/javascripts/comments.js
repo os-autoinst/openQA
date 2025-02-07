@@ -49,7 +49,20 @@ function deleteComment(deleteButton) {
   }
   fetchWithCSRF(deleteButton.dataset.deleteUrl, {method: 'DELETE'})
     .then(response => {
-      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
+    })
+    .then(({response, json}) => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
+      if (json.error) throw json.error;
       $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
       updateNumerOfComments();
     })
@@ -73,7 +86,20 @@ function updateComment(form) {
   markdownElement.innerHTML = '<em>Loading…</em>';
   fetchWithCSRF(url, {method: 'PUT', body: new FormData(form)})
     .then(response => {
-      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
+    })
+    .then(({response, json}) => {
+      if (!response.ok || json.error)
+        throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
       // get rendered markdown
       fetch(url)
         .then(response => {
@@ -106,11 +132,21 @@ function addComment(form, insertAtBottom) {
   const url = form.action;
   fetch(url, {method: 'POST', body: new FormData(form)})
     .then(response => {
-      return response.json();
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
     })
-    .then(data => {
-      if (data.error) throw data.error;
-      const commentId = data.id;
+    .then(({response, json}) => {
+      if (!response.ok || json.error)
+        throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
+      const commentId = json.id;
       console.log(`Created comment #${commentId}`);
       // get rendered markdown
       fetch(`${url}/${commentId}`)

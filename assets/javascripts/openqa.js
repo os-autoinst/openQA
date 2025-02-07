@@ -259,16 +259,26 @@ function restartJob(ajaxUrl, jobIds, comment) {
   }
   return fetchWithCSRF(ajaxUrl, {method: 'POST', body: body})
     .then(response => {
-      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      return response.json();
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
     })
-    .then(responseJSON => {
+    .then(({response, json}) => {
+      if (!response.ok || json.error)
+        throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
       var newJobUrl;
       try {
         if (singleJobId) {
-          newJobUrl = responseJSON.test_url[0][singleJobId];
+          newJobUrl = json.test_url[0][singleJobId];
         } else {
-          const testUrlData = responseJSON?.test_url;
+          const testUrlData = json?.test_url;
           if (Array.isArray(testUrlData)) {
             newJobUrl = testUrlData.map(item => Object.values(item)[0]);
           }
@@ -278,7 +288,7 @@ function restartJob(ajaxUrl, jobIds, comment) {
       }
       if (
         showJobRestartResults(
-          responseJSON,
+          json,
           newJobUrl,
           restartJob.bind(undefined, addParam(ajaxUrl, 'force', '1'), jobIds, comment)
         )

@@ -25,9 +25,23 @@ function setup_admin_user() {
     var data = new FormData(form[0]);
     var newRole = data.get('role');
 
-    fetch(form.attr('action'), {method: 'POST', body: data})
+    fetch(form.attr('action'), {method: 'POST', body: data, headers: {Accept: 'application/json'}, redirect: 'error'})
       .then(response => {
-        if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+        return response
+          .json()
+          .then(json => {
+            // Attach the parsed JSON to the response object for further use
+            return {response, json};
+          })
+          .catch(() => {
+            // If parsing fails, handle it as a non-JSON response
+            throw `Server returned ${response.status}: ${response.statusText}`;
+          });
+      })
+      .then(({response, json}) => {
+        if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}<br>${json.error || ''}`;
+        if (json.error) throw json.error;
+        if (json.status) addFlash('info', json.status);
         findDefault(form).removeClass('default');
         form.find('input[value="' + newRole + '"]').addClass('default');
       })

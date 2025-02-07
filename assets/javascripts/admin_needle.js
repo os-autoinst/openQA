@@ -160,8 +160,21 @@ function setupAdminNeedles() {
 
       fetchWithCSRF(url + nextIDs.join('&id='), {method: 'DELETE'})
         .then(response => {
-          if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-          return response.json();
+          return response
+            .json()
+            .then(json => {
+              // Attach the parsed JSON to the response object for further use
+              return {response, json};
+            })
+            .catch(() => {
+              // If parsing fails, handle it as a non-JSON response
+              throw `Server returned ${response.status}: ${response.statusText}`;
+            });
+        })
+        .then(({response, json}) => {
+          // we got parsable json and this api method has pretty custom errors
+          // so let's ignore the http status in this case and use json based error handling below
+          return json;
         })
         .then(response => {
           // add error affecting all deletions

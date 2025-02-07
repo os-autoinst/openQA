@@ -144,8 +144,21 @@ function deleteAsset(assetId) {
 function triggerAssetCleanup(form) {
   fetchWithCSRF(form.action, {method: form.method})
     .then(response => {
-      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      return response.json();
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
+    })
+    .then(({response, json}) => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}<br>${json.error || ''}`;
+      if (json.error) throw json.error;
+      return json;
     })
     .then(response => {
       addFlash(
