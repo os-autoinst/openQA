@@ -50,7 +50,6 @@ common_requires:
   perl(Storable):
   perl(Text::Glob):
   perl(Time::Moment):
-  perl(Try::Tiny):
   perl(Config::Tiny):
   ntp-daemon:
 
