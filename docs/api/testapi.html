@@ -636,13 +636,13 @@ to be used in tests.</p>
 <h5 id="_record_soft_failure">record_soft_failure</h5>
 <div class="literalblock">
 <div class="content">
-<pre>record_soft_failure([$reason]);</pre>
+<pre>record_soft_failure($reason);</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Record a soft failure on the current test modules result. The result will
 still be counted as a success. Use this to mark where workarounds are applied.
-Takes an optional <code>$reason</code> string which is recorded in the log file. See
+Takes a <code>$reason</code> string which is recorded in the log file. See
 <code>force_soft_failure</code> to forcefully override a failed test module status from
 a <code>post_fail_hook</code> or <code>record_info</code> when the status should not be
 influenced.</p>
@@ -677,7 +677,7 @@ tag on the result file.</p>
 <h5 id="_force_soft_failure">force_soft_failure</h5>
 <div class="literalblock">
 <div class="content">
-<pre>force_soft_failure([$reason]);</pre>
+<pre>force_soft_failure($reason);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2078,7 +2078,7 @@ starting to write the script into the here document.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-07 04:48:28 UTC
+Last updated 2025-02-10 04:49:12 UTC
 </div>
 </div>
 </body>
