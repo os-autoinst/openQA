@@ -48,22 +48,24 @@ sub _load_config ($app, $defaults, $mode_specific_defaults) {
     my $mode_defaults = $mode_specific_defaults->{$app->mode} // {};
     my $config_path = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child('etc', 'openqa');
     my $main_config_file = $config_path->child('openqa.ini');
-    my @config_file_paths = @{$config_path->child('openqa.d')->list->grep(qr/\.ini$/)->sort(sub { $b cmp $a })};
-    push @config_file_paths, $main_config_file if -e $main_config_file;
+    my @config_file_paths = -e $main_config_file ? ($main_config_file) : ();
+    push @config_file_paths, @{$config_path->child('openqa.d')->list->grep(qr/\.ini$/)->sort};
 
     # read config files
-    my @config_files;
+    my $config_file;
     for my $config_file_path (@config_file_paths) {
-        my $config_file = Config::IniFiles->new(-file => $config_file_path->to_string);
+        my @import_args = $config_file ? (-import => $config_file) : ();
+        my $next_config_file = Config::IniFiles->new(-file => $config_file_path->to_string, @import_args);
+        $config_file = $next_config_file if $next_config_file;
+    }
+    if ($config_file) {
         _read_config_file($config, $config_file, $defaults, $mode_defaults);
-        push @config_files, $config_file if $config_file;
+        $config->{ini_config} = $config_file;
     }
 
     # ensure default values are assigned; warn if config files were supplied at all
     _read_config_file($config, undef, $defaults, $mode_defaults);
-    $app->log->warn('No configuration files supplied, will fallback to default configuration') unless @config_files;
-
-    $config->{ini_configs} = \@config_files;
+    $app->log->warn('No configuration files supplied, will fallback to default configuration') unless $config_file;
     return $config;
 }
 
@@ -301,7 +303,7 @@ sub _validate_worker_timeout ($app) {
 
 # Update config definition from plugin requests
 sub update_config ($config, @namespaces) {
-    return undef unless my $ini_configs = $config->{ini_configs};
+    return undef unless my $ini_config = $config->{ini_config};
 
     # Filter out what plugins are loaded from the used namespaces
     foreach my $plugin (loaded_plugins(@namespaces)) {
@@ -322,11 +324,8 @@ sub update_config ($config, @namespaces) {
         # Walk the hash with the plugin returns that needs to be fetched
         # by our Ini file parser and fill config from it
         hashwalker $fields => sub ($key, $, $keys) {
-            for my $ini_config (@$ini_configs) {
-                next unless defined(my $v = $ini_config->val(@$keys[0], $key));
-                $config->{@$keys[0]}->{$key} = $v;
-                last;
-            }
+            next unless defined(my $v = $ini_config->val(@$keys[0], $key));
+            $config->{@$keys[0]}->{$key} = $v;
         };
     }
 }

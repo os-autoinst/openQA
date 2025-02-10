@@ -183,7 +183,6 @@ subtest 'Test configuration default modes' => sub {
             state_changes_limit => 3,
         },
         secrets => {github_token => ''},
-        ini_configs => [],
     };
 
     # Test configuration generation with "test" mode

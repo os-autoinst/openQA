@@ -123,7 +123,7 @@ subtest 'Update configuration from Plugin requirements' => sub {
     $ini_config->AddSection("baz");
     $ini_config->AddSection("bazzer");
     $ini_config->AddSection("foofoo");
-    $config->{ini_configs} = [$ini_config];
+    $config->{ini_config} = $ini_config;
 
     $ini_config->newval("auth", "method", "foobar");
     $ini_config->newval("bar", "foo", "test");
@@ -166,7 +166,7 @@ subtest 'Update configuration from Plugin requirements' => sub {
 
     my $app = Mojolicious->new();
     push @{$app->plugins->namespaces}, "OpenQA::FakePlugin";
-    $app->config->{ini_configs} = $config->{ini_configs};
+    $app->config->{ini_config} = $config->{ini_config};
     $app->plugin("FooFoo");
     OpenQA::Setup::update_config($app->config, "OpenQA::FakePlugin");
     is $app->config->{foofoo}->{is_there}, "wohoo", "Right config option for OpenQA::FakePlugin::Foofoo";
