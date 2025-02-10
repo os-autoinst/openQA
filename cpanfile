@@ -32,6 +32,7 @@ requires 'DateTime::Format::Pg';
 requires 'Digest::MD5';
 requires 'Exporter';
 requires 'Fcntl';
+requires 'Feature::Compat::Try';
 requires 'File::Basename';
 requires 'File::Copy';
 requires 'File::Copy::Recursive';
