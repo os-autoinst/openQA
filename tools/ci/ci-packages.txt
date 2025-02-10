@@ -82,6 +82,7 @@ perl-Eval-Closure-0.14
 perl-Exception-Class-1.44
 perl-Exporter-Declare-0.114
 perl-Exporter-Tiny-1.000000
+perl-Feature-Compat-Try-0.05
 perl-File-chdir-0.1011
 perl-File-Copy-Recursive-0.38
 perl-File-HomeDir-1.002
@@ -208,6 +209,7 @@ perl-Sub-Name-0.21
 perl-Sub-Quote-2.004000
 perl-Sub-Uplevel-0.240.0
 perl-SUPER-1.20141117
+perl-Syntax-Keyword-Try-0.28
 perl-TAP-Harness-JUnit-0.42
 perl-Task-Weaken-1.06
 perl-Test-Deep-1.127
@@ -244,6 +246,7 @@ perl-XML-SAX-Base-1.09
 perl-XML-SAX-Expat-0.51
 perl-XML-SemanticDiff-1.0007
 perl-XML-Simple-2.24
+perl-XS-Parse-Keyword-0.380.0
 perl-YAML-1.24
 perl-YAML-LibYAML-0.903.0
 perl-YAML-PP-0.036
