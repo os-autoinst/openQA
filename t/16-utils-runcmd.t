@@ -83,6 +83,12 @@ subtest 'invoke Git commands for real testing error handling' => sub {
         stdout_like { ok !$git->is_workdir_clean, 'return code 1 interpreted correctly' } qr/\[info\].*cmd returned 1\n/i,
           'no error (only info) logged if check returns false (despite Git returning 1)';
     };
+
+    subtest 'cache_ref' => sub {
+        my $test_file = $empty_tmp_dir->child('foo')->touch;
+        is($git->cache_ref('HEAD', $empty_tmp_dir, $test_file), undef, 'return undef if output file touched without errors');
+        like($git->cache_ref('HEAD', $empty_tmp_dir, ''), qr|Unable to cache Git ref.*: an internal error occurred|, 'should return Unable to cache Git ref ');
+    };
 };
 
 # setup mocking

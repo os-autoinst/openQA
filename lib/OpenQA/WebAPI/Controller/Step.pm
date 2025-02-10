@@ -1,6 +1,28 @@
 # Copyright 2014-2021 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+=head1 NAME
+
+OpenQA::WebAPI::Controller::Step - Handles test step rendering in OpenQA.
+
+=head1 SYNOPSIS
+
+    use OpenQA::WebAPI::Controller::Step;
+
+    # Example usage inside a Mojolicious route
+    my $controller = OpenQA::WebAPI::Controller::Step->new;
+    $controller->view();
+
+=head1 DESCRIPTION
+
+This module is a Mojolicious controller responsible for:
+- Fetching and displaying test steps: screenshots, text logs and audio.
+- Handling needle matching for OpenQA tests.
+- Managing needle storage and retrieval with git-based.
+- Providing AJAX responses for web-based test analysis.
+
+=cut
+
 package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
@@ -23,6 +45,8 @@ sub _init ($self) {
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     my %attrs = (rows => 1, order_by => {-desc => 'id'});
     my $module = $job->modules->find({name => $self->param('moduleid')}, \%attrs) or return 0;
+    # return 0 unless my $module = $job->modules->find({name => $self->param('moduleid')}, \%attrs);
+
     $self->stash(job => $job);
     $self->stash(testname => $job->name);
     $self->stash(distri => $job->DISTRI);
@@ -94,6 +118,34 @@ sub view ($self) {
     $self->viewimg;
 }
 
+=head2 _determine_needles_dir_for_job
+
+my ($needle_dirs, $needles_var) = $self->_determine_needles_dir_for_job($job);
+
+Get the directory where needle files are stored for a given job.  
+It checks whether the Git-based needle management is enabled.
+If enabled, it fetches the path to the needles directory and the job setting NEEDLES_DIR (or CASEDIR as fallback).
+
+=head3 Parameters
+
+=over 4
+
+=item * $job - OpenQA job
+
+=back
+
+=head3 Returns
+
+=over 4
+
+=item * A list containing:
+
+    - The absolute path to the needles directory.
+    - The job settings result object corresponding to the needles directory (either `NEEDLES_DIR` or `CASEDIR`).
+
+=back
+
+=cut
 sub _determine_needles_dir_for_job ($self, $job) {
     return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
     return undef unless my $needle_dirs = realpath($job->needle_dir);
@@ -107,13 +159,16 @@ sub _create_tmpdir_for_needles_refspec ($self, $job) {
     my $needles_url = Mojo::URL->new($needles_dir_var->value);
     return undef unless $needles_url->scheme;
     my $needles_ref = $needles_url->fragment;
-    eval {
-        my $vars = decode_json(path($job->result_dir, 'vars.json')->slurp);
-        $needles_ref = $vars->{NEEDLES_GIT_HASH} if ref $vars eq 'HASH';
-    };
-    chomp $needles_ref;
+    my $json_path = path($job->result_dir, 'vars.json');
+    my $vars;
+    if (defined $job->result_dir && -e $json_path) {
+        $vars = decode_json($json_path->slurp);
+    }
+    $needles_ref = $vars->{NEEDLES_GIT_HASH} if ref $vars eq 'HASH';
     return undef unless $needles_ref;
-    return undef unless run_cmd_with_log ['git', '-C', $needle_dirs, 'fetch', '--depth', 1, 'origin', $needles_ref];
+    chomp $needles_ref;
+    my $cmd_status = run_cmd_with_log ['git', '-C', $needle_dirs, 'fetch', '--depth', 1, 'origin', $needles_ref];
+    return undef unless $cmd_status;
     my $rev_parse_res = run_cmd_with_log_return_error ['git', '-C', $needle_dirs, 'rev-parse', 'FETCH_HEAD'];
     return undef unless $rev_parse_res->{status};
     $needles_ref = $rev_parse_res->{stdout};

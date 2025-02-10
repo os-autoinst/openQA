@@ -176,11 +176,11 @@ sub cache_ref ($self, $ref, $relative_path, $output_file) {
         eval { path($output_file)->touch };
         return $@ ? $@ : undef;
     }
-    my @git = $self->_prepare_git_command;
+    my @git = $self->_prepare_git_command(1);
     my $res = run_cmd_with_log_return_error [@git, 'show', "$ref:./$relative_path"], output_file => $output_file;
     return undef if $res->{status};
     unlink $output_file;
-    return _format_git_error($res, 'Unable to cache Git ref');
+    return $self->_format_git_error($res, 'Unable to cache Git ref');
 }
 
 1;

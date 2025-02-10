@@ -13,7 +13,7 @@ use OpenQA::Log qw(log_error);
 use OpenQA::Utils qw(prjdir sharedir);
 use Mojo::File qw(path);
 
-our @EXPORT = qw(temp_dir is_in_temp_dir needle_temp_dir locate_needle);
+our @EXPORT = qw(temp_dir is_in_temp_dir needle_temp_dir locate_needle _locate_needle_for_ref);
 
 my $tmp_dir = prjdir() . '/webui/cache/needle-refs';
 
