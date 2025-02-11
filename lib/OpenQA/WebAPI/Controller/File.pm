@@ -154,8 +154,10 @@ sub _serve_static ($self, $asset) {
         my $headers = $self->res->headers;
         if ($filename =~ m/\.([^\.]+)$/) {
             my $ext = $1;
-            my $filetype = $self->app->types->type($ext);
-            $headers->content_type($filetype) if $filetype;
+            if (my $filetype = $self->app->types->type($ext)) {
+                $headers->content_type($filetype);
+                $headers->header('X-Content-Type-Options', 'nosniff') if $filetype =~ qr|^text/plain;?|;
+            }
 
             # force saveAs
             $headers->content_disposition("attachment; filename=$filename;") if $ext eq 'iso';

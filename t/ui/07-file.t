@@ -35,9 +35,13 @@ $t->get_ok('/tests/99938/images/thumb/doesntexist.png')->status_is(404);
 
 $t->get_ok('/tests/99938/file/video.ogv')->status_is(200)->content_type_is('video/ogg');
 
-$t->get_ok('/tests/99938/file/serial0.txt')->status_is(200)->content_type_is('text/plain;charset=UTF-8');
+$t->get_ok('/tests/99938/file/serial0.txt')->status_is(200);
+$t->content_type_is('text/plain;charset=UTF-8', 'content type for text file returned');
+$t->header_is('X-Content-Type-Options' => 'nosniff', 'nosniff header added to prevent download prompt for text file');
 
-$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200)->content_type_is('application/x-bzip2');
+$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
+$t->content_type_is('application/x-bzip2', 'content type for archive returned');
+$t->header_isnt('X-Content-Type-Options' => 'nosniff', 'nosniff header not added for archive/binary file');
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
