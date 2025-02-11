@@ -20,7 +20,7 @@
 );%>
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
-    'sle-micro' => 'SUSE Linux Enterprise',
+    'sle-micro' => 'SUSE Linux',
     opensuse => 'openSUSE',
     caasp => 'SUSE CaaS Platform',
     kubic => 'openSUSE',
