@@ -43,7 +43,7 @@ use Scalar::Util qw(looks_like_number);
     }
 }
 
-my @argv = qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 WORKER_CLASS:create_hpc+=-parent);
+my @argv = qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 WORKER_CLASS:create+hpc+=-parent);
 my %options = ('parental-inheritance' => '');
 my %child_settings = (
     NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-hpc_test@64bit',
@@ -53,8 +53,8 @@ my %child_settings = (
     WORKER_CLASS => 'qemu_x86_64',
 );
 my %parent_settings = (
-    NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-create_hpc@64bit',
-    TEST => 'create_hpc',
+    NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-create+hpc@64bit',
+    TEST => 'create+hpc',
     HDD_1 => 'sle-15-x86_64-Build665.2-with-hpc.qcow2',
     HDDSIZEGB => 20,
     WORKER_CLASS => 'qemu_x86_64',
@@ -75,8 +75,18 @@ subtest 'clone job apply settings tests' => sub {
     clone_job_apply_settings(\@argv, 2, \%parent_settings, \%options);
     is_deeply(\%parent_settings, \%test_settings, 'cloned parent job only take global setting');
 
-    like warning { clone_job_apply_settings(['foo'], 1, \%child_settings, \%options) },
-      qr/no valid setting/, 'warning when argument is no valid setting';
+    subtest 'warning for invalid settings' => sub {
+        like warning { clone_job_apply_settings(['foo'], 1, {}, {}) },
+          qr/no valid setting/, 'no equal sign, lower case';
+        like warning { clone_job_apply_settings(['WORKER_CLASS:foo++=abc'], 1, {}, {}) },
+          qr/no valid setting/, 'multiple plus signs at the end';
+        like warning { clone_job_apply_settings(['WORKER_CLASS:foo-+=abc'], 1, {}, {}) },
+          qr/no valid setting/, 'minus sign at the end';
+        like warning { clone_job_apply_settings(['WORKER_CLASS:+foo=abc'], 1, {}, {}) },
+          qr/no valid setting/, 'plus sign at the beginning';
+        like warning { clone_job_apply_settings(['WORKER_CLASS:-foo=abc'], 1, {}, {}) },
+          qr/no valid setting/, 'minus sign at the beginning';
+    };
 };
 
 subtest '_GROUP and _GROUP_ID override each other' => sub {
