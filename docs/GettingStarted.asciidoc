@@ -378,9 +378,9 @@ clone a subdirectory under `/var/lib/openqa/tests` for each test distribution
 you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests.
 
 The repositories will be kept up-to-date if `git_auto_update` is enabled in
-`openqa.ini`. The updating is triggered when new tests are scheduled. For a
-periodic update (to avoid getting too far behind) you can enable the systemd
-unit `openqa-enqueue-git-auto-update.timer`.
+`openqa.ini` (which is the default). The updating is triggered when new tests
+are scheduled. For a periodic update (to avoid getting too far behind) you can
+enable the systemd unit `openqa-enqueue-git-auto-update.timer`.
 
 You can get openSUSE tests and needles from
 https://github.com/os-autoinst/os-autoinst-distri-opensuse[GitHub]. To make it

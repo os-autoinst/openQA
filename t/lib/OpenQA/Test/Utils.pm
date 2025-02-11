@@ -70,8 +70,9 @@ our (@EXPORT, @EXPORT_OK);
 # Potentially this approach can also be used in production code.
 
 sub setup_mojo_app_with_default_worker_timeout ($class = 'Mojolicious') {
-    OpenQA::App->set_singleton(
-        $class->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef));
+    my $app = $class->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef);
+    OpenQA::App->set_singleton($app);
+    return $app;
 }
 
 sub cache_minion_worker {
@@ -384,6 +385,7 @@ sub setup_fullstack_temp_dir {
     my $config = $configdir->child('openqa.ini')->slurp;
     $config =~ s/^#\Q[scm git]/[scm git]/m;
     $config =~ s/^#git_auto_clone = .*/git_auto_clone = no/m;
+    $config =~ s/^#git_auto_update = .*/git_auto_update = no/m;
     $configdir->child('openqa.ini')->spew($config);
     note("OPENQA_BASEDIR: $basedir\nOPENQA_CONFIG: $configdir");
     $ENV{OPENQA_BASEDIR} = $basedir;

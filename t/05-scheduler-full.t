@@ -52,11 +52,12 @@ my $api_key = $api_credentials->key;
 my $api_secret = $api_credentials->secret;
 
 # create web UI and websocket server
-setup_mojo_app_with_default_worker_timeout('OpenQA::WebAPI');
+my $app = setup_mojo_app_with_default_worker_timeout('OpenQA::WebAPI');
 my $mojoport = service_port 'webui';
 my $ws = create_websocket_server(undef, 0, 1);
 my $webapi = create_webapi($mojoport, sub { });
 my @workers;
+$app->config->{'scm git'}->{git_auto_update} = 'no';
 
 # setup share and result dir
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});

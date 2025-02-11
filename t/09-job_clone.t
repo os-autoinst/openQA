@@ -25,6 +25,7 @@ my $host = "localhost:$mojoport";
 my @common_options = (host => $host, from => $host, apikey => 'foo', apisecret => 'bar');
 my $webapi = create_webapi($mojoport, sub { });
 END { stop_service $webapi; }
+$t->app->config->{'scm git'}->{git_auto_update} = 'no';
 
 my $schema = $t->app->schema;
 my $products = $schema->resultset("Products");

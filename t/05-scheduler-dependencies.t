@@ -31,6 +31,7 @@ my $job_dependencies = $schema->resultset('JobDependencies');
 my $job_settings = $schema->resultset('JobSettings');
 my $workers = $schema->resultset('Workers');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+$t->app->config->{'scm git'}->{git_auto_update} = 'no';
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
     client => OpenQA::WebSockets::Client->singleton,

@@ -21,8 +21,8 @@ use Test::Warnings ':report_warnings';
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 06-job_dependencies.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+$t->app->config->{'scm git'}->{git_auto_update} = 'no';
 assume_all_assets_exist;
-
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
     client => OpenQA::WebSockets::Client->singleton,

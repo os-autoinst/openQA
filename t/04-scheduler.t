@@ -48,13 +48,15 @@ my $schema = OpenQA::Test::Database->new->create;
 my $jobs = $schema->resultset('Jobs');
 my $workers = $schema->resultset('Workers');
 my $t = Test::Mojo->new('OpenQA::Scheduler');
-OpenQA::App->set_singleton(OpenQA::WebAPI->new);
+my $app = OpenQA::WebAPI->new;
+OpenQA::App->set_singleton($app);
+$app->config->{'scm git'}->{git_auto_update} = 'no';
 
 subtest 'Authentication' => sub {
-    $t->get_ok('/test')->status_is(404)->content_like(qr/Not found/);
     my $app = $t->app;
+    $t->get_ok('/test')->status_is(404)->content_like(qr/Not found/);
     $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
-    local $t->app->config->{no_localhost_auth} = 0;
+    local $app->config->{no_localhost_auth} = 0;
     $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
 };
 
