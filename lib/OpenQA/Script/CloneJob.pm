@@ -39,7 +39,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
 
     for my $arg (@$argv) {
         # split arg into key and value
-        unless ($arg =~ /([A-Z0-9_]+)(:([\w-]+?))?(\+)?=(.*)/) {
+        unless ($arg =~ /([A-Z0-9_]+)(:([\w]+(?:[\w+-]+\w)?))?(\+)?=(.*)/) {
             warn "command-line argument '$arg' is no valid setting and will be ignored\n";
             next;
         }
