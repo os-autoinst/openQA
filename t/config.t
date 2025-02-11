@@ -194,8 +194,7 @@ subtest 'Test configuration default modes' => sub {
     is_deeply $config, $test_config, '"test" configuration';
 
     # Test configuration generation with "development" mode
-    $app = Mojolicious->new();
-    $app->mode("development");
+    $app = Mojolicious->new(mode => 'development');
     $config = read_config($app, 'reading config from default with mode development');
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{global}->{service_port_delta} = 2;
@@ -204,8 +203,7 @@ subtest 'Test configuration default modes' => sub {
     is_deeply $config, $test_config, 'right "development" configuration';
 
     # Test configuration generation with an unknown mode (should fallback to default)
-    $app = Mojolicious->new();
-    $app->mode("foo_bar");
+    $app = Mojolicious->new(mode => 'foo_bar');
     $config = read_config($app, 'reading config from default with mode foo_bar');
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{auth}->{method} = "OpenID";
@@ -265,14 +263,12 @@ subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
         recognized_referers =   bugzilla.suse.com   progress.opensuse.org github.com
     ';
     $t_dir->child('openqa.ini')->spew($data);
-    OpenQA::Setup::read_config($app);
-    ok($app->config->{global}->{appname} eq 'openQA', 'appname');
-    ok($app->config->{global}->{hide_asset_types} eq 'repo iso', 'hide_asset_types');
-    is_deeply(
-        $app->config->{global}->{recognized_referers},
-        [qw(bugzilla.suse.com progress.opensuse.org github.com)],
-        'recognized_referers'
-    );
+    my $global_config = OpenQA::Setup::read_config($app)->{global};
+    is $global_config->{appname}, 'openQA', 'appname';
+    is $global_config->{hide_asset_types}, 'repo iso', 'hide_asset_types';
+    is_deeply $global_config->{recognized_referers},
+      [qw(bugzilla.suse.com progress.opensuse.org github.com)],
+      'recognized_referers';
 };
 
 subtest 'Validation of worker timeout' => sub {
@@ -293,6 +289,23 @@ subtest 'Validation of worker timeout' => sub {
         combined_like { OpenQA::Setup::_validate_worker_timeout($app) } qr/worker_timeout.*invalid/, 'warning logged';
         is $$configured_timeout, DEFAULT_WORKER_TIMEOUT, 'rejected';
     };
+};
+
+subtest 'Multiple config files' => sub {
+    my $t_dir = tempdir;
+    my $openqa_d = $t_dir->child('openqa.d')->make_path;
+    local $ENV{OPENQA_CONFIG} = $t_dir;
+    my $app = Mojolicious->new();
+    my $data_main = "[global]\nappname =  openQA main config\nhide_asset_types = repo iso\n";
+    my $data_01 = "[global]\nappname =  openQA override 1\nscm = bazel";
+    my $data_02 = "[global]\nappname =  openQA override 2";
+    $t_dir->child('openqa.ini')->spew($data_main);
+    $openqa_d->child('01-appname-and-scm.ini')->spew($data_01);
+    $openqa_d->child('02-appname.ini')->spew($data_02);
+    my $global_config = OpenQA::Setup::read_config($app)->{global};
+    is $global_config->{appname}, 'openQA override 2', 'appname overriden by config from openqa.d, last one wins';
+    is $global_config->{scm}, 'bazel', 'scm set by config from openqa.d, not overriden';
+    is $global_config->{hide_asset_types}, 'repo iso', 'types set from main config, not overriden';
 };
 
 done_testing();

@@ -125,8 +125,8 @@ sub _load_test_preset ($self, $preset_key) {
     $presets{$preset_key} = undef;
     # read preset from an INI section [test_presets/…] or fallback to defaults assigned on setup
     my $config = $self->app->config;
-    return undef unless my $ini_config = $config->{ini_config};
     my $ini_key = "test_preset $preset_key";
+    my $ini_config = $config->{ini_config};
     return $presets{$preset_key}
       = $ini_config->SectionExists($ini_key)
       ? {map { ($_ => $ini_config->val($ini_key, $_)) } $ini_config->Parameters($ini_key)}

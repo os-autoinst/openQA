@@ -24,6 +24,51 @@ use OpenQA::Task::Job::Limit;
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
 sub carry_over_defaults () { \%CARRY_OVER_DEFAULTS }
 
+sub _read_config_file ($config, $config_file, $defaults, $mode_defaults) {
+    for my $section (sort keys %$defaults) {
+        my $section_defaults = $defaults->{$section};
+        my @known_keys = sort keys %$section_defaults;
+        # if no known_keys defined - just assign every key from the section
+        if (!@known_keys && $config_file) {
+            for my $k ($config_file->Parameters($section)) {
+                $config->{$section}->{$k} //= $config_file->val($section, $k);
+            }
+        }
+        for my $k (@known_keys) {
+            my $v = $config_file
+              ? ($config_file->val($section, $k))
+              : ($mode_defaults->{$section}->{$k} // $section_defaults->{$k});
+            $config->{$section}->{$k} //= trim $v if defined $v;
+        }
+    }
+}
+
+sub _load_config ($app, $defaults, $mode_specific_defaults) {
+    my $config = $app->config;
+    my $mode_defaults = $mode_specific_defaults->{$app->mode} // {};
+    my $config_path = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child('etc', 'openqa');
+    my $main_config_file = $config_path->child('openqa.ini');
+    my @config_file_paths = -e $main_config_file ? ($main_config_file) : ();
+    push @config_file_paths, @{$config_path->child('openqa.d')->list->grep(qr/\.ini$/)->sort};
+
+    # read config files
+    my $config_file;
+    for my $config_file_path (@config_file_paths) {
+        my @import_args = $config_file ? (-import => $config_file) : ();
+        my $next_config_file = Config::IniFiles->new(-file => $config_file_path->to_string, @import_args);
+        $config_file = $next_config_file if $next_config_file;
+    }
+    if ($config_file) {
+        _read_config_file($config, $config_file, $defaults, $mode_defaults);
+        $config->{ini_config} = $config_file;
+    }
+
+    # ensure default values are assigned; warn if config files were supplied at all
+    _read_config_file($config, undef, $defaults, $mode_defaults);
+    $app->log->warn('No configuration files supplied, will fallback to default configuration') unless $config_file;
+    return $config;
+}
+
 sub read_config ($app) {
     my %defaults = (
         global => {
@@ -214,56 +259,11 @@ sub read_config ($app) {
             build => 'openqa',
         });
 
-    # in development mode we use fake auth and log to stderr
-    my %mode_defaults = (
-        development => {
-            auth => {
-                method => 'Fake',
-            },
-            logging => {
-                file => undef,
-                level => 'debug',
-            },
-        },
-        test => {
-            auth => {
-                method => 'Fake',
-            },
-            logging => {
-                file => undef,
-                level => 'debug',
-            },
-        });
+    # in development and test mode we use fake auth and log to stderr
+    my %devel_and_test_defaults = (auth => {method => 'Fake'}, logging => {file => undef, level => 'debug'});
+    my %mode_defaults = (development => \%devel_and_test_defaults, test => \%devel_and_test_defaults);
 
-    # Mojo's built in config plugins suck. JSON for example does not
-    # support comments
-    my $cfg;
-    my $cfgpath = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child('etc', 'openqa');
-    my $cfgfile = $cfgpath->child('openqa.ini');
-    my $config = $app->config;
-
-    if (-e $cfgfile) {
-        $cfg = Config::IniFiles->new(-file => $cfgfile->to_string) || undef;
-        $config->{ini_config} = $cfg;
-    }
-    else {
-        $app->log->warn('No configuration file supplied, will fallback to default configuration');
-    }
-
-    for my $section (sort keys %defaults) {
-        my @known_keys = sort keys %{$defaults{$section}};
-        # if no known_keys defined - just assign every key from the section
-        if (!@known_keys && $cfg) {
-            for my $k ($cfg->Parameters($section)) {
-                $config->{$section}->{$k} = $cfg->val($section, $k);
-            }
-        }
-        for my $k (@known_keys) {
-            my $v = $cfg && $cfg->val($section, $k);
-            $v //= $mode_defaults{$app->mode}{$section}->{$k} // $defaults{$section}->{$k};
-            $config->{$section}->{$k} = trim $v if defined $v;
-        }
-    }
+    my $config = _load_config($app, \%defaults, \%mode_defaults);
     my $global_config = $config->{global};
     $global_config->{recognized_referers} = [split(/\s+/, $global_config->{recognized_referers})];
     if (my $regex = $global_config->{auto_clone_regex}) {
@@ -286,6 +286,7 @@ sub read_config ($app) {
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . join('', map { ":not(.result_$_)" } split(/\s+/, $results));
     _validate_worker_timeout($app);
+    return $config;
 }
 
 sub _validate_worker_timeout ($app) {
@@ -302,7 +303,7 @@ sub _validate_worker_timeout ($app) {
 
 # Update config definition from plugin requests
 sub update_config ($config, @namespaces) {
-    return unless exists $config->{ini_config};
+    return undef unless my $ini_config = $config->{ini_config};
 
     # Filter out what plugins are loaded from the used namespaces
     foreach my $plugin (loaded_plugins(@namespaces)) {
@@ -323,8 +324,8 @@ sub update_config ($config, @namespaces) {
         # Walk the hash with the plugin returns that needs to be fetched
         # by our Ini file parser and fill config from it
         hashwalker $fields => sub ($key, $, $keys) {
-            my $v = $config->{ini_config}->val(@$keys[0], $key);
-            $config->{@$keys[0]}->{$key} = $v if defined $v;
+            next unless defined(my $v = $ini_config->val(@$keys[0], $key));
+            $config->{@$keys[0]}->{$key} = $v;
         };
     }
 }

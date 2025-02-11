@@ -117,32 +117,33 @@ subtest 'Update configuration from Plugin requirements' => sub {
     use Mojolicious;
 
     my $config;
-    $config->{ini_config} = Config::IniFiles->new();
-    $config->{ini_config}->AddSection("auth");
-    $config->{ini_config}->AddSection("bar");
-    $config->{ini_config}->AddSection("baz");
-    $config->{ini_config}->AddSection("bazzer");
-    $config->{ini_config}->AddSection("foofoo");
+    my $ini_config = Config::IniFiles->new();
+    $ini_config->AddSection("auth");
+    $ini_config->AddSection("bar");
+    $ini_config->AddSection("baz");
+    $ini_config->AddSection("bazzer");
+    $ini_config->AddSection("foofoo");
+    $config->{ini_config} = $ini_config;
 
-    $config->{ini_config}->newval("auth", "method", "foobar");
-    $config->{ini_config}->newval("bar", "foo", "test");
-    $config->{ini_config}->newval("baz", "foo", "test2");
-    $config->{ini_config}->newval("baz", "test", "bartest");
-    $config->{ini_config}->newval("bazzer", "realfoo", "win");
-    $config->{ini_config}->newval("foofoo", "is_there", "wohoo");
+    $ini_config->newval("auth", "method", "foobar");
+    $ini_config->newval("bar", "foo", "test");
+    $ini_config->newval("baz", "foo", "test2");
+    $ini_config->newval("baz", "test", "bartest");
+    $ini_config->newval("bazzer", "realfoo", "win");
+    $ini_config->newval("foofoo", "is_there", "wohoo");
 
     # Check if  Config::IniFiles object returns the right values
-    is $config->{ini_config}->val("auth", "method"), "foobar",
+    is $ini_config->val("auth", "method"), "foobar",
       "Ini parser contains the right data for OpenQA::FakePlugin::Foo";
-    is $config->{ini_config}->val("bar", "foo"), "test",
+    is $ini_config->val("bar", "foo"), "test",
       "Ini parser contains the right data for OpenQA::FakePlugin::FooBar";
-    is $config->{ini_config}->val("baz", "foo"), "test2",
+    is $ini_config->val("baz", "foo"), "test2",
       "Ini parser contains the right data for OpenQA::FakePlugin::FooBaz";
-    is $config->{ini_config}->val("baz", "test"), "bartest",
+    is $ini_config->val("baz", "test"), "bartest",
       "Ini parser contains the right data for OpenQA::FakePlugin::Fuzz";
-    is $config->{ini_config}->val("bazzer", "realfoo"), "win",
+    is $ini_config->val("bazzer", "realfoo"), "win",
       "Ini parser contains the right data for OpenQA::FakePlugin::Fuzzer";
-    is $config->{ini_config}->val("foofoo", "is_there"), "wohoo",
+    is $ini_config->val("foofoo", "is_there"), "wohoo",
       "Ini parser contains the right data for OpenQA::FakePlugin::FooFoo";
 
     # inline packages declaration needs to appear as "loaded"
