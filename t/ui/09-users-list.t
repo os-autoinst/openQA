@@ -22,6 +22,7 @@ my $token = $t->tx->res->dom->at('meta[name=csrf-token]')->attr('content');
 #
 # No login, no list, redirect to login
 $t->get_ok('/admin/users')->status_is(302);
+$t->get_ok('/admin/users', {Accept => 'application/json'})->status_is(401)->json_is('/error', 'No valid user session');
 
 #
 # Not even for operators
@@ -44,6 +45,8 @@ $t->get_ok('/admin/users')->status_is(200)->content_like(qr/User lance updated/)
   ->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '11');
 
+# try something with a non existent user
+$t->post_ok('/admin/users/999021111', {'X-CSRF-Token' => $token, Accept => 'application/json'}, form => {role => 'admin'})->status_is(404)->json_is('/error', "Can't find that user");
 
 # We can even update both fields in one request
 $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role => 'operator'})->status_is(302);

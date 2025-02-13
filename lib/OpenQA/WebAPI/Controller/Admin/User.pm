@@ -27,17 +27,26 @@ sub update {
         $is_operator = 1;
     }
 
+    my $err = 0;
+    my $msg = '';
+
     my $user = $set->find($self->param('userid'));
     if (!$user) {
-        $self->flash('error', "Can't find that user");
+        $err = 404;
+        $msg = "Can't find that user";
     }
     else {
         $user->update({is_admin => $is_admin, is_operator => $is_operator});
-        $self->flash('info', 'User ' . $user->nickname . ' updated');
+        $msg = 'User ' . $user->nickname . ' updated';
         $self->emit_event('user_update_res', {nickname => $user->nickname, role => $role});
     }
 
-    $self->redirect_to($self->url_for('admin_users'));
+    if (($self->tx->req->headers->accept // '') eq 'application/json') {
+        return $self->render(json => {$err ? 'error' : 'status' => $msg}, status => ($err ? $err : '200'));
+    } else {
+        $self->flash($err ? 'error' : 'info', $msg);
+        $self->redirect_to($self->url_for('admin_users'));
+    }
 }
 
 1;

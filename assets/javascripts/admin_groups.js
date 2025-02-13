@@ -109,8 +109,21 @@ function createGroup(form) {
 
   fetchWithCSRF(postUrl, {method: 'POST', body: data})
     .then(response => {
-      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      return response.json();
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
+    })
+    .then(({response, json}) => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}<br>${json.error || ''}`;
+      if (json.error) throw json.error;
+      return json;
     })
     .then(response => {
       if (!response) throw 'Server returned no response';
@@ -380,8 +393,19 @@ function handleQuery(query) {
   query.body = body;
   fetchWithCSRF(url, query)
     .then(response => {
-      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      return response.json();
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          throw `Server returned ${response.status}: ${response.statusText}`;
+        });
+    })
+    .then(({response, json}) => {
+      return json;
     })
     .then(success)
     .catch(error);
