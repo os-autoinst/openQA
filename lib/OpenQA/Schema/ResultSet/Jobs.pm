@@ -119,7 +119,6 @@ sub create_from_settings {
     my $result_source = $self->result_source;
     my $schema = $result_source->schema;
     my $job_settings = $schema->resultset('JobSettings');
-    my $txn_guard = $result_source->storage->txn_scope_guard;
 
     my @invalid_keys = grep { $_ =~ /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
       keys %settings;
@@ -207,7 +206,6 @@ sub create_from_settings {
     log_info('Ignoring invalid group ' . encode_json($group_args) . ' when creating new job ' . $job->id)
       if keys %$group_args && !$group;
     $job->calculate_blocked_by;
-    $txn_guard->commit;
     return $job;
 }
 

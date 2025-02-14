@@ -256,6 +256,7 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
         $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
 
         # create a new job with these parameters and count if successful, do not send job notifies yet
+        $schema->svp_begin('try_create_job_from_settings');
         try {
             # Any setting name ending in _URL is special: it tells us to download
             # the file at that URL before running the job
@@ -267,8 +268,10 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
             $job_ids_by_test_machine{_job_ref($settings)} //= [];
             push @{$job_ids_by_test_machine{_job_ref($settings)}}, $j_id;
             $self->_create_download_lists(\%tmp_downloads, $download_list, $j_id);
+            $schema->svp_release('try_create_job_from_settings');
         }
         catch {
+            $schema->svp_rollback('try_create_job_from_settings');
             push @$failed_job_info, {job_name => $settings->{TEST}, error_message => $_};
         }
     }
