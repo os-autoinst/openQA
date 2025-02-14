@@ -53,7 +53,7 @@ Here is an example in Perl:
 use Mojo::Base "basetest";
 use testapi;
 
-sub run () {
+sub run {
     # write in this block the code for your test.
 }
 -------------------------------------------------------------------
@@ -90,7 +90,7 @@ An example usage:
 
 [source,perl]
 -------------------------------------------------------------------
-sub run () {
+sub run {
     # wait for bootloader to appear
     # with a timeout explicitly lower than the default because
     # the bootloader screen will timeout itself
@@ -133,21 +133,21 @@ An example usage:
 
 [source,perl]
 -------------------------------------------------------------------
-sub test_flags () {
+sub test_flags {
     return {fatal => 1};
 }
 -------------------------------------------------------------------
 
 ==== `pre_run_hook`
 
-It is called before the run function - mainly useful for a whole group of tests.
+It is called before the `run` function - mainly useful for a whole group of tests.
 It is useful to setup the start point of the test.
 
 An example usage:
 
 [source,perl]
 -------------------------------------------------------------------
-sub pre_run_hook () {
+sub pre_run_hook {
     # Make sure to begin the test in the root console.
     select_console 'root-console';
 }
@@ -155,14 +155,14 @@ sub pre_run_hook () {
 
 ==== `post_fail_hook`
 
-It is called after `run()` failed. It is useful to upload log files or to
+It is called after `run` failed. It is useful to upload log files or to
 determine the state of the machine.
 
 An example usage:
 
 [source,perl]
 -------------------------------------------------------------------
-sub post_fail_hook () {
+sub post_fail_hook {
     # Take an screenshot when the test failed
     save_screenshot;
 }
@@ -170,13 +170,13 @@ sub post_fail_hook () {
 
 ==== `post_run_hook`
 
-It is called after `run()` regardless of the result of the test run.
+It is called after `run` regardless of the result of the test run.
 
 An example usage:
 
 [source,perl]
 -------------------------------------------------------------------
-sub post_run_hook () {
+sub post_run_hook {
     send_key 'ctrl-alt-f3';
 
     assert_script_run 'openqa-cli api experimental/search q=shutdown.pm' ;
@@ -202,7 +202,7 @@ use x11utils;
 
 # [...] omitted for brevity
 
-sub run () {
+sub run {
     # [...] omitted for brevity
 
     # Start vncviewer - notice the named arguments
@@ -262,7 +262,7 @@ into the desktop when pressing enter at the boot loader:
 use Mojo::Base "basetest";
 use testapi;
 
-sub run () {
+sub run {
     # wait for bootloader to appear
     # with a timeout explicitly lower than the default because
     # the bootloader screen will timeout itself
@@ -275,7 +275,7 @@ sub run () {
     assert_screen "desktop", 300;
 }
 
-sub test_flags () {
+sub test_flags {
     return {fatal => 1};
 }
 -------------------------------------------------------------------
@@ -288,7 +288,7 @@ sub test_flags () {
 
 [source,perl]
 ----------------------------------------------------------------------------------------------------------
-sub run () {
+sub run {
     # change to root
     become_root;
 
@@ -316,7 +316,7 @@ sub run () {
 
 [source,perl]
 --------------------------------------------------------------
-sub run () {
+sub run {
     # make sure kate was installed
     # if not ensure_installed will try to install it
     ensure_installed 'kate';
@@ -452,7 +452,7 @@ $testapi::distri->set_expected_serial_failures([
 .Defining serial exception capture in the test
 [source,perl]
 --------------------------------------------------------------
-sub run () {
+sub run {
     my ($self) = @_;
     $self->{serial_failures} = [
         {type => 'soft', message  => 'known issue',  pattern => quotemeta 'Error'},
@@ -466,7 +466,7 @@ sub run () {
 .Adding serial exception capture in the test
 [source,perl]
 --------------------------------------------------------------
-sub run () {
+sub run {
     my ($self) = @_;
     push @$self->{serial_failures}, {type => 'soft', message => 'known issue',  pattern => quotemeta 'Error'};
     ...
@@ -981,7 +981,7 @@ use lockapi;
 use mmapi;
 
 # On parent job
-sub run () {
+sub run {
     # ftp service started automatically on boot
     assert_screen 'login', 300;
 
@@ -993,7 +993,7 @@ sub run () {
 }
 
 # On child we wait for ftp server to be ready
-sub run () {
+sub run {
     # wait until ftp service is ready
     # performs mutex lock & unlock internally
     mutex_wait 'ftp_service_ready';
@@ -1005,7 +1005,7 @@ sub run () {
 
 # Mutexes can be used also for garanting exclusive access to resource
 # Example on child when only one job should access ftp at time
-sub run () {
+sub run {
     # wait until ftp service is ready
     mutex_lock 'ftp_service_ready';
 
@@ -1040,7 +1040,7 @@ die. The job ID is also required when unlocking such a mutex.
 use lockapi;
 use mmapi;
 
-sub run () {
+sub run {
     my $children = get_children();
 
     # let's suppose there is only one child
@@ -1084,7 +1084,7 @@ use lockapi;
 barrier_create('NODES_CONFIGURED', 4);
 
 # On master job
-sub run () {
+sub run {
     assert_screen 'login', 300;
 
     # Master is ready, waiting while workers are configured (check_dead_job is optional)
@@ -1100,7 +1100,7 @@ sub run () {
 }
 
 # On 3 worker jobs
-sub run () {
+sub run {
     assert_screen 'login', 300;
 
     # do initial worker setup
@@ -1129,7 +1129,7 @@ use Mojo::Base "basetest";
 use testapi;
 use mmapi;
 
-sub run () {
+sub run {
     # returns a hash ref containing (id => state) for all children
     my $children = get_children();
 
@@ -1262,7 +1262,7 @@ assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.
 use Mojo::Base 'basetest';
 use testapi;
 
-sub run () {
+sub run {
   my $script="set -e -x\n";
   $script.="echo test >test.txt\n";
   $script.="time tftp ".$server_ip." -c put test.txt test2.txt\n";
@@ -1368,7 +1368,7 @@ use Mojo::Base 'opensusebasetest';
 use testapi;
 use utils;
 
-sub run () {
+sub run {
     wait_boot;  # Utility function defined by the SUSE distribution
     select_console 'root-console';
 }
@@ -1954,12 +1954,12 @@ A valid test module format looks like this:
 use Mojo::Base 'consoletest';
 use testapi;
 
-sub run () {
+sub run {
     select_console 'root-console';
     assert_script_run 'foo';
 }
 
-sub post_run_hook () {}
+sub post_run_hook {}
 ----
 
 For example this can be used in bug investigations or trying out new test
