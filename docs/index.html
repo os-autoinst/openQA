@@ -6796,7 +6796,7 @@ actual test code and the test needs to be loaded in the distribution&#8217;s
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># write in this block the code for your test.</span>
 <span class="tok-p">}</span></code></pre>
 </div>
@@ -6844,7 +6844,7 @@ that the subroutine marked with <code>*1</code> are optional.</em></p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># wait for bootloader to appear</span>
 <span class="tok-w">    </span><span class="tok-c1"># with a timeout explicitly lower than the default because</span>
 <span class="tok-w">    </span><span class="tok-c1"># the bootloader screen will timeout itself</span>
@@ -6906,7 +6906,7 @@ behavior for all backends even though it is not possible to roll back.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-n">fatal</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">};</span>
 <span class="tok-p">}</span></code></pre>
 </div>
@@ -6915,7 +6915,7 @@ behavior for all backends even though it is not possible to roll back.</p>
 <div class="sect3">
 <h4 id="_pre_run_hook"><code>pre_run_hook</code></h4>
 <div class="paragraph">
-<p>It is called before the run function - mainly useful for a whole group of tests.
+<p>It is called before the <code>run</code> function - mainly useful for a whole group of tests.
 It is useful to setup the start point of the test.</p>
 </div>
 <div class="paragraph">
@@ -6923,7 +6923,7 @@ It is useful to setup the start point of the test.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">pre_run_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">pre_run_hook</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># Make sure to begin the test in the root console.</span>
 <span class="tok-w">    </span><span class="tok-n">select_console</span><span class="tok-w"> </span><span class="tok-s">&#39;root-console&#39;</span><span class="tok-p">;</span>
 <span class="tok-p">}</span></code></pre>
@@ -6933,7 +6933,7 @@ It is useful to setup the start point of the test.</p>
 <div class="sect3">
 <h4 id="_post_fail_hook"><code>post_fail_hook</code></h4>
 <div class="paragraph">
-<p>It is called after <code>run()</code> failed. It is useful to upload log files or to
+<p>It is called after <code>run</code> failed. It is useful to upload log files or to
 determine the state of the machine.</p>
 </div>
 <div class="paragraph">
@@ -6941,7 +6941,7 @@ determine the state of the machine.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># Take an screenshot when the test failed</span>
 <span class="tok-w">    </span><span class="tok-n">save_screenshot</span><span class="tok-p">;</span>
 <span class="tok-p">}</span></code></pre>
@@ -6951,14 +6951,14 @@ determine the state of the machine.</p>
 <div class="sect3">
 <h4 id="_post_run_hook"><code>post_run_hook</code></h4>
 <div class="paragraph">
-<p>It is called after <code>run()</code> regardless of the result of the test run.</p>
+<p>It is called after <code>run</code> regardless of the result of the test run.</p>
 </div>
 <div class="paragraph">
 <p>An example usage:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_run_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_run_hook</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">send_key</span><span class="tok-w"> </span><span class="tok-s">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">;</span>
 
 <span class="tok-w">    </span><span class="tok-n">assert_script_run</span><span class="tok-w"> </span><span class="tok-s">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-w"> </span><span class="tok-p">;</span>
@@ -6988,7 +6988,7 @@ passed as positional arguments, for example <code>"key", "value"</code>.</p>
 
 <span class="tok-c1"># [...] omitted for brevity</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># [...] omitted for brevity</span>
 
 <span class="tok-w">    </span><span class="tok-c1"># Start vncviewer - notice the named arguments</span>
@@ -7050,7 +7050,7 @@ into the desktop when pressing enter at the boot loader:</p>
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># wait for bootloader to appear</span>
 <span class="tok-w">    </span><span class="tok-c1"># with a timeout explicitly lower than the default because</span>
 <span class="tok-w">    </span><span class="tok-c1"># the bootloader screen will timeout itself</span>
@@ -7063,7 +7063,7 @@ into the desktop when pressing enter at the boot loader:</p>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&quot;desktop&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 <span class="tok-p">}</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-n">fatal</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">};</span>
 <span class="tok-p">}</span></code></pre>
 </div>
@@ -7074,7 +7074,7 @@ into the desktop when pressing enter at the boot loader:</p>
 <div id="testmodule_perl_zypper" class="listingblock">
 <div class="title">Example: Console test that installs software from remote repository via zypper command</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># change to root</span>
 <span class="tok-w">    </span><span class="tok-n">become_root</span><span class="tok-p">;</span>
 
@@ -7101,7 +7101,7 @@ into the desktop when pressing enter at the boot loader:</p>
 <div class="listingblock">
 <div class="title">Example: Typical X11 test testing kate</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># make sure kate was installed</span>
 <span class="tok-w">    </span><span class="tok-c1"># if not ensure_installed will try to install it</span>
 <span class="tok-w">    </span><span class="tok-n">ensure_installed</span><span class="tok-w"> </span><span class="tok-s">&#39;kate&#39;</span><span class="tok-p">;</span>
@@ -7253,7 +7253,7 @@ even if test suites have failed due to different test modules.</p>
 <div class="listingblock">
 <div class="title">Example: Defining serial exception capture in the test</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-nv">$self</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nv">@_</span><span class="tok-p">;</span>
 <span class="tok-w">    </span><span class="tok-nv">$self</span><span class="tok-o">-&gt;</span><span class="tok-p">{</span><span class="tok-n">serial_failures</span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">[</span>
 <span class="tok-w">        </span><span class="tok-p">{</span><span class="tok-n">type</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;soft&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">message</span><span class="tok-w">  </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;known issue&#39;</span><span class="tok-p">,</span><span class="tok-w">  </span><span class="tok-n">pattern</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">quotemeta</span><span class="tok-w"> </span><span class="tok-s">&#39;Error&#39;</span><span class="tok-p">},</span>
@@ -7267,7 +7267,7 @@ even if test suites have failed due to different test modules.</p>
 <div class="listingblock">
 <div class="title">Example: Adding serial exception capture in the test</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-nv">$self</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nv">@_</span><span class="tok-p">;</span>
 <span class="tok-w">    </span><span class="tok-nb">push</span><span class="tok-w"> </span><span class="tok-nv">@$self</span><span class="tok-o">-&gt;</span><span class="tok-p">{</span><span class="tok-n">serial_failures</span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-n">type</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;soft&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">message</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;known issue&#39;</span><span class="tok-p">,</span><span class="tok-w">  </span><span class="tok-n">pattern</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">quotemeta</span><span class="tok-w"> </span><span class="tok-s">&#39;Error&#39;</span><span class="tok-p">};</span>
 <span class="tok-w">    </span><span class="tok-o">...</span>
@@ -7980,7 +7980,7 @@ wait for the children to complete.</p>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
 <span class="tok-c1"># On parent job</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># ftp service started automatically on boot</span>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 
@@ -7992,7 +7992,7 @@ wait for the children to complete.</p>
 <span class="tok-p">}</span>
 
 <span class="tok-c1"># On child we wait for ftp server to be ready</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># wait until ftp service is ready</span>
 <span class="tok-w">    </span><span class="tok-c1"># performs mutex lock &amp; unlock internally</span>
 <span class="tok-w">    </span><span class="tok-n">mutex_wait</span><span class="tok-w"> </span><span class="tok-s">&#39;ftp_service_ready&#39;</span><span class="tok-p">;</span>
@@ -8004,7 +8004,7 @@ wait for the children to complete.</p>
 
 <span class="tok-c1"># Mutexes can be used also for garanting exclusive access to resource</span>
 <span class="tok-c1"># Example on child when only one job should access ftp at time</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># wait until ftp service is ready</span>
 <span class="tok-w">    </span><span class="tok-n">mutex_lock</span><span class="tok-w"> </span><span class="tok-s">&#39;ftp_service_ready&#39;</span><span class="tok-p">;</span>
 
@@ -8040,7 +8040,7 @@ die. The job ID is also required when unlocking such a mutex.</p>
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">lockapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-nv">$children</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">get_children</span><span class="tok-p">();</span>
 
 <span class="tok-w">    </span><span class="tok-c1"># let&#39;s suppose there is only one child</span>
@@ -8087,7 +8087,7 @@ dies.</p>
 <span class="tok-n">barrier_create</span><span class="tok-p">(</span><span class="tok-s">&#39;NODES_CONFIGURED&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">4</span><span class="tok-p">);</span>
 
 <span class="tok-c1"># On master job</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 
 <span class="tok-w">    </span><span class="tok-c1"># Master is ready, waiting while workers are configured (check_dead_job is optional)</span>
@@ -8103,7 +8103,7 @@ dies.</p>
 <span class="tok-p">}</span>
 
 <span class="tok-c1"># On 3 worker jobs</span>
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">assert_screen</span><span class="tok-w"> </span><span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">300</span><span class="tok-p">;</span>
 
 <span class="tok-w">    </span><span class="tok-c1"># do initial worker setup</span>
@@ -8132,7 +8132,7 @@ dies.</p>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-c1"># returns a hash ref containing (id =&gt; state) for all children</span>
 <span class="tok-w">    </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-nv">$children</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">get_children</span><span class="tok-p">();</span>
 
@@ -8278,7 +8278,7 @@ assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.</p>
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-k">my</span><span class="tok-w"> </span><span class="tok-nv">$script</span><span class="tok-o">=</span><span class="tok-s">&quot;set -e -x\n&quot;</span><span class="tok-p">;</span>
 <span class="tok-w">  </span><span class="tok-nv">$script</span><span class="tok-o">.=</span><span class="tok-s">&quot;echo test &gt;test.txt\n&quot;</span><span class="tok-p">;</span>
 <span class="tok-w">  </span><span class="tok-nv">$script</span><span class="tok-o">.=</span><span class="tok-s">&quot;time tftp &quot;</span><span class="tok-o">.</span><span class="tok-nv">$server_ip</span><span class="tok-o">.</span><span class="tok-s">&quot; -c put test.txt test2.txt\n&quot;</span><span class="tok-p">;</span>
@@ -8399,7 +8399,7 @@ widely supported. Below is an example of how to use the VNC text console.</p>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">utils</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">wait_boot</span><span class="tok-p">;</span><span class="tok-w">  </span><span class="tok-c1"># Utility function defined by the SUSE distribution</span>
 <span class="tok-w">    </span><span class="tok-n">select_console</span><span class="tok-w"> </span><span class="tok-s">&#39;root-console&#39;</span><span class="tok-p">;</span>
 <span class="tok-p">}</span></code></pre>
@@ -9233,12 +9233,12 @@ schedule them, no path is needed.
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&#39;consoletest&#39;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">select_console</span><span class="tok-w"> </span><span class="tok-s">&#39;root-console&#39;</span><span class="tok-p">;</span>
 <span class="tok-w">    </span><span class="tok-n">assert_script_run</span><span class="tok-w"> </span><span class="tok-s">&#39;foo&#39;</span><span class="tok-p">;</span>
 <span class="tok-p">}</span>
 
-<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_run_hook</span><span class="tok-w"> </span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{}</span></code></pre>
+<span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">post_run_hook</span><span class="tok-w"> </span><span class="tok-p">{}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -13270,7 +13270,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-10 04:45:29 UTC
+Last updated 2025-02-15 04:44:06 UTC
 </div>
 </div>
 </body>
