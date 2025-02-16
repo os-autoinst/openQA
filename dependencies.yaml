@@ -39,6 +39,7 @@ common_requires:
   perl(Data::Dump):
   perl(Data::Dumper):
   perl(Digest::MD5):
+  perl(Feature::Compat::Try):
   perl(Filesys::Df):
   perl(Getopt::Long):
   perl(Minion): '>= 10.25'
