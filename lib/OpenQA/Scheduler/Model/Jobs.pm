@@ -7,7 +7,7 @@ use Mojo::Base 'Mojo::EventEmitter', -signatures;
 use Data::Dump 'pp';
 use DateTime;
 use File::Temp 'tempdir';
-use Try::Tiny;
+use Feature::Compat::Try;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::Utils 'random_string';
@@ -179,9 +179,9 @@ sub schedule ($self) {
         try {
             $worker = $schema->resultset('Workers')->find({id => $worker_id});
         }
-        catch {
-            log_debug("Failed to retrieve worker ($worker_id) in the DB, reason: $_");    # uncoverable statement
-        };
+        catch ($e) {
+            log_debug("Failed to retrieve worker ($worker_id) in the DB, reason: $e");    # uncoverable statement
+        }
         next unless $worker;
         if ($worker->unfinished_jobs->count) {
             log_debug 'Worker already got jobs, skipping';
@@ -207,17 +207,18 @@ sub schedule ($self) {
         my $sort_function = sub {
             [sort { $sort_criteria{$a} cmp $sort_criteria{$b} } @{shift()}]
         };
-        my ($directly_chained_job_sequence, $job_ids) = try {
-            _serialize_directly_chained_job_sequence($first_job_id, $cluster_info, $sort_function);
+        my ($directly_chained_job_sequence, $job_ids);
+        try {
+            ($directly_chained_job_sequence, $job_ids)
+              = _serialize_directly_chained_job_sequence($first_job_id, $cluster_info, $sort_function);
         }
-        catch {
-            my $error = $_;
-            chomp $error;
-            log_info("Unable to serialize directly chained job sequence of $first_job_id: $error");
+        catch ($e) {
+            chomp $e;
+            log_info("Unable to serialize directly chained job sequence of $first_job_id: $e");
             # deprioritize jobs with broken directly chained dependencies so they don't prevent other jobs from
             # being assigned
             ${$allocated->{priority_offset}} -= 1;
-        };
+        }
         next unless $job_ids;
 
         # find jobs
@@ -226,9 +227,9 @@ sub schedule ($self) {
         try {
             @jobs = $schema->resultset('Jobs')->search({id => {-in => $job_ids}});
         }
-        catch {
-            log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: $_");
-        };
+        catch ($e) {
+            log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: $e");
+        }
         my $actual_job_count = scalar @jobs;
         if ($actual_job_count != scalar @$job_ids) {
             log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: only got $actual_job_count jobs");
@@ -279,9 +280,9 @@ sub schedule ($self) {
             }
             die 'Failed contacting websocket server over HTTP' unless ref($res) eq 'HASH' && exists $res->{state};
         }
-        catch {
-            log_warning "Failed to send data to websocket server, reason: $_";
-        };
+        catch ($e) {
+            log_warning "Failed to send data to websocket server, reason: $e";
+        }
 
         my $state = (ref $res eq 'HASH' && ref $res->{state} eq 'HASH') ? $res->{state} : {};
         if ($state->{msg_sent}) {
@@ -298,19 +299,19 @@ sub schedule ($self) {
         try {
             $schema->txn_do(sub { $worker->unprepare_for_work; });
         }
-        catch {
-            log_warning "Failed resetting unprepare worker, reason: $_";    # uncoverable statement
-        };
+        catch ($e) {
+            log_warning "Failed resetting unprepare worker, reason: $e";    # uncoverable statement
+        }
         for my $job (@jobs) {
             try {
                 # remove the associated worker and be sure to be in scheduled state.
                 $schema->txn_do(sub { $job->reschedule_state; });
             }
-            catch {
+            catch ($e) {
                 # if we see this, we are in a really bad state
                 my $job_id = $job->id;    # uncoverable statement
-                log_warning "Failed resetting job '$job_id' to scheduled state, reason: $_";    # uncoverable statement
-            };
+                log_warning "Failed resetting job '$job_id' to scheduled state, reason: $e";    # uncoverable statement
+            }
         }
     }
 
@@ -565,9 +566,9 @@ sub incomplete_and_duplicate_stale_jobs ($self) {
                 });
         }
     }
-    catch {
-        log_info("Failed stale job detection: $_");
-    };
+    catch ($e) {
+        log_info("Failed stale job detection: $e");
+    }
 }
 
 1;

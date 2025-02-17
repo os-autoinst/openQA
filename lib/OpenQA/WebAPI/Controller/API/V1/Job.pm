@@ -16,7 +16,7 @@ use OpenQA::Scheduler::Client;
 use OpenQA::Log qw(log_error log_info);
 use List::Util qw(min);
 use Scalar::Util qw(looks_like_number);
-use Try::Tiny;
+use Feature::Compat::Try;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
@@ -425,13 +425,12 @@ sub create ($self) {
         $self->schema->txn_do_retry_on_deadlock(sub { $self->_create_jobs($global_params, $grouped_params) });
         OpenQA::Scheduler::Client->singleton->wakeup;
     }
-    catch {
-        my $error = $_;
-        chomp $error;
-        $json->{error} = $error;
+    catch ($e) {
+        chomp $e;
+        $json->{error} = $e;
         delete $json->{id};
         delete $json->{ids};
-    };
+    }
 
     $self->emit_event(openqa_job_create => $_) for @$event_data;
     $self->render(json => $json, status => ($json->{error} ? 400 : 200));
@@ -568,16 +567,14 @@ sub update_status ($self) {
         $worker->seen;
         $ret = $job->update_status($status);
     }
-    catch {
-        # uncoverable statement
-        my $error_message = $_;
+    catch ($e) {
         # uncoverable statement
         my $worker_name = $worker->name;
         # uncoverable statement
-        $ret = {error => $error_message};
+        $ret = {error => $e};
         # uncoverable statement
-        log_error("Unexpected error when updating job $job_id executed by worker $worker_name: $error_message");
-    };
+        log_error("Unexpected error when updating job $job_id executed by worker $worker_name: $e");
+    }
     if (!$ret || $ret->{error} || $ret->{error_status}) {
         $ret = {} unless $ret;
         $ret->{error} //= 'Unable to update status';
@@ -805,9 +802,9 @@ sub done ($self) {
     try {
         $res = $job->done(result => $result, reason => $reason, newbuild => $newbuild);
     }
-    catch {
-        $self->render(status => 400, json => {error => $_});
-    };
+    catch ($e) {
+        $self->render(status => 400, json => {error => $e});
+    }
     return undef unless $res;
 
     # use $res as a result, it is recomputed result by scheduler

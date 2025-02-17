@@ -11,7 +11,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON 'encode_json';
 use File::Basename;
-use Try::Tiny;
+use Feature::Compat::Try;
 
 use constant {STATUS_CACHE_FILE => '/webui/cache/asset-status.json'};
 use constant TYPES => (qw(iso repo hdd other));
@@ -332,9 +332,9 @@ sub status {
                     }));
             rename($new_cache_file_path, $cache_file_path) or die $!;
         }
-        catch {
-            log_warning("Unable to create cache file $cache_file_path: $@");    # uncoverable statement
-        };
+        catch ($e) {
+            log_warning("Unable to create cache file $cache_file_path: $e");    # uncoverable statement
+        }
     }
 
     return {assets => \@assets, groups => \%group_info, parents => \%parent_group_info};

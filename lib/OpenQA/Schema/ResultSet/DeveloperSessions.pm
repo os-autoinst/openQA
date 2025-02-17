@@ -4,7 +4,7 @@
 package OpenQA::Schema::ResultSet::DeveloperSessions;
 
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
-use Try::Tiny;
+use Feature::Compat::Try;
 use OpenQA::Constants qw(WORKER_COMMAND_DEVELOPER_SESSION_START);
 use OpenQA::Schema::Result::DeveloperSessions;
 use OpenQA::WebSockets::Client;
@@ -37,9 +37,9 @@ sub register ($self, $job_id, $user_id) {
         try {
             $client->send_msg($worker_id, WORKER_COMMAND_DEVELOPER_SESSION_START, $job_id);
         }
-        catch {
-            log_error("Unable to inform worker about developer session: $_");
-        };
+        catch ($e) {
+            log_error("Unable to inform worker about developer session: $e");
+        }
     }
 
     return $res;
