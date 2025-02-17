@@ -422,7 +422,7 @@ sub create ($self) {
     my $event_data = $self->{_event_data} = [];
     my $dependencies = $self->{_dependencies} = [];
     try {
-        $self->schema->txn_do(sub { $self->_create_jobs($global_params, $grouped_params) });
+        $self->schema->txn_do_retry_on_deadlock(sub { $self->_create_jobs($global_params, $grouped_params) });
         OpenQA::Scheduler::Client->singleton->wakeup;
     }
     catch {

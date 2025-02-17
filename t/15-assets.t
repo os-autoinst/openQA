@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -10,11 +11,13 @@ use File::Path qw(remove_tree);
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::Mojo;
+use Time::HiRes 'sleep';
 use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 require OpenQA::Test::Database;
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::WebSockets::Client;
@@ -22,7 +25,7 @@ use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Schema::ResultSet::Assets;
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use Mojo::File 'path';
-use Mojo::Util 'monkey_patch';
+use Mojo::Util 'scope_guard';
 
 # mock worker websocket send and record what was sent
 my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
@@ -40,10 +43,10 @@ $mock->redefine(
     });
 
 my $schema;
-ok($schema = OpenQA::Test::Database->new->create, 'create database')
+ok($schema = OpenQA::Test::Database->new->create(fixtures_glob => '03-users.pl'), 'create database')
   || BAIL_OUT('failed to create database');
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $cfg = $t->app->config;
 $cfg->{global}->{hide_asset_types} = 'repo  foo ';
 $cfg->{'scm git'}->{git_auto_update} = 'no';
@@ -341,6 +344,78 @@ subtest 'check for missing assets' => sub {
           'private assets correctly detected also when other asset is missing'
           or always_explain $missing_assets;
     };
+};
+
+subtest 'concurrent asset creation' => sub {
+    # allow configuring a delay so this test will always trigger the deadlock case
+    my $delay = $ENV{OPENQA_ASSET_TESTS_DELAY} // 1;
+    my $jobs_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Jobs');
+    $jobs_mock->redefine(create_from_settings => sub ($self, $settings, @args) {
+            explain "create from settings called from PID $$: ", $settings;
+            my $res = $jobs_mock->original('create_from_settings')->($self, $settings, @args);
+            sleep $delay;
+            return $res;
+    });
+
+    # define settings for jobs and assets to be created/registered
+    my %base_settings = (DISTRI => 'sle', VERSION => '12-SP5', FLAVOR => 'Server-DVD-Updates', ARCH => 'x86_64', TEST => 'base');
+    my $asset_name_1 = 'SLES-12-SP5-x86_64-mru-install-desktop-with-addons-Build20250211-1.qcow2';
+    my $asset_name_2 = 'SLES-12-SP5-x86_64-mru-install-desktop-with-addons-Build20250211-2.qcow2';
+    my %settings_1 = (%base_settings, TEST => 'job1', HDD_1 => $asset_name_1);
+    my %settings_2 = (%base_settings, TEST => 'job2', HDD_1 => $asset_name_2);
+
+    # define functions to create jobs using the web API
+    my $post_job = sub ($delay, @settings) {
+        sleep $delay / 2;
+        my %combined_settings;
+        my $index = 0;
+        for my $settings (@settings) {
+            $combined_settings{"$_:$index"} = $settings->{$_} for keys %$settings;
+            ++$index;
+        }
+        note "starting job post, $settings[0]->{TEST} first";
+        $t->post_ok('/api/v1/jobs', form => \%combined_settings)->status_is(200, "posted jobs, $settings[0]->{TEST} first");
+        ok my @job_ids = values %{$t->tx->res->json->{ids}}, 'IDs returned for jobs' or always_explain $t->tx->res->body;
+        note "concluded job post, $settings[0]->{TEST} first";
+        return \@job_ids;
+    };
+    my $schedule_product = sub ($delay, @settings) {
+        sleep $delay / 2;
+        my $scheduling_mock = Test::MockModule->new('OpenQA::Schema::Result::ScheduledProducts');
+        $scheduling_mock->mock(_generate_jobs => {settings_result => [@settings]});
+        note "starting isos post, $settings[0]->{TEST} first";
+        $t->post_ok('/api/v1/isos', form => \%base_settings)->status_is(200, "scheduled jobs, $settings[0]->{TEST} first");
+        my $job_ids = $t->tx->res->json->{ids};
+        is @$job_ids, @settings, 'one job ID per setting returned' or always_explain $t->tx->res->body;
+        note "concluded isos post, $settings[0]->{TEST} first";
+        return $job_ids;
+    };
+    my $post_jobs_1 = sub { $post_job->(0, \%settings_1, \%settings_2) };
+    my $post_jobs_2 = sub { $post_job->($delay, \%settings_2, \%settings_1) };
+    my $schedule_product_1 = sub { $schedule_product->(0, \%settings_1, \%settings_2) };
+    my $schedule_product_2 = sub { $schedule_product->($delay, \%settings_2, \%settings_1) };
+
+    # define function to test the job creation in parallel using the specified creation functions
+    my $loop = Mojo::IOLoop->singleton;
+    my $create_jobs = sub (@fn) {
+        # clean up the assets from the previous subtests
+        # note: The assets must not exist as this test would otherwise not provoke a deadlock.
+        $assets->search({type => 'hdd', name => {-in => [$asset_name_1, $asset_name_2]}})->delete;
+
+        my @all_job_ids;
+        my @promises = map { $loop->subprocess->run_p($_)->then(sub ($job_ids) { push @all_job_ids, @$job_ids }) } @fn;
+
+        # wait for results and check
+        $_->wait for @promises;
+        is @all_job_ids, 4, "expected number of jobs created with IDs @all_job_ids";
+        ok $assets->find({type => 'hdd', name => $asset_name_1}), 'asset 1 exists';
+        ok $assets->find({type => 'hdd', name => $asset_name_2}), 'asset 2 exists';
+        is $jobs->find($_)->assets->count, 1, "job $_ with asset associated" for @all_job_ids;
+    };
+
+    subtest 'posting a single set of jobs' => sub { $create_jobs->($post_jobs_1, $post_jobs_2) };
+    subtest 'scheduling a product' => sub { $create_jobs->($schedule_product_1, $schedule_product_2) };
+    subtest 'track coverage of helpers' => sub { $_->(0, \%base_settings) for $post_job, $schedule_product };
 };
 
 done_testing();
