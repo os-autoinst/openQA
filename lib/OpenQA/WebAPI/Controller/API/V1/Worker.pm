@@ -11,7 +11,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use List::Util qw(min);
-use Try::Tiny;
+use Feature::Compat::Try;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 
 =pod
@@ -122,9 +122,9 @@ sub _register {
                 _incomplete_previous_job(\%jobs_worker_says_it_works_on, $_) for $worker->unfinished_jobs->all;
             });
     }
-    catch {
-        log_warning("Unable to incomplete/duplicate or reschedule jobs abandoned by worker $worker_id: $_");
-    };
+    catch ($e) {
+        log_warning("Unable to incomplete/duplicate or reschedule jobs abandoned by worker $worker_id: $e");
+    }
 
     return $worker_id;
 }
@@ -186,15 +186,15 @@ sub create {
     try {
         $id = $self->_register($self->schema, $host, $instance, $caps, $job_ids);
     }
-    catch {
-        if (/Incompatible/) {
-            $self->render(status => 426, json => {error => $_});
+    catch ($e) {
+        if ($e =~ /Incompatible/) {
+            $self->render(status => 426, json => {error => $e});
         }
         else {
-            $self->render(status => 500, json => {error => "Failed: $_"});
+            $self->render(status => 500, json => {error => "Failed: $e"});
         }
         return undef;
-    };
+    }
     return unless defined $id;
 
     my %event_data = (id => $id, host => $host, instance => $instance);

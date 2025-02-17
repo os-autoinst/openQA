@@ -11,7 +11,7 @@ use IPC::Run();
 use Mojo::URL;
 use Regexp::Common 'URI';
 use Time::Seconds;
-use Try::Tiny;
+use Feature::Compat::Try;
 use Mojo::File 'path';
 use IO::Handle;
 use IO::Socket::IP;
@@ -366,14 +366,14 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
             stderr => $stderr,
         };
     }
-    catch {
+    catch ($e) {
         return {
             status => 0,
             return_code => undef,
             stderr => 'an internal error occurred',
             stdout => '',
         };
-    };
+    }
 }
 
 sub asset_type_from_setting {

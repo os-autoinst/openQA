@@ -13,7 +13,7 @@ use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::File 'path';
 use Mojo::Util 'trim';
-use Try::Tiny;
+use Feature::Compat::Try;
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
@@ -27,14 +27,16 @@ sub startup ($self) {
     # Provide help to users early to prevent failing later on misconfigurations
     # note: Loading plugins for the current configuration so the help of commands provided by plugins is
     #       available as well.
-    return try {
-        OpenQA::Setup::read_config($self);
-        OpenQA::Setup::load_plugins($self);
+    if ($ENV{MOJO_HELP}) {
+        try {
+            OpenQA::Setup::read_config($self);
+            OpenQA::Setup::load_plugins($self);
+        }
+        catch ($e) {
+            print("The help might be incomplete because an error occurred when loading plugins:\n$e\n");
+        }
+        return;
     }
-    catch {
-        print("The help might be incomplete because an error occurred when loading plugins:\n$_\n");
-    }
-    if $ENV{MOJO_HELP};
 
     # "templates/webapi" prefix
     $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;

@@ -6,7 +6,7 @@ package OpenQA::Schema::Result::Workers;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use DBIx::Class::Timestamps 'now';
-use Try::Tiny;
+use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::Log qw(log_error log_warning);
 use OpenQA::WebSockets::Client;
@@ -204,7 +204,8 @@ sub send_command {
     try {
         OpenQA::App->singleton->emit_event(
             openqa_command_enqueue => {workerid => $self->id, command => $args{command}});
-    };
+    }
+    catch ($e) { }
 
     # prevent ws server querying itself (which would cause it to hang until the connection times out)
     if (OpenQA::WebSockets::Client::is_current_process_the_websocket_server) {
@@ -213,14 +214,14 @@ sub send_command {
 
     my $client = OpenQA::WebSockets::Client->singleton;
     try { $client->send_msg($self->id, $args{command}, $args{job_id}) }
-    catch {
+    catch ($e) {
         log_error(
             sprintf(
                 'Failed dispatching message to websocket server over ipc for worker "%s:%n": %s',
-                $self->host, $self->instance, $_
+                $self->host, $self->instance, $e
             ));
         return undef;
-    };
+    }
     return 1;
 }
 
@@ -258,10 +259,10 @@ sub reschedule_assigned_jobs {
         try {
             $self->result_source->schema->txn_do(sub { $associated_job->reschedule_state });
         }
-        catch {
+        catch ($e) {
             my $worker_id = $self->id;    # uncoverable statement
-            log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $_"); # uncoverable statement
-        };
+            log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $e"); # uncoverable statement
+        }
     }
 }
 

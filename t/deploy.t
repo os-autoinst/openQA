@@ -18,7 +18,7 @@ use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use Mojo::File 'path';
 use List::Util 'min';
-use Try::Tiny;
+use Feature::Compat::Try;
 
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
