@@ -24,7 +24,6 @@ use Mojo::Base -signatures;
 use List::Util ();
 use Test::Mojo;
 use Test::MockModule;
-use Test::Exception;
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';

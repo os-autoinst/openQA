@@ -4,7 +4,6 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
-use Test::Exception;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';

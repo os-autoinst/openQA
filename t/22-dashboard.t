@@ -10,7 +10,6 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use Test::Exception;
 use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
