@@ -328,12 +328,26 @@ subtest 'Needle editor layout' => sub {
     is @{decode_utf8_json(element_prop('needleeditor_textarea'))->{area}}, 2, 'exclude areas always present';
     $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
     is @{decode_utf8_json(element_prop('needleeditor_textarea'))->{area}}, 2, 'no duplicated exclude areas present';
+
+    # put oddly sized png in place for the needle inst-timezone-text to be able to verify it was correctly loaded
+    my $src_dir = path('t/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde');
+    $src_dir->child('reboot_after_install-1-reboot_after_install-131M4-diff2.png')->copy_to($dir->child('inst-timezone-text.png'));
+
+    # select needle to take image from
+    $driver->execute_script("document.getElementById('image_select').selectedIndex = 1; loadBackground();");
+    is element_prop('image_select'), 'inst-timezone-text', 'selected needle to take image from';
+    sleep 0.01 until $driver->execute_script('return nEditor.bgImage.complete;');
+    my $size = $driver->execute_script('return [nEditor.bgImage.naturalWidth, nEditor.bgImage.naturalHeight];');
+    is_deeply $size, [444, 189], 'correct image for needle was loaded into canvas after selecting it';
 };
 
 my $needlename = 'test-newneedle';
 my $xoffset = my $yoffset = 200;
 
 subtest 'Create new needle' => sub {
+    # select screenshot to take image from
+    $driver->execute_script("document.getElementById('image_select').selectedIndex = 0; loadBackground();");
+
     subtest 'invalid needle tag is rejected' => sub {
         $elem = $driver->find_element_by_id('newtag');
         $elem->send_keys('123');
