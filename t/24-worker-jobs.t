@@ -16,7 +16,6 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 
 use Capture::Tiny qw(capture);
-use Test::Fatal;
 use Test::Output qw(combined_like combined_unlike);
 use Test::MockModule;
 use Test::MockObject;
@@ -274,11 +273,8 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
     is $job->status, 'accepting', 'job is now being accepted';
     $job->stop_if_out_of_acceptance_attempts;
     is $job->status, 'stopped', 'job is abandoned if unable to confirm to the web UI that we are working on it';
-    like(
-        exception { $job->start },
-        qr/attempt to start job which is not accepted/,
-        'starting job prevented unless accepted'
-    );
+    throws_ok { $job->start } qr/attempt to start job which is not accepted/,
+      'starting job prevented unless accepted';
 
     is_deeply(
         $client->websocket_connection->sent_messages,
@@ -290,11 +286,8 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
 
 subtest 'Job without id' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => undef, URL => $engine_url});
-    like(
-        exception { $job->start },
-        qr/attempt to start job without ID and job info/,
-        'starting job without id prevented'
-    );
+    throws_ok { $job->start } qr/attempt to start job without ID and job info/,
+      'starting job without id prevented';
 };
 
 subtest 'Clean up pool directory' => sub {

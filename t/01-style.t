@@ -17,7 +17,7 @@ is qx{git grep --all-match -e '^use Mojo::Base' -e 'use base'}, '', 'No redundan
 is qx{git grep -I --all-match -e '^use Mojo::Base' -e 'use \\(strict\\|warnings\\);' ':!docs'}, '',
   'Only combined Mojo::Base+strict+warnings';
 is qx{git grep -I -L '^use Test::Warnings' t/**.t ':!t/01-style.t'}, '', 'All tests use Test::Warnings';
-is qx{git grep -I -l '^use Test::Exception' t/**.t}, '', 'Test::Most already includes Test::Exception, no need to use Test::Exception';
+is qx{git grep -I -l '^use Test::\\(Exception\\|Fatal\\)' t/**.t}, '', 'Test::Most already includes Test::Exception, no need to use Test::Exception or Test::Fatal';
 is qx{git grep -I -l '^\\(throws\\|dies\\|lives\\)_ok.*\<sub\>' t/**.t}, '', 'Only use simplified prototyped Test::Exception functions';
 is qx{git grep -I -l 'sub [a-z_A-Z0-9]\\+()' ':!docs/'}, '',
   'Consistent space before function signatures (this is not ensured by perltidy)';

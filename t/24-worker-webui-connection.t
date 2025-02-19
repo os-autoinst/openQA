@@ -13,7 +13,6 @@ use Mojo::Base -signatures;
 use Mojo::IOLoop;
 use Mojolicious;
 use Test::Output 'combined_like';
-use Test::Fatal;
 use Test::Mojo;
 use Test::MockModule;
 use OpenQA::App;
@@ -34,13 +33,10 @@ OpenQA::App->set_singleton(Mojolicious->new);
 my $app = OpenQA::App->singleton;
 $app->log->level('info');
 
-like(
-    exception {
-        OpenQA::Worker::WebUIConnection->new('http://test-host', {});
-    },
-    qr{API key and secret are needed for the worker connecting http://test-host.*},
-    'auth required',
-);
+throws_ok {
+    OpenQA::Worker::WebUIConnection->new('http://test-host', {});
+} qr{API key and secret are needed for the worker connecting http://test-host.*},
+  'auth required';
 
 my $client = OpenQA::Worker::WebUIConnection->new(
     'http://test-host',
@@ -69,13 +65,8 @@ $client->worker(OpenQA::Test::FakeWorker->new);
 $client->working_directory('t/');
 
 is($client->status, 'new', 'client in status new');
-like(
-    exception {
-        $client->send('get', '.');
-    },
-    qr{attempt to send command to web UI http://test-host with no worker ID.*},
-    'registration required',
-);
+throws_ok { $client->send('get', '.'); } qr{attempt to send command to web UI http://test-host with no worker ID.*},
+  'registration required';
 
 # mock OpenQA::Worker::Job so it starts/stops the livelog also if the backend isn't running
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
