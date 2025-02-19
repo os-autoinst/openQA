@@ -8,7 +8,6 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '6';
 use Mojo::Base -signatures;
-use Test::Exception;
 use Test::Output qw(combined_like combined_unlike output_from);
 use Test::MockObject;
 use Test::MockModule;

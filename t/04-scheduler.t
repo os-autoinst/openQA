@@ -22,7 +22,6 @@ use Test::Mojo;
 use Test::MockModule;
 use Test::Output qw(combined_like);
 use Test::Warnings ':report_warnings';
-use Test::Exception;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::App;
 use OpenQA::WebAPI;
