@@ -16,7 +16,6 @@ BEGIN {
 
 use File::Spec::Functions qw(abs2rel catdir);
 use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
-use Test::Fatal;
 use Test::Warnings ':report_warnings';
 use OpenQA::Worker;
 use Test::MockModule;
@@ -78,13 +77,9 @@ sub _run_engine ($job) {
 }
 
 subtest 'isotovideo version' => sub {
-    like(
-        exception {
-            OpenQA::Worker::Engines::isotovideo::set_engine_exec('/bogus/location');
-        },
-        qr{Path to isotovideo invalid},
-        'isotovideo version path invalid'
-    );
+    throws_ok {
+        OpenQA::Worker::Engines::isotovideo::set_engine_exec('/bogus/location');
+    } qr{Path to isotovideo invalid}, 'isotovideo version path invalid';
 
     # init does not fail without isotovideo parameter
     # note that this might set the isotovideo version because the isotovideo path defaults

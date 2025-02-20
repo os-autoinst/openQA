@@ -14,7 +14,6 @@ use Data::Dumper;
 use Mojo::File qw(tempdir tempfile path);
 use Mojo::Util 'scope_guard';
 use Mojolicious;
-use Test::Fatal;
 use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
 use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_FINISH_OFF);
@@ -90,13 +89,8 @@ my $cache_service_client_mock = Test::MockModule->new('OpenQA::CacheService::Cli
 $cache_service_client_mock->redefine(info => sub { Test::FakeCacheServiceClientInfo->new });
 my $load_avg_file = simulate_load('10.93 10.91 10.25 2/2207 1212', 'worker-overall-load-avg');
 
-like(
-    exception {
-        OpenQA::Worker->new({instance => 'foo'});
-    },
-    qr{.*the specified instance number \"foo\" is no number.*},
-    'instance number must be a number',
-);
+throws_ok { OpenQA::Worker->new({instance => 'foo'}); } qr{.*the specified instance number \"foo\" is no number.*},
+  'instance number must be a number';
 my $worker = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', verbose => 1, 'no-cleanup' => 1});
 ok($worker->no_cleanup, 'no-cleanup flag works');
 ok(my $settings = $worker->settings, 'settings instantiated');
@@ -878,13 +872,9 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
         };
     };
 
-    like(
-        exception {
-            $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
-        },
-        qr{Received job status update for job 42 \(stopped\) which is not the current one\.},
-        'handling job status changed refused with no job',
-    );
+    throws_ok { $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'}); }
+    qr{Received job status update for job 42 \(stopped\) which is not the current one\.},
+      'handling job status changed refused with no job';
 };
 
 subtest 'handle critical error' => sub {
