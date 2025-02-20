@@ -24,6 +24,9 @@ __PACKAGE__->load_namespaces;
 
 my $SINGLETON;
 
+use constant DEADLOCK_RETRIES => $ENV{OPENQA_DEADLOCK_RETRIES} // 3;
+use constant DEADLOCK_REGEX => qr/deadlock detected/;
+
 sub connect_db (%args) {
     my $check_deploy = $args{deploy};
     $check_deploy //= 1;
@@ -146,6 +149,17 @@ sub read_application_secrets ($self) {
     die "couldn't create secrets\n" unless @secrets;
 
     return [map { $_->secret } @secrets];
+}
+
+sub is_deadlock ($self, $error) { $error =~ DEADLOCK_REGEX }
+
+sub txn_do_retry_on_deadlock ($self, $sub, $deadlock_cb = undef) {
+    for (my $tries = 0;; ++$tries) {
+        my $res = eval { $self->txn_do($sub) };
+        return $res unless my $e = $@;
+        die $e if $tries >= DEADLOCK_RETRIES || !$self->is_deadlock($e);    # uncoverable statement
+        $deadlock_cb->($e) if $deadlock_cb;    # uncoverable statement
+    }
 }
 
 1;

@@ -272,6 +272,7 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
         }
         catch {
             $schema->svp_rollback('try_create_job_from_settings');
+            die $_ if $schema->is_deadlock($_);    # uncoverable statement
             push @$failed_job_info, {job_name => $settings->{TEST}, error_message => $_};
         }
     }
@@ -397,11 +398,11 @@ sub _schedule_iso {
     my @failed_job_info;
 
     try {
-        $schema->txn_do(
+        $schema->txn_do_retry_on_deadlock(
             sub {
                 $self->_create_jobs_in_database($jobs, \@failed_job_info, $skip_chained_deps, $include_children,
                     \@successful_job_ids);
-            });
+            }, sub { (@successful_job_ids, @failed_job_info) = () });
     }
     catch {
         my $error = shift;
