@@ -26,6 +26,7 @@ use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use Config::Tiny;
 use Time::HiRes qw(tv_interval);
 use File::Basename;
+use File::Path qw(make_path);
 use File::Spec;
 use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
@@ -92,7 +93,6 @@ our @EXPORT = qw(
   BUGREF_REGEX
   LABEL_REGEX
   FLAG_REGEX
-  locate_needle
   needledir
   productdir
   testcasedir
@@ -254,22 +254,6 @@ sub is_in_tests {
 
 sub needledir { productdir(@_) . '/needles' }
 
-sub locate_needle {
-    my ($relative_needle_path, $needles_dir) = @_;
-
-    my $absolute_filename = catdir($needles_dir, $relative_needle_path);
-    my $needle_exists = -f $absolute_filename;
-
-    if (!$needle_exists) {
-        $absolute_filename = catdir(sharedir(), $relative_needle_path);
-        $needle_exists = -f $absolute_filename;
-    }
-    return $absolute_filename if $needle_exists;
-
-    log_error("Needle file $relative_needle_path not found within $needles_dir.");
-    return undef;
-}
-
 # Adds a timestamp to a string (eg. needle name) or replace the already present timestamp
 sub ensure_timestamp_appended {
     my ($str) = @_;
@@ -333,10 +317,12 @@ sub run_cmd_with_log {
 sub run_cmd_with_log_return_error ($cmd, %args) {
     my $stdout_level = $args{stdout} // 'debug';
     my $stderr_level = $args{stderr} // 'debug';
+    my $output_file = $args{output_file};
     log_info('Running cmd: ' . join(' ', @$cmd));
     try {
         my ($stdin, $stdout, $stderr) = ('') x 3;
-        my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, \$stdout, \$stderr);
+        my @out_args = defined $output_file ? ('>', $output_file, '2>', \$stderr) : (\$stdout, \$stderr);
+        my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, @out_args);
         my $error_code = $?;
         my $return_code = ($error_code & 127) ? (undef) : ($error_code >> 8);
         my $message = defined $return_code ? ("cmd returned $return_code") : sprintf('cmd died with signal %d', $error_code & 127);
