@@ -105,11 +105,9 @@ $jobA->set_prio(1);
 # register worker
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $w;
-eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
-like($@, qr/Incompatible websocket API version/, 'Worker no version - incompatible version exception');
+throws_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } qr/Incompatible websocket API version/, 'Worker no version - incompatible version exception';
 $workercaps->{websocket_api_version} = 999999;
-eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
-like($@, qr/Incompatible websocket API version/, 'Worker different version - incompatible version exception');
+throws_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } qr/Incompatible websocket API version/, 'Worker different version - incompatible version exception';
 $workercaps->{websocket_api_version} = WEBSOCKET_API_VERSION;
 eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
 ok(!$@, 'Worker correct version');

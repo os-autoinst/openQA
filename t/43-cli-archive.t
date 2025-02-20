@@ -43,9 +43,8 @@ subtest 'Help' => sub {
 subtest 'Unknown options' => sub {
     my $archive = OpenQA::CLI::archive->new;
     like warning {
-        eval { $archive->run('--unknown') }
+        throws_ok { $archive->run('--unknown') } qr/Usage: openqa-cli archive/, 'unknown option';
     }, qr/Unknown option: unknown/, 'right output';
-    like $@, qr/Usage: openqa-cli archive/, 'unknown option';
 };
 
 subtest 'Defaults' => sub {
@@ -58,51 +57,37 @@ subtest 'Defaults' => sub {
 
 subtest 'Host' => sub {
     my $archive = OpenQA::CLI::archive->new;
-    eval { $archive->run('--host', 'openqa.example.com') };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $archive->run('--host', 'openqa.example.com') } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->host, 'https://openqa.example.com', 'host';
 
-    eval { $archive->run('--host', 'http://openqa.example.com') };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $archive->run('--host', 'http://openqa.example.com') } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->host, 'http://openqa.example.com', 'host';
 
-    eval { $archive->run('--osd') };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $archive->run('--osd') } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->host, 'http://openqa.suse.de', 'host';
 
-    eval { $archive->run('--o3') };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $archive->run('--o3') } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->host, 'https://openqa.opensuse.org', 'host';
 
-    eval { $archive->run(@host) };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $archive->run(@host) } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->host, $host, 'host';
 };
 
 subtest 'API' => sub {
     my $archive = OpenQA::CLI::archive->new;
-    eval { $archive->run('--apibase', '/foo/bar') };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $archive->run('--apibase', '/foo/bar') } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->apibase, '/foo/bar', 'apibase';
 
-    eval { $archive->run(@auth) };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $archive->run(@auth) } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->apikey, 'ARTHURKEY01', 'apikey';
     is $archive->apisecret, 'EXCALIBUR', 'apisecret';
 };
 
 subtest 'Archive job' => sub {
-    eval { $cli->run('archive') };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
-
-    eval { $cli->run('archive', 99937) };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
-
-    eval { $cli->run('archive', @host) };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
-
-    eval { $cli->run('archive', @host, 99937) };
-    like $@, qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $cli->run('archive') } qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $cli->run('archive', 99937) } qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $cli->run('archive', @host) } qr/Usage: openqa-cli archive/, 'usage';
+    throws_ok { $cli->run('archive', @host, 99937) } qr/Usage: openqa-cli archive/, 'usage';
 
     my $target = $dir->child('archive')->make_path;
     my ($stdout, $stderr, @result) = capture_stdout sub { $cli->run('archive', @host, 99937, $target->to_string) };

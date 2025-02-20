@@ -142,33 +142,17 @@ subtest 'Parser base class object' => sub {
     is $res->generated_tests->size, 0, '0 tests';
 
     my $meant_to_fail = OpenQA::Parser->new;
-    eval { $meant_to_fail->parse() };
-    ok $@;
-    like $@, qr/parse\(\) not implemented by base class/, 'Base class does not parse data';
-
-    eval { $meant_to_fail->load() };
-    ok $@;
-    like $@, qr/You need to specify a file/, 'load croaks if no file is specified';
-
-    eval { $meant_to_fail->load('thiswontexist') };
-    ok $@;
-    like $@, qr/Can't open file \"thiswontexist\"/, 'load confesses if file is invalid';
+    throws_ok { $meant_to_fail->parse() } qr/parse\(\) not implemented by base class/, 'Base class does not parse data';
+    throws_ok { $meant_to_fail->load() } qr/You need to specify a file/, 'load croaks if no file is specified';
+    throws_ok { $meant_to_fail->load('thiswontexist') } qr/Can't open file \"thiswontexist\"/, 'load confesses if file is invalid';
 
     use Mojo::File 'tempfile';
     my $tmp = tempfile;
-    eval { $meant_to_fail->load($tmp) };
-    ok $@;
-    like $@, qr/Failed reading file $tmp/, 'load confesses if file is invalid';
+    throws_ok { $meant_to_fail->load($tmp) } qr/Failed reading file $tmp/, 'load confesses if file is invalid';
 
     my $good_parser = parser('Base');
-
-    eval { $good_parser->write_output() };
-    ok $@;
-    like $@, qr/You need to specify a directory/, 'write_output needs a directory as argument';
-
-    eval { $good_parser->write_test_result() };
-    ok $@;
-    like $@, qr/You need to specify a directory/, 'write_test_result needs a directory as argument';
+    throws_ok { $good_parser->write_output() } qr/You need to specify a directory/, 'write_output needs a directory as argument';
+    throws_ok { $good_parser->write_test_result() } qr/You need to specify a directory/, 'write_test_result needs a directory as argument';
 
     $good_parser->results->add({foo => 1});
     is $good_parser->results->size, 1;
@@ -911,17 +895,13 @@ subtest functional_interface => sub {
     my $ltp = parser("LTP");
     is ref($ltp), 'OpenQA::Parser::Format::LTP', 'Parser found';
 
-    eval { p("Doesn'tExist!"); };
-    ok $@;
-    like $@, qr/Parser not found!/, 'Croaked correctly';
+    throws_ok { p("Doesn'tExist!") } qr/Parser not found!/, 'Croaked correctly';
     {
         package OpenQA::Parser::Format::Broken;    # uncoverable statement
         sub new { die 'boo' }
     }
-
-    eval { p("Broken"); };
-    ok $@;
-    like $@, qr/Invalid parser supplied: boo/, 'Croaked correctly';
+    ;
+    throws_ok { p("Broken") } qr/Invalid parser supplied: boo/, 'Croaked correctly';
 
     my $default = p();
     ok $default->isa('OpenQA::Parser::Format::Base');
