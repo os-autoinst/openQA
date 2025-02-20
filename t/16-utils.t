@@ -40,8 +40,7 @@ subtest 'service ports' => sub {
     is service_port('livehandler'), 9532, 'livehandler port';
     is service_port('scheduler'), 9533, 'scheduler port';
     is service_port('cache_service'), 9534, 'cache service port';
-    eval { service_port('unknown') };
-    like $@, qr/Unknown service: unknown/, 'unknown port';
+    throws_ok { service_port('unknown') } qr/Unknown service: unknown/, 'unknown port';
 };
 
 subtest 'set listen address' => sub {

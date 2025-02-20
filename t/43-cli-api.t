@@ -83,35 +83,28 @@ subtest 'Defaults' => sub {
 
 subtest 'Host' => sub {
     my $api = OpenQA::CLI::api->new;
-    eval { $api->run('--host', 'openqa.example.com') };
-    like $@, qr/Usage: openqa-cli api/, 'usage';
+    throws_ok { $api->run('--host', 'openqa.example.com') } qr/Usage: openqa-cli api/, 'usage';
     is $api->host, 'https://openqa.example.com', 'host';
 
-    eval { $api->run('--host', 'http://openqa.example.com') };
-    like $@, qr/Usage: openqa-cli api/, 'usage';
+    throws_ok { $api->run('--host', 'http://openqa.example.com') } qr/Usage: openqa-cli api/, 'usage';
     is $api->host, 'http://openqa.example.com', 'host';
 
-    eval { $api->run('--osd') };
-    like $@, qr/Usage: openqa-cli api/, 'usage';
+    throws_ok { $api->run('--osd') } qr/Usage: openqa-cli api/, 'usage';
     is $api->host, 'http://openqa.suse.de', 'host';
 
-    eval { $api->run('--o3') };
-    like $@, qr/Usage: openqa-cli api/, 'usage';
+    throws_ok { $api->run('--o3') } qr/Usage: openqa-cli api/, 'usage';
     is $api->host, 'https://openqa.opensuse.org', 'host';
 
-    eval { $api->run(@host) };
-    like $@, qr/Usage: openqa-cli api/, 'usage';
+    throws_ok { $api->run(@host) } qr/Usage: openqa-cli api/, 'usage';
     is $api->host, $host, 'host';
 };
 
 subtest 'API' => sub {
     my $api = OpenQA::CLI::api->new;
-    eval { $api->run('--apibase', '/foo/bar') };
-    like $@, qr/Usage: openqa-cli api/, 'usage';
+    throws_ok { $api->run('--apibase', '/foo/bar') } qr/Usage: openqa-cli api/, 'usage';
     is $api->apibase, '/foo/bar', 'apibase';
 
-    eval { $api->run(@auth) };
-    like $@, qr/Usage: openqa-cli api/, 'usage';
+    throws_ok { $api->run(@auth) } qr/Usage: openqa-cli api/, 'usage';
     is $api->apikey, 'ARTHURKEY01', 'apikey';
     is $api->apisecret, 'EXCALIBUR', 'apisecret';
 };
@@ -123,9 +116,8 @@ subtest 'Client' => sub {
 subtest 'Unknown options' => sub {
     my $api = OpenQA::CLI::api->new;
     like warning {
-        eval { $api->run('--unknown') }
+        throws_ok { $api->run('--unknown') } qr/Usage: openqa-cli api/, 'unknown option';
     }, qr/Unknown option/, 'warning about unknown option';
-    like $@, qr/Usage: openqa-cli api/, 'unknown option';
 };
 
 subtest 'Simple request with authentication' => sub {

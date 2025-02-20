@@ -47,9 +47,8 @@ $app->config->{'scm git'}->{git_auto_update} = 'no';
 combined_like { OpenQA::CLI->new->run('help', 'schedule') } qr/Usage: openqa-cli schedule/, 'help';
 subtest 'unknown options' => sub {
     like warning {
-        eval { $schedule->run('--unknown') }
+        throws_ok { $schedule->run('--unknown') } qr/Usage: openqa-cli schedule/, 'unknown option';
     }, qr/Unknown option: unknown/, 'right output';
-    like $@, qr/Usage: openqa-cli schedule/, 'unknown option';
 };
 
 # define different sets of CLI args to be used in further tests

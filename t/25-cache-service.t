@@ -214,11 +214,8 @@ subtest 'Cache Requests' => sub {
     is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)], 'asset request array';
 
     my $base = OpenQA::CacheService::Request->new;
-    local $@;
-    eval { $base->lock };
-    like $@, qr/lock\(\) not implemented in OpenQA::CacheService::Request/, 'lock() not implemented in base request';
-    eval { $base->to_array };
-    like $@, qr/to_array\(\) not implemented in OpenQA::CacheService::Request/,
+    throws_ok { $base->lock } qr/lock\(\) not implemented in OpenQA::CacheService::Request/, 'lock() not implemented in base request';
+    throws_ok { $base->to_array } qr/to_array\(\) not implemented in OpenQA::CacheService::Request/,
       'to_array() not implemented in base request';
 };
 
