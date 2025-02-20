@@ -19,6 +19,7 @@ use OpenQA::Test::Utils qw(assume_all_assets_exist shared_hash prepare_clean_nee
 use Cwd 'abs_path';
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
+use Mojo::Util 'sha1_sum';
 use Date::Format 'time2str';
 use POSIX 'strftime';
 
@@ -270,7 +271,11 @@ sub check_flash_for_saving_logpackages {
     $driver->find_element('#flash-messages .btn-close')->click();
 }
 
-
+# put oddly sized png in place for the needle inst-timezone-text to be able to verify it was correctly loaded
+my $src_dir = path('t/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde');
+my $src_needle = $src_dir->child('reboot_after_install-1-reboot_after_install-131M4-diff2.png');
+my $src_needle_sha = sha1_sum $src_needle->slurp;
+$src_needle->copy_to($dir->child('inst-timezone-text.png'));
 
 # the actual test starts here
 
@@ -328,12 +333,36 @@ subtest 'Needle editor layout' => sub {
     is @{decode_utf8_json(element_prop('needleeditor_textarea'))->{area}}, 2, 'exclude areas always present';
     $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
     is @{decode_utf8_json(element_prop('needleeditor_textarea'))->{area}}, 2, 'no duplicated exclude areas present';
+
+    # select needle to take image from
+    $driver->execute_script("document.getElementById('image_select').selectedIndex = 1; loadBackground();");
+    is element_prop('image_select'), 'inst-timezone-text', 'selected needle to take image from';
+    sleep 0.01 until $driver->execute_script('return nEditor.bgImage.complete;');
+    my $size = $driver->execute_script('return [nEditor.bgImage.naturalWidth, nEditor.bgImage.naturalHeight];');
+    is_deeply $size, [444, 189], 'correct image for needle was loaded into canvas after selecting it';
 };
 
 my $needlename = 'test-newneedle';
+my $needlename_from_candidate = "$needlename-from-candidate";
 my $xoffset = my $yoffset = 200;
 
 subtest 'Create new needle' => sub {
+    subtest 'create needle based on existing needle image' => sub {
+        # check needle name input
+        $driver->find_element_by_id('needleeditor_name')->clear();
+        is element_prop('needleeditor_name'), '', 'needle name input clean up';
+        $driver->find_element_by_id('needleeditor_name')->send_keys($needlename_from_candidate);
+        is element_prop('needleeditor_name'), $needlename_from_candidate, 'new needle name inputed (1)';
+
+        $driver->find_element_by_id('save')->click();
+        wait_for_ajax(with_minion => $minion);
+
+        my $png_from_candidate = path("$dir/$needlename_from_candidate.png");
+        ok -f "$dir/$needlename_from_candidate.json", "$needlename_from_candidate.json created";
+        ok -f $png_from_candidate, "$needlename_from_candidate.png created";
+        is sha1_sum($png_from_candidate->slurp), $src_needle_sha, 'needle created based on selected candidate';
+    };
+
     subtest 'invalid needle tag is rejected' => sub {
         $elem = $driver->find_element_by_id('newtag');
         $elem->send_keys('123');
@@ -350,9 +379,11 @@ subtest 'Create new needle' => sub {
 
     # check needle name input
     $driver->find_element_by_id('needleeditor_name')->clear();
-    is element_prop('needleeditor_name'), '', 'needle name input clean up';
     $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
-    is element_prop('needleeditor_name'), $needlename, 'new needle name inputed';
+    is element_prop('needleeditor_name'), $needlename, 'new needle name inputed (2)';
+
+    # select screenshot to take image from
+    $driver->execute_script("document.getElementById('image_select').selectedIndex = 0; loadBackground();");
 
     # select 'Copy areas from: None'
     $driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
@@ -480,12 +511,10 @@ sub assert_needle_appears_in_selection {
 subtest 'New needle instantly visible after reloading needle editor' => sub {
     goto_editor_for_installer_timezone();
 
-    is(
-        $driver->find_element('#editor_warnings span')->get_text(),
-        "A new needle with matching tags has been created since the job started: $needlename.json"
-          . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)',
-        'warning about new needle displayed'
-    );
+    my $warnings = $driver->find_element('#editor_warnings span')->get_text;
+    my $exp_msg = 'new needle with matching tags has been created since the job started';
+    like $warnings, qr/$exp_msg: $needlename\.json.*ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag/, 'warning about new needle displayed (1)';
+    like $warnings, qr/$exp_msg: $needlename_from_candidate\.json.*ENV-VIDEOMODE-text, inst-timezone/, 'warning about new needle displayed (2)';
 
     my $based_on_option = assert_needle_appears_in_selection('tags_select', $needlename);
     my $image_option = assert_needle_appears_in_selection('image_select', $needlename);
