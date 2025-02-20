@@ -825,6 +825,16 @@ subtest 'get job status' => sub {
       ->json_is('/error_status' => 404, 'Status code correct')->json_is('/error' => 'Job does not exist');
 };
 
+subtest 'validation of test name' => sub {
+    my @disallowed = ('spam@eggs', 'spam:eggs');
+    my @allowed = ('spam.eggs', 'spam+eggs');
+    $t->post_ok('/api/v1/jobs', form => {TEST => $_})->status_is(400, "test name $_ disallowed") for @disallowed;
+    $t->json_is('/error' => 'The following settings are invalid: TEST', 'error for invalid test name returned');
+    $t->post_ok('/api/v1/jobs', form => {TEST => $_})->status_is(200, "test name $_ allowed") for @allowed;
+    is $jobs->search({TEST => {-in => \@disallowed}})->count, 0, 'no jobs with disallowed names created';
+    is $jobs->search({TEST => {-in => \@allowed}})->count, @allowed, 'all jobs with allowed names created';
+};
+
 subtest 'cancel job' => sub {
     $t->post_ok('/api/v1/jobs/99963/cancel')->status_is(200);
     is_deeply(

@@ -6,6 +6,9 @@ use Mojo::Base -base, -signatures;
 
 use Exporter 'import';
 
+# define regex for validating test names in accordance with `JobScenarios-01.yaml` and `JobTemplates-01.yaml`
+use constant TEST_NAME_REGEX => qr/^[A-Za-z\s0-9_*.+-]+$/;
+
 # job states
 use constant {
     # initial job state; the job is supposed to be assigned to a worker by the scheduler
@@ -103,6 +106,7 @@ use constant DEFAULT_JOB_PRIORITY => 50;
 use constant TAG_ID_COLUMN => "concat(VERSION, '-', BUILD)";
 
 our @EXPORT = qw(
+  TEST_NAME_REGEX
   ASSIGNED
   CANCELLED
   COMPLETE_RESULTS
