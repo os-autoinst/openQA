@@ -1,0 +1,3 @@
+#!/bin/sh -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Enqueue openQA needle ref cleanup" && exit
+exec "$(dirname "$0")"/openqa eval -m production -V 'app->gru->enqueue(limit_temp_needle_refs => [], {priority => 5, ttl => 172800, limit => 1})' "$@"

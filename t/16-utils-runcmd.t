@@ -92,6 +92,36 @@ subtest 'invoke Git commands for real testing error handling' => sub {
           qr/\[info\].*cmd returned 1\n/i,
           'no error (only info) logged if check returns false (despite Git returning 1)';
     };
+
+    subtest 'cache_ref' => sub {
+        my $test_file = $empty_tmp_dir->child('foo')->touch;
+        my $test_file_2 = "$empty_tmp_dir/bar";
+        is $git->cache_ref('HEAD', undef, 'foo', $test_file),
+          undef, 'return undef if output file already exists and could be touched';
+        is $git->cache_ref('HEAD', undef, 'foo', $test_file_2), undef, 'checkout file with ref';
+        ok -f $test_file_2, 'checkout succeeded';
+
+        # and now with remote other than origin
+        my $git_remote_dir = tempdir;
+        note qx{rmdir "$git_remote_dir"};
+        note qx{cp -a "$empty_tmp_dir/" "$git_remote_dir"};
+        note qx{rm "$empty_tmp_dir/.git" -rf};
+        note qx{git -C "$empty_tmp_dir" init};
+        my $test_file_3 = "$empty_tmp_dir/baz";
+        my $ref = qx{git -C "$git_remote_dir" rev-parse HEAD};
+        chomp $ref;
+        is($git->cache_ref($ref, "file://$git_remote_dir/.git", 'foo', $test_file_3),
+            undef, 'checkout file from remote origin with ref');
+        ok -f $test_file_3, 'checkout succeeded';
+
+        my $test_file_4 = "$empty_tmp_dir/barinus";
+        like(
+            $git->cache_ref($ref, "file://$git_remote_dir/.git", 'bar', $test_file_4),
+            qr"Unable to cache Git ref .* 'bar' exists on disk, but not in",
+            'checking out non existing file fails'
+        );
+        ok !-f $test_file_4, 'task failed successfuly';
+    };
 };
 
 # setup mocking

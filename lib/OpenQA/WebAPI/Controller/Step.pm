@@ -1,6 +1,28 @@
 # Copyright 2014-2021 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+=head1 NAME
+
+OpenQA::WebAPI::Controller::Step - Handles test step rendering in openQA.
+
+=head1 SYNOPSIS
+
+    use OpenQA::WebAPI::Controller::Step;
+
+    # Example usage inside a Mojolicious route
+    my $controller = OpenQA::WebAPI::Controller::Step->new;
+    $controller->view();
+
+=head1 DESCRIPTION
+
+This module is a Mojolicious controller responsible for:
+- Fetching and displaying test steps: screenshots, text logs and audio.
+- Handling needle matching for openQA tests.
+- Managing Git-based needle storage and retrieval.
+- Providing AJAX responses for web-based test analysis.
+
+=cut
+
 package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
@@ -9,7 +31,9 @@ use Encode 'decode_utf8';
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'decode';
-use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number locate_needle needledir testcasedir);
+use OpenQA::Needles qw(needle_temp_dir locate_needle);
+use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number needledir testcasedir
+  run_cmd_with_log run_cmd_with_log_return_error);
 use OpenQA::Jobs::Constants;
 use File::Basename;
 use File::Which 'which';
@@ -20,6 +44,7 @@ sub _init ($self) {
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     my %attrs = (rows => 1, order_by => {-desc => 'id'});
     my $module = $job->modules->find({name => $self->param('moduleid')}, \%attrs) or return 0;
+
     $self->stash(job => $job);
     $self->stash(testname => $job->name);
     $self->stash(distri => $job->DISTRI);
@@ -89,6 +114,17 @@ sub view ($self) {
     return $self->render('step/viewaudio') if $tabmode eq 'audio';
     return $self->render('step/viewtext') if $tabmode eq 'text';
     $self->viewimg;
+}
+
+sub _get_needles_ref_and_url ($self, $job) {
+    # Return tuple of git ref hash and url of needles or undef on error.
+    return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
+    my $json_path = path($job->result_dir, 'vars.json');
+    my $vars = defined $job->result_dir && -e $json_path ? decode_json($json_path->slurp) : undef;
+    my $needles_ref = ($vars // {})->{NEEDLES_GIT_HASH};
+    my $needles_url = ($vars // {})->{NEEDLES_GIT_URL};
+    return undef unless $needles_ref;
+    return ($needles_ref, $needles_url);
 }
 
 # Needle editor
@@ -274,9 +310,14 @@ sub _new_screenshot ($self, $tags, $image_name, $matches = undef) {
     return \%screenshot;
 }
 
-sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_dir) {
+sub _basic_needle_info (
+    $self, $name, $distri, $version, $file_name, $needles_dir,
+    $needle_ref = undef,
+    $needle_url = undef
+  )
+{
     $file_name //= "$name.json";
-    $file_name = locate_needle($file_name, $needles_dir) if !-f $file_name;
+    $file_name = locate_needle($file_name, $needles_dir, $needle_ref, $needle_url) if !-f $file_name;
     return (undef, 'File not found') unless defined $file_name;
 
     my $needle;
@@ -288,7 +329,7 @@ sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_di
 
     $needle->{needledir} = $needles_dir;
     $needle->{image} = $pngfile;
-    $needle->{json} = $file_name;
+    $needle->{json} = "$file_name";
     $needle->{name} = $name;
     $needle->{distri} = $distri;
     $needle->{version} = $version;
@@ -303,11 +344,16 @@ sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_di
     return ($needle, undef);
 }
 
-sub _extended_needle_info ($self, $needle_dir, $needle_name, $basic_needle_data, $file_name, $error, $error_messages) {
+sub _extended_needle_info (
+    $self, $needle_dir, $needle_name, $basic_needle_data, $file_name,
+    $error, $error_messages, $needle_ref = undef, $needle_url = undef
+  )
+{
     my $overall_list_of_tags = $basic_needle_data->{tags};
     my $distri = $basic_needle_data->{distri};
     my $version = $basic_needle_data->{version};
-    my ($needle_info, $err) = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir);
+    my ($needle_info, $err)
+      = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir, $needle_ref, $needle_url);
     unless (defined $needle_info) {
         push(@$error_messages, "Could not parse needle $needle_name for $distri $version: $err");
         return undef;
@@ -467,6 +513,7 @@ sub viewimg ($self) {
     my $distri = $job->DISTRI;
     my $dversion = $job->VERSION || '';
     my $needle_dir = $job->needle_dir;
+    my ($needle_ref, $needle_url) = $self->_get_needles_ref_and_url($job);
     my $real_needle_dir = realpath($needle_dir) // $needle_dir;
     my $needles_rs = $self->app->schema->resultset('Needles');
 
@@ -502,7 +549,8 @@ sub viewimg ($self) {
     # load primary needle match
     my $primary_match;
     if (my $needle = $module_detail->{needle}) {
-        my ($needleinfo) = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json}, $needle_dir);
+        my ($needleinfo) = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json},
+            $needle_dir, $needle_ref, $needle_url);
         if ($needleinfo) {
             my $info = {
                 name => $needle,
@@ -524,7 +572,9 @@ sub viewimg ($self) {
     if ($module_detail->{needles}) {
         for my $needle (@{$module_detail->{needles}}) {
             my $needlename = $needle->{name};
-            my ($needleinfo) = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir);
+            my ($needleinfo)
+              = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir, $needle_ref,
+                $needle_url);
             next unless $needleinfo;
             my $info = {
                 name => $needlename,
