@@ -206,10 +206,7 @@ use Scalar::Util qw(looks_like_number);
 my %options;
 my $jobid;
 
-sub usage ($r) {
-    eval { require Pod::Usage; Pod::Usage::pod2usage(-exitval => $r, -verbose => 99) };
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
-}
+sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 sub parse_options () {
     GetOptions(

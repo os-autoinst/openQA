@@ -94,10 +94,7 @@ use OpenQA::Log 'log_info';
 
 my %options;
 
-sub usage ($r) {
-    eval "use Pod::Usage; pod2usage($r);";
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
-}
+sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 GetOptions(
     \%options, "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s",

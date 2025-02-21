@@ -162,10 +162,7 @@ Getopt::Long::Configure("no_ignore_case");
 
 my %options;
 
-sub usage ($r) {
-    eval { require Pod::Usage; Pod::Usage::pod2usage($r); };
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
-}
+sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 GetOptions(
     \%options, 'host=s', 'apibase=s', 'json-output',

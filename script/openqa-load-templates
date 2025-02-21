@@ -69,10 +69,7 @@ Getopt::Long::Configure("no_ignore_case");
 
 my %options;
 
-sub usage ($r) {
-    eval "use Pod::Usage; pod2usage($r);";
-    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
-}
+sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 GetOptions(\%options, "apibase=s", "apikey=s", "apisecret=s", "clean", "host=s", "update", "help|h",) or usage(1);
 
