@@ -7,7 +7,7 @@ use Mojo::Base -base, -signatures;
 use Exporter 'import';
 
 # define regex for validating test names in accordance with `JobScenarios-01.yaml` and `JobTemplates-01.yaml`
-use constant TEST_NAME_REGEX => qr/^[A-Za-z\s0-9_*.+-]+$/;
+use constant TEST_NAME_REGEX => qr/^[A-Za-z 0-9_*.+-]+$/;
 
 # job states
 use constant {

@@ -34,7 +34,7 @@ properties:
                   description: A test suite with machine and/or priority value specified, or a custom job template name if testsuite was specified
                   additionalProperties: false
                   patternProperties:
-                    &testsuite-pattern ^[A-Za-z\s0-9_*.+-]+$:
+                    &testsuite-pattern ^[A-Za-z 0-9_*.+-]+$:
                       type: object
                       additionalProperties: false
                       properties:
