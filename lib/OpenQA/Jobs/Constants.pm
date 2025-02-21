@@ -7,7 +7,9 @@ use Mojo::Base -base, -signatures;
 use Exporter 'import';
 
 # define regex for validating test names in accordance with `JobScenarios-01.yaml` and `JobTemplates-01.yaml`
-use constant TEST_NAME_REGEX => qr/^[A-Za-z 0-9_*.+-]+$/;
+# note: In contrast to the YAML schema a few more characters are allowed here as they are useful for manually
+#       triggered jobs, e.g. via `openqa-clone-custom-git-refspec`.
+use constant TEST_NAME_REGEX => qr|^[A-Za-z 0-9_*.+,:/#@%"'-]+$|;
 
 # job states
 use constant {
