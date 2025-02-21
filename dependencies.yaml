@@ -84,7 +84,7 @@ devel_no_selenium_requires:
   sudo:
   tar:
   xorg-x11-fonts:
-  perl(Perl::Tidy): '== 20250105.0.0'
+  perl(Perl::Tidy): '== 20250214.0.0'
 
 devel_requires:
   '%devel_no_selenium_requires':
