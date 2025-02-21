@@ -826,7 +826,7 @@ subtest 'get job status' => sub {
 };
 
 subtest 'validation of test name' => sub {
-    my @disallowed = ('spam=eggs', "spam\teggs");
+    my @disallowed = ('spam=eggs', "spam\teggs", "spam\neggs", "spam eggs\n");
     my @allowed = ('spam.eggs', 'spam+eggs', 'spam:"eggs"', 'spam@eggs', "spam 'eggs'");
     $t->post_ok('/api/v1/jobs', form => {TEST => $_})->status_is(400, "test name $_ disallowed") for @disallowed;
     $t->json_is('/error' => 'The following settings are invalid: TEST', 'error for invalid test name returned');
