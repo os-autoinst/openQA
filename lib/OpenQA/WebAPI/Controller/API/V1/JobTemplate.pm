@@ -3,7 +3,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
-use Try::Tiny;
+use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::YAML qw(load_yaml dump_yaml);
 use List::Util qw(min);
@@ -247,10 +247,10 @@ sub update ($self) {
         $user_errors
           = $self->app->validate_yaml($data, $validation->param('schema'), $self->app->log->level eq 'debug');
     }
-    catch {
+    catch ($e) {
         # Push the exception to the list of errors without the trailing new line
-        push @$user_errors, substr($_, 0, -1);
-    };
+        push @$user_errors, substr($e, 0, -1);
+    }
     return $self->respond_to(json => {json => {error => $user_errors}, status => 400}) if @$user_errors;
 
     my $schema = $self->schema;
@@ -258,40 +258,43 @@ sub update ($self) {
     my $json = {};
     my @server_errors;
     try {
-        my $id = $self->param('id');
-        my $name = $validation->param('name');
-        my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
-            {select => [qw(id name template)]});
-        return push @$user_errors, 'Job group ' . ($name // $id) . ' not found' unless $job_group;
-        my $group_id = $job_group->id;
-        $json->{job_group_id} = $group_id;
-        # Backwards compatibility: ID used to mean group ID on this route
-        $json->{id} = $group_id;
+        {    # extra block for early returns via "last"
+            my $id = $self->param('id');
+            my $name = $validation->param('name');
+            my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
+                {select => [qw(id name template)]});
+            push @$user_errors, 'Job group ' . ($name // $id) . ' not found' && last unless $job_group;
+            my $group_id = $job_group->id;
+            $json->{job_group_id} = $group_id;
+            # Backwards compatibility: ID used to mean group ID on this route
+            $json->{id} = $group_id;
 
-        if (my $reference = $validation->param('reference')) {
-            my $template = $job_group->to_yaml;
-            $json->{template} = $template;
-            # Compare with no regard for trailing whitespace
-            chomp $template;
-            chomp $reference;
-            return push @$user_errors, 'Template was modified' unless $template eq $reference;
-        }
+            if (my $reference = $validation->param('reference')) {
+                my $template = $job_group->to_yaml;
+                $json->{template} = $template;
+                # Compare with no regard for trailing whitespace
+                chomp $template;
+                chomp $reference;
+                push @$user_errors, 'Template was modified' and last unless $template eq $reference;
+            }
 
-        my $job_template_names = $job_group->template_data_from_yaml($data);
-        return push @$user_errors, $job_template_names->{error} if $job_template_names->{error};
-        if ($validation->param('expand')) {
-            # Preview mode: Get the expected YAML without changing the database
-            $json->{result} = $job_group->expand_yaml($job_template_names);
+            my $job_template_names = $job_group->template_data_from_yaml($data);
+            push @$user_errors, $job_template_names->{error} and last if $job_template_names->{error};
+            if ($validation->param('expand')) {
+                # Preview mode: Get the expected YAML without changing the database
+                $json->{result} = $job_group->expand_yaml($job_template_names);
+            }
+
+            $schema->txn_do(
+                sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml) });
         }
-        $schema->txn_do(
-            sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml) });
     }
-    catch {
+    catch ($e) {
         # Push the exception to the list of errors without the trailing new line
-        my $error = substr($_, 0, -1);
+        my $error = substr($e, 0, -1);
         my $error_type = ($error =~ qr/unique constraint/) ? $user_errors : \@server_errors;
         push @$error_type, $error unless $error eq 'abort transaction';
-    };
+    }
 
     if (@server_errors) {
         push @$user_errors, 'Internal server error occurred';
