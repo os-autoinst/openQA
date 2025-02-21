@@ -35,8 +35,8 @@ $app->log->level('info');
 
 throws_ok {
     OpenQA::Worker::WebUIConnection->new('http://test-host', {});
-} qr{API key and secret are needed for the worker connecting http://test-host.*},
-  'auth required';
+}
+qr{API key and secret are needed for the worker connecting http://test-host.*}, 'auth required';
 
 my $client = OpenQA::Worker::WebUIConnection->new(
     'http://test-host',

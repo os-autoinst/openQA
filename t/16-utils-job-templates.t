@@ -28,7 +28,8 @@ my $template = {
 };
 my $errors = validate_data(%default_args, data => $template,);
 is scalar @$errors, 0, "Empty template - no errors";
-throws_ok { validate_data(schema_file => $invalid_schema, data => $template) } qr{JSON::Validator}, "Invalid schema file";
+throws_ok { validate_data(schema_file => $invalid_schema, data => $template) } qr{JSON::Validator},
+  "Invalid schema file";
 
 $errors = validate_data(schema_file => 'does-not-exist', data => $template);
 is scalar @$errors, 1, "non-existent schema file error" or diag "Error: $_" for @$errors;

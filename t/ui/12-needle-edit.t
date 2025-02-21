@@ -513,8 +513,10 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
 
     my $warnings = $driver->find_element('#editor_warnings span')->get_text;
     my $exp_msg = 'new needle with matching tags has been created since the job started';
-    like $warnings, qr/$exp_msg: $needlename\.json.*ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag/, 'warning about new needle displayed (1)';
-    like $warnings, qr/$exp_msg: $needlename_from_candidate\.json.*ENV-VIDEOMODE-text, inst-timezone/, 'warning about new needle displayed (2)';
+    like $warnings, qr/$exp_msg: $needlename\.json.*ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag/,
+      'warning about new needle displayed (1)';
+    like $warnings, qr/$exp_msg: $needlename_from_candidate\.json.*ENV-VIDEOMODE-text, inst-timezone/,
+      'warning about new needle displayed (2)';
 
     my $based_on_option = assert_needle_appears_in_selection('tags_select', $needlename);
     my $image_option = assert_needle_appears_in_selection('image_select', $needlename);
@@ -562,7 +564,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
         # add expected warnings and needle names for needle
         if ($i >= 2) {
             unshift(@expected_needle_warnings,
-                "A new needle with matching tags has been created since the job started: $new_needle_name.json"
+                    "A new needle with matching tags has been created since the job started: $new_needle_name.json"
                   . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)');
             splice(@expected_needle_names, 2, 0, 'new: ' . $new_needle_name);
         }
@@ -636,7 +638,7 @@ subtest 'open needle editor for running test' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->ua->max_redirects(1);
     warnings { $t->get_ok('/tests/99980/edit') };
-    note('ignoring warning "DateTime objects passed to search() are not supported properly"'
+    note(   'ignoring warning "DateTime objects passed to search() are not supported properly"'
           . ' at lib/OpenQA/WebAPI/Controller/Step.pm line 211');
     $t->status_is(200);
     $t->text_is(title => 'openQA: Needle Editor', 'needle editor shown for running test');

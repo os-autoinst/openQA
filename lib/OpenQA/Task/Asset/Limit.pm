@@ -117,7 +117,7 @@ sub _limit {
             my $age_in_days = $age->delta_days($now)->in_units('days');
             if ($age_in_days >= $limit_in_days) {
                 _remove_if($schema, $asset,
-                    "Removing asset $asset_name (not in any group, age "
+                        "Removing asset $asset_name (not in any group, age "
                       . "($age_in_days days) exceeds limit ($limit_in_days days)");
             }
             else {

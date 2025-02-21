@@ -402,7 +402,8 @@ sub _schedule_iso {
             sub {
                 $self->_create_jobs_in_database($jobs, \@failed_job_info, $skip_chained_deps, $include_children,
                     \@successful_job_ids);
-            }, sub { (@successful_job_ids, @failed_job_info) = () });
+            },
+            sub { (@successful_job_ids, @failed_job_info) = () });
     }
     catch {
         my $error = shift;
@@ -763,7 +764,7 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
             next unless defined $products;
             next unless my $product = $products->{$product_name};
             next
-              if ($product->{distri} ne _distri_key($args)
+              if ( $product->{distri} ne _distri_key($args)
                 || $product->{flavor} ne $args->{FLAVOR}
                 || ($product->{version} ne '*' && $product->{version} ne $args->{VERSION})
                 || $product->{arch} ne $args->{ARCH});

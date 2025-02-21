@@ -441,12 +441,13 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
 subtest 'auth with lwp' => sub {
     note 'config path: ' . ($ENV{OPENQA_CONFIG} = "$FindBin::Bin/data");
     my $ua = OpenQA::Script::CloneJob::create_lwp_user_agent('testapi', {});
-    $ua->add_handler(request_send => sub ($request, $ua, $handler) {
+    $ua->add_handler(
+        request_send => sub ($request, $ua, $handler) {
             ok looks_like_number($request->header('X-API-Microtime')), 'microtime set';
             is $request->header('X-API-Key'), 'PERCIVALKEY02', 'api key set';
             is length($request->header('X-API-Hash')), 40, 'hash set';
             return HTTP::Response->new(200);    # terminate the processing
-    });
+        });
     $ua->get('http://foobar/some/path');
 };
 

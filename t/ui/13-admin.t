@@ -509,7 +509,8 @@ subtest 'edit job templates' => sub() {
     # Expansion
     $driver->find_element_by_id('expand-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Result of expanding the YAML/, 'expansion shown') or always_explain $result->get_text();
+    like($result->get_text(), qr/Result of expanding the YAML/, 'expansion shown')
+      or always_explain $result->get_text();
     like($result->get_text(), qr/settings: \{\}/, 'expanded YAML has empty settings')
       or always_explain $result->get_text();
     unlike($result->get_text(), qr/defaults:/, 'expanded YAML has no defaults')
@@ -549,7 +550,8 @@ subtest 'edit job templates' => sub() {
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/, 'saved, nothing changed') or always_explain $result->get_text();
+    like($result->get_text(), qr/No changes were made!/, 'saved, nothing changed')
+      or always_explain $result->get_text();
 
     # Legacy UI is hidden and no longer available
     ok($driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden');

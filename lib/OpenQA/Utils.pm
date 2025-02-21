@@ -339,10 +339,18 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
         my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, \$stdout, \$stderr);
         my $error_code = $?;
         my $return_code = ($error_code & 127) ? (undef) : ($error_code >> 8);
-        my $message = defined $return_code ? ("cmd returned $return_code") : sprintf('cmd died with signal %d', $error_code & 127);
+        my $message
+          = defined $return_code
+          ? ("cmd returned $return_code")
+          : sprintf('cmd died with signal %d', $error_code & 127);
         my $expected_return_codes = $args{expected_return_codes};
         chomp $stderr;
-        if ($expected_return_codes ? (defined($return_code) && $expected_return_codes->{$return_code}) : $ipc_run_succeeded) {
+        if (
+            $expected_return_codes
+            ? (defined($return_code) && $expected_return_codes->{$return_code})
+            : $ipc_run_succeeded
+          )
+        {
             OpenQA::Log->can("log_$stdout_level")->($stdout);
             OpenQA::Log->can("log_$stderr_level")->($stderr);
             log_info $message;

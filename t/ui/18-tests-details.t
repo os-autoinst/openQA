@@ -101,7 +101,7 @@ sub find_candidate_needles {
 
             is(scalar @needle_parts, 3, 'exactly three parts per needle present (percentage, name, diff buttons)');
             push(@needles,
-                OpenQA::Test::Case::trim_whitespace($needle_parts[0]->get_text()) . '%: '
+                    OpenQA::Test::Case::trim_whitespace($needle_parts[0]->get_text()) . '%: '
                   . OpenQA::Test::Case::trim_whitespace($needle_parts[1]->get_text()));
         }
 

@@ -79,7 +79,8 @@ sub _run_engine ($job) {
 subtest 'isotovideo version' => sub {
     throws_ok {
         OpenQA::Worker::Engines::isotovideo::set_engine_exec('/bogus/location');
-    } qr{Path to isotovideo invalid}, 'isotovideo version path invalid';
+    }
+    qr{Path to isotovideo invalid}, 'isotovideo version path invalid';
 
     # init does not fail without isotovideo parameter
     # note that this might set the isotovideo version because the isotovideo path defaults

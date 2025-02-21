@@ -938,7 +938,7 @@ subtest 'Create and modify groups with YAML' => sub {
         $t->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
                 error => [
-                    'Job template name \'foobar\' is defined more than once. '
+                        'Job template name \'foobar\' is defined more than once. '
                       . 'Use a unique name and specify \'testsuite\' to reuse test suites in multiple scenarios.'
                 ],
                 error_status => 400,

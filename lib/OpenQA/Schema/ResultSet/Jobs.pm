@@ -350,7 +350,14 @@ sub complex_query ($self, %args) {
     return $jobs;
 }
 
-sub cancel_by_settings ($self, $settings, $newbuild = undef, $deprioritize = undef, $deprio_limit = undef, $related_scheduled_product = undef) {
+sub cancel_by_settings (
+    $self, $settings,
+    $newbuild = undef,
+    $deprioritize = undef,
+    $deprio_limit = undef,
+    $related_scheduled_product = undef
+  )
+{
     $deprio_limit //= 100;
     my $rsource = $self->result_source;
     my $schema = $rsource->schema;
@@ -395,7 +402,8 @@ sub cancel_by_settings ($self, $settings, $newbuild = undef, $deprioritize = und
     my $cancelled_jobs = 0;
     my $priority_increment = 10;
     my $job_result = $newbuild ? OBSOLETED : USER_CANCELLED;
-    my $reason = $related_scheduled_product
+    my $reason
+      = $related_scheduled_product
       ? 'cancelled by scheduled product ' . $related_scheduled_product->id
       : 'cancelled based on job settings';
     my $cancel_or_deprioritize = sub ($job) {

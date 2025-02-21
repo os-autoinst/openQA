@@ -1189,7 +1189,8 @@ subtest 'parallel siblings of running jobs are allocated' => sub {
         $scheduled_jobs{99998}->{matching_workers} = [$relevant_worker];
         combined_like {
             $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers)
-        } qr/Cannot assign job 99998 on 7, cluster already runs on host host$/, 'debug message logged';
+        }
+        qr/Cannot assign job 99998 on 7, cluster already runs on host host$/, 'debug message logged';
         ok !exists $allocated_jobs->{99998}, 'job 99998 not allocated' or always_explain $allocated_jobs;
         # pretend that the already running job has the PARALLEL_ONE_HOST_ONLY worker property property set
         $relevant_worker->set_property(PARALLEL_ONE_HOST_ONLY => 0);
@@ -1198,7 +1199,8 @@ subtest 'parallel siblings of running jobs are allocated' => sub {
         $job_99999->update({assigned_worker_id => $worker_on_different_host_id_2});
         combined_like {
             $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers)
-        } qr/Cannot assign job 99998 on 7, cluster already runs on host host3$/, 'debug message logged again';
+        }
+        qr/Cannot assign job 99998 on 7, cluster already runs on host host3$/, 'debug message logged again';
         ok !exists $allocated_jobs->{99998}, 'job 99998 still not allocated' or always_explain $allocated_jobs;
         is @{$scheduled_jobs{99998}->{matching_workers}}, 0, 'matching workers of relevant job emptied';
         is @{$scheduled_jobs{99997}->{matching_workers}}, 13, 'matching workers of other job still populated';

@@ -11,6 +11,4 @@
 -bt=2    # no spaces around []
 -sbt=2   # no spaces around {}
 -sct     # stack closing tokens )}
-# Prevent excessive line-wrapping
-# See https://github.com/perltidy/perltidy/issues/171
---freeze-newlines
+--pack-operator-types='->' # allow chained method calls on one line

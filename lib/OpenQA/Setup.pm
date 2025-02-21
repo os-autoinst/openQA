@@ -35,7 +35,8 @@ sub _read_config_file ($config, $config_file, $defaults, $mode_defaults) {
             }
         }
         for my $k (@known_keys) {
-            my $v = $config_file
+            my $v
+              = $config_file
               ? ($config_file->val($section, $k))
               : ($mode_defaults->{$section}->{$k} // $section_defaults->{$k});
             $config->{$section}->{$k} //= trim $v if defined $v;

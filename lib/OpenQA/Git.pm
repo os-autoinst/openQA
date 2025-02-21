@@ -104,7 +104,8 @@ sub commit ($self, $args = undef) {
 
         my $msg = 'Unable to push Git commit';
         if ($res->{return_code} == 128 and $res->{stderr} =~ m/Authentication failed for .http/) {
-            $msg .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
+            $msg
+              .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
         }
         return $self->_format_git_error($res, $msg);
     }

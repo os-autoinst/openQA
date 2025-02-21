@@ -273,8 +273,7 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
     is $job->status, 'accepting', 'job is now being accepted';
     $job->stop_if_out_of_acceptance_attempts;
     is $job->status, 'stopped', 'job is abandoned if unable to confirm to the web UI that we are working on it';
-    throws_ok { $job->start } qr/attempt to start job which is not accepted/,
-      'starting job prevented unless accepted';
+    throws_ok { $job->start } qr/attempt to start job which is not accepted/, 'starting job prevented unless accepted';
 
     is_deeply(
         $client->websocket_connection->sent_messages,
@@ -286,8 +285,7 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
 
 subtest 'Job without id' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => undef, URL => $engine_url});
-    throws_ok { $job->start } qr/attempt to start job without ID and job info/,
-      'starting job without id prevented';
+    throws_ok { $job->start } qr/attempt to start job without ID and job info/, 'starting job without id prevented';
 };
 
 subtest 'Clean up pool directory' => sub {

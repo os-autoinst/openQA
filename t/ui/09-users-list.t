@@ -46,7 +46,10 @@ $t->get_ok('/admin/users')->status_is(200)->content_like(qr/User lance updated/)
 is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '11');
 
 # try something with a non existent user
-$t->post_ok('/admin/users/999021111', {'X-CSRF-Token' => $token, Accept => 'application/json'}, form => {role => 'admin'})->status_is(404)->json_is('/error', "Can't find that user");
+$t->post_ok(
+    '/admin/users/999021111',
+    {'X-CSRF-Token' => $token, Accept => 'application/json'},
+    form => {role => 'admin'})->status_is(404)->json_is('/error', "Can't find that user");
 
 # We can even update both fields in one request
 $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role => 'operator'})->status_is(302);
