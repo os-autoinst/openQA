@@ -144,15 +144,18 @@ subtest 'Parser base class object' => sub {
     my $meant_to_fail = OpenQA::Parser->new;
     throws_ok { $meant_to_fail->parse() } qr/parse\(\) not implemented by base class/, 'Base class does not parse data';
     throws_ok { $meant_to_fail->load() } qr/You need to specify a file/, 'load croaks if no file is specified';
-    throws_ok { $meant_to_fail->load('thiswontexist') } qr/Can't open file \"thiswontexist\"/, 'load confesses if file is invalid';
+    throws_ok { $meant_to_fail->load('thiswontexist') } qr/Can't open file \"thiswontexist\"/,
+      'load confesses if file is invalid';
 
     use Mojo::File 'tempfile';
     my $tmp = tempfile;
     throws_ok { $meant_to_fail->load($tmp) } qr/Failed reading file $tmp/, 'load confesses if file is invalid';
 
     my $good_parser = parser('Base');
-    throws_ok { $good_parser->write_output() } qr/You need to specify a directory/, 'write_output needs a directory as argument';
-    throws_ok { $good_parser->write_test_result() } qr/You need to specify a directory/, 'write_test_result needs a directory as argument';
+    throws_ok { $good_parser->write_output() } qr/You need to specify a directory/,
+      'write_output needs a directory as argument';
+    throws_ok { $good_parser->write_test_result() } qr/You need to specify a directory/,
+      'write_test_result needs a directory as argument';
 
     $good_parser->results->add({foo => 1});
     is $good_parser->results->size, 1;
@@ -899,8 +902,7 @@ subtest functional_interface => sub {
     {
         package OpenQA::Parser::Format::Broken;    # uncoverable statement
         sub new { die 'boo' }
-    }
-    ;
+    };
     throws_ok { p("Broken") } qr/Invalid parser supplied: boo/, 'Croaked correctly';
 
     my $default = p();

@@ -582,7 +582,8 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/);
         my $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
-        ok $options_state->[1]->[0], 'selection for pausing on screen mismatch updated' or always_explain $options_state;
+        ok $options_state->[1]->[0], 'selection for pausing on screen mismatch updated'
+          or always_explain $options_state;
     };
 
     subtest 'upload progress handled' => sub {

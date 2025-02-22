@@ -711,7 +711,7 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
     my $machines = $self->param_hash('machine');
 
     my @jobs = grep {
-        (not $states or $states->{$_->state})
+              (not $states or $states->{$_->state})
           and (not $results or $results->{$_->result})
           and (not $archs or $archs->{$_->ARCH})
           and (not $machines or $machines->{$_->MACHINE})
@@ -757,7 +757,7 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE
         # for the jobs architecture
-        if ($job->MACHINE
+        if (   $job->MACHINE
             && $preferred_machines->{$job->ARCH}
             && $preferred_machines->{$job->ARCH} ne $job->MACHINE)
         {
@@ -972,7 +972,7 @@ sub module_fails {
 sub _add_dependency_to_graph ($dependency_data, $parent_job_id, $child_job_id, $dependency_type) {
 
     # add edge for chained dependencies
-    if ($dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
+    if (   $dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
         || $dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
     {
         push(@{$dependency_data->{edges}}, {from => $parent_job_id, to => $child_job_id});

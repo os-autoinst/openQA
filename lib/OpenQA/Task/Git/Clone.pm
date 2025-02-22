@@ -57,7 +57,7 @@ sub _git_clone_all ($job, $clones) {
         my $max_retries = $ENV{OPENQA_GIT_CLONE_RETRIES} // 10;
         my $max_best_effort_retries = min($max_retries, $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} // 2);
         my $gru_task_id = $job->info->{notes}->{gru_id};
-        if ($is_path_only
+        if (   $is_path_only
             && defined($gru_task_id)
             && ($error =~ m/disconnect|curl|stream.*closed|/i)
             && $git_config->{git_auto_update_method} eq 'best-effort'

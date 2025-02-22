@@ -29,7 +29,7 @@ is(($users->call_args(2))[1], 'mordred', 'new user created with details');
 $c->set_always(
     req => Test::MockObject->new->set_always(
         params => Test::MockObject->new->set_always(pairs => ['openid.op_endpoint', 'https://www.opensuse.org/openid/'])
-)->set_always(url => Test::MockObject->new->set_always(base => 'openqa')))
+    )->set_always(url => Test::MockObject->new->set_always(base => 'openqa')))
   ->set_always(
     app => Test::MockObject->new->set_always(config => {})->set_always(log => Test::MockObject->new->set_true('error')))
   ->set_true('flash');
@@ -47,7 +47,7 @@ $mock_openid_consumer->redefine(
 $c->set_always(
     req => Test::MockObject->new->set_always(
         params => Test::MockObject->new->set_always(pairs => ['openid.op_endpoint', 'https://www.opensuse.org/openid/'])
-)->set_always(url => Test::MockObject->new->set_always(base => 'openqa')))
+    )->set_always(url => Test::MockObject->new->set_always(base => 'openqa')))
   ->set_always(
     app => Test::MockObject->new->set_always(config => {})->set_always(log => Test::MockObject->new->set_true('debug')))
   ->set_true('flash');

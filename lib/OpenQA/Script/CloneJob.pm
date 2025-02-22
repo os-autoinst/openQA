@@ -190,9 +190,10 @@ sub create_lwp_user_agent ($host, $options) {
 
     my $apikey = ($cfg->val($host, 'key'))[-1];
     my $apisecret = ($cfg->val($host, 'secret'))[-1];
-    $ua->add_handler(request_prepare => sub ($request, $ua, $handler) {
+    $ua->add_handler(
+        request_prepare => sub ($request, $ua, $handler) {
             OpenQA::UserAgent::add_auth_headers($request, Mojo::URL->new($request->uri), $apikey, $apisecret);
-    }) if $apikey && $apisecret;
+        }) if $apikey && $apisecret;
 
     return $ua;
 }
@@ -220,7 +221,7 @@ sub openqa_baseurl ($local_url) {
     my $port = '';
     if (
         $local_url->port
-        && (($local_url->scheme eq 'http' && $local_url->port != 80)
+        && (   ($local_url->scheme eq 'http' && $local_url->port != 80)
             || ($local_url->scheme eq 'https' && $local_url->port != 443)))
     {
         $port = ':' . $local_url->port;

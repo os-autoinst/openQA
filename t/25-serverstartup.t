@@ -133,14 +133,10 @@ subtest 'Update configuration from Plugin requirements' => sub {
     $ini_config->newval("foofoo", "is_there", "wohoo");
 
     # Check if  Config::IniFiles object returns the right values
-    is $ini_config->val("auth", "method"), "foobar",
-      "Ini parser contains the right data for OpenQA::FakePlugin::Foo";
-    is $ini_config->val("bar", "foo"), "test",
-      "Ini parser contains the right data for OpenQA::FakePlugin::FooBar";
-    is $ini_config->val("baz", "foo"), "test2",
-      "Ini parser contains the right data for OpenQA::FakePlugin::FooBaz";
-    is $ini_config->val("baz", "test"), "bartest",
-      "Ini parser contains the right data for OpenQA::FakePlugin::Fuzz";
+    is $ini_config->val("auth", "method"), "foobar", "Ini parser contains the right data for OpenQA::FakePlugin::Foo";
+    is $ini_config->val("bar", "foo"), "test", "Ini parser contains the right data for OpenQA::FakePlugin::FooBar";
+    is $ini_config->val("baz", "foo"), "test2", "Ini parser contains the right data for OpenQA::FakePlugin::FooBaz";
+    is $ini_config->val("baz", "test"), "bartest", "Ini parser contains the right data for OpenQA::FakePlugin::Fuzz";
     is $ini_config->val("bazzer", "realfoo"), "win",
       "Ini parser contains the right data for OpenQA::FakePlugin::Fuzzer";
     is $ini_config->val("foofoo", "is_there"), "wohoo",

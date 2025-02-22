@@ -117,7 +117,8 @@ sub _allocate_jobs ($self, $free_workers) {
             my ($picked_worker, $job_info) = @{$taken{$picked_worker_id}};
             my $job_id = $job_info->{id};
             $allocated_workers->{$picked_worker_id} = $job_id;
-            $allocated_jobs->{$job_id} = {job => $job_id, worker => $picked_worker_id, priority_offset => \$j->{priority_offset}};
+            $allocated_jobs->{$job_id}
+              = {job => $job_id, worker => $picked_worker_id, priority_offset => \$j->{priority_offset}};
         }
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
@@ -383,8 +384,13 @@ sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
         for my $matching_worker (@{$jobinfo->{matching_workers}}) {
             my $matching_worker_id = $matching_worker->id;
             next if $allocated_workers->{$matching_worker_id};
-            if (($worker_one_host_only || $jobinfo->{one_host_only} || $matching_worker->get_property('PARALLEL_ONE_HOST_ONLY'))
-                && ($matching_worker->host ne $worker_host)) {
+            if (
+                (
+                       $worker_one_host_only
+                    || $jobinfo->{one_host_only}
+                    || $matching_worker->get_property('PARALLEL_ONE_HOST_ONLY'))
+                && ($matching_worker->host ne $worker_host))
+            {
                 log_debug "Cannot assign job $job_id on $matching_worker_id, cluster already runs on host $worker_host";
                 next;
             }

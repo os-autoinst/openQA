@@ -249,7 +249,7 @@ sub update {
             (($table eq 'TestSuites' || $table eq 'Machines') && $rc->name ne $self->param('name'))
             || (
                 $table eq 'Products'
-                && ($rc->arch ne $self->param('arch')
+                && (   $rc->arch ne $self->param('arch')
                     || $rc->distri ne $self->param('distri')
                     || $rc->flavor ne $self->param('flavor')
                     || $rc->version ne $self->param('version'))))

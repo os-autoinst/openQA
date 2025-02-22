@@ -105,9 +105,11 @@ $jobA->set_prio(1);
 # register worker
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $w;
-throws_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } qr/Incompatible websocket API version/, 'Worker no version - incompatible version exception';
+throws_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } qr/Incompatible websocket API version/,
+  'Worker no version - incompatible version exception';
 $workercaps->{websocket_api_version} = 999999;
-throws_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } qr/Incompatible websocket API version/, 'Worker different version - incompatible version exception';
+throws_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } qr/Incompatible websocket API version/,
+  'Worker different version - incompatible version exception';
 $workercaps->{websocket_api_version} = WEBSOCKET_API_VERSION;
 eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
 ok(!$@, 'Worker correct version');
@@ -348,15 +350,17 @@ subtest 'concurrent asset creation' => sub {
     # allow configuring a delay so this test will always trigger the deadlock case
     my $delay = $ENV{OPENQA_ASSET_TESTS_DELAY} // 1;
     my $jobs_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Jobs');
-    $jobs_mock->redefine(create_from_settings => sub ($self, $settings, @args) {
+    $jobs_mock->redefine(
+        create_from_settings => sub ($self, $settings, @args) {
             explain "create from settings called from PID $$: ", $settings;
             my $res = $jobs_mock->original('create_from_settings')->($self, $settings, @args);
             sleep $delay;
             return $res;
-    });
+        });
 
     # define settings for jobs and assets to be created/registered
-    my %base_settings = (DISTRI => 'sle', VERSION => '12-SP5', FLAVOR => 'Server-DVD-Updates', ARCH => 'x86_64', TEST => 'base');
+    my %base_settings
+      = (DISTRI => 'sle', VERSION => '12-SP5', FLAVOR => 'Server-DVD-Updates', ARCH => 'x86_64', TEST => 'base');
     my $asset_name_1 = 'SLES-12-SP5-x86_64-mru-install-desktop-with-addons-Build20250211-1.qcow2';
     my $asset_name_2 = 'SLES-12-SP5-x86_64-mru-install-desktop-with-addons-Build20250211-2.qcow2';
     my %settings_1 = (%base_settings, TEST => 'job1', HDD_1 => $asset_name_1);
@@ -372,8 +376,10 @@ subtest 'concurrent asset creation' => sub {
             ++$index;
         }
         note "starting job post, $settings[0]->{TEST} first";
-        $t->post_ok('/api/v1/jobs', form => \%combined_settings)->status_is(200, "posted jobs, $settings[0]->{TEST} first");
-        ok my @job_ids = values %{$t->tx->res->json->{ids}}, 'IDs returned for jobs' or always_explain $t->tx->res->body;
+        $t->post_ok('/api/v1/jobs', form => \%combined_settings)
+          ->status_is(200, "posted jobs, $settings[0]->{TEST} first");
+        ok my @job_ids = values %{$t->tx->res->json->{ids}}, 'IDs returned for jobs'
+          or always_explain $t->tx->res->body;
         note "concluded job post, $settings[0]->{TEST} first";
         return \@job_ids;
     };
@@ -382,7 +388,8 @@ subtest 'concurrent asset creation' => sub {
         my $scheduling_mock = Test::MockModule->new('OpenQA::Schema::Result::ScheduledProducts');
         $scheduling_mock->mock(_generate_jobs => {settings_result => [@settings]});
         note "starting isos post, $settings[0]->{TEST} first";
-        $t->post_ok('/api/v1/isos', form => \%base_settings)->status_is(200, "scheduled jobs, $settings[0]->{TEST} first");
+        $t->post_ok('/api/v1/isos', form => \%base_settings)
+          ->status_is(200, "scheduled jobs, $settings[0]->{TEST} first");
         my $job_ids = $t->tx->res->json->{ids};
         is @$job_ids, @settings, 'one job ID per setting returned' or always_explain $t->tx->res->body;
         note "concluded isos post, $settings[0]->{TEST} first";
@@ -401,7 +408,9 @@ subtest 'concurrent asset creation' => sub {
         $assets->search({type => 'hdd', name => {-in => [$asset_name_1, $asset_name_2]}})->delete;
 
         my @all_job_ids;
-        my @promises = map { $loop->subprocess->run_p($_)->then(sub ($job_ids) { push @all_job_ids, @$job_ids }) } @fn;
+        my @promises = map {
+            $loop->subprocess->run_p($_)->then(sub ($job_ids) { push @all_job_ids, @$job_ids })
+        } @fn;
 
         # wait for results and check
         $_->wait for @promises;

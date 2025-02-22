@@ -214,7 +214,8 @@ subtest 'Cache Requests' => sub {
     is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)], 'asset request array';
 
     my $base = OpenQA::CacheService::Request->new;
-    throws_ok { $base->lock } qr/lock\(\) not implemented in OpenQA::CacheService::Request/, 'lock() not implemented in base request';
+    throws_ok { $base->lock } qr/lock\(\) not implemented in OpenQA::CacheService::Request/,
+      'lock() not implemented in base request';
     throws_ok { $base->to_array } qr/to_array\(\) not implemented in OpenQA::CacheService::Request/,
       'to_array() not implemented in base request';
 };
@@ -345,7 +346,8 @@ subtest 'Race for same asset' => sub {
     is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
     $q->done->each(
         sub {
-            is $_->return_status, 1, "Asset exists after worker got released from cache service" or die always_explain $_;
+            is $_->return_status, 1, "Asset exists after worker got released from cache service"
+              or die always_explain $_;
         });
 
     ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";

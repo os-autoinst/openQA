@@ -379,7 +379,7 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
     @{$job_hashref->{settings}}{keys %$updated_settings} = values %$updated_settings
       if $updated_settings;
 
-    if ($job_hashref->{settings}->{NICTYPE}
+    if (   $job_hashref->{settings}->{NICTYPE}
         && !defined $job_hashref->{settings}->{NICVLAN}
         && $job_hashref->{settings}->{NICTYPE} ne 'user')
     {

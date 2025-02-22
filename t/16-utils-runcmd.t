@@ -45,42 +45,51 @@ subtest 'run (arbitrary) command' => sub {
     is $res->{stderr}, 'an internal error occurred', 'error message returned as stderr';
     ok !$res->{status}, 'status not ok if command cannot be executed';
 
-    stdout_like { $res = run_cmd_with_log_return_error(['bash', '-c', 'kill -s KILL $$']) } qr/.*cmd died with signal 9\n.*/i;
+    stdout_like { $res = run_cmd_with_log_return_error(['bash', '-c', 'kill -s KILL $$']) }
+    qr/.*cmd died with signal 9\n.*/i;
     is $res->{return_code}, undef, 'no exit code returned if command dies with a signal';
     ok !$res->{status}, 'status not ok if command dies with a signal';
 };
 
 subtest 'invoke Git commands for real testing error handling' => sub {
-    throws_ok { OpenQA::Git->new({app => $t->app, dir => 'foo/bar'})->commit } qr/no user specified/, 'exception if user missing';
+    throws_ok { OpenQA::Git->new({app => $t->app, dir => 'foo/bar'})->commit } qr/no user specified/,
+      'exception if user missing';
 
     my $empty_tmp_dir = tempdir;
     my $git = OpenQA::Git->new({app => $t->app, dir => $empty_tmp_dir, user => $first_user});
     my $res;
 
     subtest 'invoking Git command outside of a Git repo' => sub {
-        stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) } qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged';
-        like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: (N|n)ot a git repository \(or any", 'Git error returned';
+        stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
+        qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged';
+        like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: (N|n)ot a git repository \(or any",
+          'Git error returned';
         combined_like {
-            throws_ok { $git->check_sha('this-sha-does-not-exist') } qr/internal Git error/i, 'check throws an exception'
+            throws_ok { $git->check_sha('this-sha-does-not-exist') } qr/internal Git error/i,
+            'check throws an exception'
         } qr/\[error\].*cmd returned [1-9][0-9]*/, 'Git error logged for check as well';
     };
 
     combined_like {
         $git->invoke_command($_) for ['init'], ['config', 'user.email', 'foo@bar'], ['config', 'user.name', 'Foo'];
-    } qr/\[info\].*cmd returned 0\n/, 'initialized Git repo; successful command exit logged as info';
+    }
+    qr/\[info\].*cmd returned 0\n/, 'initialized Git repo; successful command exit logged as info';
 
     subtest 'error handling when checking sha' => sub {
-        stdout_like { ok !$git->check_sha('this-sha-does-not-exist'), 'return code 1 interpreted correctly' } qr/\[info\].*cmd returned 1\n/i,
+        stdout_like { ok !$git->check_sha('this-sha-does-not-exist'), 'return code 1 interpreted correctly' }
+          qr/\[info\].*cmd returned 1\n/i,
           'no error logged if check returns false (despite Git returning 1)';
     };
 
     subtest 'error handling when checking whether working directory is clean' => sub {
         my $test_file = $empty_tmp_dir->child('foo')->touch;
-        combined_like { $git->commit({add => ['foo'], message => 'test'}) } qr/commit.*foo.*cmd returned 0/is, 'commit created';
-        stdout_like { ok $git->is_workdir_clean, 'return code 0 interpreted correctly' } qr/\[info\].*cmd returned 0\n/i,
-          'no error (only info) logged if check returns true';
+        combined_like { $git->commit({add => ['foo'], message => 'test'}) } qr/commit.*foo.*cmd returned 0/is,
+          'commit created';
+        stdout_like { ok $git->is_workdir_clean, 'return code 0 interpreted correctly' }
+        qr/\[info\].*cmd returned 0\n/i, 'no error (only info) logged if check returns true';
         $test_file->spew('test');
-        stdout_like { ok !$git->is_workdir_clean, 'return code 1 interpreted correctly' } qr/\[info\].*cmd returned 1\n/i,
+        stdout_like { ok !$git->is_workdir_clean, 'return code 1 interpreted correctly' }
+          qr/\[info\].*cmd returned 1\n/i,
           'no error (only info) logged if check returns false (despite Git returning 1)';
     };
 };
@@ -146,9 +155,12 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     $mock_return_value{stderr} = 'mocked error';
     $mock_return_value{stdout} = '';
     combined_like {
-        is $git->set_to_latest_master, 'Unable to fetch from origin master (foo/bar): mocked error', 'an error occurred on remote update';
-    } qr/Error: mocked error/, 'error logged';
-    is_deeply \@executed_commands, [[qw(git -C foo/bar remote update origin)]], 'git reset not attempted' or always_explain \@executed_commands;
+        is $git->set_to_latest_master, 'Unable to fetch from origin master (foo/bar): mocked error',
+          'an error occurred on remote update';
+    }
+    qr/Error: mocked error/, 'error logged';
+    is_deeply \@executed_commands, [[qw(git -C foo/bar remote update origin)]], 'git reset not attempted'
+      or always_explain \@executed_commands;
 
     # test commit
     @executed_commands = ();
@@ -195,7 +207,8 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
         });
     combined_like {
         like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/, 'error handled during push';
-    } qr/Error: mocked push error/, 'push error logged';
+    }
+    qr/Error: mocked push error/, 'push error logged';
     $git->config->{do_push} = '';
 };
 

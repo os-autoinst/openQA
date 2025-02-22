@@ -116,7 +116,8 @@ subtest OAuth2 => sub {
     $ua_mock->redefine(get => sub { shift; push @get_args, [@_]; $get_tx });
 
     my %main_cfg = (provider => 'custom');
-    my %provider_cfg = (user_url => 'http://does-not-exist', token_label => 'bar', id_from => 'id', nickname_from => 'login');
+    my %provider_cfg
+      = (user_url => 'http://does-not-exist', token_label => 'bar', id_from => 'id', nickname_from => 'login');
     my %data = (access_token => 'some-token');
     my %expected_user = (username => 42, provider => 'oauth2@custom', nickname => 'Demo');
     my $users = $t->app->schema->resultset('Users');

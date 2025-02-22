@@ -407,14 +407,20 @@ subtest 'delete_needles' => sub {
         run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
             if (grep m/push/, @$cmd) {
-                return {status => 0, return_code => 128, stderr => q{fatal: Authentication failed for 'https://github.com/lala}, stdout => ''};
+                return {
+                    status => 0,
+                    return_code => 128,
+                    stderr => q{fatal: Authentication failed for 'https://github.com/lala},
+                    stdout => ''
+                };
             }
             return {status => 1};
         });
     $args{needle_ids} = [4];
     stderr_like { $res = run_gru_job(@gru_args) } qr{Git command failed: .*push}, 'Got error on stderr';
     is $res->{state}, 'finished', 'git job finished';
-    like $res->{result}->{errors}->[0]->{message}, qr{Unable to push Git commit. See .*_setting_up_git_support on how to setup}, 'Got error for push';
+    like $res->{result}->{errors}->[0]->{message},
+      qr{Unable to push Git commit. See .*_setting_up_git_support on how to setup}, 'Got error for push';
 
     $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd, %args) {

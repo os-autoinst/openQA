@@ -205,7 +205,7 @@ sub _message {
 
             # skip any further actions if worker just does the one job we expected it to do
             return undef
-              if (defined $job_id
+              if ( defined $job_id
                 && defined $current_job_id
                 && defined $job_token
                 && defined $registered_job_token

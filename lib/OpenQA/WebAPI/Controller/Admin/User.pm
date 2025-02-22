@@ -43,7 +43,8 @@ sub update {
 
     if (($self->tx->req->headers->accept // '') eq 'application/json') {
         return $self->render(json => {$err ? 'error' : 'status' => $msg}, status => ($err ? $err : '200'));
-    } else {
+    }
+    else {
         $self->flash($err ? 'error' : 'info', $msg);
         $self->redirect_to($self->url_for('admin_users'));
     }

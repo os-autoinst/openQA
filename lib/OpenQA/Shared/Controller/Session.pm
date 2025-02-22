@@ -28,7 +28,8 @@ sub ensure_admin {
     unless ($self->current_user) {
         if (($self->tx->req->headers->accept // '') eq 'application/json') {
             $self->render(json => {'error' => 'No valid user session'}, status => 401);
-        } else {
+        }
+        else {
             $self->redirect_to($self->url_for('login')->query(return_page => $self->req->url));
         }
         return undef;

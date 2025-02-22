@@ -1360,7 +1360,8 @@ subtest 'Parse extra tests results - LTP' => sub {
             extra_test => 1,
             script => 'test'
         })->status_is(400, 'request considered invalid (foo)');
-    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or always_explain $t->tx->res->content;
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)')
+      or always_explain $t->tx->res->content;
     ok !-e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was NOT written';
 
     $t->post_ok(
@@ -1393,7 +1394,8 @@ subtest 'Parse extra tests results - xunit' => sub {
             extra_test => 1,
             script => 'test'
         })->status_is(400, 'request considered invalid (LTP)');
-    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (LTP)') or always_explain $t->tx->res->content;
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (LTP)')
+      or always_explain $t->tx->res->content;
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
@@ -1402,7 +1404,8 @@ subtest 'Parse extra tests results - xunit' => sub {
             extra_test => 1,
             script => 'test'
         })->status_is(400, 'request considered invalid (foo)');
-    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or always_explain $t->tx->res->content;
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)')
+      or always_explain $t->tx->res->content;
     ok !-e path($basedir, 'details-unkn.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
@@ -1435,7 +1438,8 @@ subtest 'Parse extra tests results - junit' => sub {
             extra_test => 1,
             script => 'test'
         })->status_is(400, 'request considered invalid (foo)');
-    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or always_explain $t->tx->res->content;
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)')
+      or always_explain $t->tx->res->content;
     ok !-e path($basedir, 'details-1_running_upstream_tests.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
