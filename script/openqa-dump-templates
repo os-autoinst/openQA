@@ -240,7 +240,7 @@ handle_table($_) for keys %result;
 if ($options{json}) {
     use Mojo::JSON;    # booleans
     use Cpanel::JSON::XS;
-    print Cpanel::JSON::XS->new->ascii->pretty->encode(\%result);
+    print Cpanel::JSON::XS->new->ascii->pretty->canonical(1)->encode(\%result);
 }
 else {
     dd \%result;
