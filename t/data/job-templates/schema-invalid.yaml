@@ -28,7 +28,7 @@ properties:
                   description: A test suite with machine and/or priority value specified, or a custom job template name if testsuite was specified
                   additionalProperties: false
                   patternProperties:
-                    ^[A-Za-z 0-9_*.+-]+$:
+                    ^[\p{Word} _*.+-]+$:
                       type: object
                       additionalProperties: false
                       properties:
@@ -49,7 +49,7 @@ properties:
                               type: string
                         testsuite:
                           type: string
-                          pattern: ^[A-Za-z 0-9_*.+-]+$
+                          pattern: ^[\p{Word} _*.+-]+$
                           description: The test suite this scenario is based on if a custom job template name was used
                         description:
                           type: string
@@ -86,7 +86,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      ^[A-Za-z0-9._*-]+$:
+      ^[\p{Word}._*-]+$:
         type: object
         description: The name of a product (medium)
         required:

@@ -9,7 +9,7 @@ use Exporter 'import';
 # define regex for validating test names in accordance with `JobScenarios-01.yaml` and `JobTemplates-01.yaml`
 # note: In contrast to the YAML schema a few more characters are allowed here as they are useful for manually
 #       triggered jobs, e.g. via `openqa-clone-custom-git-refspec`.
-use constant TEST_NAME_REGEX => qr|^[A-Za-z 0-9_*.+,:/#@-]+\z|;
+use constant TEST_NAME_REGEX => qr|^[\p{Word} _*.+,:/#@-]+\z|;
 
 # job states
 use constant {

@@ -15,7 +15,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      ^[A-Za-z0-9._*-]+$:
+      ^[\p{Word}._*-]+$:
         type: object
         description: The name of a product (medium)
         required:
@@ -47,7 +47,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      ^[A-Za-z0-9._*-]+$:
+      ^[\p{Word}._*-]+$:
         type: object
         description: The name of a machine
         required:
@@ -66,7 +66,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      ^[A-Za-z 0-9_*.+-]+$:
+      ^[\p{Word} _*.+-]+$:
         type: object
         description: The name of the job template
         additionalProperties: false
