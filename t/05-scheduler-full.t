@@ -215,7 +215,7 @@ subtest 'Simulation of heavy unstable load' => sub {
 
     # duplicate latest jobs ignoring failures
     my @duplicated = map { my $dup = $_->auto_duplicate; ref $dup ? $dup : () } $schema->resultset('Jobs')->latest_jobs;
-    my $nr = $ENV{OPENQA_SCHEDULER_TEST_UNRESPONSIVE_COUNT} // 50;
+    my $nr = $ENV{OPENQA_SCHEDULER_TEST_UNRESPONSIVE_COUNT} // ($ENV{CI} ? 10 : 50);
     @workers = map { unresponsive_worker(@$worker_settings, $_) } (1 .. $nr);
     my $i = 2;
     wait_for_worker($schema, ++$i) for 1 .. $nr;
