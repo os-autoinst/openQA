@@ -420,7 +420,7 @@ sub create ($self) {
         json => {json => $json, status => $status},
         html => sub {
             if ($error) {
-                $self->flash('error', "Error adding the job template: $error");
+                $self->flash(error => "Error adding the job template: $error");
             }
             else {
                 $self->flash(info => 'Job template added');
@@ -477,7 +477,7 @@ sub destroy ($self) {
         json => {json => $json, status => $status},
         html => sub {
             if ($error) {
-                $self->flash('error', "Error deleting the job template: $error");
+                $self->flash(error => "Error deleting the job template: $error");
             }
             else {
                 $self->flash(info => 'Job template deleted');
