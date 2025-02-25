@@ -12,7 +12,6 @@ use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use List::Util qw(min);
 use Time::Seconds;
-use Try::Tiny;
 
 =pod
 

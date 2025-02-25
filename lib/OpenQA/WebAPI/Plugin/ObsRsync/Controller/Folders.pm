@@ -5,7 +5,6 @@ package OpenQA::WebAPI::Plugin::ObsRsync::Controller::Folders;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
 use POSIX 'strftime';
-use Try::Tiny;
 
 my $non_project_folders = '^(t|profiles|script|xml)$';
 

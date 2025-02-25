@@ -9,7 +9,6 @@ use Mojo::Base 'DBIx::Class::Core';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Date::Format;
-use Try::Tiny;
 
 __PACKAGE__->table('developer_sessions');
 __PACKAGE__->load_components(qw(Timestamps));

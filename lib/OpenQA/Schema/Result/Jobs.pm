@@ -4,7 +4,6 @@
 package OpenQA::Schema::Result::Jobs;
 
 use Mojo::Base 'DBIx::Class::Core', -signatures;
-use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;

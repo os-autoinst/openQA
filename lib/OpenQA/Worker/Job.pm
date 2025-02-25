@@ -21,7 +21,6 @@ use File::Which 'which';
 use MIME::Base64;
 use Mojo::JSON 'decode_json';
 use Mojo::File 'path';
-use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use File::Map 'map_file';
 use List::Util 'max';
