@@ -9,7 +9,6 @@ use Mojo::File 'path';
 use Mojo::URL;
 use OpenQA::UserAgent;
 use OpenQA::Utils 'human_readable_size';
-use Try::Tiny;
 use Time::HiRes 'sleep';
 
 has attempts => 5;

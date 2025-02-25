@@ -13,7 +13,6 @@ use Mojo::Util 'decode';
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
-use Try::Tiny;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));

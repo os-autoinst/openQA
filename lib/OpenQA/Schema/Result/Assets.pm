@@ -17,7 +17,6 @@ use File::Spec::Functions qw(catfile splitpath);
 use File::Path 'remove_tree';
 use Mojo::UserAgent;
 use Mojo::URL;
-use Try::Tiny;
 
 __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw(Timestamps));
