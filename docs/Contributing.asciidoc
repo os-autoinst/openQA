@@ -293,6 +293,17 @@ assets can need a big amount of disk space.
 
 WARNING: Be sure to *clear* that variable when running unit tests locally.
 
+For convenience you can use the `openqa-run` wrapper in to call openQA
+services with `OPENQA_BASEDIR` set to your local development environment with
+the appropriate service account. For example to start the openQA GRU service
+call:
+
+[source,sh]
+----
+tools/openqa-run script/openqa-gru
+----
+
+
 === Customize configuration directory
 It can be necessary during development to change the configuration.
 For example you have to edit `etc/openqa/database.ini` to use another database.
