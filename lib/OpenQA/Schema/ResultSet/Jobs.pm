@@ -125,9 +125,10 @@ sub create_from_settings {
     die 'The ' . join(',', @invalid_keys) . " cannot include / in value\n" if @invalid_keys;
 
     # validate special settings
-    my %special_settings = (_PRIORITY => delete $settings{_PRIORITY});
+    my %special_settings = (TEST => delete $settings{TEST}, _PRIORITY => delete $settings{_PRIORITY});
     my $validator = Mojolicious::Validator->new;
     my $v = Mojolicious::Validator::Validation->new(validator => $validator, input => \%special_settings);
+    my $test = $v->required('TEST')->like(TEST_NAME_REGEX)->param;
     my $prio = $v->optional('_PRIORITY')->num->param;
     die 'The following settings are invalid: ' . join(', ', @{$v->failed}) . "\n" if $v->has_error;
 
@@ -176,9 +177,9 @@ sub create_from_settings {
         my $value = $settings{$key};
         $settings{$key} = decode_utf8 encode_json $value if (ref $value eq 'ARRAY' || ref $value eq 'HASH');
     }
-    $new_job_args{TEST} = $settings{TEST};
 
     # move important keys from the settings directly to the job
+    $new_job_args{TEST} = $test;
     for my $key (OpenQA::Schema::Result::Jobs::MAIN_SETTINGS) {
         if (my $value = delete $settings{$key}) { $new_job_args{$key} = $value }
     }

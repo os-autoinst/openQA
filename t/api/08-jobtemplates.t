@@ -496,12 +496,12 @@ $yaml->{products}{$product}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
 $yaml->{scenarios}{'x86_64'}{$product} = [
     'spam',
-    "eg-G_S +133t*.\t",
+    "eg-G_S +133t*.",
     {
         'foo' => {},
     },
     {
-        "b-A_RRRR +133t*.\t" => {
+        "b-A_RRRR +133t*." => {
             machine => 'x86_64',
             priority => 33,
         },
