@@ -5,7 +5,7 @@ package OpenQA::WebAPI::Plugin::YAML;
 use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::YAML 'validate_data';
 
-use Try::Tiny;
+use Feature::Compat::Try;
 
 sub register {
     my ($self, $app) = @_;
@@ -42,10 +42,10 @@ sub register {
                 );
                 push @errors, @$errors;
             }
-            catch {
+            catch ($e) {
                 # The first line of the backtrace gives us the error message we want
-                push @errors, (split /\n/, $_)[0];
-            };
+                push @errors, (split /\n/, $e)[0];
+            }
             return \@errors;
         });
 }
