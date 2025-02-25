@@ -69,6 +69,9 @@ subtest 'Test configuration default modes' => sub {
             git_auto_clone => 'yes',
             git_auto_update => 'yes',
             git_auto_update_method => 'best-effort',
+            checkout_needles_sha => 'no',
+            allow_arbitrary_url_fetch => 'no',
+            temp_needle_refs_retention => 2 * ONE_MINUTE,
         },
         'scheduler' => {
             max_job_scheduled_time => 7,
