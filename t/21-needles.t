@@ -9,15 +9,22 @@ use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Cwd 'abs_path';
+use Cwd qw(abs_path);
 use OpenQA::Schema;
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Task::Needle::Scan;
+use OpenQA::Needles qw(_locate_needle_for_ref);
 use File::Find;
+use File::Temp qw(tempdir);
+use Mojo::File qw(path);
 use Time::Seconds;
 use Test::Output 'combined_like';
 use Test::Mojo;
+use Test::MockModule;
+use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number needledir testcasedir
+  run_cmd_with_log run_cmd_with_log_return_error);
+use OpenQA::Test::Utils 'setup_fullstack_temp_dir';
 use Test::Warnings ':report_warnings';
 use Date::Format 'time2str';
 
@@ -31,6 +38,11 @@ my %settings = (
     MACHINE => 'alpha',
     ARCH => 'x86_64',
 );
+
+my $mock_utils = Test::MockModule->new('OpenQA::Utils');
+$mock_utils->redefine('run_cmd_with_log', sub { 1 });
+$mock_utils->redefine('run_cmd_with_log_return_error', sub($cmd, %args) { return {status => 1, stdout => '0123456789abcdef0123456789abcdef01234567', stderr => 'Error message'} });
+my $mock_jobs = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 
 my $schema = OpenQA::Test::Database->new->create;
 my $needledir_archlinux = 't/data/openqa/share/tests/archlinux/needles';
@@ -166,6 +178,102 @@ subtest 'handling relative paths in update_needle' => sub {
         qr/Needle file test-does-not-exist\.json not found within $needledir_fedora/, 'error logged';
         is($needle, undef, 'no needle created');
     };
+};
+
+subtest 'controller->_determine_needles_dir_for_job' => sub {
+    my $controller = OpenQA::WebAPI::Controller::Step->new;
+    $controller->app($t->app);
+    local $settings{CASEDIR} = 'https://something#fragment';
+    my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+    $job->create_result_dir;
+
+    subtest 'checkout_needles_sha = no' => sub {
+        $controller->app->config->{'scm git'} = {checkout_needles_sha => 'no'};
+        my ($needle_dirs, $needles_var) = $controller->_determine_needles_dir_for_job($job);
+        is($needle_dirs, undef, 'needles directory determined');
+        is($needles_var, undef, 'needles var determined');
+    };
+
+    subtest 'checkout_needles_sha = yes' => sub {
+        $controller->app->config->{'scm git'} = {checkout_needles_sha => 'yes'};
+        my ($needle_dirs, $needles_var) = $controller->_determine_needles_dir_for_job($job);
+        like($needle_dirs, qr|t/data/openqa/share/tests/fedora/needles$|, 'needles dirs is defined');
+        is($needles_var->value, 'https://something#fragment', 'needles var is defined');
+    };
+};
+
+setup_fullstack_temp_dir('21-needles');
+
+subtest 'controller->_create_tmpdir_for_needles_refspec' => sub {
+    my $controller = OpenQA::WebAPI::Controller::Step->new;
+    $controller->app($t->app);
+    $controller->app->config->{'scm git'} = {checkout_needles_sha => 'yes'};
+
+    subtest 'without fragment and needles_git_hash in vars' => sub {
+        local $settings{CASEDIR} = 'https://something';
+        my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        path($job->needle_dir)->make_path;
+        $job->create_result_dir;
+        my ($needle_dirs, $needles_var) = $controller->_determine_needles_dir_for_job($job);
+
+        my $needle_refs = $controller->_create_tmpdir_for_needles_refspec($job);
+
+        is($needle_dirs, $job->needle_dir, 'needles var is defined');
+        is($needles_var->value, 'https://something', 'needles var is defined');
+        is($needle_refs, undef, 'needles refs cannot be defined without fragment or vars.json');
+    };
+
+    subtest 'with vars' => sub {
+        local $settings{CASEDIR} = 'https://something';
+        my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        path($job->needle_dir)->make_path;
+        my $testresult_dir = $job->create_result_dir;
+        my $vars_json = path($testresult_dir, 'vars.json');
+        my $vars_json_content = '{"NEEDLES_GIT_HASH": "0123456789abcdef0123456789abcdef01234567"}';
+        $vars_json->spew($vars_json_content);
+
+        my $needle_refs = $controller->_create_tmpdir_for_needles_refspec($job);
+
+        is($needle_refs, '0123456789abcdef0123456789abcdef01234567', 'needles refs is defined with vars.json');
+    };
+
+    subtest 'with fragment' => sub {
+        local $settings{CASEDIR} = 'https://something#fragment';
+        my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        path($job->needle_dir)->make_path;
+        my $testresult_dir = $job->create_result_dir;
+        my $needle_refs = $controller->_create_tmpdir_for_needles_refspec($job);
+        is($needle_refs, '0123456789abcdef0123456789abcdef01234567', 'needles refs is defined with a fragment');
+
+        subtest '_locate_needle_for_ref' => sub {
+            my $location_for_ref = _locate_needle_for_ref('test.json', $ENV{OPENQA_BASEDIR}, $needle_refs);
+            is($location_for_ref, undef, 'locate needle fail if relative path not exists');
+        };
+
+    };
+};
+
+subtest 'needledir set by jsonfile_in_temp_dir' => sub {
+    my $needles_dir = path($ENV{OPENQA_BASEDIR}, 'openqa/webui/cache/needle-refs');
+    path($needles_dir)->make_path;
+    my $pngfile = path($needles_dir . '/needle.png');
+    my $jsonfile = path($needles_dir . '/needle.json');
+    $jsonfile->spew('{"area": [{"x" : 123, "y" : 456}]}');
+    my $controller = OpenQA::WebAPI::Controller::File->new;
+    $controller->app($t->app);
+    $controller->param(name => $pngfile);
+    $controller->param(version => $settings{VERSION});
+    $controller->param(distri => $settings{DISTRI});
+    $controller->param(jsonfile => $jsonfile);
+
+    $controller->needle;
+
+    $t->get('/needles/' . $settings{DISTRI} . '/#needle')
+      ->status_is(200);
+    my $res = $t->name('needle_file')->to('file#needle');
+    is($res, '', 'should fail');
+    # is($res_json->{area}->[0]->{x}, 123, 'JSON response has correct x value');
+    # is($res_json->{area}->[0]->{y}, 456, 'JSON response has correct y value');
 };
 
 done_testing;
