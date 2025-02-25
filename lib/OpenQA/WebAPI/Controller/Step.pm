@@ -118,7 +118,7 @@ sub view ($self) {
 
 sub _get_needles_ref_and_url ($self, $job) {
     # Return tuple of git ref hash and url of needles or undef on error.
-    return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
+#    return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
     my $json_path = path($job->result_dir, 'vars.json');
     my $vars = defined $job->result_dir && -e $json_path ? decode_json($json_path->slurp) : undef;
     my $needles_ref = ($vars // {})->{NEEDLES_GIT_HASH};
@@ -506,6 +506,27 @@ sub calc_matches ($needle, $areas) {
     return;
 }
 
+my %gitmap = (
+    'github.com' => 'https://raw.githubusercontent.com/$USER/$REPO/$SHA/$FILE',
+);
+sub link_to_git ($self, $url, $sha, $name, $format) {
+    my ($host, $user, $repo);
+    if ($url =~ m/^http/) {
+        my $murl = Mojo::URL->new($url);
+        $host = $murl->host;
+        ($user, $repo) = $murl->path =~ m{^/([^/]+)/(.*?)(\.git)?$};
+    }
+    else {
+        ($host, $user, $repo) = $url =~ m{\@([^:]+):([^/]+)/([^.]+)};
+    }
+    my $redirect = $gitmap{$host};
+    $redirect =~ s/\$SHA/$sha/;
+    $redirect =~ s/\$FILE/$name$format/;
+    $redirect =~ s/\$USER/$user/;
+    $redirect =~ s/\$REPO/$repo/;
+    return $redirect;
+}
+
 sub viewimg ($self) {
     my $module_detail = $self->stash('module_detail');
     my $job = $self->stash('job');
@@ -552,10 +573,17 @@ sub viewimg ($self) {
         my ($needleinfo) = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json},
             $needle_dir, $needle_ref, $needle_url);
         if ($needleinfo) {
+            my $image_url;
+            if ($needle_ref && $needle_url) {
+                $image_url = $self->link_to_git($needle_url, $needle_ref, $needle, '.png');
+            }
+            else {
+                $image_url = $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}, $needle_url, $needle_ref);
+            }
             my $info = {
                 name => $needle,
                 needledir => $needleinfo->{needledir},
-                image => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
+                image => $image_url,
                 areas => $needleinfo->{area},
                 error => $module_detail->{error},
                 matches => [],
@@ -576,10 +604,17 @@ sub viewimg ($self) {
               = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir, $needle_ref,
                 $needle_url);
             next unless $needleinfo;
+            my $image_url;
+            if ($needle_ref && $needle_url) {
+                $image_url = $self->link_to_git($needle_url, $needle_ref, $needlename, '.png');
+            }
+            else {
+                $image_url = $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
+            }
             my $info = {
                 name => $needlename,
                 needledir => $needleinfo->{needledir},
-                image => $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
+                image => $image_url,
                 error => $needle->{error},
                 areas => $needleinfo->{area},
                 matches => [],
