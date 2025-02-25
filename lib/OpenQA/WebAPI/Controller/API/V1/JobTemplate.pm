@@ -42,33 +42,30 @@ and test suite (id and name).
 
 =cut
 
-sub list ($self) {
+sub _get_templates ($self) {
     my $schema = $self->schema;
+    my $id = $self->param('job_template_id');
+    return $schema->resultset('JobTemplates')->search({id => $id}) if $id;
+    my %cond;
+    if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
+    if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
+    for my $id (qw(arch distri flavor version)) {
+        if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
+    }
+    for my $id (qw(machine_id test_suite_id product_id group_id)) {
+        if (my $value = $self->param($id)) { $cond{$id} = $value }
+    }
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit
       = min($limits->{list_templates_max_limit}, $self->param('limit') // $limits->{list_templates_default_limit});
+    my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
+    return $schema->resultset('JobTemplates')->search(\%cond, \%attrs);
+}
+
+sub list ($self) {
     my @templates;
-    eval {
-        if (my $id = $self->param('job_template_id')) {
-            @templates = $schema->resultset('JobTemplates')->search({id => $id});
-        }
-        else {
-            my %cond;
-            if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
-            if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
-            for my $id (qw(arch distri flavor version)) {
-                if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
-            }
-            for my $id (qw(machine_id test_suite_id product_id group_id)) {
-                if (my $value = $self->param($id)) { $cond{$id} = $value }
-            }
-            my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
-            @templates = $schema->resultset('JobTemplates')->search(\%cond, \%attrs);
-        }
-    };
-
+    eval { @templates = $self->_get_templates() };
     if (my $error = $@) { return $self->render(json => {error => $error}, status => 404) }
-
     $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
 
