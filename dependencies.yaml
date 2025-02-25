@@ -165,7 +165,7 @@ main_requires:
   perl(YAML::XS):        # Required by JSON::Validator as a runtime dependency
 
 worker_requires:
-  os-autoinst: '< 5'
+  os-autoinst:
   openQA-client:
   optipng:
   sqlite3: '>= 3.24.0'   # for INSERT INTO … ON CONFLICT … DO UPDATE SET … required by cache service
