@@ -330,12 +330,8 @@ sub create ($self) {
 
     # validate/read priority
     my $prio_regex = qr/^(inherit|[0-9]+)\z/;
-    if ($has_product_id) {
-        $validation->optional('prio')->like($prio_regex);
-    }
-    else {
-        $validation->required('prio')->like($prio_regex);
-    }
+    my $f = $has_product_id ? 'optional' : 'required';
+    $validation->$f('prio')->like($prio_regex);
     $validation->optional('prio_only')->num(1);
     my $prio = $validation->param('prio');
     $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
