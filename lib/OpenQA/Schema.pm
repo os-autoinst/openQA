@@ -151,7 +151,7 @@ sub read_application_secrets ($self) {
     return [map { $_->secret } @secrets];
 }
 
-sub is_deadlock ($self, $error) { $error =~ DEADLOCK_REGEX }
+sub is_deadlock ($self, $error) { defined $error ? $error =~ DEADLOCK_REGEX : undef }
 
 sub txn_do_retry_on_deadlock ($self, $sub, $deadlock_cb = undef) {
     for (my $tries = 0;; ++$tries) {
