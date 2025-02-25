@@ -63,8 +63,7 @@ sub _get_templates ($self) {
 }
 
 sub list ($self) {
-    my @templates;
-    eval { @templates = $self->_get_templates() };
+    my @templates = eval { $self->_get_templates };
     if (my $error = $@) { return $self->render(json => {error => $error}, status => 404) }
     $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
@@ -196,6 +195,39 @@ in the response if any changes to the database were made.
 
 =cut
 
+sub _update_job_templates ($self, $job_template_names, $job_group, $user_errors, $json, $yaml) {
+    my $job_templates = $self->schema->resultset('JobTemplates');
+    my $group_id = $job_group->id;
+    my @job_template_ids;
+    foreach my $key (sort keys %$job_template_names) {
+        my $res = $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
+        push @job_template_ids, $res->{id} if $res->{id};
+        push @$user_errors, $res->{error} and die "abort transaction\n" if $res->{error};
+    }
+    $json->{ids} = \@job_template_ids;
+
+    # Drop entries we haven't touched in add/update loop
+    $job_templates->search(
+        {
+            id => {'not in' => \@job_template_ids},
+            group_id => $group_id,
+        })->delete();
+
+    if (my $diff = $job_group->text_diff($yaml)) {
+        $json->{changes} = $diff;
+    }
+
+    # Preview mode: Get the expected YAML and rollback the result
+    if ($self->validation->param('preview')) {
+        $json->{preview} = int($self->validation->param('preview'));
+        $self->schema->txn_rollback;
+    }
+    else {
+        # Store the original YAML template after all changes have been made
+        $job_group->update({template => $yaml});
+    }
+}
+
 sub update ($self) {
     my $validation = $self->validation;
     # Note: id is a regular param because it's part of the path
@@ -223,7 +255,6 @@ sub update ($self) {
 
     my $schema = $self->schema;
     my $job_groups = $schema->resultset('JobGroups');
-    my $job_templates = $schema->resultset('JobTemplates');
     my $json = {};
     my @server_errors;
     try {
@@ -252,38 +283,8 @@ sub update ($self) {
             # Preview mode: Get the expected YAML without changing the database
             $json->{result} = $job_group->expand_yaml($job_template_names);
         }
-
         $schema->txn_do(
-            sub {
-                my @job_template_ids;
-                foreach my $key (sort keys %$job_template_names) {
-                    my $res = $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
-                    push @job_template_ids, $res->{id} if $res->{id};
-                    push @$user_errors, $res->{error} and die "abort transaction\n" if $res->{error};
-                }
-                $json->{ids} = \@job_template_ids;
-
-                # Drop entries we haven't touched in add/update loop
-                $job_templates->search(
-                    {
-                        id => {'not in' => \@job_template_ids},
-                        group_id => $group_id,
-                    })->delete();
-
-                if (my $diff = $job_group->text_diff($yaml)) {
-                    $json->{changes} = $diff;
-                }
-
-                # Preview mode: Get the expected YAML and rollback the result
-                if ($validation->param('preview')) {
-                    $json->{preview} = int($validation->param('preview'));
-                    $self->schema->txn_rollback;
-                }
-                else {
-                    # Store the original YAML template after all changes have been made
-                    $job_group->update({template => $yaml});
-                }
-            });
+            sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml) });
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
