@@ -170,7 +170,8 @@ sub post_fail_hook {
 
 ==== `post_run_hook`
 
-It is called after `run` regardless of the result of the test run.
+It is called after `run` completes, regardless of its return value,
+but only if the `run` subroutine completes without any exceptions.
 
 An example usage:
 
