@@ -16,6 +16,10 @@ use Scalar::Util qw(blessed);
 
 has static => sub { Mojolicious::Static->new };
 
+my %urlmap = (
+    'github.com' => 'https://raw.githubusercontent.com/$USER/$REPO/$SHA/$FILE',
+);
+
 sub needle ($self) {
     # do the format splitting ourselves instead of using mojo to restrict the suffixes
     # 13.1.png would be format 1.png otherwise
@@ -23,6 +27,8 @@ sub needle ($self) {
     my $distri = $self->param('distri');
     my $version = $self->param('version') || '';
     my $jsonfile = $self->param('jsonfile') || '';
+    my $url = $self->param('url') || '';
+    my $sha = $self->param('sha') || '';
 
     # locate the needle in the needle directory for the given distri and version
     my $needledir = needledir($distri, $version);
@@ -58,6 +64,17 @@ sub needle ($self) {
         $needledir .= "/$path";
     }
     push @{$self->static->paths}, $needledir;
+    if ($url and $sha) {
+        my $murl = Mojo::URL->new($url);
+        my $host = $murl->host;
+        my ($user, $repo) = $murl->path =~ m{^/([^/]+)/(.*?)(\.git)?$};
+        my $redirect = $urlmap{$host};
+        $redirect =~ s/\$SHA/$sha/;
+        $redirect =~ s/\$FILE/$name$format/;
+        $redirect =~ s/\$USER/$user/;
+        $redirect =~ s/\$REPO/$repo/;
+        return $self->redirect_to($redirect);
+    }
 
     # name is an URL parameter and can't contain slashes, so it should be safe
     return $self->_serve_static($name . $format);
