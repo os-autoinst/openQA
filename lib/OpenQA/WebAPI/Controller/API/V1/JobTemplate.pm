@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Try::Tiny;
 use OpenQA::App;
 use OpenQA::YAML qw(load_yaml dump_yaml);
@@ -42,9 +42,7 @@ and test suite (id and name).
 
 =cut
 
-sub list {
-    my $self = shift;
-
+sub list ($self) {
     my $schema = $self->schema;
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit
@@ -88,9 +86,7 @@ Returns a YAML template representing the job group(s).
 
 =cut
 
-sub schedules {
-    my $self = shift;
-
+sub schedules ($self) {
     my $single = ($self->param('id') or $self->param('name'));
     my $yaml = $self->_get_job_groups($self->param('id'), $self->param('name'));
 
@@ -98,9 +94,7 @@ sub schedules {
         # only return the YAML of one group
         $yaml = (values %$yaml)[0];
     }
-    my $json_code = sub {
-        return $self->render(json => $yaml);
-    };
+    my $json_code = sub { $self->render(json => $yaml) };
     my $yaml_code = sub {
         # In the case of a single group we return the template directly
         # without encoding it to a string.
@@ -119,9 +113,7 @@ sub schedules {
     );
 }
 
-sub _get_job_groups {
-    my ($self, $id, $name) = @_;
-
+sub _get_job_groups ($self, $id, $name) {
     my %yaml;
     my $groups = $self->schema->resultset('JobGroups')->search(
         $id ? {id => $id} : ($name ? {name => $name} : undef),
@@ -207,9 +199,7 @@ in the response if any changes to the database were made.
 
 =cut
 
-sub update {
-    my $self = shift;
-
+sub update ($self) {
     my $validation = $self->validation;
     # Note: id is a regular param because it's part of the path
     $validation->required('name') unless $self->param('id');
@@ -333,9 +323,7 @@ block on success.
 
 =cut
 
-sub create {
-    my $self = shift;
-
+sub create ($self) {
     my $error;
     my @ids;
 
@@ -453,8 +441,7 @@ a 400 code on other errors or a 303 code on success.
 
 =cut
 
-sub destroy {
-    my $self = shift;
+sub destroy ($self) {
     my $job_templates = $self->schema->resultset('JobTemplates');
 
     my $status;
