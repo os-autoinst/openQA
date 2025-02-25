@@ -54,11 +54,11 @@ sub check_tabmode ($self) {
 }
 
 # Helper function to generate the needle url, with an optional version
-sub needle_url ($self, $distri, $name, $version, $jsonfile) {
+sub needle_url ($self, $distri, $name, $version, $jsonfile, $url = undef, $sha = undef) {
     if (defined($jsonfile) && $jsonfile) {
         if (defined($version) && $version) {
             $self->url_for('needle_file', distri => $distri, name => $name)
-              ->query(version => $version, jsonfile => $jsonfile);
+              ->query(version => $version, jsonfile => $jsonfile, url => $url, sha => $sha);
         }
         else {
             $self->url_for('needle_file', distri => $distri, name => $name)->query(jsonfile => $jsonfile);
@@ -460,6 +460,16 @@ sub calc_matches ($needle, $areas) {
     return;
 }
 
+sub _get_needles_ref_and_url ($self, $job) {
+    # Return tuple of git ref hash and url of needles or undef on error.
+    my $json_path = path($job->result_dir, 'vars.json');
+    my $vars = defined $job->result_dir && -e $json_path ? decode_json($json_path->slurp) : undef;
+    my $needles_ref = ($vars // {})->{NEEDLES_GIT_HASH};
+    my $needles_url = ($vars // {})->{NEEDLES_GIT_URL};
+    return undef unless $needles_ref;
+    return ($needles_ref, $needles_url);
+}
+
 sub viewimg ($self) {
     my $module_detail = $self->stash('module_detail');
     my $job = $self->stash('job');
@@ -467,6 +477,7 @@ sub viewimg ($self) {
     my $distri = $job->DISTRI;
     my $dversion = $job->VERSION || '';
     my $needle_dir = $job->needle_dir;
+    my ($needle_ref, $needle_url) = $self->_get_needles_ref_and_url($job);
     my $real_needle_dir = realpath($needle_dir) // $needle_dir;
     my $needles_rs = $self->app->schema->resultset('Needles');
 
@@ -507,7 +518,7 @@ sub viewimg ($self) {
             my $info = {
                 name => $needle,
                 needledir => $needleinfo->{needledir},
-                image => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
+                image => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}, $needle_url, $needle_ref),
                 areas => $needleinfo->{area},
                 error => $module_detail->{error},
                 matches => [],
