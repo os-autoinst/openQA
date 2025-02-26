@@ -4,7 +4,7 @@
 package OpenQA::LiveHandler::Controller::LiveViewHandler;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-use Try::Tiny;
+use Feature::Compat::Try;
 use Mojo::URL;
 use OpenQA::Log 'log_debug';
 use OpenQA::Utils;
@@ -197,14 +197,14 @@ sub handle_message_from_java_script {
     try {
         $json = decode_json($msg);
     }
-    catch {
+    catch ($e) {
         $self->send_message_to_java_script_clients(
             $job_id,
             warning => 'ignoring invalid json',
             {
                 msg => $msg,
             });
-    };
+    }
     return unless $json;
 
     # check command

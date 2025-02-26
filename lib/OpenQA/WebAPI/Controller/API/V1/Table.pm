@@ -9,7 +9,7 @@ use Mojo::Util qw(trim xml_escape);
 use OpenQA::App;
 use OpenQA::Log 'log_debug';
 use List::Util qw(min);
-use Try::Tiny;
+use Feature::Compat::Try;
 use Mojo::JSON 'decode_json';
 
 =pod
@@ -179,14 +179,11 @@ sub create {
 
     $entry{settings} = $settings;
 
-    my $error;
     my $id;
 
-    try { $id = $self->schema->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
+    try { $id = $self->schema->resultset($table)->create(\%entry)->id }
+    catch ($e) { return $self->render(json => {error => $e}, status => 400) }
 
-    if ($error) {
-        return $self->render(json => {error => $error}, status => 400);
-    }
     $self->emit_event('openqa_table_create', {table => $table, id => $id, %entry});
     $self->render(json => {id => $id});
 }
@@ -274,10 +271,10 @@ sub update {
     try {
         $schema->txn_do($update);
     }
-    catch {
+    catch ($e) {
         # The first line of the backtrace gives us the error message we want
-        $error = (split /\n/, $_)[0];
-    };
+        $error = (split /\n/, $e)[0];
+    }
 
     if ($ret && $ret == 0) {
         return $self->render(json => {error => 'Not found'}, status => 404);
@@ -324,10 +321,10 @@ sub destroy {
         }
         $ret = $res->delete;
     }
-    catch {
+    catch ($e) {
         # The first line of the backtrace gives us the error message we want
-        $error = (split /\n/, $_)[0];
-    };
+        $error = (split /\n/, $e)[0];
+    }
 
     if ($ret && $ret == 0) {
         return $self->render(json => {error => 'Not found'}, status => 404);
@@ -360,12 +357,7 @@ sub _prepare_settings {
         try {
             $hp = decode_json($self->req->body);
         }
-        catch {
-            $error = $_;
-        };
-        # of course stupid perl doesn't let you return directly from catch
-        # as that would actually lead to readable code
-        return $error if (defined $error);
+        catch ($e) { return $e }
         for my $k (keys %{$hp}) {
             # populate json hash entries as params
             $self->param($k, $hp->{$k});

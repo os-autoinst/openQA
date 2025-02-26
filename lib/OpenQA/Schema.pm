@@ -10,7 +10,7 @@ use parent 'DBIx::Class::Schema';
 use DBIx::Class::DeploymentHandler;
 use Config::IniFiles;
 use Cwd 'abs_path';
-use Try::Tiny;
+use Feature::Compat::Try;
 use FindBin '$Bin';
 use Fcntl ':flock';
 use File::Spec::Functions 'catfile';
@@ -103,16 +103,16 @@ sub _try_deploy_db ($dh) {
     try {
         $version = $dh->version_storage->database_version;
     }
-    catch {
+    catch ($e) {
         # If the table does not exist, we want to deploy, and the error
         # is expected. If we get other errors like "Permission denied" in case
         # the database is not readable by the current user, we print the
         # error message
-        warn "Error when trying to get the database version: $_"
-          unless m/relation "dbix_class_deploymenthandler_versions" does not exist/;
+        warn "Error when trying to get the database version: $e"
+          unless $e =~ m/relation "dbix_class_deploymenthandler_versions" does not exist/;
         $dh->install;
         $schema->create_system_user;    # create system user right away
-    };
+    }
 
     return !$version;
 }

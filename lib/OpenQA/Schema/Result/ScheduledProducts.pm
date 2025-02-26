@@ -10,7 +10,7 @@ use Mojo::Base -base, -signatures;
 use DBIx::Class::Timestamps 'now';
 use Exporter 'import';
 use File::Basename;
-use Try::Tiny;
+use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::Log qw(log_debug log_warning log_error);
 use OpenQA::Utils;
@@ -197,14 +197,16 @@ exported - but called by B<create()>.
 =cut
 
 sub schedule_iso ($self, $args) {
-
     # update status to SCHEDULING or just return if the job was updated otherwise
     return undef unless $self->_update_status_if(SCHEDULING, status => ADDED);
     $self->{_settings} = $args;
 
     # schedule the ISO
     $self->discard_changes;
-    my $result = try { $self->_schedule_iso($args) } catch { {error => $_} };
+    my $result = do {
+        try { $self->_schedule_iso($args) }
+        catch ($e) { {error => $e} }
+    };
     $self->set_done($result);
 
     # return result here as it is consumed by the old synchronous ISO post route and added as Minion job result
@@ -270,12 +272,13 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
             $self->_create_download_lists(\%tmp_downloads, $download_list, $j_id);
             $schema->svp_release('try_create_job_from_settings');
         }
-        catch {
+        catch ($e) {
             $schema->svp_rollback('try_create_job_from_settings');
-            die $_ if $schema->is_deadlock($_);    # uncoverable statement
-            push @$failed_job_info, {job_name => $settings->{TEST}, error_message => $_};
+            die $e if $schema->is_deadlock($e);    # uncoverable statement
+            push @$failed_job_info, {job_name => $settings->{TEST}, error_message => $e};
         }
     }
+
     # keep track of ...
     my %created_jobs;    # ... for cycle detection
     my %cluster_parents;    # ... for checking wrong parents
@@ -386,10 +389,9 @@ sub _schedule_iso {
                 );
                 $schema->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit, $self);
             }
-            catch {
-                my $error = shift;
-                push(@notes, "Failed to cancel old jobs: $error");
-            };
+            catch ($e) {
+                push(@notes, "Failed to cancel old jobs: $e");
+            }
         }
     }
 
@@ -405,12 +407,11 @@ sub _schedule_iso {
             },
             sub { (@successful_job_ids, @failed_job_info) = () });
     }
-    catch {
-        my $error = shift;
-        push(@notes, "Transaction failed: $error");
-        push(@failed_job_info, map { {job_id => $_, error_messages => [$error]} } @successful_job_ids);
+    catch ($e) {
+        push(@notes, "Transaction failed: $e");
+        push(@failed_job_info, map { {job_id => $_, error_messages => [$e]} } @successful_job_ids);
         @successful_job_ids = ();
-    };
+    }
 
     # emit events
     for my $succjob (@successful_job_ids) {
@@ -693,9 +694,9 @@ sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $par
         try {
             _check_for_cycle($job->id, $parent, $created_jobs);
         }
-        catch {
+        catch ($e) {
             die 'There is a cycle in the dependencies of ' . $job->TEST;
-        };
+        }
         if ($deptype eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
             $worker_classes //= join(',', @{$job_settings->all_values_sorted($job->id, 'WORKER_CLASS')});
             my $parent_worker_classes = join(',', @{$job_settings->all_values_sorted($parent, 'WORKER_CLASS')});

@@ -12,7 +12,7 @@ use OpenQA::Task::SignalGuard;
 use Mojo::URL;
 use Data::Dump 'pp';
 use Time::Seconds;
-use Try::Tiny;
+use Feature::Compat::Try;
 
 sub register {
     my ($self, $app) = @_;
@@ -137,17 +137,15 @@ sub _limit {
             compute_max_job_by_group => 0,
         );
     }
-    catch {
-        my $error = $_;
-
+    catch ($e) {
         # retry on errors which are most likely caused by race conditions (we want to avoid locking the tables here)
-        if ($error =~ qr/violates (foreign key|unique) constraint/) {
-            $job->note(error => $_);
+        if ($e =~ qr/violates (foreign key|unique) constraint/) {
+            $job->note(error => $e);
             return $job->retry({delay => ONE_MINUTE});
         }
 
-        $job->fail($error);
-    };
+        $job->fail($e);
+    }
 }
 
 1;
