@@ -42,7 +42,10 @@ use Scalar::Util qw(looks_like_number);
     }
 }
 
-my @argv = qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 WORKER_CLASS:create+hpc+=-parent);
+my @argv = (
+    qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 FOO=value:with:colon),
+    'WORKER_CLASS:cre:ate+hpc#foo@bar+=-parent'
+);
 my %options = ('parental-inheritance' => '');
 my %child_settings = (
     NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-hpc_test@64bit',
@@ -52,8 +55,8 @@ my %child_settings = (
     WORKER_CLASS => 'qemu_x86_64',
 );
 my %parent_settings = (
-    NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-create+hpc@64bit',
-    TEST => 'create+hpc',
+    NAME => '00000810-sle-15-Installer-DVD-x86_64-Build665.2-cre:ate+hpc#foo@bar@64bit',
+    TEST => 'cre:ate+hpc#foo@bar',
     HDD_1 => 'sle-15-x86_64-Build665.2-with-hpc.qcow2',
     HDDSIZEGB => 20,
     WORKER_CLASS => 'qemu_x86_64',
@@ -64,6 +67,7 @@ subtest 'clone job apply settings tests' => sub {
     $test_settings{HDD_1} = 'new.qcow2';
     $test_settings{HDDSIZEGB} = 40;
     $test_settings{WORKER_CLASS} = 'local';
+    $test_settings{FOO} = 'value:with:colon';
     delete $test_settings{NAME};
     clone_job_apply_settings(\@argv, 1, \%child_settings, \%options);
     is_deeply(\%child_settings, \%test_settings, 'cloned child job with correct global setting and new settings');
