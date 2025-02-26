@@ -1784,9 +1784,9 @@ you need, e.g. <code>/var/lib/openqa/tests/opensuse</code> for openSUSE tests.</
 </div>
 <div class="paragraph">
 <p>The repositories will be kept up-to-date if <code>git_auto_update</code> is enabled in
-<code>openqa.ini</code>. The updating is triggered when new tests are scheduled. For a
-periodic update (to avoid getting too far behind) you can enable the systemd
-unit <code>openqa-enqueue-git-auto-update.timer</code>.</p>
+<code>openqa.ini</code> (which is the default). The updating is triggered when new tests
+are scheduled. For a periodic update (to avoid getting too far behind) you can
+enable the systemd unit <code>openqa-enqueue-git-auto-update.timer</code>.</p>
 </div>
 <div class="paragraph">
 <p>You can get openSUSE tests and needles from
@@ -6951,7 +6951,8 @@ determine the state of the machine.</p>
 <div class="sect3">
 <h4 id="_post_run_hook"><code>post_run_hook</code></h4>
 <div class="paragraph">
-<p>It is called after <code>run</code> regardless of the result of the test run.</p>
+<p>It is called after <code>run</code> completes, regardless of its return value,
+but only if the <code>run</code> subroutine completes without any exceptions.</p>
 </div>
 <div class="paragraph">
 <p>An example usage:</p>
@@ -13270,7 +13271,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-15 04:44:06 UTC
+Last updated 2025-02-26 04:44:28 UTC
 </div>
 </div>
 </body>
