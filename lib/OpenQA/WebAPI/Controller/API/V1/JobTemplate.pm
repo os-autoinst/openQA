@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Try::Tiny;
 use OpenQA::App;
 use OpenQA::YAML qw(load_yaml dump_yaml);
@@ -42,35 +42,29 @@ and test suite (id and name).
 
 =cut
 
-sub list {
-    my $self = shift;
-
+sub _get_templates ($self) {
     my $schema = $self->schema;
+    my $id = $self->param('job_template_id');
+    return $schema->resultset('JobTemplates')->search({id => $id}) if $id;
+    my %cond;
+    if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
+    if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
+    for my $id (qw(arch distri flavor version)) {
+        if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
+    }
+    for my $id (qw(machine_id test_suite_id product_id group_id)) {
+        if (my $value = $self->param($id)) { $cond{$id} = $value }
+    }
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit
       = min($limits->{list_templates_max_limit}, $self->param('limit') // $limits->{list_templates_default_limit});
-    my @templates;
-    eval {
-        if (my $id = $self->param('job_template_id')) {
-            @templates = $schema->resultset('JobTemplates')->search({id => $id});
-        }
-        else {
-            my %cond;
-            if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
-            if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
-            for my $id (qw(arch distri flavor version)) {
-                if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
-            }
-            for my $id (qw(machine_id test_suite_id product_id group_id)) {
-                if (my $value = $self->param($id)) { $cond{$id} = $value }
-            }
-            my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
-            @templates = $schema->resultset('JobTemplates')->search(\%cond, \%attrs);
-        }
-    };
+    my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
+    return $schema->resultset('JobTemplates')->search(\%cond, \%attrs);
+}
 
+sub list ($self) {
+    my @templates = eval { $self->_get_templates };
     if (my $error = $@) { return $self->render(json => {error => $error}, status => 404) }
-
     $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
 
@@ -88,9 +82,7 @@ Returns a YAML template representing the job group(s).
 
 =cut
 
-sub schedules {
-    my $self = shift;
-
+sub schedules ($self) {
     my $single = ($self->param('id') or $self->param('name'));
     my $yaml = $self->_get_job_groups($self->param('id'), $self->param('name'));
 
@@ -98,9 +90,7 @@ sub schedules {
         # only return the YAML of one group
         $yaml = (values %$yaml)[0];
     }
-    my $json_code = sub {
-        return $self->render(json => $yaml);
-    };
+    my $json_code = sub { $self->render(json => $yaml) };
     my $yaml_code = sub {
         # In the case of a single group we return the template directly
         # without encoding it to a string.
@@ -119,9 +109,7 @@ sub schedules {
     );
 }
 
-sub _get_job_groups {
-    my ($self, $id, $name) = @_;
-
+sub _get_job_groups ($self, $id, $name) {
     my %yaml;
     my $groups = $self->schema->resultset('JobGroups')->search(
         $id ? {id => $id} : ($name ? {name => $name} : undef),
@@ -207,9 +195,40 @@ in the response if any changes to the database were made.
 
 =cut
 
-sub update {
-    my $self = shift;
+sub _update_job_templates ($self, $job_template_names, $job_group, $user_errors, $json, $yaml) {
+    my $job_templates = $self->schema->resultset('JobTemplates');
+    my $group_id = $job_group->id;
+    my @job_template_ids;
+    foreach my $key (sort keys %$job_template_names) {
+        my $res = $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
+        push @job_template_ids, $res->{id} if $res->{id};
+        push @$user_errors, $res->{error} and die "abort transaction\n" if $res->{error};
+    }
+    $json->{ids} = \@job_template_ids;
 
+    # Drop entries we haven't touched in add/update loop
+    $job_templates->search(
+        {
+            id => {'not in' => \@job_template_ids},
+            group_id => $group_id,
+        })->delete();
+
+    if (my $diff = $job_group->text_diff($yaml)) {
+        $json->{changes} = $diff;
+    }
+
+    # Preview mode: Get the expected YAML and rollback the result
+    if ($self->validation->param('preview')) {
+        $json->{preview} = int($self->validation->param('preview'));
+        $self->schema->txn_rollback;
+    }
+    else {
+        # Store the original YAML template after all changes have been made
+        $job_group->update({template => $yaml});
+    }
+}
+
+sub update ($self) {
     my $validation = $self->validation;
     # Note: id is a regular param because it's part of the path
     $validation->required('name') unless $self->param('id');
@@ -236,7 +255,6 @@ sub update {
 
     my $schema = $self->schema;
     my $job_groups = $schema->resultset('JobGroups');
-    my $job_templates = $schema->resultset('JobTemplates');
     my $json = {};
     my @server_errors;
     try {
@@ -265,38 +283,8 @@ sub update {
             # Preview mode: Get the expected YAML without changing the database
             $json->{result} = $job_group->expand_yaml($job_template_names);
         }
-
         $schema->txn_do(
-            sub {
-                my @job_template_ids;
-                foreach my $key (sort keys %$job_template_names) {
-                    my $res = $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
-                    push @job_template_ids, $res->{id} if $res->{id};
-                    push @$user_errors, $res->{error} and die "abort transaction\n" if $res->{error};
-                }
-                $json->{ids} = \@job_template_ids;
-
-                # Drop entries we haven't touched in add/update loop
-                $job_templates->search(
-                    {
-                        id => {'not in' => \@job_template_ids},
-                        group_id => $group_id,
-                    })->delete();
-
-                if (my $diff = $job_group->text_diff($yaml)) {
-                    $json->{changes} = $diff;
-                }
-
-                # Preview mode: Get the expected YAML and rollback the result
-                if ($validation->param('preview')) {
-                    $json->{preview} = int($validation->param('preview'));
-                    $self->schema->txn_rollback;
-                }
-                else {
-                    # Store the original YAML template after all changes have been made
-                    $job_group->update({template => $yaml});
-                }
-            });
+            sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml) });
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
@@ -333,9 +321,7 @@ block on success.
 
 =cut
 
-sub create {
-    my $self = shift;
-
+sub create ($self) {
     my $error;
     my @ids;
 
@@ -344,12 +330,8 @@ sub create {
 
     # validate/read priority
     my $prio_regex = qr/^(inherit|[0-9]+)\z/;
-    if ($has_product_id) {
-        $validation->optional('prio')->like($prio_regex);
-    }
-    else {
-        $validation->required('prio')->like($prio_regex);
-    }
+    my $f = $has_product_id ? 'optional' : 'required';
+    $validation->$f('prio')->like($prio_regex);
     $validation->optional('prio_only')->num(1);
     my $prio = $validation->param('prio');
     $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
@@ -432,7 +414,7 @@ sub create {
         json => {json => $json, status => $status},
         html => sub {
             if ($error) {
-                $self->flash('error', "Error adding the job template: $error");
+                $self->flash(error => "Error adding the job template: $error");
             }
             else {
                 $self->flash(info => 'Job template added');
@@ -453,8 +435,7 @@ a 400 code on other errors or a 303 code on success.
 
 =cut
 
-sub destroy {
-    my $self = shift;
+sub destroy ($self) {
     my $job_templates = $self->schema->resultset('JobTemplates');
 
     my $status;
@@ -490,7 +471,7 @@ sub destroy {
         json => {json => $json, status => $status},
         html => sub {
             if ($error) {
-                $self->flash('error', "Error deleting the job template: $error");
+                $self->flash(error => "Error deleting the job template: $error");
             }
             else {
                 $self->flash(info => 'Job template deleted');
