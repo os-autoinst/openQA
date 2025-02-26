@@ -210,8 +210,26 @@ function showScheduledProductSettings(link) {
 }
 
 function renderScheduledProductResults(results) {
-  const element = document.createElement(results ? 'pre' : 'p');
-  element.textContent = results ? JSON.stringify(results, undefined, 4) : 'No results available.';
+  const element = document.createElement('p');
+  if (results) {
+    const jsondump = document.createElement('pre');
+    jsondump.textContent = JSON.stringify(results, undefined, 4);
+    element.append(jsondump);
+    if (results.successful_job_ids) {
+      const urllist = document.createElement('p');
+      element.append('Successful job ids: ');
+      for (i = 0; i < results.successful_job_ids.length; i++) {
+        const a = document.createElement('a');
+        a.href = '/tests/' + results.successful_job_ids[i];
+        a.textContent = results.successful_job_ids[i];
+        urllist.append(a);
+        urllist.append(' ');
+      }
+      element.append(urllist);
+    }
+  } else {
+    element.textContent = 'No results available.';
+  }
   return element;
 }
 
