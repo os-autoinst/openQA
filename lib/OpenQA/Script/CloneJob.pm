@@ -10,6 +10,7 @@ use Data::Dump 'pp';
 use Exporter 'import';
 use LWP::UserAgent;
 use OpenQA::Client;
+use OpenQA::Jobs::Constants;
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
@@ -32,6 +33,10 @@ use constant JOB_SETTING_OVERRIDES => {
     _GROUP_ID => '_GROUP',
 };
 
+my $TEST_NAME = TEST_NAME_ALLOWED_CHARS;
+my $TEST_NAME_PLUS_MINUS = TEST_NAME_ALLOWED_CHARS_PLUS_MINUS;
+my $SETTINGS_REGEX = qr|([A-Z0-9_]+)(:([$TEST_NAME]+(?:[$TEST_NAME_PLUS_MINUS]+[$TEST_NAME])?))?(\+)?=(.*)|;
+
 sub is_global_setting ($key) { grep /^$key$/, GLOBAL_SETTINGS }
 
 sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
@@ -39,7 +44,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
 
     for my $arg (@$argv) {
         # split arg into key and value
-        unless ($arg =~ m|([A-Z0-9_]+)(:([\p{Word} _*.,:/#@]+(?:[\p{Word} _*.+,:/#@-]+[\p{Word} _*.,:/#@])?))?(\+)?=(.*)|) {
+        unless ($arg =~ $SETTINGS_REGEX) {
             warn "command-line argument '$arg' is no valid setting and will be ignored\n";
             next;
         }
