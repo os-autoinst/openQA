@@ -835,7 +835,13 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#_changing_timeouts">Changing timeouts</a></li>
 <li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
+<li><a href="#_traceability_and_reproducibility_of_tests">Traceability and reproducibility of tests</a>
+<ul class="sectlevel3">
+<li><a href="#_general_remarks_on_tracing">General remarks on tracing</a></li>
 <li><a href="#_logging_package_versions_used_for_test">Logging package versions used for test</a></li>
+<li><a href="#_general_remarks_on_reproducibility">General remarks on reproducibility</a></li>
+</ul>
+</li>
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
 <li><a href="#_running_a_custom_worker_engine">Running a custom worker engine</a></li>
 <li><a href="#_automatic_retries_of_jobs">Automatic retries of jobs</a></li>
@@ -7277,11 +7283,60 @@ even if test suites have failed due to different test modules.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_logging_package_versions_used_for_test">Logging package versions used for test</h3>
+<h3 id="_traceability_and_reproducibility_of_tests">Traceability and reproducibility of tests</h3>
 <div class="paragraph">
-<p>There are two sets of packages that can be included in test logs:
-1. Packages installed on the worker itself - stored as <code>worker_packages.txt</code>.
-2. Packages installed on SUT - stored as <code>sut_packages.txt</code>.</p>
+<p>openQA allows keeping track of the test environment, the version of the test
+code and needles, the test configuration and what specific system was tested.</p>
+</div>
+<div class="sect3">
+<h4 id="_general_remarks_on_tracing">General remarks on tracing</h4>
+<div class="paragraph">
+<p>The test configuration of a specific test run can be viewed in form of job
+settings on the test details page. Those settings contain the specific test
+configuration. The specific system that was tested is also listed there in via
+the corresponding <a href="#_asset_handling">asset variables</a>.</p>
+</div>
+<div class="paragraph">
+<p>In addition to that, the following variables can be found in the file
+<code>vars.json</code> when Git is used:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>TEST_GIT_HASH</code>: The specific version of the tests that were executed.</p>
+</li>
+<li>
+<p><code>NEEDLES_GIT_HASH</code>: The specific version of the needles that were used during
+the test run.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This file is upload when a test run has concluded and can be found under the
+"Logs &amp; Assets" tab.</p>
+</div>
+<div class="paragraph">
+<p>There is also the "Investigation" tab on failed tests. It shows what has changed
+since the last good test run.</p>
+</div>
+<div class="paragraph">
+<p>The next section explains how to keep track of the test environment.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_logging_package_versions_used_for_test">Logging package versions used for test</h4>
+<div class="paragraph">
+<p>There are two sets of packages that can be included in test logs:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Packages installed on the worker itself - stored as <code>worker_packages.txt</code>.</p>
+</li>
+<li>
+<p>Packages installed on SUT - stored as <code>sut_packages.txt</code>.</p>
+</li>
+</ol>
 </div>
 <div class="paragraph">
 <p>For both sets, if present, openQA will include the difference to the last good
@@ -7308,6 +7363,43 @@ the resulting file needs to be copied/moved.</p>
 <span class="tok-w">    </span><span class="tok-n">path</span><span class="tok-p">(</span><span class="tok-s">&quot;ulogs/$fname&quot;</span><span class="tok-p">)</span><span class="tok-o">-&gt;</span><span class="tok-n">move_to</span><span class="tok-p">(</span><span class="tok-s">&quot;sut_packages.txt&quot;</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-o">...</span>
 <span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_general_remarks_on_reproducibility">General remarks on reproducibility</h4>
+<div class="paragraph">
+<p>Clicking the restart button on a concrete test run will create a new test job
+with the same configuration. The new test will however use the latest version of
+the test code and needles unless <code>CASEDIR</code>/<code>NEEDLES_DIR</code> specify a concrete
+version via a Git URL. The test environment of restarted jobs might differ as
+well, e.g. because the worker host has been updated or a completely different
+worker host has been chosen to run the job.</p>
+</div>
+<div class="paragraph">
+<p>To re-run a test again under the same conditions it might be useful to clone it
+with a command like
+<code>openqa-clone-job --within-instance … CASEDIR=… NEEDLES_DIR=… WORKER_CLASS=…</code>
+instead of using the restart button. This way one can specify a concrete commit
+hash for tests and/or needles (see
+<a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering … based on Git refspec …</a>
+for details) and a concrete worker host (see
+<a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a>).
+The script
+<a href="https://github.com/os-autoinst/scripts/blob/master/README.md#openqa-investigate---automatic-investigation-jobs-with-failure-analysis-in-openqa"><code>openqa-investigate</code></a> helps automating retries like this. It will also
+automatically create
+<a href="https://github.com/os-autoinst/scripts/blob/master/README.md#more-details-and-examples-about-openqa-investigate-comments">a comment</a>
+with the findings.</p>
+</div>
+<div class="paragraph">
+<p>To improve reproducibility one should also avoid relying on any external
+resource like online repositories because those are not controlled by openQA
+test variables.</p>
+</div>
+<div class="paragraph">
+<p>Sometimes issues are sporadic and therefore hard to reproduce. The section about
+<a href="#_statistical_investigation">statistical investigation</a>
+might be helpful in this case.</p>
 </div>
 </div>
 </div>
@@ -13271,7 +13363,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-26 04:44:28 UTC
+Last updated 2025-02-27 04:44:53 UTC
 </div>
 </div>
 </body>
