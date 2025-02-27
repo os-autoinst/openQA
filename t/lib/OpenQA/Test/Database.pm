@@ -17,8 +17,6 @@ use Mojo::File 'path';
 
 has fixture_path => 't/fixtures';
 
-plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
-
 sub generate_schema_name () { 'tmp_' . random_string() }
 
 sub create ($self, %options) {
@@ -27,7 +25,13 @@ sub create ($self, %options) {
 
     # ensure the time zone is set consistently to UTC for this session
     my $storage = $schema->storage;
-    my $dbh = $storage->dbh;
+    my $dbh;
+    try { $dbh = $storage->dbh }
+    catch ($e) {
+        diag $e;
+        plan skip_all => "set TEST_PG to e.g. \"DBI:Pg:dbname=test\" to enable this test"
+          if $e =~ /DBI Connection failed.*No such file or directory/ && !$ENV{TEST_PG};
+    }
     $dbh->do('SET TIME ZONE "utc"');
 
     # create a new schema or use an existing one
