@@ -3,7 +3,7 @@
 
 package OpenQA::Test::Database;
 use Test::Most;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Date::Format;    # To allow fixtures with relative dates
 use DateTime;    # To allow fixtures using InflateColumn::DateTime
@@ -19,13 +19,9 @@ has fixture_path => 't/fixtures';
 
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
-sub generate_schema_name {
-    return 'tmp_' . random_string();
-}
+sub generate_schema_name () { 'tmp_' . random_string() }
 
-sub create {
-    my ($self, %options) = @_;
-
+sub create ($self, %options) {
     # create new database connection
     my $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0);
 
@@ -55,16 +51,12 @@ sub create {
     return $schema;
 }
 
-sub insert_fixtures {
-    my ($self, $schema, $fixtures_glob) = @_;
-
+sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
     # Store working dir
     my $cwd = getcwd;
 
     chdir $self->fixture_path;
     my %ids;
-
-    $fixtures_glob //= '*.pl';
     foreach my $fixture (glob "$fixtures_glob") {
 
         my $info = eval path($fixture)->slurp;    ## no critic
@@ -105,8 +97,7 @@ sub insert_fixtures {
     }
 }
 
-sub disconnect {
-    my $schema = shift;
+sub disconnect ($schema) {
     my $dbh = $schema->storage->dbh;
     if (my $search_path = $schema->search_path_for_tests) { $dbh->do("drop schema $search_path") }
     return $dbh->disconnect;

@@ -19,7 +19,7 @@ use OpenQA::JobDependencies::Constants qw(CHAINED DIRECTLY_CHAINED);
 use OpenQA::Jobs::Constants;
 
 my $test_case = OpenQA::Test::Case->new;
-my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema_name = OpenQA::Test::Database::generate_schema_name;
 my $schema = $test_case->init_data(
     schema_name => $schema_name,
     fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl'

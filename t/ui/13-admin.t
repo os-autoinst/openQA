@@ -21,7 +21,7 @@ use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional qw(can_load);
 
 my $test_case = OpenQA::Test::Case->new;
-my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema_name = OpenQA::Test::Database::generate_schema_name;
 my $schema = $test_case->init_data(
     schema_name => $schema_name,
     fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl'
