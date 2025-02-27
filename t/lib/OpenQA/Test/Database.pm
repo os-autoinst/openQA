@@ -9,11 +9,11 @@ use Date::Format;    # To allow fixtures with relative dates
 use DateTime;    # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw( abs_path getcwd );
+use Feature::Compat::Try;
 use OpenQA::Schema;
 use OpenQA::Log 'log_info';
 use OpenQA::Utils 'random_string';
 use Mojo::File 'path';
-use Try::Tiny;
 
 has fixture_path => 't/fixtures';
 
@@ -89,9 +89,9 @@ sub insert_fixtures {
                 my $row = $schema->resultset($class)->create($ri);
                 $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
             }
-            catch {
-                croak "Could not insert fixture " . path($fixture)->to_rel($cwd) . ": $_";
-            };
+            catch ($e) {
+                croak "Could not insert fixture " . path($fixture)->to_rel($cwd) . ": $e";
+            }
         }
     }
 
