@@ -35,7 +35,8 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     my %global_settings;
     _read_section($cfg, 'global', \%global_settings);
     _read_section($cfg, $instance_number, \%global_settings);
-    _read_section($cfg, "class:$_", \%global_settings) for split(',', $global_settings{WORKER_CLASS} // '');
+    _read_section_keeping_default($cfg, "class:$_", \%global_settings)
+      for split(',', $global_settings{WORKER_CLASS} // '');
 
     # read global settings from environment variables
     for my $var (qw(LOG_DIR TERMINATE_AFTER_JOBS_DONE)) {
@@ -79,6 +80,10 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 sub _read_section ($cfg, $section, $out) {
     return undef unless $cfg && $cfg->SectionExists($section);
     $out->{uc $_} = trim $cfg->val($section, $_) for $cfg->Parameters($section);
+}
+
+sub _read_section_keeping_default ($cfg, $section, $out) {
+    $out->{uc $_} //= trim $cfg->val($section, $_) for $cfg->Parameters($section);
 }
 
 sub auto_detect_worker_address ($self, $fallback = undef) {
