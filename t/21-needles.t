@@ -9,15 +9,22 @@ use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Cwd 'abs_path';
+use Cwd qw(abs_path);
 use OpenQA::Schema;
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Task::Needle::Scan;
+use OpenQA::Needles qw(_locate_needle_for_ref);
 use File::Find;
+use File::Temp qw(tempdir);
+use Mojo::File qw(path);
 use Time::Seconds;
 use Test::Output 'combined_like';
 use Test::Mojo;
+use Test::MockModule;
+use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number needledir testcasedir
+  run_cmd_with_log run_cmd_with_log_return_error);
+use OpenQA::Test::Utils 'setup_fullstack_temp_dir';
 use Test::Warnings ':report_warnings';
 use Date::Format 'time2str';
 
@@ -31,6 +38,11 @@ my %settings = (
     MACHINE => 'alpha',
     ARCH => 'x86_64',
 );
+
+my $mock_utils = Test::MockModule->new('OpenQA::Utils');
+$mock_utils->redefine('run_cmd_with_log', 1);
+$mock_utils->redefine('run_cmd_with_log_return_error', 1);
+my $mock_jobs = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 
 my $schema = OpenQA::Test::Database->new->create;
 my $needledir_archlinux = 't/data/openqa/share/tests/archlinux/needles';
@@ -166,6 +178,92 @@ subtest 'handling relative paths in update_needle' => sub {
         qr/Needle file test-does-not-exist\.json not found within $needledir_fedora/, 'error logged';
         is($needle, undef, 'no needle created');
     };
+};
+
+subtest 'controller->_determine_needles_dir_for_job' => sub {
+    my $controller = OpenQA::WebAPI::Controller::Step->new;
+    $controller->app($t->app);
+    local $settings{CASEDIR} = 'https://something#fragment';
+    my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+    $job->create_result_dir;
+
+    subtest 'checkout_needles_sha = no' => sub {
+        $controller->app->config->{'scm git'} = {checkout_needles_sha => 'no'};
+        my ($needles_ref, $needles_url) = $controller->_get_needles_ref_and_url($job);
+        is $needles_ref, undef, 'needles ref is not set';
+        is $needles_url, undef, 'needles ref is not set';
+    };
+
+    subtest 'checkout_needles_sha = yes with "normal" job' => sub {
+        $controller->app->config->{'scm git'} = {checkout_needles_sha => 'yes'};
+        my ($needles_ref, $needles_url) = $controller->_get_needles_ref_and_url($job);
+        is $needles_ref, undef, 'needles ref is not set';
+        is $needles_url, undef, 'needles ref is not set';
+    };
+};
+
+setup_fullstack_temp_dir('21-needles');
+
+subtest 'controller->_get_needles_ref_and_url' => sub {
+    my $controller = OpenQA::WebAPI::Controller::Step->new;
+    $controller->app($t->app);
+    $controller->app->config->{'scm git'} = {checkout_needles_sha => 'yes'};
+
+    subtest 'without fragment and needles_git_hash in vars' => sub {
+        local $settings{CASEDIR} = 'https://something';
+        my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        path($job->needle_dir)->make_path;
+        $job->create_result_dir;
+        is $controller->_get_needles_ref_and_url($job), undef, 'needles refs cannot be defined without vars.json';
+    };
+
+    subtest 'with vars' => sub {
+        local $settings{CASEDIR} = 'https://something';
+        my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        path($job->needle_dir)->make_path;
+        my $testresult_dir = $job->create_result_dir;
+        my $vars_json = path($testresult_dir, 'vars.json');
+        my $vars_json_content
+          = '{"NEEDLES_GIT_HASH": "0123456789abcdef0123456789abcdef01234567", "NEEDLES_GIT_URL": "ssh://git@codeberg.org/foo/bar.git"}';
+        $vars_json->spew($vars_json_content);
+        my ($needles_ref, $needles_url) = $controller->_get_needles_ref_and_url($job);
+        is $needles_ref, '0123456789abcdef0123456789abcdef01234567', 'needles ref is defined with vars.json';
+        is $needles_url, 'ssh://git@codeberg.org/foo/bar.git', 'needles url is defined with vars.json';
+    };
+};
+
+subtest 'needledir set by jsonfile_in_temp_dir' => sub {
+    my $temp_dir = path(OpenQA::Needles::temp_dir);
+    my $needles_dir = path($temp_dir, "$settings{DISTRI}/0123456789abcdef0123456789abcdef01234567/needles/")->make_path;
+    my $pngfile = path($needles_dir . '/needle.png');
+    my $jsonfile = path($needles_dir . '/needle.json');
+    $jsonfile->spew('{"area": [{"x" : 123, "y" : 456}]}');
+    $pngfile->spew('This is obviously a png file');
+    $t->get_ok('/needles/' . $settings{DISTRI} . '/needle.png?jsonfile=' . $jsonfile)->status_is(200)
+      ->content_like(qr/This is obviously a png file/);
+};
+
+subtest '_locate_needle_for_ref' => sub {
+    my $needles_dir = tempdir;
+    my $git_remote_dir = tempdir;
+    my $temp_dir = path(OpenQA::Needles::temp_dir);
+    note qx{git -C "$needles_dir" init};
+    note qx{git -C "$git_remote_dir" init};
+    path($git_remote_dir, 'foo.png')->spew('this is a png');
+    path($git_remote_dir, 'foo.json')->spew('this is json');
+    note qx{git -C "$git_remote_dir" config user.email foo\@bar};
+    note qx{git -C "$git_remote_dir" config user.name foo};
+    note qx{git -C "$git_remote_dir" add foo.png foo.json};
+    note qx{git -C "$git_remote_dir" commit -m cmsg};
+    my $ref = qx{git -C "$git_remote_dir" rev-parse HEAD};
+    chomp $ref;
+    $t->app->config->{'scm git'} = {checkout_needles_sha => 'yes', allow_arbitrary_url_fetch => 'yes'};
+    $mock_utils->unmock('run_cmd_with_log');
+    $mock_utils->unmock('run_cmd_with_log_return_error');
+    my $json_path = OpenQA::Needles::_locate_needle_for_ref("foo.json", $needles_dir, $ref, "file://$git_remote_dir");
+    is $json_path, "t/data/openqa/webui/cache/needle-refs/tmp/$ref/needles/foo.json", 'get needle json';
+    is path($json_path)->slurp, 'this is json';
+    is path("t/data/openqa/webui/cache/needle-refs/tmp/$ref/needles/foo.png")->slurp, 'this is a png';
 };
 
 done_testing;

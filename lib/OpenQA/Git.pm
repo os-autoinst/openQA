@@ -6,7 +6,9 @@ package OpenQA::Git;
 use Mojo::Base -base, -signatures;
 use Mojo::Util 'trim';
 use Cwd 'abs_path';
-use OpenQA::Utils qw(run_cmd_with_log_return_error);
+use Mojo::File 'path';
+use OpenQA::Utils qw(run_cmd_with_log_return_error run_cmd_with_log);
+use OpenQA::App;
 
 has 'app';
 has 'dir';
@@ -37,7 +39,10 @@ sub _run_cmd ($self, $args, $options = {}) {
     push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes', 'GIT_ASKPASS=', 'GIT_TERMINAL_PROMPT=false' if $batchmode;
     push @cmd, $self->_prepare_git_command($include_git_path), @$args;
 
-    my $result = run_cmd_with_log_return_error(\@cmd, expected_return_codes => $options->{expected_return_codes});
+    my $result = run_cmd_with_log_return_error(
+        \@cmd,
+        expected_return_codes => $options->{expected_return_codes},
+        output_file => $options->{output_file});
     $self->app->log->error("Git command failed: @cmd - Error: $result->{stderr}") unless $result->{status};
     return $result;
 }
@@ -169,6 +174,37 @@ sub is_workdir_clean ($self) {
     die $self->_format_git_error($r, 'Internal Git error: Unexpected exit code ' . $r->{return_code})
       if $r->{return_code} > 1;
     return $r->{status};
+}
+
+sub cache_ref ($self, $ref, $url, $relative_path, $output_file, $allow_arbitrary_url_fetch = 1) {
+    $self->app->log->debug(
+        "Checking out $relative_path from url '" . ($url // '') . "' rev '" . ($ref // '') . "' to $output_file");
+    # checkout git versioned file <$relative_path> of from repo at version <$ref> and write it to <$output_file>
+    # returns undef on success - else the error message
+    if (-f $output_file) {
+        eval { path($output_file)->touch };
+        return $@ ? $@ : undef;
+    }
+
+    # Now check if the ref is already present in the repo
+    my $res = $self->_run_cmd(['cat-file', '-t', $ref], \%CHECK_OPTIONS);
+    unless ($res->{status} && $res->{stdout} eq "commit\n") {
+        # the commit ref is not yet known in the local repo copy
+
+        # add a remote and fetch from that one if url is set and allow_arbitrary_url_fetch allows it
+        my $remote_name = $url && $allow_arbitrary_url_fetch ? $url : 'origin';
+
+        # fetch needle ref from remote
+        $res = $self->_run_cmd(['fetch', '--depth', 1, $remote_name, $ref]);
+        return $self->_format_git_error($res, 'Unable to fetch Git ref from remote') unless $res->{status};
+    }
+
+    # create output dir
+    path($output_file)->dirname->make_path;
+    $res = $self->_run_cmd(['show', "$ref:./$relative_path"], {output_file => $output_file});
+    return undef if $res->{status};
+    unlink $output_file;
+    return $self->_format_git_error($res, 'Unable to cache Git ref');
 }
 
 1;

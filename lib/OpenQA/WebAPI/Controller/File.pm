@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 
+use OpenQA::Needles;
 use OpenQA::Utils qw(:DEFAULT prjdir assetdir imagesdir);
 use File::Basename;
 use File::Spec;
@@ -29,11 +30,14 @@ sub needle ($self) {
 
     # make sure the directory of the file parameter is a real subdir of testcasedir before
     # using it to find needle subdirectory, to prevent access outside of the zoo
-    if ($jsonfile && !is_in_tests($jsonfile)) {
+    if ($jsonfile && !is_in_tests($jsonfile) && !OpenQA::Needles::is_in_temp_dir($jsonfile)) {
         my $prjdir = prjdir();
         warn "$jsonfile is not in a subdir of $prjdir/share/tests or $prjdir/tests";
         return $self->render(text => 'Forbidden', status => 403);
     }
+    # If the json file is not in the tests we may be using a temporary
+    # directory for needles from a different git SHA
+    $needledir = dirname($jsonfile) if ($jsonfile && OpenQA::Needles::is_in_temp_dir($jsonfile));
     # Reject directory traversal breakouts here...
     if (index($jsonfile, '..') != -1) {
         warn "jsonfile value $jsonfile is invalid, cannot contain ..";
