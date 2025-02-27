@@ -8,6 +8,26 @@ use OpenQA::App;
 use OpenQA::YAML qw(load_yaml dump_yaml);
 use List::Util qw(min);
 
+sub _get_templates ($self) {
+    my $schema = $self->schema;
+    my $id = $self->param('job_template_id');
+    return $schema->resultset('JobTemplates')->search({id => $id}) if $id;
+    my %cond;
+    if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
+    if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
+    for my $id (qw(arch distri flavor version)) {
+        if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
+    }
+    for my $id (qw(machine_id test_suite_id product_id group_id)) {
+        if (my $value = $self->param($id)) { $cond{$id} = $value }
+    }
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit
+      = min($limits->{list_templates_max_limit}, $self->param('limit') // $limits->{list_templates_default_limit});
+    my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
+    return $schema->resultset('JobTemplates')->search(\%cond, \%attrs);
+}
+
 =pod
 
 =head1 NAME
@@ -41,26 +61,6 @@ and test suite (id and name).
 =back
 
 =cut
-
-sub _get_templates ($self) {
-    my $schema = $self->schema;
-    my $id = $self->param('job_template_id');
-    return $schema->resultset('JobTemplates')->search({id => $id}) if $id;
-    my %cond;
-    if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
-    if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
-    for my $id (qw(arch distri flavor version)) {
-        if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
-    }
-    for my $id (qw(machine_id test_suite_id product_id group_id)) {
-        if (my $value = $self->param($id)) { $cond{$id} = $value }
-    }
-    my $limits = OpenQA::App->singleton->config->{misc_limits};
-    my $limit
-      = min($limits->{list_templates_max_limit}, $self->param('limit') // $limits->{list_templates_default_limit});
-    my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
-    return $schema->resultset('JobTemplates')->search(\%cond, \%attrs);
-}
 
 sub list ($self) {
     my @templates = eval { $self->_get_templates };
@@ -120,6 +120,39 @@ sub _get_job_groups ($self, $id, $name) {
     }
 
     return \%yaml;
+}
+
+sub _update_job_templates ($self, $job_template_names, $job_group, $user_errors, $json, $yaml) {
+    my $job_templates = $self->schema->resultset('JobTemplates');
+    my $group_id = $job_group->id;
+    my @job_template_ids;
+    foreach my $key (sort keys %$job_template_names) {
+        my $res = $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
+        push @job_template_ids, $res->{id} if $res->{id};
+        push @$user_errors, $res->{error} and die "abort transaction\n" if $res->{error};
+    }
+    $json->{ids} = \@job_template_ids;
+
+    # Drop entries we haven't touched in add/update loop
+    $job_templates->search(
+        {
+            id => {'not in' => \@job_template_ids},
+            group_id => $group_id,
+        })->delete();
+
+    if (my $diff = $job_group->text_diff($yaml)) {
+        $json->{changes} = $diff;
+    }
+
+    # Preview mode: Get the expected YAML and rollback the result
+    if ($self->validation->param('preview')) {
+        $json->{preview} = int($self->validation->param('preview'));
+        $self->schema->txn_rollback;
+    }
+    else {
+        # Store the original YAML template after all changes have been made
+        $job_group->update({template => $yaml});
+    }
 }
 
 =over 4
@@ -194,39 +227,6 @@ in the response if any changes to the database were made.
 =back
 
 =cut
-
-sub _update_job_templates ($self, $job_template_names, $job_group, $user_errors, $json, $yaml) {
-    my $job_templates = $self->schema->resultset('JobTemplates');
-    my $group_id = $job_group->id;
-    my @job_template_ids;
-    foreach my $key (sort keys %$job_template_names) {
-        my $res = $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
-        push @job_template_ids, $res->{id} if $res->{id};
-        push @$user_errors, $res->{error} and die "abort transaction\n" if $res->{error};
-    }
-    $json->{ids} = \@job_template_ids;
-
-    # Drop entries we haven't touched in add/update loop
-    $job_templates->search(
-        {
-            id => {'not in' => \@job_template_ids},
-            group_id => $group_id,
-        })->delete();
-
-    if (my $diff = $job_group->text_diff($yaml)) {
-        $json->{changes} = $diff;
-    }
-
-    # Preview mode: Get the expected YAML and rollback the result
-    if ($self->validation->param('preview')) {
-        $json->{preview} = int($self->validation->param('preview'));
-        $self->schema->txn_rollback;
-    }
-    else {
-        # Store the original YAML template after all changes have been made
-        $job_group->update({template => $yaml});
-    }
-}
 
 sub update ($self) {
     my $validation = $self->validation;
