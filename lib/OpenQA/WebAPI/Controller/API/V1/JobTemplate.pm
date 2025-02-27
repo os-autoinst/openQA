@@ -242,6 +242,10 @@ sub update ($self) {
     my $data = {};
     my $user_errors = [];
     my $yaml = $validation->param('template') // '';
+    my $template_reference = $validation->param('reference');
+    my $to_expand = $validation->param('expand');
+    my $id = $self->param('id');
+    my $name = $validation->param('name');
     try {
         $data = load_yaml(string => $validation->param('template'));
         $user_errors
@@ -253,38 +257,10 @@ sub update ($self) {
     };
     return $self->respond_to(json => {json => {error => $user_errors}, status => 400}) if @$user_errors;
 
-    my $schema = $self->schema;
-    my $job_groups = $schema->resultset('JobGroups');
     my $json = {};
     my @server_errors;
     try {
-        my $id = $self->param('id');
-        my $name = $validation->param('name');
-        my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
-            {select => [qw(id name template)]});
-        return push @$user_errors, 'Job group ' . ($name // $id) . ' not found' unless $job_group;
-        my $group_id = $job_group->id;
-        $json->{job_group_id} = $group_id;
-        # Backwards compatibility: ID used to mean group ID on this route
-        $json->{id} = $group_id;
-
-        if (my $reference = $validation->param('reference')) {
-            my $template = $job_group->to_yaml;
-            $json->{template} = $template;
-            # Compare with no regard for trailing whitespace
-            chomp $template;
-            chomp $reference;
-            return push @$user_errors, 'Template was modified' unless $template eq $reference;
-        }
-
-        my $job_template_names = $job_group->template_data_from_yaml($data);
-        return push @$user_errors, $job_template_names->{error} if $job_template_names->{error};
-        if ($validation->param('expand')) {
-            # Preview mode: Get the expected YAML without changing the database
-            $json->{result} = $job_group->expand_yaml($job_template_names);
-        }
-        $schema->txn_do(
-            sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml) });
+        $self->_perform_update($id, $name, $json, $data, $yaml, $template_reference, $to_expand, $user_errors);
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
@@ -304,6 +280,35 @@ sub update ($self) {
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $validation->param('preview');
     $self->respond_to(json => {json => $json});
+}
+
+sub _perform_update ($self, $id, $name, $json, $data, $yaml, $reference, $to_expand, $user_errors) {
+    my $job_groups = $self->schema->resultset('JobGroups');
+    my $job_group
+      = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef), {select => [qw(id name template)]});
+    return push @$user_errors, 'Job group ' . ($name // $id) . ' not found' unless $job_group;
+    my $group_id = $job_group->id;
+    $json->{job_group_id} = $group_id;
+    # Backwards compatibility: ID used to mean group ID on this route
+    $json->{id} = $group_id;
+
+    if ($reference) {
+        my $template = $job_group->to_yaml;
+        $json->{template} = $template;
+        # Compare with no regard for trailing whitespace
+        chomp $template;
+        chomp $reference;
+        return push @$user_errors, 'Template was modified' unless $template eq $reference;
+    }
+
+    my $job_template_names = $job_group->template_data_from_yaml($data);
+    return push @$user_errors, $job_template_names->{error} if $job_template_names->{error};
+    if ($to_expand) {
+        # Preview mode: Get the expected YAML without changing the database
+        $json->{result} = $job_group->expand_yaml($job_template_names);
+    }
+    $self->schema->txn_do(
+        sub { $self->_update_job_templates($job_template_names, $job_group, $user_errors, $json, $yaml) });
 }
 
 =over 4
