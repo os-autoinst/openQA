@@ -33,11 +33,9 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 
     # read settings from config
     my %global_settings;
-    if ($cfg) {
-        _read_section($cfg, 'global', \%global_settings);
-        _read_section($cfg, $instance_number, \%global_settings);
-        _read_section($cfg, "class:$_", \%global_settings) for split(',', $global_settings{WORKER_CLASS} // '');
-    }
+    _read_section($cfg, 'global', \%global_settings);
+    _read_section($cfg, $instance_number, \%global_settings);
+    _read_section($cfg, "class:$_", \%global_settings) for split(',', $global_settings{WORKER_CLASS} // '');
 
     # read global settings from environment variables
     for my $var (qw(LOG_DIR TERMINATE_AFTER_JOBS_DONE)) {
@@ -47,23 +45,11 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     # read global settings specified via CLI arguments
     $global_settings{LOG_LEVEL} = 'debug' if $cli_options->{verbose};
 
-    # determine web UI host
-    my $webui_host = $cli_options->{host} || $global_settings{HOST} || 'localhost';
-    delete $global_settings{HOST};
-
-    # determine web UI host specific settings
+    # determine web UI host and settings specific to it
     my %webui_host_specific_settings;
-    my @hosts = split(' ', $webui_host);
-    for my $section (@hosts) {
-        if ($cfg && $cfg->SectionExists($section)) {
-            for my $set ($cfg->Parameters($section)) {
-                $webui_host_specific_settings{$section}->{uc $set} = trim $cfg->val($section, $set);
-            }
-        }
-        else {
-            $webui_host_specific_settings{$section} = {};
-        }
-    }
+    my @hosts = split(' ', $cli_options->{host} || $global_settings{HOST} || 'localhost');
+    delete $global_settings{HOST};
+    _read_section($cfg, $_, $webui_host_specific_settings{$_} = {}) for @hosts;
 
     # Select sensible system CPU load15 threshold to prevent system overload
     # based on experiences with system stability so far
@@ -91,7 +77,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 }
 
 sub _read_section ($cfg, $section, $out) {
-    return undef unless $cfg->SectionExists($section);
+    return undef unless $cfg && $cfg->SectionExists($section);
     $out->{uc $_} = trim $cfg->val($section, $_) for $cfg->Parameters($section);
 }
 
