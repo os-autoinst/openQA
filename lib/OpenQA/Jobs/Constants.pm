@@ -9,7 +9,12 @@ use Exporter 'import';
 # define regex for validating test names in accordance with `JobScenarios-01.yaml` and `JobTemplates-01.yaml`
 # note: In contrast to the YAML schema a few more characters are allowed here as they are useful for manually
 #       triggered jobs, e.g. via `openqa-clone-custom-git-refspec`.
-use constant TEST_NAME_REGEX => qr|^[\p{Word} _*.+,:/#@-]+\z|;
+my $TEST_NAME_ALLOWED_CHARS = '\p{Word} _*.,:/#@';
+my $TEST_NAME_ALLOWED_CHARS_PLUS_MINUS = $TEST_NAME_ALLOWED_CHARS . '+-';
+my $TEST_NAME_REGEX = qr|^[?$TEST_NAME_ALLOWED_CHARS_PLUS_MINUS]+\z|;
+sub TEST_NAME_ALLOWED_CHARS () { $TEST_NAME_ALLOWED_CHARS }
+sub TEST_NAME_ALLOWED_CHARS_PLUS_MINUS () { $TEST_NAME_ALLOWED_CHARS_PLUS_MINUS }
+sub TEST_NAME_REGEX () { $TEST_NAME_REGEX }
 
 # job states
 use constant {
@@ -108,6 +113,8 @@ use constant DEFAULT_JOB_PRIORITY => 50;
 use constant TAG_ID_COLUMN => "concat(VERSION, '-', BUILD)";
 
 our @EXPORT = qw(
+  TEST_NAME_ALLOWED_CHARS
+  TEST_NAME_ALLOWED_CHARS_PLUS_MINUS
   TEST_NAME_REGEX
   ASSIGNED
   CANCELLED
