@@ -31,14 +31,12 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
         $settings_file = undef;
     }
 
-    # read global settings from config
+    # read settings from config
     my %global_settings;
-    for my $section ('global', $instance_number) {
-        if ($cfg && $cfg->SectionExists($section)) {
-            for my $set ($cfg->Parameters($section)) {
-                $global_settings{uc $set} = trim $cfg->val($section, $set);
-            }
-        }
+    if ($cfg) {
+        _read_section($cfg, 'global', \%global_settings);
+        _read_section($cfg, $instance_number, \%global_settings);
+        _read_section($cfg, "class:$_", \%global_settings) for split(',', $global_settings{WORKER_CLASS} // '');
     }
 
     # read global settings from environment variables
@@ -90,6 +88,11 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     $self->{_file_path} = $settings_file;
     $self->{_parse_errors} = \@parse_errors;
     return $self;
+}
+
+sub _read_section ($cfg, $section, $out) {
+    return undef unless $cfg->SectionExists($section);
+    $out->{uc $_} = trim $cfg->val($section, $_) for $cfg->Parameters($section);
 }
 
 sub auto_detect_worker_address ($self, $fallback = undef) {

@@ -78,7 +78,7 @@ subtest 'apply settings to app' => sub {
     is($setup_log_app, $app, 'setup_log called with the right application');
 };
 
-subtest 'instance-specific settings' => sub {
+subtest 'instance-specific and WORKER_CLASS-specific settings' => sub {
     my $settings1 = OpenQA::Worker::Settings->new(1);
     is_deeply(
         $settings1->global_settings,
@@ -101,10 +101,11 @@ subtest 'instance-specific settings' => sub {
             CRITICAL_LOAD_AVG_THRESHOLD => 40,
             GLOBAL => 'setting',
             WORKER_HOSTNAME => '127.0.0.1',
-            WORKER_CLASS => 'qemu_aarch64',
+            WORKER_CLASS => 'special-hardware,qemu_aarch64',
             LOG_LEVEL => 'test',
             LOG_DIR => 'log/dir',
-            FOO => 'bar',
+            FOO => 'special',
+            BAR => 'aarch64-specific-setting',
             RETRY_DELAY => 10,
             RETRY_DELAY_IF_WEBUI_BUSY => 120,
         },
