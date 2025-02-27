@@ -17,7 +17,7 @@ use OpenQA::JobDependencies::Constants;
 use Date::Format 'time2str';
 
 my $test_case = OpenQA::Test::Case->new;
-my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema_name = OpenQA::Test::Database::generate_schema_name;
 my $fixtures = '01-jobs.pl 06-job_dependencies.pl';
 my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 my $jobs = $schema->resultset('Jobs');

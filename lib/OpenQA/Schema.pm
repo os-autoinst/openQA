@@ -34,7 +34,7 @@ sub connect_db (%args) {
 
     my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
     if ($mode eq 'test') {
-        $SINGLETON = __PACKAGE__->connect($ENV{TEST_PG});
+        $SINGLETON = __PACKAGE__->connect($ENV{TEST_PG} // 'DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg');
     }
     else {
         my %ini;
