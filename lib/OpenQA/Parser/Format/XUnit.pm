@@ -30,6 +30,7 @@ sub parse {
 
         $result->{errors} = exists $ts->{errors} ? $ts->{errors} : undef;
         $result->{tests} = exists $ts->{tests} ? $ts->{tests} : undef;
+        $result->{softfailures} = exists $ts->{softfailures} ? $ts->{softfailures} : undef;
         $result->{failures} = exists $ts->{failures} ? $ts->{failures} : undef;
         $result->{time} = exists $ts->{time} ? $ts->{time} : undef;
 
@@ -56,6 +57,7 @@ sub parse {
             });
 
         my $ts_result = 'ok';
+        $ts_result = 'softfail' if ($ts->{softfailures} && $ts->{softfailures} > 0);
         $ts_result = 'fail' if ($ts->{failures} && $ts->{failures} > 0) || ($ts->{errors} && $ts->{errors} > 0);
         $result->{result} = $ts_result;
         $result->{dents} = 0;
@@ -67,6 +69,7 @@ sub parse {
             sub {
                 my $tc = shift;
                 my $tc_result = 'ok';
+                $tc_result = 'softfail' if ($tc->{softfailures} && $tc->{softfailures} > 0);
                 $tc_result = 'fail'
                   if ($tc->{failures} && $tc->{failures} > 0) || ($tc->{errors} && $tc->{errors} > 0);
 
@@ -76,7 +79,8 @@ sub parse {
                 my $content = '# Test messages ';
                 $content .= "# $tc->{name}\n" if $tc->{name};
 
-                for my $out ($tc->children('skipped, passed, error, failure')->each) {
+                for my $out ($tc->children('skipped, passed, error, failure, softfailure')->each) {
+                    $tc_result = 'softfail' if ($out->tag =~ m/softfailure/);
                     $tc_result = 'fail' if ($out->tag =~ m/failure|error/);
                     $content .= '# ' . $out->tag . ": \n\n";
                     $content .= $out->{message} . "\n" if $out->{message};
@@ -106,7 +110,7 @@ sub parse {
     use Mojo::Base 'OpenQA::Parser::Result::OpenQA';
     has properties => sub { OpenQA::Parser::Results->new };
 
-    has [qw(errors tests failures time)];
+    has [qw(errors tests softfailures failures time)];
 }
 
 {
