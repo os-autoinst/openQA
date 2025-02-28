@@ -247,8 +247,8 @@ subtest '_locate_needle_for_ref' => sub {
     my $needles_dir = tempdir;
     my $git_remote_dir = tempdir;
     my $temp_dir = path(OpenQA::Needles::temp_dir);
-    note qx{git -C "$needles_dir" init};
-    note qx{git -C "$git_remote_dir" init};
+    note qx{git -C "$needles_dir" init -q};
+    note qx{git -C "$git_remote_dir" init -q};
     path($git_remote_dir, 'foo.png')->spew('this is a png');
     path($git_remote_dir, 'foo.json')->spew('this is json');
     note qx{git -C "$git_remote_dir" config user.email foo\@bar};
