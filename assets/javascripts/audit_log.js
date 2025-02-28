@@ -328,6 +328,24 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
       },
       {targets: 2, orderable: false},
       {
+        targets: 6,
+        render: function (data, type, row) {
+          const rowData = dataForLink(this);
+	  const settings = rowData.settings;
+          const html = '<a href=/tests/overview?version=' + settings['VERSION'] + '&build=' + settings['BUILD'] + '&distri=' + settings['DISTRI'] + '&flavor=' + data + '>' + data + '</a>';
+          return html;
+        }
+      },
+      {
+        targets: 8,
+        render: function (data, type, row) {
+          const rowData = dataForLink(this);
+	  const settings = rowData.settings;
+          const html = '<a href=/tests/overview?version=' + settings['VERSION'] + '&build=' + data + '&distri=' + settings['DISTRI'] + '>' + data + '</a>';
+          return html;
+        }
+      },
+      {
         targets: 10,
         orderable: false,
         render: function (data, type, row) {
