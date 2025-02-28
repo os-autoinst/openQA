@@ -177,14 +177,15 @@ sub is_workdir_clean ($self) {
 }
 
 sub cache_ref ($self, $ref, $url, $relative_path, $output_file, $allow_arbitrary_url_fetch = 1) {
-    $self->app->log->debug(
-        "Checking out $relative_path from url '" . ($url // '') . "' rev '" . ($ref // '') . "' to $output_file");
     # checkout git versioned file <$relative_path> of from repo at version <$ref> and write it to <$output_file>
     # returns undef on success - else the error message
     if (-f $output_file) {
         eval { path($output_file)->touch };
         return $@ ? $@ : undef;
     }
+
+    $self->app->log->debug(
+        "Checking out $relative_path from url '" . ($url // '') . "' rev '" . ($ref // '') . "' to $output_file");
 
     # Now check if the ref is already present in the repo
     my $res = $self->_run_cmd(['cat-file', '-t', $ref], \%CHECK_OPTIONS);
