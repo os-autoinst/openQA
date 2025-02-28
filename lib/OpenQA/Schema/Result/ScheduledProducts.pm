@@ -274,7 +274,7 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
         }
         catch ($e) {
             $schema->svp_rollback('try_create_job_from_settings');
-            die $e if $schema->is_deadlock($e);    # uncoverable statement
+            die $e if $schema->is_deadlock($e);
             push @$failed_job_info, {job_name => $settings->{TEST}, error_message => $e};
         }
     }
