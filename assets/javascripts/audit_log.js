@@ -310,6 +310,35 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
       },
       {targets: 2, orderable: false},
       {
+        targets: 6,
+        render: function (data, type, row) {
+          const rowData = dataForLink(this);
+          const settings = rowData.settings;
+          const version = settings['VERSION'];
+          const build = settings['BUILD'];
+          const distri = settings['DISTRI'];
+          if (version !== undefined && build !== undefined && distri !== undefined) {
+            return `<a href=/tests/overview?version=${version}&build=${build}&distri=${distri}&flavor=${data}>${data}</a>`;
+          } else {
+            return data;
+          }
+        }
+      },
+      {
+        targets: 8,
+        render: function (data, type, row) {
+          const rowData = dataForLink(this);
+          const settings = rowData.settings;
+          const version = settings['VERSION'];
+          const distri = settings['DISTRI'];
+          if (version !== undefined && distri !== undefined) {
+            return `<a href=/tests/overview?version=${version}&build=${data}&distri=${distri}>${data}</a>`;
+          } else {
+            return data;
+          }
+        }
+      },
+      {
         targets: 10,
         orderable: false,
         render: function (data, type, row) {
