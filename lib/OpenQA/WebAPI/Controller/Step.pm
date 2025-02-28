@@ -80,23 +80,11 @@ sub check_tabmode ($self) {
 
 # Helper function to generate the needle url, with an optional version
 sub needle_url ($self, $distri, $name, $version, $jsonfile) {
-    if (defined($jsonfile) && $jsonfile) {
-        if (defined($version) && $version) {
-            $self->url_for('needle_file', distri => $distri, name => $name)
-              ->query(version => $version, jsonfile => $jsonfile);
-        }
-        else {
-            $self->url_for('needle_file', distri => $distri, name => $name)->query(jsonfile => $jsonfile);
-        }
-    }
-    else {
-        if (defined($version) && $version) {
-            $self->url_for('needle_file', distri => $distri, name => $name)->query(version => $version);
-        }
-        else {
-            $self->url_for('needle_file', distri => $distri, name => $name);
-        }
-    }
+    my $url = $self->url_for('needle_file', distri => $distri, name => $name);
+    my %query;
+    $query{jsonfile} = $jsonfile if $jsonfile;
+    $query{version} = $version if $version;
+    return keys %query ? $url->query(%query) : $url;
 }
 
 # Call to viewimg or viewaudio
