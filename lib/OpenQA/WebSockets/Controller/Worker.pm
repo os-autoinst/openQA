@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebSockets::Controller::Worker;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
@@ -18,8 +18,7 @@ use Mojo::Util 'dumper';
 
 use constant LOG_WORKER_STATUS_MESSAGES => $ENV{OPENQA_LOG_WORKER_STATUS_MESSAGES} // 0;
 
-sub ws {
-    my ($self) = @_;
+sub ws ($self) {
     my $status = $self->status;
 
     # add worker connection
@@ -34,8 +33,7 @@ sub ws {
     $self->tx->max_websocket_size(10485760);
 }
 
-sub _finish {
-    my ($self, $code, $reason) = @_;
+sub _finish ($self, $code, $reason) {
     return undef unless $self;
 
     my $worker = OpenQA::WebSockets::Model::Status->singleton->remove_worker_connection($self->tx);
@@ -51,9 +49,7 @@ sub _finish {
     #       is lost unexpectedly. It will be considered offline after the configured timeout expires.
 }
 
-sub _message {
-    my ($self, $json) = @_;
-
+sub _message ($self, $json) {
     my $app = $self->app;
     my $schema = $app->schema;
     my $tx = $self->tx;
