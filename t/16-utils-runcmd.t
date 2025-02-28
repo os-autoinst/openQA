@@ -106,7 +106,7 @@ subtest 'invoke Git commands for real testing error handling' => sub {
         note qx{rmdir "$git_remote_dir"};
         note qx{cp -a "$empty_tmp_dir/" "$git_remote_dir"};
         note qx{rm "$empty_tmp_dir/.git" -rf};
-        note qx{git -C "$empty_tmp_dir" init};
+        note qx{git -C "$empty_tmp_dir" init -q};
         my $test_file_3 = "$empty_tmp_dir/baz";
         my $ref = qx{git -C "$git_remote_dir" rev-parse HEAD};
         chomp $ref;
