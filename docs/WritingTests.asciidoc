@@ -585,10 +585,19 @@ WORKER_CLASS = desktop
 
 [2]
 WORKER_CLASS = desktop,foo,bar
+BAR = this value has precedence over the one from the "class:foo" section below
 
 [3]
 # WORKER_CLASS is not set
+
+[class:foo]
+FOO = this value is present on all instances where WORKER_CLASS contains foo
+BAR = this value is would be present in the same way but is overridden by slot 2
 --------------------------------------------------------------------------------
+
+As shown it is also possible to specify a section with the name `[class:…]` to
+specify `WORKER_CLASS`-specific values. Note that values in the concrete
+sections for instance numbers have precedence.
 
 Worker class values can also be set to additionally qualify workers or worker
 instances for informational purposes, for example region and location tags
