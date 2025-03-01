@@ -13,7 +13,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Scheduler::Client;
 use DateTime;
 use Data::Dump 'pp';
-use Try::Tiny;
+use Feature::Compat::Try;
 use Mojo::Util 'dumper';
 
 use constant LOG_WORKER_STATUS_MESSAGES => $ENV{OPENQA_LOG_WORKER_STATUS_MESSAGES} // 0;
@@ -105,10 +105,10 @@ sub _message ($self, $json) {
                     $_->reschedule_state for @jobs;
                 });
         }
-        catch {
+        catch ($e) {
             # uncoverable statement
-            log_warning("Unable to re-schedule job(s) $job_ids_str rejected by worker $worker_id: $_");
-        };
+            log_warning("Unable to re-schedule job(s) $job_ids_str rejected by worker $worker_id: $e");
+        }
 
         # log that we 'saw' the worker
         $worker_db->seen;
@@ -167,9 +167,9 @@ sub _message ($self, $json) {
             # Tell the worker that we saw it (used for tests and debugging)
             $tx->send({json => {type => 'info', seen => 1}});
         }
-        catch {
-            log_error("Failed updating seen and error status of worker $worker_id: $_");    # uncoverable statement
-        };
+        catch ($e) {
+            log_error("Failed updating seen and error status of worker $worker_id: $e");    # uncoverable statement
+        }
 
         # find the job currently associated with that worker and check whether the worker still
         # executes the job it is supposed to
@@ -206,11 +206,10 @@ sub _message ($self, $json) {
                 $worker->reschedule_assigned_jobs([$current_job, @unfinished_jobs]);
             }
         }
-        catch {
+        catch ($e) {
             # uncoverable statement
-            log_warning("Unable to verify whether worker $worker_id runs its job(s) as expected: $_");
-        };
-
+            log_warning("Unable to verify whether worker $worker_id runs its job(s) as expected: $e");
+        }
         # consider the worker idle unless it claims to be broken or work on a job
         $worker_status->{idle_despite_job_assignment} = !$worker_is_broken && !defined $job_id;
     }
