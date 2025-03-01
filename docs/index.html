@@ -7430,10 +7430,20 @@ which has both the values <code>desktop</code> <em>and</em> <code>foo</code>:</p
 
 <span class="tok-k">[2]</span>
 <span class="tok-na">WORKER_CLASS</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">desktop,foo,bar</span>
+<span class="tok-na">BAR</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">this value has precedence over the one from the &quot;class:foo&quot; section below</span>
 
 <span class="tok-k">[3]</span>
-<span class="tok-c1"># WORKER_CLASS is not set</span></code></pre>
+<span class="tok-c1"># WORKER_CLASS is not set</span>
+
+<span class="tok-k">[class:foo]</span>
+<span class="tok-na">FOO</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">this value is present on all instances where WORKER_CLASS contains foo</span>
+<span class="tok-na">BAR</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">this value is would be present in the same way but is overridden by slot 2</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>As shown it is also possible to specify a section with the name <code>[class:…]</code> to
+specify <code>WORKER_CLASS</code>-specific values. Note that values in the concrete
+sections for instance numbers have precedence.</p>
 </div>
 <div class="paragraph">
 <p>Worker class values can also be set to additionally qualify workers or worker
@@ -13363,7 +13373,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-27 04:44:53 UTC
+Last updated 2025-03-01 04:43:28 UTC
 </div>
 </div>
 </body>
