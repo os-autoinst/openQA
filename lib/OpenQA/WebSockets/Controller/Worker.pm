@@ -175,50 +175,15 @@ sub _message ($self, $json) {
 
         # find the job currently associated with that worker and check whether the worker still
         # executes the job it is supposed to
-        my $current_job_id;
+        my ($current_job, $current_job_id, $unfinished_jobs);
         try {
-            return undef unless $worker;
-
-            my $registered_job_token;
-            my $current_job_state;
-            my @unfinished_jobs = $worker->unfinished_jobs;
-            my $current_job = $worker->job // $unfinished_jobs[0];
-            if ($current_job) {
-                $current_job_id = $current_job->id;
-                $current_job_state = $current_job->state;
+            ($current_job, $job_id, $unfinished_jobs)
+              = $self->_should_assign_jobs($worker, $worker_id, \$current_job_id, $job_id, $job_token,
+                $worker_previously_idle);
+            if (defined $unfinished_jobs) {
+                log_debug("Rescheduling jobs assigned to worker $worker_id");
+                $worker->reschedule_assigned_jobs([$current_job, @$unfinished_jobs]);
             }
-
-            # log debugging info
-            log_trace("Found job $current_job_id in DB from worker_status update sent by worker $worker_id")
-              if defined $current_job_id;
-            log_trace("Received request has job id: $job_id")
-              if defined $job_id;
-            $registered_job_token = $worker->get_property('JOBTOKEN');
-            log_trace("Worker $worker_id for job $current_job_id has token $registered_job_token")
-              if defined $current_job_id && defined $registered_job_token;
-            log_trace("Received request has token: $job_token")
-              if defined $job_token;
-
-            # skip any further actions if worker just does the one job we expected it to do
-            return undef
-              if ( defined $job_id
-                && defined $current_job_id
-                && defined $job_token
-                && defined $registered_job_token
-                && $job_id eq $current_job_id
-                && (my $job_token_correct = $job_token eq $registered_job_token)
-                && OpenQA::Jobs::Constants::meta_state($current_job_state) eq OpenQA::Jobs::Constants::EXECUTION)
-              && (scalar @unfinished_jobs <= 1);
-
-            # give worker a second chance to process the job assignment
-            # possible situation on the worker: The worker might be sending a status update claiming it is
-            # idle (or has doing that task piled up on the event loop). At the same time a job arrives. The
-            # message regarding that job will be processed after sending the idle status. So let's give the
-            # worker another change to process the message about its assigned job.
-            return undef unless $worker_previously_idle;
-
-            log_debug("Rescheduling jobs assigned to worker $worker_id");
-            $worker->reschedule_assigned_jobs([$current_job, @unfinished_jobs]);
         }
         catch {
             # uncoverable statement
@@ -232,6 +197,49 @@ sub _message ($self, $json) {
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $message_type, $worker_status->{id}));
     }
+}
+
+sub _should_assign_jobs ($self, $worker, $worker_id, $current_job_id, $job_id, $job_token, $worker_previously_idle) {
+    return undef unless $worker;
+
+    my $registered_job_token;
+    my $current_job_state;
+    my @unfinished_jobs = $worker->unfinished_jobs;
+    my $current_job = $worker->job // $unfinished_jobs[0];
+    if ($current_job) {
+        $$current_job_id = $current_job->id;
+        $current_job_state = $current_job->state;
+    }
+
+    # log debugging info
+    log_trace("Found job $current_job_id in DB from worker_status update sent by worker $worker_id")
+      if defined $current_job_id;
+    log_trace("Received request has job id: $job_id")
+      if defined $job_id;
+    $registered_job_token = $worker->get_property('JOBTOKEN');
+    log_trace("Worker $worker_id for job $current_job_id has token $registered_job_token")
+      if defined $current_job_id && defined $registered_job_token;
+    log_trace("Received request has token: $job_token")
+      if defined $job_token;
+
+    # skip any further actions if worker just does the one job we expected it to do
+    return undef
+      if ( defined $job_id
+        && defined $current_job_id
+        && defined $job_token
+        && defined $registered_job_token
+        && $job_id eq $current_job_id
+        && (my $job_token_correct = $job_token eq $registered_job_token)
+        && OpenQA::Jobs::Constants::meta_state($current_job_state) eq OpenQA::Jobs::Constants::EXECUTION)
+      && (scalar @unfinished_jobs <= 1);
+
+    # give worker a second chance to process the job assignment
+    # possible situation on the worker: The worker might be sending a status update claiming it is
+    # idle (or has doing that task piled up on the event loop). At the same time a job arrives. The
+    # message regarding that job will be processed after sending the idle status. So let's give the
+    # worker another change to process the message about its assigned job.
+    return undef unless $worker_previously_idle;
+    return ($current_job, $job_id, \@unfinished_jobs);
 }
 
 1;
