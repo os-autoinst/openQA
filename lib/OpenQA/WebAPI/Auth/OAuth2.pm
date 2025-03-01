@@ -70,7 +70,7 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
         return $controller->render(text => $msg, status => 403);    # return always 403 for consistency
     }
     my $details = $tx->res->json;
-    my $id_field = $provider_config->{id_from};
+    my $id_field = $provider_config->{id_from} // 'id';
     my $nickname_field = $provider_config->{nickname_from};
     if (ref $details ne 'HASH' || !$details->{$id_field} || !$details->{$nickname_field}) {
         log_debug('OAuth2 user provider returned: ' . dumper($details));
