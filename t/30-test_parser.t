@@ -442,6 +442,7 @@ sub test_xunit_file {
     is $parser->generated_tests_results->first()->properties->last->value, 'd';
 
     ok $parser->generated_tests_results->first()->time;
+    ok $parser->generated_tests_results->first()->softfailures;
     ok $parser->generated_tests_results->first()->errors;
     ok $parser->generated_tests_results->first()->failures;
     ok $parser->generated_tests_results->first()->tests;
@@ -450,15 +451,15 @@ sub test_xunit_file {
       'Generated 11 openQA tests results';    # 9 testsuites with all cumulative results for openQA
     is $parser->generated_tests_results->size, 11, 'Object contains 11 testsuites';
 
-    is $parser->results->search_in_details("title", qr/bacon/)->size, 13,
+    is $parser->results->search_in_details("title", qr/bacon/)->size, 14,
       'Overall 11 testsuites, 2 tests does not have title containing bacon';
-    is $parser->results->search_in_details("text", qr/bacon/)->size, 15,
+    is $parser->results->search_in_details("text", qr/bacon/)->size, 16,
       'Overall 11 testsuites, 15 tests are for bacon';
-    is $parser->generated_tests_output->size, 23, "23 Outputs";
+    is $parser->generated_tests_output->size, 24, "23 Outputs";
 
     my $resultsdir = tempdir;
     $parser->write_output($resultsdir);
-    is $resultsdir->list_tree->size, 23, '23 test outputs were written';
+    is $resultsdir->list_tree->size, 24, '24 test outputs were written';
     $resultsdir->list_tree->each(
         sub {
             fail('Output result was written correctly') unless ($_->slurp =~ /^# Test messages /);
