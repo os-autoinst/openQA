@@ -10,6 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use Test::Warnings ':report_warnings';
 use Test::Mojo;
+use Test::Output qw(stderr_like);
 use Mojo::File 'tempdir';
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
@@ -74,7 +75,8 @@ $schema->create_system_user;
 
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $oldest_still_supported_schema_version, 'Schema at correct, old, version');
-$ret = $schema->deploy;
+stderr_like { $ret = $schema->deploy }
+qr{Job IDs will be converted to bigint.*Worker database IDs.*Further database IDs}s, 'Expected warnings are logged';
 
 # insert default fixtures so this test is at least a little bit closer to migrations in production
 OpenQA::Test::Database->new->insert_fixtures($schema);
