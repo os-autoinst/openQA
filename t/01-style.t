@@ -22,6 +22,7 @@ is qx{git grep -I -l '^use Test::\\(Exception\\|Fatal\\)' t/**.t}, '',
 is qx{git grep -I -l '^\\(throws\\|dies\\|lives\\)_ok.*\<sub\>' t/**.t}, '',
   'Only use simplified prototyped Test::Exception functions';
 is qx{git grep -I -l 'like.*\$\@' t/**.t}, '', 'Use throws_ok instead of manual checks of exceptions';
+is qx{git grep -I -l '^use \\(Try::Tiny\\|TryCatch\\)'}, '', 'No Try::Tiny or TryCatch necessary, use Feature::Compat::Try and later native Perl';
 is qx{git grep -I -l 'sub [a-z_A-Z0-9]\\+()' ':!docs/'}, '',
   'Consistent space before function signatures (this is not ensured by perltidy)';
 done_testing;
