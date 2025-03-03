@@ -19,7 +19,6 @@ use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use Mojo::File 'path';
 use List::Util 'min';
-use Try::Tiny;
 
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
@@ -46,11 +45,8 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         databases => 'PostgreSQL',
         force_overwrite => 0,
     });
-my $deployed_version;
-try {
-    $deployed_version = $dh->version_storage->database_version;
-};
-ok(!$deployed_version, 'DB not deployed by plain schema connection with deploy => 0');
+throws_ok { $dh->version_storage->database_version } 'DBIx::Class::Exception',
+  'DB not deployed by plain schema connection with deploy => 0';
 
 my $ret = $schema->deploy;
 ok($dh->version_storage->database_version, 'DB deployed');
