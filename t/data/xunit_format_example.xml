@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
     <testsuites>
         <!-- standard test suite -->
-        <testsuite name="bacon" errors="666" tests="777" failures="888" time="0.021">
+        <testsuite name="bacon" softfailures="555" errors="666" tests="777" failures="888" time="0.021">
             <!-- standard props -->
             <properties>
                 <property name="x" value="y" />
@@ -17,6 +17,9 @@
             <!-- each kind of test case with a full message -->
             <testcase assertions="0" classname="bacon" name="bacon 1" time="0.001">
                 <passed message="message" type="type">inner massage</passed>
+            </testcase>
+            <testcase assertions="0" classname="bacon" name="bacon 1" time="0.001">
+                <softfailure message="message" type="type">inner massage</passed>
             </testcase>
             <testcase assertions="0" classname="bacon" name="bacon 2" time="0.001">
                 <error message="message" type="type">inner massage</error>
