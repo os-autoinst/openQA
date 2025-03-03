@@ -21,6 +21,8 @@ use Test::Output qw(stdout_like stdout_unlike combined_like);
 
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
+# Avoid using tester's ~/.gitconfig
+delete $ENV{HOME};
 
 my $fixtures = '01-jobs.pl 03-users.pl 05-job_modules.pl 07-needles.pl';
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => $fixtures);
