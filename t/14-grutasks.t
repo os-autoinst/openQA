@@ -39,6 +39,9 @@ use Time::Seconds;
 
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
+# Avoid using tester's ~/.gitconfig
+delete $ENV{HOME};
+
 # Avoid tampering with git checkout
 my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 my $guard = scope_guard sub { chdir $FindBin::Bin };

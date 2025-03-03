@@ -28,6 +28,9 @@ use OpenQA::Test::Utils 'setup_fullstack_temp_dir';
 use Test::Warnings ':report_warnings';
 use Date::Format 'time2str';
 
+# Avoid using tester's ~/.gitconfig
+delete $ENV{HOME};
+
 my %settings = (
     TEST => 'test',
     DISTRI => 'fedora',

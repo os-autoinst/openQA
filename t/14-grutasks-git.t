@@ -20,6 +20,9 @@ use Mojo::File qw(path tempdir);
 use Time::Seconds;
 use File::Copy::Recursive qw(dircopy);
 
+# Avoid using tester's ~/.gitconfig
+delete $ENV{HOME};
+
 # Avoid tampering with git checkout
 my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 my $guard = scope_guard sub { chdir $FindBin::Bin };
