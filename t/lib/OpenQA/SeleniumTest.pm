@@ -19,7 +19,6 @@ use Data::Dump 'pp';
 use IPC::Run qw(start);
 use Mojo::IOLoop::Server;
 use Mojo::Server::Daemon;
-use Try::Tiny;
 use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
 use OpenQA::Log 'log_info';
