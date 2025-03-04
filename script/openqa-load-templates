@@ -54,7 +54,7 @@ use Mojo::Base -strict, -signatures;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 use File::Basename qw(dirname);
-use Try::Tiny;
+use Feature::Compat::Try;
 use Data::Dump 'dd';
 use Mojo::Util qw(decamelize);
 use Mojo::URL;
@@ -86,10 +86,10 @@ try {
     $info = Cpanel::JSON::XS->new->relaxed->decode($datafile);
     dd $info;
 }
-catch {
+catch ($e) {
     $info = eval $datafile;
     if (my $error = $@) { die "Error in data file: $error\n" }
-};
+}
 
 $options{'host'} ||= 'localhost';
 $options{apibase} ||= '/api/v1';

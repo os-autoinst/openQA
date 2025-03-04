@@ -10,7 +10,7 @@ use OpenQA::Schema::Result::ScheduledProducts;
 use OpenQA::Log qw(log_info log_warning);
 use OpenQA::Utils;
 use Mojo::JSON qw(decode_json encode_json);
-use Try::Tiny;
+use Feature::Compat::Try;
 
 sub {
     my ($schema) = @_;
@@ -26,8 +26,8 @@ sub {
         my $settings;
         try {
             $settings = decode_json($event->event_data);
-        };
-        if (!$settings) {
+        }
+        catch ($e) {
             log_warning(
                 "Unable to read settings from 'iso_create' audit event with ID $event_id. Skipping its migration.");
             next;
