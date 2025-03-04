@@ -743,8 +743,10 @@ sub _create_download_lists {
 }
 
 sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @load_yaml_args) {
-    my $data = eval { load_yaml(@load_yaml_args) };
-    if (my $error = $@) { return {error_message => "Unable to load YAML: $error"} }
+    my $data;
+    try { $data = load_yaml(@load_yaml_args) }
+    catch ($e) { return {error_message => "Unable to load YAML: $e"} }
+
     my $app = OpenQA::App->singleton;
     my $validation_errors = $app->validate_yaml($data, 'JobScenarios-01.yaml', $app->log->level eq 'debug');
     return {error_message => "YAML validation failed:\n" . join("\n", @$validation_errors)} if @$validation_errors;

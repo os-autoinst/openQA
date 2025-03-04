@@ -15,6 +15,7 @@ use FindBin '$Bin';
 use Fcntl ':flock';
 use File::Spec::Functions 'catfile';
 use OpenQA::Utils qw(:DEFAULT prjdir);
+use Feature::Compat::Try;
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
@@ -155,10 +156,11 @@ sub is_deadlock ($self, $error) { $error =~ DEADLOCK_REGEX }
 
 sub txn_do_retry_on_deadlock ($self, $sub, $deadlock_cb = undef) {
     for (my $tries = 0;; ++$tries) {
-        my $res = eval { $self->txn_do($sub) };
-        return $res unless my $e = $@;
-        die $e if $tries >= DEADLOCK_RETRIES || !$self->is_deadlock($e);    # uncoverable statement
-        $deadlock_cb->($e) if $deadlock_cb;    # uncoverable statement
+        try { return $self->txn_do($sub) }
+        catch ($e) {
+            die $e if $tries >= DEADLOCK_RETRIES || !$self->is_deadlock($e);    # uncoverable statement
+            $deadlock_cb->($e) if $deadlock_cb;    # uncoverable statement
+        }
     }
 }
 
