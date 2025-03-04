@@ -113,10 +113,6 @@ sub referer_check ($self) {
     return 1;
 }
 
-sub list {
-    my ($self) = @_;
-}
-
 sub _load_test_preset ($self, $preset_key) {
     return undef unless defined $preset_key;
     # avoid reading INI file again on subsequent calls
