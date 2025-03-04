@@ -15,6 +15,7 @@ use OpenQA::App;
 use Time::Moment;
 use File::Spec::Functions 'catfile';
 use Sys::Hostname;
+use Feature::Compat::Try;
 
 our $VERSION = '0.0.1';
 our @EXPORT_OK = qw(
@@ -116,8 +117,11 @@ sub _log_via_mojo_app ($level, $msg) {
 }
 
 sub _try_logging_to_channel ($level, $msg, $channel) {
-    eval { $channel->$level($msg); };
-    return ($@ ? 0 : 1);
+    try {
+        $channel->$level($msg);
+        return 1
+    }
+    catch ($e) { return 0 }
 }
 
 sub _log_to_stderr_or_stdout ($level, $msg) {

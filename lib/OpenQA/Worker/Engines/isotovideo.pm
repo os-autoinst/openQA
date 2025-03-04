@@ -28,6 +28,7 @@ use Mojo::IOLoop::ReadWriteProcess::CGroup 'cgroupv2';
 use Mojo::Collection 'c';
 use Mojo::File 'path';
 use Mojo::Util qw(trim scope_guard);
+use Feature::Compat::Try;
 
 use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 use constant CACHE_SERVICE_POLL_DELAY => $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} // 5;
@@ -178,10 +179,8 @@ sub _link_asset ($asset, $pooldir) {
     # If the given asset is a symlink itself, do not hardlink a symlink
     my $linked = 0;
     unless (-l $asset) {
-        $linked = eval { link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!} };
-        if (my $err = $@) {
-            log_debug(qq{Symlinking asset because hardlink failed: $err});    # uncoverable statement
-        }
+        try { $linked = link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!} }
+        catch ($e) { log_debug(qq{Symlinking asset because hardlink failed: $e}) }    # uncoverable statement
     }
     unless ($linked) {
         symlink($asset, $target) or die qq{Cannot create symlink from "$asset" to "$target": $!};
@@ -369,23 +368,24 @@ sub _configure_cgroupv2 ($job_info) {
     my $cgroup_slice = CGROUP_SLICE;
     if (!defined $cgroup_slice) {
         # determine cgroup slice of the current process
-        eval {
+        try {
             my $pid = $$;
             $cgroup_slice = (grep { /name=$cgroup_name:/ } split(/\n/, path('/proc', $pid, 'cgroup')->slurp))[0]
               if defined $pid;
             $cgroup_slice =~ s/^.*name=$cgroup_name:/$cgroup_name/g if defined $cgroup_slice;
-        };
+        }
+        catch ($e) { }
     }
     my $cgroup;
-    eval {
+    try {
         $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice // '')->child($job_info->{id})->create;
         my $query_cgroup_path = $cgroup->can('_cgroup');
         log_info('Using cgroup ' . $query_cgroup_path->($cgroup)) if $query_cgroup_path;
-    };
-    if (my $error = $@) {
+    }
+    catch ($e) {
         $cgroup = c();
-        chomp $error;
-        log_warning("Disabling cgroup usage because cgroup creation failed: $error");
+        chomp $e;
+        log_warning("Disabling cgroup usage because cgroup creation failed: $e");
         log_info(
             'You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS.');
     }

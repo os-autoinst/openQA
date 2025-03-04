@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Plugin::ObsRsync::Task;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::File;
 use IPC::Run;
+use Feature::Compat::Try;
 
 sub register {
     my ($self, $app) = @_;
@@ -50,8 +51,10 @@ sub run {
         $job->note(project_lock => 1);
     }
     my $dirty = 0;
-    eval { $dirty = $helper->is_status_dirty($project, 1); 1 }
-      or _retry_or_finish($job, $helper, $project, $retry_interval_on_exception, $retry_max_count_on_exception);
+    try { $dirty = $helper->is_status_dirty($project, 1); 1 }
+    catch ($e) {
+        _retry_or_finish($job, $helper, $project, $retry_interval_on_exception, $retry_max_count_on_exception)
+    }
     return _retry_or_finish($job, $helper, $project) if $dirty;
 
     return _retry_or_finish($job, $helper, $project)
@@ -61,8 +64,9 @@ sub run {
     my @cmd = (Mojo::File->new($home, 'script', 'rsync.sh')->to_string, $project);
     my ($stdin, $stdout, $error);
     my $exit_code = -1;
-    eval { IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error); $exit_code = $?; };
-    my $error_from_exception = $@;
+    my $error_from_exception;
+    try { IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error); $exit_code = $?; }
+    catch ($e) { $error_from_exception = $e }
 
     $helper->unlock($project);
     return $job->finish(0) if (!$exit_code);
@@ -109,9 +113,12 @@ sub update_obs_builds_text {
         my @cmd = ('bash', $read_files);
         my ($stdin, $stdout, $error);
         my $exit_code = -1;
-        eval { IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error); $exit_code = $?; };
-        my $err = $@;
-        return ($exit_code, $error // $err);
+        try {
+            IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error);
+            $exit_code = $?;
+            return ($exit_code, $error);
+        }
+        catch ($e) { return ($exit_code, $error // $e); }
     };
 
     my ($exit_code, $error) = $helper->for_every_batch($alias, $sub);

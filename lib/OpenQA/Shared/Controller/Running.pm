@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Mojo::Util 'b64_encode';
 use Mojo::File 'path';
 use Mojo::JSON qw(encode_json decode_json);
+use Feature::Compat::Try;
 use OpenQA::Constants qw(WORKER_COMMAND_LIVELOG_STOP WORKER_COMMAND_LIVELOG_START);
 use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Utils;
@@ -225,18 +226,17 @@ sub streaming ($self) {
                 $file = $self->app->static->file('images/suse-tested.png');
                 $close = 1;
             }
-
-            my $data_base64 = eval { b64_encode(path($basepath, $newfile)->slurp, '') };
-            if (my $error = $@) {
+            try {
+                my $data_base64 = b64_encode(path($basepath, $newfile)->slurp, '');
+                $self->write("data: data:image/png;base64,$data_base64\n\n", $close ? $close_connection : undef);
+            }
+            catch ($e) {
                 # log the error as server-sent events message and close the connection
                 # note: This should be good enough for debugging on the client-side. The client will re-attempt
                 #       streaming. Avoid logging on the server-side here to avoid flooding the log for this
                 #       non-critical problem.
-                chomp $error;
-                $self->write("data: Unable to read image: $error\n\n", $close_connection);
-            }
-            else {
-                $self->write("data: data:image/png;base64,$data_base64\n\n", $close ? $close_connection : undef);
+                chomp $e;
+                $self->write("data: Unable to read image: $e\n\n", $close_connection);
             }
         });
 

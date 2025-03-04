@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobGroup;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use Feature::Compat::Try;
 
 use OpenQA::Schema::Result::JobGroups;
 
@@ -226,10 +227,8 @@ sub create ($self) {
     my $properties = $self->load_properties;
 
     my $id;
-    eval { $id = $self->resultset->create($properties)->id };
-    if ($@) {
-        return $self->render(json => {error => $@}, status => 400);
-    }
+    try { $id = $self->resultset->create($properties)->id }
+    catch ($e) { return $self->render(json => {error => $e}, status => 400) }
 
     $self->emit_event(openqa_jobgroup_create => {id => $id});
     $self->render(json => {id => $id});
@@ -270,10 +269,8 @@ sub update ($self) {
 
     my $properties = $self->load_properties;
     my $id;
-    eval { $id = $group->update($properties)->id };
-    if ($@) {
-        return $self->render(json => {error => $@}, status => 400);
-    }
+    try { $id = $group->update($properties)->id }
+    catch ($e) { return $self->render(json => {error => $e}, status => 400) }
 
     $self->emit_event(openqa_jobgroup_update => {id => $id});
     $self->render(json => {id => $id});

@@ -39,6 +39,7 @@ use File::Basename;
 use File::Which 'which';
 use POSIX 'strftime';
 use Mojo::JSON 'decode_json';
+use Feature::Compat::Try;
 
 sub _init ($self) {
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
@@ -309,8 +310,8 @@ sub _basic_needle_info (
     return (undef, 'File not found') unless defined $file_name;
 
     my $needle;
-    eval { $needle = decode_json(Mojo::File->new($file_name)->slurp) };
-    return (undef, $@) if $@;
+    try { $needle = decode_json(Mojo::File->new($file_name)->slurp) }
+    catch ($e) { return (undef, $e) }
 
     my $png_fname = basename($file_name, '.json') . '.png';
     my $pngfile = File::Spec->catpath('', $needles_dir, $png_fname);
@@ -384,11 +385,12 @@ sub src ($self) {
         if ($casedir_url->scheme) {
             my $refspec = $casedir_url->fragment;
             # try to read vars.json from resultdir and replace branch by actual git hash if possible
-            eval {
+            try {
                 my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
                 my $vars = decode_json($vars_json);
                 $refspec = $vars->{TEST_GIT_HASH};
-            };
+            }
+            catch ($e) { }
             $refspec ||= 'HEAD';
             my $module_path = '/blob/' . $refspec . '/' . $module->script;
             # github treats '.git' as optional extension which needs to be stripped
@@ -400,8 +402,9 @@ sub src ($self) {
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath = "$testcasedir/" . $module->script;
     return $self->reply->not_found unless $scriptpath && -e $scriptpath;
-    my $script = eval { path($scriptpath)->slurp };
-    return $self->reply->not_found if $@;
+    my $script;
+    try { $script = path($scriptpath)->slurp }
+    catch ($e) { return $self->reply->not_found }
     $self->render(script => decode_utf8($script), scriptpath => $scriptpath);
 }
 

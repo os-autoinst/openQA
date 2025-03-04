@@ -63,8 +63,9 @@ and test suite (id and name).
 =cut
 
 sub list ($self) {
-    my @templates = eval { $self->_get_templates };
-    if (my $error = $@) { return $self->render(json => {error => $error}, status => 404) }
+    my @templates;
+    try { @templates = $self->_get_templates }
+    catch ($e) { return $self->render(json => {error => $e}, status => 404) }
     $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
 
@@ -361,8 +362,8 @@ sub create ($self) {
             machine_id => $validation->param('machine_id'),
             group_id => $group_id,
             test_suite_id => $validation->param('test_suite_id')};
-        eval { push @ids, $schema->resultset('JobTemplates')->create($values)->id };
-        $error = $@;
+        try { push @ids, $schema->resultset('JobTemplates')->create($values)->id }
+        catch ($e) { $error = $e }
     }
     elsif ($validation->param('prio_only')) {
         for my $param (qw(group_id test_suite_id)) {
@@ -370,7 +371,7 @@ sub create ($self) {
         }
         return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-        eval {
+        try {
             my $job_templates = $schema->resultset('JobTemplates')->search(
                 {
                     group_id => $group_id,
@@ -378,8 +379,8 @@ sub create ($self) {
                 });
             push @ids, $_->id for $job_templates->all;
             $job_templates->update({prio => $prio});
-        };
-        $error = $@;
+        }
+        catch ($e) { $error = $e }
     }
     else {
         for my $param (qw(group_name machine_name test_suite_name arch distri flavor version)) {
@@ -397,8 +398,8 @@ sub create ($self) {
             machine => {name => $validation->param('machine_name')},
             prio => $prio,
             test_suite => {name => $validation->param('test_suite_name')}};
-        eval { push @ids, $schema->resultset('JobTemplates')->create($values)->id };
-        $error = $@;
+        try { push @ids, $schema->resultset('JobTemplates')->create($values)->id }
+        catch ($e) { $error = $e }
     }
 
     my $status;
@@ -455,8 +456,8 @@ sub destroy ($self) {
     }
     elsif ($job_template) {
         my $rs;
-        eval { $rs = $job_template->delete };
-        $error = $@;
+        try { $rs = $job_template->delete }
+        catch ($e) { $error = $e }
 
         if ($rs) {
             $json->{result} = int($rs);

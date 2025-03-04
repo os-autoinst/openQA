@@ -9,6 +9,7 @@ use OpenQA::Log qw(log_warning);
 use OpenQA::Utils qw(check_df);
 use Scalar::Util qw(looks_like_number);
 use Time::Seconds;
+use Feature::Compat::Try;
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage));
@@ -35,9 +36,10 @@ sub finish_job_if_disk_usage_below_percentage (%args) {
     return undef if $percentage == 100;
 
     my $dir = $args{dir};
-    my ($available_bytes, $total_bytes) = eval { check_df($dir) };
-    if (my $error = $@) {
-        log_warning "$error Proceeding with cleanup.";
+    my ($available_bytes, $total_bytes);
+    try { ($available_bytes, $total_bytes) = check_df($dir) }
+    catch ($e) {
+        log_warning "$e Proceeding with cleanup.";
         return undef;
     }
 

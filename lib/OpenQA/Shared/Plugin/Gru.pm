@@ -16,6 +16,7 @@ use Mojo::Pg;
 use Mojo::Promise;
 use Mojo::File qw(path);
 use Mojo::JSON qw(decode_json);
+use Feature::Compat::Try;
 
 has app => undef, weak => 1;
 has 'dsn';
@@ -155,19 +156,19 @@ sub _add_jobs_to_gru_task ($self, $gru_id, $job_ids) {
             $schema->svp_begin('try_gru_dependencies');
             for my $id (@$job_ids) {
                 # Add job to existing gru task with the same args
-                my $gru_dep
-                  = eval { $schema->resultset('GruDependencies')->create({job_id => $id, gru_task_id => $gru_id}); };
-                unless ($gru_dep) {
-                    my $error = $@;
-                    $schema->svp_rollback('try_gru_dependencies');
-                    die $error
-                      unless $error
-                      =~ m/insert or update on table "gru_dependencies" violates foreign key constraint "gru_dependencies_fk_gru_task_id"/i;
-                    # if the GruTask was already deleted meanwhile, we can skip
-                    # the rest of the jobs, since the wanted task was done
-                    log_debug("GruTask $gru_id already gone, skip assigning jobs (message: $error)");
-                    last;
-                }
+                my $gru_dep = do {
+                    try { $schema->resultset('GruDependencies')->create({job_id => $id, gru_task_id => $gru_id}); }
+                    catch ($e) {
+                        $schema->svp_rollback('try_gru_dependencies');
+                        die $e
+                          unless $e
+                          =~ m/insert or update on table "gru_dependencies" violates foreign key constraint "gru_dependencies_fk_gru_task_id"/i;
+                        # if the GruTask was already deleted meanwhile, we can skip
+                        # the rest of the jobs, since the wanted task was done
+                        log_debug("GruTask $gru_id already gone, skip assigning jobs (message: $e)");
+                        last;
+                    }
+                };
             }
             $schema->svp_release('try_gru_dependencies');
         });

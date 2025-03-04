@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::Main;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use Feature::Compat::Try;
 
 use Date::Format;
 use OpenQA::Jobs::Constants;
@@ -33,7 +34,7 @@ sub dashboard_build_results ($self) {
     my $groups = $self->stash('job_groups_and_parents');
 
     my @results;
-    eval {
+    try {
         for my $group (@$groups) {
             if (@$group_params) {
                 next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
@@ -47,10 +48,10 @@ sub dashboard_build_results ($self) {
             my $build_results_for_group = $build_results->{build_results};
             push(@results, $build_results) if @{$build_results_for_group};
         }
-    };
-    if (my $error = $@) {
-        die $error unless $error =~ qr/^invalid regex: /;
-        return $self->render(json => {error => $error}, status => 400);
+    }
+    catch ($e) {
+        die $e unless $e =~ qr/^invalid regex: /;
+        return $self->render(json => {error => $e}, status => 400);
     }
 
     $self->stash(
@@ -119,15 +120,17 @@ sub _group_overview ($self, $resultset, $template) {
     my @pinned_comments = grep { $_->user->is_operator } $comments->search({text => $pinned_cond})->all;
 
     my $tags = $group->tags;
-    my $cbr = eval {
-        OpenQA::BuildResults::compute_build_results($group, $limit_builds,
-            $time_limit_days, $only_tagged ? $tags : undef,
-            $group_params, $tags);
+    my $cbr = do {
+        try {
+            OpenQA::BuildResults::compute_build_results($group, $limit_builds,
+                $time_limit_days, $only_tagged ? $tags : undef,
+                $group_params, $tags);
+        }
+        catch ($e) {
+            die $e unless $e =~ qr/^invalid regex: /;
+            return $self->_respond_error_for_group_overview($e);
+        }
     };
-    if (my $error = $@) {
-        die $error unless $error =~ qr/^invalid regex: /;
-        return $self->_respond_error_for_group_overview($error);
-    }
     my $build_results = $cbr->{build_results};
     my $max_jobs = $cbr->{max_jobs};
 

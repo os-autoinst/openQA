@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::Test;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use Feature::Compat::Try;
 
 use OpenQA::App;
 use OpenQA::Utils;
@@ -133,16 +134,20 @@ sub _load_scenario_definitions ($self, $preset) {
     return undef if exists $preset->{scenario_definitions};
     return undef unless my $distri = $preset->{distri};
     return undef unless my $casedir = testcasedir($distri, $preset->{version});
-    my $defs_yaml = eval { path($casedir, 'scenario-definitions.yaml')->slurp('UTF-8') };
-    if (my $error = $@) {
-        return $self->stash(flash_error => "Unable to read scenario definitions for the specified preset: $error")
-          unless $error =~ /no.*file/i;
+    my $defs_yaml;
+    try { $defs_yaml = path($casedir, 'scenario-definitions.yaml')->slurp('UTF-8') }
+    catch ($e) {
+        return $self->stash(flash_error => "Unable to read scenario definitions for the specified preset: $e")
+          unless $e =~ /no.*file/i;
         my $info = Mojo::ByteStream->new(
             qq(You first need to <a href="#" onclick="cloneTests(this)">clone the $distri test distribution</a>.));
         return $self->stash(flash_info => $info);
     }
-    my $defs = eval { load_yaml(string => $defs_yaml) };
-    return $self->stash(flash_error => "Unable to parse scenario definitions for the specified preset: $@") if $@;
+    my $defs;
+    try { $defs = load_yaml(string => $defs_yaml) }
+    catch ($e) {
+        return $self->stash(flash_error => "Unable to parse scenario definitions for the specified preset: $e")
+    }
     my $e = join("\n", @{$self->app->validate_yaml($defs, 'JobScenarios-01.yaml')});
     return $self->stash(flash_error => "Unable to validate scenarios definitions of the specified preset:\n$e") if $e;
     $preset->{scenario_definitions} = $defs_yaml;
@@ -476,11 +481,12 @@ sub show_filesrc ($self) {
         last unless $casedir_url->scheme;
         my $refspec = $casedir_url->fragment;
         # try to read vars.json from resultdir and replace branch by actual git hash if possible
-        eval {
+        try {
             my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
             my $vars = decode_json($vars_json);
             $refspec = $vars->{TEST_GIT_HASH} if $vars->{TEST_GIT_HASH};
-        };
+        }
+        catch ($e) { }
         my $src_path = path('/blob', $refspec, $filepath);
         # github treats '.git' as optional extension which needs to be stripped
         $casedir_url->path($casedir_url->path =~ s/\.git//r . $src_path);

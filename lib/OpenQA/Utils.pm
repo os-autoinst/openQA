@@ -29,6 +29,7 @@ use File::Basename;
 use File::Spec;
 use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
+use Feature::Compat::Try;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
 use List::Util qw(min);
@@ -961,9 +962,8 @@ sub format_tx_error ($err) {
 #       for using user-provided regexes that may be invalid.
 sub regex_match ($regex_string, $string) {
     use warnings FATAL => 'regexp';
-    my $match = eval { $string =~ /$regex_string/ };
-    die "invalid regex: $@" if $@;
-    return $match;
+    try { return $string =~ /$regex_string/ }
+    catch ($e) { die "invalid regex: $e" }
 }
 
 # Returns a microsecond value suitable for use with "usleep". For the first iteration it returns the minimum value plus

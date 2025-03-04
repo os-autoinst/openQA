@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::ApiKey;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use Feature::Compat::Try;
 
 use DateTime::Format::Pg;
 
@@ -23,12 +24,12 @@ sub create ($self) {
     }
 
     if (!$error && $validation->is_valid('t_expiration')) {
-        eval { $expiration = DateTime::Format::Pg->parse_datetime($self->param('t_expiration')) };
-        $error = $@;
+        try { $expiration = DateTime::Format::Pg->parse_datetime($self->param('t_expiration')) }
+        catch ($e) { $error = $e }
     }
     unless ($error) {
-        eval { $self->schema->resultset('ApiKeys')->create({user_id => $user->id, t_expiration => $expiration}) };
-        $error = $@;
+        try { $self->schema->resultset('ApiKeys')->create({user_id => $user->id, t_expiration => $expiration}) }
+        catch ($e) { $error = $e }
     }
     if ($error) {
         my $msg = "Error adding the API key: $error";
