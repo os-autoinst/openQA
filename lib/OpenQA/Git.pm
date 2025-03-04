@@ -9,6 +9,7 @@ use Cwd 'abs_path';
 use Mojo::File 'path';
 use OpenQA::Utils qw(run_cmd_with_log_return_error run_cmd_with_log);
 use OpenQA::App;
+use Feature::Compat::Try;
 
 has 'app';
 has 'dir';
@@ -180,8 +181,11 @@ sub cache_ref ($self, $ref, $url, $relative_path, $output_file, $allow_arbitrary
     # checkout git versioned file <$relative_path> of from repo at version <$ref> and write it to <$output_file>
     # returns undef on success - else the error message
     if (-f $output_file) {
-        eval { path($output_file)->touch };
-        return $@ ? $@ : undef;
+        try {
+            path($output_file)->touch;
+            return undef;
+        }
+        catch ($e) { return $e }
     }
 
     $self->app->log->debug(

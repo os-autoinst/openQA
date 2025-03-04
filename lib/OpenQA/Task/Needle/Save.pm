@@ -10,6 +10,7 @@ use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils;
 use Mojo::JSON 'decode_json';
+use Feature::Compat::Try;
 use Time::Seconds 'ONE_HOUR';
 
 sub register {
@@ -20,11 +21,11 @@ sub register {
 sub _json_validation {
     my ($json) = @_;
 
-    my $djson = eval { decode_json($json) };
-    if (!$djson) {
-        my $err = $@;
-        $err =~ s@at /usr/.*$@@;    # do not print perl module reference
-        die "syntax error: $err";
+    my $djson;
+    try { $djson = decode_json($json) }
+    catch ($e) {
+        $e =~ s@at /usr/.*$@@;    # do not print perl module reference
+        die "syntax error: $e";
     }
     if (!exists $djson->{area} || !exists $djson->{area}[0]) {
         die 'no area defined';
@@ -68,11 +69,10 @@ sub _save_needle {
 
     # read JSON data
     my $json_data;
-    eval { $json_data = _json_validation($needle_json); };
-    if ($@) {
-        my $error = $@;
-        $app->log->error("Error validating needle: $error");
-        return $minion_job->finish({error => "<strong>Failed to validate $needlename.</strong><br>$error"});
+    try { $json_data = _json_validation($needle_json); }
+    catch ($e) {
+        $app->log->error("Error validating needle: $e");
+        return $minion_job->finish({error => "<strong>Failed to validate $needlename.</strong><br>$e"});
     }
 
     # determine imagepath

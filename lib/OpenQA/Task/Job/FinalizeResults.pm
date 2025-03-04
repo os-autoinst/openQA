@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Jobs::Constants qw(CANCELLED DONE);
 use OpenQA::Task::SignalGuard;
 use Time::Seconds;
+use Feature::Compat::Try;
 
 sub register ($self, $app, @) {
     $app->minion->add_task(finalize_job_results => \&_finalize_results);
@@ -24,8 +25,8 @@ sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = unde
     # try to finalize each
     my %failed_to_finalize;
     for my $module ($openqa_job->modules_with_job_prefetched) {
-        eval { $module->finalize_results; };
-        if (my $error = $@) { $failed_to_finalize{$module->name} = $error; }
+        try { $module->finalize_results }
+        catch ($e) { $failed_to_finalize{$module->name} = $e }
     }
 
     # record failed modules

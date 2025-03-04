@@ -116,7 +116,7 @@ sub list ($self) {
     }
 
     my @all;
-    eval {
+    try {
         @all = $schema->resultset($table)->search(
             keys %search ? \%search : undef,
             {
@@ -127,10 +127,8 @@ sub list ($self) {
                 rows => $limit + 1,
                 offset => $offset
             });
-    };
-    if (my $error = $@) {
-        return $self->render(json => {error => $error}, status => 404);
     }
+    catch ($e) { return $self->render(json => {error => $e}, status => 404) }
 
     # Pagination
     pop @all if my $has_more = @all > $limit;

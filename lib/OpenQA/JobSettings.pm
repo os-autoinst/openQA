@@ -10,6 +10,7 @@ use Mojo::URL;
 use Mojo::Util 'url_unescape';
 use OpenQA::Log 'log_debug';
 use OpenQA::Utils qw(asset_type_from_setting get_url_short);
+use Feature::Compat::Try;
 
 sub generate_settings ($params) {
     my $settings = $params->{settings};
@@ -56,10 +57,10 @@ sub expand_placeholders ($settings, $on_web_ui = 1) {
     for my $value (values %$settings) {
         next unless defined $value;
         my %visited_placeholders;
-        eval {
+        try {
             $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders, $on_web_ui)/eg;
-        };
-        return "Error: $@" if $@;
+        }
+        catch ($e) { return "Error: $e" }
     }
     return undef;
 }

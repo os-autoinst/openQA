@@ -6,6 +6,7 @@ use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
+use Feature::Compat::Try;
 
 my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 
@@ -94,8 +95,8 @@ sub barrier_create ($name = undef, $jobid = undef, $expected_jobs = undef) {
     return 0 if $barriers && $barriers->single;
     my $dbh = OpenQA::Schema->singleton->storage->dbh;
     my $sth = $dbh->prepare('INSERT INTO job_locks (name, owner, count) VALUES (?, ?, ?) ON CONFLICT DO NOTHING');
-    eval { $sth->execute($name, $jobid, $expected_jobs) };
-    die "Unable to create barrier for job $jobid with name '$name': $@" if $@;
+    try { $sth->execute($name, $jobid, $expected_jobs) }
+    catch ($e) { die "Unable to create barrier for job $jobid with name '$name': $e" }
     return $sth->rows > 0;
 }
 

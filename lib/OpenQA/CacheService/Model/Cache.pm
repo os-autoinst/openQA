@@ -3,6 +3,7 @@
 
 package OpenQA::CacheService::Model::Cache;
 use Mojo::Base -base, -signatures;
+use Feature::Compat::Try;
 
 use Carp 'croak';
 use Capture::Tiny 'capture_merged';
@@ -46,14 +47,14 @@ sub repair_database ($self, $db_file = $self->_locate_db_file) {
     # perform integrity check and test migration; try to provoke an error
     my $log = $self->log;
     $log->debug("Testing sqlite database ($db_file)");
-    eval {
+    try {
         die "database integrity check failed\n" if $self->_check_database_integrity;
         $self->sqlite->migrations->migrate;
-    };
+    }
 
     # remove broken database
-    if (my $err = $@) {
-        $log->error("Database has been corrupted: $err");
+    catch ($e) {
+        $log->error("Database has been corrupted: $e");
         $log->error('Killing processes accessing the database file handles and removing database');
         $self->_kill_db_accessing_processes("'$db_file'*");
     }
@@ -158,15 +159,15 @@ sub asset ($self, $asset) {
 }
 
 sub track_asset ($self, $asset) {
-    eval {
+    try {
         my $db = $self->sqlite->db;
         my $tx = $db->begin('exclusive');
         my $sql = "INSERT INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))"
           . 'ON CONFLICT (filename) DO UPDATE SET pending=1';
         $db->query($sql, $asset);
         $tx->commit;
-    };
-    if (my $err = $@) { $self->log->error("Tracking asset failed: $err") }
+    }
+    catch ($e) { $self->log->error("Tracking asset failed: $e") }
 }
 
 sub metrics ($self) {
@@ -270,8 +271,9 @@ sub _exceeds_limit ($self, $needed) {
         return 1 if $self->{cache_real_size} + $needed > $limit;
     }
     if (my $min_free_percentage = $self->min_free_percentage) {
-        my ($available_bytes, $total_bytes) = eval { check_df $self->location };
-        if (my $error = $@) { chomp $error; $self->log->error($error); return 0 }
+        my ($available_bytes, $total_bytes);
+        try { ($available_bytes, $total_bytes) = check_df $self->location }
+        catch ($e) { chomp $e; $self->log->error($e); return 0 }
         return 1 if ($available_bytes - $needed) / $total_bytes * 100 < $min_free_percentage;
     }
     return 0;
@@ -287,7 +289,7 @@ sub _check_limits ($self, $needed, $to_preserve = undef) {
         my $limit_size = human_readable_size($limit);
         $log->info(
             "Cache size $cache_size + needed $needed_size exceeds limit of $limit_size, purging least used assets");
-        eval {
+        try {
             my $results
               = $self->sqlite->db->select('assets', [qw(filename size last_use)], {pending => '0'},
                 {-asc => 'last_use'});
@@ -300,22 +302,22 @@ sub _check_limits ($self, $needed, $to_preserve = undef) {
                 $self->_decrease($asset_size) if $self->purge_asset($filename);
                 last if !$self->_exceeds_limit($needed);
             }
-        };
-        if (my $err = $@) { $log->error("Checking cache limit failed: $err") }
+        }
+        catch ($e) { $log->error("Checking cache limit failed: $e") }
     }
 }
 
 sub _delete_pending_assets ($self) {
     my $log = $self->log;
-    eval {
+    try {
         my $results = $self->sqlite->db->select('assets', [qw(filename pending)], {pending => '1'});
         for my $asset ($results->hashes->each) {
             my $filename = $asset->{filename};
             $log->info(qq{Purging "$filename" because it appears pending after service startup});
             $self->purge_asset($filename);
         }
-    };
-    if (my $err = $@) { $log->error("Checking for pending leftovers failed: $err") }
+    }
+    catch ($e) { $log->error("Checking for pending leftovers failed: $e") }
 }
 
 1;
