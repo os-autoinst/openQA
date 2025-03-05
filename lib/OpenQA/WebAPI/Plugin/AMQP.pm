@@ -16,9 +16,8 @@ use Scalar::Util qw(looks_like_number);
 my @job_events = qw(job_create job_delete job_cancel job_restart job_update_result job_done);
 my @comment_events = qw(comment_create comment_update comment_delete);
 
-sub new {
-    my $class = shift;
-    my $self = $class->SUPER::new(@_);
+sub new ($class, @args) {
+    my $self = $class->SUPER::new(@args);
     $self->{app} = undef;
     $self->{config} = undef;
     $self->{client} = undef;
@@ -26,10 +25,9 @@ sub new {
     return $self;
 }
 
-sub register {
-    my $self = shift;
-    $self->{app} = shift;
-    $self->{config} = $self->{app}->config;
+sub register ($self, $app, @args) {
+    $self->{app} = $app;
+    $self->{config} = $app->config;
     Mojo::IOLoop->singleton->next_tick(
         sub {
             # register for events
@@ -42,8 +40,7 @@ sub register {
         });
 }
 
-sub log_event {
-    my ($self, $event, $event_data) = @_;
+sub log_event ($self, $event, $event_data) {
 
     # use dot separators
     $event =~ s/_/\./;
@@ -82,9 +79,7 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
         })->finally(sub { undef $publisher });
 }
 
-sub on_job_event {
-    my ($self, $args) = @_;
-
+sub on_job_event ($self, $args) {
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     my $jobs = $self->{app}->schema->resultset('Jobs');
     return undef unless my $job = $jobs->find({id => $event_data->{id}});
@@ -114,8 +109,7 @@ sub on_job_event {
     $self->log_event($event, $event_data);
 }
 
-sub on_comment_event {
-    my ($self, $args) = @_;
+sub on_comment_event ($self, $args) {
     my ($comment_id, $connection_id, $event, $event_data) = @$args;
 
     # find comment in database
