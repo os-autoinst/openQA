@@ -161,8 +161,10 @@ our @EXPORT_OK = qw(
 # override OPENQA_BASEDIR for tests
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
-    my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
-    $ENV{OPENQA_BASEDIR} ||= $tdirname . 'data';
+    my ($tdirname) = $0 =~ m{((.*/t/|^t/)).+$};
+    # remove ./
+    $tdirname = File::Spec->canonpath($tdirname);
+    $ENV{OPENQA_BASEDIR} ||= "$tdirname/data";
 }
 
 sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
