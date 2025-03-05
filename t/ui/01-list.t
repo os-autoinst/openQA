@@ -428,6 +428,7 @@ subtest 'filter-finished' => sub {
 
 subtest 'result filter does not affect scheduled and running jobs' => sub {
     $driver->get('/tests?resultfilter=Failed');
+    wait_for_ajax msg => 'tables loaded after reloading page with resultfilter';
 
     my @running_jobs = $driver->find_elements('#running tbody tr');
     is scalar @running_jobs, 3, 'Running jobs are displayed';
