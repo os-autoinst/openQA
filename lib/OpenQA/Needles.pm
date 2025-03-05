@@ -19,7 +19,11 @@ my $tmp_dir = prjdir() . '/webui/cache/needle-refs';
 
 sub temp_dir () { $tmp_dir }
 
-sub is_in_temp_dir ($file_path) { index($file_path, $tmp_dir) == 0 }
+sub is_in_temp_dir ($file_path) {
+    my $abs_tmpdir = File::Spec->rel2abs($tmp_dir);
+    $file_path = File::Spec->rel2abs($file_path);
+    index($file_path, $abs_tmpdir) == 0;
+}
 
 sub needle_temp_dir ($dir, $ref) { path($tmp_dir, basename(dirname($dir)), $ref, 'needles') }
 
