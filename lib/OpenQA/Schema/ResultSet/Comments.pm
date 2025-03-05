@@ -7,6 +7,7 @@ use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use DBIx::Class::Timestamps;
 use OpenQA::App;
 use OpenQA::Utils qw(find_bugrefs href_to_bugref);
+use Feature::Compat::Try;
 
 =over 4
 
@@ -54,10 +55,11 @@ Creates comments on the specified jobs handling special contents.
 sub create_for_jobs ($self, $job_ids, $text, $user_id, $events = undef) {
     for my $job_id (@$job_ids) {
         my %data = (job_id => $job_id, text => href_to_bugref($text), user_id => $user_id);
-        my $comment = eval { $self->create(\%data)->handle_special_contents };
-        if (my $error = $@) {
-            chomp $error;
-            die "Comment creation on job $job_id failed: $error\n";
+        my $comment;
+        try { $comment = $self->create(\%data)->handle_special_contents }
+        catch ($e) {
+            chomp $e;
+            die "Comment creation on job $job_id failed: $e\n";
         }
         push @$events, $comment->event_data if defined $events;
     }

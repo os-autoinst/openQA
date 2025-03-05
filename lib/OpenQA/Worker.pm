@@ -32,6 +32,7 @@ BEGIN {
 }
 
 use Fcntl;
+use Feature::Compat::Try;
 use File::Path qw(make_path remove_tree);
 use File::Spec::Functions 'catdir';
 use List::Util qw(all max min);
@@ -291,15 +292,15 @@ sub init ($self) {
             # try to stop gracefully
             my $fatal_error = 'Another error occurred when trying to stop gracefully due to an error';
             if (!$self->{_shall_terminate} || $self->{_finishing_off}) {
-                eval {
+                try {
                     # log error using print because logging utils might have caused the exception
                     # (no need to repeat $err, it is printed anyways)
                     log_error('Stopping because a critical error occurred.');
 
                     # try to stop the job nicely
                     return $self->stop('exception');
-                };
-                $fatal_error = "$fatal_error: $@" if $@;
+                }
+                catch ($e) { $fatal_error = "$fatal_error: $e" }
             }
 
             # kill if stopping gracefully does not work
@@ -603,11 +604,11 @@ sub is_qemu_running ($self) {
 }
 
 sub is_ovs_dbus_service_running ($self) {
-    eval { defined &Net::DBus::system or require Net::DBus };
-    return 0 if $@;
+    try { defined &Net::DBus::system or require Net::DBus }
+    catch ($e) { return 0 }
     my $bus = ($self->{_system_dbus} //= Net::DBus->system(nomainloop => 1));
-    my $service = eval { defined $bus->get_service('org.opensuse.os_autoinst.switch') };
-    return !$@ && $service;
+    try { return defined $bus->get_service('org.opensuse.os_autoinst.switch') }
+    catch ($e) { return 0 }
 }
 
 # checks whether the worker is available
@@ -751,10 +752,14 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
 }
 
 sub _load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
-    my @load = eval { split(' ', path($path)->slurp) };
-    log_warning "Unable to determine average load: $@" if $@;
-    splice @load, 3;    # remove non-load numbers
-    log_error "Unable to parse system load from file '$path'" and return [] unless all { looks_like_number $_ } @load;
+    my @load;
+    try {
+        @load = split(' ', path($path)->slurp);
+        splice @load, 3;    # remove non-load numbers
+        log_error "Unable to parse system load from file '$path'" and return []
+          unless all { looks_like_number $_ } @load;
+    }
+    catch ($e) { log_warning "Unable to determine average load: $e" }
     return \@load;
 }
 
@@ -779,8 +784,8 @@ sub _setup_pool_directory ($self) {
     my $pool_directory = $self->pool_directory;
     return 'No pool directory assigned.' unless $pool_directory;
 
-    eval { $self->{_pool_directory_lock_fd} = $self->_lock_pool_directory };
-    return 'Unable to lock pool directory: ' . $@ if $@;
+    try { $self->{_pool_directory_lock_fd} = $self->_lock_pool_directory }
+    catch ($e) { return 'Unable to lock pool directory: ' . $e }
     return undef;
 }
 

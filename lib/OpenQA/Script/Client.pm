@@ -9,6 +9,7 @@ use Exporter 'import';
 use Mojo::JSON;    # booleans
 use Data::Dump 'dd';
 use Mojo::URL;
+use Feature::Compat::Try;
 use Scalar::Util ();
 use OpenQA::Client;
 use OpenQA::YAML qw(dump_yaml load_yaml);
@@ -153,8 +154,8 @@ sub run ($options, $operation, @args) {
         $options->{url} = $url;
         $options->{params} = \%params;
         $options->{params2} = @ARGV;
-        eval { $res = $client->archive->run($options) };
-        die "ERROR: $@ \n", $@ if $@;
+        try { $res = $client->archive->run($options) }
+        catch ($e) { die "ERROR: $e \n" }
         exit(0);
     }
     elsif ($operation eq 'jobs/overview/restart') {

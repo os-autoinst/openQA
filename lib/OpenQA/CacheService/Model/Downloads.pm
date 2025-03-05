@@ -3,7 +3,7 @@
 
 package OpenQA::CacheService::Model::Downloads;
 use Mojo::Base -base, -signatures;
-
+use Feature::Compat::Try;
 use Carp 'croak';
 
 # Two days
@@ -12,7 +12,7 @@ use constant CLEANUP_AFTER => 172800;
 has 'cache';
 
 sub add ($self, $lock, $job_id) {
-    eval {
+    try {
         my $db = $self->cache->sqlite->db;
         my $tx = $db->begin('exclusive');
 
@@ -21,8 +21,8 @@ sub add ($self, $lock, $job_id) {
         $db->insert('downloads', {lock => $lock, job_id => $job_id});
 
         $tx->commit;
-    };
-    if (my $err = $@) { croak "Couldn't add download: $err" }
+    }
+    catch ($e) { croak "Couldn't add download: $e" }
 }
 
 sub find ($self, $lock) {

@@ -8,6 +8,7 @@ use OpenQA::File;
 use Carp qw(croak);
 use Mojo::Asset::Memory;
 use Mojo::File qw(path);
+use Feature::Compat::Try;
 
 sub _upload_asset_fail ($self, $uri, $form) {
     $form->{state} = 'fail';
@@ -57,7 +58,7 @@ sub asset ($self, $job_id, $opts) {
         do {
             $retries-- if $retries > 0;
             my $tx;
-            eval {
+            try {
                 my $form = {
                     file => {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($part->serialize)},
                     asset => $opts->{asset},
@@ -69,10 +70,10 @@ sub asset ($self, $job_id, $opts) {
                     my $json = $tx->res->json;
                     $done = 1 if $json && $json->{status} && $json->{status} eq 'ok';
                 }
-            };
-            if (my $error = $@) {
-                $self->emit('upload_chunk.request_err', $tx, $error);
-                $final_error = $error;
+            }
+            catch ($e) {
+                $self->emit('upload_chunk.request_err', $tx, $e);
+                $final_error = $e;
             }
 
             unless ($done) {
