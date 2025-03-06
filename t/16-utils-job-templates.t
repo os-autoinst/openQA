@@ -60,18 +60,14 @@ is scalar @$errors, 1, "Invalid toplevel key detected" or diag "Error: $_" for @
 like($errors->[0], qr{/: Properties not allowed: invalid.}, 'Invalid toplevel key error message');
 
 subtest load_yaml => sub {
-    eval { load_yaml(file => $template_openqa_dupkey) };
-    my $err = $@;
-    like($err, qr{Duplicate key 'foo'}, 'Duplicate key detected');
+    throws_ok { load_yaml(file => $template_openqa_dupkey) } qr{Duplicate key 'foo'}, 'Duplicate key detected';
 
     my $cyclic = <<"EOM";
     - &ALIAS
       foo: *ALIAS
 EOM
 
-    eval { my $data = load_yaml(string => $cyclic) };
-    $err = $@;
-    like $err, qr{Found cyclic ref}, "cyclic refs are fatal";
+    throws_ok { my $data = load_yaml(string => $cyclic) } qr{Found cyclic ref}, "cyclic refs are fatal";
 };
 
 done_testing;
