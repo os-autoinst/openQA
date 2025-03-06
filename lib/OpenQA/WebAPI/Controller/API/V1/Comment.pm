@@ -132,6 +132,7 @@ sub create ($self) {
     my $text = $validation->param('text');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
     my $txn_guard = $self->schema->txn_scope_guard;
+    warn __PACKAGE__.':'.__LINE__.": !!!!!!!!!!!!! will make test fail\n";
     my $comment = $comments->create(
         {
             text => href_to_bugref($text),

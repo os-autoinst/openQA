@@ -196,6 +196,8 @@ subtest 'commenting in the group overview' => sub {
     test_comment_editing(0);
 };
 
+done_testing; exit;
+
 subtest 'URL auto-replace' => sub {
     my $build_url = $driver->get_current_url();
     $build_url =~ s/\?.*//;

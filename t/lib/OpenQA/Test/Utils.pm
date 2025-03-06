@@ -219,6 +219,7 @@ my $SIGCHLD_HANDLER = sub {
         my $exit_signal = $exit_status & 127;
         _fail_and_exit "sub process $child_name terminated by signal $exit_signal", $exit_signal if $exit_signal;
         my $exit_code = ($exit_status >> 8);
+        Test::More::diag("############## exit with $exit_code");
         _fail_and_exit "sub process $child_name terminated with exit code $exit_code", $exit_code if $exit_code;
     }
 };
