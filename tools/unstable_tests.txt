@@ -1,5 +1,4 @@
 t/25-cache-service.t
 t/43-scheduling-and-worker-scalability.t
-t/ui/01-list.t
 t/ui/26-jobs_restart.t
 t/ui/13-admin.t

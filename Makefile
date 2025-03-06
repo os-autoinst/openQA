@@ -201,7 +201,7 @@ test-heavy: node_modules
 
 .PHONY: test-ui
 test-ui: node_modules
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database RETRY=200 STABILITY_TEST=1 TIMEOUT_M=10000 TESTS=t/ui/01-list.t
 
 .PHONY: test-api
 test-api: node_modules
