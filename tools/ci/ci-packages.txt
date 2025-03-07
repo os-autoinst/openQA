@@ -231,7 +231,6 @@ perl-TimeDate-2.30
 perl-Time-Duration-Parse-0.16
 perl-Time-modules-2013.0912
 perl-Time-Moment-0.44
-perl-Try-Tiny-0.30
 perl-UNIVERSAL-can-1.20140328
 perl-UNIVERSAL-isa-1.20171012
 perl-URI-1.73
