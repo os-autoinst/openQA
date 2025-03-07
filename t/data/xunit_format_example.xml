@@ -18,9 +18,6 @@
             <testcase assertions="0" classname="bacon" name="bacon 1" time="0.001">
                 <passed message="message" type="type">inner massage</passed>
             </testcase>
-            <testcase assertions="0" classname="bacon" name="bacon 1" time="0.001">
-                <softfailure message="message" type="type">inner massage</passed>
-            </testcase>
             <testcase assertions="0" classname="bacon" name="bacon 2" time="0.001">
                 <error message="message" type="type">inner massage</error>
             </testcase>
@@ -63,8 +60,11 @@
             <testcase name="bacon 12">
                 <failure message="<b>message</b>" type="<i>type</i>"></failure>
             </testcase>
-            <testcase assertions="0" classname="not bacon" name="bacon 2" time="0.001">
+            <testcase assertions="0" classname="not bacon" name="bacon 13" time="0.001">
                 <error message="message" type="type">inner massage</error>
+            </testcase>
+            <testcase assertions="0" classname="bacon" name="bacon 14" time="0.001">
+                <softfailure message="message" type="type">inner massage</softfailure>
             </testcase>
         </testsuite>
         <!-- test suite with only one of verything -->
