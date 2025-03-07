@@ -27,7 +27,7 @@ subtest 'OpenQA::Client:Archive tests' => sub {
     is(-s "$limittest_path/limittest.tar.bz2", 2 * 1024 * 1024, 'limit test file is created')
       or note "dd output: $dd_output";
 
-    eval {
+    lives_ok {
         my %options = (
             archive => $destination,
             url => "/api/v1/jobs/$jobid/details",
@@ -35,8 +35,8 @@ subtest 'OpenQA::Client:Archive tests' => sub {
             'with-thumbnails' => 1
         );
         my $command = $t->ua->archive->run(\%options);
-    };
-    is($@, '', 'Archive functionality works as expected would perform correctly') or always_explain $@;
+    }
+    'Archive functionality works as expected would perform correctly';
 
     my $file = $destination->child('testresults', 'details-zypper_up.json');
     ok(-e $file, 'details-zypper_up.json file exists') or diag $file;

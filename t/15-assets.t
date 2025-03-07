@@ -111,8 +111,7 @@ $workercaps->{websocket_api_version} = 999999;
 throws_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } qr/Incompatible websocket API version/,
   'Worker different version - incompatible version exception';
 $workercaps->{websocket_api_version} = WEBSOCKET_API_VERSION;
-eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
-ok(!$@, 'Worker correct version');
+lives_ok { $w = $c->_register($schema, 'host', '1', $workercaps) } 'Worker correct version';
 
 my $worker = $schema->resultset('Workers')->find($w);
 is($worker->websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');

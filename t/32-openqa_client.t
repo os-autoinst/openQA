@@ -43,8 +43,10 @@ subtest 'upload public assets' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/public/hdd_image2.qcow2.CHUNKS/';
     my $rp = "t/data/openqa/share/factory/hdd/hdd_image2.qcow2";
 
-    eval { $t->ua->upload->asset(99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image2.qcow2'}); };
-    ok !$@, 'No upload errors' or die explain $@;
+    lives_ok {
+        $t->ua->upload->asset(99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image2.qcow2'})
+    }
+    'No upload errors';
     path($chunkdir)->remove_tree;
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
     ok -e $rp, 'Asset exists after upload';
@@ -57,11 +59,11 @@ subtest 'upload public assets (local)' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/public/hdd_image5.qcow2.CHUNKS/';
     my $rp = "t/data/openqa/share/factory/hdd/hdd_image5.qcow2";
 
-    eval {
+    lives_ok {
         $t->ua->upload->asset(
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image5.qcow2', local => 1});
-    };
-    ok !$@, 'No upload errors' or die explain $@;
+    }
+    'No upload errors';
     path($chunkdir)->remove_tree;
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
     ok -e $rp, 'Asset exists after upload';
@@ -77,11 +79,11 @@ subtest 'upload private assets' => sub {
     my ($local_prepare, $chunk_prepare);
     my $local_prepare_cb = $t->ua->upload->on('upload_local.prepare' => sub { $local_prepare++ });
     my $chunk_prepare_cb = $t->ua->upload->on('upload_chunk.prepare' => sub { $chunk_prepare++ });
-    eval {
+    lives_ok {
         $t->ua->upload->asset(
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image3.qcow2', asset => 'private'});
-    };
-    ok !$@, 'No upload errors' or die explain $@;
+    }
+    'No upload errors' or die explain $@;
     $t->ua->upload->unsubscribe('upload_local.prepare' => $local_prepare_cb);
     $t->ua->upload->unsubscribe('upload_chunl.prepare' => $chunk_prepare_cb);
     ok !$local_prepare, 'not uploaded via file copy';
@@ -101,7 +103,7 @@ subtest 'upload private assets (local)' => sub {
     my ($local_prepare, $chunk_prepare);
     my $local_prepare_cb = $t->ua->upload->on('upload_local.prepare' => sub { $local_prepare++ });
     my $chunk_prepare_cb = $t->ua->upload->on('upload_chunk.prepare' => sub { $chunk_prepare++ });
-    eval {
+    lives_ok {
         $t->ua->upload->asset(
             99963 => {
                 chunk_size => $chunk_size,
@@ -110,8 +112,8 @@ subtest 'upload private assets (local)' => sub {
                 asset => 'private',
                 local => 1
             });
-    };
-    ok !$@, 'No upload errors' or die explain $@;
+    }
+    'No upload errors';
     $t->ua->upload->unsubscribe('upload_local.prepare' => $local_prepare_cb);
     $t->ua->upload->unsubscribe('upload_chunl.prepare' => $chunk_prepare_cb);
     ok $local_prepare, 'uploaded via file copy';
@@ -133,11 +135,11 @@ subtest 'upload other assets' => sub {
             ok(-d $chunkdir, 'Chunk directory exists');
         });
 
-    eval {
+    lives_ok {
         $t->ua->upload->asset(
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image3.xml', asset => 'other'});
-    };
-    ok !$@, 'No upload errors' or die explain $@;
+    }
+    'No upload errors';
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
     ok -e $rp, 'Asset exists after upload';
     is $sum, OpenQA::File->file_digest($rp), 'checksum matches for other asset';
@@ -160,11 +162,11 @@ subtest 'upload retries' => sub {
     $t->ua->upload->on('upload_chunk.response' => sub { $responses++; });
     $t->ua->upload->on('upload_chunk.request_fail' => sub { use Data::Dump 'pp'; diag pp(@_) });
 
-    eval {
+    lives_ok {
         $t->ua->upload->asset(
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image4.xml', asset => 'other'});
-    };
-    ok !$@, 'No upload errors';
+    }
+    'No upload errors';
     is $fail_chunk, 1, 'One chunk failed uploading, but we recovered' or always_explain "\$fail_chunk: $fail_chunk";
     is $responses, OpenQA::File::_chunk_size(-s $filename, $chunk_size) + 1, 'responses as expected';
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
@@ -191,11 +193,11 @@ subtest 'upload failures' => sub {
             is(pop()->res->json->{status}, 'foobar', 'Error message status is correct');
         });
 
-    eval {
+    lives_ok {
         $t->ua->upload->asset(99963 =>
               {chunk_size => $chunk_size, file => $filename, name => 'hdd_image5.xml', asset => 'other', retries => 7});
-    };
-    ok !$@, 'No function errors on upload failures' or die diag $@;
+    }
+    'No function errors on upload failures' or BAIL_OUT "$@";
     is $fail_chunk, 7, 'All attempts failed, no recovery on upload failures';
     is $errored, 1, 'Upload errors';
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
@@ -216,11 +218,11 @@ subtest 'upload internal errors' => sub {
     $t->ua->upload->on('upload_chunk.response' => sub { die("Subdly") });
     $t->ua->upload->on('upload_chunk.request_err' => sub { $fail_chunk++; $e = pop(); });
 
-    eval {
+    lives_ok {
         $t->ua->upload->asset(
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image6.xml', asset => 'other'});
-    };
-    ok !$@, 'No function errors on internal errors' or die diag $@;
+    }
+    'No function errors on internal errors' or BAIL_OUT "$@";
     is $fail_chunk, 10, 'All chunks failed, no recovery on internal errors';
     like $e, qr/Subdly/, 'Internal error seen';
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';

@@ -613,10 +613,7 @@ subtest tap_parse_invalid => sub {
 
     my $parser = OpenQA::Parser::Format::TAP->new;
 
-    eval { $parser->load($tap_test_file) };
-    my $error = $@;
-
-    like $error, qr{A valid TAP starts with filename.tap}, "Invalid TAP example";
+    throws_ok { $parser->load($tap_test_file) } qr{A valid TAP starts with filename.tap}, "Invalid TAP example";
 };
 
 sub test_ltp_file {
