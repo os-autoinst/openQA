@@ -611,6 +611,18 @@ based on company conventions:
 WORKER_CLASS = planet-earth,continent-antarctica,location-my_station
 --------------------------------------------------------------------------------
 
+The load of the system can affect test execution and cause failures due to delays of command execution and https://en.wikipedia.org/wiki/Thrashing_(computer_science)[thrashing]. If the average over a period of 15 minutes exceeds the specified value the worker will not accept new jobs.
+
+[caption="File: "]
+.workers.ini
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+# Set to 0 to disable.
+#CRITICAL_LOAD_AVG_THRESHOLD = 40
+--------------------------------------------------------------------------------
+
+Note that the value can also be overridden by setting `OPENQA_LOAD_AVG_FILE` in the environment, such as in the systemd service or executing isotovideo directly.
 
 === Running a custom worker engine
 
