@@ -25,6 +25,7 @@ use Scalar::Util 'looks_like_number';
 use File::Map 'map_file';
 use List::Util 'max';
 use Time::HiRes qw(usleep);
+use Feature::Compat::Try;
 
 # define attributes for public properties
 has 'worker';
@@ -385,10 +386,12 @@ sub _stop_step_3_announce ($self, $reason, $callback) {
 }
 
 sub _redact_file ($file_path, $file_name) {
-    eval { redact_settings_in_file($file_path) if $file_name eq 'vars.json' };
-    my $error = $@;
-    log_warning "Skipping upload of $file_name because an error occurred when stripping credentials: $error" if $error;
-    return !$error;
+    try { redact_settings_in_file($file_path) if $file_name eq 'vars.json' }
+    catch ($e) {
+        log_warning "Skipping upload of $file_name because an error occurred when stripping credentials: $e";
+        return 0;
+    }
+    return 1;
 }
 
 sub _stop_step_4_upload ($self, $reason, $callback) {
@@ -550,14 +553,13 @@ sub _stop_step_5_2_upload ($self, $reason, $callback) {
 sub _read_state_file ($self) {
     my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
     return {} unless -e $state_file;
-    my $state = eval {
-        my $state = decode_json($state_file->slurp);
+    my $state;
+    try {
+        $state = decode_json($state_file->slurp);
         die 'top-level element is not a hash' unless ref $state eq 'HASH';
-        return $state;
-    };
-    return $state unless my $error = $@;
-    log_warning "Found $state_file but failed to parse the JSON: $error";
-    return undef;
+    }
+    catch ($e) { log_warning "Found $state_file but failed to parse the JSON: $e" }
+    return $state;
 }
 
 sub _format_reason ($self, $state, $result, $reason) {
@@ -1066,8 +1068,7 @@ sub _upload_asset {
             );
         });
 
-    local $@;
-    eval {
+    try {
         $ua->upload->asset(
             $job_id => {
                 file => $file,
@@ -1077,14 +1078,16 @@ sub _upload_asset {
                 local => $local_upload,
                 retries => $retries
             });
-    };
-    log_error($@, channels => \@channels_both, default => 1) if $@;
-
+    }
+    catch ($e) {
+        $error ||= $e;
+        log_error($e, channels => \@channels_both, default => 1);
+    }
     $ua->upload->unsubscribe($_)
       for qw(upload_local.prepare upload_local.response upload_chunk.request_err upload_chunk.error upload_chunk.fail),
       qw( upload_chunk.response upload_chunk.start upload_chunk.finish upload_chunk.prepare);
 
-    return 0 if $@ || $error;
+    return 0 if $error;
     return 1;
 }
 
@@ -1126,13 +1129,20 @@ sub _read_json_file {
     my ($self, $name) = @_;
 
     my $file_name = $self->_result_file_path($name);
-    my $json_data = eval { path($file_name)->slurp };
-    if (my $error = $@) {
-        log_debug("Unable to read $name: $error");
-        return undef;
-    }
-    my $json = eval { decode_json($json_data) } // {};
-    log_warning("os-autoinst didn't write valid JSON file $file_name") if $@;
+    my $json_data = do {
+        try { path($file_name)->slurp }
+        catch ($e) {
+            log_debug("Unable to read $name: $e");
+            return undef;
+        }
+    };
+    my $json = do {
+        try { decode_json($json_data) }
+        catch ($e) {
+            log_warning("os-autoinst didn't write valid JSON file $file_name");
+            {};
+        }
+    };
     return $json;
 }
 
@@ -1291,11 +1301,11 @@ sub _ignore_known_files {
 
 sub _parse_log_file ($self, $match_string) {
     my $msg = '';
-    eval {
+    try {
         map_file my $log_content, path($self->worker->pool_directory, 'autoinst-log.txt'), '<';
         $msg = ": $1" if ($log_content =~ /($match_string)/);
-    };
-    log_warning($@) if $@;
+    }
+    catch ($e) { log_warning($e) }
     return $msg;
 }
 

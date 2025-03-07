@@ -8,6 +8,7 @@ use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::App;
 use OpenQA::Utils;
 use List::Util qw(min);
+use Feature::Compat::Try;
 
 =pod
 
@@ -148,10 +149,8 @@ sub delete {
         status => 404
     ) if $asset->count == 0;
     my $rs;
-    eval { $rs = $asset->delete_all };
-    if ($@) {
-        return $self->render(json => {error => $@}, status => 409);
-    }
+    try { $rs = $asset->delete_all }
+    catch ($e) { return $self->render(json => {error => $e}, status => 409) }
     $self->emit_event('openqa_asset_delete', \%args);
     $self->render(json => {count => $rs}, status => 200);
 }

@@ -19,6 +19,7 @@ use constant DATA_FIELD => '__data__';
 use constant TYPE_FIELD => '__type__';
 use OpenQA::Utils 'walker';
 use Exporter 'import';
+use Feature::Compat::Try;
 
 our @EXPORT_OK = qw(parser p);
 
@@ -40,8 +41,8 @@ sub _build_parser {
         if (my $e = load_class $parser_name) {
             croak ref $e ? "Exception: $e" : 'Parser not found!';
         }
-        eval { $p_instance = $parser_name->new(@args); };
-        croak "Invalid parser supplied: $@" if $@;
+        try { $p_instance = $parser_name->new(@args) }
+        catch ($e) { croak "Invalid parser supplied: $e" }
     }
     $p_instance;
 }
@@ -141,7 +142,7 @@ sub restore_el {
 
 sub restore_tree_section {
     my $ref = shift;
-    eval {
+    try {
         walker $ref => sub {
             my ($key, $value, $keys) = @_;
             my $hash = $ref;
@@ -155,8 +156,8 @@ sub restore_tree_section {
             $hash->{$key} = restore_el($value) if reftype $hash eq 'HASH';
             $hash->[$key] = restore_el($value) if reftype $hash eq 'ARRAY';
         };
-    };
-    confess $@ if $@;
+    }
+    catch ($e) { confess $e }
 }
 
 sub _load_tree {
@@ -165,21 +166,17 @@ sub _load_tree {
     my $tree = shift;
     my @coll = sort keys %{$tree};
 
-    {
-        local $@;
-        eval {
-            foreach my $collection (@coll) {
-                if (ref $tree->{$collection} eq 'ARRAY') {
-                    $self->$collection->add(restore_el($_)) for @{$tree->{$collection}};
-                }
-                else {
-                    $self->{$collection} = restore_el($tree->{$collection});
-                }
+    try {
+        foreach my $collection (@coll) {
+            if (ref $tree->{$collection} eq 'ARRAY') {
+                $self->$collection->add(restore_el($_)) for @{$tree->{$collection}};
             }
-        };
-        confess "Failed parsing tree: $@" if $@;
+            else {
+                $self->{$collection} = restore_el($tree->{$collection});
+            }
+        }
     }
-
+    catch ($e) { confess "Failed parsing tree: $e" }
     return $self;
 }
 

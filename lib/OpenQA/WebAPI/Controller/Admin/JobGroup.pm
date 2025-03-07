@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::JobGroup;
 use Mojo::Base 'Mojolicious::Controller';
+use Feature::Compat::Try;
 
 sub index {
     my ($self) = @_;
@@ -81,15 +82,14 @@ sub save_connect {
         machine_id => $self->param('machine'),
         group_id => $group->id,
         test_suite_id => $self->param('test')};
-    eval { $schema->resultset('JobTemplates')->create($values)->id };
-    if ($@) {
-        $self->flash(error => $@);
+    try { $schema->resultset('JobTemplates')->create($values)->id }
+    catch ($e) {
+        $self->flash(error => $e);
         return $self->redirect_to('job_group_new_media', groupid => $group->id);
     }
-    else {
-        $self->emit_event('openqa_jobgroup_connect', $values);
-        return $self->redirect_to('admin_job_templates', groupid => $group->id);
-    }
+
+    $self->emit_event('openqa_jobgroup_connect', $values);
+    return $self->redirect_to('admin_job_templates', groupid => $group->id);
 }
 
 1;

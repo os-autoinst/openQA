@@ -20,6 +20,7 @@ use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
 use OpenQA::Task::Job::Limit;
+use Feature::Compat::Try;
 
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
 sub carry_over_defaults () { \%CARRY_OVER_DEFAULTS }
@@ -364,8 +365,8 @@ sub setup_mojo_tmpdir () {
         $ENV{MOJO_TMPDIR} = assetdir() . '/tmp';
         # Try to create tmpdir if it doesn't exist but don't die if failed to create
         if (!-e $ENV{MOJO_TMPDIR}) {
-            eval { make_path($ENV{MOJO_TMPDIR}); };
-            print STDERR "Can not create MOJO_TMPDIR : $@\n" if $@;
+            try { make_path($ENV{MOJO_TMPDIR}) }
+            catch ($e) { print STDERR "Can not create MOJO_TMPDIR : $e\n" }
         }
         delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
     }
@@ -419,8 +420,8 @@ sub set_secure_flag_on_cookies_of_https_connection ($server) {
 sub setup_validator_check_for_datetime ($server) {
     $server->validator->add_check(
         datetime => sub ($validation, $name, $value) {
-            eval { DateTime::Format::Pg->parse_datetime($value); };
-            return 1 if $@;
+            try { DateTime::Format::Pg->parse_datetime($value) }
+            catch ($e) { return 1 }
             return;
         });
 }

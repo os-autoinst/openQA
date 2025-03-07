@@ -13,6 +13,7 @@ use Mojo::Util 'decode';
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
+use Feature::Compat::Try;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -90,9 +91,13 @@ sub results {
     my $name = $self->name;
 
     my $file = path($dir, "details-$name.json");
-    return {} unless my $json_data = eval { $file->slurp };
-    die qq{Malformed/unreadable JSON file "$file": $@} unless my $json = eval { decode_json($json_data) };
+    my $json_data;
+    try { $json_data = $file->slurp }
+    catch ($e) { return {} }
 
+    my $json;
+    try { $json = decode_json($json_data) }
+    catch ($e) { die qq{Malformed/unreadable JSON file "$file": $e} }
     # load detail file which restores all results provided by os-autoinst (with hash-root)
     # support also old format which only restores details information (with array-root)
     my $results = ref($json) eq 'HASH' ? $json : {details => $json};
@@ -109,8 +114,10 @@ sub results {
         my $text_file_name = $step->{text};
         if (!$skip_text_data && $text_file_name && !defined $step->{text_data}) {
             my $text_file = path($dir, $text_file_name);
-            my $text_data = eval { decode('UTF-8', $text_file->slurp) };
-            $step->{text_data} = $text_data // "Unable to read $text_file_name.";
+            $step->{text_data} = do {
+                try { decode('UTF-8', $text_file->slurp) }
+                catch ($e) { "Unable to read $text_file_name." }
+            };
         }
 
         next unless $step->{screenshot};
@@ -224,7 +231,9 @@ sub finalize_results {
     for my $step (@$details) {
         next unless my $text = $step->{text};
         my $txtfile = path($dir, $text);
-        my $txtdata = eval { decode('UTF-8', $txtfile->slurp) };
+        my $txtdata;
+        try { $txtdata = decode('UTF-8', $txtfile->slurp) }
+        catch ($e) { }
         $step->{text_data} = $txtdata if defined $txtdata;
     }
 
