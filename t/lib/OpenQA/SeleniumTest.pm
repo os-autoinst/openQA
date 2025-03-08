@@ -16,6 +16,7 @@ our @EXPORT = qw(driver_missing check_driver_modules enable_timeout
 
 use Carp;
 use Data::Dump 'pp';
+use Feature::Compat::Try;
 use IPC::Run qw(start);
 use Mojo::IOLoop::Server;
 use Mojo::Server::Daemon;
@@ -49,7 +50,7 @@ sub disable_timeout () {
 
 sub start_driver ($mojoport) {
     # Connect to it
-    eval {
+    try {
         # enforce the JSON Wire protocol (instead of using W3C WebDriver protocol)
         # note: This is required with Selenium::Remote::Driver 1.36 which would now use W3C mode leading
         #       to errors like "unknown command: unknown command: Cannot call non W3C standard command while
@@ -97,8 +98,8 @@ sub start_driver ($mojoport) {
         $_driver->set_window_size(600, 800);
         $_driver->get("http://localhost:$mojoport/");
 
-    };
-    die $@ if ($@);
+    }
+    catch ($e) { die $e }
 
     return $_driver;
 }

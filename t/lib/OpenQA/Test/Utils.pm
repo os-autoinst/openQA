@@ -32,6 +32,7 @@ use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Test::MockModule;
+use Feature::Compat::Try;
 use Time::HiRes 'sleep';
 
 BEGIN {
@@ -595,8 +596,10 @@ sub mock_io_loop (%args) {
     my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
     $io_loop_mock->redefine(    # avoid forking to prevent coverage analysis from slowing down the test significantly
         subprocess => sub ($io_loop, $function, $callback) {
-            my @result = eval { $function->() };
-            my $error = $@;
+            my @result;
+            my $error = '';
+            try { @result = $function->() }
+            catch ($e) { $error = $e }
             $io_loop->next_tick(sub { $callback->(undef, $error, @result) });
         }) if $args{subprocess};
     return $io_loop_mock;
