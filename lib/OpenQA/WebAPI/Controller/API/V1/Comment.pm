@@ -8,6 +8,7 @@ use Date::Format;
 use OpenQA::App;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
 use List::Util qw(min);
+use Feature::Compat::Try;
 
 =pod
 
@@ -138,8 +139,9 @@ sub create ($self) {
             user_id => $self->current_user->id
         });
 
-    eval { $comment->handle_special_contents($self) };
-    return $self->render(json => {error => $@}, status => 400) if $@;
+    try { $comment->handle_special_contents($self) }
+    catch ($e) { return $self->render(json => {error => $e}, status => 400) }
+    
     $self->emit_event('openqa_comment_create', $comment->event_data);
     $txn_guard->commit;
     $self->render(json => {id => $comment->id});
