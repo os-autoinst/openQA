@@ -336,7 +336,7 @@ sub wait_for_element (%args) {
             }
             return defined $element;
         },
-        $args{description} // ($selector . ' present'),
+        $args{description} // $args{desc} // ($selector . ' present'),
         $args{timeout},
         $args{check_interval},
     );
