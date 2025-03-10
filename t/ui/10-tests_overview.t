@@ -132,7 +132,7 @@ $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element_by_id('filter-todo')->click();
 $driver->find_element_by_id('filter-passed')->click();
 $driver->find_element_by_id('filter-failed')->click();
-$driver->find_element('#filter-form button')->click();
+apply_filter('failed');    # failed selected, passed and todo unselected
 $driver->find_element_by_id('res_DVD_x86_64_doc');
 my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
 is(scalar @filtered_out, 0, 'result filter correctly applied');
@@ -144,7 +144,10 @@ my $url_with_escaped_parameters
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
-is($driver->get_current_url(), $url_with_escaped_parameters . '#', 'escaped URL parameters are passed correctly');
+my $url_after_filter = "$url_with_escaped_parameters#";
+my $desc = 'escaped URL parameters are passed correctly';
+wait_until sub { $driver->get_current_url eq $url_after_filter }, $desc, 10;
+is $driver->get_current_url, $url_after_filter, $desc;
 
 # Test failed module info async update
 $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001');
