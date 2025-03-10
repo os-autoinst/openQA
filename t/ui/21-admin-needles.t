@@ -351,6 +351,7 @@ subtest 'custom needles search' => sub {
     is($needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly');
 
     $last_seen_options[0]->click();
+    wait_for_data_table($needles_table, 3);    # minimize chance for race condition, see poo#167611
     $last_match_options[6]->click();
     wait_for_data_table($needles_table, 4);
     @needle_trs = $driver->find_elements('#needles tbody tr');
