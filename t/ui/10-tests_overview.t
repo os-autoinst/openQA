@@ -239,6 +239,16 @@ subtest 'stacking of cyclic parallel jobs' => sub {
 
 $jobs->find(99961)->update({FLAVOR => 'NET', TEST => 'kde'});
 
+sub apply_filter ($filter) {
+    # submit the filter form and wait via a single XPath query until the page has been reloaded with the filter present
+    # note: Using a single selector (instead of a selector and then querying the element text/visibility) avoids
+    #       possible race conditions where querying the element text/visibility would run into an error because the
+    #       element got stale.
+    $driver->find_element('#filter-panel button[type="submit"]')->click();
+    my $s = "//*[\@id='filter-panel']/*[\@class='card-header']/span[text()='current: $filter']";
+    wait_for_element(selector => $s, method => 'xpath', desc => "filter '$filter' visible on form header");
+}
+
 subtest 'filtering by architecture' => sub {
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
 
@@ -249,7 +259,7 @@ subtest 'filtering by architecture' => sub {
     subtest 'filter for specific archs' => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-arch')->send_keys('i586,i686');
-        $driver->find_element('#filter-panel button[type="submit"]')->click();
+        apply_filter('i586,i686');
 
         element_visible('#flavor_DVD_arch_i586', qr/i586/);
         element_not_present('#flavor_DVD_arch_x86_64');
@@ -268,7 +278,7 @@ subtest 'filtering by flavor' => sub {
     subtest 'filter for specific flavors' => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-flavor')->send_keys('DVD');
-        $driver->find_element('#filter-panel button[type="submit"]')->click();
+        apply_filter('DVD');
 
         element_visible('#flavor_DVD_arch_i586', qr/i586/);
         element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
@@ -300,7 +310,7 @@ subtest 'filtering by test' => sub {
     subtest 'filter for specific test' => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-test')->send_keys('textmode');
-        $driver->find_element('#filter-panel button[type="submit"]')->click();
+        apply_filter 'textmode';
         check_textmode_test 'textmode zypper_up';
     };
 };
@@ -443,7 +453,7 @@ subtest "filtering by machine" => sub {
     subtest 'filter for specific machine' => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-machine')->send_keys('uefi');
-        $driver->find_element('#filter-panel button[type="submit"]')->click();
+        apply_filter('uefi');
 
         wait_for_element(selector => '#flavor_DVD_arch_x86_64', like => qr/x86_64/, desc => 'DVD/x86_64 present');
         element_not_present("#$_") for qw(flavor_DVD_arch_i586 flavor_GNOME-Live_arch_i686 flavor_NET_arch_x86_64);
@@ -455,7 +465,7 @@ subtest "filtering by machine" => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-machine')->clear();
         $driver->find_element('#filter-machine')->send_keys('64bit,uefi');
-        $driver->find_element('#filter-panel button[type="submit"]')->click();
+        apply_filter('64bit,uefi');
 
         wait_for_element(selector => '#flavor_NET_arch_x86_64', like => qr/x86_64/, desc => 'NET/x86_64 present');
         wait_for_element(selector => '#flavor_DVD_arch_x86_64', like => qr/x86_64/, desc => 'DVD/x86_64 still present');
