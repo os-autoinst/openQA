@@ -160,7 +160,7 @@ like($driver->find_elements('.failedmodule', 'css')->[1]->get_attribute('href'),
 my @descriptions = $driver->find_elements('td.name a', 'css');
 is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
 $descriptions[0]->click();
-is($driver->find_element('.popover-header')->get_text, 'kde', 'description popover shows content');
+is wait_for_element(selector => '.popover-header')->get_text, 'kde', 'description popover shows content';
 
 # Test bug status
 my @closed_bugs = $driver->find_elements('#bug-99937 .bug_closed', 'css');

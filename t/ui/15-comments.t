@@ -292,7 +292,7 @@ subtest 'commenting in test results including labels' => sub {
         disable_bootstrap_animations;
         my $help_icon = $driver->find_element('#commentForm .help_popover.fa-question-circle');
         $help_icon->click;
-        like($driver->find_element('.popover')->get_text, qr/Help for comments/, 'popover shown on click');
+        is wait_for_element(selector => '.popover-header')->get_text, 'Help for comments', 'popover shown on click';
         $help_icon->click;
     };
 
