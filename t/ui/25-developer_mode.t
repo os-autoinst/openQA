@@ -326,7 +326,7 @@ subtest 'expand developer panel' => sub {
     my $popover_icon = $driver->find_element('#developer-form .help_popover');
     if (ok $popover_icon, 'popover icon(s) present') {
         $popover_icon->click;
-        ok $driver->find_element('body > .popover'), 'popover shown';
+        ok wait_for_element(selector => 'body > .popover'), 'popover shown';
     }
 };
 
