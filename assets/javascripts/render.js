@@ -136,7 +136,7 @@ function renderModuleRow(module, snippets) {
 
     const url = renderTemplate(snippets.module_url, tplargs);
     const box = [];
-    const textData = step.text_data;
+    const textData = typeof step.text_data === 'string' ? step.text_data : '';
     let resborder = step.resborder;
     if (step.screenshot) {
       let thumb;
