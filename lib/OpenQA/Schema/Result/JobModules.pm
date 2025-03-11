@@ -109,9 +109,8 @@ sub results ($self, %options) {
     for my $step (@$details) {
         my $text_file_name = $step->{text};
         if (!$skip_text_data && $text_file_name && !defined $step->{text_data}) {
-            my $text_file = path($dir, $text_file_name);
             $step->{text_data} = do {
-                try { decode('UTF-8', $text_file->slurp) }
+                try { decode('UTF-8', path($dir, $text_file_name)->slurp) // "Unable to decode $text_file_name." }
                 catch ($e) { "Unable to read $text_file_name." }
             };
         }
@@ -219,9 +218,8 @@ sub finalize_results ($self) {
     # incorporate textual step data into details
     for my $step (@$details) {
         next unless my $text = $step->{text};
-        my $txtfile = path($dir, $text);
         my $txtdata;
-        try { $txtdata = decode('UTF-8', $txtfile->slurp) }
+        try { $txtdata = decode('UTF-8', path($dir, $text)->slurp) }
         catch ($e) { }
         $step->{text_data} = $txtdata if defined $txtdata;
     }
