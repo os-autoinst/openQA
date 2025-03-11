@@ -136,7 +136,7 @@ function renderModuleRow(module, snippets) {
 
     const url = renderTemplate(snippets.module_url, tplargs);
     const box = [];
-    const textData = step.text_data;
+    const textData = typeof step.text_data === 'string' ? step.text_data : '';
     let resborder = step.resborder;
     if (step.screenshot) {
       let thumb;
@@ -168,7 +168,7 @@ function renderModuleRow(module, snippets) {
       if (title === 'wait_serial') {
         const previewLimit = 120;
         // jshint ignore:start
-        let shortText = typeof textData === 'string' ? textData.replace(/.*# Result:\n*/s, '') : '';
+        let shortText = textData.replace(/.*# Result:\n*/s, '');
         // jshint ignore:end
         if (shortText.length > previewLimit) {
           shortText = shortText.substr(0, previewLimit) + '…';
