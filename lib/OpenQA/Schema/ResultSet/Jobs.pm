@@ -38,8 +38,7 @@ job that matches the settings provided as argument. Useful to find the
 latest build for a given pair of distri and version.
 
 =cut
-sub latest_build {
-    my ($self, %args) = @_;
+sub latest_build ($self, %args) {
     my @conds;
     my %attrs;
     my $rsource = $self->result_source;
@@ -110,9 +109,7 @@ sub latest_jobs ($self, $until = undef) {
     return @latest;
 }
 
-sub create_from_settings {
-    my ($self, $settings, $scheduled_product_id) = @_;
-
+sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my %settings = %$settings;
     my %new_job_args;
 
@@ -427,9 +424,7 @@ sub cancel_by_settings (
     return $cancelled_jobs;
 }
 
-sub next_previous_jobs_query {
-    my ($self, $job, $jobid, %args) = @_;
-
+sub next_previous_jobs_query ($self, $job, $jobid, %args) {
     my $p_limit = $args{previous_limit};
     my $n_limit = $args{next_limit};
     my @params = (
@@ -452,9 +447,7 @@ sub next_previous_jobs_query {
 }
 
 
-sub stale_ones {
-    my ($self) = @_;
-
+sub stale_ones ($self) {
     my $dt = DateTime->from_epoch(
         epoch => time() - OpenQA::App->singleton->config->{global}->{worker_timeout},
         time_zone => 'UTC'
@@ -472,9 +465,7 @@ sub stale_ones {
     return $self->search(\%overall_cond, \%attrs);
 }
 
-sub mark_job_linked {
-    my ($self, $jobid, $referer_url) = @_;
-
+sub mark_job_linked ($self, $jobid, $referer_url) {
     my $referer = Mojo::URL->new($referer_url);
     my $referer_host = $referer->host;
     my $app = OpenQA::App->singleton;
