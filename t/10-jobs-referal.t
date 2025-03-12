@@ -32,7 +32,7 @@ sub job_is_linked ($job) {
 }
 
 subtest 'job is marked as linked if accessed from recognized referal' => sub {
-    my $test_referer = 'http://test.referer.info/foobar';
+    my $test_referer = 'http://test.referer.info/foobar/123';
     $t->app->config->{global}->{recognized_referers}
       = ['test.referer.info', 'test.referer1.info', 'test.referer2.info', 'test.referer3.info'];
     my %_settings = %settings;
@@ -57,6 +57,14 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     $t->get_ok('/tests/' . $job->id . '/modules/' . $module->id . '/steps/1' => {Referer => $test_referer})
       ->status_is(302);
     is job_is_linked($job), 1, 'job linked after accessed from known referer';
+
+    subtest 'do not link not existing tickets from recognized referal' => sub {
+        $test_referer = 'http://test.referer.info/foobar/new';
+        my $job = _job_create(\%_settings);
+        is job_is_linked($job), 0, 'new job is not linked';
+        $t->get_ok('/tests/' . $job->id => {Referer => $test_referer})->status_is(200);
+        is job_is_linked($job), 0, 'job is not linked from known referer without an issue_id';
+    };
 };
 
 subtest 'job is not marked as linked if accessed from unrecognized referal' => sub {

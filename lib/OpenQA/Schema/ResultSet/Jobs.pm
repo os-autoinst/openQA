@@ -472,12 +472,20 @@ sub mark_job_linked ($self, $jobid, $referer_url) {
     return undef unless $referer_host;
     return log_trace("Unrecognized referer '$referer_host'")
       unless grep { $referer_host eq $_ } @{$app->config->{global}->{recognized_referers}};
+    return undef unless _specific_issue_exists($referer);
     my $job = $self->find({id => $jobid});
     return undef if !$job || ($referer->path_query =~ /^\/?$/);
     my $comments = $job->comments;
     return undef if $comments->search({text => {like => 'label:linked%'}}, {rows => 1})->first;
     my $user = $self->result_source->schema->resultset('Users')->system({select => ['id']});
     $comments->create_with_event({text => "label:linked Job mentioned in $referer_url", user_id => $user->id});
+}
+
+sub _specific_issue_exists ($url) {
+    my $path = $url->path();
+    my ($issue_id) = $path =~ m/(?:id=|\/)(\d+)/;
+    # Assume that the url is valid if there is issue_id
+    return defined $issue_id;
 }
 
 1;
