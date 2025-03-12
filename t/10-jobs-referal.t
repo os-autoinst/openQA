@@ -41,12 +41,10 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     my $cb = $openqa_events->on(openqa_comment_create => sub ($events, $data) { push @comment_events, $data });
     $_settings{TEST} = 'refJobTest';
     my $job = _job_create(\%_settings);
-    my $linked = job_is_linked($job);
-    is($linked, 0, 'new job is not linked');
+    is job_is_linked($job), 0, 'new job is not linked';
     $t->get_ok('/tests/' . $job->id => {Referer => $test_referer})->status_is(200);
-    $linked = job_is_linked($job);
-    is($linked, 1, 'job linked after accessed from known referer');
-    is(scalar @comment_events, 1, 'exactly one comment event emitted') or always_explain \@comment_events;
+    is job_is_linked($job), 1, 'job linked after accessed from known referer';
+    is scalar @comment_events, 1, 'exactly one comment event emitted' or always_explain \@comment_events;
     $openqa_events->unsubscribe($cb);
 
     $_settings{TEST} = 'refJobTest-step';
@@ -55,12 +53,10 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
     my $module = $job->modules->find({name => 'a'});
     $job->update;
-    $linked = job_is_linked($job);
-    is($linked, 0, 'new job is not linked');
+    is job_is_linked($job), 0, 'new job is not linked';
     $t->get_ok('/tests/' . $job->id . '/modules/' . $module->id . '/steps/1' => {Referer => $test_referer})
       ->status_is(302);
-    $linked = job_is_linked($job);
-    is($linked, 1, 'job linked after accessed from known referer');
+    is job_is_linked($job), 1, 'job linked after accessed from known referer';
 };
 
 subtest 'job is not marked as linked if accessed from unrecognized referal' => sub {
@@ -69,14 +65,11 @@ subtest 'job is not marked as linked if accessed from unrecognized referal' => s
     my %_settings = %settings;
     $_settings{TEST} = 'refJobTest2';
     my $job = _job_create(\%_settings);
-    my $linked = job_is_linked($job);
-    is($linked, 0, 'new job is not linked');
+    is job_is_linked($job), 0, 'new job is not linked';
     $t->get_ok('/tests/' . $job->id => {Referer => 'http://unknown.referer.info'})->status_is(200);
-    $linked = job_is_linked($job);
-    is($linked, 0, 'job not linked after accessed from unknown referer');
+    is job_is_linked($job), 0, 'job not linked after accessed from unknown referer';
     $t->get_ok('/tests/' . $job->id => {Referer => 'http://test.referer.info/'})->status_is(200);
-    $linked = job_is_linked($job);
-    is($linked, 0, 'job not linked after accessed from referer with empty query_path');
+    is job_is_linked($job), 0, 'job not linked after accessed from referer with empty query_path';
 };
 
 done_testing;
