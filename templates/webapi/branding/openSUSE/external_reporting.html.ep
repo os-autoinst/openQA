@@ -76,7 +76,10 @@
 %     }
 % }
 % elsif ($raw_distri eq 'sle-micro') {
-%     $product = 'Micro ' . $job->VERSION;
+%     # "Enterprise" is removed in 6.1 and 6.2
+%     my $version = $job->VERSION;
+%     $product = 'Micro ' . $version;
+%     $product = 'Enterprise ' . $product unless $version eq '6.1' || $version eq '6.2';
 % }
 % elsif ($raw_distri eq 'opensuse' || $raw_distri eq 'microos') {
 %     $product = $job->VERSION eq 'Tumbleweed' ? 'Tumbleweed' : 'Distribution';
