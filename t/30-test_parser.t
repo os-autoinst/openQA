@@ -443,6 +443,8 @@ sub test_xunit_file {
 
     ok $parser->generated_tests_results->first()->time;
     ok $parser->generated_tests_results->first()->softfailures;
+    is $parser->results->first->softfailures, 555, 'The test suite header says 555 softfailures';
+
     ok $parser->generated_tests_results->first()->errors;
     ok $parser->generated_tests_results->first()->failures;
     ok $parser->generated_tests_results->first()->tests;
@@ -455,7 +457,7 @@ sub test_xunit_file {
       'Overall 11 testsuites, 2 tests does not have title containing bacon';
     is $parser->results->search_in_details("text", qr/bacon/)->size, 16,
       'Overall 11 testsuites, 15 tests are for bacon';
-    is $parser->generated_tests_output->size, 24, "23 Outputs";
+    is $parser->generated_tests_output->size, 24, "24 Outputs";
 
     my $resultsdir = tempdir;
     $parser->write_output($resultsdir);

@@ -70,10 +70,6 @@ sub parse {
         $ts->children('testcase')->each(
             sub {
                 my $tc = shift;
-                my $tc_result = 'ok';
-                $tc_result = 'softfail' if ($tc->{softfailures} && $tc->{softfailures} > 0);
-                $tc_result = 'fail'
-                  if ($tc->{failures} && $tc->{failures} > 0) || ($tc->{errors} && $tc->{errors} > 0);
 
                 my $text_fn = "$ts_category-$ts_name-$num";
                 $text_fn =~ s/[\/.]/_/g;
@@ -81,8 +77,9 @@ sub parse {
                 my $content = '# Test messages ';
                 $content .= "# $tc->{name}\n" if $tc->{name};
 
+                my $tc_result = 'ok';
                 for my $out ($tc->children('skipped, passed, error, failure, softfailure')->each) {
-                    if (my $res = $TC_RESULT_BY_TAG{$out->tag}) { $tc_result //= $res }
+                    if (my $res = $TC_RESULT_BY_TAG{$out->tag}) { $tc_result = $res }
                     $content .= '# ' . $out->tag . ": \n\n";
                     $content .= $out->{message} . "\n" if $out->{message};
                     $content .= $out->text . "\n";
