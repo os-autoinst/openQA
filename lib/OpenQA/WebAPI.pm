@@ -124,18 +124,8 @@ sub startup ($self) {
     $r->get('/tests')->name('tests')->to('test#list');
     $r->get('/tests/create')->name('tests_create')->to('test#create');
     $op_auth->post('/tests/clone')->name('tests_clone')->to('test#clone');
-    # we have to set this and some later routes up differently on Mojo
-    # < 9 and Mojo >= 9.11
-    if ($Mojolicious::VERSION > 9.10) {
-        $r->get('/tests/overview' => [format => ['json', 'html']])->name('tests_overview')
-          ->to('test#overview', format => undef);
-    }
-    elsif ($Mojolicious::VERSION < 9) {
-        $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
-    }
-    else {
-        die "Unsupported Mojolicious version $Mojolicious::VERSION!";
-    }
+    $r->get('/tests/overview' => [format => ['json', 'html']])->name('tests_overview')
+      ->to('test#overview', format => undef);
     $r->get('/tests/latest')->name('latest')->to('test#latest');
     $r->get('/tests/latest/badge')->name('latest_test_result_badge')->to('test#latest_badge');
 
@@ -201,35 +191,16 @@ sub startup ($self) {
     # but this route is actually matched (in case apache is not catching this earlier)
     # due to the split md5_dirname having a /
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
-
-    if ($Mojolicious::VERSION > 9.10) {
-        $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
-          ->to('main#job_group_overview', format => undef);
-        $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
-          ->to('main#parent_group_overview', format => undef);
-    }
-    elsif ($Mojolicious::VERSION < 9) {
-        $r->get('/group_overview/<groupid:num>')->name('group_overview')->to('main#job_group_overview');
-        $r->get('/parent_group_overview/<groupid:num>')->name('parent_group_overview')
-          ->to('main#parent_group_overview');
-    }
-    else {
-        die "Unsupported Mojolicious version $Mojolicious::VERSION!";
-    }
+    $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
+      ->to('main#job_group_overview', format => undef);
+    $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
+      ->to('main#parent_group_overview', format => undef);
 
     # Favicon
     $r->get('/favicon.ico' => sub ($c) { $c->render_static('favicon.ico') });
     $r->get('/index' => sub ($c) { $c->render('main/index') });
-    if ($Mojolicious::VERSION > 9.10) {
-        $r->get('/dashboard_build_results' => [format => ['json', 'html']])->name('dashboard_build_results')
-          ->to('main#dashboard_build_results', format => undef);
-    }
-    elsif ($Mojolicious::VERSION < 9) {
-        $r->get('/dashboard_build_results')->name('dashboard_build_results')->to('main#dashboard_build_results');
-    }
-    else {
-        die "Unsupported Mojolicious version $Mojolicious::VERSION!";
-    }
+    $r->get('/dashboard_build_results' => [format => ['json', 'html']])->name('dashboard_build_results')
+      ->to('main#dashboard_build_results', format => undef);
     $r->get('/api_help' => sub ($c) { $c->render('admin/api_help') })->name('api_help');
 
     # Default route
@@ -269,17 +240,8 @@ sub startup ($self) {
 
     $pub_admin_r->get('/assets')->name('admin_assets')->to('asset#index');
     $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
-
-    if ($Mojolicious::VERSION > 9.10) {
-        $pub_admin_r->get('/workers' => [format => ['json', 'html']])->name('admin_workers')
-          ->to('workers#index', format => undef);
-    }
-    elsif ($Mojolicious::VERSION < 9) {
-        $pub_admin_r->get('/workers')->name('admin_workers')->to('workers#index');
-    }
-    else {
-        die "Unsupported Mojolicious version $Mojolicious::VERSION!";
-    }
+    $pub_admin_r->get('/workers' => [format => ['json', 'html']])->name('admin_workers')
+      ->to('workers#index', format => undef);
     $pub_admin_r->get('/workers/<worker_id:num>')->name('admin_worker_show')->to('workers#show');
     $pub_admin_r->get('/workers/<worker_id:num>/ajax')->name('admin_worker_previous_jobs_ajax')
       ->to('workers#previous_jobs_ajax');
