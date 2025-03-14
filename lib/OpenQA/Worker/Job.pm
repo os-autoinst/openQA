@@ -1080,8 +1080,8 @@ sub _upload_asset {
             });
     }
     catch ($e) {
-        $error ||= $e;
-        log_error($e, channels => \@channels_both, default => 1);
+        $error ||= $e;    # uncoverable statement
+        log_error($e, channels => \@channels_both, default => 1);    # uncoverable statement
     }
     $ua->upload->unsubscribe($_)
       for qw(upload_local.prepare upload_local.response upload_chunk.request_err upload_chunk.error upload_chunk.fail),
