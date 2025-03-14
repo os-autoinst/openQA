@@ -36,16 +36,29 @@ sub _validate_attributes ($self) {
 sub _run_cmd ($self, $args, $options = {}) {
     my $include_git_path = $options->{include_git_path} // 1;
     my $batchmode = $options->{batchmode} // 0;
+    my $max_retries = 3;
+    my $backoff_base_seconds = 2;
+
     my @cmd;
     push @cmd, 'env', 'GIT_SSH_COMMAND=ssh -oBatchMode=yes', 'GIT_ASKPASS=', 'GIT_TERMINAL_PROMPT=false' if $batchmode;
     push @cmd, $self->_prepare_git_command($include_git_path), @$args;
 
-    my $result = run_cmd_with_log_return_error(
-        \@cmd,
-        expected_return_codes => $options->{expected_return_codes},
-        output_file => $options->{output_file});
-    $self->app->log->error("Git command failed: @cmd - Error: $result->{stderr}") unless $result->{status};
-    return $result;
+    my $result;
+    for (my $attempt = 1; $attempt <= $max_retries; $attempt++) {
+        $result = run_cmd_with_log_return_error(
+            \@cmd,
+            expected_return_codes => $options->{expected_return_codes},
+            output_file => $options->{output_file});
+
+        if ($result->{status}) {
+            return $result;
+        }
+        elsif ($attempt == $max_retries) {
+            $self->app->log->error("Git command failed: @cmd - Error: $result->{stderr}");
+            return $result;
+        }
+        sleep( (2**($attempt - 1)) * $backoff_base_seconds ); # exponential backoff
+    }
 }
 
 sub _prepare_git_command ($self, $include_git_path) {
