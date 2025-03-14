@@ -99,7 +99,7 @@ sub schedules ($self) {
         # It is deprecated.
         unless ($single) {
             # YAML renderer expects a YAML string
-            $yaml = dump_yaml(string => $yaml);
+            $yaml = dump_yaml($yaml);
         }
         $self->render(yaml => $yaml);
     };

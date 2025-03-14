@@ -371,7 +371,7 @@ sub to_yaml {
     }
     my $hash = $self->to_template;
 
-    return dump_yaml(string => $hash);
+    return dump_yaml($hash);
 }
 
 sub template_data_from_yaml {
@@ -488,7 +488,7 @@ sub expand_yaml {
         push @{$result->{scenarios}->{$spec->{arch}}->{$spec->{product_name}}}, {%$scenario,};
         $result->{products}->{$spec->{product_name}} = $spec->{product_spec};
     }
-    return dump_yaml(string => $result);
+    return dump_yaml($result);
 }
 
 sub text_diff {

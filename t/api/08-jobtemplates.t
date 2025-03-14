@@ -461,36 +461,36 @@ my $product = 'open-*.SUSE1';
 my $yaml = {};
 my $schema_filename = 'JobTemplates-01.yaml';
 is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)}, 2, 'Empty YAML is an error')
-  or always_explain dump_yaml(string => $yaml);
+  or always_explain dump_yaml($yaml);
 $yaml->{scenarios}{'x86_64'}{$product} = ['spam', 'eggs'];
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), ["/products: Missing property."], 'No products defined')
-  or always_explain dump_yaml(string => $yaml);
+  or always_explain dump_yaml($yaml);
 $yaml->{products}{$product} = {version => '42.1', flavor => 'DVD'};
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product/distri: Missing property.",
     'No distri specified'
-) or always_explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml($yaml);
 $yaml->{products}{$product}{distri} = 'sle';
 delete $yaml->{products}{$product}{flavor};
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product/flavor: Missing property.",
     'No flavor specified'
-) or always_explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml($yaml);
 $yaml->{products}{$product}{flavor} = 'DVD';
 delete $yaml->{products}{$product}{version};
 is_deeply(
     $t->app->validate_yaml($yaml, $schema_filename, 1),
     ["/products/$product/version: Missing property."],
     'No version specified'
-) or always_explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml($yaml);
 $yaml->{products}{$product}{distribution} = 'sle';
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product: Properties not allowed: distribution.",
     'Invalid product property specified'
-) or always_explain dump_yaml(string => $yaml);
+) or always_explain dump_yaml($yaml);
 delete $yaml->{products}{$product}{distribution};
 $yaml->{products}{$product}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
@@ -507,7 +507,7 @@ $yaml->{scenarios}{'x86_64'}{$product} = [
         },
     }];
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML valid as expected')
-  or always_explain dump_yaml(string => $yaml);
+  or always_explain dump_yaml($yaml);
 my $opensuse = $job_groups->find({name => 'opensuse'});
 # Make 40 our default priority, which matters when we look at the "defaults" key later
 $opensuse->update({default_priority => 40});
@@ -592,7 +592,7 @@ subtest 'Migration' => sub {
     is($opensuse->template, undef, 'No YAML stored in the database');
 
     # After posting YAML the exact template is stored
-    $yaml = dump_yaml(string => $yaml);
+    $yaml = dump_yaml($yaml);
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
         form => {
@@ -674,14 +674,14 @@ subtest 'Schema handling' => sub {
     for my $schema_filename (undef, 'NoSuchSchema', '../test.yaml', '/home/test.yaml', 'NoSuchSchema.yaml') {
         is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)},
             1, 'Validating with schema ' . ($schema_filename // 'undefined') . ' is an error')
-          or always_explain dump_yaml(string => $yaml);
+          or always_explain dump_yaml($yaml);
     }
 
     for my $schema_filename ('NoSuchSchema', '../test.yaml', '/home/test.yaml') {
         $t->post_ok(
             '/api/v1/job_templates_scheduling/' . $opensuse->id,
             form => {
-                template => dump_yaml(string => $template),
+                template => dump_yaml($template),
                 schema => $schema_filename,
             }
         )->status_is(400)->json_is(
@@ -694,7 +694,7 @@ subtest 'Schema handling' => sub {
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
         form => {
-            template => dump_yaml(string => $template),
+            template => dump_yaml($template),
         }
     )->status_is(400)->json_is(
         '/error' => 'Erroneous parameters (schema missing)',
@@ -705,13 +705,13 @@ subtest 'Schema handling' => sub {
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
         form => {
-            template => dump_yaml(string => $template),
+            template => dump_yaml($template),
             schema => 'NoSuchSchema.yaml',
         })->status_is(400)->json_like('/error/0' => qr/Unable to load schema/, 'specified schema not found');
 };
 
 # Attempting to modify group with erroneous YAML should fail
-my %form = (schema => $schema_filename, template => dump_yaml(string => $template));
+my %form = (schema => $schema_filename, template => dump_yaml($template));
 $t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
 my $json = $t->tx->res->json;
 my @errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
@@ -752,7 +752,7 @@ subtest 'Create and modify groups with YAML' => sub {
 
     # Create group and job templates based on YAML template
     $yaml = load_yaml(file => "$FindBin::Bin/../data/08-create-modify-group.yaml");
-    my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+    my %form = (schema => $schema_filename, template => dump_yaml($yaml));
     $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
     $t->status_is(400, 'Post rejected because testsuite does not exist')->json_is(
         '' => {
@@ -826,7 +826,7 @@ subtest 'Create and modify groups with YAML' => sub {
         "/api/v1/job_templates_scheduling/$job_group_id3",
         form => {
             schema => $schema_filename,
-            template => dump_yaml(string => $yaml)});
+            template => dump_yaml($yaml)});
     $t->status_is(200, 'Changes applied to the database');
     return always_explain $t->tx->res->body unless $t->success;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
@@ -848,7 +848,7 @@ subtest 'Create and modify groups with YAML' => sub {
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
                 schema => $schema_filename,
-                template => dump_yaml(string => $yaml)})->status_is(200, 'Test suite was updated');
+                template => dump_yaml($yaml)})->status_is(200, 'Test suite was updated');
 
         my $job_template = $job_templates->find({prio => 11});
         is($job_template->machine_id, 1001, 'Updated machine reflected in the database');
@@ -865,7 +865,7 @@ subtest 'Create and modify groups with YAML' => sub {
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
                 schema => $schema_filename,
-                template => dump_yaml(string => $yaml)}
+                template => dump_yaml($yaml)}
         )->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
                 error => [
@@ -933,7 +933,7 @@ subtest 'Create and modify groups with YAML' => sub {
         my %foo_spam = (settings => {FOO => 'spam'});
         my %foo_eggs = (settings => {FOO => 'eggs'});
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar => \%foo_eggs}];
-        my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+        my %form = (schema => $schema_filename, template => dump_yaml($yaml));
         $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
         $t->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
@@ -952,13 +952,13 @@ subtest 'Create and modify groups with YAML' => sub {
         %foo_eggs = (testsuite => 'foobar', settings => {FOO => 'eggs'});
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar_eggs => \%foo_eggs}];
         $yaml->{defaults}{i586}{'priority'} = 16;
-        $form{template} = dump_yaml(string => $yaml);
+        $form{template} = dump_yaml($yaml);
         $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
         $t->status_is(200);
         return always_explain $t->tx->res->body unless $t->success;
         my $templates = $job_templates->search({prio => 16});
         if (!is $templates->count, 2, 'two distinct job templates') {
-            always_explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
+            always_explain dump_yaml($_->to_hash) for $templates->all;    # uncoverable statement
         }
         my %new_isos_post_params = (
             _GROUP => 'foo',
@@ -983,7 +983,7 @@ subtest 'Create and modify groups with YAML' => sub {
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
                 schema => $schema_filename,
-                template => dump_yaml(string => $yaml)}
+                template => dump_yaml($yaml)}
         )->status_is(200)->json_is(
             '' => {
                 id => $job_group_id3,
@@ -1007,16 +1007,16 @@ subtest 'Create and modify groups with YAML' => sub {
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
                 schema => $schema_filename,
-                template => dump_yaml(string => $yaml)});
+                template => dump_yaml($yaml)});
         return always_explain $t->tx->res->body unless $t->success;
         my $templates = $job_templates->search({prio => 7});
         if (!is $templates->count, 4, 'four job templates created') {
-            always_explain dump_yaml(string => $_->to_hash) for $templates->all;    # uncoverable statement
+            always_explain dump_yaml($_->to_hash) for $templates->all;    # uncoverable statement
         }
     };
 
     subtest 'Handling of unexpected errors' => sub {
-        my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+        my %form = (schema => $schema_filename, template => dump_yaml($yaml));
         my $job_templates_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::JobTemplates');
         $job_templates_mock->redefine(create_or_update_job_template => sub { die 'pretend something is wrong' });
         $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
@@ -1034,7 +1034,7 @@ subtest 'Create and modify groups with YAML' => sub {
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
                 schema => $schema_filename,
-                template => dump_yaml(string => $yaml)}
+                template => dump_yaml($yaml)}
         )->status_is(400)->json_is(
             '' => {
                 id => $job_group_id3,
@@ -1051,7 +1051,7 @@ subtest 'Create and modify groups with YAML' => sub {
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
                 schema => $schema_filename,
-                template => dump_yaml(string => $yaml)}
+                template => dump_yaml($yaml)}
         )->status_is(400)->json_is(
             '' => {
                 id => $job_group_id3,
@@ -1068,7 +1068,7 @@ subtest 'Create and modify groups with YAML' => sub {
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
                 schema => $schema_filename,
-                template => dump_yaml(string => $yaml)}
+                template => dump_yaml($yaml)}
         )->status_is(400)->json_is(
             '' => {
                 id => $job_group_id3,
@@ -1089,7 +1089,7 @@ subtest 'References' => sub {
         "/api/v1/job_templates_scheduling/$job_group_id4",
         form => {
             schema => $schema_filename,
-            template => dump_yaml(string => $yaml)});
+            template => dump_yaml($yaml)});
     $t->status_is(200, 'New group with references was added to the database');
     return always_explain $t->tx->res->body unless $t->success;
 
@@ -1106,7 +1106,7 @@ subtest 'References' => sub {
         "/api/v1/job_templates_scheduling/$job_group_id4",
         form => {
             schema => $schema_filename,
-            template => dump_yaml(string => $yaml)})->status_is(200);
+            template => dump_yaml($yaml)})->status_is(200);
     return always_explain $t->tx->res->body unless $t->success;
 
     is_deeply(
@@ -1138,7 +1138,7 @@ subtest 'Hidden keys' => sub {
         form => {
             schema => $schema_filename,
             expand => 1,
-            template => dump_yaml(string => $yaml)});
+            template => dump_yaml($yaml)});
     $t->status_is(200, 'New group with hidden keys was added to the database');
     return always_explain $t->tx->res->body unless $t->success;
 
@@ -1182,7 +1182,7 @@ subtest 'Staging' => sub {
         "/api/v1/job_templates_scheduling/$job_group_id4",
         form => {
             schema => $schema_filename,
-            template => dump_yaml(string => $yaml)});
+            template => dump_yaml($yaml)});
     $t->status_is(200, 'New group with references and variables was added to the database');
     return always_explain $t->tx->res->body unless $t->success;
     $t->get_ok(
