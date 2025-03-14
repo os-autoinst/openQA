@@ -1080,8 +1080,8 @@ sub _upload_asset {
             });
     }
     catch ($e) {
-        $error ||= $e;
-        log_error($e, channels => \@channels_both, default => 1);
+        $error ||= $e;  # uncoverable statement
+        log_error($e, channels => \@channels_both, default => 1);  # uncoverable statement
     }
     $ua->upload->unsubscribe($_)
       for qw(upload_local.prepare upload_local.response upload_chunk.request_err upload_chunk.error upload_chunk.fail),
@@ -1139,8 +1139,8 @@ sub _read_json_file {
     my $json = do {
         try { decode_json($json_data) }
         catch ($e) {
-            log_warning("os-autoinst didn't write valid JSON file $file_name");
-            {};
+            log_warning("os-autoinst didn't write valid JSON file $file_name");  # uncoverable statement
+            {};  # uncoverable statement
         }
     };
     return $json;
