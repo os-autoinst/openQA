@@ -52,7 +52,7 @@ sub handle_result ($options, $res) {
                 print $body;
             }
             else {
-                print dump_yaml(string => $json);
+                print dump_yaml($json);
             }
         }
         else {
