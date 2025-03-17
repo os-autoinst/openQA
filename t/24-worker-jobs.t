@@ -16,7 +16,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 
 use Capture::Tiny qw(capture);
-use Test::Output qw(combined_like combined_unlike);
+use Test::Output qw(combined_like combined_unlike stderr_like);
 use Test::MockModule;
 use Test::MockObject;
 use Mojo::Collection;
@@ -1500,6 +1500,13 @@ subtest 'redacting logfile' => sub {
     is_deeply $vars, {FOO => 'bar', SOME_PASSWORD => '[redacted]', _SECRET_VARIABLE => '[redacted]'}, 'secrets hidden'
       or always_explain $vars;
     like $vars_data, qr/\n/, 'JSON still formatted (with breaks at least)';
+};
+
+subtest _read_json_file => sub {
+    my $jsonfile = $pool_directory->child('foo.json')->spew(']]]');
+    my $job = Test::MockObject->new->set_always(_result_file_path => $jsonfile);
+    stderr_like { OpenQA::Worker::Job::_read_json_file($job, 'foo.json') } qr/write valid JSON/,
+      'invalid JSON issues a warning';
 };
 
 done_testing();
