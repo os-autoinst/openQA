@@ -65,7 +65,7 @@ perl-DBD-Pg-3.18.0
 perl-DBD-SQLite-1.760.0
 perl-DBI-1.647.0
 perl-DBIx-Class-0.082843
-perl-DBIx-Class-DeploymentHandler-0.002234
+perl-DBIx-Class-DeploymentHandler-0.002233
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001014
