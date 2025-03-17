@@ -50,15 +50,7 @@ sub load_yaml ($type, $input) {
     }
 }
 
-sub dump_yaml ($type, @args) {
-    if ($type eq 'file') {
-        my ($output, @docs) = @args;
-        return $YP->dump_file($output, @docs);
-    }
-    else {
-        return $YP->dump_string(@args);
-    }
-}
+sub dump_yaml (@args) { $YP->dump_string(@args) }
 
 sub validate_data (%args) {
     my $schema_file = $args{schema_file};
