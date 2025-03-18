@@ -30,7 +30,7 @@
             % }
             <div class="time-params">
                 % if ($until) {
-                    from <abbr class="timeago" title="<%= $until %>Z"><%= $until %>Z</abbr>,
+                    at the time of <abbr class="timeago" title="<%= $until %>Z"><%= $until %>Z</abbr>,
                     <a href="<%= url_with->query({t => undef}) %>">show latest jobs</a>
                 % }
                 % else {
