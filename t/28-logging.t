@@ -143,7 +143,6 @@ subtest 'Checking log level' => sub {
 
     my @loglevels = qw(trace debug info warn error fatal);
     my @channels = qw(channel1 channel2 channel3);
-    my $deathcounter = 0;
     my $counterFile = @loglevels;
     my $counterChannel = @loglevels;
     for my $level (@loglevels) {
@@ -162,11 +161,7 @@ subtest 'Checking log level' => sub {
         log_info('info message');
         log_warning('warn message');
         log_error('error message');
-
         throws_ok { log_fatal('fatal message') } qr/fatal message/, 'exception raised';
-
-        $deathcounter++ if $@;
-
         my %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
         is(keys(%matches), $counterFile, "Worker log level $level entry");
 
@@ -179,10 +174,7 @@ subtest 'Checking log level' => sub {
             log_info("info message", channels => $channel);
             log_warning("warn message", channels => $channel);
             log_error("error message", channels => $channel);
-
             throws_ok { log_fatal('fatal message', channels => $channel); } qr/fatal message/, 'exception raised';
-            $deathcounter++ if $@;
-
             %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file)->slurp =~ m/$reChannel/gm);
             is(keys(%matches), $counterChannel, "Worker channel log level $level entry");
             remove_log_channel($channel);
@@ -195,11 +187,7 @@ subtest 'Checking log level' => sub {
         log_info("info message", channels => 'no_channel');
         log_warning("warn message", channels => 'no_channel');
         log_error("error", channels => 'no_channel');
-
         throws_ok { log_fatal('fatal message', channels => 'no_channel') } qr/fatal message/, 'exception raised';
-
-        $deathcounter++ if $@;
-
         # print Mojo::File->new($output_logfile)->slurp;
 
         %matches = map { $_ => ($matches{$_} // 0) + 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
@@ -209,7 +197,6 @@ subtest 'Checking log level' => sub {
 
         truncate $output_logfile, 0;
     }
-    is($deathcounter, (@loglevels * 2 + @channels * @loglevels), "Worker dies when logs fatal");
 };
 
 subtest 'Logging to right place' => sub {
