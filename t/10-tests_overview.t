@@ -145,9 +145,9 @@ subtest 'time parameter' => sub {
     my @params = (distri => 'opensuse', version => 'Factory', build => '87.5011');
     my $tp = '2020-01-01T00:00:00';
     $t->get_ok('/tests/overview' => form => {@params, t => $tp});
-    like(get_summary, qr/from $tp.*show latest jobs$/s, 'jobs newer than time parameter filtered out');
+    like(get_summary, qr/at the time of $tp.*show latest jobs$/s, 'jobs newer than time parameter filtered out');
     $t->get_ok('/tests/overview' => form => {@params, t => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC')});
-    like(get_summary, qr/from.*show latest.*Incomplete: 1$/s, 'jobs newer than time parameter shown');
+    like(get_summary, qr/at the time of.*show latest.*Incomplete: 1$/s, 'jobs newer than time parameter shown');
 };
 
 # Advanced query parameters can be forwarded
