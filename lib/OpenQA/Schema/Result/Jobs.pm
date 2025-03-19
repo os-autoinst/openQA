@@ -1438,7 +1438,7 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
         $chunk->content(\undef);
     }
     catch ($e) {
-        # $temp_chunk_folder->remove_tree if $@; # XXX: Don't! as worker will try again to upload.
+        # $temp_chunk_folder->remove_tree; # XXX: Don't! as worker will try again to upload.
         return $e;
     }
     return 0, $fname, $type, $last;

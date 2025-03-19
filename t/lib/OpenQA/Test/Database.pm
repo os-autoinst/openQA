@@ -9,6 +9,7 @@ use Date::Format;    # To allow fixtures with relative dates
 use DateTime;    # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw( abs_path getcwd );
+use English;
 use Feature::Compat::Try;
 use OpenQA::Schema;
 use OpenQA::Log 'log_info';
@@ -63,9 +64,8 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
     my %ids;
     foreach my $fixture (glob "$fixtures_glob") {
 
-        my $info = eval path($fixture)->slurp;    ## no critic
-        chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
-
+        my $info = eval path($fixture)->slurp;
+        chdir $cwd, croak "Could not insert fixture $fixture: $EVAL_ERROR" if $EVAL_ERROR;
         # Arrayrefs of rows, (dbic syntax) table defined by fixture filename
         if (ref $info->[0] eq 'HASH') {
             my $rs_name = (split /\./, $fixture)[0];
