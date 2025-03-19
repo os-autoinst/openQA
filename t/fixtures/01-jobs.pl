@@ -56,7 +56,7 @@ use Time::Seconds;
         id => 99926,
         group_id => 1001,
         priority => 56,
-        result => "incomplete",
+        result => "skipped",
         reason => 'just a test',
         settings => [
             {key => 'DESKTOP', value => 'minimalx'},

@@ -190,7 +190,7 @@ sub check_test_parent {
     is_deeply(
         \@progress_bars,
         [
-            "failed: 1\ntotal: 1",
+            "skipped: 1\ntotal: 1",
             "failed: 1\ntotal: 1",
             "softfailed: 2\nfailed: 1\ntotal: 3",
             "passed: 1\ntotal: 1",
