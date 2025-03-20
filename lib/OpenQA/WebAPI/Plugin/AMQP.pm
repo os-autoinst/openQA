@@ -4,7 +4,7 @@
 package OpenQA::WebAPI::Plugin::AMQP;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
-use OpenQA::Log qw(log_debug log_error);
+use OpenQA::Log qw(log_debug log_info log_error);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
@@ -75,8 +75,10 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
             my $delay = $retry_delay * $config->{publish_retry_delay_factor};
             my ($event_id, $job_id) = ($event_data->{id} // 'none', $event_data->{job_id});
             my $additional_info = $job_id ? ", job ID: $job_id" : '';
-            log_error "Publishing $topic failed: $error (event ID: $event_id$additional_info, $left attempts left)";
+            my $log_msg = "Publishing $topic failed: $error (event ID: $event_id$additional_info, $left attempts left)";
+            return log_error $log_msg unless $left;
             my $retry_function = sub ($loop) { $self->publish_amqp($topic, $event_data, $headers, $left, $delay) };
+            log_info $log_msg;
             Mojo::IOLoop->timer($retry_delay => $retry_function) if $left;
         })->finally(sub { undef $publisher });
 }
