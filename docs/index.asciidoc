@@ -8,6 +8,8 @@
 
 :sectnums:
 ifdef::basebackend-html[toc::[]]
+:sectlinks:
+:sectanchors:
 include::GettingStarted.asciidoc[]
 include::Installing.asciidoc[]
 include::UsersGuide.asciidoc[]
