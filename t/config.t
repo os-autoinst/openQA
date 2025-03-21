@@ -296,7 +296,7 @@ subtest 'Validation of worker timeout' => sub {
 
 subtest 'Multiple config files' => sub {
     my $t_dir = tempdir;
-    my $openqa_d = $t_dir->child('openqa.d')->make_path;
+    my $openqa_d = $t_dir->child('openqa.ini.d')->make_path;
     local $ENV{OPENQA_CONFIG} = $t_dir;
     my $app = Mojolicious->new();
     my $data_main = "[global]\nappname =  openQA main config\nhide_asset_types = repo iso\n";
@@ -306,8 +306,8 @@ subtest 'Multiple config files' => sub {
     $openqa_d->child('01-appname-and-scm.ini')->spew($data_01);
     $openqa_d->child('02-appname.ini')->spew($data_02);
     my $global_config = OpenQA::Setup::read_config($app)->{global};
-    is $global_config->{appname}, 'openQA override 2', 'appname overriden by config from openqa.d, last one wins';
-    is $global_config->{scm}, 'bazel', 'scm set by config from openqa.d, not overriden';
+    is $global_config->{appname}, 'openQA override 2', 'appname overriden by config from openqa.ini.d, last one wins';
+    is $global_config->{scm}, 'bazel', 'scm set by config from openqa.ini.d, not overriden';
     is $global_config->{hide_asset_types}, 'repo iso', 'types set from main config, not overriden';
 };
 
