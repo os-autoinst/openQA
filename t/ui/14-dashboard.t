@@ -94,13 +94,22 @@ is(
 
 $driver->find_element_by_link_text('400')->click();
 is($driver->find_element('#more_builds b')->get_text(), 400, 'limited to the selected number');
+like($driver->get_current_url(), qr/1001\?limit_builds=400/, 'url shows the selected build_limits');
+$driver->find_element_by_link_text('50')->click();
+my $actual_url = $driver->get_current_url();
+unlike($actual_url, qr/limit_builds=400/, 'url query doesnt show previous limit_builds');
+like($actual_url, qr/1001\?limit_builds=50/, 'url query has unique limit_builds entry');
 $driver->find_element_by_link_text('tagged')->click();
 is(scalar @{$driver->find_elements('.h4', 'css')}, 0, 'no tagged builds exist');
+$driver->find_element_by_link_text('400')->click();
+$actual_url = $driver->get_current_url();
+unlike($actual_url, qr/limit_builds=50/, 'url query updates only limit_builds entry and old selection is removed');
+like($actual_url, qr/limit_builds=400/, 'url query updates only limit_builds entry and shows new selection');
+like($actual_url, qr/only_tagged=1/, 'url query contains tag settings');
 
 $driver->get('/group_overview/1001');
 my $res = OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('more_builds')->get_text);
 is($res, q{Limit to 10 / 20 / 50 / 100 / 400 builds, only tagged / all}, 'more builds can be requested');
-
 is($driver->get('/?group=opensuse'), 1, 'group parameter is not exact by default');
 wait_for_ajax;
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');

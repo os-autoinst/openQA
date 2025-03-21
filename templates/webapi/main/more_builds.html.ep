@@ -1,11 +1,11 @@
 <div id="more_builds">
     Limit to
-    %= b join(' / ', map { $_ == $limit_builds ? "<b>$_</b>" : link_to($_ => url_with->query([limit_builds => $_])) } (10, 20, 50, 100, 400));
+    %= b join(' / ', map { $_ == $limit_builds ? "<b>$_</b>" : link_to($_ => url_with->query({limit_builds => $_})) } (10, 20, 50, 100, 400));
     builds, only
     % my %tagged = (tagged => 1, all => 0);
     % my %rtagged = reverse %tagged;
     % my $selected = $rtagged{$only_tagged};
-    %= b join(' / ', map { $_ eq $selected ? "<b>$_</b>" : link_to($_ => url_with->query([only_tagged => $tagged{$_}])) } reverse sort keys %tagged);
+    %= b join(' / ', map { $_ eq $selected ? "<b>$_</b>" : link_to($_ => url_with->query({only_tagged => $tagged{$_}})) } reverse sort keys %tagged);
 </div>
 
 <div id="mode_section">
@@ -15,7 +15,7 @@
     % } else {
       <%= link_to url_for->query(fullscreen => 0)->to_abs => begin %>default view<% end %>
       | Auto refresh every
-      %= b join(' / ', map { $_ == $interval ? "<b>$_</b>" : link_to($_ => url_with->query([interval => $_])) } (30, 60, 90, 120, 180));
+      %= b join(' / ', map { $_ == $interval ? "<b>$_</b>" : link_to($_ => url_with->query({interval => $_})) } (30, 60, 90, 120, 180));
       seconds
     % }
 </div>
