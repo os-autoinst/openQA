@@ -388,6 +388,10 @@ also supports NGINX and a custom port to listen on. Try `--help` to
 learn about the available options. Read on for more detailed setup
 instructions with all the details.
 
+NOTE: The web proxy might not be allowed to connect to openQA when SELinux is enabled.
+Therefore the `configure-web-proxy` script will automatically run
+`semanage boolean -m -1 httpd_can_network_connect` on SELinux systems to change that.
+
 If you wish to run openQA behind an http proxy (Apache, NGINX, …) then see the
 *openqa.conf.template* config file in */etc/apache2/vhosts.d* (openSUSE) or
 `/etc/httpd/conf.d` (Fedora) when using apache2 or the config files in

@@ -58,3 +58,8 @@ else
     echo "No supported proxy: $web_proxy"
     exit 1
 fi
+
+if which semanage &> /dev/null; then
+    echo "Setting SELinux boolean httpd_can_network_connect to 1 allowing web proxy to connect to openQA daemon"
+    semanage boolean -m -1 httpd_can_network_connect
+fi
