@@ -307,13 +307,13 @@ subtest 'promise handlers' => sub {
     combined_like { $amqp->publish_amqp('some.topic', \%event_data) } qr/Sending.*some\.topic/, 'publishing logged (2)';
     my $previous_promise = $last_promise;
     combined_like { $last_promise->reject('some error'); $last_promise->wait }
-    qr/Publishing some\.topic failed: some error \(event ID: foo, job ID: bar, 1 attempts left\)/,
+    qr/info.*Publishing some\.topic failed: some error \(event ID: foo, job ID: bar, 1 attempts left\)/,
       'failure logged, 1 attempt remaining';
     combined_like { Mojo::IOLoop->one_tick } qr/Sending.*some\.topic/, 'trying to publish the event again';
     isnt $last_promise, $previous_promise, 'another promise has been made (to re-try)';
     $previous_promise = $last_promise;
     combined_like { $last_promise->reject('some error'); $last_promise->wait }
-    qr/Publishing some\.topic failed: some error \(event ID: foo, job ID: bar, 0 attempts left\)/,
+    qr/error.*Publishing some\.topic failed: some error \(event ID: foo, job ID: bar, 0 attempts left\)/,
       'failure logged, no attempts remaining';
     combined_unlike { Mojo::IOLoop->one_tick } qr/Sending.*some\.topic/, 'no further retry logged';
     is $last_promise, $previous_promise, 'no further promise has been made (running out of retries)';
