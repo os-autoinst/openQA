@@ -53,6 +53,18 @@ sub _git_clone_all ($job, $clones) {
         try { _git_clone($app, $job, $ctx, $path, $url); next; }
         catch ($e) { $error = $e }
 
+        if ($error =~ /Internal API unreachable/) {
+            my $outage_handling = OpenQA::Git::MaintenanceOutage::decide_outcome($app, $ctx, $error);
+            if ($outage_handling->{skip}) {
+                $ctx->info("Git clone: GitLab outage likely, skipping clone job).");
+                return;
+            }
+            elsif ($outage_handling->{fail}) {
+                $ctx->info("Prolonged GitLab outage; failing the job.");
+                die $error;
+            }
+        }
+
         # unblock openQA jobs despite network errors under best-effort configuration
         my $retries = $job->retries;
         my $git_config = $app->config->{'scm git'};
