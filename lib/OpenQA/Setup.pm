@@ -51,7 +51,7 @@ sub _load_config ($app, $defaults, $mode_specific_defaults) {
     my $config_path = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child('etc', 'openqa');
     my $main_config_file = $config_path->child('openqa.ini');
     my @config_file_paths = -e $main_config_file ? ($main_config_file) : ();
-    push @config_file_paths, @{$config_path->child('openqa.d')->list->grep(qr/\.ini$/)->sort};
+    push @config_file_paths, @{$config_path->child('openqa.ini.d')->list->grep(qr/\.ini$/)->sort};
 
     # read config files
     my $config_file;
