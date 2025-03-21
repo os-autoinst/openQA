@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Controller::API::V1::Comment;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Date::Format;
+use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
 use List::Util qw(min);
@@ -138,8 +139,11 @@ sub create ($self) {
             user_id => $self->current_user->id
         });
 
-    eval { $comment->handle_special_contents($self) };
-    return $self->render(json => {error => $@}, status => 400) if $@;
+    try { $comment->handle_special_contents($self) }
+    catch ($e) {
+        undef $txn_guard;
+        return $self->render(json => {error => $e}, status => 400);
+    }
     $self->emit_event('openqa_comment_create', $comment->event_data);
     $txn_guard->commit;
     $self->render(json => {id => $comment->id});
@@ -177,7 +181,7 @@ sub create_many ($self) {
     my (@created, @failed);
     for my $job_id (@$job_ids) {
         my $txn_guard = $schema->txn_scope_guard;
-        eval {
+        try {
             my $comment = $comments->create(
                 {
                     job_id => $job_id,
@@ -187,8 +191,11 @@ sub create_many ($self) {
             $comment->handle_special_contents($self);
             $txn_guard->commit;
             push @created, $comment->event_data;
-        };
-        push @failed, {job_id => $job_id} if $@;
+        }
+        catch ($e) {
+            undef $txn_guard;
+            push @failed, {job_id => $job_id};
+        }
     }
 
     # create a single event containing all relevant IDs for this action
@@ -228,8 +235,11 @@ sub update ($self) {
       unless ($comment->user_id == $self->current_user->id);
     my $txn_guard = $self->schema->txn_scope_guard;
     my $res = $comment->update({text => href_to_bugref($text)});
-    eval { $res->handle_special_contents($self) };
-    return $self->render(json => {error => $@}, status => 400) if $@;
+    try { $res->handle_special_contents($self) }
+    catch ($e) {
+        undef $txn_guard;
+        return $self->render(json => {error => $e}, status => 400);
+    }
     $self->emit_event('openqa_comment_update', $comment->event_data);
     $txn_guard->commit;
     $self->render(json => {id => $res->id});

@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Controller::Admin::Needle;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Cwd 'realpath';
+use Feature::Compat::Try;
 use OpenQA::Utils;
 use OpenQA::WebAPI::ServerSideDataTable;
 use Date::Format 'time2str';
@@ -72,7 +73,7 @@ sub ajax ($self) {
     my $search_value = $self->param('search[value]');
     push(@filter_conds, {filename => {-like => '%' . $search_value . '%'}}) if $search_value;
     my $seen_query = $self->param('last_seen');
-    eval {
+    try {
         if ($seen_query && $seen_query ne 'none') {
             push(@filter_conds, {last_seen_time => _translate_cond($seen_query)});
         }
@@ -80,8 +81,8 @@ sub ajax ($self) {
         if ($match_query && $match_query ne 'none') {
             push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
         }
-    };
-    return $self->render(json => {error => ($@ =~ s/ at .*//sr)}, status => 400) if $@;
+    }
+    catch ($e) { return $self->render(json => {error => ($e =~ s/ at .*//sr)}, status => 400) }
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,

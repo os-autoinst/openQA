@@ -1300,13 +1300,12 @@ sub _ignore_known_files {
 }
 
 sub _parse_log_file ($self, $match_string) {
-    my $msg = '';
     try {
         map_file my $log_content, path($self->worker->pool_directory, 'autoinst-log.txt'), '<';
-        $msg = ": $1" if ($log_content =~ /($match_string)/);
+        return ": $1" if ($log_content =~ /($match_string)/);
     }
     catch ($e) { log_warning($e) }
-    return $msg;
+    return '';
 }
 
 1;
