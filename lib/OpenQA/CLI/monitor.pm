@@ -6,10 +6,10 @@ use Mojo::Base 'OpenQA::Command', -signatures;
 
 use OpenQA::Jobs::Constants;
 use List::Util qw(all);
-use Mojo::Util qw(encode getopt);
+use Mojo::Util qw(encode);
 
 has description => 'Monitors a set of jobs';
-has usage => sub { shift->extract_usage };
+has usage => sub { OpenQA::CLI->_help('monitor') };
 
 sub _monitor_jobs ($self, $client, $follow, $poll_interval, $job_ids, $job_results) {
     my $start = time;
@@ -45,39 +45,11 @@ sub _monitor_and_return ($self, $client, $follow, $poll_interval, $job_ids) {
 }
 
 sub command ($self, @args) {
-    die $self->usage unless getopt \@args,
-      'f|follow' => \my $follow,
-      'i|poll-interval=i' => \my $poll_interval;
+    die $self->usage unless OpenQA::CLI::get_opt(monitor => \@args, [], \my %options);
+
     @args = $self->decode_args(@args);
-    $self->_monitor_and_return($self->client($self->url_for('tests')), $follow, $poll_interval, \@args);
+    $self->_monitor_and_return($self->client($self->url_for('tests')),
+        $options{follow}, $options{'poll-interval'}, \@args);
 }
 
 1;
-
-=encoding utf8
-
-=head1 SYNOPSIS
-
-  Usage: openqa-cli monitor [OPTIONS] [JOB_IDS]
-
-  Wait until all specified jobs have reached a final state and return a non-zero
-  exit code if at least one job is not ok (is not passed or softfailed).
-
-  Options:
-        --apibase <path>           API base, defaults to /api/v1
-        --apikey <key>             API key
-        --apisecret <secret>       API secret
-        --host <host>              Target host, defaults to http://localhost
-    -h, --help                     Show this summary of available options
-        --osd                      Set target host to http://openqa.suse.de
-        --o3                       Set target host to https://openqa.opensuse.org
-        --name <name>              Name of this client, used by openQA to
-                                   identify different clients via User-Agent
-                                   header, defaults to "openqa-cli"
-    -f, --follow                   Use the newest clone of each monitored job
-    -i, --poll-interval <seconds>  Specifies the poll interval
-    -p, --pretty                   Pretty print JSON content
-    -q, --quiet                    Do not print error messages to STDERR
-    -v, --verbose                  Print HTTP response headers
-
-=cut
