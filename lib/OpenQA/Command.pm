@@ -96,19 +96,15 @@ sub parse_params ($self, $args, $param_file) {
 
 sub run ($self, @args) {
     my %options = (pretty => 0, quiet => 0, links => 0, verbose => 0);
-    getopt \@args, ['pass_through'],
-      'apibase=s' => sub { $self->apibase($_[1]) },
-      'apikey=s' => sub { $self->apikey($_[1]) },
-      'apisecret=s' => sub { $self->apisecret($_[1]) },
-      'host=s' => sub { $self->host($_[1] =~ m!^/|://! ? $_[1] : "https://$_[1]") },
-      'o3' => sub { $self->host('https://openqa.opensuse.org') },
-      'osd' => sub { $self->host('http://openqa.suse.de') },
-      'odn' => sub { $self->host('https://openqa.debian.net') },
-      'L|links' => \$options{links},
-      'name=s' => sub { $self->name($_[1]) },
-      'p|pretty' => \$options{pretty},
-      'q|quiet' => \$options{quiet},
-      'v|verbose' => \$options{verbose};
+    OpenQA::CLI::get_opt(global => \@args, ['pass_through'], \%options);
+    for (qw(apibase apikey apisecret name)) {
+        $self->$_($options{$_}) if $options{$_};
+    }
+    my $host = $options{host};
+    $self->host($host =~ m!^/|://! ? $host : "https://$host") if $host;
+    $self->host('https://openqa.opensuse.org') if $options{o3};
+    $self->host('http://openqa.suse.de') if $options{osd};
+    $self->host('https://openqa.debian.net') if $options{odn};
 
     return $self->options(\%options)->command(@args);
 }
