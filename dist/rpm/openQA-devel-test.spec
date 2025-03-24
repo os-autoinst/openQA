@@ -1,3 +1,5 @@
+# Copyright SUSE LLC
+
 %define         short_name openQA-devel
 Name:           %{short_name}-test
 Version:        5
