@@ -59,7 +59,7 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-my $schema = OpenQA::Schema::connect_db(deploy => 0);
+my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1);
 
 my @databases = qw( PostgreSQL );
 

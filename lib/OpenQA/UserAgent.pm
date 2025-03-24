@@ -4,8 +4,9 @@
 package OpenQA::UserAgent;
 use Mojo::Base 'Mojo::UserAgent', -signatures;
 
+use OpenQA::Config;
+use Mojo::File 'path';
 use Mojo::Util 'hmac_sha1_sum';
-use Config::IniFiles;
 use Scalar::Util ();
 use Carp;
 
@@ -37,14 +38,8 @@ sub new {
 
 sub open_config_file ($host) {
     return undef unless $host;
-    my @cfgpaths = ($ENV{OPENQA_CONFIG} // glob('~/.config/openqa'), '/etc/openqa');
-    for my $path (@cfgpaths) {
-        my $file = $path . '/client.conf';
-        next unless -r $file;
-        my $cfg = Config::IniFiles->new(-file => $file);
-        return $cfg && $cfg->SectionExists($host) ? $cfg : undef;
-    }
-    return undef;
+    my $cfg = parse_config_files(lookup_config_files(path(glob('~/.config/openqa')), 'client.conf', 1));
+    return $cfg && $cfg->SectionExists($host) ? $cfg : undef;
 }
 
 sub configure_credentials ($self, $host) {

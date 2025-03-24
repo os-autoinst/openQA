@@ -26,7 +26,11 @@ sub read_config {
 }
 
 subtest 'Test configuration default modes' => sub {
-    local $ENV{OPENQA_CONFIG} = undef;
+    # test with a completely empty config file to check defaults
+    # note: We cannot use no config file at all because then the lookup would fallback to a system configuration.
+    my $t_dir = tempdir;
+    $t_dir->child('openqa.ini')->touch;
+    local $ENV{OPENQA_CONFIG} = $t_dir;
 
     my $app = Mojolicious->new();
     $app->mode("test");

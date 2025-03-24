@@ -7,8 +7,8 @@ use Mojo::Base -strict, -signatures;
 use Mojo::File 'path';
 use Mojo::Util 'trim';
 use Mojo::Loader 'load_class';
-use Config::IniFiles;
 use OpenQA::App;
+use OpenQA::Config;
 use OpenQA::Log 'log_format_callback';
 use OpenQA::Utils qw(:DEFAULT assetdir random_string);
 use File::Path 'make_path';
@@ -46,20 +46,9 @@ sub _read_config_file ($config, $config_file, $defaults, $mode_defaults) {
 }
 
 sub _load_config ($app, $defaults, $mode_specific_defaults) {
-    my $config = $app->config;
+    my $config_file = parse_config_files(lookup_config_files($app->home->child('etc', 'openqa'), 'openqa.ini'));
     my $mode_defaults = $mode_specific_defaults->{$app->mode} // {};
-    my $config_path = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child('etc', 'openqa');
-    my $main_config_file = $config_path->child('openqa.ini');
-    my @config_file_paths = -e $main_config_file ? ($main_config_file) : ();
-    push @config_file_paths, @{$config_path->child('openqa.ini.d')->list->grep(qr/\.ini$/)->sort};
-
-    # read config files
-    my $config_file;
-    for my $config_file_path (@config_file_paths) {
-        my @import_args = $config_file ? (-import => $config_file) : ();
-        my $next_config_file = Config::IniFiles->new(-file => $config_file_path->to_string, @import_args);
-        $config_file = $next_config_file if $next_config_file;
-    }
+    my $config = $app->config;
     if ($config_file) {
         _read_config_file($config, $config_file, $defaults, $mode_defaults);
         $config->{ini_config} = $config_file;

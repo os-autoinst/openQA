@@ -382,9 +382,6 @@ export LANG=en_US.UTF-8
 rm -rf %{buildroot}/%{_sysusersdir}
 %endif
 
-mkdir -p %{buildroot}%{_datadir}/openqa%{_sysconfdir}/openqa
-ln -s %{_sysconfdir}/openqa/openqa.ini %{buildroot}%{_datadir}/openqa%{_sysconfdir}/openqa/openqa.ini
-ln -s %{_sysconfdir}/openqa/database.ini %{buildroot}%{_datadir}/openqa%{_sysconfdir}/openqa/database.ini
 mkdir -p %{buildroot}%{_bindir}
 ln -s %{_datadir}/openqa/script/client %{buildroot}%{_bindir}/openqa-client
 ln -s %{_datadir}/openqa/script/openqa-cli %{buildroot}%{_bindir}/openqa-cli
@@ -569,10 +566,6 @@ fi
 %config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/openqa.ini
 %config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/database.ini
 %dir %{_datadir}/openqa
-%dir %{_datadir}/openqa/etc
-%dir %{_datadir}/openqa%{_sysconfdir}/openqa
-%{_datadir}/openqa%{_sysconfdir}/openqa/openqa.ini
-%{_datadir}/openqa%{_sysconfdir}/openqa/database.ini
 %config %{_sysconfdir}/logrotate.d
 # apache vhost
 %dir %{_sysconfdir}/apache2
