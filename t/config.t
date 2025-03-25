@@ -26,7 +26,8 @@ sub read_config {
 }
 
 subtest 'Test configuration default modes' => sub {
-    local $ENV{OPENQA_CONFIG} = undef;
+    # set OPENQA_CONFIG to an existing directory that has no config files to test defaults
+    local $ENV{OPENQA_CONFIG} = $FindBin::Bin;
 
     my $app = Mojolicious->new();
     $app->mode("test");
