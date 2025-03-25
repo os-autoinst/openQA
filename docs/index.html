@@ -2408,6 +2408,20 @@ also supports NGINX and a custom port to listen on. Try <code>--help</code> to
 learn about the available options. Read on for more detailed setup
 instructions with all the details.</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The web proxy might not be allowed to connect to openQA when SELinux is enabled.
+Therefore the <code>configure-web-proxy</code> script will automatically run
+<code>semanage boolean -m -1 httpd_can_network_connect</code> on SELinux systems to change that.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>If you wish to run openQA behind an http proxy (Apache, NGINX, …) then see the
 <strong>openqa.conf.template</strong> config file in <strong>/etc/apache2/vhosts.d</strong> (openSUSE) or
@@ -13373,7 +13387,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-21 04:44:48 UTC
+Last updated 2025-03-25 04:44:53 UTC
 </div>
 </div>
 </body>
