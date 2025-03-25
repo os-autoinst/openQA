@@ -25,20 +25,6 @@ use Feature::Compat::Try;
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
 sub carry_over_defaults () { \%CARRY_OVER_DEFAULTS }
 
-sub _lookup_config_files ($app) {
-    my @config_file_paths;
-    for my $path ($ENV{OPENQA_CONFIG}, $app->home->child('etc', 'openqa'), '/etc/openqa', '/usr/etc/openqa') {
-        next unless defined $path && -e $path;
-        my $config_path = path($path);
-        my $main_config_file = $config_path->child('openqa.ini');
-        push @config_file_paths, $main_config_file if -e $main_config_file;
-        push @config_file_paths, @{$config_path->child('openqa.ini.d')->list->grep(qr/\.ini$/)->sort};
-        last;
-    }
-    if (my $log = $app->log) { $app->log->info("Reading config from: @config_file_paths") }
-    return \@config_file_paths;
-}
-
 sub _read_config_file ($config, $config_file, $defaults, $mode_defaults) {
     for my $section (sort keys %$defaults) {
         my $section_defaults = $defaults->{$section};
@@ -60,17 +46,20 @@ sub _read_config_file ($config, $config_file, $defaults, $mode_defaults) {
 }
 
 sub _load_config ($app, $defaults, $mode_specific_defaults) {
-    # parse config files
+    my $config = $app->config;
+    my $mode_defaults = $mode_specific_defaults->{$app->mode} // {};
+    my $config_path = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child('etc', 'openqa');
+    my $main_config_file = $config_path->child('openqa.ini');
+    my @config_file_paths = -e $main_config_file ? ($main_config_file) : ();
+    push @config_file_paths, @{$config_path->child('openqa.ini.d')->list->grep(qr/\.ini$/)->sort};
+
+    # read config files
     my $config_file;
-    for my $config_file_path (@{_lookup_config_files($app)}) {
+    for my $config_file_path (@config_file_paths) {
         my @import_args = $config_file ? (-import => $config_file) : ();
         my $next_config_file = Config::IniFiles->new(-file => $config_file_path->to_string, @import_args);
         $config_file = $next_config_file if $next_config_file;
     }
-
-    # read values from config files
-    my $mode_defaults = $mode_specific_defaults->{$app->mode} // {};
-    my $config = $app->config;
     if ($config_file) {
         _read_config_file($config, $config_file, $defaults, $mode_defaults);
         $config->{ini_config} = $config_file;
