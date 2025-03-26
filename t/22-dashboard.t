@@ -607,4 +607,26 @@ subtest 're-routing' => sub {
     $t->attr_like('#all_tests .nav-link', 'href', qr|/base/tests|s, 'base applied to navbar link');
 };
 
+subtest 'job skipped count' => sub {
+    my $job_skipped_hash = {
+        id => 12345,
+        BUILD => '0048@0815',
+        DISTRI => 'opensuse',
+        VERSION => 'Factory',
+        FLAVOR => 'tape',
+        ARCH => 'x86_64',
+        MACHINE => 'xxx',
+        TEST => 'dummy',
+        state => OpenQA::Jobs::Constants::DONE,
+        result => OpenQA::Jobs::Constants::SKIPPED,
+    };
+    $jobs->create($job_skipped_hash);
+    my $job_skipped = $jobs->find({id => 12345});
+    my $jr = {skipped => 0, total => 0};
+    OpenQA::BuildResults::count_job($job_skipped, $jr, {});
+
+    is $jr->{skipped}, 1, 'Job with aborted result correctly increments skipped count';
+    is $jr->{total}, 1, 'Total jobs incremented';
+};
+
 done_testing;
