@@ -8,10 +8,12 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
+use Test::MockModule;
 use Mojolicious;
 use Mojo::Base -signatures;
 use Mojo::Log;
 use OpenQA::App;
+use OpenQA::Config;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::Test::TimeLimit '4';
 use OpenQA::Setup;
@@ -319,6 +321,37 @@ subtest 'Multiple config files' => sub {
     is $global_config->{appname}, 'openQA override 2', 'appname overriden by config from openqa.ini.d, last one wins';
     is $global_config->{scm}, 'bazel', 'scm set by config from openqa.ini.d, not overriden';
     is $global_config->{hide_asset_types}, 'repo iso', 'types set from main config, not overriden';
+};
+
+subtest 'Lookup precedence/hiding' => sub {
+    my $t_dir = tempdir;
+    my @args = (undef, 'openqa.ini');
+    my $config_mock = Test::MockModule->new('OpenQA::Config');
+    $config_mock->redefine(_config_dirs => [["$t_dir/override"], ["$t_dir/home"], ["$t_dir/admin", "$t_dir/package"]]);
+
+    my @expected;
+    is_deeply lookup_config_files(@args), \@expected, 'no config files found';
+
+    @expected = ("$t_dir/package/openqa.ini", "$t_dir/package/openqa.ini.d/packager-drop-in.ini");
+    $t_dir->child('package')->make_path->child('openqa.ini')->touch->sibling('openqa.ini.d')
+      ->make_path->child('packager-drop-in.ini')->touch;
+    is_deeply lookup_config_files(@args), \@expected, 'found config from package';
+
+    splice @expected, 0, 0, "$t_dir/admin/openqa.ini.d/admin-drop-in.ini";
+    $t_dir->child('admin')->make_path->child('openqa.ini.d')->make_path->child('admin-drop-in.ini')->touch;
+    is_deeply lookup_config_files(@args), \@expected, 'additional config from admin does not hide config from packager';
+
+    @expected = ("$t_dir/admin/openqa.ini", "$t_dir/admin/openqa.ini.d/admin-drop-in.ini");
+    $t_dir->child('admin')->child('openqa.ini')->touch;
+    is_deeply lookup_config_files(@args), \@expected, 'main config from admin hides config from packager';
+
+    @expected = ("$t_dir/home/openqa.ini.d/home-drop-in.ini");
+    $t_dir->child('home')->child('openqa.ini.d')->make_path->child('home-drop-in.ini')->touch;
+    is_deeply lookup_config_files(@args), \@expected, 'drop-in in home hides all other config';
+
+    @expected = ("$t_dir/override/openqa.ini.d/override-drop-in.ini");
+    $t_dir->child('override')->child('openqa.ini.d')->make_path->child('override-drop-in.ini')->touch;
+    is_deeply lookup_config_files(@args), \@expected, 'drop-in in overriden dir hides all other config';
 };
 
 done_testing();

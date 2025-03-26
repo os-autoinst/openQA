@@ -11,16 +11,24 @@ use Mojo::File qw(path);
 
 our @EXPORT = qw(lookup_config_files parse_config_files parse_config_files_as_hash);
 
+sub _config_dirs ($home) {
+    return [[$ENV{OPENQA_CONFIG} // ()], [$home], ['/etc/openqa', '/usr/etc/openqa']];
+}
+
 sub lookup_config_files ($home, $name, $silent = 0) {
+    my $config_name;
     my @config_file_paths;
-    for my $path ($ENV{OPENQA_CONFIG}, $home, '/etc/openqa', '/usr/etc/openqa') {
-        next unless defined $path;
-        my $config_path = path($path);
-        my $main_config_file = $config_path->child($name);
-        my $extension = $main_config_file->extname;
-        my $config_name = $main_config_file->basename(".$extension");
-        push @config_file_paths, $main_config_file if -r $main_config_file;
-        push @config_file_paths, @{$config_path->child("$name.d")->list->grep(qr/\.$extension$/)->sort};
+    for my $paths (@{_config_dirs($home)}) {
+        for my $path (@$paths) {
+            my $config_path = path($path);
+            my $main_config_file = $config_path->child($name);
+            my $extension = $main_config_file->extname;
+            my $has_main_config = -r $main_config_file;
+            $config_name //= $main_config_file->basename(".$extension");
+            push @config_file_paths, $main_config_file if $has_main_config;
+            push @config_file_paths, @{$config_path->child("$name.d")->list->grep(qr/\.$extension$/)->sort};
+            last if $has_main_config;
+        }
         if (@config_file_paths) {
             log_info "Reading $config_name config from: @config_file_paths" unless $silent;
             last;
