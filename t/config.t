@@ -9,6 +9,9 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use Mojolicious;
+use Mojo::Base -signatures;
+use Mojo::Log;
+use OpenQA::App;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::Test::TimeLimit '4';
 use OpenQA::Setup;
@@ -16,6 +19,8 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 use Mojo::File 'tempdir';
 use Time::Seconds;
+
+my $quiet_log = Mojo::Log->new(level => 'warn');
 
 sub read_config {
     my ($app, $msg) = @_;
@@ -32,7 +37,7 @@ subtest 'Test configuration default modes' => sub {
     $t_dir->child('openqa.ini')->touch;
     local $ENV{OPENQA_CONFIG} = $t_dir;
 
-    my $app = Mojolicious->new();
+    OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
     $app->mode("test");
     my $config = read_config($app, 'reading config from default with mode test');
     is(length($config->{_openid_secret}), 16, "config has openid_secret");
@@ -224,7 +229,7 @@ subtest 'Test configuration default modes' => sub {
 subtest 'Test configuration override from file' => sub {
     my $t_dir = tempdir;
     local $ENV{OPENQA_CONFIG} = $t_dir;
-    my $app = Mojolicious->new();
+    OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
     my @data = (
         "[global]\n",
         "suse_mirror=http://blah/\n",
@@ -262,7 +267,7 @@ subtest 'Test configuration override from file' => sub {
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
     my $t_dir = tempdir;
     local $ENV{OPENQA_CONFIG} = $t_dir;
-    my $app = Mojolicious->new();
+    OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
     my $data = '
         [global]
         appname =  openQA  
@@ -279,8 +284,9 @@ subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
 };
 
 subtest 'Validation of worker timeout' => sub {
-    my $app = Mojolicious->new(config => {global => {worker_timeout => undef}});
+    my $app = Mojolicious->new(config => {global => {worker_timeout => undef}}, log => $quiet_log);
     my $configured_timeout = \$app->config->{global}->{worker_timeout};
+    OpenQA::App->set_singleton($app);
     subtest 'too low worker_timeout' => sub {
         $$configured_timeout = MAX_TIMER - 1;
         combined_like { OpenQA::Setup::_validate_worker_timeout($app) } qr/worker_timeout.*invalid/, 'warning logged';
@@ -302,7 +308,7 @@ subtest 'Multiple config files' => sub {
     my $t_dir = tempdir;
     my $openqa_d = $t_dir->child('openqa.ini.d')->make_path;
     local $ENV{OPENQA_CONFIG} = $t_dir;
-    my $app = Mojolicious->new();
+    OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
     my $data_main = "[global]\nappname =  openQA main config\nhide_asset_types = repo iso\n";
     my $data_01 = "[global]\nappname =  openQA override 1\nscm = bazel";
     my $data_02 = "[global]\nappname =  openQA override 2";
