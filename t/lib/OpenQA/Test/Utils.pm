@@ -485,9 +485,9 @@ sub c_worker ($apikey, $apisecret, $host, $instance, $bogus, %options) {
         }
         my $error = $options{error};    # uncoverable statement
         my $worker_mock = Test::MockModule->new('OpenQA::Worker');    # uncoverable statement
-        $worker_mock->redefine(check_availability => $error) if defined $error;    # uncoverable statement
+        $worker_mock->redefine(check_availability => sub { (0, $error) }) if defined $error;    # uncoverable statement
         my $worker = OpenQA::Worker->new(\%worker_params);    # uncoverable statement
-        $worker->current_error($error) if defined $error;    # uncoverable statement
+        $worker->set_current_error_based_on_availability;    # uncoverable statement
         setup_worker($worker, $host);    # uncoverable statement
         $worker->exec();    # uncoverable statement
 

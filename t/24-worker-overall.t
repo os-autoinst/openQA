@@ -851,6 +851,7 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
                 'A QEMU instance using the current pool directory is still running (PID: 17377)',
                 'error status recomputed'
             );
+            ok $worker->current_error_is_fatal, 'leftover QEMU process considered fatal';
             is $pending_job->status, 'skipped: ?', 'pending job is supposed to be skipped due to the error';
             combined_like {
                 $worker->_handle_job_status_changed($pending_job, {status => 'stopped', reason => 'skipped'});
@@ -858,11 +859,22 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
             qr/Job 769 from some-host finished - reason: skipped/s, 'assume skipping of job 769 is complete';
             is $worker->status->{status}, 'broken', 'worker still considered broken';
 
+            # set back the job/queue for another test
+            $pending_job->{_status} = 'new';
+            $worker->current_job($fake_job);
+            $worker->_init_queue([$pending_job]);
+
             # assume the average load exceeds configured threshold
             $worker_mock->unmock('is_qemu_running');
             $worker->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD} = '10';
-            is $worker->status->{status}, 'broken', 'worker considered broken when average load exceeds threshold';
+            combined_like { $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'}) }
+            qr/Job 42 from some-host finished - reason: done.*Continuing.*769.*despite.*load.*exceeding/s,
+              'continuation despite error logged';
             like $worker->current_error, qr/load \(.*10\.25.*exceeding.*10/, 'error shows current load and threshold';
+            ok !$worker->current_error_is_fatal, 'exceeding the load is not considered fatal';
+            is $pending_job->status, 'accepted', 'pending job is not supposed to be skipped due load';
+            $worker->current_job(undef);
+            is $worker->status->{status}, 'broken', 'worker is considered broken when after the job is done';
 
             # assume the error is gone
             $load_avg_file->remove;
