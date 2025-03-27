@@ -1934,10 +1934,10 @@ worker IP/hostname even on KVM guests if set to 0.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>returns the base URL to contact the local <code>os-autoinst</code> service</p>
+<p>Returns the base URL to contact the local <code>os-autoinst</code> service.</p>
 </div>
 <div class="paragraph">
-<p>Optional <code>$path</code> argument is appended after base url.</p>
+<p>Optional <code>$path</code> argument is appended after base URL.</p>
 </div>
 <div class="paragraph">
 <p>Optional HASHREF <code>$query</code> is converted to URL query and appended
@@ -1948,12 +1948,18 @@ after path.</p>
 even on KVM guests if set to 0.</p>
 </div>
 <div class="paragraph">
-<p>Returns constructor URL. Can be used inline:</p>
+<p>Returns a URL that can be used like this:</p>
 </div>
 <div class="literalblock">
 <div class="content">
 <pre>script_run("curl " . autoinst_url . "/data");</pre>
 </div>
+</div>
+<div class="paragraph">
+<p>This function can be used to download ISO, HDD and other assets from the
+isotovideo working directory into the SUT. Note that the openQA worker does <strong>not</strong>
+synchronize repository assets there so those assets cannot be downloaded via the
+autoinst URL when the openQA worker is used.</p>
 </div>
 </div>
 <div class="sect4">
@@ -2079,7 +2085,7 @@ starting to write the script into the here document.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-25 04:48:29 UTC
+Last updated 2025-03-27 04:49:39 UTC
 </div>
 </div>
 </body>
