@@ -113,6 +113,7 @@ combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors occurred.*foo.*bar.*/s,
   'setup info with parse errors';
 
+
 subtest 'worker load' => sub {
     my $load = OpenQA::Worker::_load_avg();
     is scalar @$load, 3, 'expected number of load values';
@@ -492,7 +493,7 @@ subtest 'is_qemu_running' => sub {
     ok OpenQA::Worker::is_qemu('/usr/bin/qemu-system-x86_64'), 'QEMU executable considered to be QEMU';
     ok !OpenQA::Worker::is_qemu('/usr/bin/true'), 'other executable not considered to be QEMU';
 
-    my $pool_directory = tempdir('poolXXXX');
+    my $pool_directory = tempdir('/tmp/poolXXXX');
     $worker->pool_directory($pool_directory);
 
     $worker->no_cleanup(0);
@@ -519,7 +520,7 @@ subtest 'checking and cleaning pool directory' => sub {
 
     # assign temporary pool dir
     # note: Using scope guard to "get out" of pool directory again so we can delete the tempdir.
-    my $pool_directory = tempdir('poolXXXX');
+    my $pool_directory = tempdir('/tmp/poolXXXX');
     my $guard = scope_guard sub { chdir $FindBin::Bin };
     $worker->pool_directory($pool_directory);
 
@@ -539,6 +540,9 @@ subtest 'checking and cleaning pool directory' => sub {
 };
 
 subtest 'checking worker address' => sub {
+    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $guard = scope_guard sub { chdir $FindBin::Bin };
+    $worker->pool_directory($pool_directory);
     my $fqdn_lookup_mock = Test::MockModule->new('OpenQA::Worker::Settings');
     ok !$settings->is_local_worker, 'not considered local initially because we have https://remotehost configured';
     $global_settings->{WORKER_HOSTNAME} = undef;
@@ -565,6 +569,9 @@ subtest 'checking worker address' => sub {
 };
 
 subtest 'check availability of Open vSwitch related D-Bus service' => sub {
+    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $guard = scope_guard sub { chdir $FindBin::Bin };
+    $worker->pool_directory($pool_directory);
     delete $worker->settings->{_worker_classes};
     $worker->settings->global_settings->{WORKER_CLASS} = 'foo,tap,bar';
     ok $worker->settings->has_class('tap'), 'worker has tap class';
@@ -929,7 +936,7 @@ subtest 'resolving 127.0.0.1 without relying on getaddrinfo()' => sub {
 };
 
 subtest 'storing package list' => sub {
-    $worker->pool_directory(tempdir('pool-dir-XXXXX'));
+    $worker->pool_directory(tempdir('/tmp/pool-dir-XXXXX'));
     combined_like { $worker->_store_package_list('echo foo') }
     qr/Gathering package information/, 'log message about command invocation';
     is $worker->pool_directory->child('worker_packages.txt')->slurp('UTF-8'), "foo\n", 'package list written';
@@ -940,5 +947,7 @@ subtest 'storing package list' => sub {
     combined_like { $worker->_store_package_list('true') }
     qr/doesn't return any data/, 'log message about no data';
 };
+
+unlink 'worker-log.txt';
 
 done_testing();
