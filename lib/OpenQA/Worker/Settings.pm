@@ -4,10 +4,13 @@
 package OpenQA::Worker::Settings;
 use Mojo::Base -base, -signatures;
 
+use FindBin '$Bin';
+use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'trim';
 use Config::IniFiles;
 use Time::Seconds;
+use OpenQA::Config;
 use OpenQA::Log 'setup_log';
 use OpenQA::Utils 'is_host_local';
 use Net::Domain 'hostfqdn';
@@ -19,17 +22,9 @@ has 'webui_host_specific_settings';
 use constant VNCPORT_OFFSET => $ENV{VNCPORT_OFFSET} // 90;
 
 sub new ($class, $instance_number = undef, $cli_options = {}) {
-    my $settings_file = ($ENV{OPENQA_CONFIG} || '/etc/openqa') . '/workers.ini';
-    my $cfg;
-    my @parse_errors;
-    if (-e $settings_file) {
-        $cfg = Config::IniFiles->new(-file => $settings_file);
-        push(@parse_errors, @Config::IniFiles::errors) unless $cfg;
-    }
-    else {
-        push(@parse_errors, "Config file not found at '$settings_file'.");
-        $settings_file = undef;
-    }
+    my $config_paths = lookup_config_files(path($Bin)->dirname->child('etc', 'openqa'), 'workers.ini', 1);
+    my $cfg = parse_config_files($config_paths);
+    my @parse_errors = @$config_paths ? (@Config::IniFiles::errors) : ('No config file found.');
 
     # read settings from config
     my %global_settings;
@@ -72,7 +67,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
         webui_hosts => \@hosts,
         webui_host_specific_settings => \%webui_host_specific_settings,
     );
-    $self->{_file_path} = $settings_file;
+    $self->{_file_path} = join(', ', @$config_paths);
     $self->{_parse_errors} = \@parse_errors;
     return $self;
 }
