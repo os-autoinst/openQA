@@ -38,7 +38,6 @@ t/data/openqa/share/factory/iso/test2.iso
 t/data/openqa/share/factory/iso/test3.iso
 t/log_chromedriver
 docker.env
-pool????/
 container/webui/workdir
 base_state.json
 job.json
