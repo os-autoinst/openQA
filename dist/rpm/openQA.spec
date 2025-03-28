@@ -15,6 +15,10 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
+# define _distconfdir for openSUSE Leap 15 and SLE 15 (like other packages such as libvpl do)
+%if 0%{?suse_version} < 1550
+%define _distconfdir %{_prefix}%{_sysconfdir}
+%endif
 
 # can't use linebreaks here!
 %define openqa_main_service openqa-webui.service
@@ -563,8 +567,13 @@ fi
 %{_sbindir}/rcopenqa-webui
 %{_sbindir}/rcopenqa-livehandler
 %dir %{_sysconfdir}/openqa
-%config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/openqa.ini
-%config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/database.ini
+%dir %{_sysconfdir}/openqa/openqa.ini.d
+%dir %{_sysconfdir}/openqa/database.ini.d
+%dir %{_distconfdir}/openqa
+%dir %{_distconfdir}/openqa/openqa.ini.d
+%dir %{_distconfdir}/openqa/database.ini.d
+%{_datadir}/doc/openqa/examples/openqa.ini
+%{_datadir}/doc/openqa/examples/database.ini
 %dir %{_datadir}/openqa
 %config %{_sysconfdir}/logrotate.d
 # apache vhost
@@ -669,6 +678,11 @@ fi
 %endif
 
 %files common
+%if 0%{?suse_version} < 1550
+%dir %{_distconfdir}
+%endif
+%dir %{_datadir}/doc/openqa
+%dir %{_datadir}/doc/openqa/examples
 %dir %{_datadir}/openqa
 %{_datadir}/openqa/lib
 %exclude %{_datadir}/openqa/lib/OpenQA/CacheService/
@@ -699,8 +713,12 @@ fi
 %{_sbindir}/rcopenqa-slirpvde
 %{_sbindir}/rcopenqa-vde_switch
 %{_sbindir}/rcopenqa-worker
-%config(noreplace) %{_sysconfdir}/openqa/workers.ini
-%config(noreplace) %attr(0400,_openqa-worker,root) %{_sysconfdir}/openqa/client.conf
+%dir %{_sysconfdir}/openqa/workers.ini.d
+%dir %{_sysconfdir}/openqa/client.conf.d
+%dir %{_distconfdir}/openqa/workers.ini.d
+%dir %{_distconfdir}/openqa/client.conf.d
+%{_datadir}/doc/openqa/examples/workers.ini
+%{_datadir}/doc/openqa/examples/client.conf
 # apparmor profile
 %dir %{_sysconfdir}/apparmor.d
 %config %{_sysconfdir}/apparmor.d/usr.share.openqa.script.worker
