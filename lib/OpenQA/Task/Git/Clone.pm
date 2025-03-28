@@ -50,8 +50,24 @@ sub _git_clone_all ($job, $clones) {
         my $url = $clones->{$path};
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
         my $error;
-        try { _git_clone($app, $job, $ctx, $path, $url); next; }
+        try {
+            _git_clone($app, $job, $ctx, $path, $url);
+            OpenQA::Git::MaintenanceOutage::remove_state_file($app);
+            next;
+        }
         catch ($e) { $error = $e }
+
+        if ($error =~ /Internal API unreachable/) {
+            my $outage_handling = OpenQA::Git::MaintenanceOutage::decide_outcome($app, $ctx, $error);
+            if ($outage_handling->{SKIP}) {
+                $ctx->info('Git clone: Git server outage likely, skipping clone job.');
+                return;
+            }
+            elsif ($outage_handling->{FAIL}) {
+                $ctx->info('Prolonged Git server outage; failing the job.');
+                return $job->fail($error);
+            }
+        }
 
         # unblock openQA jobs despite network errors under best-effort configuration
         my $retries = $job->retries;

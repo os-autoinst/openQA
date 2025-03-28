@@ -8,6 +8,7 @@ use Mojo::Base -signatures;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Task::Git::Clone;
+use OpenQA::Git::MaintenanceOutage;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '20';
@@ -448,12 +449,51 @@ subtest 'delete_needles' => sub {
     like $error->{message}, qr{Unable to rm via Git}, 'expected error from git';
 
     subtest 'minion guard' => sub {
-        my $guard = $t->app->minion->guard("git_clone_t/data/openqa/share/tests/fedora/needles_task", ONE_HOUR);
+        my $guard = $t->app->minion->guard('git_clone_t/data/openqa/share/tests/fedora/needles_task', ONE_HOUR);
         $res = run_gru_job(@gru_args);
         is $res->{state}, 'finished', 'job finished';
         $error = $res->{result}->{errors}->[0];
         like $error->{message}, qr{Another git task for.*fedora.*is ongoing}, 'expected error message';
     };
+
+};
+
+subtest 'MaintenanceOutage: no lock file => skip' => sub {
+    my $tmpdir = tempdir(CLEANUP => 1);
+    local $ENV{OPENQA_GIT_SERVER_MAINTENANCE_FILE} = "$tmpdir/mock.lock";
+    my $outcome = OpenQA::Git::MaintenanceOutage::decide_outcome($t->app);
+    is_deeply($outcome, 'SKIP', 'Skips the git minion job when lock file is absent');
+};
+
+subtest 'MaintenanceOutage: file present but younger than 1800 => skip' => sub {
+    my $tmpdir = tempdir(CLEANUP => 1);
+    my $mock_file = "$tmpdir/younger.lock";
+    local $ENV{OPENQA_GIT_SERVER_MAINTENANCE_FILE} = $mock_file;
+    path($mock_file)->touch;
+    my $outcome = OpenQA::Git::MaintenanceOutage::decide_outcome($t->app);
+    is_deeply($outcome, 'SKIP', 'Skips the git minion job for an mtime < 1800');
+};
+
+subtest 'MaintenanceOutage: file present and older => fail' => sub {
+    my $tmpdir = tempdir(CLEANUP => 1);
+    my $mock_file = "$tmpdir/older.lock";
+    local $ENV{OPENQA_GIT_SERVER_MAINTENANCE_FILE} = $mock_file;
+    path($mock_file)->touch;
+    my $old_time = time - 2000;
+    utime($old_time, $old_time, $mock_file)
+      or die "Couldn't change mtime on file: $!";
+    my $outcome = OpenQA::Git::MaintenanceOutage::decide_outcome($t->app);
+    is_deeply($outcome, 'FAIL', 'Fails the git minion job for an mtime >= 1800');
+};
+
+subtest 'MaintenanceOutage: remove_state_file removes existing lock file' => sub {
+    my $tmpdir = tempdir(CLEANUP => 1);
+    my $mock_file = "$tmpdir/mock.lock";
+    local $ENV{OPENQA_GIT_SERVER_MAINTENANCE_FILE} = $mock_file;
+    path($mock_file)->touch;
+    ok(-f $mock_file, 'mock lock file exists initially');
+    OpenQA::Git::MaintenanceOutage::remove_state_file($t->app);
+    ok(!-f $mock_file, 'lock file was removed');
 };
 
 done_testing();
