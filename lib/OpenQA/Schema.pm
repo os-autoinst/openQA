@@ -14,7 +14,9 @@ use Feature::Compat::Try;
 use FindBin '$Bin';
 use Fcntl ':flock';
 use File::Spec::Functions 'catfile';
+use OpenQA::Config;
 use OpenQA::Utils qw(:DEFAULT prjdir);
+use Mojo::File qw(path);
 use Feature::Compat::Try;
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
@@ -38,12 +40,12 @@ sub connect_db (%args) {
         $SINGLETON = __PACKAGE__->connect($ENV{TEST_PG} // 'DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg');
     }
     else {
-        my %ini;
-        my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
-        my $database_file = $cfgpath . '/database.ini';
-        tie %ini, 'Config::IniFiles', (-file => $database_file);
-        die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
-        $SINGLETON = __PACKAGE__->connect($ini{$mode});
+        my $home = path($Bin)->dirname->child('etc', 'openqa');
+        my $database_config_paths = lookup_config_files($home, 'database.ini', $args{silent});
+        my $database_config = parse_config_files_as_hash($database_config_paths);
+        my $database_config_for_mode = $database_config ? $database_config->{$mode} : {dsn => 'DBI:Pg:dbname=openqa'};
+        die "Could not find database section '$mode' in @$database_config_paths\n" unless $database_config_for_mode;
+        $SINGLETON = __PACKAGE__->connect($database_config_for_mode);
     }
     deploy $SINGLETON if $check_deploy;
     return $SINGLETON;

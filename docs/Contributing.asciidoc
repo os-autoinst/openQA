@@ -294,6 +294,10 @@ assets can need a big amount of disk space.
 WARNING: Be sure to *clear* that variable when running unit tests locally.
 
 === Customize configuration directory
+When running openQA from a Git checkout it will find configuration files from
+that checkout under `etc/openqa` and not use any system provided config files
+under e.g. `/etc/openqa`.
+
 It can be necessary during development to change the configuration.
 For example you have to edit `etc/openqa/database.ini` to use another database.
 It can also be useful to set the authentication method to `Fake` and increase
