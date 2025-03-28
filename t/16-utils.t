@@ -215,15 +215,9 @@ subtest 'get current version' => sub {
 -------------------------------------------------------------------
 Mon May 08 11:45:15 UTC 2017 - rd-ops-cm@suse.de
 
-- Update to version 4.4.1494239160.9869466:
-  * Fix missing space in log debug message (#1307)
-  * Register job assets even if one of the assets need to be skipped (#1310)
-  * Test whether admin table displays needles which never matched
-  * Show needles in admin table which never matched
-  * Improve logging in case of upload failure (#1309)
-  * Improve product fixtures to prevent dependency warnings
-  * Handle wrong/missing job dependencies appropriately
-  * clone_job.pl: Print URL of generated job for easy access (#1313)
+- Update to version 5.1743167903.dfbc473b:
+  * foo
+  * bar
 
 -------------------------------------------------------------------
 Sat Mar 18 20:03:22 UTC 2017 - coolo@suse.com
@@ -258,10 +252,10 @@ EOT
 
     # Create a valid Changelog and check if result is the expected one
     $changelog_file->spew($changelog_content);
-    is detect_current_version($changelog_dir), '4.4.1494239160.9869466', 'Detect current version from Changelog format';
-    like detect_current_version($changelog_dir), qr/(\d+\.\d+\.\d+\.$sha_regex)/, "Version scheme matches";
-    $changelog_file->spew("- Update to version 4.4.1494239160.9869466:\n- Update to version 4.4.1489864450.251306a:");
-    is detect_current_version($changelog_dir), '4.4.1494239160.9869466', 'Pick latest version detected in Changelog';
+    is detect_current_version($changelog_dir), '5.1743167903.dfbc473b', 'Detect current version from Changelog format';
+    like detect_current_version($changelog_dir), qr/(\d+\.\d+\.$sha_regex)/, "Version scheme matches";
+    $changelog_file->spew("- Update to version 5.1743167903.dfbc473b:\n- Update to version 5.1743167902.cebc473b:");
+    is detect_current_version($changelog_dir), '5.1743167903.dfbc473b', 'Pick latest version detected in Changelog';
 
     # Failure detection case for Changelog file
     $changelog_file->spew("* Do job cleanup even in case of api failure");
