@@ -11753,6 +11753,11 @@ Be sure to <strong>clear</strong> that variable when running unit tests locally.
 <div class="sect2">
 <h3 id="_customize_configuration_directory"><a class="anchor" href="#_customize_configuration_directory"></a><a class="link" href="#_customize_configuration_directory">67.4. Customize configuration directory</a></h3>
 <div class="paragraph">
+<p>When running openQA from a Git checkout it will find configuration files from
+that checkout under <code>etc/openqa</code> and not use any system provided config files
+under e.g. <code>/etc/openqa</code>.</p>
+</div>
+<div class="paragraph">
 <p>It can be necessary during development to change the configuration.
 For example you have to edit <code>etc/openqa/database.ini</code> to use another database.
 It can also be useful to set the authentication method to <code>Fake</code> and increase
@@ -13387,7 +13392,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-27 04:45:02 UTC
+Last updated 2025-03-29 04:44:57 UTC
 </div>
 </div>
 </body>
