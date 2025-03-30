@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  codecov: codecov/codecov@4.2.0
+  codecov: codecov/codecov@5.3.0
 
 aliases:
   - &restore_cache
@@ -266,8 +266,8 @@ jobs:
           name: codecov gpg workaround for gpg 2.4 as included in Leap 15.6
           command: mkdir -p ~/.gnupg
       - codecov/upload:
-          file: cover_db/codecov.json
-          cli_args: -v
+          files: cover_db/codecov.json
+          verbose: true
 
   build-docs: &docs-template
     docker:
