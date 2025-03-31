@@ -10,7 +10,6 @@ use OpenQA::Log qw(log_debug log_error log_info log_warning log_trace);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION MIN_TIMER);
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;
-use OpenQA::Scheduler::Client;
 use DateTime;
 use Data::Dump 'pp';
 use Feature::Compat::Try;

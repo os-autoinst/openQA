@@ -6,7 +6,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Constants qw(WORKER_COMMAND_GRAB_JOB WORKER_COMMAND_GRAB_JOBS);
 use OpenQA::WebSockets;
-use OpenQA::WebSockets::Model::Status;
 
 sub send_msg {
     my ($self) = @_;
