@@ -4,7 +4,6 @@
 package OpenQA::Worker::Settings;
 use Mojo::Base -base, -signatures;
 
-use FindBin '$Bin';
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'trim';
@@ -22,7 +21,7 @@ has 'webui_host_specific_settings';
 use constant VNCPORT_OFFSET => $ENV{VNCPORT_OFFSET} // 90;
 
 sub new ($class, $instance_number = undef, $cli_options = {}) {
-    my $config_paths = lookup_config_files(path($Bin)->dirname->child('etc', 'openqa'), 'workers.ini', 1);
+    my $config_paths = lookup_config_files(undef, 'workers.ini', 1);
     my $cfg = parse_config_files($config_paths);
     my @parse_errors = @$config_paths ? (@Config::IniFiles::errors) : ('No config file found.');
 
