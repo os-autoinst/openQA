@@ -9,16 +9,18 @@ use Exporter qw(import);
 use OpenQA::Log qw(log_info);
 use Mojo::File qw(path);
 
-our @EXPORT = qw(lookup_config_files parse_config_files parse_config_files_as_hash);
+our @EXPORT = qw(config_dir_within_app_home lookup_config_files parse_config_files parse_config_files_as_hash);
 
-sub _config_dirs ($home) {
-    return [[$ENV{OPENQA_CONFIG} // ()], [$home], ['/etc/openqa', '/usr/etc/openqa']];
+sub _config_dirs ($config_dir_within_home) {
+    return [[$ENV{OPENQA_CONFIG} // ()], [$config_dir_within_home // ()], ['/etc/openqa', '/usr/etc/openqa']];
 }
 
-sub lookup_config_files ($home, $name, $silent = 0) {
+sub config_dir_within_app_home ($app) { $app->child('etc', 'openqa') }
+
+sub lookup_config_files ($config_dir_within_home, $name, $silent = 0) {
     my $config_name;
     my @config_file_paths;
-    for my $paths (@{_config_dirs($home)}) {
+    for my $paths (@{_config_dirs($config_dir_within_home)}) {
         for my $path (@$paths) {
             my $config_path = path($path);
             my $main_config_file = $config_path->child($name);

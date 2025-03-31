@@ -121,11 +121,11 @@ subtest 'settings file with errors' => sub {
 };
 
 subtest 'settings file not found' => sub {
-    $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-setting";
+    my $config_mock = Test::MockModule->new('OpenQA::Config');
+    $config_mock->redefine(_config_dirs => [['does not exist']]);
     my $settings = OpenQA::Worker::Settings->new(1);
-    is($settings->file_path, undef, 'no file path present');
-    is_deeply($settings->parse_errors, ["Config file not found at '$FindBin::Bin/data/24-worker-setting/workers.ini'."],
-        'error logged')
+    ok !$settings->file_path, 'no file path present';
+    is_deeply $settings->parse_errors, ['No config file found.'], 'error logged'
       or always_explain $settings->parse_errors;
 };
 

@@ -46,7 +46,7 @@ sub _read_config_file ($config, $config_file, $defaults, $mode_defaults) {
 }
 
 sub _load_config ($app, $defaults, $mode_specific_defaults) {
-    my $config_file = parse_config_files(lookup_config_files($app->home->child('etc', 'openqa'), 'openqa.ini'));
+    my $config_file = parse_config_files(lookup_config_files(config_dir_within_app_home($app->home), 'openqa.ini'));
     my $mode_defaults = $mode_specific_defaults->{$app->mode} // {};
     my $config = $app->config;
     if ($config_file) {

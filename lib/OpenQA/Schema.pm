@@ -14,6 +14,7 @@ use Feature::Compat::Try;
 use FindBin '$Bin';
 use Fcntl ':flock';
 use File::Spec::Functions 'catfile';
+use OpenQA::App;
 use OpenQA::Config;
 use OpenQA::Utils qw(:DEFAULT prjdir);
 use Mojo::File qw(path);
@@ -40,8 +41,9 @@ sub connect_db (%args) {
         $SINGLETON = __PACKAGE__->connect($ENV{TEST_PG} // 'DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg');
     }
     else {
-        my $home = path($Bin)->dirname->child('etc', 'openqa');
-        my $database_config_paths = lookup_config_files($home, 'database.ini', $args{silent});
+        my $home_dir = $args{from_script} ? path($Bin, '..') : OpenQA::App->singleton->home;
+        my $home_config_dir = config_dir_within_app_home($home_dir);
+        my $database_config_paths = lookup_config_files($home_config_dir, 'database.ini', $args{silent});
         my $database_config = parse_config_files_as_hash($database_config_paths);
         my $database_config_for_mode = $database_config ? $database_config->{$mode} : {dsn => 'DBI:Pg:dbname=openqa'};
         die "Could not find database section '$mode' in @$database_config_paths\n" unless $database_config_for_mode;
