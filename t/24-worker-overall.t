@@ -29,6 +29,10 @@ $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 #       file specified via OPENQA_LOGFILE instead of stdout/stderr.
 $ENV{OPENQA_LOGFILE} = undef;
 
+my $workdir = tempdir("/tmp/$FindBin::Script-XXXX");
+chdir $workdir;
+my $guard = scope_guard sub { chdir $FindBin::Bin };
+
 # define fake isotovideo
 {
     package Test::FakeProcess;    # uncoverable statement count:1
@@ -492,7 +496,7 @@ subtest 'is_qemu_running' => sub {
     ok OpenQA::Worker::is_qemu('/usr/bin/qemu-system-x86_64'), 'QEMU executable considered to be QEMU';
     ok !OpenQA::Worker::is_qemu('/usr/bin/true'), 'other executable not considered to be QEMU';
 
-    my $pool_directory = tempdir('poolXXXX');
+    my $pool_directory = tempdir('/tmp/poolXXXX');
     $worker->pool_directory($pool_directory);
 
     $worker->no_cleanup(0);
@@ -519,8 +523,8 @@ subtest 'checking and cleaning pool directory' => sub {
 
     # assign temporary pool dir
     # note: Using scope guard to "get out" of pool directory again so we can delete the tempdir.
-    my $pool_directory = tempdir('poolXXXX');
-    my $guard = scope_guard sub { chdir $FindBin::Bin };
+    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $guard = scope_guard sub { chdir $workdir };
     $worker->pool_directory($pool_directory);
 
     # pretend QEMU is still running
@@ -539,6 +543,9 @@ subtest 'checking and cleaning pool directory' => sub {
 };
 
 subtest 'checking worker address' => sub {
+    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $guard = scope_guard sub { chdir $workdir };
+    $worker->pool_directory($pool_directory);
     my $fqdn_lookup_mock = Test::MockModule->new('OpenQA::Worker::Settings');
     ok !$settings->is_local_worker, 'not considered local initially because we have https://remotehost configured';
     $global_settings->{WORKER_HOSTNAME} = undef;
@@ -565,6 +572,9 @@ subtest 'checking worker address' => sub {
 };
 
 subtest 'check availability of Open vSwitch related D-Bus service' => sub {
+    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $guard = scope_guard sub { chdir $workdir };
+    $worker->pool_directory($pool_directory);
     delete $worker->settings->{_worker_classes};
     $worker->settings->global_settings->{WORKER_CLASS} = 'foo,tap,bar';
     ok $worker->settings->has_class('tap'), 'worker has tap class';
@@ -929,7 +939,7 @@ subtest 'resolving 127.0.0.1 without relying on getaddrinfo()' => sub {
 };
 
 subtest 'storing package list' => sub {
-    $worker->pool_directory(tempdir('pool-dir-XXXXX'));
+    $worker->pool_directory(tempdir('/tmp/pool-dir-XXXXX'));
     combined_like { $worker->_store_package_list('echo foo') }
     qr/Gathering package information/, 'log message about command invocation';
     is $worker->pool_directory->child('worker_packages.txt')->slurp('UTF-8'), "foo\n", 'package list written';
