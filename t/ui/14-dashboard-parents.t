@@ -142,6 +142,7 @@ subtest 'filtering subgroups' => sub {
 
 subtest 'View grouped by group' => sub {
     $driver->get('/parent_group_overview/' . $parent_groups->find({name => 'Test parent'})->id);
+    my $grouped_builds = $driver->find_elements('.d-xl-flex flex-row build-row');
     $driver->find_element_by_id('grouped_by_group_tab')->click();
     is(
         $driver->find_element_by_id('grouped_by_group_tab')->get_attribute('class'),
@@ -153,7 +154,19 @@ subtest 'View grouped by group' => sub {
         'active parent_group_overview_grouping_active',
         'grouped by group link remains active'
     );
+    my $grouped_groups = $driver->find_elements('.d-xl-flex flex-row build-row');
     $driver->find_element_by_id('grouped_by_group')->is_displayed();
+    $driver->get('parent_group_overview/'
+          . $parent_groups->find({name => 'Test parent'})->id
+          . '?limit_builds=2#grouped_by_group');
+    my $groups_without_jobs = $driver->find_elements('.no-build-data');
+    is(scalar @$groups_without_jobs, 1, 'correct amount of groups without jobs found');
+    is(scalar @$grouped_groups, scalar @$grouped_builds, 'both groups display the same amount of builds');
+    is(
+        $driver->find_element('#flash-messages .alert-primary span')->get_text(),
+        'Parent group has 1 more builds with no results in the current build limits.',
+        'Notification is shown for jobless groups'
+    );
 };
 
 kill_driver();

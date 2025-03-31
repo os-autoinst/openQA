@@ -31,6 +31,7 @@ function setupParentGroupOverviewAssets(group_id) {
   }
 
   function updateGroupedByClasses() {
+    clearFlash(); // Do not let the notification messages hanging when group is updated
     if (window.location.hash === undefined || window.location.hash === '#grouped_by_build') {
       document
         .getElementById('grouped_by_group_tab')
@@ -41,6 +42,16 @@ function setupParentGroupOverviewAssets(group_id) {
         .getElementById('grouped_by_build_tab')
         .classList.remove('active', 'show', 'parent_group_overview_grouping_active');
       document.getElementById('grouped_by_group_tab').classList.add('active', 'parent_group_overview_grouping_active');
+      hiddenBuilds = document.querySelectorAll('.no-build-data');
+      if (hiddenBuilds.length > 0) {
+        hiddenBuilds.forEach(elem => {
+          console.log(elem.dataset.buildName);
+        });
+        addFlash(
+          'info',
+          `Parent group has ${hiddenBuilds.length} more builds with no results in the current build limits.`
+        );
+      }
     }
   }
 

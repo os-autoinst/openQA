@@ -52,6 +52,10 @@ function addFlash(status, text, container) {
   return div;
 }
 
+function clearFlash() {
+  document.querySelectorAll('#flash-messages .alert.alert-primary.alert-dismissible').forEach(e => e.remove());
+}
+
 function addUniqueFlash(status, id, text, container) {
   // add hash to store present flash messages
   if (!window.uniqueFlashMessages) {
