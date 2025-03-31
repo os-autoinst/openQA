@@ -1,11 +1,7 @@
 #!/bin/sh -e
 
-DIR=$1
-if test -z "$DIR"; then
-    DIR=$(mktemp -d)
-else
-    DIR=$(readlink -f "$DIR")
-fi
+DIR=${1:-/dev/shm/tpg}
+DIR=$(readlink -f "$DIR")
 if test -e "$DIR"/postmaster.pid; then
     pg_ctl -D "$DIR" stop
 fi

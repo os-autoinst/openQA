@@ -248,7 +248,7 @@ the system service. E.g.
 
 [source,sh]
 ----
-t/test_postgresql /dev/shm/tpg
+t/test_postgresql
 ----
 
 To check the coverage by individual test files easily call e.g.
@@ -392,7 +392,7 @@ test database setup and data directory:
 
 [source,sh]
 ----
-t/test_postgresql /dev/shm/tpg
+t/test_postgresql
 TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_DATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
 ----
 
@@ -598,8 +598,7 @@ install chromedriver and either chrome or chromium for the UI tests.
 
 To execute the testsuite use `make test`. This will also initialize a
 temporary PostgreSQL database used for testing. To do this step manually run
-`t/test_postgresql /dev/shm/tpg` to initialize a temporary PostgreSQL database
-and export the environment variable as instructed by that script.
+`t/test_postgresql` to initialize a temporary PostgreSQL database.
 It is also possible to run a particular test, for example
 `prove t/api/01-workers.t`. When using `prove` directly, make sure an English
 locale is set (e.g. `export LC_ALL=C.utf8 LANGUAGE=` before initializing the database
