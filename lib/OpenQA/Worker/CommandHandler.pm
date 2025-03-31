@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Worker::CommandHandler;
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Constants qw(WORKER_STOP_COMMANDS WORKER_LIVE_COMMANDS);
 use OpenQA::Log qw(log_error log_debug log_warning log_info);
@@ -110,6 +110,10 @@ sub handle_command {
 
     # WS messages of type "info" can be sent for debugging
     log_warning("Ignoring WS message with unknown type $type from $webui_host:\n" . pp($json)) if $type ne 'info';
+}
+
+sub _handle_command_info ($json, $client, $worker, $webui_host, $current_job) {
+    $client->send_status_delayed if $json->{seen};
 }
 
 sub _handle_command_livelog_start {
