@@ -46,7 +46,9 @@
                     % else {
                         % my $state_detail = '';
                         % if (my @gru_deps = $job->gru_dependencies) {
-                            % $state_detail = join(';', map { 'id: ' . $_->gru_task_id . ', name: ' . $_->gru_task->taskname } @gru_deps);
+                            % $state_detail = join(';', map {
+                            %   'id: ' . $_->id . ', name: ' . $_->taskname
+                            %  } map { $_->gru_task // () } @gru_deps);
                             % $state_detail = ", waiting for background tasks ($state_detail)";
                         % }
                         State: <b><%= $job->state %></b><%= $state_detail %>\
