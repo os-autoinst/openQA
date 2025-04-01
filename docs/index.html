@@ -11672,7 +11672,7 @@ the system service. E.g.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql<span class="tok-w"> </span>/dev/shm/tpg</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11915,7 +11915,7 @@ test database setup and data directory:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql<span class="tok-w"> </span>/dev/shm/tpg
+<pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql
 <span class="tok-nv">TEST_PG</span><span class="tok-o">=</span><span class="tok-s1">&#39;DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg&#39;</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_DATABASE</span><span class="tok-o">=</span><span class="tok-nb">test</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span>t/data<span class="tok-w"> </span>script/openqa<span class="tok-w"> </span>daemon</code></pre>
 </div>
 </div>
@@ -12202,8 +12202,7 @@ install chromedriver and either chrome or chromium for the UI tests.</p>
 <div class="paragraph">
 <p>To execute the testsuite use <code>make test</code>. This will also initialize a
 temporary PostgreSQL database used for testing. To do this step manually run
-<code>t/test_postgresql /dev/shm/tpg</code> to initialize a temporary PostgreSQL database
-and export the environment variable as instructed by that script.
+<code>t/test_postgresql</code> to initialize a temporary PostgreSQL database.
 It is also possible to run a particular test, for example
 <code>prove t/api/01-workers.t</code>. When using <code>prove</code> directly, make sure an English
 locale is set (e.g. <code>export LC_ALL=C.utf8 LANGUAGE=</code> before initializing the database
@@ -13392,7 +13391,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-29 04:44:57 UTC
+Last updated 2025-04-01 04:44:31 UTC
 </div>
 </div>
 </body>
