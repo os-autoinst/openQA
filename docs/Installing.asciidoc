@@ -463,7 +463,8 @@ APACHE_SERVER_FLAGS="SSL"
 --------------------------------------------------------------------------------
 
 If you don't have a TLS/SSL certificate for your host you must turn HTTPS off.
-You can do that in `/etc/openqa/openqa.ini`:
+You can do that in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>>:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -478,7 +479,8 @@ httpsonly = 0
 openQA uses PostgreSQL as database. By default, a database with name `openqa`
 and `geekotest` user as owner is used. An automatic setup of a freshly 
 installed PostgreSQL instance can be done using https://github.com/os-autoinst/openQA/blob/master/script/setup-db[this script].
-The database connection can be configured in `/etc/openqa/database.ini`
+The database connection can be configured in
+<<GettingStarted.asciidoc#_configuration,the database configuration file>>.
 (normally the `[production]` section is relevant). More info about the `dsn`
 value format can be found in the https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg documentation].
 
@@ -507,7 +509,9 @@ password = somepassword
 openQA supports three different authentication methods: OpenID (default),
 OAuth2 and Fake (for development).
 
-Use the `auth` section in `/etc/openqa/openqa.ini` to configure the method:
+Use the `auth` section in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>> to configure
+the method:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -534,7 +538,8 @@ reported when clocks are too far apart.
 ==== OpenID
 
 By default openQA uses OpenID with opensuse.org as OpenID provider.
-OpenID method has its own `openid` section in `/etc/openqa/openqa.ini`:
+OpenID method has its own `openid` section in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>>:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -711,9 +716,12 @@ fetch the tests cases and possibly take a look at <<WritingTests.asciidoc#writin
 === Cleanup
 The automated cleanup is enabled and configured by default. Cleanup tasks are
 scheduled via systemd timer units and run via `openqa-gru.service`. The configuration
-is done in `/etc/openqa/openqa.ini` and various places within the web UI. If you want to
-tweak the cleanup to your needs, have a look at the
-<<UsersGuide.asciidoc#cleanup,Cleanup of assets, results and other data>> section.
+is done in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration file>> and
+various places within the web UI. If you want to tweak the cleanup to your
+needs, have a look at the
+<<UsersGuide.asciidoc#cleanup,Cleanup of assets, results and other data>>
+section.
 
 === Setting up git support
 
@@ -725,8 +733,9 @@ automatically to git. To do so, you need to enable git support by setting
 [global]
 scm = git
 --------------------------------------------------------------------------------
-in `/etc/openqa/openqa.ini`. Once you do so and restart the web interface, openQA will
-automatically commit new needles to the git repository.
+in <<GettingStarted.asciidoc#_configuration,the web UI configuration>>.
+Once you do so and restart the web interface, openQA will automatically commit
+new needles to the git repository.
 
 You may want to add some description to automatic commits coming from the web
 UI.
@@ -741,7 +750,7 @@ You can do so by setting your configuration in the repository
 --------------------------------------------------------------------------------
 
 To enable automatic pushing of the repo as well, you need to add the following
-to your openqa.ini:
+to <<GettingStarted.asciidoc#_configuration,the web UI configuration>>:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -803,7 +812,7 @@ example bugzilla), this job is automatically labeled as linked and treated as
 important.
 
 List of recognized referrers is space separated list configured in
-`/etc/openqa/openqa.ini`:
+<<GettingStarted.asciidoc#_configuration,the web UI configuration file>>:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -813,11 +822,11 @@ recognized_referers = bugzilla.suse.com bugzilla.opensuse.org
 
 === Worker settings
 
-Default behavior for all workers is to use the 'Qemu' backend and connect to
-'http://localhost'. If you want to change some of those options, you can do so
-in `/etc/openqa/workers.ini`. For example to point the workers to the FQDN of
-your host (needed if test cases need to access files of the host) use the
-following setting:
+Default behavior for all workers is to use the QEMU backend and connect to
+`http://localhost`. If you want to change some of those options, you can do so
+in <<GettingStarted.asciidoc#_configuration,the worker configuration>>. For
+example to point the workers to the FQDN of your host (needed if test cases need
+to access files of the host) use the following setting:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -922,7 +931,8 @@ There you will find instructions how to configure the AMQP server as well.
 
 To let openQA send messages to an AMQP message bus,
 first make sure that the `perl-Mojo-RabbitMQ-Client` RPM is installed.
-Then you will need to configure amqp in `/etc/openqa/openqa.ini`:
+Then you will need to configure AMQP in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration file>>:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -953,8 +963,9 @@ Requirements:
 * `/etc/openqa/client.conf` must contain API keys and secrets to all instances
 * Shared storage from all instances must be properly mounted
 
-In the `/etc/openqa/workers.ini` enter space-separated instance hosts and optionally
-configure where the shared storage is mounted. Example:
+In <<GettingStarted.asciidoc#_configuration,the worker configuration>>, enter
+space-separated instance hosts and optionally configure where the shared storage
+is mounted. Example:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -988,8 +999,9 @@ remote instances.
 
 If your network is slow or you experience long time to load needles you might
 want to consider enabling caching on your remote workers. To enable caching,
-`CACHEDIRECTORY` must be set in `workers.ini`. There are also further settings
-one can optionally configure. Example:
+`CACHEDIRECTORY` must be set in
+<<GettingStarted.asciidoc#_configuration,the worker configuration>>. There are
+also further settings one can optionally configure. Example:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -1011,7 +1023,8 @@ openQA through the repositories, said directory will be created for you.
 The shown configuration causes workers to download the assets from the web UI
 and use them locally. The `TESTPOOLSERVER` setting causes also tests and
 needles to be downloaded via `rsync` from the specified location. You can find
-further examples in the comments in `/etc/openqa/workers.ini`.
+further examples in the comments in
+<<GettingStarted.asciidoc#_configuration,the worker configuration>>.
 
 It is suggested to have the cache and pool directories on the same filesystem
 to ensure assets used by tests are available as long as needed. This is
@@ -1062,8 +1075,9 @@ such case, one can setup local cache on their own (without using
 openqa-worker-cacheservice service) and share it with workers using
 some network filesystem (see <<Installing.asciidoc#Configuring remote workers>>
 section above).
-Such setups can use `SYNC_ASSETS_HOOK` in `/etc/openqa/workers.ini` to ensure
-the cache is up to date before starting the job (or resuming test in developer
+Such setups can use `SYNC_ASSETS_HOOK` in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>> to ensure the
+cache is up to date before starting the job (or resuming test in developer
 mode). The setting takes a shell command that is executed just before
 evaluating assets. It is up to the system administrator to decide what it
 should do, but there are few suggestions:
@@ -1200,23 +1214,26 @@ workers are tracked under user whose API keys are workers using.
 
 Audit log is directly accessible from `Admin menu`.
 
-Auditing, by default enabled, can be disabled by global configuration option in `/etc/openqa/openqa.ini`:
+Auditing, by default enabled, can be disabled by global configuration option in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration file>>:
 [source,ini]
 --------------------------------------------------------------------------------
 [global]
 audit_enabled = 0
 --------------------------------------------------------------------------------
 
-The `audit` section of `/etc/openqa/openqa.ini` allows to exclude some events from logging using
-a space separated blocklist:
+The `audit` section of
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>> allows to
+exclude some events from logging using a space separated blocklist:
 [source,ini]
 --------------------------------------------------------------------------------
 [audit]
 blocklist = job_grab job_done
 --------------------------------------------------------------------------------
 
-The `audit/storage_duration` section of `/etc/openqa/openqa.ini` allows to set the retention policy for
-different audit event types:
+The `audit/storage_duration` section of
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>> allows to set
+the retention policy for different audit event types:
 [source,ini]
 --------------------------------------------------------------------------------
 [audit/storage_duration]
@@ -1261,9 +1278,6 @@ automatically every day. It is also possible to trigger the cleanup manually by 
 
 Some of these events are very common and may clutter audit database. For this reason `job_grab` and `job_done`
 events are on the blocklist by default.
-
-[NOTE]
-Upgrading openQA does not automatically update `/etc/openqa/openqa.ini`. Review your configuration after upgrade.
 
 == Automatic system upgrades and reboots of openQA hosts
 [id="auto_upgrade"]
@@ -1662,7 +1676,8 @@ zypper -n in wireguard-tools
 systemctl enable --now wg-quick@openqa
 --------------------------------------------------------------------------------
 
-Then update `/etc/openqa/workers.ini` on the workers like this:
+Then update <<GettingStarted.asciidoc#_configuration,the worker configuration>>
+on the workers like this:
 
 [source,ini]
 --------------------------------------------------------------------------------
