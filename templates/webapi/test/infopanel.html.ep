@@ -110,13 +110,19 @@
                 </div>
                 % if ($job->state eq SCHEDULED) {
                     <div>
-                        <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">
-                            <i class="fa fa-minus-square-o" title="Decrease priority value (higher precedence)"></i>
-                        </a>
-                        <span class="prio-value"><%= $job->priority %></span>
-                        <a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(<%= $job->id %>, this);">
-                            <i class="fa fa-plus-square-o" title="Increase priority value (lower precedence)"></i>
-                        </a>
+                        Priority:
+                        % if (is_operator) {
+                            <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">
+                                <i class="fa fa-minus-square-o"></i>
+                            </a>
+                            <span class="prio-value"><%= $job->priority %></span>
+                            <a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(<%= $job->id %>, this);">
+                                <i class="fa fa-plus-square-o"></i>
+                            </a>
+                        % } else {
+                            <span class="prio-value"><%= $job->priority %></span>
+                        % }
+                        &nbsp;<a href="https://open.qa/docs/#_job_groups_2" target="_blank"><i class="fa fa-question-circle-o" data-bs-toggle="tooltip" data-bs-title="Jobs with lower priority values are scheduled ealier (Default: 50)"></i></a>
                     </div>
                 % }
                 % if ($worker) {
