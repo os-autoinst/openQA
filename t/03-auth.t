@@ -23,7 +23,7 @@ my $file_api_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::File');
 $file_api_mock->redefine(download_asset => sub ($self) { $self->render(text => 'asset-ok') });
 $file_api_mock->redefine(test_asset => sub ($self) { $self->redirect_to('/assets/iso/test.iso') });
 
-my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
+my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 $ENV{OPENQA_CONFIG} = $tempdir;
 OpenQA::Test::Database->new->create;
 

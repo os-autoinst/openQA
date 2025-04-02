@@ -33,7 +33,7 @@ my @auth = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', @host);
 
 my $cli = OpenQA::CLI->new;
 my $archive = OpenQA::CLI::archive->new;
-my $dir = tempdir("/tmp/$FindBin::Script-XXXX");
+my $dir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 
 subtest 'Help' => sub {
     my ($stdout, @result) = capture_stdout sub { $cli->run('help', 'archive') };
