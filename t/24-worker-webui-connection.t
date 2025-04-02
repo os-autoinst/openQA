@@ -27,6 +27,12 @@ use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT WORKER_COMMAND_QUIT WORKER_COMMA
   WORKER_COMMAND_LIVELOG_START WORKER_COMMAND_DEVELOPER_SESSION_START WORKER_COMMAND_GRAB_JOB
   WORKER_COMMAND_GRAB_JOBS WORKER_SR_API_FAILURE MIN_TIMER MAX_TIMER);
 use OpenQA::Utils;
+use Mojo::Util 'scope_guard';
+use Mojo::File qw(path tempdir);
+
+my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+chdir $workdir;
+my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 # use Mojo::Log and suppress debug messages
 OpenQA::App->set_singleton(Mojolicious->new);

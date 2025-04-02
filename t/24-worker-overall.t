@@ -29,7 +29,7 @@ $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 #       file specified via OPENQA_LOGFILE instead of stdout/stderr.
 $ENV{OPENQA_LOGFILE} = undef;
 
-my $workdir = tempdir("/tmp/$FindBin::Script-XXXX");
+my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 chdir $workdir;
 my $guard = scope_guard sub { chdir $FindBin::Bin };
 
@@ -496,7 +496,7 @@ subtest 'is_qemu_running' => sub {
     ok OpenQA::Worker::is_qemu('/usr/bin/qemu-system-x86_64'), 'QEMU executable considered to be QEMU';
     ok !OpenQA::Worker::is_qemu('/usr/bin/true'), 'other executable not considered to be QEMU';
 
-    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
     $worker->pool_directory($pool_directory);
 
     $worker->no_cleanup(0);
@@ -523,7 +523,7 @@ subtest 'checking and cleaning pool directory' => sub {
 
     # assign temporary pool dir
     # note: Using scope guard to "get out" of pool directory again so we can delete the tempdir.
-    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
     my $guard = scope_guard sub { chdir $workdir };
     $worker->pool_directory($pool_directory);
 
@@ -543,7 +543,7 @@ subtest 'checking and cleaning pool directory' => sub {
 };
 
 subtest 'checking worker address' => sub {
-    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
     my $guard = scope_guard sub { chdir $workdir };
     $worker->pool_directory($pool_directory);
     my $fqdn_lookup_mock = Test::MockModule->new('OpenQA::Worker::Settings');
@@ -572,7 +572,7 @@ subtest 'checking worker address' => sub {
 };
 
 subtest 'check availability of Open vSwitch related D-Bus service' => sub {
-    my $pool_directory = tempdir('/tmp/poolXXXX');
+    my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
     my $guard = scope_guard sub { chdir $workdir };
     $worker->pool_directory($pool_directory);
     delete $worker->settings->{_worker_classes};
@@ -939,7 +939,7 @@ subtest 'resolving 127.0.0.1 without relying on getaddrinfo()' => sub {
 };
 
 subtest 'storing package list' => sub {
-    $worker->pool_directory(tempdir('/tmp/pool-dir-XXXXX'));
+    $worker->pool_directory(tempdir('pool-dir-XXXXX', TMPDIR => 1));
     combined_like { $worker->_store_package_list('echo foo') }
     qr/Gathering package information/, 'log message about command invocation';
     is $worker->pool_directory->child('worker_packages.txt')->slurp('UTF-8'), "foo\n", 'package list written';
