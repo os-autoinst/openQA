@@ -50,8 +50,8 @@ sub parse_config_files ($config_file_paths) {
 }
 
 sub parse_config_files_as_hash ($config_file_paths) {
+    return undef unless my $config_file = parse_config_files($config_file_paths);
     my %config_hash;
-    return \%config_hash unless my $config_file = parse_config_files($config_file_paths);
     tie %config_hash, 'Config::IniFiles', (-import => $config_file);
     return \%config_hash;
 }
