@@ -17,6 +17,7 @@ coverage:
         paths:
           - lib/openQA/Worker/
           - lib/openQA/Worker.pm
+          - lib/OpenQA/Utils.pm
       tests:
         target: 100.0
         paths:

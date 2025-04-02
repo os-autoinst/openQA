@@ -25,6 +25,7 @@ use OpenQA::Task::SignalGuard;
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
 use Test::MockObject;
+use Test::MockModule;
 use Mojo::File qw(path tempdir tempfile);
 
 subtest 'service ports' => sub {
@@ -500,6 +501,14 @@ subtest 'human readable size' => sub {
     is(human_readable_size(-8007188480), '-7.5 GiB', 'negative smaller GB');
     is(human_readable_size(717946880), '685 MiB', 'large MB');
     is(human_readable_size(245760), '240 KiB', 'less than a MB');
+};
+
+subtest 'create downloads list' => sub {
+    is_deeply create_downloads_list({}), {}, 'empty for no settings provided';
+    is_deeply create_downloads_list({TEST_URL => 'test', TEST => 'test'}), {}, 'empty for non-asset URL';
+    my $utils_mocked = Test::MockModule->new('OpenQA::Utils')->redefine(locate_asset => 'foo/bar');
+    is_deeply create_downloads_list({ISO_URL => 'test', ISO => 'test'}), {test => ['foo/bar', '0']},
+      'valid download for asset URL';
 };
 
 done_testing;
