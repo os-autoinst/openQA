@@ -35,7 +35,7 @@ else
             MESSAGE="Rerun $n of $RETRY …"
             if [ "$STABILITY_ALLOW_FAILURE" = "1" ]; then
               FAILURE_PERCENTAGE=$(( ( $FAILURE_COUNTER * 100 ) / $n ))
-              MESSAGE= "$MESSAGE with failures: $FAILURE_COUNTER ($FAILURE_PERCENTAGE%)"
+              MESSAGE="$MESSAGE with failures: $FAILURE_COUNTER ($FAILURE_PERCENTAGE%)"
             fi
             echo "$MESSAGE"
         fi
