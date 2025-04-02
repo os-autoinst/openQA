@@ -37,6 +37,11 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::FakeWorker;
 use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::UserAgent;
+use Mojo::Util 'scope_guard';
+
+my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+chdir $workdir;
+my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 sub wait_for_job {
     my ($job, $check_message, $relevant_event, $check_function, $timeout) = @_;
@@ -143,7 +148,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
 
 my $isotovideo = Test::FakeEngine->new;
 my $worker = OpenQA::Test::FakeWorker->new(settings => OpenQA::Worker::Settings->new(1, {}));
-my $pool_directory = tempdir('poolXXXX');
+my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
 my $ref_uploaded_files = [
     [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
     [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],

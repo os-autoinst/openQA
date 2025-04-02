@@ -27,6 +27,13 @@ use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
 use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
 use Cwd qw(getcwd);
+use Mojo::Util 'scope_guard';
+use File::Copy::Recursive qw(dircopy);
+
+my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+chdir $workdir;
+my $guard = scope_guard sub { chdir $FindBin::Bin };
+dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
 
 # define fake packages for testing asset caching
 {
@@ -351,7 +358,7 @@ subtest 'syncing tests' => sub {
 };
 
 subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
-    my $pool_directory = tempdir('poolXXXX');
+    my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
     my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
 
@@ -475,7 +482,7 @@ subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
 };
 
 subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
-    my $pool_directory = tempdir('poolXXXX');
+    my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
     my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
     my @settings = (DISTRI => 'fedora', JOBTOKEN => 'token000', ABSOLUTE_TEST_CONFIG_PATHS => 1);
@@ -509,7 +516,7 @@ subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
 
 subtest 'link asset' => sub {
     my $cwd = getcwd;
-    my $pool_directory = tempdir('poolXXXX');
+    my $pool_directory = tempdir('poolXXXX', TMPDIR => 1);
     my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
     # just in case cleanup the symlink to really check if it gets re-created

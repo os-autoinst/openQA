@@ -11,9 +11,15 @@ use OpenQA::Test::TimeLimit '8';
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::App;
 use Test::MockModule;
+use Mojo::Util 'scope_guard';
+use Mojo::File qw(path tempdir);
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings";
 $ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE} = 1;
+
+my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+chdir $workdir;
+my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 my $settings = OpenQA::Worker::Settings->new;
 
