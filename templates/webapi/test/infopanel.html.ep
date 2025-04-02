@@ -122,7 +122,7 @@
                         % } else {
                             <span class="prio-value"><%= $job->priority %></span>
                         % }
-                        &nbsp;<a href="https://open.qa/docs/#_job_groups_2" target="_blank"><i class="fa fa-question-circle-o" data-bs-toggle="tooltip" data-bs-title="Jobs with lower priority values are scheduled ealier (Default: 50)"></i></a>
+                        &nbsp;<a href="https://open.qa/docs/#_job_groups_2" target="_blank"><i class="fa fa-question-circle-o" data-bs-toggle="tooltip" data-bs-title="Jobs with lower priority values are scheduled earlier (default: 50)"></i></a>
                     </div>
                 % }
                 % if ($worker) {
