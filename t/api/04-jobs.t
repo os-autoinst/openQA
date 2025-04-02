@@ -34,7 +34,7 @@ use Digest::MD5;
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 05-job_modules.pl');
 
 # avoid polluting checkout
-my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
+my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 $ENV{OPENQA_BASEDIR} = $tempdir;
 note("OPENQA_BASEDIR: $tempdir");
 path($tempdir, '/openqa/testresults')->make_path;
