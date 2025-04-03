@@ -2,20 +2,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Task::Asset::Download;
-use Mojo::Base 'Mojolicious::Plugin';
-
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use OpenQA::Task::SignalGuard;
 use OpenQA::Utils qw(check_download_url);
 use OpenQA::Downloader;
 use Mojo::File 'path';
 
-sub register {
-    my ($self, $app) = @_;
-    $app->minion->add_task(download_asset => \&_download);
-}
+sub register ($self, $app, @) { $app->minion->add_task(download_asset => \&_download); }
 
-sub _create_symlinks {
-    my ($job, $ctx, $assetpath, $other_destinations) = @_;
-
+sub _create_symlinks ($job, $ctx, $assetpath, $other_destinations) {
     my @error_message;
     for my $link_path (@$other_destinations) {
         $ctx->debug(qq{Creating symlink "$link_path" to "$assetpath"});
@@ -28,9 +23,8 @@ sub _create_symlinks {
     }
 }
 
-sub _download {
-    my ($job, $url, $assetpaths, $do_extract) = @_;
-
+sub _download ($job, $url, $assetpaths, $do_extract) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $job_id = $job->id;
 
