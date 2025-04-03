@@ -559,14 +559,8 @@ sub create_git_clone_list ($job_settings, $clones = {}) {
     return $clones;
 }
 
-sub _round_a_bit ($size) {
-    if ($size < 10) {
-        # give it one digit
-        return int($size * 10 + .5) / 10.;
-    }
-
-    return int($size + .5);
-}
+# give it one digit
+sub _round_a_bit ($size) { $size < 10 ? int($size * 10 + .5) / 10. : int($size + .5) }
 
 sub human_readable_size ($size) {
     my $p = ($size < 0) ? '-' : '';
