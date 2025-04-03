@@ -454,20 +454,15 @@ sub check_download_url ($url, $passlist) {
     # is used by check_download_passlist below (and so indirectly by
     # the Iso controller) and directly by the download_asset() Gru
     # task subroutine.
-    my @okdomains;
-    if (defined $passlist) {
-        @okdomains = split(/ /, $passlist);
-    }
     my $host = Mojo::URL->new($url)->host;
-    unless (@okdomains) {
-        return (2, $host);
-    }
+    return (2, $host) unless defined $passlist;
+    my @okdomains = split(/ /, $passlist);
     my $ok = 0;
     for my $okdomain (@okdomains) {
         my $quoted = qr/$okdomain/;
-        $ok = 1 if ($host =~ /${quoted}$/);
+        return () if $host =~ /${quoted}$/;
     }
-    return $ok ? () : (1, $host);
+    return (1, $host);
 }
 
 sub check_download_passlist ($params, $passlist) {
