@@ -3,7 +3,7 @@
 
 package OpenQA::Task::Asset::Download;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
-
+use OpenQA::Task::SignalGuard;
 use OpenQA::Utils qw(check_download_url);
 use OpenQA::Downloader;
 use Mojo::File 'path';
@@ -24,7 +24,7 @@ sub _create_symlinks ($job, $ctx, $assetpath, $other_destinations) {
 }
 
 sub _download ($job, $url, $assetpaths, $do_extract) {
-
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $job_id = $job->id;
 
