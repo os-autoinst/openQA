@@ -552,8 +552,8 @@ sub get_url_short ($arg) {
     # return the name with that string stripped, and a flag indicating
     # whether decompression will be needed. If it doesn't, returns
     # empty string and 0.
-    return ('', 0) unless $arg =~ /_URL$/;
-    return $arg =~ /_DECOMPRESS_URL$/ ? (substr($arg, 0, -15), 1) : (substr($arg, 0, -4), 0);
+    return ('', 0) unless $arg =~ s/_URL$//;
+    return $arg =~ s/_DECOMPRESS$// ? ($arg, 1) : ($arg, 0);
 }
 
 sub create_downloads_list ($job_settings) {
