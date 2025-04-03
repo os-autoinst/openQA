@@ -168,17 +168,17 @@ if ($0 =~ /\.t$/) {
     $ENV{OPENQA_BASEDIR} ||= "$tdirname/data";
 }
 
-sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
+sub prjdir () { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
 
-sub sharedir { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
+sub sharedir () { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
 
-sub archivedir { $ENV{OPENQA_ARCHIVEDIR} || (prjdir() . '/archive') }
+sub archivedir () { $ENV{OPENQA_ARCHIVEDIR} || (prjdir() . '/archive') }
 
 sub resultdir ($archived = 0) { ($archived ? archivedir() : prjdir()) . '/testresults' }
 
-sub assetdir { sharedir() . '/factory' }
+sub assetdir () { sharedir() . '/factory' }
 
-sub imagesdir { prjdir() . '/images' }
+sub imagesdir () { prjdir() . '/images' }
 
 # the desired new folder structure is
 # $testcasedir/<testrepository>
@@ -244,9 +244,7 @@ sub gitrepodir {
     return "https://$githost[1]/$url_tokenized[1]";
 }
 
-sub is_in_tests {
-    my ($file) = @_;
-
+sub is_in_tests ($file) {
     $file = File::Spec->rel2abs($file);
     # at least tests use a relative $prjdir, so it needs to be converted to absolute path as well
     my $abs_projdir = File::Spec->rel2abs(prjdir());
@@ -254,12 +252,10 @@ sub is_in_tests {
       || index($file, catdir($abs_projdir, 'tests')) == 0;
 }
 
-sub needledir { productdir(@_) . '/needles' }
+sub needledir (@args) { productdir(@args) . '/needles' }
 
 # Adds a timestamp to a string (eg. needle name) or replace the already present timestamp
-sub ensure_timestamp_appended {
-    my ($str) = @_;
-
+sub ensure_timestamp_appended ($str) {
     my $today = strftime('%Y%m%d', gmtime(time));
     if ($str =~ /(.*)-\d{8}$/) {
         return "$1-$today";
