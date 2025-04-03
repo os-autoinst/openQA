@@ -566,6 +566,8 @@ fi
 %{_sbindir}/rcopenqa-websockets
 %{_sbindir}/rcopenqa-webui
 %{_sbindir}/rcopenqa-livehandler
+%ghost %config(noreplace) %attr(0644,geekotest,root) %{_sysconfdir}/openqa/openqa.ini
+%ghost %config(noreplace) %attr(0640,geekotest,root) %{_sysconfdir}/openqa/database.ini
 %dir %{_sysconfdir}/openqa
 %dir %{_sysconfdir}/openqa/openqa.ini.d
 %dir %{_sysconfdir}/openqa/database.ini.d
@@ -713,6 +715,8 @@ fi
 %{_sbindir}/rcopenqa-slirpvde
 %{_sbindir}/rcopenqa-vde_switch
 %{_sbindir}/rcopenqa-worker
+%ghost %config(noreplace) %{_sysconfdir}/openqa/workers.ini
+%ghost %config(noreplace) %attr(0400,_openqa-worker,root) %{_sysconfdir}/openqa/client.conf
 %dir %{_sysconfdir}/openqa/workers.ini.d
 %dir %{_sysconfdir}/openqa/client.conf.d
 %dir %{_distconfdir}/openqa/workers.ini.d
