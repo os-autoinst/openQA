@@ -363,8 +363,7 @@ sub parse_assets_from_settings ($settings) {
     my $assets = {};
 
     for my $k (keys %$settings) {
-        my $type = asset_type_from_setting($k, $settings->{$k});
-        if ($type) {
+        if (my $type = asset_type_from_setting($k, $settings->{$k})) {
             $assets->{$k} = {type => $type, name => $settings->{$k}};
         }
     }
