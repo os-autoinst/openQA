@@ -160,9 +160,13 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is($git->config, $git_config, 'config is read-only');
 
     # test set_to_latest_master effectively being a no-op because no update remote and branch have been configured
+    $mock_return_value{stdout} = '';
     is($git->set_to_latest_master, undef, 'no error if no update remote and branch configured');
-    is_deeply(\@executed_commands, [], 'no commands executed if no update remote and branch configured')
-      or always_explain \@executed_commands;
+    is_deeply(
+        \@executed_commands,
+        [[qw(git -C foo/bar remote get-url origin)]],
+        'command executed to get remote url if no update remote and branch configured'
+    ) or always_explain \@executed_commands;
 
     # configure update branch and remote
     $git->config->{update_remote} = 'origin';
@@ -171,11 +175,18 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is($git_config->{update_remote}, $git->config->{update_remote}, 'global git config reflects all changes');
 
     # test set_to_latest_master (non-error case)
+    @executed_commands = ();
     is($git->set_to_latest_master, undef, 'no error');
     is_deeply(
         \@executed_commands,
         [
-            [qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar reset --hard HEAD)],
+            [qw(git -C foo/bar branch --show-current)],
+            [
+                'env',
+                'GIT_SSH_COMMAND=ssh -oBatchMode=yes',
+                qw(GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C foo/bar fetch origin), ''
+            ],
+            [qw(git -C foo/bar reset --hard origin/HEAD)],
             [qw(git -C foo/bar rebase origin/master)],
         ],
         'git remote update and rebase executed',
@@ -186,12 +197,9 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     $mock_return_value{status} = 0;
     $mock_return_value{stderr} = 'mocked error';
     $mock_return_value{stdout} = '';
-    combined_like {
-        is $git->set_to_latest_master, 'Unable to fetch from origin master (foo/bar): mocked error',
-          'an error occurred on remote update';
-    }
-    qr/Error: mocked error/, 'error logged';
-    is_deeply \@executed_commands, [[qw(git -C foo/bar remote update origin)]], 'git reset not attempted'
+    like($git->set_to_latest_master, qr".*mocked error.*", 'an error occurred on remote update');
+
+    is_deeply \@executed_commands, [[qw(git -C foo/bar branch --show-current)]], 'git reset not attempted'
       or always_explain \@executed_commands;
 
     # test commit
@@ -277,8 +285,14 @@ subtest 'saving needle via Git' => sub {
     is_deeply(
         \@executed_commands,
         [
-            [qw(git -C), $empty_tmp_dir, qw(remote update origin)],
-            [qw(git -C), $empty_tmp_dir, qw(reset --hard HEAD)],
+            [qw(git -C), $empty_tmp_dir, qw(branch --show-current)],
+            [
+                'env',
+                'GIT_SSH_COMMAND=ssh -oBatchMode=yes',
+                qw(GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C),
+                $empty_tmp_dir, qw(fetch origin), ''
+            ],
+            [qw(git -C), $empty_tmp_dir, qw(reset --hard origin/HEAD)],
             [qw(git -C), $empty_tmp_dir, qw(rebase origin/master)],
             [qw(git -C), $empty_tmp_dir, qw(add), "foo.json", "foo.png"],
             [

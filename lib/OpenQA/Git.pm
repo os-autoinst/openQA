@@ -65,22 +65,47 @@ sub _format_git_error ($self, $result, $error_message) {
     return $error_message;
 }
 
+=over 4
+
+=item set_to_latest_master()
+
+This function is used to checkout the latest commit from a git branch provided via update_branch
+and update_remote configuration variables in openqa.ini. In case if both the configuration variables
+are not provided then this function sets the default git branch by first extracting the git URL by using
+get_origin_url and then setting the default git branch from the extracted git URL.
+
+=back
+
+=cut
+
 sub set_to_latest_master ($self, $args = undef) {
     $self->_validate_attributes;
     if (my $update_remote = $self->config->{update_remote}) {
-        my $res = $self->_run_cmd(['remote', 'update', $update_remote]);
-        return $self->_format_git_error($res, 'Unable to fetch from origin master') unless $res->{status};
+        try { $self->fetch($self->get_current_branch) }
+        catch ($e) { return $e }
     }
 
     if (my $update_branch = $self->config->{update_branch}) {
         if ($self->config->{do_cleanup} eq 'yes') {
-            my $res = $self->_run_cmd(['reset', '--hard', 'HEAD']);
-            return $self->_format_git_error($res, 'Unable to reset repository to HEAD') unless $res->{status};
+            try {
+                $self->reset_hard('HEAD');
+            }
+            catch ($e) { return $e; }
         }
         my $res = $self->_run_cmd(['rebase', $update_branch]);
         return $self->_format_git_error($res, 'Unable to reset repository to origin/master') unless $res->{status};
     }
 
+    if ((length($self->config->{update_remote}) == 0) && (length($self->config->{update_branch}) == 0)) {
+        my $url = $self->get_origin_url;
+        if (length($url)) {
+            my $remote_default = $self->get_remote_default_branch($url);
+            $self->fetch($remote_default);
+            if ($self->config->{do_cleanup} eq 'yes') {
+                $self->reset_hard($remote_default);
+            }
+        }
+    }
     return undef;
 }
 
