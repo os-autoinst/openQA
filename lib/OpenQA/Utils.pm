@@ -551,12 +551,11 @@ sub check_download_passlist {
     return ();
 }
 
-sub get_url_short {
+sub get_url_short ($arg) {
     # Given a setting name, if it ends with _URL or _DECOMPRESS_URL
     # return the name with that string stripped, and a flag indicating
     # whether decompression will be needed. If it doesn't, returns
     # empty string and 0.
-    my ($arg) = @_;
     return ('', 0) unless ($arg =~ /_URL$/);
     my $short;
     my $do_extract = 0;
