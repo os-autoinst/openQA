@@ -168,17 +168,17 @@ if ($0 =~ /\.t$/) {
     $ENV{OPENQA_BASEDIR} ||= "$tdirname/data";
 }
 
-sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
+sub prjdir () { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
 
-sub sharedir { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
+sub sharedir () { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
 
-sub archivedir { $ENV{OPENQA_ARCHIVEDIR} || (prjdir() . '/archive') }
+sub archivedir () { $ENV{OPENQA_ARCHIVEDIR} || (prjdir() . '/archive') }
 
 sub resultdir ($archived = 0) { ($archived ? archivedir() : prjdir()) . '/testresults' }
 
-sub assetdir { sharedir() . '/factory' }
+sub assetdir () { sharedir() . '/factory' }
 
-sub imagesdir { prjdir() . '/images' }
+sub imagesdir () { prjdir() . '/images' }
 
 # the desired new folder structure is
 # $testcasedir/<testrepository>
@@ -244,9 +244,7 @@ sub gitrepodir {
     return "https://$githost[1]/$url_tokenized[1]";
 }
 
-sub is_in_tests {
-    my ($file) = @_;
-
+sub is_in_tests ($file) {
     $file = File::Spec->rel2abs($file);
     # at least tests use a relative $prjdir, so it needs to be converted to absolute path as well
     my $abs_projdir = File::Spec->rel2abs(prjdir());
@@ -254,12 +252,10 @@ sub is_in_tests {
       || index($file, catdir($abs_projdir, 'tests')) == 0;
 }
 
-sub needledir { productdir(@_) . '/needles' }
+sub needledir (@args) { productdir(@args) . '/needles' }
 
 # Adds a timestamp to a string (eg. needle name) or replace the already present timestamp
-sub ensure_timestamp_appended {
-    my ($str) = @_;
-
+sub ensure_timestamp_appended ($str) {
     my $today = strftime('%Y%m%d', gmtime(time));
     if ($str =~ /(.*)-\d{8}$/) {
         return "$1-$today";
@@ -551,23 +547,13 @@ sub check_download_passlist {
     return ();
 }
 
-sub get_url_short {
+sub get_url_short ($arg) {
     # Given a setting name, if it ends with _URL or _DECOMPRESS_URL
     # return the name with that string stripped, and a flag indicating
     # whether decompression will be needed. If it doesn't, returns
     # empty string and 0.
-    my ($arg) = @_;
-    return ('', 0) unless ($arg =~ /_URL$/);
-    my $short;
-    my $do_extract = 0;
-    if ($arg =~ /_DECOMPRESS_URL$/) {
-        $short = substr($arg, 0, -15);
-        $do_extract = 1;
-    }
-    else {
-        $short = substr($arg, 0, -4);
-    }
-    return ($short, $do_extract);
+    return ('', 0) unless $arg =~ s/_URL$//;
+    return $arg =~ s/_DECOMPRESS$// ? ($arg, 1) : ($arg, 0);
 }
 
 sub create_downloads_list ($job_settings) {
