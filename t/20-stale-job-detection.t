@@ -25,7 +25,8 @@ $jobs->find(99963)->update({assigned_worker_id => 1});
 $jobs->find(99961)->update({assigned_worker_id => 2});
 $jobs->find(80000)->update({state => ASSIGNED, result => NONE, assigned_worker_id => 1});
 
-OpenQA::App->set_singleton(my $app = OpenQA::Scheduler->new);
+$ENV{OPENQA_CONFIG} = $FindBin::Bin;    # avoid reading config from system
+OpenQA::App->set_singleton(my $app = OpenQA::Scheduler->new(log => undef));
 $app->setup;
 $app->log(undef);
 

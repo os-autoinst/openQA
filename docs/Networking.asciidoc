@@ -167,11 +167,11 @@ that value on support_server itself and it does MTU advertisement for DHCP
 clients as well.
 
 ===== Configure openQA workers
-Allow worker instances to run multi-machine jobs:
+Allow worker instances to run multi-machine jobs by modifying
+<<GettingStarted.asciidoc#_configuration,the worker configuration>>:
 
 [source,sh]
 ----
-# /etc/openqa/workers.ini
 [global]
 WORKER_CLASS = qemu_x86_64,tap
 ----
@@ -296,7 +296,8 @@ Bridge "br0"
 NOTE: Notice the tag numbers are assigned to tap1 and tap2. They should have
 the same number.
 
-NOTE: If the balance of the tap devices is wrong in the workers.ini the tag
+NOTE: If the balance of the tap devices is wrong in
+<<GettingStarted.asciidoc#_configuration,the worker configuration>>, the tag
 cannot be assigned and the communication will be broken.
 
 To list the rules which are effectively configured in the underlying netfilter

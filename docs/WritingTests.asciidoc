@@ -2174,8 +2174,8 @@ GitHub.
 
 1. Open https://github.com/settings/tokens/new and create a new token. It
    needs at least the scope "repo".
-2. Open the openQA web UI's config file (usually `/etc/openqa/openqa.ini`)
-   and add the token created in the previous step:
+2. Add the previously created token to the
+   <<GettingStarted.asciidoc#_configuration,web UI configuration file>>:
 +
  [secrets]
  github_token = $token

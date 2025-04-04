@@ -594,7 +594,7 @@ is carried over.
 NOTE: The lookup-depth is limited. The search for candidates will also stop
 early if too many different kinds of failures were seen. Checkout the
 descriptions of the relevant settings in the `carry_over` section of
-`openqa.ini` for details.
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>> for details.
 
 NOTE: For an approach to add bug references based on a search expression found
 in the job reason for incomplete jobs or job logs consider to
@@ -811,7 +811,7 @@ scenarios:
 === YAML Aliases
 
 Even more flexibility can be achieved by using aliases in YAML, or in other
-words re-using a scenario by reference, such as to run the same scenarios in
+words reusing a scenario by reference, such as to run the same scenarios in
 two different mediums. `&` is used to define an anchor, while `*` is the alias
 referencing the anchor:
 
@@ -1305,11 +1305,13 @@ assets.
 .The following suffixes exist:
 
 _URL:: Before starting these jobs, try to download these assets into the relevant asset directory
-of the openQA web-UI from trusted domains specified in `/etc/openqa/openqa.ini`. For e.g.,
-`ISO_1_URL=http://trusted.com/foo.iso` would, if `trusted.com` is set as a trusted domain, cause
-openQA to download the file `foo.iso` to `/var/lib/openqa/share/factory/iso` and set
-`ISO_1=foo.iso`. If you set both `ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will
-be downloaded and renamed to the name set as `ISO_1`.
+of the openQA web-UI from trusted domains specified in
+<<GettingStarted.asciidoc#_configuration,the web UI configuration file>>.
+For example `ISO_1_URL=http://trusted.com/foo.iso` would, if `trusted.com` is
+set as a trusted domain, cause openQA to download the file `foo.iso` to
+`/var/lib/openqa/share/factory/iso` and set `ISO_1=foo.iso`. If you set both
+`ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will be downloaded
+and renamed to the name set as `ISO_1`.
 
 _DECOMPRESS_URL:: Specify a compressed asset to be downloaded that will be uncompressed by openQA.
 For e.g. `ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz` will download the file `foo2.iso.xz`,
@@ -1366,8 +1368,9 @@ results and other data automatically according to configurable limits.
 All cleanup jobs run within the Minion job queue, normally provided by
 `openqa-gru.service`. The dashboard for Minion jobs is accessible via the
 administrator menu in the web UI. Only one cleanup job can run at the same time
-unless `concurrent` is set to `1` in the `[cleanup]` settings of `openqa.ini`.
-Many other cleanup-related settings can be found within `openqa.ini` as well,
+unless `concurrent` is set to `1` in the `[cleanup]` settings of
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>>. Many other
+cleanup-related settings can be found within the web UI configuration as well,
 e.g. the `[…_limits]` sections contain various tweaks and allow to change certain
 defaults. Checkout the sub section
 <<UsersGuide.asciidoc#_timers_and_triggers,Timers and triggers>> to learn more
