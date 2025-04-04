@@ -72,7 +72,7 @@ sub _format_git_error ($self, $result, $error_message) {
 This function is used to checkout the latest commit from a git branch provided via update_branch
 and update_remote configuration variables in openqa.ini. In case if both the configuration variables
 are not provided then this function sets the default git branch by first extracting the git URL by using
-get_origin_url function and then setting the default git branch from the extracted git URL.
+get_origin_url and then setting the default git branch from the extracted git URL.
 
 =back
 
@@ -81,11 +81,8 @@ get_origin_url function and then setting the default git branch from the extract
 sub set_to_latest_master ($self, $args = undef) {
     $self->_validate_attributes;
     if (my $update_remote = $self->config->{update_remote}) {
-        try {
-            my $current_branch = $self->get_current_branch;
-            $self->fetch($current_branch);
-        }
-        catch ($e) { return $e; }
+        try { $self->fetch($self->get_current_branch) }
+        catch ($e) { return $e }
     }
 
     if (my $update_branch = $self->config->{update_branch}) {
