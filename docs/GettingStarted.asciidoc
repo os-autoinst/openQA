@@ -268,18 +268,18 @@ to use.
 The different components of openQA read their configuration from the following
 files:
 
-* `openqa.ini`: This is the "web UI" config. Services providing the web
-  interface and related services such as the scheduler are configured via that
-  file.
-* `database.ini`: This file is also used by services providing the web interface
-  and related services such as the scheduler. It is used to configure how those
-  services connect to the database.
+* `openqa.ini`, `openqa.ini.d/*.ini`: These files are the "web UI" config.
+  Services providing the web interface and related services such as the
+  scheduler are configured via these files.
+* `database.ini`, `database.ini.d/*.ini`: These files are also used by services
+  providing the web interface and related services such as the scheduler. It is
+  used to configure how those services connect to the database.
 * `workers.ini`: This file is used to configure the openQA worker including its
   additional cache service.
-* `client.conf`: This file contains API credentials and is used by the openQA
-  worker and other tooling such as `openqa-cli` and `openqa-clone-job` to
-  authenticate with the web interface. One API key/secret can be configured per
-  web UI host.
+* `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and
+  are used by the openQA worker and other tooling such as `openqa-cli` and
+  `openqa-clone-job` to authenticate with the web interface. One API key/secret
+  can be configured per web UI host.
 
 If these files are not present, defaults are used.
 
@@ -304,13 +304,16 @@ For development, checkout the section about
 <<Contributing.asciidoc#_customize_configuration_directory,customizing the configuration directory>>.
 
 ==== Drop-in configurations
-It is possible to split the configuration into multiple files and store these
+It is recommended to split the configuration into multiple files and store these
 "drop-in" configuration files in the `….d` sub directory, e.g.
 `/etc/openqa/openqa.ini.d/01-plugins.ini`. This is possible for all config
 files, e.g. `/etc/openqa/workers.ini.d/01-bare-metal-instances.ini` and
 `/etc/openqa/client.conf.d/01-internal.conf` can be created as well to configure
 workers and API credentials. This works also on other locations, e.g.
-`/usr/etc/openqa/openqa.ini.d/01-plugins.ini` will be found as well.
+`/usr/etc/openqa/openqa.ini.d/01-plugins.ini` will be found as well. Settings
+from drop-in configurations override settings from the main config files.
+Drop-in configurations are read in alphabetical order and subsequent files
+override settings from preceding ones.
 
 === Access management
 
