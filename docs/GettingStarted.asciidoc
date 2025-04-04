@@ -264,6 +264,57 @@ Each click point can have an `id`, and if a needle contains multiple click point
 you must pass it to `testapi::assert_and_click` to select which click point
 to use.
 
+=== Configuration
+The different components of openQA read their configuration from the following
+files:
+
+* `openqa.ini`, `openqa.ini.d/*.ini`: These files are the "web UI" config.
+  Services providing the web interface and related services such as the
+  scheduler are configured via these files.
+* `database.ini`, `database.ini.d/*.ini`: These files are also used by services
+  providing the web interface and related services such as the scheduler. It is
+  used to configure how those services connect to the database.
+* `workers.ini`: This file is used to configure the openQA worker including its
+  additional cache service.
+* `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and
+  are used by the openQA worker and other tooling such as `openqa-cli` and
+  `openqa-clone-job` to authenticate with the web interface. One API key/secret
+  can be configured per web UI host.
+
+If these files are not present, defaults are used.
+
+Example configuration files are installed under `/usr/share/doc/openqa/examples`
+and in the
+https://github.com/os-autoinst/openQA/tree/master/etc/openqa[Git repository under `etc/openqa`].
+Continue reading the next sections for where you can place the actual
+configuration files and the possibility of creating drop-in configuration files.
+
+==== Locations
+All configuration files can be placed under `/etc/openqa`,
+e.g. `/etc/openqa/openqa.ini`. That is where administrators are expected to
+store system-wide configuration.
+
+Configuration files are also looked up under `/usr/etc/openqa` where a
+https://en.opensuse.org/openSUSE:Packaging_UsrEtc#Variant_1_(ideal_case)[package maintainer]
+can place default values deviating from upstream defaults.
+
+The client configuration can also be put under `~/.config/openqa/client.conf`.
+
+For development, checkout the section about
+<<Contributing.asciidoc#_customize_configuration_directory,customizing the configuration directory>>.
+
+==== Drop-in configurations
+It is recommended to split the configuration into multiple files and store these
+"drop-in" configuration files in the `….d` sub directory, e.g.
+`/etc/openqa/openqa.ini.d/01-plugins.ini`. This is possible for all config
+files, e.g. `/etc/openqa/workers.ini.d/01-bare-metal-instances.ini` and
+`/etc/openqa/client.conf.d/01-internal.conf` can be created as well to configure
+workers and API credentials. This works also on other locations, e.g.
+`/usr/etc/openqa/openqa.ini.d/01-plugins.ini` will be found as well. Settings
+from drop-in configurations override settings from the main config files.
+Drop-in configurations are read in alphabetical order and subsequent files
+override settings from preceding ones.
+
 === Access management
 
 Some actions in openQA require special privileges. openQA provides
@@ -344,8 +395,9 @@ and the <<UsersGuide.asciidoc#build_tagging,Build tagging>> section for how to m
 a job as important.
 
 *NOTE* New groups use the limits configured in the `[default_group_limits]` section
-of `/etc/openqa/openqa.ini`. Jobs outside of any group use the limits configured in
-the `[no_group_limits]` section of `/etc/openqa/openqa.ini`.
+of <<GettingStarted.asciidoc#_configuration,the web UI configuration>>. Jobs outside
+of any group use the limits configured in the `[no_group_limits]` section of the
+web UI configuration.
 
 *NOTE* Archiving of important jobs can be enabled. Checkout the related settings
 within the `[archiving]` section of the config file for details.
@@ -378,9 +430,10 @@ clone a subdirectory under `/var/lib/openqa/tests` for each test distribution
 you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests.
 
 The repositories will be kept up-to-date if `git_auto_update` is enabled in
-`openqa.ini` (which is the default). The updating is triggered when new tests
-are scheduled. For a periodic update (to avoid getting too far behind) you can
-enable the systemd unit `openqa-enqueue-git-auto-update.timer`.
+<<GettingStarted.asciidoc#_configuration,the web UI configuration>> (which is the
+default). The updating is triggered when new tests are scheduled. For a periodic
+update (to avoid getting too far behind) you can enable the systemd unit
+`openqa-enqueue-git-auto-update.timer`.
 
 You can get openSUSE tests and needles from
 https://github.com/os-autoinst/os-autoinst-distri-opensuse[GitHub]. To make it

@@ -94,10 +94,17 @@ install-generic:
 		install -m 644 etc/nginx/vhosts.d/$$i "$(DESTDIR)"/etc/nginx/vhosts.d ;\
 	done
 
-	install -D -m 640 etc/openqa/client.conf "$(DESTDIR)"/etc/openqa/client.conf
-	install -D -m 644 etc/openqa/workers.ini "$(DESTDIR)"/etc/openqa/workers.ini
-	install -D -m 644 etc/openqa/openqa.ini "$(DESTDIR)"/etc/openqa/openqa.ini
-	install -D -m 640 etc/openqa/database.ini "$(DESTDIR)"/etc/openqa/database.ini
+	for prefix in usr/etc etc; do \
+		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa ;\
+		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa/client.conf.d ;\
+		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa/workers.ini.d ;\
+		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa/openqa.ini.d ;\
+		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa/database.ini.d ;\
+	done
+	install -D -m 644 etc/openqa/client.conf "$(DESTDIR)"/usr/share/doc/openqa/examples/client.conf
+	install -D -m 644 etc/openqa/workers.ini "$(DESTDIR)"/usr/share/doc/openqa/examples/workers.ini
+	install -D -m 644 etc/openqa/openqa.ini "$(DESTDIR)"/usr/share/doc/openqa/examples/openqa.ini
+	install -D -m 644 etc/openqa/database.ini "$(DESTDIR)"/usr/share/doc/openqa/examples/database.ini
 
 	install -D -m 644 etc/logrotate.d/openqa "$(DESTDIR)"/etc/logrotate.d/openqa
 #
