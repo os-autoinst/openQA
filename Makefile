@@ -135,6 +135,17 @@ install-generic:
 	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-scheduler.service.requires/postgresql.service
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires
 	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires/postgresql.service
+	install -D -m 644 contrib/completions/openqa-cli-completion.bash "$(DESTDIR)"/usr/share//bash-completion/completions/openqa-cli
+	install -D -m 644 contrib/completions/openqa-cli-completion.zsh "$(DESTDIR)"/usr/share/zsh/site-functions/_openqa-cli
+	if [ "$(SHELL)" = "/bin/bash" ] || [ "$(SHELL)" = "/usr/bin/bash" ]; then \
+		echo "source $(DESTDIR)/usr/share/bash-completion/completions/openqa-cli" >> "$(HOME)/.bashrc"; \
+	elif [ "$(SHELL)" = "/bin/zsh" ] || [ "$(SHELL)" = "/usr/bin/zsh" ]; then \
+		echo "fpath+=($(DESTDIR)/usr/share/zsh/site-functions)" >> "$(HOME)/.zshrc"; \
+		echo "autoload -Uz compinit && compinit" >> "$(HOME)/.zshrc"; \
+	else \
+		echo "Unsupported shell: $(SHELL). Skipping completion setup."; \
+	fi
+
 #
 # install openQA apparmor profile
 	install -d -m 755 "$(DESTDIR)"/etc/apparmor.d
