@@ -529,9 +529,15 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_click_points">3.3.2. Click points</a></li>
 </ul>
 </li>
-<li><a href="#_access_management">3.4. Access management</a></li>
-<li><a href="#_job_groups">3.5. Job groups</a></li>
-<li><a href="#basic_cleanup">3.6. Cleanup</a></li>
+<li><a href="#_configuration">3.4. Configuration</a>
+<ul class="sectlevel3">
+<li><a href="#_locations">3.4.1. Locations</a></li>
+<li><a href="#_drop_in_configurations">3.4.2. Drop-in configurations</a></li>
+</ul>
+</li>
+<li><a href="#_access_management">3.5. Access management</a></li>
+<li><a href="#_job_groups">3.6. Job groups</a></li>
+<li><a href="#basic_cleanup">3.7. Cleanup</a></li>
 </ul>
 </li>
 <li><a href="#_using_the_client_script">4. Using the client script</a></li>
@@ -1136,7 +1142,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">80. Setup openQA with openSUSE-based images and docker-compose</a>
 <ul class="sectlevel2">
-<li><a href="#_configuration">80.1. Configuration</a></li>
+<li><a href="#_configuration_2">80.1. Configuration</a></li>
 <li><a href="#_build_images">80.2. Build images</a></li>
 <li><a href="#_run_the_web_ui_containers_in_ha_mode">80.3. Run the web UI containers in HA mode</a></li>
 <li><a href="#_generate_and_configure_api_credentials_2">80.4. Generate and configure API credentials</a></li>
@@ -1598,7 +1604,83 @@ to use.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_access_management"><a class="anchor" href="#_access_management"></a><a class="link" href="#_access_management">3.4. Access management</a></h3>
+<h3 id="_configuration"><a class="anchor" href="#_configuration"></a><a class="link" href="#_configuration">3.4. Configuration</a></h3>
+<div class="paragraph">
+<p>The different components of openQA read their configuration from the following
+files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>openqa.ini</code>, <code>openqa.ini.d/*.ini</code>: These files are the "web UI" config.
+Services providing the web interface and related services such as the
+scheduler are configured via these files.</p>
+</li>
+<li>
+<p><code>database.ini</code>, <code>database.ini.d/*.ini</code>: These files are also used by services
+providing the web interface and related services such as the scheduler. It is
+used to configure how those services connect to the database.</p>
+</li>
+<li>
+<p><code>workers.ini</code>: This file is used to configure the openQA worker including its
+additional cache service.</p>
+</li>
+<li>
+<p><code>client.conf</code>, <code>client.conf.d/*.conf</code>: These files contain API credentials and
+are used by the openQA worker and other tooling such as <code>openqa-cli</code> and
+<code>openqa-clone-job</code> to authenticate with the web interface. One API key/secret
+can be configured per web UI host.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If these files are not present, defaults are used.</p>
+</div>
+<div class="paragraph">
+<p>Example configuration files are installed under <code>/usr/share/doc/openqa/examples</code>
+and in the
+<a href="https://github.com/os-autoinst/openQA/tree/master/etc/openqa">Git repository under <code>etc/openqa</code></a>.
+Continue reading the next sections for where you can place the actual
+configuration files and the possibility of creating drop-in configuration files.</p>
+</div>
+<div class="sect3">
+<h4 id="_locations"><a class="anchor" href="#_locations"></a><a class="link" href="#_locations">3.4.1. Locations</a></h4>
+<div class="paragraph">
+<p>All configuration files can be placed under <code>/etc/openqa</code>,
+e.g. <code>/etc/openqa/openqa.ini</code>. That is where administrators are expected to
+store system-wide configuration.</p>
+</div>
+<div class="paragraph">
+<p>Configuration files are also looked up under <code>/usr/etc/openqa</code> where a
+<a href="https://en.opensuse.org/openSUSE:Packaging_UsrEtc#Variant_1_(ideal_case)">package maintainer</a>
+can place default values deviating from upstream defaults.</p>
+</div>
+<div class="paragraph">
+<p>The client configuration can also be put under <code>~/.config/openqa/client.conf</code>.</p>
+</div>
+<div class="paragraph">
+<p>For development, checkout the section about
+<a href="#_customize_configuration_directory">customizing the configuration directory</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_drop_in_configurations"><a class="anchor" href="#_drop_in_configurations"></a><a class="link" href="#_drop_in_configurations">3.4.2. Drop-in configurations</a></h4>
+<div class="paragraph">
+<p>It is recommended to split the configuration into multiple files and store these
+"drop-in" configuration files in the <code>….d</code> sub directory, e.g.
+<code>/etc/openqa/openqa.ini.d/01-plugins.ini</code>. This is possible for all config
+files, e.g. <code>/etc/openqa/workers.ini.d/01-bare-metal-instances.ini</code> and
+<code>/etc/openqa/client.conf.d/01-internal.conf</code> can be created as well to configure
+workers and API credentials. This works also on other locations, e.g.
+<code>/usr/etc/openqa/openqa.ini.d/01-plugins.ini</code> will be found as well. Settings
+from drop-in configurations override settings from the main config files.
+Drop-in configurations are read in alphabetical order and subsequent files
+override settings from preceding ones.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_access_management"><a class="anchor" href="#_access_management"></a><a class="link" href="#_access_management">3.5. Access management</a></h3>
 <div class="paragraph">
 <p>Some actions in openQA require special privileges. openQA provides
 authentication through <a href="http://en.wikipedia.org/wiki/OpenID">openID</a>. By default,
@@ -1647,7 +1729,7 @@ blog post</a> about the subject by the openQA development team.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_job_groups"><a class="anchor" href="#_job_groups"></a><a class="link" href="#_job_groups">3.5. Job groups</a></h3>
+<h3 id="_job_groups"><a class="anchor" href="#_job_groups"></a><a class="link" href="#_job_groups">3.6. Job groups</a></h3>
 <div class="paragraph">
 <p>A job can belong to a job group. Those job groups are displayed on the index
 page when there are recent test results in these job groups and in the <code>Job
@@ -1667,7 +1749,7 @@ the index page.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="basic_cleanup"><a class="anchor" href="#basic_cleanup"></a><a class="link" href="#basic_cleanup">3.6. Cleanup</a></h3>
+<h3 id="basic_cleanup"><a class="anchor" href="#basic_cleanup"></a><a class="link" href="#basic_cleanup">3.7. Cleanup</a></h3>
 <div class="admonitionblock important">
 <table>
 <tr>
@@ -1743,8 +1825,9 @@ a job as important.</p>
 </div>
 <div class="paragraph">
 <p><strong>NOTE</strong> New groups use the limits configured in the <code>[default_group_limits]</code> section
-of <code>/etc/openqa/openqa.ini</code>. Jobs outside of any group use the limits configured in
-the <code>[no_group_limits]</code> section of <code>/etc/openqa/openqa.ini</code>.</p>
+of <a href="#_configuration">the web UI configuration</a>. Jobs outside
+of any group use the limits configured in the <code>[no_group_limits]</code> section of the
+web UI configuration.</p>
 </div>
 <div class="paragraph">
 <p><strong>NOTE</strong> Archiving of important jobs can be enabled. Checkout the related settings
@@ -1790,9 +1873,10 @@ you need, e.g. <code>/var/lib/openqa/tests/opensuse</code> for openSUSE tests.</
 </div>
 <div class="paragraph">
 <p>The repositories will be kept up-to-date if <code>git_auto_update</code> is enabled in
-<code>openqa.ini</code> (which is the default). The updating is triggered when new tests
-are scheduled. For a periodic update (to avoid getting too far behind) you can
-enable the systemd unit <code>openqa-enqueue-git-auto-update.timer</code>.</p>
+<a href="#_configuration">the web UI configuration</a> (which is the
+default). The updating is triggered when new tests are scheduled. For a periodic
+update (to avoid getting too far behind) you can enable the systemd unit
+<code>openqa-enqueue-git-auto-update.timer</code>.</p>
 </div>
 <div class="paragraph">
 <p>You can get openSUSE tests and needles from
@@ -2504,7 +2588,8 @@ cert location in the config file). On openSUSE, you should also add <strong>SSL<
 </div>
 <div class="paragraph">
 <p>If you don&#8217;t have a TLS/SSL certificate for your host you must turn HTTPS off.
-You can do that in <code>/etc/openqa/openqa.ini</code>:</p>
+You can do that in
+<a href="#_configuration">the web UI configuration</a>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2519,7 +2604,8 @@ You can do that in <code>/etc/openqa/openqa.ini</code>:</p>
 <p>openQA uses PostgreSQL as database. By default, a database with name <code>openqa</code>
 and <code>geekotest</code> user as owner is used. An automatic setup of a freshly
 installed PostgreSQL instance can be done using <a href="https://github.com/os-autoinst/openQA/blob/master/script/setup-db">this script</a>.
-The database connection can be configured in <code>/etc/openqa/database.ini</code>
+The database connection can be configured in
+<a href="#_configuration">the database configuration file</a>.
 (normally the <code>[production]</code> section is relevant). More info about the <code>dsn</code>
 value format can be found in the <a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg documentation</a>.</p>
 </div>
@@ -2551,7 +2637,9 @@ value format can be found in the <a href="https://metacpan.org/pod/DBD::Pg#DBI-C
 OAuth2 and Fake (for development).</p>
 </div>
 <div class="paragraph">
-<p>Use the <code>auth</code> section in <code>/etc/openqa/openqa.ini</code> to configure the method:</p>
+<p>Use the <code>auth</code> section in
+<a href="#_configuration">the web UI configuration</a> to configure
+the method:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2582,7 +2670,8 @@ reported when clocks are too far apart.</p>
 <h4 id="_openid"><a class="anchor" href="#_openid"></a><a class="link" href="#_openid">12.5.1. OpenID</a></h4>
 <div class="paragraph">
 <p>By default openQA uses OpenID with opensuse.org as OpenID provider.
-OpenID method has its own <code>openid</code> section in <code>/etc/openqa/openqa.ini</code>:</p>
+OpenID method has its own <code>openid</code> section in
+<a href="#_configuration">the web UI configuration</a>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2795,9 +2884,12 @@ fetch the tests cases and possibly take a look at <a href="#writingtests">Test D
 <div class="paragraph">
 <p>The automated cleanup is enabled and configured by default. Cleanup tasks are
 scheduled via systemd timer units and run via <code>openqa-gru.service</code>. The configuration
-is done in <code>/etc/openqa/openqa.ini</code> and various places within the web UI. If you want to
-tweak the cleanup to your needs, have a look at the
-<a href="#cleanup">Cleanup of assets, results and other data</a> section.</p>
+is done in
+<a href="#_configuration">the web UI configuration file</a> and
+various places within the web UI. If you want to tweak the cleanup to your
+needs, have a look at the
+<a href="#cleanup">Cleanup of assets, results and other data</a>
+section.</p>
 </div>
 </div>
 <div class="sect2">
@@ -2813,8 +2905,9 @@ automatically to git. To do so, you need to enable git support by setting</p>
 </div>
 </div>
 <div class="paragraph">
-<p>in <code>/etc/openqa/openqa.ini</code>. Once you do so and restart the web interface, openQA will
-automatically commit new needles to the git repository.</p>
+<p>in <a href="#_configuration">the web UI configuration</a>.
+Once you do so and restart the web interface, openQA will automatically commit
+new needles to the git repository.</p>
 </div>
 <div class="paragraph">
 <p>You may want to add some description to automatic commits coming from the web
@@ -2831,7 +2924,7 @@ You can do so by setting your configuration in the repository
 </div>
 <div class="paragraph">
 <p>To enable automatic pushing of the repo as well, you need to add the following
-to your openqa.ini:</p>
+to <a href="#_configuration">the web UI configuration</a>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2904,7 +2997,7 @@ important.</p>
 </div>
 <div class="paragraph">
 <p>List of recognized referrers is space separated list configured in
-<code>/etc/openqa/openqa.ini</code>:</p>
+<a href="#_configuration">the web UI configuration file</a>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2916,11 +3009,11 @@ important.</p>
 <div class="sect2">
 <h3 id="_worker_settings"><a class="anchor" href="#_worker_settings"></a><a class="link" href="#_worker_settings">16.4. Worker settings</a></h3>
 <div class="paragraph">
-<p>Default behavior for all workers is to use the 'Qemu' backend and connect to
-'http://localhost'. If you want to change some of those options, you can do so
-in <code>/etc/openqa/workers.ini</code>. For example to point the workers to the FQDN of
-your host (needed if test cases need to access files of the host) use the
-following setting:</p>
+<p>Default behavior for all workers is to use the QEMU backend and connect to
+<code><a href="http://localhost" class="bare">http://localhost</a></code>. If you want to change some of those options, you can do so
+in <a href="#_configuration">the worker configuration</a>. For
+example to point the workers to the FQDN of your host (needed if test cases need
+to access files of the host) use the following setting:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3077,7 +3170,8 @@ There you will find instructions how to configure the AMQP server as well.</p>
 <div class="paragraph">
 <p>To let openQA send messages to an AMQP message bus,
 first make sure that the <code>perl-Mojo-RabbitMQ-Client</code> RPM is installed.
-Then you will need to configure amqp in <code>/etc/openqa/openqa.ini</code>:</p>
+Then you will need to configure AMQP in
+<a href="#_configuration">the web UI configuration file</a>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3119,8 +3213,9 @@ can be configured to register and accept jobs from all of them.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>In the <code>/etc/openqa/workers.ini</code> enter space-separated instance hosts and optionally
-configure where the shared storage is mounted. Example:</p>
+<p>In <a href="#_configuration">the worker configuration</a>, enter
+space-separated instance hosts and optionally configure where the shared storage
+is mounted. Example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3170,8 +3265,9 @@ remote instances.</p>
 <div class="paragraph">
 <p>If your network is slow or you experience long time to load needles you might
 want to consider enabling caching on your remote workers. To enable caching,
-<code>CACHEDIRECTORY</code> must be set in <code>workers.ini</code>. There are also further settings
-one can optionally configure. Example:</p>
+<code>CACHEDIRECTORY</code> must be set in
+<a href="#_configuration">the worker configuration</a>. There are
+also further settings one can optionally configure. Example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3195,7 +3291,8 @@ openQA through the repositories, said directory will be created for you.</p>
 <p>The shown configuration causes workers to download the assets from the web UI
 and use them locally. The <code>TESTPOOLSERVER</code> setting causes also tests and
 needles to be downloaded via <code>rsync</code> from the specified location. You can find
-further examples in the comments in <code>/etc/openqa/workers.ini</code>.</p>
+further examples in the comments in
+<a href="#_configuration">the worker configuration</a>.</p>
 </div>
 <div class="paragraph">
 <p>It is suggested to have the cache and pool directories on the same filesystem
@@ -3253,8 +3350,9 @@ such case, one can setup local cache on their own (without using
 openqa-worker-cacheservice service) and share it with workers using
 some network filesystem (see <a href="#Configuring remote workers">[Configuring remote workers]</a>
 section above).
-Such setups can use <code>SYNC_ASSETS_HOOK</code> in <code>/etc/openqa/workers.ini</code> to ensure
-the cache is up to date before starting the job (or resuming test in developer
+Such setups can use <code>SYNC_ASSETS_HOOK</code> in
+<a href="#_configuration">the web UI configuration</a> to ensure the
+cache is up to date before starting the job (or resuming test in developer
 mode). The setting takes a shell command that is executed just before
 evaluating assets. It is up to the system administrator to decide what it
 should do, but there are few suggestions:</p>
@@ -3426,7 +3524,8 @@ workers are tracked under user whose API keys are workers using.</p>
 <p>Audit log is directly accessible from <code>Admin menu</code>.</p>
 </div>
 <div class="paragraph">
-<p>Auditing, by default enabled, can be disabled by global configuration option in <code>/etc/openqa/openqa.ini</code>:</p>
+<p>Auditing, by default enabled, can be disabled by global configuration option in
+<a href="#_configuration">the web UI configuration file</a>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3435,8 +3534,9 @@ workers are tracked under user whose API keys are workers using.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>audit</code> section of <code>/etc/openqa/openqa.ini</code> allows to exclude some events from logging using
-a space separated blocklist:</p>
+<p>The <code>audit</code> section of
+<a href="#_configuration">the web UI configuration</a> allows to
+exclude some events from logging using a space separated blocklist:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3445,8 +3545,9 @@ a space separated blocklist:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>audit/storage_duration</code> section of <code>/etc/openqa/openqa.ini</code> allows to set the retention policy for
-different audit event types:</p>
+<p>The <code>audit/storage_duration</code> section of
+<a href="#_configuration">the web UI configuration</a> allows to set
+the retention policy for different audit event types:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3560,18 +3661,6 @@ automatically every day. It is also possible to trigger the cleanup manually by 
 <div class="paragraph">
 <p>Some of these events are very common and may clutter audit database. For this reason <code>job_grab</code> and <code>job_done</code>
 events are on the blocklist by default.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-Upgrading openQA does not automatically update <code>/etc/openqa/openqa.ini</code>. Review your configuration after upgrade.
-</td>
-</tr>
-</table>
 </div>
 </div>
 </div>
@@ -4263,7 +4352,8 @@ systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span cla
 </div>
 </div>
 <div class="paragraph">
-<p>Then update <code>/etc/openqa/workers.ini</code> on the workers like this:</p>
+<p>Then update <a href="#_configuration">the worker configuration</a>
+on the workers like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5338,7 +5428,7 @@ is carried over.
 The lookup-depth is limited. The search for candidates will also stop
 early if too many different kinds of failures were seen. Checkout the
 descriptions of the relevant settings in the <code>carry_over</code> section of
-<code>openqa.ini</code> for details.
+<a href="#_configuration">the web UI configuration</a> for details.
 </td>
 </tr>
 </table>
@@ -5636,7 +5726,7 @@ would normally be considered duplicated:</p>
 <h3 id="_yaml_aliases"><a class="anchor" href="#_yaml_aliases"></a><a class="link" href="#_yaml_aliases">29.2. YAML Aliases</a></h3>
 <div class="paragraph">
 <p>Even more flexibility can be achieved by using aliases in YAML, or in other
-words re-using a scenario by reference, such as to run the same scenarios in
+words reusing a scenario by reference, such as to run the same scenarios in
 two different mediums. <code>&amp;</code> is used to define an anchor, while <code>*</code> is the alias
 referencing the anchor:</p>
 </div>
@@ -6338,11 +6428,13 @@ _URL
 </td>
 <td class="hdlist2">
 <p>Before starting these jobs, try to download these assets into the relevant asset directory
-of the openQA web-UI from trusted domains specified in <code>/etc/openqa/openqa.ini</code>. For e.g.,
-<code>ISO_1_URL=http://trusted.com/foo.iso</code> would, if <code>trusted.com</code> is set as a trusted domain, cause
-openQA to download the file <code>foo.iso</code> to <code>/var/lib/openqa/share/factory/iso</code> and set
-<code>ISO_1=foo.iso</code>. If you set both <code>ISO_1</code> and <code>ISO_1_URL</code>, the file pointed to by <code>ISO_1_URL</code> will
-be downloaded and renamed to the name set as <code>ISO_1</code>.</p>
+of the openQA web-UI from trusted domains specified in
+<a href="#_configuration">the web UI configuration file</a>.
+For example <code>ISO_1_URL=http://trusted.com/foo.iso</code> would, if <code>trusted.com</code> is
+set as a trusted domain, cause openQA to download the file <code>foo.iso</code> to
+<code>/var/lib/openqa/share/factory/iso</code> and set <code>ISO_1=foo.iso</code>. If you set both
+<code>ISO_1</code> and <code>ISO_1_URL</code>, the file pointed to by <code>ISO_1_URL</code> will be downloaded
+and renamed to the name set as <code>ISO_1</code>.</p>
 </td>
 </tr>
 <tr>
@@ -6471,8 +6563,9 @@ results and other data automatically according to configurable limits.</p>
 <p>All cleanup jobs run within the Minion job queue, normally provided by
 <code>openqa-gru.service</code>. The dashboard for Minion jobs is accessible via the
 administrator menu in the web UI. Only one cleanup job can run at the same time
-unless <code>concurrent</code> is set to <code>1</code> in the <code>[cleanup]</code> settings of <code>openqa.ini</code>.
-Many other cleanup-related settings can be found within <code>openqa.ini</code> as well,
+unless <code>concurrent</code> is set to <code>1</code> in the <code>[cleanup]</code> settings of
+<a href="#_configuration">the web UI configuration</a>. Many other
+cleanup-related settings can be found within the web UI configuration as well,
 e.g. the <code>[…_limits]</code> sections contain various tweaks and allow to change certain
 defaults. Checkout the sub section
 <a href="#_timers_and_triggers">Timers and triggers</a> to learn more
@@ -9589,8 +9682,8 @@ GitHub.</p>
 needs at least the scope "repo".</p>
 </li>
 <li>
-<p>Open the openQA web UI&#8217;s config file (usually <code>/etc/openqa/openqa.ini</code>)
-and add the token created in the previous step:</p>
+<p>Add the previously created token to the
+<a href="#_configuration">web UI configuration file</a>:</p>
 <div class="literalblock">
 <div class="content">
 <pre>[secrets]
@@ -10504,10 +10597,11 @@ try the following sub-steps:</p>
 <div class="olist loweralpha">
 <ol class="loweralpha" type="a">
 <li>
-<p>If the host is wrong, add <code>WORKER_HOSTNAME = correcthost</code> to <code>workers.ini</code>. The worker
-should then tell the web UI that it is reachable via <code>correcthost</code> resulting in a correct URL
-for the os-autoinst command server. Be sure the setting appears after the <code>[global]</code> section
-header.</p>
+<p>If the host is wrong, add <code>WORKER_HOSTNAME = correcthost</code> to
+<a href="#_configuration">the worker configuration</a>.
+The worker should then tell the web UI that it is reachable via
+<code>correcthost</code> resulting in a correct URL for the os-autoinst command
+server. Be sure the setting appears after the <code>[global]</code> section header.</p>
 </li>
 <li>
 <p>It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
@@ -10775,12 +10869,12 @@ clients as well.
 <div class="sect4">
 <h5 id="_configure_openqa_workers"><a class="anchor" href="#_configure_openqa_workers"></a><a class="link" href="#_configure_openqa_workers">Configure openQA workers</a></h5>
 <div class="paragraph">
-<p>Allow worker instances to run multi-machine jobs:</p>
+<p>Allow worker instances to run multi-machine jobs by modifying
+<a href="#_configuration">the worker configuration</a>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/openqa/workers.ini</span>
-<span class="tok-o">[</span>global<span class="tok-o">]</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-o">[</span>global<span class="tok-o">]</span>
 <span class="tok-nv">WORKER_CLASS</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>qemu_x86_64,tap</code></pre>
 </div>
 </div>
@@ -10966,7 +11060,8 @@ the same number.
 <div class="title">Note</div>
 </td>
 <td class="content">
-If the balance of the tap devices is wrong in the workers.ini the tag
+If the balance of the tap devices is wrong in
+<a href="#_configuration">the worker configuration</a>, the tag
 cannot be assigned and the communication will be broken.
 </td>
 </tr>
@@ -12146,9 +12241,10 @@ OpenID and Fake (see <a href="#authentication">User authentication</a>).</p>
 </div>
 <div class="paragraph">
 <p>All authentication modules reside in <code>lib/OpenQA/Auth</code> directory. During
-openQA start, the <code>[auth]/method</code> section of <code>/etc/openqa/openqa.ini</code> is read
-and according to its value (or default OpenID) openQA tries to require
-OpenQA::WebAPI::Auth::$method.  If successful, the module for the given method
+openQA start, the <code>[auth]/method</code> section of
+<a href="#_configuration">the web UI configuration</a> is read and
+according to its value (or default OpenID) openQA tries to require
+<code>OpenQA::WebAPI::Auth::$method</code>. If successful, the module for the given method
 is imported or openQA ends with error.</p>
 </div>
 <div class="paragraph">
@@ -12736,10 +12832,11 @@ remote development). The magic line in this case would be:</p>
 <div class="content">
 <div class="paragraph">
 <p>You can alter the appearance of the openQA web UI to some extent through
-the 'branding' mechanism. The 'branding' configuration setting in the
-'global' section of <code>/etc/openqa/openqa.ini</code> specifies the branding to
-use. It defaults to 'openSUSE', and openQA also includes the 'plain'
-branding, which is - as its name suggests - plain and generic.</p>
+the "branding" mechanism. The <code>branding</code> configuration setting in the <code>global</code>
+section of <a href="#_configuration">the web UI configuration</a>
+specifies the branding to use. It defaults to 'openSUSE', and openQA also
+includes the "plain" branding, which is - as its name suggests - plain and
+generic.</p>
 </div>
 <div class="paragraph">
 <p>To create your own branding for openQA, you can create a subdirectory
@@ -13026,7 +13123,7 @@ repository in <code>/tools</code> directory. Note that you have to have
 repository.</p>
 </div>
 <div class="sect2">
-<h3 id="_configuration"><a class="anchor" href="#_configuration"></a><a class="link" href="#_configuration">80.1. Configuration</a></h3>
+<h3 id="_configuration_2"><a class="anchor" href="#_configuration_2"></a><a class="link" href="#_configuration_2">80.1. Configuration</a></h3>
 <div class="paragraph">
 <p>The web UI will be available under <a href="http://localhost" class="bare">http://localhost</a> and <a href="https://localhost" class="bare">https://localhost</a>. So it
 is using default HTTP(S) ports. Make sure those ports are not used by
@@ -13391,7 +13488,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-01 04:44:31 UTC
+Last updated 2025-04-05 04:44:00 UTC
 </div>
 </div>
 </body>
