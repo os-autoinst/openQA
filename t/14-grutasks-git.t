@@ -8,6 +8,7 @@ use Mojo::Base -signatures;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Task::Git::Clone;
+use OpenQA::Git::ServerAvailability qw(report_server_unavailable report_server_available SKIP FAIL);
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '20';
@@ -448,12 +449,107 @@ subtest 'delete_needles' => sub {
     like $error->{message}, qr{Unable to rm via Git}, 'expected error from git';
 
     subtest 'minion guard' => sub {
-        my $guard = $t->app->minion->guard("git_clone_t/data/openqa/share/tests/fedora/needles_task", ONE_HOUR);
+        my $guard = $t->app->minion->guard('git_clone_t/data/openqa/share/tests/fedora/needles_task', ONE_HOUR);
         $res = run_gru_job(@gru_args);
         is $res->{state}, 'finished', 'job finished';
         $error = $res->{result}->{errors}->[0];
         like $error->{message}, qr{Another git task for.*fedora.*is ongoing}, 'expected error message';
     };
+};
+
+subtest 'ServerAvailability.pm: no lock file => skip' => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/mock";
+    my $outcome = report_server_unavailable($t->app, 'gitlab');
+    is($outcome, 'SKIP', 'Skips when lock file for gitlab is absent');
+};
+
+subtest 'ServerAvailability.pm: file present but younger than 1800 => skip' => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/mock";
+    my $mock_file = "$tmpdir/mock.gitlab.lock";
+    path($mock_file)->touch;
+    my $outcome = report_server_unavailable($t->app, 'gitlab');
+    is($outcome, 'SKIP', 'Skips the job for an mtime < 1800');
+};
+
+subtest 'ServerAvailability.pm: file present and older => fail' => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/mock";
+    my $mock_file = "$tmpdir/mock.gitlab.lock";
+    path($mock_file)->touch;
+    my $old_time = time - 2000;
+    utime($old_time, $old_time, $mock_file)
+      or die "Couldn't change mtime on file: $mock_file - $!";
+    my $outcome = report_server_unavailable($t->app, 'gitlab');
+    is($outcome, 'FAIL', 'Fails the job when mtime >= 1800');
+};
+
+subtest 'ServerAvailability.pm: report_server_available removes existing lock file' => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/mock";
+    my $mock_file = "$tmpdir/mock.gitlab.lock";
+    path($mock_file)->touch;
+    ok(-f $mock_file, 'mock.gitlab.lock exists initially');
+    report_server_available($t->app, 'gitlab');
+    ok(!-f $mock_file, 'gitlab lock file was removed');
+};
+
+subtest 'ServerAvailability.pm: multiple servers do not conflict' => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/mock";
+    my $outcome_gitlab = report_server_unavailable($t->app, 'gitlab');
+    is($outcome_gitlab, 'SKIP', 'No gitlab lock => skip');
+    my $gitlab_file = "$tmpdir/mock.gitlab.lock";
+    ok(-f $gitlab_file, 'Created mock.gitlab.lock');
+    my $outcome_github = report_server_unavailable($t->app, 'github');
+    is($outcome_github, 'SKIP', 'No github lock => skip');
+    my $github_file = "$tmpdir/mock.github.lock";
+    ok(-f $github_file, 'Created mock.github.lock');
+
+    my $old_time = time - 2000;
+    utime($old_time, $old_time, $github_file);
+    # Re-check
+    $outcome_gitlab = report_server_unavailable($t->app, 'gitlab');
+    $outcome_github = report_server_unavailable($t->app, 'github');
+    is($outcome_gitlab, 'SKIP', 'GitLab file still fresh => skip');
+    is($outcome_github, 'FAIL', 'GitHub file older => fail');
+};
+
+subtest 'Clone.pm: Internal API unreachable => skip' => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/mock";
+    my $clone_mock = Test::MockModule->new('OpenQA::Task::Git::Clone');
+    $clone_mock->redefine(_git_clone => sub { die "Internal API unreachable\n" });
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    my @gru_args = ($t->app, 'git_clone', {priority => 10});
+    my $res;
+    combined_like {
+        $res = run_gru_job(@gru_args);
+    }
+    qr/Git server outage likely, skipping clone job/i, 'Minion clone job skipped due to short Git server outage';
+    is($res->{state}, 'finished', 'Job ended in "finished" state');
+    is($res->{result}, 'Job successfully executed', 'Job result indicates success (skip)');
+    done_testing();
+};
+
+subtest 'Clone.pm: Internal API unreachable => fail' => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/mock";
+    path("$tmpdir/mock.other.lock")->touch;
+    my $old_time = time - 2000;    # "older" than 1800s
+    utime($old_time, $old_time, "$tmpdir/mock.other.lock");
+    my $clone_mock = Test::MockModule->new('OpenQA::Task::Git::Clone');
+    $clone_mock->redefine(_git_clone => sub { die "Internal API unreachable\n" });
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    my @gru_args = ($t->app, 'git_clone', {priority => 10});
+    my $res;
+    combined_like {
+        $res = run_gru_job(@gru_args);
+    }
+    qr/Prolonged Git server outage, failing the job/i, 'Minion clone job failed due to prolonged Git server outage';
+    is($res->{state}, 'failed', 'Job ended in "failed" state');
+    like($res->{result}, qr/Internal API unreachable/, 'Job result includes original error message');
 };
 
 done_testing();

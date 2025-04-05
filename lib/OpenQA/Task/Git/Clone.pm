@@ -9,7 +9,8 @@ use Mojo::File;
 use Feature::Compat::Try;
 use List::Util qw(min);
 use OpenQA::Log qw(log_debug);
-use Time::Seconds 'ONE_HOUR';
+use OpenQA::Git::ServerAvailability qw(report_server_unavailable report_server_available SKIP FAIL);
+use Time::Seconds qw(ONE_HOUR);
 
 sub register ($self, $app, @) {
     $app->minion->add_task(git_clone => \&_git_clone_all);
@@ -47,11 +48,42 @@ sub _git_clone_all ($job, $clones) {
 
     # iterate clones sorted by path length to ensure that a needle dir is always cloned after the corresponding casedir
     for my $path (sort { length($a) <=> length($b) || $a cmp $b } keys %$clones) {
-        my $url = $clones->{$path};
+        my $url = $clones->{$path} // '';
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
+
+        my $git = OpenQA::Git->new(app => $app, dir => $path);
+        $url //= $git->get_origin_url;
+        my $server_host;
+        if ($url =~ m{^(?:\w+://)?([^/\@:\s]+)(?::\d+)?/}) {
+            # e.g. "https://gitlab.suse.de/qa/foo", "ssh://git.foo.org/repo"
+            $server_host = $1;
+        }
+        elsif ($url =~ m{^(?:[^@]+@)?([^:]+):}) {
+            # e.g. "git@gitlab.suse.de:qa/foo", "user@host:repo"
+            $server_host = $1;
+        }
+        else {
+            $server_host = 'other';
+        }
         my $error;
-        try { _git_clone($app, $job, $ctx, $path, $url); next; }
+        try {
+            _git_clone($app, $job, $ctx, $path, $url);
+            report_server_available($app, $server_host);
+            next;
+        }
         catch ($e) { $error = $e }
+        if ($error =~ /Internal API unreachable/) {
+            my $outcome = report_server_unavailable($app, $server_host);
+
+            if ($outcome eq 'SKIP') {
+                $ctx->info('Git server outage likely, skipping clone job.');
+                return;
+            }
+            elsif ($outcome eq 'FAIL') {
+                $ctx->info('Prolonged Git server outage, failing the job.');
+                return $job->fail($error);
+            }
+        }
 
         # unblock openQA jobs despite network errors under best-effort configuration
         my $retries = $job->retries;
