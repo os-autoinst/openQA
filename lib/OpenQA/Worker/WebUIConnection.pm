@@ -367,21 +367,18 @@ sub send_status ($self) {
     # send the worker status (unless the websocket connection has been lost)
     my $websocket_connection = $self->websocket_connection;
     return undef unless $websocket_connection;
-    my $status = $self->worker->status;
+    my $status = $self->{_last_worker_status} = $self->worker->status;
+    $websocket_connection->send({json => $status});
+}
 
-    $websocket_connection->send(
-        {json => $status},
-        sub {
+sub send_status_delayed ($self) {
+    return undef if $self->{_send_status_timer} || !$self->websocket_connection;
 
-            # continue sending status updates (unless the websocket connection has been lost)
-            return undef unless $self->websocket_connection;
-
-            my $status_update_interval = $self->calculate_status_update_interval;
-            my $webui_host = $self->webui_host;
-            log_warning "$status->{reason} - checking again for web UI '$webui_host' in $status_update_interval s"
-              if $status->{reason};
-            $self->{_send_status_timer} = Mojo::IOLoop->timer($status_update_interval, sub { $self->send_status });
-        });
+    my $status_update_interval = $self->calculate_status_update_interval;
+    my $webui_host = $self->webui_host;
+    my $reason = ($self->{_last_worker_status} // {})->{reason};
+    log_warning "$reason - checking again for web UI '$webui_host' in $status_update_interval s" if $reason;
+    $self->{_send_status_timer} = Mojo::IOLoop->timer($status_update_interval, sub { $self->send_status });
 }
 
 # send "quit" message when intentionally "going offline" so the worker is immediately considered

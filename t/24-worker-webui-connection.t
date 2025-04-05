@@ -358,7 +358,7 @@ subtest 'send status' => sub {
     $client->send_status();
     is_deeply($ws->sent_messages, [{json => {fake_status => 1, reason => 'some error'}}], 'status sent')
       or always_explain $ws->sent_messages;
-    combined_like { Mojo::IOLoop->one_tick } qr/some error.*checking again/, 'error logged in callback';
+    combined_like { $client->send_status_delayed } qr/some error.*checking again/, 'error logged in callback';
 };
 
 subtest 'quit' => sub {
@@ -573,6 +573,12 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     combined_like { $command_handler->handle_command(undef, {type => 'quit', jobid => 43}) }
     qr/Will quit job 43 later as requested by the web UI/, 'stop command for pending job executed later';
     is_deeply $worker->skipped_jobs, [[43, 'quit']], 'pending job is going to be skipped';
+
+    # reacting to info message
+    ok !$client->{_send_status_timer}, 'sending status update not scheduled yet';
+    combined_like { $command_handler->handle_command(undef, {type => 'info', seen => 1}) } qr/some error/,
+      'status update logged';
+    ok $client->{_send_status_timer}, 'sending status update with delay after receiving "seen" message';
 };
 
 $client->worker_id(undef);
