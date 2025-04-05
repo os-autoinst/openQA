@@ -1,4 +1,5 @@
 % for my $child (@{$children}) {
+  % my $group_limits = $limit_builds;
   % my $has_jobs = 0;
   % my $title_class_mod = "text-body-secondary";
 
@@ -15,8 +16,10 @@
     </div>
 
     % for my $build_res (@$build_results) {
+      % last if ($group_limits < 0);
       % my $child_res = $build_res->{children}->{$child->{id}};
       % next unless $child_res->{total};
+      % --$group_limits;
       % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
       % my %child_progress_bar_params = (url => url_for('tests_overview'), query_params => [(distri  => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build_res->{build}), groupid => $child->{id}]);
 
@@ -47,7 +50,7 @@
     % }
     % if ($has_jobs eq 0) {
       <div class="ml-3 text-body-secondary">
-        No builds
+        No builds found with the current parameters.
       </div>
     % }
   </div>

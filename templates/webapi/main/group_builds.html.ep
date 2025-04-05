@@ -1,4 +1,5 @@
 % for my $build_res (@$build_results) {
+    % last if (--$limit_builds < 0);
     % my $version = $build_res->{version};
     % my $build = $build_res->{build};
     % my $label = $build_res->{version_count} <= 1 ? "Build$build" : "$version-Build$build";

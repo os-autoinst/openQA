@@ -181,7 +181,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     my $max_jobs = 0;
     my $now = DateTime->now;
     for my $build (@builds) {
-        last if defined($limit) && (--$limit < 0);
+        #last if defined($limit) && (--$limit < 0);
 
         my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
         my $jobs = $jobs_resultset->search(
