@@ -86,6 +86,7 @@ use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#]+))\b/;
 use constant FLAG_REGEX => qr/\bflag:(?<match>([\w:#]+))\b/;
 
 use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
+use constant RANDOM_STRING_DEFAULT_LENGTH => 16;
 
 our $VERSION = sprintf '%d.%03d', q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
@@ -191,16 +192,13 @@ sub imagesdir () { prjdir() . '/images' }
 # To be backwards compatible we need to search for all combinations of "old/new
 # testrepository name" and "old/new folder structure" within the
 # testrepository.
-sub productdir {
-    my ($distri, $version, $rootfortests) = @_;
-
+sub productdir ($distri = undef, $version = undef, $rootfortests = undef) {
     my $dir = testcasedir($distri, $version, $rootfortests);
     return "$dir/products/$distri" if $distri && -e "$dir/products/$distri";
     return $dir;
 }
 
-sub testcasedir {
-    my ($distri, $version, $rootfortests) = @_;
+sub testcasedir ($distri = undef, $version = undef, $rootfortests = undef) {
     my $prjdir = prjdir();
     my $defaultroot = catdir($prjdir, 'share', 'tests');
     for my $dir ($defaultroot, catdir($prjdir, 'tests')) {
@@ -227,8 +225,8 @@ needles or tests.
 If the I<.git> directory not found it returns an empty string.
 
 =cut
-sub gitrepodir {
-    my %args = (distri => '', version => '', @_);
+sub gitrepodir (@args) {
+    my %args = (distri => '', version => '', @args);
     my $path = $args{needles} ? needledir($args{distri}, $args{version}) : testcasedir($args{distri}, $args{version});
     my $filename = (-e path($path, '.git')) ? path($path, '.git', 'config') : '';
     my $config = Config::Tiny->read($filename, 'utf8');
@@ -263,8 +261,7 @@ sub ensure_timestamp_appended ($str) {
     return "$str-$today";
 }
 
-sub save_base64_png {
-    my ($dir, $newfile, $png) = @_;
+sub save_base64_png ($dir, $newfile, $png) {
     return unless $newfile;
     # sanitize
     $newfile =~ s,\.png,,;
@@ -276,9 +273,7 @@ sub save_base64_png {
     return $newfile;
 }
 
-sub image_md5_filename {
-    my ($md5, $onlysuffix) = @_;
-
+sub image_md5_filename ($md5, $onlysuffix = undef) {
     my $prefix1 = substr($md5, 0, 3);
     $md5 = substr($md5, 3);
     my $prefix2 = substr($md5, 0, 3);
@@ -296,21 +291,12 @@ sub image_md5_filename {
 }
 
 # returns the url to the web socket proxy started via openqa-livehandler
-sub determine_web_ui_web_socket_url {
-    my ($job_id) = @_;
-    return "liveviewhandler/tests/$job_id/developer/ws-proxy";
-}
+sub determine_web_ui_web_socket_url ($job_id) { "liveviewhandler/tests/$job_id/developer/ws-proxy" }
 
 # returns the url for the status route over websocket proxy via openqa-livehandler
-sub get_ws_status_only_url {
-    my ($job_id) = @_;
-    return "liveviewhandler/tests/$job_id/developer/ws-proxy/status";
-}
+sub get_ws_status_only_url ($job_id) { "liveviewhandler/tests/$job_id/developer/ws-proxy/status" }
 
-sub run_cmd_with_log {
-    my ($cmd) = @_;
-    return run_cmd_with_log_return_error($cmd)->{status};
-}
+sub run_cmd_with_log ($cmd) { run_cmd_with_log_return_error($cmd)->{status} }
 
 sub run_cmd_with_log_return_error ($cmd, %args) {
     my $stdout_level = $args{stdout} // 'debug';
@@ -360,38 +346,24 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
     }
 }
 
-sub asset_type_from_setting {
-    # passing $value is optional but makes the result more accurate
-    # (it affects only UEFI_PFLASH_VARS currently).
-    my ($setting, $value) = @_;
-    $value //= '';
-    if ($setting eq 'ISO' || $setting =~ /^ISO_\d+$/) {
-        return 'iso';
-    }
-    if ($setting =~ /^HDD_\d+$/) {
-        return 'hdd';
-    }
+# passing $value is optional but makes the result more accurate
+# (it affects only UEFI_PFLASH_VARS currently).
+sub asset_type_from_setting ($setting, $value = undef) {
+    return 'iso' if $setting eq 'ISO' || $setting =~ /^ISO_\d+$/;
+    return 'hdd' if $setting =~ /^HDD_\d+$/;
     # non-absolute-path value of UEFI_PFLASH_VARS treated as HDD asset
-    if ($setting eq 'UEFI_PFLASH_VARS' && $value !~ m,^/,) {
-        return 'hdd';
-    }
-    if ($setting =~ /^REPO_\d+$/) {
-        return 'repo';
-    }
-    if ($setting =~ /^ASSET_\d+$/ || $setting eq 'KERNEL' || $setting eq 'INITRD') {
-        return 'other';
-    }
+    return 'hdd' if $setting eq 'UEFI_PFLASH_VARS' && ($value // '') !~ m,^/,;
+    return 'repo' if $setting =~ /^REPO_\d+$/;
+    return 'other' if $setting =~ /^ASSET_\d+$/ || $setting eq 'KERNEL' || $setting eq 'INITRD';
     # empty string if this doesn't look like an asset type
     return '';
 }
 
-sub parse_assets_from_settings {
-    my ($settings) = (@_);
+sub parse_assets_from_settings ($settings) {
     my $assets = {};
 
     for my $k (keys %$settings) {
-        my $type = asset_type_from_setting($k, $settings->{$k});
-        if ($type) {
+        if (my $type = asset_type_from_setting($k, $settings->{$k})) {
             $assets->{$k} = {type => $type, name => $settings->{$k}};
         }
     }
@@ -417,35 +389,27 @@ sub locate_asset ($type, $name, %args) {
     return $args{mustexist} ? undef : _relative_or_absolute($trans, $args{relative});
 }
 
-sub find_labels {
-    my $text = shift // '';
+sub find_labels ($text) {
     my @labels;
-    push @labels, $+{match} while $text =~ /${\LABEL_REGEX}/g;
+    push @labels, $+{match} while ($text // '') =~ /${\LABEL_REGEX}/g;
     return \@labels;
 }
 
 sub find_flags ($text) {
     my @flags;
-    push @flags, $+{match} while $text =~ /${\FLAG_REGEX}/g;
+    push @flags, $+{match} while ($text // '') =~ /${\FLAG_REGEX}/g;
     return \@flags;
 }
 
-sub find_bugref {
-    my ($text) = @_;
-    $text //= '';
-    $text =~ BUGREF_REGEX;
-    return $+{match};
-}
+sub find_bugref ($text) { ($text // '') =~ BUGREF_REGEX ? $+{match} : undef }
 
-sub find_bugrefs {
-    my $text = shift // '';
+sub find_bugrefs ($text) {
     my @bugrefs;
-    push @bugrefs, $+{match} while $text =~ /${\BUGREF_REGEX}/g;
+    push @bugrefs, $+{match} while ($text // '') =~ /${\BUGREF_REGEX}/g;
     return \@bugrefs;
 }
 
-sub bugurl {
-    my ($bugref) = @_;
+sub bugurl ($bugref) {
     # in github '/pull/' and '/issues/' are interchangeable, e.g.
     # calling https://github.com/os-autoinst/openQA/issues/966 will yield the
     # same page as https://github.com/os-autoinst/openQA/pull/966 and vice
@@ -456,15 +420,13 @@ sub bugurl {
     return $BUGREFS{$+{marker}} . ($+{repo} ? "$+{repo}/$issuetext/" : '') . $+{id};
 }
 
-sub bugref_to_href {
-    my ($text) = @_;
+sub bugref_to_href ($text) {
     my $regex = BUGREF_REGEX;
     $text =~ s{$regex}{<a href="@{[bugurl($+{match})]}">$+{match}</a>}gi;
     return $text;
 }
 
-sub href_to_bugref {
-    my ($text) = @_;
+sub href_to_bugref ($text) {
     my $regex = $MARKER_URLS =~ s/\?/\\\?/gr;
     # <repo> is optional, e.g. for github. For github issues and pull are
     # interchangeable, see comment in 'bugurl', too
@@ -475,23 +437,16 @@ sub href_to_bugref {
     return $text;
 }
 
-sub url_to_href {
-    my ($text) = @_;
+sub url_to_href ($text) {
     $text =~ s!($RE{URI}$FRAG_REGEX)!<a href="$1">$1</a>!gx;
     return $text;
 }
 
-sub render_escaped_refs {
-    my ($text) = @_;
-    return bugref_to_href(url_to_href(xml_escape($text)));
-}
+sub render_escaped_refs ($text) { bugref_to_href(url_to_href(xml_escape($text))) }
 
-sub find_bug_number {
-    my ($text) = @_;
-    return $text =~ /\S+\-((?:$MARKER_REFS)\d+)\-\S+/ ? $1 : undef;
-}
+sub find_bug_number ($text) { $text =~ /\S+\-((?:$MARKER_REFS)\d+)\-\S+/ ? $1 : undef }
 
-sub check_download_url {
+sub check_download_url ($url, $passlist) {
     # Passed a URL and the download_domains passlist from openqa.ini.
     # Checks if the host of the URL is in the passlist. Returns an
     # array: (1, host) if there is a passlist and the host is not in
@@ -499,24 +454,18 @@ sub check_download_url {
     # is used by check_download_passlist below (and so indirectly by
     # the Iso controller) and directly by the download_asset() Gru
     # task subroutine.
-    my ($url, $passlist) = @_;
-    my @okdomains;
-    if (defined $passlist) {
-        @okdomains = split(/ /, $passlist);
-    }
     my $host = Mojo::URL->new($url)->host;
-    unless (@okdomains) {
-        return (2, $host);
-    }
+    return (2, $host) unless defined $passlist;
+    my @okdomains = split(/ /, $passlist);
     my $ok = 0;
     for my $okdomain (@okdomains) {
         my $quoted = qr/$okdomain/;
-        $ok = 1 if ($host =~ /${quoted}$/);
+        return () if $host =~ /${quoted}$/;
     }
-    return $ok ? () : (1, $host);
+    return (1, $host);
 }
 
-sub check_download_passlist {
+sub check_download_passlist ($params, $passlist) {
     # Passed the params hash ref for a job and the download_domains
     # passlist read from openqa.ini. Checks that all params ending
     # in _URL (i.e. requesting asset download) specify URLs that are
@@ -530,8 +479,6 @@ sub check_download_passlist {
     # there was not, the second is the name of the param for which the
     # check failed, the third is the URL, and the fourth is the host.
     # On success, returns an empty array.
-
-    my ($params, $passlist) = @_;
     my @okdomains;
     @okdomains = split(/ /, $passlist) if defined $passlist;
     for my $param (keys %$params) {
@@ -606,20 +553,10 @@ sub create_git_clone_list ($job_settings, $clones = {}) {
     return $clones;
 }
 
-sub _round_a_bit {
-    my ($size) = @_;
+# give it one digit
+sub _round_a_bit ($size) { $size < 10 ? int($size * 10 + .5) / 10. : int($size + .5) }
 
-    if ($size < 10) {
-        # give it one digit
-        return int($size * 10 + .5) / 10.;
-    }
-
-    return int($size + .5);
-}
-
-sub human_readable_size {
-    my ($size) = @_;
-
+sub human_readable_size ($size) {
     my $p = ($size < 0) ? '-' : '';
     $size = abs($size);
     return "$p$size Byte" if $size < 3000;
@@ -631,9 +568,7 @@ sub human_readable_size {
     return $p . _round_a_bit($size) . ' GiB';
 }
 
-sub read_test_modules {
-    my ($job) = @_;
-
+sub read_test_modules ($job) {
     my $testresultdir = $job->result_dir();
     return unless $testresultdir;
 
@@ -716,9 +651,7 @@ sub parse_tags_from_comments ($group, $res) {
     }
 }
 
-sub detect_current_version {
-    my ($path) = @_;
-
+sub detect_current_version ($path) {
     # Get application version
     my $current_version = undef;
     my $changelog_file = path($path, 'public', 'Changelog');
@@ -762,14 +695,13 @@ sub loaded_modules {
 
 # Fallback to loaded_modules if no arguments are given.
 # Accepts namespaces as arguments. If supplied, it will filter by them
-sub loaded_plugins {
-    my $ns = join('|', map { quotemeta } @_);
-    return @_ ? grep { /^$ns/ } loaded_modules() : loaded_modules();
+sub loaded_plugins (@ns) {
+    my $ns = join('|', map { quotemeta } @ns);
+    return @ns ? grep { /^$ns/ } loaded_modules() : loaded_modules();
 }
 
 # Walks a hash keeping keys as a stack
-sub hashwalker {
-    my ($hash, $callback, $keys) = @_;
+sub hashwalker ($hash, $callback, $keys = undef) {
     $keys = [] if !$keys;
     foreach my $key (sort keys %$hash) {
         my $value = $hash->{$key};
@@ -785,9 +717,7 @@ sub hashwalker {
 }
 
 # Walks whatever
-sub walker {
-    my ($hash, $callback, $keys) = @_;
-    $keys //= [];
+sub walker ($hash, $callback, $keys = []) {
     if (reftype $hash eq 'HASH') {
         foreach my $key (sort keys %$hash) {
             push @$keys, [reftype($hash), $key];
@@ -826,9 +756,7 @@ sub walker {
     }
 }
 
-sub set_listen_address {
-    my $port = shift;
-
+sub set_listen_address ($port) {
     return if $ENV{MOJO_LISTEN};
     my @listen_addresses = ("http://127.0.0.1:$port?reuse=1");
 
@@ -838,11 +766,8 @@ sub set_listen_address {
     $ENV{MOJO_LISTEN} = join ',', @listen_addresses;
 }
 
-sub service_port {
-    my $service = shift;
-
+sub service_port ($service) {
     my $base = $ENV{OPENQA_BASE_PORT} ||= 9526;
-
     my $offsets = {
         webui => 0,
         websocket => 1,
@@ -854,16 +779,11 @@ sub service_port {
     return $base + $offsets->{$service};
 }
 
-sub random_string {
-    my ($length, $chars) = @_;
-    $length //= 16;
-    $chars //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+sub random_string ($length = RANDOM_STRING_DEFAULT_LENGTH, $chars = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_']) {
     return join('', map { $chars->[rand @$chars] } 1 .. $length);
 }
 
-sub random_hex {
-    my ($length) = @_;
-    $length //= 16;
+sub random_hex ($length = RANDOM_STRING_DEFAULT_LENGTH) {
     my $toread = $length / 2 + $length % 2;
     # uncoverable branch true
     open(my $fd, '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
@@ -873,9 +793,7 @@ sub random_hex {
     return uc substr(unpack('H*', $bytes), 0, $length);
 }
 
-sub any_array_item_contained_by_hash {
-    my ($array, $hash) = @_;
-
+sub any_array_item_contained_by_hash ($array, $hash) {
     for my $array_item (@$array) {
         return 1 if ($hash->{$array_item});
     }
@@ -884,9 +802,8 @@ sub any_array_item_contained_by_hash {
 
 sub base_host { Mojo::URL->new($_[0])->host || $_[0] }
 
-sub change_sec_to_word {
-    my ($second) = @_;
-    return undef unless ($second);
+sub change_sec_to_word ($second = undef) {
+    return undef unless $second;
     return undef if ($second !~ /^[[:digit:]]+$/);
     my %time_numbers = (
         d => ONE_DAY,
