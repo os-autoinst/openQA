@@ -9,6 +9,10 @@
     % }
   % }
 
+  % if (!$has_jobs) {
+      <div class="no-build-data" data-build-name="<%= $child->{name} %>" hidden></div>
+  % }
+  % else {
   <div class="mb-2">
     <div class="h4 <%= $title_class_mod %> mb-2">
       %= link_to $child->{name} => url_for('group_overview', groupid => $child->{id})
@@ -45,10 +49,7 @@
             </div>
         </div>
     % }
-    % if ($has_jobs eq 0) {
-      <div class="ml-3 text-body-secondary">
-        No builds
-      </div>
-    % }
+  
   </div>
+  % }
 % }
