@@ -1,7 +1,14 @@
 # see https://www.freedesktop.org/software/systemd/man/systemd.path.html#PathExists=
 
 [Path]
+PathChanged=/usr/etc/openqa/workers.ini
+PathChanged=/usr/etc/openqa/workers.ini.d
+PathChanged=/usr/etc/openqa/client.conf
+PathChanged=/usr/etc/openqa/client.conf.d
 PathChanged=/etc/openqa/workers.ini
+PathChanged=/etc/openqa/workers.ini.d
+PathChanged=/etc/openqa/client.conf
+PathChanged=/etc/openqa/client.conf.d
 
 [Install]
 WantedBy=multi-user.target
