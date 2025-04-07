@@ -9,6 +9,9 @@
   #include <abstractions/perl>
 
   /etc/gitconfig r,
+  /etc/openqa/client.conf r,
+  /etc/openqa/client.conf.d/ r,
+  /etc/openqa/client.conf.d/** r,
   /etc/openqa/database.ini r,
   /etc/openqa/database.ini.d/ r,
   /etc/openqa/database.ini.d/** r,
@@ -32,6 +35,9 @@
   /usr/bin/unzip{,-plain} rix,
   /usr/bin/git rix,
   /usr/bin/git-lfs rix,
+  /usr/etc/openqa/client.conf r,
+  /usr/etc/openqa/client.conf.d/ r,
+  /usr/etc/openqa/client.conf.d/** r,
   /usr/etc/openqa/database.ini r,
   /usr/etc/openqa/database.ini.d/ r,
   /usr/etc/openqa/database.ini.d/** r,
