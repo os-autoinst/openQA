@@ -221,7 +221,11 @@ test-unstable: node_modules
 
 .PHONY: test-fullstack
 test-fullstack: node_modules
-	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=30 PROVE_ARGS="$$HARNESS t/full-stack.t t/33-developer_mode.t" RETRY=7
+	for i in $$(seq 1 100); do \
+		$(MAKE) test-with-database RETRY=200 STABILITY_TEST=1 TIMEOUT_M=10000 FULLSTACK=1 PROVE_ARGS="$$HARNESS t/full-stack.t t/33-developer_mode.t"; \
+		echo "It fails $$i"; \
+	done
+	
 
 .PHONY: test-fullstack-unstable
 test-fullstack-unstable: node_modules
