@@ -7,9 +7,16 @@
   #include <abstractions/openssl>
   #include <abstractions/perl>
 
+  /etc/openqa/client.conf r,
+  /etc/openqa/client.conf.d/ r,
+  /etc/openqa/client.conf.d/** r,
   /usr/bin/perl ix,
+  /usr/etc/openqa/client.conf r,
+  /usr/etc/openqa/client.conf.d/ r,
+  /usr/etc/openqa/client.conf.d/** r,
   /usr/share/openqa/** r,
   /usr/share/openqa/lib/OpenQA/* r,
   owner /var/lib/openqa/.config/openqa/client.conf r,
-
+  owner /var/lib/openqa/.config/openqa/client.conf.d/ r,
+  owner /var/lib/openqa/.config/openqa/client.conf.d/** r,
 }
