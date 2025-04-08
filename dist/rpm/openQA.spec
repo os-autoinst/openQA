@@ -762,6 +762,7 @@ fi
 %if 0%{?suse_version} > 1500
 %{_sysusersdir}/%{name}-worker.conf
 %endif
+%{_prefix}/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf
 
 %files client
 %dir %{_datadir}/openqa
