@@ -304,7 +304,6 @@ subtest 'restarting one of two independent root jobs (only related indirectly vi
     my $res = $root_1->auto_duplicate;
     is ref $res, 'OpenQA::Schema::Result::Jobs', 'no error when duplicating root1' or always_explain $res;
     my $cloned = $res->{cluster_cloned};
-    explain $cloned;
     my @should_have_been_cloned = ($root_1, $parallel_parent, $parallel_child, $nested_chained_child);
     my @should_not_have_been_cloned = ($root_2, $chained_child);
     ok exists $cloned->{$_->id}, $_->TEST . ' has been cloned' for @should_have_been_cloned;
