@@ -534,6 +534,7 @@ fi
 %restart_on_update apparmor
 
 %postun worker
+%restart_on_update apparmor
 # restart worker services on updates; does *not* include services for worker slots unless openqa-worker.target
 # is running at the time of the update
 %service_del_postun %{openqa_worker_services}
