@@ -274,8 +274,8 @@ files:
 * `database.ini`, `database.ini.d/*.ini`: These files are also used by services
   providing the web interface and related services such as the scheduler. It is
   used to configure how those services connect to the database.
-* `workers.ini`: This file is used to configure the openQA worker including its
-  additional cache service.
+* `workers.ini`, `workers.ini.d/*.ini`: These files are used to configure the
+  openQA worker including its additional cache service.
 * `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and
   are used by the openQA worker and other tooling such as `openqa-cli` and
   `openqa-clone-job` to authenticate with the web interface. One API key/secret
