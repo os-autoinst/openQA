@@ -240,7 +240,7 @@ test-unit-and-integration: node_modules
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib -MOpenQA::Test::PatchDeparse";\
-	RETRY=${RETRY} HOOK=./tools/delete-coverdb-folder timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+	RETRY=${RETRY} HOOK=./tools/delete-coverdb-folder timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry tools/prove_wrapper ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: setup-database
 setup-database:
