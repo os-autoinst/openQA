@@ -607,7 +607,7 @@ sub mock_io_loop (%args) {
 
 sub assume_all_assets_exist { OpenQA::Schema->singleton->resultset('Assets')->search({})->update({size => 0}) }
 
-sub schedule_iso ($t, $args, $status = 200, $query_params = {}, $msg = undef) {
+sub schedule_iso ($t, $args, $guard, $status = 200, $query_params = {}, $msg = undef) {
     $t->post_ok(Mojo::URL->new('/api/v1/isos')->query($query_params), form => $args)->status_is($status, $msg)->tx->res;
 }
 

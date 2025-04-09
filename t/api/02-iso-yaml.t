@@ -8,6 +8,8 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::MockObject;
+use OpenQA::Task::SignalGuard;
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
@@ -20,10 +22,13 @@ my $schema = $t->app->schema;
 my $jobs = $schema->resultset('Jobs');
 my %iso = (ISO => 'foo.iso', DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091');
 
+my $minion_job_mocked = Test::MockObject->new;
+my $signal_guard = OpenQA::Task::SignalGuard->new($minion_job_mocked);
+
 subtest 'schedule from yaml file: error cases' => sub {
     my $file = 'does-not-exist.yaml';
     my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs');
-    my $res = schedule_iso($t, \%args, 400);
+    my $res = schedule_iso($t, \%args, $signal_guard, 400);
     my $json = $res->json;
     like $json->{error},
       qr/Unable to load YAML:.*Could not open 'does-not-exist.yaml' for reading: No such file or directory/,
@@ -36,13 +41,13 @@ subtest 'schedule from yaml file: error cases' => sub {
       = ('YAML validation failed:', 'machines: Expected object - got null', 'products: Expected object - got null');
     my $expected_errors = join '.*', @expected_errors;
     %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs');
-    $res = schedule_iso($t, \%args, 400);
+    $res = schedule_iso($t, \%args, $signal_guard, 400);
     $json = $res->json;
     like $json->{error}, qr|$expected_errors|s, 'error when YAML file is invalid' or always_explain $json;
     is $json->{count}, 0, 'no jobs are scheduled when validating YAML file fails' or always_explain $json;
 
     %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'autoyast_btrfs');
-    $res = schedule_iso($t, \%args, 400);
+    $res = schedule_iso($t, \%args, $signal_guard, 400);
     $json = $res->json;
     like $json->{error}, qr|$expected_errors|s, 'error when YAML is invalid' or always_explain $json;
     is $json->{count}, 0, 'no jobs are scheduled when validating YAML fails' or always_explain $json;
@@ -51,7 +56,7 @@ subtest 'schedule from yaml file: error cases' => sub {
 subtest 'schedule from yaml file: case with machines/products and job dependencies' => sub {
     my $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
     my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs');
-    my $res = schedule_iso($t, \%args, 200);
+    my $res = schedule_iso($t, \%args, $signal_guard, 200);
     my $json = $res->json;
     is $json->{count}, 2, 'two jobs were scheduled' or return always_explain $json;
     my $job_ids = $json->{ids};
@@ -100,7 +105,7 @@ subtest 'schedule from yaml file: case with machines/products and job dependenci
 subtest 'schedule from yaml file: most simple case of two explicitly specified jobs' => sub {
     my $file = "$FindBin::Bin/../data/09-schedule_from_file_minimal.yaml";
     my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'job1,job2');
-    my $res = schedule_iso($t, \%args, 200);
+    my $res = schedule_iso($t, \%args, $signal_guard, 200);
     my $json = $res->json;
     is $json->{count}, 2, 'two jobs were scheduled without products/machines' or always_explain $json;
     my $job_ids = $json->{ids};
@@ -125,7 +130,7 @@ subtest 'schedule from yaml file: most simple case of two explicitly specified j
 subtest 'schedule from yaml file: wildcard version' => sub {
     my $file = "$FindBin::Bin/../data/09-schedule_from_file_wildcard.yaml";
     my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'job1');
-    my $res = schedule_iso($t, \%args, 200);
+    my $res = schedule_iso($t, \%args, $signal_guard, 200);
     my $json = $res->json;
     is $json->{count}, 1, 'one job was scheduled' or always_explain $json;
     my $job_ids = $json->{ids};
