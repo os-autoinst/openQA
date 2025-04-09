@@ -9,6 +9,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
+use Test::MockObject;
 use Test::Output qw(combined_like);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::ScheduledProducts qw(ADDED SCHEDULED SCHEDULING CANCELLING CANCELLED);
@@ -33,23 +34,22 @@ my %settings = (
     user_id => $user->id,
 );
 
-# prevent job creation
+my $signal_guard = Test::MockObject->new->mock(retry => sub { undef });
 my $scheduled_products_mock = Test::MockModule->new('OpenQA::Schema::Result::ScheduledProducts');
-$scheduled_products_mock->redefine(_generate_jobs => sub { return undef; });
+$scheduled_products_mock->redefine(_generate_jobs => undef);    # prevent job creation
 
 my $scheduled_product;
 subtest 'handling assets with invalid name' => sub {
     $scheduled_product = $scheduled_products->create(\%settings);
-
     $schema->txn_begin;
     is_deeply(
-        $scheduled_product->schedule_iso({REPO_0 => ''}),
+        $scheduled_product->schedule_iso({REPO_0 => ''}, $signal_guard),
         {error => 'Asset type and name must not be empty.'},
         'schedule_iso prevents adding assets with empty name',
     );
     $schema->txn_rollback;
 
-    like $scheduled_product->schedule_iso({_DEPRIORITIZEBUILD => 1, TEST => 'foo'})->{error},
+    like $scheduled_product->schedule_iso({_DEPRIORITIZEBUILD => 1, TEST => 'foo'}, undef)->{error},
       qr/One must not specify TEST and _DEPRIORITIZEBUILD.*/,
       'schedule_iso prevents deprioritization/obsoletion when scheduling single scenario';
 
@@ -58,7 +58,7 @@ subtest 'handling assets with invalid name' => sub {
 
     $scheduled_product = $scheduled_products->create(\%settings);
     is_deeply(
-        $scheduled_product->schedule_iso({REPO_0 => 'invalid'}),
+        $scheduled_product->schedule_iso({REPO_0 => 'invalid'}, $signal_guard),
         {
             successful_job_ids => [],
             failed_job_info => [],
@@ -70,7 +70,7 @@ subtest 'handling assets with invalid name' => sub {
     is $scheduled_product->status, SCHEDULED, 'product marked as scheduled, though';
 };
 
-is $scheduled_product->schedule_iso(\%settings), undef, 'scheduling the same product again prevented';
+is $scheduled_product->schedule_iso(\%settings, $signal_guard), undef, 'scheduling the same product again prevented';
 
 subtest 'asset registration on scheduling' => sub {
     my $assets = $schema->resultset('Assets');
@@ -78,7 +78,7 @@ subtest 'asset registration on scheduling' => sub {
     $schema->storage->dbh->prepare('delete from assets where name = ? ')->execute('dvdsize42.iso');
     is $assets->find(\%asset_info), undef, 'dvdsize42.iso is not known yet';
     $scheduled_product = $scheduled_products->create(\%settings);
-    $scheduled_product->schedule_iso({ISO => 'dvdsize42.iso'});
+    $scheduled_product->schedule_iso({ISO => 'dvdsize42.iso'}, $signal_guard);
     is $assets->find(\%asset_info)->size, 42, 'dvdsize42.iso has known size';
     $scheduled_product->discard_changes;
 };

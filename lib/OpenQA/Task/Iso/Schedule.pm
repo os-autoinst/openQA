@@ -5,6 +5,7 @@ package OpenQA::Task::Iso::Schedule;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Utils 'format_tx_error';
+use OpenQA::Task::SignalGuard;
 use Mojo::URL;
 use Mojo::UserAgent;
 
@@ -37,12 +38,14 @@ sub _download_scenario_definitions ($minion_job, $scheduled_product, $scheduling
 }
 
 sub _schedule_iso ($app, $minion_job, $args, @) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
     my $scheduled_product_id = $args->{scheduled_product_id};
     my $scheduling_params = $args->{scheduling_params};
     return $minion_job->fail({error => "Scheduled product with ID $scheduled_product_id does not exist."})
       unless my $scheduled_product = $app->schema->resultset('ScheduledProducts')->find($scheduled_product_id);
     return undef unless _download_scenario_definitions($minion_job, $scheduled_product, $scheduling_params);
-    $minion_job->finish($scheduled_product->schedule_iso($scheduling_params));
+    $minion_job->finish(
+        $scheduled_product->schedule_iso($scheduling_params, $ensure_task_retry_on_termination_signal_guard));
 }
 
 1;

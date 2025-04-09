@@ -192,11 +192,16 @@ from B<_generate_jobs()>. Returns a list of job ids from the jobs that were succ
 and a list of failure reason for the jobs that could not be scheduled. Internal function, not
 exported - but called by B<create()>.
 
+=item $guard
+
+Expects an C<OpenQA::Task::SignalGuard> object. If the related Minion job is aborting after the database
+transaction has completed, a restart of the Minion job is prevented so jobs aren't created twice.
+
 =back
 
 =cut
 
-sub schedule_iso ($self, $args) {
+sub schedule_iso ($self, $args, $guard) {
     # update status to SCHEDULING or just return if the job was updated otherwise
     return undef unless $self->_update_status_if(SCHEDULING, status => ADDED);
     $self->{_settings} = $args;
@@ -204,7 +209,7 @@ sub schedule_iso ($self, $args) {
     # schedule the ISO
     $self->discard_changes;
     my $result = do {
-        try { $self->_schedule_iso($args) }
+        try { $self->_schedule_iso($args, $guard) }
         catch ($e) { {error => $e} }
     };
     $self->set_done($result);
@@ -316,9 +321,7 @@ Internal function to actually schedule the ISO, see schedule_iso().
 
 =cut
 
-sub _schedule_iso {
-    my ($self, $args) = @_;
-
+sub _schedule_iso ($self, $args, $guard) {
     my @notes;
     my $schema = $self->result_source->schema;
     my $user_id = $self->user_id;
@@ -411,6 +414,7 @@ sub _schedule_iso {
         @successful_job_ids = ();
     }
 
+    $guard->retry(0) if defined($guard);
     # emit events
     for my $succjob (@successful_job_ids) {
         OpenQA::Events->singleton->emit_event('openqa_job_create', data => {id => $succjob}, user_id => $user_id);
