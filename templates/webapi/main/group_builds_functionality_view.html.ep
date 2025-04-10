@@ -47,7 +47,7 @@
     % }
     % if ($has_jobs eq 0) {
       <div class="ml-3 text-body-secondary">
-        No builds
+        The last <%= $limit_builds %> builds do not include this group. Increase the limit of the number of builds to potentially see more.
       </div>
     % }
   </div>
