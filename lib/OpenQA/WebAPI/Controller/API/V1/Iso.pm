@@ -157,7 +157,7 @@ sub create {
     return $self->render(json => $scheduled_product->enqueue_minion_job(\%params)) if $async;
 
     # schedule jobs synchronously (hopefully within the timeout)
-    my $scheduled_jobs = $scheduled_product->schedule_iso(\%params);
+    my $scheduled_jobs = $scheduled_product->schedule_iso(\%params, undef);
     my $error = $scheduled_jobs->{error};
     return $self->render(
         json => {
