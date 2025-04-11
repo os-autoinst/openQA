@@ -8,6 +8,7 @@ use Mojo::Base -signatures;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Task::Git::Clone;
+use OpenQA::Git::ServerAvailability qw(report_server_unavailable report_server_available SKIP FAIL);
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '20';
@@ -30,8 +31,9 @@ chdir $workdir;
 path('t/data/openqa/db')->make_path;
 my $git_clones = "$workdir/git-clones";
 mkdir $git_clones;
-mkdir "$git_clones/$_"
-  for qw(default branch dirty-error dirty-status nodefault wrong-url sha1 sha2 sha-error sha-branchname);
+path("$git_clones/$_")->make_path
+  for
+  qw(default branch dirty-error dirty-status nodefault wrong-url sha1 sha2 sha-error sha-branchname opensuse opensuse/needles);
 mkdir 't';
 dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
 
@@ -266,6 +268,8 @@ subtest 'git clone' => sub {
 subtest 'git_update_all' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Task::Git::Clone');
     $clone_mock->redefine(_git_clone => sub (@args) { die 'fake disconnect' });
+    my $openqa_git = Test::MockModule->new('OpenQA::Git');
+    $openqa_git->redefine(get_origin_url => 'foo');
 
     my $git_config = $t->app->config->{'scm git'};
     $git_config->{git_auto_update} = 'yes';
@@ -448,11 +452,103 @@ subtest 'delete_needles' => sub {
     like $error->{message}, qr{Unable to rm via Git}, 'expected error from git';
 
     subtest 'minion guard' => sub {
-        my $guard = $t->app->minion->guard("git_clone_t/data/openqa/share/tests/fedora/needles_task", ONE_HOUR);
+        my $guard = $t->app->minion->guard('git_clone_t/data/openqa/share/tests/fedora/needles_task', ONE_HOUR);
         $res = run_gru_job(@gru_args);
         is $res->{state}, 'finished', 'job finished';
         $error = $res->{result}->{errors}->[0];
         like $error->{message}, qr{Another git task for.*fedora.*is ongoing}, 'expected error message';
+    };
+};
+
+subtest ServerAvailability => sub {
+    my $tmpdir = tempdir();
+    local $ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} = "$tmpdir/foo/mock";
+
+    subtest 'no flag file => skip' => sub {
+        my $outcome = report_server_unavailable($t->app, 'gitlab');
+        is $outcome, 'SKIP', 'Skips when flag file for gitlab is absent';
+    };
+
+    subtest 'file present but younger than 1800 => skip' => sub {
+        my $mock_file = $tmpdir->child('foo/mock.gitlab.flag')->touch;
+        my $outcome = report_server_unavailable($t->app, 'gitlab');
+        is $outcome, 'SKIP', 'Skips the job for an mtime < 1800';
+    };
+
+    subtest 'file present and older => fail' => sub {
+        my $mock_file = $tmpdir->child('foo/mock.gitlab.flag')->touch;
+        my $old_time = time - 2000;
+        utime($old_time, $old_time, $mock_file)
+          or die "Couldn't change mtime on file: $mock_file - $!";
+        my $outcome = report_server_unavailable($t->app, 'gitlab');
+        is $outcome, 'FAIL', 'Fails the job when mtime >= 1800';
+    };
+
+    subtest 'report_server_available removes existing flag file' => sub {
+        my $mock_file = $tmpdir->child('foo/mock.gitlab.flag')->touch;
+        ok -f $mock_file, 'mock.gitlab.flag exists initially';
+        report_server_available($t->app, 'gitlab');
+        ok !-f $mock_file, 'gitlab flag file was removed';
+    };
+
+    subtest 'multiple servers do not conflict' => sub {
+        my $outcome_gitlab = report_server_unavailable($t->app, 'gitlab');
+        is $outcome_gitlab, 'SKIP', 'No gitlab flag => skip';
+        my $gitlab_file = "$tmpdir/foo/mock.gitlab.flag";
+        ok -f $gitlab_file, 'Created mock.gitlab.flag';
+        my $outcome_github = report_server_unavailable($t->app, 'github');
+        is $outcome_github, 'SKIP', 'No github flag => skip';
+        my $github_file = "$tmpdir/foo/mock.github.flag";
+        ok -f $github_file, 'Created mock.github.flag';
+
+        my $old_time = time - 2000;
+        utime($old_time, $old_time, $github_file);
+        # Re-check
+        $outcome_gitlab = report_server_unavailable($t->app, 'gitlab');
+        $outcome_github = report_server_unavailable($t->app, 'github');
+        is $outcome_gitlab, 'SKIP', 'GitLab file still fresh => skip';
+        is $outcome_github, 'FAIL', 'GitHub file older => fail';
+    };
+
+    subtest Clone => sub {
+        my $clone_mock = Test::MockModule->new('OpenQA::Task::Git::Clone');
+        $clone_mock->redefine(_git_clone => sub { die "Internal API unreachable\n" });
+        subtest 'Internal API unreachable => skip' => sub {
+            my @gru_args = (
+                $t->app,
+                'git_clone',
+                {
+                    '/my/mock/path' => 'git@gitlab.suse.de:qa/foo',
+                });
+            my $res;
+            combined_like {
+                $res = run_gru_job(@gru_args);
+            }
+            qr/Git server outage likely, skipping clone job/i,
+              'Minion clone job skipped due to short Git server outage';
+            is $res->{state}, 'finished', 'Job ended in "finished" state';
+            is $res->{result}, 'Job successfully executed', 'Job result indicates success (skip)';
+        };
+
+        subtest 'Internal API unreachable => fail' => sub {
+            $tmpdir->child('foo/mock.gitlab.suse.de.flag')->touch;
+            my $old_time = time - 2000;    # "older" than 1800s
+            utime($old_time, $old_time, "$tmpdir/foo/mock.gitlab.suse.de.flag");
+            my @gru_args = (
+                $t->app,
+                'git_clone',
+                {
+                    '/my/other/mock/path' => 'https://gitlab.suse.de/qa/foo',
+                });
+            my $res;
+            combined_like {
+                $res = run_gru_job(@gru_args);
+            }
+            qr/Prolonged Git server outage, failing the job/i,
+              'Minion clone job failed due to prolonged Git server outage';
+            is $res->{state}, 'failed', 'Job ended in "failed" state';
+            like $res->{result}, qr/Internal API unreachable/, 'Job result includes original error message';
+        };
     };
 };
 

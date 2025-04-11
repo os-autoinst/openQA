@@ -9,7 +9,8 @@ use Mojo::File;
 use Feature::Compat::Try;
 use List::Util qw(min);
 use OpenQA::Log qw(log_debug);
-use Time::Seconds 'ONE_HOUR';
+use OpenQA::Git::ServerAvailability qw(report_server_unavailable report_server_available SKIP FAIL);
+use Time::Seconds qw(ONE_HOUR);
 
 sub register ($self, $app, @) {
     $app->minion->add_task(git_clone => \&_git_clone_all);
@@ -47,11 +48,30 @@ sub _git_clone_all ($job, $clones) {
 
     # iterate clones sorted by path length to ensure that a needle dir is always cloned after the corresponding casedir
     for my $path (sort { length($a) <=> length($b) || $a cmp $b } keys %$clones) {
-        my $url = $clones->{$path};
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
+
+        my $git = OpenQA::Git->new(app => $app, dir => $path);
+        my $origin_url = -d $path ? $git->get_origin_url : undef;
+        my $url = $origin_url // $clones->{$path};
+        my $server_host = _extract_server_host($url);
         my $error;
-        try { _git_clone($app, $job, $ctx, $path, $url); next; }
+        try {
+            _git_clone($git, $ctx, $path, $clones->{$path}, $origin_url);
+            report_server_available($app, $server_host);
+            next;
+        }
         catch ($e) { $error = $e }
+        if ($error =~ /Internal API unreachable/) {
+            my $outcome = report_server_unavailable($app, $server_host);
+            if ($outcome eq 'SKIP') {
+                $ctx->info('Git server outage likely, skipping clone job.');
+                return;
+            }
+            elsif ($outcome eq 'FAIL') {
+                $ctx->info('Prolonged Git server outage, failing the job.');
+                return $job->fail($error);
+            }
+        }
 
         # unblock openQA jobs despite network errors under best-effort configuration
         my $retries = $job->retries;
@@ -73,8 +93,7 @@ sub _git_clone_all ($job, $clones) {
     }
 }
 
-sub _git_clone ($app, $job, $ctx, $path, $url) {
-    my $git = OpenQA::Git->new(app => $app, dir => $path);
+sub _git_clone ($git, $ctx, $path, $url, $origin_url) {
     $ctx->debug(sprintf q{Updating '%s' to '%s'}, $path, ($url // 'n/a'));
     my $requested_branch;
     if ($url) {
@@ -85,7 +104,6 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
         # An initial clone fetches all refs, we are done
         return $git->clone_url($url) unless -d $path;
 
-        my $origin_url = $git->get_origin_url;
         if ($url ne $origin_url) {
             $ctx->info(<<~"END_OF_MESSAGE");
                 Local checkout at $path has origin $origin_url but requesting to clone from $url. The requested URL will not be cloned.
@@ -94,7 +112,7 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
         }
     }
     else {
-        $url = $git->get_origin_url;
+        $url = $origin_url;
     }
 
     return if ($requested_branch and $requested_branch !~ tr/a-f0-9//c and $git->check_sha($requested_branch));
@@ -115,6 +133,17 @@ sub _git_clone ($app, $job, $ctx, $path, $url) {
     # updating default branch (including checkout)
     $git->fetch($requested_branch);
     $git->reset_hard($requested_branch) if ($requested_branch eq $current_branch);
+}
+
+sub _extract_server_host ($url) {
+    if ($url =~ m{^[^@]+@([^:]+):}) {
+        # e.g. "git@gitlab.suse.de:qa/foo", "user@host:repo"
+        return $1;
+    }
+    else {
+        my $mojo_url = Mojo::URL->new($url);
+        return $mojo_url->host // 'other';
+    }
 }
 
 1;
