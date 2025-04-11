@@ -1,0 +1,25 @@
+#!/bin/sh
+# shellcheck disable=SC2048,SC2086
+
+echo "Running prove with TAP output check"
+OUTPUT=$(prove "$@" 2>&1)
+STATUS=$?
+
+echo "Output:"
+echo "$OUTPUT"
+
+if [ "$STATUS" -ne 0 ]; then
+    echo "Failed with status $STATUS"
+    exit $STATUS
+fi
+
+echo "$OUTPUT" | grep -vE '^(\[debug\]|ok|not ok)' | grep -v '^\s*$' > /tmp/prove_output.txt
+
+if [ -s /tmp/prove_output.txt ]; then
+    echo "Unhandled output found:"
+    cat /tmp/prove_output.txt
+    exit 1
+else
+    echo "Check passed!"
+    exit 0
+fi
