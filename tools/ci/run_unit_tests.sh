@@ -16,6 +16,8 @@ export JUNIT_OUTPUT_FILE=test-results/junit/$target.xml
 # that context in the prove calling context.
 export PERL_TEST_HARNESS_DUMP_TAP=test-results
 export HARNESS='--harness TAP::Harness::JUnit --timer'
+# Activate Test::CheckGitStatus
+export CHECK_GIT_STATUS=1
 mkdir -p test-results/junit
 sudo chown -R $USER test-results
 # circleCI can be particularly slow sometimes since some time around 2021-06

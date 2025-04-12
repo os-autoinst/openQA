@@ -1,6 +1,11 @@
 logs/*.tar.*
 etc/mine/
-cover_db/
+# Devel::Cover
+/cover_db*
+# TAP::Harness::JUnit
+/test-results/
+# CircleCI cache
+/logs/
 temp
 /testresults
 /t/data/openqa/webui/cache

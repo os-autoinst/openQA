@@ -85,6 +85,7 @@ devel_no_selenium_requires:
   tar:
   xorg-x11-fonts:
   perl(Perl::Tidy): '== 20250711.0.0'
+  perl(Test::CheckGitStatus):
 
 devel_requires:
   '%devel_no_selenium_requires':
