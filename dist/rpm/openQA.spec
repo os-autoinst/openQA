@@ -387,6 +387,11 @@ export LANG=en_US.UTF-8
 rm -rf %{buildroot}/%{_sysusersdir}
 %endif
 
+%if 0%{?suse_version} > 1560
+# the limit set via sysctl is already present on Tumbleweed and packaging sysctl config would require a security review
+rm -rf %{buildroot}/%{_prefix}/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf
+%endif
+
 mkdir -p %{buildroot}%{_bindir}
 ln -s %{_datadir}/openqa/script/client %{buildroot}%{_bindir}/openqa-client
 ln -s %{_datadir}/openqa/script/openqa-cli %{buildroot}%{_bindir}/openqa-cli
@@ -768,7 +773,9 @@ fi
 %if 0%{?suse_version} > 1500
 %{_sysusersdir}/%{name}-worker.conf
 %endif
+%if 0%{?suse_version} <= 1560
 %{_prefix}/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf
+%endif
 
 %files client
 %dir %{_datadir}/openqa
