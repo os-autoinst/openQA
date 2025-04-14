@@ -112,6 +112,7 @@ BuildRequires:  openSUSE-release
 BuildRequires:  sles-release
 %endif
 BuildRequires:  %{build_requires}
+BuildRequires:  apparmor-rpm-macros
 BuildRequires:  local-npm-registry
 Requires:       perl(Minion) >= 10.0
 Requires:       %{main_requires}
@@ -531,10 +532,14 @@ if [ -x /usr/bin/systemctl ] && [ $1 -ge 1 ]; then
 fi
 # restart other services
 %service_del_postun %{openqa_extra_services}
-%restart_on_update apparmor
+# reload AppArmor profiles
+%apparmor_reload %{_sysconfdir}/apparmor.d/usr.share.openqa.script.openqa
+%apparmor_reload %{_sysconfdir}/apparmor.d/local/usr.share.openqa.script.openqa
 
 %postun worker
-%restart_on_update apparmor
+# reload AppArmor profiles
+%apparmor_reload %{_sysconfdir}/apparmor.d/usr.share.openqa.script.worker
+%apparmor_reload %{_sysconfdir}/apparmor.d/local/usr.share.openqa.script.worker
 # restart worker services on updates; does *not* include services for worker slots unless openqa-worker.target
 # is running at the time of the update
 %service_del_postun %{openqa_worker_services}
