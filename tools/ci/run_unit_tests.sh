@@ -22,4 +22,5 @@ sudo chown -R $USER test-results
 export OPENQA_TEST_TIMEOUT_SCALE_CI=3
 export EXTRA_PROVE_ARGS="-v"
 export OPENQA_FULLSTACK_TEMP_DIR=$PWD/test-results/fullstack
+export PROVE="tools/prove_wrapper"
 make test-$target
