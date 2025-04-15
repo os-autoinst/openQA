@@ -9,6 +9,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
+use Test::Output qw(combined_like);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::ScheduledProducts qw(ADDED SCHEDULED SCHEDULING CANCELLING CANCELLED);
 use OpenQA::Test::TimeLimit '6';
@@ -129,6 +130,22 @@ subtest 'cancellation also affects clones' => sub {
     is $cloned_job->reason, 'scheduled product cancelled: test reason 3', 'cancellation reason assigned to cloned job';
     is $test_job->cancel_whole_clone_chain(USER_CANCELLED), 0, 'invoking cancel again is possible but returns zero';
     is $cloned_job->cancel_whole_clone_chain(USER_CANCELLED), 0, 'invoking cancel is possible from either direction';
+};
+
+subtest 'settings not modified when creating jobs (so it can be retried)' => sub {
+    my %settings1 = (TEST => 'job1', GROUP_ID => 1, FOO => 'bar');
+    my %settings2 = (TEST => 'job2', GROUP_ID => 2, BAR => 'foo');
+    my %settings1_copy = %settings1;
+    my %settings2_copy = %settings2;
+    my @settings = (\%settings1, \%settings2);
+    my @settings_copy = (\%settings1_copy, \%settings2_copy);
+    my @ids;
+    combined_like {
+        $schema->txn_do(sub { $scheduled_product->_create_jobs_in_database(\@settings_copy, [], [], 0, \@ids) });
+    }
+    qr/invalid group \{"id":1\}.*invalid group \{"id":2\}/s, 'group settings processed';
+    is_deeply \@settings_copy, \@settings, 'settings have not been modified' or always_explain \@settings_copy;
+    is @ids, 2, 'two jobs created';
 };
 
 done_testing();

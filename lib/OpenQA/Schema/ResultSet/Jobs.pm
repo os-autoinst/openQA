@@ -130,6 +130,8 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     die 'The following settings are invalid: ' . join(', ', @{$v->failed}) . "\n" if $v->has_error;
 
     # assign group ID and priority
+    my $group_id = delete $settings{GROUP_ID};
+    $settings{_GROUP_ID} = $group_id if defined $group_id;
     my ($group_args, $group) = OpenQA::Schema::Result::Jobs::extract_group_args_from_settings(\%settings);
     $new_job_args{priority} = $prio if defined $prio;
     if ($group) {
