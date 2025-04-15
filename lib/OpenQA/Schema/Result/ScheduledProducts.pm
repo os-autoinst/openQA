@@ -255,8 +255,6 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
     my %job_ids_by_test_machine;    # key: "TEST@MACHINE", value: "array of job ids"
 
     for my $settings (@{$jobs || []}) {
-        $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
-
         # create a new job with these parameters and count if successful, do not send job notifies yet
         $schema->svp_begin('try_create_job_from_settings');
         try {
