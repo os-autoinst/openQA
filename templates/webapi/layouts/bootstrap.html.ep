@@ -70,7 +70,7 @@
                   %= link_to 'GPL-2.0' => 'https://github.com/os-autoinst/openQA'
                   % if ($current_version) {
                       - Version
-                      %= link_to $current_version => url_for('changelog')
+                      %= link_to $current_version => url_for_changelog($current_version)
                   % }
               </div>
             </div>

@@ -381,6 +381,11 @@ sub register ($self, $app, $config) {
             }
             return $regex_problem && $context ? "$context: $regex_problem" : $regex_problem;
         });
+
+    $app->helper(url_for_changelog => sub ($c, $v) {
+        $v =~ s/.*-//;
+        return "https://github.com/os-autoinst/openQA/commits/$v";
+    });
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

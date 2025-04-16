@@ -414,6 +414,12 @@ install -m 644 contrib/munin/config/minion.config %{buildroot}/%{_sysconfdir}/mu
 install -m 755 contrib/munin/utils/munin-mail %{buildroot}/%{_datadir}/openqa/script/munin-mail
 %endif
 
+# install file containing package version to display it on the web UI
+version=%{version}
+version=${version%-*}
+version=${version##*.}
+echo "%{version}" > %{buildroot}/%{_datadir}/openqa/version.txt
+
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
     sed -e 's,%{_bindir}/env perl,%{_bindir}/perl,' -i $file
@@ -588,6 +594,7 @@ fi
 %{_datadir}/doc/openqa/examples/openqa.ini
 %{_datadir}/doc/openqa/examples/database.ini
 %dir %{_datadir}/openqa
+%{_datadir}/openqa/version.txt
 %config %{_sysconfdir}/logrotate.d
 # apache vhost
 %dir %{_sysconfdir}/apache2

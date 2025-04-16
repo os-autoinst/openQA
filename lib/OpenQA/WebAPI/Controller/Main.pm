@@ -183,12 +183,6 @@ sub _group_overview ($self, $resultset, $template) {
 sub job_group_overview ($self) { $self->_group_overview('JobGroups', 'main/group_overview') }
 sub parent_group_overview ($self) { $self->_group_overview('JobGroupParents', 'main/parent_group_overview') }
 
-sub changelog ($self) {
-    my $file = path($self->app->config->{global}->{changelog_file});
-    my $changelog = -r $file ? $file->slurp : 'No changelog available.';
-    $self->render(changelog => $changelog);
-}
-
 # Inspired by https://testfully.io/blog/api-health-check-monitoring/
 sub health ($self) {
     $self->render(text => 'ok');

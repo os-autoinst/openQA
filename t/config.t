@@ -54,7 +54,6 @@ subtest 'Test configuration default modes' => sub {
             monitoring_enabled => 0,
             hide_asset_types => 'repo',
             recognized_referers => [],
-            changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
             job_investigate_git_log_limit => 200,

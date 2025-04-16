@@ -652,19 +652,17 @@ sub parse_tags_from_comments ($group, $res) {
 }
 
 sub detect_current_version ($path) {
-    # Get application version
     my $current_version = undef;
-    my $changelog_file = path($path, 'public', 'Changelog');
+    my $version_file = $path->child('version.txt');
+    if (-e $version_file) {
+        $current_version = $version_file->slurp;
+        chomp $current_version;
+        return $current_version;
+    }
+
     my $head_file = path($path, '.git', 'refs', 'heads', 'master');
     my $refs_file = path($path, '.git', 'packed-refs');
-
-    if (-e $changelog_file) {
-        my $changelog = $changelog_file->slurp;
-        if ($changelog && $changelog =~ /Update to version (\d+\.\d+\.(\b[0-9a-f]{5,40}\b))\:/mi) {
-            $current_version = $1;
-        }
-    }
-    elsif (-e $head_file && -e $refs_file) {
+    if (-e $head_file && -e $refs_file) {
         my $master_head = $head_file->slurp;
         my $packed_refs = $refs_file->slurp;
 
