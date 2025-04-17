@@ -46,6 +46,7 @@ my $worker;
 my $ws;
 my $livehandler;
 my $scheduler;
+
 sub turn_down_stack {
     stop_service($_) for ($worker, $ws, $livehandler, $scheduler);
 }
@@ -82,6 +83,7 @@ $livehandler = create_live_view_handler;
 
 # logs out and logs in again as the specified user; tries multiple times to workaround poo#128807
 my $max_login_attempts = $ENV{OPENQA_DEVEL_MODE_TEST_MAX_LOGIN_ATTEMPTS} // 10;
+
 sub relogin_as ($user) {
     my $login_text = '';
     my $expected_login_text = 'Logged in as ' . $user;
