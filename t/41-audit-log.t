@@ -55,16 +55,19 @@ $events->create(
 sub all_events_ids {
     return [sort map { $_->id } $events->all];
 }
+
 sub make_time {
     my ($days_ago) = @_;
     my $seconds_per_day = 60 * 60 * 24;
     return time2str('%Y-%m-%d %H:%M:%S', time - ($seconds_per_day * $days_ago), 'UTC');
 }
+
 sub assume_all_events_before_x_days {
     my ($days_ago) = @_;
     my $date = make_time($days_ago);
     $events->search({})->update({t_created => $date});
 }
+
 sub assume_events_being_deleted {
     my (@event_ids) = @_;
     delete $fake_events{$_} for (@event_ids);

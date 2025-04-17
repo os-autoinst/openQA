@@ -80,6 +80,7 @@ sub list_jobs {
     [map { $_->to_hash(assets => 1) } $jobs->complex_query(@_)->all]
 }
 sub job_get { $jobs->find({id => shift}) }
+
 sub job_get_hash {
     my ($id) = @_;
 
