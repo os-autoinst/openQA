@@ -223,6 +223,7 @@ my $SIGCHLD_HANDLER = sub {
         _fail_and_exit "sub process $child_name terminated with exit code $exit_code", $exit_code if $exit_code;
     }
 };
+
 sub _pids_from_ipc_run_harness {
     my ($ipc_run_harness, $error_message) = @_;
     my $children = ref $ipc_run_harness->{KIDS} eq 'ARRAY' ? $ipc_run_harness->{KIDS} : [];
@@ -230,6 +231,7 @@ sub _pids_from_ipc_run_harness {
     BAIL_OUT($error_message) if $error_message && !@pids;
     return \@pids;
 }
+
 sub _setup_sigchld_handler {
     # adds the PIDs from the specified $ipc_run_harness to the PIDs considered by $SIGCHLD_HANDLER and
     # ensures $SIGCHLD_HANDLER is called
@@ -452,10 +454,12 @@ sub unresponsive_worker ($apikey, $apisecret, $host, $instance) {
     note("Starting unresponsive worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 1);
 }
+
 sub broken_worker ($apikey, $apisecret, $host, $instance, $error) {
     note("Starting broken worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 0, error => $error);
 }
+
 sub rejective_worker ($apikey, $apisecret, $host, $instance, $reason) {
     note("Starting rejective worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 1, rejection_reason => $reason);

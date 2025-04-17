@@ -96,6 +96,7 @@ note("Result dir: $resultdir");
 
 # spawn workers
 note("Spawning $worker_count workers");
+
 sub spawn_worker {
     my ($instance) = @_;
 
@@ -109,6 +110,7 @@ my @workers = map { spawn_worker($_) } (1 .. $worker_count);
 
 # create jobs
 note("Creating $job_count jobs");
+
 sub log_jobs {
     # uncoverable sub only used in case of failures
     my @job_info

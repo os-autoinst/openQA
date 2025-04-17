@@ -13,6 +13,7 @@ has include_results => 0;
 
 # Override to use specific OpenQA Result class.
 sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
+
 sub _add_result {
     my $self = shift;
     my %opts = ref $_[0] eq 'HASH' ? %{$_[0]} : @_;

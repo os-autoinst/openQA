@@ -499,6 +499,7 @@ sub _serialize_directly_chained_job_sequence ($first_job_id, $cluster_info, $sor
         $cluster_info, $sort_function // sub { return shift });
     return ($sequence, [keys %visited]);
 }
+
 sub _serialize_directly_chained_job_sub_sequence ($output_array, $visited, $child_job_ids, $cluster_info,
     $sort_function)
 {

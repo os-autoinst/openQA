@@ -8,6 +8,7 @@ use Time::Seconds;
 $ENV{MOJO_LOG_LEVEL} = 'info';
 
 my $tempdir;
+
 BEGIN {
     use Mojo::File qw(path tempdir);
 

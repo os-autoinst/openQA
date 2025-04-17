@@ -71,6 +71,7 @@ sub set_fake_status_java_script_transactions {
 
 my $finished_handled_mock = Test::MockModule->new('OpenQA::LiveHandler::Controller::LiveViewHandler');
 my $finished_handled;
+
 sub prepare_waiting_for_finished_handled {
     my $subroutine_name = 'handle_disconnect_from_java_script_client';
     $finished_handled = 0;
@@ -80,6 +81,7 @@ sub prepare_waiting_for_finished_handled {
             $finished_handled = 1;
         });
 }
+
 sub wait_for_finished_handled {
     # wait until the finished event is handled (but at most 5 seconds)
     my $timer = Mojo::IOLoop->timer(5.0 => sub { });

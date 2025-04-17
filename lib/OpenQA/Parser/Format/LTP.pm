@@ -82,8 +82,7 @@ sub parse {
 }
 
 # Schema
-{
-    package OpenQA::Parser::Result::LTP::Test;
+package OpenQA::Parser::Result::LTP::Test {
     use Mojo::Base 'OpenQA::Parser::Result::OpenQA';
 
     has environment => sub { OpenQA::Parser::Result::LTP::Environment->new() };
@@ -92,15 +91,13 @@ sub parse {
 }
 
 # Additional data structure - they get mapped automatically
-{
-    package OpenQA::Parser::Result::LTP::SubTest;
+package OpenQA::Parser::Result::LTP::SubTest {
     use Mojo::Base 'OpenQA::Parser::Result::Test';
 
     has [qw(log duration result)];
 }
 
-{
-    package OpenQA::Parser::Result::LTP::Environment;
+package OpenQA::Parser::Result::LTP::Environment {
     use Mojo::Base 'OpenQA::Parser::Result';
 
     has [qw(gcc product revision kernel ltp_version harness libc arch)];

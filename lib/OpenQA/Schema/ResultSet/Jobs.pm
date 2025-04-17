@@ -38,6 +38,7 @@ job that matches the settings provided as argument. Useful to find the
 latest build for a given pair of distri and version.
 
 =cut
+
 sub latest_build ($self, %args) {
     my @conds;
     my %attrs;

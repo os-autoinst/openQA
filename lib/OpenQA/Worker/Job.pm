@@ -663,6 +663,7 @@ sub is_backend_running {
 # starts/stops the livelog
 sub start_livelog ($self) { $self->_add_livelog_viewers(1) }
 sub stop_livelog ($self) { $self->_add_livelog_viewers(-1) }
+
 sub _add_livelog_viewers ($self, $viewer_count_diff) {
     my $viewer_count_after = $self->{_livelog_viewers} = max(0, $self->{_livelog_viewers} + $viewer_count_diff);
     return undef unless $self->is_backend_running;    # skip evaluating viewers if backend has not been started yet

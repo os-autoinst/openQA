@@ -28,6 +28,7 @@ Handle job restart by user (using API or WebUI). Job is only restarted when eith
 or done. Scheduled jobs can't be restarted.
 
 =cut
+
 sub job_restart ($jobids, %args) {
     my (@duplicates, @comments, @processed, @errors, @warnings);
     my %res = (
