@@ -368,22 +368,6 @@ table#users {
     }
 }
 
-// changelog
-.changelog {
-    ul {
-        font-weight: bold;
-
-        p {
-            margin-top: 10px;
-            margin-bottom: 0px;
-        }
-
-        ul, span {
-            font-weight: normal;
-        }
-    }
-}
-
 // status info (used on worker details)
 .status-info div span {
     min-width: 20%;

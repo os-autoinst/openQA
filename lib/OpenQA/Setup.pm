@@ -77,7 +77,6 @@ sub read_config ($app) {
             plugins => undef,
             hide_asset_types => 'repo',
             recognized_referers => '',
-            changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
             job_investigate_git_log_limit => 200,
             job_investigate_git_timeout => 20,

@@ -1,9 +1,0 @@
-% layout 'bootstrap';
-% title 'Changelog';
-
-%= include 'layouts/info'
-
-<h2>Changelog for web UI</h2>
-<div class="changelog">
-    <pre><%= $changelog %></pre>
-</div>
