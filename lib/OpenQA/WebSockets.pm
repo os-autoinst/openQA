@@ -5,9 +5,13 @@ package OpenQA::WebSockets;
 use Mojo::Base 'Mojolicious';
 
 use Mojo::Server::Daemon;
+use Mojo::IOLoop;
 use OpenQA::Setup;
 use OpenQA::Log qw(log_debug log_warning log_info setup_log);
 use OpenQA::WebSockets::Model::Status;
+use List::Util qw(max);
+
+use constant MAX_CONNECTIONS_HEADROOM => 10;
 
 our $RUNNING;
 
@@ -19,8 +23,13 @@ sub startup {
     $self->_setup if $RUNNING;
 
     $self->defaults(appname => 'openQA Websocket Server');
-    if (defined(my $max_online_workers = $self->config->{misc_limits}->{max_online_workers})) {
-        $self->log->info("Limiting number of online worker slots to $max_online_workers");
+    if (defined(my $max_workers = $self->config->{misc_limits}->{max_online_workers})) {
+        # increase max connections from default of 1000 to cover configured max_online_workers
+        my $loop = Mojo::IOLoop->singleton;
+        my $max_conn = max($loop->max_connections, $max_workers + MAX_CONNECTIONS_HEADROOM);
+        my $msg = "Limiting number of online worker slots to $max_workers, allowing up to $max_conn connections";
+        $loop->max_connections($max_conn);
+        $self->log->info($msg);
     }
 
     # no cookies for worker, no secrets to protect
