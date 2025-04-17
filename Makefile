@@ -237,9 +237,12 @@ test-with-database: node_modules setup-database
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration: node_modules
+	cpanm -l /tmp/perl5 Test::CheckGitStatus@v0.0.1;\
+	export PERL5LIB=/tmp/perl5/lib/perl5;\
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	export DEVEL_COVER_DB_FORMAT=JSON;\
-	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib -MOpenQA::Test::PatchDeparse";\
+	export CHECK_GIT_STATUS=1;\
+	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib -MTest::CheckGitStatus -MOpenQA::Test::PatchDeparse";\
 	RETRY=${RETRY} HOOK=./tools/delete-coverdb-folder timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: setup-database
