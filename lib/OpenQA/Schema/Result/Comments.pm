@@ -104,6 +104,7 @@ sub bugrefs ($self) { find_bugrefs($self->text) }
 
 Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_label'
 =cut
+
 sub label ($self) {
     return find_labels($self->text)->[0];
 }
@@ -112,6 +113,7 @@ sub label ($self) {
 
 Returns flag values if C<$self> has flags, e.g. 'flag:carryover flag:foobar' returns a hashref with the keys 'carryover' and 'foobar'
 =cut
+
 sub text_flags ($self) {
     my $flags = find_flags($self->text);
     my %flag_hash;
@@ -143,6 +145,7 @@ comments not on test comments. The description is optional.
 Returns C<build_nr>, C<type> and optionally C<description> if C<$self> is tag,
 e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 =cut
+
 sub tag ($self) {
     $self->text
       =~ /\btag:(((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w]+)|"((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w\s\+:]+)"):(?<type>[-@\d\w]+)(:(?<description>[-.@\d\w]+))?\b/;

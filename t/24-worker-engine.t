@@ -36,10 +36,8 @@ my $guard = scope_guard sub { chdir $FindBin::Bin };
 dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
 
 # define fake packages for testing asset caching
-{
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    package Test::FakeJob;
+# uncoverable statement count:1
+package Test::FakeJob {
     use Mojo::Base -base;
     has id => 42;
     has worker => undef;
@@ -47,19 +45,15 @@ dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
     sub post_setup_status { 1 }
     sub is_stopped_or_stopping { 0 }
 }
-{
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    package Test::FakeRequest;
+# uncoverable statement count:1
+package Test::FakeRequest {
     use Mojo::Base -base;
     has minion_id => 13;
 }
 
 # Fake client
-{
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    package Test::FakeClient;
+# uncoverable statement count:1
+package Test::FakeClient {
     use Mojo::Base -base;
     has worker_id => 1;
     has webui_host => 'localhost';
