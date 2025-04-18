@@ -267,6 +267,18 @@ We use annotations in some places to mark "uncoverable" code such as this:
 
 See the docs for details https://metacpan.org/pod/Devel::Cover
 
+To run the tests with a different command than `prove` you can set the
+`PROVE_COMMAND` variable in the Makefile. For example, in our circleCI tests we
+use `tools/prove_wrapper` to run the tests. This wrapper is a simple script that
+will run `prove` and check if there are some unhandled outputs. If so, it will
+cause the fail of the test. This is useful to avoid having unhandled outputs in 
+the tests. To run the tests with `tools/prove_wrapper` you can do:
+
+[source,sh]
+----
+make test-unit-and-integration TESTS=t/foo.t PROVE_COMMAND=tools/prove_wrapper
+----
+
 There are some ways to save some time when executing local tests:
 
 * One option is selecting individual tests to run as explained above
