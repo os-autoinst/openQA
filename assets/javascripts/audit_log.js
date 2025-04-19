@@ -312,48 +312,29 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
       {
         targets: 6,
         render: function (data, type, row) {
-          const rowData = dataForLink(this);
-          const settings = rowData.settings;
-          const version = settings.VERSION;
-          const build = settings.BUILD;
-          const distri = settings.DISTRI;
-          if (version !== undefined && build !== undefined && distri !== undefined) {
-            const link = urlWithBase(
+          return "<a href='" + urlWithBase(
               '/tests/overview?build=' +
-                encodeURIComponent(build) +
-                '&distri=' +
-                encodeURIComponent(distri) +
-                '&version=' +
-                encodeURIComponent(version) +
-                '&flavor=' +
-                encodeURIComponent(data)
-            );
-            return `<a href='${link}'>${data}</a>`;
-          } else {
-            return data;
-          }
+              encodeURIComponent(row.build) +
+              '&distri=' +
+              encodeURIComponent(row.distri) +
+              '&version=' +
+              encodeURIComponent(row.version) +
+              '&flavor=' +
+              encodeURIComponent(data)
+            ) + "'>" + data + "</a>";
         }
       },
       {
         targets: 8,
         render: function (data, type, row) {
-          const rowData = dataForLink(this);
-          const settings = rowData.settings;
-          const version = settings.VERSION;
-          const distri = settings.DISTRI;
-          if (version !== undefined && distri !== undefined) {
-            const link = urlWithBase(
+          return "<a href='" + urlWithBase(
               '/tests/overview?build=' +
-                encodeURIComponent(data) +
-                '&distri=' +
-                encodeURIComponent(distri) +
-                '&version=' +
-                encodeURIComponent(version)
-            );
-            return `<a href='${link}'>${data}</a>`;
-          } else {
-            return data;
-          }
+              encodeURIComponent(data) +
+              '&distri=' +
+              encodeURIComponent(row.distri) +
+              '&version=' +
+              encodeURIComponent(row.version)
+            ) + "'>" + data + "</a>";
         }
       },
       {
