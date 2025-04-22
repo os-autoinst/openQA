@@ -1074,7 +1074,9 @@ subtest 'Create and modify groups with YAML' => sub {
                 id => $job_group_id3,
                 job_group_id => $job_group_id3,
                 error_status => 400,
-                error => ["Product 'opensuse-13.1-DVD-i586' is invalid"],
+                error => [
+"Product 'opensuse-13.1-DVD-i586' not found in database (arch: 'i586', distri: 'geeko', flavor: 'DVD', version: '13.1')"
+                ],
             },
             'Invalid product'
         );
