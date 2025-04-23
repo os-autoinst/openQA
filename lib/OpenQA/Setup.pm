@@ -225,6 +225,7 @@ sub read_config ($app) {
             assets_default_limit => 100000,
             assets_max_limit => 200000,
             max_online_workers => 1000,
+            wait_for_grutask_retries => 6,    # exponential, ~4 minutes
             worker_limit_retry_delay => ONE_HOUR / 4,
         },
         archiving => {
