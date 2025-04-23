@@ -346,6 +346,9 @@ subtest 'check for missing assets' => sub {
 };
 
 subtest 'concurrent asset creation' => sub {
+    my $minion = $t->app->minion;
+    $minion->reset({all => 1});
+
     # allow configuring a delay so this test will always trigger the deadlock case
     my $delay = $ENV{OPENQA_ASSET_TESTS_DELAY} // 1;
     my $jobs_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Jobs');
@@ -362,8 +365,8 @@ subtest 'concurrent asset creation' => sub {
       = (DISTRI => 'sle', VERSION => '12-SP5', FLAVOR => 'Server-DVD-Updates', ARCH => 'x86_64', TEST => 'base');
     my $asset_name_1 = 'SLES-12-SP5-x86_64-mru-install-desktop-with-addons-Build20250211-1.qcow2';
     my $asset_name_2 = 'SLES-12-SP5-x86_64-mru-install-desktop-with-addons-Build20250211-2.qcow2';
-    my %settings_1 = (%base_settings, TEST => 'job1', HDD_1 => $asset_name_1);
-    my %settings_2 = (%base_settings, TEST => 'job2', HDD_1 => $asset_name_2);
+    my %settings_1 = (%base_settings, TEST => 'job1', HDD_1 => $asset_name_1, HDD_1_URL => "http://foo/$asset_name_1");
+    my %settings_2 = (%base_settings, TEST => 'job2', HDD_1 => $asset_name_2, HDD_1_URL => "http://foo/$asset_name_2");
 
     # define functions to create jobs using the web API
     my $post_job = sub ($delay, @settings) {
@@ -422,6 +425,22 @@ subtest 'concurrent asset creation' => sub {
     subtest 'posting a single set of jobs' => sub { $create_jobs->($post_jobs_1, $post_jobs_2) };
     subtest 'scheduling a product' => sub { $create_jobs->($schedule_product_1, $schedule_product_2) };
     subtest 'track coverage of helpers' => sub { $_->(0, \%base_settings) for $post_job, $schedule_product };
+
+    subtest 'no leftover Minion jobs after handling deadlocks' => sub {
+        my $jobs = $minion->jobs;
+        my $count = 0;
+        my $gru_tasks = $schema->resultset('GruTasks');
+        while (my $info = $jobs->next) {
+            next if $info->{notes}->{obsolete};
+            my $job_id = $info->{id};
+            my $gru_id = $info->{notes}->{gru_id};
+            ++$count;
+            is $info->{task}, 'download_asset', "Minion job $job_id is of expected task";
+            ok $gru_tasks->find($gru_id), "Minion job $job_id refers to Gru task with valid ID $gru_id"
+              or always_explain $info;
+        }
+        is $count, 8, 'one Minion job per openQA job, excluding obsolete jobs';
+    };
 };
 
 done_testing();

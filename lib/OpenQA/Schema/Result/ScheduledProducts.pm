@@ -248,7 +248,7 @@ sub _log_wrong_parents ($self, $parent, $cluster_parents, $failed_job_info) {
 }
 
 sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps, $include_children,
-    $successful_job_ids)
+    $successful_job_ids, $minion_ids = undef)
 {
     my $schema = $self->result_source->schema;
     my $jobs_resultset = $schema->resultset('Jobs');
@@ -307,8 +307,8 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
             $tmp_downloads{$_}->{blocked_job_id}]
     } keys %tmp_downloads;
     my $gru = OpenQA::App->singleton->gru;
-    $gru->enqueue_download_jobs(\%downloads);
-    $gru->enqueue_git_clones(\%clones, $successful_job_ids) if keys %clones;
+    $gru->enqueue_download_jobs(\%downloads, $minion_ids);
+    $gru->enqueue_git_clones(\%clones, $successful_job_ids, $minion_ids) if keys %clones;
 }
 
 =over 4
@@ -399,16 +399,22 @@ sub _schedule_iso ($self, $args, $guard) {
     # define function to create jobs in the database; executed as transaction
     my @successful_job_ids;
     my @failed_job_info;
+    my @minion_ids;
+    my $gru = OpenQA::App->singleton->gru;
 
     try {
         $schema->txn_do_retry_on_deadlock(
             sub {
                 $self->_create_jobs_in_database($jobs, \@failed_job_info, $skip_chained_deps, $include_children,
-                    \@successful_job_ids);
+                    \@successful_job_ids, \@minion_ids);
             },
-            sub { (@successful_job_ids, @failed_job_info) = () });
+            sub {   # this handler is generally covered but tests are unable to reproduce the deadlock 100 % of the time
+                $gru->obsolete_minion_jobs(\@minion_ids);    # uncoverable statement
+                (@successful_job_ids, @failed_job_info, @minion_ids) = ();    # uncoverable statement
+            });
     }
     catch ($e) {
+        $gru->obsolete_minion_jobs(\@minion_ids);
         push(@notes, "Transaction failed: $e");
         push(@failed_job_info, map { {job_id => $_, error_messages => [$e]} } @successful_job_ids);
         @successful_job_ids = ();
