@@ -1,5 +1,6 @@
 #!/bin/bash
-# must run as geekotest
+set -euo pipefail
 
-pg_dump -Fc -c openqa  -f ~/SQL-DUMPS/`date -Idate`.dump
-find ~/SQL-DUMPS/ -mtime +7 -print0 | xargs --no-run-if-empty -0 rm
+DUMP_FOLDER="/var/lib/openqa/SQL-DUMPS"
+pg_dump -Fc -c openqa -f "${DUMP_FOLDER}/$(date -Idate).dump"
+find "${DUMP_FOLDER}" -mtime +7 -print0 -delete
