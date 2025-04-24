@@ -401,6 +401,7 @@ ln -s %{_datadir}/openqa/script/openqa-load-templates %{buildroot}%{_bindir}/ope
 ln -s %{_datadir}/openqa/script/openqa-clone-custom-git-refspec %{buildroot}%{_bindir}/openqa-clone-custom-git-refspec
 ln -s %{_datadir}/openqa/script/openqa-validate-yaml %{buildroot}%{_bindir}/openqa-validate-yaml
 ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
+ln -s %{_datadir}/openqa/script/dump-db %{buildroot}%{_bindir}/openqa-dump-db
 %if %{with python_scripts}
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
 %endif
@@ -817,7 +818,9 @@ fi
 %{_unitdir}/openqa-scheduler.service.requires/postgresql.service
 %{_unitdir}/openqa-websockets.service.requires/postgresql.service
 %{_datadir}/openqa/script/setup-db
+%{_datadir}/openqa/script/dump-db
 %{_bindir}/openqa-setup-db
+%{_bindir}/openqa-dump-db
 
 %files single-instance
 
