@@ -864,6 +864,11 @@ subtest 'finalize job results' => sub {
     };
 };
 
+subtest 'marking Minion jobs as obsolete' => sub {
+    my $job_id = $app->minion->jobs->next->{id};
+    $app->gru->obsolete_minion_jobs([$job_id]);
+    ok $app->minion->job($job_id)->info->{notes}->{obsolete}, "job $job_id marked as obsolete";
+};
 
 done_testing();
 
