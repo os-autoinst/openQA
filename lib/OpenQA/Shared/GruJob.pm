@@ -5,6 +5,7 @@ package OpenQA::Shared::GruJob;
 use Mojo::Base 'Minion::Job', -signatures;
 
 use Mojo::Util qw(dumper);
+use OpenQA::Log qw(log_debug);
 
 sub _grutasks ($self) { $self->minion->app->schema->resultset('GruTasks'); }
 
@@ -14,7 +15,17 @@ sub execute ($self) {
         # We have a gru_id and this is the first run of the job
         my $gru = $self->_grutasks->find($gru_id);
         # GruTask might not yet have landed in database due to open transaction
-        return $self->retry({delay => 2}) unless $gru;
+        unless ($gru) {
+            my $max_retries = $self->app->config->{misc_limits}->{wait_for_grutask_retries};
+            my $retried = $self->info->{retries};
+            my $delay = 2**(1 + $retried);
+            my $msg = "Could not find GruTask '$gru_id' after $retried retries";
+            if ($retried > $max_retries) {
+                return $self->note(stop_reason => "$msg, giving up");
+            }
+            log_debug("$msg, delaying ${delay}s");
+            return $self->retry({delay => $delay});
+        }
     }
     my $err = $self->SUPER::execute;
     return $err unless $gru_id;    # Non-Gru tasks

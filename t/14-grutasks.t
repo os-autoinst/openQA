@@ -601,15 +601,36 @@ subtest 'Gru tasks retry' => sub {
 };
 
 subtest 'waiting gru job' => sub {
+    $t->app->config->{misc_limits}->{wait_for_grutask_retries} = 4;
     my $enq = $app->gru->enqueue(wait_for_grutask => {});
+    my $id = $enq->{minion_id};
     # Simulate that the gru task is not yet visible for the minion server
     $schema->resultset('GruTasks')->find($enq->{gru_id})->delete;
     my $worker = $app->minion->worker->register;
-    my $job = $worker->dequeue(0, {id => $enq->{minion_id}});
-    $job->execute;
+    perform_minion_jobs($t->app->minion);
+    my $job = $t->app->minion->job($id);
     is $job->info->{retries}, 1, 'job retried because there is no GruTasks entry';
     is $job->info->{state}, 'inactive', 'state inactive because there is no GruTasks entry';
     is $job->info->{finished}, undef, 'finished is not defined';
+
+    subtest 'Giving up on missing GruTask' => sub {
+        # Calling retry() with delay 0 explicitly again to run the next job immediately
+        $t->app->minion->job($id)->retry({delay => 0});    # retries=2
+        combined_like { perform_minion_jobs($t->app->minion) } qr{Could not find GruTask.*after 2 retries, delaying 8s};
+        is $job->info->{retries}, 3, 'job retried because there is no GruTasks entry';
+
+        $t->app->minion->job($id)->retry({delay => 0});    # retries=4
+        combined_like { perform_minion_jobs($t->app->minion) }
+        qr{Could not find GruTask.*after 4 retries, delaying 32s};
+        is $job->info->{retries}, 5, 'job retried because there is no GruTasks entry';
+
+        $t->app->minion->job($id)->retry({delay => 0});    # retries=6
+        perform_minion_jobs($t->app->minion);
+        is $job->info->{state}, 'failed', 'Job finally failed';
+        like $job->info->{notes}->{stop_reason}, qr{Could not find GruTask '\d+' after 6 retries.*},
+          'Message is logged as job result';
+        is $job->info->{retries}, 6, 'job retried because there is no GruTasks entry';
+    };
 };
 
 # prevent writing to a log file to enable use of combined_like in the following tests
