@@ -316,7 +316,7 @@ be merged ($job_specific_params takes precedence).
 
 =cut
 
-sub _create_job ($self, $global_params, $job_suffix = undef, $job_specific_params = {}) {
+sub _create_job ($self, $global_params, $job_suffix, $job_specific_params, $minion_ids) {
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $global_params->{$_} } keys %$global_params;
     $up_params{uc $_} = $job_specific_params->{$_} for keys %$job_specific_params;
@@ -344,9 +344,9 @@ sub _create_job ($self, $global_params, $job_suffix = undef, $job_specific_param
 
     # enqueue gru jobs and calculate blocked by
     push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
-    $self->gru->enqueue_download_jobs($downloads);
+    $self->gru->enqueue_download_jobs($downloads, $minion_ids);
     my $clones = create_git_clone_list($job_settings);
-    $self->gru->enqueue_git_clones($clones, [$job_id]) if keys %$clones;
+    $self->gru->enqueue_git_clones($clones, [$job_id], $minion_ids) if keys %$clones;
     return $job_id;
 }
 
@@ -391,14 +391,14 @@ if $grouped_params is empty.
 
 =cut
 
-sub _create_jobs ($self, $global_params, $grouped_params) {
+sub _create_jobs ($self, $global_params, $grouped_params, $minion_ids) {
     if (keys %$grouped_params) {
         # create as many jobs as unique ":"-suffixes exist
-        $self->_create_job($global_params, $_, $grouped_params->{$_}) for keys %$grouped_params;
+        $self->_create_job($global_params, $_, $grouped_params->{$_}, $minion_ids) for keys %$grouped_params;
     }
     else {
         # create a single job if there are no job-specific parameters
-        $self->_create_job($global_params);
+        $self->_create_job($global_params, undef, {}, $minion_ids);
     }
     $self->_create_dependencies;
 }
@@ -421,8 +421,12 @@ sub create ($self) {
     my $json = $self->{_json} = {};
     my $event_data = $self->{_event_data} = [];
     my $dependencies = $self->{_dependencies} = [];
+    my @minion_ids;
+    my $gru = OpenQA::App->singleton->gru;
     try {
-        $self->schema->txn_do_retry_on_deadlock(sub { $self->_create_jobs($global_params, $grouped_params) });
+        $self->schema->txn_do_retry_on_deadlock(
+            sub { $self->_create_jobs($global_params, $grouped_params, \@minion_ids) },
+            sub { $gru->obsolete_minion_jobs(\@minion_ids) });
         OpenQA::Scheduler::Client->singleton->wakeup;
     }
     catch ($e) {
@@ -430,6 +434,7 @@ sub create ($self) {
         $json->{error} = $e;
         delete $json->{id};
         delete $json->{ids};
+        $gru->obsolete_minion_jobs(\@minion_ids);
     }
 
     $self->emit_event(openqa_job_create => $_) for @$event_data;
