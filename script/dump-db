@@ -4,5 +4,5 @@ DUMP_FOLDER=${DUMP_FOLDER:-"/var/lib/openqa/SQL-DUMPS"}
 DAYS_TO_KEEP=${DAYS_TO_KEEP:-"7"}
 [[ $1 = '-h' ]] || [[ $1 = '--help' ]] && echo "Dump the openQA postgresql database to ${DUMP_FOLDER} and clean-up backups older than ${DAYS_TO_KEEP} days." && exit
 
-pg_dump -Fc -c openqa -f "${DUMP_FOLDER}/$(date -Idate).dump"
+ionice -c3 nice -n19 pg_dump -Fc -c openqa -f "${DUMP_FOLDER}/$(date -Idate).dump"
 find "${DUMP_FOLDER}" -mtime "+${DAYS_TO_KEEP}" -print0 -delete
