@@ -21,7 +21,8 @@ sub execute ($self) {
             my $delay = 2**(1 + $retried);
             my $msg = "Could not find GruTask '$gru_id' after $retried retries";
             if ($retried > $max_retries) {
-                return $self->note(stop_reason => "$msg, giving up");
+                $self->note(stop_reason => "$msg, giving up");
+                return undef;
             }
             log_debug("$msg, delaying ${delay}s");
             return $self->retry({delay => $delay});

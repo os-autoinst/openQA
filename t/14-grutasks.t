@@ -626,7 +626,7 @@ subtest 'waiting gru job' => sub {
 
         $t->app->minion->job($id)->retry({delay => 0});    # retries=6
         perform_minion_jobs($t->app->minion);
-        is $job->info->{state}, 'failed', 'Job finally failed';
+        is $job->info->{state}, 'finished', 'job finished successfully';
         like $job->info->{notes}->{stop_reason}, qr{Could not find GruTask '\d+' after 6 retries.*},
           'Message is logged as job result';
         is $job->info->{retries}, 6, 'job retried because there is no GruTasks entry';
