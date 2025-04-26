@@ -11794,6 +11794,19 @@ the system service. E.g.</p>
 <p>See the docs for details <a href="https://metacpan.org/pod/Devel::Cover" class="bare">https://metacpan.org/pod/Devel::Cover</a></p>
 </div>
 <div class="paragraph">
+<p>To run the tests with a different command than <code>prove</code> you can set the
+<code>PROVE</code> variable in the Makefile. For example, in our CircleCI tests we
+use <code>tools/prove_wrapper</code> to run the tests. This wrapper is a simple script that
+will run <code>prove</code> and fail the test if there is unhandled output. This is useful
+to avoid having unhandled output in tests. To run the tests with
+<code>tools/prove_wrapper</code> you can do:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PROVE</span><span class="tok-o">=</span>tools/prove_wrapper<span class="tok-w"> </span>make<span class="tok-w"> </span><span class="tok-nb">test</span><span class="tok-w"> </span><span class="tok-nv">TESTS</span><span class="tok-o">=</span>t/foo.t</code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>There are some ways to save some time when executing local tests:</p>
 </div>
 <div class="ulist">
@@ -13488,7 +13501,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-10 04:44:33 UTC
+Last updated 2025-04-26 04:44:40 UTC
 </div>
 </div>
 </body>
