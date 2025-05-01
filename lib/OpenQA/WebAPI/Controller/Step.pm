@@ -263,7 +263,8 @@ sub edit ($self) {
             tags => $tags,
             default_needle => $default_needle,
             error_messages => \@error_messages,
-            git_enabled => ($app->config->{global}->{scm} // '') eq 'git',
+            git_enabled => ($app->config->{global}->{scm} // '') eq 'git'
+              && $app->config->{'scm git'}->{git_auto_commit} eq 'yes',
         });
     $self->render('step/edit');
 }

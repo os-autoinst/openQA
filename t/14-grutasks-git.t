@@ -458,6 +458,7 @@ subtest 'delete_needles' => sub {
 
     # now enable git
     $t->app->config->{global}->{scm} = 'git';
+    $t->app->config->{git_auto_commit} = 'yes';
     $t->app->config->{'scm git'}->{do_push} = 'yes';
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @cmds;
