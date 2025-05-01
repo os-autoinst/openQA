@@ -107,6 +107,7 @@ sub view ($self) {
 
 sub _get_needles_ref_and_url ($self, $job) {
     # Return tuple of git ref hash and url of needles or undef on error.
+    return undef unless ($self->app->config->{global}->{scm} // '') eq 'git';
     return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
     my $json_path = path($job->result_dir, 'vars.json');
     my $vars = defined $job->result_dir && -e $json_path ? decode_json($json_path->slurp) : undef;
