@@ -289,6 +289,8 @@ subtest 'git_update_all' => sub {
     $t->app->config->{global}->{scm} = '';
     my $git_config = $t->app->config->{'scm git'};
     $git_config->{git_auto_update} = 'no';
+    # test that this never disables update_all, it shouldn't
+    $git_config->{git_auto_clone} = 'no';
 
     my $result = $t->app->gru->enqueue_git_update_all;
     is $result, undef, 'gru task not created yet';
@@ -304,7 +306,8 @@ subtest 'git_update_all' => sub {
     $result = $t->app->gru->enqueue_git_update_all;
     is $result, undef, 'gru task not created yet';
 
-    # now enable both
+    # now enable both, but leave auto_clone disabled, it should not
+    # interfere
     $t->app->config->{global}->{scm} = 'git';
     $result = $t->app->gru->enqueue_git_update_all;
     my $minion = $t->app->minion;

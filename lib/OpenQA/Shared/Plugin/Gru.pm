@@ -237,7 +237,6 @@ sub enqueue_download_jobs ($self, $downloads, $minion_ids = undef) {
 sub enqueue_git_update_all ($self) {
     my $conf = OpenQA::App->singleton->config;
     return if ($conf->{global}->{scm} // '') ne 'git';
-    return if $conf->{'scm git'}->{git_auto_clone} ne 'yes';
     return if $conf->{'scm git'}->{git_auto_update} ne 'yes';
     my %clones;
     my $testdir = path(sharedir() . '/tests');
