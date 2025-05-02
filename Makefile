@@ -96,7 +96,7 @@ install-generic:
 		install -m 644 etc/nginx/vhosts.d/$$i "$(DESTDIR)"/etc/nginx/vhosts.d ;\
 	done
 
-	for prefix in usr/etc etc; do \
+	for prefix in etc; do \
 		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa ;\
 		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa/client.conf.d ;\
 		install -d -m 755 "$(DESTDIR)"/$$prefix/openqa/workers.ini.d ;\
