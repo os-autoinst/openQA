@@ -110,8 +110,12 @@ sub auth_response ($c) {
 
     $csr->handle_server_response(
         not_openid => sub () {
-            my $op_uri = $params{'openid.op_endpoint'} // '';
-            $err_handler->('Failed to login', "OpenID provider '$op_uri' returned invalid data on a login attempt.");
+            my $op_uri = $params{'openid.op_endpoint'};
+            my $msg
+              = $op_uri
+              ? "OpenID provider '$op_uri' returned invalid data on a login attempt"
+              : 'OpenID response returned no provider endpoint';
+            $err_handler->('Failed to login', $msg);
         },
         setup_needed => sub ($setup_url) {
             # Redirect the user to $setup_url
