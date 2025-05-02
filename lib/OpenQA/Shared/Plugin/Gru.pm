@@ -266,7 +266,6 @@ sub enqueue_git_clones ($self, $clones, $job_ids, $minion_ids = undef) {
     return unless keys %$clones;
     my $conf = OpenQA::App->singleton->config;
     return unless ($conf->{global}->{scm} // '') eq 'git';
-    return unless $conf->{'scm git'}->{git_auto_clone} eq 'yes';
     # $clones is a hashref with paths as keys and git urls as values
     # $job_id is used to create entries in a related table (gru_dependencies)
 

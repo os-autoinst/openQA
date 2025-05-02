@@ -359,24 +359,11 @@ subtest 'enqueue_git_clones' => sub {
 
     # disable git, first
     $t->app->config->{global}->{scm} = '';
-    my $git_config = $t->app->config->{'scm git'};
-    $git_config->{git_auto_clone} = 'no';
 
     my $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
     is $result, undef, 'gru task not created yet';
 
-    # now enable git but leave auto_clone disabled
-    $t->app->config->{global}->{scm} = 'git';
-    $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
-    is $result, undef, 'gru task not created yet';
-
-    # now enable auto_clone but disable git
-    $t->app->config->{global}->{scm} = '';
-    $git_config->{git_auto_clone} = 'yes';
-    $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
-    is $result, undef, 'gru task not created yet';
-
-    # now enable both
+    # now enable it
     $t->app->config->{global}->{scm} = 'git';
     $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
 
