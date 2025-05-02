@@ -46,7 +46,7 @@ if [[ $web_proxy == "nginx" ]]; then
     if [[ -n "$web_port" ]]; then
         sed -Ei "s@(.*listen.*)80@\1${web_port}@g" /etc/nginx/vhosts.d/openqa.conf /etc/nginx/nginx.conf
     fi
-    sed -i -e "s/\(^[^#]*server_name  localhost;\)/#\1/" /etc/nginx/nginx.conf
+    sed -i -e 's/^\([^#]*server_name[[:space:]]\+localhost;\)/#\1/' /etc/nginx/nginx.conf
 elif [[ $web_proxy == "apache" || $web_proxy == "apache2" ]]; then
     echo "Setting up apache"
     for i in headers proxy proxy_http proxy_wstunnel rewrite; do a2enmod $i; done
