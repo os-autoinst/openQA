@@ -764,18 +764,18 @@ sub _upload_results_step_0_prepare {
     my $upload_up_to;
     if ($test_state eq 'running' || $finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
+        my ($current_mtime, $current_fsize) = (($file_info[9] // 0), ($file_info[7] // 0));
+        my ($last_mtime, $last_fsize) = (($self->{_test_order_mtime} // 0), ($self->{_test_order_fsize} // 0));
         my $test_order;
-        my $changed_schedule = (
-            $self->{_test_order_mtime} and ($file_info[9] != $self->{_test_order_mtime}
-                or $file_info[7] != $self->{_test_order_fsize}));
+        my $changed_schedule = $last_mtime && ($current_mtime != $last_mtime || $current_fsize != $last_fsize);
         if (not $current_test_module or $changed_schedule) {
             log_info('Test schedule has changed, reloading test_order.json') if $changed_schedule;
             $test_order = $self->_read_json_file('test_order.json');
             $status{test_order} = $test_order;
             $self->{_test_order} = $test_order;
             $self->{_full_test_order} = $test_order;
-            $self->{_test_order_mtime} = $file_info[9];
-            $self->{_test_order_fsize} = $file_info[7];
+            $self->{_test_order_mtime} = $current_mtime;
+            $self->{_test_order_fsize} = $current_fsize;
         }
         if (!$current_test_module) {    # first test (or already after the last!)
             if (!$test_order) {
