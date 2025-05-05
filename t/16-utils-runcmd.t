@@ -147,15 +147,15 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is($git->app, $t->app, 'app is set');
     is($git->dir, 'foo/bar', 'dir is set');
     is($git->user, $first_user, 'user is set');
-    ok(!$git->enabled, 'git is not enabled by default');
+    ok($git->enabled, 'git is enabled by default');
     my $git_config = $t->app->config->{'scm git'};
     is($git->config, $git_config, 'global git config is mirrored');
     is($git->config->{update_remote}, '', 'by default no remote configured');
     is($git->config->{update_branch}, '', 'by default no branch configured');
 
     # read-only getters
-    $git->enabled(1);
-    ok(!$git->enabled, 'enabled is read-only');
+    $git->enabled(0);
+    ok($git->enabled, 'enabled is read-only');
     $git->config({});
     is($git->config, $git_config, 'config is read-only');
 
@@ -258,6 +258,7 @@ subtest 'saving needle via Git' => sub {
 
     # configure use of Git
     $t->app->config->{global}->{scm} = 'git';
+    $t->app->config->{'scm git'}->{git_auto_commit} = 'yes';
     my $empty_tmp_dir = tempdir();
 
     # trigger saving needles like Minion would do

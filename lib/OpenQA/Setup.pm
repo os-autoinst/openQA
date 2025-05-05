@@ -68,7 +68,7 @@ sub read_config ($app) {
             branding => 'openSUSE',
             download_domains => undef,
             suse_mirror => undef,
-            scm => undef,
+            scm => 'git',
             hsts => 365,
             audit_enabled => 1,
             max_rss_limit => 0,
@@ -100,7 +100,7 @@ sub read_config ($app) {
             require_for_assets => 0,
         },
         'scm git' => {
-            git_auto_commit => 'yes',
+            git_auto_commit => 'no',
             update_remote => '',
             update_branch => '',
             do_push => 'no',

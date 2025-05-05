@@ -64,6 +64,7 @@ subtest 'Test configuration default modes' => sub {
             parallel_children_collapsable_results_sel => ' .status:not(.result_passed):not(.result_softfailed)',
             auto_clone_limit => 20,
             api_hmac_time_tolerance => 300,
+            scm => 'git',
         },
         rate_limits => {
             search => 5,
@@ -78,7 +79,7 @@ subtest 'Test configuration default modes' => sub {
             do_push => 'no',
             do_cleanup => 'no',
             git_auto_clone => 'yes',
-            git_auto_commit => 'yes',
+            git_auto_commit => 'no',
             git_auto_update => 'yes',
             git_auto_update_method => 'best-effort',
             checkout_needles_sha => 'no',
