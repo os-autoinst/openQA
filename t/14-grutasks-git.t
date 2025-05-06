@@ -50,9 +50,6 @@ my $webapi = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 # prevent writing to a log file to enable use of combined_like in the following tests
 $t->app->log(Mojo::Log->new(level => 'info'));
 
-# ensure git is enabled
-$t->app->config->{global}->{scm} = 'git';
-
 subtest 'git clone' => sub {
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @mocked_git_calls;
@@ -274,6 +271,8 @@ subtest 'git_update_all' => sub {
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     $openqa_git->redefine(get_origin_url => 'foo');
 
+    my $git_config = $t->app->config->{'scm git'};
+    $git_config->{git_auto_update} = 'yes';
     my $testdir = $workdir->child('openqa/share/tests');
     $testdir->make_path;
     my @clones;
@@ -284,33 +283,8 @@ subtest 'git_update_all' => sub {
     local $ENV{OPENQA_BASEDIR} = $workdir;
     local $ENV{OPENQA_GIT_CLONE_RETRIES} = 4;
     local $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} = 2;
-
-    # disable git, first
-    $t->app->config->{global}->{scm} = '';
-    my $git_config = $t->app->config->{'scm git'};
-    $git_config->{git_auto_update} = 'no';
-    # test that this never disables update_all, it shouldn't
-    $git_config->{git_auto_clone} = 'no';
-
-    my $result = $t->app->gru->enqueue_git_update_all;
-    is $result, undef, 'gru task not created yet';
-
-    # now enable git but leave auto_update disabled
-    $t->app->config->{global}->{scm} = 'git';
-    $result = $t->app->gru->enqueue_git_update_all;
-    is $result, undef, 'gru task not created yet';
-
-    # now enable auto_update but disable git
-    $t->app->config->{global}->{scm} = '';
-    $git_config->{git_auto_update} = 'yes';
-    $result = $t->app->gru->enqueue_git_update_all;
-    is $result, undef, 'gru task not created yet';
-
-    # now enable both, but leave auto_clone disabled, it should not
-    # interfere
-    $t->app->config->{global}->{scm} = 'git';
-    $result = $t->app->gru->enqueue_git_update_all;
     my $minion = $t->app->minion;
+    my $result = $t->app->gru->enqueue_git_update_all;
     my $job = $minion->job($result->{minion_id});
     my $args = $job->info->{args}->[0];
     my $gru_id = $result->{gru_id};
@@ -356,17 +330,7 @@ subtest 'enqueue_git_clones' => sub {
     my $clones = {x => 'y'};
     my @j = map { $schema->resultset('Jobs')->create({state => 'scheduled', TEST => "t$_"}); } 1 .. 5;
     my $jobs = [$j[0]->id, $j[1]->id];
-
-    # disable git, first
-    $t->app->config->{global}->{scm} = '';
-
     my $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
-    is $result, undef, 'gru task not created yet';
-
-    # now enable it
-    $t->app->config->{global}->{scm} = 'git';
-    $result = $t->app->gru->enqueue_git_clones($clones, $jobs);
-
     my $minion_job = $minion->job($result->{minion_id});
     my $job_id = $minion_job->id;
     my $task = $schema->resultset('GruTasks')->find($result->{gru_id});
@@ -414,10 +378,6 @@ qr{GruTask 999 already gone.*insert or update on table "gru_dependencies" violat
 $t->app->log(Mojo::Log->new(level => 'info'));
 
 subtest 'delete_needles' => sub {
-    # disable git to start with, as the ad hoc distris we create are
-    # not yet git repos, so if it's enabled the delete_needles task
-    # fails
-    $t->app->config->{global}->{scm} = '';
     my $needledirs = $schema->resultset('NeedleDirs');
     my $needles = $schema->resultset('Needles');
     $needledirs->create({id => 1, path => 't/data/openqa/share/tests/archlinux/needles', 'name' => 'test'});
@@ -446,9 +406,7 @@ subtest 'delete_needles' => sub {
     $error = $res->{result}->{errors}->[0];
     like $error->{message}, qr{Unable to find needle.*99}, 'expected error for not existing needle';
 
-    # now enable git
     $t->app->config->{global}->{scm} = 'git';
-    $t->app->config->{git_auto_commit} = 'yes';
     $t->app->config->{'scm git'}->{do_push} = 'yes';
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @cmds;

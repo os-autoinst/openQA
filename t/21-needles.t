@@ -210,7 +210,6 @@ setup_fullstack_temp_dir('21-needles');
 subtest 'controller->_get_needles_ref_and_url' => sub {
     my $controller = OpenQA::WebAPI::Controller::Step->new;
     $controller->app($t->app);
-    $controller->app->config->{global}->{scm} = 'git';
     $controller->app->config->{'scm git'} = {checkout_needles_sha => 'yes'};
 
     subtest 'without fragment and needles_git_hash in vars' => sub {

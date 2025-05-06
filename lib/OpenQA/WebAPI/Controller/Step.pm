@@ -107,7 +107,6 @@ sub view ($self) {
 
 sub _get_needles_ref_and_url ($self, $job) {
     # Return tuple of git ref hash and url of needles or undef on error.
-    return undef unless ($self->app->config->{global}->{scm} // '') eq 'git';
     return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
     my $json_path = path($job->result_dir, 'vars.json');
     my $vars = defined $job->result_dir && -e $json_path ? decode_json($json_path->slurp) : undef;
@@ -263,8 +262,7 @@ sub edit ($self) {
             tags => $tags,
             default_needle => $default_needle,
             error_messages => \@error_messages,
-            git_enabled => ($app->config->{global}->{scm} // '') eq 'git'
-              && $app->config->{'scm git'}->{git_auto_commit} eq 'yes',
+            git_enabled => ($app->config->{global}->{scm} // '') eq 'git',
         });
     $self->render('step/edit');
 }

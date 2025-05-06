@@ -78,7 +78,6 @@ subtest 'Test configuration default modes' => sub {
             do_push => 'no',
             do_cleanup => 'no',
             git_auto_clone => 'yes',
-            git_auto_commit => 'yes',
             git_auto_update => 'yes',
             git_auto_update_method => 'best-effort',
             checkout_needles_sha => 'no',

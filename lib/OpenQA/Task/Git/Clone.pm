@@ -26,9 +26,6 @@ sub register ($self, $app, @) {
 sub _git_clone_all ($job, $clones) {
     my $app = $job->app;
     my $job_id = $job->id;
-    # failsafe check - we should never actually get here with git
-    # disabled, but just in case
-    return if (($app->config->{global}->{scm} // '') ne 'git');
 
     my $retry_delay = {delay => 30 + int(rand(10))};
     # Prevent multiple git_clone tasks for the same path to run in parallel
@@ -78,13 +75,14 @@ sub _git_clone_all ($job, $clones) {
 
         # unblock openQA jobs despite network errors under best-effort configuration
         my $retries = $job->retries;
+        my $git_config = $app->config->{'scm git'};
         my $max_retries = $ENV{OPENQA_GIT_CLONE_RETRIES} // 10;
         my $max_best_effort_retries = min($max_retries, $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} // 2);
         my $gru_task_id = $job->info->{notes}->{gru_id};
         if (   $is_path_only
             && defined($gru_task_id)
             && ($error =~ m/disconnect|curl|stream.*closed|/i)
-            && $git->config->{git_auto_update_method} eq 'best-effort'
+            && $git_config->{git_auto_update_method} eq 'best-effort'
             && $retries >= $max_best_effort_retries)
         {
             $app->schema->resultset('GruDependencies')->search({gru_task_id => $gru_task_id})->delete;
