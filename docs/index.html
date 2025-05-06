@@ -2895,8 +2895,24 @@ section.</p>
 <div class="sect2">
 <h3 id="_setting_up_git_support"><a class="anchor" href="#_setting_up_git_support"></a><a class="link" href="#_setting_up_git_support">16.2. Setting up git support</a></h3>
 <div class="paragraph">
-<p>Editing needles from web can optionally commit new or changed needles
-automatically to git. To do so, you need to enable git support by setting</p>
+<p>If your tests and needles are stored in git, openQA can perform various operations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Automatically commit needles created in the web UI editor back to the repository</p>
+</li>
+<li>
+<p>Automatically update the repository when scheduling tests</p>
+</li>
+<li>
+<p>Clone tests and needles from git repos specified in a job&#8217;s <code>CASEDIR</code> and <code>NEEDLES_DIR</code>
+variables</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To enable these features, you need to enable git support by setting</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2906,8 +2922,24 @@ automatically to git. To do so, you need to enable git support by setting</p>
 </div>
 <div class="paragraph">
 <p>in <a href="#_configuration">the web UI configuration</a>.
-Once you do so and restart the web interface, openQA will automatically commit
-new needles to the git repository.</p>
+Once you do so and restart the web interface, all of the above features will be enabled.</p>
+</div>
+<div class="paragraph">
+<p>To disable individual features, you can use these config settings:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[scm git]</span>
+<span class="tok-na">git_auto_commit</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">no</span>
+<span class="tok-na">git_auto_clone</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">no</span>
+<span class="tok-na">git_auto_update</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">no</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>git_auto_commit</code> controls whether needles created or edited in the webUI editor are
+automatically committed. <code>git_auto_update</code> controls automatic test/needle updating
+when scheduling tests. <code>git_auto_clone</code> controls the automatic cloning of repos
+referenced by <code>CASEDIR</code> and <code>NEEDLES_DIR</code>.</p>
 </div>
 <div class="paragraph">
 <p>You may want to add some description to automatic commits coming from the web
@@ -13501,7 +13533,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-26 04:44:40 UTC
+Last updated 2025-05-06 04:44:29 UTC
 </div>
 </div>
 </body>
