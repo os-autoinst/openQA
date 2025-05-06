@@ -93,7 +93,9 @@ sub auth_login ($controller) {
     croak 'Config was not parsed' unless my $main_config = $controller->app->config->{oauth2};
     croak 'Setup was not called' unless my $provider_config = $main_config->{provider_config};
 
-    my $get_token_args = {redirect_uri => $controller->url_for('login')->userinfo(undef)->to_abs};
+    my $base_url = $controller->app->config->{global}->{base_url};
+    my $host = $base_url ? Mojo::URL->new($base_url)->host : $controller->req->url->host;
+    my $get_token_args = {redirect_uri => $controller->url_for('login')->userinfo(undef)->host($host)->to_abs};
     $get_token_args->{scope} = $provider_config->{token_scope};
     $controller->oauth2->get_token_p($main_config->{provider} => $get_token_args)
       ->then(sub { update_user($controller, $main_config, $provider_config, shift) })
