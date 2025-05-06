@@ -256,5 +256,5 @@ python3-PyYAML-5.4.1
 python3-yamllint-1.22.1
 ShellCheck-0.8.0
 shfmt-3.5.1
-sqlite3-3.44.0
+sqlite3-3.49.1
 sshpass-1.10
