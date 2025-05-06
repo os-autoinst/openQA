@@ -15,11 +15,6 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-# define _distconfdir for openSUSE Leap 15 and SLE 15 (like other packages such as libvpl do)
-%if 0%{?suse_version} < 1550
-%define _distconfdir %{_prefix}%{_sysconfdir}
-%endif
-
 # can't use linebreaks here!
 %define openqa_main_service openqa-webui.service
 %define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-git-auto-update.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer openqa-enqueue-git-auto-update.timer openqa-enqueue-needle-ref-cleanup.service openqa-enqueue-needle-ref-cleanup.timer
@@ -583,9 +578,6 @@ fi
 %dir %{_sysconfdir}/openqa
 %dir %{_sysconfdir}/openqa/openqa.ini.d
 %dir %{_sysconfdir}/openqa/database.ini.d
-%dir %{_distconfdir}/openqa
-%dir %{_distconfdir}/openqa/openqa.ini.d
-%dir %{_distconfdir}/openqa/database.ini.d
 %{_datadir}/doc/openqa/examples/openqa.ini
 %{_datadir}/doc/openqa/examples/database.ini
 %dir %{_datadir}/openqa
@@ -693,7 +685,6 @@ fi
 
 %files common
 %if 0%{?suse_version} < 1550
-%dir %{_distconfdir}
 %endif
 %dir %{_datadir}/doc/openqa
 %dir %{_datadir}/doc/openqa/examples
@@ -731,8 +722,6 @@ fi
 %ghost %config(noreplace) %attr(0400,_openqa-worker,root) %{_sysconfdir}/openqa/client.conf
 %dir %{_sysconfdir}/openqa/workers.ini.d
 %dir %{_sysconfdir}/openqa/client.conf.d
-%dir %{_distconfdir}/openqa/workers.ini.d
-%dir %{_distconfdir}/openqa/client.conf.d
 %{_datadir}/doc/openqa/examples/workers.ini
 %{_datadir}/doc/openqa/examples/client.conf
 # apparmor profile
