@@ -44,7 +44,7 @@ run_fullstack_test() {
 if [ "$FULLSTACK" = 1 ]; then
     run_fullstack_test t/full-stack.t t/05-scheduler-full.t t/33-developer_mode.t
 elif [ "$CHECKSTYLE" = 1 ]; then
-    make checkstyle || touch tests_failed
+    make test-checkstyle || touch tests_failed
 else
     if [ "$UITESTS" = 1 ]; then
         list=$(find ./t/ui -name '*.t' | sort)
