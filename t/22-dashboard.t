@@ -597,6 +597,8 @@ subtest 'SUSE branding' => sub {
     my $btn_sel = '#commentForm .comment-toolbar a.fa-unlink';
     $t->attr_like($btn_sel, 'title', qr/Add marker.*approved/, 'button title for adding review marker');
     $t->attr_like($btn_sel, 'data-template', qr/\@review:acceptable_for/, 'button template for adding review marker');
+    $t->get_ok('/tests/overview?build=0091&result=none')->status_is(200, 'test overview page');
+    $t->attr_like('a.fa-unlink', 'data-template', qr/\@review:acceptable_for/, 'review marker on test overview page');
 };
 
 subtest 're-routing' => sub {
