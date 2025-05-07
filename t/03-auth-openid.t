@@ -52,5 +52,5 @@ $c->set_always(
     app => Test::MockObject->new->set_always(config => {})->set_always(log => Test::MockObject->new->set_true('debug')))
   ->set_true('flash');
 is OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can handle setup_needed response';
-$c->app->log->called_ok('debug', 'a debug messgae is logged when setup_needed respond');
+$c->app->log->called_ok('debug', 'a debug message is logged when setup_needed respond');
 done_testing;
