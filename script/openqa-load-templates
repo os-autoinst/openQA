@@ -204,7 +204,8 @@ sub post_entry ($table, $entry) {
         }
     }
 
-    my $res = $client->post($table_url, json => \%param)->res;
+    my $type = $table eq 'JobTemplates' ? 'form' : 'json';
+    my $res = $client->post($table_url, $type => \%param)->res;
     print_error $res unless $res->is_success;
     return 1;
 }
