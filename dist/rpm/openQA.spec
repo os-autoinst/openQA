@@ -20,6 +20,7 @@
 %define openqa_extra_services openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-git-auto-update.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer openqa-enqueue-git-auto-update.timer openqa-enqueue-needle-ref-cleanup.service openqa-enqueue-needle-ref-cleanup.timer
 %define openqa_services %{openqa_main_service} %{openqa_extra_services}
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
+%define openqa_localdb_services openqa-setup-db.service openqa-dump-db.service openqa-dump-db.timer
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
@@ -553,13 +554,13 @@ fi
 %service_del_postun openqa-continuous-update.timer
 
 %post local-db
-%service_add_post openqa-setup-db.service
+%service_add_post %{openqa_localdb_services}
 
 %preun local-db
-%service_del_preun openqa-setup-db.service
+%service_del_preun %{openqa_localdb_services}
 
 %postun local-db
-%service_del_postun openqa-setup-db.service
+%service_del_postun %{openqa_localdb_services}
 
 %files
 %doc README.asciidoc
@@ -798,6 +799,8 @@ fi
 
 %files local-db
 %{_unitdir}/openqa-setup-db.service
+%{_unitdir}/openqa-dump-db.service
+%{_unitdir}/openqa-dump-db.timer
 %{_unitdir}/openqa-gru.service.requires/postgresql.service
 %{_unitdir}/openqa-scheduler.service.requires/postgresql.service
 %{_unitdir}/openqa-websockets.service.requires/postgresql.service
@@ -805,6 +808,7 @@ fi
 %{_datadir}/openqa/script/dump-db
 %{_bindir}/openqa-setup-db
 %{_bindir}/openqa-dump-db
+%dir %attr(0755,postgres,root) %{_localstatedir}/lib/openqa/backup
 
 %files single-instance
 

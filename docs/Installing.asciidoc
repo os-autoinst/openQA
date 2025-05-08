@@ -1205,6 +1205,19 @@ cloning.
 Note that jobs marked as incomplete by the stale job detection are not affected by this
 configuration and cloned in any case.
 
+=== Enable automatic database backup
+[id="automatic_database_cleanup"]
+
+An optional systemd service, `openqa-dump-db.service`, can be enabled to
+perform daily database backups. This service is triggered by the
+`openqa-dump-db.timer`. To enable automatic database backup, run:
+
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl enable --now openqa-dump-db.timer
+--------------------------------------------------------------------------------
+Backups are stored at `/var/lib/openqa/backup`.
+
 [id="auditing"]
 == Auditing - tracking openQA changes
 

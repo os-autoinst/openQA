@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily openQA database dump and cleanup task
+
+[Timer]
+OnCalendar=23:40
+Persistent=true
+
+[Install]
+WantedBy=timers.target
