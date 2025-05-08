@@ -1,5 +1,5 @@
 [Unit]
-Description=Ensure a git update of all test code and needles regardless of test execution.
+Description=openQA enqueue task git-auto-update for test code and needles
 After=postgresql.service openqa-setup-db.service
 Wants=openqa-setup-db.service
 

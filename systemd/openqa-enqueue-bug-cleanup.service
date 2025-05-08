@@ -1,5 +1,5 @@
 [Unit]
-Description=Enqueues a bug cleanup task for the openQA database.
+Description=openQA enqueue database bug cleanup task
 After=postgresql.service openqa-setup-db.service
 Wants=openqa-setup-db.service
 

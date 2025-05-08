@@ -1,5 +1,5 @@
 [Unit]
-Description=Enqueues an asset cleanup cleanup task for openQA.
+Description=openQA enqueue asset cleanup task
 After=postgresql.service openqa-setup-db.service
 Wants=openqa-setup-db.service
 

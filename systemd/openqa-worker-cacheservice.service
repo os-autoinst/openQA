@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenQA Worker Cache Service
+Description=openQA Worker Cache Service
 After=network.target nss-lookup.target remote-fs.target
 Wants=nss-lookup.target remote-fs.target
 PartOf=openqa-worker.target

@@ -1,5 +1,5 @@
 [Unit]
-Description=Restarts services which are using Minion
+Description=Trigger restart of all openQA services using minions
 
 [Service]
 Type=oneshot

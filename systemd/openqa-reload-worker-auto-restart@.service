@@ -1,5 +1,5 @@
 [Unit]
-Description=Restarts openqa-worker-auto-restart@%i.service as soon as possible without interrupting jobs
+Description=Restart openqa-worker-auto-restart@%i.service ASAP without interrupting jobs
 
 [Service]
 Type=oneshot

@@ -1,5 +1,5 @@
 [Unit]
-Description=Handler for live view in openQA's web UI
+Description=openQA Livehandler for live view in openQA's web UI
 After=postgresql.service nss-lookup.target remote-fs.target
 Requires=openqa-websockets.service
 
