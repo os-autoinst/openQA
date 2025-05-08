@@ -71,7 +71,7 @@ install-generic:
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
 
-	for i in db images testresults pool ; do \
+	for i in db images testresults pool/1 cache webui/cache; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 # shared dirs between openQA web and workers + compatibility links
