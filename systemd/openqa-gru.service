@@ -1,5 +1,5 @@
 [Unit]
-Description=The openQA daemon for various background tasks like cleanup and saving needles
+Description=The openQA GRU daemon for various background tasks
 After=postgresql.service openqa-setup-db.service
 Wants=openqa-setup-db.service
 

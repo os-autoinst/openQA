@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenQA Worker Cache Service Minion
+Description=openQA Worker Cache Service Minion
 After=openqa-worker-cacheservice.service
 Requires=openqa-worker-cacheservice.service
 PartOf=openqa-worker.target
