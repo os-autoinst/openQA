@@ -298,6 +298,9 @@ CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50
 LOCAL_UPLOAD = 0
 
+# Ensure fullstack tests run even under high load.
+CRITICAL_LOAD_AVG_THRESHOLD = 0
+
 [1]
 WORKER_CLASS = qemu_i386,qemu_x86_64
 
