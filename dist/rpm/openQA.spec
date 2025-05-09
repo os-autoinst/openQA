@@ -422,11 +422,6 @@ done
 install -D -m 644 /dev/null %{buildroot}%{_localstatedir}/log/openqa
 install -m 0644 %{_sourcedir}/openQA.changes %{buildroot}%{_datadir}/openqa/public/Changelog
 #
-mkdir %{buildroot}%{_localstatedir}/lib/openqa/pool/1
-mkdir %{buildroot}%{_localstatedir}/lib/openqa/cache
-mkdir %{buildroot}%{_localstatedir}/lib/openqa/webui
-mkdir %{buildroot}%{_localstatedir}/lib/openqa/webui/cache
-#
 %fdupes %{buildroot}/%{_prefix}
 
 %if 0%{?suse_version} > 1500

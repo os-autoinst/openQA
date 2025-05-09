@@ -18,7 +18,7 @@ use constant {
 };
 
 sub _state_file ($app, $server_name) {
-    return path(($ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} // prjdir . '/git_server_outage') . ".$server_name.flag");
+    return path(($ENV{OPENQA_GIT_SERVER_OUTAGE_FILE} // prjdir . '/webui/git_server_outage') . ".$server_name.flag");
 }
 
 sub report_server_available ($app, $server_name) {
