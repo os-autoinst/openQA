@@ -643,6 +643,11 @@ Run tests by spawning a container manually, e.g.:
 
 Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 
+NOTE: `run-tests-within-container` runs with CONTAINER_TEST enabled by default.
+It is used to run scripts which are not meant to run inside *openqa_devel* and
+the image itself does not contain any container engine. Consider disabling it
+to run any tests in a container.
+
 The command line to run tests manually reveals that the Makefile target
 `run-tests-within-container` is used to run the tests *inside* the container.
 It does some preparations to be able to run the full stack test within a
