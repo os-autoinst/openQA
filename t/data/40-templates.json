@@ -1,7 +1,7 @@
 {
    "Machines" : [
       {
-         "name" : "32bit",
+         "name" : "128bit",
          "backend" : "qemu"
       }
    ],

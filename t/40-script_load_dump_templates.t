@@ -58,8 +58,10 @@ $apikey = 'ARTHURKEY01';
 $apisecret = 'EXCALIBUR';
 my $base_args = "--host $host --apikey $apikey --apisecret $apisecret";
 $args = "$base_args $filename";
-my $expected = qr/JobGroups +=> \{ added => 1, of => 1 \}/;
-my $expectednochange = qr/JobGroups +=> \{ added => 0, of => 1 \}/;
+my $expected
+  = qr/JobGroups +=> \{ added => 1, of => 1 \},\n +JobTemplates +=> \{ added => 0, of => 0 \},\n +Machines +=> \{ added => 1, of => 1 \},\n +Products +=> \{ added => 1, of => 1 \},\n +TestSuites +=> \{ added => 1, of => 1 \}/;
+my $expectednochange
+  = qr/JobGroups +=> \{ added => 0, of => 1 \},\n +JobTemplates +=> \{ added => 0, of => 0 \},\n +Machines +=> \{ added => 0, of => 1 \},\n +Products +=> \{ added => 0, of => 1 \},\n +TestSuites +=> \{ added => 0, of => 1 \}/;
 test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded templates';
 test_once $args, $expectednochange, 'Reload does not modify without --update', 0, 'succeeded without change';
 $args = "$base_args --update $filename";
@@ -108,10 +110,10 @@ is_deeply decode($tempfilename), decode($reference), 'both dumps match';
 subtest 'dump_templates tests' => sub {
     $args = $base_args;
     dump_templates "$args Products42", qr/Invalid table.*42/, 'Error on non-existant table', 1, 'table error';
-    $args .= " --test uefi --machine 32bit --group opensuse --product bar --full JobTemplates";
+    $args .= " --test uefi --machine 128bit --group opensuse --product bar --full JobTemplates";
     $expected = qr/JobTemplates\s*=> \[.*group_name\s*=> "opensuse"/s;
     dump_templates $args, $expected, 'dump_templates with options', 0, 'dump_templates success with options';
-    $args = "$base_args --test uefi --machine 32bit --group \"openSUSE Leap 42\" --product bar --full JobTemplates";
+    $args = "$base_args --test uefi --machine 128bit --group \"openSUSE Leap 42\" --product bar --full JobTemplates";
     $expected = qr/ERROR requesting.*404 - Not Found/;
     dump_templates $args, $expected, 'dump_templates fails on wrong group', 1, 'dump_templates handles error';
 };
@@ -130,6 +132,6 @@ $expected = qr/Machines.+=> \{ added => 1, of => 1 \}/;
 test_once $args, $expected, 'imported original fixtures';
 is $schema->resultset('Machines')->count, 1, "only one machine is loaded";
 my $machine = $schema->resultset('Machines')->first;
-is $machine->name, "32bit", "correct machine is loaded";
+is $machine->name, "128bit", "correct machine is loaded";
 
 done_testing;
