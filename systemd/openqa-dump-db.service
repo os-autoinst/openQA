@@ -1,0 +1,11 @@
+[Unit]
+Description=openQA database dump and cleanup task
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
+
+[Service]
+Type=exec
+User=postgres
+ConditionPathIsReadWrite=/var/lib/openqa/backup
+ConditionPathIsSymbolicLink=/var/lib/openqa/SQL-DUMPS
+ExecStart=/usr/share/openqa/script/dump-db
