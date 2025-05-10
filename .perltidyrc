@@ -3,7 +3,7 @@
 --character-encoding=none
 --no-valign
 -l=120   # 120 characters per line
--fbl     # don't change blank lines
+--noblanks-before-comments
 -nsfs    # no spaces before semicolons
 -baao    # space after operators
 -bbao    # space before operators
@@ -12,3 +12,6 @@
 -sbt=2   # no spaces around {}
 -sct     # stack closing tokens )}
 --pack-operator-types='->' # allow chained method calls on one line
+--blanks-before-subs
+--keep-old-blank-lines=2 # keep all blank lines
+--noblanks-before-blocks

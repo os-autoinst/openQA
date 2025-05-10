@@ -605,6 +605,7 @@ sub extract_group_args_from_settings ($settings) {
 Internal function, needs to be executed in a transaction to perform
 optimistic locking on clone_id
 =cut
+
 sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_children, $settings) {
     # Skip cloning 'ok' jobs which are only pulled in as children if that flag is set
     return ()
@@ -904,6 +905,7 @@ for DIRECTLY_CHAINED dependencies:
  + if child is clone, find the latest clone and clone it
 
 =cut
+
 sub duplicate ($self, $args = {}) {
     # If the job already has a clone, none is created
     my ($orig_id, $clone_id) = ($self->id, $self->clone_id);
@@ -967,6 +969,7 @@ Handle individual job restart including dependent jobs and asset dependencies. N
 the caller is responsible to notify the workers about the new job.
 
 =cut
+
 sub auto_duplicate ($self, $args = {}) {
     my $clones = $self->duplicate($args);
     return $clones unless ref $clones eq 'HASH';
@@ -1698,6 +1701,7 @@ sub _failure_reason ($self) {
 Returns the hook script for this job depending on its result and settings and the global configuration.
 
 =cut
+
 sub hook_script ($self) {
     my $trigger_hook = $self->settings_hash->{_TRIGGER_JOB_DONE_HOOK};
     return undef if defined $trigger_hook && !$trigger_hook;
@@ -1757,6 +1761,7 @@ carry over bugrefs (i.e. special comments) from previous jobs to current
 result in the same scenario.
 
 =cut
+
 sub carry_over_bugrefs ($self) {
     if (my $group = $self->group) { return undef unless $group->carry_over_bugrefs }
     return undef unless my $prev = $self->_carry_over_candidate;
@@ -2107,6 +2112,7 @@ if result is not set (expected default situation) result is computed from the re
 test modules
 
 =cut
+
 sub done ($self, %args) {
     # read specified result or calculate result from module results if none specified
     my $result;

@@ -5,6 +5,7 @@
 use Test::Most;
 
 my ($tempdir, $cached, $cachedir, $db_file);
+
 BEGIN {
     use Mojo::File qw(path tempdir);
 

@@ -34,26 +34,26 @@ chdir $workdir;
 my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 # define fake isotovideo
-{
-    package Test::FakeProcess;    # uncoverable statement count:1
+package Test::FakeProcess {    # uncoverable statement count:1
     use Mojo::Base -base;
     has is_running => 1;
     sub stop { shift->is_running(0) }
 }
-{
-    package Test::FakeClient;    # uncoverable statement count:2
+
+package Test::FakeClient {    # uncoverable statement count:2
     use Mojo::Base -base;
     has webui_host => 'fake';
     has worker_id => 42;
     has service_port_delta => 2;
     has api_calls => sub { [] };
+
     sub send {
         my ($self, $method, $path, %args) = @_;
         push(@{shift->api_calls}, $method, $path, $args{params});
     }
 }
-{
-    package Test::FakeJob;    # uncoverable statement count:2
+
+package Test::FakeJob {    # uncoverable statement count:2
     use Mojo::Base 'Mojo::EventEmitter';
     has id => 42;
     has status => 'running';
@@ -61,12 +61,14 @@ my $guard = scope_guard sub { chdir $FindBin::Bin };
     has is_accepted => 0;
     has client => sub { Test::FakeClient->new; };
     has name => 'test-job';
+
     sub skip {
         my ($self) = @_;
         $self->is_skipped(1);
         $self->emit(status_changed => {job => $self, status => 'stopped', reason => 'skipped'});
         return 1;
     }
+
     sub accept {
         my ($self) = @_;
         $self->is_accepted(1);
@@ -75,13 +77,13 @@ my $guard = scope_guard sub { chdir $FindBin::Bin };
     }
     sub start { }
 }
-{
-    package Test::FakeCacheServiceClientInfo;
+
+package Test::FakeCacheServiceClientInfo {
     use Mojo::Base -base;
     has availability_error => 'Cache service info error: Connection refused';
 }
-{
-    package Test::FakeDBus;    # uncoverable statement count:2
+
+package Test::FakeDBus {    # uncoverable statement count:2
     use Mojo::Base -base, -signatures;
     has mock_service_value => 1;
     sub get_service ($self, $service_name) { $self->mock_service_value }

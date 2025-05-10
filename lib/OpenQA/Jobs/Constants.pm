@@ -168,6 +168,7 @@ my %META_RESULT_MAPPING = (
 );
 sub meta_state ($state) { $META_STATE_MAPPING{$state} // NONE }
 sub meta_result ($result) { $META_RESULT_MAPPING{$result} // NONE }
+
 sub is_ok_result ($result) {
     !!grep { $result eq $_ } OK_RESULTS;
 }
