@@ -685,6 +685,7 @@ subtest 'carry over, including soft-fails' => sub {
             $job->update({state => UPLOADING});
             $job->discard_changes;
             $job->done;
+            my $start = time;
             perform_minion_jobs($t->app->minion);
             $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
             is $job_info->{state}, 'inactive', 'hook script has been retried with long delay';
@@ -695,9 +696,21 @@ subtest 'carry over, including soft-fails' => sub {
             like($notes->{hook_result}, qr/delayed/, 'real hook cmd from config called if result matches (5)');
             is $notes->{hook_rc}, 142, 'exit code of the hook cmd is as expected';
             is $job_info->{retries}, 1, 'hook script has been retried once because of delay';
+
+            note "There is a linear delay for each hook script which gets exit 142";
+            cmp_ok $job_info->{delayed} - $start, '>', 60, 'default delay for first retry applied correctly';
+            # force some retries with delay 0 to avoid having to wait in the test
+            $t->app->minion->job($job_info->{id})->retry({delay => 0});
+            $t->app->minion->job($job_info->{id})->retry({delay => 0});
+            $start = time;
+            perform_minion_jobs($t->app->minion);
+            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            is $job_info->{retries}, 4, 'hook script has been retried 4 times';
+            cmp_ok $job_info->{delayed} - $start, '>', 240, 'linear delay calculated correctly for 4th retry';
         };
     };
 };
+
 
 subtest 'carry over for ignore_failure modules' => sub {
     my %_settings = %settings;
