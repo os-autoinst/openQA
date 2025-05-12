@@ -513,23 +513,20 @@ sub _groups_for_globs ($c) {
     return \@groups;
 }
 
-sub _glob_to_like ($glob) { $glob =~ s/\*/\%/gr }
-
 sub _job_setting_conds ($c) {
     my $job_setting_params = $c->every_param('job_setting');
     my @conds;
     for my $param (@$job_setting_params) {
         my $equal_sign_pos = index($param, '=');
         my $key = $equal_sign_pos >= 0 ? substr($param, 0, $equal_sign_pos) : $param;
-        my %cond = ('settings.key' => {-ilike => _glob_to_like($key)});
+        my %cond = ('settings.key' => \['~* ?', $key]);
         if ($equal_sign_pos >= 0) {
             my $value = substr($param, $equal_sign_pos + 1);
-            $cond{'settings.value'} = {-ilike => _glob_to_like($value)};
+            $cond{'settings.value'} = \['~* ?', $value];
         }
         push @conds, \%cond;
     }
-    return (undef, undef) unless @conds;
-    return ([{-or => \@conds}], ['settings']);
+    return @conds ? ([{-or => \@conds}], ['settings']) : (undef, undef);
 }
 
 sub _match_group ($regexes, $group) {
