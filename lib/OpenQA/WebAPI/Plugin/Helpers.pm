@@ -339,6 +339,7 @@ sub register ($self, $app, $config) {
 
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
     $app->helper(groups_for_globs => \&_groups_for_globs);
+    $app->helper(job_setting_conds => \&_job_setting_conds);
     $app->helper(param_hash => \&_param_hash);
     $app->helper(
         link_key_exists => sub {
@@ -510,6 +511,25 @@ sub _groups_for_globs ($c) {
     }
 
     return \@groups;
+}
+
+sub _glob_to_like ($glob) { $glob =~ s/\*/\%/gr }
+
+sub _job_setting_conds ($c) {
+    my $job_setting_params = $c->every_param('job_setting');
+    my @conds;
+    for my $param (@$job_setting_params) {
+        my $equal_sign_pos = index($param, '=');
+        my $key = $equal_sign_pos >= 0 ? substr($param, 0, $equal_sign_pos) : $param;
+        my %cond = ('settings.key' => {-ilike => _glob_to_like($key)});
+        if ($equal_sign_pos >= 0) {
+            my $value = substr($param, $equal_sign_pos + 1);
+            $cond{'settings.value'} = {-ilike => _glob_to_like($value)};
+        }
+        push @conds, \%cond;
+    }
+    return (undef, undef) unless @conds;
+    return ([{-or => \@conds}], ['settings']);
 }
 
 sub _match_group ($regexes, $group) {

@@ -257,9 +257,12 @@ function renderTestLists() {
       this[paramName] = paramValues[0];
     }
   };
-  jQuery.each(['limit', 'groupid', 'match', 'group_glob', 'not_group_glob', 'comment'], (index, paramName) => {
-    ajaxQueryParams.addFirstParam(paramName);
-  });
+  jQuery.each(
+    ['limit', 'groupid', 'match', 'group_glob', 'not_group_glob', 'job_setting', 'comment'],
+    (index, paramName) => {
+      ajaxQueryParams.addFirstParam(paramName);
+    }
+  );
   delete ajaxQueryParams.addFirstParam;
   filters.forEach(filter => {
     const param = pageQueryParams[filter];

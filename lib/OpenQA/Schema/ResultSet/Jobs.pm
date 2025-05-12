@@ -327,13 +327,15 @@ sub _prepare_complex_query_search_args ($self, $args) {
         push @conds, \['(select id from comments where job_id = me.id and text like ? limit 1) is not null', "%$c%"];
     }
 
-    push(@conds, @{$args->{additional_conds}}) if $args->{additional_conds};
+    if (my $additional_conds = $args->{additional_conds}) { push @conds, @$additional_conds }
+    if (my $additional_joins = $args->{additional_joins}) { push @joins, @$additional_joins }
     my %attrs;
     $attrs{columns} = $args->{columns} if $args->{columns};
     $attrs{prefetch} = $args->{prefetch} if $args->{prefetch};
     $attrs{rows} = $args->{limit} if $args->{limit};
     $attrs{offset} = $args->{offset} if $args->{offset};
     $attrs{order_by} = $args->{order_by} || ['me.id DESC'];
+    if (my $group_by = $args->{group_by}) { $attrs{group_by} = $group_by }
     $attrs{join} = \@joins if @joins;
     return (\@conds, \%attrs);
 }
