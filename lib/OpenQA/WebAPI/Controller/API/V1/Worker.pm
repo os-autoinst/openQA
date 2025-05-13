@@ -148,11 +148,11 @@ sub _incomplete_previous_job {
     my $worker = $job->assigned_worker // $job->worker;
     my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
     $job->set_property('JOBTOKEN');
-    $job->auto_duplicate;
-    $job->done(
-        result => OpenQA::Jobs::Constants::INCOMPLETE,
-        reason => "abandoned: associated $worker_info re-connected but abandoned the job",
-    );
+    try { $job->auto_duplicate }
+    catch ($e) { log_warning("Unable to duplicate job $job_id after being abandoned by $worker_info: $e") }
+    my $reason = "abandoned: associated $worker_info re-connected but abandoned the job";
+    try { $job->done(result => INCOMPLETE, reason => $reason) }
+    catch ($e) { log_warning("Unable to incomplete job $job_id after being abandoned by $worker_info: $e") }
     return 1;
 }
 

@@ -1757,23 +1757,29 @@ result in the same scenario.
 
 =cut
 sub carry_over_bugrefs ($self) {
-    if (my $group = $self->group) { return undef unless $group->carry_over_bugrefs }
-    return undef unless my $prev = $self->_carry_over_candidate;
+    try {
+        if (my $group = $self->group) { return undef unless $group->carry_over_bugrefs }
+        return undef unless my $prev = $self->_carry_over_candidate;
 
-    my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
-    for my $comment ($comments->all) {
-        next if !$comment->bugref && !exists($comment->text_flags->{carryover});
-        my $text = $comment->text;
-        my $prev_id = $prev->id;
-        $text .= "\n\n(Automatic carryover from t#$prev_id)" if $text !~ qr/Automatic (takeover|carryover)/;
-        $text .= "\n(The hook script will not be executed.)"
-          if $text !~ qr/The hook script will not be executed/ && defined $self->hook_script;
-        $text .= "\n" unless substr($text, -1, 1) eq "\n";
-        my %newone = (text => $text, user_id => $comment->user_id);
-        my $comment = $self->comments->create_with_event(\%newone, {taken_over_from_job_id => $prev_id});
-        try { $comment->handle_special_contents }
-        catch ($e) { log_info "Unable to evaluate contents of taken-over comment: $e" }
-        return 1;
+        my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
+        for my $comment ($comments->all) {
+            next if !$comment->bugref && !exists($comment->text_flags->{carryover});
+            my $text = $comment->text;
+            my $prev_id = $prev->id;
+            $text .= "\n\n(Automatic carryover from t#$prev_id)" if $text !~ qr/Automatic (takeover|carryover)/;
+            $text .= "\n(The hook script will not be executed.)"
+              if $text !~ qr/The hook script will not be executed/ && defined $self->hook_script;
+            $text .= "\n" unless substr($text, -1, 1) eq "\n";
+            my %newone = (text => $text, user_id => $comment->user_id);
+            my $comment = $self->comments->create_with_event(\%newone, {taken_over_from_job_id => $prev_id});
+            try { $comment->handle_special_contents }
+            catch ($e) { log_info "Unable to evaluate contents of taken-over comment: $e" }
+            return 1;
+        }
+    }
+    catch ($e) {
+        my $job_id = $self->id;
+        log_warning "Unable to carry-over bugrefs of job $job_id: $e";
     }
     return undef;
 }
