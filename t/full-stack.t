@@ -244,7 +244,7 @@ subtest 'clone job that crashes' => sub {
     like status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker';
   }
   or bail_with_log 2,
-  'Job 1 produced the wrong results';
+  'Job 2 produced the wrong results';
 
 subtest 'cancel a scheduled job' => sub {
     client_call(
