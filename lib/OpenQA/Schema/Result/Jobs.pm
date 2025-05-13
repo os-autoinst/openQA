@@ -4,7 +4,6 @@
 package OpenQA::Schema::Result::Jobs;
 
 use Mojo::Base 'DBIx::Class::Core', -signatures;
-use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;
 use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
@@ -30,7 +29,7 @@ use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::Collection;
 use Mojo::File qw(tempfile path);
-use Mojo::JSON 'decode_json';
+use Mojo::JSON qw(encode_json decode_json);
 use Data::Dump 'dump';
 use Text::Diff;
 use OpenQA::File;
