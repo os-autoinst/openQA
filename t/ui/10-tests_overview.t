@@ -282,6 +282,7 @@ subtest 'filtering by flavor' => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-flavor')->send_keys('DVD');
         apply_filter('DVD');
+        like $driver->get_current_url, qr/flavor=DVD/, 'url contains single flavor';
 
         element_visible('#flavor_DVD_arch_i586', qr/i586/);
         element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
