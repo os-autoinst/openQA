@@ -321,6 +321,18 @@ subtest 'jobs for job settings' => sub {
       ->json_is({jobs => [99981]});
     $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
       ->json_is({jobs => [99926]});
+
+
+    subtest 'get blocked jobs' => sub {
+        #default
+        $t->get_ok('/api/v1/job_settings/blocked_jobs' => form => {key => 'INCIDENT', list_value => 3456})
+          ->status_is(200)->json_is({jobs => [99962]});
+        # passed not returned
+        $t->get_ok('/api/v1/job_settings/blocked_jobs' => form => {key => '*_TEST_ISSUES', list_value => 26122})
+          ->status_is(200)->json_is({jobs => []});
+        $t->get_ok('/api/v1/job_settings/blocked_jobs' => form => {key => 'INCIDENT', list_value => 1234})
+          ->status_is(200)->json_is({jobs => [99962, 99938]});
+    };
 };
 
 $schema->txn_begin;
