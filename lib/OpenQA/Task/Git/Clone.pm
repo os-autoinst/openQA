@@ -10,6 +10,7 @@ use Feature::Compat::Try;
 use List::Util qw(min);
 use OpenQA::Log qw(log_debug);
 use OpenQA::Git::ServerAvailability qw(report_server_unavailable report_server_available SKIP FAIL);
+use OpenQA::Task::SignalGuard;
 use Time::Seconds qw(ONE_HOUR);
 
 sub register ($self, $app, @) {
@@ -24,6 +25,7 @@ sub register ($self, $app, @) {
 # if the url matches the origin remote.
 
 sub _git_clone_all ($job, $clones) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $job_id = $job->id;
 
