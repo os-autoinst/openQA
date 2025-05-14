@@ -104,6 +104,7 @@ main_requires:
   perl(Carp):
   perl(Config::Tiny):
   perl(CommonMark):
+  perl(CryptX):
   perl(Date::Format):
   perl(DateTime):
   perl(DateTime::Duration):

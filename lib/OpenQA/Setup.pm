@@ -396,7 +396,7 @@ sub load_plugins ($server, $monitoring_root_route = undef, %options) {
 }
 
 sub set_secure_flag_on_cookies ($c) {
-    $c->app->sessions->secure(1) if $c->req->is_secure;
+    $c->app->sessions->encrypted(1) if $c->req->is_secure;
     if (my $days = $c->app->config->{global}->{hsts}) {
         $c->res->headers->header(
             'Strict-Transport-Security' => sprintf('max-age=%d; includeSubDomains', $days * 24 * 60 * 60));
