@@ -489,7 +489,7 @@ subtest 'carry over, including soft-fails' => sub {
             ok($inv = $job->investigate(git_limit => 23), 'job investigation ok with test changes');
             my $actual_lines = split(/\n/, $inv->{test_log});
             my $expected_lines = 7;
-            is($actual_lines, $expected_lines, 'test_log have correct number of lines');
+            is($actual_lines, $expected_lines, 'test_log has the correct number of lines');
             like($inv->{test_log}, qr/^.*file changed/m, 'git log with test changes');
             is $got_limit, 23, 'git_limit was correctly passed';
         };
