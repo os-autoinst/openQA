@@ -9,7 +9,7 @@
     Machines => [
         {
             backend => "qemu",
-            name => "32bit",
+            name => "128bit",
             settings => [],
         },
     ],

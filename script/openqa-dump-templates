@@ -53,6 +53,12 @@ when dumping a specific job group also dump related test suites, products and ma
 
 dump as json
 
+=item B<--convert>
+
+convert legacy non-YAML job groups to modern YAML
+
+dump as json
+
 =item B<--help, -h>
 
 print help
@@ -117,7 +123,7 @@ sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 GetOptions(
     \%options, "json", "host=s", "apibase=s", "apikey:s", "apisecret:s",
     "group=s@", "name=s@", "test=s@", "product=s@", "machine=s@", "full",
-    "help|h",
+    "convert", "help|h",
 ) or usage(1);
 
 usage(0) if $options{help};
@@ -179,24 +185,41 @@ sub product_key ($r) {
 }
 
 if ($tables{'JobGroups'}) {
-    my $group = (keys %{$options{group}})[0];
-    $url->path($options{apibase} . '/job_templates_scheduling/' . ($group // ''));
-    my $res = $client->get($url)->res;
-    handle_error($group // 'all groups', $url, $res) unless $res->code && $res->code == 200;
-    if ($group) {
-        # This is already the YAML document of a single group
-        push @{$result{JobGroups}}, {group_name => $group, template => $res->json};
+    my $group = defined $options{group} ? (keys %{$options{group}})[0] // '' : '';
+    if ($options{convert}) {
+        # use job_templates_scheduling, which converts if no YAML
+        # string already exists
+        $url->path($options{apibase} . '/job_templates_scheduling/' . $group);
+        my $res = $client->get($url)->res;
+        handle_error($group || 'all groups', $url, $res) unless $res->code && $res->code == 200;
+        if ($group) {
+            # This is already the YAML document of a single group
+            push @{$result{JobGroups}}, {group_name => $group, template => $res->json};
+        }
+        else {
+            my $yaml = $res->json;
+            foreach my $group (sort keys %$yaml) {
+                push @{$result{JobGroups}}, {group_name => $group, template => $yaml->{$group}};
+            }
+        }
     }
     else {
-        my $yaml = $res->json;
-        foreach my $group (sort keys %$yaml) {
-            push @{$result{JobGroups}}, {group_name => $group, template => $yaml->{$group}};
+        # use job_groups and store any existing template strings
+        $url->path($options{apibase} . '/job_groups/');
+        my $res = $client->get($url)->res;
+        handle_error($group || 'all groups', $url, $res) unless $res->code && $res->code == 200;
+        my $jgroups = $res->json;
+        for my $jgdata (@$jgroups) {
+            next unless ($jgdata->{template});
+            next if ($group && $jgdata->{name} ne $group);
+            push @{$result{JobGroups}}, {group_name => $jgdata->{name}, template => $jgdata->{template}};
         }
     }
 }
 
 for my $table (qw(Machines TestSuites Products JobTemplates)) {
     next unless $tables{$table};
+    next if ($table eq "JobTemplates" && $options{convert});
     $url->path($options{apibase} . '/' . decamelize($table));
     my $res = $client->get($url)->res;
     handle_error($table, $url, $res) unless $res->code && $res->code == 200;
@@ -210,6 +233,8 @@ if ($tables{JobTemplates} && $options{full}) {
         next if $options{group} && !$options{group}->{$r->{group_name}};
         $options{test}->{$r->{test_suite}->{name}} = 1;
         $options{machine}->{$r->{machine}->{name}} = 1;
+        # note: $options{product} may not be defined yet, this relies
+        # on perl autovivification
         $options{product}->{product_key($r->{product})} = 1;
     }
 }
@@ -217,7 +242,21 @@ if ($tables{JobTemplates} && $options{full}) {
 sub handle_row ($table, $r) {
     if ($table eq 'JobTemplates') {
         return undef if $options{group} && $r->{group_name} && !$options{group}->{$r->{group_name}};
-        return undef unless $options{product}->{product_key($r->{product})};
+        return undef if $options{product} && !$options{product}->{product_key($r->{product})};
+        # skip if we have YAML data for this group. mixing YAML and
+        # non-YAML template data for a group is not a good idea
+        return undef
+          if $r->{group_name} && $result{JobGroups} && grep { $r->{group_name} eq $_->{group_name} }
+          @{$result{JobGroups}};
+        # see https://github.com/os-autoinst/openQA/pull/2071#issuecomment-2867855025
+        if ($r->{settings} || $r->{description}) {
+            print STDERR
+              "Settings and/or description unexpectedly present in job template from legacy (non-YAML) job group "
+              . $r->{group_name} . "!\n";
+            print STDERR "Loading the dumped data would lose the settings.\n";
+            print STDERR "Dump with --convert to convert to YAML format and preserve settings.\n";
+            exit(1);
+        }
     }
     return undef if $table eq 'TestSuites' && $options{test} && $r->{name} && !$options{test}->{$r->{name}};
     return undef if $table eq 'Machines' && $options{machine} && $r->{name} && !$options{machine}->{$r->{name}};
@@ -231,8 +270,20 @@ sub handle_row ($table, $r) {
     return $r;
 }
 
+sub jt_key ($jt) {
+    my $prod = $jt->{product};
+    return join('',
+        $jt->{group_name},
+        $jt->{test_suite}->{name},
+        $jt->{machine}->{name},
+        $prod->{arch}, $prod->{distri}, $prod->{flavor}, $prod->{version});
+}
+
 sub handle_table ($table) {
     $result{$table} = [grep { defined } map { handle_row($table, $_) } @{$result{$table}}];
+    if ($table eq 'JobTemplates') {
+        $result{$table} = [sort { jt_key($a) cmp jt_key($b) } @{$result{$table}}];
+    }
 }
 
 handle_table($_) for keys %result;

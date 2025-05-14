@@ -22,6 +22,7 @@ $Test::Strict::TEST_SKIP = [
     't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm',
     # Skip data files which are supposed to resemble generated output which has no 'use' statements
     't/data/40-templates.pl',
+    't/data/40-templates-jgs.pl',
     't/data/40-templates-more.pl',
     't/data/openqa-trigger-from-obs/Proj2::appliances/.api_package',
     't/data/openqa-trigger-from-obs/Proj2::appliances/.dirty_status',

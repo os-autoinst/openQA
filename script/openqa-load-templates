@@ -115,21 +115,14 @@ sub post_entry ($table, $entry) {
     my %param;
 
     if ($table eq 'JobGroups') {
-        # Create the group first
+        # Try to create the group first
         my $job_groups_url = $url->clone->path($options{apibase} . '/job_groups');
-        my $existing_group_res = $client->get($job_groups_url, form => {name => $entry->{group_name}})->res;
-        print_error $existing_group_res unless $existing_group_res->is_success;
-        my $group_exists = 0;
-        for my $group (@{$existing_group_res->json}) {
-            next unless $group->{name} eq $entry->{group_name};
-            $group_exists = 1
-              if $options{update}
-              or die "Job group '$entry->{group_name}' already exists. Use --update to modify existing entries.";
-        }
-        unless ($group_exists) {
-            my $create_res = $client->post($job_groups_url, form => {name => $entry->{group_name}})->res;
-            print_error($create_res) unless $create_res->is_success;
-        }
+        my $create_res = $client->post($job_groups_url, form => {name => $entry->{group_name}})->res;
+        # this is what we get from the API if the group exists
+        my $exists = ($create_res->code == 500 && $create_res->json->{already_exists});
+        # return 0 (indicating no change) unless --clean or --update passed
+        return 0 if ($exists && !$options{update} && !$options{clean});
+        print_error($create_res) unless ($create_res->is_success || $exists);
         # Post the job template YAML
         my $job_templates_url = $url->clone->path($options{apibase} . '/job_templates_scheduling');
         my $yaml_res = $client->post(
@@ -204,7 +197,8 @@ sub post_entry ($table, $entry) {
         }
     }
 
-    my $res = $client->post($table_url, json => \%param)->res;
+    my $type = $table eq 'JobTemplates' ? 'form' : 'json';
+    my $res = $client->post($table_url, $type => \%param)->res;
     print_error $res unless $res->is_success;
     return 1;
 }

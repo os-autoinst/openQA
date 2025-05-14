@@ -9,12 +9,12 @@
     Machines => [
         {
             backend => "qemu",
-            name => "32bit",
+            name => "128bit",
             settings => [],
         },
         {
             backend => "qemu",
-            name => "64bit",
+            name => "256bit",
             settings => [],
         },
     ],

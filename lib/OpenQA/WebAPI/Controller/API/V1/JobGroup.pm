@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobGroup;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use Mojo::JSON;
 use Feature::Compat::Try;
 
 use OpenQA::Schema::Result::JobGroups;
@@ -219,7 +220,10 @@ sub create ($self) {
     my $check = $self->check_top_level_group;
     if ($check != 0) {
         return $self->render(
-            json => {error => 'Unable to create group with existing name ' . $validation->param('name')},
+            json => {
+                error => 'Unable to create group with existing name ' . $validation->param('name'),
+                already_exists => Mojo::JSON->true
+            },
             status => 500
         );
     }
