@@ -106,7 +106,8 @@
                     <div class="col-5">
                         <div class="mb-3">
                             <strong>Flavor</strong>
-                            <input type="text" class="form-control" name="flavor" placeholder="any" id="filter-flavor">
+                            <input type="text" class="form-control" name="flavor" id="filter-flavor"
+                            placeholder="flavors, comma separated, e.g. foo,bar">
                         </div>
                     </div>
                 </div>

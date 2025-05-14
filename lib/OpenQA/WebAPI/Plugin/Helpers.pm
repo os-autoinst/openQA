@@ -392,6 +392,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('comment');
     $v->optional('groupid')->num(0, undef);
     $v->optional('modules', 'comma_separated');
+    $v->optional('flavor', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(0, undef);
 
     # add simple query params to search args
