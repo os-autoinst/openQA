@@ -6,8 +6,10 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
+use Test::Output qw(combined_like);
 use Mojo::URL;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Case;
@@ -146,17 +148,65 @@ subtest 'incompleting previous job on worker registration' => sub {
         is($jobs->find($running_job_id)->state, RUNNING, 'assigned job still running');
     };
 
+    my $expected_breakage = '';
+    my $expected_warning = qr//;
+    my $test_registration = sub {
+        $schema->txn_begin;
+        combined_like sub { $t->post_ok('/api/v1/workers', form => \%registration_params) },
+          $expected_warning, 'expected warning logged';
+        $t->status_is(200, 'register existing worker passing no job ID');
+        $t->json_is('/id' => $worker_id, 'worker ID returned');
+        always_explain $t->tx->res->json unless $t->success;
+        return $schema->txn_rollback if $expected_breakage eq 'worker';
+        is $workers->find($worker_id)->job_id, undef, 'worker has no longer an assigned job';
+        return $schema->txn_rollback if $expected_breakage eq 'job';
+        my $incomplete_job = $jobs->find($running_job_id);
+        is $incomplete_job->state, DONE, 'assigned job set to done';
+        ok $incomplete_job->result eq INCOMPLETE || $incomplete_job->result eq PARALLEL_RESTARTED,
+          'assigned job considered incomplete or parallel restarted'
+          or always_explain 'actual job result: ' . $incomplete_job->result;
+        $schema->txn_rollback;
+    };
+
     subtest 'previous job incompleted when worker doing something else' => sub {
         delete $registration_params{job_id};
-        $t->post_ok('/api/v1/workers', form => \%registration_params)
-          ->status_is(200, 'register existing worker passing no job ID')
-          ->json_is('/id' => $worker_id, 'worker ID returned');
-        return always_explain $t->tx->res->json unless $t->success;
-        my $incomplete_job = $jobs->find($running_job_id);
-        is($incomplete_job->state, DONE, 'assigned job set to done');
-        ok($incomplete_job->result eq INCOMPLETE || $incomplete_job->result eq PARALLEL_RESTARTED,
-            'assigned job considered incomplete or parallel restarted')
-          or always_explain 'actual job result: ' . $incomplete_job->result;
+
+        subtest 'no errors occurred' => $test_registration;
+
+        # test the worst case where workers will end up stuck with a job
+        # note: This is not supposed to happen in production as errors are now supposed to be caught
+        #       earlier by the cases tested in further subtests. However, this warning turned out to
+        #       be useful when investigating problems so we should keep it and have this test.
+        my $mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Worker');
+        $mock->redefine(_incomplete_previous_job => sub { die 'foo1' });
+        $expected_breakage = 'worker';
+        $expected_warning = qr/Unable to incomplete.*reschedule.*abandoned by worker 2: foo1/;
+        subtest 'incompleting previous job fails' => $test_registration;
+
+        # test that everything else works as expected despite failing duplication
+        $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        $mock->redefine(auto_duplicate => sub { die 'foo2' });
+        $expected_breakage = '';
+        $expected_warning = qr/Unable to duplicate job.*abandoned by worker remotehost:1: foo2/;
+        subtest 'failure when duplicating job does not prevent anything else' => $test_registration;
+
+        # test that when we cannot set the job to done the worker is at least freed from its job
+        # note: It is very important to free the worker from its job as it would otherwise be stuck
+        #       forever. The jobs seem to be mostly cancelled by obsoletion in practices anyway and
+        #       can also be cancelled manually by users if needed.
+        $mock->unmock('auto_duplicate');
+        $mock->redefine(done => sub { die 'foo3' });
+        $expected_breakage = 'job';
+        $expected_warning = qr/Unable to incomplete job.*abandoned by worker remotehost:1: foo3/;
+        subtest 'worker still freed from its job, even if job cannot be set done' => $test_registration;
+
+        # test that failures when reading results (e.g. for carry over) are not preventing anything else to happen
+        $mock = Test::MockModule->new('OpenQA::Schema::Result::JobModules');
+        $jobs->find($running_job_id)->modules->create({name => 'foo', script => 'bar', category => 'testsuite'});
+        $mock->redefine(results => sub ($self, %options) { die 'foo4' });
+        $expected_breakage = '';
+        $expected_warning = qr/Unable to carry-over bugrefs of job.*: foo4/;
+        subtest 'failure when reading job module results does not prevent anything else' => $test_registration;
     };
 };
 
