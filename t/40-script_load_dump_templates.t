@@ -221,7 +221,7 @@ for my $jt ($schema->resultset('JobTemplates')->all) {
 }
 is $found, 1, 'exactly one advanced_kde job template was found';
 
-# now let's test --clean / --update with YAML groups
+# now let's test --update with YAML groups
 # clear the templates, but leave the job group in existence
 $schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates);
 $schema->resultset('JobGroups')->update({template => ''});
@@ -233,15 +233,23 @@ $args = "$base_args --update t/data/40-templates-jgs.pl";
 $expected = qr/JobGroups +=> \{ added => 1, of => 1 \}/;
 test_once $args, $expected, 're-import with --update works';
 is $schema->resultset('JobTemplates')->count, 3, 'job templates were loaded';
-# change template string and test we can --clean over it (in fact we
-# always overwrite the string, clean and update are the same in this regard)
-# TODO: make --clean empty existing templates for all job groups, even
-# ones we're not writing to
-$schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates);
-$schema->resultset('JobGroups')->update({template => "scenarios: {}\nproducts: {}\n"});
+
+# to test YAML --clean, let's rename the group from 40-templates-jgs
+# to 'fedora' and add a legacy group
+$schema->resultset('JobGroups')->update({name => 'fedora'});
+$schema->resultset('JobGroups')->create({name => 'legacy', description => 'legacy group'});
 $args = "$base_args --clean t/data/40-templates-jgs.pl";
 $expected = qr/JobGroups +=> \{ added => 1, of => 1 \}/;
-test_once $args, $expected, 're-import with --update works';
+test_once $args, $expected, 're-import with --clean works';
 is $schema->resultset('JobTemplates')->count, 3, 'job templates were loaded';
+is $schema->resultset('JobGroups')->count, 3, 'we now have three job groups';
+my $fedora = $schema->resultset('JobGroups')->find({name => 'fedora'});
+my $opensuse = $schema->resultset('JobGroups')->find({name => 'opensuse'});
+my $legacy = $schema->resultset('JobGroups')->find({name => 'legacy'});
+is $fedora->template, "scenarios: {}\nproducts: {}\n", 'fedora group template emptied';
+is $legacy->template, undef, 'legacy group template still undefined';
+ok $opensuse->template, 'opensuse group has template';
+# make sure all job templates are for opensuse group not fedora group
+check_property($schema, 'JobTemplates', 'group_id', [$opensuse->id, $opensuse->id, $opensuse->id]);
 
 done_testing;

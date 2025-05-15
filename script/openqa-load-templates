@@ -96,6 +96,9 @@ $options{apibase} ||= '/api/v1';
 my $url = OpenQA::Client::url_from_host($options{host});
 my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
 my @tables = (qw(Machines TestSuites Products JobTemplates JobGroups));
+# clean JobGroups first so we don't hit
+# "must be updated through the YAML template" in the other tables
+my @cleantables = (qw(JobGroups Machines TestSuites Products JobTemplates));
 
 sub print_error ($res) {
     if (my $err = $res->error) {
@@ -111,6 +114,18 @@ sub print_error ($res) {
     die "unknown error code - host $url->{host} unreachable?";
 }
 
+sub post_yaml_templates ($group_name, $template) {
+    # Post the job template YAML
+    my $job_templates_url = $url->clone->path($options{apibase} . '/job_templates_scheduling');
+    return $client->post(
+        $job_templates_url,
+        form => {
+            name => $group_name,
+            template => $template,
+            schema => 'JobTemplates-01.yaml'
+        })->res;
+}
+
 sub post_entry ($table, $entry) {
     my %param;
 
@@ -124,14 +139,8 @@ sub post_entry ($table, $entry) {
         return 0 if ($exists && !$options{update} && !$options{clean});
         print_error($create_res) unless ($create_res->is_success || $exists);
         # Post the job template YAML
-        my $job_templates_url = $url->clone->path($options{apibase} . '/job_templates_scheduling');
-        my $yaml_res = $client->post(
-            $job_templates_url,
-            form => {
-                name => $entry->{group_name},
-                template => $entry->{template},
-                schema => 'JobTemplates-01.yaml'
-            })->res;
+
+        my $yaml_res = post_yaml_templates($entry->{group_name}, $entry->{template});
         print_error($yaml_res) unless $yaml_res->is_success;
         return 1;
     }
@@ -204,21 +213,31 @@ sub post_entry ($table, $entry) {
 }
 
 if ($options{'clean'}) {
-    for my $table (@tables) {
-        # we can't clean job groups as they're not deletable unless empty
-        next if ($table eq "JobGroups");
+    for my $table (@cleantables) {
         my $table_url = $url->clone->path($options{apibase} . '/' . decamelize($table));
         my $res = $client->get($table_url)->res;
         if ($res->is_success) {
             my $result = $res->json;
-            for my $i (0 .. $#{$result->{$table}}) {
-                my $id = $result->{$table}->[$i]->{id};
-                my $table_url_id = $url->clone->path($options{apibase} . '/' . decamelize($table) . "/$id");
-                $res = $client->delete($table_url_id)->res;
-                last unless $res->is_success;
+            # we can't clean job groups as they're not deletable
+            # unless empty, but we *can* replace existing YAML
+            # template strings with 'empty' ones
+            if ($table eq "JobGroups") {
+                # unlike all other tables, is not a hash
+                for my $jg (@$result) {
+                    next unless ($jg->{template});
+                    $res = post_yaml_templates($jg->{name}, "scenarios: {}\nproducts: {}\n");
+                    last unless $res->is_success;
+                }
+            }
+            else {
+                for my $i (0 .. $#{$result->{$table}}) {
+                    my $id = $result->{$table}->[$i]->{id};
+                    my $table_url_id = $url->clone->path($options{apibase} . '/' . decamelize($table) . "/$id");
+                    $res = $client->delete($table_url_id)->res;
+                    last unless $res->is_success;
+                }
             }
         }
-
         print_error $res unless $res->is_success;
     }
 }
