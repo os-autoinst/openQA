@@ -629,6 +629,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_enable_linking_files_referred_by_job_settings">16.11. Enable linking files referred by job settings</a></li>
 <li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">16.12. Enable custom hook scripts on "job done" based on result</a></li>
 <li><a href="#_automatic_cloning_of_incomplete_jobs">16.13. Automatic cloning of incomplete jobs</a></li>
+<li><a href="#_enable_automatic_database_backup">16.14. Enable automatic database backup</a></li>
 </ul>
 </li>
 <li><a href="#auditing">17. Auditing - tracking openQA changes</a>
@@ -3508,6 +3509,22 @@ cloning.</p>
 <div class="paragraph">
 <p>Note that jobs marked as incomplete by the stale job detection are not affected by this
 configuration and cloned in any case.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_enable_automatic_database_backup"><a class="anchor" href="#_enable_automatic_database_backup"></a><a class="link" href="#_enable_automatic_database_backup">16.14. Enable automatic database backup</a></h3>
+<div id="automatic_database_cleanup" class="paragraph">
+<p>An optional systemd service, <code>openqa-dump-db.service</code>, can be enabled to
+perform daily database backups. This service is triggered by the
+<code>openqa-dump-db.timer</code>. To enable automatic database backup, run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>openqa-dump-db.timer</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Backups are stored at <code>/var/lib/openqa/backup</code>.</p>
 </div>
 </div>
 </div>
@@ -13501,7 +13518,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-26 04:44:40 UTC
+Last updated 2025-05-15 04:44:08 UTC
 </div>
 </div>
 </body>
