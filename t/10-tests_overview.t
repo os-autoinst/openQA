@@ -225,6 +225,19 @@ subtest 'todo-flag on test overview' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'comma-separated filtering of flavor in query param' => sub {
+    my $url = '/tests/overview?distri=opensuse&version=13.1&build=0091&flavor=DVD%2Cfoo%2Cbar';
+    $t->get_ok($url)->status_is(200);
+    like(get_summary, qr/Summary of opensuse 13\.1 build 0091/i, 'correct build summary shown');
+    $t->element_exists('#flavor_DVD_arch_i586', 'DVD flavor shown');
+    $t->element_exists_not('#flavor_NET_arch_x86_64', 'NET flavor not shown');
+    $url = '/tests/overview?distri=opensuse&version=13.1&build=0091&flavor=DVD&flavor=foo&flavor=bar';
+    $t->get_ok($url)->status_is(200);
+    like(get_summary, qr/Summary of opensuse 13\.1 build 0091/i, 'correct build summary shown');
+    $t->element_exists('#flavor_DVD_arch_i586', 'DVD flavor shown');
+    $t->element_exists_not('#flavor_NET_arch_x86_64', 'NET flavor not shown');
+};
+
 # multiple groups can be shown at the same time
 $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
 $summary = get_summary;

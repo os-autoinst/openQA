@@ -315,11 +315,14 @@ sub _prepare_complex_query_search_args ($self, $args) {
             push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
         }
 
-        for my $key (qw(distri version flavor arch test machine)) {
+        for my $key (qw(distri version arch test machine)) {
             push(@conds, {'me.' . uc($key) => $args->{$key}}) if $args->{$key};
         }
         if (my $build = $args->{build}) {
             push @conds, {'me.BUILD' => ref $build eq 'ARRAY' ? {-in => $build} : $build};
+        }
+        if (my $flavor = $args->{flavor}) {
+            push @conds, {'me.FLAVOR' => ref $flavor eq 'ARRAY' ? {-in => $flavor} : $flavor};
         }
     }
 
@@ -341,7 +344,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
 sub complex_query ($self, %args) {
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
-    for my $arg (qw(state ids result modules modules_result)) {
+    for my $arg (qw(state ids result modules modules_result flavor)) {
         next unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
