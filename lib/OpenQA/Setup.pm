@@ -100,6 +100,7 @@ sub read_config ($app) {
             require_for_assets => 0,
         },
         'scm git' => {
+            git_auto_commit => 'yes',
             update_remote => '',
             update_branch => '',
             do_push => 'no',
