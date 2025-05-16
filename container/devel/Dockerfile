@@ -20,7 +20,7 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 # endlabelprefix
 
 # hadolint ignore=DL3037
-RUN zypper in -y os-autoinst-devel openQA-devel vim nodejs-default git mc perl-Devel-REPL perl-Term-ReadKey && \
+RUN zypper in -y os-autoinst-devel openQA-devel vim nodejs-default git mc perl-Devel-REPL perl-Term-ReadKey podman && \
     zypper clean -a
 
 ENV OPENQA_DIR /opt/openqa
