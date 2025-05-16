@@ -30,9 +30,11 @@ embed_server_for_testing(
 
 my $jobs_rs = $schema->resultset('Jobs');
 sub job_get_rs ($id) { $jobs_rs->find({id => $id}) }
+
 sub list_jobs () {
     return [map { $_->to_hash() } $jobs_rs->all];
 }
+
 sub job_get ($id) {
     return undef unless my $job = job_get_rs($id);
     return $job->to_hash;

@@ -7,6 +7,7 @@ use Test::Warnings ':report_warnings';
 
 my $sleep_count = 0;
 my $tempdir;
+
 BEGIN {
     use Mojo::File qw(path tempdir);
 

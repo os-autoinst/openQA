@@ -20,18 +20,18 @@ use Mojo::Transaction;
 use Scalar::Util qw(looks_like_number);
 
 # define fake client
-{
-    package Test::FakeLWPUserAgentMirrorResult;
+package Test::FakeLWPUserAgentMirrorResult {
     use Mojo::Base -base, -signatures;
     has is_success => 1;
     has code => 304;
     has status_line => 'some status';
 }
-{
-    package Test::FakeLWPUserAgent;
+
+package Test::FakeLWPUserAgent {
     use Mojo::Base -base, -signatures;
     has mirrored => sub { {} };
     has missing => 0;
+
     sub mirror ($self, $from, $dest) {
         my @res
           = ($self->missing || $from !~ qr{http://foo/tests/1/asset/iso/(foo|bar)\.iso})

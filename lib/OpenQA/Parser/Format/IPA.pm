@@ -87,8 +87,7 @@ sub parse {
     $self;
 }
 
-{
-    package OpenQA::Parser::Result::IPA::Info;
+package OpenQA::Parser::Result::IPA::Info {
     use Mojo::Base 'OpenQA::Parser::Result';
 
     has [qw(distro platform image instance region results_file log_file timestamp)];
