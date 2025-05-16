@@ -3,10 +3,12 @@ INSTALL_FROM_CPAN="${INSTALL_FROM_CPAN:-0}"
 
 export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log
 
+TESTS_FAILED_FLAG=0
+
 run_test() {
     # Allow command line options without quotes
     # shellcheck disable=SC2086
-    prove -l ${PROVE_ARGS} "$@" || touch tests_failed
+    prove -l ${PROVE_ARGS} "$@" || TESTS_FAILED_FLAG=1
 }
 
 prepare_fullstack_test() {
@@ -35,7 +37,7 @@ run_fullstack_test() {
 
     export PERL5OPT="$PERL5OPT $HARNESS_PERL_SWITCHES"
     if ! prove -l "${PROVE_ARGS}" "$@"; then
-        touch tests_failed
+        TESTS_FAILED_FLAG=1
         find '/tmp' -path '*/t/full-stack.d/openqa/testresults/*/autoinst-log.txt' \
             -exec echo 'contents of' {} \; -exec cat {} \; 2> /dev/null > '/opt/openqa/autoinst-log.txt'
     fi
@@ -44,7 +46,7 @@ run_fullstack_test() {
 if [ "$FULLSTACK" = 1 ]; then
     run_fullstack_test t/full-stack.t t/05-scheduler-full.t t/33-developer_mode.t
 elif [ "$CHECKSTYLE" = 1 ]; then
-    make checkstyle || touch tests_failed
+    make test-checkstyle || TESTS_FAILED_FLAG=1
 else
     if [ "$UITESTS" = 1 ]; then
         list=$(find ./t/ui -name '*.t' | sort)
@@ -56,7 +58,4 @@ else
     run_test -r $list
 fi
 
-[ -r tests_failed ] && exit 1
-if test -n "$TRAVIS"; then
-    cp -a assets/cache/* /opt/openqa/assets/cache
-fi
+exit "$TESTS_FAILED_FLAG"

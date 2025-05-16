@@ -177,9 +177,6 @@ node_modules: package-lock.json
 	@touch node_modules
 
 .PHONY: test
-ifeq ($(TRAVIS),true)
-test: run-tests-within-container
-else
 ifeq ($(CHECKSTYLE),0)
 checkstyle_tests =
 else
@@ -194,7 +191,6 @@ endif
 ifeq ($(HELM_TEST),1)
 ifeq ($(TESTS),)
 test: test-helm-chart
-endif
 endif
 endif
 
