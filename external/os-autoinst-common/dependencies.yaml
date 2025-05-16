@@ -17,7 +17,7 @@ main_requires:
   perl(Module::CPANfile):
 
 develop_requires:
-  perl(Perl::Tidy): '== 20240511.0.0'
+  perl(Perl::Tidy): '== 20250311'
   perl(Code::TidyAll):
   perl(Perl::Critic):
   perl(Perl::Critic::Community):

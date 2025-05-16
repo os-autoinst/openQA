@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+set -euo pipefail
+
+OUTPUT=$(mktemp)
+
+echo "Running prove with TAP output check ..."
+
+prove -I . "$@" 2>&1 | tee "$OUTPUT"
+STATUS=${PIPESTATUS[0]}
+
+if [ "$STATUS" -ne 0 ]; then
+    echo "not ok - prove failed"
+    exit "$STATUS"
+fi
+
+sed -E '
+  s/^\[[0-9]{2}:[0-9]{2}:[0-9]{2}\][[:space:]]*//
+  /^All tests successful\./,$d
+' "$OUTPUT" > "$OUTPUT.processed"
+
+UNHANDLED=$(grep -vE '^t/.*([0-9]{2}-|)([[:alnum:]]|_|-)+\.t \.+' "$OUTPUT.processed" || true)
+
+if [ -n "$UNHANDLED" ]; then
+    echo "not ok - unhandled output found"
+    echo "Run with PROVE_COMMAND=tools/prove_wrapper to reproduce locally"
+    exit 1
+else
+    echo "ok - no unhandled output found"
+    exit 0
+fi
