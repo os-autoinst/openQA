@@ -704,8 +704,9 @@ subtest 'carry over, including soft-fails' => sub {
             $job->update({state => UPLOADING});
             $job->discard_changes;
             $job->done;
-            perform_minion_jobs($t->app->minion);
-            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            my $minion = $t->app->minion;
+            perform_minion_jobs($minion);
+            $job_info = $minion->jobs({tasks => ['hook_script']})->next;
             is_deeply(
                 $job_info->{args}[2],
                 {delay => 60, retries => 4, skip_rc => 142, kill_timeout => '30s', timeout => '5m'},
@@ -716,15 +717,15 @@ subtest 'carry over, including soft-fails' => sub {
             my $linear_delay = $job_info->{delayed} - $job_info->{retried};
             is $linear_delay, 60, 'default delay for first retry applied correctly';
             # force some retries with delay 0 to avoid having to wait in the test
-            $t->app->minion->job($job_info->{id})->retry({delay => 0}) for 1, 2;
-            perform_minion_jobs($t->app->minion);
-            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            $minion->job($job_info->{id})->retry({delay => 0}) for 1, 2;
+            perform_minion_jobs($minion);
+            $job_info = $minion->jobs({tasks => ['hook_script']})->next;
             is $job_info->{retries}, 4, 'hook script has been retried the expected number of times';
             $linear_delay = $job_info->{delayed} - $job_info->{retried};
             is $linear_delay, 240, 'linear delay calculated correctly for 4th retry';
-            $t->app->minion->job($job_info->{id})->retry({delay => 0});
-            perform_minion_jobs($t->app->minion);
-            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            $minion->job($job_info->{id})->retry({delay => 0});
+            perform_minion_jobs($minion);
+            $job_info = $minion->jobs({tasks => ['hook_script']})->next;
             is $job_info->{retries}, 5, 'hook script retried for last time, exceeding the retry limit';
             is $job_info->{state}, 'finished', 'hook script at the end of the retries has finished state';
         };
