@@ -625,6 +625,7 @@ subtest 'carry over, including soft-fails' => sub {
 
         subtest 'Retry hook script with exit code 142' => sub {
             # Defaults (no retry)
+            my $default_retries = 53;
             $hooks->{job_done_hook_failed} = 'echo retried && exit 143;';
             $job->update({state => UPLOADING});
             $job->discard_changes;
@@ -632,7 +633,7 @@ subtest 'carry over, including soft-fails' => sub {
             perform_minion_jobs($t->app->minion);
             $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
             is_deeply($job_info->{args}[2],
-                {delay => 60, retries => 1440, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
+                {delay => 60, retries => $default_retries, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
             $notes = $job_info->{notes};
             is($notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (3)');
             like($notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (3)');
@@ -689,12 +690,44 @@ subtest 'carry over, including soft-fails' => sub {
             $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
             is $job_info->{state}, 'inactive', 'hook script has been retried with long delay';
             is_deeply($job_info->{args}[2],
-                {delay => 60, retries => 1440, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
+                {delay => 60, retries => $default_retries, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
             $notes = $job_info->{notes};
             is($notes->{hook_cmd}, 'echo delayed && exit 142;', 'real hook cmd in notes if result matches (5)');
             like($notes->{hook_result}, qr/delayed/, 'real hook cmd from config called if result matches (5)');
             is $notes->{hook_rc}, 142, 'exit code of the hook cmd is as expected';
             is $job_info->{retries}, 1, 'hook script has been retried once because of delay';
+        };
+
+        subtest 'linear delay of each hook scripts exiting with 142' => sub {
+            $job->settings->create({key => '_TRIGGER_JOB_DONE_RETRIES', value => '4'});
+            $hooks->{job_done_hook_failed} = 'echo delayed && exit 142;';
+            $job->update({state => UPLOADING});
+            $job->discard_changes;
+            $job->done;
+            my $minion = $t->app->minion;
+            perform_minion_jobs($minion);
+            $job_info = $minion->jobs({tasks => ['hook_script']})->next;
+            is_deeply(
+                $job_info->{args}[2],
+                {delay => 60, retries => 4, skip_rc => 142, kill_timeout => '30s', timeout => '5m'},
+                'args contain expected parameters'
+            );
+            is $job_info->{retries}, 1, 'hook script has been already tried once since has been queued';
+            is $job_info->{state}, 'inactive', 'job ends up inactive due to retry';
+            my $linear_delay = $job_info->{delayed} - $job_info->{retried};
+            is $linear_delay, 60, 'default delay for first retry applied correctly';
+            # force some retries with delay 0 to avoid having to wait in the test
+            $minion->job($job_info->{id})->retry({delay => 0}) for 1, 2;
+            perform_minion_jobs($minion);
+            $job_info = $minion->jobs({tasks => ['hook_script']})->next;
+            is $job_info->{retries}, 4, 'hook script has been retried the expected number of times';
+            $linear_delay = $job_info->{delayed} - $job_info->{retried};
+            is $linear_delay, 240, 'linear delay calculated correctly for 4th retry';
+            $minion->job($job_info->{id})->retry({delay => 0});
+            perform_minion_jobs($minion);
+            $job_info = $minion->jobs({tasks => ['hook_script']})->next;
+            is $job_info->{retries}, 5, 'hook script retried for last time, exceeding the retry limit';
+            is $job_info->{state}, 'finished', 'hook script at the end of the retries has finished state';
         };
     };
 };
