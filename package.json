@@ -12,7 +12,7 @@
   },
   "homepage": "https://github.com/os-autoinst/openQA#readme",
   "devDependencies": {
-    "eslint": "^9.26.0",
+    "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
     "prettier": "3.5.3"
