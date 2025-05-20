@@ -12375,6 +12375,21 @@ and based on the <code>Dockerfile</code> within the <code>container/devel</code>
 <div class="paragraph">
 <p>Replace <code>OPENQA_LOCAL_CODE</code> with the location where you have the openQA code.</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<code>run-tests-within-container</code> runs with CONTAINER_TEST enabled by default.
+It is used to run scripts which are not meant to run inside <strong>openqa_devel</strong> and
+the image itself does not contain any container engine. Consider disabling it
+to run any tests in a container.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>The command line to run tests manually reveals that the Makefile target
 <code>run-tests-within-container</code> is used to run the tests <strong>inside</strong> the container.
@@ -13518,7 +13533,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-05-15 04:44:08 UTC
+Last updated 2025-05-20 04:44:55 UTC
 </div>
 </div>
 </body>
