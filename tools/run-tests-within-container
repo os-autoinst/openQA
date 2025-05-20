@@ -36,7 +36,8 @@ run_fullstack_test() {
     prepare_fullstack_test
 
     export PERL5OPT="$PERL5OPT $HARNESS_PERL_SWITCHES"
-    if ! prove -l "${PROVE_ARGS}" "$@"; then
+    # shellcheck disable=SC2086
+    if ! prove -l ${PROVE_ARGS} "$@"; then
         TESTS_FAILED_FLAG=1
         find '/tmp' -path '*/t/full-stack.d/openqa/testresults/*/autoinst-log.txt' \
             -exec echo 'contents of' {} \; -exec cat {} \; 2> /dev/null > '/opt/openqa/autoinst-log.txt'
