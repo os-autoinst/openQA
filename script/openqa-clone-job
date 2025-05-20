@@ -112,7 +112,12 @@ $OPENQA_SHAREDIR/factory).
 
 =item B<--skip-checks>
 
-Skips additional checks like maintenance update availability.
+Deprecated option. The logic was inverted, so currently the check is skipped by default.
+If you were using it, just remove it and the behavior will remain the same.
+
+=item B<--check-repos>
+
+Enables additional checks for availability of maintenance update repositories (SUSE specific check).
 
 =item B<--skip-deps>
 
@@ -215,10 +220,13 @@ sub parse_options () {
         "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance",
         "help|h", "show-progress", "within-instance|w=s", "clone-children",
         "max-depth:i", "repeat|r:i", "ignore-missing-assets", "export-command",
-        "skip-checks",
+        "skip-checks", "check-repos",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
+    warn
+"--skip-checks is deprecated and will be dropped soon. Just remove it because checks are not executed by default anymore"
+      if $options{'skip-checks'};
     if ($options{'within-instance'}) {
         ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
         $options{'skip-download'} = 1;

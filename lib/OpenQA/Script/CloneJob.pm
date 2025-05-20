@@ -327,7 +327,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     if (my $group_id = $job->{group_id}) { $settings->{_GROUP_ID} = $group_id }
     clone_job_apply_settings($options->{args}, $relation eq 'children' ? 0 : $depth, $settings, $options);
     OpenQA::Script::CloneJobSUSE::detect_maintenance_update($jobid, $url_handler, $settings)
-      unless $options->{'skip-checks'};
+      if $options->{'check-repos'};
     clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
 }
 
