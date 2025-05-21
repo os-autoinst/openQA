@@ -20,7 +20,6 @@ use OpenQA::Test::Case;
 use Mojo::File 'path';
 use List::Util 'min';
 
-plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 # find the oldest still supported schema version which is defined by the oldest deploy folder
 # which is still present
