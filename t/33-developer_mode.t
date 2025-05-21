@@ -40,7 +40,7 @@ use OpenQA::Test::FullstackUtils;
 use OpenQA::SeleniumTest;
 
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
-plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
+
 
 my $worker;
 my $ws;
