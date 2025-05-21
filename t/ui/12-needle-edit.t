@@ -81,9 +81,9 @@ sub create_running_job_for_needle_editor {
 
 create_running_job_for_needle_editor;
 
-# enable use of Git (via a config file to affect all apps forked by call_driver) but mock it
+# enable auto-commit (via a config file to affect all apps forked by call_driver) but mock it
 $ENV{OPENQA_CONFIG} = my $config_dir = tempdir;
-$config_dir->child('openqa.ini')->spew("[global]\nscm = git");
+$config_dir->child('openqa.ini')->spew("[scm git]\ngit_auto_commit = yes");
 shared_hash {};
 my $git_mock = Test::MockModule->new('OpenQA::Git');
 $git_mock->redefine(commit => sub ($self, $args) { shared_hash $args; return undef });

@@ -33,7 +33,7 @@ use Mojo::URL;
 use Mojo::Util 'decode';
 use OpenQA::Needles qw(needle_temp_dir locate_needle);
 use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number needledir testcasedir
-  run_cmd_with_log run_cmd_with_log_return_error);
+  run_cmd_with_log run_cmd_with_log_return_error config_autocommit_enabled);
 use OpenQA::Jobs::Constants;
 use File::Basename;
 use File::Which 'which';
@@ -262,7 +262,7 @@ sub edit ($self) {
             tags => $tags,
             default_needle => $default_needle,
             error_messages => \@error_messages,
-            git_enabled => ($app->config->{global}->{scm} // '') eq 'git',
+            autocommit_enabled => config_autocommit_enabled($app->config),
         });
     $self->render('step/edit');
 }

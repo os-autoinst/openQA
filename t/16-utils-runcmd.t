@@ -159,17 +159,27 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is($git->app, $t->app, 'app is set');
     is($git->dir, 'foo/bar', 'dir is set');
     is($git->user, $first_user, 'user is set');
-    ok(!$git->enabled, 'git is not enabled by default');
+    ok(!$git->autocommit_enabled, 'git autocommit is not enabled by default');
     my $git_config = $t->app->config->{'scm git'};
     is($git->config, $git_config, 'global git config is mirrored');
     is($git->config->{update_remote}, '', 'by default no remote configured');
     is($git->config->{update_branch}, '', 'by default no branch configured');
 
     # read-only getters
-    $git->enabled(1);
-    ok(!$git->enabled, 'enabled is read-only');
+    $git->autocommit_enabled(1);
+    ok(!$git->autocommit_enabled, 'autocommit_enabled is read-only');
     $git->config({});
     is($git->config, $git_config, 'config is read-only');
+
+    # enable git auto-commit a few different ways and check it
+    $git->config->{git_auto_commit} = 'yes';
+    ok($git->autocommit_enabled, 'git_auto_commit = yes enables autocommit');
+    $git->config->{git_auto_commit} = '';
+    ok(!$git->autocommit_enabled, 'git_auto_commit empty disables autocommit');
+    $t->app->config->{global}->{scm} = 'git';
+    ok($git->autocommit_enabled, 'git_auto_commit empty and scm = git enables autocommit');
+    $git->config->{git_auto_commit} = 'no';
+    ok(!$git->autocommit_enabled, 'git_auto_commit = no disables autocommit even with scm = git');
 
     # test set_to_latest_master effectively being a no-op because no update remote and branch have been configured
     is($git->set_to_latest_master, undef, 'no error if no update remote and branch configured');
@@ -267,8 +277,8 @@ subtest 'saving needle via Git' => sub {
         }
     }    # uncoverable statement
 
-    # configure use of Git
-    $t->app->config->{global}->{scm} = 'git';
+    # enable git auto-commit
+    $t->app->config->{'scm git'}->{git_auto_commit} = 'yes';
 
     # trigger saving needles like Minion would do
     @executed_commands = ();
@@ -304,7 +314,7 @@ subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub
     my $signal_guard_mock = Test::MockModule->new('OpenQA::Task::SignalGuard');
     $signal_guard_mock->redefine(new => sub { $signal_guard = My::FakeSignalGuard->new() });
 
-    $t->app->config->{global}->{scm} = '';    # disable Git
+    $t->app->config->{'scm git'}->{git_auto_commit} = 'no';    # disable autocommit
     $t->app->config->{global}->{do_cleanup} = 'no';    # disable cleanup
 
     # trigger saving needles like Minion would do
@@ -322,7 +332,7 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
     }    # uncoverable statement
 
     my $git_mock = Test::MockModule->new('OpenQA::Git');
-    $t->app->config->{global}->{scm} = 'git';    # enable Git
+    $t->app->config->{'scm git'}->{git_auto_commit} = 'yes';    # enable autocommit
     $t->app->config->{do_cleanup} = 'yes';    # enable cleanup
     $git_mock->redefine(set_to_latest_master => 'Unable to fetch from origin master: mocked error');
 

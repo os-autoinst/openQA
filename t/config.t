@@ -78,6 +78,7 @@ subtest 'Test configuration default modes' => sub {
             do_push => 'no',
             do_cleanup => 'no',
             git_auto_clone => 'yes',
+            git_auto_commit => '',
             git_auto_update => 'yes',
             git_auto_update_method => 'best-effort',
             checkout_needles_sha => 'no',
@@ -313,14 +314,14 @@ subtest 'Multiple config files' => sub {
     local $ENV{OPENQA_CONFIG} = $t_dir;
     OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
     my $data_main = "[global]\nappname =  openQA main config\nhide_asset_types = repo iso\n";
-    my $data_01 = "[global]\nappname =  openQA override 1\nscm = bazel";
+    my $data_01 = "[global]\nappname =  openQA override 1\nbranding = fedora";
     my $data_02 = "[global]\nappname =  openQA override 2";
     $t_dir->child('openqa.ini')->spew($data_main);
     $openqa_d->child('01-appname-and-scm.ini')->spew($data_01);
     $openqa_d->child('02-appname.ini')->spew($data_02);
     my $global_config = OpenQA::Setup::read_config($app)->{global};
     is $global_config->{appname}, 'openQA override 2', 'appname overriden by config from openqa.ini.d, last one wins';
-    is $global_config->{scm}, 'bazel', 'scm set by config from openqa.ini.d, not overriden';
+    is $global_config->{branding}, 'fedora', 'scm set by config from openqa.ini.d, not overriden';
     is $global_config->{hide_asset_types}, 'repo iso', 'types set from main config, not overriden';
 };
 

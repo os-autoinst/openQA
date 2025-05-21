@@ -142,6 +142,7 @@ our @EXPORT = qw(
   is_host_local
   format_tx_error
   regex_match
+  config_autocommit_enabled
 );
 
 our @EXPORT_OK = qw(
@@ -879,6 +880,13 @@ sub usleep_backoff ($iteration, $min_seconds, $max_seconds, $padding = int(rand(
 
     my $delay = (($min_seconds + $iteration - 1) * ONE_SECOND_IN_MICROSECONDS) + $padding;
     return min($max_seconds * ONE_SECOND_IN_MICROSECONDS, $delay);
+}
+
+# whether we consider git auto-commit enabled or not, handling
+# compatibility with the old 'scm = git' setting
+sub config_autocommit_enabled ($config) {
+    return 0 if $config->{'scm git'}{git_auto_commit} eq 'no';
+    return ($config->{global}->{scm} || '') eq 'git' || $config->{'scm git'}{git_auto_commit} eq 'yes';
 }
 
 1;

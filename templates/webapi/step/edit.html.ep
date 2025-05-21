@@ -145,7 +145,7 @@
                                     <input type="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
                                 </span>
                             </p>
-                            % if ($git_enabled) {
+                            % if ($autocommit_enabled) {
                             <p>
                                 <label for="needleeditor_commit_message">Optional commit message (leave empty for default text):</label>
                                 <textarea id="needleeditor_commit_message" name="commit_message"

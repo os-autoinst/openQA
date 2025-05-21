@@ -416,7 +416,8 @@ subtest 'delete_needles' => sub {
     $error = $res->{result}->{errors}->[0];
     like $error->{message}, qr{Unable to find needle.*99}, 'expected error for not existing needle';
 
-    $t->app->config->{global}->{scm} = 'git';
+    # now enable git auto-commit
+    $t->app->config->{'scm git'}->{git_auto_commit} = 'yes';
     $t->app->config->{'scm git'}->{do_push} = 'yes';
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @cmds;
