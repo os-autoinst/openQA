@@ -160,7 +160,7 @@ sub _message ($self, $json) {
 
         # log that we 'saw' the worker
         try {
-            log_debug("Updating seen of worker $worker_id from worker_status ($current_worker_status)");
+            log_trace("Updating seen of worker $worker_id from worker_status ($current_worker_status)");
             $worker->seen({error => $current_worker_error});
 
             # Tell the worker that we saw it (used for tests and debugging)
