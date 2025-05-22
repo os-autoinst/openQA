@@ -535,20 +535,24 @@ sub create_downloads_list ($job_settings) {
 
 sub create_git_clone_list ($job_settings, $clones = {}) {
     my $distri = $job_settings->{DISTRI};
-    if (OpenQA::App->singleton->config->{'scm git'}->{git_auto_update} eq 'yes') {
+    my $config = OpenQA::App->singleton->config->{'scm git'};
+    if ($config->{git_auto_update} eq 'yes') {
         # Potential existing git clones to update without having CASEDIR or NEEDLES_DIR
         not $job_settings->{CASEDIR} and $clones->{testcasedir($distri)} = undef;
         not $job_settings->{NEEDLES_DIR} and $clones->{needledir($distri)} = undef;
     }
-    my $case_url = Mojo::URL->new($job_settings->{CASEDIR} // '');
-    my $needles_url = Mojo::URL->new($job_settings->{NEEDLES_DIR} // '');
-    if ($case_url->scheme) {
-        $case_url->fragment($job_settings->{TEST_GIT_REFSPEC}) if ($job_settings->{TEST_GIT_REFSPEC});
-        $clones->{testcasedir($distri)} = $case_url;
-    }
-    if ($needles_url->scheme) {
-        $needles_url->fragment($job_settings->{NEEDLES_GIT_REFSPEC}) if ($job_settings->{NEEDLES_GIT_REFSPEC});
-        $clones->{needledir($distri)} = $needles_url;
+    if ($config->{git_auto_clone} eq 'yes') {
+        # Check CASEDIR and NEEDLES_DIR
+        my $case_url = Mojo::URL->new($job_settings->{CASEDIR} // '');
+        my $needles_url = Mojo::URL->new($job_settings->{NEEDLES_DIR} // '');
+        if ($case_url->scheme) {
+            $case_url->fragment($job_settings->{TEST_GIT_REFSPEC}) if ($job_settings->{TEST_GIT_REFSPEC});
+            $clones->{testcasedir($distri)} = $case_url;
+        }
+        if ($needles_url->scheme) {
+            $needles_url->fragment($job_settings->{NEEDLES_GIT_REFSPEC}) if ($job_settings->{NEEDLES_GIT_REFSPEC});
+            $clones->{needledir($distri)} = $needles_url;
+        }
     }
     return $clones;
 }
