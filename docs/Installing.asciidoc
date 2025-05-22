@@ -734,9 +734,8 @@ If your tests and needles are stored in git, openQA can perform various operatio
 * Attempt to have the web UI display the correct needles each job was executed with via
 temporary git checkouts, based on its variables
 
-By default, cloning based on `CASEDIR` and `NEEDLES_DIR` and automatic needle updates
-are enabled, but the other features are disabled. To control these features, you can use
-these config settings:
+By default, cloning based on `CASEDIR` and `NEEDLES_DIR` is enabled, but the other
+features are disabled. To control these features, you can use these config settings:
 
 [source,ini]
 --------------------------------------------------------------------------------
