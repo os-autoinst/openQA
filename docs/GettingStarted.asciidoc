@@ -450,7 +450,6 @@ cd /var/lib/openqa/share/tests
 mkdir fedora
 cd fedora
 git clone https://pagure.io/fedora-qa/os-autoinst-distri-fedora.git
-./templates --clean
 cd ..
 chown -R geekotest fedora/
 --------------------------------------------------------------------------------
@@ -476,8 +475,14 @@ For Fedora, similarly, you can call:
 
 [source,sh]
 --------------------------------------------------------------------------------
-/var/lib/openqa/share/tests/fedora/templates [--apikey API_KEY] [--apisecret API_SECRET]
+/var/lib/openqa/share/tests/fedora/fifloader.py -c -l templates.fif.json templates-updates.fif.json
 --------------------------------------------------------------------------------
+
+For this to work you need to have a `client.conf` with API key and secret, because
+fifloader doesn't support setting them on the command line. See the
+<<Client.asciidoc#client,openQA client>> section for more details on this. Also
+see the docstring of `fifloader.py` for details on the alternative template format
+Fedora uses.
 
 Some Fedora tests require special hard disk images to be present in
 `/var/lib/openqa/share/factory/hdd/fixed`. The `createhdds.py` script in the
