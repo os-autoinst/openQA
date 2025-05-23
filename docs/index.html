@@ -1896,7 +1896,6 @@ do:</p>
 mkdir<span class="tok-w"> </span>fedora
 <span class="tok-nb">cd</span><span class="tok-w"> </span>fedora
 git<span class="tok-w"> </span>clone<span class="tok-w"> </span>https://pagure.io/fedora-qa/os-autoinst-distri-fedora.git
-./templates<span class="tok-w"> </span>--clean
 <span class="tok-nb">cd</span><span class="tok-w"> </span>..
 chown<span class="tok-w"> </span>-R<span class="tok-w"> </span>geekotest<span class="tok-w"> </span>fedora/</code></pre>
 </div>
@@ -1926,8 +1925,15 @@ consider reading its help page (<code>--help</code>) for documentation on possib
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/var/lib/openqa/share/tests/fedora/templates<span class="tok-w"> </span><span class="tok-o">[</span>--apikey<span class="tok-w"> </span>API_KEY<span class="tok-o">]</span><span class="tok-w"> </span><span class="tok-o">[</span>--apisecret<span class="tok-w"> </span>API_SECRET<span class="tok-o">]</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/var/lib/openqa/share/tests/fedora/fifloader.py<span class="tok-w"> </span>-c<span class="tok-w"> </span>-l<span class="tok-w"> </span>templates.fif.json<span class="tok-w"> </span>templates-updates.fif.json</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>For this to work you need to have a <code>client.conf</code> with API key and secret, because
+fifloader doesn&#8217;t support setting them on the command line. See the
+<a href="#client">openQA client</a> section for more details on this. Also
+see the docstring of <code>fifloader.py</code> for details on the alternative template format
+Fedora uses.</p>
 </div>
 <div class="paragraph">
 <p>Some Fedora tests require special hard disk images to be present in
@@ -13533,7 +13539,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-05-20 04:44:55 UTC
+Last updated 2025-05-23 04:43:58 UTC
 </div>
 </div>
 </body>
