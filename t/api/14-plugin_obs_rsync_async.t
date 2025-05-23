@@ -153,6 +153,7 @@ is(_jobs_cnt('finished'), 10, 'Number of finished jobs');
 my ($cnt, $jobs) = _jobs('failed');
 is($cnt, 1, 'Number of finished jobs');
 is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message') if $cnt;
+is($jobs->[0]->{result}->{code}, 777, 'Correct return code') if $cnt;
 
 subtest 'test max retry count' => sub {
     # use all concurrency slots to reach concurrency limit
@@ -170,7 +171,7 @@ subtest 'test max retry count' => sub {
     }
 
     is($cnt, 11, 'Job should retry succeed');
-    is($jobs->[0]->{retries}, $config{retry_max_count}, 'Job retris is correct');
+    is($jobs->[0]->{retries}, $config{retry_max_count}, 'Job retries is correct');
     is(ref $jobs->[0]->{result}, 'HASH', 'Job retry result is hash');
     is(
         $jobs->[0]->{result}->{message},
