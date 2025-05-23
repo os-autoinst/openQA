@@ -725,17 +725,39 @@ section.
 
 === Setting up git support
 
-Editing needles from web can optionally commit new or changed needles
-automatically to git. To do so, you need to enable git support by setting
+If your tests and needles are stored in git, openQA can perform various operations:
+
+* Automatically commit needles created in the web UI editor back to the repository
+* Automatically update the repository when scheduling tests
+* Update the server's tests and needles from git repos specified in a job's `CASEDIR` and
+`NEEDLES_DIR` variables
+* Attempt to have the web UI display the correct needles each job was executed with via
+temporary git checkouts, based on its variables
+
+By default, cloning based on `CASEDIR` and `NEEDLES_DIR` is enabled, but the other
+features are disabled. To control these features, you can use these config settings:
 
 [source,ini]
 --------------------------------------------------------------------------------
-[global]
-scm = git
+[scm git]
+git_auto_commit = yes|no|''
+git_auto_clone = yes|no
+git_auto_update = yes|no
+checkout_needles_sha = yes|no
 --------------------------------------------------------------------------------
-in <<GettingStarted.asciidoc#_configuration,the web UI configuration>>.
-Once you do so and restart the web interface, openQA will automatically commit
-new needles to the git repository.
+
+* `git_auto_commit` controls whether needles saved in the web UI editor are automatically
+committed. For backwards compatibility, setting `scm` in the `[global]` section to 'git'
+also enables this feature, if `git_auto_commit` is not set exactly to 'no' (its default
+value is the empty string '').
+* `git_auto_update` controls automatic test/needle updating when scheduling tests.
+* `git_auto_clone` controls the automatic cloning of repos referenced by `CASEDIR` and
+`NEEDLES_DIR`, at job schedule time.
+* `checkout_needles_sha` controls the feature whereby, when a job viewed in the web UI has
+variables indicating the needles came from a specific git repository and ref, openQA will
+attempt to clone that ref and display the needles from it.
+
+==== Configuration of automatic needle commit feature
 
 You may want to add some description to automatic commits coming from the web
 UI.
