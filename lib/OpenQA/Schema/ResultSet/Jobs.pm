@@ -341,7 +341,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
 sub complex_query ($self, %args) {
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
-    for my $arg (qw(state ids result modules modules_result)) {
+    for my $arg (qw(state ids result modules modules_result flavor)) {
         next unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
