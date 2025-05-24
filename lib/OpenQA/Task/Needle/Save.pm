@@ -101,7 +101,7 @@ sub _save_needle {
 
     # ensure needle dir is up-to-date
     my $git = OpenQA::Git->new({app => $app, dir => $needledir, user => $user});
-    if ($git->enabled) {
+    if ($git->enabled && $git->config->{git_auto_commit} eq 'yes') {
         my $error = $git->set_to_latest_master;
         if ($error) {
             $app->log->error($error);
@@ -136,7 +136,7 @@ sub _save_needle {
     return $minion_job->fail({error => "<strong>Error creating/updating needle:</strong><br>$!."}) unless $success;
 
     # commit needle in Git repository
-    if ($git->enabled) {
+    if ($git->enabled && $git->config->{git_auto_commit} eq 'yes') {
         my $error = $git->commit(
             {
                 add => ["$needlename.json", "$needlename.png"],

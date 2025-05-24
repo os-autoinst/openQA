@@ -62,6 +62,7 @@ $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $cfg = $t->app->config;
+$cfg->{global}->{scm} = 'git';
 $cfg->{'scm git'}->{git_auto_clone} = 'no';
 $cfg->{'scm git'}->{git_auto_update} = 'no';
 is $cfg->{audit}->{blocklist}, 'job_grab', 'blocklist updated';
