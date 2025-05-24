@@ -196,21 +196,22 @@ subtest 'attempt to setup websocket connection' => sub {
 
 subtest 'retry behavior' => sub {
     # use fake Mojo::UserAgent and Mojo::Transaction
-    {
-        package Test::FakeTransaction;
+    package Test::FakeTransaction {
         use Mojo::Base -base;
         has error => undef;
         has res => undef;
     }
-    {
-        package Test::FakeUserAgent;
+
+    package Test::FakeUserAgent {
         use Mojo::Base -base;
         has fake_error => undef;
         has start_count => 0;
+
         sub build_tx {
             my ($self, @args) = @_;
             return Test::FakeTransaction->new;
         }
+
         sub start {
             my ($self, $tx, $callback) = @_;
             $tx->error($self->fake_error);
