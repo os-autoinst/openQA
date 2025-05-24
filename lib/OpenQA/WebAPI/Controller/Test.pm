@@ -192,17 +192,21 @@ sub list_ajax ($self) {
     my $scope = $self->param('relevant');
     $scope = $scope && $scope ne 'false' && $scope ne '0' ? 'relevant' : '';
     my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my ($job_setting_conds, $job_setting_joins) = $self->job_setting_conds;
     my @jobs = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope => $scope,
         match => $self->get_match_param,
         comment_text => $self->param('comment'),
         groupids => $self->_prepare_groupids,
+        additional_conds => $job_setting_conds,
+        additional_joins => $job_setting_joins,
         limit => min(
             $limits->{all_tests_max_finished_jobs},
             $self->param('limit') // $limits->{all_tests_default_finished_jobs}
         ),
         order_by => \'COALESCE(me.t_finished, me.t_updated) DESC, me.id DESC',
+        group_by => 'me.id',    # prevent "Unable to … derive … group_by from the supplied order_by …"
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state clone_id result group_id t_finished t_updated
