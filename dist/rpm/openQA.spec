@@ -27,7 +27,7 @@
 %{nil}
 %endif
 # Run tests on openSUSE Tumbleweed and supported openSUSE Leap versions
-%if 0%{?suse_version} >= 1550 || ( 0%{?is_opensuse} && 0%{?sle_version} >= 150100 )
+%if 0%{?is_opensuse} && 0%{?suse_version} >= 1500
 %ifarch x86_64
 %bcond_without tests
 %else
@@ -37,13 +37,13 @@
 %bcond_with tests
 %endif
 # SLE < 15 does not provide many of the dependencies for the python sub-package
-%if 0%{?sle_version} < 150000 && !0%{?is_opensuse}
+%if 0%{?suse_version} < 1500 && !0%{?is_opensuse}
 %bcond_with python_scripts
 %else
 %bcond_without python_scripts
 %endif
 # exclude additional sub packages that would pull in a lot of extra dependencies on SLE
-%if 0%{?sle_version} && !0%{?is_opensuse}
+%if 0%{?suse_version} && !0%{?is_opensuse}
 %bcond_with devel_package
 %bcond_with munin_package
 %else
@@ -104,7 +104,7 @@ BuildRequires:  fdupes
 %if 0%{?is_opensuse}
 BuildRequires:  openSUSE-release
 %endif
-%if 0%{?sle_version} && !0%{?is_opensuse}
+%if 0%{?suse_version} && !0%{?is_opensuse}
 BuildRequires:  sles-release
 %endif
 BuildRequires:  %{build_requires}
