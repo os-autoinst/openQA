@@ -230,11 +230,9 @@ function setupOverview() {
       modulesResults.push(val);
       modulesResultFilter.val(modulesResults).trigger('chosen:updated').trigger('change');
       return formatFilter(val);
-    } else {
-      const formElement = form[key];
-      if (formElement) {
-        return (form[key].value = val);
-      }
+    } else if (form[key] && form[key].value != null) {
+      form[key].value += form[key].value.length > 0 ? `,${val}` : val;
+      return val;
     }
   });
 
