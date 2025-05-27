@@ -10,6 +10,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
+use Mojo::Base -signatures;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;
@@ -75,9 +76,11 @@ my $baseurl = $driver->get_current_url;
 sub current_tab { $driver->find_element('.nav.nav-tabs .active')->get_text }
 
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
-sub find_candidate_needles {
+sub find_candidate_needles ($enabled_expected = 1) {
     # ensure the candidates menu is visible
-    my $candidates_menu = wait_for_element(selector => '#candidatesMenu', is_displayed => 1) or return {};
+    my $candidates_menu = wait_for_element(selector => '#candidatesMenu', is_displayed => 1);
+    fail 'unable to locate candidates menu' and return {} unless $candidates_menu;
+    is $candidates_menu->is_enabled, $enabled_expected, 'candidates menu is enabled/disabled';
     return {} unless $candidates_menu->is_enabled;
 
     # save implicit waiting time as long as we are only looking for elements
@@ -377,7 +380,7 @@ subtest 'running job' => sub {
     subtest 'missing text results are attempted to be reloaded' => sub {
         my $step_detail_element = $driver->find_element('#module_aplay .links');
         ok $step_detail_element, 'step detail present' or return;
-        like $step_detail_element->get_text, qr/Unable to read/, '"Unable to read…" shown in the first place';
+        like $step_detail_element->get_text, qr/Unable to read/, '"Unable to read" shown in the first place';
         # pretend the text result has been uploaded
         $aplay_text_result->spew('some text result');
         update_status sub {
@@ -637,7 +640,7 @@ sub test_with_error {
         my $details = decode_json($details_file->slurp);
         my $detail = $details->[0];
         $detail->{needles}->[$needle_to_modify]->{error} = $error if defined $needle_to_modify && defined $error;
-        $detail->{tags} = $tags if defined $tags;
+        $detail->{tags} = $tags;
         $details_file->spew(encode_json($details));
     }
 
@@ -645,7 +648,8 @@ sub test_with_error {
     my $random_number = int(rand(100000));
     $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/1");
     wait_for_ajax(msg => 'step of yast2_lan test module loaded');
-    is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
+    my $candidates = find_candidate_needles(@$tags > 0);
+    is_deeply $candidates, $expect, $test_name // 'candidates displayed as expected' or always_explain $candidates;
 }
 
 subtest 'test candidate list' => sub {
@@ -664,6 +668,7 @@ subtest 'test candidate list' => sub {
 
     $expected_candidates{'sudo-passwordprompt'} = ['68%: sudo-passwordprompt-lxde', '52%: sudo-passwordprompt'];
     test_with_error(1, 0.1, \@tags, \%expected_candidates, '68%, 52%');
+
     $expected_candidates{'sudo-passwordprompt'} = ['100%: sudo-passwordprompt-lxde', '52%: sudo-passwordprompt'];
     test_with_error(1, 0, \@tags, \%expected_candidates, '100%, 52%');
 
