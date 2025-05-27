@@ -15,16 +15,16 @@ sub auth_setup ($server) {
     my $config = $app->config->{oidc};
 
     my $params = {
-            args => [
-                authorize_url => $config->{authorize_url},
-                token_url => $config->{token_url},
-            ],
-            config => {
-                id_from => "sub",
-                nickname_from => "preferred_username",
-                groups_from => $config->{groups_from},
-                access_group => $config->{access_group},
-            },
+        args => [
+            authorize_url => $config->{authorize_url},
+            token_url => $config->{token_url},
+        ],
+        config => {
+            id_from => "sub",
+            nickname_from => "preferred_username",
+            groups_from => $config->{groups_from},
+            access_group => $config->{access_group},
+        },
     };
     croak "OIDC provider 'oidc' not supported" unless $params;
 
@@ -47,13 +47,14 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
         log_debug('OIDC user provider returned: ' . dumper($details));
         return $controller->render(text => 'User data returned by OIDC provider is insufficient', status => 403);
     }
-    if ( defined $details->{$groups_field} )  {
+    if (defined $details->{$groups_field}) {
         my %groups = map { $_ => 1 } $details->{$groups_field};
         if ($groups{$provider_config->{access_group}}) {
             return $controller->render(text => 'User is not member of configured group.', status => 401);
         }
-    } else {
-            return $controller->render(text => 'User is not member of configured group.', status => 401);
+    }
+    else {
+        return $controller->render(text => 'User is not member of configured group.', status => 401);
     }
     my $user = $controller->schema->resultset('Users')->create_user(
         $details->{$id_field},
@@ -72,8 +73,10 @@ sub auth_login ($controller) {
 
     my $base_url = $controller->app->config->{global}->{base_url};
     my $host = $base_url ? Mojo::URL->new($base_url)->host : $controller->req->url->host;
-    my $get_token_args = {redirect_uri => $controller->url_for('login')->userinfo(undef)->host($host)->to_abs,
-                          scope => "openid"};
+    my $get_token_args = {
+        redirect_uri => $controller->url_for('login')->userinfo(undef)->host($host)->to_abs,
+        scope => "openid"
+    };
     $controller->oauth2->get_token_p(oidc => $get_token_args)
       ->then(sub { update_user($controller, $main_config, $provider_config, shift) })
       ->catch(sub { $controller->render(text => shift, status => 403) });
