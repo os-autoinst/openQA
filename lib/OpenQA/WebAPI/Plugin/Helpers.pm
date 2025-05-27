@@ -398,14 +398,8 @@ sub _compose_job_overview_search_args ($c) {
     # add simple query params to search args
     for my $arg (qw(distri version flavor test limit)) {
         next unless $v->is_valid($arg);
-        my $params = $v->every_param($arg);
-        my $param_count = scalar @$params;
-        if ($param_count == 1) {
-            $search_args{$arg} = $params->[0];
-        }
-        elsif ($param_count > 1) {
-            $search_args{$arg} = {-in => $params};
-        }
+        my @params = @{$v->every_param($arg) // []};
+        $search_args{$arg} = @params == 1 ? $params[0] : {-in => \@params} if @params;
     }
 
     # handle build separately
