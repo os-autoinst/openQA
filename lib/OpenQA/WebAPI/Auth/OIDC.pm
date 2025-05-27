@@ -1,4 +1,3 @@
-# Copyright 2020-2021 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Auth::OIDC;
@@ -78,8 +77,8 @@ sub auth_login ($controller) {
         scope => "openid"
     };
     $controller->oauth2->get_token_p(oidc => $get_token_args)
-      ->then(sub { update_user($controller, $main_config, $provider_config, shift) })
-      ->catch(sub { $controller->render(text => shift, status => 403) });
+      ->then(sub ($data) { update_user($controller, $main_config, $provider_config, $data) })
+      ->catch(sub ($error) { $controller->render(text => $error, status => 403) });
     return (manual => 1);
 }
 
