@@ -41,7 +41,7 @@ my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
 my $needle_dir = prepare_clean_needles_dir;
 prepare_default_needle($needle_dir);
 
-sub prepare_database {
+sub prepare_database () {
     # set assigned_worker_id to test whether worker still displayed when job set to done
     # manually for Selenium test
     $jobs->find(99963)->update({assigned_worker_id => 1});
@@ -212,9 +212,7 @@ subtest 'filtering' => sub {
     is($count_headings->(), 3, 'module headings shown again');
 };
 
-sub check_report_links {
-    my ($failed_module, $failed_step, $container) = @_;
-
+sub check_report_links ($failed_module, $failed_step, $container = undef) {
     my @report_links
       = $container
       ? $driver->find_child_elements($container, '.report')
@@ -289,9 +287,9 @@ subtest 'reason and log details on incomplete jobs' => sub {
       ->text_like(qr/cannot provide hints/, 'investigation status content shown as table');
 };
 
-sub update_status {
+sub update_status (@args) {
     $driver->execute_script('window.enableStatusUpdates = true; updateStatus(); window.enableStatusUpdates = false;');
-    wait_until @_, 10;
+    wait_until @args, 10;
 }
 
 subtest 'running job' => sub {
@@ -630,9 +628,7 @@ my $ntext = <<EOM;
 EOM
 $needle_dir->child("$_.json")->spew($ntext) for qw(sudo-passwordprompt-lxde sudo-passwordprompt);
 
-sub test_with_error {
-    my ($needle_to_modify, $error, $tags, $expect, $test_name) = @_;
-
+sub test_with_error ($needle_to_modify, $error, $tags, $expect, $test_name) {
     # modify the fixture test data: parse JSON -> modify -> write JSON
     if (defined $needle_to_modify || defined $tags) {
         my $details_file = path('t/data/openqa/testresults/00099/'
