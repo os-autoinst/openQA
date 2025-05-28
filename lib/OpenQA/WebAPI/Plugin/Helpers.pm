@@ -395,7 +395,8 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('limit', 'not_empty')->num(0, undef);
 
     # add simple query params to search args
-    for my $arg (qw(distri version flavor test limit)) {
+    $search_args{limit} = $v->param('limit') if $v->is_valid('limit');
+    for my $arg (qw(distri version flavor test)) {
         next unless $v->is_valid($arg);
         my $params = $v->every_param($arg);
         my $param_count = scalar @$params;
