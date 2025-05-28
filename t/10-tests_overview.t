@@ -150,6 +150,14 @@ subtest 'time parameter' => sub {
     like(get_summary, qr/at the time of.*show latest.*Incomplete: 1$/s, 'jobs newer than time parameter shown');
 };
 
+subtest 'limit parameter' => sub {
+    $t->get_ok(
+        '/tests/overview?distri=opensuse&version=Factory&limit=2&limit=2',
+        'no database error when specifying more than one limit'
+    );
+    is $t->tx->res->dom->find('table.overview td.name')->size, 2, 'number of jobs limited';
+};
+
 # Advanced query parameters can be forwarded
 $form = {distri => 'opensuse', version => '13.1', result => 'passed'};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
