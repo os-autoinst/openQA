@@ -6,4 +6,4 @@ which ct > /dev/null || echo "Error: ct is not installed"
 
 cd container/helm
 
-ct "${1:-lint}" --all --config ct.yaml
+ct "${1:-lint}" --debug --all --config ct.yaml
