@@ -714,7 +714,7 @@ fi
 %{_sbindir}/rcopenqa-slirpvde
 %{_sbindir}/rcopenqa-vde_switch
 %{_sbindir}/rcopenqa-worker
-%ghost %config(noreplace) %{_sysconfdir}/openqa/workers.ini
+%ghost %config(noreplace) %attr(0644,root,root) %{_sysconfdir}/openqa/workers.ini
 %ghost %config(noreplace) %attr(0400,_openqa-worker,root) %{_sysconfdir}/openqa/client.conf
 %dir %{_sysconfdir}/openqa/workers.ini.d
 %dir %{_sysconfdir}/openqa/client.conf.d
@@ -743,7 +743,7 @@ fi
 %{_datadir}/openqa/script/openqa-slirpvde
 %{_datadir}/openqa/script/openqa-vde_switch
 %{_tmpfilesdir}/openqa.conf
-%ghost %dir %{_rundir}/openqa
+%ghost %dir %attr(0755,_openqa-worker,root) %{_rundir}/openqa
 # worker libs
 %dir %{_datadir}/openqa
 %dir %{_datadir}/openqa/script
