@@ -796,6 +796,8 @@ fi
 
 %files doc
 %doc docs/*
+%exclude %{_pkgdocdir}/asciinema/.gitignore
+%exclude %{_pkgdocdir}/images/.gitignore
 
 %files local-db
 %{_unitdir}/openqa-setup-db.service
