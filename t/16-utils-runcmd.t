@@ -9,10 +9,11 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Data::Dumper;
 use OpenQA::Git;
-use OpenQA::Utils;
 use OpenQA::Task::Needle::Save;
+use OpenQA::Task::SignalGuard;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Utils;
 use Mojo::File 'tempdir';
 use Test::MockModule;
 use Test::Mojo;
@@ -294,6 +295,37 @@ subtest 'saving needle via Git' => sub {
 
     # note: Saving needles is already tested in t/ui/12-needle-edit.t. However, Git is disabled in that UI test so
     #       it is tested here explicitly.
+};
+
+subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub {
+    package My::FakeSignalGuard {
+        use Mojo::Base -base, -signatures;
+        has 'abort' => sub { 0 };
+    }    # uncoverable statement
+    my $signal_guard;
+    my $signal_guard_mock = Test::MockModule->new('OpenQA::Task::SignalGuard');
+    $signal_guard_mock->redefine(new => sub { $signal_guard = My::FakeSignalGuard->new() });
+
+    $t->app->config->{global}->{scm} = '';    # disable Git
+    $t->app->config->{global}->{do_cleanup} = 'no';    # disable cleanup
+
+    # trigger saving needles like Minion would do
+    @executed_commands = ();
+    OpenQA::Task::Needle::Save::_save_needle(
+        $t->app,
+        bless({} => 'Test::FakeMinionJob'),
+        {
+            job_id => 99926,
+            user_id => 99903,
+            needle_json => '{"area":[{"xpos":0,"ypos":0,"width":0,"height":0,"type":"match"}],"tags":["foo"]}',
+            needlename => 'foo',
+            needledir => tempdir(),
+            imagedir => 't/data/openqa/share/tests/archlinux/needles',
+            imagename => 'test-rootneedle.png',
+        });
+
+    isa_ok $signal_guard, 'My::FakeSignalGuard', 'signal guard has been created with the right class';
+    ok $signal_guard->abort, 'signal guard is set to abort';
 };
 
 done_testing();
