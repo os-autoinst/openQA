@@ -327,4 +327,44 @@ subtest 'signal guard aborts when git is disabled and do_cleanup is no' => sub {
     is($signal_guard->abort, 1, 'signal guard is not aborted initially');
 };
 
+subtest 'save_needle return log error when set_to_latest_master fail' => sub {
+    package Test::FailingMinionJob {
+        sub finish { }
+        sub fail { Test::Most::note("Minion job failed with: " . Data::Dumper::Dumper(\@_)); }
+    }    # uncoverable statement
+
+    my $git_mock = Test::MockModule->new('OpenQA::Git');
+    $t->app->config->{global}->{scm} = 'git';    # enable Git
+    $t->app->config->{do_cleanup} = 'yes';    # enable cleanup
+    $git_mock->redefine(
+        set_to_latest_master => sub {
+            return 'Unable to fetch from origin master: mocked error';
+        });
+
+    my @log_errors;
+    my $log_mock = Test::MockModule->new(ref $t->app->log);
+    $log_mock->redefine(
+        error => sub {
+            my ($self, $message) = @_;
+            push @log_errors, $message;
+        });
+
+    my $job = bless({} => 'Test::FailingMinionJob');
+
+    my $result = OpenQA::Task::Needle::Save::_save_needle(
+        $t->app,
+        $job,
+        {
+            job_id => 99926,
+            user_id => 99903,
+            needle_json => '{"area":[{"xpos":0,"ypos":0,"width":0,"height":0,"type":"match"}],"tags":["foo"]}',
+            needlename => 'foo',
+            needledir => tempdir(),
+            imagedir => 't/data/openqa/share/tests/archlinux/needles',
+            imagename => 'test-rootneedle.png',
+        });
+
+    like $log_errors[0], qr/Unable to fetch.*mocked/, 'error logged on fail';
+};
+
 done_testing();
