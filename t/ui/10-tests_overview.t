@@ -282,12 +282,37 @@ subtest 'filtering by flavor' => sub {
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-flavor')->send_keys('DVD');
         apply_filter('DVD');
-
+        like $driver->get_current_url, qr/flavor=DVD/, 'url contains single flavor';
         element_visible('#flavor_DVD_arch_i586', qr/i586/);
         element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
         element_not_present('#flavor_GNOME-Live_arch_i686');
         element_not_present('#flavor_NET_arch_x86_64');
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_element('#filter-flavor')->send_keys(',NET');
+        apply_filter('DVD,NET');
+        like $driver->get_current_url, qr/flavor=DVD.*NET/, 'url contains both flavors';
+        element_visible('#flavor_DVD_arch_i586', qr/i586/);
+        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
+        element_not_present('#flavor_GNOME-Live_arch_i686');
+        element_visible('#flavor_NET_arch_x86_64');
     };
+
+    subtest 'options from url are carried over to the form' => sub {
+        $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&flavor=DVD%2CNET');
+        like $driver->find_element('#filter-flavor')->get_attribute('value'), qr/DVD,NET/,
+          'comma-separated flavor options from the URL are present in the form';
+        element_visible('#flavor_DVD_arch_i586', qr/i586/);
+        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
+        element_not_present('#flavor_GNOME-Live_arch_i686');
+        element_visible('#flavor_NET_arch_x86_64');
+        $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&flavor=DVD&flavor=NET');
+        like $driver->find_element('#filter-flavor')->get_attribute('value'), qr/DVD,NET/,
+          'multiple flavor options from the URL are present in the form';
+        element_visible('#flavor_DVD_arch_i586', qr/i586/);
+        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
+        element_not_present('#flavor_GNOME-Live_arch_i686');
+        element_visible('#flavor_NET_arch_x86_64');
+    }
 };
 
 sub check_textmode_test ($test_row) {
