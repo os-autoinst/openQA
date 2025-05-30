@@ -180,6 +180,7 @@ use Time::Seconds;
             {key => 'ISO_MAXSIZE', value => '4700372992'},
             {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'},
             {key => 'QEMUCPU', value => 'qemu64'},
+            {key => 'INCIDENT', value => '1234'},
             {key => 'FOO', value => 'foo/foo.txt'}]
     },
     Jobs => {
@@ -417,7 +418,8 @@ use Time::Seconds;
         ARCH => 'x86_64',
         result_dir => '00099962-opensuse-13.1-DVD-x86_64-Build0091-kde',
         settings => [
-            {key => 'DESKTOP', value => 'kde'},
+            {key => 'DESKTOP', value => 'kde'}, {key => 'INCIDENT', value => '1234,3456'},
+
             {key => 'ISO_MAXSIZE', value => '4700372992'},
             {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
             {key => 'DVD', value => '1'},
