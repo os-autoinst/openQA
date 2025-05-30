@@ -30,6 +30,17 @@ my $schema = OpenQA::Test::Database->new->create(fixtures_glob => $fixtures);
 my $first_user = $schema->resultset('Users')->first;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+my $empty_tmp_dir = tempdir();
+my $fake_needle = {
+    job_id => 99926,
+    user_id => 99903,
+    needle_json => '{"area":[{"xpos":0,"ypos":0,"width":0,"height":0,"type":"match"}],"tags":["foo"]}',
+    needlename => 'foo',
+    needledir => $empty_tmp_dir,
+    imagedir => 't/data/openqa/share/tests/archlinux/needles',
+    imagename => 'test-rootneedle.png',
+};
+
 subtest 'run (arbitrary) command' => sub {
     ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
     stdout_like { is(run_cmd_with_log([qw(false)]), '') } qr/[WARN].*[ERROR]/i;
@@ -248,33 +259,20 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
 subtest 'saving needle via Git' => sub {
     my $utils_mock = Test::MockModule->new('OpenQA::Git');
     $utils_mock->redefine(run_cmd_with_log_return_error => \&_run_cmd_mock);
-    {
-        package Test::FakeMinionJob;    # uncoverable statement
+    package Test::FakeMinionJob {
         sub finish { }
         sub fail {
             Test::Most::fail("Minion job shouldn't have failed.");    # uncoverable statement
             Test::Most::note(Data::Dumper::Dumper(\@_));    # uncoverable statement
         }
-    }
+    }    # uncoverable statement
 
     # configure use of Git
     $t->app->config->{global}->{scm} = 'git';
-    my $empty_tmp_dir = tempdir();
 
     # trigger saving needles like Minion would do
     @executed_commands = ();
-    OpenQA::Task::Needle::Save::_save_needle(
-        $t->app,
-        bless({} => 'Test::FakeMinionJob'),
-        {
-            job_id => 99926,
-            user_id => 99903,
-            needle_json => '{"area":[{"xpos":0,"ypos":0,"width":0,"height":0,"type":"match"}],"tags":["foo"]}',
-            needlename => 'foo',
-            needledir => $empty_tmp_dir,
-            imagedir => 't/data/openqa/share/tests/archlinux/needles',
-            imagename => 'test-rootneedle.png',
-        });
+    OpenQA::Task::Needle::Save::_save_needle($t->app, bless({} => 'Test::FakeMinionJob'), $fake_needle);
     is_deeply(
         \@executed_commands,
         [
@@ -311,21 +309,32 @@ subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub
 
     # trigger saving needles like Minion would do
     @executed_commands = ();
-    OpenQA::Task::Needle::Save::_save_needle(
-        $t->app,
-        bless({} => 'Test::FakeMinionJob'),
-        {
-            job_id => 99926,
-            user_id => 99903,
-            needle_json => '{"area":[{"xpos":0,"ypos":0,"width":0,"height":0,"type":"match"}],"tags":["foo"]}',
-            needlename => 'foo',
-            needledir => tempdir(),
-            imagedir => 't/data/openqa/share/tests/archlinux/needles',
-            imagename => 'test-rootneedle.png',
-        });
+    OpenQA::Task::Needle::Save::_save_needle($t->app, bless({} => 'Test::FakeMinionJob'), $fake_needle);
 
     isa_ok $signal_guard, 'My::FakeSignalGuard', 'signal guard has been created with the right class';
     ok $signal_guard->abort, 'signal guard is set to abort';
+};
+
+subtest 'save_needle returns and logs error when set_to_latest_master fails' => sub {
+    package Test::FailingMinionJob {
+        sub finish { }
+        sub fail($self, $args) { $self->{fail_message} = $args }
+    }    # uncoverable statement
+
+    my $git_mock = Test::MockModule->new('OpenQA::Git');
+    $t->app->config->{global}->{scm} = 'git';    # enable Git
+    $t->app->config->{do_cleanup} = 'yes';    # enable cleanup
+    $git_mock->redefine(set_to_latest_master => 'Unable to fetch from origin master: mocked error');
+
+    my @log_errors;
+    my $log_mock = Test::MockModule->new(ref $t->app->log);
+    $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });
+    my $job = bless({} => 'Test::FailingMinionJob');
+    OpenQA::Task::Needle::Save::_save_needle($t->app, $job, $fake_needle);
+
+    like $log_errors[0], qr/Unable to fetch.*mocked/, 'error logged on fail';
+    like $job->{fail_message}->{error}, qr/<strong>Failed to save.*<\/strong>.*<pre>Unable to fetch.*mocked.*<\/pre>/,
+      'error message in fail';
 };
 
 done_testing();
