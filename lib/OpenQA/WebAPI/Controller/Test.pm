@@ -511,6 +511,7 @@ sub comments ($self) {
 }
 
 my $ANCESTORS_LIMIT = 10;
+
 sub _stash_clone_info ($self, $job) {
     $self->stash(
         {

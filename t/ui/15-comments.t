@@ -64,6 +64,7 @@ my $user_name = 'Demo';
 
 # fills out the comment form and submits
 my $max_write_attempts = $ENV{OPENQA_COMMENTS_TEST_MAX_WRITE_ATTEMPTS} // 10;
+
 sub write_comment ($text, $desc) {
     for (my $attempts = 1;; ++$attempts) {
         eval {
@@ -446,6 +447,7 @@ subtest 'editing when logged in as regular user' => sub {
             0, "edit not displayed for other users comments");
         is(@{$driver->find_elements('button.remove-edit-button', 'css')}, 0, "removal not displayed for regular user");
     }
+
     sub only_edit_for_own_comments_expected {
         is(@{$driver->find_elements('button.trigger-edit-button', 'css')}, 1, "own comments can be edited");
         is(@{$driver->find_elements('button.remove-edit-button', 'css')}, 0,
