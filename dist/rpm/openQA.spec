@@ -787,6 +787,8 @@ fi
 %{_bindir}/openqa-load-templates
 %{_bindir}/openqa-clone-custom-git-refspec
 %{_bindir}/openqa-validate-yaml
+%dir %{_sysconfdir}/apparmor.d
+%config %{_sysconfdir}/apparmor.d/usr.share.openqa.script.openqa-cli
 
 %if %{with python_scripts}
 %files python-scripts
