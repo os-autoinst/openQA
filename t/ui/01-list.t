@@ -218,6 +218,15 @@ subtest 'scheduled jobs server-side limit has precedence over user-specified lim
     $schema->txn_rollback;
 };
 
+subtest 'filtering by job settings' => sub {
+    $driver->get('/tests?job_setting=^HDD_1$=x86_64.hd.?$');
+    wait_for_ajax(msg => 'DataTables on "All tests" page for filtered jobs');
+    my $s
+      = "return Array.from(document.querySelectorAll('#results td:nth-child(2)').values().map(e => e.textContent.trim()))";
+    my $tests = $driver->execute_script($s);
+    is_deeply $tests, ['kde@64bit', 'kde@64bit-uefi', 'textmode@32bit'], 'expected set of tests present';
+};
+
 subtest 'available comments shown' => sub {
     $driver->get('/tests');
     wait_for_ajax(msg => 'DataTables on "All tests" page for comments');
