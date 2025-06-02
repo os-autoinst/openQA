@@ -99,6 +99,11 @@ Source0:        %{name}-%{version}.tar.xz
 Source1:        openQA-rpmlintrc
 Source2:        node_modules.spec.inc
 %include        %{_sourcedir}/node_modules.spec.inc
+# Indirect dependency first observed to be necessary on Leap 16.0 (but not
+# <16.0 nor Tumbleweed)
+%if 0%{?suse_version} >= 1600 && 0%{?suse_version} < 1699
+BuildRequires:  perl-LWP-Protocol-https
+%endif
 BuildRequires:  fdupes
 # for install-opensuse in Makefile
 %if 0%{?is_opensuse}
