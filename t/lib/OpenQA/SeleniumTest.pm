@@ -216,6 +216,9 @@ sub javascript_console_has_no_warnings_or_errors ($test_name_suffix = '') {
             # WebSocket connection
         next if ($msg =~ qr/Data frame received after close/);    # uncoverable statement
 
+        # ignore warning that can happen when we intentionally wait for the WebSocket connection to be closed
+        next if ($msg =~ qr/WebSocket is already in CLOSING or CLOSED state/i);    # uncoverable statement
+
         # ignore when server replied with 4xx response; this may be provoked when testing error cases and if it is
         # not expected tests would fail anyways
         next if ($msg =~ qr/server responded with a status of 4\d\d/);    # uncoverable statement
