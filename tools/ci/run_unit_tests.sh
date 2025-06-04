@@ -23,4 +23,11 @@ export OPENQA_TEST_TIMEOUT_SCALE_CI=3
 export EXTRA_PROVE_ARGS="-v"
 export OPENQA_FULLSTACK_TEMP_DIR=$PWD/test-results/fullstack
 export PROVE="tools/prove_wrapper"
+
+# https://progress.opensuse.org/issues/162500
+cpanm -n -l /tmp/css-sass CSS::Sass
+find /tmp/css-sass
+export PERL5LIB=/tmp/css-sass/lib/perl5
+perl -wE'use CSS::Sass 3.6.4'
+
 make test-$target
