@@ -46,3 +46,5 @@ node_modules
 openqa-documentation.html
 docs/build/
 docs/vendor/
+# docs
+**/openqa-in-5-minutes.gif
