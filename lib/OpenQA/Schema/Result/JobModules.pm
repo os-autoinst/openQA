@@ -87,9 +87,11 @@ sub results ($self, %options) {
     my $name = $self->name;
 
     my $file = path($dir, "details-$name.json");
-    my $json_data;
-    try { $json_data = $file->slurp }
-    catch ($e) { return {} }
+    my $json_data = do {
+        try { $file->slurp }
+        catch ($e) { }
+      }
+      or return {};
 
     my $json;
     try { $json = decode_json($json_data) }

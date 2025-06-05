@@ -1069,4 +1069,19 @@ subtest 'handling of array and unicode settings' => sub {
     is $v, '["value1","ä","…"]', 'retrieved correctly encoded JSON array as string';
 };
 
+subtest 'error handling when reading job module results' => sub {
+    my $modules = $jobs->find(99937)->modules;
+    my $valid_module = $modules->first;
+    my $empty_module = $modules->create({name => 'empty', script => 'foo', category => 'unittests'});
+    my $broken_module = $modules->create({name => 'broken', script => 'foo', category => 'unittests'});
+
+    my $results = $valid_module->results;
+    is scalar @{$results->{details}}, 1, 'details returned if JSON file exists' or always_explain $results;
+
+    $results = $empty_module->results;
+    is scalar @{$results->{details}}, 0, 'empty details returned if JSON file empty' or always_explain $results;
+
+    throws_ok { $broken_module->results } qr/Malformed.*JSON/i, 'exception if JSON is malformed';
+};
+
 done_testing();
