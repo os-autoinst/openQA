@@ -9,16 +9,7 @@ function createElement(tag, content = [], attrs = {}) {
     }
   }
 
-  for (const idx in content) {
-    let val = content[idx];
-
-    if (typeof val === 'string') {
-      val = document.createTextNode(val);
-    }
-
-    elem.appendChild(val);
-  }
-
+  elem.append(...content);
   return elem;
 }
 
