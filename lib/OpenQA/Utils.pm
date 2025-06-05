@@ -569,12 +569,11 @@ sub human_readable_size ($size) {
 }
 
 sub read_test_modules ($job) {
-    my $testresultdir = $job->result_dir();
-    return unless $testresultdir;
+    return undef unless my $testresultdir = $job->result_dir;
 
     my $category;
     my $has_parser_text_results = 0;
-    my @modlist;
+    my (@modlist, @errors);
 
     for my $module ($job->modules_with_job_prefetched->all) {
         my $name = $module->name();
@@ -584,7 +583,7 @@ sub read_test_modules ($job) {
         my $num = 1;
         my $has_module_parser_text_result = 0;
 
-        my $module_results = $module->results;
+        my $module_results = $module->results(errors => \@errors);
         for my $step (@{$module_results->{details}}) {
             my $text = $step->{text};
             my $source = $step->{_source};
@@ -625,10 +624,7 @@ sub read_test_modules ($job) {
 
     }
 
-    return {
-        modules => \@modlist,
-        has_parser_text_results => $has_parser_text_results,
-    };
+    return {modules => \@modlist, errors => \@errors, has_parser_text_results => $has_parser_text_results};
 }
 
 # parse comments of the specified (parent) group and store all mentioned builds in $res (hashref)
