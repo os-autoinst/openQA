@@ -1075,13 +1075,18 @@ subtest 'error handling when reading job module results' => sub {
     my $empty_module = $modules->create({name => 'empty', script => 'foo', category => 'unittests'});
     my $broken_module = $modules->create({name => 'broken', script => 'foo', category => 'unittests'});
 
-    my $results = $valid_module->results;
+    my $errors = [];
+    my $results = $valid_module->results(errors => $errors);
+    is scalar @$errors, 0, 'no errors returned if JSON file exists' or always_explain $results;
     is scalar @{$results->{details}}, 1, 'details returned if JSON file exists' or always_explain $results;
 
-    $results = $empty_module->results;
+    $results = $empty_module->results(errors => $errors);
+    is scalar @$errors, 0, 'no errors returned if JSON file empty' or always_explain $results;
     is scalar @{$results->{details}}, 0, 'empty details returned if JSON file empty' or always_explain $results;
 
-    throws_ok { $broken_module->results } qr/Malformed.*JSON/i, 'exception if JSON is malformed';
+    $results = $broken_module->results(errors => $errors);
+    like $errors->[0], qr/Malformed.*JSON/i, 'error returned if JSON file malformed' or always_explain $results;
+    is scalar @{$results->{details}}, 0, 'empty details returned if JSON file malformed' or always_explain $results;
 };
 
 done_testing();

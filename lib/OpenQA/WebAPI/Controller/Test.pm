@@ -381,10 +381,9 @@ sub details ($self) {
         return $self->render(json => {snippets => {header => $log}});
     }
 
-    my $modules = read_test_modules($job);
     my @ret;
-
-    for my $module (@{$modules->{modules}}) {
+    my $modules = read_test_modules($job) // {};
+    for my $module (@{$modules->{modules} // []}) {
         delete $_->{needles} for @{$module->{details}};
         my $hash = {
             name => $module->{name},
@@ -410,7 +409,7 @@ sub details ($self) {
         md5thumb_url => $self->url_for('thumb_image', md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
         thumbnail_url => $self->url_for('test_thumbnail', testid => $job->id, filename => '$FILENAME$')};
 
-    return $self->render(json => {snippets => $snips, modules => \@ret});
+    return $self->render(json => {snippets => $snips, modules => \@ret, errors => $modules->{errors}});
 }
 
 sub external ($self) {
