@@ -7,6 +7,7 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::App;
@@ -45,12 +46,8 @@ is_deeply($settings->webui_hosts, ['http://localhost:9527', 'https://remotehost'
 is_deeply(
     $settings->webui_host_specific_settings,
     {
-        'http://localhost:9527' => {
-            HOST_SPECIFIC => 'setting (localhost)',
-        },
-        'https://remotehost' => {
-            HOST_SPECIFIC => 'specific setting (remotehost)',
-        },
+        'http://localhost:9527' => {HOST_SPECIFIC => 'setting (localhost)'},
+        'https://remotehost' => {HOST_SPECIFIC => 'specific setting (remotehost)'},
     },
     'web UI host specific settings'
 ) or always_explain $settings->webui_host_specific_settings;
@@ -69,11 +66,7 @@ subtest 'check for local worker' => sub {
 subtest 'apply settings to app' => sub {
     my ($setup_log_called, $setup_log_app);
     my $mock = Test::MockModule->new('OpenQA::Worker::Settings');
-    $mock->redefine(
-        setup_log => sub {
-            $setup_log_app = shift;
-            $setup_log_called = 1;
-        });
+    $mock->redefine(setup_log => sub ($app, @) { $setup_log_app = $app; $setup_log_called = 1 });
     my $app = OpenQA::Worker::App->new;
     $settings->apply_to_app($app);
     is($app->level, 'test', 'log level applied');
