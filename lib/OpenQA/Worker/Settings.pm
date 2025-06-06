@@ -28,7 +28,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     # read settings from config
     my %global_settings;
     _read_section($cfg, 'global', \%global_settings);
-    _read_section($cfg, $instance_number, \%global_settings);
+    _read_section($cfg, $_, \%global_settings) for @{_relevant_sections($cfg, $instance_number)};
     _read_section_keeping_default($cfg, "class:$_", \%global_settings)
       for split(',', $global_settings{WORKER_CLASS} // '');
 
@@ -69,6 +69,32 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     $self->{_file_path} = join(', ', @$config_paths);
     $self->{_parse_errors} = \@parse_errors;
     return $self;
+}
+
+sub _is_uint ($value) { $value =~ m/^\d+$/ }
+
+sub _is_section_relevant ($section_name, $instance_number) {
+    return 1 if $section_name eq $instance_number;
+    return 0 unless _is_uint $instance_number;
+    my @section_bounds = map {
+        [map { trim $_ } split '-', $_, 2]
+    } split ',', $section_name;
+    for my $bounds (@section_bounds) {
+        my ($lower_bound, $upper_bound) = @$bounds;
+        return 1
+          if defined $upper_bound
+          && _is_uint($lower_bound)
+          && _is_uint($upper_bound)
+          && $instance_number >= $lower_bound
+          && $instance_number <= $upper_bound;
+        return 1 if _is_uint($lower_bound) && $instance_number == $lower_bound;
+    }
+    return 0;
+}
+
+sub _relevant_sections ($cfg, $instance_number) {
+    return [] unless defined $cfg && defined $instance_number;
+    return [grep { _is_section_relevant($_, $instance_number) } $cfg->Sections];
 }
 
 sub _read_section ($cfg, $section, $out) {

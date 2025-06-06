@@ -590,10 +590,17 @@ BAR = this value has precedence over the one from the "class:foo" section below
 [3]
 # WORKER_CLASS is not set
 
+[4-10,20-25,30]
+WORKER_CLASS = yet-another-class
+
 [class:foo]
 FOO = this value is present on all instances where WORKER_CLASS contains foo
 BAR = this value is would be present in the same way but is overridden by slot 2
 --------------------------------------------------------------------------------
+
+It is possible to specify comma-separated lists of instance numbers and ranges.
+So in the example above the instances 4 to 10 (inclusive), 20 to 25 (inclusive)
+and 30 will have the `WORKER_CLASS` set to `yet-another-class`.
 
 As shown it is also possible to specify a section with the name `[class:…]` to
 specify `WORKER_CLASS`-specific values. Note that values in the concrete
