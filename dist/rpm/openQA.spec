@@ -68,7 +68,7 @@
 # The following line is generated from dependencies.yaml
 %define worker_requires bsdtar openQA-client optipng os-autoinst perl(Capture::Tiny) perl(File::Map) perl(Minion::Backend::SQLite) >= 5.0.7 perl(Mojo::IOLoop::ReadWriteProcess) >= 0.26 perl(Mojo::SQLite) psmisc sqlite3 >= 3.24.0
 # The following line is generated from dependencies.yaml
-%define build_requires %assetpack_requires npm rubygem(sass) >= 3.7.4
+%define build_requires %assetpack_requires npm perl(CSS::Sass)
 
 # All requirements needed by the tests executed during build-time.
 # Do not require on this in individual sub-packages except for the devel

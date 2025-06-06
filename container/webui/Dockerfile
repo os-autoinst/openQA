@@ -17,10 +17,10 @@ ENV LC_ALL C.UTF-8
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.6 devel_openQA && \
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.6/15.6 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
-    # openQA might need rubygem:sass to compile assets in this context due to
+    # openQA might need perl(CSS::Sass) to compile assets in this context due to
     # unknown reasons even though the package should use the precompiled
     # assets from cache.tar
-    zypper in -y ca-certificates-mozilla curl openQA-local-db apache2 apache2-utils hostname which w3m 'rubygem(sass)>=3.7.4' && \
+    zypper in -y ca-certificates-mozilla curl openQA-local-db apache2 apache2-utils hostname which w3m 'perl(CSS::Sass)' && \
     zypper clean && \
     gensslcert && \
     a2enmod headers && \
