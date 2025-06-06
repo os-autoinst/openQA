@@ -7,7 +7,7 @@ use Mojo::Base -base, -signatures;
 use Mojo::Util 'trim';
 use Cwd 'abs_path';
 use Mojo::File 'path';
-use OpenQA::Utils qw(run_cmd_with_log_return_error run_cmd_with_log);
+use OpenQA::Utils qw(run_cmd_with_log_return_error run_cmd_with_log config_autocommit_enabled);
 use OpenQA::App;
 use Feature::Compat::Try;
 
@@ -17,9 +17,9 @@ has 'user';
 
 my %CHECK_OPTIONS = (expected_return_codes => {0 => 1, 1 => 1});
 
-sub enabled ($self, $args = undef) {
+sub autocommit_enabled ($self, $args = undef) {
     die 'no app assigned' unless my $app = $self->app;
-    return ($app->config->{global}->{scm} || '') eq 'git';
+    return config_autocommit_enabled($app->config);
 }
 
 sub config ($self, $args = undef) {

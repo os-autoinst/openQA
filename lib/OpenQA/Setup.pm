@@ -68,6 +68,7 @@ sub read_config ($app) {
             branding => 'openSUSE',
             download_domains => undef,
             suse_mirror => undef,
+            # deprecated alternate for git_auto_commit below
             scm => undef,
             hsts => 365,
             audit_enabled => 1,
@@ -100,12 +101,13 @@ sub read_config ($app) {
             require_for_assets => 0,
         },
         'scm git' => {
+            git_auto_commit => '',
             update_remote => '',
             update_branch => '',
             do_push => 'no',
             do_cleanup => 'no',
             git_auto_clone => 'yes',
-            git_auto_update => 'yes',
+            git_auto_update => 'no',
             git_auto_update_method => 'best-effort',
             checkout_needles_sha => 'no',
             allow_arbitrary_url_fetch => 'no',
