@@ -70,23 +70,12 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     return $self;
 }
 
-sub _is_uint ($value) { $value =~ m/^\d+$/ }
-
 sub _is_section_relevant ($section_name, $instance_number) {
     return 1 if $section_name eq $instance_number;
-    return 0 unless _is_uint $instance_number;
-    my @section_bounds = map {
-        [map { trim $_ } split '-', $_, 2]
-    } split ',', $section_name;
-    for my $bounds (@section_bounds) {
-        my ($lower_bound, $upper_bound) = @$bounds;
-        return 1
-          if defined $upper_bound
-          && _is_uint($lower_bound)
-          && _is_uint($upper_bound)
-          && $instance_number >= $lower_bound
-          && $instance_number <= $upper_bound;
-        return 1 if _is_uint($lower_bound) && $instance_number == $lower_bound;
+    return 0 unless $instance_number =~ m/^\d+$/;
+    for my $range (split m/ *, */, $section_name) {
+        next unless $range =~ m/^(\d+) *(?:- *(\d+))?$/;
+        return 1 if $instance_number >= $1 && $instance_number <= ($2 // $1);
     }
     return 0;
 }
