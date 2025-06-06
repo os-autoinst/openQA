@@ -7,6 +7,7 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::App;
@@ -22,21 +23,19 @@ chdir $workdir;
 my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 my $settings = OpenQA::Worker::Settings->new;
+my @common_settings = (
+    CRITICAL_LOAD_AVG_THRESHOLD => 40,
+    GLOBAL => 'setting',
+    WORKER_HOSTNAME => '127.0.0.1',
+    LOG_LEVEL => 'test',
+    LOG_DIR => 'log/dir',
+    RETRY_DELAY => 5,
+    RETRY_DELAY_IF_WEBUI_BUSY => 60,
+);
 
-is_deeply(
-    $settings->global_settings,
-    {
-        CRITICAL_LOAD_AVG_THRESHOLD => 40,
-        GLOBAL => 'setting',
-        WORKER_HOSTNAME => '127.0.0.1',
-        LOG_LEVEL => 'test',
-        LOG_DIR => 'log/dir',
-        RETRY_DELAY => 5,
-        RETRY_DELAY_IF_WEBUI_BUSY => 60,
-        TERMINATE_AFTER_JOBS_DONE => 1,
-    },
-    'global settings, spaces trimmed'
-) or always_explain $settings->global_settings;
+is_deeply $settings->global_settings, {@common_settings, TERMINATE_AFTER_JOBS_DONE => 1},
+  'global settings, spaces trimmed'
+  or always_explain $settings->global_settings;
 
 is($settings->file_path, "$FindBin::Bin/data/24-worker-settings/workers.ini", 'file path set');
 is_deeply($settings->parse_errors, [], 'no parse errors occurred');
@@ -47,12 +46,8 @@ is_deeply($settings->webui_hosts, ['http://localhost:9527', 'https://remotehost'
 is_deeply(
     $settings->webui_host_specific_settings,
     {
-        'http://localhost:9527' => {
-            HOST_SPECIFIC => 'setting (localhost)',
-        },
-        'https://remotehost' => {
-            HOST_SPECIFIC => 'specific setting (remotehost)',
-        },
+        'http://localhost:9527' => {HOST_SPECIFIC => 'setting (localhost)'},
+        'https://remotehost' => {HOST_SPECIFIC => 'specific setting (remotehost)'},
     },
     'web UI host specific settings'
 ) or always_explain $settings->webui_host_specific_settings;
@@ -71,11 +66,7 @@ subtest 'check for local worker' => sub {
 subtest 'apply settings to app' => sub {
     my ($setup_log_called, $setup_log_app);
     my $mock = Test::MockModule->new('OpenQA::Worker::Settings');
-    $mock->redefine(
-        setup_log => sub {
-            $setup_log_app = shift;
-            $setup_log_called = 1;
-        });
+    $mock->redefine(setup_log => sub ($app, @) { $setup_log_app = $app; $setup_log_called = 1 });
     my $app = OpenQA::Worker::App->new;
     $settings->apply_to_app($app);
     is($app->level, 'test', 'log level applied');
@@ -85,38 +76,43 @@ subtest 'apply settings to app' => sub {
 };
 
 subtest 'instance-specific and WORKER_CLASS-specific settings' => sub {
-    my $settings1 = OpenQA::Worker::Settings->new(1);
-    is_deeply(
-        $settings1->global_settings,
+    my @expected_settings = (
         {
-            CRITICAL_LOAD_AVG_THRESHOLD => 40,
-            GLOBAL => 'setting',
-            WORKER_HOSTNAME => '127.0.0.1',
+            @common_settings,
             WORKER_CLASS => 'qemu_i386,qemu_x86_64',
-            LOG_LEVEL => 'test',
-            LOG_DIR => 'log/dir',
-            RETRY_DELAY => 5,
-            RETRY_DELAY_IF_WEBUI_BUSY => 60,
+            LIST_KEY => 'set-via-list',    # via section using list specifier
+            RANGE_AND_LIST_KEY => 'set-via-range-and-list',    # via combined specifier
         },
-        'global settings (instance 1)'
-    ) or always_explain $settings1->global_settings;
-    my $settings2 = OpenQA::Worker::Settings->new(2);
-    is_deeply(
-        $settings2->global_settings,
         {
-            CRITICAL_LOAD_AVG_THRESHOLD => 40,
-            GLOBAL => 'setting',
-            WORKER_HOSTNAME => '127.0.0.1',
-            WORKER_CLASS => 'special-hardware,qemu_aarch64',
-            LOG_LEVEL => 'test',
-            LOG_DIR => 'log/dir',
+            @common_settings,
+            WORKER_CLASS => 'special-hardware,qemu_aarch64,worker-class-via-range',
             FOO => 'setting from slot has precedence',
             BAR => 'aarch64-specific-setting',
             RETRY_DELAY => 10,
             RETRY_DELAY_IF_WEBUI_BUSY => 120,
+            LIST_KEY => 'set-via-list',    # via section using range specifier
+            RANGE_KEY => 'set-via-range',    # via section using range specifier
         },
-        'global settings (instance 2)'
-    ) or always_explain $settings2->global_settings;
+        {
+            @common_settings,
+            WORKER_CLASS => 'yet-another-class,worker-class-via-range',
+            RANGE_KEY => 'set-via-range',    # via section using range specifier
+            RANGE_AND_LIST_KEY => 'set-via-range-and-list',    # via combined specifier
+        },
+        {
+            @common_settings,
+            WORKER_CLASS => 'worker-class-via-range',
+            RANGE_KEY => 'set-via-range',
+            RANGE_AND_LIST_KEY => 'set-via-range-and-list',
+        },
+        {@common_settings, RANGE_AND_LIST_KEY => 'set-via-range-and-list'},
+        {@common_settings, RANGE_AND_LIST_KEY => 'set-via-range-and-list'},
+        {@common_settings});
+    for my $i (1 .. 7) {
+        my $settings = OpenQA::Worker::Settings->new($i);
+        is_deeply $settings->global_settings, $expected_settings[$i - 1], "global settings (instance $i)"
+          or always_explain $settings->global_settings;
+    }
 };
 
 subtest 'settings file with errors' => sub {
