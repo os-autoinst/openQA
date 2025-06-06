@@ -29,8 +29,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     my %global_settings;
     _read_section($cfg, 'global', \%global_settings);
     _read_section($cfg, $_, \%global_settings) for @{_relevant_sections($cfg, $instance_number)};
-    _read_section_keeping_default($cfg, "class:$_", \%global_settings)
-      for split(',', $global_settings{WORKER_CLASS} // '');
+    _read_section($cfg, "class:$_", \%global_settings, 1) for split(',', $global_settings{WORKER_CLASS} // '');
 
     # read global settings from environment variables
     for my $var (qw(LOG_DIR TERMINATE_AFTER_JOBS_DONE)) {
@@ -97,13 +96,17 @@ sub _relevant_sections ($cfg, $instance_number) {
     return [grep { _is_section_relevant($_, $instance_number) } $cfg->Sections];
 }
 
-sub _read_section ($cfg, $section, $out) {
-    return undef unless $cfg && $cfg->SectionExists($section);
-    $out->{uc $_} = trim $cfg->val($section, $_) for $cfg->Parameters($section);
+sub _read_value ($cfg, $section, $out, $keep_default, $key) {
+    my $value = trim $cfg->val($section, $key);
+    $key = trim substr($key, 0, -1) if my $append = substr($key, -1, 1) eq '+';    # append if "+=" is used
+    $key = uc $key;
+    return if defined(my $existing_value = $out->{$key}) && $keep_default;
+    $out->{$key} = $append && defined $existing_value ? "$existing_value,$value" : $value;
 }
 
-sub _read_section_keeping_default ($cfg, $section, $out) {
-    $out->{uc $_} //= trim $cfg->val($section, $_) for $cfg->Parameters($section);
+sub _read_section ($cfg, $section, $out, $keep_default = 0) {
+    return undef unless $cfg && $cfg->SectionExists($section);
+    _read_value($cfg, $section, $out, $keep_default, $_) for $cfg->Parameters($section);
 }
 
 sub auto_detect_worker_address ($self, $fallback = undef) {

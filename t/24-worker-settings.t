@@ -85,7 +85,7 @@ subtest 'instance-specific and WORKER_CLASS-specific settings' => sub {
         },
         {
             @common_settings,
-            WORKER_CLASS => 'special-hardware,qemu_aarch64',
+            WORKER_CLASS => 'special-hardware,qemu_aarch64,worker-class-via-range',
             FOO => 'setting from slot has precedence',
             BAR => 'aarch64-specific-setting',
             RETRY_DELAY => 10,
@@ -95,11 +95,16 @@ subtest 'instance-specific and WORKER_CLASS-specific settings' => sub {
         },
         {
             @common_settings,
-            WORKER_CLASS => 'yet-another-class',
+            WORKER_CLASS => 'yet-another-class,worker-class-via-range',
             RANGE_KEY => 'set-via-range',    # via section using range specifier
             RANGE_AND_LIST_KEY => 'set-via-range-and-list',    # via combined specifier
         },
-        {@common_settings, RANGE_KEY => 'set-via-range', RANGE_AND_LIST_KEY => 'set-via-range-and-list'},
+        {
+            @common_settings,
+            WORKER_CLASS => 'worker-class-via-range',
+            RANGE_KEY => 'set-via-range',
+            RANGE_AND_LIST_KEY => 'set-via-range-and-list',
+        },
         {@common_settings, RANGE_AND_LIST_KEY => 'set-via-range-and-list'},
         {@common_settings, RANGE_AND_LIST_KEY => 'set-via-range-and-list'},
         {@common_settings});
