@@ -127,6 +127,12 @@ is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'lo
 $driver->get('/tests/99937');
 disable_bootstrap_animations;
 
+subtest 'error handling when loading test modules' => sub {
+    my $error = wait_for_element(selector => '#flash-messages .alert', is_displayed => 1);
+    like $error->get_text, qr/malformed json.*details-broken.json/i, 'error message displayed';
+    $error->child('.btn-close')->click;
+};
+
 subtest 'tab navigation via history' => sub {
     is(current_tab, 'Details', 'starting on Details tab for completed job');
     $driver->find_element_by_link_text('Settings')->click();
@@ -176,7 +182,7 @@ subtest 'filtering' => sub {
     # check initial state (no filters enabled)
     ok(!$driver->find_element('#details-name-filter')->is_displayed(), 'name filter initially not displayed');
     ok(!$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed');
-    is($count_steps->('ok'), 5, 'number of passed steps without filter');
+    is($count_steps->('ok'), 6, 'number of passed steps without filter');
     is($count_steps->('failed'), 2, 'number of failed steps without filter');
     is($count_headings->(), 3, 'number of module headings without filter');
 
@@ -207,7 +213,7 @@ subtest 'filtering' => sub {
 
     # disable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'), 5, 'same number of passed steps as initial');
+    is($count_steps->('ok'), 6, 'same number of passed steps as initial');
     is($count_steps->('failed'), 2, 'same number of failed steps as initial');
     is($count_headings->(), 3, 'module headings shown again');
 };

@@ -9,16 +9,7 @@ function createElement(tag, content = [], attrs = {}) {
     }
   }
 
-  for (const idx in content) {
-    let val = content[idx];
-
-    if (typeof val === 'string') {
-      val = document.createTextNode(val);
-    }
-
-    elem.appendChild(val);
-  }
-
+  elem.append(...content);
   return elem;
 }
 
@@ -221,11 +212,18 @@ function renderModuleRow(module, snippets) {
 function renderModuleTable(container, response) {
   container.innerHTML = response.snippets.header;
 
+  const E = createElement;
+  const errors = response.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    const liElements = errors.map(error => E('li', error));
+    const ul = E('ul', liElements);
+    addFlash('danger', E('div', ['Errors occurred when trying to load test results:', ul]));
+  }
+
   if (response.modules === undefined || response.modules === null) {
     return;
   }
 
-  const E = createElement;
   const thead = E('thead', [
     E('tr', [E('th', ['Test']), E('th', ['Result']), E('th', ['References'], {style: 'width: 100%'})])
   ]);

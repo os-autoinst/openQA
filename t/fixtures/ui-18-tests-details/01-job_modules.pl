@@ -12,6 +12,13 @@ use warnings;
         result => 'passed',
     },
     JobModules => {
+        script => 'tests/installation/broken.pm',
+        job_id => 99937,
+        category => 'installation',
+        name => 'broken',
+        result => 'passed',
+    },
+    JobModules => {
         script => 'tests/installation/installer_timezone.pm',
         job_id => 99937,
         category => 'installation',
