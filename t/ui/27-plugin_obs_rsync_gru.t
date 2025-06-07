@@ -14,10 +14,8 @@ my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
 my $app = $t->app;
 my $minion = $app->minion;
 
-{
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    package FakeMinionJob;
+# uncoverable statement count:1
+package FakeMinionJob {
     use Mojo::Base -base, -signatures;
     has id => 0;
     has app => sub { $app };

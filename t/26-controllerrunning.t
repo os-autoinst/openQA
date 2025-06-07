@@ -224,6 +224,7 @@ subtest edit => sub {
 done_testing;
 
 package Job;
+
 sub new {
     my ($class) = @_;
     my $self = bless({}, $class);
@@ -240,6 +241,7 @@ sub name { "foobar" }
 
 package Worker;
 use Mojo::File 'tempdir';
+
 sub new {
     my ($class) = @_;
     my $self = bless({}, $class);
@@ -261,6 +263,7 @@ sub finish ($self) { $self->emit(finish => $self) }
 
 package FakeSchema;
 use Mojo::Base -signatures;
+
 sub new {
     my ($class) = @_;
     my $self = bless({}, $class);
