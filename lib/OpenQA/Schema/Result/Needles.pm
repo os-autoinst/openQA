@@ -176,7 +176,7 @@ sub remove ($self, $user) {
     $app->log->debug("Remove needle $fname and $screenshot");
 
     my $git = OpenQA::Git->new({app => $app, dir => $self->directory->path, user => $user});
-    if ($git->enabled) {
+    if ($git->enabled && $git->config->{git_auto_commit} eq 'yes') {
         my $directory = $self->directory;
         my $error = $git->commit(
             {
