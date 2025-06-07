@@ -7565,10 +7565,27 @@ which has both the values <code>desktop</code> <em>and</em> <code>foo</code>:</p
 <span class="tok-k">[3]</span>
 <span class="tok-c1"># WORKER_CLASS is not set</span>
 
+<span class="tok-k">[4-10,20-25,30]</span>
+<span class="tok-na">WORKER_CLASS</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">yet-another-class</span>
+
+<span class="tok-k">[4-6]</span>
+<span class="tok-na">WORKER_CLASS +</span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">appended-worker-class</span>
+
 <span class="tok-k">[class:foo]</span>
 <span class="tok-na">FOO</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">this value is present on all instances where WORKER_CLASS contains foo</span>
 <span class="tok-na">BAR</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">this value is would be present in the same way but is overridden by slot 2</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>It is possible to specify comma-separated lists of instance numbers and ranges.
+So in the example above the instances 4 to 10 (inclusive), 20 to 25 (inclusive)
+and 30 will have the <code>WORKER_CLASS</code> set to <code>yet-another-class</code>.</p>
+</div>
+<div class="paragraph">
+<p>Values specified in additional sections override values specified in preceding
+sections. One can use <code>+=</code> to append sections instead. So in this example slots
+4 to 6 will have the <code>WORKER_CLASS</code> set to
+<code>yet-another-class,appended-worker-class</code>.</p>
 </div>
 <div class="paragraph">
 <p>As shown it is also possible to specify a section with the name <code>[class:…]</code> to
@@ -13539,7 +13556,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-05-23 04:43:58 UTC
+Last updated 2025-06-07 04:44:32 UTC
 </div>
 </div>
 </body>
