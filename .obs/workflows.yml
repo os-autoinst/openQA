@@ -30,7 +30,7 @@ pr:
               - target_project: devel:openQA:Leap:15.6
                 target_repository: '15.6'
             architectures: [ x86_64 ]
-          - name: openSUSE_Leap_16.0
+          - name: '16.0'
             paths:
               - target_project: devel:openQA:Leap:16.0
                 target_repository: '16.0'
