@@ -608,7 +608,7 @@ function renderComments(row) {
   return html;
 }
 
-function renderHttpUrlAsLink(value) {
+function renderHttpUrlAsLink(value, oneUrlPerLine = false) {
   if (!value) {
     return document.createTextNode('');
   }
@@ -626,6 +626,11 @@ function renderHttpUrlAsLink(value) {
     value = String(value);
   }
   const urlRegex = /https?:\/\/[^\s,]*/g;
+  if (oneUrlPerLine) {
+    // Regex to match an array of space-separated URLs (to print one per line)
+    const arrayOfUrlsRegex = /^(https?:\/\/[^\s,]*)(\s+https?:\/\/[^\s,]*)+\s*$/g;
+    oneUrlPerLine = arrayOfUrlsRegex.exec(value) !== null;
+  }
   let lastIndex = 0;
   let match;
   while ((match = urlRegex.exec(value)) !== null) {
@@ -634,6 +639,9 @@ function renderHttpUrlAsLink(value) {
     }
     const a = document.createElement('a');
     a.href = a.textContent = match[0];
+    if (oneUrlPerLine) {
+      a.style.display = 'block';
+    }
     fragment.appendChild(a);
     lastIndex = urlRegex.lastIndex;
   }

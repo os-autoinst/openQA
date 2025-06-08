@@ -1116,7 +1116,7 @@ function renderSettingsTab(response) {
   Array.from(tabPanelElement.getElementsByClassName('settings-value')).forEach(settingsLink => {
     const url = settingsLink.textContent;
     settingsLink.innerHTML = null;
-    settingsLink.appendChild(renderHttpUrlAsLink(url));
+    settingsLink.appendChild(renderHttpUrlAsLink(url, true));
   });
 }
 
