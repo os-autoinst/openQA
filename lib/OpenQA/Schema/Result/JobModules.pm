@@ -82,18 +82,22 @@ sub sqlt_deploy_hook ($self, $sqlt_table) {
 
 sub results ($self, %options) {
     my $skip_text_data = $options{skip_text_data};
+    my $errors = $options{errors};
 
     return {} unless my $dir = $self->job->result_dir;
     my $name = $self->name;
 
     my $file = path($dir, "details-$name.json");
-    my $json_data;
-    try { $json_data = $file->slurp }
-    catch ($e) { return {} }
-
-    my $json;
-    try { $json = decode_json($json_data) }
-    catch ($e) { die qq{Malformed/unreadable JSON file "$file": $e} }
+    my $json_data = do {
+        try { $file->slurp }
+        catch ($e) { push @$errors, qq{Unable to read "$file": $e} if $errors; undef }
+      }
+      or return {};
+    my $json = do {
+        try { decode_json($json_data) }
+        catch ($e) { push @$errors, qq{Malformed JSON file "$file": $e} if $errors; undef }
+      }
+      or return {};
     # load detail file which restores all results provided by os-autoinst (with hash-root)
     # support also old format which only restores details information (with array-root)
     my $results = ref($json) eq 'HASH' ? $json : {details => $json};
