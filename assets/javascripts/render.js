@@ -213,8 +213,10 @@ function renderModuleTable(container, response) {
   container.innerHTML = response.snippets.header;
 
   const E = createElement;
-  const errors = response.errors;
-  if (Array.isArray(errors) && errors.length > 0) {
+  const isFinal = testStatus.state === 'done' || testStatus.state === 'cancelled';
+  const showErrors = isFinal && Array.isArray(response.errors);
+  const errors = showErrors ? response.errors.filter(e => !e.includes('No such file')) : [];
+  if (errors.length > 0) {
     const liElements = errors.map(error => E('li', error));
     const ul = E('ul', liElements);
     addFlash('danger', E('div', ['Errors occurred when trying to load test results:', ul]));
