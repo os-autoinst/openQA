@@ -38,7 +38,9 @@ webui:
   postgresql:
     enabled: true
     fullnameOverride: db
-    postgresqlDatabase: openqa
-    postgresqlUsername: openqa
-    postgresqlPassword: openqa
+    auth:
+      postgresPassword: openqa
+      database: openqa
+      username: openqa
+      password: openqa
 ```
