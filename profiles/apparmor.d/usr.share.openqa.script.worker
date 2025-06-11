@@ -81,6 +81,7 @@
   /sys/firmware/devicetree/base/ r,
   /sys/fs/cgroup/systemd/openqa.slice/** rw,
   /sys/kernel/mm/transparent_hugepage/enabled r,
+  /sys/kernel/mm/transparent_hugepage/hpage_pmd_size r,
   /tmp/** rwk,
   /usr/bin/Xvnc rCx,
   /{usr/,}bin/cat rix,
