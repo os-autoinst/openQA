@@ -104,8 +104,8 @@ sub _save_needle ($app, $minion_job, $args) {
     my $git = OpenQA::Git->new({app => $app, dir => $needledir, user => $user});
     # avoid retrying if cleanup via Git is not configured (then an admin might need to
     # manually cleanup the repo first)
-    $signal_guard->abort(1) if !$git->enabled || $git->config->{do_cleanup} eq 'no';
-    if ($git->enabled) {
+    $signal_guard->abort(1) if !$git->autocommit_enabled || $git->config->{do_cleanup} eq 'no';
+    if ($git->autocommit_enabled) {
         my $error = $git->set_to_latest_master;
         if ($error) {
             $app->log->error($error);
@@ -140,7 +140,7 @@ sub _save_needle ($app, $minion_job, $args) {
     return $minion_job->fail({error => "<strong>Error creating/updating needle:</strong><br>$!."}) unless $success;
 
     # commit needle in Git repository
-    if ($git->enabled) {
+    if ($git->autocommit_enabled) {
         my $error = $git->commit(
             {
                 add => ["$needlename.json", "$needlename.png"],

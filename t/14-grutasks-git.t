@@ -271,8 +271,6 @@ subtest 'git_update_all' => sub {
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     $openqa_git->redefine(get_origin_url => 'foo');
 
-    my $git_config = $t->app->config->{'scm git'};
-    $git_config->{git_auto_update} = 'yes';
     my $testdir = $workdir->child('openqa/share/tests');
     $testdir->make_path;
     my @clones;
@@ -283,8 +281,20 @@ subtest 'git_update_all' => sub {
     local $ENV{OPENQA_BASEDIR} = $workdir;
     local $ENV{OPENQA_GIT_CLONE_RETRIES} = 4;
     local $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} = 2;
-    my $minion = $t->app->minion;
+
+    # disable git_auto_update and check task is not created
+    my $git_config = $t->app->config->{'scm git'};
+    $git_config->{git_auto_update} = 'no';
     my $result = $t->app->gru->enqueue_git_update_all;
+    is $result, undef, 'gru task not created yet';
+
+    # now enable auto_update and check task is created. we disable
+    # git_auto_clone to verify that does not disable auto-update
+    # (it shouldn't, but once did)
+    $git_config->{git_auto_update} = 'yes';
+    $git_config->{git_auto_clone} = 'no';
+    $result = $t->app->gru->enqueue_git_update_all;
+    my $minion = $t->app->minion;
     my $job = $minion->job($result->{minion_id});
     my $args = $job->info->{args}->[0];
     my $gru_id = $result->{gru_id};
@@ -406,7 +416,8 @@ subtest 'delete_needles' => sub {
     $error = $res->{result}->{errors}->[0];
     like $error->{message}, qr{Unable to find needle.*99}, 'expected error for not existing needle';
 
-    $t->app->config->{global}->{scm} = 'git';
+    # now enable git auto-commit
+    $t->app->config->{'scm git'}->{git_auto_commit} = 'yes';
     $t->app->config->{'scm git'}->{do_push} = 'yes';
     my $openqa_git = Test::MockModule->new('OpenQA::Git');
     my @cmds;
