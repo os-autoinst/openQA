@@ -5,6 +5,6 @@ type: application
 version: 0.1.0
 dependencies:
   - name: postgresql
-    version: 6.5.0
-    repository: https://charts.helm.sh/stable
+    version: 15.5.38
+    repository: https://charts.bitnami.com/bitnami
     condition: postgresql.enabled

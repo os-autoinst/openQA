@@ -19,10 +19,10 @@ data:
     secret = {{ .Values.secret }}
   database_ini: |
     [production]
-    dsn = DBI:Pg:dbname={{ .Values.postgresql.postgresqlDatabase }};host=db;user={{ .Values.postgresql.postgresqlUsername }};password={{ .Values.postgresql.postgresqlPassword }}
+    dsn = DBI:Pg:dbname={{ .Values.postgresql.auth.database }};host=db;user={{ .Values.postgresql.auth.username }};password={{ .Values.postgresql.auth.password }}
 
     [development]
-    dsn = DBI:Pg:dbname={{ .Values.postgresql.postgresqlDatabase }};host=db;user={{ .Values.postgresql.postgresqlUsername }};password={{ .Values.postgresql.postgresqlPassword }}
+    dsn = DBI:Pg:dbname={{ .Values.postgresql.auth.database }};host=db;user={{ .Values.postgresql.auth.username }};password={{ .Values.postgresql.auth.password }}
   openqa_ini: |
     [global]
     # change to the URL the web UI will be available under so redirection for
