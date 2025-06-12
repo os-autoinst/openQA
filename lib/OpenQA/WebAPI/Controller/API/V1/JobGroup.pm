@@ -187,6 +187,30 @@ sub _validate_common_properties ($self) {
     $validation->optional('description');
 }
 
+sub _check_keep_logs_and_results ($self, $properties) {
+    if ($self->is_parent) {
+        if (($properties->{default_keep_logs_in_days} // 0) > ($properties->{default_keep_results_in_days} // 0)) {
+            $self->render(
+                json => {
+                    error => '`default_keep_logs_in_days` must be lower than or equal to `default_keep_results_in_days`'
+                },
+                status => 400
+            );
+            return 0;
+        }
+    }
+    else {
+        if (($properties->{keep_logs_in_days} // 0) > ($properties->{keep_results_in_days} // 0)) {
+            $self->render(
+                json => {error => '`keep_logs_in_days` must be lower than or equal to `keep_results_in_days`'},
+                status => 400
+            );
+            return 0;
+        }
+    }
+    return 1;
+}
+
 =over 4
 
 =item create()
@@ -230,6 +254,8 @@ sub create ($self) {
 
     my $properties = $self->load_properties;
 
+    return undef unless $self->_check_keep_logs_and_results($properties);
+
     my $id;
     try { $id = $self->resultset->create($properties)->id }
     catch ($e) { return $self->render(json => {error => $e}, status => 400) }
@@ -272,6 +298,9 @@ sub update ($self) {
     }
 
     my $properties = $self->load_properties;
+
+    return undef unless $self->_check_keep_logs_and_results($properties);
+
     my $id;
     try { $id = $group->update($properties)->id }
     catch ($e) { return $self->render(json => {error => $e}, status => 400) }
