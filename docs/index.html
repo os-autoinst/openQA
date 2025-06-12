@@ -613,7 +613,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#advanced">16. Advanced configuration</a>
 <ul class="sectlevel2">
 <li><a href="#advanced_cleanup">16.1. Cleanup</a></li>
-<li><a href="#_setting_up_git_support">16.2. Setting up git support</a></li>
+<li><a href="#_setting_up_git_support">16.2. Setting up git support</a>
+<ul class="sectlevel3">
+<li><a href="#_configuration_of_automatic_needle_commit_feature">16.2.1. Configuration of automatic needle commit feature</a></li>
+</ul>
+</li>
 <li><a href="#_referer_settings_to_auto_mark_important_jobs">16.3. Referer settings to auto-mark important jobs</a></li>
 <li><a href="#_worker_settings">16.4. Worker settings</a></li>
 <li><a href="#_further_systemd_units_for_the_worker">16.5. Further systemd units for the worker</a>
@@ -2902,20 +2906,63 @@ section.</p>
 <div class="sect2">
 <h3 id="_setting_up_git_support"><a class="anchor" href="#_setting_up_git_support"></a><a class="link" href="#_setting_up_git_support">16.2. Setting up git support</a></h3>
 <div class="paragraph">
-<p>Editing needles from web can optionally commit new or changed needles
-automatically to git. To do so, you need to enable git support by setting</p>
+<p>If your tests and needles are stored in git, openQA can perform various operations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Automatically commit needles created in the web UI editor back to the repository</p>
+</li>
+<li>
+<p>Automatically update the repository when scheduling tests</p>
+</li>
+<li>
+<p>Update the server&#8217;s tests and needles from git repos specified in a job&#8217;s <code>CASEDIR</code> and
+<code>NEEDLES_DIR</code> variables</p>
+</li>
+<li>
+<p>Attempt to have the web UI display the correct needles each job was executed with via
+temporary git checkouts, based on its variables</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>By default, cloning based on <code>CASEDIR</code> and <code>NEEDLES_DIR</code> is enabled, but the other
+features are disabled. To control these features, you can use these config settings:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
-<span class="tok-na">scm</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">git</span></code></pre>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[scm git]</span>
+<span class="tok-na">git_auto_commit</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">yes|no|&#39;&#39;</span>
+<span class="tok-na">git_auto_clone</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">yes|no</span>
+<span class="tok-na">git_auto_update</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">yes|no</span>
+<span class="tok-na">checkout_needles_sha</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">yes|no</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>in <a href="#_configuration">the web UI configuration</a>.
-Once you do so and restart the web interface, openQA will automatically commit
-new needles to the git repository.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>git_auto_commit</code> controls whether needles saved in the web UI editor are automatically
+committed. For backwards compatibility, setting <code>scm</code> in the <code>[global]</code> section to 'git'
+also enables this feature, if <code>git_auto_commit</code> is not set exactly to 'no' (its default
+value is the empty string '').</p>
+</li>
+<li>
+<p><code>git_auto_update</code> controls automatic test/needle updating when scheduling tests.</p>
+</li>
+<li>
+<p><code>git_auto_clone</code> controls the automatic cloning of repos referenced by <code>CASEDIR</code> and
+<code>NEEDLES_DIR</code>, at job schedule time.</p>
+</li>
+<li>
+<p><code>checkout_needles_sha</code> controls the feature whereby, when a job viewed in the web UI has
+variables indicating the needles came from a specific git repository and ref, openQA will
+attempt to clone that ref and display the needles from it.</p>
+</li>
+</ul>
 </div>
+<div class="sect3">
+<h4 id="_configuration_of_automatic_needle_commit_feature"><a class="anchor" href="#_configuration_of_automatic_needle_commit_feature"></a><a class="link" href="#_configuration_of_automatic_needle_commit_feature">16.2.1. Configuration of automatic needle commit feature</a></h4>
 <div class="paragraph">
 <p>You may want to add some description to automatic commits coming from the web
 UI.
@@ -2990,6 +3037,7 @@ repository, even if it&#8217;s already cloned.</p>
 </div>
 <div class="paragraph">
 <p>You can apply the same kind of thing for any other git hosting provider.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -13556,7 +13604,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-06-07 04:44:32 UTC
+Last updated 2025-06-12 04:45:49 UTC
 </div>
 </div>
 </body>
