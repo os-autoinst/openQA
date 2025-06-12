@@ -315,7 +315,7 @@ subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub
     $signal_guard_mock->redefine(new => sub { $signal_guard = My::FakeSignalGuard->new() });
 
     $t->app->config->{'scm git'}->{git_auto_commit} = 'no';    # disable autocommit
-    $t->app->config->{global}->{do_cleanup} = 'no';    # disable cleanup
+    $t->app->config->{'scm git'}->{do_cleanup} = 'no';    # disable cleanup
 
     # trigger saving needles like Minion would do
     @executed_commands = ();
@@ -333,7 +333,7 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
 
     my $git_mock = Test::MockModule->new('OpenQA::Git');
     $t->app->config->{'scm git'}->{git_auto_commit} = 'yes';    # enable autocommit
-    $t->app->config->{do_cleanup} = 'yes';    # enable cleanup
+    $t->app->config->{'scm git'}->{do_cleanup} = 'yes';    # enable cleanup
     $git_mock->redefine(set_to_latest_master => 'Unable to fetch from origin master: mocked error');
 
     my @log_errors;
