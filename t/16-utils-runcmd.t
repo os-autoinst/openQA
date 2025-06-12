@@ -331,20 +331,32 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
         sub fail($self, $args) { $self->{fail_message} = $args }
     }    # uncoverable statement
 
+    sub _run_save_needle_test($git_mock) {
+        my @log_errors;
+        my $log_mock = Test::MockModule->new(ref $t->app->log);
+        $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });
+        my $job = bless({} => 'Test::FailingMinionJob');
+        OpenQA::Task::Needle::Save::_save_needle($t->app, $job, $fake_needle);
+
+        like $log_errors[0], qr/Unable to fetch.*mocked/, 'error logged on fail';
+        like $job->{fail_message}->{error},
+          qr/<strong>Failed to save.*<\/strong>.*<pre>Unable to fetch.*mocked.*<\/pre>/,
+          'error message in fail';
+    }
+
     my $git_mock = Test::MockModule->new('OpenQA::Git');
     $t->app->config->{'scm git'}->{git_auto_commit} = 'yes';    # enable autocommit
-    $t->app->config->{'scm git'}->{do_cleanup} = 'yes';    # enable cleanup
     $git_mock->redefine(set_to_latest_master => 'Unable to fetch from origin master: mocked error');
 
-    my @log_errors;
-    my $log_mock = Test::MockModule->new(ref $t->app->log);
-    $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });
-    my $job = bless({} => 'Test::FailingMinionJob');
-    OpenQA::Task::Needle::Save::_save_needle($t->app, $job, $fake_needle);
+    subtest 'fails when git_auto_commit and do_cleanup are enabled ' => sub {
+        $t->app->config->{'scm git'}->{do_cleanup} = 'yes';
+        _run_save_needle_test($git_mock);
+    };
 
-    like $log_errors[0], qr/Unable to fetch.*mocked/, 'error logged on fail';
-    like $job->{fail_message}->{error}, qr/<strong>Failed to save.*<\/strong>.*<pre>Unable to fetch.*mocked.*<\/pre>/,
-      'error message in fail';
+    subtest 'fails when git_auto_commit is enabled and do_cleanup is disabled ' => sub {
+        $t->app->config->{'scm git'}->{do_cleanup} = 'no';
+        _run_save_needle_test($git_mock);
+    };
 };
 
 done_testing();
