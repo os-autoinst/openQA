@@ -50,6 +50,7 @@ my %default_job_settings = (
     ARCH => 'x86_64',
     NICTYPE => 'tap',
 );
+
 sub _job_create {
     my ($settings, $parallel_jobs, $start_after_jobs, $start_directly_after_jobs) = @_;
     $settings = {%default_job_settings, TEST => $settings} unless ref $settings;
@@ -60,6 +61,7 @@ sub _job_create {
     $job->discard_changes;    # reload all values from database so we can check against default values
     return $job;
 }
+
 sub _jobs_update_state {
     my ($jobs, $state, $result) = @_;
     for my $job (@$jobs) {
@@ -69,6 +71,7 @@ sub _jobs_update_state {
     }
 }
 sub _job_deps { $jobs->find(shift, {prefetch => [qw(settings parents children)]})->to_hash(deps => 1) }
+
 sub _schedule {
     my $scheduling_info = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     _jobs_update_state([$jobs->find($_->{job})], RUNNING) for @$scheduling_info;
@@ -276,6 +279,7 @@ my %exp_cluster_jobs = (
         state => RUNNING,
     },
 );
+
 sub exp_cluster_jobs_for {
     my ($job) = @_;
 
@@ -292,6 +296,7 @@ sub exp_cluster_jobs_for {
     $exp_cluster_jobs{$jobF->id}{is_parent_or_initial_job} = ($job eq 'F') ? 1 : 0;
     return \%exp_cluster_jobs;
 }
+
 sub log_job_info {
     my %jobs = (A => $jobA, B => $jobB, C => $jobC, D => $jobD, E => $jobE, F => $jobF);    # uncoverable statement
     note 'job IDs:';    # uncoverable statement
@@ -1000,6 +1005,7 @@ subtest 'clone chained parent with chained sub-tree' => sub {
         _jobs_update_state([$job], $state, PASSED);
         return $job;
     }
+
     sub _job_cloned_and_related {
         my ($jobA, $jobB) = @_;
         ok($jobA->clone, 'jobA has a clone');

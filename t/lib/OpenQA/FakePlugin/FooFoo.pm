@@ -6,6 +6,7 @@ has 'configuration_fields' => sub {
             is_there => 1
         }};
 };
+
 sub register {
     1;
 }

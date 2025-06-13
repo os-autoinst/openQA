@@ -37,6 +37,7 @@ use List::Util qw(min);
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
 my (%BUGREFS, %BUGURLS, $MARKER_REFS, $MARKER_URLS, $BUGREF_REGEX);
+
 BEGIN {
     %BUGREFS = (
         bnc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
@@ -226,6 +227,7 @@ needles or tests.
 If the I<.git> directory not found it returns an empty string.
 
 =cut
+
 sub gitrepodir (@args) {
     my %args = (distri => '', version => '', @args);
     my $path = $args{needles} ? needledir($args{distri}, $args{version}) : testcasedir($args{distri}, $args{version});
