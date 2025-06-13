@@ -633,6 +633,23 @@ The openQA web UI should be available on http://localhost/ now. To simply
 start openQA without enabling it permanently one can simply use `systemctl
 start` instead.
 
+=== Additional considerations for zero-downtime upgrades
+The main openQA web UI service (the `openqa-webui-daemon` script which is
+usually started via the systemd unit `openqa-webui.service`) supports
+https://docs.mojolicious.org/Mojolicious/Guides/Cookbook#Zero-downtime-software-upgrades[zero-downtime upgrades]
+with the help of
+https://lwn.net/Articles/542629[the `SO_REUSEPORT` socket option].
+
+A zero-downtime restart is triggered by sending `SIGHUP` to the script/service
+(which can be done by reloading `openqa-webui.service` when using systemd which
+is also what the official rpm packaging does on upgrades).
+
+The use of `SO_REUSEPORT` can cause unintended connection failures which can be
+circumvented via `sysctl net.ipv4.tcp_migrate_req=1`, see
+https://lwn.net/Articles/853637[the according article on LWN.net]. Note that
+there is no corresponding setting for IPv6 but the setting for IPv4 seems to
+help with IPv6 connections as well.
+
 == Run openQA workers
 
 Workers are services running backends to perform the actual testing. The
