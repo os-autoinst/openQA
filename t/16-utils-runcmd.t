@@ -340,7 +340,7 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
 
         like $log_errors[0], qr/Unable to fetch.*mocked/, 'error logged on fail';
         like $job->{fail_message}->{error},
-          qr/<strong>Failed to save.*<\/strong>.*<pre>Unable to fetch.*mocked.*<\/pre>/,
+          qr{<strong>Failed to save.*</strong>.*<pre>Unable to fetch.*mocked.*</pre>},
           'error message in fail';
     }
 
