@@ -1,5 +1,5 @@
 YAML_FILES=$(wildcard *.yaml)
-GIF_FILES=$(YAML_FILES:.yaml=.gif)
+WEBM_FILES=$(YAML_FILES:.yaml=.webm)
 THEME=monokai
 BAT_THEME=Monokai Extended
 
@@ -7,13 +7,16 @@ BAT_THEME=Monokai Extended
 all: build run
 
 .PHONY: cast
-cast: $(GIF_FILES)
+cast: $(WEBM_FILES)
 
 %.cast:%.yaml
 	autocast --overwrite $< $@
 
 %.gif: %.cast
 	agg --theme $(THEME) $< $@
+
+%.webm: %.gif
+	ffmpeg -i $< -c:v libvpx-vp9 -b:v 0 -crf 30 -pix_fmt yuv420p $@
 
 .PHONY: build
 build:

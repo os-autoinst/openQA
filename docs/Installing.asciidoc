@@ -49,7 +49,7 @@ or https://localhost:1443.
 
 ==== How to run a test with single-instance container in 5 minutes
 
-image::images/openqa-in-5-minutes.gif[Running openQA job within 5 minutes]
+video::images/openqa-in-5-minutes.webm[opts="autoplay,loop,muted",title="Running openQA job within 5 minutes"]
 
 ==== Triggering and cloning existing jobs within single-instance container
 

@@ -2,7 +2,7 @@
 FROM opensuse/tumbleweed:latest
 
 # Install recording prerequisites
-RUN zypper in -y asciinema cargo gcc make fira-code-fonts
+RUN zypper in -y asciinema cargo gcc make fira-code-fonts ffmpeg
 RUN cargo install autocast && \
     ln -s /root/.cargo/bin/autocast /usr/local/bin/
 RUN cargo install --git https://github.com/asciinema/agg && \
