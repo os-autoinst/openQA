@@ -272,6 +272,14 @@ sub update ($self) {
     }
 
     my $properties = $self->load_properties;
+
+    if ($properties->{default_keep_logs_in_days} > $properties->{default_keep_results_in_days}) {
+        return $self->render(
+            json => {error => '`keep_logs_in_days` must be grater than `keep_results_in_days`'},
+            status => 400
+        );
+    }
+
     my $id;
     try { $id = $group->update($properties)->id }
     catch ($e) { return $self->render(json => {error => $e}, status => 400) }
