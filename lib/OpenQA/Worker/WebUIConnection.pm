@@ -68,7 +68,11 @@ sub _set_status ($self, $status, $event_data) {
     $event_data->{status} = $status;
     $self->status($status);
     # set the error message from the event data as last error so it can added to the reason when setting the job done
-    if (my $event_error_message = $event_data->{error_message}) { $self->{_last_error} = $event_error_message }
+    $self->reset_last_error if $status eq 'connected' && ($self->{_last_error_source} // '') eq 'ws-connection';
+    if (my $event_error_message = $event_data->{error_message}) {
+        $self->{_last_error} = $event_error_message;
+        $self->{_last_error_source} = $event_data->{error_source};
+    }
     $self->emit(status_changed => $event_data);
 }
 
@@ -168,7 +172,8 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
                 my $retry_after = $tx->res->headers->header('Retry-After');
                 my $error_message = "Unable to upgrade to ws connection via $websocket_url";
                 $error_message .= ", code $error->{code}" if ($error && $error->{code});
-                $self->_set_status(failed => {error_message => $error_message, retry_after => $retry_after});
+                my %s = (error_source => 'ws-connection', error_message => $error_message, retry_after => $retry_after);
+                $self->_set_status(failed => \%s);
                 return undef;
             }
 
@@ -198,6 +203,7 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
 
                     $self->websocket_connection(undef)->_set_status(    # uncoverable statement
                         failed => {
+                            error_source => 'ws-connection',
                             error_message =>
                               "Websocket connection to $websocket_url finished by remote side with code $code, $reason"
                         });
@@ -343,7 +349,7 @@ sub send ($self, $method, $path, %args) {
 
 sub last_error ($self) { $self->{_last_error} }
 
-sub reset_last_error ($self) { delete $self->{_last_error} }
+sub reset_last_error ($self) { delete $self->{_last_error}; delete $self->{_last_error_source} }
 
 sub add_context_to_last_error ($self, $context) {
     my $last_error = $self->{_last_error};

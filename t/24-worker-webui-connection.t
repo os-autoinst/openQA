@@ -192,6 +192,16 @@ subtest 'attempt to setup websocket connection' => sub {
     $client->once(status_changed => sub ($status, @) { Mojo::IOLoop->stop if $status eq 'failed' });
     Mojo::IOLoop->start;
     is_deeply \@happened_events, \@expected_events, 'events emitted' or always_explain \@happened_events;
+    is $client->last_error, 'Unable to upgrade to ws connection via http://test-host/api/v1/ws/42', 'last error set';
+};
+
+subtest 'clearning errors' => sub {
+    $client->_set_status(connected => {});
+    is $client->last_error, undef, 'last error from ws connection cleared once connected again';
+
+    $client->_set_status(failed => {error_message => 'other error'});
+    $client->_set_status(connected => {});
+    is $client->last_error, 'other error', 'other errors not cleared once connected again';
 };
 
 subtest 'retry behavior' => sub {
