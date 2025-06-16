@@ -607,7 +607,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
-<li><a href="#_run_the_web_ui">13. Run the web UI</a></li>
+<li><a href="#_run_the_web_ui">13. Run the web UI</a>
+<ul class="sectlevel2">
+<li><a href="#_additional_considerations_for_zero_downtime_upgrades">13.1. Additional considerations for zero-downtime upgrades</a></li>
+</ul>
+</li>
 <li><a href="#_run_openqa_workers">14. Run openQA workers</a></li>
 <li><a href="#_where_to_now">15. Where to now?</a></li>
 <li><a href="#advanced">16. Advanced configuration</a>
@@ -2068,9 +2072,12 @@ or <a href="https://localhost:1443" class="bare">https://localhost:1443</a>.</p>
 </div>
 <div class="sect3">
 <h4 id="_how_to_run_a_test_with_single_instance_container_in_5_minutes"><a class="anchor" href="#_how_to_run_a_test_with_single_instance_container_in_5_minutes"></a><a class="link" href="#_how_to_run_a_test_with_single_instance_container_in_5_minutes">8.1.1. How to run a test with single-instance container in 5 minutes</a></h4>
-<div class="imageblock">
+<div class="videoblock">
+<div class="title">Running openQA job within 5 minutes</div>
 <div class="content">
-<img src="images/openqa-in-5-minutes.gif" alt="Running openQA job within 5 minutes">
+<video src="images/openqa-in-5-minutes.webm" autoplay muted controls loop>
+Your browser does not support the video tag.
+</video>
 </div>
 </div>
 </div>
@@ -2791,6 +2798,28 @@ systemctl<span class="tok-w"> </span>restart<span class="tok-w"> </span>httpd</c
 <p>The openQA web UI should be available on <a href="http://localhost/" class="bare">http://localhost/</a> now. To simply
 start openQA without enabling it permanently one can simply use <code>systemctl
 start</code> instead.</p>
+</div>
+<div class="sect2">
+<h3 id="_additional_considerations_for_zero_downtime_upgrades"><a class="anchor" href="#_additional_considerations_for_zero_downtime_upgrades"></a><a class="link" href="#_additional_considerations_for_zero_downtime_upgrades">13.1. Additional considerations for zero-downtime upgrades</a></h3>
+<div class="paragraph">
+<p>The main openQA web UI service (the <code>openqa-webui-daemon</code> script which is
+usually started via the systemd unit <code>openqa-webui.service</code>) supports
+<a href="https://docs.mojolicious.org/Mojolicious/Guides/Cookbook#Zero-downtime-software-upgrades">zero-downtime upgrades</a>
+with the help of
+<a href="https://lwn.net/Articles/542629">the <code>SO_REUSEPORT</code> socket option</a>.</p>
+</div>
+<div class="paragraph">
+<p>A zero-downtime restart is triggered by sending <code>SIGHUP</code> to the script/service
+(which can be done by reloading <code>openqa-webui.service</code> when using systemd which
+is also what the official rpm packaging does on upgrades).</p>
+</div>
+<div class="paragraph">
+<p>The use of <code>SO_REUSEPORT</code> can cause unintended connection failures which can be
+circumvented via <code>sysctl net.ipv4.tcp_migrate_req=1</code>, see
+<a href="https://lwn.net/Articles/853637">the according article on LWN.net</a>. Note that
+there is no corresponding setting for IPv6 but the setting for IPv4 seems to
+help with IPv6 connections as well.</p>
+</div>
 </div>
 </div>
 </div>
@@ -13604,7 +13633,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-06-12 04:45:49 UTC
+Last updated 2025-06-16 04:44:29 UTC
 </div>
 </div>
 </body>
