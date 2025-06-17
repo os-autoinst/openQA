@@ -68,11 +68,9 @@ sub _set_status ($self, $status, $event_data) {
     $event_data->{status} = $status;
     $self->status($status);
     # set the error message from the event data as last error so it can added to the reason when setting the job done
-    $self->reset_last_error if $status eq 'connected' && ($self->{_last_error_source} // '') eq 'ws-connection';
-    if (my $event_error_message = $event_data->{error_message}) {
-        $self->{_last_error} = $event_error_message;
-        $self->{_last_error_source} = $event_data->{error_source};
-    }
+    delete $self->{_last_ws_error} if $status eq 'connected';
+    if (my $error_message = $event_data->{error_message}) { $self->{_last_error} = $error_message }
+    if (my $ws_error_message = $event_data->{ws_error_message}) { $self->{_last_ws_error} = $ws_error_message }
     $self->emit(status_changed => $event_data);
 }
 
@@ -172,8 +170,7 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
                 my $retry_after = $tx->res->headers->header('Retry-After');
                 my $error_message = "Unable to upgrade to ws connection via $websocket_url";
                 $error_message .= ", code $error->{code}" if ($error && $error->{code});
-                my %s = (error_source => 'ws-connection', error_message => $error_message, retry_after => $retry_after);
-                $self->_set_status(failed => \%s);
+                $self->_set_status(failed => {ws_error_message => $error_message, retry_after => $retry_after});
                 return undef;
             }
 
@@ -203,8 +200,7 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
 
                     $self->websocket_connection(undef)->_set_status(    # uncoverable statement
                         failed => {
-                            error_source => 'ws-connection',
-                            error_message =>
+                            ws_error_message =>
                               "Websocket connection to $websocket_url finished by remote side with code $code, $reason"
                         });
 
@@ -312,13 +308,13 @@ sub send ($self, $method, $path, %args) {
         my ($error_msg, $retry_delay) = $self->evaluate_error($tx, \$tries);
         return $callback->($tx->res->json) if !$error_msg && $tx->res->json;
         return $callback->() if $ignore_errors;
-        $self->{_last_error} = $error_msg;
         log_error(qq{REST-API error ($method "$ua_url"): $error_msg (remaining tries: $tries)});
 
         # handle critical error when no more attempts remain
         if ($tries <= 0 && !$non_critical) {
             # abort the current job, we're in trouble - but keep running to grab the next
             my $worker = $self->worker;
+            $self->{_last_error} = $error_msg;
             my $current_webui_host = $worker->current_webui_host;
             if ($current_webui_host && $current_webui_host eq $self->webui_host) {
                 $worker->stop_current_job(WORKER_SR_API_FAILURE);
@@ -347,9 +343,9 @@ sub send ($self, $method, $path, %args) {
     $ua->start($tx => sub { $cb->(@_, $tries) });
 }
 
-sub last_error ($self) { $self->{_last_error} }
+sub last_error ($self) { $self->{_last_error} // $self->{_last_ws_error} }
 
-sub reset_last_error ($self) { delete $self->{_last_error}; delete $self->{_last_error_source} }
+sub reset_last_error ($self) { delete $self->{_last_error}; delete $self->{_last_ws_error} }
 
 sub add_context_to_last_error ($self, $context) {
     my $last_error = $self->{_last_error};

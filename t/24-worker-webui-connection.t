@@ -62,7 +62,7 @@ $client->on(
             @happened_events,
             {
                 status => $event_data->{status},
-                error_message => $event_data->{error_message},
+                error_message => $event_data->{error_message} // $event_data->{ws_error_message},
             });
     });
 
@@ -187,6 +187,7 @@ subtest 'attempt to setup websocket connection' => sub {
     $client->_setup_websocket_connection;
 
     # attempt to connect running into connection error
+    $client->reset_last_error;
     $client->worker_id(42);
     $client->_setup_websocket_connection;
     $client->once(status_changed => sub ($status, @) { Mojo::IOLoop->stop if $status eq 'failed' });
