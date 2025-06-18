@@ -660,7 +660,7 @@ sub set_current_error_based_on_availability ($self) {
 
 sub _handle_client_status_changed ($self, $client, $event_data) {
     my $status = $event_data->{status};
-    my $error_message = $event_data->{error_message};
+    my $error_message = $event_data->{error_message} // $event_data->{ws_error_message};
     my $webui_host = $client->webui_host;
     return log_info("Registering with openQA $webui_host") if $status eq 'registering';
     return log_info('Establishing ws connection via ' . $event_data->{url}) if $status eq 'establishing_ws';
