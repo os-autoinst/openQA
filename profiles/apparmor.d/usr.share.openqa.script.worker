@@ -79,6 +79,7 @@
   /sys/devices/system/cpu/** r,
   /sys/devices/system/node/** r,
   /sys/firmware/devicetree/base/ r,
+  /sys/firmware/devicetree/base/** r,
   /sys/fs/cgroup/systemd/openqa.slice/** rw,
   /sys/kernel/mm/transparent_hugepage/enabled r,
   /sys/kernel/mm/transparent_hugepage/hpage_pmd_size r,
