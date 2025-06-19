@@ -1,15 +1,12 @@
-# Default values for worker.
-# This is a YAML-formatted file.
-
+enabled: true
 image:
   name: registry.opensuse.org/devel/openqa/containers15.6/openqa_worker
   pullPolicy: Always
   tag: "latest"
-
 openqa:
   host: openqa.host
-  key: 123456789ABCDEF
-  secret: 123456789ABCDEF
-
+  key: 1234567890ABCDEF
+  secret: 1234567890ABCDEF
 cacheService: false
-cacheLimit: 50
+cacheLimit: 20
+workerClass: qemu_x86_64,kubernetes
