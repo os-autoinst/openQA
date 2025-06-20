@@ -1,9 +1,3 @@
----
-webui:
-  enabled: true
-  postgresql:
-    enabled: false
-
 postgresql:
   enabled: true
   fullnameOverride: db
@@ -13,9 +7,6 @@ postgresql:
     username: openqa
     password: openqa
 
-worker:
-  enabled: true
-  openqa:
-    host: openqa.host
-    key: 1234567890ABCDEF
-    secret: 123456789ABCDEF
+# These values can be set to override the defaults
+# worker:
+# webui:
