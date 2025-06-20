@@ -27,6 +27,7 @@
   /usr/bin/bsdcat rix,
   /usr/bin/bsdtar rix,
   /usr/bin/dash ix,
+  /usr/bin/env ix,
   /usr/bin/perl ix,
   /usr/bin/pwd ix,
   /usr/bin/sleep rix,
