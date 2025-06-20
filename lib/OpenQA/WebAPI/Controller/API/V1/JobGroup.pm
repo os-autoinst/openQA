@@ -187,27 +187,34 @@ sub _validate_common_properties ($self) {
     $validation->optional('description');
 }
 
-sub _check_keep_logs_and_results ($self, $properties) {
+sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
+    my ($log_key, $result_key);
+
     if ($self->is_parent) {
-        if (($properties->{default_keep_logs_in_days} // 0) > ($properties->{default_keep_results_in_days} // 0)) {
-            $self->render(
-                json => {
-                    error => '`default_keep_logs_in_days` must be lower than or equal to `default_keep_results_in_days`'
-                },
-                status => 400
-            );
-            return 0;
-        }
+        ($log_key, $result_key) = ('default_keep_logs_in_days', 'default_keep_results_in_days');
     }
     else {
-        if (($properties->{keep_logs_in_days} // 0) > ($properties->{keep_results_in_days} // 0)) {
-            $self->render(
-                json => {error => '`keep_logs_in_days` must be lower than or equal to `keep_results_in_days`'},
-                status => 400
-            );
-            return 0;
-        }
+        ($log_key, $result_key) = ('keep_logs_in_days', 'keep_results_in_days');
     }
+
+    my $log_value
+      = defined $properties->{$log_key}
+      ? $properties->{$log_key}
+      : ($group ? $group->$log_key : 0);
+
+    my $result_value
+      = defined $properties->{$result_key}
+      ? $properties->{$result_key}
+      : ($group ? $group->$result_key : 0);
+
+    if ($log_value > $result_value) {
+        $self->render(
+            json => {error => "`$log_key` must be lower than or equal to `$result_key`"},
+            status => 400
+        );
+        return 0;
+    }
+
     return 1;
 }
 
@@ -299,7 +306,7 @@ sub update ($self) {
 
     my $properties = $self->load_properties;
 
-    return undef unless $self->_check_keep_logs_and_results($properties);
+    return undef unless $self->_check_keep_logs_and_results($properties, $group);
 
     my $id;
     try { $id = $group->update($properties)->id }
