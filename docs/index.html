@@ -2106,12 +2106,30 @@ single-instance container. You can spawn a new shell via:</p>
 <span class="tok-w">    </span><span class="tok-nv">CASEDIR</span><span class="tok-o">=</span>https://github.com/os-autoinst/os-autoinst-distri-example.git<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span><span class="tok-nv">NEEDLES_DIR</span><span class="tok-o">=</span>%%CASEDIR%%/needles
 
-openqa-clone-job<span class="tok-w"> </span>https://openqa.opensuse.org/tests/1896520</code></pre>
+openqa-clone-job<span class="tok-w"> </span>https://openqa.opensuse.org/tests/1</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>More details on triggering tests can also be found in the
 <a href="#usersguide">Users Guide</a>.</p>
+</div>
+<div class="paragraph">
+<p>You can also run the container and directly clone tests, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>-e<span class="tok-w"> </span><span class="tok-nv">skip_suse_specifics</span><span class="tok-o">=</span><span class="tok-w"> </span>-e<span class="tok-w"> </span><span class="tok-nv">skip_suse_tests</span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w"> </span>--name<span class="tok-w"> </span>openqa<span class="tok-w"> </span>--device<span class="tok-w"> </span>/dev/kvm<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1080</span>:80<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1443</span>:443<span class="tok-w"> </span>--rm<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers/openqa-single-instance<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w"> </span>https://openqa.opensuse.org/tests/1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>skip_suse_specifics=</code> and <code>skip_suse_tests=</code> options ensure the test files
+and needles required for openSUSE/SUSE tests are downloaded. Refer to the
+<a href="#_how_to_run_a_test_with_single_instance_container_in_5_minutes">example video above</a>
+and the <a href="#get-testing">get testing</a> section for more
+details.</p>
 </div>
 </div>
 </div>
@@ -13633,7 +13651,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-06-16 04:44:29 UTC
+Last updated 2025-06-21 04:44:28 UTC
 </div>
 </div>
 </body>
