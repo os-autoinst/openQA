@@ -40,7 +40,17 @@ done
 echo -e "[openid]\nhttpsonly = 0" > /etc/openqa/openqa.ini.d/01-enable-http-auth.ini
 
 etc_proxy=/etc/${web_proxy/apache/apache2}
-vhosts_dir=${etc_proxy}/vhosts.d
+for v in vhosts.d sites-available; do
+    if [[ -e "${etc_proxy}/${v}/openqa.conf.template" ]]; then
+        vhosts_dir="${etc_proxy}/${v}"
+        break
+    fi
+done
+
+if [[ -z $vhosts_dir ]]; then
+    printf "%s: ERROR: template file not found under '%s'\n" "$0" "$etc_proxy"
+    exit 1
+fi
 
 if [[ $web_proxy == "nginx" ]]; then
     echo "Setting up nginx"
