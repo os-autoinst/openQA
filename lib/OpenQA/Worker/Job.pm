@@ -1129,10 +1129,14 @@ sub _read_json_file {
     my ($self, $name) = @_;
 
     my $file_name = $self->_result_file_path($name);
+    unless (-f $file_name) {
+        log_debug("$file_name does not exist");
+        return undef;
+    }
     my $json_data = do {
         try { path($file_name)->slurp }
         catch ($e) {
-            log_debug("Unable to read $name: $e");
+            log_debug("Unable to read $file_name: $e");
             return undef;
         }
     };

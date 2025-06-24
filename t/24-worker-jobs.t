@@ -1103,11 +1103,16 @@ subtest 'Scheduling failure handled correctly' => sub {
     my $callback_invoked;
     $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE)
       ->spew(encode_json({status => 'running', current_test => undef}));
+
+    $testresults_dir->child('test_order.json')->chmod(0111);
+    combined_like { $job->_read_json_file('test_order.json') }
+    qr{Unable to read .*test_order\.json.*Permission denied}, 'message for unexpected errors';
+
     $testresults_dir->child('test_order.json')->remove;
     combined_like {
         $job->_upload_results_step_0_prepare(sub { $callback_invoked = 1 })
     }
-    qr/Unable to read test_order\.json/, 'error logged';
+    qr/test_order\.json does not exist$/, 'error without stack trace logged';
     is $job->status, 'stopped', 'job immediately considered stopped (as it was still in status new)';
     Mojo::IOLoop->one_tick;    # the callback is supposed to be invoked on the next tick
     ok $callback_invoked, 'callback invoked also when posting status did not work';
