@@ -145,7 +145,7 @@ sub startup ($self) {
     my $test_auth = $auth->any($test_path => {format => 0});
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
-    $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
+    $test_r->get('/modules/#moduleid/fails')->name('test_module_fails')->to('test#module_fails');
     $test_r->get('/details_ajax')->name('test_details')->to('test#details');
     $test_r->get('/external_ajax')->name('test_external')->to('test#external');
     $test_r->get('/live_ajax')->name('test_live')->to('test#live');
@@ -175,8 +175,8 @@ sub startup ($self) {
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
     $developer_auth->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
 
-    my $step_r = $test_r->any('/modules/:moduleid/steps/<stepid:step>')->to(controller => 'step');
-    my $step_auth = $test_auth->any('/modules/:moduleid/steps/<stepid:step>');
+    my $step_r = $test_r->any('/modules/#moduleid/steps/<stepid:step>')->to(controller => 'step');
+    my $step_auth = $test_auth->any('/modules/#moduleid/steps/<stepid:step>');
     $step_r->get('/view')->to(action => 'view');
     $step_r->get('/edit')->name('edit_step')->to(action => 'edit');
     $step_r->get('/src', [format => ['txt']])->name('src_step')->to(action => 'src', format => undef);
