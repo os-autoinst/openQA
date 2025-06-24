@@ -187,6 +187,20 @@ sub _validate_common_properties ($self) {
     $validation->optional('description');
 }
 
+sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
+    my $prefix = $self->is_parent ? 'default_' : '';
+    my $log_key = $prefix . 'keep_logs_in_days';
+    my $result_key = $prefix . 'keep_results_in_days';
+    my $log_value = $properties->{$log_key} // ($group ? $group->$log_key : 0);
+    my $result_value = $properties->{$result_key} // ($group ? $group->$result_key : 0);
+    return 1 if ($log_value <= $result_value);
+    $self->render(
+        json => {error => "`$log_key` must be lower than or equal to `$result_key`"},
+        status => 400
+    );
+    return 0;
+}
+
 =over 4
 
 =item create()
@@ -229,7 +243,7 @@ sub create ($self) {
     }
 
     my $properties = $self->load_properties;
-
+    return undef unless $self->_check_keep_logs_and_results($properties);
     my $id;
     try { $id = $self->resultset->create($properties)->id }
     catch ($e) { return $self->render(json => {error => $e}, status => 400) }
@@ -272,6 +286,7 @@ sub update ($self) {
     }
 
     my $properties = $self->load_properties;
+    return undef unless $self->_check_keep_logs_and_results($properties, $group);
     my $id;
     try { $id = $group->update($properties)->id }
     catch ($e) { return $self->render(json => {error => $e}, status => 400) }
