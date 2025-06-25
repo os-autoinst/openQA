@@ -15,7 +15,7 @@
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
-    "prettier": "3.6.0"
+    "prettier": "3.6.1"
   },
   "dependencies": {
     "ace-builds": "^1.43.0",
