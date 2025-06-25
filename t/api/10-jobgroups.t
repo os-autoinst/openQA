@@ -479,4 +479,65 @@ subtest 'prevent create/update duplicate job group on same parent group' => sub(
     );
 };
 
+subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => sub() {
+    my %tests_parameters = (
+        'parent group' => {
+            endpoint => '/api/v1/parent_groups',
+            name => 'test_parent_group',
+            keep_logs_name => 'default_keep_logs_in_days',
+            keep_results_name => 'default_keep_results_in_days',
+        },
+        'job group' => {
+            endpoint => '/api/v1/job_groups',
+            name => 'test_job_group',
+            keep_logs_name => 'keep_logs_in_days',
+            keep_results_name => 'keep_results_in_days',
+        });
+
+    for my $test (sort keys %tests_parameters) {
+        subtest $test => sub {
+            my $params = $tests_parameters{$test};
+            $t->post_ok(
+                $params->{endpoint},
+                form => {
+                    name => $params->{name},
+                    $params->{keep_logs_name} => 2000,
+                    $params->{keep_results_name} => 1,
+                })
+              ->status_is(400,
+                "if $params->{keep_logs_name} lower than or equal to $params->{keep_results_name} create should fail")
+              ->json_is(
+                '/error' => "`$params->{keep_logs_name}` must be lower than or equal to `$params->{keep_results_name}`",
+                "error message shown on invalid $test creation"
+              );
+            my $group_id = $t->post_ok(
+                $params->{endpoint},
+                form => {
+                    name => $params->{name},
+                })->tx->res->json->{id};
+            $t->put_ok(
+                "$params->{endpoint}/$group_id",
+                form => {
+                    name => $params->{name},
+                    $params->{keep_logs_name} => 1,
+                    $params->{keep_results_name} => 2000,
+                })->status_is(200, 'valid values are accepted');
+            $t->put_ok(
+                "$params->{endpoint}/$group_id",
+                form => {
+                    name => $params->{name},
+                    $params->{keep_logs_name} => 2000,
+                    $params->{keep_results_name} => 1,
+                })
+              ->status_is(400,
+                "if $params->{keep_logs_name} lower than or equal to $params->{keep_results_name} update should fail")
+              ->json_is(
+                '/error' => "`$params->{keep_logs_name}` must be lower than or equal to `$params->{keep_results_name}`",
+                "error message shown on invalid $test update"
+              );
+        };
+    }
+};
+
+
 done_testing();

@@ -94,11 +94,29 @@
                         <label class="form-label" for="editor-build-version-sort-no" data-bs-toggle="tooltip" title="Sort builds by the time a job was most recently created for each build (choose this if the build values do not sort properly as version numbers)">Sort by time job most recently created</label>
                     </div>
                 </div>
+            <% my $log_retention = begin %>
+              <%= help_popover 'Log vs. Result retention' => '
+                <p>
+                    Specifies the default retention time for logs and results stored by this job group.
+                </p>
+                <ul>
+                    <li>
+                        <code>Keep logs for</code>
+                        must be <strong>less than or equal to</strong>
+                        <code>Keep results for</code>
+                    </li>
+                    <li>
+                        This ensures logs are not retained longer than the test results themselves.
+                    </li>
+                </ul>
+                '; %>
+              <% end %>
             % if (!$is_parent) {
                 <div class="mb-3 row">
                     <label for="editor-keep-logs-in-days" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of jobs">Keep logs for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-logs-in-days" name="keep_logs_in_days" value="<%= $group->keep_logs_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
                 <div class="mb-3 row">
@@ -113,6 +131,7 @@
                     col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep results of jobs">Keep results for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-results-in-days" name="keep_results_in_days" value="<%= $group->keep_results_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
                 <div class="mb-3 row">
@@ -128,6 +147,7 @@
                     <label for="editor-keep-logs-in-days" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of jobs">Keep logs for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-logs-in-days" name="default_keep_logs_in_days" value="<%= $group->default_keep_logs_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
                 <div class="mb-3 row">
@@ -142,6 +162,7 @@
                     col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep results of jobs">Keep results for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-results-in-days" name="default_keep_results_in_days" value="<%= $group->default_keep_results_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
                 <div class="mb-3 row">
