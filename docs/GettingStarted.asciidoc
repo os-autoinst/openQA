@@ -147,17 +147,23 @@ returns an overall result. Every one of those executions is called a 'job'.
 Every job is labeled with a numeric identifier and has several associated
 'settings' that will drive its behavior.
 
-A job goes through several states. Here is (an incomplete list) of these
-states:
+A job goes through following states:
 
-* *scheduled* Initial state for newly created jobs. Queued for future
-  execution.
-* *setup*/*running*/*uploading* In progress.
-* *cancelled* The job was explicitly cancelled by the user or was
-  replaced by a clone (see below) and the worker has not acknowledged the
-  cancellation yet.
-* *done* The worker acknowledged that the execution finished or the web UI
-  considers the job as abandoned by the worker.
+* *scheduled* Initial state for newly created jobs. The scheduler suppose to assign
+  the job to a worker.
+* *assigned* The job has been sent to worker but worker has not acknowledged yet.
+   the state might be reverted to *scheduled* in some conditions
+* *setup* The worker prepares execution of backend/isotovideo
+   (e.g. waiting for cache service)
+* *running* backend/isotovideo is running
+* *uploading* Remaining test results are uploaded after backend/isotovideo
+  has exited
+* *cancelled* job was cancelled by the user (result *user_cancelled* is set)
+   or obsoleted due to a new build (result *obsoleted* is set)
+   or skipped due to failed (directly) chained dependencies (result *skipped* is set).
+* *done*  worker reported that the job is no longer running (a result other than NONE but including
+    *user_cancelled* and *obsoleted* is set) or web UI considers job dead/abandoned (result *incomplete* is set)
+    or the job has been cancelled due to failed parallel dependencies (result *parallel_failed* is set)
 
 Jobs in the final states 'cancelled' and 'done' have typically gone through a
 whole sequence of steps (called 'testmodules') each one with its own result.
