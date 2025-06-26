@@ -46,6 +46,7 @@ openqa-cli - provides command-line access to the openQA API
     -h, --help                  Get more information on a specific command
         --osd                   Set target host to http://openqa.suse.de
         --o3                    Set target host to https://openqa.opensuse.org
+        --odn                   Set target host to https://openqa.debian.net
 
   Configuration:
     API key and secret are read from "client.conf" if not specified via CLI

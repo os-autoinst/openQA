@@ -126,6 +126,7 @@ sub command ($self, @args) {
     -j, --json                    Request content is JSON
         --osd                     Set target host to http://openqa.suse.de
         --o3                      Set target host to https://openqa.opensuse.org
+        --odn                     Set target host to https://openqa.debian.net
         --param-file <param=file> Load content of params from files instead of
                                   from command line arguments. Multiple params
                                   may be specified by adding the option

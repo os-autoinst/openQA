@@ -58,6 +58,7 @@ sub command ($self, @args) {
                                    header, defaults to "openqa-cli"
         --osd                      Set target host to http://openqa.suse.de
         --o3                       Set target host to https://openqa.opensuse.org
+        --odn                      Set target host to https://openqa.debian.net
     -t, --with-thumbnails          Download thumbnails as well
 
 =cut
