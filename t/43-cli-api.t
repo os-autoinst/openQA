@@ -95,6 +95,9 @@ subtest 'Host' => sub {
     throws_ok { $api->run('--o3') } qr/Usage: openqa-cli api/, 'usage';
     is $api->host, 'https://openqa.opensuse.org', 'host';
 
+    throws_ok { $api->run('--odn') } qr/Usage: openqa-cli api/, 'usage';
+    is $api->host, 'https://openqa.debian.net', 'host';
+
     throws_ok { $api->run(@host) } qr/Usage: openqa-cli api/, 'usage';
     is $api->host, $host, 'host';
 };

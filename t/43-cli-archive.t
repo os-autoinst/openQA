@@ -69,6 +69,9 @@ subtest 'Host' => sub {
     throws_ok { $archive->run('--o3') } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->host, 'https://openqa.opensuse.org', 'host';
 
+    throws_ok { $archive->run('--odn') } qr/Usage: openqa-cli archive/, 'usage';
+    is $archive->host, 'https://openqa.debian.net', 'host';
+
     throws_ok { $archive->run(@host) } qr/Usage: openqa-cli archive/, 'usage';
     is $archive->host, $host, 'host';
 };
