@@ -345,6 +345,7 @@ sub get_effective_cell_background ($row_id) {
             .map(e => getComputedStyle(e).backgroundColor)))"
     );
 }
+
 sub check_no_highlighting {
     is scalar @{$driver->find_elements('#job_99937.highlight_parent')}, 0, 'parent not highlighted';
     is scalar @{$driver->find_elements('#job_99938.highlight_child')}, 0, 'child not highlighted';
