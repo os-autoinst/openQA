@@ -39,20 +39,33 @@ done
 
 echo -e "[openid]\nhttpsonly = 0" > /etc/openqa/openqa.ini.d/01-enable-http-auth.ini
 
+etc_proxy=/etc/${web_proxy/apache/apache2}
+for v in vhosts.d sites-available; do
+    if [[ -e "${etc_proxy}/${v}/openqa.conf.template" ]]; then
+        vhosts_dir="${etc_proxy}/${v}"
+        break
+    fi
+done
+
+if [[ -z $vhosts_dir ]]; then
+    printf "%s: ERROR: template file not found under '%s'\n" "$0" "$etc_proxy"
+    exit 1
+fi
+
 if [[ $web_proxy == "nginx" ]]; then
     echo "Setting up nginx"
-    sed "s/openqa.example.com/$(hostname)/" /etc/nginx/vhosts.d/openqa.conf.template > /etc/nginx/vhosts.d/openqa.conf
+    sed "s/openqa.example.com/$(hostname)/" "${vhosts_dir}/openqa.conf.template" > "${vhosts_dir}/openqa.conf"
     # IPv6 uses [::]:80 syntax instead of just a port
     if [[ -n "$web_port" ]]; then
-        sed -Ei "s@(.*listen.*)80@\1${web_port}@g" /etc/nginx/vhosts.d/openqa.conf /etc/nginx/nginx.conf
+        sed -Ei "s@(.*listen.*)80@\1${web_port}@g" "${vhosts_dir}/openqa.conf" "${etc_proxy}/nginx.conf"
     fi
     sed -i -e 's/^\([^#]*server_name[[:space:]]\+localhost;\)/#\1/' /etc/nginx/nginx.conf
 elif [[ $web_proxy == "apache" || $web_proxy == "apache2" ]]; then
     echo "Setting up apache"
     for i in headers proxy proxy_http proxy_wstunnel rewrite; do a2enmod $i; done
-    sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf
+    sed "s/#ServerName.*$/ServerName $(hostname)/" "${vhosts_dir}/openqa.conf.template" > "${vhosts_dir}/openqa.conf"
     if [[ -n "$web_port" ]]; then
-        sed -i "s/^Listen.*$/Listen $web_port/" /etc/apache2/listen.conf
+        sed -i "s/^Listen.*$/Listen $web_port/" "${etc_proxy}/listen.conf"
     fi
 else
     echo "No supported proxy: $web_proxy"
