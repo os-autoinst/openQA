@@ -21,10 +21,12 @@ class CustomFormatter(
 
     pass
 
-
-def parse_args():
+def get_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=CustomFormatter
+        prog='openqa-label-all',
+        description=""".B openqa-label-all
+allows comments to be applied to a set jobs, which match the specified options, on the specified server.""",
+        formatter_class=CustomFormatter
     )
     parser.add_argument(
         "-v",
@@ -61,6 +63,10 @@ def parse_args():
         action="store_true",
         help="Do not restart the jobs after labelling",
     )
+    return parser
+
+def parse_args():
+    parser = get_parser()
     args = parser.parse_args()
     verbose_to_log = {
         0: logging.CRITICAL,
