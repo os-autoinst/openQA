@@ -74,7 +74,7 @@
 %define build_requires %assetpack_requires npm rubygem(sass) >= 3.7.4
 %else
 # The following line is generated from dependencies.yaml
-%define build_requires %assetpack_requires npm perl(CSS::Sass)
+%define build_requires %assetpack_requires npm perl(CSS::Sass) python3-argparse-manpage
 %endif
 
 # All requirements needed by the tests executed during build-time.

@@ -27,6 +27,7 @@ assetpack_requires:
 
 build_requires:
   perl(CSS::Sass):
+  python3-argparse-manpage:
   npm:
   '%assetpack_requires':
 
