@@ -202,14 +202,13 @@ sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
     }
 
     $app->log($log);
+    OpenQA::App->set_singleton($app);
     if ($ENV{OPENQA_SQL_DEBUG} // $app->config->{logging}->{sql_debug} // 'false' eq 'true') {
         require OpenQA::Schema::Profiler;
         # avoid enabling the SQL debug unless we really want to see it
         # it's rather expensive
         OpenQA::Schema::Profiler->enable_sql_debugging;
     }
-
-    OpenQA::App->set_singleton($app);
 }
 
 sub redact_settings ($vars) {
