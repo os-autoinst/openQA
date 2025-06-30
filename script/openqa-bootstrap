@@ -163,7 +163,7 @@ grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 start-daemons
 
 # wait for webui to become available
-while ! curl -sI http://localhost/ | grep 200; do
+while ! curl -o /dev/null -w "%{http_code}" -sIL http://localhost/ | grep 200; do
     sleep 3
 done
 
