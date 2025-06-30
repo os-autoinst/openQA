@@ -61,7 +61,7 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     build_version_sort => {
-        data_type => 'boolean',
+        data_type => 'integer',
         default_value => 1,
         is_nullable => 0,
     },

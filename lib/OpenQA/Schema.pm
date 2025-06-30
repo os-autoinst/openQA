@@ -22,7 +22,7 @@ use Feature::Compat::Try;
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} // 100;
+our $VERSION = $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} // 101;
 
 __PACKAGE__->load_namespaces;
 
