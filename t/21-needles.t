@@ -13,11 +13,13 @@ use Cwd qw(abs_path);
 use OpenQA::Schema;
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Task::Needle::Save;
 use OpenQA::Task::Needle::Scan;
 use OpenQA::Needles qw(_locate_needle_for_ref);
 use File::Find;
 use File::Temp qw(tempdir);
 use Mojo::File qw(path);
+use Mojo::JSON qw(encode_json);
 use Time::Seconds;
 use Test::Output 'combined_like';
 use Test::Mojo;
@@ -181,6 +183,25 @@ subtest 'handling relative paths in update_needle' => sub {
         qr/Needle file test-does-not-exist\.json not found within $needledir_fedora/, 'error logged';
         is($needle, undef, 'no needle created');
     };
+};
+
+subtest 'handling symlinks when saving needles' => sub {
+    my $git_mock = Test::MockModule->new('OpenQA::Git');
+    my $used_needle_dir;
+    $git_mock->redefine(new => sub ($class, $args) { $used_needle_dir = $args->{dir}; die 'do not actually save' });
+    my %needle = (area => [{xpos => 0, ypos => 0, width => 1, height => 1, type => ''}], tags => [{}]);
+    my $real_needledir = "$FindBin::Bin/testresults/00099/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde";
+    my %args = (
+        job_id => $schema->resultset('Jobs')->create({TEST => 'foo'})->id,
+        user_id => 1,
+        needledir => "$FindBin::Bin/testresults/00099/00099926-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx",
+        needle_json => encode_json(\%needle),
+        imagedir => "$FindBin::Bin/images/347/da6",
+        imagename => '61d0c3faf37d49d33b6fc308f2.png'
+    );
+    throws_ok { OpenQA::Task::Needle::Save::_save_needle($t->app, undef, \%args) } qr/do not actually save/,
+      'save needle runs as far as needed';
+    is $used_needle_dir, $real_needledir, 'the real path of the needles dir is used';
 };
 
 subtest 'controller->_determine_needles_dir_for_job' => sub {
