@@ -64,8 +64,8 @@ unless ($key) {
 }
 
 my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
-my $users = $schema->resultset('Users')->find({is_admin => 1});
-if ($users != 0) {
+my @admins = $schema->resultset('Users')->search({is_admin => 1});
+if (scalar @admins != 0) {
     warn "An admin user already exists! Use client or web UI to create further users.\n";
     exit 1;
 }
