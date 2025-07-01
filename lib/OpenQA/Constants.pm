@@ -101,6 +101,13 @@ use constant FRAGMENT_REGEX => qr'(#([-?/:@.~!$&\'()*+,;=\w]|%[0-9a-fA-F]{2})*)*
 use constant JOBS_OVERVIEW_SEARCH_CRITERIA =>
   (qw(distri version flavor arch build test machine modules modules_result module_re group groupid id));
 
+# the build_version_sort column of job_groups and job_group_parents
+use constant {
+    BUILD_SORT_BY_NAME => 1,    # default
+    BUILD_SORT_BY_NEWEST_JOB => 0,
+    BUILD_SORT_BY_OLDEST_JOB => 2
+};
+
 our @EXPORT_OK = qw(
   WEBSOCKET_API_VERSION DEFAULT_WORKER_TIMEOUT
   WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_COMMAND_LIVELOG_STOP
@@ -116,6 +123,7 @@ our @EXPORT_OK = qw(
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
   FRAGMENT_REGEX
   JOBS_OVERVIEW_SEARCH_CRITERIA
+  BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB
 );
 
 1;

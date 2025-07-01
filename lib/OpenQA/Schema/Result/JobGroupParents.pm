@@ -10,6 +10,7 @@ use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::JobGroupDefaults;
 use OpenQA::Utils qw(parse_tags_from_comments regex_match);
+use OpenQA::Constants qw(BUILD_SORT_BY_NAME);
 use Class::Method::Modifiers;
 
 __PACKAGE__->table('job_group_parents');
@@ -62,7 +63,7 @@ __PACKAGE__->add_columns(
     },
     build_version_sort => {
         data_type => 'integer',
-        default_value => 1,
+        default_value => BUILD_SORT_BY_NAME,
         is_nullable => 0,
     },
     carry_over_bugrefs => {
