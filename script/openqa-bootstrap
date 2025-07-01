@@ -114,7 +114,7 @@ else
 fi
 echo -e "[auth]\nmethod = Fake" > /etc/openqa/openqa.ini.d/01-enable-fake-auth.ini
 
-if [[ -z $skip_suse_specifics ]] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse); then
+if [[ -z $skip_suse_specifics ]] && ping -c1 download.suse.de. > /dev/null 2>&1 && (! rpm -q ca-certificates-suse); then
     # add internal CA if executed within suse network
     if ! zypper info ca-certificates-suse | grep -q ':'; then
         # add suse ca repo if needed
