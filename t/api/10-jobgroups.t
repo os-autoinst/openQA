@@ -10,6 +10,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client;
+use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use Mojo::IOLoop;
 use Mojo::JSON 'decode_json';
 
@@ -94,7 +95,7 @@ subtest 'list job groups' => sub() {
                 keep_results_in_days => 365,
                 keep_important_results_in_days => 0,
                 size_limit_gb => 100,
-                build_version_sort => 1,
+                build_version_sort => BUILD_SORT_BY_NAME,
                 id => $opensuse_group,
                 exclusively_kept_asset_size => undef,
             },
@@ -104,7 +105,7 @@ subtest 'list job groups' => sub() {
                 keep_results_in_days => 365,
                 keep_important_results_in_days => 0,
                 size_limit_gb => 100,
-                build_version_sort => 1,
+                build_version_sort => BUILD_SORT_BY_NAME,
                 id => 1002,
                 name => 'opensuse test',
                 parent_id => undef,
@@ -166,7 +167,7 @@ subtest 'create parent group' => sub() {
                 exclusively_kept_asset_size => undef,
                 id => $new_id,
                 description => undef,
-                build_version_sort => 1,
+                build_version_sort => BUILD_SORT_BY_NAME,
             },
         ],
         'list created parent group'
@@ -231,7 +232,7 @@ subtest 'create job group' => sub() {
                 keep_results_in_days => 365,
                 keep_important_results_in_days => 0,
                 size_limit_gb => 200,
-                build_version_sort => 1,
+                build_version_sort => BUILD_SORT_BY_NAME,
                 id => $cool_group_id,
                 exclusively_kept_asset_size => undef,
             },
@@ -286,7 +287,7 @@ subtest 'update job group' => sub() {
         form => {
             name => 'opensuse',
             size_limit_gb => 101,
-            build_version_sort => 0,
+            build_version_sort => BUILD_SORT_BY_OLDEST_JOB,
             default_priority => 70,
             description => 'Test',
             carry_over_bugrefs => 0,
@@ -401,7 +402,7 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
                 keep_results_in_days => 365,
                 keep_important_results_in_days => 0,
                 size_limit_gb => 300,
-                build_version_sort => 1,
+                build_version_sort => BUILD_SORT_BY_NAME,
                 id => $cool_group_id,
                 exclusively_kept_asset_size => undef,
             },

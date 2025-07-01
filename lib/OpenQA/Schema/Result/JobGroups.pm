@@ -13,6 +13,7 @@ use OpenQA::Log qw(log_debug);
 use OpenQA::Utils qw(parse_tags_from_comments regex_match);
 use Date::Format 'time2str';
 use OpenQA::YAML 'dump_yaml';
+use OpenQA::Constants qw(BUILD_SORT_BY_NAME);
 use Storable 'dclone';
 use Text::Diff 'diff';
 use Time::Seconds;
@@ -76,7 +77,7 @@ __PACKAGE__->add_columns(
     },
     build_version_sort => {
         data_type => 'integer',
-        default_value => 1,
+        default_value => BUILD_SORT_BY_NAME,
         is_nullable => 0,
     },
     carry_over_bugrefs => {

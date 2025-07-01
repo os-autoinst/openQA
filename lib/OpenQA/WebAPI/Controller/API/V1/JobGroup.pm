@@ -177,7 +177,7 @@ sub _validate_common_properties ($self) {
     my $validation = $self->validation;
     $validation->optional('parent_id')->like(qr/^(none|[0-9]+)\z/);
     $validation->optional('size_limit_gb')->like(qr/^(|[0-9]+)\z/);
-    $validation->optional('build_version_sort')->in(0, 1);
+    $validation->optional('build_version_sort')->num(0, 2);
     $validation->optional('keep_logs_in_days')->num(0);
     $validation->optional('keep_important_logs_in_days')->num(0);
     $validation->optional('keep_results_in_days')->num(0);
