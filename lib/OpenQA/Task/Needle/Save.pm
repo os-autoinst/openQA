@@ -4,6 +4,7 @@
 package OpenQA::Task::Needle::Save;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
+use Cwd 'realpath';
 use File::Copy;
 use Encode 'encode_utf8';
 use OpenQA::Git;
@@ -64,7 +65,7 @@ sub _save_needle ($app, $minion_job, $args) {
     my $imagedistri = $args->{imagedistri};
     my $imagename = $args->{imagename};
     my $imageversion = $args->{imageversion};
-    my $needledir = $args->{needledir};
+    my $needledir = realpath($args->{needledir});
     my $needlename = $args->{needlename};
     my $commit_message = $args->{commit_message};
 

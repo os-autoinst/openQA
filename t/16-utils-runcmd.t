@@ -286,12 +286,12 @@ subtest 'saving needle via Git' => sub {
     is_deeply(
         \@executed_commands,
         [
-            [qw(git -C), $empty_tmp_dir, qw(remote update origin)],
-            [qw(git -C), $empty_tmp_dir, qw(reset --hard HEAD)],
-            [qw(git -C), $empty_tmp_dir, qw(rebase origin/master)],
-            [qw(git -C), $empty_tmp_dir, qw(add), "foo.json", "foo.png"],
+            [qw(git -C), "$empty_tmp_dir", qw(remote update origin)],
+            [qw(git -C), "$empty_tmp_dir", qw(reset --hard HEAD)],
+            [qw(git -C), "$empty_tmp_dir", qw(rebase origin/master)],
+            [qw(git -C), "$empty_tmp_dir", qw(add), "foo.json", "foo.png"],
             [
-                qw(git -C), $empty_tmp_dir,
+                qw(git -C), "$empty_tmp_dir",
                 qw(commit -q -m),
                 'foo for opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
                 '--author=Percival <percival@example.com>',
