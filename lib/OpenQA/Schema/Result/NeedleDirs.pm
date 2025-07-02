@@ -4,7 +4,8 @@
 package OpenQA::Schema::Result::NeedleDirs;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
+use Cwd 'realpath';
 
 __PACKAGE__->table('needle_dirs');
 __PACKAGE__->add_columns(
@@ -30,5 +31,7 @@ sub set_name_from_job {
 
     $self->name(sprintf('%s-%s', $job->DISTRI, $job->VERSION));
 }
+
+sub is_symlink ($self) { $self->path ne (realpath($self->path) // '') }
 
 1;
