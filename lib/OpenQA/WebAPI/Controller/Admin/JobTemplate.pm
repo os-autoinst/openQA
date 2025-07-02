@@ -12,12 +12,9 @@ sub index {
     return $self->reply->not_found unless $group;
 
     my $yaml = $group->template;
-    my $force_yaml_editor
-      = defined $yaml || $schema->resultset('JobTemplates')->search({group_id => $group->id}, {rows => 1})->count == 0;
     $self->stash(
         group => $group,
         yaml_template => $yaml,
-        force_yaml_editor => $force_yaml_editor,
     );
 
     my @machines = $schema->resultset('Machines')->search(undef, {order_by => 'name'});
