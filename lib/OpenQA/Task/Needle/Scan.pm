@@ -21,6 +21,15 @@ sub _needles ($app, $job) {
     return $job->finish('Previous scan_needles job is still active')
       unless my $guard = $app->minion->guard('limit_scan_needles_task', 7200);
     for my $dir ($app->schema->resultset('NeedleDirs')->all) {
+        if ($dir->is_symlink) {
+            # discard needle dirs (and contained needles) under symlinked locations
+            # note: We only update last seen/match of needle entries under their real locations
+            #       so keeping these entries only clutters the needles table on the web UI. Note
+            #       that these entries are no longer supposed to be created in the first place.
+            #       This is just about needles entries in the database so needles on disk stay.
+            $dir->delete;
+            next;
+        }
         for my $needle ($dir->needles->all) {
             $needle->check_file;
             $needle->update;

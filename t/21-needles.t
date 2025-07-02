@@ -16,6 +16,7 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::Task::Needle::Save;
 use OpenQA::Task::Needle::Scan;
 use OpenQA::Needles qw(_locate_needle_for_ref);
+use OpenQA::Test::Utils qw(perform_minion_jobs);
 use File::Find;
 use File::Temp qw(tempdir);
 use Mojo::File qw(path);
@@ -288,6 +289,22 @@ subtest '_locate_needle_for_ref' => sub {
     is $json_path, "t/data/openqa/webui/cache/needle-refs/tmp/$ref/needles/foo.json", 'get needle json';
     is path($json_path)->slurp, 'this is json';
     is path("t/data/openqa/webui/cache/needle-refs/tmp/$ref/needles/foo.png")->slurp, 'this is a png';
+};
+
+subtest 'needle dirs under symlinked locations are discarded during needle scan' => sub {
+    my $needle_dir_count = $needle_dirs->count;
+    my $needle_count = $needles->count;
+    my $symlinked_path = "$FindBin::Bin/data/openqa/share/tests/test_symlink_dir/needles";
+    my $dir_id = $needle_dirs->create({name => 'test_symlink_dir', path => $symlinked_path})->id;
+    my $needle_id = $needles->create({dir_id => $dir_id, filename => 'test-rootneedle.json'})->id;
+    my $minion = $t->app->minion;
+    $minion->enqueue('scan_needles');
+    perform_minion_jobs($minion);
+    is $needle_dirs->find($dir_id), undef, 'symlinked needle dir removed';
+    is $needles->find($needle_id), undef, 'needle within symlinked needle dir removed';
+    is $needle_dirs->count, $needle_dir_count, "no other needle dirs affected (still $needle_dir_count dirs present)";
+    is $needles->count, $needle_count, "no other needles affected (still $needle_count needles present)";
+    ok -f "$symlinked_path/test-rootneedle.json", 'needle only removed in database (needle still exists on disk)';
 };
 
 done_testing;
