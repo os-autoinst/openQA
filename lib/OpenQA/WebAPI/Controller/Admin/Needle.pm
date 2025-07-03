@@ -36,32 +36,13 @@ sub _translate_cond ($cond) {
     $translated ? [{$operator => $translated}, @additional_conds] : die "Unknown '$cond'";
 }
 
-sub _prepare_data_table ($self, $n, $paths, $dir_rs, $needles_rs) {
+sub _prepare_data_table ($self, $n, $dir_rs, $needles_rs) {
     my $filename = $n->filename;
     my $hash = {
         id => $n->id,
         directory => $n->directory->name,
         filename => $filename,
     };
-    my $dir_path = $n->directory->path;
-    my $real_dir_id;
-
-    if ($paths->{$dir_path}) {
-        $real_dir_id = $paths->{$dir_path}->{real_path_id} if $dir_path ne ($paths->{$dir_path}->{real_path} // '');
-    }
-    else {
-        my $real_path_id = $n->directory->id;
-        my $dir_real_path = realpath($dir_path);
-        if ($dir_real_path && $dir_real_path ne $dir_path) {
-            my $real_dir = $dir_rs->find({path => $dir_real_path});
-            $real_dir_id = $real_path_id = $real_dir->id if $real_dir;
-        }
-        $paths->{$dir_path} = {
-            real_path => $dir_real_path,
-            real_path_id => $real_path_id,
-        };
-    }
-    $n = ($real_dir_id ? $needles_rs->find({dir_id => $real_dir_id, filename => $filename}) : undef) // $n;
     return $self->populate_hash_with_needle_timestamps_and_urls($n, $hash);
 }
 
@@ -98,8 +79,7 @@ sub ajax ($self) {
         prepare_data_function => sub {
             my $needle_dirs = $self->schema->resultset('NeedleDirs');
             my $needles = $self->schema->resultset('Needles');
-            my %paths;
-            [map { $self->_prepare_data_table($_, \%paths, $needle_dirs, $needles) } shift->all];
+            [map { $self->_prepare_data_table($_, $needle_dirs, $needles) } shift->all];
         },
     );
 }
