@@ -3,11 +3,14 @@ chrony-4.1
 chrony-pool-openSUSE-4.1
 cmark-0.30.2
 hostname-3.16
+iproute2-6.4
 jq-1.6
 libcmark0_30_2-0.30.2
 libjq1-1.6
+libmnl0-1.0.4
 libonig4-6.7.0
 libssh2-1-1.11.0
+libxtables12-1.8.7
 lsof-4.99.0
 openssh-common-9.6p1
 optipng-0.7.8
