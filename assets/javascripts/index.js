@@ -1,3 +1,7 @@
+window.onbeforeunload = function () {
+  window.unloading = true;
+};
+
 function setupIndexPage() {
   setupFilterForm({preventLoadingIndication: true});
 
@@ -105,6 +109,9 @@ function loadBuildResults(queryParams) {
       window.buildResultStatus = 'success';
     })
     .catch(error => {
+      if (window.unloading) {
+        return;
+      }
       const message = error ? htmlEscape(error) : 'Unable to fetch build results.';
       showBuildResults(
         '<div class="alert alert-danger" role="alert">' +
