@@ -127,7 +127,7 @@ subtest 'settings file not found' => sub {
     $config_mock->redefine(_config_dirs => [['does not exist']]);
     my $settings = OpenQA::Worker::Settings->new(1);
     ok !$settings->file_path, 'no file path present';
-    is_deeply $settings->parse_errors, ['No config file found.'], 'error logged'
+    is_deeply $settings->parse_errors, [], 'no parse errors if file is missing'
       or always_explain $settings->parse_errors;
 };
 

@@ -10,7 +10,7 @@ use Mojo::Util 'trim';
 use Config::IniFiles;
 use Time::Seconds;
 use OpenQA::Config;
-use OpenQA::Log 'setup_log';
+use OpenQA::Log qw(setup_log log_info);
 use OpenQA::Utils 'is_host_local';
 use Net::Domain 'hostfqdn';
 
@@ -23,7 +23,8 @@ use constant VNCPORT_OFFSET => $ENV{VNCPORT_OFFSET} // 90;
 sub new ($class, $instance_number = undef, $cli_options = {}) {
     my $config_paths = lookup_config_files(undef, 'workers.ini', 1);
     my $cfg = parse_config_files($config_paths);
-    my @parse_errors = @$config_paths ? (@Config::IniFiles::errors) : ('No config file found.');
+    my @parse_errors = @$config_paths ? (@Config::IniFiles::errors) : ();
+    log_info 'workers.ini not found, using default settings' unless @$config_paths;
 
     # read settings from config
     my %global_settings;
