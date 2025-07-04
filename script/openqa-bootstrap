@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 [[ $1 = "-h" ]] || [[ $1 = "--help" ]] && echo "Setup a working openQA installation, automating the steps mentioned in the 'custom installation' documentation section. Supports to immediately clone an existing job simply by supplying 'openqa-clone-job' parameters directly for a quickstart" && exit
 
 set -xeuo pipefail
