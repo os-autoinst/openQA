@@ -20,6 +20,11 @@ RUN zypper in -y openQA-single-instance openQA-bootstrap \
     qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps \
     qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci && \
     zypper clean -a
+RUN cat > /etc/openqa/workers.ini <<EOF
+[global]
+HOST = http://localhost:9526
+EOF
+
 EXPOSE 80 443 9526
 ENV skip_suse_specifics=1
 ENV skip_suse_tests=1
