@@ -57,6 +57,7 @@ plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
 my $worker;
 my $ws;
 my $livehandler;
+
 sub turn_down_stack {
     stop_service($_) for ($worker, $ws, $livehandler);
 }
@@ -92,6 +93,7 @@ sub status_text { find_status_text($driver) }
 # add a function to verify the test setup before trying to run a job
 my $setup_timeout = 0;    # actually initialized further down after subtest 'testhelper'
 my $setup_poll_interval = 0;    # actually initialized further down after subtest 'testhelper'
+
 sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     # check whether the job we expect to be scheduled is actually scheduled
     # note: After all this is a test so it might uncover problems and then it is useful to have further
@@ -140,6 +142,7 @@ sub assign_jobs ($worker_class = undef) {
     }
     fail "Unable to assign $to_be_scheduled jobs after $elapsed seconds";    # uncoverable statement
 }
+
 sub start_worker_and_assign_jobs ($worker_class = undef) {
     $worker = start_worker get_connect_args;
     ok $worker, "Worker started as $worker";

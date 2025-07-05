@@ -269,8 +269,10 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
 subtest 'saving needle via Git' => sub {
     my $utils_mock = Test::MockModule->new('OpenQA::Git');
     $utils_mock->redefine(run_cmd_with_log_return_error => \&_run_cmd_mock);
+
     package Test::FakeMinionJob {
         sub finish { }
+
         sub fail {
             Test::Most::fail("Minion job shouldn't have failed.");    # uncoverable statement
             Test::Most::note(Data::Dumper::Dumper(\@_));    # uncoverable statement
@@ -306,6 +308,7 @@ subtest 'saving needle via Git' => sub {
 };
 
 subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub {
+
     package My::FakeSignalGuard {
         use Mojo::Base -base, -signatures;
         has 'abort' => sub { 0 };
@@ -326,6 +329,7 @@ subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub
 };
 
 subtest 'save_needle returns and logs error when set_to_latest_master fails' => sub {
+
     package Test::FailingMinionJob {
         sub finish { }
         sub fail($self, $args) { $self->{fail_message} = $args }

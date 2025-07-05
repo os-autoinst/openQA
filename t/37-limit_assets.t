@@ -19,8 +19,7 @@ use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::WebAPI::Controller::API::V1::Iso;
 
-{
-    package Test::FakeJob;
+package Test::FakeJob {
     use Mojo::Base -base;
     has app => undef;
     has fail => undef;
