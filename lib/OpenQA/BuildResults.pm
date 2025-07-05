@@ -6,6 +6,7 @@ package OpenQA::BuildResults;
 use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
+use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use OpenQA::Log qw(log_error);
@@ -131,13 +132,18 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         return \%result;
     }
 
+    # build sorting
+    my $buildver_sort_mode = BUILD_SORT_BY_NAME;
+    $buildver_sort_mode = $group->build_version_sort if $group->can('build_version_sort');
+    my $sort_column = $buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB ? 'oldest_job' : 'newest_job';
+
     # 400 is the max. limit selectable in the group overview
     my $row_limit = (defined($limit) && $limit > 400) ? $limit : 400;
     my @search_cols = qw(VERSION BUILD);
     my %search_opts = (
-        select => [@search_cols, {max => 'id', -as => 'lasted_job'}],
+        select => [@search_cols, {max => 'id', -as => 'newest_job'}, {min => 'id', -as => 'oldest_job'}],
         group_by => \@search_cols,
-        order_by => {-desc => 'lasted_job'},
+        order_by => {-desc => $sort_column},
         rows => $row_limit
     );
     my %search_filter = (group_id => {in => $group_ids});
@@ -169,12 +175,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         $build->{key} = join('-', $version, $buildnr);
         $versions_per_build{$buildnr}->{$version} = 1;
     }
-    # sort by treating the key as a version number, if job group
-    # indicates this is OK (the default). otherwise, list remains
-    # sorted on the most recent job for each build
-    my $versort = 1;
-    $versort = $group->build_version_sort if $group->can('build_version_sort');
-    if ($versort) {
+    if ($buildver_sort_mode == BUILD_SORT_BY_NAME) {
         @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
     }
 
