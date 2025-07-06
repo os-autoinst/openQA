@@ -108,12 +108,7 @@ Source2:        node_modules.spec.inc
 %include        %{_sourcedir}/node_modules.spec.inc
 BuildRequires:  fdupes
 # for install-opensuse in Makefile
-%if 0%{?is_opensuse}
-BuildRequires:  openSUSE-release
-%endif
-%if 0%{?suse_version} && !0%{?is_opensuse}
-BuildRequires:  sles-release
-%endif
+BuildRequires:  distribution-release
 BuildRequires:  %{build_requires}
 BuildRequires:  apparmor-rpm-macros
 BuildRequires:  local-npm-registry
