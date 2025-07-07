@@ -876,7 +876,8 @@ subtest 'json representation of group overview (actually not part of the API)' =
         'group name present'
     );
     my $b48 = find_build($t->tx->res->json, 'Factory-0048');
-    delete $b48->{oldest};
+    delete $b48->{date};
+    delete $b48->{date_mode};
     is_deeply(
         $b48,
         {
@@ -910,7 +911,8 @@ is(@{$ret->{results}}, 2);
 my $g1 = (shift @{$ret->{results}});
 is($g1->{group}->{name}, 'opensuse', 'First group is opensuse');
 my $b1 = find_build($g1, '13.1-0092');
-delete $b1->{oldest};
+delete $b1->{date};
+delete $b1->{date_mode};
 is_deeply(
     $b1,
     {

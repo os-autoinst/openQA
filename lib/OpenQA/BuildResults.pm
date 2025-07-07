@@ -193,12 +193,17 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
+        my $date_ref_job_col
+          = ($buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB || $buildver_sort_mode == BUILD_SORT_BY_NAME)
+          ? 'oldest_job'
+          : 'newest_job';
+        my $date_ref_job = $build->{_column_data}->{$date_ref_job_col};
         my %jr = (
             key => $build->{key},
             build => $buildnr,
             version => $version,
             version_count => scalar keys %{$versions_per_build{$buildnr}},
-            oldest => $now,
+            date_mode => $date_ref_job_col,
         );
         init_job_figures(\%jr);
         for my $child (@$children) {
@@ -213,7 +218,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
         for my $job (@jobs) {
             $jr{distris}->{$job->DISTRI} = 1;
-            $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
+            $jr{date} = $job->t_created if $job->id == $date_ref_job;
             count_job($job, \%jr, $comment_data);
             if ($jr{children}) {
                 my $child = $jr{children}->{$job->group_id};
@@ -223,6 +228,11 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
                 count_job($job, $child, $comment_data);
                 add_review_badge($child);
             }
+        }
+        unless (defined $jr{date}) {
+            # job was not in @jobs - so fetch it from db
+            my $job = $jobs_resultset->find($date_ref_job);
+            $jr{date} = $job->t_created;
         }
         $jr{escaped_version} = $jr{version};
         $jr{escaped_version} =~ s/\W/_/g;
