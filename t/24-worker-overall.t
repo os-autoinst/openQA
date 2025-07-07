@@ -81,10 +81,16 @@ my $guard = scope_guard sub { chdir $FindBin::Bin };
     has availability_error => 'Cache service info error: Connection refused';
 }
 {
+    package Test::FakeDBusObject;
+    use Mojo::Base -base, -signatures;
+    sub disconnect_from_signal ($self, $signal, $id) { }
+}
+{
     package Test::FakeDBus;    # uncoverable statement count:2
     use Mojo::Base -base, -signatures;
     has mock_service_value => 1;
     sub get_service ($self, $service_name) { $self->mock_service_value }
+    sub get_bus_object ($self) { Test::FakeDBusObject->new }
 }
 
 my $dbus_mock = Test::MockModule->new('Net::DBus', no_auto => 1);

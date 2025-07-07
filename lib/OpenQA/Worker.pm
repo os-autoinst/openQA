@@ -611,8 +611,12 @@ sub is_qemu_running ($self) {
 sub is_ovs_dbus_service_running ($self) {
     try { defined &Net::DBus::system or require Net::DBus }
     catch ($e) { return 0 }
-    my $bus = ($self->{_system_dbus} //= Net::DBus->system(nomainloop => 1));
-    try { return defined $bus->get_service('org.opensuse.os_autoinst.switch') }
+    unless (defined $self->{_system_dbus}) {
+        $self->{_system_dbus} = Net::DBus->system(nomainloop => 1);
+        # this avoids piling up signals we never do anything with - POO #183833
+        $self->{_system_dbus}->get_bus_object->disconnect_from_signal('NameOwnerChanged', 1);
+    }
+    try { return defined $self->{_system_dbus}->get_service('org.opensuse.os_autoinst.switch') }
     catch ($e) { return 0 }
 }
 
