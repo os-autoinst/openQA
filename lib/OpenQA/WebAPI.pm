@@ -7,11 +7,12 @@ use Mojo::Base 'Mojolicious', -signatures;
 use OpenQA::Assets;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
-use OpenQA::Log 'setup_log';
+use OpenQA::Log qw(setup_log log_debug log_error);
 use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::File 'path';
+use Mojo::IOLoop;
 use Mojo::Util 'trim';
 use Feature::Compat::Try;
 
@@ -489,6 +490,11 @@ sub startup ($self) {
 
     $self->plugin('OpenQA::WebAPI::Plugin::MemoryLimit');
 
+    # treat certain exceptions as non-errors
+    my $reactor = Mojo::IOLoop->singleton->reactor;
+    $reactor->unsubscribe('error');    # avoid default handling of always logging an error
+    $reactor->on(error => \&_handle_exception);
+
     # add method to be called before rendering
     $app->hook(
         before_render => sub ($c, $args) {
@@ -514,6 +520,12 @@ sub startup ($self) {
                 $headers->access_control_allow_origin($res_origin);
             });
     }
+}
+
+sub _handle_exception ($reactor, $err) {
+    return log_debug 'Connection lost (e.g. closed by client), abort processing request'
+      if $err =~ m/Transaction already destroyed/;
+    return log_error $err;
 }
 
 sub schema ($self) { OpenQA::Schema->singleton }
