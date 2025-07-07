@@ -23,10 +23,11 @@ use OpenQA::Assets;
 use OpenQA::Log 'setup_log';
 use OpenQA::Setup;
 use OpenQA::Utils;
+use OpenQA::WebAPI;
 use Mojolicious;
 use Mojo::File qw(tempfile path);
 use Mojo::Home;
-use Test::Output qw(combined_from);
+use Test::Output qw(combined_from combined_like);
 
 subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
@@ -69,6 +70,13 @@ subtest 'Setup logging to STDOUT' => sub {
     like $buffer, qr/\[fatal\] Fatal error\n/, 'right fatal message';
     like $buffer, qr/\[debug\] It works\n/, 'right debug message';
     like $buffer, qr/\[info\] Works too\n/, 'right info message';
+};
+
+subtest 'global exception handling' => sub {
+    combined_like { OpenQA::WebAPI::_handle_exception(undef, 'foo') } qr/error.*foo/,
+      'exceptions generally logged as errors';
+    combined_like { OpenQA::WebAPI::_handle_exception(undef, 'Transaction already destroyed') }
+    qr/debug.*abort processing/, 'destroyed transactions logged as debug message';
 };
 
 subtest 'Setup logging to file (ENV)' => sub {
