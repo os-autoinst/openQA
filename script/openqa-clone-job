@@ -208,12 +208,10 @@ use OpenQA::Script::CloneJob;
 use OpenQA::Utils 'assetdir';
 use Scalar::Util qw(looks_like_number);
 
-my %options;
-my $jobid;
-
 sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 sub parse_options () {
+    my %options;
     GetOptions(
         \%options, "from=s", "host=s", "dir=s",
         "apikey:s", "apisecret:s", "verbose|v", "json-output|j",
@@ -224,36 +222,38 @@ sub parse_options () {
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
-    warn
-"--skip-checks is deprecated and will be dropped soon. Just remove it because checks are not executed by default anymore"
+
+    warn "--skip-checks is deprecated and will be dropped soon."
+      . " Just remove it because checks are not executed by default anymore"
       if $options{'skip-checks'};
+    my $jobid;
     if ($options{'within-instance'}) {
         ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
         $options{'skip-download'} = 1;
-        $options{'from'} = $options{'within-instance'};
-        $options{'host'} = $options{'within-instance'};
+        $options{from} = $options{'within-instance'};
+        $options{host} = $options{'within-instance'};
     }
-    elsif ($options{'from'}) {
-        ($options{'from'}, $jobid) = split_jobid($options{'from'});
+    elsif ($options{from}) {
+        ($options{from}, $jobid) = split_jobid($options{from});
     }
     $jobid = shift @ARGV unless $jobid;
     die "missing job reference, see --help for usage\n" unless $jobid;
-    ($options{'from'}, $jobid) = split_jobid($jobid) unless $options{'from'};
-    usage(1) unless ($jobid && $options{'from'});
-    my $repeat = $options{'repeat'} //= 1;
+    ($options{from}, $jobid) = split_jobid($jobid) unless $options{from};
+    usage(1) unless ($jobid && $options{from});
+    my $repeat = $options{repeat} //= 1;
     die "invalid repeat count, should be greater than or equal to 1\n" if !looks_like_number($repeat) || $repeat < 1;
-    $options{'dir'} ||= assetdir();
-    $options{'host'} ||= 'localhost';
-    $options{'args'} = \@ARGV;
-    return $jobid;
+    $options{dir} ||= assetdir();
+    $options{host} ||= 'localhost';
+    $options{args} = \@ARGV;
+    return ($jobid, \%options);
 }
 
 sub main () {
-    my ($jobid, $host) = parse_options();
+    my ($jobid, $options) = parse_options();
     return unless $jobid;
-    clone_jobs($jobid, \%options);
+    clone_jobs($jobid, $options);
 }
 
-main;
+main unless caller();
 
 1;
