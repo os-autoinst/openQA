@@ -6,6 +6,7 @@ package OpenQA::BuildResults;
 use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
+use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use OpenQA::Log qw(log_error);
@@ -131,13 +132,18 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         return \%result;
     }
 
+    # build sorting
+    my $buildver_sort_mode = BUILD_SORT_BY_NAME;
+    $buildver_sort_mode = $group->build_version_sort if $group->can('build_version_sort');
+    my $sort_column = $buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB ? 'oldest_job' : 'newest_job';
+
     # 400 is the max. limit selectable in the group overview
     my $row_limit = (defined($limit) && $limit > 400) ? $limit : 400;
     my @search_cols = qw(VERSION BUILD);
     my %search_opts = (
-        select => [@search_cols, {max => 'id', -as => 'lasted_job'}],
+        select => [@search_cols, {max => 'id', -as => 'newest_job'}, {min => 'id', -as => 'oldest_job'}],
         group_by => \@search_cols,
-        order_by => {-desc => 'lasted_job'},
+        order_by => {-desc => $sort_column},
         rows => $row_limit
     );
     my %search_filter = (group_id => {in => $group_ids});
@@ -169,12 +175,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         $build->{key} = join('-', $version, $buildnr);
         $versions_per_build{$buildnr}->{$version} = 1;
     }
-    # sort by treating the key as a version number, if job group
-    # indicates this is OK (the default). otherwise, list remains
-    # sorted on the most recent job for each build
-    my $versort = 1;
-    $versort = $group->build_version_sort if $group->can('build_version_sort');
-    if ($versort) {
+    if ($buildver_sort_mode == BUILD_SORT_BY_NAME) {
         @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
     }
 
@@ -192,12 +193,17 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
+        my $date_ref_job_col
+          = ($buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB || $buildver_sort_mode == BUILD_SORT_BY_NAME)
+          ? 'oldest_job'
+          : 'newest_job';
+        my $date_ref_job = $build->{_column_data}->{$date_ref_job_col};
         my %jr = (
             key => $build->{key},
             build => $buildnr,
             version => $version,
             version_count => scalar keys %{$versions_per_build{$buildnr}},
-            oldest => $now,
+            date_mode => $date_ref_job_col,
         );
         init_job_figures(\%jr);
         for my $child (@$children) {
@@ -212,7 +218,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
         for my $job (@jobs) {
             $jr{distris}->{$job->DISTRI} = 1;
-            $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
+            $jr{date} = $job->t_created if $job->id == $date_ref_job;
             count_job($job, \%jr, $comment_data);
             if ($jr{children}) {
                 my $child = $jr{children}->{$job->group_id};
@@ -222,6 +228,11 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
                 count_job($job, $child, $comment_data);
                 add_review_badge($child);
             }
+        }
+        unless (defined $jr{date}) {
+            # job was not in @jobs - so fetch it from db
+            my $job = $jobs_resultset->find($date_ref_job);
+            $jr{date} = $job->t_created;
         }
         $jr{escaped_version} = $jr{version};
         $jr{escaped_version} =~ s/\W/_/g;

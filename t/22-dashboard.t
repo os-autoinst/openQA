@@ -14,6 +14,7 @@ use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Jobs::Constants;
+use OpenQA::Constants qw(BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Utils qw(regex_match);
 use Mojo::File qw(tempfile);
 
@@ -498,9 +499,17 @@ subtest 'proper build sorting for dotted build number' => sub {
 
     # without version sorting, builds should be sorted in reverse order
     # (as the build which most recently had a job created sorts first)
-    $group->update({build_version_sort => 0});
+    $group->update({build_version_sort => BUILD_SORT_BY_NEWEST_JOB});
     @build_names = reverse @build_names;
-    check_builds(\@build_names, $group, 'builds shown sorted by dotted number');
+    check_builds(\@build_names, $group, 'builds shown sorted by newest job in jobgroup');
+
+    # sorted by oldest job per build
+    # here a job for the old build 62.51 is rescheduled which will not break sorting
+    # in a jobgroup with BUILD_SORT_BY_OLDEST_JOB
+    $job_hash->{BUILD} = "62.51";
+    $jobs->create($job_hash);
+    $group->update({build_version_sort => BUILD_SORT_BY_OLDEST_JOB});
+    check_builds(\@build_names, $group, 'builds shown sorted by oldest job in jobgroup');
 };
 
 subtest 'job groups with multiple version and builds' => sub {

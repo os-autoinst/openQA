@@ -1,4 +1,5 @@
 % use OpenQA::Utils 'human_readable_size';
+% use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 % content_for 'ready_function' => begin
     validateJobGroupForm(document.getElementById('group_properties_form'));
 % end
@@ -83,15 +84,21 @@
                 <div class="mb-3 row">
                     <label for="editor-build-version-sort" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Sets how builds are sorted when groups of them are displayed together">How to sort builds for display</label>
                     <div class="col-sm-10" id="editor-build-version-sort">
-                        <input type="radio" id="editor-build-version-sort-yes" name="build_version_sort" value="1"
-                            %= 'checked' if $group->build_version_sort
+                        <input type="radio" id="editor-build-version-sort-name" name="build_version_sort" value="<%= BUILD_SORT_BY_NAME %>"
+                            %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_NAME
                             >
-                        <label class="form-label" for="editor-build-version-sort-yes" data-bs-toggle="tooltip" title="Treat the build values as version numbers and sort based on those">Sort by build value (as a version)</label>
+                        <label class="form-label" for="editor-build-version-sort-name" data-bs-toggle="tooltip" title="Treat the build values as version numbers and sort based on those">Sort by build value (as a version)</label>
                         <br>
-                        <input type="radio" id="editor-build-version-sort-no" name="build_version_sort" value="0"
-                            %= 'checked' if !$group->build_version_sort
+                        <input type="radio" id="editor-build-version-sort-newest" name="build_version_sort" value="<%= BUILD_SORT_BY_NEWEST_JOB %>"
+                            %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_NEWEST_JOB
                             >
-                        <label class="form-label" for="editor-build-version-sort-no" data-bs-toggle="tooltip" title="Sort builds by the time a job was most recently created for each build (choose this if the build values do not sort properly as version numbers)">Sort by time job most recently created</label>
+                        <label class="form-label" for="editor-build-version-sort-newest" data-bs-toggle="tooltip" title="Sort builds by the creation time of the newest job for each build (choose this if the build values do not sort properly as version numbers)">Sort by newest job creation time</label>
+
+                        <br>
+                        <input type="radio" id="editor-build-version-sort-oldest" name="build_version_sort" value="<%= BUILD_SORT_BY_OLDEST_JOB %>"
+                            %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_OLDEST_JOB
+                            >
+                        <label class="form-label" for="editor-build-version-sort-oldest" data-bs-toggle="tooltip" title="Sort builds by the creation time of the oldest job for each build (choose this if the build values do not sort properly as version numbers)">Sort by oldest job creation time</label>
                     </div>
                 </div>
             <% my $log_retention = begin %>
