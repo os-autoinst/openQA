@@ -232,7 +232,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         unless (defined $jr{date}) {
             # job was not in @jobs - so fetch it from db
             my $job = $jobs_resultset->find($date_ref_job);
-            $jr{date} = $job->t_created;
+            $jr{date} = (defined $job) ? $job->t_created : DateTime->from_epoch(0);
         }
         $jr{escaped_version} = $jr{version};
         $jr{escaped_version} =~ s/\W/_/g;
