@@ -16,6 +16,10 @@ spec:
       labels:
         {{- include "webui.selectorLabels" . | nindent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: "postgres:latest"
+          command: ["sh", "-c", "until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done;"]
       containers:
         # Future enhancement option: a container with rsync for setup with cache service
         - name: {{ include "webui.fullname" . }}-scheduler
