@@ -515,6 +515,7 @@ subtest 'proper build sorting for dotted build number' => sub {
 subtest 'job groups with multiple version and builds' => sub {
     my $group = $job_groups->create({name => 'multi version group'});
     $job_hash->{group_id} = $group->id;
+
     sub create_job_version_build {
         my ($version, $build) = @_;
         $job_hash->{VERSION} = $version;
