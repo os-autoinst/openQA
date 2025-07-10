@@ -1056,7 +1056,7 @@ sub calculate_result ($self) {
 }
 
 sub save_screenshot ($self, $screen) {
-    return unless length($screen->{name});
+    return unless ref $screen eq 'HASH' && length($screen->{name});
 
     my $tmpdir = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $tmpdir;    # we can't help
@@ -1084,7 +1084,7 @@ sub append_log ($self, $log, $file_name) {
 }
 
 sub update_backend ($self, $backend_info) {
-    $self->update({backend => $backend_info->{backend}});
+    $self->update({backend => $backend_info->{backend}}) if ref $backend_info eq 'HASH';
 }
 
 sub update_result ($self, $result, $state = undef) {
@@ -1126,7 +1126,7 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
 }
 
 sub insert_test_modules ($self, $testmodules) {
-    return undef unless scalar @$testmodules;
+    return undef unless ref $testmodules eq 'ARRAY' && scalar @$testmodules;
 
     # insert all test modules and update job module statistics uxing txn to avoid inconsistent job module
     # statistics in the error case
@@ -1481,10 +1481,9 @@ sub update_status ($self, $status) {
     $self->append_log($status->{serial_terminal}, 'serial-terminal-live.txt');
     $self->append_log($status->{serial_terminal_user}, 'serial-terminal-live.txt');
     # delete from the hash so it becomes dumpable for debugging
-    my $screen = delete $status->{screen};
-    $self->save_screenshot($screen) if $screen;
-    $self->update_backend($status->{backend}) if $status->{backend};
-    $self->insert_test_modules($status->{test_order}) if $status->{test_order};
+    $self->save_screenshot(delete $status->{screen});
+    $self->update_backend($status->{backend});
+    $self->insert_test_modules($status->{test_order});
     my %known_image;
     my %known_files;
     my @failed_modules;
