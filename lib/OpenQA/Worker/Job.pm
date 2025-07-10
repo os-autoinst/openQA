@@ -1156,24 +1156,25 @@ sub _read_result_file ($self, $upload_up_to, $extra_test_order) {
     my $test_order = $self->test_order;
     my (%ret, $last_test_module);
     return (\%ret, $last_test_module) unless $test_order;
+    my $skipped = 0;
     for my $test_module (@$test_order) {
-        my $test = $test_module->{name};
-        my $result = $self->_read_module_result($test);
-        last unless $result;
+        ++$skipped and next unless my $test = $test_module->{name};
+        ++$skipped and last unless my $result = $self->_read_module_result($test);
 
         $last_test_module = $test;
         $ret{$test} = $result;
         if ($result->{extra_test_results}) {
             for my $extra_test (@{$result->{extra_test_results}}) {
-                my $extra_result = $self->_read_module_result($extra_test->{name});
-                next unless $extra_result;
-                $ret{$extra_test->{name}} = $extra_result;
+                ++$skipped and next unless my $extra_test_name = $extra_test->{name};
+                ++$skipped and next unless my $extra_result = $self->_read_module_result($extra_test_name);
+                $ret{$extra_test_name} = $extra_result;
             }
             push @{$extra_test_order}, @{$result->{extra_test_results}};
         }
 
         last if $test eq $upload_up_to;
     }
+    log_debug "Skipped $skipped invalid test modules or extra tests" if $skipped;
     return (\%ret, $last_test_module);
 }
 
@@ -1185,7 +1186,7 @@ sub _reduce_test_order ($self, $last_test_module) {
 
     my $modules_considered_processed = 0;
     for my $test_module (@$test_order) {
-        my $test_name = $test_module->{name};
+        next unless my $test_name = $test_module->{name};
         last if $test_name eq $current_test_module;
         ++$modules_considered_processed;
         last if $test_name eq $last_test_module;
