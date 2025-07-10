@@ -40,6 +40,7 @@ See also: https://docs.github.com/en/codespaces[GitHub Codespaces documentation]
 See https://open.qa/docs/#_openqa_in_a_browser[openQA in a browser] for
 documentation on how to use it.
 
+
 == Contributing
 [id="getting_involved"]
 
