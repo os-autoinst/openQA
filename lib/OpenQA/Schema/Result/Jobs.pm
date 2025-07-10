@@ -2237,10 +2237,10 @@ sub dependencies ($self, $children_list = undef, $parents_list = undef) {
     $parents_list ||= [$self->parents->all];
     for my $s (@$parents_list) {
         push(@{$parents{$s->to_string}}, $s->parent_job_id);
-        $has_parents = 1;
         my $jobs = $self->result_source->schema->resultset('Jobs');
-        $parents_ok = $jobs->find($s->parent_job_id, {select => ['result']})->is_ok
-          if $is_final && $parents_ok;
+        next unless my $parent = $jobs->find($s->parent_job_id, {select => ['result']});
+        $has_parents = 1;
+        $parents_ok &&= $parent->is_ok if $is_final;
     }
     $children_list ||= [$self->children->all];
     for my $s (@$children_list) {
