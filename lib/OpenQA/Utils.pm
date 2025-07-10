@@ -263,7 +263,7 @@ sub ensure_timestamp_appended ($str) {
 }
 
 sub save_base64_png ($dir, $newfile, $png) {
-    return unless $newfile;
+    return unless $newfile && defined($png);
     # sanitize
     $newfile =~ s,\.png,,;
     $newfile =~ tr/a-zA-Z0-9-/_/cs;

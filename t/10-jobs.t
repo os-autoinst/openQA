@@ -39,6 +39,11 @@ my $users = $t->app->schema->resultset('Users');
 # for "investigation" tests
 my $fake_git_log = 'deadbeef Break test foo';
 
+subtest 'adding job module without required fields' => sub {
+    my $res = $jobs->first->insert_module({name => undef, category => 'foo', script => 'unk'});
+    is 0, $res, 'no job module inserted if name missing';
+};
+
 subtest 'handling of concurrent deletions in code updating jobs' => sub {
     ok my $job = $jobs->find(99927), 'job exists in first place';
 

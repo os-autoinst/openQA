@@ -35,7 +35,7 @@ use Text::Diff;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
-use List::Util qw(any);
+use List::Util qw(any all);
 use Scalar::Util qw(looks_like_number);
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -1056,7 +1056,7 @@ sub calculate_result ($self) {
 }
 
 sub save_screenshot ($self, $screen) {
-    return unless length($screen->{name});
+    return unless ref $screen eq 'HASH' && length($screen->{name});
 
     my $tmpdir = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $tmpdir;    # we can't help
@@ -1083,10 +1083,6 @@ sub append_log ($self, $log, $file_name) {
     }
 }
 
-sub update_backend ($self, $backend_info) {
-    $self->update({backend => $backend_info->{backend}});
-}
-
 sub update_result ($self, $result, $state = undef) {
     my %values = (result => $result);
     $values{state} = $state if defined $state;
@@ -1096,6 +1092,9 @@ sub update_result ($self, $result, $state = undef) {
 }
 
 sub insert_module ($self, $tm, $skip_jobs_update = undef) {
+    my @required_fields = ($tm->{name}, $tm->{category}, $tm->{script});
+    return 0 unless all { defined $_ } @required_fields;
+
     # prepare query to insert job module
     my $insert_sth = $self->{_insert_job_module_sth};
     $insert_sth = $self->{_insert_job_module_sth} = $self->result_source->schema->storage->dbh->prepare(
@@ -1112,7 +1111,7 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
     # note: We have 'important' in the DB but 'ignore_failure' in the flags for historical reasons (see #1266).
     my $flags = $tm->{flags};
     $insert_sth->execute(
-        $self->id, $tm->{name}, $tm->{category}, $tm->{script},
+        $self->id, @required_fields,
         $flags->{milestone} ? 1 : 0,
         $flags->{ignore_failure} ? 0 : 1,
         $flags->{fatal} ? 1 : 0,
@@ -1126,7 +1125,7 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
 }
 
 sub insert_test_modules ($self, $testmodules) {
-    return undef unless scalar @$testmodules;
+    return undef unless ref $testmodules eq 'ARRAY' && scalar @$testmodules;
 
     # insert all test modules and update job module statistics uxing txn to avoid inconsistent job module
     # statistics in the error case
@@ -1333,11 +1332,11 @@ sub parse_extra_tests ($self, $asset, $type, $script = undef) {
 
         $parser->load($tmp_extra_test)->results->each(
             sub {
-                return if !$_->test;
-                $_->test->script($script) if $script;
-                my $t_info = $_->test->to_openqa;
-                $self->insert_module($t_info);
-                $self->update_module($_->test->name, $_->to_openqa);
+                return unless my $test = $_->test;
+                return unless my $test_name = $test->name;
+                $test->script($script) if $script;
+                $self->insert_module($test->to_openqa);
+                $self->update_module($test_name, $_->to_openqa);
             });
 
         $self->account_result_size("$type results", $parser->write_output($self->result_dir));
@@ -1481,10 +1480,8 @@ sub update_status ($self, $status) {
     $self->append_log($status->{serial_terminal}, 'serial-terminal-live.txt');
     $self->append_log($status->{serial_terminal_user}, 'serial-terminal-live.txt');
     # delete from the hash so it becomes dumpable for debugging
-    my $screen = delete $status->{screen};
-    $self->save_screenshot($screen) if $screen;
-    $self->update_backend($status->{backend}) if $status->{backend};
-    $self->insert_test_modules($status->{test_order}) if $status->{test_order};
+    $self->save_screenshot(delete $status->{screen});
+    $self->insert_test_modules($status->{test_order});
     my %known_image;
     my %known_files;
     my @failed_modules;
