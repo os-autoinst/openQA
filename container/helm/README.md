@@ -19,13 +19,31 @@ To install openQA, update helm dependencies and install the parent chart.
 helm dependency update charts/openqa/
 helm install openqa charts/openqa/
 ```
+The dependency subcommand will build the manifests of the services, which can
+be
+found under the root chart (helm/charts/openqa/charts).
+The install will deploy the services in the cluster.
 
-To uninstall and start over, use `helm uninstall openqa`.
+To uninstall and start over, use `helm uninstall openqa` and delete the tgz
+archives and rerun `helm dependency update charts/openqa/`.
+
+
+Check that everything is up and running:
+
+```
+helm status --show-resources openqa
+```
 
 ## Configuration
 
 It might be necessary to customize the charts by overriding some of the
 variables inside _charts/values.yaml_ to suit your needs.
+
+For testing, it is also useful to create a `my_values.yaml` and run:
+
+```
+helm install openqa helm/charts/openqa/ -f my_values.yaml
+```
 
 ### Worker
 
