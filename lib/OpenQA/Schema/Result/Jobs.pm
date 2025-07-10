@@ -35,7 +35,7 @@ use Text::Diff;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
-use List::Util qw(any);
+use List::Util qw(any all);
 use Scalar::Util qw(looks_like_number);
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -1092,6 +1092,9 @@ sub update_result ($self, $result, $state = undef) {
 }
 
 sub insert_module ($self, $tm, $skip_jobs_update = undef) {
+    my @required_fields = ($tm->{name}, $tm->{category}, $tm->{script});
+    return 0 unless all { defined $_ } @required_fields;
+
     # prepare query to insert job module
     my $insert_sth = $self->{_insert_job_module_sth};
     $insert_sth = $self->{_insert_job_module_sth} = $self->result_source->schema->storage->dbh->prepare(
@@ -1108,7 +1111,7 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
     # note: We have 'important' in the DB but 'ignore_failure' in the flags for historical reasons (see #1266).
     my $flags = $tm->{flags};
     $insert_sth->execute(
-        $self->id, $tm->{name}, $tm->{category}, $tm->{script},
+        $self->id, @required_fields,
         $flags->{milestone} ? 1 : 0,
         $flags->{ignore_failure} ? 0 : 1,
         $flags->{fatal} ? 1 : 0,
@@ -1329,11 +1332,11 @@ sub parse_extra_tests ($self, $asset, $type, $script = undef) {
 
         $parser->load($tmp_extra_test)->results->each(
             sub {
-                return if !$_->test;
-                $_->test->script($script) if $script;
-                my $t_info = $_->test->to_openqa;
-                $self->insert_module($t_info);
-                $self->update_module($_->test->name, $_->to_openqa);
+                return unless my $test = $_->test;
+                return unless my $test_name = $test->name;
+                $test->script($script) if $script;
+                $self->insert_module($test->to_openqa);
+                $self->update_module($test_name, $_->to_openqa);
             });
 
         $self->account_result_size("$type results", $parser->write_output($self->result_dir));
