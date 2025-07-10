@@ -1083,10 +1083,6 @@ sub append_log ($self, $log, $file_name) {
     }
 }
 
-sub update_backend ($self, $backend_info) {
-    $self->update({backend => $backend_info->{backend}}) if ref $backend_info eq 'HASH';
-}
-
 sub update_result ($self, $result, $state = undef) {
     my %values = (result => $result);
     $values{state} = $state if defined $state;
@@ -1482,7 +1478,6 @@ sub update_status ($self, $status) {
     $self->append_log($status->{serial_terminal_user}, 'serial-terminal-live.txt');
     # delete from the hash so it becomes dumpable for debugging
     $self->save_screenshot(delete $status->{screen});
-    $self->update_backend($status->{backend});
     $self->insert_test_modules($status->{test_order});
     my %known_image;
     my %known_files;
