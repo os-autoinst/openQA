@@ -36,8 +36,7 @@
                 % }
             </div>
             <div class="px-2 text-nowrap smaller-font ps-4">
-				% my $date_mode = ($build_res->{date_mode} eq "oldest_job") ? "Oldest job: " : "Newest job: ";
-                <abbr class="timeago" title="<%= $date_mode . ($build_res->{date}->datetime()) %>Z">
+                <abbr class="timeago" title="<%= $build_res->{date}->datetime() %>Z">
                     %= $build_res->{date}
                 </abbr>
             </div>
