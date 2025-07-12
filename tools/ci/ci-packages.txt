@@ -65,8 +65,8 @@ perl-DateTime-Format-Strptime-1.74
 perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.60
 perl-DBD-Pg-3.18.0
-perl-DBD-SQLite-1.760.0
-perl-DBI-1.647.0
+perl-DBD-SQLite-1.740.0
+perl-DBI-1.643
 perl-DBIx-Class-0.082843
 perl-DBIx-Class-DeploymentHandler-0.002234
 perl-DBIx-Class-DynamicDefault-0.04
@@ -251,7 +251,7 @@ perl-XML-SemanticDiff-1.0007
 perl-XML-Simple-2.24
 perl-XS-Parse-Keyword-0.380.0
 perl-YAML-1.24
-perl-YAML-LibYAML-0.904.0
+perl-YAML-LibYAML-0.890.0
 perl-YAML-PP-0.036
 psmisc-23.0
 python3-pathspec-0.7.0
