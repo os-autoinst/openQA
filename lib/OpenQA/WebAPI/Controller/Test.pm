@@ -139,8 +139,10 @@ sub _load_scenario_definitions ($self, $preset) {
     catch ($e) {
         return $self->stash(flash_error => "Unable to read scenario definitions for the specified preset: $e")
           unless $e =~ /no.*file/i;
-        my $info = Mojo::ByteStream->new(
-            qq(You first need to <a href="#" onclick="cloneTests(this)">clone the $distri test distribution</a>.));
+        my $info
+          = Mojo::ByteStream->new(
+qq(You first need to clone the <a href="https://github.com/os-autoinst/os-autoinst-distri-$distri">$distri</a> test distribution to automatically fill out the fields: <a href="#" class="btn btn-primary" onclick="cloneTests(this)">Clone</a>)
+          );
         return $self->stash(flash_info => $info);
     }
     my $defs;
