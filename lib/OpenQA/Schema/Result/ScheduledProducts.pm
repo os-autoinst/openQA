@@ -7,6 +7,7 @@ package OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use Mojo::Base -base, -signatures;
+use DBI qw(:sql_types);
 use DBIx::Class::Timestamps 'now';
 use Exporter 'import';
 use File::Basename;
@@ -960,6 +961,95 @@ sub cancel ($self, $reason = undef) {
     $count += $_->cancel_whole_clone_chain(USER_CANCELLED, $job_reason) for $self->jobs;
     $self->update({status => CANCELLED});
     return $count;
+}
+
+
+=head2 job_statistics
+
+Returns job statistics about the scheduled product.
+
+This allows to determine whether all jobs are done and whether all jobs have
+passed. If jobs have been cloned/restarted then only the state/result of the
+latest job is taken into account.
+
+The statistics are returned as nested hash references with one key per present
+state on outer level and one key per present result on inner level:
+
+{
+  done => {failed => {job_ids => [5057]}, incomplete => {job_ids => [5056]}}
+}
+
+=cut
+
+sub job_statistics ($self) {
+    my $sth = $self->result_source->schema->storage->dbh->prepare(
+        <<~'END_SQL'
+        WITH RECURSIVE
+        -- get the initial set of jobs in the scheduled product
+        initial_job_ids AS (
+            SELECT
+                jobs.id AS job_id
+            FROM
+                scheduled_products
+            JOIN jobs ON scheduled_products.id = jobs.scheduled_product_id
+            WHERE
+                scheduled_products.id = ?
+        ),
+        -- find more recent jobs for each initial job recursively
+        latest_id_resolver AS (
+            -- start with each job_id from initial_job_ids
+            SELECT
+                ij.job_id,
+                ij.job_id AS latest_job_id,
+                1 AS level
+            FROM
+                initial_job_ids AS ij
+            UNION ALL
+            -- find the clone_id for the current latest_job_id
+            SELECT
+                lir.job_id,
+                j.clone_id AS latest_job_id,
+                lir.level + 1 AS level
+            FROM
+                jobs AS j
+            JOIN latest_id_resolver AS lir ON lir.latest_job_id = j.id
+            -- limit the recursion
+            WHERE
+                lir.level < 50
+        ),
+        -- filter jobs to only get the latest
+        most_recent_jobs AS (
+            SELECT DISTINCT ON (job_id)
+                job_id as initial_job_id,
+                latest_job_id,
+                mrj.state as latest_job_state,
+                mrj.result as latest_job_result,
+                level as chain_length
+            FROM
+                latest_id_resolver
+            JOIN jobs AS mrj ON mrj.id = latest_job_id
+            WHERE
+                latest_job_id IS NOT NULL
+            ORDER BY
+                job_id,
+                level DESC
+        )
+        SELECT
+            latest_job_state,
+            latest_job_result,
+            array_agg(latest_job_id) as job_ids
+        FROM
+            most_recent_jobs
+        WHERE
+            latest_job_id IS NOT NULL
+        GROUP BY
+            latest_job_state,
+            latest_job_result
+        END_SQL
+    );
+    $sth->bind_param(1, $self->id, SQL_BIGINT);
+    $sth->execute;
+    return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
 
 1;
