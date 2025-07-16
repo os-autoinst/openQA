@@ -356,4 +356,28 @@ subtest 'Lookup precedence/hiding' => sub {
     is_deeply lookup_config_files(@args), \@expected, 'drop-in in overriden dir hides all other config';
 };
 
+subtest 'show and write config values' => sub {
+    my $ini = <<~'EOM';
+    [section1]
+    A = 1
+    B=2
+    EOM
+    my $out = show_config(\$ini, []);
+    like $out, qr{section1}, 'show sections';
+    $out = show_config(\$ini, ['section1']);
+    like $out, qr{section1.*A.*1.*B.*2}s, 'show section';
+    $out = show_config(\$ini, ['section1', 'B']);
+    is $out, 2, 'show section param';
+
+    # Config::IniFiles does not have a method to get the ini output as
+    # a simple string, it can only write to files and file handles
+    my $string;
+    my $scalar = IO::Scalar->new(\$string);
+    my $orig = select $scalar;
+    write_config(\$ini, [section2 => X => 2]);
+    select $orig;
+    diag $string;
+    like $string, qr{section2.*X=2}s, 'write_config new section / param';
+};
+
 done_testing();
