@@ -56,6 +56,48 @@ sub show_scheduled_product {
     $self->render(json => $scheduled_product->to_hash(@args));
 }
 
+=over 4
+
+=item job_statistics()
+
+Returns job statistics about the most recent scheduled products for each ARCH
+matching the specified DISTRI, VERSION and FLAVOR. Only scheduled products that
+are cancelling/cancelled are not considered.
+
+This allows to determine whether all jobs that have been scheduled for a
+certain purpose are done and whether the jobs have passed. If jobs have been
+cloned/restarted then only the state/result of the latest job is taken into
+account.
+
+The statistics are returned as nested JSON object with one key per present state
+on outer level and one key per present result on inner level:
+
+{
+  done => {
+    failed =>     {job_ids => [5057], scheduled_product_ids => [330]},
+    incomplete => {job_ids => [5056], scheduled_product_ids => [330]},
+  }
+}
+
+One can check for the existence of keys in the returned JSON object to check
+whether certain states/results are present. The concrete job IDs and scheduled
+product IDs for each combination are mainly returned for easier retracing but
+could also be used to generate a more detailed report.
+
+=back
+
+=cut
+
+sub job_statistics ($self) {
+    my $validation = $self->validation;
+    my @param_keys = (qw(distri version flavor));
+    $validation->required($_) for @param_keys;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+    my @params = map { $validation->param($_) } @param_keys;
+    my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
+    $self->render(json => $scheduled_products->job_statistics(@params));
+}
+
 sub validate_create_parameters ($self) {
     my $validation = $self->validation;
     $validation->required($_) for (MANDATORY_PARAMETERS);
