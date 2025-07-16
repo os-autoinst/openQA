@@ -177,6 +177,11 @@ Take a look at
 https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA[openSUSE's registry]
 for all available container images.
 
+=== Kubernetes
+
+Find a guide and the helm charts for Kubernetes deployment of openQA in
+link:https://github.com/os-autoinst/openQA/blob/master/container/helm/README.md[Helm README].
+
 == Quick bootstrapping under openSUSE
 [id="bootstrapping"]
 
