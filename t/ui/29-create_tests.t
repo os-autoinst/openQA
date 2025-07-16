@@ -77,10 +77,10 @@ subtest 'preset information can be loaded from INI file, note about non-existing
     unlike $flash_messages, qr/does not exist/i, 'preset defined in INI file is available';
 
     like $flash_messages,
-      qr|You first need to clone the does-not-exist test distribution|i,
+      qr|You first need to clone the .*does-not-exist.* test distribution|i,
       'note about cloning test distribution shown';
 
-    $driver->find_element_by_link_text('clone the does-not-exist test distribution')->click;
+    $driver->find_element_by_link_text('Clone')->click;
     my $error_message = wait_for_element selector => '#flash-messages .alert-danger', description => 'error message';
     like $error_message->get_text, qr/No Minion worker available/i, 'expected error shown';
 };
