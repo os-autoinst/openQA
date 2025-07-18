@@ -46,7 +46,7 @@ test_once "-v $args", qr/\+ local dry_run/, 'clone-job with -v prints commands';
 test_once "-n -v $args", qr/\+ local dry_run/, 'clone-job with -n -v prints commands';
 my $args_branch = 'https://github.com/user/repo/tree/my/branch https://openqa.opensuse.org/tests/1234 FOO=bar';
 my $expected_branch_re
-  = qr{${clone_job}1234 _GROUP=0 TEST\+=\@user/repo#my/branch BUILD=user/repo#my/branch ${dirs} FOO=bar};
+  = qr{${clone_job}1234 _GROUP=0 TEST\+=\@user/repo\#my/branch BUILD=user/repo\#my/branch ${dirs} FOO=bar};
 test_once $args_branch, $expected_branch_re, 'alternative mode with branch reference also yields right variables';
 my $prefix = 'env repo_name=user/repo pr=9128 host=https://openqa.opensuse.org job=1234';
 combined_like { $ret = run_once('', $prefix) } $expected_re, 'environment variables can be used instead';
@@ -57,7 +57,7 @@ my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 .*${dirs}}
 combined_like { $ret = run_once('', $prefix) } $expected_custom_re, 'testsuite and dirs can be overridden';
 is $ret, 0, 'exits successfully';
 my $args_trailing = 'https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1';
-test_once $args_trailing, qr{TEST\+=\@user/repo#my/branch.*}, 'trailing slash ignored';
+test_once $args_trailing, qr{TEST\+=\@user/repo\#my/branch.*}, 'trailing slash ignored';
 my $args_list = $args . ',https://openqa.opensuse.org/tests/1234';
 $expected_re = qr/${expected}.*opensuse.org 1234/s;
 test_once $args_list, $expected_re, 'accepts comma-separated list of jobs';
