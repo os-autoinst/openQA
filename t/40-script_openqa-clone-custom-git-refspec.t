@@ -75,13 +75,12 @@ $expected_re = qr/TEST1=BLUB\r?\nTEST2=\$VAR\r?\nTEST3=space space\r?\nTEST4=\(!
 combined_like { run_once($args_escape, q(dry_run='printf "%s\n"')) } $expected_re,
   'Custom variables has proper bash escaping';
 
-TODO: {
-    local $TODO = 'not implemented';
+subtest 'short urls' => sub {
     $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/t1234';
     test_once $args, qr/${expected}/, 'short test URLs are supported the same';
     $args .= ',https://openqa.suse.de/t1234';
     test_once $args, qr/${expected}.* 1234/s, 'multiple short URLs from different hosts point to individual hosts';
-}
+};
 
 my $test_url = 'https://openqa.opensuse.org/tests/1107158';
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "\@openqa: Clone ${test_url}"}'; true};

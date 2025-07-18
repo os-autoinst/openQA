@@ -136,6 +136,7 @@ clone_job() {
         local job_url="${1:?"Need 'job_url' parameter"}"
         local host=${job_url%%/t*}
         local job=${job_url##*/}
+        job=${job##t}
     fi
     if [[ -z "$testsuite" ]] || [[ -z "$productdir" ]]; then
         local json_url=${host}/tests/${job}/file/vars.json
