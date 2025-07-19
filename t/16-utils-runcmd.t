@@ -332,10 +332,10 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
 
     package Test::FailingMinionJob {
         sub finish { }
-        sub fail($self, $args) { $self->{fail_message} = $args }
+        sub fail ($self, $args) { $self->{fail_message} = $args }
     }    # uncoverable statement
 
-    sub _run_save_needle_test($git_mock) {
+    sub _run_save_needle_test ($git_mock) {
         my @log_errors;
         my $log_mock = Test::MockModule->new(ref $t->app->log);
         $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });

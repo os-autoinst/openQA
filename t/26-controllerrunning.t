@@ -275,4 +275,4 @@ sub resultset ($self, $name) { FakeSchema::Find->new($name) }
 
 package FakeSchema::Find;
 use Mojo::Base -signatures;
-sub new($class, $name = '') { bless({name => $name}, $class) }
+sub new ($class, $name = '') { bless({name => $name}, $class) }

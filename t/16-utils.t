@@ -12,7 +12,7 @@ BEGIN {
     *CORE::GLOBAL::exit = sub (;$) { $exit_handler->(@_ ? 0 + $_[0] : 0) }
 }
 
-sub exit_code(&) {
+sub exit_code (&) {
     my $exit_code;
     local $exit_handler = sub { $exit_code = $_[0] };
     shift->();
