@@ -31,8 +31,8 @@ sub iso_path {
 sub touch_isos {
     my ($isos) = @_;
     for my $iso (@$isos) {
-        ok(open(FH, '>', iso_path($iso)), "touch $iso");
-        close FH;
+        ok open(my $fh, '>', iso_path($iso)), "touch $iso";
+        close $fh;
     }
 }
 my $iso1 = 'test-dvd-1.iso';

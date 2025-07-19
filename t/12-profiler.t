@@ -25,9 +25,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # now get some DB action done
 $t->get_ok('/tests')->status_is(200);
 
-open(FILE, $filename);
-my @lines = <FILE>;
-close(FILE);
+my @lines = <$fh>;
 
 like(join('', @lines), qr/.*debug\] \[pid:.*\] \[DBIC\] Took .* seconds: SELECT.*/, 'seconds in log file');
 
