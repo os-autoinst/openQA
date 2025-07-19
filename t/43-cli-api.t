@@ -216,7 +216,7 @@ subtest 'HTTP features' => sub {
       = capture_stdout sub { $api->run(@host, '-X', 'POST', '-a', 'Accept: application/json', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
-    is $data->{headers}{'Accept'}, 'application/json', 'Accept header';
+    is $data->{headers}{Accept}, 'application/json', 'Accept header';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http?async=1') };
     $data = decode_json $stdout;

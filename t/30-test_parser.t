@@ -865,7 +865,7 @@ subtest 'Unstructured data' => sub {
     is $n->dataLogLocation()->val(), '/usr/local/tomcat/logs/dataLog.log', or die always_explain $n;
 
     #bool are decoded '1'/1 or '0'/0 between perl 5.18 and 5.26
-    $n->val->{'betaServer'} = $n->val->{'betaServer'} ? 1 : 0;
+    $n->val->{betaServer} = $n->val->{betaServer} ? 1 : 0;
 
     is_deeply $n->val,
       {

@@ -462,7 +462,7 @@ my $yaml = {};
 my $schema_filename = 'JobTemplates-01.yaml';
 is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)}, 2, 'Empty YAML is an error')
   or always_explain dump_yaml($yaml);
-$yaml->{scenarios}{'x86_64'}{$product} = ['spam', 'eggs'];
+$yaml->{scenarios}{x86_64}{$product} = ['spam', 'eggs'];
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), ['/products: Missing property.'], 'No products defined')
   or always_explain dump_yaml($yaml);
 $yaml->{products}{$product} = {version => '42.1', flavor => 'DVD'};
@@ -494,11 +494,11 @@ is_deeply(
 delete $yaml->{products}{$product}{distribution};
 $yaml->{products}{$product}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
-$yaml->{scenarios}{'x86_64'}{$product} = [
+$yaml->{scenarios}{x86_64}{$product} = [
     'spam',
     'eg-G_S +133t*.',
     {
-        'foo' => {},
+        foo => {},
     },
     {
         'b-A_RRRR +133t*.' => {
@@ -951,7 +951,7 @@ subtest 'Create and modify groups with YAML' => sub {
         # Specify testsuite to correctly disambiguate
         %foo_eggs = (testsuite => 'foobar', settings => {FOO => 'eggs'});
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar_eggs => \%foo_eggs}];
-        $yaml->{defaults}{i586}{'priority'} = 16;
+        $yaml->{defaults}{i586}{priority} = 16;
         $form{template} = dump_yaml($yaml);
         $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
         $t->status_is(200);
@@ -970,7 +970,7 @@ subtest 'Create and modify groups with YAML' => sub {
         $t->post_ok('/api/v1/isos', form => \%new_isos_post_params)->status_is(200, 'ISO posted');
         return always_explain $t->tx->res->body unless $t->success;
         my $jobs = $schema->resultset('Jobs');
-        my %tests = map { $_ => $jobs->find($_)->settings_hash->{'NAME'} } @{$t->tx->res->json->{ids}};
+        my %tests = map { $_ => $jobs->find($_)->settings_hash->{NAME} } @{$t->tx->res->json->{ids}};
         is_deeply(
             [sort values %tests],
             ['00099982-opensuse-13.1-DVD-i586-foobar@64bit', '00099983-opensuse-13.1-DVD-i586-foobar_eggs@64bit',],
@@ -999,7 +999,7 @@ subtest 'Create and modify groups with YAML' => sub {
 
     subtest 'Single scenario with multiple machines' => sub {
         $test_suites->create({name => 'baz'});
-        $yaml->{defaults}{i586}{'machine'} = ['Laptop_64', '64bit'];
+        $yaml->{defaults}{i586}{machine} = ['Laptop_64', '64bit'];
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [
             {baz => {machine => ['32bit', '64bit'], priority => 7}},
             {baz_defaults => {priority => 7, testsuite => 'baz'}}];
@@ -1046,7 +1046,7 @@ subtest 'Create and modify groups with YAML' => sub {
         );
 
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = ['foo'];
-        $yaml->{defaults}{i586}{'machine'} = '66bit';
+        $yaml->{defaults}{i586}{machine} = '66bit';
         $t->post_ok(
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
@@ -1062,8 +1062,8 @@ subtest 'Create and modify groups with YAML' => sub {
             'Invalid machine in defaults'
         );
 
-        $yaml->{defaults}{i586}{'machine'} = '64bit';
-        $yaml->{products}{'opensuse-13.1-DVD-i586'}{'distri'} = 'geeko';
+        $yaml->{defaults}{i586}{machine} = '64bit';
+        $yaml->{products}{'opensuse-13.1-DVD-i586'}{distri} = 'geeko';
         $t->post_ok(
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {

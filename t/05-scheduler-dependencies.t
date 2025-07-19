@@ -712,7 +712,7 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
       or always_explain \@sorted_got;
 
     # check chained parents
-    @sorted_got = sort(@{$jobTA2->{parents}->{'Chained'}});
+    @sorted_got = sort(@{$jobTA2->{parents}->{Chained}});
     @sorted_exp = sort(());
     is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 not regularly chained after jobQ') or always_explain \@sorted_got;
 

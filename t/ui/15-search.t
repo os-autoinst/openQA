@@ -29,7 +29,7 @@ subtest 'Perl modules' => sub {
     is $search->get_text(), '', 'empty search entry by default';
 
     $search->send_keys('timezone');
-    $search->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    $search->send_keys(Selenium::Remote::WDKeys->KEYS->{enter});
     wait_for_element(selector => '#results .list-group-item');
 
     like $driver->get_title(), qr/Search/, 'search shown' or return;
