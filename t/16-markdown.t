@@ -47,7 +47,7 @@ qq{<p><span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https
 qq{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span> 123</p>\n},
       'bugref expanded';
     is markdown_to_html('testing boo#123 123 boo#321'),
-qq{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span> 123}
+q{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span> 123}
       . qq{ <span title="Bug referenced: boo#321" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=321"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#321</a></span></p>\n},
       'bugref expanded';
     is markdown_to_html("testing boo#123\n123\n boo#321"),
@@ -58,14 +58,14 @@ qq{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a hre
 qq{<p>boo\ntesting <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span> 123\n123</p>\n},
       'bugref expanded';
     is markdown_to_html('related issues: boo#123,bsc#1234'),
-qq{<p>related issues: <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span>,}
+q{<p>related issues: <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span>,}
       . qq{<span title="Bug referenced: bsc#1234" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span></p>\n},
       'bugref expanded';
     is markdown_to_html('related issue: bsc#1234, yada yada'),
 qq{<p>related issue: <span title="Bug referenced: bsc#1234" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span>, yada yada</p>\n},
       'bugref expanded';
     is markdown_to_html('label:force_result:passed:bsc#1234'),
-      qq{<p><span class="openqa-label">label:force_result:passed:}
+      q{<p><span class="openqa-label">label:force_result:passed:}
       . qq{<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234" title="Bug referenced: bsc#1234">bsc#1234</a></span></p>\n},
       'bugref expaned within label';
 };
@@ -94,24 +94,24 @@ qq{<p><a href="https://example.com/#fragment/">https://example.com/#fragment/</a
     is markdown_to_html("t\ntesting t#123 123\n123"), qq{<p>t\ntesting <a href="/tests/123">t#123</a> 123\n123</p>\n},
       'testref expanded';
 
-    is markdown_to_html(qq{{{color:#ffffff|"Text"}}}),
+    is markdown_to_html(q{{{color:#ffffff|"Text"}}}),
       qq{<p><span style="color:#ffffff;background-color:black">&quot;Text&quot;</span></p>\n},
       'White text';
-    is markdown_to_html("test {{color:#ff0000|Text}} 123"),
+    is markdown_to_html('test {{color:#ff0000|Text}} 123'),
       qq{<p>test <span style="color:#ff0000;background-color:white">Text</span> 123</p>\n}, 'Red text';
-    is markdown_to_html("test {{color:#FFFFFF|Text}} 123"),
+    is markdown_to_html('test {{color:#FFFFFF|Text}} 123'),
       qq{<p>test <span style="color:#FFFFFF;background-color:black">Text</span> 123</p>\n}, 'White text';
-    is markdown_to_html("test {{color:#00ff00|Some Text}} 123"),
+    is markdown_to_html('test {{color:#00ff00|Some Text}} 123'),
       qq{<p>test <span style="color:#00ff00;background-color:white">Some Text</span> 123</p>\n}, 'Green text';
-    is markdown_to_html("test {{color:#00ff00|Some Text}} 123 {{color:#0000ff|Also {w}orks}}"),
-      qq{<p>test <span style="color:#00ff00;background-color:white">Some Text</span> 123}
+    is markdown_to_html('test {{color:#00ff00|Some Text}} 123 {{color:#0000ff|Also {w}orks}}'),
+      q{<p>test <span style="color:#00ff00;background-color:white">Some Text</span> 123}
       . qq{ <span style="color:#0000ff;background-color:white">Also {w}orks</span></p>\n},
       'Green and blue text';
-    is markdown_to_html("test {{  color: #00ff00  |  Some Text  }} 123"),
+    is markdown_to_html('test {{  color: #00ff00  |  Some Text  }} 123'),
       "<p>test {{  color: #00ff00  |  Some Text  }} 123</p>\n", 'Extra whitespace is not allowed';
-    is markdown_to_html("test {{color:javascript|Text}} 123"),
+    is markdown_to_html('test {{color:javascript|Text}} 123'),
       qq{<p>test {{color:javascript|Text}} 123</p>\n}, 'Invalid custom tag';
-    is markdown_to_html(qq{test {{javascript:alert("test")|Text}} 123}),
+    is markdown_to_html(q{test {{javascript:alert("test")|Text}} 123}),
       qq{<p>test {{javascript:alert(&quot;test&quot;)|Text}} 123</p>\n}, 'Invalid custom tag';
 };
 
@@ -129,7 +129,7 @@ subtest 'unsafe HTML filtered out' => sub {
       qq{<blockquote>\n<p>hello <!-- raw HTML omitted --><em>you</em><!-- raw HTML omitted --></p>\n</blockquote>\n},
       'unsafe HTML filtered';
     is markdown_to_html('{{color:#0000ff|<a>Test</a>}}'),
-      qq{<p><span style="color:#0000ff;background-color:white">}
+      q{<p><span style="color:#0000ff;background-color:white">}
       . qq{<!-- raw HTML omitted -->Test<!-- raw HTML omitted --></span></p>\n},
       'unsafe HTML filtered';
 };

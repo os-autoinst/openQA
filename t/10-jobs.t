@@ -25,7 +25,7 @@ use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Utils qw(perform_minion_jobs);
 use OpenQA::Test::TimeLimit '30';
 
-binmode(STDOUT, ":encoding(UTF-8)");
+binmode(STDOUT, ':encoding(UTF-8)');
 
 my $schema_name = OpenQA::Test::Database::generate_schema_name;
 my $schema = OpenQA::Test::Case->new->init_data(
@@ -64,7 +64,7 @@ my %settings = (
     VERSION => '42',
     BUILD => '666',
     ISO => 'whatever.iso',
-    MACHINE => "RainbowPC",
+    MACHINE => 'RainbowPC',
     ARCH => 'x86_64',
 );
 
@@ -1016,13 +1016,13 @@ subtest 'git log diff' => sub {
             my $rc = 0;
             my $stdout = '';
             if ("@$cmd" =~ m/rev-list --count/) {
-                if ("@$cmd" =~ m/revlistfail/) { $stdout = "git failed"; $rc = 1; }
-                elsif ("@$cmd" =~ m/nonumber/) { $stdout = "NaN"; }
+                if ("@$cmd" =~ m/revlistfail/) { $stdout = 'git failed'; $rc = 1; }
+                elsif ("@$cmd" =~ m/nonumber/) { $stdout = 'NaN'; }
                 else { $stdout = 10; }
             }
             elsif ("@$cmd" =~ m/diff --stat/) {
-                if ("@$cmd" =~ m/difffail/) { $stdout = "git failed"; $rc = 1; }
-                else { $stdout = "2 files changed"; }
+                if ("@$cmd" =~ m/difffail/) { $stdout = 'git failed'; $rc = 1; }
+                else { $stdout = '2 files changed'; }
             }
             return {stdout => $stdout, return_code => $rc, stderr => ''};
         });

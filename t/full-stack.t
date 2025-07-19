@@ -294,7 +294,7 @@ subtest 'incomplete job because of setup failure' => sub {
 my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
 ok -e $cache_location, 'Setting up Cache directory';
 
-path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew(<<EOC);
+path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew(<<EOC);
 [global]
 CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50
@@ -309,7 +309,7 @@ WORKER_CLASS = qemu_i386,qemu_x86_64
 [http://localhost:$mojoport]
 TESTPOOLSERVER = $sharedir/tests
 EOC
-ok -e path($ENV{OPENQA_CONFIG})->child("workers.ini"), 'Config file created';
+ok -e path($ENV{OPENQA_CONFIG})->child('workers.ini'), 'Config file created';
 
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
@@ -341,8 +341,8 @@ subtest 'Cache tests' => sub {
     my $result_5;
     subtest 'results of test 5' => sub {
         ok -e $db_file, 'cache.sqlite file created';
-        ok !-d path($cache_location, "test_directory"), 'Directory within cache, not present after deploy';
-        ok !-e $cache_location->child("test.file"), 'File within cache, not present after deploy';
+        ok !-d path($cache_location, 'test_directory'), 'Directory within cache, not present after deploy';
+        ok !-e $cache_location->child('test.file'), 'File within cache, not present after deploy';
 
         my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child('Core-7.2.iso');
         wait_for_or_bail_out { -e $link } 'finished download';

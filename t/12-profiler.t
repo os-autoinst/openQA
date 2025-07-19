@@ -29,6 +29,6 @@ open(FILE, $filename);
 my @lines = <FILE>;
 close(FILE);
 
-like(join('', @lines), qr/.*debug\] \[pid:.*\] \[DBIC\] Took .* seconds: SELECT.*/, "seconds in log file");
+like(join('', @lines), qr/.*debug\] \[pid:.*\] \[DBIC\] Took .* seconds: SELECT.*/, 'seconds in log file');
 
 done_testing();

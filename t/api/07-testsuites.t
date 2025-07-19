@@ -216,7 +216,7 @@ is_deeply(
                         'value' => 'kde,textmode'
                     }]}]
     },
-    "Initial test suites"
+    'Initial test suites'
 ) || always_explain $t->tx->res->json;
 
 $t->post_ok('/api/v1/test_suites', json => {})->status_is(400);    #no name
@@ -225,12 +225,12 @@ $t->post_ok('/api/v1/test_suites', json => {})->status_is(400);    #no name
 $t->post_ok(
     '/api/v1/test_suites',
     json => {
-        name => "testsuite",
+        name => 'testsuite',
         settings => {
-            "TEST" => "val1",
-            "TEST2" => "val1"
+            'TEST' => 'val1',
+            'TEST2' => 'val1'
         },
-        description => "this is a new testsuite"
+        description => 'this is a new testsuite'
     })->status_is(200);
 my $test_suite_id = $t->tx->res->json->{id};
 my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
@@ -240,7 +240,7 @@ is_deeply(
     'testsuite event was logged correctly'
 );
 
-$t->post_ok('/api/v1/test_suites', json => {name => "testsuite"})->status_is(400);    #already exists
+$t->post_ok('/api/v1/test_suites', json => {name => 'testsuite'})->status_is(400);    #already exists
 
 $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
@@ -261,10 +261,10 @@ is_deeply(
                         'value' => 'val1'
                     }]}]
     },
-    "Add test_suite"
+    'Add test_suite'
 ) || always_explain $t->tx->res->json;
 
-$t->put_ok("/api/v1/test_suites/$test_suite_id", json => {name => "testsuite", settings => {"TEST2" => "val1"}})
+$t->put_ok("/api/v1/test_suites/$test_suite_id", json => {name => 'testsuite', settings => {'TEST2' => 'val1'}})
   ->status_is(200);
 
 $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
@@ -281,7 +281,7 @@ is_deeply(
                         'value' => 'val1'
                     }]}]
     },
-    "Delete test_suite variable"
+    'Delete test_suite variable'
 ) || always_explain $t->tx->res->json;
 
 $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
@@ -289,8 +289,8 @@ $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not fou
 
 # switch to operator (default client) and try some modifications
 client($t);
-$t->post_ok('/api/v1/test_suites', json => {name => "testsuite"})->status_is(403);
-$t->put_ok("/api/v1/test_suites/$test_suite_id", json => {name => "testsuite", settings => {"TEST2" => "val1"}})
+$t->post_ok('/api/v1/test_suites', json => {name => 'testsuite'})->status_is(403);
+$t->put_ok("/api/v1/test_suites/$test_suite_id", json => {name => 'testsuite', settings => {'TEST2' => 'val1'}})
   ->status_is(403);
 $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(403);
 

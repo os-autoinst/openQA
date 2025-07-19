@@ -52,7 +52,7 @@ $workers->create({id => $offline_worker_id, host => 'offline_test', instance => 
 
 driver_missing unless my $driver = call_driver;
 
-$driver->title_is("openQA", "on main page");
+$driver->title_is('openQA', 'on main page');
 
 subtest 'offline status' => sub {
     $driver->get("/admin/workers/$offline_worker_id");
@@ -87,10 +87,10 @@ is(scalar @{$driver->find_elements('h3', 'css')}, 1, 'table properties hidden');
 $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-$driver->title_is("openQA", "back on main page");
+$driver->title_is('openQA', 'back on main page');
 # but ...
 
-is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
 
 subtest 'worker overview' => sub {
     $driver->find_element('#user-action a')->click();

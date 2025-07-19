@@ -164,13 +164,13 @@ my $job_ref = {
     # to be removed
     test => 'rainbow'
 };
-my $iso = sprintf("%s/iso/%s", assetdir(), $settings{ISO});
+my $iso = sprintf('%s/iso/%s', assetdir(), $settings{ISO});
 my $job = $jobs->create_from_settings(\%settings);
-is($job->id, 1, "job_create");
+is($job->id, 1, 'job_create');
 
 my %settings2 = %settings;
-$settings2{NAME} = "OTHER NAME";
-$settings2{BUILD} = "44";
+$settings2{NAME} = 'OTHER NAME';
+$settings2{BUILD} = '44';
 my $job2 = $jobs->create_from_settings(\%settings2);
 is($job2->id, 2);
 
@@ -182,7 +182,7 @@ subtest 'calling again with same settings' => sub {
 
 $job->set_prio(40);
 my $new_job = job_get_hash($job->id);
-is_deeply($new_job, $job_ref, "job_get");
+is_deeply($new_job, $job_ref, 'job_get');
 
 subtest 'job listing' => sub {
     my $expected_jobs = [
@@ -247,43 +247,43 @@ subtest 'job listing' => sub {
     ];
 
     $current_jobs = list_jobs();
-    is_deeply($current_jobs, $expected_jobs, "All list_jobs");
+    is_deeply($current_jobs, $expected_jobs, 'All list_jobs');
 
     my %args = (state => SCHEDULED);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, $expected_jobs, "All list_jobs with state scheduled");
+    is_deeply($current_jobs, $expected_jobs, 'All list_jobs with state scheduled');
 
     %args = (state => RUNNING);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [], "All list_jobs with state running");
+    is_deeply($current_jobs, [], 'All list_jobs with state running');
 
-    %args = (build => "666");
+    %args = (build => '666');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[1]], "list_jobs with build");
+    is_deeply($current_jobs, [$expected_jobs->[1]], 'list_jobs with build');
 
-    %args = (iso => "whatever.iso");
+    %args = (iso => 'whatever.iso');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, $expected_jobs, "list_jobs with iso");
+    is_deeply($current_jobs, $expected_jobs, 'list_jobs with iso');
 
-    %args = (build => "666", state => SCHEDULED);
+    %args = (build => '666', state => SCHEDULED);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[1]], "list_jobs combining a setting (BUILD) and state");
+    is_deeply($current_jobs, [$expected_jobs->[1]], 'list_jobs combining a setting (BUILD) and state');
 
-    %args = (iso => "whatever.iso", build => "666");
+    %args = (iso => 'whatever.iso', build => '666');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[1]], "list_jobs combining two settings (ISO and BUILD)");
+    is_deeply($current_jobs, [$expected_jobs->[1]], 'list_jobs combining two settings (ISO and BUILD)');
 
-    %args = (build => "whatever.iso", iso => "666");
+    %args = (build => 'whatever.iso', iso => '666');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [], "list_jobs messing two settings up");
+    is_deeply($current_jobs, [], 'list_jobs messing two settings up');
 
     %args = (ids => [1, 2], state => [SCHEDULED, DONE]);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, $expected_jobs, "jobs with specified IDs and states (array ref)");
+    is_deeply($current_jobs, $expected_jobs, 'jobs with specified IDs and states (array ref)');
 
-    %args = (ids => "2,3", state => "scheduled,done");
+    %args = (ids => '2,3', state => 'scheduled,done');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[0]], "jobs with specified IDs (comma list)");
+    is_deeply($current_jobs, [$expected_jobs->[0]], 'jobs with specified IDs (comma list)');
 };
 
 # assume the worker has just been seen
@@ -452,7 +452,7 @@ subtest 'worker re-registration' => sub {
     $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
     $job_ref->{settings}->{NAME} = $grabbed->{settings}->{NAME};
 
-    is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
+    is_deeply($grabbed->{settings}, $job_ref->{settings}, 'settings correct');
     $job3_id = $job->id;
     $job_id = $grabbed->{id};
 };
@@ -467,7 +467,7 @@ subtest 'setting job to done' => sub {
     ok(!$job->settings_hash->{JOBTOKEN}, 'job token not present after job done');
 
     $current_jobs = list_jobs(result => PASSED);
-    is(scalar @{$current_jobs}, 1, "there is one passed job listed");
+    is(scalar @{$current_jobs}, 1, 'there is one passed job listed');
 };
 
 subtest 'set_prio' => sub {

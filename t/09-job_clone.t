@@ -28,11 +28,11 @@ END { stop_service $webapi; }
 $t->app->config->{'scm git'}->{git_auto_update} = 'no';
 
 my $schema = $t->app->schema;
-my $products = $schema->resultset("Products");
-my $testsuites = $schema->resultset("TestSuites");
-my $jobs = $schema->resultset("Jobs");
+my $products = $schema->resultset('Products');
+my $testsuites = $schema->resultset('TestSuites');
+my $jobs = $schema->resultset('Jobs');
 
-my $rset = $t->app->schema->resultset("Jobs");
+my $rset = $t->app->schema->resultset('Jobs');
 
 subtest 'multiple clones' => sub {
     $schema->txn_begin;
@@ -49,11 +49,11 @@ my $minimalx = $rset->find(99926);
 my $clones = $minimalx->duplicate();
 my $clone = $rset->find($clones->{$minimalx->id}->{clone});
 
-isnt($clone->id, $minimalx->id, "is not the same job");
-is($clone->TEST, "minimalx", "but is the same test");
-is($clone->priority, 56, "with the same priority");
-is($minimalx->state, "done", "original test keeps its state");
-is($clone->state, "scheduled", "the new job is scheduled");
+isnt($clone->id, $minimalx->id, 'is not the same job');
+is($clone->TEST, 'minimalx', 'but is the same test');
+is($clone->priority, 56, 'with the same priority');
+is($minimalx->state, 'done', 'original test keeps its state');
+is($clone->state, 'scheduled', 'the new job is scheduled');
 
 # Second attempt
 ok($minimalx->can_be_duplicated, 'looks cloneable');
@@ -61,9 +61,9 @@ is($minimalx->duplicate, 'Job 99926 already has clone 99982', 'cannot clone agai
 
 # Reload minimalx from the database
 $minimalx->discard_changes;
-is($minimalx->clone_id, $clone->id, "relationship is set");
-is($minimalx->clone->id, $clone->id, "relationship works");
-is($clone->origin->id, $minimalx->id, "reverse relationship works");
+is($minimalx->clone_id, $clone->id, 'relationship is set');
+is($minimalx->clone->id, $clone->id, 'relationship works');
+is($clone->origin->id, $minimalx->id, 'reverse relationship works');
 
 # After reloading minimalx, it doesn't look cloneable anymore
 ok(!$minimalx->can_be_duplicated, 'does not look cloneable after reloading');
@@ -73,8 +73,8 @@ is($minimalx->duplicate, 'Specified job 99926 has already been cloned as 99982',
 $clone->state(OpenQA::Jobs::Constants::CANCELLED);
 $clones = $clone->duplicate({prio => 35});
 my $second = $rset->find($clones->{$clone->id}->{clone});
-is($second->TEST, "minimalx", "same test again");
-is($second->priority, 35, "with adjusted priority");
+is($second->TEST, 'minimalx', 'same test again');
+is($second->priority, 35, 'with adjusted priority');
 
 subtest 'job state affects clonability' => sub {
     my $pristine_job = $jobs->find(99927);
@@ -102,7 +102,7 @@ subtest 'get job' => sub {
 subtest 'get job with verbose output' => sub {
     # Put a .conf file in place to make sure we cover initialization of UserAgent
     my $config = tempdir;
-    $config->child("client.conf")->touch;
+    $config->child('client.conf')->touch;
     $ENV{OPENQA_CONFIG} = $config;
 
     my $temp_assetdir = tempdir;
@@ -142,7 +142,7 @@ subtest 'auto_clone limits' => sub {
         is scalar @$last_incompletes, $limit, "incomplete_ancestors returns $limit incompletes";
         $restart = 0;
         $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
-        is $restart, 0, "restart false";
+        is $restart, 0, 'restart false';
         like $new{reason}, qr{Not restarting.*"auto_clone_regex".*3 times.*limit is 3}, '$reason is modified';
     };
 
@@ -154,7 +154,7 @@ subtest 'auto_clone limits' => sub {
         $restart = 0;
         %new = ();
         $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
-        is $restart, 1, "restart true";
+        is $restart, 1, 'restart true';
         like $new{reason}, qr{Auto-restarting because.*auto_clone_regex}, '$reason is modified';
     };
 
@@ -166,7 +166,7 @@ subtest 'auto_clone limits' => sub {
         $restart = 0;
         %new = ();
         $last->_compute_result_and_reason(\%new, 'incomplete', $backend_reason, \$restart);
-        is $restart, 1, "restart true";
+        is $restart, 1, 'restart true';
         like $new{reason}, qr{Auto-restarting because.*auto_clone_regex}, '$reason is modified';
     };
     $schema->txn_rollback;

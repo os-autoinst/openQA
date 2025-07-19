@@ -21,20 +21,20 @@ $t->get_ok('/api/v1/obs_rsync')->status_is(200, 'project list')->content_like(qr
   ->content_like(qr/Proj3/)->content_unlike(qr/Proj3::standard/)->content_like(qr/BatchedProj/);
 
 subtest 'smoke' => sub {
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
-    $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
-    $t->put_ok('/admin/obs_rsync/Proj1/runs')->status_is(404, "trigger rsync non-api path");
-    $t->put_ok('/api/v1/obs_rsync/Proj3/runs?repository=standard')->status_is(201, "trigger with repository parameter");
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, 'trigger rsync');
+    $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, 'trigger rsync wrong project');
+    $t->put_ok('/admin/obs_rsync/Proj1/runs')->status_is(404, 'trigger rsync non-api path');
+    $t->put_ok('/api/v1/obs_rsync/Proj3/runs?repository=standard')->status_is(201, 'trigger with repository parameter');
 };
 
 perform_minion_jobs($t->app->minion);
 
 subtest 'appliances' => sub {
-    $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')->status_is(201, "trigger with repository parameter");
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')->status_is(201, 'trigger with repository parameter');
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')
-      ->status_is(208, "trigger with repository parameter again");
+      ->status_is(208, 'trigger with repository parameter again');
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=appliances')
-      ->status_is(201, "trigger with different repository");
+      ->status_is(201, 'trigger with different repository');
 };
 
 perform_minion_jobs($t->app->minion);
@@ -42,22 +42,22 @@ perform_minion_jobs($t->app->minion);
 sub test_queue {
     my $t = shift;
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=wrong')
-      ->status_is(204, "Proj2 with different repository ignored");
+      ->status_is(204, 'Proj2 with different repository ignored');
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')
-      ->status_is(201, "Proj2 first time - should just start as queue is empty");
+      ->status_is(201, 'Proj2 first time - should just start as queue is empty');
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs')
-      ->status_is(208, "Proj2 second time - should report IN_QUEUE, because another Proj2 wasn't started by worker");
-    $t->put_ok('/api/v1/obs_rsync/Proj3::standard/runs')->status_is(201, "Proj3 first time - should just start");
-    $t->put_ok('/api/v1/obs_rsync/Proj2/runs')->status_is(208, "Proj2 still gets queued");
-    $t->put_ok('/api/v1/obs_rsync/Proj3::standard/runs')->status_is(208, "Proj3 now reports that already queued");
+      ->status_is(208, 'Proj2 second time - should report IN_QUEUE, because another Proj2 was not started by worker');
+    $t->put_ok('/api/v1/obs_rsync/Proj3::standard/runs')->status_is(201, 'Proj3 first time - should just start');
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs')->status_is(208, 'Proj2 still gets queued');
+    $t->put_ok('/api/v1/obs_rsync/Proj3::standard/runs')->status_is(208, 'Proj3 now reports that already queued');
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs?repository=standard')
-      ->status_is(507, "Proj1 cannot be handled because queue is full 2=(Proj2, Proj3 running)");
-    $t->put_ok('/api/v1/obs_rsync/Proj3/runs?repository=standard')->status_is(208, "Proj3 is still in queue");
-    $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "wrong project still returns error");
+      ->status_is(507, 'Proj1 cannot be handled because queue is full 2=(Proj2, Proj3 running)');
+    $t->put_ok('/api/v1/obs_rsync/Proj3/runs?repository=standard')->status_is(208, 'Proj3 is still in queue');
+    $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, 'wrong project still returns error');
 
     perform_minion_jobs($t->app->minion);
 
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "Proj1 just starts as queue is empty now");
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, 'Proj1 just starts as queue is empty now');
 }
 
 subtest 'test queue' => sub {
@@ -118,7 +118,7 @@ subtest 'test lock smoke' => sub {
 subtest 'test lock after failure' => sub {
     # now similate error by deleting the script
     unlink(Mojo::File->new($home, 'script', 'rsync.sh'));
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, 'trigger rsync');
     perform_minion_jobs($t->app->minion);
 
     lock_test();

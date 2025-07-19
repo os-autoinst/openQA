@@ -82,12 +82,12 @@ my %fake_response_by_project = (
 );
 
 my $auth_header_exact
-  = qq(Signature keyId="dummy-username",algorithm="ssh",)
-  . qq(signature="U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgSKpcECPm8Vjo9UznZS+)
-  . qq(M/QLjmXXmLzoBxkIbZ8Z/oPkAAAAaVXNlIHlvdXIgZGV2ZWxvcGVyIGFjY291bnQAAAAAAAAABn)
-  . qq(NoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA8cmvTy1PgpW2XhHWxQ1yw/wPGAfT2M3CGRJ3II)
-  . qq(7uT5Orqn1a0bWlo/lEV0WiqP+pPcQdajQ4a2YGJvpfzT1uBA==",)
-  . qq (headers="(created)",created="1664187470");
+  = q(Signature keyId="dummy-username",algorithm="ssh",)
+  . q(signature="U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgSKpcECPm8Vjo9UznZS+)
+  . q(M/QLjmXXmLzoBxkIbZ8Z/oPkAAAAaVXNlIHlvdXIgZGV2ZWxvcGVyIGFjY291bnQAAAAAAAAABn)
+  . q(NoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA8cmvTy1PgpW2XhHWxQ1yw/wPGAfT2M3CGRJ3II)
+  . q(7uT5Orqn1a0bWlo/lEV0WiqP+pPcQdajQ4a2YGJvpfzT1uBA==",)
+  . q(headers="(created)",created="1664187470");
 
 note 'Starting fake API server';
 
@@ -96,7 +96,7 @@ my $server_process = sub {
     my $mock = Mojolicious->new;
     $mock->mode('test');
 
-    my $www_authenticate = qq(Signature realm="Use your developer account",headers="(created)");
+    my $www_authenticate = q(Signature realm="Use your developer account",headers="(created)");
     $mock->routes->get(
         '/build/ProjWithAuth/_result' => sub ($c) {
             return $c->render(status => 200, text => $fake_response_by_project{Proj1})

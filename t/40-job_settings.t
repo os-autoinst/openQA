@@ -85,8 +85,8 @@ subtest expand_placeholders => sub {
         CASEDIR => 'foo',
         NEEDLES_DIR => '%CASEDIR%/bar/%%%CASEDIR%%/foo',
     };
-    is($error, undef, "no error returned");
-    is_deeply($settings, $match_settings, "Settings replaced");
+    is($error, undef, 'no error returned');
+    is_deeply($settings, $match_settings, 'Settings replaced');
 };
 
 subtest circular_reference => sub {
@@ -106,7 +106,7 @@ subtest circular_reference => sub {
     like(
         OpenQA::JobSettings::expand_placeholders($circular_settings),
         qr/The key (\w+) contains a circular reference, its value is %\w+%/,
-        "circular reference exit successfully"
+        'circular reference exit successfully'
     );
 };
 

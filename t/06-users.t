@@ -23,7 +23,7 @@ subtest 'new users are not ops and admins' => sub {
 };
 
 subtest 'system user presence' => sub {
-    my $system_user = $t->app->schema->resultset("Users")->system;
+    my $system_user = $t->app->schema->resultset('Users')->system;
     ok($system_user, 'system user exists');
     ok(!$system_user->is_admin, 'system user is not an admin');
     ok(!$system_user->is_operator, 'system user is not an operator');

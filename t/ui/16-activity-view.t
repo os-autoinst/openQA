@@ -124,7 +124,7 @@ subtest 'Current jobs' => sub {
             user_id => $demo_user->id,
             connection_id => 'foo',
             event => 'job_restart',
-            event_data => "{\"id\": 99936}",
+            event_data => '{"id": 99936}',
         });
     $driver->refresh;
     wait_for_element(selector => '#results .list-group-item');
@@ -151,7 +151,7 @@ subtest 'Current jobs' => sub {
           or diag(Data::Dumper->Dump([\@class], ['class']));
     }
     if (keys %state_result) {
-        fail "Missed the following jobs in the list:";    # uncoverable statement
+        fail 'Missed the following jobs in the list:';    # uncoverable statement
         diag(Data::Dumper->Dump([\%state_result], ['state_result']));    # uncoverable statement
     }
 

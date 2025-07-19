@@ -104,20 +104,20 @@ test_once $args, $expected_re, 'clone-job command with multiple URLs in PR and j
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my/branch"}, "body": "Lorem ipsum"}'; true};
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "my/distri", "PRODUCTDIR": "distri/products/sle"}'; true};
-$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle";
+$dirs = 'CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle';
 $expected = $clone_job . '1169326 _GROUP=0 TEST\+=\@user/repo#my/branch BUILD=user/repo#9539 ';
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, "PRODUCTDIR is correct when the source job's PRODUCTDIR is a relative directory";
 
 $ENV{curl_openqa} = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/distri", "PRODUCTDIR": "products/sle"}'; true};
-$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle";
+$dirs = 'CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle';
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, 'Correct PRODUCTDIR for relative non-prefixed dir';
 
 my $casedir = '/openqa/cache/openqa1-opensuse/tests/opensuse';
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "$casedir", "PRODUCTDIR": "$casedir/products/opensuse"}'; true};
-$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/opensuse";
+$dirs = 'CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/opensuse';
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, "PRODUCTDIR is correct when the source job's PRODUCTDIR includes specific word";
 

@@ -162,7 +162,7 @@ subtest 'limit parameter' => sub {
 $form = {distri => 'opensuse', version => '13.1', result => 'passed'};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
-like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
+like($summary, qr/Summary of opensuse 13\.1 build 0091/i, 'Still references the last build');
 like($summary, qr/Passed: 3$/i, 'only passed are shown');
 $t->element_exists('#res_DVD_i586_kde .result_passed');
 $t->element_exists('#res_DVD_i586_textmode .result_passed');
@@ -336,7 +336,7 @@ $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 # Selenium
 
 $t->get_ok('/tests/999379999/modules/kate/fails')->status_is(404, 'Error condition when test not existing');
-$t->get_ok('/tests/99937/modules/kate/fails')->json_is('/failed_needles' => ["test-kate-1"], 'correct failed needles');
+$t->get_ok('/tests/99937/modules/kate/fails')->json_is('/failed_needles' => ['test-kate-1'], 'correct failed needles');
 $t->get_ok('/tests/99937/modules/zypper_up/fails')
   ->json_is('/first_failed_step' => 1, 'failed module: fallback to first step');
 

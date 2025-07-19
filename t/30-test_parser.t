@@ -197,7 +197,7 @@ subtest 'Parser base class object' => sub {
       'serialization support warns';
 
     my $copy;
-    like warning { $copy = parser("Base")->_load_tree($good_parser->_build_tree) },
+    like warning { $copy = parser('Base')->_load_tree($good_parser->_build_tree) },
       qr/Serialization is officially supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
     like warning {
@@ -223,18 +223,18 @@ subtest 'Parser base class object' => sub {
     is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(a b c)]
       or always_explain $good_parser->_build_tree->{generated_tests_results};
 
-    $copy = parser("Base")->_load_tree($good_parser->_build_tree);
+    $copy = parser('Base')->_load_tree($good_parser->_build_tree);
     is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(a b c)]
       or always_explain $copy->_build_tree->{generated_tests_results};
 
 
-    my $alt_parser = parser("Base");
+    my $alt_parser = parser('Base');
 
     $alt_parser->results->add(Dummy3to->new);
 
     is $alt_parser->results->first->{foobar}, 'barbaz', 'Result is there';
 
-    $copy = parser("Base")->_load_tree($alt_parser->_build_tree);
+    $copy = parser('Base')->_load_tree($alt_parser->_build_tree);
 
     is $copy->results->first->{foobar}, 'barbaz', 'Result is there';
 };
@@ -318,7 +318,7 @@ subtest 'Nested results' => sub {
             ),
         ));
 
-    my $serialized = parser("Base")->deserialize($parser_nested->serialize());
+    my $serialized = parser('Base')->deserialize($parser_nested->serialize());
     my $serialized_tree = $serialized->_build_tree();
     is_deeply $serialized->_build_tree(), $parser_nested->_build_tree(), 'Tree are matching'
       or die always_explain $serialized;
@@ -347,16 +347,16 @@ sub test_junit_file {
         'script' => undef
       };
 
-    is $parser->tests->search("name", qr/1_running_upstream_tests/)->first()->name, '1_running_upstream_tests';
-    is $parser->tests->search("name", qr/1_running_upstream_tests/)->size, 1;
+    is $parser->tests->search('name', qr/1_running_upstream_tests/)->first()->name, '1_running_upstream_tests';
+    is $parser->tests->search('name', qr/1_running_upstream_tests/)->size, 1;
 
     is $parser->tests->size, 9,
       'Generated 9 openQA tests results';    # 9 testsuites with all cumulative results for openQA
     is $parser->generated_tests_results->size, 9, 'Object contains 9 testsuites';
 
-    is $parser->results->search_in_details("text", qr/tests-systemd/)->size, 166,
+    is $parser->results->search_in_details('text', qr/tests-systemd/)->size, 166,
       'Overall 9 testsuites, 166 tests are for systemd';
-    is $parser->generated_tests_output->size, 166, "Outputs of systemd tests details matches";
+    is $parser->generated_tests_output->size, 166, 'Outputs of systemd tests details matches';
 
     my $resultsdir = tempdir;
     my $reported_size = $parser->write_output($resultsdir);
@@ -429,10 +429,10 @@ sub test_xunit_file {
         'name' => 'bacon',
         'script' => undef
       };
-    is $parser->tests->search("name", qr/bacon/)->size, 1;
+    is $parser->tests->search('name', qr/bacon/)->size, 1;
 
-    is $parser->tests->search("name", qr/bacon/)->first()->name, 'bacon';
-    is $parser->generated_tests_results->search("result", qr/ok/)->size, 7;
+    is $parser->tests->search('name', qr/bacon/)->first()->name, 'bacon';
+    is $parser->generated_tests_results->search('result', qr/ok/)->size, 7;
 
     is $parser->generated_tests_results->first()->properties->first->value, 'y';
     is $parser->generated_tests_results->first()->properties->last->value, 'd';
@@ -449,11 +449,11 @@ sub test_xunit_file {
       'Generated 11 openQA tests results';    # 9 testsuites with all cumulative results for openQA
     is $parser->generated_tests_results->size, 11, 'Object contains 11 testsuites';
 
-    is $parser->results->search_in_details("title", qr/bacon/)->size, 14,
+    is $parser->results->search_in_details('title', qr/bacon/)->size, 14,
       'Overall 11 testsuites, 2 tests does not have title containing bacon';
-    is $parser->results->search_in_details("text", qr/bacon/)->size, 16,
+    is $parser->results->search_in_details('text', qr/bacon/)->size, 16,
       'Overall 11 testsuites, 15 tests are for bacon';
-    is $parser->generated_tests_output->size, 24, "24 Outputs";
+    is $parser->generated_tests_output->size, 24, '24 Outputs';
 
     my $resultsdir = tempdir;
     $parser->write_output($resultsdir);
@@ -507,7 +507,7 @@ sub test_xunit_file {
 subtest junit_parse => sub {
     my $parser = OpenQA::Parser::Format::JUnit->new;
 
-    my $junit_test_file = path($FindBin::Bin, "data")->child("junit-results.xml");
+    my $junit_test_file = path($FindBin::Bin, 'data')->child('junit-results.xml');
 
     $parser->load($junit_test_file);
     my $expected_test_result = test_junit_file($parser);
@@ -542,7 +542,7 @@ subtest junit_parse => sub {
 
     $parser = OpenQA::Parser::Format::JUnit->new;
 
-    $junit_test_file = path($FindBin::Bin, "data")->child("junit-results-fail.xml");
+    $junit_test_file = path($FindBin::Bin, 'data')->child('junit-results-fail.xml');
 
     $parser->load($junit_test_file);
 
@@ -552,7 +552,7 @@ subtest junit_parse => sub {
 
     $parser = OpenQA::Parser::Format::JUnit->new;
 
-    $junit_test_file = path($FindBin::Bin, "data")->child("junit-results-output-softfail.xml");
+    $junit_test_file = path($FindBin::Bin, 'data')->child('junit-results-output-softfail.xml');
 
     $parser->load($junit_test_file);
 
@@ -566,19 +566,19 @@ sub test_tap_file {
     is $p->results->size, 1, 'Expected 1 results';
     $p->results->each(
         sub {
-            is $_->details->[0]->{result}, 'ok', "Test has passed" or always_explain $_;
+            is $_->details->[0]->{result}, 'ok', 'Test has passed' or always_explain $_;
         });
 }
 
 subtest tap_parse_ok => sub {
     my $parser = OpenQA::Parser::Format::TAP->new;
 
-    my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example.tap");
+    my $tap_test_file = path($FindBin::Bin, 'data')->child('tap_format_example.tap');
 
     $parser = OpenQA::Parser::Format::TAP->new;
     $parser->load($tap_test_file);
 
-    is $parser->results->size, 1, "File has 6 test cases";
+    is $parser->results->size, 1, 'File has 6 test cases';
 
     is $parser->results->first->result, 'passed', 'First test passes';
     is scalar @{$parser->results->first->details}, 6, '1 test cases details';
@@ -591,12 +591,12 @@ subtest tap_parse_ok => sub {
 
 subtest tap_parse_fail => sub {
     # test other suffix and failing test
-    my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example2.tap");
+    my $tap_test_file = path($FindBin::Bin, 'data')->child('tap_format_example2.tap');
 
     my $parser = OpenQA::Parser::Format::TAP->new;
     $parser->load($tap_test_file);
 
-    is $parser->results->size, 1, "One test file";
+    is $parser->results->size, 1, 'One test file';
     is $parser->results->first->result, 'fail', 'tests failed';
 
     is scalar @{$parser->results->first->details}, 2, '2 test cases details';
@@ -607,11 +607,11 @@ subtest tap_parse_fail => sub {
 
 subtest tap_parse_invalid => sub {
     # test invalid TAP
-    my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example3.tap");
+    my $tap_test_file = path($FindBin::Bin, 'data')->child('tap_format_example3.tap');
 
     my $parser = OpenQA::Parser::Format::TAP->new;
 
-    throws_ok { $parser->load($tap_test_file) } qr{A valid TAP starts with filename.tap}, "Invalid TAP example";
+    throws_ok { $parser->load($tap_test_file) } qr{A valid TAP starts with filename.tap}, 'Invalid TAP example';
 };
 
 sub test_ltp_file {
@@ -627,7 +627,7 @@ sub test_ltp_file {
             is $_->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
               'Environment information matches';
             is $_->test->result, 'TPASS', 'subtest result is TPASS' or always_explain $_;
-            is $_->test_fqn, "LTP:cpuhotplug:cpuhotplug0$i", "test_fqn matches and are different";
+            is $_->test_fqn, "LTP:cpuhotplug:cpuhotplug0$i", 'test_fqn matches and are different';
             $i++;
         });
     is $p->results->get(0)->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
@@ -687,7 +687,7 @@ sub test_ltp_file_v2 {
             ok !!$_->environment, 'Environment is present';
             ok !!$_->test, 'Test information is present';
             is $_->environment->gcc, undef;
-            like $_->test_fqn, qr/LTP:/, "test_fqn is there";
+            like $_->test_fqn, qr/LTP:/, 'test_fqn is there';
             $i++;
         });
 }
@@ -696,7 +696,7 @@ subtest ltp_parse => sub {
 
     my $parser = OpenQA::Parser::Format::LTP->new;
 
-    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+    my $ltp_test_result_file = path($FindBin::Bin, 'data')->child('ltp_test_result_format.json');
 
     $parser->load($ltp_test_result_file);
 
@@ -705,7 +705,7 @@ subtest ltp_parse => sub {
 
     my $parser_format_v2 = OpenQA::Parser::Format::LTP->new;
 
-    $ltp_test_result_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+    $ltp_test_result_file = path($FindBin::Bin, 'data')->child('new_ltp_result_array.json');
 
     $parser_format_v2->load($ltp_test_result_file);
 
@@ -716,7 +716,7 @@ sub serialize_test {
     my ($parser_name, $file, $test_function) = @_;
 
     subtest "Serialization test for $parser_name and $file with test $test_function" => sub {
-        my $test_result_file = path($FindBin::Bin, "data")->child($file);
+        my $test_result_file = path($FindBin::Bin, 'data')->child($file);
 
         # With content saved
         my $parser = $parser_name->new(include_content => 1);
@@ -729,7 +729,7 @@ sub serialize_test {
         ok length($wrote_file->slurp()) > 3000, 'File has content';
 
         my $deserialized = $parser_name->new->deserialize($wrote_file->slurp);
-        ok "$deserialized" ne "$parser", "Different objects";
+        ok "$deserialized" ne "$parser", 'Different objects';
 
         $test_function->($parser);
         $test_function->($deserialized);
@@ -747,7 +747,7 @@ sub serialize_test {
         $parser->save($saved);
         ok length(path($saved)->slurp) > 50, 'Data';
         $deserialized = $parser_name->new->from_file($saved);
-        ok "$deserialized" ne "$parser", "Different objects";
+        ok "$deserialized" ne "$parser", 'Different objects';
         $test_function->($parser);
         $test_function->($deserialized);
         is $parser->content, $test_result_file->slurp, 'Content was kept intact for original obj'
@@ -760,7 +760,7 @@ sub serialize_test {
         $parser->load($test_result_file);
         $obj_content = $parser->serialize();
         $deserialized = $parser_name->new->deserialize($obj_content);
-        ok "$deserialized" ne "$parser", "Different objects";
+        ok "$deserialized" ne "$parser", 'Different objects';
         $test_function->($parser);
         $test_function->($deserialized);
         is $parser->content, undef, 'Content is not there' or always_explain $deserialized->content;
@@ -774,7 +774,7 @@ sub serialize_test {
         $parser->save($saved);
         ok length(path($saved)->slurp) > 50, 'Data';
         $deserialized = $parser_name->new->from_file($saved);
-        ok "$deserialized" ne "$parser", "Different objects";
+        ok "$deserialized" ne "$parser", 'Different objects';
         $test_function->($parser);
         $test_function->($deserialized);
         is $parser->content, undef, 'Content is not there' or always_explain $deserialized->content;
@@ -785,7 +785,7 @@ sub serialize_test {
         $parser->load($test_result_file);
         $obj_content = $parser->to_json();
         $deserialized = $parser_name->new()->from_json($obj_content);
-        ok "$deserialized" ne "$parser", "Different objects";
+        ok "$deserialized" ne "$parser", 'Different objects';
         $test_function->($parser);
         $test_function->($deserialized);
 
@@ -796,7 +796,7 @@ sub serialize_test {
         $parser->save_to_json($saved);
         ok length(path($saved)->slurp) > 50, 'Data';
         $deserialized = $parser_name->new()->from_json_file($saved);
-        ok "$deserialized" ne "$parser", "Different objects";
+        ok "$deserialized" ne "$parser", 'Different objects';
         $test_function->($parser);
         $test_function->($deserialized);
 
@@ -807,7 +807,7 @@ sub serialize_test {
         $parser->save_to_json($saved);
         ok length(path($saved)->slurp) > 50, 'Data';
         $deserialized = $parser_name->new()->from_json_file($saved);
-        ok "$deserialized" ne "$parser", "Different objects";
+        ok "$deserialized" ne "$parser", 'Different objects';
         $test_function->($parser);
         $test_function->($deserialized);
         is $parser->content, $test_result_file->slurp, 'Content was kept intact for original obj'
@@ -818,12 +818,12 @@ sub serialize_test {
 }
 
 subtest 'serialize/deserialize' => sub {
-    serialize_test("OpenQA::Parser::Format::IPA", "ipa.json", \&test_ipa_file);
-    serialize_test("OpenQA::Parser::Format::LTP", "ltp_test_result_format.json", \&test_ltp_file);
-    serialize_test("OpenQA::Parser::Format::LTP", "new_ltp_result_array.json", \&test_ltp_file_v2);
-    serialize_test("OpenQA::Parser::Format::JUnit", "junit-results.xml", \&test_junit_file);
-    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml", \&test_xunit_file);
-    serialize_test("OpenQA::Parser::Format::TAP", "tap_format_example.tap", \&test_tap_file);
+    serialize_test('OpenQA::Parser::Format::IPA', 'ipa.json', \&test_ipa_file);
+    serialize_test('OpenQA::Parser::Format::LTP', 'ltp_test_result_format.json', \&test_ltp_file);
+    serialize_test('OpenQA::Parser::Format::LTP', 'new_ltp_result_array.json', \&test_ltp_file_v2);
+    serialize_test('OpenQA::Parser::Format::JUnit', 'junit-results.xml', \&test_junit_file);
+    serialize_test('OpenQA::Parser::Format::XUnit', 'xunit_format_example.xml', \&test_xunit_file);
+    serialize_test('OpenQA::Parser::Format::TAP', 'tap_format_example.tap', \&test_tap_file);
 };
 
 subtest 'Unstructured data' => sub {
@@ -862,26 +862,26 @@ subtest 'Unstructured data' => sub {
     is($init_params->mailHost->override->always->val, 'yes') or die always_explain $init_params;
 
     my $n = $deserialized->results->last->get('init-param');
-    is $n->dataLogLocation()->val(), "/usr/local/tomcat/logs/dataLog.log", or die always_explain $n;
+    is $n->dataLogLocation()->val(), '/usr/local/tomcat/logs/dataLog.log', or die always_explain $n;
 
     #bool are decoded '1'/1 or '0'/0 between perl 5.18 and 5.26
     $n->val->{'betaServer'} = $n->val->{'betaServer'} ? 1 : 0;
 
     is_deeply $n->val,
       {
-        "templatePath" => "toolstemplates/",
-        "log" => 1,
-        "logLocation" => "/usr/local/tomcat/logs/CofaxTools.log",
-        "logMaxSize" => "",
-        "dataLog" => 1,
-        "dataLogLocation" => "/usr/local/tomcat/logs/dataLog.log",
-        "dataLogMaxSize" => "",
-        "removePageCache" => "/content/admin/remove?cache=pages&id=",
-        "removeTemplateCache" => "/content/admin/remove?cache=templates&id=",
-        "fileTransferFolder" => "/usr/local/tomcat/webapps/content/fileTransferFolder",
-        "lookInContext" => 1,
-        "adminGroupID" => 4,
-        "betaServer" => 1
+        'templatePath' => 'toolstemplates/',
+        'log' => 1,
+        'logLocation' => '/usr/local/tomcat/logs/CofaxTools.log',
+        'logMaxSize' => '',
+        'dataLog' => 1,
+        'dataLogLocation' => '/usr/local/tomcat/logs/dataLog.log',
+        'dataLogMaxSize' => '',
+        'removePageCache' => '/content/admin/remove?cache=pages&id=',
+        'removeTemplateCache' => '/content/admin/remove?cache=templates&id=',
+        'fileTransferFolder' => '/usr/local/tomcat/webapps/content/fileTransferFolder',
+        'lookInContext' => 1,
+        'adminGroupID' => 4,
+        'betaServer' => 1
       },
       'Last servlet matches',
       or die always_explain $n;
@@ -891,7 +891,7 @@ subtest functional_interface => sub {
 
     use OpenQA::Parser qw(parser p);
 
-    my $ltp = parser("LTP");
+    my $ltp = parser('LTP');
     is ref($ltp), 'OpenQA::Parser::Format::LTP', 'Parser found';
 
     throws_ok { p("Doesn'tExist!") } qr/Parser not found!/, 'Croaked correctly';
@@ -900,25 +900,25 @@ subtest functional_interface => sub {
         sub new { die 'boo' }
     }    # uncoverable statement
 
-    throws_ok { p("Broken") } qr/Invalid parser supplied: boo/, 'Croaked correctly';
+    throws_ok { p('Broken') } qr/Invalid parser supplied: boo/, 'Croaked correctly';
 
     my $default = p();
     ok $default->isa('OpenQA::Parser::Format::Base');
 
     # Supports functional interface.
-    my $test_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+    my $test_file = path($FindBin::Bin, 'data')->child('new_ltp_result_array.json');
     my $parsed_res = p(LTP => $test_file);
 
     is $parsed_res->results->size, 7, 'Expected 7 results';
     is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
 
     # Keeps working as usual
-    $parsed_res = p("LTP")->load($test_file);
+    $parsed_res = p('LTP')->load($test_file);
 
     is $parsed_res->results->size, 7, 'Expected 7 results';
     is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
 
-    $parsed_res = p("LTP")->parse($test_file->slurp);
+    $parsed_res = p('LTP')->parse($test_file->slurp);
 
     is $parsed_res->results->size, 7, 'Expected 7 results';
     is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
@@ -926,7 +926,7 @@ subtest functional_interface => sub {
 
 subtest dummy_search_fails => sub {
 
-    my $parsed_res = p("Dummy");
+    my $parsed_res = p('Dummy');
     $parsed_res->include_results(1);
     $parsed_res->parse;
     is $parsed_res->results->size, 1, 'Expected 1 result';
@@ -936,7 +936,7 @@ subtest dummy_search_fails => sub {
 
 
 subtest xunit_parse => sub {
-    my $parser = parser(XUnit => path($FindBin::Bin, "data")->child("xunit_format_example.xml"));
+    my $parser = parser(XUnit => path($FindBin::Bin, 'data')->child('xunit_format_example.xml'));
 
     my $expected_test_result = test_xunit_file($parser);
 };
@@ -944,7 +944,7 @@ subtest xunit_parse => sub {
 subtest nested_parsers => sub {
     my $join = p();
 
-    my $parser = parser(LTP => path($FindBin::Bin, "data")->child("new_ltp_result_array.json"));
+    my $parser = parser(LTP => path($FindBin::Bin, 'data')->child('new_ltp_result_array.json'));
     # E.g serialize it and retrieve (normally it would be only retrieved)
     my $frozen = $parser->serialize();
 
@@ -972,7 +972,7 @@ package OpenQA::Parser::UnstructuredDummy {    # uncoverable statement count:2
 
     sub parse () {
         my ($self, $json) = @_;
-        die "No JSON given/loaded" unless $json;
+        die 'No JSON given/loaded' unless $json;
         my $decoded_json = decode_json $json;
 
         foreach my $res (@{$decoded_json->{'web-app'}->{servlet}}) {

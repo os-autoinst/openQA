@@ -169,11 +169,11 @@ subtest 'Checking log level' => sub {
             my $logging_test_file = tempfile;
 
             add_log_channel($channel, path => $logging_test_file, level => $level);
-            log_trace("trace message", channels => $channel);
-            log_debug("debug message", channels => $channel);
-            log_info("info message", channels => $channel);
-            log_warning("warn message", channels => $channel);
-            log_error("error message", channels => $channel);
+            log_trace('trace message', channels => $channel);
+            log_debug('debug message', channels => $channel);
+            log_info('info message', channels => $channel);
+            log_warning('warn message', channels => $channel);
+            log_error('error message', channels => $channel);
             throws_ok { log_fatal('fatal message', channels => $channel); } qr/fatal message/, 'exception raised';
             %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file)->slurp =~ m/$reChannel/gm);
             is(keys(%matches), $counterChannel, "Worker channel log level $level entry");
@@ -182,11 +182,11 @@ subtest 'Checking log level' => sub {
         }
         $counterChannel--;
 
-        log_trace("trace message", channels => 'no_channel');
-        log_debug("debug message", channels => 'no_channel');
-        log_info("info message", channels => 'no_channel');
-        log_warning("warn message", channels => 'no_channel');
-        log_error("error", channels => 'no_channel');
+        log_trace('trace message', channels => 'no_channel');
+        log_debug('debug message', channels => 'no_channel');
+        log_info('info message', channels => 'no_channel');
+        log_warning('warn message', channels => 'no_channel');
+        log_error('error', channels => 'no_channel');
         throws_ok { log_fatal('fatal message', channels => 'no_channel') } qr/fatal message/, 'exception raised';
         # print Mojo::File->new($output_logfile)->slurp;
 
@@ -278,11 +278,11 @@ subtest 'Logs to multiple channels' => sub {
             add_log_channel($channel_tupple->[0], path => $logging_test_file1, level => $level);
             add_log_channel($channel_tupple->[1], path => $logging_test_file2, level => $level);
 
-            log_trace("trace message", channels => $channel_tupple, standard => 1);
-            log_debug("debug message", channels => $channel_tupple, standard => 1);
-            log_info("info message", channels => $channel_tupple, standard => 1);
-            log_warning("warn message", channels => $channel_tupple, standard => 1);
-            log_error("error message", channels => $channel_tupple, standard => 1);
+            log_trace('trace message', channels => $channel_tupple, standard => 1);
+            log_debug('debug message', channels => $channel_tupple, standard => 1);
+            log_info('info message', channels => $channel_tupple, standard => 1);
+            log_warning('warn message', channels => $channel_tupple, standard => 1);
+            log_error('error message', channels => $channel_tupple, standard => 1);
 
             throws_ok { log_fatal('fatal message', channels => $channel_tupple, standard => 1) } qr/fatal message/,
               'exception raised';
@@ -327,11 +327,11 @@ subtest 'Logs to bogus channels' => sub {
             add_log_channel($channel_tupple->[0], path => $logging_test_file1, level => $level);
             add_log_channel($channel_tupple->[1], path => $logging_test_file2, level => $level);
 
-            log_trace("trace message", channels => ['test', 'test1']);
-            log_debug("debug message", channels => ['test', 'test1']);
-            log_info("info message", channels => ['test', 'test1']);
-            log_warning("warn message", channels => ['test', 'test1']);
-            log_error("error message", channels => ['test', 'test1']);
+            log_trace('trace message', channels => ['test', 'test1']);
+            log_debug('debug message', channels => ['test', 'test1']);
+            log_info('info message', channels => ['test', 'test1']);
+            log_warning('warn message', channels => ['test', 'test1']);
+            log_error('error message', channels => ['test', 'test1']);
 
             throws_ok { log_fatal('fatal message', channels => ['test', 'test1']) } qr/fatal message/,
               'exception raised';
@@ -378,11 +378,11 @@ subtest 'Logs to default channels' => sub {
         add_log_channel('channel 1', path => $logging_test_file1, level => $level, default => 'set');
         add_log_channel('channel 2', path => $logging_test_file2, level => $level);
 
-        log_trace("trace message");
-        log_debug("debug message");
-        log_info("info message");
-        log_warning("warn message");
-        log_error("error message");
+        log_trace('trace message');
+        log_debug('debug message');
+        log_info('info message');
+        log_warning('warn message');
+        log_error('error message');
 
         throws_ok { log_fatal('fatal message') } qr/fatal message/, 'exception raised';
 
@@ -402,11 +402,11 @@ subtest 'Logs to default channels' => sub {
 
         add_log_channel('channel 2', path => $logging_test_file2, level => $level, default => 'append');
 
-        log_trace("trace message");
-        log_debug("debug message");
-        log_info("info message");
-        log_warning("warn message");
-        log_error("error message");
+        log_trace('trace message');
+        log_debug('debug message');
+        log_info('info message');
+        log_warning('warn message');
+        log_error('error message');
 
         throws_ok { log_fatal('fatal message') } qr/fatal message/, 'exception raised';
 
@@ -424,11 +424,11 @@ subtest 'Logs to default channels' => sub {
         truncate $logging_test_file1, 0;
         truncate $logging_test_file2, 0;
 
-        log_trace("trace message");
-        log_debug("debug message");
-        log_info("info message");
-        log_warning("warn message");
-        log_error("error message");
+        log_trace('trace message');
+        log_debug('debug message');
+        log_info('info message');
+        log_warning('warn message');
+        log_error('error message');
 
         throws_ok { log_fatal('fatal message') } qr/fatal message/, 'exception raised';
 
@@ -446,11 +446,11 @@ subtest 'Logs to default channels' => sub {
         truncate $logging_test_file1, 0;
         truncate $logging_test_file2, 0;
 
-        log_trace("trace message");
-        log_debug("debug message");
-        log_info("info message");
-        log_warning("warn message");
-        log_error("error message");
+        log_trace('trace message');
+        log_debug('debug message');
+        log_info('info message');
+        log_warning('warn message');
+        log_error('error message');
 
         throws_ok { log_fatal('fatal message') } qr/fatal message/, 'exception raised';
 

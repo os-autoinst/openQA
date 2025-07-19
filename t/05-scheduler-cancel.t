@@ -33,7 +33,7 @@ embed_server_for_testing(
 sub job_get {
     my ($id) = @_;
 
-    my $job = $schema->resultset("Jobs")->find({id => $id});
+    my $job = $schema->resultset('Jobs')->find({id => $id});
     return $job;
 }
 
@@ -64,12 +64,12 @@ is_deeply(
             parallel_parents => [99961],
         },
     },
-    "99963 is part of a duett"
+    '99963 is part of a duett'
 );
 my $new_job = $job->auto_duplicate;
-ok($new_job, "got new job id " . $new_job->id);
+ok($new_job, 'got new job id ' . $new_job->id);
 
-is($new_job->state, 'scheduled', "new job is scheduled");
+is($new_job->state, 'scheduled', 'new job is scheduled');
 is_deeply(
     $new_job->cluster_jobs,
     {
@@ -96,12 +96,12 @@ is_deeply(
             parallel_parents => [99982],
         },
     },
-    "new job is part of a new duett"
+    'new job is part of a new duett'
 );
 
 $job = job_get(99963);
-is($job->state, 'running', "old job is running");
-is($job->t_finished, undef, "There is a no finish time yet");
+is($job->state, 'running', 'old job is running');
+is($job->t_finished, undef, 'There is a no finish time yet');
 
 sub lj {
     # check the call succeeds every time, only output if verbose
@@ -131,49 +131,49 @@ is $job->reason, 'cancelled by scheduled product 42', 'jobs cancellation reason 
 lj;
 
 $job = $new_job->discard_changes;
-is($job->state, 'cancelled', "new job is cancelled");
-ok($job->t_finished, "There is a finish time");
+is($job->state, 'cancelled', 'new job is cancelled');
+ok($job->t_finished, 'There is a finish time');
 
 $job = job_get(99963);
-is($job->state, 'cancelled', "old job cancelled as well");
+is($job->state, 'cancelled', 'old job cancelled as well');
 
 $job = job_get(99982);
-is($job->state, 'cancelled', "new job 99982 cancelled");
+is($job->state, 'cancelled', 'new job 99982 cancelled');
 
 $job = job_get(99983);
-is($job->state, 'cancelled', "new job 99983 cancelled");
+is($job->state, 'cancelled', 'new job 99983 cancelled');
 
 $job = job_get(99928);
-is($job->state, 'scheduled', "unrelated job 99928 still scheduled");
+is($job->state, 'scheduled', 'unrelated job 99928 still scheduled');
 $job = job_get(99927);
-is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
+is($job->state, 'scheduled', 'unrelated job 99927 still scheduled');
 
 $job = job_get(99928);
 $ret = $job->cancel(USER_CANCELLED);
-is($ret, 1, "one job cancelled by id");
+is($ret, 1, 'one job cancelled by id');
 
 $job = job_get(99928);
-is($job->state, 'cancelled', "job 99928 cancelled");
+is($job->state, 'cancelled', 'job 99928 cancelled');
 $job = job_get(99927);
-is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
+is($job->state, 'scheduled', 'unrelated job 99927 still scheduled');
 
 
 $new_job = job_get(99981)->auto_duplicate;
-ok($new_job, "duplicate new job for iso test");
+ok($new_job, 'duplicate new job for iso test');
 
 $job = $new_job;
-is($job->state, 'scheduled', "new job is scheduled");
+is($job->state, 'scheduled', 'new job is scheduled');
 
 lj;
 
 $form = {ISO => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'};
 $ret = $schema->resultset('Jobs')->cancel_by_settings($form);
-is($ret, 1, "one job cancelled by iso");
+is($ret, 1, 'one job cancelled by iso');
 is_deeply(OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
     $form, 'Cancellation was logged with settings');
 
 $job = job_get(99927);
-is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
+is($job->state, 'scheduled', 'unrelated job 99927 still scheduled');
 
 my %settings = (
     DISTRI => 'Unicorn',
@@ -181,7 +181,7 @@ my %settings = (
     VERSION => '42',
     BUILD => '666',
     ISO => 'whatever.iso',
-    MACHINE => "RainbowPC",
+    MACHINE => 'RainbowPC',
     ARCH => 'x86_64',
 );
 

@@ -43,7 +43,7 @@ subtest 'Create custom job module' => sub {
     $_settings{TEST} = 'TEST1';
     my $job = _job_create(\%_settings);
     my $result = OpenQA::Parser::Result::OpenQA->new(
-        details => [{text => "Test-CUSTOM.txt", title => 'CUSTOM'}],
+        details => [{text => 'Test-CUSTOM.txt', title => 'CUSTOM'}],
         name => 'random',
         result => 'fail',
         test => OpenQA::Parser::Result::Test->new(name => 'CUSTOM', category => 'w00t!'));

@@ -41,7 +41,7 @@ my $sum = OpenQA::File->file_digest($filename);
 
 subtest 'upload public assets' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/public/hdd_image2.qcow2.CHUNKS/';
-    my $rp = "t/data/openqa/share/factory/hdd/hdd_image2.qcow2";
+    my $rp = 't/data/openqa/share/factory/hdd/hdd_image2.qcow2';
 
     lives_ok {
         $t->ua->upload->asset(99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image2.qcow2'})
@@ -57,7 +57,7 @@ subtest 'upload public assets' => sub {
 
 subtest 'upload public assets (local)' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/public/hdd_image5.qcow2.CHUNKS/';
-    my $rp = "t/data/openqa/share/factory/hdd/hdd_image5.qcow2";
+    my $rp = 't/data/openqa/share/factory/hdd/hdd_image5.qcow2';
 
     lives_ok {
         $t->ua->upload->asset(
@@ -74,7 +74,7 @@ subtest 'upload public assets (local)' => sub {
 
 subtest 'upload private assets' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/private/00099963-hdd_image3.qcow2.CHUNKS/';
-    my $rp = "t/data/openqa/share/factory/hdd/00099963-hdd_image3.qcow2";
+    my $rp = 't/data/openqa/share/factory/hdd/00099963-hdd_image3.qcow2';
 
     my ($local_prepare, $chunk_prepare);
     my $local_prepare_cb = $t->ua->upload->on('upload_local.prepare' => sub { $local_prepare++ });
@@ -98,7 +98,7 @@ subtest 'upload private assets' => sub {
 
 subtest 'upload private assets (local)' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/private/00099963-hdd_image7.qcow2.CHUNKS/';
-    my $rp = "t/data/openqa/share/factory/hdd/00099963-hdd_image7.qcow2";
+    my $rp = 't/data/openqa/share/factory/hdd/00099963-hdd_image7.qcow2';
 
     my ($local_prepare, $chunk_prepare);
     my $local_prepare_cb = $t->ua->upload->on('upload_local.prepare' => sub { $local_prepare++ });
@@ -128,7 +128,7 @@ subtest 'upload private assets (local)' => sub {
 
 subtest 'upload other assets' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963/00099963-hdd_image3.xml.CHUNKS';
-    my $rp = "t/data/openqa/share/factory/other/00099963-hdd_image3.xml";
+    my $rp = 't/data/openqa/share/factory/other/00099963-hdd_image3.xml';
 
     $t->ua->upload->once(
         'upload_chunk.response' => sub {
@@ -149,7 +149,7 @@ subtest 'upload other assets' => sub {
 
 subtest 'upload retries' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image4.xml.CHUNKS/';
-    my $rp = "t/data/openqa/share/factory/other/00099963-hdd_image4.xml";
+    my $rp = 't/data/openqa/share/factory/other/00099963-hdd_image4.xml';
 
     # Sabotage!
     my $fired;
@@ -178,7 +178,7 @@ subtest 'upload retries' => sub {
 
 subtest 'upload failures' => sub {
     my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image5.xml.CHUNKS/';
-    my $rp = "t/data/openqa/share/factory/other/00099963-hdd_image5.xml";
+    my $rp = 't/data/openqa/share/factory/other/00099963-hdd_image5.xml';
 
     # Moar Sabotage!
     my $fired;
@@ -210,12 +210,12 @@ subtest 'upload internal errors' => sub {
     $client->base_url($base_url);
 
     my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image6.xml.CHUNKS/';
-    my $rp = "t/data/openqa/share/factory/other/00099963-hdd_image6.xml";
+    my $rp = 't/data/openqa/share/factory/other/00099963-hdd_image6.xml';
 
     # Moar Sabotage!
     my $fail_chunk;
     my $e;
-    $t->ua->upload->on('upload_chunk.response' => sub { die("Subdly") });
+    $t->ua->upload->on('upload_chunk.response' => sub { die('Subdly') });
     $t->ua->upload->on('upload_chunk.request_err' => sub { $fail_chunk++; $e = pop(); });
 
     lives_ok {

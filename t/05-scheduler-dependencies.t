@@ -453,19 +453,19 @@ subtest 'clone and schedule parallel cluster' => sub {
     # now free two of them and create one more worker. So that we
     # have 6 free, but have vlan 1 still busy
     $_->done(result => PASSED) for ($jobC, $jobF);
-    $c->_register($schema, 'host', "10", \%workercaps);
+    $c->_register($schema, 'host', '10', \%workercaps);
     _schedule();
 
     ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned") or die "A2 $jobA2 wasn't scheduled";
     $job = $sent->{job}->{$jobA2}->{jobhash};
-    is($job->{id}, $jobA2, "jobA2");    # lowest prio of jobs without parents
-    is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
+    is($job->{id}, $jobA2, 'jobA2');    # lowest prio of jobs without parents
+    is($job->{settings}->{NICVLAN}, 2, 'different vlan') or die explain $job;
 
     ok(exists $sent->{job}->{$jobB2}, " $jobB2 was assigned") or die "B2 $jobB2 wasn't scheduled";
     $job = $sent->{job}->{$jobB2}->{job}->to_hash;
-    is($job->{id}, $jobB2, "jobB2");    # lowest prio of jobs without parents
+    is($job->{id}, $jobB2, 'jobB2');    # lowest prio of jobs without parents
 
-    is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
+    is($job->{settings}->{NICVLAN}, 2, 'different vlan') or die explain $job;
 
     $jobB->done(result => PASSED);
     $jobs->find($_)->done(result => PASSED) for ($jobA2, $jobB2, $jobC2, $jobD2, $jobE2, $jobF2);
@@ -506,12 +506,12 @@ subtest 'simple chained dependency cloning' => sub {
     is($jobY->state, CANCELLED, 'jobY was cancelled');
     is($jobY->result, SKIPPED, 'jobY was skipped');
     my $jobY2 = $jobY->clone;
-    ok(defined $jobY2, "jobY was cloned too");
-    is($jobY2->blocked_by_id, $jobX2->id, "JobY2 is blocked");
+    ok(defined $jobY2, 'jobY was cloned too');
+    is($jobY2->blocked_by_id, $jobX2->id, 'JobY2 is blocked');
     is_deeply(
         $jobY2->to_hash(deps => 1)->{parents},
         {Chained => [$jobX2->id], Parallel => [], 'Directly chained' => []},
-        "JobY parents fit"
+        'JobY parents fit'
     );
     is($jobX2->id, $jobY2->parents->single->parent_job_id, 'jobY2 parent is now jobX clone');
     is($jobX2->clone, undef, 'no clone');
@@ -883,7 +883,7 @@ subtest 'clone chained child with siblings; then clone chained parent' =>
 
     # clone A
     $jobA->discard_changes;
-    ok(!$jobA->clone, "jobA not yet cloned");
+    ok(!$jobA->clone, 'jobA not yet cloned');
     my $jobA2 = $jobA->auto_duplicate;
     ok($jobA2, 'jobA duplicated');
     $jobA->discard_changes;
@@ -954,7 +954,7 @@ subtest 'clone chained parent while children are running' => sub {
     $jobA2->state(RUNNING);
     $jobA2->update;
     my $jobA3 = $jobA2->auto_duplicate;
-    ok($jobA3, "cloned A2");
+    ok($jobA3, 'cloned A2');
     $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
     # check all children were cloned anymore and has $jobA3 as parent

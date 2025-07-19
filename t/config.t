@@ -40,9 +40,9 @@ subtest 'Test configuration default modes' => sub {
     local $ENV{OPENQA_CONFIG} = $t_dir;
 
     OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
-    $app->mode("test");
+    $app->mode('test');
     my $config = read_config($app, 'reading config from default with mode test');
-    is(length($config->{_openid_secret}), 16, "config has openid_secret");
+    is(length($config->{_openid_secret}), 16, 'config has openid_secret');
     my $test_config = {
         global => {
             appname => 'openQA',
@@ -203,7 +203,7 @@ subtest 'Test configuration default modes' => sub {
 
     # Test configuration generation with "test" mode
     $test_config->{_openid_secret} = $config->{_openid_secret};
-    $test_config->{logging}->{level} = "debug";
+    $test_config->{logging}->{level} = 'debug';
     $test_config->{global}->{service_port_delta} = 2;
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
     ok delete $config->{'test_preset example'}, 'default values for example tests assigned';
@@ -222,7 +222,7 @@ subtest 'Test configuration default modes' => sub {
     $app = Mojolicious->new(mode => 'foo_bar');
     $config = read_config($app, 'reading config from default with mode foo_bar');
     $test_config->{_openid_secret} = $config->{_openid_secret};
-    $test_config->{auth}->{method} = "OpenID";
+    $test_config->{auth}->{method} = 'OpenID';
     $test_config->{global}->{service_port_delta} = 2;
     delete $config->{global}->{auto_clone_regex};
     delete $config->{'test_preset example'};
@@ -248,10 +248,10 @@ subtest 'Test configuration override from file' => sub {
         "ignored_failed_minion_jobs = foo boo\n"
 
     );
-    $t_dir->child("openqa.ini")->spew(join '', @data);
+    $t_dir->child('openqa.ini')->spew(join '', @data);
     combined_like sub { OpenQA::Setup::read_config($app) }, qr/Deprecated.*blacklist/, 'notice about deprecated key';
 
-    ok -e $t_dir->child("openqa.ini");
+    ok -e $t_dir->child('openqa.ini');
     ok $app->config->{global}->{suse_mirror} eq 'http://blah/', 'suse mirror';
     ok $app->config->{audit}->{blocklist} eq 'job_grab job_done', 'audit blocklist migrated from deprecated key name';
     is $app->config->{'assets/storage_duration'}->{'-CURRENT'}, 40, 'assets/storage_duration';

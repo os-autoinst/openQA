@@ -395,7 +395,7 @@ subtest 'Job aborted because backend process died, multiple lines' => sub {
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spew(qq({"msg": "Lorem ipsum\\nDolor sit amet"}));
+            $state_file->spew(q({"msg": "Lorem ipsum\nDolor sit amet"}));
             $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
@@ -419,7 +419,7 @@ subtest 'Job aborted, broken state file' => sub {
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spew(qq({"msg": "test", ));
+            $state_file->spew(q({"msg": "test", ));
             $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
@@ -450,7 +450,7 @@ subtest 'Job aborted, broken state file' => sub {
 
 subtest 'Job aborted, statefile contains result' => sub {
     my $state_file = $pool_directory->child('base_state.json');
-    $state_file->spew(qq({"msg": "test", "result": "incomplete"}));
+    $state_file->spew(q({"msg": "test", "result": "incomplete"}));
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
     $job->_set_job_done('test-reason', {}, undef);
     is @{$client->sent_messages}[-1]->{result}, 'incomplete', 'result propagated'
@@ -1379,7 +1379,7 @@ subtest 'override job reason when qemu terminated with known issues by parsing a
 subtest 'Cache setup error handling' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
     $worker->settings->global_settings->{CACHEDIRECTORY} = '/var/lib/openqa/cache';
-    my $extended_reason = "do_asset_caching return error";
+    my $extended_reason = 'do_asset_caching return error';
     $engine_mock->redefine(
         do_asset_caching => sub ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir, $callback) {
             return $callback->({error => $extended_reason});

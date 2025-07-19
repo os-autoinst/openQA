@@ -50,13 +50,13 @@ BEGIN { $INC{$_}++ for qw( DB/Skip.pm UDAG/VendorBox/Log/Auto.pm ) }
 
 sub B::Deparse::pp_await {    # fix await parsing
     my ($self, $op, $cx) = @_;
-    return $self->maybe_parens_unop("await", $op->first, $cx);
+    return $self->maybe_parens_unop('await', $op->first, $cx);
 }
 
 # dumb way to handle these, simply silences them instead of deparsing them
 # optimally the code below would be implemented
-sub B::Deparse::pp_leaveasync { "XXX;" }
-sub B::Deparse::pp_pushmark { "XXX;" }
+sub B::Deparse::pp_leaveasync { 'XXX;' }
+sub B::Deparse::pp_pushmark { 'XXX;' }
 
 package Syntax::Keyword::Try::DeparseUDFix;
 use strict;
@@ -84,7 +84,7 @@ sub pp_leave {    # fix https://rt.cpan.org/Ticket/Display.html?id=134812
     no warnings;
     return $self->$orig_pp_leave(@_) if $enter->type != OP_ENTER;
 
-    my $meth = ref $enter->sibling eq "B::COP" ? $orig_pp_leave : $patched_pp_leave;
+    my $meth = ref $enter->sibling eq 'B::COP' ? $orig_pp_leave : $patched_pp_leave;
     return $self->$meth(@_);
 }
 

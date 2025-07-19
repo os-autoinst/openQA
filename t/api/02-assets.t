@@ -42,7 +42,7 @@ touch_isos [$iso1, $iso2];
 my $listing = [
     {
         name => $iso1,
-        type => "iso",
+        type => 'iso',
         size => undef,
         checksum => undef,
         last_use_job_id => undef,
@@ -50,7 +50,7 @@ my $listing = [
     },
     {
         name => $iso2,
-        type => "iso",
+        type => 'iso',
         size => undef,
         checksum => undef,
         last_use_job_id => undef,
@@ -70,10 +70,10 @@ la;
 # check data
 $t->get_ok('/api/v1/assets/iso/' . $iso1)->status_is(200);
 delete $t->tx->res->json->{$_} for qw/t_updated t_created/;
-$t->json_is('' => $listing->[0], "asset correctly entered by name");
+$t->json_is('' => $listing->[0], 'asset correctly entered by name');
 $t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200);
 delete $t->tx->res->json->{$_} for qw/t_updated t_created/;
-$t->json_is('' => $listing->[0], "asset correctly entered by id");
+$t->json_is('' => $listing->[0], 'asset correctly entered by id');
 $t->get_ok('/api/v1/assets/iso/' . $iso2)->status_is(404, 'iso does not exist');
 
 $t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso2})->status_is(200, 'second asset posted');
@@ -83,12 +83,12 @@ isnt($listing->[0]->{id}, $listing->[1]->{id}, 'new assets has a distinct ID');
 # check data
 $t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200);
 delete $t->tx->res->json->{$_} for qw/t_updated t_created/;
-$t->json_is('' => $listing->[1], "asset correctly entered by ID");
+$t->json_is('' => $listing->[1], 'asset correctly entered by ID');
 
 # check listing
 $t->get_ok('/api/v1/assets')->status_is(200);
 delete $t->tx->res->json->{assets}->[6]->{$_} for qw/t_updated t_created/;
-$t->json_is('/assets/6' => $listing->[0], "listing ok");
+$t->json_is('/assets/6' => $listing->[0], 'listing ok');
 
 #check user specified and server-side limit
 subtest 'server-side limit has precedence over user-specified limit' => sub {
@@ -211,7 +211,7 @@ la;
 $t->delete_ok('/api/v1/assets/1a')->status_is(404, 'assert with invalid ID');
 $t->delete_ok('/api/v1/assets/99')->status_is(404, 'asset does not exist');
 $t->delete_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200, 'asset deleted')
-  ->json_is('/count' => 1, "one asset deleted");
+  ->json_is('/count' => 1, 'one asset deleted');
 
 $t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(404, 'asset was deleted');
 ok(!-e iso_path($iso1), 'iso file 1 has been removed');
@@ -220,7 +220,7 @@ ok(-e iso_path($iso2), 'iso file 2 is still there');
 
 touch_isos [$iso1];
 $t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'registering again works')
-  ->json_is('/id' =>, $listing->[1]->{id} + 1, "asset has next id");
+  ->json_is('/id' =>, $listing->[1]->{id} + 1, 'asset has next id');
 
 $t->delete_ok('/api/v1/assets/iso/' . $iso2)->status_is(200, 'delete asset by name');
 ok(!-e iso_path($iso2), 'iso file 2 has been removed');

@@ -25,7 +25,7 @@ subtest 'Perl modules' => sub {
         '/data/results/code/1' => {
             occurrence => 'opensuse/tests/installation/installer_timezone.pm',
             contents => qq{    3 # Summary: Verify timezone settings page\n}
-              . qq{   10     assert_screen "inst-timezone", 125 || die 'no timezone';}
+              . qq{   10     assert_screen 'inst-timezone', 125 || die 'no timezone';}
         },
         'contents found'
     );
@@ -69,7 +69,7 @@ subtest 'Job modules' => sub {
     $t->json_is(
         '/data/results/modules/0' => {
             occurrence => 'lorem',
-            contents => "tests/lorem/ipsum.pm\n" . "tests/lorem/ipsum_dolor.py"
+            contents => "tests/lorem/ipsum.pm\n" . 'tests/lorem/ipsum_dolor.py'
         },
         'job module found'
     );
@@ -137,8 +137,8 @@ subtest 'Errors' => sub {
     $t->get_ok('/api/v1/experimental/search?q=*', 'wildcard is interpreted literally');
     $t->json_is(
         '/data/results/code/0' => {
-            occurrence => "opensuse\/tests\/openQA\/search.py",
-            contents => "    1 from testapi import *",
+            occurrence => 'opensuse/tests/openQA/search.py',
+            contents => '    1 from testapi import *',
         },
         '* finds literal *'
     );

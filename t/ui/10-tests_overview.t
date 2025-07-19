@@ -123,7 +123,7 @@ prepare_database;
 driver_missing unless my $driver = call_driver;
 disable_timeout;
 
-$driver->title_is("openQA", "on main page");
+$driver->title_is('openQA', 'on main page');
 my $baseurl = $driver->get_current_url();
 
 # Test initial state of checkboxes and applying changes
@@ -401,7 +401,7 @@ subtest 'filtering by module' => sub {
     my $JOB_ICON_SELECTOR = 'td[id^="res_DVD_"]';
     my $result = 'failed';
 
-    subtest "jobs containing the module with any result are present" => sub {
+    subtest 'jobs containing the module with any result are present' => sub {
         my $number_of_found_jobs = 3;
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
@@ -412,7 +412,7 @@ subtest 'filtering by module' => sub {
         element_visible('#res_DVD_x86_64_doc');
     };
 
-    subtest "jobs containing the module with the specified result are present" => sub {
+    subtest 'jobs containing the module with the specified result are present' => sub {
         my $number_of_found_jobs = 1;
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
@@ -420,7 +420,7 @@ subtest 'filtering by module' => sub {
         is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found");
         element_visible('#res_DVD_i586_kde');
     };
-    subtest "jobs containing all the modules with the specified result are present" => sub {
+    subtest 'jobs containing all the modules with the specified result are present' => sub {
         my $number_of_found_jobs = 4;
         $driver->get("/tests/overview?arch=&distri=opensuse&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
@@ -432,7 +432,7 @@ subtest 'filtering by module' => sub {
         element_visible('#res_DVD_i586_textmode');
         element_visible('#res_DVD_x86_64_doc');
     };
-    subtest "jobs containing all the modules separated by comma are present" => sub {
+    subtest 'jobs containing all the modules separated by comma are present' => sub {
         my $modules = 'kate,zypper_up';
         my $number_of_found_jobs = 2;
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$modules&modules_result=$result");
@@ -449,7 +449,7 @@ subtest 'filtering by module_re' => sub {
     my $job_icon_selector = 'td[id^="res_DVD_"]';
     my $result = 'failed';
 
-    subtest "jobs containing the module with any result are present" => sub {
+    subtest 'jobs containing the module with any result are present' => sub {
         my $number_of_found_jobs = 3;
         $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re");
         my @jobs = $driver->find_elements($job_icon_selector);
@@ -460,7 +460,7 @@ subtest 'filtering by module_re' => sub {
         element_visible('#res_DVD_x86_64_doc');
     };
 
-    subtest "jobs containing the module with the specified result are present" => sub {
+    subtest 'jobs containing the module with the specified result are present' => sub {
         my $number_of_found_jobs = 1;
         $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re&modules_result=$result");
         my @jobs = $driver->find_elements($job_icon_selector);
@@ -471,7 +471,7 @@ subtest 'filtering by module_re' => sub {
 
 };
 
-subtest "filtering by machine" => sub {
+subtest 'filtering by machine' => sub {
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
 
     subtest 'by default, all machines for all flavors present' => sub {

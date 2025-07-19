@@ -79,7 +79,7 @@ subtest 'test changing existing entries' => sub {
     # overwrite testsuite settings
     $t->get_ok("http://$host/api/v1/test_suites?name=uefi")->status_is(200);
     my $test_suite_id = $t->tx->res->json->{TestSuites}->[0]->{id};
-    $t->put_ok("http://$host/api/v1/test_suites/$test_suite_id", json => {name => "uefi", settings => {UEFI => '42'}})
+    $t->put_ok("http://$host/api/v1/test_suites/$test_suite_id", json => {name => 'uefi', settings => {UEFI => '42'}})
       ->status_is(200);
 
     # check overwriting testsuite settings
@@ -165,7 +165,7 @@ ok !$legjg->template, 'legacy group has no template';
 subtest 'dump_templates tests' => sub {
     $args = $base_args;
     dump_templates "$args Products42", qr/Invalid table.*42/, 'Error on non-existant table', 1, 'table error';
-    $args .= " --test uefi --machine 128bit --group opensuse --product bar --full JobTemplates";
+    $args .= ' --test uefi --machine 128bit --group opensuse --product bar --full JobTemplates';
     $expected = qr/JobTemplates\s*=> \[.*group_name\s*=> "opensuse"/s;
     dump_templates $args, $expected, 'dump_templates with options', 0, 'dump_templates success with options';
     # this test intends to hit job_templates_scheduling/openSUSE Leap 42
@@ -200,9 +200,9 @@ test_once $args, $expected, 'imported MOAR fixtures';
 $args = "--host $host --apikey $apikey --apisecret $apisecret --clean $filename";
 $expected = qr/Machines.+=> \{ added => 1, of => 1 \}/;
 test_once $args, $expected, 'imported original fixtures';
-is $schema->resultset('Machines')->count, 1, "only one machine is loaded";
+is $schema->resultset('Machines')->count, 1, 'only one machine is loaded';
 my $machine = $schema->resultset('Machines')->first;
-is $machine->name, "128bit", "correct machine is loaded";
+is $machine->name, '128bit', 'correct machine is loaded';
 
 # Clear the data in relevant tables again
 $schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates JobGroups);

@@ -30,9 +30,9 @@ ok($oldest_still_supported_schema_version, 'found oldest still supported schema 
 sub ensure_schema_is_created_and_empty {
     my $dbh = shift->storage->dbh;
     $dbh->do('SET client_min_messages TO WARNING;');
-    $dbh->do("drop schema if exists deploy cascade");
-    $dbh->do("create schema deploy");
-    $dbh->do("SET search_path TO deploy");
+    $dbh->do('drop schema if exists deploy cascade');
+    $dbh->do('create schema deploy');
+    $dbh->do('SET search_path TO deploy');
 }
 my $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0, from_script => 1);
 ensure_schema_is_created_and_empty $schema;

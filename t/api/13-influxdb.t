@@ -22,13 +22,13 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{global}->{base_url} = 'http://example.com';
 
 $t->get_ok('/admin/influxdb/jobs')->status_is(200)->content_is(
-    "openqa_jobs,url=http://example.com blocked=0i,running=2i,scheduled=2i
+    'openqa_jobs,url=http://example.com blocked=0i,running=2i,scheduled=2i
 openqa_jobs_by_group,url=http://example.com,group=No\\ Group scheduled=1i
 openqa_jobs_by_group,url=http://example.com,group=opensuse running=1i,scheduled=1i
 openqa_jobs_by_group,url=http://example.com,group=opensuse\\ test running=1i
 openqa_jobs_by_arch,url=http://example.com,arch=i586 scheduled=2i
 openqa_jobs_by_arch,url=http://example.com,arch=x86_64 running=2i
-"
+'
 );
 
 $t->get_ok('/admin/influxdb/minion')->status_is(200)
@@ -72,7 +72,7 @@ q!INSERT INTO minion_jobs (id, args, created, delayed, finished, priority, resul
       ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=0i,inactive=2i!)
       ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=1i 3600000000000!)
       ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
-    $sth = $dbh->prepare("DELETE FROM minion_jobs WHERE id = 7291599");
+    $sth = $dbh->prepare('DELETE FROM minion_jobs WHERE id = 7291599');
     $sth->execute();
 };
 

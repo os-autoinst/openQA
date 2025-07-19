@@ -52,7 +52,7 @@ dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data testresu
 # mock asset deletion
 # * prevent removing assets from database and file system
 # * keep track of calls to OpenQA::Schema::Result::Assets::delete and OpenQA::Schema::Result::Assets::remove_from_disk
-my $tempdir = tempdir("assets-XXXX", TMPDIR => 1);
+my $tempdir = tempdir('assets-XXXX', TMPDIR => 1);
 my $deleted = $tempdir->child('deleted');
 my $removed = $tempdir->child('removed');
 sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
@@ -704,7 +704,7 @@ subtest 'handling dying GRU task' => sub {
 };
 
 subtest 'download assets with correct permissions' => sub {
-    my $local_domain = "127.0.0.1";
+    my $local_domain = '127.0.0.1';
     my $assetsource = "http://$local_domain:$mojo_port/tests/99926/file/autoinst-log.txt";
     my $assetpath = 't/data/openqa/share/factory/iso/Core-7.2.iso';
 

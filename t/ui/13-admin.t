@@ -77,7 +77,7 @@ subtest 'add product' => sub() {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Medium types')->click();
 
-    $driver->title_is("openQA: Medium types", "on products");
+    $driver->title_is('openQA: Medium types', 'on products');
     wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
@@ -92,12 +92,12 @@ subtest 'add product' => sub() {
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(1)');
     my @cells = $driver->find_child_elements($elem, 'td');
-    is((shift @cells)->get_text(), "opensuse", "distri");
-    is((shift @cells)->get_text(), "13.1", "version");
-    is((shift @cells)->get_text(), "DVD", "flavor");
-    is((shift @cells)->get_text(), "i586", "arch");
+    is((shift @cells)->get_text(), 'opensuse', 'distri');
+    is((shift @cells)->get_text(), '13.1', 'version');
+    is((shift @cells)->get_text(), 'DVD', 'flavor');
+    is((shift @cells)->get_text(), 'i586', 'arch');
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, "3 edit buttons/media before");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons/media before');
 
     is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
 
@@ -113,7 +113,7 @@ subtest 'add product' => sub() {
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, "4 edit buttons/media afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, '4 edit buttons/media afterwards');
 
     # check the distri name will be lowercase after added a new one
     is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
@@ -132,7 +132,7 @@ subtest 'add product' => sub() {
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 5, "5 edit buttons/media afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 5, '5 edit buttons/media afterwards');
 };
 
 subtest 'add machine' => sub() {
@@ -140,7 +140,7 @@ subtest 'add machine' => sub() {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Machines')->click();
 
-    $driver->title_is("openQA: Machines", "on machines list");
+    $driver->title_is('openQA: Machines', 'on machines list');
     wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
@@ -154,11 +154,11 @@ subtest 'add machine' => sub() {
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)');
     my @cells = $driver->find_child_elements($elem, 'td');
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @cells)->get_text(), "Laptop_64", "name");
-    is((shift @cells)->get_text(), "qemu", "backend");
-    is((shift @cells)->get_text(), "LAPTOP=1\nQEMUCPU=qemu64", "cpu");
+    is((shift @cells)->get_text(), 'Laptop_64', 'name');
+    is((shift @cells)->get_text(), 'qemu', 'backend');
+    is((shift @cells)->get_text(), "LAPTOP=1\nQEMUCPU=qemu64", 'cpu');
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, "3 edit buttons before");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons before');
 
     is($driver->find_element_by_xpath('//input[@value="New machine"]')->click(), 1, 'new machine');
 
@@ -174,7 +174,7 @@ subtest 'add machine' => sub() {
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, "4 edit buttons afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, '4 edit buttons afterwards');
 };
 
 subtest 'add test suite' => sub() {
@@ -182,7 +182,7 @@ subtest 'add test suite' => sub() {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Test suites')->click();
 
-    $driver->title_is("openQA: Test suites", "on test suites");
+    $driver->title_is('openQA: Test suites', 'on test suites');
     wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
@@ -287,16 +287,16 @@ subtest 'add test suite' => sub() {
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 
     $elem = $driver->find_element('.dt-search input');
-    $elem->send_keys("^kde");
+    $elem->send_keys('^kde');
     @fields = $driver->find_elements('.admintable tbody tr');
-    is(@fields, 1, "search using regex");
+    is(@fields, 1, 'search using regex');
 };
 
 subtest 'add job group' => sub() {
     # navigate to job groups
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Job groups')->click();
-    $driver->title_is("openQA: Job groups", "on groups");
+    $driver->title_is('openQA: Job groups', 'on groups');
 
     # check whether all job groups from fixtures are displayed
     my $list_element = $driver->find_element_by_id('job_group_list');
@@ -581,7 +581,7 @@ subtest 'edit job templates' => sub() {
     $driver->switch_to_window($second_tab);
     $form = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
-    $yaml .= " # additional comment";
+    $yaml .= ' # additional comment';
     my $jsyaml = $yaml =~ s/\n/\\n/gr;
     $driver->execute_script("editor.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
@@ -593,7 +593,7 @@ subtest 'edit job templates' => sub() {
     $driver->switch_to_window($first_tab);
     $form = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
-    $jsyaml .= " # one more comment\\n";
+    $jsyaml .= ' # one more comment\n';
     $driver->execute_script("editor.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
@@ -629,7 +629,7 @@ subtest 'asset list' => sub {
 
     my $asset_table_url = '/admin/assets?force_refresh=1';
     $driver->get($asset_table_url);
-    $driver->title_is("openQA: Assets", "on asset");
+    $driver->title_is('openQA: Assets', 'on asset');
     wait_for_ajax;
 
     ok(-f 't/data/openqa/webui/cache/asset-status.json', 'cache file created');
@@ -677,14 +677,14 @@ subtest 'asset list' => sub {
     wait_for_ajax;
 
     like(
-        $driver->find_element("div#flash-messages .alert span")->get_text,
+        $driver->find_element('div#flash-messages .alert span')->get_text,
         qr/The asset was deleted successfully/,
         'delete asset successfully'
     );
     $asset4_a->click();
     wait_for_ajax;
     is(
-        $driver->find_element("div#flash-messages .alert-danger span")->get_text,
+        $driver->find_element('div#flash-messages .alert-danger span')->get_text,
 'Error deleting asset: The asset might have already been removed and only the cached view has not been updated yet.',
         'The asset has been removed'
     );

@@ -59,7 +59,7 @@ my %settings = (
     DESKTOP => 'DESKTOP',
     KVM => 'KVM',
     ISO_MAXSIZE => 1,
-    MACHINE => "RainbowPC",
+    MACHINE => 'RainbowPC',
     ARCH => 'x86_64'
 );
 
@@ -159,15 +159,15 @@ $jobI->set_prio(10);
 $jobJ->set_prio(9);
 
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
-my $w1_id = $c->_register($schema, "host", "1", \%workercaps64_client);
-my $w2_id = $c->_register($schema, "host", "2", \%workercaps64_server);
-my $w3_id = $c->_register($schema, "host", "3", \%workercaps32);
-my $w4_id = $c->_register($schema, "host", "4", \%workercaps64);
-my $w5_id = $c->_register($schema, "host", "5", \%workercaps64_client);
-my $w6_id = $c->_register($schema, "host", "6", \%workercaps64);
-my $w7_id = $c->_register($schema, "host", "7", \%workercaps64_server);
-my $w8_id = $c->_register($schema, "host", "8", \%workercaps64);
-my $w9_id = $c->_register($schema, "host", "9", \%workercaps64_client);
+my $w1_id = $c->_register($schema, 'host', '1', \%workercaps64_client);
+my $w2_id = $c->_register($schema, 'host', '2', \%workercaps64_server);
+my $w3_id = $c->_register($schema, 'host', '3', \%workercaps32);
+my $w4_id = $c->_register($schema, 'host', '4', \%workercaps64);
+my $w5_id = $c->_register($schema, 'host', '5', \%workercaps64_client);
+my $w6_id = $c->_register($schema, 'host', '6', \%workercaps64);
+my $w7_id = $c->_register($schema, 'host', '7', \%workercaps64_server);
+my $w8_id = $c->_register($schema, 'host', '8', \%workercaps64);
+my $w9_id = $c->_register($schema, 'host', '9', \%workercaps64_client);
 
 schedule() for ($jobA, $jobB, $jobE, $jobF, $jobD, $jobC, $jobH, $jobJ, $jobI);
 ok exists $sent->{job}->{$_}, "$_ exists"
@@ -180,19 +180,19 @@ $job = $sent->{$w2_id}->{job}->to_hash;
 is($job->{id}, $jobB->id, "'server' job for 'server' worker");
 
 $job = $sent->{$w3_id}->{job}->to_hash;
-is($job->{id}, $jobE->id, "32bit worker gets 32bit job with highest prio");
+is($job->{id}, $jobE->id, '32bit worker gets 32bit job with highest prio');
 
 $job = $sent->{$w4_id}->{job}->to_hash;
-is($job->{id}, $jobF->id, "next job by prio");
+is($job->{id}, $jobF->id, 'next job by prio');
 
 $job = $sent->{$w5_id}->{job}->to_hash;
 is($job->{id}, $jobD->id, "next job by prio, 'client' worker can do jobs without class");
 
 $job = $sent->{$w6_id}->{job}->to_hash;
-is($job->{id}, $jobC->id, "next job by prio, 64bit worker can get 32bit job");
+is($job->{id}, $jobC->id, 'next job by prio, 64bit worker can get 32bit job');
 
 $job = $sent->{$w7_id}->{job}->to_hash;
-is($job->{id}, $jobH->id, "next job by prio, parent - server");
+is($job->{id}, $jobH->id, 'next job by prio, parent - server');
 
 $job = $sent->{$w8_id}->{job}->to_hash;
 is($job->{id}, $jobJ->id,
@@ -200,7 +200,7 @@ is($job->{id}, $jobJ->id,
 );
 
 $job = $sent->{$w9_id}->{job}->to_hash;
-is($job->{id}, $jobI->id, "this worker can do jobI, child - client");
+is($job->{id}, $jobI->id, 'this worker can do jobI, child - client');
 
 # job G is not grabbed because there is no worker with class 'special'
 

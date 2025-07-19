@@ -121,7 +121,7 @@ sub job_create_with_worker ($test, $parent = undef) {
 
     use OpenQA::WebAPI::Controller::API::V1::Worker;
     my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
-    my $w_id = $c->_register($schema, "host", $last_worker_instance, \%worker);
+    my $w_id = $c->_register($schema, 'host', $last_worker_instance, \%worker);
     ok($w_id, "Worker instance $last_worker_instance created");
     $last_worker_instance++;
 
@@ -267,9 +267,9 @@ sub test_barrier_destroy ($state, $test) {
     return 1;
 }
 
-test_barrier_destroy($_, "jA")
-  && test_barrier_destroy($_, "jB")
-  && test_barrier_destroy($_, "jC")
+test_barrier_destroy($_, 'jA')
+  && test_barrier_destroy($_, 'jB')
+  && test_barrier_destroy($_, 'jC')
   for OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 
 

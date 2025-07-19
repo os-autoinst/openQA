@@ -23,8 +23,8 @@ is($bugs->first->bugid, 'poo#200', 'Test bug inserted');
 subtest 'Properties' => sub {
     $t->get_ok('/api/v1/bugs')->json_is('/bugs/1' => 'poo#200', 'Bug entry exists');
     $t->get_ok('/api/v1/bugs?refreshable=1')->json_is('/bugs/1' => 'poo#200', 'Bug entry is refreshable');
-    $t->put_ok('/api/v1/bugs/1', form => {title => "foobar", existing => 1})->json_is('/id' => 1, 'Bug #1 updated');
-    $t->put_ok('/api/v1/bugs/2', form => {title => "foobar", existing => 1})->status_is(404, 'Bug #2 not yet existing');
+    $t->put_ok('/api/v1/bugs/1', form => {title => 'foobar', existing => 1})->json_is('/id' => 1, 'Bug #1 updated');
+    $t->put_ok('/api/v1/bugs/2', form => {title => 'foobar', existing => 1})->status_is(404, 'Bug #2 not yet existing');
     $t->get_ok('/api/v1/bugs/1')->json_is('/title', 'foobar', 'Bug has correct title');
     is_deeply(
         [sort keys %{$t->tx->res->json}],
@@ -35,7 +35,7 @@ subtest 'Properties' => sub {
 
 subtest 'Refreshable' => sub {
     $t->get_ok('/api/v1/bugs?refreshable=1')->json_is('/bugs', {}, 'All bugs are refreshed');
-    $t->post_ok('/api/v1/bugs', form => {title => "foobar2", bugid => 'poo#201', existing => 1, refreshed => 1})
+    $t->post_ok('/api/v1/bugs', form => {title => 'foobar2', bugid => 'poo#201', existing => 1, refreshed => 1})
       ->json_is('/id' => 2, 'Bug #2 created');
     return always_explain $t->tx->res->body unless $t->success;
     $t->get_ok('/api/v1/bugs/2')->json_is('/title' => 'foobar2', 'Bug #2 has correct title');
@@ -52,9 +52,9 @@ subtest 'Comments' => sub {
 };
 
 subtest 'Created since' => sub {
-    $t->post_ok('/api/v1/bugs', form => {title => "new", bugid => 'bsc#123'});
+    $t->post_ok('/api/v1/bugs', form => {title => 'new', bugid => 'bsc#123'});
     return always_explain $t->tx->res->body unless $t->success;
-    ok(my $bugid = $t->tx->res->json->{id}, "Bug ID returned") or return;
+    ok(my $bugid = $t->tx->res->json->{id}, 'Bug ID returned') or return;
     my $update_time = time;
     ok(my $bug = $bugs->find($bugid), "Bug $bugid found in the database") or return;
     $bug->update({t_created => time2str('%Y-%m-%d %H:%M:%S', $update_time - 490, 'UTC')});

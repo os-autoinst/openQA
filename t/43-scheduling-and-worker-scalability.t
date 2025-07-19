@@ -86,7 +86,7 @@ my $webui_port = service_port 'webui';
 my $webui_host = "http://localhost:$webui_port";
 my $worker_path = path($FindBin::Bin)->child('../script/worker');
 my $isotovideo_path = path($FindBin::Bin)->child('dummy-isotovideo.sh');
-$webui_host .= " http://localhost:12345" if $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST};
+$webui_host .= ' http://localhost:12345' if $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST};
 my @worker_args = (
     "--apikey=$api_key", "--apisecret=$api_secret", "--host=$webui_host", "--isotovideo=$isotovideo_path",
     '--verbose', '--no-cleanup',
@@ -117,7 +117,7 @@ sub log_jobs {
       # uncoverable statement
       = map {
         # uncoverable statement
-        sprintf("id: %s, state: %s, result: %s, reason: %s", $_->id, $_->state, $_->result, $_->reason // 'none')
+        sprintf('id: %s, state: %s, result: %s, reason: %s', $_->id, $_->state, $_->result, $_->reason // 'none')
       } $jobs->search({}, {order_by => 'id'});
     # uncoverable statement
     diag("All jobs:\n - " . join("\n - ", @job_info));
@@ -188,7 +188,7 @@ subtest 'assign and run jobs' => sub {
     }
 
     my $remaining_jobs = $job_count - $worker_count;
-    note("Assigned jobs: " . dumper($allocated));
+    note('Assigned jobs: ' . dumper($allocated));
     note('Remaining ' . ($remaining_jobs > 0 ? ('jobs: ' . $remaining_jobs) : ('workers: ' . -$remaining_jobs)));
     if ($remaining_jobs > 0) {
         is(scalar @$allocated, $worker_count, 'each worker has a job assigned');

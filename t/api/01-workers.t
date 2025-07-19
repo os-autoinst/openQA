@@ -311,9 +311,9 @@ subtest 'delete offline worker' => sub {
         OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_delete'),
         {
             id => $offline_worker_id,
-            name => "offline_test:5"
+            name => 'offline_test:5'
         },
-        "Delete worker was logged correctly."
+        'Delete worker was logged correctly.'
     );
 
     $t->delete_ok('/api/v1/workers/99')->status_is(404, 'worker not found');

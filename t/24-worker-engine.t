@@ -61,10 +61,10 @@ package Test::FakeClient {
 }    # uncoverable statement
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
-$ENV{OPENQA_HOSTNAME} = "localhost";
+$ENV{OPENQA_HOSTNAME} = 'localhost';
 
 sub get_job_json_data ($pool_dir) {
-    my $vars_json = path($pool_dir)->child("vars.json")->slurp;
+    my $vars_json = path($pool_dir)->child('vars.json')->slurp;
     return decode_json $vars_json;
 }
 

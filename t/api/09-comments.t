@@ -173,7 +173,7 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     $t->app->schema->txn_begin;
 
     for my $i (1 .. 9) {
-        $t->post_ok("/api/v1/jobs/99981/comments" => form => {text => "comment number $i"})->status_is(200);
+        $t->post_ok('/api/v1/jobs/99981/comments' => form => {text => "comment number $i"})->status_is(200);
     }
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     $limits->{generic_max_limit} = 5;
@@ -212,7 +212,7 @@ subtest 'admin can delete comments' => sub {
     };
 
     subtest 'delete comment with invalid comment id' => sub {
-        $t->put_ok("/api/v1/jobs/1234/comments/33546345" => form => {text => $edited_test_message})
+        $t->put_ok('/api/v1/jobs/1234/comments/33546345' => form => {text => $edited_test_message})
           ->status_is(404, 'comment can not be deleted for invalid comment ID');
         test_get_comment_invalid_job_or_group('jobs', 1234, 35);
     };
@@ -237,7 +237,7 @@ subtest 'delete many comments' => sub {
 $t->app->schema->txn_rollback;
 
 subtest 'can not edit comment by other user' => sub {
-    $t->put_ok("/api/v1/jobs/99981/comments/1" => form => {text => $edited_test_message . $another_test_message})
+    $t->put_ok('/api/v1/jobs/99981/comments/1' => form => {text => $edited_test_message . $another_test_message})
       ->status_is(403, 'editing comments by other users is forbidden');
     test_get_comment(jobs => 99981, 1, $edited_test_message);
 };

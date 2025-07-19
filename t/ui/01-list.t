@@ -113,8 +113,8 @@ prepare_database();
 
 driver_missing unless my $driver = call_driver;
 
-$driver->title_is("openQA", "on main page");
-is($driver->get("/results"), 1, "/results gets");
+$driver->title_is('openQA', 'on main page');
+is($driver->get('/results'), 1, '/results gets');
 like($driver->get_current_url(), qr{.*/tests}, 'legacy redirection from /results to /tests');
 
 wait_for_ajax(msg => 'DataTables on "All tests" page');
@@ -162,7 +162,7 @@ wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
 $t->get_ok('/tests/99963')->status_is(200);
-$t->content_like(qr/State.*running/, "Running jobs are marked");
+$t->content_like(qr/State.*running/, 'Running jobs are marked');
 
 subtest 'all tests server-side limit has precedence over user-specified limit' => sub {
     my $limits = OpenQA::App->singleton->config->{misc_limits};
@@ -236,7 +236,7 @@ subtest 'available comments shown' => sub {
     );
     is(
         $driver->find_element('#job_99936 .fa-bug')->get_attribute('title'),
-        "Bug referenced: bsc#3",
+        'Bug referenced: bsc#3',
         'available bugref (bsc#3) shown for finished jobs'
     );
     my @closed = $driver->find_elements('#job_99936 .bug_closed');
@@ -264,7 +264,7 @@ like(
 );
 
 # return
-is($driver->get("/tests"), 1, "/tests gets");
+is($driver->get('/tests'), 1, '/tests gets');
 wait_for_ajax(msg => 'wait for all tests displayed before looking for 99928');
 
 # Test 99928 is scheduled
@@ -277,7 +277,7 @@ $driver->find_element('#scheduled #job_99928 td.test a')->click();
 $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-RAID1@32bit test results', 'tests/99928 followed');
 
 # return
-is($driver->get("/tests"), 1, "/tests gets");
+is($driver->get('/tests'), 1, '/tests gets');
 wait_for_ajax();
 
 # Test 99938 failed, so it should be displayed in red
@@ -289,7 +289,7 @@ $driver->find_element('#results #job_99938 td.test a')->click();
 $driver->title_is('openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'tests/99938 followed');
 
 # return
-is($driver->get("/tests"), 1, "/tests gets");
+is($driver->get('/tests'), 1, '/tests gets');
 wait_for_ajax();
 
 my @links = $driver->find_elements('#results #job_99946 td.test a', 'css');
@@ -330,14 +330,14 @@ ok $driver->get('/tests'), 'get tests';
 wait_for_ajax(msg => 'wait for all tests displayed before looking for 99938');
 # parent-child
 my $child_e = $driver->find_element('#results #job_99938 .parent_child');
-is($child_e->get_attribute('title'), "1 chained parent", "dep info");
-is($child_e->get_attribute('data-children'), "[]", "no children");
-is($child_e->get_attribute('data-parents'), "[99937]", "parent");
+is($child_e->get_attribute('title'), '1 chained parent', 'dep info');
+is($child_e->get_attribute('data-children'), '[]', 'no children');
+is($child_e->get_attribute('data-parents'), '[99937]', 'parent');
 
 my $parent_e = $driver->find_element('#results #job_99937 .parent_child');
-is($parent_e->get_attribute('title'), "1 chained child", "dep info");
-is($parent_e->get_attribute('data-children'), "[99938]", "child");
-is($parent_e->get_attribute('data-parents'), "[]", "no parents");
+is($parent_e->get_attribute('title'), '1 chained child', 'dep info');
+is($parent_e->get_attribute('data-children'), '[99938]', 'child');
+is($parent_e->get_attribute('data-parents'), '[]', 'no parents');
 
 sub get_effective_cell_background ($row_id) {
     $driver->execute_script(
@@ -488,7 +488,7 @@ subtest 'check test results of job99940' => sub {
     $results = $driver->find_child_element($results, 'a');
     my @count = split(/\s+/, $results->get_text());
     my @types = $driver->find_child_elements($results, 'i');
-    is(@count, @types, "each number has a type");
+    is(@count, @types, 'each number has a type');
     for my $class (qw(module_passed module_failed module_softfailed module_none module_skipped)) {
         is(scalar(@{$driver->find_child_elements($results, 'i.' . $class)}), 1, "$class displayed");
     }

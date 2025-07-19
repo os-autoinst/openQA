@@ -55,32 +55,32 @@ is_deeply(
                 settings => [],
             }]
     },
-    "Initial products"
+    'Initial products'
 ) || always_explain $t->tx->res->json;
 
 
 # no arch
-$t->post_ok('/api/v1/products', json => {distri => "opensuse", flavor => "DVD", version => 13.2})->status_is(400);
+$t->post_ok('/api/v1/products', json => {distri => 'opensuse', flavor => 'DVD', version => 13.2})->status_is(400);
 
 # no distri
-$t->post_ok('/api/v1/products', json => {arch => "x86_64", flavor => "DVD", version => 13.2})->status_is(400);
+$t->post_ok('/api/v1/products', json => {arch => 'x86_64', flavor => 'DVD', version => 13.2})->status_is(400);
 
 # no flavor
-$t->post_ok('/api/v1/products', json => {arch => "x86_64", distri => "opensuse", version => 13.2})->status_is(400);
+$t->post_ok('/api/v1/products', json => {arch => 'x86_64', distri => 'opensuse', version => 13.2})->status_is(400);
 
 # no version
-$t->post_ok('/api/v1/products', json => {arch => "x86_64", distri => "opensuse", flavor => "DVD"})->status_is(400);
+$t->post_ok('/api/v1/products', json => {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD'})->status_is(400);
 
 $t->post_ok(
     '/api/v1/products',
     json => {
-        arch => "x86_64",
-        distri => "opensuse",
-        flavor => "DVD",
+        arch => 'x86_64',
+        distri => 'opensuse',
+        flavor => 'DVD',
         version => 13.2,
-        "settings" => {
-            "TEST" => "val1",
-            "TEST2" => "val1"
+        'settings' => {
+            'TEST' => 'val1',
+            'TEST2' => 'val1'
         }})->status_is(200);
 my $product_id = $t->tx->res->json->{id};
 my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
@@ -90,7 +90,7 @@ is_deeply(
     'product event was logged correctly'
 );
 
-$t->post_ok('/api/v1/products', json => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2})
+$t->post_ok('/api/v1/products', json => {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => 13.2})
   ->status_is(400);    #already exists
 
 $t->get_ok("/api/v1/products/$product_id")->status_is(200);
@@ -116,12 +116,12 @@ is_deeply(
                 'version' => '13.2'
             }]
     },
-    "Add product"
+    'Add product'
 ) || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/products/$product_id",
     json =>
-      {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings" => {"TEST2" => "val1"}})
+      {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => 13.2, 'settings' => {'TEST2' => 'val1'}})
   ->status_is(200);
 
 $t->get_ok("/api/v1/products/$product_id")->status_is(200);
@@ -143,7 +143,7 @@ is_deeply(
                 'version' => '13.2'
             }]
     },
-    "Delete product variable"
+    'Delete product variable'
 ) || always_explain $t->tx->res->json;
 
 subtest 'server-side limit has precedence over user-specified limit' => sub {
@@ -154,7 +154,7 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     #create test-products
     for my $i (2 .. 4) {
         $t->post_ok('/api/v1/products',
-            json => {arch => "x86_64", distri => "opensuse-$i", flavor => "DVD", version => 13.2})->status_is(200);
+            json => {arch => 'x86_64', distri => "opensuse-$i", flavor => 'DVD', version => 13.2})->status_is(200);
     }
 
     $t->get_ok('/api/v1/products?limit=10', 'query with exceeding user-specified limit for products')->status_is(200);
@@ -273,17 +273,17 @@ client($t);
 $t->post_ok(
     '/api/v1/products',
     json => {
-        arch => "x86_64",
-        distri => "opensuse",
-        flavor => "DVD",
+        arch => 'x86_64',
+        distri => 'opensuse',
+        flavor => 'DVD',
         version => 13.2,
-        "settings" => {
-            "TEST" => "val1",
-            "TEST2" => "val1"
+        'settings' => {
+            'TEST' => 'val1',
+            'TEST2' => 'val1'
         }})->status_is(403);
 $t->put_ok("/api/v1/products/$product_id",
     json =>
-      {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings" => {"TEST2" => "val1"}})
+      {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => 13.2, 'settings' => {'TEST2' => 'val1'}})
   ->status_is(403);
 $t->delete_ok("/api/v1/products/$product_id")->status_is(403);
 

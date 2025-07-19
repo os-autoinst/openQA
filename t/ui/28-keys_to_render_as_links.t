@@ -17,7 +17,7 @@ my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
 my $product_id = $scheduled_products->create({settings => {__URL => 'https://foo,http://bar test', __NO_URL => 'foo'}});
 # setup openqa.ini with job_settings_ui
-$ENV{OPENQA_CONFIG} = "t/data/03-setting-links";
+$ENV{OPENQA_CONFIG} = 't/data/03-setting-links';
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 $t->app($app);
@@ -25,7 +25,7 @@ $t->app($app);
 $ENV{OPENQA_BASEDIR} = 't/data';
 
 my $job_id = 99938;
-my $foo_path = "foo/foo.txt";
+my $foo_path = 'foo/foo.txt';
 my $uri_path_from_root_dir = "/tests/$job_id/settings/$foo_path";
 my $uri_path_from_default_data_dir = "/tests/$job_id/settings/bar/foo.txt";
 $schema->resultset('Jobs')->find($job_id)

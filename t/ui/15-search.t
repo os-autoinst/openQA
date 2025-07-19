@@ -49,7 +49,7 @@ subtest 'Perl modules' => sub {
       'expected occurrence';
     is $second->child('.contents')->get_text(),
       qq{    3 # Summary: Verify timezone settings page\n}
-      . qq{   10     assert_screen "inst-timezone", 125 || die 'no timezone';},
+      . qq{   10     assert_screen 'inst-timezone', 125 || die 'no timezone';},
       'expected contents';
 };
 

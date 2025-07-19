@@ -138,13 +138,13 @@ sub fake_asset_server {
             my $id = $c->stash('job');
             my $type = $c->stash('type');
             my $filename = $c->stash('filename');
-            return $c->render(status => 404, text => "Move along, nothing to see here")
+            return $c->render(status => 404, text => 'Move along, nothing to see here')
               if $filename =~ /sle-12-SP3-x86_64-0368-404/;
-            return $c->render(status => 400, text => "Move along, nothing to see here")
+            return $c->render(status => 400, text => 'Move along, nothing to see here')
               if $filename =~ /sle-12-SP3-x86_64-0368-400/;
-            return $c->render(status => 500, text => "Move along, nothing to see here")
+            return $c->render(status => 500, text => 'Move along, nothing to see here')
               if $filename =~ /sle-12-SP3-x86_64-0368-500/;
-            return $c->render(status => 503, text => "Move along, nothing to see here")
+            return $c->render(status => 503, text => 'Move along, nothing to see here')
               if $filename =~ /sle-12-SP3-x86_64-0368-503/;
 
             if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
@@ -421,7 +421,7 @@ sub start_worker ($connect_args) {
     $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
     # enable additional diagnostics for serialization errors
     $ENV{DEBUG_JSON} = 1;
-    my @cmd = ("perl", "./script/worker", "--isotovideo=$isotovideo_path", "--verbose");
+    my @cmd = ('perl', './script/worker', "--isotovideo=$isotovideo_path", '--verbose');
     push @cmd, @$connect_args;
     start \@cmd;
 }

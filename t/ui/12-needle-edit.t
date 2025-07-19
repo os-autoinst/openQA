@@ -126,7 +126,7 @@ sub add_needle_tag {
     $driver->find_element_by_id('tag_add_button')->click();
     wait_for_ajax(with_minion => $minion);
     is($driver->find_element_by_xpath("//input[\@value=\"$tagname\"]")->is_selected(),
-        1, "new tag found and was checked");
+        1, 'new tag found and was checked');
 }
 
 sub add_workaround_property () {
@@ -175,17 +175,17 @@ sub change_needle_value {
 
     # test match type
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{type}, "match", "type is match");
+    is($decode_new_textarea->{area}[0]->{type}, 'match', 'type is match');
     $driver->double_click;    # the match type change to exclude
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{type}, "exclude", "type is exclude");
+    is($decode_new_textarea->{area}[0]->{type}, 'exclude', 'type is exclude');
     $driver->double_click;    # the match type change to ocr
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{type}, "ocr", "type is ocr");
+    is($decode_new_textarea->{area}[0]->{type}, 'ocr', 'type is ocr');
     $driver->double_click;    # the match type change back to match
 
     unlike($driver->find_element_by_id('change-match')->get_attribute('class'),
-        qr/disabled/, "match level now enabled");
+        qr/disabled/, 'match level now enabled');
 
     # test match level
     $driver->find_element_by_id('change-match')->click();
@@ -234,11 +234,11 @@ sub overwrite_needle {
     wait_for_ajax(with_minion => $minion);
     my $diag;
     $diag = $driver->find_element_by_id('modal-overwrite');
-    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "overwrite dialog shown");
+    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, 'overwrite dialog shown');
     is(
         $driver->find_child_element($diag, '.modal-title', 'css')->get_text(),
-        "Sure to overwrite test-newneedle?",
-        "Needle part of the title"
+        'Sure to overwrite test-newneedle?',
+        'Needle part of the title'
     );
 
     $driver->find_element_by_id('modal-overwrite-confirm')->click();
@@ -257,7 +257,7 @@ sub overwrite_needle {
     is(
         $driver->get_title(),
         'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
-        "no longer on needle editor"
+        'no longer on needle editor'
     );
 }
 
@@ -285,7 +285,7 @@ subtest 'Open needle editor for installer_timezone' => sub {
     # we're back on the main page
     $driver->title_is('openQA', 'back on main page');
 
-    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
+    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
 
     goto_editor_for_installer_timezone();
 
@@ -304,11 +304,11 @@ subtest 'Needle editor layout' => sub {
     ok element_prop('take_matches', 'checked'), '"take matches" selected by default';
 
     # check needle suggested name
-    my $today = strftime("%Y%m%d", gmtime(time));
-    is element_prop('needleeditor_name'), "inst-timezone-text-$today", "has correct needle name";
+    my $today = strftime('%Y%m%d', gmtime(time));
+    is element_prop('needleeditor_name'), "inst-timezone-text-$today", 'has correct needle name';
 
     # ENV-VIDEOMODE-text and inst-timezone tag are selected
-    is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, "tag selected");
+    is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, 'tag selected');
 
     # workaround property isn't selected
     is element_prop('property_workaround', 'checked'), 0, 'workaround property unselected';
@@ -426,7 +426,7 @@ subtest 'Create new needle' => sub {
     add_needle_tag('test-overwritetag');
     add_workaround_property();
 
-    like($driver->find_element_by_id('change-match')->get_attribute('class'), qr/disabled/, "match level disabled");
+    like($driver->find_element_by_id('change-match')->get_attribute('class'), qr/disabled/, 'match level disabled');
 
     # change area
     change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area
@@ -481,16 +481,16 @@ subtest 'Verify new needle\'s JSON' => sub {
     for my $tag (@{$decoded_json->{tags}}) {
         $match = 1 if ($tag eq 'test-overwritetag');
     }
-    is($match, 1, "found new tag in new needle");
+    is($match, 1, 'found new tag in new needle');
     is(
         $decoded_json->{area}[0]->{xpos},
         $decode_textarea->{area}[0]->{xpos} + $xoffset,
-        "new xpos stored to new needle"
+        'new xpos stored to new needle'
     );
     is(
         $decoded_json->{area}[0]->{ypos},
         $decode_textarea->{area}[0]->{ypos} + $yoffset,
-        "new ypos stored to new needle"
+        'new ypos stored to new needle'
     );
 } or always_explain $decoded_json;
 
@@ -589,7 +589,7 @@ foreach my $type (sort keys %tests) {
 }
 
 subtest 'Broken needle is handled gracefully' => sub {
-    $needle_json_file->spew("{{{,};");
+    $needle_json_file->spew('{{{,};');
     $driver->refresh;
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     my @warnings = (split /\n/, $driver->find_element('#editor_warnings span')->get_text());
