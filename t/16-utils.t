@@ -7,9 +7,11 @@ use Test::Warnings ':report_warnings';
 
 # define test helper to check for exit code
 our $exit_handler = sub { CORE::exit $_[0] };
+
 BEGIN {
     *CORE::GLOBAL::exit = sub (;$) { $exit_handler->(@_ ? 0 + $_[0] : 0) }
 }
+
 sub exit_code(&) {
     my $exit_code;
     local $exit_handler = sub { $exit_code = $_[0] };

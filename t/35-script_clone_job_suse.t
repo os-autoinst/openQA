@@ -13,17 +13,16 @@ use OpenQA::Script::CloneJobSUSE;
 use Mojo::URL;
 
 # define fake client
-{
-    package Test::FakeLWPUserAgentMirrorResult;
+package Test::FakeLWPUserAgentMirrorResult {
     use Mojo::Base -base, -signatures;
     has is_success => 1;
-}
-{
-    package Test::FakeLWPUserAgent;
+}    # uncoverable statement
+
+package Test::FakeLWPUserAgent {
     use Mojo::Base -base, -signatures;
     has is_validrepo => 1;
     sub get ($self, $url) { Test::FakeLWPUserAgentMirrorResult->new(is_success => $self->is_validrepo) }
-}
+}    # uncoverable statement
 
 subtest 'maintenance update detect' => sub {
     my $job_id = 1;

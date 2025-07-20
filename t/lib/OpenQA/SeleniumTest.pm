@@ -288,9 +288,11 @@ sub element_not_present ($selector, $test_description = undef) {
 sub element_prop ($element_id, $property = 'value') {
     return $_driver->execute_script("return document.getElementById('$element_id').$property;");
 }
+
 sub element_prop_by_selector ($element_selector, $property = 'value') {
     return $_driver->execute_script("return document.querySelector('$element_selector').$property;");
 }
+
 sub map_elements ($selector, $mapping) {
     return $_driver->execute_script("return Array.from(document.querySelectorAll('$selector')).map(e => [$mapping]);");
 }

@@ -103,16 +103,14 @@ sub parse {
 }
 
 # Schema
-{
-    package OpenQA::Parser::Result::XUnit;
+package OpenQA::Parser::Result::XUnit {
     use Mojo::Base 'OpenQA::Parser::Result::OpenQA';
     has properties => sub { OpenQA::Parser::Results->new };
 
     has [qw(errors tests softfailures failures time)];
 }
 
-{
-    package OpenQA::Parser::Result::XUnit::Property;
+package OpenQA::Parser::Result::XUnit::Property {
     use Mojo::Base 'OpenQA::Parser::Result';
 
     has [qw(name value)];

@@ -89,10 +89,8 @@ sub wait_until_uploading_logs_and_assets_concluded {
 }
 
 # Fake client and engine
-{
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    package Test::FakeClient;
+# uncoverable statement count:1
+package Test::FakeClient {
     use Mojo::Base -base;
     has worker_id => 1;
     has service_port_delta => 2;
@@ -108,6 +106,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has fail_job_duplication => 0;
     has configured_retries => 5;
     has fake_result => undef;
+
     sub send {
         my ($self, $method, $path, %args) = @_;
         my $params = $args{params};
@@ -128,23 +127,22 @@ sub wait_until_uploading_logs_and_assets_concluded {
     sub reset_last_error { shift->last_error(undef) }
     sub send_status { push(@{shift->sent_messages}, @_) }
     sub register { shift->register_called(1) }
+
     sub add_context_to_last_error {
         my ($self, $context) = @_;
         $self->last_error($self->last_error . " on $context");
     }
     sub _retry_delay { 0 }
     sub evaluate_error { OpenQA::Worker::WebUIConnection::evaluate_error(@_) }
-}
-{
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    package Test::FakeEngine;
+}    # uncoverable statement count:1
+
+package Test::FakeEngine {
     use Mojo::Base -base;
     has pid => 1;
     has errored => 0;
     has is_running => 1;
     sub stop { shift->is_running(0) }
-}
+}    # uncoverable statement count:1
 
 my $isotovideo = Test::FakeEngine->new;
 my $worker = OpenQA::Test::FakeWorker->new(settings => OpenQA::Worker::Settings->new(1, {}));
@@ -208,6 +206,7 @@ $engine_mock->redefine(
 # Mock log file and asset uploads to collect diagnostics
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
 my $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+
 sub upload_mock ($key, $self, @args) {
     push @{$upload_stats->{$key}}, \@args;
     return $upload_stats->{upload_result};

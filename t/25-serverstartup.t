@@ -5,15 +5,17 @@ use Test::Most;
 use Test::Warnings ':report_warnings';
 
 BEGIN {
-    package OpenQA::FakePlugin::Fuzz;
-    use Mojo::Base -base;
 
-    has 'configuration_fields' => sub {
-        {
-            baz => {
-                test => 1
-            }};
-    };
+    package OpenQA::FakePlugin::Fuzz {
+        use Mojo::Base -base;
+
+        has 'configuration_fields' => sub {
+            {
+                baz => {
+                    test => 1
+                }};
+        };
+    }
 }
 
 use FindBin;

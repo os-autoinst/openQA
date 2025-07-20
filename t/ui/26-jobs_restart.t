@@ -75,6 +75,7 @@ prepare_database;
 
 my $last_job_id;
 sub update_last_job_id () { $last_job_id = $jobs->search(undef, {rows => 1, order_by => {-desc => 'id'}})->first->id }
+
 sub expected_job_id_regex ($offset = 1) {
     my $expected_job_id = $last_job_id + $offset;
     return qr|tests/$expected_job_id|;

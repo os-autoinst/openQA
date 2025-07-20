@@ -14,16 +14,13 @@ my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
 my $app = $t->app;
 my $minion = $app->minion;
 
-{
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    package FakeMinionJob;
+package FakeMinionJob {
     use Mojo::Base -base, -signatures;
     has id => 0;
     has app => sub { $app };
     sub finish { $_[0]->{state} = 'finished'; $_[0]->{result} = $_[1] }
     sub info { {notes => {project_lock => 1}} }
-}
+}    # uncoverable statement
 
 $t->post_ok('/admin/obs_rsync/Proj1/runs' => $params)->status_is(201, 'trigger rsync');
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/Proj1/, 'get project queue');
