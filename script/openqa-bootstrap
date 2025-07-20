@@ -18,6 +18,9 @@ fi
 
 start-database() {
     if [[ -z $running_systemd ]]; then
+        # ensure /run/postgresql exists for PostgreSQL to create lock socket
+        mkdir -p /run/postgresql
+        chown postgres:postgres /run/postgresql
         su postgres -c '/usr/share/postgresql/postgresql-script stop' || true
         su postgres -c '/usr/share/postgresql/postgresql-script start'
     else
