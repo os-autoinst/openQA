@@ -1212,7 +1212,8 @@ subtest 'optipng' => sub {
 };
 
 subtest 'pngquant' => sub {
-    is OpenQA::Worker::Job::_optimize_image('foo', {USE_PNGQUANT => 1}), undef, 'pngquant call is "best-effort"';
+    combined_like { OpenQA::Worker::Job::_optimize_image('foo', {USE_PNGQUANT => 1}) } qr/cannot open foo for reading/,
+      'pngquant call is "best-effort"';
 };
 
 subtest '_read_module_result' => sub {
