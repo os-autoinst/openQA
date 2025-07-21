@@ -16,6 +16,7 @@ use OpenQA::Parser::Format::LTP;
 use OpenQA::Parser::Format::XUnit;
 use OpenQA::Parser::Format::TAP;
 use OpenQA::Parser::Format::IPA;
+use OpenQA::Parser::Format::KTAP;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON qw(decode_json encode_json);
 
@@ -957,6 +958,46 @@ subtest nested_parsers => sub {
 
     my $final_data = parser()->deserialize($frozen_file->slurp());
     test_ltp_file_v2($final_data->results->first);
+};
+
+subtest ktap_parse => sub {
+
+    my $ktap_file = path($FindBin::Bin, "data")->child("ktap_correct.tap");
+
+    my $parser = OpenQA::Parser::Format::KTAP->new;
+    $parser->load($ktap_file);
+
+    is $parser->results->size, 4, 'Expected four test groups';
+
+    my $result0 = $parser->results->get(0);
+    is $result0->{name}, 'selftests: cgroup: test_core', 'The first test group has expected name';
+
+    is $result0->result, 'passed', 'Group result is passed';
+    is scalar @{$result0->details}, 12, 'Has 12 subtest details';
+    is $result0->details->[0]->{result}, 'ok', 'First subtest passed';
+    is $result0->details->[0]->{title}, 'test_cgcore_internal_process_constraint', 'First subtest has expected name';
+
+    my $result2 = $parser->results->get(2);
+    is $result2->result, 'fail', 'Group result is failed';
+
+    my $result3 = $parser->results->get(3);
+    is $result3->result, 'skip', 'Group result is skipped';
+};
+
+subtest 'ktap_parse_incorrect_file' => sub {
+    my $ktap_file = path($FindBin::Bin, "data")->child("ktap_incorrect.tap");
+
+    my $parser = OpenQA::Parser::Format::KTAP->new;
+    $parser->load($ktap_file);
+
+    is $parser->results->size, 3, 'Three test groups parsed (last one missing the final summary line)';
+
+    my $last = $parser->results->get(2);
+    is $last->{name}, 'selftests: cgroup: test_zswap', 'Last test group name is correct';
+    is scalar @{$last->details}, 7, 'Last group has 7 subtests';
+    is $last->details->[0]->{title}, 'test_zswap_usage', 'First subtest parsed correctly';
+    is $last->details->[-1]->{title}, 'test_no_invasive_cgroup_shrink', 'Last subtest parsed';
+    is $last->result, 'fail', 'Group result marked as fail (due to subtest failure)';
 };
 
 done_testing;

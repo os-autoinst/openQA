@@ -1,0 +1,45 @@
+TAP version 13
+1..13
+# overriding timeout to 300
+# selftests: cgroup: test_core
+# ok 1 test_cgcore_internal_process_constraint
+# ok 2 test_cgcore_top_down_constraint_enable
+# ok 3 test_cgcore_top_down_constraint_disable
+# ok 4 test_cgcore_no_internal_process_constraint_on_threads
+# ok 5 test_cgcore_parent_becomes_threaded
+# ok 6 test_cgcore_invalid_domain
+# ok 7 test_cgcore_populated
+# ok 8 test_cgcore_proc_migration
+# ok 9 test_cgcore_thread_migration
+# ok 10 test_cgcore_destroy
+# ok 11 test_cgcore_lesser_euid_open
+# ok 12 test_cgcore_lesser_ns_open
+ok 1 selftests: cgroup: test_core
+# overriding timeout to 300
+# selftests: cgroup: test_cpu
+# ok 1 test_cpucg_subtree_control
+# ok 2 test_cpucg_stats
+# ok 3 test_cpucg_nice
+# ok 4 test_cpucg_weight_overprovisioned
+# ok 5 test_cpucg_weight_underprovisioned
+# ok 6 test_cpucg_nested_weight_overprovisioned
+# ok 7 test_cpucg_nested_weight_underprovisioned
+# ok 8 test_cpucg_max
+# ok 9 test_cpucg_max_nested
+ok 2 selftests: cgroup: test_cpu
+# overriding timeout to 300
+# selftests: cgroup: test_zswap
+# # zswpout does not increase after test program
+# not ok 1 test_zswap_usage
+# ok 2 test_swapin_nozswap
+# # at least 24MB should be brought back from zswap
+# not ok 3 test_zswapin
+# # zswpwb_after is 0 while wb is enablednot ok 4 test_zswap_writeback_enabled
+# not ok 5 test_zswap_writeback_disabled
+# not ok 6 test_no_kmem_bypass
+# not ok 7 test_no_invasive_cgroup_shrink
+not ok 10 selftests: cgroup: test_zswap # exit=1
+# overriding timeout to 300
+# selftests: cgroup: test_hugetlb_memcg
+# 1..0 # SKIP memory hugetlb accounting is disabled
+ok 5 selftests: cgroup: test_hugetlb_memcg # SKIP
