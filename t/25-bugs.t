@@ -35,7 +35,7 @@ subtest 'Unreferenced bugs cleanup job works' => sub {
     $schema->resultset('Jobs')->create(
         {
             id => 421,
-            TEST => "textmode",
+            TEST => 'textmode',
         });
     $schema->resultset('Comments')->create(
         {

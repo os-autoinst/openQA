@@ -50,7 +50,7 @@ sub job_setup (%override) {
 
 sub get_connect_args () {
     my $mojoport = OpenQA::SeleniumTest::get_mojoport;
-    return ["--apikey=1234567890ABCDEF", "--apisecret=1234567890ABCDEF", "--host=http://localhost:$mojoport"];
+    return ['--apikey=1234567890ABCDEF', '--apisecret=1234567890ABCDEF', "--host=http://localhost:$mojoport"];
 }
 
 sub client_output ($args) { qx{perl ./script/openqa-cli api @{get_connect_args()} $args} }
@@ -73,7 +73,7 @@ sub find_status_text ($driver) {
 sub _fail_with_result_panel_contents ($result_panel_contents, $msg) {
     diag("full result panel contents:\n$result_panel_contents");    # uncoverable statement
     ok(javascript_console_has_no_warnings_or_errors, 'No unexpected js warnings');    # uncoverable statement
-    fail "Expected result not found";    # uncoverable statement
+    fail 'Expected result not found';    # uncoverable statement
 }
 
 sub wait_for_result_panel ($driver, $result_panel, $context = undef, $fail_on_incomplete = undef, $check_interval = 0.5)

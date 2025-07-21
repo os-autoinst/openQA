@@ -49,10 +49,10 @@ my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-match
 path($needle_dir)->make_path;
 map { path($needle_dir, $_)->spew('go away later') } @needle_files;
 
-$driver->title_is("openQA", "on main page");
+$driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-$driver->title_is("openQA", "back on main page");
+$driver->title_is('openQA', 'back on main page');
 
 sub goto_admin_needle_table {
     my $login_link = $driver->find_element('#user-action > a');
@@ -71,29 +71,29 @@ wait_for_data_table($needles_table, 2);
 my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
-is((shift @tds)->get_text(), 'fixtures', "Path is fixtures");
-is((shift @tds)->get_text(), 'inst-timezone-text.json', "Name is right");
-is((my $module_link = shift @tds)->get_text(), 'a day ago', "last use is right");
-is((shift @tds)->get_text(), 'about 14 hours ago', "last match is right");
+is((shift @tds)->get_text(), 'fixtures', 'Path is fixtures');
+is((shift @tds)->get_text(), 'inst-timezone-text.json', 'Name is right');
+is((my $module_link = shift @tds)->get_text(), 'a day ago', 'last use is right');
+is((shift @tds)->get_text(), 'about 14 hours ago', 'last match is right');
 @tds = $driver->find_child_elements($trs[2], 'td', 'css');
-is((shift @tds)->get_text(), 'fixtures', "Path is fixtures");
-is((shift @tds)->get_text(), 'never-matched.json', "Name is right");
-is((shift @tds)->get_text(), 'a day ago', "last use is right");
-is((shift @tds)->get_text(), 'never', "last match is right");
+is((shift @tds)->get_text(), 'fixtures', 'Path is fixtures');
+is((shift @tds)->get_text(), 'never-matched.json', 'Name is right');
+is((shift @tds)->get_text(), 'a day ago', 'last use is right');
+is((shift @tds)->get_text(), 'never', 'last match is right');
 $driver->find_child_element($module_link, 'a', 'css')->click();
 like(
-    $driver->execute_script("return window.location.href"),
+    $driver->execute_script('return window.location.href'),
     qr(\Q/tests/99937#step/partitioning_finish/1\E),
-    "redirected to right module"
+    'redirected to right module'
 );
 
 $needles_table = goto_admin_needle_table;
 wait_for_data_table($needles_table, 2);
 $driver->find_element_by_link_text('about 14 hours ago')->click();
 like(
-    $driver->execute_script("return window.location.href"),
+    $driver->execute_script('return window.location.href'),
     qr(\Q/tests/99937#step/partitioning/1\E),
-    "redirected to right module too"
+    'redirected to right module too'
 );
 
 $needles_table = goto_admin_needle_table;

@@ -36,7 +36,7 @@ subtest 'Setup logging to file' => sub {
     my $tempfile = tempfile;
     my $app = Mojolicious->new(config => {logging => {file => $tempfile}});
     setup_log($app);
-    $app->attr('log_name', sub { return "test"; });
+    $app->attr('log_name', sub { return 'test'; });
 
     my $log = $app->log;
     $log->level('debug');
@@ -57,7 +57,7 @@ subtest 'Setup logging to STDOUT' => sub {
     my $buffer = '';
     my $app = Mojolicious->new();
     setup_log($app);
-    $app->attr('log_name', sub { return "test"; });
+    $app->attr('log_name', sub { return 'test'; });
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
@@ -83,9 +83,9 @@ subtest 'global exception handling' => sub {
 
 subtest 'Setup logging to file (ENV)' => sub {
     local $ENV{OPENQA_LOGFILE} = tempfile;
-    my $app = Mojolicious->new(config => {logging => {file => "/tmp/ignored_foo_bar"}});
+    my $app = Mojolicious->new(config => {logging => {file => '/tmp/ignored_foo_bar'}});
     setup_log($app);
-    $app->attr('log_name', sub { return "test"; });
+    $app->attr('log_name', sub { return 'test'; });
 
     my $log = $app->log;
     $log->level('debug');
@@ -99,11 +99,11 @@ subtest 'Setup logging to file (ENV)' => sub {
     like $content, qr/\[.*\] \[fatal\] Fatal error/, 'right fatal message';
     like $content, qr/\[.*\] \[debug\] It works/, 'right debug message';
     like $content, qr/\[.*\] \[info\] Works too/, 'right info message';
-    ok !-e "/tmp/ignored_foo_bar";
+    ok !-e '/tmp/ignored_foo_bar';
 
     $app = Mojolicious->new();
     setup_log($app);
-    $app->attr('log_name', sub { return "test"; });
+    $app->attr('log_name', sub { return 'test'; });
 
     $log = $app->log;
     $log->level('debug');
@@ -128,54 +128,54 @@ subtest 'Update configuration from Plugin requirements' => sub {
 
     my $config;
     my $ini_config = Config::IniFiles->new();
-    $ini_config->AddSection("auth");
-    $ini_config->AddSection("bar");
-    $ini_config->AddSection("baz");
-    $ini_config->AddSection("bazzer");
-    $ini_config->AddSection("foofoo");
+    $ini_config->AddSection('auth');
+    $ini_config->AddSection('bar');
+    $ini_config->AddSection('baz');
+    $ini_config->AddSection('bazzer');
+    $ini_config->AddSection('foofoo');
     $config->{ini_config} = $ini_config;
 
-    $ini_config->newval("auth", "method", "foobar");
-    $ini_config->newval("bar", "foo", "test");
-    $ini_config->newval("baz", "foo", "test2");
-    $ini_config->newval("baz", "test", "bartest");
-    $ini_config->newval("bazzer", "realfoo", "win");
-    $ini_config->newval("foofoo", "is_there", "wohoo");
+    $ini_config->newval('auth', 'method', 'foobar');
+    $ini_config->newval('bar', 'foo', 'test');
+    $ini_config->newval('baz', 'foo', 'test2');
+    $ini_config->newval('baz', 'test', 'bartest');
+    $ini_config->newval('bazzer', 'realfoo', 'win');
+    $ini_config->newval('foofoo', 'is_there', 'wohoo');
 
     # Check if  Config::IniFiles object returns the right values
-    is $ini_config->val("auth", "method"), "foobar", "Ini parser contains the right data for OpenQA::FakePlugin::Foo";
-    is $ini_config->val("bar", "foo"), "test", "Ini parser contains the right data for OpenQA::FakePlugin::FooBar";
-    is $ini_config->val("baz", "foo"), "test2", "Ini parser contains the right data for OpenQA::FakePlugin::FooBaz";
-    is $ini_config->val("baz", "test"), "bartest", "Ini parser contains the right data for OpenQA::FakePlugin::Fuzz";
-    is $ini_config->val("bazzer", "realfoo"), "win",
-      "Ini parser contains the right data for OpenQA::FakePlugin::Fuzzer";
-    is $ini_config->val("foofoo", "is_there"), "wohoo",
-      "Ini parser contains the right data for OpenQA::FakePlugin::FooFoo";
+    is $ini_config->val('auth', 'method'), 'foobar', 'Ini parser contains the right data for OpenQA::FakePlugin::Foo';
+    is $ini_config->val('bar', 'foo'), 'test', 'Ini parser contains the right data for OpenQA::FakePlugin::FooBar';
+    is $ini_config->val('baz', 'foo'), 'test2', 'Ini parser contains the right data for OpenQA::FakePlugin::FooBaz';
+    is $ini_config->val('baz', 'test'), 'bartest', 'Ini parser contains the right data for OpenQA::FakePlugin::Fuzz';
+    is $ini_config->val('bazzer', 'realfoo'), 'win',
+      'Ini parser contains the right data for OpenQA::FakePlugin::Fuzzer';
+    is $ini_config->val('foofoo', 'is_there'), 'wohoo',
+      'Ini parser contains the right data for OpenQA::FakePlugin::FooFoo';
 
     # inline packages declaration needs to appear as "loaded"
-    $INC{"OpenQA/FakePlugin/Fuzz.pm"} = undef;
-    $INC{"OpenQA/FakePlugin/Fuzzer.pm"} = undef;
-    OpenQA::Setup::update_config($config, "OpenQA::FakePlugin");
+    $INC{'OpenQA/FakePlugin/Fuzz.pm'} = undef;
+    $INC{'OpenQA/FakePlugin/Fuzzer.pm'} = undef;
+    OpenQA::Setup::update_config($config, 'OpenQA::FakePlugin');
 
-    ok exists($config->{auth}->{method}), "Config option exists for OpenQA::FakePlugin::Foo";
-    ok exists($config->{bar}->{foo}), "Config option exists for OpenQA::FakePlugin::FooBar";
-    ok exists($config->{baz}->{foo}), "Config option exists for OpenQA::FakePlugin::FooBaz";
-    ok exists($config->{baz}->{test}), "Config option exists for OpenQA::FakePlugin::Fuzz";
-    ok exists($config->{bazzer}->{realfoo}), "Config option exists for OpenQA::FakePlugin::Fuzzer";
-    ok !exists($config->{foofoo}->{is_there}), "Config option doesn't exists(yet) for OpenQA::FakePlugin::Foofoo";
+    ok exists($config->{auth}->{method}), 'Config option exists for OpenQA::FakePlugin::Foo';
+    ok exists($config->{bar}->{foo}), 'Config option exists for OpenQA::FakePlugin::FooBar';
+    ok exists($config->{baz}->{foo}), 'Config option exists for OpenQA::FakePlugin::FooBaz';
+    ok exists($config->{baz}->{test}), 'Config option exists for OpenQA::FakePlugin::Fuzz';
+    ok exists($config->{bazzer}->{realfoo}), 'Config option exists for OpenQA::FakePlugin::Fuzzer';
+    ok !exists($config->{foofoo}->{is_there}), 'Config option does not exists(yet) for OpenQA::FakePlugin::Foofoo';
 
-    is $config->{auth}->{method}, "foobar", "Right config option for OpenQA::FakePlugin::Foo";
-    is $config->{bar}->{foo}, "test", "Right config option for OpenQA::FakePlugin::FooBar";
-    is $config->{baz}->{foo}, "test2", "Right config option for OpenQA::FakePlugin::FooBaz";
-    is $config->{baz}->{test}, "bartest", "Right config option for OpenQA::FakePlugin::Fuzz";
-    is $config->{bazzer}->{realfoo}, "win", "Right config option for OpenQA::FakePlugin::Fuzzer";
+    is $config->{auth}->{method}, 'foobar', 'Right config option for OpenQA::FakePlugin::Foo';
+    is $config->{bar}->{foo}, 'test', 'Right config option for OpenQA::FakePlugin::FooBar';
+    is $config->{baz}->{foo}, 'test2', 'Right config option for OpenQA::FakePlugin::FooBaz';
+    is $config->{baz}->{test}, 'bartest', 'Right config option for OpenQA::FakePlugin::Fuzz';
+    is $config->{bazzer}->{realfoo}, 'win', 'Right config option for OpenQA::FakePlugin::Fuzzer';
 
     my $app = Mojolicious->new();
-    push @{$app->plugins->namespaces}, "OpenQA::FakePlugin";
+    push @{$app->plugins->namespaces}, 'OpenQA::FakePlugin';
     $app->config->{ini_config} = $config->{ini_config};
-    $app->plugin("FooFoo");
-    OpenQA::Setup::update_config($app->config, "OpenQA::FakePlugin");
-    is $app->config->{foofoo}->{is_there}, "wohoo", "Right config option for OpenQA::FakePlugin::Foofoo";
+    $app->plugin('FooFoo');
+    OpenQA::Setup::update_config($app->config, 'OpenQA::FakePlugin');
+    is $app->config->{foofoo}->{is_there}, 'wohoo', 'Right config option for OpenQA::FakePlugin::Foofoo';
 };
 
 subtest 'listing assets (for installation/Makefile)' => sub {

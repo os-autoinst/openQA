@@ -46,8 +46,8 @@ $t->get_ok('/api_keys')->status_is(200)->text_is('#api_key_6 .expiration' => 'ne
 
 # check invalid expiration date
 $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {t_expiration => 'asdlfj'})->status_is(302);
-$t->get_ok('/api_keys')->status_is(200)->element_exists_not('#api_key_8', "No invalid key created")
-  ->element_exists('#flash-messages .alert-danger', "Error message displayed");
+$t->get_ok('/api_keys')->status_is(200)->element_exists_not('#api_key_8', 'No invalid key created')
+  ->element_exists('#flash-messages .alert-danger', 'Error message displayed');
 
 # And to delete keys
 $t->delete_ok('/api_keys/6', {'X-CSRF-Token' => $token})->status_is(302);

@@ -135,7 +135,7 @@ is_deeply(
     ['opensuse test', 'Test parent', $test_overview_tooltip],
     'parent group shown and opensuse is no more on top-level'
 );
-my $tests_overview_dashboard = $t->tx->res->dom->find("#test_result_overview_link_1")->first;
+my $tests_overview_dashboard = $t->tx->res->dom->find('#test_result_overview_link_1')->first;
 is(
     $tests_overview_dashboard->attr('href'),
     '/tests/overview?groupid=1001',
@@ -237,10 +237,10 @@ for my $url (@urls) {
 # parent group overview
 $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 check_test_parent('expanded');
-my $tests_overview = $t->tx->res->dom->find("#test_result_overview_link_1")->first;
+my $tests_overview = $t->tx->res->dom->find('#test_result_overview_link_1')->first;
 is(
-    $tests_overview->attr("href"),
-    "/tests/overview?groupid=1001&groupid=1002",
+    $tests_overview->attr('href'),
+    '/tests/overview?groupid=1001&groupid=1002',
     "The 'test result overview' anchor href points to /test/overview and includes all the groupids"
 );
 
@@ -259,7 +259,7 @@ sub check_tags {
     $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
     @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)');
-    @h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
+    @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
     is_deeply(\@h4, ['Build0092'], 'only tagged builds on parent-level shown');
 }
 check_tags();
@@ -273,7 +273,7 @@ $tag_for_0092_comment->update({text => 'tag:5-0092:important:some_tag', user_id 
 $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
 my @tags = $t->tx->res->dom->find('div.children-collapsed .h4 span i.tag')->map('text')->each;
 is_deeply(\@tags, [], 'tag is not shown on parent-level because version does not match');
-@h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
+@h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
 is_deeply(\@h4, [], 'also no tagged builds on parent-level shown');
 
 # now tag build 0091 to check build tagging when there are common builds
@@ -282,7 +282,7 @@ my $tag_for_0091_comment
   = $opensuse_test_group->comments->create({text => 'tag:0091:important:some_tag', user_id => 99901});
 
 $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
-@h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
+@h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
 is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
 @h4 = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
@@ -506,7 +506,7 @@ subtest 'proper build sorting for dotted build number' => sub {
     # sorted by oldest job per build
     # here a job for the old build 62.51 is rescheduled which will not break sorting
     # in a jobgroup with BUILD_SORT_BY_OLDEST_JOB
-    $job_hash->{BUILD} = "62.51";
+    $job_hash->{BUILD} = '62.51';
     $jobs->create($job_hash);
     $group->update({build_version_sort => BUILD_SORT_BY_OLDEST_JOB});
     check_builds(\@build_names, $group, 'builds shown sorted by oldest job in jobgroup');

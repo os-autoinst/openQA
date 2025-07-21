@@ -37,15 +37,15 @@ sub prepare_database {
         {
             id => 100001,
             group_id => $new_job_group->id,
-            result => "none",
-            state => "cancelled",
+            result => 'none',
+            state => 'cancelled',
             priority => 35,
             t_finished => undef,
             # 10 minutes ago
             t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
             # Two hours ago
             t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-            TEST => "upgrade",
+            TEST => 'upgrade',
             ARCH => 'x86_64',
             BUILD => '0100',
             DISTRI => 'opensuse',

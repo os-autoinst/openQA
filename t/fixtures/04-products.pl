@@ -6,71 +6,71 @@ use warnings;
         id => 1001,
         name => '32bit',
         backend => 'qemu',
-        settings => [{key => "QEMUCPU", value => "qemu32"},],
+        settings => [{key => 'QEMUCPU', value => 'qemu32'},],
     },
     Machines => {
         id => 1002,
         name => '64bit',
         backend => 'qemu',
-        settings => [{key => "QEMUCPU", value => "qemu64"},],
+        settings => [{key => 'QEMUCPU', value => 'qemu64'},],
     },
     Machines => {
         id => 1008,
         name => 'Laptop_64',
         backend => 'qemu',
-        settings => [{key => "QEMUCPU", value => "qemu64"}, {key => "LAPTOP", value => "1"},],
+        settings => [{key => 'QEMUCPU', value => 'qemu64'}, {key => 'LAPTOP', value => '1'},],
     },
 
     TestSuites => {
         id => 1001,
-        name => "textmode",
-        settings => [{key => "DESKTOP", value => "textmode"}, {key => "VIDEOMODE", value => "text"},],
+        name => 'textmode',
+        settings => [{key => 'DESKTOP', value => 'textmode'}, {key => 'VIDEOMODE', value => 'text'},],
     },
 
     TestSuites => {
         id => 1002,
-        name => "kde",
+        name => 'kde',
         description => 'Simple kde test, before advanced_kde',
-        settings => [{key => "DESKTOP", value => "kde"}],
+        settings => [{key => 'DESKTOP', value => 'kde'}],
     },
 
     TestSuites => {
         id => 1013,
-        name => "RAID0",
+        name => 'RAID0',
         settings =>
-          [{key => "RAIDLEVEL", value => 0}, {key => "INSTALLONLY", value => 1}, {key => "DESKTOP", value => "kde"},],
+          [{key => 'RAIDLEVEL', value => 0}, {key => 'INSTALLONLY', value => 1}, {key => 'DESKTOP', value => 'kde'},],
     },
 
     TestSuites => {
         id => 1014,
-        name => "client1",
+        name => 'client1',
         settings => [
-            {key => "DESKTOP", value => "kde"},
-            {key => "PARALLEL_WITH", value => "server"},
-            {key => "PRECEDENCE", value => "wontoverride"}
+            {key => 'DESKTOP', value => 'kde'},
+            {key => 'PARALLEL_WITH', value => 'server'},
+            {key => 'PRECEDENCE', value => 'wontoverride'}
         ],
     },
 
     TestSuites => {
         id => 1015,
-        name => "server",
-        settings => [{key => "+PRECEDENCE", value => "overridden"}, {key => "DESKTOP", value => "textmode"}],
+        name => 'server',
+        settings => [{key => '+PRECEDENCE', value => 'overridden'}, {key => 'DESKTOP', value => 'textmode'}],
     },
 
     TestSuites => {
         id => 1016,
-        name => "client2",
-        settings => [{key => "DESKTOP", value => "textmode"}, {key => "PARALLEL_WITH", value => "server"}],
+        name => 'client2',
+        settings => [{key => 'DESKTOP', value => 'textmode'}, {key => 'PARALLEL_WITH', value => 'server'}],
     },
 
     TestSuites => {
         id => 1017,
-        name => "advanced_kde",
+        name => 'advanced_kde',
         description => 'See kde for simple test',
         settings => [
-            {key => "DESKTOP", value => "kde"},
-            {key => "START_AFTER_TEST", value => "kde,textmode"},
-            {key => "PUBLISH_HDD_1", value => "%DISTRI%-%VERSION%-%ARCH%-%DESKTOP%-%QEMUCPU%.qcow2"}
+            {key => 'DESKTOP', value => 'kde'},
+            {key => 'START_AFTER_TEST', value => 'kde,textmode'},
+            {key => 'PUBLISH_HDD_1', value => '%DISTRI%-%VERSION%-%ARCH%-%DESKTOP%-%QEMUCPU%.qcow2'}
         ],
     },
     Products => {
@@ -82,12 +82,12 @@ use warnings;
         arch => 'i586',
         settings => [
             {
-                key => "ISO_MAXSIZE",
+                key => 'ISO_MAXSIZE',
                 value => 4_700_372_992
             },
             {
-                key => "DVD",
-                value => "1"
+                key => 'DVD',
+                value => '1'
             },
         ],
         job_templates => [

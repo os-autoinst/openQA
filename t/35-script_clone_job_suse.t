@@ -28,17 +28,17 @@ subtest 'maintenance update detect' => sub {
     my $job_id = 1;
     my %job = (
         id => $job_id,
-        SCC_ADDONS => "we,sdk",
-        WE_TEST_REPOS => "http://foo/WE_suse/openqa,http://foo/WE_suse_2/openqa",
-        SDK_TEST_REPOS => "http://foo/SDK_suse/openqa,http://foo/SDK_suse_2/openqa",
+        SCC_ADDONS => 'we,sdk',
+        WE_TEST_REPOS => 'http://foo/WE_suse/openqa,http://foo/WE_suse_2/openqa',
+        SDK_TEST_REPOS => 'http://foo/SDK_suse/openqa,http://foo/SDK_suse_2/openqa',
     );
     my %incident_job = (
         id => $job_id,
-        INCIDENT_REPO => "http://foo/incident_repo/openqa,http://foo/incident_repo_1/openqa",
+        INCIDENT_REPO => 'http://foo/incident_repo/openqa,http://foo/incident_repo_1/openqa',
     );
     my %skip_check = (
         id => $job_id,
-        SKIP_MAINTENANCE_UPDATES => "1"
+        SKIP_MAINTENANCE_UPDATES => '1'
     );
     my $fake_ua = Test::FakeLWPUserAgent->new;
     my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
@@ -58,11 +58,11 @@ subtest 'similar but invalid settings' => sub {
     my $job_id = 1;
     my %job = (
         id => $job_id,
-        XXX_SCC_ADDONS => "we,sdk",
+        XXX_SCC_ADDONS => 'we,sdk',
     );
     my %incident_job = (
         id => $job_id,
-        XXX_INCIDENT_REPO => "http://foo/incident_repo/openqa,http://foo/incident_repo_1/openqa",
+        XXX_INCIDENT_REPO => 'http://foo/incident_repo/openqa,http://foo/incident_repo_1/openqa',
     );
     my $fake_ua = Test::FakeLWPUserAgent->new;
     my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);

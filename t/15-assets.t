@@ -228,9 +228,9 @@ is($repo->ensure_size, 10, 'repo asset size should be 10');
 $ja->remove_from_disk();
 $fixed->remove_from_disk();
 $repo->remove_from_disk();
-ok(!-e $japath, "ja asset should have been removed");
-ok(!-e $fixedpath, "fixed asset should have been removed");
-ok(!-e $repopath, "repo asset should have been removed");
+ok(!-e $japath, 'ja asset should have been removed');
+ok(!-e $fixedpath, 'fixed asset should have been removed');
+ok(!-e $repopath, 'repo asset should have been removed');
 
 # for safety
 unlink($japath);
@@ -320,7 +320,7 @@ subtest 'check for missing assets' => sub {
                 dependency => OpenQA::JobDependencies::Constants::CHAINED
             });
         $schema->resultset('Assets')
-          ->create({type => 'hdd', name => sprintf("%08d-disk_from_parent", $parent_job->id), size => 0});
+          ->create({type => 'hdd', name => sprintf('%08d-disk_from_parent', $parent_job->id), size => 0});
         $missing_assets = $job_with_2_assets->missing_assets;
         is_deeply $missing_assets, [], 'private asset created by parent so no asset missing'
           or always_explain $missing_assets;
@@ -336,7 +336,7 @@ subtest 'check for missing assets' => sub {
                 dependency => OpenQA::JobDependencies::Constants::CHAINED
             });
         $schema->resultset('Assets')
-          ->create({type => 'hdd', name => sprintf("%08d-disk_from_parent", $parent_job->id), size => 0});
+          ->create({type => 'hdd', name => sprintf('%08d-disk_from_parent', $parent_job->id), size => 0});
         @assets = sort map { $_->asset->name } $job_with_2_assets->jobs_assets->all;
         $missing_assets = $job_with_2_assets->missing_assets;
         is_deeply $missing_assets, ['hdd/non_existent'],

@@ -30,7 +30,7 @@ sub create ($self, %options) {
     try { $dbh = $storage->dbh }
     catch ($e) {
         diag $e;
-        plan skip_all => "set TEST_PG to e.g. \"DBI:Pg:dbname=test\" to enable this test"
+        plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test'
           if $e =~ /DBI Connection failed.*No such file or directory/ && !$ENV{TEST_PG};
     }
     $dbh->do('SET TIME ZONE "utc"');
@@ -86,7 +86,7 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
                 $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
             }
             catch ($e) {
-                croak "Could not insert fixture " . path($fixture)->to_rel($cwd) . ": $e";
+                croak 'Could not insert fixture ' . path($fixture)->to_rel($cwd) . ": $e";
             }
         }
     }

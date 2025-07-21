@@ -44,7 +44,7 @@ symlink "$FindBin::Bin/../data/openqa/share/factory", "$share_dir/factory";
 # ensure job events are logged
 $ENV{OPENQA_CONFIG} = $tempdir;
 my @data = ("[audit]\n", "blocklist = job_grab\n");
-$tempdir->child("openqa.ini")->spew(join '', @data);
+$tempdir->child('openqa.ini')->spew(join '', @data);
 
 my $chunk_size = 10000000;
 
@@ -472,7 +472,7 @@ my $expected_result_size = 0;
 my $rp;
 my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
 seek($fh, 20 * 1024 * 1024, 0);    # create 200 MiB quick
-syswrite($fh, "X");
+syswrite($fh, 'X');
 close($fh);
 
 subtest 'upload video' => sub {
@@ -1081,7 +1081,7 @@ subtest 'handle settings when posting job' => sub {
         {
             name => '64bit',
             backend => 'qemu',
-            settings => [{key => "QEMUCPU", value => "qemu64"},],
+            settings => [{key => 'QEMUCPU', value => 'qemu64'},],
         });
     $products->create(
         {
@@ -1347,7 +1347,7 @@ subtest 'Parse extra tests results - LTP' => sub {
     $parser->include_results(1);
     $parser->load($junit);
     my $jobid = 99963;
-    my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
+    my $basedir = 't/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/';
 
     stdout_like(
         sub {
@@ -1397,7 +1397,7 @@ subtest 'Parse extra tests results - xunit' => sub {
     $parser->include_results(1);
     $parser->load($junit);
     my $jobid = 99963;
-    my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
+    my $basedir = 't/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/';
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
@@ -1441,7 +1441,7 @@ subtest 'Parse extra tests results - junit' => sub {
     $parser->include_results(1);
     $parser->load($junit);
     my $jobid = 99963;
-    my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
+    my $basedir = 't/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/';
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
@@ -1457,7 +1457,7 @@ subtest 'Parse extra tests results - junit' => sub {
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
             file => {file => $junit, filename => $fname},
-            type => "JUnit",
+            type => 'JUnit',
             extra_test => 1,
             script => 'test'
         })->status_is(200, 'request went fine');

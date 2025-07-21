@@ -274,7 +274,7 @@ subtest 'saving needle via Git' => sub {
         sub finish { }
 
         sub fail {
-            Test::Most::fail("Minion job shouldn't have failed.");    # uncoverable statement
+            Test::Most::fail('Minion job should not have failed.');    # uncoverable statement
             Test::Most::note(Data::Dumper::Dumper(\@_));    # uncoverable statement
         }
     }    # uncoverable statement
@@ -291,13 +291,13 @@ subtest 'saving needle via Git' => sub {
             [qw(git -C), "$empty_tmp_dir", qw(remote update origin)],
             [qw(git -C), "$empty_tmp_dir", qw(reset --hard HEAD)],
             [qw(git -C), "$empty_tmp_dir", qw(rebase origin/master)],
-            [qw(git -C), "$empty_tmp_dir", qw(add), "foo.json", "foo.png"],
+            [qw(git -C), "$empty_tmp_dir", qw(add), 'foo.json', 'foo.png'],
             [
                 qw(git -C), "$empty_tmp_dir",
                 qw(commit -q -m),
                 'foo for opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
                 '--author=Percival <percival@example.com>',
-                "foo.json", "foo.png"
+                'foo.json', 'foo.png'
             ],
         ],
         'commands executed as expected'
@@ -332,10 +332,10 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
 
     package Test::FailingMinionJob {
         sub finish { }
-        sub fail($self, $args) { $self->{fail_message} = $args }
+        sub fail ($self, $args) { $self->{fail_message} = $args }
     }    # uncoverable statement
 
-    sub _run_save_needle_test($git_mock) {
+    sub _run_save_needle_test ($git_mock) {
         my @log_errors;
         my $log_mock = Test::MockModule->new(ref $t->app->log);
         $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });

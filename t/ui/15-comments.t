@@ -39,11 +39,11 @@ my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 #
 # List with no parameters
 #
-$driver->title_is("openQA", "on main page");
+$driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
 
 # we are back on the main page
-$driver->title_is("openQA", "back on main page");
+$driver->title_is('openQA', 'back on main page');
 
 # check 'reviewed' labels
 
@@ -56,10 +56,10 @@ $driver->find_element_by_link_text('opensuse')->click();
 is($driver->find_element('h2:first-of-type')->get_text(), 'Last Builds for opensuse', 'on group overview');
 
 # define test message
-my $test_message = "This is a cool test ☠";
-my $another_test_message = " - this message will be appended if editing works ☠";
+my $test_message = 'This is a cool test ☠';
+my $another_test_message = ' - this message will be appended if editing works ☠';
 my $edited_test_message = $test_message . $another_test_message;
-my $description_test_message = "pinned-description ... The description";
+my $description_test_message = 'pinned-description ... The description';
 my $user_name = 'Demo';
 
 # fills out the comment form and submits
@@ -122,7 +122,7 @@ sub check_comment {
     # check anchor
     my $anchor = $driver->find_child_element($comment_headings[0], '.comment-anchor')->get_attribute('href');
     $anchor =~ s/[^#]*#/#/;
-    like($anchor, qr/#comment-[0-9]+/, "anchor matches expected format");
+    like($anchor, qr/#comment-[0-9]+/, 'anchor matches expected format');
     is($driver->find_element("$anchor div.media-comment")->get_text(), $supposed_text, 'body found via anchor ref');
 }
 
@@ -169,7 +169,7 @@ sub test_comment_editing {
 
         # the comment mustn't be deleted yet
         is($driver->find_element('div.media-comment')->get_text(),
-            $edited_test_message, "comment is still there after dismissing removal");
+            $edited_test_message, 'comment is still there after dismissing removal');
 
         # try to remove the first displayed comment again (and accept this time);
         $driver->find_element('button.remove-edit-button')->click();
@@ -225,7 +225,7 @@ EOF
 
     # the first made comment needs to be 2nd now
     my @comments = $driver->find_elements('div.media-comment p', 'css');
-    #is($comments[0]->get_text(), $test_message, "body of first comment after adding another");
+    #is($comments[0]->get_text(), $test_message, 'body of first comment after adding another');
 
     # uses ( delimiter for qr as there are / in the text
     like($comments[0]->get_text(),
@@ -233,46 +233,46 @@ qr(bsc#1234  boo#2345, poo#3456 t#4567 .*poo#6789  bsc#7890 bsc#1000629 bsc#1000
     );
     my @urls = $driver->find_elements('div.media-comment a', 'css');
     is(scalar @urls, 19);
-    is((shift @urls)->get_text(), 'http://localhost:9562', "url2");
-    is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
-    is((shift @urls)->get_text(), 'http://localhost/foo/bar', "url4");
-    is((shift @urls)->get_text(), ' bsc#1234', "url5");
-    is((shift @urls)->get_text(), ' boo#2345', "url6");
-    is((shift @urls)->get_text(), ' poo#3456', "url7");
-    is((shift @urls)->get_text(), 't#4567', "url8");
-    is((shift @urls)->get_text(), 't#5678/modules/welcome/steps/1', "url9");
-    is((shift @urls)->get_text(), ' poo#6789', "url10");
-    is((shift @urls)->get_text(), ' bsc#7890', "url11");
-    is((shift @urls)->get_text(), 'bsc#1000629', "url12");
-    is((shift @urls)->get_text(), ' bnc#1246', "url14");
-    is((shift @urls)->get_text(), ' gh#os-autoinst/openQA#1234', "url15");
-    is((shift @urls)->get_text(), ' gh#os-autoinst/os-autoinst#960', "url16");
-    is((shift @urls)->get_text(), ' bgo#768954', "url17");
-    is((shift @urls)->get_text(), ' brc#1401123', "url18");
-    is((shift @urls)->get_text(), ' bgo#690345', "url19");
-    is((shift @urls)->get_text(), ' brc#343098', "url20");
-    is((shift @urls)->get_text(), 'bsc#1043970', "url21");
+    is((shift @urls)->get_text(), 'http://localhost:9562', 'url2');
+    is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', 'url3');
+    is((shift @urls)->get_text(), 'http://localhost/foo/bar', 'url4');
+    is((shift @urls)->get_text(), ' bsc#1234', 'url5');
+    is((shift @urls)->get_text(), ' boo#2345', 'url6');
+    is((shift @urls)->get_text(), ' poo#3456', 'url7');
+    is((shift @urls)->get_text(), 't#4567', 'url8');
+    is((shift @urls)->get_text(), 't#5678/modules/welcome/steps/1', 'url9');
+    is((shift @urls)->get_text(), ' poo#6789', 'url10');
+    is((shift @urls)->get_text(), ' bsc#7890', 'url11');
+    is((shift @urls)->get_text(), 'bsc#1000629', 'url12');
+    is((shift @urls)->get_text(), ' bnc#1246', 'url14');
+    is((shift @urls)->get_text(), ' gh#os-autoinst/openQA#1234', 'url15');
+    is((shift @urls)->get_text(), ' gh#os-autoinst/os-autoinst#960', 'url16');
+    is((shift @urls)->get_text(), ' bgo#768954', 'url17');
+    is((shift @urls)->get_text(), ' brc#1401123', 'url18');
+    is((shift @urls)->get_text(), ' bgo#690345', 'url19');
+    is((shift @urls)->get_text(), ' brc#343098', 'url20');
+    is((shift @urls)->get_text(), 'bsc#1043970', 'url21');
 
     my @urls2 = $driver->find_elements('div.media-comment a', 'css');
-    like((shift @urls2)->get_attribute('href'), qr|^http://localhost:9562/?$|, "url2-href");
-    is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/tests/181148', "url3-href");
-    is((shift @urls2)->get_attribute('href'), 'http://localhost/foo/bar', "url4-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', "url5-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.opensuse.org/show_bug.cgi?id=2345', "url6-href");
-    is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/3456', "url7-href");
-    like((shift @urls2)->get_attribute('href'), qr{/tests/4567}, "url8-href");
-    like((shift @urls2)->get_attribute('href'), qr{/tests/5678/modules/welcome/steps}, "url9-href");
-    is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/6789', "url10-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=7890', "url11-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', "url12-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1246', "url14-href");
-    is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/openQA/issues/1234', "url15-href");
-    is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/os-autoinst/issues/960', "url16-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.gnome.org/show_bug.cgi?id=768954', "url17-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=1401123', "url18-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.gnome.org/show_bug.cgi?id=690345', "url19-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=343098', "url20-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1043970', "url21-href");
+    like((shift @urls2)->get_attribute('href'), qr|^http://localhost:9562/?$|, 'url2-href');
+    is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/tests/181148', 'url3-href');
+    is((shift @urls2)->get_attribute('href'), 'http://localhost/foo/bar', 'url4-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'url5-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.opensuse.org/show_bug.cgi?id=2345', 'url6-href');
+    is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/3456', 'url7-href');
+    like((shift @urls2)->get_attribute('href'), qr{/tests/4567}, 'url8-href');
+    like((shift @urls2)->get_attribute('href'), qr{/tests/5678/modules/welcome/steps}, 'url9-href');
+    is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/6789', 'url10-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=7890', 'url11-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', 'url12-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1246', 'url14-href');
+    is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/openQA/issues/1234', 'url15-href');
+    is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/os-autoinst/issues/960', 'url16-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.gnome.org/show_bug.cgi?id=768954', 'url17-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=1401123', 'url18-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.gnome.org/show_bug.cgi?id=690345', 'url19-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=343098', 'url20-href');
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1043970', 'url21-href');
 };
 
 subtest 'commenting in test results including labels' => sub {
@@ -284,7 +284,7 @@ subtest 'commenting in test results including labels' => sub {
     is(
         $driver->get_title(),
         'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results',
-        "on test result page"
+        'on test result page'
     );
     switch_to_comments_tab(0);
 
@@ -325,8 +325,8 @@ EOM
         $driver->refresh;
         wait_for_ajax msg => 'comment with status icons loaded';
         my @i = $driver->find_elements('div.comment-body span.openqa-testref i.status');
-        is $i[0]->get_attribute('class'), 'status fa fa-circle result_passed', "Icon for success is shown";
-        is $i[1]->get_attribute('class'), 'status fa fa-circle result_failed', "Icon for failure is shown";
+        is $i[0]->get_attribute('class'), 'status fa fa-circle result_passed', 'Icon for success is shown';
+        is $i[1]->get_attribute('class'), 'status fa fa-circle result_failed', 'Icon for failure is shown';
     };
 
     subtest 'check comment availability sign on test result overview' => sub {
@@ -338,11 +338,11 @@ EOM
         );
         $driver->find_element('#current-build-overview a')->click();
 
-        $driver->title_is("openQA: Test summary", "back on test group overview");
+        $driver->title_is('openQA: Test summary', 'back on test group overview');
         is(
             $driver->find_element('#res_DVD_x86_64_doc .fa-comment')->get_attribute('title'),
             '3 comments available',
-            "test results show available comment(s)"
+            'test results show available comment(s)'
         );
     };
 
@@ -444,14 +444,14 @@ subtest 'editing when logged in as regular user' => sub {
 
     sub no_edit_no_remove_on_other_comments_expected {
         is(@{$driver->find_elements('button.trigger-edit-button', 'css')},
-            0, "edit not displayed for other users comments");
-        is(@{$driver->find_elements('button.remove-edit-button', 'css')}, 0, "removal not displayed for regular user");
+            0, 'edit not displayed for other users comments');
+        is(@{$driver->find_elements('button.remove-edit-button', 'css')}, 0, 'removal not displayed for regular user');
     }
 
     sub only_edit_for_own_comments_expected {
-        is(@{$driver->find_elements('button.trigger-edit-button', 'css')}, 1, "own comments can be edited");
+        is(@{$driver->find_elements('button.trigger-edit-button', 'css')}, 1, 'own comments can be edited');
         is(@{$driver->find_elements('button.remove-edit-button', 'css')}, 0,
-            "no comments can be removed, even not own");
+            'no comments can be removed, even not own');
     }
 
     subtest 'test pinned comments: ' . $_ => sub {

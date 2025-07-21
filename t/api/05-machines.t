@@ -55,18 +55,18 @@ is_deeply(
                         'value' => 'qemu64'
                     }]}]
     },
-    "Initial machines"
+    'Initial machines'
 ) || always_explain $t->tx->res->json;
 
 
-$t->post_ok('/api/v1/machines', json => {name => "testmachine"})->status_is(400)
+$t->post_ok('/api/v1/machines', json => {name => 'testmachine'})->status_is(400)
   ->json_is('/error', 'Missing parameter: backend');
-$t->post_ok('/api/v1/machines', json => {backend => "kde/usb"})->status_is(400)
+$t->post_ok('/api/v1/machines', json => {backend => 'kde/usb'})->status_is(400)
   ->json_is('/error', 'Missing parameter: name');
 $t->post_ok('/api/v1/machines', json => {})->status_is(400)->json_is('/error', 'Missing parameter: backend, name');
 
 $t->post_ok('/api/v1/machines',
-    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST" => "val1", "TEST2" => "val1"}})
+    json => {name => 'testmachine', backend => 'qemu', 'settings' => {'TEST' => 'val1', 'TEST2' => 'val1'}})
   ->status_is(200);
 my $machine_id = $t->tx->res->json->{id};
 my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
@@ -76,23 +76,23 @@ is_deeply(
     'machine event was logged correctly'
 );
 
-$t->get_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(200);
+$t->get_ok('/api/v1/machines', form => {name => 'testmachine'})->status_is(200);
 is($t->tx->res->json->{Machines}->[0]->{id}, $machine_id);
 
 $t->post_ok('/api/v1/machines',
-    json => {name => "testmachineQ", backend => "qemu", "settings" => {"TEST" => "'v'al1", "TEST2" => "va'l\'1"}})
+    json => {name => 'testmachineQ', backend => 'qemu', 'settings' => {'TEST' => "'v'al1", 'TEST2' => "va'l\'1"}})
   ->status_is(200);
-$t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
+$t->get_ok('/api/v1/machines', form => {name => 'testmachineQ'})->status_is(200);
 is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
 is($t->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1");
 
-$t->post_ok('/api/v1/machines', json => {name => "testmachineZ", backend => "qemu", "settings" => {"TEST" => "'v'al1"}})
+$t->post_ok('/api/v1/machines', json => {name => 'testmachineZ', backend => 'qemu', 'settings' => {'TEST' => "'v'al1"}})
   ->status_is(200);
-$t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
-is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{key}, "TEST");
+$t->get_ok('/api/v1/machines', form => {name => 'testmachineQ'})->status_is(200);
+is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{key}, 'TEST');
 is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
 
-$t->post_ok('/api/v1/machines', json => {name => "testmachine", backend => "qemu"})->status_is(400);    #already exists
+$t->post_ok('/api/v1/machines', json => {name => 'testmachine', backend => 'qemu'})->status_is(400);    #already exists
 
 $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
@@ -113,11 +113,11 @@ is_deeply(
                         'value' => 'val1'
                     }]}]
     },
-    "Add machine"
+    'Add machine'
 ) || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/machines/$machine_id",
-    json => {name => "testmachine", backend => "qemu", settings => {"TEST2" => "val1"}})->status_is(200);
+    json => {name => 'testmachine', backend => 'qemu', settings => {'TEST2' => 'val1'}})->status_is(200);
 
 $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
@@ -134,10 +134,10 @@ is_deeply(
                         'value' => 'val1'
                     }]}]
     },
-    "Delete machine variable"
+    'Delete machine variable'
 ) || always_explain $t->tx->res->json;
 
-$t->put_ok("/api/v1/machines/$machine_id", json => {name => "testmachine", "settings" => {"TEST2" => "val0"}})
+$t->put_ok("/api/v1/machines/$machine_id", json => {name => 'testmachine', 'settings' => {'TEST2' => 'val0'}})
   ->status_is(400)->json_is('/error', 'Missing parameter: backend');
 
 $t->put_ok("/api/v1/machines/$machine_id", => {'Content-Type' => 'application/json'} => '{BROKEN JSON')->status_is(400)
@@ -147,11 +147,11 @@ $t->put_ok("/api/v1/machines/$machine_id", => {'Content-Type' => 'text/html'})->
   ->json_like('/error', qr/Invalid request Content-Type/);
 
 $t->put_ok("/api/v1/machines/$machine_id",
-    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST2'" => "val2"}})->status_is(400)
+    json => {name => 'testmachine', backend => 'qemu', 'settings' => {"TEST2'" => 'val2'}})->status_is(400)
   ->json_like('/error', qr(Invalid characters <b>&#39;</b> in settings key <b>TEST2&#39;</b>));
 
 $t->put_ok("/api/v1/machines/$machine_id",
-    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST2" => "val2"}})->status_is(200);
+    json => {name => 'testmachine', backend => 'qemu', 'settings' => {'TEST2' => 'val2'}})->status_is(200);
 
 $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
@@ -168,7 +168,7 @@ is_deeply(
                         'value' => 'val2'
                     }]}]
     },
-    "Update settings via JSON request"
+    'Update settings via JSON request'
 ) || always_explain $t->tx->res->json;
 
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
@@ -178,11 +178,11 @@ subtest 'trim whitespace characters' => sub {
     $t->post_ok(
         '/api/v1/machines',
         json => {
-            name => " create_with_space ",
-            backend => " qemu ",
+            name => ' create_with_space ',
+            backend => ' qemu ',
             settings => {
-                " TEST " => " test value  ",
-                "TEST2  " => " test value2  "
+                ' TEST ' => ' test value  ',
+                'TEST2  ' => ' test value2  '
             }})->status_is(200);
     my $id = $t->tx->res->json->{id};
     $t->get_ok("/api/v1/machines/$id")->status_is(200);
@@ -209,11 +209,11 @@ subtest 'trim whitespace characters' => sub {
     $t->put_ok(
         "/api/v1/machines/$id",
         json => {
-            name => "  update_with_space ",
-            backend => "qemu ",
+            name => '  update_with_space ',
+            backend => 'qemu ',
             settings => {
-                " TEST " => " new test value  ",
-                " TEST3" => "  new test value3 "
+                ' TEST ' => ' new test value  ',
+                ' TEST3' => '  new test value3 '
             }})->status_is(200);
     $t->get_ok("/api/v1/machines/$id")->status_is(200);
     $t->json_is(
@@ -240,10 +240,10 @@ subtest 'trim whitespace characters' => sub {
 # switch to operator (default client) and try some modifications
 client($t);
 $t->post_ok('/api/v1/machines',
-    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST" => "val1", "TEST2" => "val1"}})
+    json => {name => 'testmachine', backend => 'qemu', 'settings' => {'TEST' => 'val1', 'TEST2' => 'val1'}})
   ->status_is(403);
 $t->put_ok("/api/v1/machines/$machine_id",
-    json => {name => "testmachine", backend => "qemu", "settings" => {"TEST2" => "val1"}})->status_is(403);
+    json => {name => 'testmachine', backend => 'qemu', 'settings' => {'TEST2' => 'val1'}})->status_is(403);
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(403);
 
 subtest 'server-side limit has precedence over user-specified limit' => sub {

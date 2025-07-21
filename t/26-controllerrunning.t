@@ -62,7 +62,7 @@ subtest streaming => sub {
         $log->unsubscribe('message');
         $log->on(message => sub { my ($log, $level, @lines) = @_; $log_messages .= join "\n", @lines, '' });
         $controller->tx($faketx);
-        $controller->stash("job", Job->new);
+        $controller->stash('job', Job->new);
 
         # setup fake textfile
         my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
@@ -79,10 +79,10 @@ subtest streaming => sub {
 
         my $fake_data = "A\n" x (12 * 1024);
         $t_file->spew($fake_data);
-        $controller->streamtext("test.txt");
+        $controller->streamtext('test.txt');
 
         my $size = -s $t_file;
-        ok $size > (10 * 1024), "test file size is greater than 10 * 1024";
+        ok $size > (10 * 1024), 'test file size is greater than 10 * 1024';
         like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
         Mojo::IOLoop->one_tick;
     };
@@ -145,7 +145,7 @@ subtest streaming => sub {
 
 subtest init => sub {
     my $app = Mojolicious->new();
-    $app->attr("schema", sub { FakeSchema->new() });
+    $app->attr('schema', sub { FakeSchema->new() });
     my $not_found;
     my $render_specific_not_found;
     my $render;
@@ -191,7 +191,7 @@ subtest init => sub {
 
 subtest edit => sub {
     my $app = Mojolicious->new();
-    $app->attr("schema", sub { FakeSchema->new() });
+    $app->attr('schema', sub { FakeSchema->new() });
     my $not_found;
     my $render_specific_not_found;
     my $found;
@@ -204,21 +204,21 @@ subtest edit => sub {
 
     # No results
     my $c = OpenQA::Shared::Controller::Running->new(app => $app);
-    $c->param('testid', "foobar");
-    $c->stash("job", Job->new);
+    $c->param('testid', 'foobar');
+    $c->stash('job', Job->new);
     $c->edit();
-    is $render_specific_not_found, 1, "No results";
+    is $render_specific_not_found, 1, 'No results';
 
     # Check if we can get the fake results
     my $details_count;
     monkey_patch 'FakeSchema::Find', find => sub { Job->new };
     monkey_patch 'OpenQA::Shared::Controller::Running', redirect_to => sub { $found = 1; $details_count = $_[5]; };
     $c = OpenQA::Shared::Controller::Running->new(app => $app);
-    $c->param('testid', "foobar");
-    $c->stash("job", Job->new);
+    $c->param('testid', 'foobar');
+    $c->stash('job', Job->new);
     $c->edit();
-    is $found, 1, "Redirecting to results";
-    is $details_count, 3, "Fake results are correct";
+    is $found, 1, 'Redirecting to results';
+    is $details_count, 3, 'Fake results are correct';
 };
 
 done_testing;
@@ -237,7 +237,7 @@ sub state { OpenQA::Jobs::Constants::RUNNING }
 sub result { OpenQA::Jobs::Constants::NONE }
 sub modules { FakeSchema::Find->new }
 sub results { {details => [qw(foo bar baz)]} }
-sub name { "foobar" }
+sub name { 'foobar' }
 
 package Worker;
 use Mojo::File 'tempdir';
@@ -275,4 +275,4 @@ sub resultset ($self, $name) { FakeSchema::Find->new($name) }
 
 package FakeSchema::Find;
 use Mojo::Base -signatures;
-sub new($class, $name = '') { bless({name => $name}, $class) }
+sub new ($class, $name = '') { bless({name => $name}, $class) }

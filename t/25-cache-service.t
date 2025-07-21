@@ -23,7 +23,7 @@ BEGIN {
     $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
     $ENV{OPENQA_BASEDIR} = $basedir;
     $ENV{OPENQA_CONFIG} = path($basedir, 'config')->make_path;
-    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew('
+    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew('
 [global]
 CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
 CACHEWORKERS = 10
@@ -90,7 +90,7 @@ sub test_default_usage ($id, $asset) {
         wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
     }
     ok($cache_client->asset_exists('localhost', $asset), "Asset $asset downloaded");
-    ok($asset_request->minion_id, "Minion job id recorded in the request object") or die always_explain $asset_request;
+    ok($asset_request->minion_id, 'Minion job id recorded in the request object') or die always_explain $asset_request;
 }
 
 sub test_sync ($run) {
@@ -120,13 +120,13 @@ sub test_sync ($run) {
 
     my $rsync_request2;
     stderr_like {
-        $rsync_request2 = $cache_client->rsync_request(from => "empty", to => "nowhewre");
+        $rsync_request2 = $cache_client->rsync_request(from => 'empty', to => 'nowhewre');
         ok !$cache_client->enqueue($rsync_request2);
 
         perform_minion_jobs($t->app->minion);
         wait_for_or_bail_out { $cache_client->status($rsync_request2)->is_processed } 'rsync';
     }
-    qr/rsync error:.*/, "rsync error message";
+    qr/rsync error:.*/, 'rsync error message';
 
     my $status2 = $cache_client->status($rsync_request2);
     is $status2->result, 'exit code 11', "exit code ok, run $run";
@@ -152,7 +152,7 @@ sub test_download ($id, $asset) {
     ok !$status->data->{has_download_error}, 'no download error occurred';
 
     ok($cache_client->asset_exists('localhost', $asset), "Asset downloaded id $id, asset $asset");
-    ok($asset_request->minion_id, "Minion job id recorded in the request object") or die always_explain $asset_request;
+    ok($asset_request->minion_id, 'Minion job id recorded in the request object') or die always_explain $asset_request;
 }
 
 sub perform_job_in_foreground ($job) {
@@ -196,7 +196,7 @@ subtest 'Configurable minion workers' => sub {
     is_deeply([OpenQA::CacheService::setup_workers(qw(minion daemon))],
         [qw(minion daemon)], 'minion worker setup with daemon');
 
-    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew("
+    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew("
 [global]
 CACHEDIRECTORY = $cachedir
 CACHELIMIT = 100");
@@ -323,7 +323,7 @@ subtest 'Race for same asset' => sub {
     my $sum = md5_sum(path($cachedir, 'localhost')->child($asset)->slurp);
     unlink path($cachedir, 'localhost')->child($asset)->to_string;
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
-      or die diag "Asset already exists - abort test";
+      or die diag 'Asset already exists - abort test';
 
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
     my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
@@ -347,11 +347,11 @@ subtest 'Race for same asset' => sub {
     is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
     $q->done->each(
         sub {
-            is $_->return_status, 1, "Asset exists after worker got released from cache service"
+            is $_->return_status, 1, 'Asset exists after worker got released from cache service'
               or die always_explain $_;
         });
 
-    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag 'Failed - no asset is there';
     is($sum, md5_sum(path($cachedir, 'localhost')->child($asset)->slurp), 'Download not corrupted');
 };
 
@@ -361,12 +361,12 @@ subtest 'Default usage' => sub {
 
     unlink path($cachedir)->child($asset);
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
-      or die diag "Asset already exists - abort test";
+      or die diag 'Asset already exists - abort test';
 
     my @logs;
     my $log_mock = Test::MockModule->new('Mojo::Log');
     $log_mock->redefine(info => sub { push @logs, $_[1] });
-    BAIL_OUT("Failed enqueuing download") if $cache_client->enqueue($asset_request);
+    BAIL_OUT('Failed enqueuing download') if $cache_client->enqueue($asset_request);
     perform_minion_jobs($t->app->minion);
     wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
     my $worker = $t->app->minion->repair->worker->register;
@@ -374,8 +374,8 @@ subtest 'Default usage' => sub {
     my $out = $cache_client->status($asset_request)->output;
     $worker->unregister;
     ok(scalar @logs, 'Output should be present') or die diag $out;
-    like "@logs", qr/Downloading "$asset" from/, "Asset download attempt logged";
-    ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
+    like "@logs", qr/Downloading "$asset" from/, 'Asset download attempt logged';
+    ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag 'Failed - no asset is there';
 };
 
 subtest 'Small assets causes racing when releasing locks' => sub {
@@ -384,15 +384,15 @@ subtest 'Small assets causes racing when releasing locks' => sub {
 
     unlink path($cachedir)->child($asset);
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
-      or die diag "Asset already exists - abort test";
+      or die diag 'Asset already exists - abort test';
 
-    BAIL_OUT("Failed enqueuing download") if $cache_client->enqueue($asset_request);
+    BAIL_OUT('Failed enqueuing download') if $cache_client->enqueue($asset_request);
     perform_minion_jobs($t->app->minion);
     wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
     my $out = $cache_client->status($asset_request)->output;
     ok($out, 'Output should be present') or die diag $out;
-    like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
-    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";
+    like $out, qr/Downloading "$asset" from/, 'Asset download attempt logged';
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag 'Failed - no asset is there';
 };
 
 subtest 'Asset download with default usage' => sub {
@@ -423,7 +423,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
     ok($cache_client->asset_exists('localhost', $_), "Asset $_ downloaded correctly") for @assets;
 
-    @assets = map { "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2" } 1 .. $tot_proc;
+    @assets = map { 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2' } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
     %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
@@ -434,7 +434,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     }
     'assets';
 
-    ok($cache_client->asset_exists('localhost', "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2"),
+    ok($cache_client->asset_exists('localhost', 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2'),
         "Asset $_ downloaded correctly")
       for @assets;
 

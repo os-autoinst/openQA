@@ -16,7 +16,7 @@ use OpenQA::Test::TimeLimit '15';
 sub file_path { OpenQA::File->new(file => path(@_)) }
 
 subtest 'base' => sub {
-    my $file = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
+    my $file = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json');
     ok $file->end;
     $file->read;
     my $content = $file->content();
@@ -27,7 +27,7 @@ subtest 'base' => sub {
 };
 
 subtest 'split/join' => sub {
-    my $size = file_path($FindBin::Bin, "data", "ltp_test_result_format.json")->size;
+    my $size = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->size;
 
     is $size, 6991, 'size matches';
 
@@ -37,21 +37,21 @@ subtest 'split/join' => sub {
     is OpenQA::File::_chunk_size(30, 10), 3;
     is OpenQA::File::_chunk_size(31, 10), 4;
 
-    my $pieces = file_path($FindBin::Bin, "data", "ltp_test_result_format.json")->split(2000);
+    my $pieces = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->split(2000);
 
     is $pieces->last->end, $size, 'Last piece end must match with size';
 
-    is $pieces->join(), path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp, 'Content match'
+    is $pieces->join(), path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->slurp, 'Content match'
       or die always_explain $pieces;
 
-    is $pieces->generate_sum(), sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp),
+    is $pieces->generate_sum(), sha1_base64(path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->slurp),
       'SHA-1 match'
       or die always_explain $pieces;
 
     my $t_file = tempfile();
     $pieces->write($t_file);
 
-    is $t_file->slurp, path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp,
+    is $t_file->slurp, path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->slurp,
       'Composed content is same as original'
       or die always_explain $pieces;
 
@@ -63,19 +63,19 @@ subtest 'split/join' => sub {
 
     is_deeply $des_pieces, $pieces or die always_explain $des_pieces;
 
-    is $des_pieces->join(), path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp, 'Content match'
+    is $des_pieces->join(), path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->slurp, 'Content match'
       or die always_explain $des_pieces;
 
     is $des_pieces->generate_sum(),
-      sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp), 'SHA-1 match'
+      sha1_base64(path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->slurp), 'SHA-1 match'
       or die always_explain $des_pieces;
 
-    ok $des_pieces->is_sum(sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp));
+    ok $des_pieces->is_sum(sha1_base64(path($FindBin::Bin, 'data', 'ltp_test_result_format.json')->slurp));
 };
 
 
 subtest 'recompose in-place' => sub {
-    my $original = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
+    my $original = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json');
 
     my $pieces = $original->split(103);
 
@@ -119,17 +119,17 @@ subtest 'recompose in-place' => sub {
 };
 
 subtest 'prepare_chunks' => sub {
-    my $original = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
+    my $original = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json');
 
     my $pieces = $original->split(10);
 
     $pieces->prepare;
 
-    ok $_->cksum, "Checksum present for " . $_->index for $pieces->each;
+    ok $_->cksum, 'Checksum present for ' . $_->index for $pieces->each;
 };
 
 subtest 'verify_chunks' => sub {
-    my $original = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
+    my $original = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json');
 
     my $pieces = $original->split(100000);
 
@@ -168,7 +168,7 @@ subtest 'verify_chunks' => sub {
 
 sub compare {
     my ($file, $chunk_size) = @_;
-    my $original = file_path($FindBin::Bin, "data", $file);
+    my $original = file_path($FindBin::Bin, 'data', $file);
     my $pieces = $original->split($chunk_size);
 
     is(OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!');
@@ -189,8 +189,8 @@ sub compare {
 }
 
 subtest 'get_piece' => sub {
-    my $file = "ltp_test_result_format.json";
-    my $size = file_path($FindBin::Bin, "data", $file)->size;
+    my $file = 'ltp_test_result_format.json';
+    my $size = file_path($FindBin::Bin, 'data', $file)->size;
 
     compare($file => 1);
     compare($file => 10);

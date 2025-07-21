@@ -285,7 +285,7 @@ subtest '_locate_needle_for_ref' => sub {
     $t->app->config->{'scm git'} = {checkout_needles_sha => 'yes', allow_arbitrary_url_fetch => 'yes'};
     $mock_utils->unmock('run_cmd_with_log');
     $mock_utils->unmock('run_cmd_with_log_return_error');
-    my $json_path = OpenQA::Needles::_locate_needle_for_ref("foo.json", $needles_dir, $ref, "file://$git_remote_dir");
+    my $json_path = OpenQA::Needles::_locate_needle_for_ref('foo.json', $needles_dir, $ref, "file://$git_remote_dir");
     is $json_path, "t/data/openqa/webui/cache/needle-refs/tmp/$ref/needles/foo.json", 'get needle json';
     is path($json_path)->slurp, 'this is json';
     is path("t/data/openqa/webui/cache/needle-refs/tmp/$ref/needles/foo.png")->slurp, 'this is a png';

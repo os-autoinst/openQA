@@ -230,14 +230,14 @@ my $textmode_32 = find_job(\@jobs, \@newids, 'textmode', '32bit');
 is_deeply(
     $client1_32->{parents},
     {Parallel => [$server_32->{id}], Chained => [], 'Directly chained' => []},
-    "server_32 is only parent of client1_32"
+    'server_32 is only parent of client1_32'
 );
 is_deeply(
     $client2_32->{parents},
     {Parallel => [$server_32->{id}], Chained => [], 'Directly chained' => []},
-    "server_32 is only parent of client2_32"
+    'server_32 is only parent of client2_32'
 );
-is_deeply($server_32->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, "server_32 has no parents");
+is_deeply($server_32->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'server_32 has no parents');
 is($kde_32, undef, 'kde is not created for 32bit machine');
 is($advanced_kde_32, undef, 'advanced_kde is not created for 32bit machine');
 
@@ -251,14 +251,14 @@ my $textmode_64 = find_job(\@jobs, \@newids, 'textmode', '64bit');
 is_deeply(
     $client1_64->{parents},
     {Parallel => [$server_64->{id}], Chained => [], 'Directly chained' => []},
-    "server_64 is only parent of client1_64"
+    'server_64 is only parent of client1_64'
 );
 is_deeply(
     $client2_64->{parents},
     {Parallel => [$server_64->{id}], Chained => [], 'Directly chained' => []},
-    "server_64 is only parent of client2_64"
+    'server_64 is only parent of client2_64'
 );
-is_deeply($server_64->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, "server_64 has no parents");
+is_deeply($server_64->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'server_64 has no parents');
 eq_set($advanced_kde_64->{parents}->{Parallel}, [], 'advanced_kde_64 has no parallel parents');
 eq_set(
     $advanced_kde_64->{parents}->{Chained},
@@ -302,10 +302,10 @@ is_deeply(
 ) or always_explain $advanced_kde_64->{settings};
 
 # variable precedence
-is($client1_32->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
-is($client1_64->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
-is($server_32->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
-is($server_64->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
+is($client1_32->{settings}->{PRECEDENCE}, 'original', 'default precedence (post PRECEDENCE beats suite PRECEDENCE)');
+is($client1_64->{settings}->{PRECEDENCE}, 'original', 'default precedence (post PRECEDENCE beats suite PRECEDENCE)');
+is($server_32->{settings}->{PRECEDENCE}, 'overridden', 'precedence override (suite +PRECEDENCE beats post PRECEDENCE)');
+is($server_64->{settings}->{PRECEDENCE}, 'overridden', 'precedence override (suite +PRECEDENCE beats post PRECEDENCE)');
 
 lj;
 
@@ -332,7 +332,7 @@ $t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
 $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is($t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
-schedule_iso($t, {iso => $iso, tests => "kde/usb"}, 400, {}, 'invalid parameters');
+schedule_iso($t, {iso => $iso, tests => 'kde/usb'}, 400, {}, 'invalid parameters');
 schedule_iso($t, {%iso, FLAVOR => 'cherry'}, 200, {}, 'no product found');
 schedule_iso($t, {%iso, _GROUP_ID => 12345}, 404, {}, 'no templates found');
 
@@ -353,7 +353,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $t->get_ok('/api/v1/jobs/99963')->status_is(200);
     is($t->tx->res->json->{job}->{state}, 'running', 'job in build 0091 running');
     my $tag = 'tag:0091:important';
-    $schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    $schema->resultset('JobGroups')->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso($t, {%iso, _OBSOLETE => 1});
     is($res->json->{count}, 10, '10 jobs created');
     my $example = $res->json->{ids}->[9];
@@ -370,7 +370,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
     # now test with a VERSION-BUILD format tag
     $tag = 'tag:13.1-0093:important';
-    $schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    $schema->resultset('JobGroups')->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso($t, {%iso, BUILD => '0094', _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled');
     @jobs = @{$t->tx->res->json->{jobs}};
@@ -455,16 +455,16 @@ subtest 'Catch multimachine cycles' => sub {
 
     # we want the data to be transient
     $schema->txn_begin;
-    add_opensuse_test('Algol-a', PARALLEL_WITH => "Algol-b");
-    add_opensuse_test('Algol-b', PARALLEL_WITH => "Algol-c");
-    add_opensuse_test('Algol-c', PARALLEL_WITH => "Algol-a,Algol-b");
+    add_opensuse_test('Algol-a', PARALLEL_WITH => 'Algol-b');
+    add_opensuse_test('Algol-b', PARALLEL_WITH => 'Algol-c');
+    add_opensuse_test('Algol-c', PARALLEL_WITH => 'Algol-a,Algol-b');
 
     my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 0, 'Cycle found');
     like(
         $res->json->{failed}->[0]->{error_messages}->[0],
         qr/There is a cycle in the dependencies of Algol-c/,
-        "Cycle reported"
+        'Cycle reported'
     );
     $schema->txn_rollback;
 };
@@ -490,9 +490,9 @@ subtest 'Catch blocked_by cycles' => sub {
 
     # we want the data to be transient
     $schema->txn_begin;
-    add_opensuse_test "ha_alpha_node01_upgrade";
-    add_opensuse_test "ha_alpha_node02_upgrade";
-    add_opensuse_test "ha_supportserver_upgraded";
+    add_opensuse_test 'ha_alpha_node01_upgrade';
+    add_opensuse_test 'ha_alpha_node02_upgrade';
+    add_opensuse_test 'ha_supportserver_upgraded';
     add_opensuse_test 'ha_alpha_node01_upgraded',
       PARALLEL_WITH => 'ha_supportserver_upgraded',
       START_AFTER_TEST => 'ha_alpha_node01_upgrade';
@@ -518,12 +518,12 @@ subtest 'Catch blocked_by cycles' => sub {
         \%block_hash,
         {
             ha_alpha_node01_upgrade => undef,
-            ha_alpha_node01_upgraded => "ha_alpha_node01_upgrade",
+            ha_alpha_node01_upgraded => 'ha_alpha_node01_upgrade',
             ha_alpha_node02_upgrade => undef,
-            ha_alpha_node02_upgraded => "ha_alpha_node02_upgrade",
-            ha_supportserver_upgraded => "ha_alpha_node01_upgrade",
+            ha_alpha_node02_upgraded => 'ha_alpha_node02_upgrade',
+            ha_supportserver_upgraded => 'ha_alpha_node01_upgrade',
         },
-        "Upgrades not blocked"
+        'Upgrades not blocked'
     );
 
     $schema->txn_rollback;
@@ -561,7 +561,7 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
 
 for my $machine_separator (qw(@ :)) {
     $schema->txn_begin;
-    subtest "Create dependency for jobs on different machines"
+    subtest 'Create dependency for jobs on different machines'
       . " - dependency setting are correct (using machine separator '$machine_separator')" => sub {
         $t->post_ok('/api/v1/machines',
             json => {name => '64bit-ipmi', backend => 'ipmi', settings => {'TEST' => 'ipmi'}})->status_is(200);
@@ -591,7 +591,7 @@ for my $machine_separator (qw(@ :)) {
         is_deeply(
             $client_laptop->{parents},
             {Parallel => [$server1_64->{id}, $server2_ipmi->{id}], Chained => [], 'Directly chained' => []},
-            "server1_64 and server2_ipmi are the parents of client_laptop"
+            'server1_64 and server2_ipmi are the parents of client_laptop'
         );
 
         my $test1_64 = find_job(\@jobs, \@newids, 'test1', '64bit');
@@ -601,12 +601,12 @@ for my $machine_separator (qw(@ :)) {
         is_deeply(
             $test3_64->{parents},
             {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}], 'Directly chained' => []},
-            "test1_64 and test2_ipmi are the parents of test3"
+            'test1_64 and test2_ipmi are the parents of test3'
         ) or always_explain $test3_64->{parents};
         is_deeply(
             $test4_64->{parents},
             {Parallel => [], Chained => [], 'Directly chained' => [$test3_64->{id}]},
-            "test1_64 and test2_ipmi are the parents of test3"
+            'test1_64 and test2_ipmi are the parents of test3'
         ) or always_explain $test4_64->{parents};
 
       };
@@ -635,16 +635,16 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     my $install_ltp = find_job(\@jobs, \@newids, 'install_ltp', 'powerpc');
     my $use_ltp_64 = find_job(\@jobs, \@newids, 'use_ltp', '64bit');
     my $use_ltp_power = find_job(\@jobs, \@newids, 'use_ltp', 'powerpc');
-    is_deeply($use_ltp_64->{parents}, undef, "not found parent for use_ltp on 64bit, check for dependency typos");
+    is_deeply($use_ltp_64->{parents}, undef, 'not found parent for use_ltp on 64bit, check for dependency typos');
     like(
         $res->json->{failed}->[0]->{error_messages}->[0],
         qr/START_AFTER_TEST=install_ltp\@64bit not found - check for dependency typos and dependency cycles/,
-        "install_ltp@64bit not exist, check for dependency typos"
+        'install_ltp@64bit not exist, check for dependency typos'
     );
     is_deeply(
         $use_ltp_power->{parents},
         {Parallel => [], Chained => [$install_ltp->{id}], 'Directly chained' => []},
-        "install_ltp is parent of use_ltp_power"
+        'install_ltp is parent of use_ltp_power'
     );
 
     my $install_kde_64 = find_job(\@jobs, \@newids, 'install_kde', '64bit');
@@ -654,12 +654,12 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     is_deeply(
         $use_kde_64->{parents},
         {Parallel => [], Chained => [$install_kde_64->{id}], 'Directly chained' => []},
-        "install_kde_64 is only parent of use_kde_64"
+        'install_kde_64 is only parent of use_kde_64'
     );
     is_deeply(
         $use_kde_power->{parents},
         {Parallel => [], Chained => [$install_kde_power->{id}], 'Directly chained' => []},
-        "install_kde_power is only parent of use_kde_power"
+        'install_kde_power is only parent of use_kde_power'
     );
 
     $schema->txn_rollback;
@@ -696,7 +696,7 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
         is_deeply(
             $c->{parents},
             {Parallel => [$supportserver_ppc->{id}], Chained => [], 'Directly chained' => []},
-            "supportserver_ppc is only parent of " . $c->{name});
+            'supportserver_ppc is only parent of ' . $c->{name});
     }
 
     subtest 'error reported to client and logged in scheduled products table' => sub {
@@ -710,7 +710,7 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
                 like(
                     $error,
                     qr/supportserver@(.*?) has no child, check its machine placed or dependency setting typos/,
-                    "supportserver placed on 64bit/s390x machine, but no child"
+                    'supportserver placed on 64bit/s390x machine, but no child'
                 );
             }
         }

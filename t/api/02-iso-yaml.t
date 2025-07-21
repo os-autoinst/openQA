@@ -135,13 +135,13 @@ subtest 'schedule from yaml file: wildcard version' => sub {
     my $job_settings = $jobs->find($job_id)->settings_hash;
     my %expected = (
         %iso,
-        TEST => "job1",
+        TEST => 'job1',
         NAME => "0000000$job_id-opensuse-13.1-DVD-i586-Build0091-job1",
         WORKER_CLASS => 'qemu_i586',
         FOO => 'bar',
         PRODUCT_SETTING => 'foo',
     );
-    is_deeply $job_settings, \%expected, "job1 scheduled with expected settings" or always_explain $job_settings;
+    is_deeply $job_settings, \%expected, 'job1 scheduled with expected settings' or always_explain $job_settings;
 };
 
 done_testing();

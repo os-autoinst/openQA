@@ -26,7 +26,7 @@ plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
 #
 # List with no parameters
 #
-$driver->title_is("openQA", "on main page");
+$driver->title_is('openQA', 'on main page');
 my @build_headings = $driver->find_elements('.h4', 'css');
 is scalar @build_headings, 4, '4 builds shown';
 

@@ -158,7 +158,7 @@ subtest 'test max retry count' => sub {
     # use all concurrency slots to reach concurrency limit
     my @guards = map { $t->app->obs_rsync->concurrency_guard() } (1 .. $config{queue_limit});
     # put request and make sure it succeeded within 5 sec
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, 'trigger rsync');
 
     my $sleep = .2;
     my $empiristic = 3;    # this accounts gru timing in worst case for job run and retry

@@ -51,10 +51,10 @@ my @empty_deps = (
     directly_chained_children => [],
 );
 
-ok($schema, "create database") || BAIL_OUT("failed to create database");
+ok($schema, 'create database') || BAIL_OUT('failed to create database');
 
 my $current_jobs = list_jobs();
-ok(@$current_jobs, "have jobs");
+ok(@$current_jobs, 'have jobs');
 
 my $job1 = job_get(99927);
 is($job1->{state}, OpenQA::Jobs::Constants::SCHEDULED, 'trying to duplicate scheduled job');
@@ -68,11 +68,11 @@ is_deeply(
     '99926 has no siblings and is DONE'
 );
 $job = job_get_rs(99926)->auto_duplicate;
-ok(defined $job, "duplication works");
+ok(defined $job, 'duplication works');
 isnt($job->id, $job1->{id}, 'clone id is different than original job id');
 
 my $jobs = list_jobs();
-is(@$jobs, @$current_jobs + 1, "one more job after duplicating one job");
+is(@$jobs, @$current_jobs + 1, 'one more job after duplicating one job');
 
 $current_jobs = $jobs;
 
@@ -101,7 +101,7 @@ subtest 'restart job which has already been cloned' => sub {
 };
 
 $jobs = list_jobs();
-is_deeply($jobs, $current_jobs, "jobs unchanged after restarting scheduled job");
+is_deeply($jobs, $current_jobs, 'jobs unchanged after restarting scheduled job');
 
 subtest 'cancel job' => sub {
     $job1 = job_get(99927);
@@ -228,32 +228,32 @@ is_deeply(
 OpenQA::Resource::Jobs::job_restart([99963]);
 
 $jobs = list_jobs();
-is(@$jobs, @$current_jobs + 2, "two more job after restarting running job with parallel dependency");
+is(@$jobs, @$current_jobs + 2, 'two more job after restarting running job with parallel dependency');
 
 $job1 = job_get(99963);
 job_get_rs(99963)->cancel(OpenQA::Jobs::Constants::USER_CANCELLED);
 $job2 = job_get(99963);
 
-is_deeply($job1, $job2, "running job unchanged after cancel");
+is_deeply($job1, $job2, 'running job unchanged after cancel');
 
 my $job3 = job_get(99938)->{clone_id};
 job_get_rs($job3)->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
 $job3 = job_get($job3);
 my $round1 = job_get_rs($job3->{id})->auto_duplicate({dup_type_auto => 1});
-ok(defined $round1, "auto-duplicate works");
+ok(defined $round1, 'auto-duplicate works');
 $job3 = job_get($round1->id);
 # need to change state from scheduled
 $job3 = job_get($round1->id);
 job_get_rs($job3->{id})->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
 $round1->discard_changes;
 my $round2 = $round1->auto_duplicate({dup_type_auto => 1});
-ok(defined $round2, "auto-duplicate works");
+ok(defined $round2, 'auto-duplicate works');
 $job3 = job_get($round2->id);
 # need to change state from scheduled
 job_get_rs($job3->{id})->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
 $round2->discard_changes;
 my $round3 = $round2->auto_duplicate({dup_type_auto => 1});
-ok(defined $round3, "auto-duplicate works");
+ok(defined $round3, 'auto-duplicate works');
 $job3 = job_get($round3->id);
 # need to change state from scheduled
 job_get_rs($job3->{id})->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
@@ -262,7 +262,7 @@ job_get_rs($job3->{id})->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
 $job3 = job_get($round3->id);
 job_get_rs($job3->{id})->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
 my $round5 = job_get_rs($round3->id)->auto_duplicate;
-ok(defined $round5, "manual-duplicate works");
+ok(defined $round5, 'manual-duplicate works');
 $job3 = job_get($round5->id);
 
 sub _print_job_cluster ($jobs) {

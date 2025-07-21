@@ -84,7 +84,7 @@ sub start_driver ($mojoport) {
 
         # chromedriver is unfortunately hidden on openSUSE
         $ENV{PATH} = join(':', $ENV{PATH}, qw(/usr/lib64/chromium));
-        $opts{custom_args} = "--log-path=t/log_chromedriver";
+        $opts{custom_args} = '--log-path=t/log_chromedriver';
         unless ($ENV{NOT_HEADLESS}) {
             push(@{$opts{extra_capabilities}{$_}{args}}, qw(--headless --disable-gpu --no-sandbox))
               for @chrome_option_keys;
@@ -110,7 +110,7 @@ sub start_driver ($mojoport) {
 #  * see 33-developer_mode.t for an example
 sub open_new_tab ($url) {
     # open new window using JavaScript API (Selenium::Remote::Driver doesn't seem to provide a method)
-    $url = $url ? "\"$url\"" : 'window.location';
+    $url = $url ? qq{"$url"} : 'window.location';
     $_driver->execute_script("window.open($url);");
 
     # assume the last window handle is the one of the newly created window

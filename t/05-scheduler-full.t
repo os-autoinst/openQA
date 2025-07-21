@@ -40,7 +40,7 @@ use OpenQA::Test::Utils qw(
 use OpenQA::Test::TimeLimit '150';
 
 # treat this test like the fullstack test
-plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
+plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
 
 my $load_avg_file = simulate_load('0.93 0.95 3.25 2/2207 1212', '05-scheduler-full');
 
@@ -81,7 +81,7 @@ sub stop_workers { stop_service($_, 1) for @workers }
 sub dead_workers {
     my $schema = shift;
     $_->update({t_seen => DateTime->from_epoch(epoch => time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY)})
-      for $schema->resultset("Workers")->all();
+      for $schema->resultset('Workers')->all();
 }
 
 sub wait_for_worker {
@@ -237,7 +237,7 @@ subtest 'Simulation of heavy unstable load' => sub {
             last if $dup->state eq SCHEDULED;
             sleep .1;    # uncoverable statement
         }
-        is $dup->state, SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
+        is $dup->state, SCHEDULED, 'Job(' . $dup->id . ') back in scheduled state';
     }
     stop_workers;
     dead_workers($schema);
@@ -254,7 +254,7 @@ subtest 'Simulation of heavy unstable load' => sub {
             last if $dup->state eq SCHEDULED;
             sleep .1;    # uncoverable statement
         }
-        is $dup->state, SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
+        is $dup->state, SCHEDULED, 'Job(' . $dup->id . ') is still in scheduled state';
     }
 
     stop_workers;
@@ -291,8 +291,8 @@ END {
     stop_workers;
     stop_service($_, 1) for ($ws, $webapi);
     if (which 'ps') {
-        $ENV{CI} and note "### all processes: " . qx{ps auxf} . "\n";
-        note "### processes in tree: " . qx{ps Tf} . "\n";
+        $ENV{CI} and note '### all processes: ' . qx{ps auxf} . "\n";
+        note '### processes in tree: ' . qx{ps Tf} . "\n";
     }
 }
 

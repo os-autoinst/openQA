@@ -29,7 +29,7 @@ subtest 'Perl modules' => sub {
     is $search->get_text(), '', 'empty search entry by default';
 
     $search->send_keys('timezone');
-    $search->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    $search->send_keys(Selenium::Remote::WDKeys->KEYS->{enter});
     wait_for_element(selector => '#results .list-group-item');
 
     like $driver->get_title(), qr/Search/, 'search shown' or return;
@@ -49,7 +49,7 @@ subtest 'Perl modules' => sub {
       'expected occurrence';
     is $second->child('.contents')->get_text(),
       qq{    3 # Summary: Verify timezone settings page\n}
-      . qq{   10     assert_screen "inst-timezone", 125 || die 'no timezone';},
+      . qq{   10     assert_screen 'inst-timezone', 125 || die 'no timezone';},
       'expected contents';
 };
 

@@ -12,7 +12,7 @@ BEGIN {
     *CORE::GLOBAL::exit = sub (;$) { $exit_handler->(@_ ? 0 + $_[0] : 0) }
 }
 
-sub exit_code(&) {
+sub exit_code (&) {
     my $exit_code;
     local $exit_handler = sub { $exit_code = $_[0] };
     shift->();
@@ -57,25 +57,25 @@ subtest 'set listen address' => sub {
 subtest 'random number generator' => sub {
     my $r = random_string;
     my $r2 = random_string;
-    is(length($r), 16, "length 16");
-    like($r, qr/^\w+$/a, "random_string only consists of word characters");
-    is(length($r), length($r2), "same length");
-    isnt($r, $r2, "random_string produces different results");
+    is(length($r), 16, 'length 16');
+    like($r, qr/^\w+$/a, 'random_string only consists of word characters');
+    is(length($r), length($r2), 'same length');
+    isnt($r, $r2, 'random_string produces different results');
 
     $r = random_string 32;
     $r2 = random_string 32;
-    is(length($r), 32, "length 32");
-    like($r, qr/^\w+$/a, "random_string only consists of word characters");
-    is(length($r), length($r2), "same length");
-    isnt($r, $r2, "random_string produces different results");
+    is(length($r), 32, 'length 32');
+    like($r, qr/^\w+$/a, 'random_string only consists of word characters');
+    is(length($r), length($r2), 'same length');
+    isnt($r, $r2, 'random_string produces different results');
 
     is(length(random_hex), 16, 'default length 16');
     $r = random_hex 97;
     $r2 = random_hex 97;
-    is(length($r), 97, "length 97");
-    like($r, qr/^[0-9A-F]+$/a, "random_hex only consists of hex characters");
-    is(length($r), length($r2), "same length");
-    isnt($r, $r2, "random_hex produces different results");
+    is(length($r), 97, 'length 97');
+    like($r, qr/^[0-9A-F]+$/a, 'random_hex only consists of hex characters');
+    is(length($r), length($r2), 'same length');
+    isnt($r, $r2, 'random_hex produces different results');
 };
 
 subtest 'download speed' => sub {
@@ -150,7 +150,7 @@ walker(
     $t3 => sub {
         my ($k, $v, $ks, $what) = @_;
         next if reftype $what eq 'HASH' && exists $what->{_data};
-        like $_[0], qr/bar|baz|foo|0|1|fish$|fish2|boring/, "Walked";
+        like $_[0], qr/bar|baz|foo|0|1|fish$|fish2|boring/, 'Walked';
 
         $what->[$k] = {_type => ref $v, _data => $v} if reftype $what eq 'ARRAY';
         $what->{$k} = {_type => ref $v, _data => $v} if reftype $what eq 'HASH';
@@ -256,50 +256,50 @@ EOT
     # Create a valid Changelog and check if result is the expected one
     $changelog_file->spew($changelog_content);
     is detect_current_version($changelog_dir), '5.1743167903.dfbc473b', 'Detect current version from Changelog format';
-    like detect_current_version($changelog_dir), qr/(\d+\.\d+\.$sha_regex)/, "Version scheme matches";
+    like detect_current_version($changelog_dir), qr/(\d+\.\d+\.$sha_regex)/, 'Version scheme matches';
     $changelog_file->spew("- Update to version 5.1743167903.dfbc473b:\n- Update to version 5.1743167902.cebc473b:");
     is detect_current_version($changelog_dir), '5.1743167903.dfbc473b', 'Pick latest version detected in Changelog';
 
     # Failure detection case for Changelog file
-    $changelog_file->spew("* Do job cleanup even in case of api failure");
+    $changelog_file->spew('* Do job cleanup even in case of api failure');
     is detect_current_version($changelog_dir), undef, 'Invalid Changelog return no version';
-    $changelog_file->spew("Update to version 3a2.d2d.2ad.9869466:");
+    $changelog_file->spew('Update to version 3a2.d2d.2ad.9869466:');
     is detect_current_version($changelog_dir), undef, 'Invalid versions in Changelog returns undef';
 
     # Create a valid Git repository where we can fetch the exact version.
-    $head_file->spew("7223a2408120127ad2d82d71ef1893bbe02ad8aa");
+    $head_file->spew('7223a2408120127ad2d82d71ef1893bbe02ad8aa');
     $refs_file->spew($refs_content);
     is detect_current_version($git_dir), 'git-4.3-7223a240', 'detect current version from Git repository';
     like detect_current_version($git_dir), qr/(git\-\d+\.\d+\-$sha_regex)/, 'Git version scheme matches';
 
     # If refs file can't be found or there is no tag present, version should be undef
     unlink($refs_file);
-    is detect_current_version($git_dir), undef, "Git ref file missing, version is undef";
-    $refs_file->spew("ac6dd8d4475f8b7e0d683e64ff49d6d96151fb76");
-    is detect_current_version($git_dir), undef, "Git ref file shows no tag, version is undef";
+    is detect_current_version($git_dir), undef, 'Git ref file missing, version is undef';
+    $refs_file->spew('ac6dd8d4475f8b7e0d683e64ff49d6d96151fb76');
+    is detect_current_version($git_dir), undef, 'Git ref file shows no tag, version is undef';
 };
 
 subtest 'Plugins handling' => sub {
 
-    is path_to_class('foo/bar.pm'), "foo::bar";
-    is path_to_class('foo/bar/baz.pm'), "foo::bar::baz";
+    is path_to_class('foo/bar.pm'), 'foo::bar';
+    is path_to_class('foo/bar/baz.pm'), 'foo::bar::baz';
 
-    ok grep("OpenQA::Utils", loaded_modules), "Can detect loaded modules";
-    ok grep("Test::Most", loaded_modules), "Can detect loaded modules";
+    ok grep('OpenQA::Utils', loaded_modules), 'Can detect loaded modules';
+    ok grep('Test::Most', loaded_modules), 'Can detect loaded modules';
 
     is_deeply [loaded_plugins('OpenQA::Utils', 'Test::Most')], ['OpenQA::Utils', 'Test::Most', 'Test::Most::Exception'],
-      "Can detect loaded plugins, filtering by namespace";
-    ok grep("Test::Most", loaded_plugins),
-      "loaded_plugins() behave like loaded_modules() when no arguments are supplied";
+      'Can detect loaded plugins, filtering by namespace';
+    ok grep('Test::Most', loaded_plugins),
+      'loaded_plugins() behave like loaded_modules() when no arguments are supplied';
 
     my $test_hash = {
         auth => {
-            method => "Fake",
-            foo => "bar",
+            method => 'Fake',
+            foo => 'bar',
             b => {bar2 => 2},
         },
         baz => {
-            bar => "test"
+            bar => 'test'
         }};
 
     my %reconstructed_hash;
@@ -316,58 +316,58 @@ subtest 'Plugins handling' => sub {
 
     };
 
-    is_deeply \%reconstructed_hash, $test_hash, "hashwalker() reconstructed original hash correctly";
+    is_deeply \%reconstructed_hash, $test_hash, 'hashwalker() reconstructed original hash correctly';
 };
 
 subtest asset_type_from_setting => sub {
     use OpenQA::Utils 'asset_type_from_setting';
     is asset_type_from_setting('ISO'), 'iso', 'simple from ISO';
-    is asset_type_from_setting('UEFI_PFLASH_VARS'), 'hdd', "simple from UEFI_PFLASH_VARS";
-    is asset_type_from_setting('UEFI_PFLASH_VARS', 'relative'), 'hdd', "relative from UEFI_PFLASH_VARS";
-    is asset_type_from_setting('UEFI_PFLASH_VARS', '/absolute'), '', "absolute from UEFI_PFLASH_VARS";
+    is asset_type_from_setting('UEFI_PFLASH_VARS'), 'hdd', 'simple from UEFI_PFLASH_VARS';
+    is asset_type_from_setting('UEFI_PFLASH_VARS', 'relative'), 'hdd', 'relative from UEFI_PFLASH_VARS';
+    is asset_type_from_setting('UEFI_PFLASH_VARS', '/absolute'), '', 'absolute from UEFI_PFLASH_VARS';
 };
 
 subtest parse_assets_from_settings => sub {
     use OpenQA::Utils 'parse_assets_from_settings';
     my $settings = {
-        ISO => "foo.iso",
-        ISO_2 => "foo_2.iso",
+        ISO => 'foo.iso',
+        ISO_2 => 'foo_2.iso',
         # this is a trap: shouldn't be treated as an asset
-        HDD => "hdd.qcow2",
-        HDD_1 => "hdd_1.qcow2",
-        HDD_2 => "hdd_2.qcow2",
+        HDD => 'hdd.qcow2',
+        HDD_1 => 'hdd_1.qcow2',
+        HDD_2 => 'hdd_2.qcow2',
         # shouldn't be treated as asset *yet* as it's absolute
-        UEFI_PFLASH_VARS => "/absolute/path/uefi_pflash_vars.qcow2",
+        UEFI_PFLASH_VARS => '/absolute/path/uefi_pflash_vars.qcow2',
         # trap
-        REPO => "repo",
-        REPO_1 => "repo_1",
-        REPO_2 => "repo_2",
+        REPO => 'repo',
+        REPO_1 => 'repo_1',
+        REPO_2 => 'repo_2',
         # trap
-        ASSET => "asset.pm",
-        ASSET_1 => "asset_1.pm",
-        ASSET_2 => "asset_2.pm",
-        KERNEL => "vmlinuz",
-        INITRD => "initrd.img",
+        ASSET => 'asset.pm',
+        ASSET_1 => 'asset_1.pm',
+        ASSET_2 => 'asset_2.pm',
+        KERNEL => 'vmlinuz',
+        INITRD => 'initrd.img',
     };
     my $assets = parse_assets_from_settings($settings);
     my $refassets = {
-        ISO => {type => "iso", name => "foo.iso"},
-        ISO_2 => {type => "iso", name => "foo_2.iso"},
-        HDD_1 => {type => "hdd", name => "hdd_1.qcow2"},
-        HDD_2 => {type => "hdd", name => "hdd_2.qcow2"},
-        REPO_1 => {type => "repo", name => "repo_1"},
-        REPO_2 => {type => "repo", name => "repo_2"},
-        ASSET_1 => {type => "other", name => "asset_1.pm"},
-        ASSET_2 => {type => "other", name => "asset_2.pm"},
-        KERNEL => {type => "other", name => "vmlinuz"},
-        INITRD => {type => "other", name => "initrd.img"},
+        ISO => {type => 'iso', name => 'foo.iso'},
+        ISO_2 => {type => 'iso', name => 'foo_2.iso'},
+        HDD_1 => {type => 'hdd', name => 'hdd_1.qcow2'},
+        HDD_2 => {type => 'hdd', name => 'hdd_2.qcow2'},
+        REPO_1 => {type => 'repo', name => 'repo_1'},
+        REPO_2 => {type => 'repo', name => 'repo_2'},
+        ASSET_1 => {type => 'other', name => 'asset_1.pm'},
+        ASSET_2 => {type => 'other', name => 'asset_2.pm'},
+        KERNEL => {type => 'other', name => 'vmlinuz'},
+        INITRD => {type => 'other', name => 'initrd.img'},
     };
-    is_deeply $assets, $refassets, "correct with absolute UEFI_PFLASH_VARS";
+    is_deeply $assets, $refassets, 'correct with absolute UEFI_PFLASH_VARS';
     # now make this relative: it should now be seen as an asset type
-    $settings->{UEFI_PFLASH_VARS} = "uefi_pflash_vars.qcow2";
+    $settings->{UEFI_PFLASH_VARS} = 'uefi_pflash_vars.qcow2';
     $assets = parse_assets_from_settings($settings);
-    $refassets->{UEFI_PFLASH_VARS} = {type => "hdd", name => "uefi_pflash_vars.qcow2"};
-    is_deeply $assets, $refassets, "correct with relative UEFI_PFLASH_VARS";
+    $refassets->{UEFI_PFLASH_VARS} = {type => 'hdd', name => 'uefi_pflash_vars.qcow2'};
+    is_deeply $assets, $refassets, 'correct with relative UEFI_PFLASH_VARS';
 };
 
 subtest 'base_host' => sub {

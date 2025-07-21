@@ -16,7 +16,7 @@ BEGIN {
     $cachedir->make_path->realpath;
     $db_file = $cachedir->child('cache.sqlite');
     $ENV{OPENQA_CONFIG} = path($cached, 'config')->make_path;
-    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spew("
+    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew("
 [global]
 CACHEDIRECTORY = $cachedir
 CACHEWORKERS = 10

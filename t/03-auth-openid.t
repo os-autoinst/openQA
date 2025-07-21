@@ -41,7 +41,7 @@ $mock_openid_consumer->redefine(
     'handle_server_response',
     sub ($self, %res_handlers) {
         return $res_handlers{setup_needed}
-          ? $res_handlers{setup_needed}->("https://www.opensuse.org/openid/setup")
+          ? $res_handlers{setup_needed}->('https://www.opensuse.org/openid/setup')
           : undef;
     });
 $c->set_always(
