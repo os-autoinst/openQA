@@ -46,7 +46,7 @@ test_once "-v $args", qr/\+ local dry_run/, 'clone-job with -v prints commands';
 test_once "-n -v $args", qr/\+ local dry_run/, 'clone-job with -n -v prints commands';
 my $args_branch = 'https://github.com/user/repo/tree/my/branch https://openqa.opensuse.org/tests/1234 FOO=bar';
 my $expected_branch_re
-  = qr{${clone_job}1234 _GROUP=0 TEST\+=\@user/repo#my/branch BUILD=user/repo#my/branch ${dirs} FOO=bar};
+  = qr{${clone_job}1234 _GROUP=0 TEST\+=\@user/repo\#my/branch BUILD=user/repo\#my/branch ${dirs} FOO=bar};
 test_once $args_branch, $expected_branch_re, 'alternative mode with branch reference also yields right variables';
 my $prefix = 'env repo_name=user/repo pr=9128 host=https://openqa.opensuse.org job=1234';
 combined_like { $ret = run_once('', $prefix) } $expected_re, 'environment variables can be used instead';
@@ -57,7 +57,7 @@ my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 .*${dirs}}
 combined_like { $ret = run_once('', $prefix) } $expected_custom_re, 'testsuite and dirs can be overridden';
 is $ret, 0, 'exits successfully';
 my $args_trailing = 'https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1';
-test_once $args_trailing, qr{TEST\+=\@user/repo#my/branch.*}, 'trailing slash ignored';
+test_once $args_trailing, qr{TEST\+=\@user/repo\#my/branch.*}, 'trailing slash ignored';
 my $args_list = $args . ',https://openqa.opensuse.org/tests/1234';
 $expected_re = qr/${expected}.*opensuse.org 1234/s;
 test_once $args_list, $expected_re, 'accepts comma-separated list of jobs';
@@ -75,13 +75,12 @@ $expected_re = qr/TEST1=BLUB\r?\nTEST2=\$VAR\r?\nTEST3=space space\r?\nTEST4=\(!
 combined_like { run_once($args_escape, q(dry_run='printf "%s\n"')) } $expected_re,
   'Custom variables has proper bash escaping';
 
-TODO: {
-    local $TODO = 'not implemented';
+subtest 'short urls' => sub {
     $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/t1234';
     test_once $args, qr/${expected}/, 'short test URLs are supported the same';
     $args .= ',https://openqa.suse.de/t1234';
     test_once $args, qr/${expected}.* 1234/s, 'multiple short URLs from different hosts point to individual hosts';
-}
+};
 
 my $test_url = 'https://openqa.opensuse.org/tests/1107158';
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "\@openqa: Clone ${test_url}"}'; true};
