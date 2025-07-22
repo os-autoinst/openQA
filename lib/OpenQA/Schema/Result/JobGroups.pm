@@ -96,9 +96,7 @@ __PACKAGE__->belongs_to(
     'parent_id', {join_type => 'left', on_delete => 'SET NULL'});
 __PACKAGE__->has_many(job_templates => 'OpenQA::Schema::Result::JobTemplates', 'group_id');
 
-sub _get_column_or_default {
-    my ($self, $column, $setting) = @_;
-
+sub _get_column_or_default ($self, $column, $setting) {
     if (defined(my $own_value = $self->get_column($column))) {
         return $own_value;
     }
@@ -111,9 +109,7 @@ sub _get_column_or_default {
     return $limits->{$setting};
 }
 
-around size_limit_gb => sub {
-    my ($orig, $self) = @_;
-
+around size_limit_gb => sub ($orig, $self) {
     if (defined(my $own_value = $self->get_column('size_limit_gb'))) {
         return $own_value;
     }
@@ -123,34 +119,28 @@ around size_limit_gb => sub {
     #       the parent group. So the default is directly read from the config.
 };
 
-around keep_logs_in_days => sub {
-    my ($orig, $self) = @_;
+around keep_logs_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('keep_logs_in_days', 'log_storage_duration');
 };
 
-around keep_important_logs_in_days => sub {
-    my ($orig, $self) = @_;
+around keep_important_logs_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('keep_important_logs_in_days', 'important_log_storage_duration');
 };
 
-around keep_results_in_days => sub {
-    my ($orig, $self) = @_;
+around keep_results_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('keep_results_in_days', 'result_storage_duration');
 };
 
-around keep_important_results_in_days => sub {
-    my ($orig, $self) = @_;
+around keep_important_results_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('keep_important_results_in_days', 'important_result_storage_duration');
 };
 
-around default_priority => sub {
-    my ($orig, $self) = @_;
+around default_priority => sub ($orig, $self) {
     return $self->get_column('default_priority')
       // ($self->parent ? $self->parent->default_priority : OpenQA::JobGroupDefaults::PRIORITY);
 };
 
-around carry_over_bugrefs => sub {
-    my ($orig, $self) = @_;
+around carry_over_bugrefs => sub ($orig, $self) {
     return $self->get_column('carry_over_bugrefs')
       // ($self->parent ? $self->parent->carry_over_bugrefs : OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS);
 };
