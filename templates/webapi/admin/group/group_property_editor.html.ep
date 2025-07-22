@@ -102,18 +102,22 @@
                     </div>
                 </div>
             <% my $log_retention = begin %>
-              <%= help_popover 'Log vs. Result retention' => '
+              <%= help_popover 'Log vs. result vs. database retention' => '
                 <p>
-                    Specifies the default retention time for logs and results stored by this job group.
+                    The <em>Keep … for</em> settings specify the default retention time for <em>database entries</em>, <em>results</em> and <em>logs</em> of jobs belonging to this job group:
                 </p>
                 <ul>
                     <li>
-                        <code>Keep logs for</code>
-                        must be <strong>less than or equal to</strong>
-                        <code>Keep results for</code>
+                        The <em>database entry</em> for a job is required for openQA knowing the job at all. This retention must therefore be the longest.
+                        Note that a job is no longer accounted for in statistics on the index and group overview pages after its database entry is deleted.
                     </li>
                     <li>
-                        This ensures logs are not retained longer than the test results themselves.
+                        <em>Results</em> are all additional files stored on disk for a job (excluding assets) such as screenshots. This also includes logs and therefore this
+                        retention must be longer (or equal) than the retention of <em>Logs</em>.
+                    </li>
+                    <li>
+                        <em>Logs</em> are files listed under "Result files" in the "Logs & Assets" tab on the job details page, e.g. <code>autoinst-log.txt</code>.
+                        Note that files listed under "Assets" are <em>not</em> considered logs and configured via <em>Size limit for assets</em>.
                     </li>
                 </ul>
                 '; %>
@@ -131,6 +135,7 @@
                     class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of important jobs" title="currently not used">Keep important logs for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-important-logs-in-days" name="keep_important_logs_in_days" value="<%= $group->keep_important_logs_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
                 <div class="mb-3 row">
@@ -146,6 +151,23 @@
                     class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep results of important jobs">Keep important results for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-important-results-in-days" name="keep_important_results_in_days" value="<%= $group->keep_important_results_in_days %>"> days
+                        <%= $log_retention->() %>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="editor-keep-jobs-in-days" class="form-label
+                    col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep jobs in the database">Keep jobs in the database for</label>
+                    <div class="col-sm-10">
+                        <input type="number" min="0" class="form-control" id="editor-keep-results-in-days" name="keep_jobs_in_days" value="<%= $group->keep_jobs_in_days %>"> days
+                        <%= $log_retention->() %>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="editor-keep-important-jobs-in-days"
+                    class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep important jobs in the database">Keep important jobs in the database for</label>
+                    <div class="col-sm-10">
+                        <input type="number" min="0" class="form-control" id="editor-keep-important-jobs-in-days" name="keep_important_jobs_in_days" value="<%= $group->keep_important_jobs_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
             % }
@@ -162,6 +184,7 @@
                     class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of important jobs">Keep important logs for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-important-logs-in-days" name="default_keep_important_logs_in_days" value="<%= $group->default_keep_important_logs_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
                 <div class="mb-3 row">
@@ -177,6 +200,23 @@
                     class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep results of important jobs">Keep important results for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-important-results-in-days" name="default_keep_important_results_in_days" value="<%= $group->default_keep_important_results_in_days %>"> days
+                        <%= $log_retention->() %>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="editor-keep-jobs-in-days" class="form-label
+                    col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep jobs in database">Keep jobs in database for</label>
+                    <div class="col-sm-10">
+                        <input type="number" min="0" class="form-control" id="editor-keep-jobs-in-days" name="default_keep_jobs_in_days" value="<%= $group->default_keep_results_in_days %>"> days
+                        <%= $log_retention->() %>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="editor-keep-important-jobs-in-days"
+                    class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep important jobs in database">Keep important jobs in database for</label>
+                    <div class="col-sm-10">
+                        <input type="number" min="0" class="form-control" id="editor-keep-important-jobs-in-days" name="default_keep_important_jobs_in_days" value="<%= $group->default_keep_important_jobs_in_days %>"> days
+                        <%= $log_retention->() %>
                     </div>
                 </div>
             % }
