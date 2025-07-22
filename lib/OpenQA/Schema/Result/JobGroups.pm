@@ -262,6 +262,11 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
     return $jobs->search({-and => {@group_cond, -or => \@ors}}, {order_by => qw(id)});
 }
 
+sub find_expired_jobs ($self) {
+    my $expired = $self->_find_expired_jobs($self->keep_jobs_in_days, $self->keep_important_jobs_in_days);
+    return $expired ? [$expired->all] : [];
+}
+
 sub find_jobs_with_expired_results ($self) {
     my $expired = $self->_find_expired_jobs($self->keep_results_in_days, $self->keep_important_results_in_days);
     return $expired ? [$expired->all] : [];
@@ -275,8 +280,11 @@ sub find_jobs_with_expired_logs ($self, $preserved_important_jobs_out = undef) {
 
 # helper function for cleanup task
 sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef) {
-    my $expired_jobs = $self->find_jobs_with_expired_results;
+    my $expired_jobs = $self->find_expired_jobs;
     $_->delete for @$expired_jobs;
+
+    my $expired_results_jobs = $self->find_jobs_with_expired_results;
+    $_->delete_results for @$expired_results_jobs;
 
     my $config = OpenQA::App->singleton->config;
     my $preserved = $config->{archiving}->{archive_preserved_important_jobs} ? $preserved_important_jobs_out : undef;

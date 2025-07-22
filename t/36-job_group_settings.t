@@ -11,6 +11,8 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
 use OpenQA::JobGroupDefaults;
+use Date::Format qw(time2str);
+use Time::Seconds;
 
 OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -132,12 +134,31 @@ subtest 'inherited job group properties overridden' => sub {
 };
 
 subtest 'retention period of infinity does not break cleanup' => sub {
-    my $group = $job_groups->create({name => 'yet another group', keep_results_in_days => 0, keep_logs_in_days => 0});
+    my @retention_params = (keep_results_in_days => 0, keep_logs_in_days => 0, keep_jobs_in_days => 0);
+    my $group = $job_groups->create({name => 'yet another group', @retention_params});
     $group->jobs->create({TEST => 'very old job', t_finished => '0001-01-01 00:00:00'});
     $group->discard_changes;
     $group->limit_results_and_logs;
     $group->discard_changes;
     is $group->jobs->count, 1, 'very old job still there';
+};
+
+subtest 'retentions for job in database and job results are effective' => sub {
+    my $five_days_old = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 5, 'UTC');
+    my $group = $job_groups->create({name => 'another group', keep_results_in_days => 4});
+    my $job = $group->jobs->create({TEST => 'job', t_finished => $five_days_old});
+    $job->create_result_dir;
+    $group->discard_changes;
+    $group->limit_results_and_logs;
+    $group->discard_changes;
+    my $result_dir = $job->result_dir;
+    is $group->jobs->count, 1, 'job still in database as only keep_results_in_days was set';
+    ok !-d $result_dir, "result dir '$result_dir' no longer exists";
+
+    $group->update({keep_jobs_in_days => 4});
+    $group->limit_results_and_logs;
+    $group->discard_changes;
+    is $group->jobs->count, 0, 'job has been deleted from database via keep_jobs_in_days';
 };
 
 subtest 'new "null" job group uses configured default group limits' => sub {
