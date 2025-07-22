@@ -149,12 +149,16 @@ subtest 'Test configuration default modes' => sub {
             important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
             result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            job_storage_duration => OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS,
+            important_job_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS,
         },
         no_group_limits => {
             log_storage_duration => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
             important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
             result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            job_storage_duration => OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS,
+            important_job_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS,
         },
         minion_task_triggers => {
             on_job_done => [],
