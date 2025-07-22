@@ -404,6 +404,9 @@ ln -s %{_datadir}/openqa/script/dump-db %{buildroot}%{_bindir}/openqa-dump-db
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
 %endif
 
+install -d -m 755 %{buildroot}%{_datadir}/openqa/client
+install -m 755 public/openqa-cli.yaml %{buildroot}%{_datadir}/openqa/client/openqa-cli.yaml
+
 # munin
 %if %{with munin_package}
 install -d -m 755 %{buildroot}/%{_prefix}/lib/munin/plugins
@@ -767,6 +770,8 @@ fi
 
 %files client
 %dir %{_datadir}/openqa
+%dir %{_datadir}/openqa/client
+%{_datadir}/openqa/client/openqa-cli.yaml
 %dir %{_datadir}/openqa/script
 %{_datadir}/openqa/script/client
 %{_datadir}/openqa/script/clone_job.pl

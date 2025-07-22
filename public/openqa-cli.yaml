@@ -1,0 +1,188 @@
+---
+name: openqa-cli
+appspec: {version: '0.001'}
+plugins: [-Meta, -Help]
+title: openQA API commandline
+description: |2
+
+        # Show api command help with all available options and more examples
+        openqa-cli api --help
+
+        # Show details for job from localhost
+        openqa-cli api jobs/4160811
+
+        # Show details for job from arbitrary host
+        openqa-cli api --host http://openqa.example.com jobs/408
+
+        # Show details for OSD job (prettified JSON)
+        openqa-cli api --osd --pretty jobs/4160811
+
+        # Archive job from O3
+        openqa-cli archive --o3 408 /tmp/job_408
+
+
+        Configuration:
+          API key and secret are read from "client.conf" if not specified via CLI
+          arguments. The config file is checked for under "$OPENQA_CONFIG",
+          "~/.config/openqa" and "/etc/openqa" in this order. It must look like
+          this:
+
+            [openqa.opensuse.org]
+            key = 45ABCEB4562ACB04
+            secret = 4BA0003086C4CB95
+            [another.host]
+            key = D7345DA7B9D86B3B
+            secret = A98CDBA9C8DB87BD
+
+options:
+  - apibase=s       --API base, defaults to /api/v1
+  - apikey=s        --API key
+  - apisecret=s     --API secret
+  - host=s          --Target host, defaults to http://localhost
+  - help|h          --Get more information on a specific command
+  - osd             --Set target host to http://openqa.suse.de
+  - o3              --Set target host to https://openqa.opensuse.org
+  - odn             --Set target host to https://openqa.debian.net
+  - links|L         --Print pagination links to STDERR
+  - |
+    name=s          --Name of this client, used by openQA to
+                      identify different clients via User-Agent
+                      header, defaults to "openqa-cli"
+  - pretty|p        --Pretty print JSON content
+  - quiet|q         --Do not print error messages to STDERR
+  - verbose|v       --Print HTTP response headers
+
+subcommands:
+
+  api:
+    summary: Issue an arbitrary request to the API
+    description: |2
+        Usage: openqa-cli api [OPTIONS] PATH [PARAMS]
+
+        # Show details for job from localhost
+        openqa-cli api jobs/4160811
+
+        # Show details for job from arbitrary host
+        openqa-cli api --host http://openqa.example.com jobs/408
+
+        # Show details for job from OSD (prettified JSON)
+        openqa-cli api --osd --pretty jobs/4160811
+
+        # List all jobs (CAUTION: this might time out for a large instance)
+        openqa-cli api --host openqa.example.com jobs
+
+        # List all jobs matching the search criteria
+        openqa-cli api --osd jobs groupid=135 distri=caasp version=3.0 latest=1
+
+        # List the latest jobs matching the search criteria
+        # supported search criteria: $search_criteria
+        openqa-cli api --osd jobs/overview groupid=135 distri=caasp version=3.0
+
+        # Restart a job
+        openqa-cli api -X POST jobs/16/restart
+
+        # Delete job (CAUTION: destructive operation)
+        openqa-cli api --host openqa.example.com -X DELETE jobs/1
+
+        # Trigger a single job
+        openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri \
+          FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test
+
+        # Trigger a single set of jobs (see
+        # https://open.qa/docs/#_spawning_single_new_jobs_jobs_post for details)
+        openqa-cli api -X POST jobs \
+          TEST:0=first-job TEST:1=second-job _START_AFTER:1=0
+
+        # Trigger jobs on ISO "foo.iso" creating a "scheduled product" (see
+        # https://open.qa/docs/#_spawning_multiple_jobs_based_on_templates_isos_post
+        # for details, e.g for considering to use the `async` flag)
+        openqa-cli api --o3 -X POST isos ISO=foo.iso \
+          DISTRI=my-distri FLAVOR=my-flavor ARCH=my-arch VERSION=42 BUILD=1234
+
+        # Track scheduled product
+        openqa-cli api --o3 isos/1234
+
+        # Change group id for job
+        openqa-cli api --json --data '{"group_id":1}' -X PUT jobs/639172
+
+        # Change group id for job (pipe JSON data)
+        echo '{"group_id":1}' | openqa-cli api --json -X PUT jobs/639172
+
+        # Post job template
+        openqa-cli api -X POST job_templates_scheduling/1 \
+          schema=JobTemplates-01.yaml preview=0 template="$(cat foo.yaml)"
+
+        # Post job template (from file)
+        openqa-cli api -X POST job_templates_scheduling/1 \
+          schema=JobTemplates-01.yaml preview=0 --param-file template=foo.yaml
+
+        # Post job template (from JSON file)
+        openqa-cli api --data-file form.json -X POST job_templates_scheduling/1
+
+    options:
+      - header|a=s@           --One or more additional HTTP headers (<name:value>)
+      - name: data-file
+        aliases: [D]
+        type: file
+        summary: Load content to send with request from file
+      - data|d=s              --Content to send with request
+      - form|f                --Turn JSON object into form parameters
+      - json|j                --Request content is JSON
+      - verbose|v             --Print HTTP response headers
+      - &param_file |
+        param-file=s@         --Load content of params from files instead of
+                                from command line arguments. Multiple params
+                                may be specified by adding the option
+                                multiple times
+      - |
+        retries|r=i           --Retry up to the specified value on some
+                                errors. Retries can also be set by the
+                                environment variable 'OPENQA_CLI_RETRIES',
+                                defaults to no retry.
+                                Set 'OPENQA_CLI_RETRY_SLEEP_TIME_S' to
+                                configure the sleep time between retries.
+      - name: method
+        aliases: [X]
+        type: string
+        enum: [GET, HEAD, OPTIONS, TRACE, PUT, DELETE, POST, PATCH, CONNECT]
+        summary: HTTP method to use, defaults to GET
+    parameters:
+      - name: path
+        summary: API route
+        required: true
+      - name: parameters
+        summary: Query parameters
+
+  archive:
+    summary: Download assets and test results from a job
+    description: |
+      Usage: openqa-cli archive [OPTIONS] JOB PATH
+    options:
+      - asset-size-limit|l=i   --Asset size limit in bytes
+      - with-thumbnails|t      --Download thumbnails as well
+
+  schedule:
+    summary: Schedules a set of jobs (via "isos post" creating a schedule product)
+    description: |
+      Usage: openqa-cli schedule [OPTIONS] DISTRI=… VERSION=… FLAVOR=… ARCH=… [ISO=… …]
+    options:
+      - *param_file
+      - |
+        monitor|m         --Wait until all jobs are done/cancelled and return
+                            non-zero exit code if at least on job has not
+                            passed/softfailed
+      - &follow
+        follow|f          --Use the newest clone of each monitored job
+      - &poll_intervall
+        poll-interval|i=i --Specifies the poll interval used with --monitor
+
+  monitor:
+    summary: Monitors a set of jobs
+    description: |
+      Usage: openqa-cli monitor [OPTIONS] [JOB_IDS]
+
+      Wait until all specified jobs have reached a final state and return a non-zero
+      exit code if at least one job is not ok (is not passed or softfailed).
+    options:
+      - *poll_intervall
+      - *follow

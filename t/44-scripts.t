@@ -26,7 +26,11 @@ for my $key (keys %types) {
 }
 
 for my $script (sort keys %types) {
-    my $out = qx{$Bin/../script/$script --help 2>&1};
+    my $out = do {
+        # Mojolicious does not execute some code when it's run in test mode
+        local $ENV{HARNESS_ACTIVE} = 0;
+        qx{$Bin/../script/$script --help 2>&1};
+    };
     my $rc = $?;
     is($rc, 0, "Calling '$script --help' returns exit code 0")
       or diag "Output: $out";
