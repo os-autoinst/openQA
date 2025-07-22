@@ -178,6 +178,10 @@ sub _validate_common_properties ($self) {
     $validation->optional('parent_id')->like(qr/^(none|[0-9]+)\z/);
     $validation->optional('size_limit_gb')->like(qr/^(|[0-9]+)\z/);
     $validation->optional('build_version_sort')->num(0, 2);
+    $validation->optional('default_keep_logs_in_days')->num(0);
+    $validation->optional('default_keep_important_logs_in_days')->num(0);
+    $validation->optional('default_keep_results_in_days')->num(0);
+    $validation->optional('default_keep_important_results_in_days')->num(0);
     $validation->optional('keep_logs_in_days')->num(0);
     $validation->optional('keep_important_logs_in_days')->num(0);
     $validation->optional('keep_results_in_days')->num(0);
@@ -224,10 +228,6 @@ Returns a 400 code on error or a 500 code if the group already exists.
 sub create ($self) {
     my $validation = $self->validation;
     $validation->required('name')->like(qr/^(?!\s*$).+/);
-    $validation->optional('default_keep_logs_in_days')->num(0);
-    $validation->optional('default_keep_important_logs_in_days')->num(0);
-    $validation->optional('default_keep_results_in_days')->num(0);
-    $validation->optional('default_keep_important_results_in_days')->num(0);
     $self->_validate_common_properties;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
@@ -270,10 +270,6 @@ sub update ($self) {
     # Don't check group name if sorting group by dragging
     $validation->required('name')->like(qr/^(?!\s*$).+/) unless $validation->optional('drag')->num(1)->is_valid;
     $validation->optional('sort_order')->num(0);
-    $validation->optional('default_keep_logs_in_days')->num(0);
-    $validation->optional('default_keep_important_logs_in_days')->num(0);
-    $validation->optional('default_keep_results_in_days')->num(0);
-    $validation->optional('default_keep_important_results_in_days')->num(0);
     $self->_validate_common_properties;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
