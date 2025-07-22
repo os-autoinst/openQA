@@ -10,6 +10,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Test::TimeLimit '300';
 use OpenQA::Test::Case;
@@ -308,6 +309,25 @@ is($server_32->{settings}->{PRECEDENCE}, 'overridden', 'precedence override (sui
 is($server_64->{settings}->{PRECEDENCE}, 'overridden', 'precedence override (suite +PRECEDENCE beats post PRECEDENCE)');
 
 lj;
+
+subtest 'job statistics can be queried about the scheduled product' => sub {
+    $schema->txn_begin;
+    # assume some of the scheduled jobs are already done
+    $jobs->find(99985)->update({state => DONE, result => INCOMPLETE});
+    $jobs->find(99988)->update({state => DONE, result => FAILED});
+    $jobs->find(99993)->update({state => DONE, result => PASSED});
+    $jobs->find(99994)->update({state => DONE, result => PASSED});
+    $t->get_ok('/api/v1/isos/job_stats?distri=opensuse&version=13.1&flavor=DVD')->status_is(200);
+    $schema->txn_rollback;
+    my $json = $t->tx->res->json;
+    is_deeply [sort keys %$json], [DONE, SCHEDULED], 'expected states present';
+    is_deeply [sort keys %{$json->{done}}], [FAILED, INCOMPLETE, PASSED], 'expected results present';
+    is_deeply [sort @{$json->{done}->{failed}->{job_ids}}], [99988], 'failed jobs';
+    is_deeply [sort @{$json->{done}->{incomplete}->{job_ids}}], [99985], 'incomplete jobs';
+    is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99993, 99994], 'passed jobs';
+    is_deeply [sort @{$json->{scheduled}->{none}->{job_ids}}], [99986, 99987, 99989, 99990, 99991, 99992],
+      'scheduled jobs';
+};
 
 subtest 'old tests are cancelled unless they are marked as important' => sub {
     $t->get_ok('/api/v1/jobs/99927')->status_is(200);
