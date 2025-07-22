@@ -12,7 +12,7 @@ use File::Path 'make_path';
 use Scalar::Util 'looks_like_number';
 use List::Util qw(min max);
 use Mojo::File qw(path tempfile);
-use Mojo::Util 'dumper';
+use Mojo::Util qw(dumper scope_guard);
 use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -56,6 +56,8 @@ note('Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust thi
 
 # setup basedir, config dir and database
 my $tempdir = setup_fullstack_temp_dir('scalability');
+chdir $tempdir;
+my $guard = scope_guard sub { chdir $FindBin::Bin };
 my $schema = OpenQA::Test::Database->new->create;
 my $workers = $schema->resultset('Workers');
 my $jobs = $schema->resultset('Jobs');

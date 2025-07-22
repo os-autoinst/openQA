@@ -118,6 +118,7 @@ on 'develop' => sub {
     requires 'Perl::Critic';
     requires 'Perl::Critic::Community';
     requires 'Perl::Tidy', '== 20250616.0.0';
+    requires 'Test::CheckGitStatus';
 
 };
 

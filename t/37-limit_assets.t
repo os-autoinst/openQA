@@ -6,7 +6,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::File 'path';
+use Mojo::File qw(path tempdir);
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
@@ -41,6 +41,8 @@ my $assets = $schema->resultset('Assets');
 # assume some assets already have a last_use_job_id
 $assets->find($_)->update({last_use_job_id => 99963}) for (2, 3);
 
+my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+
 note('Asset directory: ' . assetdir());
 
 subtest 'configurable concurrency' => sub {
@@ -55,6 +57,7 @@ subtest 'configurable concurrency' => sub {
 };
 
 subtest 'filesystem removal' => sub {
+    local $ENV{OPENQA_SHAREDIR} = "$tempdir/openqa";
     my $asset_sub_dir = path(assetdir(), 'foo');
     $asset_sub_dir->remove_tree->make_path;
 

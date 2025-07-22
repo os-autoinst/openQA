@@ -269,7 +269,7 @@ test-with-database: node_modules setup-database
 test-unit-and-integration: node_modules
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	export DEVEL_COVER_DB_FORMAT=JSON;\
-	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib -MOpenQA::Test::PatchDeparse";\
+	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib $(CHECK_GIT_STATUS_OPT) -MOpenQA::Test::PatchDeparse";\
 	RETRY=${RETRY} HOOK=./tools/delete-coverdb-folder timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry "${PROVE}" ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: setup-database
@@ -297,6 +297,10 @@ COVERDB_SUFFIX ?=
 # https://metacpan.org/pod/Feature::Compat::Try#COMPATIBILITY-NOTES
 # https://rt.cpan.org/Transaction/Display.html?id=1992941
 COVEROPT ?= -mJSON::PP -It/lib -MCoverageWorkaround -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy|t/lib/CoverageWorkaround,-coverage,statement,-db,cover_db$(COVERDB_SUFFIX),
+endif
+
+ifeq ($(CHECK_GIT_STATUS),1)
+CHECK_GIT_STATUS_OPT ?= -MTest::CheckGitStatus
 endif
 
 .PHONY: coverage
