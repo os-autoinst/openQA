@@ -182,10 +182,14 @@ sub _validate_common_properties ($self) {
     $validation->optional('default_keep_important_logs_in_days')->num(0);
     $validation->optional('default_keep_results_in_days')->num(0);
     $validation->optional('default_keep_important_results_in_days')->num(0);
+    $validation->optional('default_keep_jobs_in_days')->num(0);
+    $validation->optional('default_keep_important_jobs_in_days')->num(0);
     $validation->optional('keep_logs_in_days')->num(0);
     $validation->optional('keep_important_logs_in_days')->num(0);
     $validation->optional('keep_results_in_days')->num(0);
     $validation->optional('keep_important_results_in_days')->num(0);
+    $validation->optional('keep_jobs_in_days')->num(0);
+    $validation->optional('keep_important_jobs_in_days')->num(0);
     $validation->optional('default_priority')->num(0);
     $validation->optional('carry_over_bugrefs')->num(0, 1);
     $validation->optional('description');
@@ -195,14 +199,15 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
     my $prefix = $self->is_parent ? 'default_' : '';
     my $log_key = $prefix . 'keep_logs_in_days';
     my $result_key = $prefix . 'keep_results_in_days';
+    my $job_key = $prefix . 'keep_jobs_in_days';
     my $log_value = $properties->{$log_key} // ($group ? $group->$log_key : 0);
     my $result_value = $properties->{$result_key} // ($group ? $group->$result_key : 0);
-    return 1 if ($log_value <= $result_value);
-    $self->render(
-        json => {error => "`$log_key` must be lower than or equal to `$result_key`"},
-        status => 400
-    );
-    return 0;
+    my $job_value = $properties->{$job_key} // ($group ? $group->$job_key : 0);
+    my @errors;
+    push @errors, "'$log_key' must be <= '$result_key'" if $result_value != 0 && $log_value > $result_value;
+    push @errors, "'$result_key' must be <= '$job_key'" if $job_value != 0 && $result_value > $job_value;
+    $self->render(json => {error => join(', ', @errors)}, status => 400) if @errors;
+    return @errors == 0;
 }
 
 =over 4
