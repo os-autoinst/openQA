@@ -59,6 +59,14 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         is_nullable => 1,
     },
+    keep_jobs_in_days => {
+        data_type => 'integer',
+        is_nullable => 1,
+    },
+    keep_important_jobs_in_days => {
+        data_type => 'integer',
+        is_nullable => 1,
+    },
     default_priority => {
         data_type => 'integer',
         is_nullable => 1,
@@ -133,6 +141,14 @@ around keep_results_in_days => sub ($orig, $self) {
 
 around keep_important_results_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('keep_important_results_in_days', 'important_result_storage_duration');
+};
+
+around keep_jobs_in_days => sub ($orig, $self) {
+    return $self->_get_column_or_default('keep_jobs_in_days', 'job_storage_duration');
+};
+
+around keep_important_jobs_in_days => sub ($orig, $self) {
+    return $self->_get_column_or_default('keep_important_jobs_in_days', 'important_job_storage_duration');
 };
 
 around default_priority => sub ($orig, $self) {
