@@ -80,42 +80,34 @@ __PACKAGE__->has_many(
     'parent_id', {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
 __PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'parent_group_id', {order_by => 'id'});
 
-sub _get_column_or_default {
-    my ($self, $column, $setting) = @_;
-
+sub _get_column_or_default ($self, $column, $setting) {
     if (defined(my $own_value = $self->get_column($column))) {
         return $own_value;
     }
     return OpenQA::App->singleton->config->{default_group_limits}->{$setting};
 }
 
-around default_keep_logs_in_days => sub {
-    my ($orig, $self) = @_;
+around default_keep_logs_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('default_keep_logs_in_days', 'log_storage_duration');
 };
 
-around default_keep_important_logs_in_days => sub {
-    my ($orig, $self) = @_;
+around default_keep_important_logs_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('default_keep_important_logs_in_days', 'important_log_storage_duration');
 };
 
-around default_keep_results_in_days => sub {
-    my ($orig, $self) = @_;
+around default_keep_results_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('default_keep_results_in_days', 'result_storage_duration');
 };
 
-around default_keep_important_results_in_days => sub {
-    my ($orig, $self) = @_;
+around default_keep_important_results_in_days => sub ($orig, $self) {
     return $self->_get_column_or_default('default_keep_important_results_in_days', 'important_result_storage_duration');
 };
 
-around default_priority => sub {
-    my ($orig, $self) = @_;
+around default_priority => sub ($orig, $self) {
     return $self->get_column('default_priority') // OpenQA::JobGroupDefaults::PRIORITY;
 };
 
-around carry_over_bugrefs => sub {
-    my ($orig, $self) = @_;
+around carry_over_bugrefs => sub ($orig, $self) {
     return $self->get_column('carry_over_bugrefs') // OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS;
 };
 

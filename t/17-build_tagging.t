@@ -217,11 +217,9 @@ subtest 'tagging builds via parent group comments' => sub {
 
     $schema->txn_begin;
     subtest 'the version of "important" tags is considered when determining expired jobs' => sub {
-        # create tag without version constraint, setup group's retention
+        # create tag without version constraint
         post_comment_1001 'tag:0066:important:foo';
         my $group = $job_groups->find(1001);
-        $group->keep_results_in_days(1);
-        $group->keep_important_results_in_days(0);
         # create job to be expired despite "tag:Arch-2018-08:important:fromparent"; version specified but does not match
         my @common_args = (BUILD => '08', t_finished => '0001-01-01 00:00:00', group_id => $group->id);
         my $expired_job = $jobs->create({TEST => 'expired-1', VERSION => 'Arch-2019', @common_args});
