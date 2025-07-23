@@ -234,9 +234,14 @@ order for variables is as follows (from lowest to highest):
 * API POST query parameters
 
 That is, variable values set as part of the API request that triggers the jobs will
-'win' over values set at any of the other locations. In the special case of the 
-`BACKEND` variable, if there is a `MACHINE` specified, the `BACKEND` value for this
-machine defined in openQA has highest precedence.
+'win' over values set at any of the other locations. It's important to note that
+this precedence applies when a job is created. Test code can modify variable values
+at runtime (e.g. by calling `set_var`). Such runtime modifications will override
+any of the initial settings.
+
+In the special case of the `BACKEND` variable,
+if there is a `MACHINE` specified, the `BACKEND` value for this machine defined
+in openQA has highest precedence.
 
 If you need to override this precedence - for example, you want the value set in
 one particular test suite to take precedence over a setting of the same value from
