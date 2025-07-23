@@ -13,6 +13,6 @@ function sleep_until_file_created {
 [[ "$1" =~ MockProjectLongProcessing* ]] && { sleep_until_file_created "$1" || exit 1; }
 [ "$1" != MockProjectError ] || {
     echo >&2 "Mock Error"
-    exit 1
+    exit 777
 }
 echo MOCK OK $1

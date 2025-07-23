@@ -123,7 +123,10 @@ sub update_obs_builds_text {
 
     my ($exit_code, $error) = $helper->for_every_batch($alias, $sub);
 
-    return $job->fail({code => $exit_code, message => $error}) if $exit_code;
+    # Log the error without flagging it as a failure
+    # See https://progress.opensuse.org/issues/18096
+    # XXX: This has no effect no unit tests?
+    return $job->finish({code => $exit_code, message => $error}) if $exit_code;
     return $job->finish('Success');
 }
 
