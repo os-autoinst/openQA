@@ -1299,7 +1299,7 @@ autoyast test:
 
 [source,sh]
 --------------------------------------------------------------------------------
-/usr/share/openqa/script/client jobs post DISTRI=opensuse VERSION=13.2 \
+openqa-cli api -X post jobs DISTRI=opensuse VERSION=13.2 \
     ISO=openSUSE-13.2-DVD-x86_64.iso  ARCH=x86_64 FLAVOR=Server-DVD \
     TEST=supportserver_generator MACHINE=64bit DESKTOP=textmode  INSTALLONLY=1 \
     AUTOYAST=supportserver/autoyast_supportserver.xml SUPPORT_SERVER_GENERATOR=1 \
@@ -1342,7 +1342,7 @@ usual way:
 
 [source,sh]
 -----------------
-/usr/share/openqa/script/client isos post DISTRI=opensuse VERSION=13.2 \
+openqa-cli api -X post isos DISTRI=opensuse VERSION=13.2 \
         ISO=openSUSE-13.2-DVD-x86_64.iso ARCH=x86_64 FLAVOR=Server-DVD
 -----------------
 
