@@ -5000,9 +5000,15 @@ order for variables is as follows (from lowest to highest):</p>
 </div>
 <div class="paragraph">
 <p>That is, variable values set as part of the API request that triggers the jobs will
-'win' over values set at any of the other locations. In the special case of the
-<code>BACKEND</code> variable, if there is a <code>MACHINE</code> specified, the <code>BACKEND</code> value for this
-machine defined in openQA has highest precedence.</p>
+'win' over values set at any of the other locations. It&#8217;s important to note that
+this precedence applies when a job is created. Test code can modify variable values
+at runtime (e.g. by calling <code>set_var</code>). Such runtime modifications will override
+any of the initial settings.</p>
+</div>
+<div class="paragraph">
+<p>In the special case of the <code>BACKEND</code> variable,
+if there is a <code>MACHINE</code> specified, the <code>BACKEND</code> value for this machine defined
+in openQA has highest precedence.</p>
 </div>
 <div class="paragraph">
 <p>If you need to override this precedence - for example, you want the value set in
@@ -13659,7 +13665,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-17 04:44:26 UTC
+Last updated 2025-07-24 04:44:39 UTC
 </div>
 </div>
 </body>
