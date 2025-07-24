@@ -102,7 +102,7 @@
                     </div>
                 </div>
             <% my $log_retention = begin %>
-              <%= help_popover 'Log vs. result vs. database retention' => '
+              <%= help_popover 'Retention durations' => '
                 <p>
                     The <em>Keep … for</em> settings specify the default retention time for <em>database entries</em>, <em>results</em> and <em>logs</em> of jobs belonging to this job group:
                 </p>
@@ -120,6 +120,10 @@
                         Note that files listed under "Assets" are <em>not</em> considered logs and configured via <em>Size limit for assets</em>.
                     </li>
                 </ul>
+                <p>
+                    There is also separate retentions for <strong>important</strong> jobs so these jobs can be stored longer. Jobs can be marked as important on job group level
+                    via <a href="https://open.qa/docs/#build_tagging">build tagging</a> and on job level via "link labels", e.g. <code>label:linked Job mentioned on https://…</code>.
+                </p>
                 '; %>
               <% end %>
             % if (!$is_parent) {
