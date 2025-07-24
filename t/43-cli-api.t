@@ -110,6 +110,10 @@ subtest 'API' => sub {
     throws_ok { $api->run(@auth) } qr/Usage: openqa-cli api/, 'usage';
     is $api->apikey, 'ARTHURKEY01', 'apikey';
     is $api->apisecret, 'EXCALIBUR', 'apisecret';
+
+    $api = OpenQA::CLI::api->new;
+    throws_ok { $api->run('--apibase', '') } qr/Usage: openqa-cli api/, 'usage';
+    is $api->apibase, '', 'set apibase to an empty string';
 };
 
 subtest 'Client' => sub {
