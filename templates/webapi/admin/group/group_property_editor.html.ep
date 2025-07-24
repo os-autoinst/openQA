@@ -285,8 +285,7 @@
                         </div>
                         % }
                         <div>
-                            The openQA documentation contains further information about the <a href="http://open.qa/docs/#basic_cleanup">cleanup-related properties</a>
-                            and <a href="http://open.qa/docs/#cleanup">further documentation about the cleanup</a>.
+                            The openQA documentation contains <a href="http://open.qa/docs/#cleanup">further documentation about the cleanup</a>.
                         </div>
                     </span>
                 </div>
