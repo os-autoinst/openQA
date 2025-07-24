@@ -98,7 +98,7 @@ sub run ($self, @args) {
     my %options = (pretty => 0, quiet => 0, links => 0, verbose => 0);
     OpenQA::CLI::get_opt(global => \@args, ['pass_through'], \%options);
     for (qw(apibase apikey apisecret name)) {
-        $self->$_($options{$_}) if $options{$_};
+        $self->$_($options{$_}) if defined $options{$_};
     }
     my $host = $options{host};
     $self->host($host =~ m!^/|://! ? $host : "https://$host") if $host;
