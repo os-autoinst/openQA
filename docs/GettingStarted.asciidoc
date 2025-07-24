@@ -377,29 +377,39 @@ different settings. For example old jobs and assets are deleted at some point.
 The following cleanup settings can be done on job-group-level:
 
 [horizontal]
-size limit:: Limits size of assets
-keep logs for:: Specifies how long logs of a non-important job are retained after
-  it finished
-keep important logs for:: How long logs of an important job are retained after it
-  finished
-keep results for:: specifies How long results of a non-important job are retained
-  after it finished
-keep important results for:: How long results of an important job are retained after
-  it finished
+Size limit:: Limits the size of assets.
+Keep logs for:: How long *logs* of non-important jobs are retained after
+  they finished. *Logs* are files listed under "Result files" in the
+  "Logs & Assets" tab on the job details page, e.g. `autoinst-log.txt`.
+Keep important logs for:: How long logs of an *important* job are retained after
+  it finished.
+Keep results for:: How long *results* of non-important job are retained after
+  they finished. *Results* are all additional files stored on disk for a job
+  (excluding assets) such as screenshots. This also includes logs and therefore
+  this retention must be longer (or equal) than the retention of *logs*.
+Keep important results for:: How long results of *important* jobs are retained
+  after they finished.
+Keep jobs for:: How long *database entries* of non-important jobs are retained
+  in the database after they finished. The *database entry* for a job is
+  required for openQA knowing the job at all and deleting the database entry
+  also means deleting results stored on disk. This retention must therefore be
+  the longest. Note that a job is no longer accounted for in statistics on the
+  index and group overview pages after its database entry is deleted.
+Keep important jobs for:: How long *important* jobs are retained in the database
+  after they finished.
 
-*NOTE* Deletion of job results includes deletion of logs and will cause the job to
-be completely removed from the database.
+NOTE: Checkout the <<UsersGuide.asciidoc#cleanup,Cleanup>> section for more
+details and the <<UsersGuide.asciidoc#build_tagging,Build tagging>> section for
+how to mark a job as important on job group level. Jobs can also be marked as
+important by adding a "link label" (e.g.
+`label:linked Job mentioned on https://…`) in a job comment.
 
-*NOTE* Checkout the <<UsersGuide.asciidoc#cleanup,Cleanup>> section for more details
-and the <<UsersGuide.asciidoc#build_tagging,Build tagging>> section for how to mark
-a job as important.
+NOTE: New groups use the limits configured in the `[default_group_limits]`
+section of <<GettingStarted.asciidoc#_configuration,the web UI configuration>>.
+Jobs outside of any group use the limits configured in the `[no_group_limits]`
+section of the web UI configuration.
 
-*NOTE* New groups use the limits configured in the `[default_group_limits]` section
-of <<GettingStarted.asciidoc#_configuration,the web UI configuration>>. Jobs outside
-of any group use the limits configured in the `[no_group_limits]` section of the
-web UI configuration.
-
-*NOTE* Archiving of important jobs can be enabled. Checkout the related settings
+NOTE: Archiving of important jobs can be enabled. Checkout the related settings
 within the `[archiving]` section of the config file for details.
 
 == Using the client script
