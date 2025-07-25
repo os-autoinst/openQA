@@ -95,6 +95,7 @@ main_requires:
   git-core:
   hostname:  # for script/configure-web-proxy
   bsdtar:  # for extraction feature of OpenQA::Downloader
+  openssh-clients:
   perl(aliased):
   perl(base):
   perl(constant):
