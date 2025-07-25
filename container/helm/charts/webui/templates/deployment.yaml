@@ -16,6 +16,10 @@ spec:
       labels:
         {{- include "webui.selectorLabels" . | nindent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: "postgres:latest"
+          command: ["sh", "-c", "until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done;"]
       containers:
         # Future enhancement option: a container with rsync for setup with cache service
         - name: {{ include "webui.fullname" . }}-scheduler
@@ -56,6 +60,10 @@ spec:
           readinessProbe:
             exec:
               command: ["curl", "-f", "http://localhost:9527"]
+            # Give the app 15 seconds to start before probing
+            initialDelaySeconds: 15
+            # Give the probe 5 seconds to respond
+            timeoutSeconds: 5
         - name: {{ include "webui.fullname" . }}-gru
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
