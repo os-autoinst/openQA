@@ -28,6 +28,74 @@
                     <input type="text" class="form-control" id="editor-name" name="name" value="<%= $group->name %>">
                 </div>
             </div>
+            <div class="mb-3 row">
+                <label for="editor-description" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Shown on top of the group overview">Description</label>
+                <div class="col-sm-10">
+                    <textarea class="form-control" id="editor-description" name="description" ><%= $group->description %></textarea>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="editor-carry-over-bugrefs" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Carry over bug references">Bug reference carry over</label>
+                <div class="col-sm-10">
+                    <input type="hidden" name="carry_over_bugrefs" value="0">
+                    <input type="checkbox"
+                           id="editor-carry-over-bugrefs" name="carry_over_bugrefs"
+                           value="1"
+                        % if ($group->carry_over_bugrefs) {
+                            checked="checked"
+                        % }
+                    >
+                    <%= help_popover 'Bug reference carry over' =>
+                        '<p>
+                            Whether job comments containing bug references should be carried over automatically from previously failed jobs. Only previous jobs are considered
+                            which failed with an identical list of failed and softfailed test modules.
+                        </p>';
+                    %>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="editor-build-version-sort" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Sets how builds are sorted when groups of them are displayed together">How to sort builds for display</label>
+                <div class="col-sm-10" id="editor-build-version-sort">
+                    <input type="radio" id="editor-build-version-sort-name" name="build_version_sort" value="<%= BUILD_SORT_BY_NAME %>"
+                        %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_NAME
+                        >
+                    <label class="form-label" for="editor-build-version-sort-name" data-bs-toggle="tooltip" title="Treat the build values as version numbers and sort based on those">Sort by build value (as a version)</label>
+                    <br>
+                    <input type="radio" id="editor-build-version-sort-newest" name="build_version_sort" value="<%= BUILD_SORT_BY_NEWEST_JOB %>"
+                        %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_NEWEST_JOB
+                        >
+                    <label class="form-label" for="editor-build-version-sort-newest" data-bs-toggle="tooltip" title="Sort builds by the creation time of the newest job for each build (choose this if the build values do not sort properly as version numbers)">Sort by newest job creation time</label>
+
+                    <br>
+                    <input type="radio" id="editor-build-version-sort-oldest" name="build_version_sort" value="<%= BUILD_SORT_BY_OLDEST_JOB %>"
+                        %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_OLDEST_JOB
+                        >
+                    <label class="form-label" for="editor-build-version-sort-oldest" data-bs-toggle="tooltip" title="Sort builds by the creation time of the oldest job for each build (choose this if the build values do not sort properly as version numbers)">Sort by oldest job creation time</label>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="editor-default-priority" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Default priority for jobs created in the group">Default priority</label>
+                <div class="col-sm-10">
+                    <input
+                        type="number" class="form-control"
+                        id="editor-default-priority" name="default_priority"
+                        value="<%= $group->default_priority %>" data-initial-value="<%= $group->default_priority %>">
+                    <%= help_popover 'Default priority' =>
+                        '<p>
+                            Specifies the default priority for jobs created in the group.
+                        </p>
+                        <ul>
+                            <li>
+                                Does not affect existing jobs.
+                            </li>
+                            <li>
+                                It is possible to override this priority on job template level (the rows in the table above).
+                                In this case the default set here has no effect.
+                            </li>
+                        </ul>';
+                    %>
+                </div>
+            </div>
                 <div class="mb-3 row">
                     <label for="editor-size-limit" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Size limit for assets">Size limit for assets</label>
                     <div class="col-sm-10">
@@ -81,26 +149,6 @@
                     </div>
                 </div>
             % }
-                <div class="mb-3 row">
-                    <label for="editor-build-version-sort" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Sets how builds are sorted when groups of them are displayed together">How to sort builds for display</label>
-                    <div class="col-sm-10" id="editor-build-version-sort">
-                        <input type="radio" id="editor-build-version-sort-name" name="build_version_sort" value="<%= BUILD_SORT_BY_NAME %>"
-                            %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_NAME
-                            >
-                        <label class="form-label" for="editor-build-version-sort-name" data-bs-toggle="tooltip" title="Treat the build values as version numbers and sort based on those">Sort by build value (as a version)</label>
-                        <br>
-                        <input type="radio" id="editor-build-version-sort-newest" name="build_version_sort" value="<%= BUILD_SORT_BY_NEWEST_JOB %>"
-                            %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_NEWEST_JOB
-                            >
-                        <label class="form-label" for="editor-build-version-sort-newest" data-bs-toggle="tooltip" title="Sort builds by the creation time of the newest job for each build (choose this if the build values do not sort properly as version numbers)">Sort by newest job creation time</label>
-
-                        <br>
-                        <input type="radio" id="editor-build-version-sort-oldest" name="build_version_sort" value="<%= BUILD_SORT_BY_OLDEST_JOB %>"
-                            %= 'checked' if $group->build_version_sort == BUILD_SORT_BY_OLDEST_JOB
-                            >
-                        <label class="form-label" for="editor-build-version-sort-oldest" data-bs-toggle="tooltip" title="Sort builds by the creation time of the oldest job for each build (choose this if the build values do not sort properly as version numbers)">Sort by oldest job creation time</label>
-                    </div>
-                </div>
             <% my $log_retention = begin %>
               <%= help_popover 'Retention durations' => '
                 <p>
@@ -224,54 +272,6 @@
                     </div>
                 </div>
             % }
-            <div class="mb-3 row">
-                <label for="editor-default-priority" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Default priority for jobs created in the group">Default priority</label>
-                <div class="col-sm-10">
-                    <input
-                        type="number" class="form-control"
-                        id="editor-default-priority" name="default_priority"
-                        value="<%= $group->default_priority %>" data-initial-value="<%= $group->default_priority %>">
-                    <%= help_popover 'Default priority' =>
-                        '<p>
-                            Specifies the default priority for jobs created in the group.
-                        </p>
-                        <ul>
-                            <li>
-                                Does not affect existing jobs.
-                            </li>
-                            <li>
-                                It is possible to override this priority on job template level (the rows in the table above).
-                                In this case the default set here has no effect.
-                            </li>
-                        </ul>';
-                    %>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label for="editor-carry-over-bugrefs" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Carry over bug references">Bug reference carry over</label>
-                <div class="col-sm-10">
-                    <input type="hidden" name="carry_over_bugrefs" value="0">
-                    <input type="checkbox"
-                           id="editor-carry-over-bugrefs" name="carry_over_bugrefs"
-                           value="1"
-                        % if ($group->carry_over_bugrefs) {
-                            checked="checked"
-                        % }
-                    >
-                    <%= help_popover 'Bug reference carry over' =>
-                        '<p>
-                            Whether job comments containing bug references should be carried over automatically from previously failed jobs. Only previous jobs are considered
-                            which failed with an identical list of failed and softfailed test modules.
-                        </p>';
-                    %>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label for="editor-description" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Shown on top of the group overview">Description</label>
-                <div class="col-sm-10">
-                    <textarea class="form-control" id="editor-description" name="description" ><%= $group->description %></textarea>
-                </div>
-            </div>
             <div class="mb-3 row">
                 <label for="editor-info" class="form-label col-sm-2 control-label"><i class="fa fa-info-circle"></i></label>
                 <div class="col-sm-10">
