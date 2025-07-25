@@ -186,7 +186,7 @@
                     <label for="editor-keep-jobs-in-days" class="form-label
                     col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep jobs in the database">Keep jobs in the database for</label>
                     <div class="col-sm-10">
-                        <input type="number" min="0" class="form-control" id="editor-keep-results-in-days" name="keep_jobs_in_days" value="<%= $group->keep_jobs_in_days %>"> days
+                        <input type="number" min="0" class="form-control" id="editor-keep-jobs-in-days" name="keep_jobs_in_days" value="<%= $group->keep_jobs_in_days %>"> days
                         <%= include 'admin/group/cleanup_help' %>
                     </div>
                 </div>
@@ -236,7 +236,7 @@
                     <label for="editor-keep-jobs-in-days" class="form-label
                     col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep jobs in database">Keep jobs in database for</label>
                     <div class="col-sm-10">
-                        <input type="number" min="0" class="form-control" id="editor-keep-jobs-in-days" name="default_keep_jobs_in_days" value="<%= $group->default_keep_results_in_days %>"> days
+                        <input type="number" min="0" class="form-control" id="editor-keep-jobs-in-days" name="default_keep_jobs_in_days" value="<%= $group->default_keep_jobs_in_days %>"> days
                         <%= include 'admin/group/cleanup_help' %>
                     </div>
                 </div>
