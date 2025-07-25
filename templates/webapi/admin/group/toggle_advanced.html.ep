@@ -6,5 +6,10 @@
                 data-bs-toggle="collapse" data-bs-target=".advanced-cleanup-settings">
             <i class="fa fa-cogs"></i> Show advanced cleanup settings
         </button>
+        <a href="http://open.qa/docs/#cleanup"
+           class="btn btn-outline-info btn-sm"
+           target="blank">
+            <i class="fa fa-book"></i> Cleanup documentation
+        </a>
     </div>
 </div>

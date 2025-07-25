@@ -261,9 +261,6 @@
                             The affected jobs will stay visible on the web UI in any case; only the videos and possibly logs and screenshots will be gone.
                         </div>
                         % }
-                        <div>
-                            The openQA documentation contains <a href="http://open.qa/docs/#cleanup">further documentation about the cleanup</a>.
-                        </div>
                     </span>
                 </div>
             </div>
