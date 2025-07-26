@@ -123,13 +123,13 @@ expected to be backed with the corresponding tests.
 == Technologies
 [id="technologies"]
 
-Everything in openQA, from `os-autoinst` to the web frontend and from the tests
-to the support scripts is written in Perl. So having some basic knowledge
-about that language is really desirable in order to understand and develop
-openQA. Of course, in addition to bare Perl, several libraries and additional
-tools are required. The easiest way to install all needed dependencies is
-using the available os-autoinst and openQA packages, as described in the
-Installation Guide.
+Most in openQA, from `os-autoinst` to the web frontend and from the tests to
+the support scripts is written in Perl in combination with other languages. So
+having some basic knowledge in those is desirable in order to understand and
+develop openQA. Of course, in addition to bare Perl, several libraries and
+additional tools are required. The easiest way to install all needed
+dependencies is using the available os-autoinst and openQA packages, as
+described in the Installation Guide.
 
 In the case of os-autoinst, only a few http://www.cpan.org/[CPAN] modules are
 required. Basically `Carp::Always`, `Data::Dump`. `JSON` and `YAML`. On the other
