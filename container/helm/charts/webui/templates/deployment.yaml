@@ -20,6 +20,12 @@ spec:
         - name: wait-for-db
           image: "postgres:latest"
           command: ["sh", "-c", "until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done;"]
+        - name: setup-factory-dirs
+          image: "busybox:latest"
+          command: ["sh", "-c", "mkdir -p /var/lib/openqa/share/factory/hdd /var/lib/openqa/share/factory/iso /var/lib/openqa/share/factory/repos /var/lib/openqa/share/factory/tmp /var/lib/openqa/share/factory/other"]
+          volumeMounts:
+            - name: factory-data
+              mountPath: /var/lib/openqa/share/factory
       containers:
         # Future enhancement option: a container with rsync for setup with cache service
         - name: {{ include "webui.fullname" . }}-scheduler
@@ -109,6 +115,8 @@ spec:
             - name: config
               mountPath: /data/conf
               readOnly: true
+            - name: factory-data
+              mountPath: /var/lib/openqa/share/factory
           env:
             - name: MODE
               value: "webui"
@@ -135,3 +143,5 @@ spec:
                 path: openqa.ini
               - key: database_ini
                 path: database.ini
+        - name: factory-data
+          emptyDir: {}

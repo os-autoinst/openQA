@@ -4,7 +4,6 @@ image:
   pullPolicy: Always
   tag: "latest"
 openqa:
-  host: openqa.host.org
   key: 1234567890ABCDEF
   secret: 1234567890ABCDEF
 cacheService: false

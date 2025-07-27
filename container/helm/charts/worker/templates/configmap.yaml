@@ -7,7 +7,7 @@ metadata:
 data:
   workers_ini: |
     [global]
-    HOST = {{ .Values.openqa.host }}
+    HOST = {{ .Release.Name }}-webui:9529
     BACKEND = qemu
     {{ if .Values.workerClass -}}
     WORKER_CLASS = {{ .Values.workerClass }}
@@ -21,6 +21,9 @@ data:
     TESTPOOLSERVER = rsync://{{ .Values.openqa.host }}/tests
     {{ end }}
   client_conf: |
-    [{{ .Values.openqa.host }}]
+    [localhost]
+    key = {{ .Values.openqa.key }}
+    secret = {{ .Values.openqa.secret }}
+    [{{ .Release.Name }}-webui:9529]
     key = {{ .Values.openqa.key }}
     secret = {{ .Values.openqa.secret }}
