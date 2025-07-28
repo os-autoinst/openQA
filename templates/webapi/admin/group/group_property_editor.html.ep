@@ -181,7 +181,7 @@
                         <%= include 'admin/group/cleanup_help' %>
                     </div>
                 </div>
-                %= include 'admin/group/toggle_advanced';
+                %= include 'admin/group/cleanup_buttons';
                 <div class="mb-3 row collapse multi-collapse advanced-cleanup-settings">
                     <label for="editor-keep-jobs-in-days" class="form-label
                     col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep jobs in the database">Keep jobs in the database for</label>
@@ -231,7 +231,7 @@
                         <%= include 'admin/group/cleanup_help' %>
                     </div>
                 </div>
-                %= include 'admin/group/toggle_advanced';
+                %= include 'admin/group/cleanup_buttons';
                 <div class="mb-3 row collapse multi-collapse advanced-cleanup-settings">
                     <label for="editor-keep-jobs-in-days" class="form-label
                     col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep jobs in database">Keep jobs in database for</label>
