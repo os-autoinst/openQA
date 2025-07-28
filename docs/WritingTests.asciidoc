@@ -22,12 +22,14 @@ https://github.com/os-autoinst/openQA[official repository].
 [id="basic"]
 
 This section explains the basic layout of an openQA test and the API available.
-Tests are written in the *Perl* programming language. However there is support
-for the *Python* programming language (through the Perl module
-`Inline::Python`).
+Tests can be written in the programming languages *Perl*, *Python*¹ and *Lua*².
+So basic but no in-depth knowledge of Perl, Python or Lua is needed. This
+document assumes that the reader is already familiar with Perl, Python or Lua.
 
-Some basic but no in-depth knowledge of Perl or Python is needed. This document
-assumes that the reader is already familiar with Perl or Python.
+'''
+
+¹ requires the Perl module `Inline::Python` +
+² requires the Perl module `Inline::Lua`
 
 == Test API
 [id="api"]
@@ -67,6 +69,17 @@ from testapi import *
 
 def run(self):
     # write in this block the code for your test.
+-------------------------------------------------------------------
+
+And here is an example in Lua:
+
+[source,lua]
+-------------------------------------------------------------------
+use("testapi")
+
+function run(self)
+    -- write in this block the code for your test.
+end
 -------------------------------------------------------------------
 
 There are more optional subroutines that can be defined to extend the behavior
@@ -138,6 +151,13 @@ sub test_flags {
 }
 -------------------------------------------------------------------
 
+[source,lua]
+-------------------------------------------------------------------
+function test_flags(self)
+    return {fatal = 1}
+end
+-------------------------------------------------------------------
+
 ==== `pre_run_hook`
 
 It is called before the `run` function - mainly useful for a whole group of tests.
@@ -187,7 +207,7 @@ sub post_run_hook {
 === Notes on the Python API
 [id="notes-python-api"]
 
-The Python integration that OpenQA offers through `Inline::Python` also allows
+The Python integration that openQA offers through `Inline::Python` also allows
 the test modules to import other Perl modules with the usage of the `perl`
 virtual package provided by `Inline::Python`.
 
@@ -215,7 +235,7 @@ sub run {
 }
 -------------------------------------------------------------------
 
-versus the equivalent python code:
+versus the equivalent Python code:
 
 [source,python]
 -------------------------------------------------------------------
@@ -236,12 +256,9 @@ def run(self):
     # [...] omitted for brevity
 -------------------------------------------------------------------
 
-Additionally, Python tests do not support `run_args`. An error will be present
-when a Python test detects the presence of `run_args` on schedule.
-
-This is because of the way `Inline::Python` handles argument passing between
-Perl <-> Python, references to complex Perl objects do not reach Python properly
-and they can't be used.
+Additionally, Python tests do not support `run_args` and treat the presence of
+`run_args` as error. This is because of the way `Inline::Python` does not pass
+references to complex Perl objects to Python.
 
 === Example Perl test modules
 [id="testmodule_perl_examples"]
@@ -387,6 +404,30 @@ def post_fail_hook(self):
 
 def test_flags(self):
     return {'fatal': 1}
+--------------------------------------------------------------
+
+=== Example Lua test module
+
+[source,lua]
+--------------------------------------------------------------
+use("testapi")
+
+function run(self)
+    assert_screen('openqa-logged-in')
+    assert_and_click('openqa-search')
+    type_string('shutdown.pm')
+    send_key('ret')
+    …
+end
+
+function post_fail_hook(self)
+    send_key('ctrl-alt-f3')
+    assert_script_run('openqa-cli api experimental/search q=shutdown.pm')
+end
+
+function test_flags(self)
+    return {fatal = 1}
+end
 --------------------------------------------------------------
 
 == Variables
