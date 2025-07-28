@@ -207,7 +207,7 @@ sub post_run_hook {
 === Notes on the Python API
 [id="notes-python-api"]
 
-The Python integration that OpenQA offers through `Inline::Python` also allows
+The Python integration that openQA offers through `Inline::Python` also allows
 the test modules to import other Perl modules with the usage of the `perl`
 virtual package provided by `Inline::Python`.
 
@@ -235,7 +235,7 @@ sub run {
 }
 -------------------------------------------------------------------
 
-versus the equivalent python code:
+versus the equivalent Python code:
 
 [source,python]
 -------------------------------------------------------------------
@@ -256,12 +256,9 @@ def run(self):
     # [...] omitted for brevity
 -------------------------------------------------------------------
 
-Additionally, Python tests do not support `run_args`. An error will be present
-when a Python test detects the presence of `run_args` on schedule.
-
-This is because of the way `Inline::Python` handles argument passing between
-Perl <-> Python, references to complex Perl objects do not reach Python properly
-and they can't be used.
+Additionally, Python tests do not support `run_args` and treat the presence of
+`run_args` as error. This is because of the way `Inline::Python` does not pass
+references to complex Perl objects to Python.
 
 === Example Perl test modules
 [id="testmodule_perl_examples"]
