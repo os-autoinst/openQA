@@ -205,7 +205,7 @@ endif
 # Ensure npm packages are installed and up-to-date (unless local-npm-registry is installed; in this case we can
 # assume installing npm packages is taken care of separately, e.g. in builds on OBS)
 node_modules: package-lock.json
-	@which local-npm-registry >/dev/null 2>&1 || npm install --no-audit --no-fund
+	@which local-npm-registry >/dev/null 2>&1 || npm install --no-audit --no-fund --ignore-scripts
 	@touch node_modules
 
 .PHONY: test
