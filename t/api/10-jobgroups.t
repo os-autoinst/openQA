@@ -499,20 +499,24 @@ subtest 'prevent create/update duplicate job group on same parent group' => sub(
     );
 };
 
-subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => sub() {
+subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => sub {
     my %tests_parameters = (
         'parent group' => {
             endpoint => '/api/v1/parent_groups',
             name => 'test_parent_group',
             keep_logs_name => 'default_keep_logs_in_days',
+            keep_important_logs_name => 'default_keep_important_logs_in_days',
             keep_results_name => 'default_keep_results_in_days',
+            keep_important_results_name => 'default_keep_important_results_in_days',
             keep_jobs_name => 'default_keep_jobs_in_days',
         },
         'job group' => {
             endpoint => '/api/v1/job_groups',
             name => 'test_job_group',
             keep_logs_name => 'keep_logs_in_days',
+            keep_important_logs_name => 'keep_important_logs_in_days',
             keep_results_name => 'keep_results_in_days',
+            keep_important_results_name => 'keep_important_results_in_days',
             keep_jobs_name => 'keep_jobs_in_days',
         });
 
@@ -525,12 +529,18 @@ subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => s
                 $params->{keep_results_name} => 1,
                 $params->{keep_jobs_name} => 1
             );
-            $t->post_ok($params->{endpoint}, form => \%form_invalid);
-            $t->status_is(400, "creation fails if $params->{keep_results_name} lower than $params->{keep_logs_name}");
-            $t->json_is(
-                '/error' => "'$params->{keep_logs_name}' must be <= '$params->{keep_results_name}'",
-                "error message on invalid $test creation (1)"
+            my @expected_errors = (
+                "'$params->{keep_logs_name}' must be <= '$params->{keep_results_name}'",
+                "'$params->{keep_important_logs_name}' must be <= '$params->{keep_important_results_name}'",
             );
+            my %form_invalid_1 = (
+                %form_invalid,
+                $params->{keep_important_logs_name} => 5,
+                $params->{keep_important_results_name} => 4,
+            );
+            $t->post_ok($params->{endpoint}, form => \%form_invalid_1);
+            $t->status_is(400, "creation fails if $params->{keep_results_name} lower than $params->{keep_logs_name}");
+            $t->json_is('/error' => join(', ', @expected_errors), "error message on invalid $test creation (1)");
             my %form_invalid_2 = (%form_invalid, $params->{keep_logs_name} => 1, $params->{keep_results_name} => 2);
             $t->post_ok($params->{endpoint}, form => \%form_invalid_2);
             $t->status_is(400, "creation fails if $params->{keep_jobs_name} lower than $params->{keep_results_name}");
