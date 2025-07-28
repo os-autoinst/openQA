@@ -178,21 +178,13 @@ sub _validate_common_properties ($self) {
     $validation->optional('parent_id')->like(qr/^(none|[0-9]+)\z/);
     $validation->optional('size_limit_gb')->like(qr/^(|[0-9]+)\z/);
     $validation->optional('build_version_sort')->num(0, 2);
-    $validation->optional('default_keep_logs_in_days')->num(0);
-    $validation->optional('default_keep_important_logs_in_days')->num(0);
-    $validation->optional('default_keep_results_in_days')->num(0);
-    $validation->optional('default_keep_important_results_in_days')->num(0);
-    $validation->optional('default_keep_jobs_in_days')->num(0);
-    $validation->optional('default_keep_important_jobs_in_days')->num(0);
-    $validation->optional('keep_logs_in_days')->num(0);
-    $validation->optional('keep_important_logs_in_days')->num(0);
-    $validation->optional('keep_results_in_days')->num(0);
-    $validation->optional('keep_important_results_in_days')->num(0);
-    $validation->optional('keep_jobs_in_days')->num(0);
-    $validation->optional('keep_important_jobs_in_days')->num(0);
     $validation->optional('default_priority')->num(0);
     $validation->optional('carry_over_bugrefs')->num(0, 1);
     $validation->optional('description');
+    for my $field (qw(logs important_logs results important_results jobs important_jobs)) {
+        $validation->optional("keep_${field}_in_days")->num(0);
+        $validation->optional("default_keep_${field}_in_days")->num(0);
+    }
 }
 
 sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
