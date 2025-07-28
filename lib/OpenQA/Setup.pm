@@ -309,16 +309,21 @@ sub _max_limit (@limits) {
     return (any { $_ == 0 } @limits) ? 0 : max(@limits);
 }
 
+my @DEFAULT_LIMIT_ASSIGNMENTS = (
+    ['result', 'log', OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS],
+    ['important_result', 'important_log', OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS],
+    ['job', 'result', OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS],
+    ['important_job', 'important_result', OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS],
+);
+
 sub _set_default_storage_durations ($limits) {
     # assign according constant as default but never assign a lower value than the one for the smaller cleanup
-    $limits->{result_storage_duration}
-      //= _max_limit($limits->{log_storage_duration}, OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS);
-    $limits->{important_result_storage_duration} //= _max_limit($limits->{important_log_storage_duration},
-        OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS);
-    $limits->{job_storage_duration}
-      //= _max_limit($limits->{result_storage_duration}, OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS);
-    $limits->{important_job_storage_duration} //= _max_limit($limits->{important_result_storage_duration},
-        OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS);
+    for my $default_limit_assignment (@DEFAULT_LIMIT_ASSIGNMENTS) {
+        my ($cleanup, $smaller_cleanup, $default) = @$default_limit_assignment;
+        my $duration_key = "${cleanup}_storage_duration";
+        my $smaller_cleanup_duration_key = "${smaller_cleanup}_storage_duration";
+        $limits->{$duration_key} //= _max_limit($limits->{$smaller_cleanup_duration_key}, $default);
+    }
 }
 
 # Update config definition from plugin requests
