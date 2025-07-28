@@ -540,7 +540,7 @@ function submitProperties(form) {
     .catch(error => {
       showSubmitResults(
         editorForm,
-        '<i class="fa fa-trash"></i> Unable to apply changes ' + '<strong>' + error + '</strong>'
+        `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${error}</strong>`
       );
     });
 
