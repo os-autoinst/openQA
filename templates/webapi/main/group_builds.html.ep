@@ -1,3 +1,9 @@
+% if (my $note = stash('sorting_note')) {
+<p id="sorting-note">
+    %== $note->{info}
+    %= help_popover 'Sorting and timestamps', "<p>$note->{help}</p><p>Sorting can be changed via \"Edit job group\".</p>"
+</p>
+% }
 % for my $build_res (@$build_results) {
     % my $version = $build_res->{version};
     % my $build = $build_res->{build};
