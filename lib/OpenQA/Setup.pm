@@ -438,6 +438,11 @@ sub set_secure_flag_on_cookies_of_https_connection ($server) {
 }
 
 sub setup_validator_check_for_datetime ($server) {
+    $server->validator->add_filter(
+        seconds_optional => sub ($v, $name, $value) {
+            # add seconds if missing so they become optional
+            return m/^\d{4}(-\d{2}){2}T\d{2}:\d{2}$/ ? "$value:00" : $value;
+        });
     $server->validator->add_check(
         datetime => sub ($validation, $name, $value) {
             try { DateTime::Format::Pg->parse_datetime($value) }
