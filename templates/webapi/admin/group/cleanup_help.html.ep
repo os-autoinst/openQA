@@ -1,0 +1,24 @@
+<%= help_popover 'Retention durations' => '
+<p>
+    The <em>Keep … for</em> settings specify the default retention time for <em>logs</em>, <em>results</em> and <em>database entries</em> of jobs belonging to this job group:
+</p>
+<ul>
+    <li>
+        <em>Logs</em> are files listed under "Result files" in the "Logs & Assets" tab on the job details page, e.g. <code>autoinst-log.txt</code>.
+        Note that files listed under "Assets" are <em>not</em> considered logs and configured via <em>Size limit for assets</em>.
+    </li>
+    <li>
+        <em>Results</em> are all additional files stored on disk for a job (excluding assets) such as screenshots. This also includes logs and therefore this
+        retention must be longer (or equal) than the retention of <em>Logs</em>.
+    </li>
+    <li>
+        The <em>database entry</em> for a job is required for openQA knowing the job at all. This retention must therefore be the longest.
+        This setting is showing via "Show advanced cleanup settings".
+        Note that a job is no longer accounted for in statistics on the index and group overview pages after its database entry is deleted.
+    </li>
+</ul>
+<p>
+    There is also separate retentions for <strong>important</strong> jobs so these jobs can be stored longer. Jobs can be marked as important on job group level
+    via <a href="https://open.qa/docs/#build_tagging">build tagging</a> and on job level via "link labels", e.g. <code>label:linked Job mentioned on https://…</code>.
+</p>
+'; %>

@@ -1,0 +1,15 @@
+<div class="mb-3 row">
+    <div class="form-label col-sm-2"></div>
+    <div class="col-sm-10">
+        <button id="show-advanced-cleanup-settings-button" type="button"
+                class="btn btn-outline-info btn-sm"
+                data-bs-toggle="collapse" data-bs-target=".advanced-cleanup-settings">
+            <i class="fa fa-cogs"></i> Show advanced cleanup settings
+        </button>
+        <a href="http://open.qa/docs/#cleanup"
+           class="btn btn-outline-info btn-sm"
+           target="blank">
+            <i class="fa fa-book"></i> Cleanup documentation
+        </a>
+    </div>
+</div>

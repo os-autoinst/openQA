@@ -149,12 +149,16 @@ subtest 'Test configuration default modes' => sub {
             important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
             result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            job_storage_duration => OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS,
+            important_job_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS,
         },
         no_group_limits => {
             log_storage_duration => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
             important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
             result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            job_storage_duration => OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS,
+            important_job_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS,
         },
         minion_task_triggers => {
             on_job_done => [],
@@ -244,6 +248,10 @@ subtest 'Test configuration override from file' => sub {
         "-CURRENT = 40\n",
         "[minion_task_triggers]\n",
         "on_job_done = spam eggs\n",
+        "[default_group_limits]\n",
+        "result_storage_duration = 0\n",
+        "[no_group_limits]\n",
+        "result_storage_duration = 366\n",
         "[influxdb]\n",
         "ignored_failed_minion_jobs = foo boo\n"
 
@@ -266,6 +274,11 @@ subtest 'Test configuration override from file' => sub {
         [qw(spam eggs)], 'parse minion task triggers correctly');
     is_deeply($app->config->{influxdb}->{ignored_failed_minion_jobs},
         [qw(foo boo)], 'parse ignored_failed_minion_jobs correctly');
+
+    is $app->config->{default_group_limits}->{job_storage_duration}, 0,
+      'default job_storage_duration extended to result_storage_duration';
+    is $app->config->{no_group_limits}->{job_storage_duration}, 366,
+      'default job_storage_duration extended to result_storage_duration (no group)';
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {

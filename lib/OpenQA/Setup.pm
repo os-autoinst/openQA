@@ -16,6 +16,7 @@ use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
 use Time::Seconds;
 use Scalar::Util 'looks_like_number';
+use List::Util qw(any max);
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
@@ -192,14 +193,18 @@ sub read_config ($app) {
             asset_size_limit => OpenQA::JobGroupDefaults::SIZE_LIMIT_GB,
             log_storage_duration => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
             important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
-            result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
-            important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            result_storage_duration => undef,    # set via _set_default_storage_durations
+            important_result_storage_duration => undef,    # set via _set_default_storage_durations
+            job_storage_duration => undef,    # set via _set_default_storage_durations
+            important_job_storage_duration => undef,    # set via _set_default_storage_durations
         },
         no_group_limits => {
             log_storage_duration => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
             important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
-            result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
-            important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            result_storage_duration => undef,    # set via _set_default_storage_durations
+            important_result_storage_duration => undef,    # set via _set_default_storage_durations
+            job_storage_duration => undef,    # set via _set_default_storage_durations
+            important_job_storage_duration => undef,    # set via _set_default_storage_durations
         },
         minion_task_triggers => {
             on_job_done => '',
@@ -283,6 +288,7 @@ sub read_config ($app) {
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . join('', map { ":not(.result_$_)" } split(/\s+/, $results));
     _validate_worker_timeout($app);
+    _set_default_storage_durations($_) for $config->{default_group_limits}, $config->{no_group_limits};
     return $config;
 }
 
@@ -295,6 +301,28 @@ sub _validate_worker_timeout ($app) {
             'The specified worker_timeout is invalid and will be ignored. The timeout must be an integer greater than '
               . MAX_TIMER
               . '.');
+    }
+}
+
+sub _max_limit (@limits) {
+    # return the maximum limit where zero means infinity and is hence the highest
+    return (any { $_ == 0 } @limits) ? 0 : max(@limits);
+}
+
+my @DEFAULT_LIMIT_ASSIGNMENTS = (
+    ['result', 'log', OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS],
+    ['important_result', 'important_log', OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS],
+    ['job', 'result', OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS],
+    ['important_job', 'important_result', OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS],
+);
+
+sub _set_default_storage_durations ($limits) {
+    # assign according constant as default but never assign a lower value than the one for the smaller cleanup
+    for my $default_limit_assignment (@DEFAULT_LIMIT_ASSIGNMENTS) {
+        my ($cleanup, $smaller_cleanup, $default) = @$default_limit_assignment;
+        my $duration_key = "${cleanup}_storage_duration";
+        my $smaller_cleanup_duration_key = "${smaller_cleanup}_storage_duration";
+        $limits->{$duration_key} //= _max_limit($limits->{$smaller_cleanup_duration_key}, $default);
     }
 }
 

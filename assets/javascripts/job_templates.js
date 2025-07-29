@@ -538,9 +538,13 @@ function submitProperties(form) {
       $('td.prio input').attr('placeholder', defaultPrio);
     })
     .catch(error => {
+      const collapse = document.getElementById('show-advanced-cleanup-settings-button');
+      if (error.includes('_jobs') && collapse.getAttribute('aria-expanded') !== 'true') {
+        collapse.click();
+      }
       showSubmitResults(
         editorForm,
-        '<i class="fa fa-trash"></i> Unable to apply changes ' + '<strong>' + error + '</strong>'
+        `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${error}</strong>`
       );
     });
 

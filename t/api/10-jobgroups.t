@@ -89,8 +89,10 @@ subtest 'list job groups' => sub() {
                 description => "## Test description\n\nwith bugref bsc#1234",
                 exclusively_kept_asset_size => undef,
                 id => $opensuse_group,
+                keep_important_jobs_in_days => 0,
                 keep_important_logs_in_days => 120,
                 keep_important_results_in_days => 0,
+                keep_jobs_in_days => 365,
                 keep_logs_in_days => 30,
                 keep_results_in_days => 365,
                 name => 'opensuse',
@@ -106,8 +108,10 @@ subtest 'list job groups' => sub() {
                 description => undef,
                 exclusively_kept_asset_size => undef,
                 id => 1002,
+                keep_important_jobs_in_days => 0,
                 keep_important_logs_in_days => 120,
                 keep_important_results_in_days => 0,
+                keep_jobs_in_days => 365,
                 keep_logs_in_days => 30,
                 keep_results_in_days => 365,
                 name => 'opensuse test',
@@ -157,8 +161,10 @@ subtest 'create parent group' => sub() {
             {
                 build_version_sort => BUILD_SORT_BY_NAME,
                 carry_over_bugrefs => 1,
+                default_keep_important_jobs_in_days => 0,
                 default_keep_important_logs_in_days => 45,
                 default_keep_important_results_in_days => 0,
+                default_keep_jobs_in_days => 365,
                 default_keep_logs_in_days => 30,
                 default_keep_results_in_days => 365,
                 default_priority => 50,
@@ -226,8 +232,10 @@ subtest 'create job group' => sub() {
                 description => 'Test2',
                 exclusively_kept_asset_size => undef,
                 id => $cool_group_id,
+                keep_important_jobs_in_days => 0,
                 keep_important_logs_in_days => 45,
                 keep_important_results_in_days => 0,
+                keep_jobs_in_days => 365,
                 keep_logs_in_days => 30,
                 keep_results_in_days => 365,
                 name => 'Cool group',
@@ -256,9 +264,12 @@ subtest 'update job group' => sub() {
             default_keep_logs_in_days => 22,
             default_keep_important_logs_in_days => 44,
             default_keep_results_in_days => 222,
-            default_keep_important_results_in_days => 333
+            default_keep_important_results_in_days => 333,
+            default_keep_jobs_in_days => 444,
+            default_keep_important_jobs_in_days => 555,
         })->tx->res->json->{id};
-    return always_explain $t->tx->res->json unless $t->success;
+    $t->status_is(200, 'parent job group with defaults created');
+    return always_explain $t->tx->res->json unless $new_id;
 
     my @forms = (
         {size_limit_gb => '-300GB'},
@@ -311,6 +322,8 @@ subtest 'update job group' => sub() {
     $t->json_is('/0/keep_important_logs_in_days' => 44, 'inherited important logs expiry from parent');
     $t->json_is('/0/keep_results_in_days' => 222, 'inherited results expiry from parent');
     $t->json_is('/0/keep_important_results_in_days' => 333, 'inherited important results expiry from parent');
+    $t->json_is('/0/keep_jobs_in_days' => 444, 'inherited jobs expiry from parent');
+    $t->json_is('/0/keep_important_jobs_in_days' => 555, 'inherited important jobs expiry from parent');
     $t->json_is('/0/sort_order' => 123, 'sort order updated');
 
     $t->put_ok(
@@ -321,6 +334,8 @@ subtest 'update job group' => sub() {
             keep_important_logs_in_days => 40,
             keep_results_in_days => 200,
             keep_important_results_in_days => 300,
+            keep_jobs_in_days => 400,
+            keep_important_jobs_in_days => 500,
         })->status_is(200, 'defaults overridden');
 
     $t->get_ok("/api/v1/job_groups/$opensuse_group")->status_is(200);
@@ -328,6 +343,8 @@ subtest 'update job group' => sub() {
     $t->json_is('/0/keep_important_logs_in_days' => 40, 'inherited important logs expiry overridden');
     $t->json_is('/0/keep_results_in_days' => 200, 'inherited results expiry overridden');
     $t->json_is('/0/keep_important_results_in_days' => 300, 'inherited important results expiry overridden');
+    $t->json_is('/0/keep_jobs_in_days' => 400, 'inherited jobs expiry overridden');
+    $t->json_is('/0/keep_important_jobs_in_days' => 500, 'inherited important jobs expiry overridden');
 };
 
 subtest 'delete job/parent group and error when listing non-existing group' => sub() {
@@ -396,8 +413,10 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
                 description => 'Updated group without parent',
                 exclusively_kept_asset_size => undef,
                 id => $cool_group_id,
+                keep_important_jobs_in_days => 0,
                 keep_important_logs_in_days => 100,
                 keep_important_results_in_days => 0,
+                keep_jobs_in_days => 365,
                 keep_logs_in_days => 30,
                 keep_results_in_days => 365,
                 name => 'Cool group',
@@ -480,62 +499,72 @@ subtest 'prevent create/update duplicate job group on same parent group' => sub(
     );
 };
 
-subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => sub() {
+subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => sub {
     my %tests_parameters = (
         'parent group' => {
             endpoint => '/api/v1/parent_groups',
             name => 'test_parent_group',
             keep_logs_name => 'default_keep_logs_in_days',
+            keep_important_logs_name => 'default_keep_important_logs_in_days',
             keep_results_name => 'default_keep_results_in_days',
+            keep_important_results_name => 'default_keep_important_results_in_days',
+            keep_jobs_name => 'default_keep_jobs_in_days',
         },
         'job group' => {
             endpoint => '/api/v1/job_groups',
             name => 'test_job_group',
             keep_logs_name => 'keep_logs_in_days',
+            keep_important_logs_name => 'keep_important_logs_in_days',
             keep_results_name => 'keep_results_in_days',
+            keep_important_results_name => 'keep_important_results_in_days',
+            keep_jobs_name => 'keep_jobs_in_days',
         });
 
     for my $test (sort keys %tests_parameters) {
         subtest $test => sub {
             my $params = $tests_parameters{$test};
-            $t->post_ok(
-                $params->{endpoint},
-                form => {
-                    name => $params->{name},
-                    $params->{keep_logs_name} => 2000,
-                    $params->{keep_results_name} => 1,
-                })
-              ->status_is(400,
-                "if $params->{keep_logs_name} lower than or equal to $params->{keep_results_name} create should fail")
-              ->json_is(
-                '/error' => "`$params->{keep_logs_name}` must be lower than or equal to `$params->{keep_results_name}`",
-                "error message shown on invalid $test creation"
-              );
-            my $group_id = $t->post_ok(
-                $params->{endpoint},
-                form => {
-                    name => $params->{name},
-                })->tx->res->json->{id};
-            $t->put_ok(
-                "$params->{endpoint}/$group_id",
-                form => {
-                    name => $params->{name},
-                    $params->{keep_logs_name} => 1,
-                    $params->{keep_results_name} => 2000,
-                })->status_is(200, 'valid values are accepted');
-            $t->put_ok(
-                "$params->{endpoint}/$group_id",
-                form => {
-                    name => $params->{name},
-                    $params->{keep_logs_name} => 2000,
-                    $params->{keep_results_name} => 1,
-                })
-              ->status_is(400,
-                "if $params->{keep_logs_name} lower than or equal to $params->{keep_results_name} update should fail")
-              ->json_is(
-                '/error' => "`$params->{keep_logs_name}` must be lower than or equal to `$params->{keep_results_name}`",
-                "error message shown on invalid $test update"
-              );
+            my %form_invalid = (
+                name => $params->{name},
+                $params->{keep_logs_name} => 2,
+                $params->{keep_results_name} => 1,
+                $params->{keep_jobs_name} => 1
+            );
+            my @expected_errors = (
+                "'$params->{keep_logs_name}' must be <= '$params->{keep_results_name}'",
+                "'$params->{keep_important_logs_name}' must be <= '$params->{keep_important_results_name}'",
+            );
+            my %form_invalid_1 = (
+                %form_invalid,
+                $params->{keep_important_logs_name} => 5,
+                $params->{keep_important_results_name} => 4,
+            );
+            $t->post_ok($params->{endpoint}, form => \%form_invalid_1);
+            $t->status_is(400, "creation fails if $params->{keep_results_name} lower than $params->{keep_logs_name}");
+            $t->json_is('/error' => join(', ', @expected_errors), "error message on invalid $test creation (1)");
+            my %form_invalid_2 = (%form_invalid, $params->{keep_logs_name} => 1, $params->{keep_results_name} => 2);
+            $t->post_ok($params->{endpoint}, form => \%form_invalid_2);
+            $t->status_is(400, "creation fails if $params->{keep_jobs_name} lower than $params->{keep_results_name}");
+            $t->json_is(
+                '/error' => "'$params->{keep_results_name}' must be <= '$params->{keep_jobs_name}'",
+                "error message on invalid $test creation (2)"
+            );
+            $t->post_ok($params->{endpoint}, form => {name => $params->{name}});
+            $t->status_is(200, "can create $test without retention parameters");
+            return unless my $group_id = $t->tx->res->json->{id};
+            my %form_valid = (
+                name => $params->{name},
+                $params->{keep_logs_name} => 1,
+                $params->{keep_results_name} => 2,
+                $params->{keep_jobs_name} => 3,
+            );
+            $t->put_ok("$params->{endpoint}/$group_id", form => \%form_valid);
+            $t->status_is(200, 'valid values are accepted');
+            $t->put_ok("$params->{endpoint}/$group_id", form => \%form_invalid);
+            $t->status_is(400, "update fails if $params->{keep_results_name} lower than $params->{keep_logs_name}");
+            $t->json_is(
+                '/error' => "'$params->{keep_logs_name}' must be <= '$params->{keep_results_name}'",
+                "error message on invalid $test update (1)"
+            );
         };
     }
 };

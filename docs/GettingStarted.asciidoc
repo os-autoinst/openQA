@@ -371,36 +371,10 @@ the index page.
 
 [id="basic_cleanup"]
 === Cleanup
-IMPORTANT: openQA automatically deletes data that it considers "old" based on
+openQA automatically archives and deletes data that it considers "old" based on
 different settings. For example old jobs and assets are deleted at some point.
-
-The following cleanup settings can be done on job-group-level:
-
-[horizontal]
-size limit:: Limits size of assets
-keep logs for:: Specifies how long logs of a non-important job are retained after
-  it finished
-keep important logs for:: How long logs of an important job are retained after it
-  finished
-keep results for:: specifies How long results of a non-important job are retained
-  after it finished
-keep important results for:: How long results of an important job are retained after
-  it finished
-
-*NOTE* Deletion of job results includes deletion of logs and will cause the job to
-be completely removed from the database.
-
-*NOTE* Checkout the <<UsersGuide.asciidoc#cleanup,Cleanup>> section for more details
-and the <<UsersGuide.asciidoc#build_tagging,Build tagging>> section for how to mark
-a job as important.
-
-*NOTE* New groups use the limits configured in the `[default_group_limits]` section
-of <<GettingStarted.asciidoc#_configuration,the web UI configuration>>. Jobs outside
-of any group use the limits configured in the `[no_group_limits]` section of the
-web UI configuration.
-
-*NOTE* Archiving of important jobs can be enabled. Checkout the related settings
-within the `[archiving]` section of the config file for details.
+The settings can be adjusted on job-group-level and in the configuration file
+You can read the <<UsersGuide.asciidoc#cleanup,Cleanup>> section for details.
 
 == Using the client script
 :openqa-personal-configuration: ~/.config/openqa/client.conf
