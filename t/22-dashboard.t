@@ -120,12 +120,12 @@ my $opensuse_group = $job_groups->find({name => 'opensuse'});
 $opensuse_group->update({parent_id => $test_parent->id});
 
 $t->get_ok('/group_overview/' . $opensuse_group->id)->status_is(200);
-@h2 = $t->tx->res->dom->find('h2')->map('all_text')->each;
-like(
-    $h2[0],
-    qr/[ \n]*Last Builds for[ \n]*Test parent[ \n]*\/[ \n]*opensuse[ \n]*/,
-    'parent name also shown on group overview'
-);
+my $dom = $t->tx->res->dom;
+like
+  $dom->find('h2')->map('all_text')->join,
+  qr/[ \n]*Last Builds for[ \n]*Test parent[ \n]*\/[ \n]*opensuse[ \n]*/,
+  'parent name also shown on group overview';
+like $dom->find('#sorting-note')->map('all_text')->join, qr/Builds are sorted by name/, 'note about sorting present';
 
 $t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map(sub ($e) { $e->text . ($e->attr('title') // '') })->each;

@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Feature::Compat::Try;
 
 use Date::Format;
+use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::BuildResults;
@@ -71,6 +72,18 @@ sub _respond_error_for_group_overview ($self, $error) {
         html => {template => 'main/specific_not_found', status => 400},
     );
 }
+
+sub _sort_info_time ($new_old) { "Builds are sorted by the creation time of the <em>$new_old</em> job." }
+
+sub _sort_help_timestamps ($new_old) {
+"This means the timestamps are the creation time of the <em>$new_old</em> job in that build (accross all architectures).";
+}
+
+my %SORTING_NOTE = (
+    BUILD_SORT_BY_NAME() => {info => 'Builds are sorted by <em>name</em>.', help => _sort_help_timestamps('oldest')},
+    BUILD_SORT_BY_NEWEST_JOB() => {info => _sort_info_time('newest'), help => _sort_help_timestamps('newest')},
+    BUILD_SORT_BY_OLDEST_JOB() => {info => _sort_info_time('oldest'), help => _sort_help_timestamps('oldest')},
+);
 
 sub _group_overview ($self, $resultset, $template) {
     my $validation = $self->validation;
@@ -154,6 +167,7 @@ sub _group_overview ($self, $resultset, $template) {
     }
     $self->stash(
         group => $group_hash,
+        sorting_note => $SORTING_NOTE{$group->build_version_sort},
         limit_builds => $limit_builds,
         only_tagged => $only_tagged,
         comments => \@comments,
