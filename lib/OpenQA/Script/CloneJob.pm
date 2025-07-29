@@ -161,6 +161,11 @@ sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
 
             print STDERR "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
+
+            # Follow redirection manually for behaviour LWP < 6.48, see
+            # https://github.com/libwww-perl/libwww-perl/pull/349
+            $r = $ua->mirror($r->header('Location'), $dst) if ($r->code == 308);
+
             unless ($r->is_success || $r->code == 304) {
                 print STDERR "$jobid failed: $file, ", $r->status_line, "\n";
                 die "Can't clone due to missing assets: ", $r->status_line, " \n"
