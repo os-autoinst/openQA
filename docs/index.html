@@ -844,6 +844,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_openqa_web_ui_sample_test">39.4.1. openQA web UI sample test</a></li>
 </ul>
 </li>
+<li><a href="#_example_lua_test_module">39.5. Example Lua test module</a></li>
 </ul>
 </li>
 <li><a href="#_variables">40. Variables</a></li>
@@ -7002,13 +7003,14 @@ familiar with openQA and has already read the Starter Guide, available at the
 <div class="sectionbody">
 <div id="basic" class="paragraph">
 <p>This section explains the basic layout of an openQA test and the API available.
-Tests are written in the <strong>Perl</strong> programming language. However there is support
-for the <strong>Python</strong> programming language (through the Perl module
-<code>Inline::Python</code>).</p>
+Tests can be written in the programming languages <strong>Perl</strong>, <strong>Python</strong>¹ and <strong>Lua</strong>².
+So basic but no in-depth knowledge of Perl, Python or Lua is needed. This
+document assumes that the reader is already familiar with Perl, Python or Lua.</p>
 </div>
+<hr>
 <div class="paragraph">
-<p>Some basic but no in-depth knowledge of Perl or Python is needed. This document
-assumes that the reader is already familiar with Perl or Python.</p>
+<p>¹ requires the Perl module <code>Inline::Python</code><br>
+² requires the Perl module <code>Inline::Lua</code></p>
 </div>
 </div>
 </div>
@@ -7062,6 +7064,18 @@ actual test code and the test needs to be loaded in the distribution&#8217;s
 
 <span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-c1"># write in this block the code for your test.</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And here is an example in Lua:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
+
+<span class="tok-kr">function</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
+    <span class="tok-c1">-- write in this block the code for your test.</span>
+<span class="tok-kr">end</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -7156,6 +7170,13 @@ behavior for all backends even though it is not possible to roll back.</p>
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-kr">function</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
+    <span class="tok-kr">return</span> <span class="tok-p">{</span><span class="tok-n">fatal</span> <span class="tok-o">=</span> <span class="tok-mi">1</span><span class="tok-p">}</span>
+<span class="tok-kr">end</span></code></pre>
+</div>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_pre_run_hook"><a class="anchor" href="#_pre_run_hook"></a><a class="link" href="#_pre_run_hook">39.1.3. <code>pre_run_hook</code></a></h4>
@@ -7216,7 +7237,7 @@ but only if the <code>run</code> subroutine completes without any exceptions.</p
 <div class="sect2">
 <h3 id="_notes_on_the_python_api"><a class="anchor" href="#_notes_on_the_python_api"></a><a class="link" href="#_notes_on_the_python_api">39.2. Notes on the Python API</a></h3>
 <div id="notes-python-api" class="paragraph">
-<p>The Python integration that OpenQA offers through <code>Inline::Python</code> also allows
+<p>The Python integration that openQA offers through <code>Inline::Python</code> also allows
 the test modules to import other Perl modules with the usage of the <code>perl</code>
 virtual package provided by <code>Inline::Python</code>.</p>
 </div>
@@ -7247,7 +7268,7 @@ passed as positional arguments, for example <code>"key", "value"</code>.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>versus the equivalent python code:</p>
+<p>versus the equivalent Python code:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7269,13 +7290,9 @@ passed as positional arguments, for example <code>"key", "value"</code>.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Additionally, Python tests do not support <code>run_args</code>. An error will be present
-when a Python test detects the presence of <code>run_args</code> on schedule.</p>
-</div>
-<div class="paragraph">
-<p>This is because of the way <code>Inline::Python</code> handles argument passing between
-Perl &lt;&#8594; Python, references to complex Perl objects do not reach Python properly
-and they can&#8217;t be used.</p>
+<p>Additionally, Python tests do not support <code>run_args</code> and treat the presence of
+<code>run_args</code> as error. This is because of the way <code>Inline::Python</code> does not pass
+references to complex Perl objects to Python.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7417,6 +7434,31 @@ implementing the interface described above.</p>
 <span class="tok-k">def</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-k">return</span> <span class="tok-p">{</span><span class="tok-s1">&#39;fatal&#39;</span><span class="tok-p">:</span> <span class="tok-mi">1</span><span class="tok-p">}</span></code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example_lua_test_module"><a class="anchor" href="#_example_lua_test_module"></a><a class="link" href="#_example_lua_test_module">39.5. Example Lua test module</a></h3>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
+
+<span class="tok-kr">function</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
+    <span class="tok-n">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-logged-in&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">assert_and_click</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-search&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">type_string</span><span class="tok-p">(</span><span class="tok-s1">&#39;shutdown.pm&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ret&#39;</span><span class="tok-p">)</span>
+    <span class="tok-err">…</span>
+<span class="tok-kr">end</span>
+
+<span class="tok-kr">function</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
+    <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-p">)</span>
+<span class="tok-kr">end</span>
+
+<span class="tok-kr">function</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
+    <span class="tok-kr">return</span> <span class="tok-p">{</span><span class="tok-n">fatal</span> <span class="tok-o">=</span> <span class="tok-mi">1</span><span class="tok-p">}</span>
+<span class="tok-kr">end</span></code></pre>
 </div>
 </div>
 </div>
@@ -11725,13 +11767,13 @@ expected to be backed with the corresponding tests.</p>
 <h2 id="_technologies"><a class="anchor" href="#_technologies"></a><a class="link" href="#_technologies">65. Technologies</a></h2>
 <div class="sectionbody">
 <div id="technologies" class="paragraph">
-<p>Everything in openQA, from <code>os-autoinst</code> to the web frontend and from the tests
-to the support scripts is written in Perl. So having some basic knowledge
-about that language is really desirable in order to understand and develop
-openQA. Of course, in addition to bare Perl, several libraries and additional
-tools are required. The easiest way to install all needed dependencies is
-using the available os-autoinst and openQA packages, as described in the
-Installation Guide.</p>
+<p>Most in openQA, from <code>os-autoinst</code> to the web frontend and from the tests to
+the support scripts is written in Perl in combination with other languages. So
+having some basic knowledge in those is desirable in order to understand and
+develop openQA. Of course, in addition to bare Perl, several libraries and
+additional tools are required. The easiest way to install all needed
+dependencies is using the available os-autoinst and openQA packages, as
+described in the Installation Guide.</p>
 </div>
 <div class="paragraph">
 <p>In the case of os-autoinst, only a few <a href="http://www.cpan.org/">CPAN</a> modules are
@@ -12140,7 +12182,7 @@ development after you setup a PostgreSQL database as mentioned in the previous
 section.</p>
 </div>
 <div class="paragraph">
-<p>You have to install/update web-related dependencies first using <code>npm install</code>.
+<p>You have to install/update web-related dependencies first using <code>npm install --ignore-scripts</code>.
 To start the webserver for development, use <code>scripts/openqa daemon</code>. The other
 daemons (mentioned in the <a href="images/architecture.svg">architecture diagram</a>)
 are started in the same way, e.g. <code>script/openqa-scheduler daemon</code>.</p>
@@ -13665,7 +13707,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-24 04:44:39 UTC
+Last updated 2025-07-29 04:44:36 UTC
 </div>
 </div>
 </body>
