@@ -11,7 +11,7 @@
                 <div class="mb-3">
                     <label class="form-label" for="expiration">Expiration</label>
                     <input type="checkbox" id="expiration" checked onchange="toggleExpiration(this)">
-                    %= datetime_field 't_expiration', id => 'expiration-datetime-field', size => 14, class => 'form-control', value => DateTime->now()->add(years => 1)
+                    %= datetime_field 't_expiration', id => 'expiration-datetime-field', size => 14, class => 'form-control', value => DateTime->now()->add(years => 1)->strftime('%FT%H:%M')
                 </div>
                 <div class="mb-3">
                     %= submit_button 'Create', class => 'btn btn-primary'

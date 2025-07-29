@@ -16,7 +16,7 @@ sub create ($self) {
     my $user = $self->current_user;
     my $expiration;
     my $validation = $self->validation;
-    $validation->optional('t_expiration')->datetime;
+    $validation->optional('t_expiration', 'seconds_optional')->datetime;
 
     my $error;
     if ($validation->has_error) {
@@ -24,7 +24,7 @@ sub create ($self) {
     }
 
     if (!$error && $validation->is_valid('t_expiration')) {
-        try { $expiration = DateTime::Format::Pg->parse_datetime($self->param('t_expiration')) }
+        try { $expiration = DateTime::Format::Pg->parse_datetime($validation->param('t_expiration')) }
         catch ($e) { $error = $e }
     }
     unless ($error) {
