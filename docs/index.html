@@ -1761,88 +1761,11 @@ the index page.</p>
 </div>
 <div class="sect2">
 <h3 id="basic_cleanup"><a class="anchor" href="#basic_cleanup"></a><a class="link" href="#basic_cleanup">3.7. Cleanup</a></h3>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Important</div>
-</td>
-<td class="content">
-openQA automatically deletes data that it considers "old" based on
+<div class="paragraph">
+<p>openQA automatically archives and deletes data that it considers "old" based on
 different settings. For example old jobs and assets are deleted at some point.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The following cleanup settings can be done on job-group-level:</p>
-</div>
-<div class="hdlist">
-<table>
-<tr>
-<td class="hdlist1">
-size limit
-</td>
-<td class="hdlist2">
-<p>Limits size of assets</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-keep logs for
-</td>
-<td class="hdlist2">
-<p>Specifies how long logs of a non-important job are retained after
-it finished</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-keep important logs for
-</td>
-<td class="hdlist2">
-<p>How long logs of an important job are retained after it
-finished</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-keep results for
-</td>
-<td class="hdlist2">
-<p>specifies How long results of a non-important job are retained
-after it finished</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-keep important results for
-</td>
-<td class="hdlist2">
-<p>How long results of an important job are retained after
-it finished</p>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p><strong>NOTE</strong> Deletion of job results includes deletion of logs and will cause the job to
-be completely removed from the database.</p>
-</div>
-<div class="paragraph">
-<p><strong>NOTE</strong> Checkout the <a href="#cleanup">Cleanup</a> section for more details
-and the <a href="#build_tagging">Build tagging</a> section for how to mark
-a job as important.</p>
-</div>
-<div class="paragraph">
-<p><strong>NOTE</strong> New groups use the limits configured in the <code>[default_group_limits]</code> section
-of <a href="#_configuration">the web UI configuration</a>. Jobs outside
-of any group use the limits configured in the <code>[no_group_limits]</code> section of the
-web UI configuration.</p>
-</div>
-<div class="paragraph">
-<p><strong>NOTE</strong> Archiving of important jobs can be enabled. Checkout the related settings
-within the <code>[archiving]</code> section of the config file for details.</p>
+The settings can be adjusted on job-group-level and in the configuration file
+You can read the <a href="#cleanup">Cleanup</a> section for details.</p>
 </div>
 </div>
 </div>
@@ -6706,20 +6629,105 @@ about how those jobs are triggered.</p>
 </div>
 <div class="paragraph">
 <p>The cleanup of <strong>assets</strong> and job <strong>results</strong> (and certain other data) is happening
-independently of each other using different strategies and retention settings:</p>
+independently of each other using different strategies and retention settings.</p>
+</div>
+<div class="paragraph">
+<p>The following cleanup settings can be done on job-group-level:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Size limit
+</td>
+<td class="hdlist2">
+<p>Limits the size of assets. The further sub sections provide an
+overall description of the <strong>asset</strong> cleanup strategy and how to configure it.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Keep logs for
+</td>
+<td class="hdlist2">
+<p>How long <strong>logs</strong> of non-important jobs are retained after
+they finished. <strong>Logs</strong> are files listed under "Result files" in the
+"Logs &amp; Assets" tab on the job details page, e.g. <code>autoinst-log.txt</code>.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Keep important logs for
+</td>
+<td class="hdlist2">
+<p>How long logs of an <strong>important</strong> job are retained after
+it finished.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Keep results for
+</td>
+<td class="hdlist2">
+<p>How long <strong>results</strong> of non-important job are retained after
+they finished. <strong>Results</strong> are all additional files stored on disk for a job
+(excluding assets) such as screenshots. This also includes logs and therefore
+this retention must be longer (or equal) than the retention of <strong>logs</strong>.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Keep important results for
+</td>
+<td class="hdlist2">
+<p>How long results of <strong>important</strong> jobs are retained
+after they finished.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Keep jobs for
+</td>
+<td class="hdlist2">
+<p>How long <strong>database entries</strong> of non-important jobs are retained
+in the database after they finished. The <strong>database entry</strong> for a job is
+required for openQA knowing the job at all and deleting the database entry
+also means deleting results stored on disk. This retention must therefore be
+the longest. Note that a job is no longer accounted for in statistics on the
+index and group overview pages after its database entry is deleted.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Keep important jobs for
+</td>
+<td class="hdlist2">
+<p>How long <strong>important</strong> jobs are retained in the database
+after they finished.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Further remarks:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>The further sub sections provide an overall description of the <strong>asset</strong> cleanup
-strategy and how to configure it.</p>
+<p>Checkout the <a href="#build_tagging">Build tagging</a> section for
+how to mark a job as important on job group level. Jobs can also be marked as
+important by adding a "link label" (e.g.
+<code>label:linked Job mentioned on <a href="https://…" class="bare">https://…</a></code>) in a job comment.</p>
 </li>
 <li>
-<p>The <a href="#basic_cleanup">Basic cleanup settings</a>
-section explains how to configure retentions, covering the job <strong>result</strong>
-cleanup as well. Also have a look at
-<a href="#build_tagging">Build tagging</a> which allows to keep
-certain jobs longer by marking them as important.</p>
+<p>New groups use the limits configured in the <code>[default_group_limits]</code>
+section of <a href="#_configuration">the web UI configuration</a>.
+Jobs outside of any group use the limits configured in the <code>[no_group_limits]</code>
+section of the web UI configuration.</p>
+</li>
+<li>
+<p>Archiving of important jobs can be enabled. Checkout the related settings
+within the <code>[archiving]</code> section of the config file for details.</p>
 </li>
 <li>
 <p>The <a href="#auditing">Auditing</a> section explains the cleanup of
@@ -13707,7 +13715,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-29 04:44:36 UTC
+Last updated 2025-07-30 04:44:23 UTC
 </div>
 </div>
 </body>
