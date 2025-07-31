@@ -251,7 +251,7 @@ subtest 'Test configuration override from file' => sub {
         "[default_group_limits]\n",
         "result_storage_duration = 0\n",
         "[no_group_limits]\n",
-        "result_storage_duration = 366\n",
+        "result_storage_duration = 731\n",
         "[influxdb]\n",
         "ignored_failed_minion_jobs = foo boo\n"
 
@@ -277,7 +277,7 @@ subtest 'Test configuration override from file' => sub {
 
     is $app->config->{default_group_limits}->{job_storage_duration}, 0,
       'default job_storage_duration extended to result_storage_duration';
-    is $app->config->{no_group_limits}->{job_storage_duration}, 366,
+    is $app->config->{no_group_limits}->{job_storage_duration}, 731,
       'default job_storage_duration extended to result_storage_duration (no group)';
 };
 
