@@ -4,6 +4,38 @@
 package OpenQA::WebAPI::Controller::API::V1::JobSettings;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
+=head2 jobs
+
+Filters jobs based on a single setting key/value pair.
+
+  openqa-cli api --osd job_settings/jobs key="*_TEST_ISSUES" list_value=39911
+  openqa-cli api --osd job_settings/jobs key="*" list_value=39911
+
+=head3 Arguments
+
+=over 4
+
+=item C<key>
+
+The setting key to filter by. It accepts a string or a glob of a job variable.
+Some variables are not stored and they can not be used.
+Examples are DISTRI, BUILD and ARCH
+
+=item C<list_value>
+
+The value to match for the given key. This can be a string without special characters.
+
+=back
+
+=head3 Returns
+
+On success, returns an array of the matched job ids. The results rely on
+some openqa settings C<{misc_limits}{job_settings_max_recent_jobs}>.
+
+On failure, returns a 400 code on invalid input of key or value.
+
+=cut
+
 sub jobs ($self) {
     my $validation = $self->validation;
     $validation->required('key')->like(qr/^[\w\*]+$/);

@@ -119,6 +119,9 @@ subcommands:
         # Post job template (from JSON file)
         openqa-cli api --data-file form.json -X POST job_templates_scheduling/1
 
+        # Get jobid(s) filtered by key/value job settings
+        openqa-cli api --osd job_settings/jobs key="*_TEST_ISSUES" list_value=39911
+
     options:
       - header|a=s@           --One or more additional HTTP headers (<name:value>)
       - name: data-file
