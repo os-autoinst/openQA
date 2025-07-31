@@ -8594,7 +8594,7 @@ autoyast test:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/client<span class="tok-w"> </span><span class="tok-nb">jobs</span><span class="tok-w"> </span>post<span class="tok-w"> </span><span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse<span class="tok-w"> </span><span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2<span class="tok-w"> </span><span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli<span class="tok-w"> </span>api<span class="tok-w"> </span>-X<span class="tok-w"> </span>post<span class="tok-w"> </span><span class="tok-nb">jobs</span><span class="tok-w"> </span><span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse<span class="tok-w"> </span><span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span><span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-13.2-DVD-x86_64.iso<span class="tok-w">  </span><span class="tok-nv">ARCH</span><span class="tok-o">=</span>x86_64<span class="tok-w"> </span><span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>Server-DVD<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span><span class="tok-nv">TEST</span><span class="tok-o">=</span>supportserver_generator<span class="tok-w"> </span><span class="tok-nv">MACHINE</span><span class="tok-o">=</span>64bit<span class="tok-w"> </span><span class="tok-nv">DESKTOP</span><span class="tok-o">=</span>textmode<span class="tok-w">  </span><span class="tok-nv">INSTALLONLY</span><span class="tok-o">=</span><span class="tok-m">1</span><span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span><span class="tok-nv">AUTOYAST</span><span class="tok-o">=</span>supportserver/autoyast_supportserver.xml<span class="tok-w"> </span><span class="tok-nv">SUPPORT_SERVER_GENERATOR</span><span class="tok-o">=</span><span class="tok-m">1</span><span class="tok-w"> </span><span class="tok-se">\</span>
@@ -8642,7 +8642,7 @@ usual way:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/client<span class="tok-w"> </span>isos<span class="tok-w"> </span>post<span class="tok-w"> </span><span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse<span class="tok-w"> </span><span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2<span class="tok-w"> </span><span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli<span class="tok-w"> </span>api<span class="tok-w"> </span>-X<span class="tok-w"> </span>post<span class="tok-w"> </span>isos<span class="tok-w"> </span><span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse<span class="tok-w"> </span><span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">        </span><span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-13.2-DVD-x86_64.iso<span class="tok-w"> </span><span class="tok-nv">ARCH</span><span class="tok-o">=</span>x86_64<span class="tok-w"> </span><span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>Server-DVD</code></pre>
 </div>
 </div>
@@ -13715,7 +13715,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-30 04:44:23 UTC
+Last updated 2025-07-31 04:44:42 UTC
 </div>
 </div>
 </body>
