@@ -16,6 +16,10 @@ spec:
       labels:
         {{- include "worker.selectorLabels" . | nindent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-webui
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -vz {{ .Release.Name }}-webui 9526; do echo "Waiting for webui service"; sleep 15; done;']
       # Future enhancement option: initContainer for git-pulling tests into /data
       containers:
         {{ if .Values.cacheService -}}

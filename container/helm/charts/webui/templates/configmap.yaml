@@ -17,6 +17,10 @@ data:
     [{{ .Chart.Name }}-websockets]
     key = {{ .Values.key }}
     secret = {{ .Values.secret }}
+
+    [{{ .Release.Name }}-webui:9529]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
   database_ini: |
     [production]
     dsn = DBI:Pg:dbname={{ .Values.postgresql.auth.database }};host=db;user={{ .Values.postgresql.auth.username }};password={{ .Values.postgresql.auth.password }}
@@ -30,7 +34,7 @@ data:
     base_url = {{ .Values.useHttps | ternary "https://" "http://" }}{{ .Values.baseUrl }}
 
     [auth]
-    method = OpenID
+    method = Fake
 
     [logging]
     level = info
