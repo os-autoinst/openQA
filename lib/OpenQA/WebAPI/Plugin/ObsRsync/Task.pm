@@ -76,7 +76,7 @@ sub run {
     $error =~ s/\s+$//;
     $app->log->error('ObsRsync#_run failed (' . $exit_code . '): ' . $error);
     $helper->log_failure($project, $job->id);
-    return $job->fail({code => $exit_code, message => $error});
+    return $job->finish({code => $exit_code, message => $error});
 }
 
 sub update_dirty_status {
@@ -123,7 +123,7 @@ sub update_obs_builds_text {
 
     my ($exit_code, $error) = $helper->for_every_batch($alias, $sub);
 
-    return $job->fail({code => $exit_code, message => $error}) if $exit_code;
+    return $job->finish({code => $exit_code, message => $error}) if $exit_code;
     return $job->finish('Success');
 }
 

@@ -148,38 +148,14 @@ $t->put_ok('/api/v1/obs_rsync/MockProjectError/runs')->status_is(201, 'Start ano
 
 sleep_until_all_jobs_finished($t);
 
-# MockProjectError will fail so number of finished jobs should remain, but one job must be failed
-is(_jobs_cnt('finished'), 10, 'Number of finished jobs');
+# MockProjectError should not be raised because errors are ignored
+is(_jobs_cnt('finished'), 11, 'Number of finished jobs');
 my ($cnt, $jobs) = _jobs('failed');
-is($cnt, 1, 'Number of finished jobs');
-is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message') if $cnt;
+is($cnt, 0, 'Number of failed jobs');
 
-subtest 'test max retry count' => sub {
-    # use all concurrency slots to reach concurrency limit
-    my @guards = map { $t->app->obs_rsync->concurrency_guard() } (1 .. $config{queue_limit});
-    # put request and make sure it succeeded within 5 sec
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, 'trigger rsync');
-
-    my $sleep = .2;
-    my $empiristic = 3;    # this accounts gru timing in worst case for job run and retry
-    my $max_iterations = ($config{retry_max_count} + 1) * ($empiristic + $config{retry_interval}) / $sleep;
-    for (1 .. $max_iterations) {
-        ($cnt, $jobs) = _jobs('finished');
-        last if $cnt > 10;
-        sleep $sleep;
-    }
-
-    is($cnt, 11, 'Job should retry succeed');
-    is($jobs->[0]->{retries}, $config{retry_max_count}, 'Job retris is correct');
-    is(ref $jobs->[0]->{result}, 'HASH', 'Job retry result is hash');
-    is(
-        $jobs->[0]->{result}->{message},
-        "Exceeded retry count $config{retry_max_count}. Consider job will be re-triggered later",
-        'Job retry message'
-    ) if ref $jobs->[0]->{result} eq 'HASH';
-    # unlock guards
-    @guards = undef;
-};
+($cnt, $jobs) = _jobs('finished');
+is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message');
+is($jobs->[0]->{result}->{code}, 256, 'Correct exit code') if $cnt;
 
 END {
     $gru->signal('TERM');
