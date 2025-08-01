@@ -6,12 +6,12 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 =over 4
 
-=item jobs
+=item jobs()
 
 Filters jobs based on a single setting key/value pair.
 
-  openqa-cli api --osd job_settings/jobs key="*_TEST_ISSUES" list_value=39911
-  openqa-cli api --osd job_settings/jobs key="*" list_value=39911
+  openqa-cli api job_settings/jobs key="*_TEST_ISSUES" list_value=39911
+  openqa-cli api job_settings/jobs key="*" list_value=39911
 
 =item C<key>
 
@@ -22,12 +22,12 @@ Some variables are not stored and they can not be used.
 
 The value to match for the given key. This can be a string without special characters.
 
-=back
-
-=head3 Returns
+=item Returns
 
 On success, returns an array of the matched job ids. The results rely on
 C<{misc_limits}{job_settings_max_recent_jobs}>.
+
+=back
 
 =cut
 

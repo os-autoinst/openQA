@@ -1024,7 +1024,7 @@ by adding additional query parameters, e.g.:
 === Finding tests by querying particular job settings
 
 In case you are looking for a way to get a list of all the tests based on their
-settings, settings, here is one way to achieve this with `openqa-cli api`:
+settings, here is one way to achieve this with `openqa-cli api`:
 
 [source,sh]
 ----
@@ -1033,7 +1033,7 @@ openqa-cli api job_settings/jobs key="*_TEST_ISSUES" list_value=39911
 
 It is possible to use a literal string or a glob for C<key> as shown in the
 examples. C<list_value> does not support globbing, though.
-openQA configuration sets C<job_settings_max_recent_jobs> value which limits
+openQA configuration sets C<job_settings_max_recent_jobs> which limits
 the results.
 
 === Triggering tests
