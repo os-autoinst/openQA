@@ -7763,6 +7763,17 @@ based on company conventions:</p>
 <span class="tok-na">WORKER_CLASS</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">planet-earth,continent-antarctica,location-my_station</span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>The load of the system can affect test execution and cause failures due to delays of command execution and <a href="https://en.wikipedia.org/wiki/Thrashing_(computer_science)">thrashing</a>. If the average over a period of 15 minutes exceeds the specified value the worker will not accept new jobs.</p>
+</div>
+<div class="listingblock">
+<div class="title">File: workers.ini</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
+<span class="tok-c1"># Set to 0 to disable.</span>
+<span class="tok-c1">#CRITICAL_LOAD_AVG_THRESHOLD = 40</span></code></pre>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_running_a_custom_worker_engine"><a class="anchor" href="#_running_a_custom_worker_engine"></a><a class="link" href="#_running_a_custom_worker_engine">41.5. Running a custom worker engine</a></h3>
@@ -13715,7 +13726,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-31 04:44:42 UTC
+Last updated 2025-08-03 04:43:35 UTC
 </div>
 </div>
 </body>
