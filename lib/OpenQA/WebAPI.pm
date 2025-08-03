@@ -15,6 +15,7 @@ use Mojo::File 'path';
 use Mojo::IOLoop;
 use Mojo::Util 'trim';
 use Feature::Compat::Try;
+use OpenQA::Shared::Controller::OpenAPI;
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
@@ -24,6 +25,13 @@ sub startup ($self) {
     # Some plugins are shared between openQA micro services
     push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
     $self->plugin('SharedHelpers');
+
+    $self->config({
+        openapi => {
+            document_filename => 'public/openapi.yaml',
+        },
+    });
+    $self->plugin('OpenAPI::Modern', $self->config->{openapi});
 
     # Provide help to users early to prevent failing later on misconfigurations
     # note: Loading plugins for the current configuration so the help of commands provided by plugins is
@@ -298,7 +306,7 @@ sub startup ($self) {
 
     # api/v1/job_groups
     $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
-    $api_public_r->get('/job_groups/<group_id:num>')->name('apiv1_get_job_group')->to('job_group#list');
+    $api_public_r->get('/job_groups/<group_id:num>')->to('job_group#catchall');
     $api_public_r->get('/job_groups/<group_id:num>/jobs')->name('apiv1_get_job_group_jobs')->to('job_group#list_jobs');
     $api_public_r->get('/job_groups/<group_id:num>/build_results')->name('apiv1_get_job_group_jobs')
       ->to('job_group#build_results');
@@ -325,9 +333,9 @@ sub startup ($self) {
 
     my $job_r = $api_ro->any('/jobs/<jobid:num>');
     push @api_routes, $job_r;
-    $api_public_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
+    $api_public_r->any('/jobs/<jobid:num>')->to('job#catchall');
     $api_public_r->get('/experimental/jobs/<jobid:num>/status')->name('apiv1_get_status')->to('job#get_status');
-    $api_public_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
+    $api_public_r->any('/jobs/<jobid:num>/details')->to('job#catchall');
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
