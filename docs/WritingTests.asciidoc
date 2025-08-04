@@ -260,6 +260,72 @@ Additionally, Python tests do not support `run_args` and treat the presence of
 `run_args` as error. This is because of the way `Inline::Python` does not pass
 references to complex Perl objects to Python.
 
+=== Notes on the Lua API
+[id="notes-lua-api"]
+
+The Lua integration that openQA offers through `Inline::Lua` also allows
+the test modules to import other Perl modules via the `use()` function
+which works similar to Perl's native `use` function.
+
+[source,lua]
+-------------------------------------------------------------------
+use("testapi") -- imports all functions that testapi.pm exports
+use("testapi", {"check_screen"}) -- only imports the check_screen function from the testapi
+-------------------------------------------------------------------
+
+NOTE: The `use()` function will import everything into the global scope.
+
+Libraries written in Lua can be placed as `.lua` files into the `tests/lib/` directory.
+
+[source,lua]
+-------------------------------------------------------------------
+-- example test library to be imported by lua test modules
+
+local modname = "luatestlib"
+local M = {}
+_G[modname] = M
+package.loaded[modname] = M
+
+function M.testfunc3()
+    print("testfunc3")
+    return 44
+end
+-------------------------------------------------------------------
+
+The above library can be imported from a Lua test using the `require` function.
+
+NOTE: Lua libraries are - other than perl libraries - imported into their own scope.
+
+[source,lua]
+-------------------------------------------------------------------
+require 'luatestlib'
+luatestlib.testfunc3() -- returns 44
+-------------------------------------------------------------------
+
+Because of the way `Inline::Lua` binds Perl functions to Lua it is not
+possible to use keywords arguments from Lua to Perl functions. They must be
+passed as positional arguments of alternating key and value entries.
+
+See the following snippet of Perl code
+
+[source,perl]
+-------------------------------------------------------------------
+x11_start_program('vncviewer :0',
+    target_match => 'virtman-gnome_virt-install',
+    match_timeout => 100
+);
+-------------------------------------------------------------------
+
+versus the equivalent Lua code:
+
+[source,lua]
+-------------------------------------------------------------------
+x11_start_program('vncviewer :0',
+    'target_match', 'virtman-gnome_virt-install',
+    'match_timeout', 100
+)
+-------------------------------------------------------------------
+
 === Example Perl test modules
 [id="testmodule_perl_examples"]
 
