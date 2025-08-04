@@ -23,4 +23,7 @@ test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 1, 'help 
 my $args = 'jobs 1';
 test_once $args, qr/ERROR.*not connected/, 'fails without network', 1, 'fail';
 
+$args = '--form --json-data {} jobs/1';
+test_once $args, qr/ERROR.*--form.*--json/, 'test', 2, 'fail';
+
 done_testing();
