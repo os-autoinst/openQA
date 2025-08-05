@@ -23,6 +23,6 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 RUN zypper in -y os-autoinst-devel openQA-devel vim nodejs-default git mc perl-Devel-REPL perl-Term-ReadKey && \
     zypper clean -a
 
-ENV OPENQA_DIR /opt/openqa
+ENV OPENQA_DIR=/opt/openqa
 VOLUME $OPENQA_DIR
 WORKDIR $OPENQA_DIR

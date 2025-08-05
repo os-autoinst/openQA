@@ -19,10 +19,10 @@ RUN zypper install -y 'rubygem(sass)>=3.7.4' ruby-devel npm python3-base python3
 # openQA chromedriver for Selenium tests
 RUN zypper install -y chromedriver
 
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
-ENV NORMAL_USER squamata
-ENV USER squamata
+ENV NORMAL_USER=squamata
+ENV USER=squamata
 
 RUN echo "$NORMAL_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 RUN useradd -r -d /home/$NORMAL_USER -m -g users --uid=1000 $NORMAL_USER
