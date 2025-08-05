@@ -213,6 +213,24 @@ subtest 'personal access token' => sub {
 
     # Valid access token (again)
     $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
+
+    subtest 'Bearer token' => sub {
+        # Valid token
+        $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer lance:LANCELOTKEY01:MANYPEOPLEKNOW'} => form =>
+              {version => 100})->status_is(200);
+
+        # Invalid username
+        $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer invalid:LANCELOTKEY01:MANYPEOPLEKNOW'} => form =>
+              {version => 100})->status_is(403)->json_is({error => 'invalid personal access token'});
+
+        # Invalid key
+        $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer lance:LANCELOTKEY02:MANYPEOPLEKNOW'} => form =>
+              {version => 100})->status_is(403)->json_is({error => 'invalid personal access token'});
+
+        # Invalid secret
+        $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer lance:LANCELOTKEY01:MANYPEOPLEKNOWS'} => form =>
+              {version => 100})->status_is(403)->json_is({error => 'invalid personal access token'});
+    };
 };
 
 subtest 'personal access token (with reverse proxy)' => sub {
