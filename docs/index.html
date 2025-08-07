@@ -832,19 +832,20 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </ul>
 </li>
 <li><a href="#_notes_on_the_python_api">39.2. Notes on the Python API</a></li>
-<li><a href="#_example_perl_test_modules">39.3. Example Perl test modules</a>
+<li><a href="#_notes_on_the_lua_api">39.3. Notes on the Lua API</a></li>
+<li><a href="#_example_perl_test_modules">39.4. Example Perl test modules</a>
 <ul class="sectlevel3">
-<li><a href="#_boot_to_desktop">39.3.1. Boot to desktop</a></li>
-<li><a href="#_install_software_via_zypper">39.3.2. Install software via <code>zypper</code></a></li>
-<li><a href="#_sample_x11_test">39.3.3. Sample X11 Test</a></li>
+<li><a href="#_boot_to_desktop">39.4.1. Boot to desktop</a></li>
+<li><a href="#_install_software_via_zypper">39.4.2. Install software via <code>zypper</code></a></li>
+<li><a href="#_sample_x11_test">39.4.3. Sample X11 Test</a></li>
 </ul>
 </li>
-<li><a href="#_example_python_test_modules">39.4. Example Python test modules</a>
+<li><a href="#_example_python_test_modules">39.5. Example Python test modules</a>
 <ul class="sectlevel3">
-<li><a href="#_openqa_web_ui_sample_test">39.4.1. openQA web UI sample test</a></li>
+<li><a href="#_openqa_web_ui_sample_test">39.5.1. openQA web UI sample test</a></li>
 </ul>
 </li>
-<li><a href="#_example_lua_test_module">39.5. Example Lua test module</a></li>
+<li><a href="#_example_lua_test_module">39.6. Example Lua test module</a></li>
 </ul>
 </li>
 <li><a href="#_variables">40. Variables</a></li>
@@ -7304,13 +7305,105 @@ references to complex Perl objects to Python.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example_perl_test_modules"><a class="anchor" href="#_example_perl_test_modules"></a><a class="link" href="#_example_perl_test_modules">39.3. Example Perl test modules</a></h3>
+<h3 id="_notes_on_the_lua_api"><a class="anchor" href="#_notes_on_the_lua_api"></a><a class="link" href="#_notes_on_the_lua_api">39.3. Notes on the Lua API</a></h3>
+<div id="notes-lua-api" class="paragraph">
+<p>The Lua integration that openQA offers through <code>Inline::Lua</code> also allows
+the test modules to import other Perl modules via the <code>use()</code> function
+which works similar to Perl&#8217;s native <code>use</code> function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span> <span class="tok-c1">-- imports all functions that testapi.pm exports</span>
+<span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">,</span> <span class="tok-p">{</span><span class="tok-s2">&quot;check_screen&quot;</span><span class="tok-p">})</span> <span class="tok-c1">-- only imports the check_screen function from the testapi</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The <code>use()</code> function will import everything into the global scope.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Libraries written in Lua can be placed as <code>.lua</code> files into the <code>tests/lib/</code> directory.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-c1">-- example test library to be imported by lua test modules</span>
+
+<span class="tok-kd">local</span> <span class="tok-n">modname</span> <span class="tok-o">=</span> <span class="tok-s2">&quot;luatestlib&quot;</span>
+<span class="tok-kd">local</span> <span class="tok-n">M</span> <span class="tok-o">=</span> <span class="tok-p">{}</span>
+<span class="tok-nb">_G</span><span class="tok-p">[</span><span class="tok-n">modname</span><span class="tok-p">]</span> <span class="tok-o">=</span> <span class="tok-n">M</span>
+<span class="tok-nb">package.loaded</span><span class="tok-p">[</span><span class="tok-n">modname</span><span class="tok-p">]</span> <span class="tok-o">=</span> <span class="tok-n">M</span>
+
+<span class="tok-kr">function</span> <span class="tok-nc">M</span><span class="tok-p">.</span><span class="tok-nf">testfunc3</span><span class="tok-p">()</span>
+    <span class="tok-nb">print</span><span class="tok-p">(</span><span class="tok-s2">&quot;testfunc3&quot;</span><span class="tok-p">)</span>
+    <span class="tok-kr">return</span> <span class="tok-mi">44</span>
+<span class="tok-kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above library can be imported from a Lua test using the <code>require</code> function.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Lua libraries are - other than perl libraries - imported into their own scope.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nb">require</span> <span class="tok-s1">&#39;luatestlib&#39;</span>
+<span class="tok-n">luatestlib</span><span class="tok-p">.</span><span class="tok-n">testfunc3</span><span class="tok-p">()</span> <span class="tok-c1">-- returns 44</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Because of the way <code>Inline::Lua</code> binds Perl functions to Lua it is not
+possible to use keywords arguments from Lua to Perl functions. They must be
+passed as positional arguments of alternating key and value entries.</p>
+</div>
+<div class="paragraph">
+<p>See the following snippet of Perl code</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s">&#39;vncviewer :0&#39;</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-n">target_match</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&#39;virtman-gnome_virt-install&#39;</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-n">match_timeout</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-mi">100</span>
+<span class="tok-p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>versus the equivalent Lua code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s1">&#39;vncviewer :0&#39;</span><span class="tok-p">,</span>
+    <span class="tok-s1">&#39;target_match&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;virtman-gnome_virt-install&#39;</span><span class="tok-p">,</span>
+    <span class="tok-s1">&#39;match_timeout&#39;</span><span class="tok-p">,</span> <span class="tok-mi">100</span>
+<span class="tok-p">)</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example_perl_test_modules"><a class="anchor" href="#_example_perl_test_modules"></a><a class="link" href="#_example_perl_test_modules">39.4. Example Perl test modules</a></h3>
 <div id="testmodule_perl_examples" class="paragraph">
 <p>The following examples are short complete test modules written in Perl
 implementing the interface described above.</p>
 </div>
 <div class="sect3">
-<h4 id="_boot_to_desktop"><a class="anchor" href="#_boot_to_desktop"></a><a class="link" href="#_boot_to_desktop">39.3.1. Boot to desktop</a></h4>
+<h4 id="_boot_to_desktop"><a class="anchor" href="#_boot_to_desktop"></a><a class="link" href="#_boot_to_desktop">39.4.1. Boot to desktop</a></h4>
 <div id="testmodule_perl_boot" class="paragraph">
 <div class="title">Boots into desktop when pressing enter at the boot loader screen.</div>
 <p>The following example is a basic test that assumes some live image that boots
@@ -7341,7 +7434,7 @@ into the desktop when pressing enter at the boot loader:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_install_software_via_zypper"><a class="anchor" href="#_install_software_via_zypper"></a><a class="link" href="#_install_software_via_zypper">39.3.2. Install software via <code>zypper</code></a></h4>
+<h4 id="_install_software_via_zypper"><a class="anchor" href="#_install_software_via_zypper"></a><a class="link" href="#_install_software_via_zypper">39.4.2. Install software via <code>zypper</code></a></h4>
 <div id="testmodule_perl_zypper" class="listingblock">
 <div class="title">Example: Console test that installs software from remote repository via zypper command</div>
 <div class="content">
@@ -7368,7 +7461,7 @@ into the desktop when pressing enter at the boot loader:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_sample_x11_test"><a class="anchor" href="#_sample_x11_test"></a><a class="link" href="#_sample_x11_test">39.3.3. Sample X11 Test</a></h4>
+<h4 id="_sample_x11_test"><a class="anchor" href="#_sample_x11_test"></a><a class="link" href="#_sample_x11_test">39.4.3. Sample X11 Test</a></h4>
 <div class="listingblock">
 <div class="title">Example: Typical X11 test testing kate</div>
 <div class="content">
@@ -7404,13 +7497,13 @@ into the desktop when pressing enter at the boot loader:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example_python_test_modules"><a class="anchor" href="#_example_python_test_modules"></a><a class="link" href="#_example_python_test_modules">39.4. Example Python test modules</a></h3>
+<h3 id="_example_python_test_modules"><a class="anchor" href="#_example_python_test_modules"></a><a class="link" href="#_example_python_test_modules">39.5. Example Python test modules</a></h3>
 <div id="testmodule_python_examples" class="paragraph">
 <p>The following examples are short complete test modules written in Python
 implementing the interface described above.</p>
 </div>
 <div class="sect3">
-<h4 id="_openqa_web_ui_sample_test"><a class="anchor" href="#_openqa_web_ui_sample_test"></a><a class="link" href="#_openqa_web_ui_sample_test">39.4.1. openQA web UI sample test</a></h4>
+<h4 id="_openqa_web_ui_sample_test"><a class="anchor" href="#_openqa_web_ui_sample_test"></a><a class="link" href="#_openqa_web_ui_sample_test">39.5.1. openQA web UI sample test</a></h4>
 <div id="testmodule_python_webui" class="listingblock">
 <div class="title">Example: Test for the openQA web UI written in Python</div>
 <div class="content">
@@ -7446,7 +7539,7 @@ implementing the interface described above.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example_lua_test_module"><a class="anchor" href="#_example_lua_test_module"></a><a class="link" href="#_example_lua_test_module">39.5. Example Lua test module</a></h3>
+<h3 id="_example_lua_test_module"><a class="anchor" href="#_example_lua_test_module"></a><a class="link" href="#_example_lua_test_module">39.6. Example Lua test module</a></h3>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
@@ -13726,7 +13819,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-08-03 04:43:35 UTC
+Last updated 2025-08-07 04:44:43 UTC
 </div>
 </div>
 </body>

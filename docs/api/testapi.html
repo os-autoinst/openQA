@@ -564,6 +564,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_compat_args">compat_args</a></li>
 <li><a href="#_show_curl_progress_meter">show_curl_progress_meter</a></li>
 <li><a href="#_backend_get_wait_still_screen_on_here_doc_input">backend_get_wait_still_screen_on_here_doc_input</a></li>
+<li><a href="#_get_username_set_username">get_username, set_username</a></li>
+<li><a href="#_get_realname_set_realname">get_realname, set_realname</a></li>
+<li><a href="#_get_password_set_password">get_password, set_password</a></li>
+<li><a href="#_get_serialdev_set_serialdev">get_serialdev, set_serialdev</a></li>
 </ul>
 </li>
 </ul>
@@ -2081,11 +2085,59 @@ This function returns the value to be used by <code>wait_still_screen</code> bef
 starting to write the script into the here document.</p>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_get_username_set_username">get_username, set_username</h5>
+<div class="literalblock">
+<div class="content">
+<pre>my $old = get_username;
+set_username($new);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wrapper around the exported <code>$username</code> variable.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_get_realname_set_realname">get_realname, set_realname</h5>
+<div class="literalblock">
+<div class="content">
+<pre>my $old = get_realname;
+set_realname($new);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wrapper around the exported <code>$realname</code> variable.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_get_password_set_password">get_password, set_password</h5>
+<div class="literalblock">
+<div class="content">
+<pre>my $old = get_password;
+set_password($new);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wrapper around the exported <code>$password</code> variable.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_get_serialdev_set_serialdev">get_serialdev, set_serialdev</h5>
+<div class="literalblock">
+<div class="content">
+<pre>my $old = get_serialdev;
+set_serialdev($new);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wrapper around the exported <code>$serialdev</code> variable.</p>
+</div>
+</div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-08-03 04:47:28 UTC
+Last updated 2025-08-07 04:48:54 UTC
 </div>
 </div>
 </body>
