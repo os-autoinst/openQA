@@ -1242,7 +1242,6 @@ When using `apparmor` the called hook scripts must be covered by according
   /usr/bin/curl rix,
   /usr/bin/jq rix,
   /usr/bin/mktemp rix,
-  /usr/share/openqa/script/client rix,
 ```
 
 Additions should be added to `/etc/apparmor.d/local/usr.share.openqa.script.openqa`
