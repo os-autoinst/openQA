@@ -563,6 +563,40 @@ subtest ansiToHtml => sub {
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+subtest 'GRU dependency shown in infopanel' => sub {
+    my $job = $jobs->find(99927);
+    $job->update({state => SCHEDULED, result => NONE});
+
+    my $task = $schema->resultset('GruTasks')->create(
+        {
+            taskname => 'git_clone',
+            args => {},
+            run_at => DateTime->now(),
+            priority => 0,
+        });
+
+    $schema->resultset('GruDependencies')->create(
+        {
+            job_id => $job->id,
+            gru_task_id => $task->id,
+        });
+
+    $driver->get('/tests/' . $job->id);
+    disable_bootstrap_animations;
+    wait_for_ajax msg => 'job with GRU dependency loaded';
+
+    is(current_tab, 'Settings', 'Waiting for gru task start from Details tab');
+
+    like(
+        $driver->find_element('#info_box')->get_text(),
+        qr/State: scheduled, waiting for background tasks/,
+        'Waiting shown'
+    );
+
+    $t->get_ok('/tests/' . $job->id . '/infopanel_ajax')->status_is(200)
+      ->content_like(qr/waiting for background tasks/s, 'waiting text present');
+};
+
 subtest 'scheduled job' => sub {
     $t->get_ok('/tests/99927/infopanel_ajax')->status_is(200);
     $t->content_like(qr/scheduled.*, created.*\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/s, 'creation date displayed');
