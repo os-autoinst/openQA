@@ -22,3 +22,6 @@
 .idea/
 *.tmproj
 .vscode/
+# Helm files
+Chart.lock
+*.tgz
