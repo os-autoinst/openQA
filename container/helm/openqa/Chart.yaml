@@ -1,0 +1,16 @@
+apiVersion: v2
+name: openqa
+description: A Helm chart for openQA in Kubernetes
+type: application
+version: 0.1.0
+home: https://open.qa
+icon: https://raw.githubusercontent.com/os-autoinst/openQA/master/assets/images/logo.svg
+dependencies:
+  - name: postgresql
+    version: 15.5.38
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: worker
+    repository: file://charts/worker/
+    version: ~0.1.0
+    condition: worker.enabled

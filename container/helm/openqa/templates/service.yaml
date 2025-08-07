@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "openqa.fullname" . }}
+  labels:
+    {{- include "openqa.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: webui-port
+      port: 9526
+      targetPort: 9526
+    - name: websockets-port
+      port: 9527
+      targetPort: 9527
+    - name: livehandler-port
+      port: 9528
+      targetPort: 9528
+    - name: scheduler-port
+      port: 9529
+      targetPort: 9529
+
+  selector:
+    {{- include "openqa.selectorLabels" . | nindent 4 }}
