@@ -1,18 +1,25 @@
-#!/usr/bin/env bash
+#!/usr/bin/env perl
 
 # Copyright 2014-2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-# NAME
-#   openqa-client - obsolete script for talking to an openQA server
-#
-# SYNOPSIS
-#   This script is obsolete, use openqa-cli instead
-#
-#   openqa-client
+=head1 NAME
 
-echo "NOTICE: openqa-client is obsolete. Use openqa-cli instead" >&2
+openqa-client - obsolete script for talking to an openQA server
 
-[[ $1 == "--help" || $1 == "-h" ]] && exit 0
+=head1 SYNOPSIS
 
-exit 1
+This script is obsolete, use openqa-cli instead
+
+    openqa-client
+
+=cut
+
+use strict;
+use warnings;
+
+print STDERR "NOTICE: openqa-client is obsolete. Use openqa-cli instead\n";
+
+exit 0 if (@ARGV && ($ARGV[0] eq '--help' || $ARGV[0] eq '-h'));
+
+exit 1;
