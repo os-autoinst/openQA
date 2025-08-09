@@ -1021,6 +1021,21 @@ by adding additional query parameters, e.g.:
   `openSUSE Leap 15 ARM`. This applies to parameters for filtering job settings
   as well.
 
+=== Finding tests by quering particular job settings
+
+In case you are looking for a way to get a list of all the tests based on their
+settings, here one way to achieve with the power of the `openqa-cli api`
+
+[source,sh]
+----
+openqa-cli api job_settings/jobs key="*_TEST_ISSUES" list_value=39911
+----
+
+It is possible to use a literal string or a glob for C<key> as is shown in the
+examples. We cannot use glob for the C<list_value>.
+OpenQA configuration sets C<job_settings_max_recent_jobs> value which limits
+the results.
+
 === Triggering tests
 
 Tests can be triggered over multiple ways, using `openqa-clone-job`,
