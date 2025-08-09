@@ -11,6 +11,7 @@ use OpenQA::Log qw(setup_log log_debug log_error);
 use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
+use OpenQA::WebAPI::MCP;
 use Mojo::File 'path';
 use Mojo::IOLoop;
 use Mojo::Util 'trim';
@@ -51,6 +52,9 @@ sub startup ($self) {
     # take care of DB deployment or migration before starting the main app
     OpenQA::Schema->singleton;
 
+    # MCP server
+    my $mcp = OpenQA::MCP->new;
+
     # Some controllers are shared between openQA micro services
     my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::WebAPI::Controller', 'OpenQA::WebAPI']);
 
@@ -70,6 +74,7 @@ sub startup ($self) {
       = $api_public->under('/')->to('Auth#auth_admin')->name('api_ensure_admin');
     my $api_auth_any_user
       = $api_public->under('/')->to('Auth#auth')->name('api_ensure_user');
+    my $mcp_auth = $r->under('/')->to('Auth#auth')->name('mcp_ensure_user');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
@@ -269,6 +274,14 @@ sub startup ($self) {
 
     ###
     ## Admin area ends here
+    #
+
+    #
+    ## MCP (Model Context Protocol) endpoint
+    ###
+    $mcp_auth->any('/experimental/mcp' => $mcp->to_action);
+    ###
+    ##
     #
 
     #
