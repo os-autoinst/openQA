@@ -33,6 +33,7 @@ setup suitable to develop openQA itself, have a look at the
 
 openQA is provided in containers. Multiple variants exist.
 
+[[single-instance-container]]
 === Single-instance container
 
 The easiest and quickest way to spawn a single instance of openQA with a
