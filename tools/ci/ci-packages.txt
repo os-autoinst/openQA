@@ -71,7 +71,7 @@ perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.60
 perl-DBD-Pg-3.18.0
 perl-DBD-SQLite-1.740.0
-perl-DBI-1.643
+perl-DBI-1.647.0
 perl-DBIx-Class-0.082843
 perl-DBIx-Class-DeploymentHandler-0.002234
 perl-DBIx-Class-DynamicDefault-0.04
