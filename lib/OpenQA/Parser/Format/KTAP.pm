@@ -10,10 +10,10 @@ use OpenQA::Parser::Result::OpenQA;
 use TAP::Parser;
 
 has [qw(test)];
-has state => sub { return { steps => undef, m => 0 } };
+has state => sub { return {steps => undef, m => 0} };
 
 sub _testgroup_init ($self, $line) {
-    # flush previous group if any
+    # flush previous group if required
     if ($self->state->{steps} && $self->test) {
         my $steps = $self->state->{steps};
         $steps->{name} = $self->test->{name};
@@ -26,19 +26,19 @@ sub _testgroup_init ($self, $line) {
     $sanitized_group_name =~ s/[\/.]/_/g;
 
     my $group = {
-        flags    => {},
+        flags => {},
         category => 'KTAP',
-        name     => $sanitized_group_name,
+        name => $sanitized_group_name,
     };
 
     $self->test(OpenQA::Parser::Result->new($group));
     $self->_add_test($self->test);
 
-    $self->state->{steps} = OpenQA::Parser::Result->new({
-        details => [],
-        dents   => 0,
-        result  => 'ok',
-    });
+    $self->state->{steps} = OpenQA::Parser::Result->new(
+        {
+            details => [],
+            result => 'passed',
+        });
     $self->state->{m} = 0;
 }
 
@@ -47,27 +47,29 @@ sub _parse_subtest ($self, $result) {
     $self->test or return;
 
     my $line = $result->as_string;
-    return unless $line =~ /^#\s*(ok|not ok)\s+\d+\s+(.+)/;
-    my ($status, $subtest_name) = ($1, $2);
+    return unless $line =~ /^#\s*(?<status>ok|not ok)\s+\d+\s+(?<name>.+)/;
+    my ($status, $subtest_name) = @+{qw(status name)};
 
-    my $is_todo = $line =~ /#\s*TODO\b/i;
+    my $has_todo = $line =~ /#\s*TODO\b/i;
     my $m = $self->state->{m};
     my $filename = "KTAP-@{[$self->test->{name}]}-$m.txt";
-    my $detail_result = $is_todo ? 'softfail' : ($status eq 'ok' ? 'ok' : 'fail');
+    my $subtest_result = $has_todo ? 'softfail' : ($status eq 'ok' ? 'ok' : 'fail');
 
-    push @{$steps->{details}}, {
-        text   => $filename,
-        title  => $subtest_name,
-        result => $detail_result,
-    };
+    push @{$steps->{details}},
+      {
+        text => $filename,
+        title => $subtest_name,
+        result => $subtest_result,
+      };
 
-    if (!$is_todo && $status ne 'ok') {
+    if (!$has_todo && $status ne 'ok') {
         $steps->{result} = 'fail';
-    } elsif ($is_todo && $steps->{result} ne 'fail') {
+    }
+    elsif ($has_todo && $steps->{result} ne 'fail') {
         $steps->{result} = 'softfail';
     }
 
-    $self->_add_output({ file => $filename, content => $line });
+    $self->_add_output({file => $filename, content => $line});
     $self->state->{m} = $m + 1;
 }
 
@@ -92,12 +94,12 @@ sub _testgroup_finalize ($self, $result) {
 
     $self->test(undef);
     $self->state->{steps} = undef;
-    $self->state->{m}     = 0;
+    $self->state->{m} = 0;
 }
 
 sub parse ($self, $KTAP) {
-    my $parser = TAP::Parser->new({ tap => $KTAP });
-    confess 'Fail to parse KTAP:' . $parser->parse_errors if $parser->parse_errors;
+    my $parser = TAP::Parser->new({tap => $KTAP});
+    confess 'Failed to parse KTAP: ' . $parser->parse_errors if $parser->parse_errors;
 
     while (my $result = $parser->next) {
         next if $result->type eq 'version' || $result->type eq 'plan';
@@ -122,7 +124,7 @@ sub parse ($self, $KTAP) {
         $self->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new($steps));
         $self->test(undef);
         $self->state->{steps} = undef;
-        $self->state->{m}     = 0;
+        $self->state->{m} = 0;
     }
 }
 
@@ -156,12 +158,12 @@ OpenQA::Parser::Format::KTAP - KTAP file parser
 
 B<OpenQA::Parser::Format::KTAP> parses Linux kernel selftests written in KTAP (Kernel Test Anything Protocol),
 which extends TAP with structured subtests and test groups.
-The parser is making use of the C<tests()>, C<results()> and C<output()> collections.
+The parser uses the C<tests()>, C<results()> and C<output()> collections.
 
 This parser extracts:
-- Test groups (`selftests: ...`)
-- Subtest results (`# ok ...`, `# not ok ...`)
-- Final group summary lines (`ok N selftests: ...`)
+- Test groups (C<selftests: ...>)
+- Subtest results (C<# ok ...>, C<# not ok ...>) - C<# TODO> lines are treated as C<softfail>
+- Final group summary lines (C<ok N selftests: ...>, C<not ok N selftests: ...>, optional C<# SKIP> / C<# TODO> directives)
 
 It populates internal result structures that can later be queried using standard OpenQA::Parser accessors.
 
@@ -194,7 +196,7 @@ Finalizes the current test group and stores the accumulated results.
 
 =head2 parse($KTAP)
 
-Main entry point. Parses KTAP-formatted text and populates the parser’s result, test, and output collections.
+Main entry point. Parses KTAP-formatted text and populates the parser's result, test, and output collections.
 
 =cut
 
