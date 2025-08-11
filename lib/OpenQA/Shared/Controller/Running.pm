@@ -130,7 +130,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
             # Zero tolerance for any shenanigans with the logfile, such as
             # truncation, rotation, etc.
             my @st = stat $logfile;
-            return $close_connection->() unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
+            return $close_connection->($self) unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
 
             # If there's new data, read it all and send it out. Then
             # seek to the current position to reset EOF.
