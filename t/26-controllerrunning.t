@@ -85,9 +85,15 @@ subtest streaming => sub {
         ok $size > (10 * 1024), 'test file size is greater than 10 * 1024';
         like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
         Mojo::IOLoop->one_tick;
+
+        $controller->streamtext('test.txt');
+        $t_file->remove();
+        Mojo::IOLoop->one_tick;
+        ok $c_finished, 'controller has closed after file removed';
     };
 
     subtest image => sub {
+        $c_finished = 0;
         $app->attr(schema => sub { FakeSchema->new() });
         my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
