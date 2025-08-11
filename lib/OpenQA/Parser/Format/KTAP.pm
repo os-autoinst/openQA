@@ -50,15 +50,22 @@ sub _parse_subtest ($self, $result) {
     return unless $line =~ /^#\s*(ok|not ok)\s+\d+\s+(.+)/;
     my ($status, $subtest_name) = ($1, $2);
 
-    my $m        = $self->state->{m};
+    my $is_todo = $line =~ /#\s*TODO\b/i;
+    my $m = $self->state->{m};
     my $filename = "KTAP-@{[$self->test->{name}]}-$m.txt";
+    my $detail_result = $is_todo ? 'softfail' : ($status eq 'ok' ? 'ok' : 'fail');
 
     push @{$steps->{details}}, {
         text   => $filename,
         title  => $subtest_name,
-        result => $status eq 'ok' ? 'ok' : 'fail',
+        result => $detail_result,
     };
-    $steps->{result} = 'fail' if $status ne 'ok';
+
+    if (!$is_todo && $status ne 'ok') {
+        $steps->{result} = 'fail';
+    } elsif ($is_todo && $steps->{result} ne 'fail') {
+        $steps->{result} = 'softfail';
+    }
 
     $self->_add_output({ file => $filename, content => $line });
     $self->state->{m} = $m + 1;
@@ -72,13 +79,15 @@ sub _testgroup_finalize ($self, $result) {
     if ($line =~ /^not ok\b/i) {
         $steps->{result} = 'fail';
     }
+    elsif ($line =~ /#\s*TODO\b/i) {
+        $steps->{result} = 'softfail' if $steps->{result} ne 'fail';
+    }
     elsif ($line =~ /#\s*SKIP\b/i) {
         $steps->{result} = 'skip';
     }
 
     $steps->{name} = $self->test->{name};
     $steps->{test} = $self->test;
-
     $self->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new($steps));
 
     $self->test(undef);
