@@ -88,7 +88,9 @@ subtest streaming => sub {
 
         $controller->streamtext('test.txt');
         $t_file->remove();
-        Mojo::IOLoop->one_tick;
+        combined_like { Mojo::IOLoop->one_tick }
+        qr{Connection to worker .* will be closed because /tmp/.+/test.txt changed},
+          'connection termination is logged when log is truncated';
         ok $c_finished, 'controller has closed after file removed';
     };
 
