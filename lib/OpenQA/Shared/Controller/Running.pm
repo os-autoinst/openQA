@@ -113,6 +113,9 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
     # Setup utility function to close the connection if something goes wrong
     my $timer_id;
     my $close_connection = sub ($self) {
+        my $worker_id = $worker->id;
+        my $worker_instance = $worker->instance;
+        log_debug "Connection to instance $worker_instance of worker $worker_id will be terminated because $logfile changed";
         Mojo::IOLoop->remove($timer_id);
         $close_hook->();
         $self->finish;
