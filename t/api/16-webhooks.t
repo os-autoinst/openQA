@@ -8,7 +8,7 @@ use Mojo::Base -base, -signatures;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings qw(:report_warnings);
 use Test::MockModule;
 use Digest::SHA qw(hmac_sha256_hex);
 use OpenQA::App;
@@ -31,6 +31,7 @@ my $ioloop = Mojo::IOLoop->singleton;
 my $url_base = '/api/v1/webhooks/product';
 my $url = "$url_base/?DISTRI=opensuse&VERSION=13.1&FLAVOR=DVD&ARCH=i586&BUILD=0091&TEST=autoyast_btrfs";
 my $test_payload = decode_json(path("$FindBin::Bin/../data/example-webhook-payload.json")->slurp);
+my $gitea_test_payload = decode_json(path("$FindBin::Bin/../data/example-webhook-payload-gitea.json")->slurp);
 my $ua = $app->ua->ioloop($ioloop);
 my %headers = ('X-GitHub-Event' => 'pull_request');
 my $validation_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Webhook');
@@ -110,7 +111,7 @@ $vcs_mock->redefine(
         $callback ? $callback->($ua, $tx) : $tx;
       });
 
-subtest 'scheduled product created via webhook' => sub {
+subtest 'scheduled product created via github webhook' => sub {
     $t->post_ok($url, \%headers, json => $test_payload)->status_is(200, 'scheduled product has been created');
     $t->json_is('/scheduled_product_id', 2, 'scheduled product ID returned');
     is $minion->jobs->total, 1, 'created one Minion job';
@@ -231,5 +232,46 @@ subtest 'previous jobs are cancelled when the PR is updated/closed' => sub {
     is $new_sp->status, CANCELLED, 'new scheduled product has been cancelled';
     is $scheduled_products->count, 2, 'no new scheduled product has been created';
 };
+
+is $minion->jobs->total, 7, 'Minion jobs';
+is $scheduled_products->count, 2, 'scheduled products';
+is $status_reports, 8, 'status reports';
+subtest 'scheduled product created via gitea webhook' => sub {
+    $expected_statuses_url = "https://src.opensuse.org/api/v1/repos/owner/reponame/statuses/$expected_sha";
+    my %headers = ('X-Gitea-Event' => 'pull_request');
+    $t->post_ok($url, \%headers, json => $gitea_test_payload)->status_is(200, 'scheduled product has been created');
+    $t->json_is('/scheduled_product_id', 4, 'scheduled product ID returned');
+    is $minion->jobs->total, 8, 'created one Minion job';
+    is $scheduled_products->count, 3, 'created one scheduled product';
+    is $status_reports, 9, 'exactly one status report to GitHub happened';
+#    $scheduled_products->next;
+#    $scheduled_products->next;
+    my $scheduled_product = ($scheduled_products->all)[2];
+    my $scheduled_product_settings = $scheduled_product->settings;
+    is $scheduled_product->webhook_id, 'gitea:pr:1234', 'webhook ID assigned';
+    ok delete $scheduled_product_settings->{CI_TARGET_URL}, 'CI_TARGET_URL assigned';
+    $expected_path = "$expected_sha/scenario-definitions.yaml";
+    $expected_url = "https://src.opensuse.org/owner/reponame/raw/branch/$expected_path";
+    is_deeply $scheduled_product_settings,
+      {
+        TEST => 'autoyast_btrfs',
+        ARCH => 'i586',
+        BUILD => '0091',
+        DISTRI => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR => 'DVD',
+        CASEDIR => "https://src.opensuse.org/owner/reponame.git#$expected_sha",
+        NEEDLES_DIR => '%%CASEDIR%%/needles',
+        PRIO => '100',
+        _GROUP_ID => '0',
+        GITHUB_PR_URL => 'https://src.opensuse.org/owner/reponame/pulls/1234',
+        GITHUB_REPO => 'owner/reponame',
+        GITHUB_SHA => $expected_sha,
+        GITHUB_STATUSES_URL => $expected_statuses_url,
+        SCENARIO_DEFINITIONS_YAML_FILE => $expected_url,
+      },
+      'expected settings assigned'
+      or always_explain $scheduled_product_settings;
+} or BAIL_OUT 'unable to created scheduled product';
 
 done_testing();
