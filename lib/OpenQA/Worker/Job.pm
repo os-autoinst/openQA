@@ -717,7 +717,11 @@ sub _calculate_upload_results_interval {
 sub _conclude_upload ($self, $callback, $result = {}) {
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => $result);
-    return Mojo::IOLoop->next_tick($callback);
+    Mojo::IOLoop->next_tick($callback) if $callback;
+}
+
+sub conclude_upload_if_ongoing ($self, $result = {}) {
+    $self->_conclude_upload(undef, $result) if $self->{_is_uploading_results};
 }
 
 sub _upload_results {

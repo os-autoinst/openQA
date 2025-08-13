@@ -54,7 +54,7 @@ package Test::FakeClient {    # uncoverable statement count:2
 }    # uncoverable statement
 
 package Test::FakeJob {    # uncoverable statement count:2
-    use Mojo::Base 'Mojo::EventEmitter';
+    use Mojo::Base 'Mojo::EventEmitter', -signatures;
     has id => 42;
     has status => 'running';
     has is_skipped => 0;
@@ -76,6 +76,8 @@ package Test::FakeJob {    # uncoverable statement count:2
         return 1;
     }
     sub start { }
+    sub kill ($self) { ++$self->{kill_count} }
+    sub conclude_upload_if_ongoing ($self) { ++$self->{conclude_count} }
 }    # uncoverable statement
 
 package Test::FakeCacheServiceClientInfo {
@@ -913,8 +915,10 @@ subtest 'handle critical error' => sub {
     my $msg_1 = 'fake some critical error on the event loop';
     my $msg_2 = 'fake another critical error while handling the first error';
     Mojo::IOLoop->next_tick(sub { note 'simulating initial error'; die $msg_1 });
+    my $fake_job = Test::FakeJob->new;
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
     my $stop_called = 0;
+    $worker->current_job($fake_job);
     $worker_mock->redefine(
         stop => sub ($worker, $reason) {
             ++$stop_called;
@@ -934,6 +938,8 @@ subtest 'handle critical error' => sub {
     qr/$expected_logs.*$msg_2.*Trying to kill ourself forcefully now/s,
       'log for initial critical error and forcefull kill after second error';
     is $stop_called, 1, 'worker tried to stop the job';
+    is $fake_job->{kill_count}, 1, 'worker tried to kill current job';
+    is $fake_job->{conclude_count}, 1, 'conclude_upload_if_ongoing called';
     is $kill_called, 1, 'worker tried to kill itself in the end';
 };
 
