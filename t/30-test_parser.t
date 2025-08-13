@@ -1000,6 +1000,24 @@ subtest 'ktap_parse_incorrect_file' => sub {
     is $last->result, 'fail', 'Group result marked as fail (due to subtest failure)';
 };
 
+subtest 'ktap_with_todo' => sub {
+    my $f = path($FindBin::Bin, 'data')->child('ktap_with_todo.tap');
+    my $p = OpenQA::Parser::Format::KTAP->new->load($f);
+    is $p->results->size, 2, 'two groups';
+
+    my ($group1, $group2) = ($p->results->get(0), $p->results->get(1));
+
+    # group 1: TODO subtests -> group softfail, details softfail
+    is $group1->result, 'softfail';
+    is $group1->details->[0]{result}, 'softfail';
+    is $group1->details->[1]{result}, 'softfail';
+
+    # group 2: clean subtests, TODO in summary -> group softfail, details ok
+    is $group2->result, 'softfail';
+    is $group2->details->[0]{result}, 'ok';
+    is $group2->details->[1]{result}, 'ok';
+};
+
 done_testing;
 
 package OpenQA::Parser::Format::Dummy {    # uncoverable statement
