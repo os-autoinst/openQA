@@ -131,10 +131,9 @@ additional tools are required. The easiest way to install all needed
 dependencies is using the available os-autoinst and openQA packages, as
 described in the Installation Guide.
 
-In the case of os-autoinst, only a few http://www.cpan.org/[CPAN] modules are
-required. Basically `Carp::Always`, `Data::Dump`. `JSON` and `YAML`. On the other
-hand, several external tools are needed including
-http://wiki.qemu.org/Main_Page[QEMU],
+In the case of https://github.com/os-autoinst/os-autoinst[os-autoinst], some
+http://www.cpan.org/[CPAN] modules are required. Additionally, several external
+tools are needed including http://wiki.qemu.org/Main_Page[QEMU],
 https://code.google.com/p/tesseract-ocr/[Tesseract] and
 http://optipng.sourceforge.net/[OptiPNG]. Last but not least, the
 http://opencv.org/[OpenCV] library is the core of the openQA image matching
@@ -143,7 +142,7 @@ mechanism, so it must be available on the system.
 The openQA package is built on top of Mojolicious, an excellent Perl framework
 for web development that will be extremely familiar to developers coming from
 other modern web frameworks like Sinatra and that have nice and comprehensive
-documentation available at its http://mojolicio.us[home page].
+documentation available at its https://mojolicious.org/[home page].
 
 In addition to Mojolicious and its dependencies, several other CPAN modules are
 required by the openQA package. See
@@ -155,10 +154,7 @@ but that is no longer possible.
 As stated in the previous section, every feature implemented in both packages
 should be backed by proper tests.
 http://perldoc.perl.org/Test/Most.html[Test::Most] is used to implement those
-tests. As usual, tests are located under the `/t/` directory. In the openQA
-package, one of the tests consists of a call to
-http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
-follows the most common Perl style conventions.
+tests. As usual, tests are located under the `t/` directory.
 
 == Folder structure
 
@@ -179,25 +175,85 @@ systemd:: systemd service definitions
 templates:: HTML templates delivered by web UI
 tools:: Development tools
 
+[[dependencies]]
+== Dependencies
+
+Here we differentiate between these types of dependencies:
+
+* Runtime: run openQA
+* Test: run the test suite of openQA itself
+* For developers: style checks, code coverage etc.
+
+You can get those dependencies in several ways:
+
+* Packaged in openSUSE and other distributions
+* Manually install from source
+* Perl modules via CPAN client
+* Use a prebuilt container
+
+We manage our dependencies via a central `dependencies.yaml` file per
+repository. We generate the `.spec` files for `rpm` as well as a `cpanfile`
+for quicker installation of all Perl modules.
+
+[[runtime-dependencies]]
+=== Runtime Dependencies
+
+For openSUSE you need the packages `openQA` and `os-autoinst`.
+That should be everything necessary to run an openQA instance. For more
+details check <<Installing.asciidoc#_installation,Installation>.
+
+If you have to manually install packages, look into the `dependencies.yaml`
+file or the spec file, e.g. `dist/rpm/openQA.spec` (or `dist/rpm/*.spec` in
+general). You can leave out sections starting with `test_requires` for example.
+
+A CPAN client will by default also leave out modules for testing and
+development.
+
+As alternative you can try out the
+<<Installing.asciidoc#single-instance-container,Single-Instance Container>> as
+a minimal runtime environment.
+
+[[development-dependencies]]
+=== Development Dependencies
+
+For openSUSE:
+```
+zypper install openQA-devel
+```
+
+For distributions without those packages, look into `dependencies.yaml` or
+`dist/rpm/openQA.spec` like above. The `devel_*requires` sections/definitions
+list dependencies for tests and development.
+
+If you just want to run the test suite to see if it passes on your platform,
+you would not need the developer's dependencies, like `Perl::Tidy` and
+`Devel::Cover`. They are recommended as soon as you plan a contribution.
+
+For the UI tests you need `perl-Selenium-Remote-Driver` as well as
+`chromedriver` and either `chrome` or `chromium`.
+
+See <<Contributing.asciidoc#run-tests-in-container,Run tests in a container>>
+for a container with all dependencies.
 
 [[development-setup]]
 == Development setup
+
+The following explains in detail what is necessary to develop openQA code.
+
+For a setup with containers you can checkout the
+<<Contributing.asciidoc#quick-container-development-setup,Quick container
+development setup>> below with a complete list of instructions.
+
+Otherwise follow the detailed steps below. This setup is applicable to a
+container environment as well as without.
+
 For developing openQA and os-autoinst itself it makes sense to checkout the
 <<Contributing.asciidoc#repo-urls,Git repositories>> and either execute
 existing tests or start the daemons manually.
 
-[[dependencies]]
-=== Dependencies
-Have a look at the packaged version (e.g. `dist/rpm/openQA.spec` within the
-root of the openQA repository) for all required dependencies. For development
-build time dependencies need to be installed as well. Recommended
-dependencies such as logrotate can be ignored. For openSUSE there is also the
-`openQA-devel` meta-package which pulls all required dependencies for
-development.
-
-You can find all required Perl modules in form of a `cpanfile` that enables
-you to install them with a CPAN client. They are also defined in
-`dist/rpm/openQA.spec`.
+Install the necessary
+<<Contributing.asciidoc#development-dependencies,Development Dependencies>>
+first.
 
 [[testing]]
 === Conducting tests
@@ -431,10 +487,240 @@ Also find more details in
   look at the
   https://github.com/Martchus/openQA-helper[openQA-helper repository].
 
+[[quick-container-setup]]
+=== Quick container development setup
+
+==== Requirements
+
+In these examples we use the following tools which are all in openSUSE Leap:
+
+* https://podman.io/[`podman`]
+* https://en.opensuse.org/Distrobox[`distrobox`]
+
+You can use similar tools like `docker`, `toolbox` etc. to achieve the same.
+
+==== Intro
+
+These instructions are ready to use without any changes. You only might want to
+change the `OPENQA_BASEDIR` location.
+
+You will run two containers:
+
+* A separate postgres container (so you don't have to deal with the database
+  when updating your dev container)
+* The openQA environment in an openSUSE Leap or Tumbleweed container, which
+  both can use the same postgres container.
+  In this example we will be setting up and using the Leap container.
+
+`distrobox`, for example, can be used to take care of network, home directory,
+permissions, and graphical environment.
+
+Some common settings we are using here:
+
+* `OPENQA_BASEDIR=$HOME/openqadev.leap`
+* Database name: `openqa-local`
+* Database user: `geekotest`
+* Database container name: `postgres-openqa`
+
+==== Environment Variables
+
+Create a file that you can `source` whenever you want to work in this
+environment:
+
+File: `~/localopenqa.leap.sh`:
+[source,sh]
+----
+#!/bin/bash
+
+# The directory where openQA operates in and creates everything in:
+# * git repos
+# * openQA assets, pool directory, testresults
+# * configuration
+
+export OPENQA_BASEDIR=$HOME/openqadev.leap
+
+# The rest of the variables can likely stay like this
+
+# If you want to import database dumps from elsewhere
+#export SQL_DUMP_DIR=$HOME/sqldumps
+
+export OPENQA_CONFIG=$OPENQA_BASEDIR/config
+export OPENQA_REPOS="$OPENQA_BASEDIR/git"
+PATH=$OPENQA_REPOS/openQA/scripts:$PATH
+
+# ----------- CPAN ------------
+# Whenever necessary, you can install additional modules from CPAN like:
+# cpanm -l $OPENQA_BASEDIR/perl5 Some::Module@1.23
+export PERL5LIB=$OPENQA_BASEDIR/perl5/lib/perl5
+PATH=$OPENQA_BASEDIR/perl5/bin:$PATH
+
+export OPENQA_KEY=1234567890ABCDEF
+export OPENQA_SECRET=1234567890ABCDEF
+----
+
+==== Postgres Container
+
+To be able to reuse the database later when stopping the container, we create a
+named volume.
+We are using a Debian postgres container here, but it doesn't matter what
+you use.
+[source,sh]
+----
+### host ###
+podman volume create mypostgres
+podman run -it --rm --name postgres-openqa \
+    -v mypostgres:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    -e POSTGRES_PASSWORD="x" \
+    -d \
+    docker.io/library/postgres:17
+
+# Optionally add this to mount a directory for sql dumps to import
+#    -v "$SQL_DUMP_DIR:/sqldumps" \
+----
+
+For the next step you need to execute commands in the container:
+
+[source,sh]
+----
+# Create the role and database
+podman exec -it postgres-openqa su - postgres
+
+### postgres container ###
+createuser --no-createdb --pwprompt geekotest
+# enter password ('x' in this example)
+createdb -O geekotest openqa-local
+----
+
+==== Distrobox
+
+You can use a Leap container and install the requirements, but you can also
+build your own container with the requirements already installed.
+
+[source,sh]
+----
+### host ###
+distrobox create -i registry.opensuse.org/opensuse/leap:15.6 -n box-openqadev-leap
+distrobox enter box-openqadev-leap
+# Tumbleweed:
+#distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest -n box-openqadev-tw
+
+### distrobox container ###
+
+# Leap 15.6
+zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/15.6 devel-openqa \
+    && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.6/15.6/ devel-openqa-leap
+
+# Tumbleweed
+#zypper addrepo -G p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa \
+#        && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/SUSE:/CA/openSUSE_Tumbleweed/SUSE:CA.repo
+
+zypper -n ref && zypper -n install ca-certificates-suse \
+        os-autoinst-devel openQA-devel \
+        os-autoinst-scripts-deps \
+        os-autoinst-scripts-deps-devel \
+        crudini
+# plus your favourite dev tools, e.g. tmux
+----
+Note: https://github.com/pixelb/crudini[`crudini`] is a tool for manipulating
+values in ini files.
+
+==== Git
+
+[source,sh]
+----
+### distrobox container ###
+# Remember to source this file
+source ~/localopenqa.leap.sh
+mkdir $OPENQA_BASEDIR
+mkdir $OPENQA_REPOS
+mkdir $OPENQA_BASEDIR/openqa $OPENQA_CONFIG $OPENQA_BASEDIR/perl5 $OPENQA_BASEDIR/openqa/db
+
+git clone git@github.com:os-autoinst/openQA $OPENQA_REPOS/openQA
+git clone git@github.com:os-autoinst/os-autoinst $OPENQA_REPOS/os-autoinst
+git clone git@github.com:os-autoinst/scripts $OPENQA_REPOS/scripts
+----
+
+==== Config Files
+
+[source,sh]
+----
+### distrobox container ###
+echo <<< EOM
+[localhost]
+key = 1234567890ABCDEF
+secret = 1234567890ABCDEF
+EOM >> $OPENQA_CONFIG/client.conf
+
+echo <<< EOM
+[production]
+dsn = dbi:Pg:dbname=openqa-local;host=127.0.0.1;port=5432
+user = geekotest
+password = x
+EOM >> $OPENQA_CONFIG/database.ini
+
+cp $OPENQA_REPOS/openQA/etc/openqa/workers.ini $OPENQA_CONFIG/workers.ini
+crudini --set $OPENQA_CONFIG/workers.ini global HOST http://localhost:9526
+crudini --set $OPENQA_CONFIG/workers.ini global WORKER_HOSTNAME 127.0.0.1
+
+cp $OPENQA_REPOS/openQA/etc/openqa/openqa.ini $OPENQA_CONFIG/openqa.ini
+crudini --set $OPENQA_CONFIG/openqa.ini auth method Fake
+----
+
+==== Build openQA
+
+[source,sh]
+----
+### distrobox container ###
+# Build steps
+cd $OPENQA_REPOS/os-autoinst
+make
+cd $OPENQA_REPOS/openQA
+make node_modules
+
+# Optionally check if you can access the database
+#psql -U geekotest -h 127.0.0.1 -p 5432 openqa-local
+
+# Initialize the database schema. This is using the database.ini you
+# created above.
+$OPENQA_REPOS/openQA/script/initdb --init_database
+----
+
+==== Run openQA
+
+Ready!
+
+For playing with the web UI, you just need to run the `openqa-webui-daemon`.
+For running openQA jobs, you need all daemons.
+
+[source,sh]
+----
+### distrobox container ###
+# Main web UI (required for web interface and web API)
+openqa-webui-daemon
+
+# Websockets (for workers to connect so they can receive job assignments)
+openqa-websockets daemon
+
+# Scheduler (assigns jobs to workers)
+openqa-scheduler daemon
+
+# Gru (for running background tasks as Minion jobs)
+openqa gru run
+
+# Livehandler (for the developer mode on the web UI)
+openqa-livehandler daemon
+
+# Worker
+worker --isotovideo "$OPENQA_REPOS/os-autoinst/isotovideo" --instance 1 --verbose --apikey $OPENQA_KEY --apisecret $OPENQA_SECRET
+----
+
+For running unit tests, see <<Contributing.asciidoc#testing,Conducting tests>>.
+
 [[dependency-handling]]
 == Handling of dependencies
 
-=== Javascript and CSS
+=== JavaScript and CSS
 Install third-party JavaScript and CSS files via their corresponding npm
 packages and add the paths of those files to `assets/assetpack.def`.
 
@@ -604,10 +890,8 @@ specific to that environment.
 Be sure to install all required dependencies. The package `openQA-devel` will
 provide them.
 
-If the package is not available the dependencies can also be found in the file
-`dist/rpm/openQA.spec` in the openQA repository. In this case also the package
-`perl-Selenium-Remote-Driver` is required to run UI tests. You also need to
-install chromedriver and either chrome or chromium for the UI tests.
+For more information look into
+<<Contributing.asciidoc#development-dependencies,Development Dependencies>>.
 
 To execute the testsuite use `make test`. This will also initialize a
 temporary PostgreSQL database used for testing. To do this step manually run
@@ -623,6 +907,7 @@ To keep the test database running after executing tests with the `Makefile`, add
 
 To watch the execution of the UI tests, set the environment variable `NOT_HEADLESS`.
 
+[[run-tests-in-container]]
 === Run tests within a container
 The container used in this section of the documentation is not identical with the container used
 within the CI. To run tests within the CI environment locally, checkout the
