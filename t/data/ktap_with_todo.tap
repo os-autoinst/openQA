@@ -1,0 +1,10 @@
+TAP version 13
+1..2
+# selftests: bpf: prog_tests
+# not ok 1 map_basic   # TODO flaky
+# ok 2 verifier_hint   # TODO known issue
+ok 1 selftests: bpf: prog_tests
+# selftests: bpf: prog_tests_adv
+# ok 1 another test
+# ok 2 yet another test
+ok 1 selftests: bpf: prog_tests_adv   # TODO flaky suite

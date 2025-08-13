@@ -34,7 +34,8 @@ ok 2 selftests: cgroup: test_cpu
 # ok 2 test_swapin_nozswap
 # # at least 24MB should be brought back from zswap
 # not ok 3 test_zswapin
-# # zswpwb_after is 0 while wb is enablednot ok 4 test_zswap_writeback_enabled
+# # zswpwb_after is 0 while wb is enabled
+# not ok 4 test_zswap_writeback_enabled
 # not ok 5 test_zswap_writeback_disabled
 # not ok 6 test_no_kmem_bypass
 # not ok 7 test_no_invasive_cgroup_shrink
