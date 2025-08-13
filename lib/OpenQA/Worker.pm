@@ -293,12 +293,8 @@ sub init ($self) {
             my $fatal_error = 'Another error occurred when trying to stop gracefully due to an error';
             if (!$self->{_shall_terminate} || $self->{_finishing_off}) {
                 try {
-                    # log error using print because logging utils might have caused the exception
-                    # (no need to repeat $err, it is printed anyways)
                     log_error('Stopping because a critical error occurred.');
-
-                    # try to stop the job nicely
-                    return $self->stop('exception');
+                    return $self->stop('exception');    # try to stop the job nicely
                 }
                 catch ($e) { $fatal_error = "$fatal_error: $e" }
             }
