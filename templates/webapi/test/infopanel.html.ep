@@ -44,16 +44,12 @@
                         Result: <b><%= $job->result %></b>\
                     % }
                     % else {
+                        % my $gru_tasks_items = $self->gru_tasks_items($job);
                         % my $state_detail = '';
-                        % if (my @gru_deps = $job->gru_dependencies) {
+                        % if (@$gru_tasks_items) {
                             % $state_detail = join(';', map {
-                            %   my $state = 'id: ' . $_->id . ', name: ' . $_->taskname;
-                            %   if (is_operator) {
-                            %      my $link = url_for('/minion/jobs')->query(note => 'gru_id_' . $_->id, task => $_->taskname);
-                            %      $state = link_to $state => $link
-                            %   }
-                            %   $state
-                            % } map { $_->gru_task // () } @gru_deps);
+                            %   $_->{href} ? link_to($_->{label} => $_->{href}) : $_->{label}
+                            % } @$gru_tasks_items);
                             % $state_detail = qq{, waiting for background tasks ($state_detail)};
                         % }
                         State: <b><%= $job->state %></b><%== $state_detail %>\
