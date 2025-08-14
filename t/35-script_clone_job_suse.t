@@ -24,6 +24,12 @@ package Test::FakeLWPUserAgent {
     sub get ($self, $url) { Test::FakeLWPUserAgentMirrorResult->new(is_success => $self->is_validrepo) }
 }    # uncoverable statement
 
+sub create_mock () {
+    my $fake_ua = Test::FakeLWPUserAgent->new;
+    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
+    return ($fake_ua, %url_handler);
+}
+
 subtest 'maintenance update detect' => sub {
     my $job_id = 1;
     my %job = (
@@ -40,9 +46,7 @@ subtest 'maintenance update detect' => sub {
         id => $job_id,
         SKIP_MAINTENANCE_UPDATES => '1'
     );
-    my $fake_ua = Test::FakeLWPUserAgent->new;
-    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
-    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJobSUSE');
+    my ($fake_ua, %url_handler) = create_mock;
     $fake_ua->is_validrepo(1);
     lives_ok { detect_maintenance_update($job_id, \%url_handler, \%job) } 'Maintenance updates are available';
     lives_ok { detect_maintenance_update($job_id, \%url_handler, \%incident_job) } 'Maintenance updates are available';
@@ -64,12 +68,17 @@ subtest 'similar but invalid settings' => sub {
         id => $job_id,
         XXX_INCIDENT_REPO => 'http://foo/incident_repo/openqa,http://foo/incident_repo_1/openqa',
     );
-    my $fake_ua = Test::FakeLWPUserAgent->new;
-    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
-    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJobSUSE');
+    my ($fake_ua, %url_handler) = create_mock;
     $fake_ua->is_validrepo(0);
     lives_ok { detect_maintenance_update($job_id, \%url_handler, \%job) } 'Addon-like setting ignored';
     lives_ok { detect_maintenance_update($job_id, \%url_handler, \%incident_job) } 'Incident-like setting ignored';
+};
+
+subtest 'repos with variables' => sub {
+    my $settings = {INCIDENT_REPO => 'http://%MIRROR%/incident_repo/openqa,http://%MIRROR%/incident_repo_1/openqa'};
+    my ($fake_ua, %url_handler) = create_mock;
+    throws_ok { detect_maintenance_update(1, \%url_handler, $settings) } qr/unexpanded variable/,
+      'unexpanded repos throw an error';
 };
 
 done_testing();

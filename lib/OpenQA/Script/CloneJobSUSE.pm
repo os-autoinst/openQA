@@ -28,6 +28,8 @@ sub verify_incident_repos ($url_handler, $incident_repos) {
     my @incident_urls;
     my $ua = $url_handler->{ua};
     foreach my $incident (split(/,/, $incident_repos)) {
+        die "URL '$incident' contains an unexpanded variable. See https://open.qa/docs/#_variable_expansion for details"
+          if $incident =~ /%/;
         push @incident_urls, $incident unless $ua->get($incident)->is_success;
     }
     return \@incident_urls;
