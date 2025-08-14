@@ -113,7 +113,7 @@ sub validate_create_parameters ($self) {
     return 0;
 }
 
-sub validate_download_parameters ($self, $params) {
+sub validate_download_parameters ($self, $params, $render = 1) {
     my @check = check_download_passlist($params, $self->app->config->{global}->{download_domains});
     return 1 unless @check;
 
@@ -123,6 +123,7 @@ sub validate_download_parameters ($self, $params) {
       = $status == 2
       ? 'Asset download requested but no domains passlisted! Set download_domains.'
       : "Asset download requested from non-passlisted host $host.";
+    die {text => $error, status => 403} unless $render;
     $self->render(text => $error, status => 403);
     return 0;
 }

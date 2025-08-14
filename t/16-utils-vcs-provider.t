@@ -20,7 +20,7 @@ subtest 'reporting status to GitHub' => sub {
     my $app = $t->app;
     $app->config->{secrets}->{github_token} = 'some-token';
 
-    my $git = OpenQA::VcsProvider->new(app => $app);
+    my $git = OpenQA::VcsProvider::Github->new(app => $app);
     my $url = 'http://127.0.0.1/repos/some/repo/statuses/some-sha';
     my $tx = $git->report_status_to_github($url, {state => 'pending'}, '42', 'https://openqa.opensuse.org');
     my $req = $tx->req;

@@ -244,8 +244,6 @@ subtest 'scheduled product created via gitea webhook' => sub {
     is $minion->jobs->total, 8, 'created one Minion job';
     is $scheduled_products->count, 3, 'created one scheduled product';
     is $status_reports, 9, 'exactly one status report to GitHub happened';
-#    $scheduled_products->next;
-#    $scheduled_products->next;
     my $scheduled_product = ($scheduled_products->all)[2];
     my $scheduled_product_settings = $scheduled_product->settings;
     is $scheduled_product->webhook_id, 'gitea:pr:1234', 'webhook ID assigned';
