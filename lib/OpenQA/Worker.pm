@@ -351,7 +351,7 @@ sub init ($self) {
             });
     }
 
-    return $return_code;
+    return \$return_code;
 }
 
 sub configure_cache_client ($self) {
@@ -367,7 +367,7 @@ sub configure_cache_client ($self) {
 sub exec ($self) {
     my $return_code = $self->init;
     Mojo::IOLoop->singleton->start;
-    return $return_code;
+    return $$return_code;
 }
 
 sub _prepare_cache_directory ($webui_host, $cachedirectory) {

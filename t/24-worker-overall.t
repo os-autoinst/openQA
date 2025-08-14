@@ -142,9 +142,9 @@ subtest 'worker load' => sub {
     ok $worker->_check_system_utilization(10, [11, 12, 13]), 'load still exceeded on falling flank but high';
 };
 
-subtest 'delay and exec' => sub {
+subtest 'passing return code' => sub {
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-    $worker_mock->redefine(init => 42);
+    $worker_mock->redefine(init => \42);
     is $worker->exec, 42, 'return code passed from init';
 };
 
