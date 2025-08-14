@@ -47,6 +47,7 @@ my $settings = {
     # %%%%CASEDIR%%% will be preserved, number of surrounding % preserved except for outermost pair
     # %CASEDIR% will still be substituted, despite other escaped occurrences in same value
     NEEDLES_DIR => '%%CASEDIR%%/bar/%%%%CASEDIR%%%/%CASEDIR%',
+    ENCODED_URL => 'https://example.org/url%20with%20spaces%20unchanged',
 };
 
 subtest expand_placeholders => sub {
@@ -84,6 +85,7 @@ subtest expand_placeholders => sub {
         WORKAROUND_MODULES => 'base,desktop,serverapp,script,sdk',
         CASEDIR => 'foo',
         NEEDLES_DIR => '%CASEDIR%/bar/%%%CASEDIR%%/foo',
+        ENCODED_URL => 'https://example.org/url%20with%20spaces%20unchanged',
     };
     is $error, undef, 'no error returned';
     is_deeply $settings, $match_settings, 'Settings replaced';
