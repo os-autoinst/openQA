@@ -79,6 +79,8 @@ subtest 'repos with variables' => sub {
     my ($fake_ua, %url_handler) = create_mock;
     throws_ok { detect_maintenance_update(1, \%url_handler, $settings) } qr/unexpanded variable/,
       'unexpanded repos throw an error';
+    $settings->{MIRROR} = 'my.mirror';
+    lives_ok { detect_maintenance_update(1, \%url_handler, $settings) }, 'Specified variables are expanded';
 };
 
 done_testing();
