@@ -556,7 +556,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_introduction_2">7. Introduction</a></li>
 <li><a href="#container_setup">8. Container based setup</a>
 <ul class="sectlevel2">
-<li><a href="#_single_instance_container">8.1. Single-instance container</a>
+<li><a href="#single-instance-container">8.1. Single-instance container</a>
 <ul class="sectlevel3">
 <li><a href="#_how_to_run_a_test_with_single_instance_container_in_5_minutes">8.1.1. How to run a test with single-instance container in 5 minutes</a></li>
 <li><a href="#_triggering_and_cloning_existing_jobs_within_single_instance_container">8.1.2. Triggering and cloning existing jobs within single-instance container</a></li>
@@ -771,24 +771,25 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_remarks">30.1.1. Remarks</a></li>
 </ul>
 </li>
-<li><a href="#_triggering_tests">30.2. Triggering tests</a>
+<li><a href="#_finding_tests_by_querying_particular_job_settings">30.2. Finding tests by querying particular job settings</a></li>
+<li><a href="#_triggering_tests">30.3. Triggering tests</a>
 <ul class="sectlevel3">
-<li><a href="#_cloning_existing_jobs_openqa_clone_job">30.2.1. Cloning existing jobs - openqa-clone-job</a></li>
-<li><a href="#_spawning_single_new_jobs_jobs_post">30.2.2. Spawning single new jobs - jobs post</a>
+<li><a href="#_cloning_existing_jobs_openqa_clone_job">30.3.1. Cloning existing jobs - openqa-clone-job</a></li>
+<li><a href="#_spawning_single_new_jobs_jobs_post">30.3.2. Spawning single new jobs - jobs post</a>
 <ul class="sectlevel4">
 <li><a href="#_further_examples_for_advanced_dependency_handling">Further examples for advanced dependency handling</a></li>
 </ul>
 </li>
-<li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">30.2.3. Spawning multiple jobs based on templates - isos post</a>
+<li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">30.3.3. Spawning multiple jobs based on templates - isos post</a>
 <ul class="sectlevel4">
 <li><a href="#_statistical_investigation">Statistical investigation</a></li>
 <li><a href="#scenarios_yaml">Defining test scenarios in YAML</a></li>
 </ul>
 </li>
-<li><a href="#_remarks_2">30.2.4. Remarks</a></li>
+<li><a href="#_remarks_2">30.3.4. Remarks</a></li>
 </ul>
 </li>
-<li><a href="#_job_template_yaml">30.3. Job template YAML</a></li>
+<li><a href="#_job_template_yaml">30.4. Job template YAML</a></li>
 </ul>
 </li>
 <li><a href="#_asset_handling">31. Asset handling</a>
@@ -1061,115 +1062,133 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_getting_involved_into_development">64. Getting involved into development</a></li>
 <li><a href="#_technologies">65. Technologies</a></li>
 <li><a href="#_folder_structure">66. Folder structure</a></li>
-<li><a href="#development-setup">67. Development setup</a>
+<li><a href="#dependencies">67. Dependencies</a>
 <ul class="sectlevel2">
-<li><a href="#dependencies">67.1. Dependencies</a></li>
-<li><a href="#testing">67.2. Conducting tests</a></li>
-<li><a href="#customize_base_directory">67.3. Customize base directory</a></li>
-<li><a href="#_customize_configuration_directory">67.4. Customize configuration directory</a></li>
-<li><a href="#setup-postgresql">67.5. Setting up the PostgreSQL database</a>
+<li><a href="#runtime-dependencies">67.1. Runtime Dependencies</a></li>
+<li><a href="#development-dependencies">67.2. Development Dependencies</a></li>
+</ul>
+</li>
+<li><a href="#development-setup">68. Development setup</a>
+<ul class="sectlevel2">
+<li><a href="#testing">68.1. Conducting tests</a></li>
+<li><a href="#customize_base_directory">68.2. Customize base directory</a></li>
+<li><a href="#_customize_configuration_directory">68.3. Customize configuration directory</a></li>
+<li><a href="#setup-postgresql">68.4. Setting up the PostgreSQL database</a>
 <ul class="sectlevel3">
-<li><a href="#_importing_production_data">67.5.1. Importing production data</a></li>
+<li><a href="#_importing_production_data">68.4.1. Importing production data</a></li>
 </ul>
 </li>
-<li><a href="#_manual_daemon_setup">67.6. Manual daemon setup</a>
+<li><a href="#_manual_daemon_setup">68.5. Manual daemon setup</a>
 <ul class="sectlevel3">
-<li><a href="#_further_tips">67.6.1. Further tips</a></li>
+<li><a href="#_further_tips">68.5.1. Further tips</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a href="#dependency-handling">68. Handling of dependencies</a>
-<ul class="sectlevel2">
-<li><a href="#_javascript_and_css">68.1. Javascript and CSS</a></li>
-<li><a href="#_perl_and_other_packages">68.2. Perl and other packages</a></li>
-<li><a href="#_remarks_regarding_ci">68.3. Remarks regarding CI</a></li>
-</ul>
-</li>
-<li><a href="#_managing_the_database">69. Managing the database</a>
-<ul class="sectlevel2">
-<li><a href="#_when_is_it_required_to_update_the_database_schema">69.1. When is it required to update the database schema?</a></li>
-<li><a href="#_how_to_update_the_database_schema">69.2. How to update the database schema</a></li>
-<li><a href="#_how_to_add_fixtures_to_the_database">69.3. How to add fixtures to the database</a></li>
-</ul>
-</li>
-<li><a href="#_adding_new_authentication_module">70. Adding new authentication module</a></li>
-<li><a href="#_running_tests_of_openqa_itself">71. Running tests of openQA itself</a>
-<ul class="sectlevel2">
-<li><a href="#_run_tests_without_container">71.1. Run tests without container</a></li>
-<li><a href="#_run_tests_within_a_container">71.2. Run tests within a container</a>
+<li><a href="#quick-container-setup">68.6. Quick container development setup</a>
 <ul class="sectlevel3">
-<li><a href="#_tips">71.2.1. Tips</a></li>
+<li><a href="#_requirements">68.6.1. Requirements</a></li>
+<li><a href="#_intro">68.6.2. Intro</a></li>
+<li><a href="#_environment_variables">68.6.3. Environment Variables</a></li>
+<li><a href="#_postgres_container">68.6.4. Postgres Container</a></li>
+<li><a href="#_distrobox">68.6.5. Distrobox</a></li>
+<li><a href="#_git">68.6.6. Git</a></li>
+<li><a href="#_config_files">68.6.7. Config Files</a></li>
+<li><a href="#_build_openqa">68.6.8. Build openQA</a></li>
+<li><a href="#_run_openqa">68.6.9. Run openQA</a></li>
 </ul>
 </li>
-<li><a href="#_logging_behavior">71.3. Logging behavior</a></li>
-<li><a href="#_test_runtime_limits">71.4. Test runtime limits</a></li>
 </ul>
 </li>
-<li><a href="#circleci-workflow">72. CircleCI workflow</a>
+<li><a href="#dependency-handling">69. Handling of dependencies</a>
 <ul class="sectlevel2">
-<li><a href="#_dependency_artefacts">72.1. Dependency artefacts</a></li>
-<li><a href="#_managing_and_troubleshooting_dependencies">72.2. Managing and troubleshooting dependencies</a></li>
-<li><a href="#circleci-local-container">72.3. Run tests locally using a container</a></li>
-<li><a href="#_run_tests_using_the_circleci_tool">72.4. Run tests using the circleci tool</a></li>
-<li><a href="#_changing_config_cnf">72.5. Changing config.cnf</a></li>
+<li><a href="#_javascript_and_css">69.1. JavaScript and CSS</a></li>
+<li><a href="#_perl_and_other_packages">69.2. Perl and other packages</a></li>
+<li><a href="#_remarks_regarding_ci">69.3. Remarks regarding CI</a></li>
 </ul>
 </li>
-<li><a href="#_building_plugins">73. Building plugins</a></li>
-<li><a href="#_checking_for_javascript_problems">74. Checking for JavaScript problems</a></li>
-<li><a href="#_profiling_the_web_ui">75. Profiling the web UI</a>
+<li><a href="#_managing_the_database">70. Managing the database</a>
 <ul class="sectlevel2">
-<li><a href="#_note">75.1. Note</a></li>
+<li><a href="#_when_is_it_required_to_update_the_database_schema">70.1. When is it required to update the database schema?</a></li>
+<li><a href="#_how_to_update_the_database_schema">70.2. How to update the database schema</a></li>
+<li><a href="#_how_to_add_fixtures_to_the_database">70.3. How to add fixtures to the database</a></li>
 </ul>
 </li>
-<li><a href="#_making_documentation_changes">76. Making documentation changes</a></li>
+<li><a href="#_adding_new_authentication_module">71. Adding new authentication module</a></li>
+<li><a href="#_running_tests_of_openqa_itself">72. Running tests of openQA itself</a>
+<ul class="sectlevel2">
+<li><a href="#_run_tests_without_container">72.1. Run tests without container</a></li>
+<li><a href="#run-tests-in-container">72.2. Run tests within a container</a>
+<ul class="sectlevel3">
+<li><a href="#_tips">72.2.1. Tips</a></li>
+</ul>
+</li>
+<li><a href="#_logging_behavior">72.3. Logging behavior</a></li>
+<li><a href="#_test_runtime_limits">72.4. Test runtime limits</a></li>
+</ul>
+</li>
+<li><a href="#circleci-workflow">73. CircleCI workflow</a>
+<ul class="sectlevel2">
+<li><a href="#_dependency_artefacts">73.1. Dependency artefacts</a></li>
+<li><a href="#_managing_and_troubleshooting_dependencies">73.2. Managing and troubleshooting dependencies</a></li>
+<li><a href="#circleci-local-container">73.3. Run tests locally using a container</a></li>
+<li><a href="#_run_tests_using_the_circleci_tool">73.4. Run tests using the circleci tool</a></li>
+<li><a href="#_changing_config_cnf">73.5. Changing config.cnf</a></li>
+</ul>
+</li>
+<li><a href="#_building_plugins">74. Building plugins</a></li>
+<li><a href="#_checking_for_javascript_problems">75. Checking for JavaScript problems</a></li>
+<li><a href="#_profiling_the_web_ui">76. Profiling the web UI</a>
+<ul class="sectlevel2">
+<li><a href="#_note">76.1. Note</a></li>
+</ul>
+</li>
+<li><a href="#_making_documentation_changes">77. Making documentation changes</a></li>
 </ul>
 </li>
 <li><a href="#branding">openQA branding</a>
 <ul class="sectlevel1">
-<li><a href="#_web_ui_template">77. Web UI template</a></li>
+<li><a href="#_web_ui_template">78. Web UI template</a></li>
 </ul>
 </li>
 <li><a href="#containerizedsetup">Containerized setup</a>
 <ul class="sectlevel1">
-<li><a href="#_get_container_images">78. Get container images</a>
+<li><a href="#_get_container_images">79. Get container images</a>
 <ul class="sectlevel2">
-<li><a href="#_download_fedora_based_images_from_the_docker_hub">78.1. Download Fedora-based images from the Docker Hub</a></li>
-<li><a href="#_build_opensuse_based_images_locally">78.2. Build openSUSE-based images locally</a></li>
+<li><a href="#_download_fedora_based_images_from_the_docker_hub">79.1. Download Fedora-based images from the Docker Hub</a></li>
+<li><a href="#_build_opensuse_based_images_locally">79.2. Build openSUSE-based images locally</a></li>
 </ul>
 </li>
-<li><a href="#_setup_with_fedora_based_images">79. Setup with Fedora-based images</a>
+<li><a href="#_setup_with_fedora_based_images">80. Setup with Fedora-based images</a>
 <ul class="sectlevel2">
-<li><a href="#_data_storage_and_directory_structure">79.1. Data storage and directory structure</a></li>
-<li><a href="#_update_firewall_rules">79.2. Update firewall rules</a></li>
-<li><a href="#_run_the_data_and_web_ui_containers">79.3. Run the data and web UI containers</a>
+<li><a href="#_data_storage_and_directory_structure">80.1. Data storage and directory structure</a></li>
+<li><a href="#_update_firewall_rules">80.2. Update firewall rules</a></li>
+<li><a href="#_run_the_data_and_web_ui_containers">80.3. Run the data and web UI containers</a>
 <ul class="sectlevel3">
-<li><a href="#_generate_and_configure_api_credentials">79.3.1. Generate and configure API credentials</a></li>
+<li><a href="#_generate_and_configure_api_credentials">80.3.1. Generate and configure API credentials</a></li>
 </ul>
 </li>
-<li><a href="#_run_the_worker_container">79.4. Run the worker container</a></li>
-<li><a href="#_enable_services">79.5. Enable services</a></li>
-<li><a href="#_get_tests_isos_and_create_disks">79.6. Get tests, ISOs and create disks</a></li>
+<li><a href="#_run_the_worker_container">80.4. Run the worker container</a></li>
+<li><a href="#_enable_services">80.5. Enable services</a></li>
+<li><a href="#_get_tests_isos_and_create_disks">80.6. Get tests, ISOs and create disks</a></li>
 </ul>
 </li>
-<li><a href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">80. Setup openQA with openSUSE-based images and docker-compose</a>
+<li><a href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">81. Setup openQA with openSUSE-based images and docker-compose</a>
 <ul class="sectlevel2">
-<li><a href="#_configuration_2">80.1. Configuration</a></li>
-<li><a href="#_build_images">80.2. Build images</a></li>
-<li><a href="#_run_the_web_ui_containers_in_ha_mode">80.3. Run the web UI containers in HA mode</a></li>
-<li><a href="#_generate_and_configure_api_credentials_2">80.4. Generate and configure API credentials</a></li>
-<li><a href="#_run_the_worker_container_2">80.5. Run the worker container</a></li>
-<li><a href="#_get_tests_isos_and_create_disks_2">80.6. Get tests, ISOs and create disks</a></li>
+<li><a href="#_configuration_2">81.1. Configuration</a></li>
+<li><a href="#_build_images">81.2. Build images</a></li>
+<li><a href="#_run_the_web_ui_containers_in_ha_mode">81.3. Run the web UI containers in HA mode</a></li>
+<li><a href="#_generate_and_configure_api_credentials_2">81.4. Generate and configure API credentials</a></li>
+<li><a href="#_run_the_worker_container_2">81.5. Run the worker container</a></li>
+<li><a href="#_get_tests_isos_and_create_disks_2">81.6. Get tests, ISOs and create disks</a></li>
 </ul>
 </li>
-<li><a href="#_running_jobs">81. Running jobs</a></li>
-<li><a href="#_further_configuration_options">82. Further configuration options</a>
+<li><a href="#_running_jobs">82. Running jobs</a></li>
+<li><a href="#_further_configuration_options">83. Further configuration options</a>
 <ul class="sectlevel2">
-<li><a href="#_change_the_openid_provider">82.1. Change the OpenID provider</a></li>
-<li><a href="#_adding_workers_on_other_hosts">82.2. Adding workers on other hosts</a></li>
-<li><a href="#_keeping_all_data_in_the_data_volume_container">82.3. Keeping all data in the Data Volume container</a></li>
-<li><a href="#_keeping_all_data_on_the_host_system">82.4. Keeping all data on the host system</a></li>
-<li><a href="#_developing_tests_with_container_setup">82.5. Developing tests with container setup</a></li>
+<li><a href="#_change_the_openid_provider">83.1. Change the OpenID provider</a></li>
+<li><a href="#_adding_workers_on_other_hosts">83.2. Adding workers on other hosts</a></li>
+<li><a href="#_keeping_all_data_in_the_data_volume_container">83.3. Keeping all data in the Data Volume container</a></li>
+<li><a href="#_keeping_all_data_on_the_host_system">83.4. Keeping all data on the host system</a></li>
+<li><a href="#_developing_tests_with_container_setup">83.5. Developing tests with container setup</a></li>
 </ul>
 </li>
 </ul>
@@ -1981,7 +2000,7 @@ setup suitable to develop openQA itself, have a look at the
 <p>openQA is provided in containers. Multiple variants exist.</p>
 </div>
 <div class="sect2">
-<h3 id="_single_instance_container"><a class="anchor" href="#_single_instance_container"></a><a class="link" href="#_single_instance_container">8.1. Single-instance container</a></h3>
+<h3 id="single-instance-container"><a class="anchor" href="#single-instance-container"></a><a class="link" href="#single-instance-container">8.1. Single-instance container</a></h3>
 <div class="paragraph">
 <p>The easiest and quickest way to spawn a single instance of openQA with a
 single command line using the <code>podman</code> container engine is the following:</p>
@@ -6046,14 +6065,32 @@ as well.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_triggering_tests"><a class="anchor" href="#_triggering_tests"></a><a class="link" href="#_triggering_tests">30.2. Triggering tests</a></h3>
+<h3 id="_finding_tests_by_querying_particular_job_settings"><a class="anchor" href="#_finding_tests_by_querying_particular_job_settings"></a><a class="link" href="#_finding_tests_by_querying_particular_job_settings">30.2. Finding tests by querying particular job settings</a></h3>
+<div class="paragraph">
+<p>In case you are looking for a way to get a list of all the tests based on their
+settings, here is one way to achieve this with <code>openqa-cli api</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli<span class="tok-w"> </span>api<span class="tok-w"> </span>job_settings/jobs<span class="tok-w"> </span><span class="tok-nv">key</span><span class="tok-o">=</span><span class="tok-s2">&quot;*_TEST_ISSUES&quot;</span><span class="tok-w"> </span><span class="tok-nv">list_value</span><span class="tok-o">=</span><span class="tok-m">39911</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is possible to use a literal string or a glob for C&lt;key&gt; as shown in the
+examples. C&lt;list_value&gt; does not support globbing, though.
+openQA configuration sets C&lt;job_settings_max_recent_jobs&gt; which limits
+the results.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_triggering_tests"><a class="anchor" href="#_triggering_tests"></a><a class="link" href="#_triggering_tests">30.3. Triggering tests</a></h3>
 <div class="paragraph">
 <p>Tests can be triggered over multiple ways, using <code>openqa-clone-job</code>,
 <code>jobs post</code>, <code>isos post</code> as well as retriggering existing jobs or whole media
 over the web UI.</p>
 </div>
 <div class="sect3">
-<h4 id="_cloning_existing_jobs_openqa_clone_job"><a class="anchor" href="#_cloning_existing_jobs_openqa_clone_job"></a><a class="link" href="#_cloning_existing_jobs_openqa_clone_job">30.2.1. Cloning existing jobs - openqa-clone-job</a></h4>
+<h4 id="_cloning_existing_jobs_openqa_clone_job"><a class="anchor" href="#_cloning_existing_jobs_openqa_clone_job"></a><a class="link" href="#_cloning_existing_jobs_openqa_clone_job">30.3.1. Cloning existing jobs - openqa-clone-job</a></h4>
 <div class="paragraph">
 <p>If one wants to recreate an existing job from any publicly available openQA
 instance the script <code>openqa-clone-job</code> can be used to copy the necessary
@@ -6065,7 +6102,7 @@ on <code>openqa-clone-job</code> can be found in
 </div>
 </div>
 <div class="sect3">
-<h4 id="_spawning_single_new_jobs_jobs_post"><a class="anchor" href="#_spawning_single_new_jobs_jobs_post"></a><a class="link" href="#_spawning_single_new_jobs_jobs_post">30.2.2. Spawning single new jobs - jobs post</a></h4>
+<h4 id="_spawning_single_new_jobs_jobs_post"><a class="anchor" href="#_spawning_single_new_jobs_jobs_post"></a><a class="link" href="#_spawning_single_new_jobs_jobs_post">30.3.2. Spawning single new jobs - jobs post</a></h4>
 <div class="paragraph">
 <p>Single jobs can be spawned using the <code>jobs post</code> API route. All necessary
 settings on a job must be supplied in the API request. The "openQA client" has
@@ -6108,7 +6145,7 @@ that has been used, e.g.:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_spawning_multiple_jobs_based_on_templates_isos_post"><a class="anchor" href="#_spawning_multiple_jobs_based_on_templates_isos_post"></a><a class="link" href="#_spawning_multiple_jobs_based_on_templates_isos_post">30.2.3. Spawning multiple jobs based on templates - isos post</a></h4>
+<h4 id="_spawning_multiple_jobs_based_on_templates_isos_post"><a class="anchor" href="#_spawning_multiple_jobs_based_on_templates_isos_post"></a><a class="link" href="#_spawning_multiple_jobs_based_on_templates_isos_post">30.3.3. Spawning multiple jobs based on templates - isos post</a></h4>
 <div class="paragraph">
 <p>The most common way of spawning jobs on production instances is using the
 <code>isos post</code> API route. Based on settings for media, job groups, machines and
@@ -6355,7 +6392,7 @@ reading the next section for more details on job templates).</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_remarks_2"><a class="anchor" href="#_remarks_2"></a><a class="link" href="#_remarks_2">30.2.4. Remarks</a></h4>
+<h4 id="_remarks_2"><a class="anchor" href="#_remarks_2"></a><a class="link" href="#_remarks_2">30.3.4. Remarks</a></h4>
 <div class="paragraph">
 <p>When scheduling a single test (variable <code>TEST</code> is specified) attempts to
 obsolete/deprioritize are prevented by default because this is likely not wanted.
@@ -6365,7 +6402,7 @@ obsolete/deprioritize <strong>all</strong> jobs with matching <code>DISTRI</code
 </div>
 </div>
 <div class="sect2">
-<h3 id="_job_template_yaml"><a class="anchor" href="#_job_template_yaml"></a><a class="link" href="#_job_template_yaml">30.3. Job template YAML</a></h3>
+<h3 id="_job_template_yaml"><a class="anchor" href="#_job_template_yaml"></a><a class="link" href="#_job_template_yaml">30.4. Job template YAML</a></h3>
 <div class="paragraph">
 <p>Job groups can be queried via the experimental REST API:</p>
 </div>
@@ -11887,10 +11924,9 @@ dependencies is using the available os-autoinst and openQA packages, as
 described in the Installation Guide.</p>
 </div>
 <div class="paragraph">
-<p>In the case of os-autoinst, only a few <a href="http://www.cpan.org/">CPAN</a> modules are
-required. Basically <code>Carp::Always</code>, <code>Data::Dump</code>. <code>JSON</code> and <code>YAML</code>. On the other
-hand, several external tools are needed including
-<a href="http://wiki.qemu.org/Main_Page">QEMU</a>,
+<p>In the case of <a href="https://github.com/os-autoinst/os-autoinst">os-autoinst</a>, some
+<a href="http://www.cpan.org/">CPAN</a> modules are required. Additionally, several external
+tools are needed including <a href="http://wiki.qemu.org/Main_Page">QEMU</a>,
 <a href="https://code.google.com/p/tesseract-ocr/">Tesseract</a> and
 <a href="http://optipng.sourceforge.net/">OptiPNG</a>. Last but not least, the
 <a href="http://opencv.org/">OpenCV</a> library is the core of the openQA image matching
@@ -11900,7 +11936,7 @@ mechanism, so it must be available on the system.</p>
 <p>The openQA package is built on top of Mojolicious, an excellent Perl framework
 for web development that will be extremely familiar to developers coming from
 other modern web frameworks like Sinatra and that have nice and comprehensive
-documentation available at its <a href="http://mojolicio.us">home page</a>.</p>
+documentation available at its <a href="https://mojolicious.org/">home page</a>.</p>
 </div>
 <div class="paragraph">
 <p>In addition to Mojolicious and its dependencies, several other CPAN modules are
@@ -11915,10 +11951,7 @@ but that is no longer possible.</p>
 <p>As stated in the previous section, every feature implemented in both packages
 should be backed by proper tests.
 <a href="http://perldoc.perl.org/Test/Most.html">Test::Most</a> is used to implement those
-tests. As usual, tests are located under the <code>/t/</code> directory. In the openQA
-package, one of the tests consists of a call to
-<a href="http://perltidy.sourceforge.net/">Perltidy</a> to ensure that the contributed code
-follows the most common Perl style conventions.</p>
+tests. As usual, tests are located under the <code>t/</code> directory.</p>
 </div>
 </div>
 </div>
@@ -11991,31 +12024,128 @@ follows the most common Perl style conventions.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="development-setup"><a class="anchor" href="#development-setup"></a><a class="link" href="#development-setup">67. Development setup</a></h2>
+<h2 id="dependencies"><a class="anchor" href="#dependencies"></a><a class="link" href="#dependencies">67. Dependencies</a></h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>Here we differentiate between these types of dependencies:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Runtime: run openQA</p>
+</li>
+<li>
+<p>Test: run the test suite of openQA itself</p>
+</li>
+<li>
+<p>For developers: style checks, code coverage etc.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can get those dependencies in several ways:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Packaged in openSUSE and other distributions</p>
+</li>
+<li>
+<p>Manually install from source</p>
+</li>
+<li>
+<p>Perl modules via CPAN client</p>
+</li>
+<li>
+<p>Use a prebuilt container</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We manage our dependencies via a central <code>dependencies.yaml</code> file per
+repository. We generate the <code>.spec</code> files for <code>rpm</code> as well as a <code>cpanfile</code>
+for quicker installation of all Perl modules.</p>
+</div>
+<div class="sect2">
+<h3 id="runtime-dependencies"><a class="anchor" href="#runtime-dependencies"></a><a class="link" href="#runtime-dependencies">67.1. Runtime Dependencies</a></h3>
+<div class="paragraph">
+<p>For openSUSE you need the packages <code>openQA</code> and <code>os-autoinst</code>.
+That should be everything necessary to run an openQA instance. For more
+details check &lt;&lt;Installing.asciidoc#_installation,Installation&gt;.</p>
+</div>
+<div class="paragraph">
+<p>If you have to manually install packages, look into the <code>dependencies.yaml</code>
+file or the spec file, e.g. <code>dist/rpm/openQA.spec</code> (or <code>dist/rpm/*.spec</code> in
+general). You can leave out sections starting with <code>test_requires</code> for example.</p>
+</div>
+<div class="paragraph">
+<p>A CPAN client will by default also leave out modules for testing and
+development.</p>
+</div>
+<div class="paragraph">
+<p>As alternative you can try out the
+<a href="#single-instance-container">Single-Instance Container</a> as
+a minimal runtime environment.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="development-dependencies"><a class="anchor" href="#development-dependencies"></a><a class="link" href="#development-dependencies">67.2. Development Dependencies</a></h3>
+<div class="paragraph">
+<p>For openSUSE:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>zypper install openQA-devel</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For distributions without those packages, look into <code>dependencies.yaml</code> or
+<code>dist/rpm/openQA.spec</code> like above. The <code>devel_*requires</code> sections/definitions
+list dependencies for tests and development.</p>
+</div>
+<div class="paragraph">
+<p>If you just want to run the test suite to see if it passes on your platform,
+you would not need the developer&#8217;s dependencies, like <code>Perl::Tidy</code> and
+<code>Devel::Cover</code>. They are recommended as soon as you plan a contribution.</p>
+</div>
+<div class="paragraph">
+<p>For the UI tests you need <code>perl-Selenium-Remote-Driver</code> as well as
+<code>chromedriver</code> and either <code>chrome</code> or <code>chromium</code>.</p>
+</div>
+<div class="paragraph">
+<p>See <a href="#run-tests-in-container">Run tests in a container</a>
+for a container with all dependencies.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="development-setup"><a class="anchor" href="#development-setup"></a><a class="link" href="#development-setup">68. Development setup</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following explains in detail what is necessary to develop openQA code.</p>
+</div>
+<div class="paragraph">
+<p>For a setup with containers you can checkout the
+<a href="#quick-container-development-setup">Quick container
+development setup</a> below with a complete list of instructions.</p>
+</div>
+<div class="paragraph">
+<p>Otherwise follow the detailed steps below. This setup is applicable to a
+container environment as well as without.</p>
+</div>
 <div class="paragraph">
 <p>For developing openQA and os-autoinst itself it makes sense to checkout the
 <a href="#repo-urls">Git repositories</a> and either execute
 existing tests or start the daemons manually.</p>
 </div>
-<div class="sect2">
-<h3 id="dependencies"><a class="anchor" href="#dependencies"></a><a class="link" href="#dependencies">67.1. Dependencies</a></h3>
 <div class="paragraph">
-<p>Have a look at the packaged version (e.g. <code>dist/rpm/openQA.spec</code> within the
-root of the openQA repository) for all required dependencies. For development
-build time dependencies need to be installed as well. Recommended
-dependencies such as logrotate can be ignored. For openSUSE there is also the
-<code>openQA-devel</code> meta-package which pulls all required dependencies for
-development.</p>
-</div>
-<div class="paragraph">
-<p>You can find all required Perl modules in form of a <code>cpanfile</code> that enables
-you to install them with a CPAN client. They are also defined in
-<code>dist/rpm/openQA.spec</code>.</p>
-</div>
+<p>Install the necessary
+<a href="#development-dependencies">Development Dependencies</a>
+first.</p>
 </div>
 <div class="sect2">
-<h3 id="testing"><a class="anchor" href="#testing"></a><a class="link" href="#testing">67.2. Conducting tests</a></h3>
+<h3 id="testing"><a class="anchor" href="#testing"></a><a class="link" href="#testing">68.1. Conducting tests</a></h3>
 <div class="paragraph">
 <p>To execute all existing checks and tests simply call:</p>
 </div>
@@ -12138,7 +12268,7 @@ from individual test job runs within the full stack test.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="customize_base_directory"><a class="anchor" href="#customize_base_directory"></a><a class="link" href="#customize_base_directory">67.3. Customize base directory</a></h3>
+<h3 id="customize_base_directory"><a class="anchor" href="#customize_base_directory"></a><a class="link" href="#customize_base_directory">68.2. Customize base directory</a></h3>
 <div class="paragraph">
 <p>It is possible to customize the openQA base directory (which is for instance
 used to store test results) by setting the environment variable
@@ -12161,7 +12291,7 @@ Be sure to <strong>clear</strong> that variable when running unit tests locally.
 </div>
 </div>
 <div class="sect2">
-<h3 id="_customize_configuration_directory"><a class="anchor" href="#_customize_configuration_directory"></a><a class="link" href="#_customize_configuration_directory">67.4. Customize configuration directory</a></h3>
+<h3 id="_customize_configuration_directory"><a class="anchor" href="#_customize_configuration_directory"></a><a class="link" href="#_customize_configuration_directory">68.3. Customize configuration directory</a></h3>
 <div class="paragraph">
 <p>When running openQA from a Git checkout it will find configuration files from
 that checkout under <code>etc/openqa</code> and not use any system provided config files
@@ -12198,7 +12328,7 @@ directory and set the environment variable <code>OPENQA_CONFIG</code>:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="setup-postgresql"><a class="anchor" href="#setup-postgresql"></a><a class="link" href="#setup-postgresql">67.5. Setting up the PostgreSQL database</a></h3>
+<h3 id="setup-postgresql"><a class="anchor" href="#setup-postgresql"></a><a class="link" href="#setup-postgresql">68.4. Setting up the PostgreSQL database</a></h3>
 <div class="paragraph">
 <p>Setting up a PostgreSQL database for openQA takes the following steps:</p>
 </div>
@@ -12258,7 +12388,7 @@ your regular user.
 </table>
 </div>
 <div class="sect3">
-<h4 id="_importing_production_data"><a class="anchor" href="#_importing_production_data"></a><a class="link" href="#_importing_production_data">67.5.1. Importing production data</a></h4>
+<h4 id="_importing_production_data"><a class="anchor" href="#_importing_production_data"></a><a class="link" href="#_importing_production_data">68.4.1. Importing production data</a></h4>
 <div class="paragraph">
 <p>Assuming you have already followed steps 1. to 4. above:</p>
 </div>
@@ -12286,7 +12416,7 @@ Everything will be owned by <code>your_username</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_manual_daemon_setup"><a class="anchor" href="#_manual_daemon_setup"></a><a class="link" href="#_manual_daemon_setup">67.6. Manual daemon setup</a></h3>
+<h3 id="_manual_daemon_setup"><a class="anchor" href="#_manual_daemon_setup"></a><a class="link" href="#_manual_daemon_setup">68.5. Manual daemon setup</a></h3>
 <div class="paragraph">
 <p>This section should give you a general idea how to start daemons manually for
 development after you setup a PostgreSQL database as mentioned in the previous
@@ -12339,7 +12469,7 @@ aware that this may cause unwanted changes in the <code>t/data</code> directory.
 <a href="#_run_tests_without_container">Run tests without Container</a>.</p>
 </div>
 <div class="sect3">
-<h4 id="_further_tips"><a class="anchor" href="#_further_tips"></a><a class="link" href="#_further_tips">67.6.1. Further tips</a></h4>
+<h4 id="_further_tips"><a class="anchor" href="#_further_tips"></a><a class="link" href="#_further_tips">68.5.1. Further tips</a></h4>
 <div class="ulist">
 <ul>
 <li>
@@ -12368,13 +12498,295 @@ look at the
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="quick-container-setup"><a class="anchor" href="#quick-container-setup"></a><a class="link" href="#quick-container-setup">68.6. Quick container development setup</a></h3>
+<div class="sect3">
+<h4 id="_requirements"><a class="anchor" href="#_requirements"></a><a class="link" href="#_requirements">68.6.1. Requirements</a></h4>
+<div class="paragraph">
+<p>In these examples we use the following tools which are all in openSUSE Leap:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://podman.io/"><code>podman</code></a></p>
+</li>
+<li>
+<p><a href="https://en.opensuse.org/Distrobox"><code>distrobox</code></a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can use similar tools like <code>docker</code>, <code>toolbox</code> etc. to achieve the same.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_intro"><a class="anchor" href="#_intro"></a><a class="link" href="#_intro">68.6.2. Intro</a></h4>
+<div class="paragraph">
+<p>These instructions are ready to use without any changes. You only might want to
+change the <code>OPENQA_BASEDIR</code> location.</p>
+</div>
+<div class="paragraph">
+<p>You will run two containers:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A separate postgres container (so you don&#8217;t have to deal with the database
+when updating your dev container)</p>
+</li>
+<li>
+<p>The openQA environment in an openSUSE Leap or Tumbleweed container, which
+both can use the same postgres container.
+In this example we will be setting up and using the Leap container.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>distrobox</code>, for example, can be used to take care of network, home directory,
+permissions, and graphical environment.</p>
+</div>
+<div class="paragraph">
+<p>Some common settings we are using here:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>OPENQA_BASEDIR=$HOME/openqadev.leap</code></p>
+</li>
+<li>
+<p>Database name: <code>openqa-local</code></p>
+</li>
+<li>
+<p>Database user: <code>geekotest</code></p>
+</li>
+<li>
+<p>Database container name: <code>postgres-openqa</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_environment_variables"><a class="anchor" href="#_environment_variables"></a><a class="link" href="#_environment_variables">68.6.3. Environment Variables</a></h4>
+<div class="paragraph">
+<p>Create a file that you can <code>source</code> whenever you want to work in this
+environment:</p>
+</div>
+<div class="paragraph">
+<p>File: <code>~/localopenqa.leap.sh</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-ch">#!/bin/bash</span>
+
+<span class="tok-c1"># The directory where openQA operates in and creates everything in:</span>
+<span class="tok-c1"># * git repos</span>
+<span class="tok-c1"># * openQA assets, pool directory, testresults</span>
+<span class="tok-c1"># * configuration</span>
+
+<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span><span class="tok-nv">$HOME</span>/openqadev.leap
+
+<span class="tok-c1"># The rest of the variables can likely stay like this</span>
+
+<span class="tok-c1"># If you want to import database dumps from elsewhere</span>
+<span class="tok-c1">#export SQL_DUMP_DIR=$HOME/sqldumps</span>
+
+<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_CONFIG</span><span class="tok-o">=</span><span class="tok-nv">$OPENQA_BASEDIR</span>/config
+<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_REPOS</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$OPENQA_BASEDIR</span><span class="tok-s2">/git&quot;</span>
+<span class="tok-nv">PATH</span><span class="tok-o">=</span><span class="tok-nv">$OPENQA_REPOS</span>/openQA/scripts:<span class="tok-nv">$PATH</span>
+
+<span class="tok-c1"># ----------- CPAN ------------</span>
+<span class="tok-c1"># Whenever necessary, you can install additional modules from CPAN like:</span>
+<span class="tok-c1"># cpanm -l $OPENQA_BASEDIR/perl5 Some::Module@1.23</span>
+<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">PERL5LIB</span><span class="tok-o">=</span><span class="tok-nv">$OPENQA_BASEDIR</span>/perl5/lib/perl5
+<span class="tok-nv">PATH</span><span class="tok-o">=</span><span class="tok-nv">$OPENQA_BASEDIR</span>/perl5/bin:<span class="tok-nv">$PATH</span>
+
+<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_KEY</span><span class="tok-o">=</span>1234567890ABCDEF
+<span class="tok-nb">export</span><span class="tok-w"> </span><span class="tok-nv">OPENQA_SECRET</span><span class="tok-o">=</span>1234567890ABCDEF</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_postgres_container"><a class="anchor" href="#_postgres_container"></a><a class="link" href="#_postgres_container">68.6.4. Postgres Container</a></h4>
+<div class="paragraph">
+<p>To be able to reuse the database later when stopping the container, we create a
+named volume.
+We are using a Debian postgres container here, but it doesn&#8217;t matter what
+you use.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### host ###</span>
+podman<span class="tok-w"> </span>volume<span class="tok-w"> </span>create<span class="tok-w"> </span>mypostgres
+podman<span class="tok-w"> </span>run<span class="tok-w"> </span>-it<span class="tok-w"> </span>--rm<span class="tok-w"> </span>--name<span class="tok-w"> </span>postgres-openqa<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span>-v<span class="tok-w"> </span>mypostgres:/var/lib/postgresql/data<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span>-p<span class="tok-w"> </span><span class="tok-m">5432</span>:5432<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span>-e<span class="tok-w"> </span><span class="tok-nv">POSTGRES_PASSWORD</span><span class="tok-o">=</span><span class="tok-s2">&quot;x&quot;</span><span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span>-d<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span>docker.io/library/postgres:17
+
+<span class="tok-c1"># Optionally add this to mount a directory for sql dumps to import</span>
+<span class="tok-c1">#    -v &quot;$SQL_DUMP_DIR:/sqldumps&quot; \</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For the next step you need to execute commands in the container:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Create the role and database</span>
+podman<span class="tok-w"> </span><span class="tok-nb">exec</span><span class="tok-w"> </span>-it<span class="tok-w"> </span>postgres-openqa<span class="tok-w"> </span>su<span class="tok-w"> </span>-<span class="tok-w"> </span>postgres
+
+<span class="tok-c1">### postgres container ###</span>
+createuser<span class="tok-w"> </span>--no-createdb<span class="tok-w"> </span>--pwprompt<span class="tok-w"> </span>geekotest
+<span class="tok-c1"># enter password (&#39;x&#39; in this example)</span>
+createdb<span class="tok-w"> </span>-O<span class="tok-w"> </span>geekotest<span class="tok-w"> </span>openqa-local</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_distrobox"><a class="anchor" href="#_distrobox"></a><a class="link" href="#_distrobox">68.6.5. Distrobox</a></h4>
+<div class="paragraph">
+<p>You can use a Leap container and install the requirements, but you can also
+build your own container with the requirements already installed.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### host ###</span>
+distrobox<span class="tok-w"> </span>create<span class="tok-w"> </span>-i<span class="tok-w"> </span>registry.opensuse.org/opensuse/leap:15.6<span class="tok-w"> </span>-n<span class="tok-w"> </span>box-openqadev-leap
+distrobox<span class="tok-w"> </span>enter<span class="tok-w"> </span>box-openqadev-leap
+<span class="tok-c1"># Tumbleweed:</span>
+<span class="tok-c1">#distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest -n box-openqadev-tw</span>
+
+<span class="tok-c1">### distrobox container ###</span>
+
+<span class="tok-c1"># Leap 15.6</span>
+zypper<span class="tok-w"> </span>addrepo<span class="tok-w"> </span>-G<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">95</span><span class="tok-w"> </span>https://download.opensuse.org/repositories/devel:/openQA/15.6<span class="tok-w"> </span>devel-openqa<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span>zypper<span class="tok-w"> </span>addrepo<span class="tok-w"> </span>-G<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">95</span><span class="tok-w"> </span>https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.6/15.6/<span class="tok-w"> </span>devel-openqa-leap
+
+<span class="tok-c1"># Tumbleweed</span>
+<span class="tok-c1">#zypper addrepo -G p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa \</span>
+<span class="tok-c1">#        &amp;&amp; zypper addrepo -G -p 95 https://download.opensuse.org/repositories/SUSE:/CA/openSUSE_Tumbleweed/SUSE:CA.repo</span>
+
+zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span>ref<span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span>zypper<span class="tok-w"> </span>-n<span class="tok-w"> </span>install<span class="tok-w"> </span>ca-certificates-suse<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">        </span>os-autoinst-devel<span class="tok-w"> </span>openQA-devel<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">        </span>os-autoinst-scripts-deps<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">        </span>os-autoinst-scripts-deps-devel<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">        </span>crudini
+<span class="tok-c1"># plus your favourite dev tools, e.g. tmux</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note: <a href="https://github.com/pixelb/crudini"><code>crudini</code></a> is a tool for manipulating
+values in ini files.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_git"><a class="anchor" href="#_git"></a><a class="link" href="#_git">68.6.6. Git</a></h4>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
+<span class="tok-c1"># Remember to source this file</span>
+<span class="tok-nb">source</span><span class="tok-w"> </span>~/localopenqa.leap.sh
+mkdir<span class="tok-w"> </span><span class="tok-nv">$OPENQA_BASEDIR</span>
+mkdir<span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>
+mkdir<span class="tok-w"> </span><span class="tok-nv">$OPENQA_BASEDIR</span>/openqa<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span><span class="tok-w"> </span><span class="tok-nv">$OPENQA_BASEDIR</span>/perl5<span class="tok-w"> </span><span class="tok-nv">$OPENQA_BASEDIR</span>/openqa/db
+
+git<span class="tok-w"> </span>clone<span class="tok-w"> </span>git@github.com:os-autoinst/openQA<span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/openQA
+git<span class="tok-w"> </span>clone<span class="tok-w"> </span>git@github.com:os-autoinst/os-autoinst<span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/os-autoinst
+git<span class="tok-w"> </span>clone<span class="tok-w"> </span>git@github.com:os-autoinst/scripts<span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/scripts</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_config_files"><a class="anchor" href="#_config_files"></a><a class="link" href="#_config_files">68.6.7. Config Files</a></h4>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
+<span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-o">&lt;&lt;&lt;</span><span class="tok-w"> </span>EOM
+<span class="tok-o">[</span>localhost<span class="tok-o">]</span>
+<span class="tok-nv">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>1234567890ABCDEF
+<span class="tok-nv">secret</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>1234567890ABCDEF
+EOM<span class="tok-w"> </span>&gt;&gt;<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/client.conf
+
+<span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-o">&lt;&lt;&lt;</span><span class="tok-w"> </span>EOM
+<span class="tok-o">[</span>production<span class="tok-o">]</span>
+<span class="tok-nv">dsn</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>dbi:Pg:dbname<span class="tok-o">=</span>openqa-local<span class="tok-p">;</span><span class="tok-nv">host</span><span class="tok-o">=</span><span class="tok-m">127</span>.0.0.1<span class="tok-p">;</span><span class="tok-nv">port</span><span class="tok-o">=</span><span class="tok-m">5432</span>
+<span class="tok-nv">user</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>geekotest
+<span class="tok-nv">password</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>x
+EOM<span class="tok-w"> </span>&gt;&gt;<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/database.ini
+
+cp<span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/openQA/etc/openqa/workers.ini<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/workers.ini
+crudini<span class="tok-w"> </span>--set<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/workers.ini<span class="tok-w"> </span>global<span class="tok-w"> </span>HOST<span class="tok-w"> </span>http://localhost:9526
+crudini<span class="tok-w"> </span>--set<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/workers.ini<span class="tok-w"> </span>global<span class="tok-w"> </span>WORKER_HOSTNAME<span class="tok-w"> </span><span class="tok-m">127</span>.0.0.1
+
+cp<span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/openQA/etc/openqa/openqa.ini<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/openqa.ini
+crudini<span class="tok-w"> </span>--set<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/openqa.ini<span class="tok-w"> </span>auth<span class="tok-w"> </span>method<span class="tok-w"> </span>Fake</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_build_openqa"><a class="anchor" href="#_build_openqa"></a><a class="link" href="#_build_openqa">68.6.8. Build openQA</a></h4>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
+<span class="tok-c1"># Build steps</span>
+<span class="tok-nb">cd</span><span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/os-autoinst
+make
+<span class="tok-nb">cd</span><span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/openQA
+make<span class="tok-w"> </span>node_modules
+
+<span class="tok-c1"># Optionally check if you can access the database</span>
+<span class="tok-c1">#psql -U geekotest -h 127.0.0.1 -p 5432 openqa-local</span>
+
+<span class="tok-c1"># Initialize the database schema. This is using the database.ini you</span>
+<span class="tok-c1"># created above.</span>
+<span class="tok-nv">$OPENQA_REPOS</span>/openQA/script/initdb<span class="tok-w"> </span>--init_database</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_run_openqa"><a class="anchor" href="#_run_openqa"></a><a class="link" href="#_run_openqa">68.6.9. Run openQA</a></h4>
+<div class="paragraph">
+<p>Ready!</p>
+</div>
+<div class="paragraph">
+<p>For playing with the web UI, you just need to run the <code>openqa-webui-daemon</code>.
+For running openQA jobs, you need all daemons.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
+<span class="tok-c1"># Main web UI (required for web interface and web API)</span>
+openqa-webui-daemon
+
+<span class="tok-c1"># Websockets (for workers to connect so they can receive job assignments)</span>
+openqa-websockets<span class="tok-w"> </span>daemon
+
+<span class="tok-c1"># Scheduler (assigns jobs to workers)</span>
+openqa-scheduler<span class="tok-w"> </span>daemon
+
+<span class="tok-c1"># Gru (for running background tasks as Minion jobs)</span>
+openqa<span class="tok-w"> </span>gru<span class="tok-w"> </span>run
+
+<span class="tok-c1"># Livehandler (for the developer mode on the web UI)</span>
+openqa-livehandler<span class="tok-w"> </span>daemon
+
+<span class="tok-c1"># Worker</span>
+worker<span class="tok-w"> </span>--isotovideo<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$OPENQA_REPOS</span><span class="tok-s2">/os-autoinst/isotovideo&quot;</span><span class="tok-w"> </span>--instance<span class="tok-w"> </span><span class="tok-m">1</span><span class="tok-w"> </span>--verbose<span class="tok-w"> </span>--apikey<span class="tok-w"> </span><span class="tok-nv">$OPENQA_KEY</span><span class="tok-w"> </span>--apisecret<span class="tok-w"> </span><span class="tok-nv">$OPENQA_SECRET</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For running unit tests, see <a href="#testing">Conducting tests</a>.</p>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="dependency-handling"><a class="anchor" href="#dependency-handling"></a><a class="link" href="#dependency-handling">68. Handling of dependencies</a></h2>
+<h2 id="dependency-handling"><a class="anchor" href="#dependency-handling"></a><a class="link" href="#dependency-handling">69. Handling of dependencies</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_javascript_and_css"><a class="anchor" href="#_javascript_and_css"></a><a class="link" href="#_javascript_and_css">68.1. Javascript and CSS</a></h3>
+<h3 id="_javascript_and_css"><a class="anchor" href="#_javascript_and_css"></a><a class="link" href="#_javascript_and_css">69.1. JavaScript and CSS</a></h3>
 <div class="paragraph">
 <p>Install third-party JavaScript and CSS files via their corresponding npm
 packages and add the paths of those files to <code>assets/assetpack.def</code>.</p>
@@ -12388,7 +12800,7 @@ files instead.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_perl_and_other_packages"><a class="anchor" href="#_perl_and_other_packages"></a><a class="link" href="#_perl_and_other_packages">68.2. Perl and other packages</a></h3>
+<h3 id="_perl_and_other_packages"><a class="anchor" href="#_perl_and_other_packages"></a><a class="link" href="#_perl_and_other_packages">69.2. Perl and other packages</a></h3>
 <div class="paragraph">
 <p>In openQA, there is a <code>dependencies.yaml</code> file including a list of
 dependencies, separated in groups. For example the openQA client does not need
@@ -12409,7 +12821,7 @@ as part of openSUSE Tumbleweed.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_remarks_regarding_ci"><a class="anchor" href="#_remarks_regarding_ci"></a><a class="link" href="#_remarks_regarding_ci">68.3. Remarks regarding CI</a></h3>
+<h3 id="_remarks_regarding_ci"><a class="anchor" href="#_remarks_regarding_ci"></a><a class="link" href="#_remarks_regarding_ci">69.3. Remarks regarding CI</a></h3>
 <div class="ulist">
 <ul>
 <li>
@@ -12428,7 +12840,7 @@ against openSUSE Tumbleweed and openSUSE Leap.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_managing_the_database"><a class="anchor" href="#_managing_the_database"></a><a class="link" href="#_managing_the_database">69. Managing the database</a></h2>
+<h2 id="_managing_the_database"><a class="anchor" href="#_managing_the_database"></a><a class="link" href="#_managing_the_database">70. Managing the database</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>During the development process there are cases in which the database schema
@@ -12437,7 +12849,7 @@ there are some steps that have to be followed so that new database instances
 and upgrades include those changes.</p>
 </div>
 <div class="sect2">
-<h3 id="_when_is_it_required_to_update_the_database_schema"><a class="anchor" href="#_when_is_it_required_to_update_the_database_schema"></a><a class="link" href="#_when_is_it_required_to_update_the_database_schema">69.1. When is it required to update the database schema?</a></h3>
+<h3 id="_when_is_it_required_to_update_the_database_schema"><a class="anchor" href="#_when_is_it_required_to_update_the_database_schema"></a><a class="link" href="#_when_is_it_required_to_update_the_database_schema">70.1. When is it required to update the database schema?</a></h3>
 <div class="paragraph">
 <p>After modifying files in <code>lib/OpenQA/Schema/Result</code>. However, not all changes
 require to update the schema. Adding just another method or altering/adding
@@ -12449,7 +12861,7 @@ any statements) you can just drop the migration again.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_how_to_update_the_database_schema"><a class="anchor" href="#_how_to_update_the_database_schema"></a><a class="link" href="#_how_to_update_the_database_schema">69.2. How to update the database schema</a></h3>
+<h3 id="_how_to_update_the_database_schema"><a class="anchor" href="#_how_to_update_the_database_schema"></a><a class="link" href="#_how_to_update_the_database_schema">70.2. How to update the database schema</a></h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -12516,7 +12928,7 @@ section for how to tackle this problem.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_how_to_add_fixtures_to_the_database"><a class="anchor" href="#_how_to_add_fixtures_to_the_database"></a><a class="link" href="#_how_to_add_fixtures_to_the_database">69.3. How to add fixtures to the database</a></h3>
+<h3 id="_how_to_add_fixtures_to_the_database"><a class="anchor" href="#_how_to_add_fixtures_to_the_database"></a><a class="link" href="#_how_to_add_fixtures_to_the_database">70.3. How to add fixtures to the database</a></h3>
 <div class="paragraph">
 <p>Note: This section is not about the fixtures for the testsuite. Those are located
 under t/fixtures.</p>
@@ -12548,7 +12960,7 @@ variable.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_adding_new_authentication_module"><a class="anchor" href="#_adding_new_authentication_module"></a><a class="link" href="#_adding_new_authentication_module">70. Adding new authentication module</a></h2>
+<h2 id="_adding_new_authentication_module"><a class="anchor" href="#_adding_new_authentication_module"></a><a class="link" href="#_adding_new_authentication_module">71. Adding new authentication module</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA comes with two authentication modules providing authentication methods:
@@ -12591,7 +13003,7 @@ after user validation. See included modules for inspiration.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_running_tests_of_openqa_itself"><a class="anchor" href="#_running_tests_of_openqa_itself"></a><a class="link" href="#_running_tests_of_openqa_itself">71. Running tests of openQA itself</a></h2>
+<h2 id="_running_tests_of_openqa_itself"><a class="anchor" href="#_running_tests_of_openqa_itself"></a><a class="link" href="#_running_tests_of_openqa_itself">72. Running tests of openQA itself</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Beside simply running the testsuite, it is also possible to use containers. Using containers,
@@ -12599,16 +13011,14 @@ tests are executed in the same environment as on CircleCI. This allows to reprod
 specific to that environment.</p>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_without_container"><a class="anchor" href="#_run_tests_without_container"></a><a class="link" href="#_run_tests_without_container">71.1. Run tests without container</a></h3>
+<h3 id="_run_tests_without_container"><a class="anchor" href="#_run_tests_without_container"></a><a class="link" href="#_run_tests_without_container">72.1. Run tests without container</a></h3>
 <div id="run_tests_without_container" class="paragraph">
 <p>Be sure to install all required dependencies. The package <code>openQA-devel</code> will
 provide them.</p>
 </div>
 <div class="paragraph">
-<p>If the package is not available the dependencies can also be found in the file
-<code>dist/rpm/openQA.spec</code> in the openQA repository. In this case also the package
-<code>perl-Selenium-Remote-Driver</code> is required to run UI tests. You also need to
-install chromedriver and either chrome or chromium for the UI tests.</p>
+<p>For more information look into
+<a href="#development-dependencies">Development Dependencies</a>.</p>
 </div>
 <div class="paragraph">
 <p>To execute the testsuite use <code>make test</code>. This will also initialize a
@@ -12629,7 +13039,7 @@ and running <code>prove</code>).</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_within_a_container"><a class="anchor" href="#_run_tests_within_a_container"></a><a class="link" href="#_run_tests_within_a_container">71.2. Run tests within a container</a></h3>
+<h3 id="run-tests-in-container"><a class="anchor" href="#run-tests-in-container"></a><a class="link" href="#run-tests-in-container">72.2. Run tests within a container</a></h3>
 <div class="paragraph">
 <p>The container used in this section of the documentation is not identical with the container used
 within the CI. To run tests within the CI environment locally, checkout the
@@ -12720,7 +13130,7 @@ container and considers a few environment variables defining our test matrix:</p
 <p>Of course it is also possible to run (specific) tests directly via <code>prove</code> instead of using the Makefile targets.</p>
 </div>
 <div class="sect3">
-<h4 id="_tips"><a class="anchor" href="#_tips"></a><a class="link" href="#_tips">71.2.1. Tips</a></h4>
+<h4 id="_tips"><a class="anchor" href="#_tips"></a><a class="link" href="#_tips">72.2.1. Tips</a></h4>
 <div class="paragraph">
 <p>Running UI tests in non-headless mode is also possible, eg.:</p>
 </div>
@@ -12751,7 +13161,7 @@ executed.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_logging_behavior"><a class="anchor" href="#_logging_behavior"></a><a class="link" href="#_logging_behavior">71.3. Logging behavior</a></h3>
+<h3 id="_logging_behavior"><a class="anchor" href="#_logging_behavior"></a><a class="link" href="#_logging_behavior">72.3. Logging behavior</a></h3>
 <div class="paragraph">
 <p>Logs are redirected to a logfile when running tests within the CI. The output
 can therefore not be asserted using <code>Test::Output</code>. This can be worked around
@@ -12768,7 +13178,7 @@ quite irritating.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_test_runtime_limits"><a class="anchor" href="#_test_runtime_limits"></a><a class="link" href="#_test_runtime_limits">71.4. Test runtime limits</a></h3>
+<h3 id="_test_runtime_limits"><a class="anchor" href="#_test_runtime_limits"></a><a class="link" href="#_test_runtime_limits">72.4. Test runtime limits</a></h3>
 <div class="paragraph">
 <p>The test modules use <code>OpenQA::Test::TimeLimit</code> to introduce a test module
 specific timeout. The timeout is automatically scaled up based on environment
@@ -12825,14 +13235,14 @@ be set to a higher value. See
 </div>
 </div>
 <div class="sect1">
-<h2 id="circleci-workflow"><a class="anchor" href="#circleci-workflow"></a><a class="link" href="#circleci-workflow">72. CircleCI workflow</a></h2>
+<h2 id="circleci-workflow"><a class="anchor" href="#circleci-workflow"></a><a class="link" href="#circleci-workflow">73. CircleCI workflow</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The goal of the following workflow is to provide a way to run tests with a
 pre-approved list of dependencies both in the CI and locally.</p>
 </div>
 <div class="sect2">
-<h3 id="_dependency_artefacts"><a class="anchor" href="#_dependency_artefacts"></a><a class="link" href="#_dependency_artefacts">72.1. Dependency artefacts</a></h3>
+<h3 id="_dependency_artefacts"><a class="anchor" href="#_dependency_artefacts"></a><a class="link" href="#_dependency_artefacts">73.1. Dependency artefacts</a></h3>
 <div class="ulist">
 <ul>
 <li>
@@ -12846,7 +13256,7 @@ The testing will run against the latest master if empty.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_managing_and_troubleshooting_dependencies"><a class="anchor" href="#_managing_and_troubleshooting_dependencies"></a><a class="link" href="#_managing_and_troubleshooting_dependencies">72.2. Managing and troubleshooting dependencies</a></h3>
+<h3 id="_managing_and_troubleshooting_dependencies"><a class="anchor" href="#_managing_and_troubleshooting_dependencies"></a><a class="link" href="#_managing_and_troubleshooting_dependencies">73.2. Managing and troubleshooting dependencies</a></h3>
 <div class="paragraph">
 <p><code>ci-packages.txt</code> and <code>autoinst.sha</code> are aimed to represent those dependencies
 which change often. In normal workflow these files are generated automatically
@@ -12875,7 +13285,7 @@ project, etc.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="circleci-local-container"><a class="anchor" href="#circleci-local-container"></a><a class="link" href="#circleci-local-container">72.3. Run tests locally using a container</a></h3>
+<h3 id="circleci-local-container"><a class="anchor" href="#circleci-local-container"></a><a class="link" href="#circleci-local-container">73.3. Run tests locally using a container</a></h3>
 <div class="paragraph">
 <p>One way is to build an image using the <code>build_local_container.sh</code> script, start a
 container and then use the same commands one would use to test locally.</p>
@@ -12918,7 +13328,7 @@ podman stop -t 0 t1</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_using_the_circleci_tool"><a class="anchor" href="#_run_tests_using_the_circleci_tool"></a><a class="link" href="#_run_tests_using_the_circleci_tool">72.4. Run tests using the circleci tool</a></h3>
+<h3 id="_run_tests_using_the_circleci_tool"><a class="anchor" href="#_run_tests_using_the_circleci_tool"></a><a class="link" href="#_run_tests_using_the_circleci_tool">73.4. Run tests using the circleci tool</a></h3>
 <div class="paragraph">
 <p>After installing the <code>circleci</code> tool the following commands will be available.
 They will build the container and use committed changes from current local branch.</p>
@@ -12933,7 +13343,7 @@ circleci local execute --job testdeveloperfullstack</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_changing_config_cnf"><a class="anchor" href="#_changing_config_cnf"></a><a class="link" href="#_changing_config_cnf">72.5. Changing config.cnf</a></h3>
+<h3 id="_changing_config_cnf"><a class="anchor" href="#_changing_config_cnf"></a><a class="link" href="#_changing_config_cnf">73.5. Changing config.cnf</a></h3>
 <div class="paragraph">
 <p>Command to verify the YAML with the <code>circleci</code> tool:</p>
 </div>
@@ -12946,7 +13356,7 @@ circleci local execute --job testdeveloperfullstack</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_building_plugins"><a class="anchor" href="#_building_plugins"></a><a class="link" href="#_building_plugins">73. Building plugins</a></h2>
+<h2 id="_building_plugins"><a class="anchor" href="#_building_plugins"></a><a class="link" href="#_building_plugins">74. Building plugins</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Not all code needs to be included in openQA itself. openQA also supports the use
@@ -13080,7 +13490,7 @@ $<span class="tok-w"> </span>make<span class="tok-w"> </span><span class="tok-nb
 </div>
 </div>
 <div class="sect1">
-<h2 id="_checking_for_javascript_problems"><a class="anchor" href="#_checking_for_javascript_problems"></a><a class="link" href="#_checking_for_javascript_problems">74. Checking for JavaScript problems</a></h2>
+<h2 id="_checking_for_javascript_problems"><a class="anchor" href="#_checking_for_javascript_problems"></a><a class="link" href="#_checking_for_javascript_problems">75. Checking for JavaScript problems</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>One can use the tool <code>jshint</code> to check for problems within JavaScript code. It can be installed
@@ -13095,7 +13505,7 @@ node_modules/jshint/bin/jshint<span class="tok-w"> </span>path/to/javascript.js<
 </div>
 </div>
 <div class="sect1">
-<h2 id="_profiling_the_web_ui"><a class="anchor" href="#_profiling_the_web_ui"></a><a class="link" href="#_profiling_the_web_ui">75. Profiling the web UI</a></h2>
+<h2 id="_profiling_the_web_ui"><a class="anchor" href="#_profiling_the_web_ui"></a><a class="link" href="#_profiling_the_web_ui">76. Profiling the web UI</a></h2>
 <div class="sectionbody">
 <div class="olist arabic">
 <ol class="arabic">
@@ -13117,7 +13527,7 @@ node_modules/jshint/bin/jshint<span class="tok-w"> </span>path/to/javascript.js<
 </ol>
 </div>
 <div class="sect2">
-<h3 id="_note"><a class="anchor" href="#_note"></a><a class="link" href="#_note">75.1. Note</a></h3>
+<h3 id="_note"><a class="anchor" href="#_note"></a><a class="link" href="#_note">76.1. Note</a></h3>
 <div class="paragraph">
 <p>Profiling data is extensive. Remove it if you do not need it anymore and disable the <code>profiling_enabled</code>
 configuration again if not needed anymore.</p>
@@ -13126,7 +13536,7 @@ configuration again if not needed anymore.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_making_documentation_changes"><a class="anchor" href="#_making_documentation_changes"></a><a class="link" href="#_making_documentation_changes">76. Making documentation changes</a></h2>
+<h2 id="_making_documentation_changes"><a class="anchor" href="#_making_documentation_changes"></a><a class="link" href="#_making_documentation_changes">77. Making documentation changes</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>After changing documentation, consider generating documentation locally to
@@ -13178,7 +13588,7 @@ use as starting points, and adjust as necessary.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_web_ui_template"><a class="anchor" href="#_web_ui_template"></a><a class="link" href="#_web_ui_template">77. Web UI template</a></h2>
+<h2 id="_web_ui_template"><a class="anchor" href="#_web_ui_template"></a><a class="link" href="#_web_ui_template">78. Web UI template</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA uses the <a href="https://mojolicious.org/">Mojolicious</a> framework&#8217;s templating
@@ -13214,7 +13624,7 @@ supported by upstream.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_get_container_images"><a class="anchor" href="#_get_container_images"></a><a class="link" href="#_get_container_images">78. Get container images</a></h2>
+<h2 id="_get_container_images"><a class="anchor" href="#_get_container_images"></a><a class="link" href="#_get_container_images">79. Get container images</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>You can either build the images locally or use Fedora images from Docker Hub.</p>
@@ -13225,7 +13635,7 @@ However, it is done via <code>docker-compose</code> and explained later so this 
 can be skipped.</p>
 </div>
 <div class="sect2">
-<h3 id="_download_fedora_based_images_from_the_docker_hub"><a class="anchor" href="#_download_fedora_based_images_from_the_docker_hub"></a><a class="link" href="#_download_fedora_based_images_from_the_docker_hub">78.1. Download Fedora-based images from the Docker Hub</a></h3>
+<h3 id="_download_fedora_based_images_from_the_docker_hub"><a class="anchor" href="#_download_fedora_based_images_from_the_docker_hub"></a><a class="link" href="#_download_fedora_based_images_from_the_docker_hub">79.1. Download Fedora-based images from the Docker Hub</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman pull fedoraqa/openqa_data
@@ -13235,7 +13645,7 @@ podman pull fedoraqa/openqa_worker</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_build_opensuse_based_images_locally"><a class="anchor" href="#_build_opensuse_based_images_locally"></a><a class="link" href="#_build_opensuse_based_images_locally">78.2. Build openSUSE-based images locally</a></h3>
+<h3 id="_build_opensuse_based_images_locally"><a class="anchor" href="#_build_opensuse_based_images_locally"></a><a class="link" href="#_build_opensuse_based_images_locally">79.2. Build openSUSE-based images locally</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman build -t openqa_data ./openqa_data
@@ -13247,10 +13657,10 @@ podman build -t openqa_worker ./worker</pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_setup_with_fedora_based_images"><a class="anchor" href="#_setup_with_fedora_based_images"></a><a class="link" href="#_setup_with_fedora_based_images">79. Setup with Fedora-based images</a></h2>
+<h2 id="_setup_with_fedora_based_images"><a class="anchor" href="#_setup_with_fedora_based_images"></a><a class="link" href="#_setup_with_fedora_based_images">80. Setup with Fedora-based images</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_data_storage_and_directory_structure"><a class="anchor" href="#_data_storage_and_directory_structure"></a><a class="link" href="#_data_storage_and_directory_structure">79.1. Data storage and directory structure</a></h3>
+<h3 id="_data_storage_and_directory_structure"><a class="anchor" href="#_data_storage_and_directory_structure"></a><a class="link" href="#_data_storage_and_directory_structure">80.1. Data storage and directory structure</a></h3>
 <div class="paragraph">
 <p>Our intent was to create universal <code>webui</code> and <code>worker</code> containers and move
 all data storage and configurations to a third container, called <code>openqa_data</code>.
@@ -13298,7 +13708,7 @@ setup SELinux properly. If you are having problems with it, run this command:</p
 </div>
 </div>
 <div class="sect2">
-<h3 id="_update_firewall_rules"><a class="anchor" href="#_update_firewall_rules"></a><a class="link" href="#_update_firewall_rules">79.2. Update firewall rules</a></h3>
+<h3 id="_update_firewall_rules"><a class="anchor" href="#_update_firewall_rules"></a><a class="link" href="#_update_firewall_rules">80.2. Update firewall rules</a></h3>
 <div class="paragraph">
 <p>There is a <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1244124">bug in Fedora</a>
 with <code>docker-1.7.0-6</code> package that prevents containers to communicate with
@@ -13316,7 +13726,7 @@ sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_data_and_web_ui_containers"><a class="anchor" href="#_run_the_data_and_web_ui_containers"></a><a class="link" href="#_run_the_data_and_web_ui_containers">79.3. Run the data and web UI containers</a></h3>
+<h3 id="_run_the_data_and_web_ui_containers"><a class="anchor" href="#_run_the_data_and_web_ui_containers"></a><a class="link" href="#_run_the_data_and_web_ui_containers">80.3. Run the data and web UI containers</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
@@ -13336,7 +13746,7 @@ keys in the openQA&#8217;s web interface, and store the configuration in the Dat
 Container.</p>
 </div>
 <div class="sect3">
-<h4 id="_generate_and_configure_api_credentials"><a class="anchor" href="#_generate_and_configure_api_credentials"></a><a class="link" href="#_generate_and_configure_api_credentials">79.3.1. Generate and configure API credentials</a></h4>
+<h4 id="_generate_and_configure_api_credentials"><a class="anchor" href="#_generate_and_configure_api_credentials"></a><a class="link" href="#_generate_and_configure_api_credentials">80.3.1. Generate and configure API credentials</a></h4>
 <div class="paragraph">
 <p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a>, generate key and secret. Then run the following
 command substituting <code>KEY</code> and <code>SECRET</code> with the generated values:</p>
@@ -13349,7 +13759,7 @@ command substituting <code>KEY</code> and <code>SECRET</code> with the generated
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_worker_container"><a class="anchor" href="#_run_the_worker_container"></a><a class="link" href="#_run_the_worker_container">79.4. Run the worker container</a></h3>
+<h3 id="_run_the_worker_container"><a class="anchor" href="#_run_the_worker_container"></a><a class="link" href="#_run_the_worker_container">80.4. Run the worker container</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
@@ -13369,7 +13779,7 @@ container name, so to add worker 2 use:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_enable_services"><a class="anchor" href="#_enable_services"></a><a class="link" href="#_enable_services">79.5. Enable services</a></h3>
+<h3 id="_enable_services"><a class="anchor" href="#_enable_services"></a><a class="link" href="#_enable_services">80.5. Enable services</a></h3>
 <div class="paragraph">
 <p>Some systemd services are provided to start up the containers, so you do not
 have to keep doing it manually. To install and enable them:</p>
@@ -13389,7 +13799,7 @@ openqa-worker@2.service</code>, and so on.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_get_tests_isos_and_create_disks"><a class="anchor" href="#_get_tests_isos_and_create_disks"></a><a class="link" href="#_get_tests_isos_and_create_disks">79.6. Get tests, ISOs and create disks</a></h3>
+<h3 id="_get_tests_isos_and_create_disks"><a class="anchor" href="#_get_tests_isos_and_create_disks"></a><a class="link" href="#_get_tests_isos_and_create_disks">80.6. Get tests, ISOs and create disks</a></h3>
 <div class="paragraph">
 <p>You have to put your tests under <code>data/tests</code> directory and ISOs under
 <code>data/factory/iso</code> directory. For testing Fedora, run:</p>
@@ -13446,14 +13856,14 @@ repository in <code>/tools</code> directory. Note that you have to have
 </div>
 </div>
 <div class="sect1">
-<h2 id="_setup_openqa_with_opensuse_based_images_and_docker_compose"><a class="anchor" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose"></a><a class="link" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">80. Setup openQA with openSUSE-based images and docker-compose</a></h2>
+<h2 id="_setup_openqa_with_opensuse_based_images_and_docker_compose"><a class="anchor" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose"></a><a class="link" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">81. Setup openQA with openSUSE-based images and docker-compose</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>All relative paths in this section are relative to a checkout of openQA&#8217;s Git
 repository.</p>
 </div>
 <div class="sect2">
-<h3 id="_configuration_2"><a class="anchor" href="#_configuration_2"></a><a class="link" href="#_configuration_2">80.1. Configuration</a></h3>
+<h3 id="_configuration_2"><a class="anchor" href="#_configuration_2"></a><a class="link" href="#_configuration_2">81.1. Configuration</a></h3>
 <div class="paragraph">
 <p>The web UI will be available under <a href="http://localhost" class="bare">http://localhost</a> and <a href="https://localhost" class="bare">https://localhost</a>. So it
 is using default HTTP(S) ports. Make sure those ports are not used by
@@ -13491,7 +13901,7 @@ be stored under <code>container/webui/workdir/db</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_build_images"><a class="anchor" href="#_build_images"></a><a class="link" href="#_build_images">80.2. Build images</a></h3>
+<h3 id="_build_images"><a class="anchor" href="#_build_images"></a><a class="link" href="#_build_images">81.2. Build images</a></h3>
 <div class="paragraph">
 <p><code>docker-compose</code> will build images automatically. However, it is also possible
 to build images explicitly:</p>
@@ -13507,7 +13917,7 @@ docker-compose build       # build worker images</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_web_ui_containers_in_ha_mode"><a class="anchor" href="#_run_the_web_ui_containers_in_ha_mode"></a><a class="link" href="#_run_the_web_ui_containers_in_ha_mode">80.3. Run the web UI containers in HA mode</a></h3>
+<h3 id="_run_the_web_ui_containers_in_ha_mode"><a class="anchor" href="#_run_the_web_ui_containers_in_ha_mode"></a><a class="link" href="#_run_the_web_ui_containers_in_ha_mode">81.3. Run the web UI containers in HA mode</a></h3>
 <div class="paragraph">
 <p>To start the containers, just run:</p>
 </div>
@@ -13541,7 +13951,7 @@ docker-compose exec db psql openqa openqa  # open psql shell</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_generate_and_configure_api_credentials_2"><a class="anchor" href="#_generate_and_configure_api_credentials_2"></a><a class="link" href="#_generate_and_configure_api_credentials_2">80.4. Generate and configure API credentials</a></h3>
+<h3 id="_generate_and_configure_api_credentials_2"><a class="anchor" href="#_generate_and_configure_api_credentials_2"></a><a class="link" href="#_generate_and_configure_api_credentials_2">81.4. Generate and configure API credentials</a></h3>
 <div class="paragraph">
 <p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a> and generate a key/secret and configure it in
 <code>container/webui/conf/client.conf</code> <strong>and</strong> <code>container/worker/conf/client.conf</code> in
@@ -13559,7 +13969,7 @@ docker-compose restart</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_worker_container_2"><a class="anchor" href="#_run_the_worker_container_2"></a><a class="link" href="#_run_the_worker_container_2">80.5. Run the worker container</a></h3>
+<h3 id="_run_the_worker_container_2"><a class="anchor" href="#_run_the_worker_container_2"></a><a class="link" href="#_run_the_worker_container_2">81.5. Run the worker container</a></h3>
 <div class="paragraph">
 <p>Configure the number of workers to start via the environment variable
 <code>OPENQA_WORKER_REPLICAS</code>. By default, one worker is started.</p>
@@ -13594,7 +14004,7 @@ consecutive numbers for the <code>--instance</code> parameter:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_get_tests_isos_and_create_disks_2"><a class="anchor" href="#_get_tests_isos_and_create_disks_2"></a><a class="link" href="#_get_tests_isos_and_create_disks_2">80.6. Get tests, ISOs and create disks</a></h3>
+<h3 id="_get_tests_isos_and_create_disks_2"><a class="anchor" href="#_get_tests_isos_and_create_disks_2"></a><a class="link" href="#_get_tests_isos_and_create_disks_2">81.6. Get tests, ISOs and create disks</a></h3>
 <div class="paragraph">
 <p>You have to put your tests under <code>data/tests</code> directory and ISOs under
 <code>data/factory/iso</code> directory. For testing openSUSE, follow
@@ -13611,7 +14021,7 @@ dependencies, e.g. via a <code>zypper</code> call.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_running_jobs"><a class="anchor" href="#_running_jobs"></a><a class="link" href="#_running_jobs">81. Running jobs</a></h2>
+<h2 id="_running_jobs"><a class="anchor" href="#_running_jobs"></a><a class="link" href="#_running_jobs">82. Running jobs</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>After performing the "setup" tasks above - do not forget about tests and ISOs.</p>
@@ -13631,13 +14041,13 @@ docker-compose exec webui openqa-clone-job \
 </div>
 </div>
 <div class="sect1">
-<h2 id="_further_configuration_options"><a class="anchor" href="#_further_configuration_options"></a><a class="link" href="#_further_configuration_options">82. Further configuration options</a></h2>
+<h2 id="_further_configuration_options"><a class="anchor" href="#_further_configuration_options"></a><a class="link" href="#_further_configuration_options">83. Further configuration options</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Most of these options do <strong>not</strong> apply to the docker-compose setup.</p>
 </div>
 <div class="sect2">
-<h3 id="_change_the_openid_provider"><a class="anchor" href="#_change_the_openid_provider"></a><a class="link" href="#_change_the_openid_provider">82.1. Change the OpenID provider</a></h3>
+<h3 id="_change_the_openid_provider"><a class="anchor" href="#_change_the_openid_provider"></a><a class="link" href="#_change_the_openid_provider">83.1. Change the OpenID provider</a></h3>
 <div class="paragraph">
 <p><a href="https://www.opensuse.org/openid/user/" class="bare">https://www.opensuse.org/openid/user/</a> is set as a default OpenID provider. To
 change it, run:</p>
@@ -13652,7 +14062,7 @@ change it, run:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_adding_workers_on_other_hosts"><a class="anchor" href="#_adding_workers_on_other_hosts"></a><a class="link" href="#_adding_workers_on_other_hosts">82.2. Adding workers on other hosts</a></h3>
+<h3 id="_adding_workers_on_other_hosts"><a class="anchor" href="#_adding_workers_on_other_hosts"></a><a class="link" href="#_adding_workers_on_other_hosts">83.2. Adding workers on other hosts</a></h3>
 <div class="paragraph">
 <p>You may want to add workers on other hosts, so you do not need one powerful
 host to run the UI and all the workers.</p>
@@ -13716,7 +14126,7 @@ adjust these files if you use non-standard ports (see above).</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_keeping_all_data_in_the_data_volume_container"><a class="anchor" href="#_keeping_all_data_in_the_data_volume_container"></a><a class="link" href="#_keeping_all_data_in_the_data_volume_container">82.3. Keeping all data in the Data Volume container</a></h3>
+<h3 id="_keeping_all_data_in_the_data_volume_container"><a class="anchor" href="#_keeping_all_data_in_the_data_volume_container"></a><a class="link" href="#_keeping_all_data_in_the_data_volume_container">83.3. Keeping all data in the Data Volume container</a></h3>
 <div class="paragraph">
 <p>If you decided to keep all the data in the Volume container (<code>openqa_data</code>), run the following commands:</p>
 </div>
@@ -13751,7 +14161,7 @@ podman exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_
 </div>
 </div>
 <div class="sect2">
-<h3 id="_keeping_all_data_on_the_host_system"><a class="anchor" href="#_keeping_all_data_on_the_host_system"></a><a class="link" href="#_keeping_all_data_on_the_host_system">82.4. Keeping all data on the host system</a></h3>
+<h3 id="_keeping_all_data_on_the_host_system"><a class="anchor" href="#_keeping_all_data_on_the_host_system"></a><a class="link" href="#_keeping_all_data_on_the_host_system">83.4. Keeping all data on the host system</a></h3>
 <div class="paragraph">
 <p>If you want to keep all the data in the host system and you prefer not to use
 a Volume Container, run the following commands:</p>
@@ -13793,7 +14203,7 @@ run the worker as:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_developing_tests_with_container_setup"><a class="anchor" href="#_developing_tests_with_container_setup"></a><a class="link" href="#_developing_tests_with_container_setup">82.5. Developing tests with container setup</a></h3>
+<h3 id="_developing_tests_with_container_setup"><a class="anchor" href="#_developing_tests_with_container_setup"></a><a class="link" href="#_developing_tests_with_container_setup">83.5. Developing tests with container setup</a></h3>
 <div class="paragraph">
 <p>With this setup, the needles created from the web UI will almost certainly have
 a different owner and group than your user account. As we have the tests in
@@ -13818,7 +14228,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-08-08 04:44:47 UTC
+Last updated 2025-08-15 04:45:18 UTC
 </div>
 </div>
 </body>
