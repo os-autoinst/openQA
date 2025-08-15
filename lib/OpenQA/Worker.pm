@@ -287,11 +287,15 @@ sub init ($self) {
     Mojo::IOLoop->singleton->reactor->on(
         error => sub {
             my ($reactor, $err) = @_;
+            my $fatal_error = 'Another error occurred when trying to stop gracefully due to an error';
             $return_code = 1;
 
-            # try to stop gracefully
-            my $fatal_error = 'Another error occurred when trying to stop gracefully due to an error';
-            if (!$self->{_shall_terminate} || $self->{_finishing_off}) {
+            # avoid getting stuck waiting on result upload
+            my $is_stopping = $self->is_stopping;
+            if (my $job = $self->current_job) { $job->conclude_upload_if_ongoing }
+
+            # try to stop gracefully unless we are already stopping
+            if (!$is_stopping && (!$self->{_shall_terminate} || $self->{_finishing_off})) {
                 try {
                     log_error('Stopping because a critical error occurred.');
                     return $self->stop('exception');    # try to stop the job nicely
@@ -347,7 +351,7 @@ sub init ($self) {
             });
     }
 
-    return $return_code;
+    return \$return_code;
 }
 
 sub configure_cache_client ($self) {
@@ -363,7 +367,7 @@ sub configure_cache_client ($self) {
 sub exec ($self) {
     my $return_code = $self->init;
     Mojo::IOLoop->singleton->start;
-    return $return_code;
+    return $$return_code;
 }
 
 sub _prepare_cache_directory ($webui_host, $cachedirectory) {

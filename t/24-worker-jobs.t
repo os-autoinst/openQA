@@ -565,6 +565,18 @@ $engine_mock->redefine(
         return $callback->({child => $isotovideo->is_running(1)});
     });
 
+subtest 'Conclude uploading results if ongoing' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url, settings => {}});
+    my $upload_concluded = 0;
+    $job->once(uploading_results_concluded => sub ($job, $result) { ++$upload_concluded });
+    $job->conclude_upload_if_ongoing;
+    is $upload_concluded, 0, 'conclude_upload_if_ongoing does nothing if not uploading';
+    $job->{_is_uploading_results} = 1;
+    $job->conclude_upload_if_ongoing;
+    is $upload_concluded, 1, 'callback invoked if upload was ongoing';
+    ok !$job->is_uploading_results, 'job not considered uploading anymore';
+};
+
 subtest 'Successful job' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     is_deeply $client->sent_messages, [], 'no REST-API calls yet';
