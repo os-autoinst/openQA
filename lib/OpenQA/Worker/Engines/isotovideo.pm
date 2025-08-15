@@ -294,12 +294,7 @@ sub engine_workit ($job, $callback) {
     log_info('+++ setup notes +++', channels => 'autoinst');
     log_info(sprintf("Running on $hostname:%d ($sysname $release $version $machine)", $instance),
         channels => 'autoinst');
-
     log_error('Failed enabling subreaper mode', channels => 'autoinst') unless session->subreaper;
-
-    # XXX: this should come from the worker table. Only included
-    # here for convenience when looking at the pool of
-    # debugging.
     my $job_settings = $job_info->{settings};
     for my $i (qw(QEMUPORT VNC OPENQA_HOSTNAME)) {
         $job_settings->{$i} = $ENV{$i};
