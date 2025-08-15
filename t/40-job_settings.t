@@ -124,11 +124,11 @@ subtest 'handle_plus_in_settings' => sub {
 subtest 'two-pass variable expansion' => sub {
     my %settings = (FOO => 'http://%BAR%/', NEEDLES_DIR => '%%CASEDIR%%/needles');
 
-    OpenQA::JobSettings::expand_placeholders(\%settings);    # web UI pass
+    is OpenQA::JobSettings::expand_placeholders(\%settings), undef, 'web UI pass of expand_placeholders';
     is $settings{FOO}, 'http://%BAR%/', 'placeholder referring to non-existing key not removed during web UI pass';
     is $settings{NEEDLES_DIR}, '%CASEDIR%/needles', 'one level of %-signs stripped during web UI pass';
 
-    OpenQA::JobSettings::expand_placeholders(\%settings, 0);    # worker pass
+    is OpenQA::JobSettings::expand_placeholders(\%settings, 0), undef, 'worker pass of expand_placeholders';
     is $settings{FOO}, 'http:///', 'placeholder referring to non-existing key finally removed by worker';
     is $settings{NEEDLES_DIR}, '%CASEDIR%/needles',
       '%CASEDIR% preserved during worker pass (handled instead by _engine_workit_step_2)';
