@@ -109,8 +109,8 @@ sub streamtext ($self, $file_name) {
     # Setup utility function to close the connection if something goes wrong
     my $timer_id;
     my $close_connection = sub ($self) {
-        my $worker_id = $worker->id;
-        log_debug "Connection to worker with ID $worker_id will be closed because $logfile changed";
+        Mojo::IOLoop->remove($timer_id);
+        $close_hook->();
         $self->finish;
     };
     $timer_id = Mojo::IOLoop->recurring(
