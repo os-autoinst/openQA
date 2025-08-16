@@ -63,9 +63,7 @@ sub current_test_module { shift->{_current_test_module} }
 sub progress_info { shift->{_progress_info} }
 sub engine { shift->{_engine} }
 
-sub new {
-    my ($class, $worker, $client, $job_info) = @_;
-
+sub new ($class, $worker, $client, $job_info) {
     my $self = $class->SUPER::new(
         worker => $worker,
         client => $client,
@@ -96,17 +94,12 @@ sub new {
     return $self;
 }
 
-sub DESTROY {
-    my ($self) = @_;
-    return if ${^GLOBAL_PHASE} eq 'DESTRUCT';
-
-    $self->_remove_timer;
+sub DESTROY ($self) {
+    $self->_remove_timer unless ${^GLOBAL_PHASE} eq 'DESTRUCT';
 }
 
-sub _remove_timer {
-    my ($self, $timer_names) = @_;
+sub _remove_timer ($self, $timer_names = undef) {
     $timer_names //= [qw(_upload_results_timer _timeout_timer)];
-
     for my $timer_name (@$timer_names) {
         if (my $timer_id = delete $self->{$timer_name}) {
             Mojo::IOLoop->remove($timer_id);
@@ -114,48 +107,32 @@ sub _remove_timer {
     }
 }
 
-sub _invoke_after_result_upload {
-    my ($self, $callback) = @_;
-
+sub _invoke_after_result_upload ($self, $callback) {
     $self->{_is_uploading_results} ? $self->once(uploading_results_concluded => $callback) : $callback->();
 }
 
-sub _result_file_path {
-    my ($self, $name) = @_;
+sub _result_file_path ($self, $name) { $self->worker->pool_directory . "/testresults/$name" }
 
-    return $self->worker->pool_directory . "/testresults/$name";
-}
-
-sub _set_status {
-    my ($self, $status, $event_data) = @_;
-
+sub _set_status ($self, $status, $event_data) {
     $event_data->{job} = $self;
     $event_data->{status} = $status;
     $self->{_status} = $status;
     $self->emit(status_changed => $event_data);
 }
 
-sub is_stopped_or_stopping {
-    my ($self) = @_;
-
+sub is_stopped_or_stopping ($self) {
     my $status = $self->status;
     return $status eq 'stopped' || $status eq 'stopping';
 }
 
-sub is_uploading_results {
-    my ($self) = @_;
-
-    return $self->{_is_uploading_results};
-}
+sub is_uploading_results ($self) { $self->{_is_uploading_results} }
 
 sub is_supposed_to_start ($self) {
     my $status = $self->status;
     return $status eq 'accepting' || $status eq 'new';
 }
 
-sub accept {
-    my ($self) = @_;
-
+sub accept ($self) {
     my $id = $self->id;
     my $info = $self->info;
     die 'attempt to accept job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
@@ -225,9 +202,7 @@ sub _set_timeout ($self, $timeout, $engine = undef) {
     $self->{_timeout_timer} = $loop->timer($timeout => sub { $self->_handle_timeout($engine) });
 }
 
-sub start {
-    my ($self) = @_;
-
+sub start ($self) {
     my $id = $self->id;
     my $info = $self->info;
     die 'attempt to start job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
@@ -320,9 +295,7 @@ sub kill ($self) {
     if (my $child = $engine->{child}) { $child->stop }
 }
 
-sub skip {
-    my ($self, $reason) = @_;
-
+sub skip ($self, $reason = undef) {
     my $status = $self->status;
     die "attempt to skip $status job; only new jobs can be skipped" unless $status eq 'new';
 
@@ -652,9 +625,7 @@ sub _stop_step_5_finalize ($self, $reason, $params) {
     #       from its current_job property and will clean the pool directory.
 }
 
-sub is_backend_running {
-    my ($self) = @_;
-
+sub is_backend_running ($self) {
     my $engine = $self->engine;
     return !!0 unless $engine;
     return !exists $engine->{child} ? !!0 : $engine->{child}->is_running;
@@ -685,9 +656,7 @@ sub _add_livelog_viewers ($self, $viewer_count_diff) {
 # posts the setup status
 # note: Called by the engine while preparing the startup so the job is not considered dead by the
 #       web UI if this takes longer.
-sub post_setup_status {
-    my ($self) = @_;
-
+sub post_setup_status ($self) {
     # allow the worker to stop when interrupted during setup
     return 0 if ($self->is_stopped_or_stopping);
 
@@ -704,9 +673,7 @@ sub post_setup_status {
     return 1;
 }
 
-sub _calculate_upload_results_interval {
-    my ($self) = @_;
-
+sub _calculate_upload_results_interval ($self) {
     my $interval = $self->upload_results_interval;
     return $interval if $interval;
     $interval = $self->livelog_viewers >= 1 ? 1 : 10;
@@ -724,9 +691,7 @@ sub conclude_upload_if_ongoing ($self, $result = {}) {
     $self->_conclude_upload(undef, $result) if $self->{_is_uploading_results};
 }
 
-sub _upload_results {
-    my ($self, $callback) = @_;
-
+sub _upload_results ($self, $callback) {
     # ensure an ongoing timer is cancelled in case upload_results has been called manually
     if (my $upload_results_timer = delete $self->{_upload_results_timer}) {
         Mojo::IOLoop->remove($upload_results_timer);
@@ -743,9 +708,7 @@ sub _upload_results {
     $self->_upload_results_step_0_prepare($callback);
 }
 
-sub _upload_results_step_0_prepare {
-    my ($self, $callback) = @_;
-
+sub _upload_results_step_0_prepare ($self, $callback) {
     my $worker_id = $self->client->worker_id;
     my $job_url = $self->isotovideo_client->url;
     my $global_settings = $self->worker->settings->global_settings;
@@ -873,9 +836,7 @@ sub _upload_results_step_0_prepare {
         });
 }
 
-sub _upload_results_step_1_post_status {
-    my ($self, $status, $callback) = @_;
-
+sub _upload_results_step_1_post_status ($self, $status, $callback) {
     my $job_id = $self->id;
     $self->client->send(
         post => "jobs/$job_id/status",
@@ -937,9 +898,7 @@ sub _upload_results_step_3_finalize ($self, $upload_up_to, $callback) {
     $self->_conclude_upload($callback, {upload_up_to => $upload_up_to});
 }
 
-sub post_upload_progress_to_liveviewhandler {
-    my ($self, $upload_up_to, $callback) = @_;
-
+sub post_upload_progress_to_liveviewhandler ($self, $upload_up_to, $callback) {
     return Mojo::IOLoop->next_tick($callback) if $self->is_stopped_or_stopping || !$self->developer_session_running;
 
     my $current_test_module = $self->current_test_module;
@@ -977,9 +936,7 @@ sub post_upload_progress_to_liveviewhandler {
         });
 }
 
-sub _upload_log_file_or_asset {
-    my ($self, $upload_parameter) = @_;
-
+sub _upload_log_file_or_asset ($self, $upload_parameter) {
     my $filename = $upload_parameter->{file}->{filename};
     my $file = $upload_parameter->{file}->{file};
     my $is_asset = $upload_parameter->{asset};
@@ -997,9 +954,7 @@ sub _log_upload_error ($self, $filename, $tx) {
     return 1;
 }
 
-sub _upload_asset {
-    my ($self, $upload_parameter) = @_;
-
+sub _upload_asset ($self, $upload_parameter) {
     my $job_id = $self->id;
     my $filename = $upload_parameter->{file}->{filename};
     my $file = $upload_parameter->{file}->{file};
@@ -1130,9 +1085,7 @@ sub _upload_log_file ($self, $upload_parameter) {
     return 1;
 }
 
-sub _read_json_file {
-    my ($self, $name) = @_;
-
+sub _read_json_file ($self, $name) {
     my $file_name = $self->_result_file_path($name);
     unless (-f $file_name) {
         log_debug("$file_name does not exist");
@@ -1199,9 +1152,7 @@ sub _reduce_test_order ($self, $last_test_module) {
     splice @$test_order, 0, $modules_considered_processed;
 }
 
-sub _read_module_result {
-    my ($self, $test) = @_;
-
+sub _read_module_result ($self, $test) {
     my $result = $self->_read_json_file("result-$test.json");
     return undef unless ref($result) eq 'HASH';
     return $result unless $result->{details};
@@ -1229,9 +1180,7 @@ sub _read_module_result {
     return $result;
 }
 
-sub _calculate_file_md5 {
-    my ($self, $file) = @_;
-
+sub _calculate_file_md5 ($self, $file) {
     # return previously calculated checksum for that file
     # note: We're optimizing the image immediately before the upload (which is after computing the md5sum).
     #       So the web UI knows the md5sum of the unoptimized image. If we re-read the results of a test module
@@ -1247,9 +1196,7 @@ sub _calculate_file_md5 {
     return $md5sums->{$file} = $md5->clone->hexdigest;
 }
 
-sub _read_last_screen {
-    my ($self) = @_;
-
+sub _read_last_screen ($self) {
     my $pooldir = $self->worker->pool_directory;
     my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
     return if !$lastlink || $self->last_screenshot eq $lastlink;
@@ -1258,9 +1205,7 @@ sub _read_last_screen {
     return {name => $lastlink, png => $png};
 }
 
-sub _log_snippet {
-    my ($self, $file, $offset_name) = @_;
-
+sub _log_snippet ($self, $file, $offset_name) {
     my $offset = $self->$offset_name;
     my $fd;
     my %ret;
@@ -1277,8 +1222,7 @@ sub _log_snippet {
     return \%ret;
 }
 
-sub _optimize_image {
-    my ($image, $job_settings) = @_;
+sub _optimize_image ($image, $job_settings) {
     log_debug("Optimizing $image");
     {
         # treat as "best-effort". If no pngquant nor optipng is found, ignore
@@ -1293,16 +1237,14 @@ sub _optimize_image {
     return undef;
 }
 
-sub _ignore_known_images {
-    my ($self, $known_images) = @_;
+sub _ignore_known_images ($self, $known_images = undef) {
     $self->{_known_images} = $known_images if ref $known_images eq 'ARRAY';
     my $images_to_send = $self->images_to_send;
     delete $images_to_send->{$_} for @{$self->known_images};
     return undef;
 }
 
-sub _ignore_known_files {
-    my ($self, $known_files) = @_;
+sub _ignore_known_files ($self, $known_files = undef) {
     $self->{_known_files} = $known_files if ref $known_files eq 'ARRAY';
     my $files_to_send = $self->files_to_send;
     delete $files_to_send->{$_} for @{$self->known_files};
