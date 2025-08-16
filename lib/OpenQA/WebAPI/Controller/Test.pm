@@ -522,6 +522,21 @@ sub _stash_clone_info ($self, $job) {
         });
 }
 
+sub gru_tasks_items($self, $job){
+    my @items;
+    for my $dep ($job->gru_dependencies){
+        my $task = $dep->gru_task;
+        my $label = 'id: ' . $task->id . ', name: ' . $task->taskname;
+        my $href = '';
+        if($self->is_operator){
+            $href = $self->url_for('/minion/jobs')
+                ->query(note=>'gru_id_'.$task->id,task=>$task->taskname);
+        }
+        push @items, { label=>$label, href=>$href};
+    }
+    return \@items
+}
+
 sub infopanel ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
     $self->stash({worker => $job->assigned_worker, additional_data => 1});
