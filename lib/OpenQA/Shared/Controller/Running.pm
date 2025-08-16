@@ -75,14 +75,10 @@ sub edit ($self) {
     $self->redirect_to('edit_step', moduleid => $running_module->name(), stepid => $stepid);
 }
 
-sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
+sub streamtext ($self, $file_name) {
     my $job = $self->stash('job');
     my $worker = $job->worker;
-    $start_hook ||= sub (@) { };
-    $close_hook ||= sub (@) { };
     my $logfile = $worker->get_property('WORKER_TMPDIR') . "/$file_name";
-
-    $start_hook->($worker, $job);
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     my $res = $self->res;
@@ -113,10 +109,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
     # Setup utility function to close the connection if something goes wrong
     my $timer_id;
     my $close_connection = sub ($self) {
-        Mojo::IOLoop->remove($timer_id);
-        $close_hook->();
         $self->finish;
-        close $log;
     };
     $timer_id = Mojo::IOLoop->recurring(
         TEXT_STREAMING_INTERVAL() => sub (@) {
@@ -149,7 +142,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
     $self->on(
         finish => sub (@) {
             Mojo::IOLoop->remove($timer_id);
-            $close_hook->($worker, $job);
+            close $log;
         });
 }
 
