@@ -522,7 +522,7 @@ sub _stash_clone_info ($self, $job) {
         });
 }
 
-sub gru_tasks_items ($self, $job) {
+sub _gru_tasks_items ($self, $job) {
     return [
         map {
             my $task = $_->gru_task;
@@ -538,6 +538,7 @@ sub gru_tasks_items ($self, $job) {
 
 sub infopanel ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
+    $self->stash(gru_dependencies => $self->_gru_tasks_items($job));
     $self->stash({worker => $job->assigned_worker, additional_data => 1});
     $self->_stash_clone_info($job);
     $self->render('test/infopanel');
@@ -571,6 +572,7 @@ sub _show ($self, $job = undef) {
             show_investigation => $job->should_show_investigation,
             show_live_tab => $job->state ne DONE,
         });
+    $self->stash(gru_dependencies => $self->_gru_tasks_items($job));
     $self->_stash_clone_info($job);
     $self->render('test/result');
 }
