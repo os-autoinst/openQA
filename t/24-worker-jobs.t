@@ -1340,7 +1340,7 @@ subtest 'known images and files populated from status update' => sub {
     path($worker->pool_directory, 'autoinst-status.json')->spew('{"status":"setup"}');
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
-    $job->_upload_results_step_0_prepare();
+    $job->_upload_results_step_0_prepare(sub () { });
     is_deeply($job->known_images, \@fake_known_images, 'known images populated from status update');
     is_deeply($job->known_files, \@fake_known_files, 'known files populated from status update');
 };

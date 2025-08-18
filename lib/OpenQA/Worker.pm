@@ -285,8 +285,7 @@ sub init ($self) {
 
     # register error handler to stop the current job when a critical/unhandled error occurs
     Mojo::IOLoop->singleton->reactor->on(
-        error => sub {
-            my ($reactor, $err) = @_;
+        error => sub ($reactor, $err) {
             my $fatal_error = 'Another error occurred when trying to stop gracefully due to an error';
             $return_code = 1;
 

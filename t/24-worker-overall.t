@@ -35,21 +35,20 @@ my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 # define fake isotovideo
 package Test::FakeProcess {    # uncoverable statement count:1
-    use Mojo::Base -base;
+    use Mojo::Base -base, -signatures;
     has is_running => 1;
-    sub stop { shift->is_running(0) }
+    sub stop ($self) { $self->is_running(0) }
 }    # uncoverable statement
 
 package Test::FakeClient {    # uncoverable statement count:2
-    use Mojo::Base -base;
+    use Mojo::Base -base, -signatures;
     has webui_host => 'fake';
     has worker_id => 42;
     has service_port_delta => 2;
     has api_calls => sub { [] };
 
-    sub send {
-        my ($self, $method, $path, %args) = @_;
-        push(@{shift->api_calls}, $method, $path, $args{params});
+    sub send ($self, $method, $path, %args) {
+        push(@{$self->api_calls}, $method, $path, $args{params});
     }
 }    # uncoverable statement
 
@@ -62,20 +61,18 @@ package Test::FakeJob {    # uncoverable statement count:2
     has client => sub { Test::FakeClient->new; };
     has name => 'test-job';
 
-    sub skip {
-        my ($self) = @_;
+    sub skip ($self, $reason) {
         $self->is_skipped(1);
         $self->emit(status_changed => {job => $self, status => 'stopped', reason => 'skipped'});
         return 1;
     }
 
-    sub accept {
-        my ($self) = @_;
+    sub accept ($self) {
         $self->is_accepted(1);
         $self->emit(status_changed => {job => $self, status => 'accepted'});
         return 1;
     }
-    sub start { }
+    sub start ($self) { }
     sub kill ($self) { ++$self->{kill_count} }
     sub conclude_upload_if_ongoing ($self) { ++$self->{conclude_count} }
 }    # uncoverable statement
@@ -410,7 +407,7 @@ subtest 'accept or skip next job' => sub {
         my $worker = OpenQA::Worker->new({instance => 1});
         my $client = Test::FakeClient->new;
         my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-        $job_mock->redefine(accept => sub { shift->_set_status(accepting => {}); });
+        $job_mock->redefine(accept => sub ($self) { $self->_set_status(accepting => {}); });
         my %job_info = (
             sequence => [26, 27],
             data => {map { ($_ => {id => $_, settings => {}}) } (26, 27)},
@@ -463,8 +460,7 @@ subtest 'stopping' => sub {
         my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
         my $expected_reason;
         $job_mock->redefine(
-            stop => sub {
-                my ($self, $reason) = @_;
+            stop => sub ($self, $reason) {
                 $self->{_status} = 'stopped';
                 is($reason, $expected_reason, 'job stopped due to ' . $expected_reason);
             });
@@ -684,10 +680,10 @@ subtest 'handle job status changes' => sub {
 
     # mock accepting and starting job
     my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-    $job_mock->redefine(accept => sub { shift->{_status} = 'accepted' });
-    $job_mock->redefine(start => sub { shift->{_status} = 'started' });
-    $job_mock->redefine(skip => sub { shift->{_status} = 'skipped: ' . ($_[1] // '?') });
-    $job_mock->redefine(stop => sub { shift->{_status} = 'stopped: ' . ($_[1] // '?') });
+    $job_mock->redefine(accept => sub ($self) { $self->{_status} = 'accepted' });
+    $job_mock->redefine(start => sub ($self) { $self->{_status} = 'started' });
+    $job_mock->redefine(skip => sub ($self, $reason) { $self->{_status} = 'skipped: ' . ($reason // '?') });
+    $job_mock->redefine(stop => sub ($self, $reason) { $self->{_status} = 'stopped: ' . ($reason // '?') });
 
     # assign fake client and job with cleanup
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
