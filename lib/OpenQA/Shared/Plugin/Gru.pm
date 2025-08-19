@@ -211,7 +211,7 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
         @ttl,
         priority => $priority,
         delay => $delay,
-        notes => {gru_id => $gru_id, @notes},
+        notes => {gru_id => $gru_id, "gru_id_$gru_id" => 1, @notes},
         defined $lax ? (lax => $lax) : (),
         defined $parents ? (parents => $parents) : (),
     );

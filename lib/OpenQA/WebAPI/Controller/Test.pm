@@ -522,8 +522,23 @@ sub _stash_clone_info ($self, $job) {
         });
 }
 
+sub _gru_tasks_items ($self, $job) {
+    return [
+        map {
+            my $task = $_->gru_task;
+            my $label = 'id: ' . $task->id . ', name: ' . $task->taskname;
+            my $href = '';
+            if ($self->is_operator) {
+                $href = $self->url_for('/minion/jobs')->query(note => 'gru_id_' . $task->id, task => $task->taskname);
+            }
+            {label => $label, href => $href}
+        } $job->gru_dependencies
+    ];
+}
+
 sub infopanel ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
+    $self->stash(gru_dependencies => $self->_gru_tasks_items($job));
     $self->stash({worker => $job->assigned_worker, additional_data => 1});
     $self->_stash_clone_info($job);
     $self->render('test/infopanel');
@@ -557,6 +572,7 @@ sub _show ($self, $job = undef) {
             show_investigation => $job->should_show_investigation,
             show_live_tab => $job->state ne DONE,
         });
+    $self->stash(gru_dependencies => $self->_gru_tasks_items($job));
     $self->_stash_clone_info($job);
     $self->render('test/result');
 }

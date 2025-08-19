@@ -563,6 +563,49 @@ subtest ansiToHtml => sub {
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+subtest 'GRU dependency shown in infopanel' => sub {
+    my $job = $jobs->find(99927);
+    $job->update({state => SCHEDULED, result => NONE});
+
+    my $task = $schema->resultset('GruTasks')->create(
+        {
+            taskname => 'git_clone',
+            args => {},
+            run_at => DateTime->now(),
+            priority => 0,
+        });
+    my $gru_dep = $schema->resultset('GruDependencies')->create(
+        {
+            job_id => $job->id,
+            gru_task_id => $task->id,
+        });
+
+    $driver->get('/tests/' . $job->id);
+    wait_for_ajax msg => 'job with GRU dependency loaded';
+
+    my $gru_task_id = $gru_dep->gru_task_id;
+
+    subtest 'operator sees link and it works' => sub {
+        ok my $link = $driver->find_element_by_link_text("id: $gru_task_id, name: git_clone"), 'found link';
+        like $link->get_attribute('href'), qr{minion/jobs\?note=gru_id_$gru_task_id&task=git_clone},
+          'link to minion job shown';
+    };
+
+    subtest 'guest user sees no link' => sub {
+        $driver->get('/logout');
+        wait_for_ajax msg => 'job with GRU dependency loaded';
+        $driver->get('/tests/' . $job->id);
+        wait_for_ajax msg => 'job with GRU dependency loaded';
+
+        my $txt = $driver->find_element('#info_box')->get_text;
+        like $txt, qr{State: .*, waiting for background tasks \(id: $gru_task_id, name: git_clone\)},
+          'The infobox is properly formatted';
+
+        my $links = $driver->find_elements('#info_box a[href*="/minion/jobs"]');
+        is(scalar(@{$links}), 0, 'Expect 0 link to minion jobs as guest');
+    };
+};
+
 subtest 'scheduled job' => sub {
     $t->get_ok('/tests/99927/infopanel_ajax')->status_is(200);
     $t->content_like(qr/scheduled.*, created.*\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/s, 'creation date displayed');
