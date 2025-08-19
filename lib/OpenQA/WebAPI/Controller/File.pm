@@ -108,6 +108,7 @@ sub download_asset ($self) {
     return $self->reply->not_found if $path =~ qr/\.\./;
 
     my $file = path(assetdir(), $path)->to_string;
+    $self->_set_headers($file);
     return $self->reply->not_found unless -f $file && -r _;
     $self->reply->file($file);
 }
@@ -143,6 +144,23 @@ sub test_asset ($self) {
     return $self->redirect_to($path);
 }
 
+sub _set_headers ($self, $path) {
+    my $filename = basename($path);
+    # guess content type from extension
+    my $headers = $self->res->headers;
+    return $headers->content_type('application/octet-stream') unless $filename =~ m/\.([^\.]+)$/;
+    my $ext = $1;
+    my $as_attachment = 1;
+    if (my $filetype = $self->app->types->type($ext)) {
+        $headers->content_type($filetype);
+        $headers->header('X-Content-Type-Options', 'nosniff') if $filetype =~ qr|^text/plain;?|;
+        my $allow_insecure = $self->app->config->{global}->{file_security_policy} ne 'download-prompt';
+        $as_attachment = 0 if ($allow_insecure || $filetype !~ m|html|) && $ext ne 'iso';
+    }
+    # force saveAs
+    $headers->content_disposition("attachment; filename=$filename;") if $as_attachment;
+}
+
 sub _serve_static ($self, $asset) {
     my $static = $self->static;
     my $log = $self->log;
@@ -152,25 +170,7 @@ sub _serve_static ($self, $asset) {
     return $self->reply->not_found unless $asset;
     $log->debug('found ' . pp($asset));
 
-    if (blessed $asset && $asset->isa('Mojo::Asset::File')) {
-        my $filename = basename($asset->path);
-        # guess content type from extension
-        my $headers = $self->res->headers;
-        if ($filename =~ m/\.([^\.]+)$/) {
-            my $ext = $1;
-            if (my $filetype = $self->app->types->type($ext)) {
-                $headers->content_type($filetype);
-                $headers->header('X-Content-Type-Options', 'nosniff') if $filetype =~ qr|^text/plain;?|;
-            }
-
-            # force saveAs
-            $headers->content_disposition("attachment; filename=$filename;") if $ext eq 'iso';
-        }
-        else {
-            $self->res->headers->content_type('application/octet-stream');
-        }
-    }
-
+    $self->_set_headers($asset->path) if blessed $asset && $asset->isa('Mojo::Asset::File');
     $static->serve_asset($self, $asset);
     return !!$self->rendered;
 }
