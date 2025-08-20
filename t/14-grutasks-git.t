@@ -398,7 +398,7 @@ subtest 'delete_needles' => sub {
     $needles->create({dir_id => 2, filename => 'test-nestedneedle-1.json'});
     $needles->create({dir_id => 2, filename => 'test-nestedneedle-2.json'});
 
-    my %args = (needle_ids => [1, 2], user_id => 1);
+    my %args = (needle_ids => [1, 2], user_id => 1, needledir => '');
     my @gru_args = ($t->app, 'delete_needles', \%args, {priority => 10});
     my $res = run_gru_job(@gru_args);
     is $res->{state}, 'finished', 'finished';

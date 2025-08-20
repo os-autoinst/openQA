@@ -2,26 +2,31 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Task::Needle::Delete;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
+use Cwd 'realpath';
 use OpenQA::Utils;
 use Scalar::Util 'looks_like_number';
 use Time::Seconds 'ONE_HOUR';
+use OpenQA::Task::SignalGuard;
 
 sub register {
     my ($self, $app) = @_;
     $app->minion->add_task(delete_needles => sub { _delete_needles($app, @_) });
 }
 
-sub _delete_needles {
-    my ($app, $minion_job, $args) = @_;
-
+sub _delete_needles ($app, $minion_job, $args) {
+    my $signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
     my $schema = $app->schema;
     my $needles = $schema->resultset('Needles');
     my $user = $schema->resultset('Users')->find($args->{user_id});
     my $needle_ids = $args->{needle_ids};
+    my $needledir = realpath($args->{needledir});
 
     my (@removed_ids, @errors);
+
+    my $git = OpenQA::Git->new({app => $app, dir => $needledir, user => $user});
+    $signal_guard->abort(1) if !$git->autocommit_enabled || $git->config->{do_cleanup} eq 'no';
 
     my %to_remove;
     for my $needle_id (@$needle_ids) {
