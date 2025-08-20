@@ -10,9 +10,9 @@ use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 
 sub check ($self) {
-    if ($self->app->config->{no_localhost_auth}) {
-        return 1 if $self->is_local_request;
-    }
+    my $config = $self->app->config;
+    return 1 if $config->{no_localhost_auth} && $self->is_local_request;
+    return 0 if $self->via_subdomain($config->{global}->{file_subdomain});
 
     my $req = $self->req;
     my $headers = $req->headers;
@@ -45,6 +45,12 @@ sub check ($self) {
 
 sub auth ($self) {
     my $log = $self->app->log;
+
+    # Prevent authentication via file subdomain (where potentially untrusted HTML is served)
+    if ($self->via_subdomain($self->config->{global}->{file_subdomain})) {
+        $self->render(json => {error => 'Forbidden via file subdomain'}, status => 403);
+        return 0;
+    }
 
     # Browser with a logged in user
     my ($user, $reason) = (undef, 'Not authorized');
