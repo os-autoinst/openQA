@@ -78,6 +78,7 @@ sub read_config ($app) {
             monitoring_enabled => 0,
             plugins => undef,
             hide_asset_types => 'repo',
+            file_security_policy => 'download-prompt',
             recognized_referers => '',
             changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
@@ -288,6 +289,7 @@ sub read_config ($app) {
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . join('', map { ":not(.result_$_)" } split(/\s+/, $results));
     _validate_worker_timeout($app);
+    _validate_security_policy($app, $global_config);
     _set_default_storage_durations($_) for $config->{default_group_limits}, $config->{no_group_limits};
     return $config;
 }
@@ -301,6 +303,13 @@ sub _validate_worker_timeout ($app) {
             'The specified worker_timeout is invalid and will be ignored. The timeout must be an integer greater than '
               . MAX_TIMER
               . '.');
+    }
+}
+
+sub _validate_security_policy ($app, $config) {
+    if ($config->{file_security_policy} !~ m/^(download-prompt|insecure-browsing)$/) {
+        $config->{file_security_policy} = 'download-prompt';
+        $app->log->warn('Invalid file_security_policy specified, defaulting to "download-prompt"');
     }
 }
 

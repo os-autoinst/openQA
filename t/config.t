@@ -53,6 +53,7 @@ subtest 'Test configuration default modes' => sub {
             profiling_enabled => 0,
             monitoring_enabled => 0,
             hide_asset_types => 'repo',
+            file_security_policy => 'download-prompt',
             recognized_referers => [],
             changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
@@ -319,6 +320,19 @@ subtest 'Validation of worker timeout' => sub {
         combined_like { OpenQA::Setup::_validate_worker_timeout($app) } qr/worker_timeout.*invalid/, 'warning logged';
         is $$configured_timeout, DEFAULT_WORKER_TIMEOUT, 'rejected';
     };
+};
+
+subtest 'Validation of file_security_policy' => sub {
+    my %config;
+    my $app = Mojolicious->new(config => \%config, log => $quiet_log);
+    for my $value (qw(insecure-browsing download-prompt)) {
+        $config{file_security_policy} = $value;
+        OpenQA::Setup::_validate_security_policy($app, \%config);
+        is $config{file_security_policy}, $value, "$value is valid";
+    }
+    $config{file_security_policy} = 'wrong';
+    combined_like { OpenQA::Setup::_validate_security_policy($app, \%config) } qr/Invalid.*security/, 'warning logged';
+    is $config{file_security_policy}, 'download-prompt', 'default to "download-prompt" on invalid value';
 };
 
 subtest 'Multiple config files' => sub {

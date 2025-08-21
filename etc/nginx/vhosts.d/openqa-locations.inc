@@ -19,6 +19,9 @@ if_modified_since before;
 #    tcp_nopush         on;
 #    sendfile           on;
 #    sendfile_max_chunk 1m;
+#
+#    # Enforce download of assets so HTML assets cannot highjack session
+#    add_header Content-Disposition 'attachment; filename="$1"';
 #}
 
 ## Optional to make use of auth_request to require authentication for asset downloads

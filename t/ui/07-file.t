@@ -126,7 +126,14 @@ $t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)
   ->content_is('invalid character in path');
 
 # download_asset is handled by apache normally, but make sure it works - important for fullstack test
-$t->get_ok('/assets/repo/testrepo/README')->status_is(200);
+$t->get_ok('/assets/repo/testrepo/README')->status_is(200)->content_type_is('application/octet-stream');
+$t->get_ok('/assets/repo/testrepo/README.html')->status_is(200);
+$t->content_type_is('text/html;charset=UTF-8', 'correct content type for HTML document');
+$t->header_is(
+    'Content-Disposition',
+    'attachment; filename=README.html;',
+    'HTML by default served as attachment for security'
+);
 $t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200)
   ->content_type_is('application/octet-stream');
 $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
