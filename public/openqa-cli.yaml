@@ -163,6 +163,7 @@ subcommands:
     options:
       - asset-size-limit|l=i   --Asset size limit in bytes
       - with-thumbnails|t      --Download thumbnails as well
+      - no-limit|u             --Download all assets without size limits
 
   schedule:
     summary: Schedules a set of jobs (via "isos post" creating a schedule product)
