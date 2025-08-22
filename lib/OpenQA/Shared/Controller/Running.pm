@@ -115,9 +115,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
     my $close_connection = sub ($self) {
         my $worker_id = $worker->id;
         log_debug "Connection to worker with ID $worker_id will be closed because $logfile changed";
-        Mojo::IOLoop->remove($timer_id);
         $self->finish;
-        close $log;
     };
     $timer_id = Mojo::IOLoop->recurring(
         TEXT_STREAMING_INTERVAL() => sub (@) {
@@ -151,6 +149,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
         finish => sub (@) {
             Mojo::IOLoop->remove($timer_id);
             $close_hook->($worker, $job);
+            close $log;
         });
 }
 
@@ -204,7 +203,6 @@ sub streaming ($self) {
     # setup a function to stop streaming again
     my $timer_id;
     my $close_connection = sub ($self, @) {
-        Mojo::IOLoop->remove($timer_id);
         $self->finish;
     };
 
