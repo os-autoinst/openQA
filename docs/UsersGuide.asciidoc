@@ -1408,13 +1408,14 @@ Keep logs for:: How long *logs* of non-important jobs are retained after
   they finished. *Logs* are files listed under "Result files" in the
   "Logs & Assets" tab on the job details page, e.g. `autoinst-log.txt`.
 Keep important logs for:: How long logs of an *important* job are retained after
-  it finished.
+  it finished. This limit only applies if it's higher than regular logs.
 Keep results for:: How long *results* of non-important job are retained after
   they finished. *Results* are all additional files stored on disk for a job
   (excluding assets) such as screenshots. This also includes logs and therefore
   this retention must be longer (or equal) than the retention of *logs*.
 Keep important results for:: How long results of *important* jobs are retained
-  after they finished.
+  after they finished. This limit only applies if it's higher than regular
+  results.
 Keep jobs for:: How long *database entries* of non-important jobs are retained
   in the database after they finished. The *database entry* for a job is
   required for openQA knowing the job at all and deleting the database entry
@@ -1422,7 +1423,7 @@ Keep jobs for:: How long *database entries* of non-important jobs are retained
   the longest. Note that a job is no longer accounted for in statistics on the
   index and group overview pages after its database entry is deleted.
 Keep important jobs for:: How long *important* jobs are retained in the database
-  after they finished.
+  after they finished. This limit only applies if it's higher than regular jobs.
 
 Further remarks:
 
