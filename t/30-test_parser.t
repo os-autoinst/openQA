@@ -970,7 +970,7 @@ subtest ktap_parse => sub {
     is $parser->results->size, 4, 'Expected four test groups';
 
     my $result0 = $parser->results->get(0);
-    is $result0->{name}, 'selftests: cgroup: test_core', 'The first test group has expected name';
+    is $result0->{name}, 'selftests:cgroup:test_core', 'The first test group has expected name';
 
     is $result0->result, 'passed', 'Group result is passed';
     is scalar @{$result0->details}, 12, 'Has 12 subtest details';
@@ -993,7 +993,7 @@ subtest 'ktap_parse_incorrect_file' => sub {
     is $parser->results->size, 3, 'Three test groups parsed (last one missing the final summary line)';
 
     my $last = $parser->results->get(2);
-    is $last->{name}, 'selftests: cgroup: test_zswap', 'Last test group name is correct';
+    is $last->{name}, 'selftests:cgroup:test_zswap', 'Last test group name is correct';
     is scalar @{$last->details}, 7, 'Last group has 7 subtests';
     is $last->details->[0]->{title}, 'test_zswap_usage', 'First subtest parsed correctly';
     is $last->details->[-1]->{title}, 'test_no_invasive_cgroup_shrink', 'Last subtest parsed';

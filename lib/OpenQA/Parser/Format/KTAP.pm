@@ -24,6 +24,7 @@ sub _testgroup_init ($self, $line) {
     my ($group_name) = $line =~ /^#\s*selftests:\s+(.*)/;
     my $sanitized_group_name = "selftests: $group_name";
     $sanitized_group_name =~ s/[\/.]/_/g;
+    $sanitized_group_name =~ s/\s//g;
 
     my $group = {
         flags => {},
