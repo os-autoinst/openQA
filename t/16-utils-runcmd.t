@@ -363,4 +363,33 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
     };
 };
 
+subtest 'signal guard created and abort toggled for delete_needles' => sub {
+
+    package My::FakeSignalGuard {
+        use Mojo::Base -base, -signatures;
+        has abort => sub { 0 };
+    }    # uncoverable statement
+    my $signal_guard;
+    my $signal_guard_mock = Test::MockModule->new('OpenQA::Task::SignalGuard');
+    $signal_guard_mock->redefine(new => sub { $signal_guard = My::FakeSignalGuard->new() });
+
+    my $job = bless({}, 'Test::FakeMinionJob');
+
+    $t->app->config->{'scm git'}->{git_auto_commit} = 'no';
+    $t->app->config->{global}->{do_cleanup} = 'yes';
+    OpenQA::Task::Needle::Delete::_delete_needles($t->app, $job, {user_id => 99903, needle_ids => [], needledir => ''});
+    isa_ok $signal_guard, 'My::FakeSignalGuard', 'signale guard have been created with rthe right class';
+    ok !$signal_guard->abort, 'no abort when git+cleanup enabled';
+
+    $t->app->config->{global}->{scm} = '';
+    $t->app->config->{global}->{do_cleanup} = 'yes';
+    OpenQA::Task::Needle::Delete::_delete_needles($t->app, $job, {user_id => 99903, needle_ids => [], needledir => ''});
+    ok $signal_guard->abort, 'abort when git disabled';
+
+    $t->app->config->{global}->{scm} = 'git';
+    $t->app->config->{global}->{do_cleanup} = 'no';
+    OpenQA::Task::Needle::Delete::_delete_needles($t->app, $job, {user_id => 99903, needle_ids => [], needledir => ''});
+    ok $signal_guard->abort, 'abort when do_cleanup=no';
+};
+
 done_testing();
