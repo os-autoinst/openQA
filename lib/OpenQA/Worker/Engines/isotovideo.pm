@@ -51,14 +51,7 @@ sub set_engine_exec ($path) {
 
 sub _save_vars ($pooldir, $vars) {
     die 'cannot get environment variables!\n' unless $vars;
-    my $fn = $pooldir . '/vars.json';
-    unlink "$pooldir/vars.json" if -e "$pooldir/vars.json";
-    open(my $fd, '>', $fn) or die "can not write vars.json: $!\n";
-    fcntl($fd, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$)) or die "cannot lock vars.json: $!\n";
-    truncate($fd, 0) or die "cannot truncate vars.json: $!\n";
-
-    print $fd Cpanel::JSON::XS->new->pretty(1)->encode(\%$vars);
-    close($fd);
+    path($pooldir, 'vars.json')->spew(Cpanel::JSON::XS->new->pretty(1)->encode(\%$vars));
 }
 
 sub detect_asset_keys ($vars) {
@@ -294,20 +287,10 @@ sub engine_workit ($job, $callback) {
     log_info('+++ setup notes +++', channels => 'autoinst');
     log_info(sprintf("Running on $hostname:%d ($sysname $release $version $machine)", $instance),
         channels => 'autoinst');
-
     log_error('Failed enabling subreaper mode', channels => 'autoinst') unless session->subreaper;
-
-    # XXX: this should come from the worker table. Only included
-    # here for convenience when looking at the pool of
-    # debugging.
     my $job_settings = $job_info->{settings};
-    for my $i (qw(QEMUPORT VNC OPENQA_HOSTNAME)) {
-        $job_settings->{$i} = $ENV{$i};
-    }
-    if (open(my $fh, '>', 'job.json')) {
-        print $fh Cpanel::JSON::XS->new->pretty(1)->encode($job_info);
-        close $fh;
-    }
+    $job_settings->{$_} = $ENV{$_} for qw(QEMUPORT VNC OPENQA_HOSTNAME);
+    path('job.json')->spew(Cpanel::JSON::XS->new->pretty(1)->encode($job_info));
 
     # pass worker instance and worker id to isotovideo
     # both used to create unique MAC and TAP devices if needed
