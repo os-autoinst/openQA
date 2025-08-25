@@ -17,3 +17,27 @@ server {
 #    ssl_certificate_key /etc/dehydrated/certs/openqa.example.com/privkey.pem;
 #    include vhosts.d/openqa-locations.inc;
 #}
+
+# Provide different servers for serving assets under a different subdomain
+# (enable these in accordance to "Optional faster asset downloads …" in
+# "openqa-locations.inc")
+#server {
+#    listen       80;
+#    listen       [::]:80;
+#    # Set server_name in accordance with the file_subdomain in openQA config
+#    server_name  file.openqa.example.com;
+#    location /assets {
+#        include vhosts.d/openqa-assets.inc;
+#    }
+#    include vhosts.d/openqa-endpoints.inc;
+#}
+#server {
+#    listen       443;
+#    listen       [::]:443;
+#    # Set server_name in accordance with the file_subdomain in openQA config
+#    server_name  file.openqa.example.com;
+#    location /assets {
+#        include vhosts.d/openqa-assets.inc;
+#    }
+#    include vhosts.d/openqa-endpoints.inc;
+#}
