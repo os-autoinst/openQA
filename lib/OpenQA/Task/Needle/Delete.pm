@@ -15,32 +15,9 @@ sub register {
     $app->minion->add_task(delete_needles => sub { _delete_needles($app, @_) });
 }
 
-sub _delete_needles ($app, $minion_job, $args) {
-    my $signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
-    my $schema = $app->schema;
-    my $needles = $schema->resultset('Needles');
-    my $user = $schema->resultset('Users')->find($args->{user_id});
-    my $needle_ids = $args->{needle_ids};
-    my $needledir = realpath($args->{needledir});
-
-    my (@removed_ids, @errors);
-
-    my $git = OpenQA::Git->new({app => $app, dir => $needledir, user => $user});
-    $signal_guard->abort(1) if !$git->autocommit_enabled || $git->config->{do_cleanup} eq 'no';
-
-    my %to_remove;
-    for my $needle_id (@$needle_ids) {
-        my $needle = looks_like_number($needle_id) ? $needles->find($needle_id) : undef;
-        if (!$needle) {
-            push @errors,
-              {
-                id => $needle_id,
-                message => "Unable to find needle with ID \"$needle_id\"",
-              };
-            next;
-        }
-        push @{$to_remove{$needle->directory->path}}, $needle;
-    }
+sub _remove_needles {
+    my (%to_remove, $app, $user, @errors) = @_;
+    my @removed_ids;
 
     for my $dir (sort keys %to_remove) {
         my $needles = $to_remove{$dir};
@@ -69,6 +46,37 @@ sub _delete_needles ($app, $minion_job, $args) {
             push @removed_ids, $needle_id;
         }
     }
+
+    return @removed_ids;
+}
+
+sub _delete_needles ($app, $minion_job, $args) {
+    my $signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
+    my $schema = $app->schema;
+    my $needles = $schema->resultset('Needles');
+    my $user = $schema->resultset('Users')->find($args->{user_id});
+    my $needle_ids = $args->{needle_ids};
+    my $needledir = realpath($args->{needledir});
+    my $git = OpenQA::Git->new({app => $app, dir => $needledir, user => $user});
+    my @errors;
+
+    my %to_remove;
+    for my $needle_id (@$needle_ids) {
+        my $needle = looks_like_number($needle_id) ? $needles->find($needle_id) : undef;
+        if (!$needle) {
+            push @errors,
+              {
+                id => $needle_id,
+                message => "Unable to find needle with ID \"$needle_id\"",
+              };
+            next;
+        }
+        push @{$to_remove{$needle->directory->path}}, $needle;
+    }
+
+    my @removed_ids = _remove_needles(%to_remove, $app, $user, @errors);
+
+    $signal_guard->abort(1) if !$git->autocommit_enabled || $git->config->{do_cleanup} eq 'no';
 
     return $minion_job->finish(
         {
