@@ -75,14 +75,10 @@ sub edit ($self) {
     $self->redirect_to('edit_step', moduleid => $running_module->name(), stepid => $stepid);
 }
 
-sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
+sub streamtext ($self, $file_name) {
     my $job = $self->stash('job');
     my $worker = $job->worker;
-    $start_hook ||= sub (@) { };
-    $close_hook ||= sub (@) { };
     my $logfile = $worker->get_property('WORKER_TMPDIR') . "/$file_name";
-
-    $start_hook->($worker, $job);
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     my $res = $self->res;
@@ -147,11 +143,7 @@ sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
         });
 
     # Stop monitoring the logfile when the connection closes
-    $self->on(
-        finish => sub (@) {
-            Mojo::IOLoop->remove($timer_id);
-            $close_hook->($worker, $job);
-        });
+    $self->on(finish => sub (@) { Mojo::IOLoop->remove($timer_id); });
 }
 
 sub livelog ($self) {
