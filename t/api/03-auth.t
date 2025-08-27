@@ -36,17 +36,13 @@ my $mock_asset = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 $mock_asset->redefine(remove_from_disk => sub { $mock_asset_remove_callcount++; return 1; });
 
 subtest 'authentication routes for plugins' => sub {
-    my $public = $t->app->routes->find('api_public');
-    ok $public, 'api_pubic route found';
+    ok my $public = $t->app->routes->find('api_public'), 'api_pubic route found';
     $public->put('/public_plugin' => sub { shift->render(text => 'API public plugin works!') });
-    my $ensure_user = $t->app->routes->find('api_ensure_user');
-    ok $ensure_user, 'api_ensure_user route found';
+    ok my $ensure_user = $t->app->routes->find('api_ensure_user'), 'api_ensure_user route found';
     $ensure_user->put('/user_plugin' => sub { shift->render(text => 'API user plugin works!') });
-    my $ensure_admin = $t->app->routes->find('api_ensure_admin');
-    ok $ensure_admin, 'api_ensure_admin route found';
+    ok my $ensure_admin = $t->app->routes->find('api_ensure_admin'), 'api_ensure_admin route found';
     $ensure_admin->put('/admin_plugin' => sub { shift->render(text => 'API admin plugin works!') });
-    my $ensure_operator = $t->app->routes->find('api_ensure_operator');
-    ok $ensure_operator, 'api_ensure_operator route found';
+    ok my $ensure_operator = $t->app->routes->find('api_ensure_operator'), 'api_ensure_operator route found';
     $ensure_operator->put('/operator_plugin' => sub { shift->render(text => 'API operator plugin works!') });
 };
 
