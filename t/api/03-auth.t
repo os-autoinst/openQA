@@ -175,57 +175,38 @@ subtest 'personal access token' => sub {
         $t->ua->once(start => sub ($ua, $tx) { $tx->req->url->userinfo($userinfo) });
         return $t;
     };
-
-    # No access token
     my $t = Test::Mojo->new('OpenQA::WebAPI');
-    $t->delete_ok('/api/v1/assets/1')->status_is(403)->json_is({error => 'no api key'});
-
-    # Valid access token
-    $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
-
-    # Valid access token (OpenID user)
+    $t->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is({error => 'no api key'}, undef, 'access token is required');
+    $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404, 'valid access token');
     $t->$userinfo('lance:LANCELOTKEY01:MANYPEOPLEKNOW')->post_ok('/api/v1/feature' => form => {version => 100})
-      ->status_is(200);
-
-    # Invalid access token
+      ->status_is(200, 'valid access token (OpenID user)');
     $t->$userinfo('invalid:invalid')->delete_ok('/api/v1/assets/1')->status_is(403)
-      ->json_is({error => 'invalid personal access token'});
-
-    # Invalid username
+      ->json_is({error => 'invalid personal access token'}, undef, 'invalid access token denied');
     $t->$userinfo('invalid:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(403)
-      ->json_is({error => 'invalid personal access token'});
-
-    # Invalid key
+      ->json_is({error => 'invalid personal access token'}, undef, 'invalid username denied');
     $t->$userinfo('artie:INVALID:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(403)
-      ->json_is({error => 'invalid personal access token'});
-
-    # Invalid secret
+      ->json_is({error => 'invalid personal access token'}, undef, 'invalid key denied');
     $t->$userinfo('artie:ARTHURKEY01:INVALID')->delete_ok('/api/v1/assets/1')->status_is(403)
-      ->json_is({error => 'invalid personal access token'});
-
-    # Invalid secret (OpenID user)
+      ->json_is({error => 'invalid personal access token'}, undef, 'invalid secret denied');
     $t->$userinfo('lance:LANCELOTKEY01:INVALIDTOO')->post_ok('/api/v1/feature' => form => {version => 100})
-      ->status_is(403)->json_is({error => 'invalid personal access token'});
-
-    # Valid access token (again)
-    $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
+      ->status_is(403)->json_is({error => 'invalid personal access token'}, undef, 'invalid secret (OpenID) denied');
+    $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')
+      ->status_is(404, 'valid access token (again)');
 
     subtest 'Bearer token' => sub {
         subtest 'Valid token' => sub {
             $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer lance:LANCELOTKEY01:MANYPEOPLEKNOW'} => form =>
                   {version => 100})->status_is(200);
         };
-
         subtest 'Invalid username' => sub {
             $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer invalid:LANCELOTKEY01:MANYPEOPLEKNOW'} => form =>
                   {version => 100})->status_is(403)->json_is({error => 'invalid personal access token'});
         };
-
         subtest 'Invalid key' => sub {
             $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer lance:LANCELOTKEY02:MANYPEOPLEKNOW'} => form =>
                   {version => 100})->status_is(403)->json_is({error => 'invalid personal access token'});
         };
-
         subtest 'Invalid secret' => sub {
             $t->post_ok('/api/v1/feature' => {Authorization => 'Bearer lance:LANCELOTKEY01:MANYPEOPLEKNOWS'} => form =>
                   {version => 100})->status_is(403)->json_is({error => 'invalid personal access token'});
@@ -243,29 +224,21 @@ subtest 'personal access token (with reverse proxy)' => sub {
             });
         return $t;
     };
-
-    # Not HTTPS or localhost
     local $ENV{MOJO_REVERSE_PROXY} = 1;
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(403)
-      ->json_is({error => 'personal access token can only be used via HTTPS or from localhost'});
-
-    # HTTPS
+      ->json_is({error => 'personal access token can only be used via HTTPS or from localhost'},
+        undef, 'not https or localhost denied');
     $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')
-      ->status_is(404);
-
-    # localhost
-    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
-
-    # localhost (IPv6)
-    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '::1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
-
-    # HTTPS and localhost
-    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(404);
-
-    # HTTPS but invalid key
+      ->status_is(404, 'https not found');
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'http')->delete_ok('/api/v1/assets/1')
+      ->status_is(404, 'localhost not found');
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '::1', 'http')->delete_ok('/api/v1/assets/1')
+      ->status_is(404, 'localhost ipv6 not found');
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'https')->delete_ok('/api/v1/assets/1')
+      ->status_is(404, 'https and localhost not found');
     $t->$forwarded('artie:INVALID:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(403)
-      ->json_is({error => 'invalid personal access token'});
+      ->json_is({error => 'invalid personal access token'}, undef, 'HTTPS but invalid key');
 };
 
 done_testing();
