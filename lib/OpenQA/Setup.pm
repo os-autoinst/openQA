@@ -141,6 +141,14 @@ sub read_config ($app) {
             unique_name => '',
             id_from => 'id',
         },
+        oidc => {
+            key => '',
+            secret => '',
+            authorize_url => '',
+            token_url => '',
+            access_group => '',
+            groups_from => 'groups',
+        },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
             proxy => 1,
