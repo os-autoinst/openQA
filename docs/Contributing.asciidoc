@@ -546,7 +546,7 @@ export OPENQA_BASEDIR=$HOME/openqadev.leap
 
 export OPENQA_CONFIG=$OPENQA_BASEDIR/config
 export OPENQA_REPOS="$OPENQA_BASEDIR/git"
-PATH=$OPENQA_REPOS/openQA/scripts:$PATH
+PATH=$OPENQA_REPOS/openQA/script:$PATH
 
 # ----------- CPAN ------------
 # Whenever necessary, you can install additional modules from CPAN like:
