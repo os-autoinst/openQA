@@ -52,6 +52,7 @@ subtest 'Test configuration default modes' => sub {
             max_rss_limit => 0,
             profiling_enabled => 0,
             monitoring_enabled => 0,
+            mcp_enabled => 0,
             hide_asset_types => 'repo',
             file_security_policy => 'download-prompt',
             recognized_referers => [],
