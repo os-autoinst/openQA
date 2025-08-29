@@ -191,21 +191,34 @@
                       </div>
                     % }
                     % if (my $sp_id = $job->scheduled_product_id) {
-                      <div class="btn-group btn-group-sm">
-                        <a href="#"
-                          id="restart-scheduled-product" \
-                          onclick="return rescheduleProductForJob(this);" \
-                          class="btn btn-danger"\
-                           data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
-                             <i class="fa fa-2 fa-refresh"></i><span>Reschedule product from here</span>
-                        </a>
-                      <%= help_popover('Partial product re-scheduling' => "
+                        <div class="btn-group btn-group-sm">
+                        <% my $first_dep = $job->children->first; %>
+                        % if ($show_dependencies && $first_dep && $first_dep->dependency == 2) {
+                            % my $parallel_child = $first_dep->child_job_id;
+                            <a href="#"
+                                id="restart-scheduled-product" \
+                                onclick="return rescheduleProductForJob(this);" \
+                                class="btn btn-danger disabled"\
+                                data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
+                                <i class="fa fa-2 fa-refresh"></i><span>Schedule only from <%= $parallel_child %> </span>
+                            </a>
+                        % }
+                        % else {
+                            <a href="#"
+                                id="restart-scheduled-product" \
+                                onclick="return rescheduleProductForJob(this);" \
+                                class="btn btn-danger"\
+                                data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
+                                <i class="fa fa-2 fa-refresh"></i><span>Reschedule product from here</span>
+                            </a>
+                        % }
+                        <%= help_popover('Partial product re-scheduling' => "
                           <p>Schedules the product again using the current job as starting point. That means chained parents of
                           the current job will not be scheduled again but all its children will be. The re-scheduling is <strong>not</strong>
                           limited to the current job group.</p>",
                           undef, undef, 'bottom', class => 'help_popover fa fa-question-circle btn btn-danger');
-                      %>
-                      </div>
+                         %>
+                         </div>
                     % }
                 </div>
                 % }
