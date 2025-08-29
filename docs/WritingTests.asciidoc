@@ -1919,6 +1919,81 @@ SUSE distribution's serial terminal utility library). However some programs
 ignore this, but piping there output into `tee` is usually enough to stop them
 outputting non-printable characters.
 
+=== MCP Support
+
+The https://modelcontextprotocol.io/[Model Context Protocol] (MCP) is a standard
+that allows Large Language Models (LLMs) to interact with web services. MCP is
+supported natively by openQA, but still considered experimental, and therefore
+needs to be enabled manually in `openqa.ini`.
+
+[source,ini]
+----
+[global]
+mcp_enabled = read-only
+----
+
+Once enabled the experimental MCP endpoint becomes available under the path
+`/experimental/mcp`. At the moment all implemented MCP tools are read-only,
+that means LLMs can review infomation provided by openQA, but are unable to
+make changes or trigger actions. Once write operations become available
+with future updates, they will have to be enabled with a different setting
+in `openqa.ini` for security reasons.
+
+Most MCP clients today support Bearer token authentication, so that is what
+openQA relies on as well. More authentication mechanisms will be added as
+the technology evolves.
+
+This example configuration in the `mcp.json` format, which is commonly used
+by MCP clients, shows how to include an openQA personal access token by
+setting the `Authorization` HTTP header:
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "openqa": {
+      "url": "http://127.0.0.1:9526/experimental/mcp",
+      "headers": {
+        "Authorization": "Bearer USER:KEY:SECRET"
+      }
+    }
+  }
+}
+----
+
+==== 3rd Party MCP Clients
+===== gemini-cli
+
+Once you have installed and set up
+https://github.com/google-gemini/gemini-cli[gemini-cli], you can use the
+`gemini mcp` command to add openQA:
+
+[source,shell]
+----
+gemini mcp add openqa http://127.0.0.1:9526/experimental/mcp -H 'Authorization: Bearer USER:KEY:SECRET' -t http
+----
+
+After restarting gemini-cli, it will automatically discover available openQA
+tools and make use of them on its own:
+
+[source]
+----
+╭────────────────────────────────────────────────────╮
+│  > give me a brief summary for openQA job 5265754  │
+╰────────────────────────────────────────────────────╯
+
+ ╭───────────────────────────────────────────────────────────────────╮
+ │ ✔ openqa_get_job_info (openqa MCP Server) openqa_get_job_info...  │
+ │                                                                   │
+ │    ...                                                            │
+ ╰───────────────────────────────────────────────────────────────────╯
+✦ Job 5265754 was a passed test named opensuse-Tumbleweed-DVD-x86_64-
+  Build20250825-ltp_net_features@64bit. It ran on August 26, 2025,
+  and took about 21 minutes to complete. The job tested the
+  ltp_net_features test suite on the x86_64 architecture. Most of the
+   tests passed, with a few being skipped.
+----
+
 
 == Test Development tricks
 === Trigger new tests by modifying settings from existing test runs
