@@ -55,7 +55,7 @@ sub get_pod_from_controllers ($app, @args) {
             log_warning('get_pod_from_controllers: could not parse file: ['
                   . $ctrlrpath->child($controllers{$ctrl})->to_string
                   . '] for POD. Error: ['
-                  . $tree->error()
+                  . $parser->error()
                   . ']');
             next;
         }
