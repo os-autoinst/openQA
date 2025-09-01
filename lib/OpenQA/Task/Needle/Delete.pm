@@ -2,20 +2,23 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Task::Needle::Delete;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Utils;
 use Scalar::Util 'looks_like_number';
 use Time::Seconds 'ONE_HOUR';
+use OpenQA::Task::SignalGuard;
 
 sub register {
     my ($self, $app) = @_;
     $app->minion->add_task(delete_needles => sub { _delete_needles($app, @_) });
 }
 
-sub _delete_needles {
-    my ($app, $minion_job, $args) = @_;
-
+sub _delete_needles ($app, $minion_job, $args) {
+    # SignalGuard will prevent the delete task to interrupt with no recovery,
+    # instead will retry once the gru server returned up and running. The popup
+    # on the frontend will wait until the retried job finished.
+    my $signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
     my $schema = $app->schema;
     my $needles = $schema->resultset('Needles');
     my $user = $schema->resultset('Users')->find($args->{user_id});
