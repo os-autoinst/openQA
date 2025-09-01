@@ -48,7 +48,7 @@ sub _parse_subtest ($self, $result) {
     $self->test or return;
 
     my $line = $result->as_string;
-    return unless $line =~ /^#\s*(?<status>ok|not ok)\s+\d+\s+(?<name>.+)/;
+    return unless $line =~ /^#\s*(?<status>ok|not ok)\s+\d+\s+(?<name>[^#]*)/;
     my ($status, $subtest_name) = @+{qw(status name)};
 
     my $has_todo = $line =~ /#\s*TODO\b/i;
