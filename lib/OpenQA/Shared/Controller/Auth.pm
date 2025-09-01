@@ -56,7 +56,10 @@ sub auth ($self) {
     else {
 
         # Personal access token
-        if (my $userinfo = $self->req->url->to_abs->userinfo) {
+        if (($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/) {
+            ($user, $reason) = $self->_token_auth($reason, $1);
+        }
+        elsif (my $userinfo = $self->req->url->to_abs->userinfo) {
             ($user, $reason) = $self->_token_auth($reason, $userinfo);
         }
 
