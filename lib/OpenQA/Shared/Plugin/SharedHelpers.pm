@@ -21,7 +21,6 @@ sub register ($self, $app, @) {
     $app->helper(is_admin => \&_is_admin);
     $app->helper(is_local_request => \&_is_local_request);
     $app->helper(render_specific_not_found => \&_render_specific_not_found);
-    $app->helper(via_subdomain => \&_via_subdomain);
 }
 
 # returns the isotovideo command server web socket URL and the VNC argument for the given job or undef if not available
@@ -78,11 +77,6 @@ sub _is_local_request ($c) {
 sub _render_specific_not_found ($c, $title, $error_message) {
     $c->res->headers->content_type('text/plain');
     return $c->render(status => 404, text => "$title - $error_message");
-}
-
-sub _via_subdomain ($c, $subdomain) {
-    return 0 unless defined $subdomain;
-    return index($c->req->url->to_abs->host, $subdomain) == 0;
 }
 
 1;

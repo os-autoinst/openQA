@@ -72,7 +72,6 @@ sub read_config ($app) {
             # deprecated alternate for git_auto_commit below
             scm => undef,
             hsts => 365,
-            file_subdomain => undef,
             audit_enabled => 1,
             max_rss_limit => 0,
             profiling_enabled => 0,
@@ -308,10 +307,7 @@ sub _validate_worker_timeout ($app) {
 }
 
 sub _validate_security_policy ($app, $config) {
-    if ($config->{file_security_policy} =~ m/^(download-prompt|insecure-browsing|subdomain:(.+))$/) {
-        if (defined(my $subdomain = $2)) { $config->{file_subdomain} = "$subdomain." }
-    }
-    else {
+    if ($config->{file_security_policy} !~ m/^(download-prompt|insecure-browsing)$/) {
         $config->{file_security_policy} = 'download-prompt';
         $app->log->warn('Invalid file_security_policy specified, defaulting to "download-prompt"');
     }

@@ -53,11 +53,8 @@ sub destroy {
 sub create {
     my ($self) = @_;
     my $ref = $self->req->headers->referrer;
-    my $config = $self->app->config;
-    my $auth_method = $config->{auth}->{method};
+    my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    return $self->render(text => 'Forbidden via file subdomain', status => 403)
-      if $self->via_subdomain($config->{global}->{file_subdomain});
 
     # prevent redirecting loop when referrer is login page
     $ref = 'index' if !$ref or $ref eq $self->url_for('login');
