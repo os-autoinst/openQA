@@ -2,23 +2,22 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::MemoryLimit;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use BSD::Resource 'getrusage';
 use Mojo::IOLoop;
 
 # Stop prefork workers gracefully once they reach a certain size
-sub register {
-    my ($self, $app) = @_;
-
+sub register ($self, $app, $conf) {
     my $max = $app->config->{global}{max_rss_limit};
+    my $interval = $ENV{OPENQA_RSS_CHECK_INTERVAL} // 5;
     return unless $max && $max > 0;
 
     my $parent = $$;
     Mojo::IOLoop->next_tick(
         sub {
             Mojo::IOLoop->recurring(
-                5 => sub {
+                $interval => sub {
                     my $rss = (getrusage())[2];
                     # RSS is in KB under Linux
                     return unless $rss > $max;
