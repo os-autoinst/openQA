@@ -10425,9 +10425,9 @@ options. Which will override whatever the config files may contain.</p>
 <p>The authentication mechanism used by <code>openqa-cli</code> was specifically designed to
 allow secure access to the REST API even via unencrypted HTTP connections. But
 when your openQA server has been deployed with HTTPS (and for HTTP connections
-originating from localhost) you can also use plain old Basic authentication
-with a personal access token. That allows for almost any HTTP client to be used
-with openQA.</p>
+originating from localhost) you can also use plain old Basic or Bearer token
+authentication with a personal access token. That allows for almost any HTTP
+client to be used with openQA.</p>
 </div>
 <div class="paragraph">
 <p>This access token is made up of your username, and the same key/secret combo
@@ -10439,6 +10439,17 @@ admin REST endpoints (depending on user privileges of course).</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>curl<span class="tok-w"> </span>-u<span class="tok-w"> </span>arthur:1234567890ABCDEF:ABCDEF1234567890<span class="tok-w"> </span>-X<span class="tok-w"> </span>DELETE<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span>https://openqa.example.com/api/v1/assets/1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And for HTTP clients that don&#8217;t support Basic authentication or where the use
+of plain HTTP headers might be more convenient, you can also send the
+personal access token in the form of a Bearer token.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>curl<span class="tok-w"> </span>-H<span class="tok-w"> </span><span class="tok-s1">&#39;Authorization: Bearer arthur:1234567890ABCDEF:ABCDEF1234567890&#39;</span><span class="tok-se">\</span>
+<span class="tok-w">    </span>-X<span class="tok-w"> </span>DELETE<span class="tok-w"> </span>https://openqa.example.com/api/v1/assets/1</code></pre>
 </div>
 </div>
 </div>
@@ -14229,7 +14240,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-08-30 04:45:03 UTC
+Last updated 2025-09-02 04:44:49 UTC
 </div>
 </div>
 </body>
