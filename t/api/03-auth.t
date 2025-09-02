@@ -12,6 +12,7 @@ use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use Mojo::URL;
 use Mojo::Util qw(encode hmac_sha1_sum);
+use OpenQA::Shared::Controller::Auth;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
@@ -270,6 +271,25 @@ subtest 'personal access token (with reverse proxy)' => sub {
     # HTTPS but invalid key
     $t->$forwarded('artie:INVALID:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'invalid personal access token'});
+};
+
+subtest 'auth forbidden via subdomain' => sub {
+    my $rendered;
+    my $req = Mojo::Message::Request->new;
+    $req->url->parse('http://foobar.openqa.de/test/42');
+    my $controller_mock = Test::MockModule->new('Mojolicious::Controller');
+    $controller_mock->redefine(req => $req);
+    $controller_mock->redefine(render => sub ($c, @args) { $rendered = [@args] });
+    my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app, req => $req);
+    $c->config->{global}->{file_subdomain} = 'foobar.';
+    is $c->auth, 0, 'auth denied via subdomain';
+    my %expected_json = (error => 'Forbidden via file subdomain');
+    my @expected = (json => \%expected_json, status => 403);
+    is_deeply $rendered, \@expected, 'expected error and status';
+    $req->url->parse('http://openqa.de/test/42');
+    is $c->auth, 0, 'auth denied via regular domain';
+    $expected_json{error} = 'no api key';
+    is_deeply $rendered, \@expected, 'normal auth error via regular domain';
 };
 
 done_testing();

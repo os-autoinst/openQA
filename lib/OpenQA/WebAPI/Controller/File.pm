@@ -108,7 +108,8 @@ sub download_asset ($self) {
     return $self->reply->not_found if $path =~ qr/\.\./;
 
     my $file = path(assetdir(), $path)->to_string;
-    $self->_set_headers($file);
+    my $is_text = $self->_set_headers($file);
+    return if $self->_redirect_if_configured($is_text);
     return $self->reply->not_found unless -f $file && -r _;
     $self->reply->file($file);
 }
@@ -146,19 +147,41 @@ sub test_asset ($self) {
 
 sub _set_headers ($self, $path) {
     my $filename = basename($path);
-    # guess content type from extension
     my $headers = $self->res->headers;
-    return $headers->content_type('application/octet-stream') unless $filename =~ m/\.([^\.]+)$/;
-    my $ext = $1;
-    my $as_attachment = 1;
-    if (my $filetype = $self->app->types->type($ext)) {
-        $headers->content_type($filetype);
-        $headers->header('X-Content-Type-Options', 'nosniff') if $filetype =~ qr|^text/plain;?|;
-        my $allow_insecure = $self->app->config->{global}->{file_security_policy} ne 'download-prompt';
-        $as_attachment = 0 if ($allow_insecure || $filetype !~ m|html|) && $ext ne 'iso';
+    my $is_text = 0;
+    if ($filename =~ m/\.([^\.]+)$/) {
+        # guess content type from extension
+        my $ext = $1;
+        my $as_attachment = 1;
+        if (my $filetype = $self->app->types->type($ext)) {
+            $headers->content_type($filetype);
+            if ($filetype =~ qr|^text/plain;?|) {
+                $headers->header('X-Content-Type-Options', 'nosniff');
+                $is_text = 1;
+            }
+            my $allow_insecure = $self->app->config->{global}->{file_security_policy} ne 'download-prompt';
+            $as_attachment = 0 if ($allow_insecure || $filetype !~ m|html|) && $ext ne 'iso';
+        }
+        # force saveAs
+        $headers->content_disposition("attachment; filename=$filename;") if $as_attachment;
     }
-    # force saveAs
-    $headers->content_disposition("attachment; filename=$filename;") if $as_attachment;
+    else {
+        $headers->content_type('application/octet-stream');
+    }
+    return $is_text;
+}
+
+sub _redirect_if_configured ($self, $is_text) {
+    # skip harmless text files as the viewer doesn't follow redirects and those files are not problematic anyway
+    return 0 if $is_text || !defined(my $subdomain = $self->app->config->{global}->{file_subdomain});
+    # redirect to configured subdomain so potentially dangerious HTML files cannot use the current session
+    my $url = $self->req->url->to_abs;
+    my $host = $url->host;
+    # skip if already redirected
+    return 0 unless index($host, $subdomain) == -1;
+    $url->host($subdomain . $host);
+    $self->redirect_to($url);
+    return 1;
 }
 
 sub _serve_static ($self, $asset) {
@@ -170,7 +193,9 @@ sub _serve_static ($self, $asset) {
     return $self->reply->not_found unless $asset;
     $log->debug('found ' . pp($asset));
 
-    $self->_set_headers($asset->path) if blessed $asset && $asset->isa('Mojo::Asset::File');
+    my $is_text = blessed $asset && $asset->isa('Mojo::Asset::File') && $self->_set_headers($asset->path);
+    return 1 if $self->_redirect_if_configured($is_text);
+
     $static->serve_asset($self, $asset);
     return !!$self->rendered;
 }
