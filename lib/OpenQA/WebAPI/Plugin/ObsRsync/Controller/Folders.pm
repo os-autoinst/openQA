@@ -186,10 +186,8 @@ sub forget_run_last {
     my $project_lock = Mojo::File->new($helper->home, $project, 'rsync.lock');
     -f $project_lock and return $self->render(json => {message => 'Project lock exists'}, status => 423);
 
-    if (unlink($dest)) {
-        return $self->render(json => {message => 'success'}, status => 200);
-    }
-    return $self->render(json => {message => "error $!"}, status => 500);
+    unlink($dest) or return $self->render(json => {message => "error $!"}, status => 500);
+    return $self->render(json => {message => 'success'}, status => 200);
 }
 
 sub test_result {
