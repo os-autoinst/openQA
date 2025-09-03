@@ -189,6 +189,7 @@ sub forget_run_last {
     if (unlink($dest)) {
         return $self->render(json => {message => 'success'}, status => 200);
     }
+    # uncoverable statement
     return $self->render(json => {message => "error $!"}, status => 500);
 }
 
