@@ -142,7 +142,7 @@ subtest 'asset download' => sub {
     );
 
     throws_ok { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) }
-    qr/can't write $temp_assetdir/, 'error because folder is not writable';
+    qr/Cannot write $temp_assetdir/, 'error because folder is not writable';
 
     # assume an asset download fails
     $temp_assetdir->child($_)->remove_tree for qw(iso hdd);    # test with missing asset folders (will be created)
