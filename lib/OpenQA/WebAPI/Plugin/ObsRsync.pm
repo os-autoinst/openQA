@@ -44,7 +44,9 @@ sub register {
     die("ssh-keygen is not available. Aborting.\n") unless which('ssh-keygen');
 
     if (!$plugin_r) {
-        $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
+        # uncoverable statement
+        $app->log->error('Routes not configured, plugin ObsRsync will be disabled')
+          unless $plugin_r;
     }
     else {
         $app->helper('obs_rsync.home' => sub { shift->app->config->{obs_rsync}->{home} });
@@ -155,7 +157,9 @@ sub register {
     }
 
     if (!$plugin_api_r) {
-        $app->log->error('API routes not configured, plugin ObsRsync will not have API configured') unless $plugin_r;
+        # uncoverable statement
+        $app->log->error('API routes not configured, plugin ObsRsync will not have API configured')
+          unless $plugin_r;
     }
     else {
         $plugin_api_r->get('/obs_rsync')->name('plugin_obs_rsync_api_list')
