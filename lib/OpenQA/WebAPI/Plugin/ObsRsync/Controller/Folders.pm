@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::ObsRsync::Controller::Folders;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Mojo::File;
 use POSIX 'strftime';
 
 my $non_project_folders = '^(t|profiles|script|xml)$';
 
-sub list {
-    my $self = shift;
+sub list ($self) {
     my $helper = $self->obs_rsync;
     my $folders = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')->to_array;
     my @res;
@@ -26,8 +25,7 @@ sub list {
     return $self->render(json => \@res, status => 200);
 }
 
-sub index {
-    my ($self, $obs_project, $folders) = @_;
+sub index ($self, $obs_project = undef, $folders = undef) {
     my $helper = $self->obs_rsync;
     my %folder_info_by_name;
     if (!$folders) {
@@ -85,8 +83,7 @@ sub index {
     $self->render('ObsRsync_index', folder_info_by_name => \%folder_info_by_name, project => $obs_project);
 }
 
-sub folder {
-    my $self = shift;
+sub folder ($self) {
     my $alias = $self->param('alias');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($alias);
@@ -113,8 +110,7 @@ sub folder {
         openqa_sh => $files->grep(qr/print_openqa\.sh/)->join());
 }
 
-sub runs {
-    my $self = shift;
+sub runs ($self) {
     my $alias = $self->param('alias');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($alias);
@@ -126,8 +122,7 @@ sub runs {
     $self->render('ObsRsync_logs', alias => $alias, full => $full->to_string, subfolders => $files);
 }
 
-sub run {
-    my $self = shift;
+sub run ($self) {
     my $alias = $self->param('alias');
     my $subfolder = $self->param('subfolder');
     my $helper = $self->obs_rsync;
@@ -145,8 +140,7 @@ sub run {
     );
 }
 
-sub download_file {
-    my $self = shift;
+sub download_file ($self) {
     my $alias = $self->param('alias');
     my $subfolder = $self->param('subfolder');
     my $filename = $self->param('filename');
@@ -159,8 +153,7 @@ sub download_file {
     $self->reply->file($full->child($filename));
 }
 
-sub get_run_last {
-    my $self = shift;
+sub get_run_last ($self) {
     my $alias = $self->param('alias');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($alias);
@@ -172,8 +165,7 @@ sub get_run_last {
     return $self->render(json => {message => $run_last}, status => 200);
 }
 
-sub forget_run_last {
-    my $self = shift;
+sub forget_run_last ($self) {
     my $alias = $self->param('alias');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($alias);
@@ -190,8 +182,7 @@ sub forget_run_last {
     return $self->render(json => {message => 'success'}, status => 200);
 }
 
-sub test_result {
-    my $self = shift;
+sub test_result ($self) {
     my $alias = $self->param('alias');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($alias);
