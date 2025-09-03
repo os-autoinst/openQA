@@ -7,4 +7,4 @@
 #    #return 301 http://file.$host$request_uri;
 #}
 
-include vhosts.d/openqa-endpoints.inc
+include vhosts.d/openqa-endpoints.inc;
