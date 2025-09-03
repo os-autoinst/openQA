@@ -152,12 +152,13 @@ sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
                 next unless $parent_publishes_uefi_vars;
             }
             $dst =~ s,.*/,,;
-            $dst = join('/', $options->{dir}, $type, $dst);
+            my $dst_dir = path($options->{dir}, $type)->make_path;
+            $dst = $dst_dir->child($dst)->to_string;
             my $from = $remote_url->clone;
             $from->path(sprintf '/tests/%d/asset/%s/%s', $jobid, $type, $file);
             $from = $from->to_string;
 
-            die "can't write $options->{dir}/$type\n" unless -w "$options->{dir}/$type";
+            die "can't write $dst_dir\n" unless -w $dst_dir;
 
             print STDERR "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
