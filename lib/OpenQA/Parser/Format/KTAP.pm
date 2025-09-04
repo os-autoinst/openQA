@@ -70,6 +70,7 @@ sub _parse_subtest ($self, $result) {
         $steps->{result} = 'softfail';
     }
 
+    return if $line =~ /#\s*SKIP\b/i;
     $self->_add_output({file => $filename, content => $line});
     $self->state->{m} = $m + 1;
 }
