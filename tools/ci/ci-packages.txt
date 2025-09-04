@@ -116,13 +116,13 @@ perl-IO-Socket-SSL-2.84.0
 perl-IO-String-1.08
 perl-IO-stringy-2.111
 perl-IO-Tty-1.12
-perl-IPC-Run-20231003.0.0
+perl-IPC-Run
 perl-IPC-Run3-0.048
 perl-IPC-System-Simple-1.25
 perl-JavaScript-Minifier-XS-0.15
 perl-JSON-2.97001
 perl-JSON-MaybeXS-1.004000
-perl-JSON-Validator-5.150.0
+perl-JSON-Validator
 perl-libwww-perl-6.31
 perl-Lingua-EN-Inflect-1.905
 perl-List-Compare-0.55
@@ -135,6 +135,7 @@ perl-Log-Any-1.705
 perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
+perl-MCP
 perl-Meta-Builder-0.004
 perl-Minion-10.310.0
 perl-Minion-Backend-SQLite-5.0.7
@@ -146,7 +147,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-1.1.0
-perl-Mojolicious-9.410.0
+perl-Mojolicious
 perl-Mojolicious-Plugin-AssetPack-2.150.0
 perl-Mojolicious-Plugin-OAuth2-2.02
 perl-Mojo-Pg-4.27
