@@ -309,7 +309,7 @@ sub _validate_worker_timeout ($app) {
 
 sub _validate_security_policy ($app, $config) {
     if ($config->{file_security_policy} =~ m/^(download-prompt|insecure-browsing|subdomain:(.+))$/) {
-        if (defined(my $subdomain = $2)) { $config->{file_subdomain} = "$subdomain." }
+        if (defined(my $subdomain = $2)) { $config->{file_subdomain} = $subdomain }
     }
     else {
         $config->{file_security_policy} = 'download-prompt';

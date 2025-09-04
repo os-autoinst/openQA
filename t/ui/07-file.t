@@ -143,10 +143,10 @@ $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
 subtest 'redirection to different subdomain' => sub {
     my $config = $t->app->config->{global};
-    $config->{file_security_policy} = 'subdomain:file';
-    $config->{file_subdomain} = 'file.';
+    $config->{file_security_policy} = 'subdomain:files-';
+    $config->{file_subdomain} = 'files-';
     $t->get_ok('/assets/repo/testrepo/README.html')->status_is(302);
-    $t->header_like(Location => qr|^http://file\.[^/]*/assets/repo/testrepo/README.html$|);
+    $t->header_like(Location => qr|^http://files-[^/]*/assets/repo/testrepo/README.html$|);
 };
 
 done_testing();

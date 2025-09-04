@@ -276,12 +276,12 @@ subtest 'personal access token (with reverse proxy)' => sub {
 subtest 'auth forbidden via subdomain' => sub {
     my $rendered;
     my $req = Mojo::Message::Request->new;
-    $req->url->parse('http://foobar.openqa.de/test/42');
+    $req->url->parse('http://foobar-openqa.de/test/42');
     my $controller_mock = Test::MockModule->new('Mojolicious::Controller');
     $controller_mock->redefine(req => $req);
     $controller_mock->redefine(render => sub ($c, @args) { $rendered = [@args] });
     my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app, req => $req);
-    $c->config->{global}->{file_subdomain} = 'foobar.';
+    $c->config->{global}->{file_subdomain} = 'foobar-';
     is $c->auth, 0, 'auth denied via subdomain';
     my %expected_json = (error => 'Forbidden via file subdomain');
     my @expected = (json => \%expected_json, status => 403);
