@@ -77,7 +77,6 @@ sub read_config ($app) {
             max_rss_limit => 0,
             profiling_enabled => 0,
             monitoring_enabled => 0,
-            mcp_enabled => 'no',
             plugins => undef,
             hide_asset_types => 'repo',
             file_security_policy => 'download-prompt',
@@ -237,7 +236,6 @@ sub read_config ($app) {
             max_online_workers => 1000,
             wait_for_grutask_retries => 6,    # exponential, ~4 minutes
             worker_limit_retry_delay => ONE_HOUR / 4,
-            mcp_max_result_size => 500000,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
@@ -411,7 +409,6 @@ sub load_plugins ($server, $monitoring_root_route = undef, %options) {
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
     $server->plugin($_) for qw(Helpers MIMETypes CSRF REST Gru YAML);
     $server->plugin('AuditLog') if $server->config->{global}{audit_enabled};
-    $server->plugin('MCP') if $server->config->{global}{mcp_enabled} eq 'read-only';
     # Load arbitrary plugins defined in config: 'plugins' in section
     # '[global]' can be a space-separated list of plugins to load, by
     # module name under OpenQA::WebAPI::Plugin::

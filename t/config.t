@@ -52,7 +52,6 @@ subtest 'Test configuration default modes' => sub {
             max_rss_limit => 0,
             profiling_enabled => 0,
             monitoring_enabled => 0,
-            mcp_enabled => 'no',
             hide_asset_types => 'repo',
             file_security_policy => 'download-prompt',
             recognized_referers => [],
@@ -189,7 +188,6 @@ subtest 'Test configuration default modes' => sub {
             max_online_workers => 1000,
             wait_for_grutask_retries => 6,
             worker_limit_retry_delay => ONE_HOUR / 4,
-            mcp_max_result_size => 500000,
         },
         archiving => {
             archive_preserved_important_jobs => 0,

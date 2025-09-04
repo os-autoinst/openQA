@@ -29,7 +29,12 @@ sub _extend_info ($w) {
 
 sub index ($self) {
     my $workers_db = $self->schema->resultset('Workers');
-    my $worker_stats = $workers_db->stats;
+    my $total_online = grep { !$_->dead } $workers_db->all();
+    my $total = $workers_db->count;
+    my $free_active_workers = grep { !$_->dead } $workers_db->search({job_id => undef, error => undef})->all();
+    my $free_broken_workers
+      = grep { !$_->dead } $workers_db->search({job_id => undef, error => {'!=' => undef}})->all();
+    my $busy_workers = grep { !$_->dead } $workers_db->search({job_id => {'!=' => undef}})->all();
 
     my %workers;
     while (my $w = $workers_db->next) {
@@ -37,11 +42,11 @@ sub index ($self) {
         $workers{$w->name} = _extend_info($w);
     }
     $self->stash(
-        workers_online => $worker_stats->{total_online},
-        total => $worker_stats->{total},
-        workers_active_free => $worker_stats->{free_active_workers},
-        workers_broken_free => $worker_stats->{free_broken_workers},
-        workers_busy => $worker_stats->{busy_workers},
+        workers_online => $total_online,
+        total => $total,
+        workers_active_free => $free_active_workers,
+        workers_broken_free => $free_broken_workers,
+        workers_busy => $busy_workers,
         is_admin => !!$self->is_admin,
         workers => \%workers
     );
