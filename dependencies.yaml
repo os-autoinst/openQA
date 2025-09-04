@@ -134,7 +134,6 @@ main_requires:
   perl(IPC::Run):
   perl(JSON::Validator):
   perl(LWP::UserAgent):
-  perl(MCP): '>= 0.04'
   perl(Module::Load::Conditional):
   perl(Module::Pluggable):
   perl(Mojo::Base):
