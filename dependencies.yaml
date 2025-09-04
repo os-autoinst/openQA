@@ -8,8 +8,8 @@
 #######################################################
 ---
 targets:
-  cpanfile: [ assetpack,        client, common, cover, devel, devel_no_selenium, main, test, style_check, worker ]
-  spec:     [ assetpack, build, client, common, cover, devel, devel_no_selenium, main, test, style_check, worker ]
+  cpanfile: [ assetpack,        client, common, cover, devel, devel_no_selenium, main, test, style_check, worker, mcp ]
+  spec:     [ assetpack, build, client, common, cover, devel, devel_no_selenium, main, test, style_check, worker, mcp ]
   cpanfile-targets:
     # target: cpanfile target type (default main)
     devel: develop
@@ -178,9 +178,13 @@ worker_requires:
   perl(File::Map):
   psmisc:
 
+mcp_requires:
+  perl(MCP):
+
 test_requires:
   '%common_requires':
   '%main_requires':
+  '%mcp_requires':
   '%python_scripts_requires':
   '%worker_requires':
   openssh-common:
