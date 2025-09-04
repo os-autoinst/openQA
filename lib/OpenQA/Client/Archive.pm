@@ -134,7 +134,7 @@ sub _download_asset ($self, $url, $jobid, $path, $type, $file) {
 
     # Assume that we're in the working directory
     my $destination_directory = $path->child($type)->make_path;
-    die "can't write in $path/$type directory" unless -w "$destination_directory";
+    die "Cannot write in $path/$type directory" unless -w "$destination_directory";
     $file = $destination_directory->child($file);
 
     # Ensure we are requesting the right file, so call basename
