@@ -67,6 +67,8 @@
 %define client_requires curl git-core jq perl(Getopt::Long::Descriptive) perl(IO::Socket::SSL) >= 2.009 perl(IPC::Run) perl(JSON::Validator) perl(LWP::Protocol::https) perl(LWP::UserAgent) perl(Test::More) perl(YAML::PP) >= 0.020 perl(YAML::XS)
 # The following line is generated from dependencies.yaml
 %define worker_requires bsdtar openQA-client optipng os-autoinst perl(Capture::Tiny) perl(File::Map) perl(Minion::Backend::SQLite) >= 5.0.7 perl(Mojo::IOLoop::ReadWriteProcess) >= 0.26 perl(Mojo::SQLite) psmisc sqlite3 >= 3.24.0
+# The following line is generated from dependencies.yaml
+%define mcp_requires perl(MCP)
 %if 0%{?suse_version} < 1570
 # SLE <= 15 has older Perl not providing a sufficiently recent
 # ExtUtils::ParseXS needed by ExtUtils::CppGuess
@@ -81,7 +83,7 @@
 # Do not require on this in individual sub-packages except for the devel
 # package.
 # The following line is generated from dependencies.yaml
-%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires curl jq openssh-common os-autoinst perl(App::cpanminus) perl(Selenium::Remote::Driver) >= 1.23 perl(Selenium::Remote::WDKeys) perl(Test::Exception) perl(Test::Fatal) perl(Test::MockModule) perl(Test::MockObject) perl(Test::Mojo) perl(Test::Most) perl(Test::Output) perl(Test::Pod) perl(Test::Strict) perl(Test::Warnings) >= 0.029 postgresql-server python3-setuptools
+%define test_requires %common_requires %main_requires %mcp_requires %python_scripts_requires %worker_requires curl jq openssh-common os-autoinst perl(App::cpanminus) perl(Selenium::Remote::Driver) >= 1.23 perl(Selenium::Remote::WDKeys) perl(Test::Exception) perl(Test::Fatal) perl(Test::MockModule) perl(Test::MockObject) perl(Test::Mojo) perl(Test::Most) perl(Test::Output) perl(Test::Pod) perl(Test::Strict) perl(Test::Warnings) >= 0.029 postgresql-server python3-setuptools
 %ifarch x86_64
 %define qemu qemu qemu-kvm
 %else
@@ -214,6 +216,13 @@ Requires(pre):  group(kvm)
 
 %description worker
 The openQA worker manages test engine (provided by os-autoinst package).
+
+%package mcp
+Summary:        Additional MCP package for AI support in openQA
+Requires:       %{mcp_requires}
+
+%description mcp
+This package contains additional resources for AI support in openQA.
 
 %package client
 Summary:        Client tools for remote openQA management
@@ -850,5 +859,7 @@ fi
 %{_datadir}/openqa/script/munin-mail
 %config(noreplace) %{_sysconfdir}/munin/plugin-conf.d/openqa-minion
 %endif
+
+%files mcp
 
 %changelog
