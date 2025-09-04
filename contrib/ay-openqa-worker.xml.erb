@@ -69,6 +69,8 @@
   </timezone>
   <partitioning config:type="list">
     <drive>
+      <% disk = disks.sort_by { |d| d[:size] }.first %> <%# find the [smallest] disk for main OS installation %>
+      <device><%= disk[:udev_names][0] %></device> <%# print the disk device name %>
       <initialize config:type="boolean">true</initialize>
       <partitions config:type="list">
         <partition>
@@ -81,7 +83,60 @@
           <size>auto</size>
         </partition>
       </partitions>
+      <use>all</use>
     </drive>
+    <% raidarray = disks.sort_by { |d| d[:size] }.slice(1..-1) %> <%# remove first [smallest] disk from array %>
+    <% if raidarray.length > 1 %> <%# if there is more than one disk remaining on the system, combine them into a raid array %>
+      <% for d in 0..raidarray.length - 1 %>
+      <drive>
+      <type t="symbol">CT_DISK</type>
+      <device><%= raidarray[d][:udev_names][0] %></device> <%# print full device name such as /dev/nvme0n1 %>
+      <disklabel>none</disklabel>
+      <partitions config:type="list">
+        <partition>
+          <raid_name>/dev/md/openqa</raid_name>
+          <size>max</size>
+        </partition>
+      </partitions>
+      <use>all</use>
+    </drive>
+    <% end %> <%# end for loop %>
+    <drive>
+      <type t="symbol">CT_MD</type>
+      <device>/dev/md/openqa</device>
+      <partitions config:type="list">
+        <partition>
+          <mount>/var/lib/openqa</mount>
+          <size>max</size>
+        </partition>
+      </partitions>
+      <raid_options>
+        <raid_type>raid0</raid_type>
+        <device_order t="list">
+          <% for d in 0..raidarray.length - 1 %>
+          <device><%= raidarray[d][:udev_names][0] %></device>
+          <% end %>
+        </device_order>
+      </raid_options>
+      <use>all</use>
+    </drive>
+    <% else %> <%# maybe we have only one disk left on the system %>
+    <% if raidarray.length != 0 %>
+    <drive>
+      <type t="symbol">CT_DISK</type>
+      <device><%= raidarray[0][:udev_names][0] %></device> <%# print full device name such as /dev/nvme0n1 %>
+      <disklabel>gpt</disklabel>
+      <use>all</use>
+      <partitions t="list">
+        <partition>
+          <size>max</size>
+          <filesystem t="symbol">ext4</filesystem>
+          <mount>/var/lib/openqa</mount>
+        </partition>
+      </partitions>
+    </drive>
+    <% end %> <%# end inner if %>
+    <% end %> <%# end outer if-else %>
   </partitioning>
   <scripts>
     <post-scripts config:type="list">
