@@ -763,9 +763,34 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
     my $machines = $data->{machines} // {};
     my $job_templates = $data->{job_templates};
     my ($error_msg, %wanted, @job_templates);
+    my @flattened;
     for my $key (sort keys %$job_templates) {
-        my $job_template = $job_templates->{$key};
-        my $settings = $job_template->{settings} // {};
+        my $template = $job_templates->{$key};
+        my %new_template = (%$template, name => $key);
+        my @machines;
+        if ($key =~ s/\@\(([\w,-]+)\)$//) {
+            @machines = grep { length } split /,/, $1;
+        }
+        elsif ($template->{machine}) {
+            my $machine = delete $template->{machine};
+            if (ref $machine eq 'ARRAY') {
+                @machines = @$machine;
+            }
+            else {
+                @machines = $machine;
+            }
+        }
+        else {
+            push @flattened, {%new_template};
+            next;
+        }
+        for my $machine (@machines) {
+            push @flattened, {%new_template, machine => $machine};
+        }
+    }
+    for my $job_template (@flattened) {
+        my $key = $job_template->{name};
+        my $settings = {%{$job_template->{settings} // {}}};
         $settings->{TEST} = $key;
         my @worker_class;
         push @worker_class, $settings->{WORKER_CLASS} if $settings->{WORKER_CLASS};
