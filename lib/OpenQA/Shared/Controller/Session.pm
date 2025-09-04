@@ -56,8 +56,8 @@ sub create {
     my $config = $self->app->config;
     my $auth_method = $config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    return $self->render(text => 'Forbidden via file subdomain', status => 403)
-      if $self->via_subdomain($config->{global}->{file_subdomain});
+    return $self->render(text => 'Forbidden via file domain', status => 403)
+      if $self->via_domain($config->{global}->{file_domain});
 
     # prevent redirecting loop when referrer is login page
     $ref = 'index' if !$ref or $ref eq $self->url_for('login');

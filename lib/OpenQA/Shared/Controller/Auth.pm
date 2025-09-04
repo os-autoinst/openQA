@@ -12,7 +12,7 @@ use Mojo::URL;
 sub check ($self) {
     my $config = $self->app->config;
     return 1 if $config->{no_localhost_auth} && $self->is_local_request;
-    return 0 if $self->via_subdomain($config->{global}->{file_subdomain});
+    return 0 if $self->via_domain($config->{global}->{file_domain});
 
     my $req = $self->req;
     my $headers = $req->headers;
@@ -46,9 +46,9 @@ sub check ($self) {
 sub auth ($self) {
     my $log = $self->app->log;
 
-    # Prevent authentication via file subdomain (where potentially untrusted HTML is served)
-    if ($self->via_subdomain($self->config->{global}->{file_subdomain})) {
-        $self->render(json => {error => 'Forbidden via file subdomain'}, status => 403);
+    # Prevent authentication via file domain (where potentially untrusted HTML is served)
+    if ($self->via_domain($self->config->{global}->{file_domain})) {
+        $self->render(json => {error => 'Forbidden via file domain'}, status => 403);
         return 0;
     }
 

@@ -141,12 +141,12 @@ $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->sta
 $t->get_ok('/assets/hdd/foo.qcow2')->status_is(200)->content_type_is('application/octet-stream');
 $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
-subtest 'redirection to different subdomain' => sub {
+subtest 'redirection to different domain' => sub {
     my $config = $t->app->config->{global};
-    $config->{file_security_policy} = 'subdomain:files-';
-    $config->{file_subdomain} = 'files-';
+    $config->{file_security_policy} = 'domain:openqa-files';
+    $config->{file_domain} = 'openqa-files';
     $t->get_ok('/assets/repo/testrepo/README.html')->status_is(302);
-    $t->header_like(Location => qr|^http://files-[^/]*/assets/repo/testrepo/README.html$|);
+    $t->header_like(Location => qr|^http://openqa-files(:\d+)?/assets/repo/testrepo/README.html$|);
 };
 
 done_testing();

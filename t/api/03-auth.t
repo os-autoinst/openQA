@@ -273,7 +273,7 @@ subtest 'personal access token (with reverse proxy)' => sub {
       ->json_is({error => 'invalid personal access token'});
 };
 
-subtest 'auth forbidden via subdomain' => sub {
+subtest 'auth forbidden via domain' => sub {
     my $rendered;
     my $req = Mojo::Message::Request->new;
     $req->url->parse('http://foobar-openqa.de/test/42');
@@ -281,9 +281,9 @@ subtest 'auth forbidden via subdomain' => sub {
     $controller_mock->redefine(req => $req);
     $controller_mock->redefine(render => sub ($c, @args) { $rendered = [@args] });
     my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app, req => $req);
-    $c->config->{global}->{file_subdomain} = 'foobar-';
-    is $c->auth, 0, 'auth denied via subdomain';
-    my %expected_json = (error => 'Forbidden via file subdomain');
+    $c->config->{global}->{file_domain} = 'foobar-openqa.de';
+    is $c->auth, 0, 'auth denied via domain';
+    my %expected_json = (error => 'Forbidden via file domain');
     my @expected = (json => \%expected_json, status => 403);
     is_deeply $rendered, \@expected, 'expected error and status';
     $req->url->parse('http://openqa.de/test/42');

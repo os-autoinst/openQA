@@ -333,10 +333,10 @@ subtest 'Validation of file_security_policy' => sub {
     $config{file_security_policy} = 'wrong';
     combined_like { OpenQA::Setup::_validate_security_policy($app, \%config) } qr/Invalid.*security/, 'warning logged';
     is $config{file_security_policy}, 'download-prompt', 'default to "download-prompt" on invalid value';
-    is $config{file_subdomain}, undef, 'file_subdomain not populated yet';
-    $config{file_security_policy} = 'subdomain:foo-';
+    is $config{file_domain}, undef, 'file_domain not populated yet';
+    $config{file_security_policy} = 'domain:openqa-foo';
     OpenQA::Setup::_validate_security_policy($app, \%config);
-    is $config{file_subdomain}, 'foo-', 'file_subdomain populated via "subdomain:"';
+    is $config{file_domain}, 'openqa-foo', 'file_domain populated via "domain:"';
 };
 
 subtest 'Multiple config files' => sub {
