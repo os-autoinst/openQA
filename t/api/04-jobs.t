@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use File::Temp;
+use File::Copy::Recursive qw(dircopy);
 use Test::Mojo;
 use Test::Output;
 use Test::Warnings ':report_warnings';
@@ -39,7 +40,7 @@ $ENV{OPENQA_BASEDIR} = $tempdir;
 note("OPENQA_BASEDIR: $tempdir");
 path($tempdir, '/openqa/testresults')->make_path;
 my $share_dir = path($tempdir, 'openqa/share')->make_path;
-symlink "$FindBin::Bin/../data/openqa/share/factory", "$share_dir/factory";
+dircopy("$FindBin::Bin/../data/openqa/share/factory", "$share_dir/factory");
 
 # ensure job events are logged
 $ENV{OPENQA_CONFIG} = $tempdir;

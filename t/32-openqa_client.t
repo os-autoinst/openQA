@@ -8,11 +8,12 @@ use Test::Warnings ':report_warnings';
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
-use Mojo::File qw(tempfile path);
+use Mojo::File qw(tempfile path tempdir);
 use OpenQA::Events;
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::TimeLimit '80';
+use Mojo::Util qw(scope_guard);
 
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
@@ -21,6 +22,10 @@ my $chunk_size = 10000000;
 
 # allow up to 200MB - videos mostly
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
+
+my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+chdir $tempdir;
+my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 my @client_args = (apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), @client_args);
