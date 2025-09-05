@@ -59,6 +59,7 @@ perl-CPAN-Meta-Requirements-2.140000
 perl-Crypt-DES-2.07
 perl-Crypt-DH-GMP-0.00012
 perl-Crypt-Rijndael-1.13
+perl-CryptX-0.87.0
 perl-CSS-Minifier-XS-0.13
 perl-Data-Dump-1.23
 perl-Data-Dumper-Concise-2.023
@@ -135,7 +136,7 @@ perl-Log-Any-1.705
 perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
-perl-MCP
+perl-MCP-0.40.0
 perl-Meta-Builder-0.004
 perl-Minion-10.310.0
 perl-Minion-Backend-SQLite-5.0.7
