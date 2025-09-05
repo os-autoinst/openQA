@@ -222,7 +222,7 @@ Summary:        Additional MCP package for AI support in openQA
 Requires:       %{mcp_requires}
 
 %description mcp
-This package contains additional resources for AI support in openQA.
+This package contains a plugin for AI support in openQA.
 
 %package client
 Summary:        Client tools for remote openQA management
@@ -642,6 +642,7 @@ fi
 %{_datadir}/openqa/lib/OpenQA/Scheduler/
 %{_datadir}/openqa/lib/OpenQA/Schema/
 %{_datadir}/openqa/lib/OpenQA/WebAPI/
+%exclude %{_datadir}/openqa/lib/OpenQA/WebAPI/Plugin/MCP.pm
 %{_datadir}/openqa/lib/OpenQA/WebSockets/
 %{_datadir}/openqa/templates
 %{_datadir}/openqa/public
@@ -861,5 +862,6 @@ fi
 %endif
 
 %files mcp
+%{_datadir}/openqa/lib/OpenQA/WebAPI/Plugin/MCP.pm
 
 %changelog
