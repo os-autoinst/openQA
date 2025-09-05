@@ -378,8 +378,7 @@ subtest 'enqueue_git_clones' => sub {
         $t->app->log(Mojo::Log->new(level => 'debug'));
         my $jobs = [$j[4]->id];
         stderr_like { $t->app->gru->_add_jobs_to_gru_task(999, $jobs) }
-qr{GruTask 999 already gone.*insert or update on table "gru_dependencies" violates foreign key constraint "gru_dependencies_fk_gru_task_id"},
-          'expected log output if GruTask deleted in between';
+        qr{GruTask 999 already gone, skip assigning jobs}, 'expected log output if GruTask deleted in between';
         my @deps = $task->jobs;
         is scalar @deps, 3, 'no job was added to GruTask';
     };

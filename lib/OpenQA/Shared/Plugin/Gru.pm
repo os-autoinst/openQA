@@ -166,7 +166,7 @@ sub _add_jobs_to_gru_task ($self, $gru_id, $job_ids) {
                       =~ m/insert or update on table "gru_dependencies" violates foreign key constraint "gru_dependencies_fk_gru_task_id"/i;
                     # if the GruTask was already deleted meanwhile, we can skip
                     # the rest of the jobs, since the wanted task was done
-                    log_debug("GruTask $gru_id already gone, skip assigning jobs (message: $e)");
+                    log_debug("GruTask $gru_id already gone, skip assigning jobs");
                     last;
                 }
             }
