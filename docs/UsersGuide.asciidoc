@@ -1136,10 +1136,10 @@ _SKIP_CHAINED_DEPS:: Do not schedule parent test suites which are specified in `
 _INCLUDE_CHILDREN:: Include children that would otherwise not be considered when
                     filtering test suites via the `TEST` parameter.
 
-_GROUP:: Job templates *not* matching the given group name are ignored. Does *not*
-         affect obsoletion behavior.
+_GROUP:: Limiting lookup for job templates only to group with matching name.
+         Does *not* affect obsoletion behavior.
 
-_GROUP_ID:: Same as `_GROUP` but allows to specify the group directly by ID.
+_GROUP_ID:: Limiting lookup for job templates only to group with matching ID.
 _PRIORITY:: Sets the priority value for the new jobs (which otherwise defaults
 to the priority of the job template)
 
