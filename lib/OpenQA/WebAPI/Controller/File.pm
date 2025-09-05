@@ -173,13 +173,11 @@ sub _set_headers ($self, $path) {
 
 sub _redirect_if_configured ($self, $is_text) {
     # skip harmless text files as the viewer doesn't follow redirects and those files are not problematic anyway
-    return 0 if $is_text || !defined(my $subdomain = $self->app->config->{global}->{file_subdomain});
-    # redirect to configured subdomain so potentially dangerious HTML files cannot use the current session
+    return 0 if $is_text || !defined(my $domain = $self->app->config->{global}->{file_domain});
+    # redirect to configured domain so potentially dangerious HTML files cannot use the current session
     my $url = $self->req->url->to_abs;
-    my $host = $url->host;
-    # skip if already redirected
-    return 0 unless index($host, $subdomain) == -1;
-    $url->host($subdomain . $host);
+    return 0 if $url->host eq $domain;    # skip if already redirected
+    $url->host($domain);
     $self->redirect_to($url);
     return 1;
 }
