@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Log qw(log_debug log_info log_error);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Utils qw(read_test_modules);
 use OpenQA::Events;
 use Mojo::IOLoop;
 use Mojo::RabbitMQ::Client::Publisher;
@@ -104,6 +105,12 @@ sub on_job_event ($self, $args) {
         if ($event_data->{bugref} = $bugref) {
             $event_data->{bugurl} = OpenQA::Utils::bugurl($bugref);
         }
+        # include failed test modules
+        my $tmo = read_test_modules($job);
+        my $test_modules = $tmo ? $tmo->{modules} : [];
+        my @faileds = grep { $_->{result} eq OpenQA::Jobs::Constants::FAILED } @$test_modules;
+        my @fnames = map { $_->{name} } @faileds;
+        $event_data->{failedmodules} = @faileds ? \@fnames : [];
     }
     my $job_settings = $job->settings_hash;
     for my $detail (qw(ISO HDD_1)) {
