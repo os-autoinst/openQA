@@ -4,6 +4,7 @@ chrony-pool-openSUSE-4.1
 cmark-0.30.2
 hostname-3.16
 iproute2-6.4
+iputils-20221126
 jq-1.6
 libcbor0_10-0.10.1
 libcmark0_30_2-0.30.2
@@ -222,7 +223,7 @@ perl-SUPER-1.20141117
 perl-Syntax-Keyword-Try-0.28
 perl-TAP-Harness-JUnit-0.42
 perl-Task-Weaken-1.06
-perl-Test-CheckGitStatus
+perl-Test-CheckGitStatus-0.1.2
 perl-Test-Deep-1.127
 perl-Test-Differences-0.64
 perl-Test-Exception-0.430000
@@ -259,7 +260,7 @@ perl-XML-SemanticDiff-1.0007
 perl-XML-Simple-2.24
 perl-XS-Parse-Keyword-0.380.0
 perl-YAML-1.24
-perl-YAML-LibYAML-0.890.0
+perl-YAML-LibYAML-0.904.0
 perl-YAML-PP-0.036
 psmisc-23.0
 python3-pathspec-0.7.0
