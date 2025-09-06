@@ -18,7 +18,8 @@ sub run ($self, $options) {
     my $res = $req->res;
     my $default_max_asset_size = 1024 * 1024 * 200;
     $options->{'asset-size-limit'} //= $default_max_asset_size;
-    $self->client->max_response_size($options->{'asset-size-limit'});
+    $options->{'no-limit'} //= 0;
+    $self->client->max_response_size($options->{'no-limit'} ? 0 : $options->{'asset-size-limit'});
 
     my $code = $res->code;
     die "There's an error openQA client returned $code" unless $code eq 200;
@@ -32,7 +33,7 @@ sub run ($self, $options) {
     delete($job->{assets}->{repo});
 
     $path->child('testresults', 'thumbnails')->make_path if $options->{'with-thumbnails'};
-    $self->_download_assets($url, $job, $path);
+    $self->_download_assets($url, $job, $path) if $options->{'no-limit'};
     $self->_download_test_results($url, $job, $path, $options);
 }
 
