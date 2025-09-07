@@ -915,6 +915,15 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_the_virtio_serial_terminal_implementation">41.11.4. The virtio serial terminal implementation</a></li>
 </ul>
 </li>
+<li><a href="#_mcp_support">41.12. MCP Support</a>
+<ul class="sectlevel3">
+<li><a href="#_3rd_party_mcp_clients">41.12.1. 3rd Party MCP Clients</a>
+<ul class="sectlevel4">
+<li><a href="#_gemini_cli">gemini-cli</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_test_development_tricks">42. Test Development tricks</a>
@@ -9378,6 +9387,91 @@ outputting non-printable characters.</p>
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_mcp_support"><a class="anchor" href="#_mcp_support"></a><a class="link" href="#_mcp_support">41.12. MCP Support</a></h3>
+<div class="paragraph">
+<p>The <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> (MCP) is a standard
+that allows Large Language Models (LLMs) to interact with web services. MCP is
+supported natively by openQA, but still considered experimental, and therefore
+needs to be enabled manually in <code>openqa.ini</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
+<span class="tok-na">mcp_enabled</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">read-only</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once enabled the experimental MCP endpoint becomes available under the path
+<code>/experimental/mcp</code>. At the moment all implemented MCP tools are read-only,
+that means LLMs can review infomation provided by openQA, but are unable to
+make changes or trigger actions. Once write operations become available
+with future updates, they will have to be enabled with a different setting
+in <code>openqa.ini</code> for security reasons.</p>
+</div>
+<div class="paragraph">
+<p>Most MCP clients today support Bearer token authentication, so that is what
+openQA relies on as well. More authentication mechanisms will be added as
+the technology evolves.</p>
+</div>
+<div class="paragraph">
+<p>This example configuration in the <code>mcp.json</code> format, which is commonly used
+by MCP clients, shows how to include an openQA personal access token by
+setting the <code>Authorization</code> HTTP header:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-nt">&quot;mcpServers&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-nt">&quot;openqa&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-nt">&quot;url&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s2">&quot;http://127.0.0.1:9526/experimental/mcp&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-nt">&quot;headers&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">        </span><span class="tok-nt">&quot;Authorization&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s2">&quot;Bearer USER:KEY:SECRET&quot;</span>
+<span class="tok-w">      </span><span class="tok-p">}</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_3rd_party_mcp_clients"><a class="anchor" href="#_3rd_party_mcp_clients"></a><a class="link" href="#_3rd_party_mcp_clients">41.12.1. 3rd Party MCP Clients</a></h4>
+<div class="sect4">
+<h5 id="_gemini_cli"><a class="anchor" href="#_gemini_cli"></a><a class="link" href="#_gemini_cli">gemini-cli</a></h5>
+<div class="paragraph">
+<p>Once you have installed and set up
+<a href="https://github.com/google-gemini/gemini-cli">gemini-cli</a>, you can use the
+<code>gemini mcp</code> command to add openQA:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="shell"><span></span>gemini<span class="tok-w"> </span>mcp<span class="tok-w"> </span>add<span class="tok-w"> </span>openqa<span class="tok-w"> </span>http://127.0.0.1:9526/experimental/mcp<span class="tok-w"> </span>-H<span class="tok-w"> </span><span class="tok-s1">&#39;Authorization: Bearer USER:KEY:SECRET&#39;</span><span class="tok-w"> </span>-t<span class="tok-w"> </span>http</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After restarting gemini-cli, it will automatically discover available openQA
+tools and make use of them on its own:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>╭────────────────────────────────────────────────────╮
+│  &gt; give me a brief summary for openQA job 5265754  │
+╰────────────────────────────────────────────────────╯
+
+ ╭───────────────────────────────────────────────────────────────────╮
+ │ ✔ openqa_get_job_info (openqa MCP Server) openqa_get_job_info...  │
+ │                                                                   │
+ │    ...                                                            │
+ ╰───────────────────────────────────────────────────────────────────╯
+✦ Job 5265754 was a passed test named opensuse-Tumbleweed-DVD-x86_64-
+  Build20250825-ltp_net_features@64bit. It ran on August 26, 2025,
+  and took about 21 minutes to complete. The job tested the
+  ltp_net_features test suite on the x86_64 architecture. Most of the
+   tests passed, with a few being skipped.</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -14240,7 +14334,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-05 04:44:19 UTC
+Last updated 2025-09-07 04:44:54 UTC
 </div>
 </div>
 </body>
