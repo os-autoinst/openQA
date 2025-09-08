@@ -241,7 +241,7 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
 
     # define condition for expired jobs in important builds
     my ($important_timestamp, @important_cond);
-    if ($keep_important_in_days && $keep_important_in_days > $keep_in_days) {
+    if ($keep_important_in_days) {
         $important_timestamp = time2str('%Y-%m-%d %H:%M:%S', $now - ONE_DAY * $keep_important_in_days, 'UTC');
         @important_cond = (
             -or => [

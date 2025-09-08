@@ -171,4 +171,28 @@ subtest 'new "null" job group uses configured default group limits' => sub {
     is $g->keep_important_results_in_days, $c->{important_result_storage_duration}, 'important_result_storage_duration';
 };
 
+subtest 'finding expired jobs' => sub {
+    my $find_expired_jobs = sub () {
+        [sort map { $_->TEST } @{$new_job_group->find_expired_jobs}]
+    };
+    my $two_days_old = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 3, 'UTC');
+    my $four_days_old = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 4, 'UTC');
+    my $jobs = $new_job_group->jobs;
+
+    $jobs->create({TEST => 'regular', t_finished => $two_days_old, BUILD => '1000'});
+    $jobs->create({TEST => 'important', t_finished => $four_days_old, BUILD => '1001'});
+    $new_job_group->comments->create({text => 'tag:1001:important:test', user_id => 1});
+    $new_job_group->update({keep_jobs_in_days => 1, keep_important_jobs_in_days => 1});
+    $new_job_group->discard_changes;
+    is_deeply $find_expired_jobs->(), ['important', 'regular'], 'both jobs expired with same expiration setting';
+
+    $new_job_group->update({keep_jobs_in_days => 1, keep_important_jobs_in_days => 5});
+    $new_job_group->discard_changes;
+    is_deeply $find_expired_jobs->(), ['regular'], 'only regular job expired if retention of important jobs extended';
+
+    $new_job_group->update({keep_jobs_in_days => 5, keep_important_jobs_in_days => 1});
+    $new_job_group->discard_changes;
+    is_deeply $find_expired_jobs->(), ['important'], 'only important job expired if retentions reversed';
+};
+
 done_testing();
