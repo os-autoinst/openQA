@@ -503,7 +503,7 @@ sub _sort_dep ($list) {
         for my $job (@$list) {
             next if $done{$job};
             my $has_parents_to_go_before;
-            for my $parent (@{_chained_parents($job)}, @{_parallel_parents($job)}) {
+            for my $parent (@{_all_parents($job)}) {
                 if ($count{join('@', @$parent)}) {
                     $has_parents_to_go_before = 1;
                     last;
