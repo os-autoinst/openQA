@@ -408,7 +408,7 @@ specify the user and database name and run it as user `postgres`:
 
 [source,sh]
 ----
-sudo sudo -u postgres openqa-setup-db your_username openqa-local`
+sudo su -u postgres openqa-setup-db your_username openqa-local
 ----
 
 NOTE: To remove the database again, you can use e.g. `dropdb openqa-local` as
