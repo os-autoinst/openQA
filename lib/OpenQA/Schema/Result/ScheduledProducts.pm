@@ -482,6 +482,8 @@ sub _parallel_parents ($job) {
     [_parse_dep_variable($job->{PARALLEL_WITH}, $job)];
 }
 
+sub _all_parents ($job) { [@{_chained_parents($job)}, @{_parallel_parents($job)}] }
+
 =over 4
 
 =item _sort_dep()
@@ -501,7 +503,7 @@ sub _sort_dep ($list) {
         for my $job (@$list) {
             next if $done{$job};
             my $has_parents_to_go_before;
-            for my $parent (@{_chained_parents($job)}, @{_parallel_parents($job)}) {
+            for my $parent (@{_all_parents($job)}) {
                 if ($count{join('@', @$parent)}) {
                     $has_parents_to_go_before = 1;
                     last;
@@ -857,7 +859,7 @@ sub _is_any_parent_wanted ($jobs, $parents, $wanted_list, $visited = {}) {
             my $job_ref = _job_ref($job);
             next unless $job_ref eq $parent_job_ref;
             return 1 if $wanted_list->{$job_ref};
-            return 1 if _is_any_parent_wanted($jobs, _chained_parents($job), $wanted_list, $visited);
+            return 1 if _is_any_parent_wanted($jobs, _all_parents($job), $wanted_list, $visited);
         }
     }
     return 0;
@@ -873,16 +875,17 @@ sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained
 
         # parse relevant parents from job settings
         my $chained_parents = !$skip_chained_deps || $include_children ? _chained_parents($job) : [];
-        my $parents = _parallel_parents($job);
-        push @$parents, @$chained_parents unless $skip_chained_deps;
+        my $parallel_parents = _parallel_parents($job);
+        my $all_parents = [@$chained_parents, @$parallel_parents];
+        my $wanted_parents = $skip_chained_deps ? $parallel_parents : $all_parents;
 
         # delete unwanted jobs unless the parent is wanted and we include children
         my $unwanted = !$wanted->{_job_ref($job)};
         splice @$jobs, $i, 1 and next
-          if $unwanted && (!$include_children || !_is_any_parent_wanted($jobs, $chained_parents, $wanted));
+          if $unwanted && (!$include_children || !_is_any_parent_wanted($jobs, $all_parents, $wanted));
 
         # add parents to wanted list
-        for my $parent (@$parents) {
+        for my $parent (@$wanted_parents) {
             my $parent_job_ref = join('@', @$parent);
             for my $job (@$jobs) {
                 my $job_ref = _job_ref($job);
