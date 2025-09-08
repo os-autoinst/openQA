@@ -878,6 +878,16 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     is_deeply \%created_jobs, \%expected_jobs, 'only parallel parent and (nested) children scheduled'
       or always_explain \%created_jobs, $json_res;
 
+    subtest 'consider parallel children via _INCLUDE_CHILDREN=1' => sub {
+        my %expected_jobs = map { ("child_test_$_" => 1) } 6 .. 7;
+        %p = (%iso, _GROUP => 'opensuse test', TEST => 'child_test_7', _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1);
+        $json_res = schedule_iso($t, \%p)->json;
+        is $json_res->{count}, 2, '2 jobs scheduled';
+        %created_jobs = map { $jobs->find($_)->settings_hash->{TEST} => 1 } @{$json_res->{ids}};
+        is_deeply \%created_jobs, \%expected_jobs, 'parallel parent scheduled with its parallel child'
+          or always_explain \%created_jobs, $json_res;
+    };
+
     subtest 'params also taken via scheduled_product_clone_id; directly specified params still have precedence' => sub {
         %p = (scheduled_product_clone_id => $json_res->{scheduled_product_id}, TEST => 'child_test_3', FOO => 'bar');
         $json_res = schedule_iso($t, \%p)->json;
