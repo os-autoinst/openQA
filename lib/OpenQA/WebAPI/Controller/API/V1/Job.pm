@@ -455,6 +455,7 @@ Pass follow=1 as query param to follow job clones and report most recent result 
 =cut
 
 sub show ($self) {
+    $self->openapi->valid_input or return;
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $check_assets = !!$self->param('check_assets');
@@ -464,6 +465,11 @@ sub show ($self) {
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
     $self->render(json => {job => $job});
+}
+
+sub show_details ($self) {
+    $self->stash(details => 1);
+    show($self);
 }
 
 =over 4
@@ -494,10 +500,9 @@ Sets priority for a given job.
 =cut
 
 sub prio ($self) {
+    $self->openapi->valid_input or return;
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $v = $self->validation;
-    my $prio = $v->required('prio')->num->param;
-    return $self->reply->validation_error({format => 'json'}) if $v->has_error;
+    my $prio = $self->param('prio');
 
     # Referencing the scalar will result in true or false (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$job->set_prio($prio)});
