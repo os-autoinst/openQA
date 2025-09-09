@@ -428,7 +428,7 @@ sub create ($self) {
 }
 
 sub show ($self) {
-    $self->openapi->valid_input or return;
+    $self->reply->openapi_validate or return;
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $check_assets = !!$self->param('check_assets');
@@ -463,7 +463,7 @@ sub destroy ($self) {
 }
 
 sub prio ($self) {
-    $self->openapi->valid_input or return;
+    $self->reply->openapi_validate or return;
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $prio = $self->param('prio');
 
