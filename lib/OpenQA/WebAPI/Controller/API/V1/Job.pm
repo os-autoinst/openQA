@@ -427,20 +427,8 @@ sub create ($self) {
     $self->render(json => $json, status => ($json->{error} ? 400 : 200));
 }
 
-=over 4
-
-=item show()
-
-Shows details for a specific job, such as the assets associated, assigned worker id,
-children and parents, job id, group id, name, parent group id and name, priority, result,
-settings, state and times of startup and finish of the job.
-Pass follow=1 as query param to follow job clones and report most recent result for given id.
-
-=back
-
-=cut
-
 sub show ($self) {
+    $self->openapi->valid_input or return;
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $check_assets = !!$self->param('check_assets');
@@ -450,6 +438,11 @@ sub show ($self) {
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
     $self->render(json => {job => $job});
+}
+
+sub show_details ($self) {
+    $self->stash(details => 1);
+    show($self);
 }
 
 =over 4
@@ -469,21 +462,10 @@ sub destroy ($self) {
     $self->render(json => {result => 1});
 }
 
-=over 4
-
-=item prio()
-
-Sets priority for a given job.
-
-=back
-
-=cut
-
 sub prio ($self) {
+    $self->openapi->valid_input or return;
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $v = $self->validation;
-    my $prio = $v->required('prio')->num->param;
-    return $self->reply->validation_error({format => 'json'}) if $v->has_error;
+    my $prio = $self->param('prio');
 
     # Referencing the scalar will result in true or false (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$job->set_prio($prio)});
