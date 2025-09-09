@@ -189,6 +189,8 @@ sub _validate_common_properties ($self) {
 
 sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
     my @errors;
+    my %errors_by_field;
+    my %warnings_by_field;
     my $prefix = $self->is_parent ? 'default_' : '';
     for my $important ('', '_important') {
         my $log_key = "${prefix}keep${important}_logs_in_days";
@@ -197,11 +199,40 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
         my $log_value = $properties->{$log_key} // ($group ? $group->$log_key : 0);
         my $result_value = $properties->{$result_key} // ($group ? $group->$result_key : 0);
         my $job_value = $properties->{$job_key} // ($group ? $group->$job_key : 0);
-        push @errors, "'$log_key' must be <= '$result_key'" if $result_value != 0 && $log_value > $result_value;
-        push @errors, "'$result_key' must be <= '$job_key'" if $job_value != 0 && $result_value > $job_value;
+        if ($result_value != 0 && $log_value > $result_value) {
+            push @{$errors_by_field{$log_key}}, "must be <= '$result_key'";
+            push @errors, "'$log_key' must be <= '$result_key'";
+        }
+        if ($job_value != 0 && $result_value > $job_value) {
+            push @{$errors_by_field{$result_key}}, "must be <= '$job_key'";
+            push @errors, "'$result_key' must be <= '$job_key'";
+        }
     }
-    $self->render(json => {error => join(', ', @errors)}, status => 400) if @errors;
+    for my $field (qw(logs results jobs)) {
+        my $important_key = "${prefix}keep_important_${field}_in_days";
+        my $regular_key = "${prefix}keep_${field}_in_days";
+        my $important_value = $properties->{$important_key} // ($group ? $group->$important_key : 0);
+        my $regular_value = $properties->{$regular_key} // ($group ? $group->$regular_key : 0);
+        if ($important_value != 0 && $important_value < $regular_value) {
+            push @{$warnings_by_field{$important_key}}, "should be >= '$regular_key'";
+        }
+    }
+    $self->{_errors} = \@errors;
+    $self->{_errors_by_field} = \%errors_by_field;
+    $self->{_warnings_by_field} = \%warnings_by_field;
     return @errors == 0;
+}
+
+sub _render_json ($self, $id = undef) {
+    my $errors = $self->{_errors};
+    my $status = @$errors ? 400 : 200;
+    my %res = (
+        errors_by_field => $self->{_errors_by_field} // {},
+        warnings_by_field => $self->{_warnings_by_field} // {},
+    );
+    $res{id} = $id if defined $id;
+    $res{error} = join(', ', @$errors) if @$errors;
+    $self->render(json => \%res, status => $status);
 }
 
 =over 4
@@ -242,13 +273,13 @@ sub create ($self) {
     }
 
     my $properties = $self->load_properties;
-    return undef unless $self->_check_keep_logs_and_results($properties);
+    return $self->_render_json unless $self->_check_keep_logs_and_results($properties);
     my $id;
     try { $id = $self->resultset->create($properties)->id }
     catch ($e) { return $self->render(json => {error => $e}, status => 400) }
 
     $self->emit_event(openqa_jobgroup_create => {id => $id});
-    $self->render(json => {id => $id});
+    $self->_render_json($id);
 }
 
 =over 4
@@ -281,13 +312,13 @@ sub update ($self) {
     }
 
     my $properties = $self->load_properties;
-    return undef unless $self->_check_keep_logs_and_results($properties, $group);
+    return $self->_render_json unless $self->_check_keep_logs_and_results($properties, $group);
     my $id;
     try { $id = $group->update($properties)->id }
     catch ($e) { return $self->render(json => {error => $e}, status => 400) }
 
     $self->emit_event(openqa_jobgroup_update => {id => $id});
-    $self->render(json => {id => $id});
+    $self->_render_json($id);
 }
 
 =over 4

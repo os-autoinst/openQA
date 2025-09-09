@@ -529,10 +529,12 @@ subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => s
                 $params->{keep_results_name} => 1,
                 $params->{keep_jobs_name} => 1
             );
-            my @expected_errors = (
-                "'$params->{keep_logs_name}' must be <= '$params->{keep_results_name}'",
-                "'$params->{keep_important_logs_name}' must be <= '$params->{keep_important_results_name}'",
+            my %expected_errors_by_field = (
+                $params->{keep_logs_name} => ["must be <= '$params->{keep_results_name}'"],
+                $params->{keep_important_logs_name} => ["must be <= '$params->{keep_important_results_name}'"],
             );
+            my @fields = qw(keep_logs_name keep_important_logs_name);
+            my @expected_errors = map { "'$params->{$_}' $expected_errors_by_field{$params->{$_}}->[0]" } @fields;
             my %form_invalid_1 = (
                 %form_invalid,
                 $params->{keep_important_logs_name} => 5,
@@ -541,12 +543,31 @@ subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => s
             $t->post_ok($params->{endpoint}, form => \%form_invalid_1);
             $t->status_is(400, "creation fails if $params->{keep_results_name} lower than $params->{keep_logs_name}");
             $t->json_is('/error' => join(', ', @expected_errors), "error message on invalid $test creation (1)");
-            my %form_invalid_2 = (%form_invalid, $params->{keep_logs_name} => 1, $params->{keep_results_name} => 2);
+            $t->json_is(
+                '/errors_by_field' => \%expected_errors_by_field,
+                "errors by field on invalid $test creation (1)"
+            );
+            $t->json_is('/warnings_by_field' => {}, "no warnings by field on invalid $test creation (1)");
+            my %form_invalid_2 = (
+                %form_invalid, $params->{keep_logs_name} => 1,
+                $params->{keep_important_logs_name} => 0,
+                $params->{keep_results_name} => 2,
+                $params->{keep_important_results_name} => 1
+            );
             $t->post_ok($params->{endpoint}, form => \%form_invalid_2);
             $t->status_is(400, "creation fails if $params->{keep_jobs_name} lower than $params->{keep_results_name}");
             $t->json_is(
                 '/error' => "'$params->{keep_results_name}' must be <= '$params->{keep_jobs_name}'",
                 "error message on invalid $test creation (2)"
+            );
+            $t->json_is(
+                '/errors_by_field' => {$params->{keep_results_name} => ["must be <= '$params->{keep_jobs_name}'"]},
+                "no warnings by field on invalid $test creation (2)"
+            );
+            $t->json_is(
+                '/warnings_by_field' =>
+                  {$params->{keep_important_results_name} => ["should be >= '$params->{keep_results_name}'"]},
+                "no warnings by field on invalid $test creation (2)"
             );
             $t->post_ok($params->{endpoint}, form => {name => $params->{name}});
             $t->status_is(200, "can create $test without retention parameters");
