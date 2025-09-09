@@ -336,6 +336,7 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper('reply.validation_error' => \&_validation_error);
+    $app->helper('reply.openapi_validate' => \&_openapi_validate);
 
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
     $app->helper(every_non_empty_param => \&_every_non_empty_param);
@@ -587,6 +588,20 @@ sub _validation_error {
     my $error = "Erroneous parameters ($failed)";
     return $c->render(json => {error => $error}, status => 400) if $format eq 'json';
     return $c->render(text => $error, status => 400);
+}
+
+sub _openapi_validate ($c) {
+    return 1 unless my @errors = $c->openapi->validate;
+    my %errors;
+    for my $error (@errors) {
+        my $path = $error->path =~ s{^/}{}r;
+        $path =~ tr{/}{_};
+        $errors{$path} = {message => $error->message};
+    }
+    my $failed = join(', ', map { "$_: $errors{$_}->{message}" } sort keys %errors);
+    my $msg = "Erroneous parameters ($failed)";
+    $c->render(json => {error_status => 400, error => $msg, details => \%errors}, status => 400);
+    return 0;
 }
 
 1;
