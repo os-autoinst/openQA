@@ -121,6 +121,19 @@ curl -H 'Authorization: Bearer arthur:1234567890ABCDEF:ABCDEF1234567890'\
     -X DELETE https://openqa.example.com/api/v1/assets/1
 ----
 
+When using `curl` or `wget` one can utilise the `~/.netrc` file to 
+automatically add those credentials. See the following template for
+openqa.example.com and the user arthur
+
+[source,txt]
+----
+machine openqa.example.com login arthur password 1234567890ABCDEF:ABCDEF1234567890
+----
+
+For `curl` one needs to use `curl --netrc`.
+For `wget` it's `wget --auth-no-challenge` so that `wget` will provide the 
+access credentials without being explicitly asked.
+
 == Features
 
 Many of the `openqa-cli api` features are designed to be similar to other
