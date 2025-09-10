@@ -505,6 +505,46 @@ function showSubmitResults(form, result) {
   form.find('.properties-status').html(result);
 }
 
+// adds/removes "is-invalid"/"invalid-feedback" classes/elements within the specified form for the specified response
+// returns the overall error with mentionings of internal field names replaced with labels from the form
+function updateValidation(form, response) {
+  const E = createElement;
+  const errorsByField = response?.errors_by_field ?? {};
+  const warningsByField = response?.warnings_by_field ?? {};
+  const elements = Array.from(form.elements);
+  const labels = elements.filter(e => e.labels?.length > 0).map(e => [`'${e.name}'`, `"${e.labels[0].innerText}"`]);
+  const applyLabels = msg => labels.reduce((msg, label) => msg.replace(...label), msg);
+  const overallError = typeof response.error === 'string' ? applyLabels(response.error) : undefined;
+  elements.forEach(element => {
+    const fieldName = element.name;
+    if (fieldName.length === 0) {
+      return;
+    }
+    const errors = errorsByField[fieldName];
+    const warnings = warningsByField[fieldName];
+    const hasErrors = Array.isArray(errors) && errors.length > 0;
+    const hasWarnings = Array.isArray(warnings) && warnings.length > 0;
+    const parentElement = element.parentElement;
+    let feedbackElement = parentElement.querySelector('.invalid-feedback');
+    element.classList[hasErrors || hasWarnings ? 'add' : 'remove']('is-invalid');
+    element.classList[hasWarnings ? 'add' : 'remove']('is-invalid-non-critical');
+    if (hasErrors || hasWarnings) {
+      if (feedbackElement === null) {
+        feedbackElement = E('div', [], {class: 'invalid-feedback'});
+        parentElement.appendChild(feedbackElement);
+      } else {
+        feedbackElement.innerHTML = '';
+      }
+      const addBadge = (className, msg) => feedbackElement.appendChild(E('span', [msg], {class: className}));
+      hasErrors && errors.map(applyLabels).forEach(addBadge.bind(undefined, 'badge text-bg-danger'));
+      hasWarnings && warnings.map(applyLabels).forEach(addBadge.bind(undefined, 'badge text-bg-warning'));
+    } else if (feedbackElement !== null) {
+      parentElement.removeChild(feedbackElement);
+    }
+  });
+  return overallError;
+}
+
 function submitProperties(form) {
   var editorForm = $(form);
   editorForm.find('.buttons').hide();
@@ -523,9 +563,19 @@ function submitProperties(form) {
         });
     })
     .then(({response, json}) => {
-      if (!response.ok || json.error)
-        throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
-      showSubmitResults(editorForm, '<i class="fa fa-save"></i> Changes applied');
+      const collapse = document.getElementById('show-advanced-cleanup-settings-button');
+      if (json?.error?.includes('_jobs') && collapse.getAttribute('aria-expanded') !== 'true') {
+        collapse.click();
+      }
+      const overallError = updateValidation(form, json);
+      if (!response.ok || overallError)
+        throw `Server returned ${response.status}: ${response.statusText}\n${overallError || ''}`;
+      const warnings = json?.warnings_by_field;
+      const remark =
+        typeof warnings === 'object' && Object.keys(warnings).length > 0
+          ? ', but <strong>there are warnings</strong> (see highlighted fields)'
+          : '';
+      showSubmitResults(editorForm, `<i class="fa fa-save"></i> Changes applied${remark}`);
 
       // show new name
       var newJobName = $('#editor-name').val();
@@ -538,10 +588,6 @@ function submitProperties(form) {
       $('td.prio input').attr('placeholder', defaultPrio);
     })
     .catch(error => {
-      const collapse = document.getElementById('show-advanced-cleanup-settings-button');
-      if (error.includes('_jobs') && collapse.getAttribute('aria-expanded') !== 'true') {
-        collapse.click();
-      }
       showSubmitResults(
         editorForm,
         `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${error}</strong>`
