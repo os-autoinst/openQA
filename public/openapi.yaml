@@ -1,0 +1,232 @@
+openapi: 3.0.3
+info:
+  version: '1.0'
+  title: OpenQA API
+externalDocs:
+  description: The official OpenQA doc
+  url: https://open.qa/docs/
+servers:
+  - url: /api/v1
+tags:
+  - name: public
+    description: Those API routes which are public (no auth)
+  - name: ro
+    description: read-only routes
+security:
+  - basicAuth: []
+paths:
+  /jobs/{jobid}:
+    get:
+      tags:
+        - public
+      summary: Filters jobs based on a single setting key/value pair.
+      operationId: apiv1_job
+      x-mojo-name: apiv1_job
+      x-mojo-to: 'job#show'
+      #   $validation->optional('scope')->in('current', 'relevant');
+      # $validation->optional('latest')->num(1);
+      # $validation->optional('limit')->num;
+      # $validation->optional('offset')->num;
+      # $validation->optional('groupid')->num;
+      # $validation->optional('not_groupid')->num
+      parameters:
+        - name: jobid
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items: {}
+        # '404':
+        #   description: 'Not Found.'
+        #   content:
+        #     text/plain:
+        #       schema:
+        #         type: string
+        #         example: 'Scheduled product to clone settings from not found.'
+      #   '400':
+      #     description: Erroneous parameters (key invalid, list_value invalid)
+      #     content:
+      #       application/json:
+      #         schema:
+      #           type: object
+      #           properties:
+      #             error_status:
+      #               type: integer
+      #             error:
+      #               type: string
+      #               example: Erroneous parameters (key invalid, list_value invalid)
+      #       text/plain:
+      #         schema:
+      #           type: string
+      #           example: Erroneous parameters (key invalid, list_value invalid)
+  /jobs/{jobid}/prio:
+    post:
+      tags:
+        - ro
+      summary: 'Sets priority for a given job.'
+      description: |
+        'Sets priority for a given job.'
+      operationId: 'apiv1_job_prio'
+      x-mojo-name: 'apiv1_job_prio'
+      x-mojo-to: 'job#prio'
+      parameters:
+        - name: jobid
+          in: path
+          required: true
+          description: 'The ID of the job to update.'
+          schema:
+            type: integer
+        # - $ref: '#/components/parameters/CSRFHeader'
+        # - in: cookie
+        #   name: csrftoken
+        #   schema:
+        #     type: string
+      requestBody:
+        description: 'new priority'
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              requires:
+                - prio
+              properties:
+                prio:
+                  type: integer
+                  description: 'The new priority value. Higher is more important.'
+                  example: 50
+      responses:
+        '200':
+          description: 'OK. The jobs were scheduled synchronously.'
+          content:
+            application/json:
+              schema:
+                #$ref: '#/components/schemas/IsoSyncResponse'
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 'True if the update was successful.'
+        # '202':
+        #   description: 'Accepted. The job scheduling was enqueued to run asynchronously.'
+        #   content:
+        #     application/json:
+        #       schema:
+        #         $ref: '#/components/schemas/IsoAsyncResponse'
+        # '400':
+        #   description: 'Bad Request with something is missing or invalid.'
+        #   content:
+        #     text/plain:
+        #       schema:
+        #         type: string
+        #         example: 'Specified scheduled_product_id is invalid.'
+        # '404':
+        #   description: 'Not Found.'
+        #   content:
+        #     text/plain:
+        #       schema:
+        #         type: string
+        #         example: 'Scheduled product to clone settings from not found.'
+components:
+  parameters:
+    CSRFHeader:
+      name: X-Requested-With
+      in: header
+      description: 'Required header to bypass CSRF check for API clients.'
+      required: true
+      schema:
+        type: string
+        default: XMLHttpRequest
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: "HTTP Basic Authentication using your username and a composite password of 'API_KEY:API_SECRET'."
+    oauth2Auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://id.opensuse.org/login/ldap
+          scopes:
+            admin: admin
+            operator: operator
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # optional, arbitrary value for documentation purposes
+  schemas:
+    isosSync:
+      type: object
+      required:
+        - DISTRI
+        - VERSION
+        - FLAVOR
+        - ARCH
+      properties:
+        DISTRI:
+          type: string
+          description: 'The Linux distribution.'
+          example: 'opensuse'
+        VERSION:
+          type: string
+          description: 'The distribution version.'
+          example: '15.4'
+        FLAVOR:
+          type: string
+          description: 'The build flavor, e.g., DVD, Live, etc.'
+          example: 'DVD'
+        ARCH:
+          type: string
+          description: 'The processor architecture.'
+          example: 'x86_64'
+        async:
+          type: boolean
+          description: 'If true, the operation runs as a background job.'
+
+    isosAsync:
+      type: object
+      required:
+        - scheduled_product_clone_id
+      properties:
+        scheduled_product_clone_id:
+          type: integer
+          description: 'ID of a previous product to clone settings from.'
+          example: 12345
+        async:
+          type: boolean
+          description: 'If true, the operation runs as a background job.'
+      additionalProperties: {}
+
+    IsoSyncResponse:
+      type: object
+      properties:
+        scheduled_product_id:
+          type: integer
+        count:
+          type: integer
+        ids:
+          type: array
+          items:
+            type: integer
+        failed:
+          type: object
+          additionalProperties: true
+
+    IsoAsyncResponse:
+      type: object
+      properties:
+        job_id:
+          type: integer
+        scheduled_product_id:
+          type: integer

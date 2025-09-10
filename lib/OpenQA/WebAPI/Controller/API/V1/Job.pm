@@ -80,6 +80,8 @@ Limit the number of jobs.
 
 sub list ($self) {
     my $validation = $self->validation;
+    #$self->openapi->valid_input or return;
+    #my $validation = $self->openapi->validator;
     $validation->optional('scope')->in('current', 'relevant');
     $validation->optional('latest')->num(1);
     $validation->optional('limit')->num;
@@ -455,6 +457,8 @@ Pass follow=1 as query param to follow job clones and report most recent result 
 =cut
 
 sub show ($self) {
+    # manually triggers validation - unclear if this is how it should be
+    $self->openapi->valid_input or return;
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $check_assets = !!$self->param('check_assets');
@@ -463,7 +467,7 @@ sub show ($self) {
     $job = $job->latest_job if $follow;
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
-    $self->render(json => {job => $job});
+    $self->render(openapi => {job => $job});
 }
 
 =over 4
@@ -494,10 +498,14 @@ Sets priority for a given job.
 =cut
 
 sub prio ($self) {
+    
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $v = $self->validation;
-    my $prio = $v->required('prio')->num->param;
-    return $self->reply->validation_error({format => 'json'}) if $v->has_error;
+    # seems this is the default behavior
+    $self->openapi->valid_input or return;
+    #my $v = $self->validation;
+    #my $prio = $v->required('prio')->num->param;
+    my $prio = $self->param('prio');
+    #return $self->reply->validation_error({format => 'json'}) if $v->has_error;
 
     # Referencing the scalar will result in true or false (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$job->set_prio($prio)});
