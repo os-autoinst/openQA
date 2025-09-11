@@ -193,22 +193,6 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
     my %warnings_by_field;
     my %changed_fields;
     my $prefix = $self->is_parent ? 'default_' : '';
-    for my $important ('', '_important') {
-        my $log_key = "${prefix}keep${important}_logs_in_days";
-        my $result_key = "${prefix}keep${important}_results_in_days";
-        my $job_key = "${prefix}keep${important}_jobs_in_days";
-        my $log_value = $properties->{$log_key} // ($group ? $group->$log_key : 0);
-        my $result_value = $properties->{$result_key} // ($group ? $group->$result_key : 0);
-        my $job_value = $properties->{$job_key} // ($group ? $group->$job_key : 0);
-        if ($result_value != 0 && $log_value > $result_value) {
-            push @{$errors_by_field{$log_key}}, "must be <= '$result_key'";
-            push @errors, "'$log_key' must be <= '$result_key'";
-        }
-        if ($job_value != 0 && $result_value > $job_value) {
-            push @{$errors_by_field{$result_key}}, "must be <= '$job_key'";
-            push @errors, "'$result_key' must be <= '$job_key'";
-        }
-    }
     for my $field (qw(logs results jobs)) {
         my $important_key = "${prefix}keep_important_${field}_in_days";
         my $regular_key = "${prefix}keep_${field}_in_days";
@@ -217,6 +201,22 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
         if ($important_value != 0 && $important_value < $regular_value) {
             $changed_fields{$important_key} = $properties->{$important_key} = $regular_value;
             push @{$warnings_by_field{$important_key}}, "automatically increased to match '$regular_key'";
+        }
+    }
+    for my $important ('', '_important') {
+        my $log_key = "${prefix}keep${important}_logs_in_days";
+        my $result_key = "${prefix}keep${important}_results_in_days";
+        my $job_key = "${prefix}keep${important}_jobs_in_days";
+        my $log_value = $properties->{$log_key} // ($group ? $group->$log_key : 0);
+        my $result_value = $properties->{$result_key} // ($group ? $group->$result_key : 0);
+        my $job_value = $properties->{$job_key} // ($group ? $group->$job_key : 0);
+        if ($result_value != 0 && $log_value > $result_value) {
+            $changed_fields{$result_key} = $properties->{$result_key} = $log_value;
+            push @{$warnings_by_field{$result_key}}, "automatically increased to match '$log_key'";
+        }
+        if ($job_value != 0 && $result_value > $job_value) {
+            $changed_fields{$job_key} = $properties->{$job_key} = $result_value;
+            push @{$warnings_by_field{$job_key}}, "automatically increased to match '$result_key'";
         }
     }
     $self->{_errors} = \@errors;
