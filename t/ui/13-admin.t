@@ -428,17 +428,28 @@ subtest 'job property editor' => sub() {
         $ele = $driver->find_element_by_id('editor-keep-important-results-in-days');
         $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $ele->send_keys('500');
+        $ele = $driver->find_element_by_id('editor-keep-results-in-days');
+        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $ele->send_keys('501');
         is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
             undef, 'group properties save button is enabled');
         $driver->find_element_by_id('editor-carry-over-bugrefs')->click();
         $driver->find_element('#properties p.buttons button.btn-primary')->click();
         wait_for_ajax(msg => 'ensure there is no race condition, even though the page is reloaded');
+        my $status = $driver->find_element('.properties-status')->get_text;
+        my $input = $driver->find_element('#editor-keep-important-results-in-days.is-invalid.is-invalid-non-critical');
+        my $badge_sel = '#editor-keep-important-results-in-days ~ .invalid-feedback .badge.text-bg-warning';
+        my $badge = $driver->find_element($badge_sel)->get_text;
+        ok $input, 'input is highlighted to show a non-critical validation issue';
+        like $status, qr/Changes applied.*warnings/i, 'remark about warnings';
+        like $badge, qr/should be >= "Keep results for"/i, 'badge with warning shown';
         $driver->refresh();
         $driver->title_is('openQA: Job templates for Cool Group has been edited!', 'new name on title');
         $driver->find_element_by_id('toggle-group-properties')->click();
         is element_prop('editor-name'), 'Cool Group has been edited!', 'name edited';
         is element_prop('editor-size-limit'), '1000', 'size edited';
         is element_prop('editor-keep-important-results-in-days'), '500', 'keep important results in days edited';
+        is element_prop('editor-keep-results-in-days'), '501', 'keep results in days edited';
         is element_prop('editor-default-priority'), '50', 'default priority should be the same';
         ok !element_prop('editor-carry-over-bugrefs', 'checked'), 'bug carry over disabled';
 

@@ -127,6 +127,7 @@
 < ../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js
 < ../node_modules/timeago/jquery.timeago.js
 < javascripts/index.js
+< javascripts/render.js
 < javascripts/admintable.js
 < javascripts/admin_user.js
 < javascripts/admin_api_keys.js
@@ -157,7 +158,6 @@
 < ../node_modules/anser/lib/index.js
 
 ! test_result.js
-< javascripts/render.js
 < javascripts/test_result.js
 < javascripts/needlediff.js
 < javascripts/running.js
