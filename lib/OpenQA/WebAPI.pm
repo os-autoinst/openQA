@@ -206,6 +206,7 @@ sub startup ($self) {
     $r->get('/dashboard_build_results' => [format => ['json', 'html']])->name('dashboard_build_results')
       ->to('main#dashboard_build_results', format => undef);
     $r->get('/api_help' => sub ($c) { $c->render('admin/api_help') })->name('api_help');
+    $r->get('/swagger' => sub ($c) { $c->render('swagger') })->name('swagger');
 
     # Default route
     $r->get('/' => sub ($c) { $c->render('main/index') })->name('index');
