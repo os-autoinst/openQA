@@ -41,16 +41,16 @@ paths:
                   jobs:
                     type: array
                     items: {}
-        # '404':
-        #   description: 'Not Found.'
-        #   content:
-        #     application/json:
-        #       schema:
-        #         type: object
-        #         example: 'Scheduled product to clone settings from not found.'
-        #         properties:
-        #           error:
-        #             type: string
+        '404':
+          description: 'Not Found.'
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 'Scheduled product to clone settings from not found.'
+                properties:
+                  error:
+                    type: string
       #   '400':
       #     description: Erroneous parameters (key invalid, list_value invalid)
       #     content:

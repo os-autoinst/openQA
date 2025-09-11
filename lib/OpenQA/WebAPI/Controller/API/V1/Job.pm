@@ -467,7 +467,7 @@ sub show ($self) {
     $job = $job->latest_job if $follow;
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
-    $self->render(json => {job => $job});
+    $self->render(openapi => {job => $job});
 }
 
 =over 4
@@ -508,8 +508,7 @@ sub prio ($self) {
     #return $self->reply->validation_error({format => 'json'}) if $v->has_error;
 
     # Referencing the scalar will result in true or false (see http://mojolicio.us/perldoc/Mojo/JSON)
-    $self->render(json => {result => \$job->set_prio($prio)});
-    #$self->render(openapi => {result => \$job->set_prio($prio)});
+    $self->render(openapi => {result => \$job->set_prio($prio)});
 }
 
 =over 4
