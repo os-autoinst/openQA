@@ -568,8 +568,8 @@ function submitProperties(form) {
         collapse.click();
       }
       const overallError = updateValidation(form, json);
-      if (!response.ok || overallError)
-        throw `Server returned ${response.status}: ${response.statusText}\n${overallError || ''}`;
+      if (overallError) throw overallError;
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       const warnings = json?.warnings_by_field;
       const remark =
         typeof warnings === 'object' && Object.keys(warnings).length > 0
