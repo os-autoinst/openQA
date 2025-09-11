@@ -4,7 +4,7 @@
 use Test::Most;
 use Test::Warnings qw(:report_warnings);
 use Mojo::Base -strict, -signatures;
-
+use Data::Dumper;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
@@ -24,7 +24,10 @@ subtest jobs => sub {
     $t->get_ok('/api/v1/jobs/80000')->status_is(200)->json_is('/job/id', '80000')->json_is('/job/testresults', undef);
 
     $t->post_ok('/api/v1/jobs/80000/prio', form => {prio => 99})->status_is(200);
-    #$t->post_ok('/api/v1/jobs/80000/prio', form => {prio => 'not a number'})->status_is(400)->json_like('/error', qr{Erroneous parameters.*prio});
+    #warn "*** " . Dumper($t->tx->res);
+    # openapi validator executed. no output from the controller
+    $t->post_ok('/api/v1/jobs/80000/prio', form => {prio => 'not a number'})->status_is(400)
+      ->json_like('/errors/0/message', qr{Expected integer});
 };
 
 done_testing;

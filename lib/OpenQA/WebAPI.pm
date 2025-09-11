@@ -52,7 +52,11 @@ sub startup ($self) {
     OpenQA::Schema->singleton;
 
     # Some controllers are shared between openQA micro services
-    my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::WebAPI::Controller', 'OpenQA::WebAPI', 'OpenQA::WebAPI::Controller::API::V1']);
+    my $r = $self->routes->namespaces(
+        [
+            'OpenQA::Shared::Controller', 'OpenQA::WebAPI::Controller',
+            'OpenQA::WebAPI', 'OpenQA::WebAPI::Controller::API::V1'
+        ]);
 
     # register basic routes
     my $logged_in = $r->under('/')->to('session#ensure_user');

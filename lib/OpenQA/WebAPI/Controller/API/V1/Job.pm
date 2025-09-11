@@ -467,7 +467,7 @@ sub show ($self) {
     $job = $job->latest_job if $follow;
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
-    $self->render(openapi => {job => $job});
+    $self->render(json => {job => $job});
 }
 
 =over 4
@@ -499,9 +499,9 @@ Sets priority for a given job.
 
 sub prio ($self) {
     
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     # seems this is the default behavior
     $self->openapi->valid_input or return;
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     #my $v = $self->validation;
     #my $prio = $v->required('prio')->num->param;
     my $prio = $self->param('prio');
@@ -509,6 +509,7 @@ sub prio ($self) {
 
     # Referencing the scalar will result in true or false (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$job->set_prio($prio)});
+    #$self->render(openapi => {result => \$job->set_prio($prio)});
 }
 
 =over 4

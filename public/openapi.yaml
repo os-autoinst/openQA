@@ -23,12 +23,6 @@ paths:
       operationId: apiv1_job
       x-mojo-name: apiv1_job
       x-mojo-to: 'job#show'
-      #   $validation->optional('scope')->in('current', 'relevant');
-      # $validation->optional('latest')->num(1);
-      # $validation->optional('limit')->num;
-      # $validation->optional('offset')->num;
-      # $validation->optional('groupid')->num;
-      # $validation->optional('not_groupid')->num
       parameters:
         - name: jobid
           in: path
@@ -50,10 +44,13 @@ paths:
         # '404':
         #   description: 'Not Found.'
         #   content:
-        #     text/plain:
+        #     application/json:
         #       schema:
-        #         type: string
+        #         type: object
         #         example: 'Scheduled product to clone settings from not found.'
+        #         properties:
+        #           error:
+        #             type: string
       #   '400':
       #     description: Erroneous parameters (key invalid, list_value invalid)
       #     content:
@@ -92,6 +89,7 @@ paths:
         #   name: csrftoken
         #   schema:
         #     type: string
+
       requestBody:
         description: 'new priority'
         required: true
@@ -99,7 +97,7 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               type: object
-              requires:
+              required:
                 - prio
               properties:
                 prio:
@@ -116,8 +114,8 @@ paths:
                 type: object
                 properties:
                   result:
-                    type: boolean
-                    description: 'True if the update was successful.'
+                    #type: {} #???????
+                    description: 'True if the update was successful'
         # '202':
         #   description: 'Accepted. The job scheduling was enqueued to run asynchronously.'
         #   content:
@@ -127,7 +125,7 @@ paths:
         # '400':
         #   description: 'Bad Request with something is missing or invalid.'
         #   content:
-        #     text/plain:
+        #     application/json:
         #       schema:
         #         type: string
         #         example: 'Specified scheduled_product_id is invalid.'
