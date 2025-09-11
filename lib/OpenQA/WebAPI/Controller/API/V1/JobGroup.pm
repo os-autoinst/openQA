@@ -214,7 +214,8 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
         my $important_value = $properties->{$important_key} // ($group ? $group->$important_key : 0);
         my $regular_value = $properties->{$regular_key} // ($group ? $group->$regular_key : 0);
         if ($important_value != 0 && $important_value < $regular_value) {
-            push @{$warnings_by_field{$important_key}}, "should be >= '$regular_key'";
+            $properties->{$important_key} = $regular_value;
+            push @{$warnings_by_field{$important_key}}, "automatically increased to match '$regular_key'";
         }
     }
     $self->{_errors} = \@errors;
