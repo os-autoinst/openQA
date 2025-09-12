@@ -18,7 +18,7 @@ sub _delete_needles ($app, $minion_job, $args) {
     # SignalGuard will prevent the delete task to interrupt with no recovery,
     # instead will retry once the gru server returned up and running. The popup
     # on the frontend will wait until the retried job finished.
-    my $signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
+    my $signal_guard = OpenQA::Task::SignalGuard->new($minion_job, abort => 1);
     my $schema = $app->schema;
     my $needles = $schema->resultset('Needles');
     my $user = $schema->resultset('Users')->find($args->{user_id});
@@ -39,6 +39,8 @@ sub _delete_needles ($app, $minion_job, $args) {
         }
         push @{$to_remove{$needle->directory->path}}, $needle;
     }
+
+    $signal_guard->abort(0);
 
     for my $dir (sort keys %to_remove) {
         my $needles = $to_remove{$dir};
