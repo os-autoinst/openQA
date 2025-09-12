@@ -10546,6 +10546,21 @@ personal access token in the form of a Bearer token.</p>
 <span class="tok-w">    </span>-X<span class="tok-w"> </span>DELETE<span class="tok-w"> </span>https://openqa.example.com/api/v1/assets/1</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>When using <code>curl</code> or <code>wget</code> one can utilise the <code>~/.netrc</code> file to
+automatically add those credentials. See the following template for
+openqa.example.com and the user arthur</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="txt"><span></span>machine openqa.example.com login arthur password 1234567890ABCDEF:ABCDEF1234567890</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For <code>curl</code> one needs to use <code>curl --netrc</code>.
+For <code>wget</code> it&#8217;s <code>wget --auth-no-challenge</code> so that <code>wget</code> will provide the
+access credentials without being explicitly asked.</p>
+</div>
 </div>
 </div>
 </div>
@@ -14334,7 +14349,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-09 04:44:56 UTC
+Last updated 2025-09-12 04:44:52 UTC
 </div>
 </div>
 </body>
