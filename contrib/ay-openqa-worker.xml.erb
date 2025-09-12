@@ -3,19 +3,19 @@
 <profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
   <general>
     <mode>
-      <confirm config:type="boolean">false</confirm>
+      <confirm t="boolean">false</confirm>
     </mode>
   </general>
   <networking>
     <!-- okurz: 2023-06-13: For multiple network interfaces by default the last is configured, prefer the first -->
-    <interfaces config:type="list">
+    <interfaces t="list">
       <interface>
         <bootproto>dhcp</bootproto>
         <name>eth0</name>
         <startmode>auto</startmode>
       </interface>
     </interfaces>
-    <keep_install_network config:type="boolean">true</keep_install_network>
+    <keep_install_network t="boolean">true</keep_install_network>
     <routing t="map">
       <ipv4_forward t="boolean">true</ipv4_forward>
       <ipv6_forward t="boolean">true</ipv6_forward>
@@ -23,7 +23,7 @@
   </networking>
   <% if os_release[:id] == 'opensuse-leap' %>
   <add-on>
-    <add_on_others config:type="list">
+    <add_on_others t="list">
       <listentry>
         <media_url>https://download.opensuse.org/distribution/leap/<%= os_release[:version] %>/repo/oss</media_url>
         <alias>repo-oss</alias>
@@ -49,14 +49,14 @@
   <% end %>
   <software>
     <% if os_release[:id] == 'opensuse-leap' %>
-    <products config:type="list">
+    <products t="list">
       <product>Leap</product>
     </products>
     <% end %>
-    <patterns config:type="list">
+    <patterns t="list">
       <pattern>kvm_server</pattern>
     </patterns>
-    <packages config:type="list">
+    <packages t="list">
       <package>openssh</package>
       <package>sudo</package>
       <package>salt-minion</package>
@@ -67,16 +67,16 @@
     <hwclock>UTC</hwclock>
     <timezone>Etc/UTC</timezone>
   </timezone>
-  <partitioning config:type="list">
+  <partitioning t="list">
     <drive>
+      <initialize t="boolean">true</initialize> <%# wipe out partition table before AutoYaST starts partition calculation %>
       <% disk = disks.sort_by { |d| d[:size] }.first %> <%# find the [smallest] disk for main OS installation %>
       <device><%= disk[:udev_names][0] %></device> <%# print the disk device name %>
-      <initialize config:type="boolean">true</initialize>
-      <partitions config:type="list">
+      <partitions t="list">
         <partition>
           <mount>/</mount>
           <size>max</size>
-          <filesystem config:type="symbol">btrfs</filesystem>
+          <filesystem t="symbol">btrfs</filesystem>
         </partition>
         <partition>
           <mount>swap</mount>
@@ -89,12 +89,12 @@
     <% if raidarray.length > 1 %> <%# if there is more than one disk remaining on the system, combine them into a raid array %>
       <% for d in 0..raidarray.length - 1 %>
       <drive>
+      <initialize t="boolean">true</initialize> <%# wipe out partition table before AutoYaST starts partition calculation %>
       <type t="symbol">CT_DISK</type>
       <device><%= raidarray[d][:udev_names][0] %></device> <%# print full device name such as /dev/nvme0n1 %>
-      <disklabel>none</disklabel>
-      <partitions config:type="list">
+      <partitions t="list">
         <partition>
-          <raid_name>/dev/md/openqa</raid_name>
+          <raid_name>/dev/md/openqa</raid_name> <%# device node used within automount systemd service var-lib-automount %>
           <size>max</size>
         </partition>
       </partitions>
@@ -104,12 +104,6 @@
     <drive>
       <type t="symbol">CT_MD</type>
       <device>/dev/md/openqa</device>
-      <partitions config:type="list">
-        <partition>
-          <mount>/var/lib/openqa</mount>
-          <size>max</size>
-        </partition>
-      </partitions>
       <raid_options>
         <raid_type>raid0</raid_type>
         <device_order t="list">
@@ -123,27 +117,37 @@
     <% else %> <%# maybe we have only one disk left on the system %>
     <% if raidarray.length != 0 %>
     <drive>
-      <type t="symbol">CT_DISK</type>
+      <initialize t="boolean">true</initialize> <%# wipe out partition table %>
       <device><%= raidarray[0][:udev_names][0] %></device> <%# print full device name such as /dev/nvme0n1 %>
-      <disklabel>gpt</disklabel>
-      <use>all</use>
       <partitions t="list">
         <partition>
+          <%# create raid device even with a single disk to comply with systemd automount service %>
+          <raid_name>/dev/md/openqa</raid_name>
           <size>max</size>
-          <filesystem t="symbol">ext4</filesystem>
-          <mount>/var/lib/openqa</mount>
         </partition>
       </partitions>
+      <use>all</use>
+    </drive>
+    <drive>
+    <type t="symbol">CT_MD</type>
+    <device>/dev/md/openqa</device>
+    <raid_options>
+      <raid_type>raid0</raid_type>
+      <device_order t="list">
+        <device><%= raidarray[0][:udev_names][0] %></device>
+      </device_order>
+    </raid_options>
+    <use>all</use>
     </drive>
     <% end %> <%# end inner if %>
     <% end %> <%# end outer if-else %>
   </partitioning>
   <scripts>
-    <post-scripts config:type="list">
+    <post-scripts t="list">
       <script>
         <filename>setup.sh</filename>
         <interpreter>shell</interpreter>
-        <debug config:type="boolean">true</debug>
+        <debug t="boolean">true</debug>
         <source><![CDATA[
             echo 'roles: worker' > /etc/salt/grains
         ]]></source>
@@ -151,13 +155,13 @@
     </post-scripts>
   </scripts>
   <firewall>
-    <enable_firewall config:type="boolean">true</enable_firewall>
-    <start_firewall config:type="boolean">true</start_firewall>
+    <enable_firewall t="boolean">true</enable_firewall>
+    <start_firewall t="boolean">true</start_firewall>
     <default_zone>public</default_zone>
-    <zones config:type="list">
+    <zones t="list">
       <zone>
 	<name>public</name>
-	<services config:type="list">
+	<services t="list">
           <service>ssh</service>
 	</services>
       </zone>
@@ -165,7 +169,7 @@
   </firewall>
   <services-manager t="map">
     <services>
-      <enable config:type="list">
+      <enable t="list">
         <service>sshd</service>
         <service>chronyd</service>
       </enable>
