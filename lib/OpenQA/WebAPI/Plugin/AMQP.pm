@@ -104,6 +104,7 @@ sub on_job_event ($self, $args) {
         if ($event_data->{bugref} = $bugref) {
             $event_data->{bugurl} = OpenQA::Utils::bugurl($bugref);
         }
+        $event_data->{failedmodules} = $job->failed_modules;
     }
     my $job_settings = $job->settings_hash;
     for my $detail (qw(ISO HDD_1)) {
