@@ -367,7 +367,7 @@ $t->delete_ok("/api/v1/isos/$iso")->status_is(403);
 client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
-$t->get_ok('/api/v1/jobs/$newid')->status_is(404);
+$t->get_ok("/api/v1/jobs/$newid")->status_is(404);
 
 subtest 'jobs belonging to important builds are not cancelled by new iso post' => sub {
     $t->get_ok('/api/v1/jobs/99963')->status_is(200);
