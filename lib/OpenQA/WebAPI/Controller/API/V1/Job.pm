@@ -20,6 +20,8 @@ use Feature::Compat::Try;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
+use OpenQA::Shared::Controller::OpenAPI;
+*catchall = \&OpenQA::Shared::Controller::OpenAPI::catchall;
 
 =pod
 
@@ -464,6 +466,11 @@ sub show ($self) {
     $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
     $self->render(json => {job => $job});
+}
+
+sub show_details ($self) {
+    $self->stash(details => 1);
+    show($self);
 }
 
 =over 4

@@ -7,6 +7,8 @@ use Mojo::JSON;
 use Feature::Compat::Try;
 
 use OpenQA::Schema::Result::JobGroups;
+use OpenQA::Shared::Controller::OpenAPI;
+*catchall = \&OpenQA::Shared::Controller::OpenAPI::catchall;
 
 =pod
 
