@@ -18,6 +18,7 @@ sub jobs_for_setting ($self, $options) {
     $key_like =~ s/\*/\%/g;
     my $list_value = $options->{list_value};
     my $list_value_like = "%${list_value}%";
+    my $list_result = $options->{list_result};
 
     # Get the highest job id to limit the number of jobs that need to be considered (to improve performance)
     my $dbh = $self->result_source->schema->storage->dbh;
@@ -28,11 +29,28 @@ sub jobs_for_setting ($self, $options) {
     my $max_id = defined $result ? $result->[0] : 0;
     my $min_id = $max_id > $limit ? $max_id - $limit : 0;
 
+    my @where_queries = ('js.key LIKE ?', 'js.value LIKE ?', 'js.job_id > ?');
+    my @where_values = ($key_like, $list_value_like, $min_id);
+    my $join_part = '';
+    if (defined $list_result) {
+        $join_part = 'JOIN jobs j ON js.job_id = j.id';
+        my $placeholders = join(',', ('?') x scalar @$list_result);
+        push @where_queries, "j.result IN ($placeholders)";
+        push @where_values, @$list_result;
+    }
     # Instead of limiting the number of jobs, this query could also use a trigram gin index to achieve even better
     # performance (at the cost of disk space and setup complexity)
-    $sth = $dbh->prepare(
-        'SELECT job_id, value FROM job_settings WHERE key LIKE ? AND value LIKE ? AND job_id > ? ORDER BY job_id DESC');
-    $sth->execute($key_like, $list_value_like, $min_id);
+    my $where_queries = 'WHERE ' . join(' AND ', @where_queries);
+    my $sql = "SELECT js.job_id, js.value
+               FROM job_settings js
+               $join_part
+               $where_queries
+               ORDER BY js.job_id DESC";
+    $sth = $dbh->prepare($sql);
+    $sth->execute(@where_values);
+    #$sth = $dbh->prepare(
+   #    'SELECT job_id, value FROM job_settings WHERE key LIKE ? AND value LIKE ? AND job_id > ? ORDER BY job_id DESC');
+    #$sth->execute($key_like, $list_value_like, $min_id);
 
     # Match list values
     my @jobs;
