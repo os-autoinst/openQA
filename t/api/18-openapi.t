@@ -32,4 +32,10 @@ subtest jobs => sub {
       ->json_like('/details/body_prio/message', qr{Expected integer - got string});
 };
 
+subtest workers => sub {
+    $t->get_ok('/api/v1/workers?limit=a')->status_is(400)->json_is('/error_status' => 400)
+      ->json_is('/error' => 'Erroneous parameters (limit: Expected integer - got string.)')
+      ->json_is('/details/limit/message' => 'Expected integer - got string.');
+};
+
 done_testing;
