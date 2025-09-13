@@ -355,7 +355,7 @@ sub startup ($self) {
     $bug_r->delete('/')->name('apiv1_delete_bug')->to('bug#destroy');
 
     # api/v1/workers
-    $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
+    #    $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
     $api_description{apiv1_worker}
       = 'Each entry contains the "hostname", the boolean flag "connected" which can be 0 or 1 depending on the connection to the websockets server and the field "status" which can be "dead", "idle", "running". A worker can be considered "up" when "connected=1" and "status!=dead"';
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');

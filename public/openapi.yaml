@@ -62,3 +62,25 @@ paths:
                 prio:
                   type: integer
       responses: {}
+
+  /workers:
+    get:
+      description: >
+        Returns a list of workers with useful information for each including
+        its ID, the host where the worker is located, the worker instance, the
+        worker status and the worker's websocket status.
+      tags: [workers]
+      x-mojo-name: apiv1_workers
+      x-mojo-to: worker#list
+      parameters:
+        - name: limit
+          description: Limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          description: Offset
+          in: query
+          schema:
+            type: integer
+      responses: {}
