@@ -511,6 +511,7 @@ function updateValidation(form, response) {
   const E = createElement;
   const errorsByField = response?.errors_by_field ?? {};
   const warningsByField = response?.warnings_by_field ?? {};
+  const changedFields = response?.changed_fields ?? {};
   const elements = Array.from(form.elements);
   const labels = elements.filter(e => e.labels?.length > 0).map(e => [`'${e.name}'`, `"${e.labels[0].innerText}"`]);
   const applyLabels = msg => labels.reduce((msg, label) => msg.replace(...label), msg);
@@ -522,6 +523,7 @@ function updateValidation(form, response) {
     }
     const errors = errorsByField[fieldName];
     const warnings = warningsByField[fieldName];
+    const newValue = changedFields[fieldName];
     const hasErrors = Array.isArray(errors) && errors.length > 0;
     const hasWarnings = Array.isArray(warnings) && warnings.length > 0;
     const parentElement = element.parentElement;
@@ -540,6 +542,9 @@ function updateValidation(form, response) {
       hasWarnings && warnings.map(applyLabels).forEach(addBadge.bind(undefined, 'badge text-bg-warning'));
     } else if (feedbackElement !== null) {
       parentElement.removeChild(feedbackElement);
+    }
+    if (newValue !== undefined) {
+      element.value = newValue;
     }
   });
   return overallError;

@@ -556,19 +556,13 @@ subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => s
             );
             $t->post_ok($params->{endpoint}, form => \%form_invalid_2);
             $t->status_is(400, "creation fails if $params->{keep_jobs_name} lower than $params->{keep_results_name}");
-            $t->json_is(
-                '/error' => "'$params->{keep_results_name}' must be <= '$params->{keep_jobs_name}'",
-                "error message on invalid $test creation (2)"
-            );
-            $t->json_is(
-                '/errors_by_field' => {$params->{keep_results_name} => ["must be <= '$params->{keep_jobs_name}'"]},
-                "no warnings by field on invalid $test creation (2)"
-            );
-            $t->json_is(
-                '/warnings_by_field' =>
-                  {$params->{keep_important_results_name} => ["should be >= '$params->{keep_results_name}'"]},
-                "no warnings by field on invalid $test creation (2)"
-            );
+            my $expected = "'$params->{keep_results_name}' must be <= '$params->{keep_jobs_name}'";
+            $t->json_is('/error' => $expected, "error message on invalid $test creation (2)");
+            $expected = {$params->{keep_results_name} => ["must be <= '$params->{keep_jobs_name}'"]};
+            $t->json_is('/errors_by_field' => $expected, "errors returned by field on invalid $test creation (2)");
+            $expected = "automatically increased to match '$params->{keep_results_name}'";
+            $expected = {$params->{keep_important_results_name} => [$expected]};
+            $t->json_is('/warnings_by_field' => $expected, "no warnings by field on invalid $test creation (2)");
             $t->post_ok($params->{endpoint}, form => {name => $params->{name}});
             $t->status_is(200, "can create $test without retention parameters");
             return unless my $group_id = $t->tx->res->json->{id};
