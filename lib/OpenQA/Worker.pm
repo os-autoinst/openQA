@@ -181,15 +181,12 @@ sub capabilities ($self) {
     }
 
     # determine memory limit
-    open(my $MEMINFO, '<', '/proc/meminfo');
-    for my $line (<$MEMINFO>) {
-        chomp $line;
+    for my $line (eval { split /\n/, path('/proc/meminfo')->slurp }) {
         if ($line =~ m/MemTotal:\s+(\d+).+kB/) {
             my $mem_max = $1 ? $1 : '';
             $caps->{mem_max} = int($mem_max / 1024) if $mem_max;
         }
     }
-    close($MEMINFO);
 
     # determine worker class ...
     if (my $worker_class = $global_settings->{WORKER_CLASS}) {
