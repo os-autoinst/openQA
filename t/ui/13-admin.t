@@ -443,6 +443,7 @@ subtest 'job property editor' => sub() {
         ok $input, 'input is highlighted to show a non-critical validation issue';
         like $status, qr/Changes applied.*warnings/i, 'remark about warnings';
         like $badge, qr/automatically increased to match "Keep results for"/i, 'badge with warning shown';
+        is element_prop('editor-keep-important-results-in-days'), '501', 'automatically changed value shown';
         $driver->refresh();
         $driver->title_is('openQA: Job templates for Cool Group has been edited!', 'new name on title');
         $driver->find_element_by_id('toggle-group-properties')->click();

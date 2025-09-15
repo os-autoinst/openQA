@@ -191,6 +191,7 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
     my @errors;
     my %errors_by_field;
     my %warnings_by_field;
+    my %changed_fields;
     my $prefix = $self->is_parent ? 'default_' : '';
     for my $important ('', '_important') {
         my $log_key = "${prefix}keep${important}_logs_in_days";
@@ -214,13 +215,14 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
         my $important_value = $properties->{$important_key} // ($group ? $group->$important_key : 0);
         my $regular_value = $properties->{$regular_key} // ($group ? $group->$regular_key : 0);
         if ($important_value != 0 && $important_value < $regular_value) {
-            $properties->{$important_key} = $regular_value;
+            $changed_fields{$important_key} = $properties->{$important_key} = $regular_value;
             push @{$warnings_by_field{$important_key}}, "automatically increased to match '$regular_key'";
         }
     }
     $self->{_errors} = \@errors;
     $self->{_errors_by_field} = \%errors_by_field;
     $self->{_warnings_by_field} = \%warnings_by_field;
+    $self->{_changed_fields} = \%changed_fields;
     return @errors == 0;
 }
 
@@ -230,6 +232,7 @@ sub _render_json ($self, $id = undef) {
     my %res = (
         errors_by_field => $self->{_errors_by_field} // {},
         warnings_by_field => $self->{_warnings_by_field} // {},
+        changed_fields => $self->{_changed_fields} // {},
     );
     $res{id} = $id if defined $id;
     $res{error} = join(', ', @$errors) if @$errors;
