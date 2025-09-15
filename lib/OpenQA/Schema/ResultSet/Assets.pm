@@ -42,7 +42,7 @@ sub register ($self, $type, $name, $options = {}) {
             $asset->refresh_size if $options->{refresh_size};
             if (my $created_by = $options->{created_by}) {
                 my $scope = $options->{scope} // 'public';
-                $created_by->jobs_assets->find_or_create({asset_id => $asset->id, created_by => 1});
+                $created_by->jobs_assets->update_or_create({asset_id => $asset->id, created_by => 1});
                 $created_by->reevaluate_children_asset_settings if $scope ne 'public';
             }
             return $asset;
