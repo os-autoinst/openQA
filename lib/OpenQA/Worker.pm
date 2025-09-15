@@ -617,11 +617,10 @@ sub is_qemu ($executable_path) { defined $executable_path && $executable_path =~
 # checks whether a qemu instance using the current pool directory is running and returns its PID if that's the case
 sub is_qemu_running ($self) {
     return undef unless my $pool_directory = $self->pool_directory;
-    return undef unless open(my $fh, '<', my $pid_file = "$pool_directory/qemu.pid");
-
-    my $pid = <$fh>;
-    chomp($pid);
-    close($fh);
+    my $pid_file = "$pool_directory/qemu.pid";
+    my $pid;
+    try { $pid = path($pid_file)->slurp }
+    catch ($e) { return undef }
     return undef unless $pid;
 
     return $pid if is_qemu(readlink("/proc/$pid/exe"));
