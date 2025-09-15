@@ -339,7 +339,7 @@ function alignCols() {
 
 function toggleEdit() {
   $('#properties').toggle(250);
-  validateJobGroupForm('#group_properties_form');
+  validateJobGroupForm(document.getElementById('group_properties_form'));
   if ((window.groupPropertiesEditorVisisble = !window.groupPropertiesEditorVisisble)) {
     document.getElementById('job-config-page-heading').innerHTML = 'Job';
     document.getElementById('job-config-templates-heading').style.display = 'inline';
@@ -550,6 +550,20 @@ function updateValidation(form, response) {
   return overallError;
 }
 
+function showAdvancedFieldsIfJsonRefersToThem(response) {
+  const collapse = document.getElementById('show-advanced-cleanup-settings-button');
+  if (collapse.getAttribute('aria-expanded') === 'true') {
+    return;
+  }
+  const advancedFields = Array.from(document.querySelectorAll('.advanced-cleanup-settings input')).map(e => e.name);
+  const erroneousFields = Object.keys(response?.errors_by_field ?? {});
+  const admonitoryFields = Object.keys(response?.warnings_by_field ?? {});
+  const containsAdvancedFields = array => array.find(i => advancedFields.includes(i)) !== undefined;
+  if (containsAdvancedFields(erroneousFields) || containsAdvancedFields(admonitoryFields)) {
+    collapse.click();
+  }
+}
+
 function submitProperties(form) {
   var editorForm = $(form);
   editorForm.find('.buttons').hide();
@@ -568,10 +582,7 @@ function submitProperties(form) {
         });
     })
     .then(({response, json}) => {
-      const collapse = document.getElementById('show-advanced-cleanup-settings-button');
-      if (json?.error?.includes('_jobs') && collapse.getAttribute('aria-expanded') !== 'true') {
-        collapse.click();
-      }
+      showAdvancedFieldsIfJsonRefersToThem(json);
       const overallError = updateValidation(form, json);
       if (overallError) throw overallError;
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
