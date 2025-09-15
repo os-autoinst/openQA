@@ -23,6 +23,7 @@ __PACKAGE__->add_columns(
     });
 __PACKAGE__->add_timestamps;
 
+__PACKAGE__->set_primary_key(qw(job_id asset_id));    # so update() can be used in unit tests
 __PACKAGE__->add_unique_constraint([qw(job_id asset_id)]);
 
 __PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id');
