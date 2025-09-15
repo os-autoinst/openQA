@@ -345,6 +345,22 @@ subtest 'check for missing assets' => sub {
     };
 };
 
+subtest 'job asset creation' => sub {
+    my $jobs = $schema->resultset('Jobs');
+    my $job_assets = $schema->resultset('JobsAssets');
+    ok my $job = $jobs->first;
+    my $assets = $schema->resultset('Assets');
+    my $asset = $assets->register(repo => 'foo', {missing_ok => 1, created_by => $job});
+    ok $asset, 'asset created' or return;
+    my $job_asset = $job_assets->find({job_id => $job->id, asset_id => $asset->id});
+    ok $job_asset, 'job asset created' or return;
+    $job_asset->update({created_by => 0});
+    my $asset2 = $assets->register(repo => 'foo', {missing_ok => 1, created_by => $job});
+    ok $asset2, 'asset created again' or return;
+    my $job_asset_updated = $job_assets->find({job_id => $job->id, asset_id => $asset->id});
+    is $job_asset_updated->created_by, 1, 'created by flag set again';
+};
+
 subtest 'concurrent asset creation' => sub {
     my $minion = $t->app->minion;
     $minion->reset({all => 1});

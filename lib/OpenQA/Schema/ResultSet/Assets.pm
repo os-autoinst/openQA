@@ -29,9 +29,15 @@ sub register ($self, $type, $name, $options = {}) {
         return undef;
     }
     my $schema = $self->result_source->schema;
-    my $sth = $schema->storage->dbh->prepare_cached(<<~'END_SQL');
+    my $dbh = $schema->storage->dbh;
+    my $sth = $dbh->prepare_cached(<<~'END_SQL');
         INSERT INTO assets (type, name, t_created, t_updated)
                     VALUES (?,    ?,    now(),     now()    ) ON CONFLICT DO NOTHING
+        END_SQL
+    my $sth_jobs_assets = $dbh->prepare(<<~'END_SQL');
+        INSERT INTO jobs_assets (job_id, asset_id, t_created, t_updated, created_by)
+                        VALUES (?,      ?,        now(),     now(),      true)
+            ON CONFLICT ON CONSTRAINT jobs_assets_job_id_asset_id DO UPDATE SET created_by = true
         END_SQL
     $schema->txn_do(
         sub {
@@ -42,7 +48,7 @@ sub register ($self, $type, $name, $options = {}) {
             $asset->refresh_size if $options->{refresh_size};
             if (my $created_by = $options->{created_by}) {
                 my $scope = $options->{scope} // 'public';
-                $created_by->jobs_assets->find_or_create({asset_id => $asset->id, created_by => 1});
+                $sth_jobs_assets->execute($created_by->id, $asset->id);
                 $created_by->reevaluate_children_asset_settings if $scope ne 'public';
             }
             return $asset;
