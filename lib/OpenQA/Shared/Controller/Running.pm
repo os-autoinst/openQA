@@ -107,13 +107,7 @@ sub streamtext ($self, $file_name) {
 
     # Check for new lines from the logfile using recurring timer
     # Setup utility function to close the connection if something goes wrong
-    my $timer_id;
-    my $close_connection = sub ($self) {
-        my $worker_id = $worker->id;
-        log_debug "Connection to worker with ID $worker_id will be closed because $logfile changed";
-        $self->finish;
-    };
-    $timer_id = Mojo::IOLoop->recurring(
+    my $timer_id = Mojo::IOLoop->recurring(
         TEXT_STREAMING_INTERVAL() => sub (@) {
             if (!$ino) {
                 # log file was not yet opened
@@ -125,7 +119,7 @@ sub streamtext ($self, $file_name) {
             # Zero tolerance for any shenanigans with the logfile, such as
             # truncation, rotation, etc.
             my @st = stat $logfile;
-            return $close_connection->($self) unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
+            return $self->finish unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
 
             # If there's new data, read it all and send it out. Then
             # seek to the current position to reset EOF.
