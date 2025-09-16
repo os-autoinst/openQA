@@ -472,6 +472,10 @@ function updateToggleClickCoordinatesButton(hasClickCoorinates) {
 function saveNeedle(overwrite) {
   var form = document.getElementById('save_needle_form');
   var errors = [];
+  var needle_name = document.getElementById('needleeditor_name').value;
+  if (!/-\d{8}$/.test(needle_name)) {
+    errors.push('No valid timestamp');
+  }
   var tagSelection = window.needles[$('#tags_select').val()];
   if (!tagSelection.tags.length) {
     errors.push('No tags specified.');
