@@ -19,7 +19,7 @@ pull_request_rules:
           - "#check-failure=0"
           - "#check-pending=0"
           - linear-history
-      - and:
+      - and: &manual_review
           - "#approved-reviews-by>=2"
           - "#changes-requested-reviews-by=0"
           # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
@@ -52,6 +52,7 @@ pull_request_rules:
           - base=main
           - author=dependabot[bot]
           - label=waited
+      - and: *manual_review  # temporary measure due to ongoing supply chain attacks
     actions:
       merge:
         method: squash
