@@ -961,4 +961,31 @@ subtest 'storing package list' => sub {
     qr/doesn't return any data/, 'log message about no data';
 };
 
+subtest 'worker ipmi' => sub {
+    my $ioloop_mock = Test::MockModule->new('Mojo::IOLoop');
+    my $sched = 0;
+    $ioloop_mock->redefine(recurring => sub { $sched = 1; });
+    my $global_settings = $settings->global_settings;
+    delete $global_settings->{LOG_DIR};
+    $global_settings->{IPMI_HOSTNAME} = "ipmi.host";
+    $global_settings->{IPMI_USER} = "username";
+    $global_settings->{IPMI_PASSWORD} = "password";
+    $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} = "1";
+    combined_like { $worker->init }
+    qr/IPMI config present/, 'IPMI config detected';
+    ok $sched, 'ipmi job scheduled';
+    $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} = '0';
+    $ioloop_mock->unmock('recurring');
+
+    $worker->current_job(undef);
+    my $ipc_mock = Test::MockModule->new('IPC::Run');
+    my $c = [];
+    $ipc_mock->redefine('run' => sub($cmd, $si, $so, $se) { $c = $cmd; $$se = ''; return 1; });
+    $worker->shutdown_ipmi_sut();
+    is_deeply $c,
+      ['ipmitool', '-I', 'lanplus', '-H', 'ipmi.host', '-U', 'username', '-P', 'password', 'chassis', 'power', 'off'],
+      'ipmitool called correctly';
+};
+
+
 done_testing();

@@ -3,6 +3,7 @@
 
 package OpenQA::Worker;
 use Mojo::Base -base, -signatures;
+use IPC::Run ();
 
 BEGIN {
     use Socket;
@@ -350,7 +351,33 @@ sub init ($self) {
             });
     }
 
+    my $interval = $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} // 300;
+    if (   $global_settings->{IPMI_HOSTNAME}
+        && $global_settings->{IPMI_USER}
+        && $global_settings->{IPMI_PASSWORD}
+        && $interval ne '0')
+    {
+        log_info 'IPMI config present -> will periodically make sure SUT is powered off when unused.';
+        Mojo::IOLoop->recurring($interval => sub { $self->shutdown_ipmi_sut() });
+    }
+
     return \$return_code;
+}
+
+sub shutdown_ipmi_sut ($self) {
+    return if $self->current_job;
+    my $sgs = $self->settings->global_settings;
+    my $ipmi_host = $sgs->{IPMI_HOSTNAME};
+    my $ipmi_user = $sgs->{IPMI_USER};
+    my $ipmi_pass = $sgs->{IPMI_PASSWORD};
+    my $ipmi_opts = $sgs->{IPMI_OPTIONS} // '-I lanplus';
+    my @cmd = (
+        'ipmitool', split(' ', $ipmi_opts),
+        '-H', $ipmi_host, '-U', $ipmi_user, '-P', $ipmi_pass, 'chassis', 'power', 'off'
+    );
+    my $ret = IPC::Run::run(\@cmd, \my $stdin, \my $stdout, \my $stderr);
+    chomp $stderr;
+    log_warning(join(' ', map { $_ eq $ipmi_pass ? '[masked]' : $_ } @cmd) . ": $stderr") unless $ret;
 }
 
 sub configure_cache_client ($self) {
