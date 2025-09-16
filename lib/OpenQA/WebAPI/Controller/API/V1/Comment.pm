@@ -141,6 +141,7 @@ sub create ($self) {
 
     try { $comment->handle_special_contents($self) }
     catch ($e) {
+        local $@ = $e;
         undef $txn_guard;
         return $self->render(json => {error => $e}, status => 400);
     }
@@ -193,6 +194,7 @@ sub create_many ($self) {
             push @created, $comment->event_data;
         }
         catch ($e) {
+            local $@ = $e;
             undef $txn_guard;
             push @failed, {job_id => $job_id};
         }
@@ -237,6 +239,7 @@ sub update ($self) {
     my $res = $comment->update({text => href_to_bugref($text)});
     try { $res->handle_special_contents($self) }
     catch ($e) {
+        local $@ = $e;
         undef $txn_guard;
         return $self->render(json => {error => $e}, status => 400);
     }
