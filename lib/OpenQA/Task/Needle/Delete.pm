@@ -40,6 +40,8 @@ sub _delete_needles ($app, $minion_job, $args) {
         push @{$to_remove{$needle->directory->path}}, $needle;
     }
 
+    $signal_guard->retry(0);
+
     for my $dir (sort keys %to_remove) {
         my $needles = $to_remove{$dir};
         # prevent multiple git tasks to run in parallel
