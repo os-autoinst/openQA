@@ -28,7 +28,11 @@ else
     DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/ports/$ARCH/tumbleweed/repo/oss/"}"
 fi
 
-PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 iputils openQA-single-instance sudo net-tools curl wget ca-certificates-mozilla qemu-arm qemu-ppc qemu-x86 openQA-bootstrap"
+# Workaround for https://bugzilla.suse.com/show_bug.cgi?id=1248857#c9
+# Install packages in two chunks to ensure that systemd is installed before shadow
+# to avoid issues when SELinux is enabled on the host.
+PKGS_TO_INSTALL_1=(aaa_base systemd openSUSE-release grep sed)
+PKGS_TO_INSTALL_2=(shadow zypper vim iproute2 iputils openQA-single-instance sudo net-tools curl wget ca-certificates-mozilla qemu-arm qemu-ppc qemu-x86 openQA-bootstrap)
 
 zypper -n install systemd-container
 mkdir -p /var/lib/machines/
@@ -72,9 +76,8 @@ if [ ! -d $CONTAINER_PATH ]; then
     zypper -n --root $CONTAINER_PATH addrepo "$DEFAULT_REPO" defaultrepo
     zypper -n --root $CONTAINER_PATH --gpg-auto-import-keys refresh
     # There are non-fatal errors when zyppering inside chroot, so ignoring errors on the next line
-    # Allow command line options without quotes
-    # shellcheck disable=SC2086
-    zypper -n --root $CONTAINER_PATH install --no-recommends -ly $PKGS_TO_INSTALL || test $? = 107
+    zypper -n --root $CONTAINER_PATH install --no-recommends -ly "${PKGS_TO_INSTALL_1[@]}" || test $? = 107
+    zypper -n --root $CONTAINER_PATH install --no-recommends -ly "${PKGS_TO_INSTALL_2[@]}" || test $? = 107
 else
     echo Container path $CONTAINER_PATH already exists, stopping here. Please clean manually and rerun.
     exit 1
