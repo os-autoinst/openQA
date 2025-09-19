@@ -23,8 +23,7 @@ my $lock_timeout = 360000;
 # non-privileged routes - will be accessible with curl without authentication
 # ensure_operator - privileged routes for using in UI
 # api_ensure_operator - privileged routes for API access
-sub register_common_routes {
-    my ($self, $r, $suffix) = @_;
+sub register_common_routes ($self, $r, $suffix = undef) {
     my $prefix = 'plugin_obs_rsync_';
     $prefix .= $suffix . '_' if $suffix;
 
@@ -35,8 +34,7 @@ sub register_common_routes {
       ->to('Plugin::ObsRsync::Controller::Folders#test_result');
 }
 
-sub register {
-    my ($self, $app, $config) = @_;
+sub register ($self, $app, $config) {
     my $plugin_r = $app->routes->find('ensure_operator');
     my $plugin_api_r = $app->routes->find('api_ensure_operator');
 
@@ -85,8 +83,7 @@ sub register {
         $app->helper('obs_rsync.get_test_result' => \&_get_test_result);
         $app->helper('obs_rsync.get_run_last_info' => \&_get_run_last_info);
         $app->helper(
-            'obs_rsync.get_fail_last_info' => sub {
-                my ($c, $project) = @_;
+            'obs_rsync.get_fail_last_info' => sub ($c, $project) {
                 return _get_last_failed_job($c, $project, 1);
             });
         $app->helper('obs_rsync.get_api_repo' => \&_get_api_repo);
@@ -175,8 +172,7 @@ sub register {
 
 # try to determine whether project is dirty
 # undef means status is unknown
-sub _is_obs_project_status_dirty {
-    my ($self, $url, $project, $repo, $helper) = @_;
+sub _is_obs_project_status_dirty ($self, $url, $project, $repo, $helper) {
     return undef unless $url;
 
     # Use only one UserAgent
@@ -198,8 +194,7 @@ sub _is_obs_project_status_dirty {
     return _parse_obs_response_dirty($res, $repo);
 }
 
-sub _parse_obs_response_dirty {
-    my ($res, $repo) = @_;
+sub _parse_obs_response_dirty ($res, $repo = undef) {
     $repo = 'images' unless $repo;
 
     my $results = $res->dom('result');
@@ -222,8 +217,7 @@ sub _parse_obs_response_dirty {
 # and returns pair ('projectname', 'repo')
 # if input doesn't have '::' character -
 # returned pair is ($project, '')
-sub _split_repo {
-    my (undef, $alias) = @_;
+sub _split_repo ($, $alias) {
     my ($project, $repo) = split(/::/, $alias, 2);
     $repo = '' unless $repo;
     return ($project, $repo);
@@ -233,15 +227,13 @@ sub _split_repo {
 # and returns pair ('projectname', 'batchname')
 # if input doesn't have '|' character -
 # returned pair is ($project, '')
-sub _split_alias {
-    my (undef, $alias) = @_;
+sub _split_alias ($, $alias) {
     my ($project, $batch) = split(/\|/, $alias, 2);
     $batch = '' unless $batch;
     return ($project, $batch);
 }
 
-sub _get_batches {
-    my ($c, $project, $only_first) = @_;
+sub _get_batches ($c, $project, $only_first = undef) {
     my $home = $c->obs_rsync->home;
     my $batches = Mojo::File->new($home, $project)->list({dir => 1})->grep(sub { -d $_ })->map('basename');
     return $batches->to_array() unless $only_first;
@@ -253,8 +245,7 @@ sub _get_batches {
 # and return it in pair with split project name
 # otherwise it attempts to find first batch of project
 # and returns it in pair with unaltered input
-sub _get_first_batch {
-    my ($c, $alias) = @_;
+sub _get_first_batch ($c, $alias) {
     my $helper = $c->obs_rsync;
     my ($project, $batch) = $helper->split_alias($alias);
     return ($batch, $project) if $batch;
@@ -265,8 +256,7 @@ sub _get_first_batch {
 # extract the job id returned by `job post` command as noted in openqa.cmd.log
 # returns empty string when log file doesn't exists or pattern didn't match
 # throws exception if OS error occurs
-sub _get_last_test_id {
-    my ($c, $alias) = @_;
+sub _get_last_test_id ($c, $alias) {
     my $home = $c->obs_rsync->home;
     # don't call get_first_batch: test info is not supported for batches yet
 
@@ -288,14 +278,12 @@ sub _read_test_id {
     return $res;
 }
 
-sub _get_test_result {
-    my ($c, $id) = @_;
+sub _get_test_result ($c, $id) {
     return 'unknown' unless my $job = $c->schema->resultset('Jobs')->find($id);
     return $job->result;
 }
 
-sub _get_version_test_id {
-    my ($c, $project, $version) = @_;
+sub _get_version_test_id ($c, $project, $version = undef) {
     return undef unless $version;
     my $home = $c->obs_rsync->home;
     my $runs = Mojo::File->new($home, $project)->list({dir => 1, hidden => 1})->map('basename')->grep(qr/\.run_.*/)
@@ -308,8 +296,7 @@ sub _get_version_test_id {
 # string in format %y%m%d_%H%M%S, which corresponds to location
 # used by openqa-trigger-from-obs to determine if any files changed
 # or rsync can be skipped.
-sub _get_run_last_info {
-    my ($c, $alias) = @_;
+sub _get_run_last_info ($c, $alias) {
     my $helper = $c->obs_rsync;
     my $home = $helper->home;
     my ($batch, $project) = $helper->get_first_batch($alias);
@@ -331,8 +318,7 @@ sub _get_run_last_info {
     return \%res;
 }
 
-sub _get_first_line {
-    my ($file, $with_timestamp) = @_;
+sub _get_first_line ($file, $with_timestamp = undef) {
     open(my $fh, '<', $file) or return '';
     my $res = readline $fh;
     return '' unless $res;
@@ -346,8 +332,7 @@ sub _get_first_line {
     return $res;
 }
 
-sub _write_to_file {
-    my ($file, $str) = @_;
+sub _write_to_file ($file, $str) {
     if (open(my $fh, '>', $file)) {
         print $fh $str;
         close $fh;
@@ -355,8 +340,7 @@ sub _write_to_file {
 }
 
 # Dirty status file is updated from ObsRsync Gru tasks
-sub _get_dirty_status {
-    my ($c, $alias) = @_;
+sub _get_dirty_status ($c, $alias) {
     my $helper = $c->obs_rsync;
     # doesn't depend on batch, so just strip it out
     my ($project, undef) = $helper->split_alias($alias);
@@ -367,8 +351,7 @@ sub _get_dirty_status {
 }
 
 # Which repo on OBS should trigger sync
-sub _get_api_repo {
-    my ($c, $alias) = @_;
+sub _get_api_repo ($c, $alias) {
     my $helper = $c->obs_rsync;
     # doesn't depend on batch, so just strip it out
     my ($project, undef) = $helper->split_alias($alias);
@@ -381,8 +364,7 @@ sub _get_api_repo {
 }
 
 # Which package on OBS should be checked for being published on obs
-sub _get_api_package {
-    my ($c, $alias) = @_;
+sub _get_api_package ($c, $alias) {
     my $helper = $c->obs_rsync;
     # doesn't depend on batch, so just strip it out
     my ($project, undef) = $helper->split_alias($alias);
@@ -393,8 +375,7 @@ sub _get_api_package {
 }
 
 # Build url to check dirty status for project
-sub _get_api_dirty_status_url {
-    my ($c, $project) = @_;
+sub _get_api_dirty_status_url ($c, $project) {
     my $helper = $c->obs_rsync;
     my $url_str = $helper->project_status_url;
     return '' unless $url_str;
@@ -408,8 +389,7 @@ sub _get_api_dirty_status_url {
     return $url->to_string;
 }
 
-sub _get_builds_in_file {
-    my ($file, $seen) = @_;
+sub _get_builds_in_file ($file, $seen) {
     open(my $fh, '<', $file) or return undef;
     while (my $row = <$fh>) {
         chomp $row;
@@ -425,8 +405,7 @@ sub _get_builds_in_file {
 # Obs version is parsed from files_iso.lst for iso and hdd
 # and from Media*.lst, for repositories
 # these files are updated from ObsRsync Gru tasks
-sub _get_builds_in_folder {
-    my ($folder) = @_;
+sub _get_builds_in_folder ($folder) {
     my %seen;
     _get_builds_in_file(Mojo::File->new($folder, $files_iso_filename), \%seen);
     Mojo::File->new($folder)->list()->grep($files_media_filemask)->each(
@@ -437,14 +416,12 @@ sub _get_builds_in_folder {
 }
 
 # Obs builds are parsed from files_iso.lst, which is updated from ObsRsync Gru tasks
-sub _get_obs_builds_text {
-    my ($c, $alias, $last) = @_;
+sub _get_obs_builds_text ($c, $alias, $last = undef) {
     my $helper = $c->obs_rsync;
     my $home = $helper->home;
     my $subfolder = $last ? '.run_last' : '';
     my %seen;
-    my $sub = sub {
-        my ($project, $batch) = @_;
+    my $sub = sub ($project, $batch) {
         my @builds = _get_builds_in_folder(Mojo::File->new($home, $project, $batch, $subfolder));
         for my $build (@builds) {
             $seen{$build} = 1 if $build;
@@ -458,53 +435,45 @@ sub _get_obs_builds_text {
     return join ', ', @builds;
 }
 
-sub _concurrency_guard {
-    my $app = shift->app;
+sub _concurrency_guard ($c) {
+    my $app = $c->app;
     return $app->minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $app->obs_rsync->concurrency});
 }
 
-sub _guard {
-    my ($c, $project) = @_;
+sub _guard ($c, $project) {
     return $c->app->minion->guard('obs_rsync_project_' . $project . '_lock', $lock_timeout);
 }
 
-sub _lock {
-    my ($c, $project) = @_;
+sub _lock ($c, $project) {
     return $c->app->minion->lock('obs_rsync_project_' . $project . '_lock', $lock_timeout);
 }
 
-sub _unlock {
-    my ($c, $project) = @_;
+sub _unlock ($c, $project) {
     return $c->app->minion->unlock('obs_rsync_project_' . $project . '_lock');
 }
 
-sub _log_job_id {
-    my ($c, $project, $job_id) = @_;
+sub _log_job_id ($c, $project, $job_id) {
     my $home = $c->obs_rsync->home;
     return _write_to_file(Mojo::File->new($home, $project, '.job_id'), $job_id);
 }
 
-sub _log_failure {
-    my ($c, $project, $job_id) = @_;
+sub _log_failure ($c, $project, $job_id) {
     my $home = $c->obs_rsync->home;
     return _write_to_file(Mojo::File->new($home, $project, '.last_failed_job_id'), $job_id);
 }
 
-sub _get_last_failed_job {
-    my ($c, $project, $with_timestamp) = @_;
+sub _get_last_failed_job ($c, $project, $with_timestamp) {
     my $home = $c->obs_rsync->home;
     return _get_first_line(Mojo::File->new($home, $project, '.last_failed_job_id'), $with_timestamp);
 }
 
-sub _check_and_render_error {
-    my ($c, @args) = @_;
+sub _check_and_render_error ($c, @args) {
     my ($code, $message) = _check_error($c->obs_rsync->home, @args);
     $c->render(json => {error => $message}, status => $code) if $code;
     return $code;
 }
 
-sub _check_error {
-    my ($home, $alias, $subfolder, $filename) = @_;
+sub _check_error ($home, $alias, $subfolder = undef, $filename = undef) {
     return (405, 'Home directory is not set') unless $home;
     return (405, 'Home directory not found') unless -d $home;
     return (400, 'Project has invalid characters') if $alias && $alias =~ m!/!;
@@ -518,8 +487,7 @@ sub _check_error {
     return 0;
 }
 
-sub _for_every_batch {
-    my ($c, $alias, $sub) = @_;
+sub _for_every_batch ($c, $alias, $sub) {
     my $helper = $c->obs_rsync;
     my ($project, $batch) = $helper->split_alias($alias);
 
