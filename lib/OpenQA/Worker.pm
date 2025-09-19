@@ -538,6 +538,7 @@ sub _accept_or_skip_next_job_in_queue ($self) {
 # accepts a single job from the job info received via the 'grab_job' command
 sub accept_job ($self, $client, $job_info) {
     $self->_assert_whether_job_acceptance_possible;
+    if (my $unavailable_reason = $self->update_availability) { return $unavailable_reason }
     $self->{_queue} = undef;
     $self->_prepare_job_execution(OpenQA::Worker::Job->new($self, $client, $job_info));
     $self->current_job->accept;
@@ -681,6 +682,16 @@ sub check_availability ($self) {
     return (1, $self->_check_system_utilization);
 }
 
+# update the general worker availability (e.g. we might detect here that QEMU from the last run
+# hasn't been terminated yet)
+# incomplete subsequent jobs in the queue if it turns out the worker is generally broken
+# continue with the next job in the queue (this just returns if there are no further jobs)
+sub update_availability ($self) {
+    my $availability_reason = $self->set_current_error_based_on_availability;
+    log_warning $availability_reason if $availability_reason;
+    return $availability_reason;
+}
+
 sub set_current_error_based_on_availability ($self) {
     my ($is_available, $reason) = $self->check_availability;
     $self->current_error($reason);
@@ -781,14 +792,7 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
             log_debug('Cleaning up for next job');
             $self->_clean_pool_directory;
         }
-
-        # update the general worker availability (e.g. we might detect here that QEMU from the last run
-        # hasn't been terminated yet)
-        # incomplete subsequent jobs in the queue if it turns out the worker is generally broken
-        # continue with the next job in the queue (this just returns if there are no further jobs)
-        my $availability_reason = $self->set_current_error_based_on_availability;
-        log_warning $availability_reason if $availability_reason;
-
+        self->update_availability;
         if (!$self->_accept_or_skip_next_job_in_queue) {
             # stop if we can not accept/skip the next job (e.g. because there's no further job) if that's configured
             $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
