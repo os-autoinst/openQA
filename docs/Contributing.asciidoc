@@ -646,18 +646,18 @@ git clone git@github.com:os-autoinst/scripts $OPENQA_REPOS/scripts
 [source,sh]
 ----
 ### distrobox container ###
-echo <<< EOM
+cat >> $OPENQA_CONFIG/client.conf << EOM
 [localhost]
 key = 1234567890ABCDEF
 secret = 1234567890ABCDEF
-EOM >> $OPENQA_CONFIG/client.conf
+EOM
 
-echo <<< EOM
+cat  >> $OPENQA_CONFIG/database.ini << EOM
 [production]
 dsn = dbi:Pg:dbname=openqa-local;host=127.0.0.1;port=5432
 user = geekotest
 password = x
-EOM >> $OPENQA_CONFIG/database.ini
+EOM
 
 cp $OPENQA_REPOS/openQA/etc/openqa/workers.ini $OPENQA_CONFIG/workers.ini
 crudini --set $OPENQA_CONFIG/workers.ini global HOST http://localhost:9526
