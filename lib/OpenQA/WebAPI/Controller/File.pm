@@ -160,7 +160,7 @@ sub _set_headers ($self, $path) {
                 $is_text = 1;
             }
             my $allow_insecure = $self->app->config->{global}->{file_security_policy} ne 'download-prompt';
-            $as_attachment = 0 if ($allow_insecure || $filetype !~ m|html|) && $ext ne 'iso';
+            $as_attachment = 0 if ($allow_insecure || $filetype !~ m/(html|svg)/) && $ext ne 'iso';
         }
         # force saveAs
         $headers->content_disposition("attachment; filename=$filename;") if $as_attachment;
