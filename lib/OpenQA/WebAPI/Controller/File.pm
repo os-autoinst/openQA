@@ -138,11 +138,16 @@ sub test_asset ($self) {
       if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
 
     # map to URL - mojo will canonicalize
-    $path = $self->url_for('download_asset', assetpath => $path);
-    $self->app->log->debug("redirect to $path");
+    my $url = $self->url_for('download_asset', assetpath => $path);
+
+    # redirect to file domain if configured
+    my $file_domain = $self->app->config->{global}->{file_domain};
+    $url->host($file_domain) if ($file_domain);
+
+    $self->app->log->debug("redirect to $url");
     # pass the redirect to the reverse proxy - might come back to use
     # in case there is no proxy (e.g. in tests)
-    return $self->redirect_to($path);
+    return $self->redirect_to($url);
 }
 
 sub _set_headers ($self, $path) {
