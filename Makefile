@@ -92,13 +92,16 @@ build-manpages: $(man_dir) $(manpages)
 clean:
 	-rm -r build
 
-.PHONY: install-generic
-install-generic:
+.PHONY: generate-assets
+generate-assets:
 	./tools/generate-packed-assets
 	for i in lib public script templates assets; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
+
+.PHONY: install-generic
+install-generic: generate-assets
 	for f in $(shell perl -Ilib -mOpenQA::Assets -e OpenQA::Assets::list); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
