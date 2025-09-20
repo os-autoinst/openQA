@@ -1082,7 +1082,7 @@ wait_serial 'substring', no_regex =&gt; 1, timeout =&gt; 30;</pre>
 <h5 id="_assert_script_run">assert_script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>assert_script_run($cmd [, timeout =&gt; $timeout] [, fail_message =&gt; $fail_message] [,quiet =&gt; $quiet]);</pre>
+<pre>assert_script_run($cmd [, timeout =&gt; $timeout] [, fail_message =&gt; $fail_message] [,quiet =&gt; $quiet] [,max_interval =&gt; $max_interval]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1102,6 +1102,11 @@ Use <code>script_run</code> instead if <code>$cmd</code> may fail.</p>
 <p><code>$fail_message</code> is returned in the die message if specified.</p>
 </div>
 <div class="paragraph">
+<p><code>$quiet</code> and <code>$max_interval</code> are passed through to <code>$distri&#8594;script_run</code>. In
+the default implementation, <code>$quiet</code> is used to avoid recording serial_results.
+<code>$max_interval</code> (1-250) controls typing speed (lower values mean slower typing).</p>
+</div>
+<div class="paragraph">
 <p><em>The <code>script_run</code> implementation is distribution specific and not always available.
 For this to work correctly, it must return 0 if and only if <code>$command</code> completes
 successfully. It must NOT return 0 if <code>$command</code> times out. The default implementation
@@ -1112,7 +1117,7 @@ should work on *nix operating systems with a configured serial device.</em></p>
 <h5 id="_script_run">script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet]);</pre>
+<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet] [,max_interval =&gt; $max_interval]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1131,6 +1136,11 @@ execution to complete.</p>
 <div class="paragraph">
 <p><code>$output</code> can be used as an explanatory text that will be displayed with the execution of
 the command.</p>
+</div>
+<div class="paragraph">
+<p><code>$quiet</code> and <code>$max_interval</code> are passed through to <code>$distri&#8594;script_run</code>. In
+the default implementation, <code>$quiet</code> is used to avoid recording serial_results.
+<code>$max_interval</code> (1-250) controls typing speed (lower values mean slower typing).</p>
 </div>
 <div class="paragraph">
 <p><code>script_run</code> will throw an exception if the timeout has expired.</p>
@@ -2137,7 +2147,7 @@ set_serialdev($new);</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-12 04:48:55 UTC
+Last updated 2025-09-20 04:49:33 UTC
 </div>
 </div>
 </body>

@@ -12823,18 +12823,18 @@ git<span class="tok-w"> </span>clone<span class="tok-w"> </span>git@github.com:o
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
-<span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-o">&lt;&lt;&lt;</span><span class="tok-w"> </span>EOM
-<span class="tok-o">[</span>localhost<span class="tok-o">]</span>
-<span class="tok-nv">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>1234567890ABCDEF
-<span class="tok-nv">secret</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>1234567890ABCDEF
-EOM<span class="tok-w"> </span>&gt;&gt;<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/client.conf
+cat<span class="tok-w"> </span>&gt;&gt;<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/client.conf<span class="tok-w"> </span><span class="tok-s">&lt;&lt; EOM</span>
+<span class="tok-s">[localhost]</span>
+<span class="tok-s">key = 1234567890ABCDEF</span>
+<span class="tok-s">secret = 1234567890ABCDEF</span>
+<span class="tok-s">EOM</span>
 
-<span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-o">&lt;&lt;&lt;</span><span class="tok-w"> </span>EOM
-<span class="tok-o">[</span>production<span class="tok-o">]</span>
-<span class="tok-nv">dsn</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>dbi:Pg:dbname<span class="tok-o">=</span>openqa-local<span class="tok-p">;</span><span class="tok-nv">host</span><span class="tok-o">=</span><span class="tok-m">127</span>.0.0.1<span class="tok-p">;</span><span class="tok-nv">port</span><span class="tok-o">=</span><span class="tok-m">5432</span>
-<span class="tok-nv">user</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>geekotest
-<span class="tok-nv">password</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span>x
-EOM<span class="tok-w"> </span>&gt;&gt;<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/database.ini
+cat<span class="tok-w">  </span>&gt;&gt;<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/database.ini<span class="tok-w"> </span><span class="tok-s">&lt;&lt; EOM</span>
+<span class="tok-s">[production]</span>
+<span class="tok-s">dsn = dbi:Pg:dbname=openqa-local;host=127.0.0.1;port=5432</span>
+<span class="tok-s">user = geekotest</span>
+<span class="tok-s">password = x</span>
+<span class="tok-s">EOM</span>
 
 cp<span class="tok-w"> </span><span class="tok-nv">$OPENQA_REPOS</span>/openQA/etc/openqa/workers.ini<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/workers.ini
 crudini<span class="tok-w"> </span>--set<span class="tok-w"> </span><span class="tok-nv">$OPENQA_CONFIG</span>/workers.ini<span class="tok-w"> </span>global<span class="tok-w"> </span>HOST<span class="tok-w"> </span>http://localhost:9526
@@ -14349,7 +14349,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-12 04:44:52 UTC
+Last updated 2025-09-20 04:44:47 UTC
 </div>
 </div>
 </body>
