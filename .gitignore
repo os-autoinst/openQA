@@ -1,4 +1,3 @@
-logs/*.tar.*
 etc/mine/
 # Devel::Cover
 /cover_db*
@@ -6,51 +5,31 @@ etc/mine/
 /test-results/
 # CircleCI cache
 /logs/
-temp
-/testresults
+# Editor files
+*.swp
+*~
+# docs
+docs/build/
+docs/vendor/
+**/openqa-in-5-minutes.gif
+**/openqa-in-5-minutes.webm
+# Development
+.sass-cache/
+.tidyall.d/
+assets/cache/
+assets/assetpack.db
+docker.env
+node_modules
+nytprof/
+/public/packed/
+/public/sass/bootstrap.scss
+# Tests
+.prove
+/t/cache.d/
 /t/data/openqa/webui/cache
 /t/data/openqa/db/db.lock
 /t/data/openqa/testresults
-/t/data/openqa/share/tests
-/t/data/7da661d0c3faf37d49d33b6fc308f2.png
-/factory
-/public/packed/
-/public/sass/bootstrap.scss
-testrun-cron
-testrun-manual
-archive
-backlog
-video
-*.swp
-.sass-cache/
-www/htdocs/includes/knownissues.html
-*~
-mojoResults.png
-openqa.log
-t/data/openqa/factory/hdd/00099963-hdd_image2.qcow2
-t/data/openqa/factory/hdd/hdd_image.qcow2
-t/diagram-v*.png
-assets/cache/
-assets/assetpack.db
-nytprof/
-.prove
-t/cache.d/
-t/data/openqa/pool/
-t/data/openqa/share/factory/hdd/00099963-hdd_image2.qcow2
-t/data/openqa/share/factory/hdd/hdd_image.qcow2
+/t/data/openqa/share/tests/opensuse/needles
 t/data/openqa/share/factory/iso/Core-7.2.iso
-t/data/openqa/share/factory/iso/test2.iso
-t/data/openqa/share/factory/iso/test3.iso
 t/log_chromedriver
-docker.env
 container/webui/workdir
-base_state.json
-job.json
-node_modules
-.tidyall.d/
-openqa-documentation.html
-docs/build/
-docs/vendor/
-# docs
-**/openqa-in-5-minutes.gif
-**/openqa-in-5-minutes.webm
