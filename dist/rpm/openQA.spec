@@ -330,7 +330,7 @@ statistics.
 %prep
 %setup -q
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
-local-npm-registry %{_sourcedir} install --omit=dev --legacy-peer-deps --no-package-lock
+local-npm-registry %{_sourcedir} install --omit=dev --legacy-peer-deps --no-package-lock --ignore-scripts
 
 %build
 %make_build
