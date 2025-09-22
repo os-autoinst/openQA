@@ -147,6 +147,9 @@ subtest 'redirection to different domain' => sub {
     $config->{file_domain} = 'openqa-files';
     $t->get_ok('/assets/repo/testrepo/README.html')->status_is(302);
     $t->header_like(Location => qr|^http://openqa-files(:\d+)?/assets/repo/testrepo/README.html$|);
+
+    $t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302);
+    $t->header_like(Location => qr|^//openqa-files(:\d+)?/assets/repo/testrepo/README$|);
 };
 
 done_testing();
