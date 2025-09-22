@@ -377,7 +377,7 @@ Just be aware that this is a feature the openQA team does not control, and the
 exact output as well as how it escapes control characters will change a bit over
 time.
 
-== Archive mode
+== Archiving individual job results
 
 With the `archive` subcommand of `openqa-cli` you can download all the assets
 and test results of a job for archiving or debugging purposes.
@@ -393,3 +393,6 @@ Thumbnails are not included by default, but can be added with the
 openqa-cli archive --host http://openqa.example.com --with-thumbnails \
     408 ~/openqa_job_408
 ----
+
+See also <<UsersGuide.asciidoc#archiving,Archiving>> for automatic archiving
+of old jobs.

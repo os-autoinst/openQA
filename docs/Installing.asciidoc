@@ -1653,6 +1653,9 @@ the workers create their own instance directories.
 * the "project directory"
     - defined as `$basedir/openqa`, by default `/var/lib/openqa`
     - referred as `$prjdir` within openQA
+* the "archive directory"
+    - defined as `$prjdir/openqa`, by default `/var/lib/openqa/archive`
+    - referred as `$archivedir` within openQA
 * the "share directory": contains directories shared between web UI and (remote) workers
     - defined as `$prjdir/share`, by default `/var/lib/openqa/share`
     - referred as `$sharedir` within openQA
