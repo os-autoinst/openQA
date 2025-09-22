@@ -23,12 +23,8 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15
     zypper in -y ca-certificates-mozilla curl openQA-local-db apache2 apache2-utils hostname which w3m 'rubygem(sass)>=3.7.4' && \
     zypper clean && \
     gensslcert && \
-    a2enmod headers && \
-    a2enmod proxy && \
-    a2enmod proxy_http && \
-    a2enmod proxy_wstunnel && \
+    /usr/share/openqa/script/configure-web-proxy && \
     a2enmod ssl && \
-    a2enmod rewrite && \
     a2enflag SSL
 
 COPY openqa-ssl.conf openqa.conf /etc/apache2/vhosts.d/
