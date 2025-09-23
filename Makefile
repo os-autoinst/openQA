@@ -207,8 +207,11 @@ endif
 
 # Ensure npm packages are installed and up-to-date (unless local-npm-registry is installed; in this case we can
 # assume installing npm packages is taken care of separately, e.g. in builds on OBS)
+# note: Excluding dev dependencies like `eslint` via `--omit=dev` to pull in only dependencies needed at runtime (and for
+#       regular tests). Development tests/tooling like `js-tidy` will invoke `npm install …` to install missing dependencies
+#       on its own anyway.
 node_modules: package-lock.json
-	@which local-npm-registry >/dev/null 2>&1 || npm install --no-audit --no-fund --ignore-scripts
+	@which local-npm-registry >/dev/null 2>&1 || npm install --no-audit --no-fund --ignore-scripts --omit=dev
 	@touch node_modules
 
 .PHONY: test
