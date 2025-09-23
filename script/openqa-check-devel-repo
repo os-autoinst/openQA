@@ -34,6 +34,10 @@ log_error() {
 
 [[ $VERSION ]] || . /etc/os-release
 [[ $ARCH ]] || ARCH=$(uname -i)
+if ! grep -q '^solver.dupAllowVendorChange\s*=\s*true' /etc/zypp/zypp.conf; then
+    result="/etc/zypp/zypp.conf needs to have '^solver.dupAllowVendorChange = true' for devel:openQA repositories. See https://progress.opensuse.org/issues/188235 for details"
+    false
+fi
 result="$(curl -sS "${REPO_URL:-https://api.opensuse.org/public/build/devel:openQA}/_result?repository=${VERSION}&arch=${ARCH}")"
 
 echo -e "$result" | grep -q "project.*state=.published."
