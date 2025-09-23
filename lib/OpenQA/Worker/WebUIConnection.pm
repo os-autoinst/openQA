@@ -360,7 +360,7 @@ sub calculate_status_update_interval ($self) {
 }
 
 # sends the overall worker status
-sub send_status ($self) {
+sub send_status ($self, %args) {
     # ensure an ongoing timer is cancelled in case send_status has been called manually
     if (my $send_status_timer = delete $self->{_send_status_timer}) {
         Mojo::IOLoop->remove($send_status_timer);
@@ -370,7 +370,7 @@ sub send_status ($self) {
     my $websocket_connection = $self->websocket_connection;
     return undef unless $websocket_connection;
     my $status = $self->{_last_worker_status} = $self->worker->status;
-    $websocket_connection->send({json => $status});
+    $websocket_connection->send({json => $status}) if !$args{on_error} || defined $status->{reason};
 }
 
 sub send_status_delayed ($self) {

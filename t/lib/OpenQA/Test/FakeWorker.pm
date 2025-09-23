@@ -28,7 +28,7 @@ has is_executing_single_job => 1;
 
 sub stop_current_job ($self, $reason) { $self->stop_current_job_called($reason) }
 sub stop ($self) { $self->is_stopping(1) }
-sub status ($self) { {fake_status => 1, reason => 'some error'} }
+sub status ($self) { {fake_status => 1, reason => $self->current_error} }
 
 sub accept_job ($self, $client, $job_info) {
     $self->current_job(OpenQA::Worker::Job->new($self, $client, $job_info));
