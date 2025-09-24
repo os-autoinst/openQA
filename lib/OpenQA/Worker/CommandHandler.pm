@@ -134,19 +134,24 @@ sub _handle_command_developer_session_start {
     $current_job->developer_session_running(1);
 }
 
+sub _reevaluate_and_return_current_error ($client, $worker) {
+    # invoke send_status which will re-evaluate the availability updating $worker->current_error
+    # note: This will not work if there's currently a job but then we will not accept a new job anyway.
+    $client->send_status(on_error => 1) unless $worker->current_job;
+    return $worker->current_error;
+}
+
 sub _can_grab_job {
     my ($client, $worker, $webui_host, $current_job, $job_ids_to_grab) = @_;
     my $reason_to_reject_job;
 
-    # refuse new job(s) if the worker is
-    # * in an error state
-    # * stopping
+    # refuse new job(s) if the worker is in an error state or stopping
     if ($worker->is_stopping) {
         $reason_to_reject_job = 'currently stopping';
         # note: Not rejecting the job here; declaring the worker as offline which is done in any case
         #       should be sufficient.
     }
-    elsif (my $current_error = $worker->current_error) {
+    elsif (my $current_error = _reevaluate_and_return_current_error($client, $worker)) {
         $reason_to_reject_job = $current_error;
         $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
     }

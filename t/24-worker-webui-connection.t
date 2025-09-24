@@ -366,6 +366,7 @@ subtest 'retry delay configurable' => sub {
 
 subtest 'send status' => sub {
     my $ws = OpenQA::Test::FakeWebSocketTransaction->new;
+    $client->worker->current_error('some error');
     $client->websocket_connection($ws);
     $client->send_status();
     is_deeply($ws->sent_messages, [{json => {fake_status => 1, reason => 'some error'}}], 'status sent')
@@ -424,6 +425,7 @@ subtest 'command handler' => sub {
     my $command_handler = OpenQA::Worker::CommandHandler->new($client);
     my $ws = OpenQA::Test::FakeWebSocketTransaction->new;
     my $worker = $client->worker;
+    $worker->current_error('some error');
     $client->websocket_connection($ws);
 
     # test at least some of the error cases
@@ -437,13 +439,13 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     my %job = (id => 42, settings => {});
     combined_like { $command_handler->handle_command(undef, {type => WORKER_COMMAND_GRAB_JOB, job => \%job}) }
     qr/Refusing to grab job.*: some error/, 'ignoring grab_job while in error-state';
-
+    is $worker->current_job, undef, 'no job has been accepted while in error-state';
     my %job_info = (sequence => [$job{id}], data => {42 => \%job});
     combined_like {
         $command_handler->handle_command(undef, {type => WORKER_COMMAND_GRAB_JOBS, job_info => \%job_info})
     }
     qr/Refusing to grab job.*: some error/, 'ignoring grab_jobs while in error-state';
-    is($worker->current_job, undef, 'no job has been accepted while in error-state');
+    is $worker->current_job, undef, 'no jobs have been accepted while in error-state';
 
     $worker->current_error(undef);
     $worker->is_stopping(1);
@@ -497,11 +499,12 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     $worker->current_job_ids([]);
     $worker->is_busy(0);
     my $rejection = sub { {json => {job_ids => shift, reason => shift, type => 'rejected'}} };
+    my %fake_error_status = (json => {fake_status => 1, reason => 'some error'});
     is_deeply(
         $ws->sent_messages,
         [
-            $rejection->([42], 'some error'),
-            $rejection->([42], 'some error'),
+            \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
+            \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
             $rejection->(['but no settings'], 'the provided job is invalid'),
             $rejection->(['42'], 'job info lacks execution sequence'),
             $rejection->(['42'], 'already busy with a job from foo'),
@@ -512,8 +515,8 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     # test accepting a job
     is($worker->current_job, undef, 'no job accepted so far');
-    $command_handler->handle_command(undef,
-        {type => WORKER_COMMAND_GRAB_JOB, job => {id => 25, settings => {FOO => 'bar'}}});
+    my %cmd = (type => WORKER_COMMAND_GRAB_JOB, job => {id => 25, settings => {FOO => 'bar'}});
+    $command_handler->handle_command(undef, \%cmd);
     my $accepted_job = $worker->current_job;
     is_deeply($accepted_job->info, {id => 25, settings => {FOO => 'bar'}}, 'job accepted');
 
@@ -587,8 +590,10 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     is_deeply $worker->skipped_jobs, [[43, 'quit']], 'pending job is going to be skipped';
 
     # reacting to info message
+    $worker->current_error('yet another error');
+    $client->send_status;
     ok !$client->{_send_status_timer}, 'sending status update not scheduled yet';
-    combined_like { $command_handler->handle_command(undef, {type => 'info', seen => 1}) } qr/some error/,
+    combined_like { $command_handler->handle_command(undef, {type => 'info', seen => 1}) } qr/yet another error/,
       'status update logged';
     ok $client->{_send_status_timer}, 'sending status update with delay after receiving "seen" message';
 };
