@@ -64,6 +64,8 @@ has 'current_error_is_fatal';
 has 'worker_hostname';
 has 'isotovideo_interface_version';
 
+sub encode_token ($entry_string) { OpenQA::Worker::Settings::encode_token(split /@/, $entry_string) }
+
 sub new ($class, $cli_options) {
     # determine instance number
     my $instance_number = $cli_options->{instance};
