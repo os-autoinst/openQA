@@ -25,13 +25,19 @@ has 'service_port_delta';    # delta from web UI port on which to directly conne
 # the websocket connection to receive commands from the web UI and send the status (Mojo::Transaction::WebSockets instance)
 has 'websocket_connection';
 
-sub new ($class, $webui_host, $cli_options) {
+
+
+sub new ($class, $webui_host, $args) {
     $webui_host = $ENV{OPENQA_WORKER_WEBUI_HOST} // $webui_host;
     my $url = $webui_host !~ '/' ? Mojo::URL->new->scheme('http')->host_port($webui_host) : Mojo::URL->new($webui_host);
+    my ($host, $key, $secret) = split /|/, $ENV{OPENQA_WORKER_TOKEN} if $ENV{OPENQA_WORKER_TOKEN};
+    $host //= $ENV{OPENQA_WORKER_HOST};
+    $key //= $ENV{OPENQA_WORKER_APIKEY};
+    $secret //= $ENV{OPENQA_WORKER_APISECRET};
     my $ua = OpenQA::Client->new(
         api => $url->host,
-        apikey => $ENV{OPENQA_WORKER_APIKEY} // $cli_options->{apikey},
-        apisecret => $ENV{OPENQA_WORKER_APISECRET} // $cli_options->{apisecret},
+        apikey => $ENV{OPENQA_WORKER_APIKEY} // $args->{apikey},
+        apisecret => $ENV{OPENQA_WORKER_APISECRET} // $args->{apisecret},
     );
     $ua->base_url($url);
 

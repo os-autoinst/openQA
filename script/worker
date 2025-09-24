@@ -30,6 +30,16 @@ specify the public key needed for API authentication
 
 specify the secret key needed for API authentication
 
+=item B<--token> <value>
+
+specify a comma-separated list of tokens for C<host>@C<key>@C<secret>
+combinations as alternative to the individual options. Alternatively use the
+environment variable C<OPENQA_WORKER_TOKEN>.
+
+=item B<--encode-token> HOST@KEY@SECRET
+
+Encode a token as string for the specified host+key+secret combination
+
 =item B<--isotovideo> PATH
 
 path to isotovideo script, useful for running from git
@@ -97,11 +107,13 @@ my %options;
 sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 GetOptions(
-    \%options, "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s",
-    "apisecret:s", "verbose|v|debug|d", "help|h",
+    \%options, "no-cleanup", "instance=i", "isotovideo=s",
+    "host=s", "apikey:s", "apisecret:s", "token:s",
+    "encode-token:s", "verbose|v|debug|d", "help|h",
 ) or usage(1);
 
 usage(0) if ($options{help});
+exit !OpenQA::Worker::encode_token($options{encode-token}) if $options{encode-token};
 
 # count workers from 1 if not set - if tap devices are used worker would try to use tap -1
 $options{instance} ||= 1;
