@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+OPENQA_WEBUI_MODE=${OPENQA_WEBUI_MODE:-"production"}
 pid=
 pid_idx=0
 pid_dir=${OPENQA_BASEDIR:-/var/lib}/openqa/webui
@@ -16,7 +17,7 @@ function start_service {
 
     # start openQA in the background
     # note: Our API commands are very expensive, so the default timeouts are too tight.
-    "$openqa_dir"/openqa prefork -m production --proxy -i 100 -H 900 -w 30 -c 1 -G 800 -P "$pid_file" "${openqa_args[@]}" &
+    "$openqa_dir"/openqa prefork -m "$OPENQA_WEBUI_MODE" --proxy -i 100 -H 900 -w 30 -c 1 -G 800 -P "$pid_file" "${openqa_args[@]}" &
     pid=$!
 
     # wait until openQA is ready to accept requests by waiting for its PID file
