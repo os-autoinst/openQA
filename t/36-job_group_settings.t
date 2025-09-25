@@ -10,6 +10,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
+use OpenQA::JobDependencies::Constants;
 use OpenQA::JobGroupDefaults;
 use Date::Format qw(time2str);
 use Time::Seconds;
@@ -144,9 +145,14 @@ subtest 'retention period of infinity does not break cleanup' => sub {
 };
 
 subtest 'retentions for job in database and job results are effective' => sub {
-    my $five_days_old = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 5, 'UTC');
+    my $now = time;
+    my $zero_days_old = time2str('%Y-%m-%d %H:%M:%S', $now, 'UTC');
+    my $five_days_old = time2str('%Y-%m-%d %H:%M:%S', $now - ONE_DAY * 5, 'UTC');
     my $group = $job_groups->create({name => 'another group', keep_results_in_days => 4});
+    my $jobs = $schema->resultset('Jobs');
     my $job = $group->jobs->create({TEST => 'job', t_finished => $five_days_old});
+    my $parallel_job = $jobs->create({TEST => 'parallel_job', t_finished => $zero_days_old});
+    $job->children->create({child_job_id => $parallel_job->id, dependency => PARALLEL});
     $job->create_result_dir;
     $group->discard_changes;
     $group->limit_results_and_logs;
@@ -158,6 +164,7 @@ subtest 'retentions for job in database and job results are effective' => sub {
     $group->update({keep_jobs_in_days => 4});
     $group->limit_results_and_logs;
     $group->discard_changes;
+    is $jobs->search({id => $parallel_job->id})->count, 1, 'dependent job still there';
     is $group->jobs->count, 0, 'job has been deleted from database via keep_jobs_in_days';
 };
 
