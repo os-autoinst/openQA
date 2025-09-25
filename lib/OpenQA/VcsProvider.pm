@@ -9,7 +9,7 @@ use Mojo::URL;
 
 has 'app';
 
-sub report_status_to_github ($self, $statuses_url, $params, $scheduled_product_id, $base_url, $callback = undef) {
+sub report_status_to_git ($self, $statuses_url, $params, $scheduled_product_id, $base_url, $callback = undef) {
     $params->{context} //= 'openqa';
     $params->{description} //= 'openQA test run';
     $params->{target_url} //= "$base_url/admin/productlog?id=$scheduled_product_id"

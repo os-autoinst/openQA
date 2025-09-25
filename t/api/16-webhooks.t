@@ -100,7 +100,7 @@ my $expected_statuses_url = "https://127.0.0.1/repos/os-autoinst/openQA/statuses
 my $expected_ci_check_state = 'pending';
 my $expected_ci_check_desc = undef;
 $vcs_mock->redefine(
-    report_status_to_github =>
+    report_status_to_git =>
       sub ($self, $statuses_url, $params, $scheduled_product_id, $base_url_from_req, $callback) {
         my $tx = $ua->build_tx(POST => 'http://dummy');
         is $statuses_url, $expected_statuses_url, 'URL from webhook payload used for reporting back';
