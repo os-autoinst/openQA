@@ -8,17 +8,20 @@ use Mojo::JSON qw(encode_json);
 use Mojo::URL;
 
 has 'app';
+has 'base_url';
 has 'statuses_url';
 
 sub read_settings ($self, $settings) {
     $self->statuses_url($settings->{GITHUB_STATUSES_URL});
+    $self->base_url($settings->{CI_TARGET_URL});
     return undef unless $self->statuses_url;
     return 1;
 }
 
-sub report_status_to_git ($self, $params, $scheduled_product_id, $base_url, $callback = undef) {
+sub report_status_to_git ($self, $params, $scheduled_product_id, $callback = undef) {
     $params->{context} //= 'openqa';
     $params->{description} //= 'openQA test run';
+    my $base_url = $self->base_url;
     $params->{target_url} //= "$base_url/admin/productlog?id=$scheduled_product_id"
       if $scheduled_product_id && $base_url;
 
