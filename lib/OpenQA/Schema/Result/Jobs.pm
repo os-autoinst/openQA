@@ -994,7 +994,7 @@ sub auto_duplicate ($self, $args = {}) {
     # report status back to GitHub for affected scheduled products
     my $scheduled_products = $rsource->schema->resultset('ScheduledProducts');
     my %related_scheduled_products = (id => {-in => [keys %related_scheduled_product_ids]});
-    $_->report_status_to_github for $scheduled_products->search(\%related_scheduled_products);
+    $_->report_status_to_git for $scheduled_products->search(\%related_scheduled_products);
 
     my $clone_id = $clones->{$job_id}->{clone};
     my $dup = $rsource->resultset->find($clone_id);
@@ -2158,7 +2158,7 @@ sub done ($self, %args) {
 
     # report back to GitHub if this job is part of a CI check which has concluded with this job
     if (my $sp_id = $self->related_scheduled_product_id) {
-        $self->result_source->schema->resultset('ScheduledProducts')->find($sp_id)->report_status_to_github;
+        $self->result_source->schema->resultset('ScheduledProducts')->find($sp_id)->report_status_to_git;
     }
 
     # enqueue the finalize job only after stopping the cluster so in case the job should be restarted the cluster

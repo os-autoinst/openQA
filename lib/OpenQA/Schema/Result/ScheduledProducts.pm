@@ -226,7 +226,7 @@ sub set_done ($self, $result) {
     }
     else {
         $self->update({status => SCHEDULED, results => $result});    # … SCHEDULED if remained SCHEDULING
-        $self->report_status_to_github;
+        $self->report_status_to_git;
     }
 }
 
@@ -932,7 +932,7 @@ sub _format_check_description ($verb, $count, $total) {
     return "All $total openQA jobs $verb";
 }
 
-sub report_status_to_github ($self, $callback = undef) {
+sub report_status_to_git ($self, $callback = undef) {
     my $id = $self->id;
     my $settings = $self->{_settings} // $self->settings;
     return undef unless my $github_statuses_url = $settings->{GITHUB_STATUSES_URL};
@@ -941,7 +941,7 @@ sub report_status_to_github ($self, $callback = undef) {
     my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
     my $base_url = $settings->{CI_TARGET_URL};
     my %params = (state => $state, description => _format_check_description($verb, $count, $total));
-    $vcs->report_status_to_github($github_statuses_url, \%params, $id, $base_url, $callback);
+    $vcs->report_status_to_git($github_statuses_url, \%params, $id, $base_url, $callback);
 }
 
 sub cancel ($self, $reason = undef) {

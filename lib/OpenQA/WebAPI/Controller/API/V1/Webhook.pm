@@ -153,7 +153,7 @@ sub product ($self) {
         return $self->render(json => $scheduled_product->enqueue_minion_job(\%params));
     };
     $scheduled_product->discard_changes;    # load value of columns that have a default value
-    my $tx = $vcs->report_status_to_github($statuses_url, {state => 'pending'}, $scheduled_product->id, $base_url, $cb);
+    my $tx = $vcs->report_status_to_git($statuses_url, {state => 'pending'}, $scheduled_product->id, $base_url, $cb);
 }
 
 1;

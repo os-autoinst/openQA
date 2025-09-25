@@ -22,7 +22,7 @@ subtest 'reporting status to GitHub' => sub {
 
     my $git = OpenQA::VcsProvider->new(app => $app);
     my $url = 'http://127.0.0.1/repos/some/repo/statuses/some-sha';
-    my $tx = $git->report_status_to_github($url, {state => 'pending'}, '42', 'https://openqa.opensuse.org');
+    my $tx = $git->report_status_to_git($url, {state => 'pending'}, '42', 'https://openqa.opensuse.org');
     my $req = $tx->req;
     is $req->method, 'POST', 'method';
     is $req->url, $url, 'URL';
