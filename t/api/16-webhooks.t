@@ -101,9 +101,9 @@ my $expected_ci_check_state = 'pending';
 my $expected_ci_check_desc = undef;
 $vcs_mock->redefine(
     report_status_to_git =>
-      sub ($self, $statuses_url, $params, $scheduled_product_id, $base_url_from_req, $callback) {
+      sub ($self, $params, $scheduled_product_id, $base_url_from_req, $callback) {
         my $tx = $ua->build_tx(POST => 'http://dummy');
-        is $statuses_url, $expected_statuses_url, 'URL from webhook payload used for reporting back';
+        is $self->statuses_url, $expected_statuses_url, 'URL from webhook payload used for reporting back';
         is $params->{state}, $expected_ci_check_state, "check reported to be $expected_ci_check_state";
         is $params->{description}, $expected_ci_check_desc, 'check description';
         ++$status_reports;
