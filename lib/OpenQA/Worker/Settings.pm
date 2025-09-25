@@ -9,7 +9,7 @@ use Mojo::URL;
 use Mojo::Util 'trim';
 use Config::IniFiles;
 use Feature::Compat::Try;
-use MIME::Base64 qw(encode_base64url decode_base64url);
+use MIME::Base64 qw(decode_base64url);
 use Time::Seconds;
 use OpenQA::Config;
 use OpenQA::Constants qw(VNCPORT_OFFSET);
@@ -155,13 +155,6 @@ sub is_local_worker ($self) {
 sub has_class ($self, $worker_class) {
     my $c = $self->{_worker_classes} //= {map { $_ => 1 } split /,/, $self->global_settings->{WORKER_CLASS} // ''};
     return exists $c->{$worker_class};
-}
-
-# Generate a length-optimized, URL escaped, base64 encoded worker token string
-# with a prefix abbreviated for "openQA worker token"
-sub encode_token ($host, $key, $secret) {
-    my ($key_bin, $secret_bin) = map { pack 'H*', $_ } ($key, $secret);
-    return 'oqwt-' . encode_base64url join "\x00", $host, $key_bin, $secret_bin;
 }
 
 sub decode_token ($token) {
