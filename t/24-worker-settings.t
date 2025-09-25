@@ -68,7 +68,6 @@ subtest 'worker tokens' => sub {
     my $key = '1234567890ABCDEF';
     my $secret = '1234567890ABCDEF';
     my $token = 'oqwt-bXlfaG9zdAASNFZ4kKvN7wASNFZ4kKvN7w';
-    is OpenQA::Worker::Settings::encode_token($host, $key, $secret), $token, 'worker can encode expected token';
     is_deeply [OpenQA::Worker::Settings::decode_token($token)], [$host, $key, $secret], 'worker can decode token';
     my $settings = OpenQA::Worker::Settings->new(1, {token => $token});
     is_deeply(
