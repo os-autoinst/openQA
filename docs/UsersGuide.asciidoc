@@ -580,6 +580,50 @@ http://openqa/tests/latest/badge
 There is an optional parameter 'show_build=1' that will
 prefix the status with the build number.
 
+=== Build a continuous openQA monitoring dashboard
+
+With just some common tools a dashboard showing the openQA index page with
+continuously updated results can be setup. Example setup using the
+`fullscreen=1` parameter to use the entire page for the build results:
+
+Content of /home/tux/.xinitrc
+
+[source,sh]
+----
+#!/bin/bash
+
+unclutter &
+openbox &
+xset s off
+xset -dpms
+sleep 5
+url="https://openqa.opensuse.org?group=openSUSE Tumbleweed\$|openSUSE Leap [0-9]{2}.?[0-9]*\$|openSUSE Leap.\*JeOS\$|openSUSE Krypton|openQA|GNOME Next&limit_builds=2&time_limit_days=14&&show_tags=1&fullscreen=1#build-results"
+chromium --kiosk "$url" &
+
+while sleep 300 ; do
+        xdotool windowactivate $(xdotool search --class Chromium)
+        xdotool key F5
+        xdotool windowactivate $(xdotool getactivewindow)
+done
+----
+
+Content of /usr/share/lightdm/lightdm.conf.d/50-suse-defaults.conf
+
+[source,ini]
+----
+[Seat:*]
+pam-service = lightdm
+pam-autologin-service = lightdm-autologin
+pam-greeter-service = lightdm-greeter
+xserver-command=/usr/bin/X
+session-wrapper=/etc/X11/xdm/Xsession
+greeter-setup-script=/etc/X11/xdm/Xsetup
+session-setup-script=/etc/X11/xdm/Xstartup
+session-cleanup-script=/etc/X11/xdm/Xreset
+autologin-user=tux
+autologin-timeout=0
+----
+
 
 [id="carry-over"]
 === Carry over of bug references from previous jobs in same scenario
