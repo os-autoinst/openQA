@@ -935,13 +935,13 @@ sub _format_check_description ($verb, $count, $total) {
 sub report_status_to_git ($self, $callback = undef) {
     my $id = $self->id;
     my $settings = $self->{_settings} // $self->settings;
-    return undef unless my $github_statuses_url = $settings->{GITHUB_STATUSES_URL};
+    my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
+    $vcs->read_settings($settings) or return undef;
     my ($state, $verb, $count, $total) = $self->state_for_ci_status;
     return undef unless $state;
-    my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
     my $base_url = $settings->{CI_TARGET_URL};
     my %params = (state => $state, description => _format_check_description($verb, $count, $total));
-    $vcs->report_status_to_git($github_statuses_url, \%params, $id, $base_url, $callback);
+    $vcs->report_status_to_git(\%params, $id, $base_url, $callback);
 }
 
 sub cancel ($self, $reason = undef) {
