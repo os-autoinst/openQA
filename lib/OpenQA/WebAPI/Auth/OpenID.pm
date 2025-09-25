@@ -22,10 +22,8 @@ sub auth_login ($c) {
     );
 
     my $claimed_id = $csr->claimed_identity($c->config->{openid}->{provider});
-    if (!defined $claimed_id) {
-        log_error("Claiming OpenID identity for URL '$url' failed: " . $csr->err);
-        return;
-    }
+    !defined $claimed_id and do { log_error("Claiming OpenID identity for URL '$url' failed: " . $csr->err); return; };
+
     $claimed_id->set_extension_args(
         'http://openid.net/extensions/sreg/1.1',
         {
@@ -59,8 +57,8 @@ sub auth_login ($c) {
         return_to => $return_url,
         trust_root => qq{$url/},
     );
-    return (redirect => $check_url, error => 0) if $check_url;
-    return (error => $csr->err);
+    return (error => $csr->err) unless $check_url;
+    return (redirect => $check_url, error => 0);
 }
 
 sub _first_last_name ($ax) { join(' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '') }
@@ -94,6 +92,7 @@ sub auth_response ($c) {
     %params = map { $_ => URI::Escape::uri_unescape($params{$_}) } keys %params;
 
     my $csr = Net::OpenID::Consumer->new(
+        # uncoverable statement
         debug => sub (@args) { $c->app->log->debug('Net::OpenID::Consumer: ' . join(' ', @args)) },
         ua => LWP::UserAgent->new,
         required_root => $url,
