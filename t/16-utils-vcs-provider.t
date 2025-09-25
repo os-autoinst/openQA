@@ -8,7 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '5';
-use OpenQA::VcsProvider;
+use OpenQA::VcsProvider::GitHub;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
@@ -20,7 +20,7 @@ subtest 'reporting status to GitHub' => sub {
     my $app = $t->app;
     $app->config->{secrets}->{github_token} = 'some-token';
 
-    my $git = OpenQA::VcsProvider->new(app => $app);
+    my $git = OpenQA::VcsProvider::GitHub->new(app => $app);
     my $url = 'http://127.0.0.1/repos/some/repo/statuses/some-sha';
     $git->read_settings({GITHUB_STATUSES_URL => $url, CI_TARGET_URL => 'https://openqa.opensuse.org'});
     my $tx = $git->report_status_to_git({state => 'pending'}, '42');

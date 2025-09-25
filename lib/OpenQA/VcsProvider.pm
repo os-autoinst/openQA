@@ -18,28 +18,34 @@ sub read_settings ($self, $settings) {
     return 1;
 }
 
-sub report_status_to_git ($self, $params, $scheduled_product_id, $callback = undef) {
+sub add_params ($self, $params, $scheduled_product_id) {
     $params->{context} //= 'openqa';
     $params->{description} //= 'openQA test run';
     my $base_url = $self->base_url;
     $params->{target_url} //= "$base_url/admin/productlog?id=$scheduled_product_id"
       if $scheduled_product_id && $base_url;
+}
 
-    my $url = Mojo::URL->new($self->statuses_url);
+sub create_request ($self, $params) {
     my $app = $self->app;
     my $ua = $app->ua;
+    my $url = Mojo::URL->new($self->statuses_url);
     my $tx = $ua->build_tx(POST => $url);
     my $req = $tx->req;
-    my $headers = $req->headers;
-    my $github_token = $app->config->{secrets}->{github_token};
     my $json = encode_json($params);
     $req->body($json);
+    my $headers = $req->headers;
     $headers->content_type('application/json');
     $headers->content_length(length $json);
-    $headers->header(Accept => 'application/vnd.github+json');
-    $headers->header(Authorization => "Bearer $github_token");
-    $headers->header('X-GitHub-Api-Version' => '2022-11-28');
-    $ua->start($tx, $callback);
+
+    return $tx;
+}
+
+sub report_status_to_git ($self, $params, $scheduled_product_id, $callback = undef) {
+    $self->add_params($params, $scheduled_product_id);
+
+    my $tx = $self->create_request($params);
+    $self->app->ua->start($tx, $callback);
     return $tx;
 }
 

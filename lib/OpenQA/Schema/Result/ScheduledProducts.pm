@@ -18,7 +18,8 @@ use OpenQA::JobSettings;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Scheduler::Client;
-use OpenQA::VcsProvider;
+use OpenQA::VcsProvider::GitHub;
+use OpenQA::VcsProvider::Gitea;
 use Mojo::JSON qw(encode_json decode_json);
 use OpenQA::YAML 'load_yaml';
 use Carp;
@@ -935,7 +936,10 @@ sub _format_check_description ($verb, $count, $total) {
 sub report_status_to_git ($self, $callback = undef) {
     my $id = $self->id;
     my $settings = $self->{_settings} // $self->settings;
-    my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
+    return undef unless $self->webhook_id;
+    my ($type) = split m/:/, $self->webhook_id;
+    my $class = {gh => 'GitHub', gitea => 'Gitea'}->{$type} or return undef;
+    my $vcs = "OpenQA::VcsProvider::$class"->new(app => OpenQA::App->singleton);
     $vcs->read_settings($settings) or return undef;
     my ($state, $verb, $count, $total) = $self->state_for_ci_status;
     return undef unless $state;
