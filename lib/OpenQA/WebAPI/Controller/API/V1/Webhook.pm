@@ -154,8 +154,8 @@ sub product ($self) {
     };
     $scheduled_product->discard_changes;    # load value of columns that have a default value
     $vcs->statuses_url($statuses_url);
-#    $vcs->read_settings($settings) or return undef;
-    my $tx = $vcs->report_status_to_git({state => 'pending'}, $scheduled_product->id, $base_url, $cb);
+    $vcs->base_url($base_url);
+    my $tx = $vcs->report_status_to_git({state => 'pending'}, $scheduled_product->id, $cb);
 }
 
 1;
