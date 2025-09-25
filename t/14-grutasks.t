@@ -328,7 +328,7 @@ subtest 'assets associated with pending jobs are preserved' => sub {
     is($most_reject_job_for_asset_1->id,
         99947, "job 99947 is actually the most recent job of asset $pending_asset_name");
     my $pending_job = $jobs->find(99947);
-    $pending_job->update({state => RUNNING, result => NONE, t_finished => undef});
+    $pending_job->update({state => RUNNING, result => NONE, t_created => '1970-01-01 00:00:00'});
 
     # ensure that the asset will actually be removed
     # note: The big size is not completely arbitrarily chosen. It must be bigger than the size of the relevant
@@ -396,12 +396,12 @@ subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     my $c = $t->app->config->{default_group_limits};
     my $expired = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * ($c->{log_storage_duration} + 1), 'UTC');
     my $jobs = $t->app->schema->resultset('Jobs');
-    my $groupless_job = $jobs->create({TEST => 'groupless-job', t_finished => $expired});
+    my $groupless_job = $jobs->create({TEST => 'groupless-job', t_created => $expired});
     $groupless_job->update({result_dir => "$tempdir/groupless-job", logs_present => 1});
 
     # make job 99937 from group 1001 expired
     my $job = $jobs->find(99937);
-    $job->update({t_finished => $expired});
+    $job->update({t_created => $expired});
 
     # create a log file for both jobs and run the cleanup
     my $log_file_for_job = create_temp_job_log_file($job->result_dir);
@@ -463,7 +463,7 @@ subtest 'labeled jobs considered important' => sub {
 
     # create important job which was finished 12 days ago
     my $job = $app->schema->resultset('Jobs')->find(99938);
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
+    $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update({keep_logs_in_days => 5, keep_important_logs_in_days => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
     my $user = $app->schema->resultset('Users')->find({username => 'system'});
@@ -503,7 +503,7 @@ subtest 'labeled jobs considered important' => sub {
     }
 
     # assume job was finished 22 days ago
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC')});
+    $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC')});
     run_gru_job($app, 'limit_results_and_logs');
     ok !-e $filename, 'results of important job cleaned up if exceeding retention period for important jobs';
 };
