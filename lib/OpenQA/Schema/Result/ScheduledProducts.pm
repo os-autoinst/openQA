@@ -935,7 +935,8 @@ sub _format_check_description ($verb, $count, $total) {
 sub report_status_to_git ($self, $callback = undef) {
     my $id = $self->id;
     my $settings = $self->{_settings} // $self->settings;
-    my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
+    return undef unless $self->webhook_id;
+    my $vcs = OpenQA::VcsProvider->new(type => $self->webhook_id, app => OpenQA::App->singleton);
     $vcs->read_settings($settings) or return undef;
     my ($state, $verb, $count, $total) = $self->state_for_ci_status;
     return undef unless $state;

@@ -90,7 +90,7 @@ subtest 'failure when reporting status to GitHub' => sub {
 };
 
 # mock reporting back to GitHub
-my $vcs_mock = Test::MockModule->new('OpenQA::VcsProvider');
+my $vcs_mock = Test::MockModule->new('OpenQA::VcsProvider::GitHub');
 my $minion_job_id;
 my $status_reports = 0;
 my $expected_sha = '04a3f669ea13a4aa7cbd4569f578a66f7403c43d';

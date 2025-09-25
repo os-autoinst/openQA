@@ -144,7 +144,7 @@ sub product ($self) {
 
     # create scheduled product and enqueue minion job with parameter
     my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user, $webhook_id);
-    my $vcs = OpenQA::VcsProvider->new(app => $app);
+    my $vcs = OpenQA::VcsProvider->new(type => $webhook_id, app => $app);
     my $cb = sub ($ua, $tx, @) {
         if (my $err = $tx->error) {
             $scheduled_product->delete;
