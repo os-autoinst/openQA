@@ -10,7 +10,7 @@ use OpenQA::Utils;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'format_tx_error';
-use OpenQA::VcsProvider::GitHub;
+use OpenQA::VcsProvider;
 use Mojo::Util 'secure_compare';
 
 my %SUPPORTED_PR_ACTIONS = (opened => 'opened', synchronize => 'updated', closed => 'closed');
@@ -144,7 +144,7 @@ sub product ($self) {
 
     # create scheduled product and enqueue minion job with parameter
     my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user, $webhook_id);
-    my $vcs = OpenQA::VcsProvider::GitHub->new(app => $app);
+    my $vcs = OpenQA::VcsProvider->new(type => $webhook_id, app => $app);
     my $cb = sub ($ua, $tx, @) {
         if (my $err = $tx->error) {
             $scheduled_product->delete;
