@@ -1,2 +1,3 @@
 #!/bin/sh -e
-exec "$(dirname "$0")"/openqa-scheduler daemon -m production "$@"
+OPENQA_WEBUI_MODE=${OPENQA_WEBUI_MODE:-"production"}
+exec "$(dirname "$0")"/openqa-scheduler daemon -m "$OPENQA_WEBUI_MODE" "$@"

@@ -1,3 +1,4 @@
 #!/bin/sh -e
 [ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Start openQA GRU service" && exit
-exec "$(dirname "$0")"/openqa gru -m production run --reset-locks --jobs 4 --spare 2 --spare-min-priority 10 "$@"
+OPENQA_WEBUI_MODE=${OPENQA_WEBUI_MODE:-"production"}
+exec "$(dirname "$0")"/openqa gru -m "$OPENQA_WEBUI_MODE" run --reset-locks --jobs 4 --spare 2 --spare-min-priority 10 "$@"

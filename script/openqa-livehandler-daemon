@@ -1,3 +1,4 @@
 #!/bin/sh -e
+OPENQA_WEBUI_MODE=${OPENQA_WEBUI_MODE:-"production"}
 # Our API commands are very expensive, so the default timeouts are too tight
-exec "$(dirname "$0")"/openqa-livehandler daemon -m production --proxy -i 100 "$@"
+exec "$(dirname "$0")"/openqa-livehandler daemon -m "$OPENQA_WEBUI_MODE" --proxy -i 100 "$@"
