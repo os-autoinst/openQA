@@ -2,20 +2,18 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::ObsRsync::Task;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Mojo::File;
 use IPC::Run;
 use Feature::Compat::Try;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf) {
     $app->minion->add_task(obs_rsync_run => \&run);
     $app->minion->add_task(obs_rsync_update_dirty_status => \&update_dirty_status);
     $app->minion->add_task(obs_rsync_update_builds_text => \&update_obs_builds_text);
 }
 
-sub _retry_or_finish {
-    my ($job, $helper, $project, $retry_interval, $retry_max_count) = @_;
+sub _retry_or_finish ($job, $helper, $project = undef, $retry_interval = undef, $retry_max_count = undef) {
     $retry_interval ||= $helper->retry_interval;
     $retry_max_count ||= $helper->retry_max_count;
 
@@ -34,9 +32,7 @@ sub _retry_or_finish {
 #       a retry but is otherwise not concerned with any details (such as invoking rsync or creating openQA jobs).
 #       Jobs of this task are enqueued by the "/obs_rsync/#project/runs" route (POST request) which can be triggered via the
 #       "Sync now" button on the web UI (e.g. on a page like "/admin/obs_rsync/openSUSE:Factory:Staging:C").
-sub run {
-    my ($job, $args) = @_;
-
+sub run ($job, $args) {
     my $app = $job->app;
     my $project = $args->{project};
     my $helper = $app->obs_rsync;
@@ -79,9 +75,7 @@ sub run {
     return $job->finish({code => $exit_code, message => $error});
 }
 
-sub update_dirty_status {
-    my ($job, $args) = @_;
-
+sub update_dirty_status ($job, $args) {
     my $app = $job->app;
     my $project = $args->{project};
     my $helper = $app->obs_rsync;
@@ -89,9 +83,7 @@ sub update_dirty_status {
     return $job->finish(0);
 }
 
-sub update_obs_builds_text {
-    my ($job, $args) = @_;
-
+sub update_obs_builds_text ($job, $args) {
     my $app = $job->app;
     my $alias = $args->{alias};
     my $helper = $app->obs_rsync;
