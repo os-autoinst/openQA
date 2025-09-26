@@ -221,7 +221,7 @@ subtest 'tagging builds via parent group comments' => sub {
         post_comment_1001 'tag:0066:important:foo';
         my $group = $job_groups->find(1001);
         # create job to be expired despite "tag:Arch-2018-08:important:fromparent"; version specified but does not match
-        my @common_args = (BUILD => '08', t_finished => '0001-01-01 00:00:00', group_id => $group->id);
+        my @common_args = (BUILD => '08', t_created => '0001-01-01 00:00:00', group_id => $group->id);
         my $expired_job = $jobs->create({TEST => 'expired-1', VERSION => 'Arch-2019', @common_args});
         # create job to be preserved via "tag:0066:important:foo"; no version specified but build matches
         $jobs->create({TEST => 'preservable-1', VERSION => 'Arch-2018', @common_args, BUILD => '0066'});
@@ -278,7 +278,7 @@ subtest 'expired jobs' => sub {
         is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
 
         $t->app->schema->resultset('Jobs')->find(99938)
-          ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
+          ->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
         is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
         $jg->update({"keep_${file_type}_in_days" => 5});
         # now the unimportant jobs are expired
@@ -307,7 +307,7 @@ subtest 'no cleanup of important builds' => sub {
     # build 0048 has already been tagged as important before
     my $job = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
     my $filename = $job->result_dir . '/autoinst-log.txt';
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
+    $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update(
         {
             keep_logs_in_days => 10,

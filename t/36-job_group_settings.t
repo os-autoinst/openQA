@@ -10,6 +10,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
+use OpenQA::JobDependencies::Constants;
 use OpenQA::JobGroupDefaults;
 use Date::Format qw(time2str);
 use Time::Seconds;
@@ -144,11 +145,17 @@ subtest 'retention period of infinity does not break cleanup' => sub {
 };
 
 subtest 'retentions for job in database and job results are effective' => sub {
-    my $five_days_old = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 5, 'UTC');
+    my $now = time;
+    my $zero_days_old = time2str('%Y-%m-%d %H:%M:%S', $now, 'UTC');
+    my $five_days_old = time2str('%Y-%m-%d %H:%M:%S', $now - ONE_DAY * 5, 'UTC');
     my $group = $job_groups->create({name => 'another group', keep_results_in_days => 4});
-    my $job = $group->jobs->create({TEST => 'job', t_finished => $five_days_old});
+    my $jobs = $schema->resultset('Jobs');
+    my $job = $group->jobs->create({TEST => 'job', t_created => $five_days_old});
+    my $parallel_job = $jobs->create({TEST => 'parallel_job', t_created => $zero_days_old});
+    $job->children->create({child_job_id => $parallel_job->id, dependency => PARALLEL});
     $job->create_result_dir;
     $group->discard_changes;
+    is_deeply [map { $_->id } @{$group->find_expired_jobs}], [], 'job not considered expired (only results)';
     $group->limit_results_and_logs;
     $group->discard_changes;
     my $result_dir = $job->result_dir;
@@ -156,8 +163,10 @@ subtest 'retentions for job in database and job results are effective' => sub {
     ok !-d $result_dir, "result dir '$result_dir' no longer exists";
 
     $group->update({keep_jobs_in_days => 4});
+    is_deeply [map { $_->id } @{$group->find_expired_jobs}], [$job->id], 'job considered expired';
     $group->limit_results_and_logs;
     $group->discard_changes;
+    is $jobs->search({id => $parallel_job->id})->count, 1, 'dependent job still there';
     is $group->jobs->count, 0, 'job has been deleted from database via keep_jobs_in_days';
 };
 
@@ -179,8 +188,8 @@ subtest 'finding expired jobs' => sub {
     my $four_days_old = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 4, 'UTC');
     my $jobs = $new_job_group->jobs;
 
-    $jobs->create({TEST => 'regular', t_finished => $two_days_old, BUILD => '1000'});
-    $jobs->create({TEST => 'important', t_finished => $four_days_old, BUILD => '1001'});
+    $jobs->create({TEST => 'regular', t_created => $two_days_old, BUILD => '1000'});
+    $jobs->create({TEST => 'important', t_created => $four_days_old, BUILD => '1001'});
     $new_job_group->comments->create({text => 'tag:1001:important:test', user_id => 1});
     $new_job_group->update({keep_jobs_in_days => 1, keep_important_jobs_in_days => 1});
     $new_job_group->discard_changes;
