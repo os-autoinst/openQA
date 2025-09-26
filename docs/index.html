@@ -804,11 +804,12 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#cleanup">32. Cleanup of assets, results and other data</a>
 <ul class="sectlevel2">
-<li><a href="#asset_cleanup">32.1. Cleanup strategy for assets</a></li>
-<li><a href="#_configuring_limit_for_assets_within_job_groups">32.2. Configuring limit for assets within job groups</a></li>
-<li><a href="#_configuring_limit_for_groupless_assets">32.3. Configuring limit for groupless assets</a></li>
-<li><a href="#_timers_and_triggers">32.4. Timers and triggers</a></li>
-<li><a href="#_disabling_cleanup">32.5. Disabling cleanup</a></li>
+<li><a href="#archiving">32.1. Automatic archiving of old jobs</a></li>
+<li><a href="#asset_cleanup">32.2. Cleanup strategy for assets</a></li>
+<li><a href="#_configuring_limit_for_assets_within_job_groups">32.3. Configuring limit for assets within job groups</a></li>
+<li><a href="#_configuring_limit_for_groupless_assets">32.4. Configuring limit for groupless assets</a></li>
+<li><a href="#_timers_and_triggers">32.5. Timers and triggers</a></li>
+<li><a href="#_disabling_cleanup">32.6. Disabling cleanup</a></li>
 </ul>
 </li>
 <li><a href="#_cli_interface">33. CLI interface</a></li>
@@ -1000,7 +1001,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_debugging">51.8. Debugging</a></li>
 </ul>
 </li>
-<li><a href="#_archive_mode">52. Archive mode</a></li>
+<li><a href="#_archiving_individual_job_results">52. Archiving individual job results</a></li>
 </ul>
 </li>
 <li><a href="#pitfalls">openQA pitfalls</a>
@@ -4260,6 +4261,19 @@ the workers create their own instance directories.</p>
 </div>
 </li>
 <li>
+<p>the "archive directory"</p>
+<div class="ulist">
+<ul>
+<li>
+<p>defined as <code>$prjdir/openqa</code>, by default <code>/var/lib/openqa/archive</code></p>
+</li>
+<li>
+<p>referred as <code>$archivedir</code> within openQA</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
 <p>the "share directory": contains directories shared between web UI and (remote) workers</p>
 <div class="ulist">
 <ul>
@@ -6773,17 +6787,33 @@ Jobs outside of any group use the limits configured in the <code>[no_group_limit
 section of the web UI configuration.</p>
 </li>
 <li>
-<p>Archiving of important jobs can be enabled. Checkout the related settings
-within the <code>[archiving]</code> section of the config file for details.</p>
-</li>
-<li>
 <p>The <a href="#auditing">Auditing</a> section explains the cleanup of
 the audit log.</p>
 </li>
 </ul>
 </div>
 <div class="sect2">
-<h3 id="asset_cleanup"><a class="anchor" href="#asset_cleanup"></a><a class="link" href="#asset_cleanup">32.1. Cleanup strategy for assets</a></h3>
+<h3 id="archiving"><a class="anchor" href="#archiving"></a><a class="link" href="#archiving">32.1. Automatic archiving of old jobs</a></h3>
+<div class="paragraph">
+<p>Archiving of important jobs can be enabled:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[archiving]</span>
+<span class="tok-c1">## Moves results of important jobs which are preserved during the cleanup</span>
+<span class="tok-c1">## to OPENQA_ARCHIVEDIR (/var/lib/openqa/archive/ by default)</span>
+<span class="tok-c1">#archive_preserved_important_jobs = 0</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When archiving is enabled important job results are moved to the archive
+directory once they reach the expiration for regular job logs. This
+happens as part of the normal cleanup. In the web UI an icon indicates that
+a job was archived.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="asset_cleanup"><a class="anchor" href="#asset_cleanup"></a><a class="link" href="#asset_cleanup">32.2. Cleanup strategy for assets</a></h3>
 <div class="paragraph">
 <p>To find out whether an asset should be removed, openQA determines by which
 groups the asset is used. If at least one job within a certain job group is
@@ -6840,7 +6870,7 @@ preserved.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_limit_for_assets_within_job_groups"><a class="anchor" href="#_configuring_limit_for_assets_within_job_groups"></a><a class="link" href="#_configuring_limit_for_assets_within_job_groups">32.2. Configuring limit for assets within job groups</a></h3>
+<h3 id="_configuring_limit_for_assets_within_job_groups"><a class="anchor" href="#_configuring_limit_for_assets_within_job_groups"></a><a class="link" href="#_configuring_limit_for_assets_within_job_groups">32.3. Configuring limit for assets within job groups</a></h3>
 <div class="paragraph">
 <p>To configure the maximum size for the assets of a group, open 'Job groups'
 in the operators menu and select a group. The size limit for assets can be
@@ -6853,7 +6883,7 @@ assets which belong to that group and not to any other group.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_limit_for_groupless_assets"><a class="anchor" href="#_configuring_limit_for_groupless_assets"></a><a class="link" href="#_configuring_limit_for_groupless_assets">32.3. Configuring limit for groupless assets</a></h3>
+<h3 id="_configuring_limit_for_groupless_assets"><a class="anchor" href="#_configuring_limit_for_groupless_assets"></a><a class="link" href="#_configuring_limit_for_groupless_assets">32.4. Configuring limit for groupless assets</a></h3>
 <div class="paragraph">
 <p>Assets not belonging to jobs within a group are deleted automatically
 after a certain number of days. That duration can be adjusted by setting
@@ -6884,7 +6914,7 @@ asset was updated within the timespan it will not be removed.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_timers_and_triggers"><a class="anchor" href="#_timers_and_triggers"></a><a class="link" href="#_timers_and_triggers">32.4. Timers and triggers</a></h3>
+<h3 id="_timers_and_triggers"><a class="anchor" href="#_timers_and_triggers"></a><a class="link" href="#_timers_and_triggers">32.5. Timers and triggers</a></h3>
 <div class="paragraph">
 <p>Cleanup can be triggered in different ways. One option is to use
 <code>minion_task_triggers</code> and specify tasks via <code>on_job_done</code>. Another way to do
@@ -6921,7 +6951,7 @@ corresponding config file section.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_disabling_cleanup"><a class="anchor" href="#_disabling_cleanup"></a><a class="link" href="#_disabling_cleanup">32.5. Disabling cleanup</a></h3>
+<h3 id="_disabling_cleanup"><a class="anchor" href="#_disabling_cleanup"></a><a class="link" href="#_disabling_cleanup">32.6. Disabling cleanup</a></h3>
 <div class="paragraph">
 <p>By default the cleanup is enabled with systemd timers if available. To
 completely disable cleanup make sure that no minion cleanup tasks are enabled
@@ -10845,7 +10875,7 @@ time.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_archive_mode"><a class="anchor" href="#_archive_mode"></a><a class="link" href="#_archive_mode">52. Archive mode</a></h2>
+<h2 id="_archiving_individual_job_results"><a class="anchor" href="#_archiving_individual_job_results"></a><a class="link" href="#_archiving_individual_job_results">52. Archiving individual job results</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>With the <code>archive</code> subcommand of <code>openqa-cli</code> you can download all the assets
@@ -10865,6 +10895,10 @@ and test results of a job for archiving or debugging purposes.</p>
 <pre>openqa-cli archive --host http://openqa.example.com --with-thumbnails \
     408 ~/openqa_job_408</pre>
 </div>
+</div>
+<div class="paragraph">
+<p>See also <a href="#archiving">Archiving</a> for automatic archiving
+of old jobs.</p>
 </div>
 </div>
 </div>
@@ -14349,7 +14383,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-21 04:44:42 UTC
+Last updated 2025-09-26 04:44:46 UTC
 </div>
 </div>
 </body>
