@@ -90,7 +90,7 @@ subtest 'failure when reporting status to GitHub' => sub {
 };
 
 # mock reporting back to GitHub
-my $vcs_mock = Test::MockModule->new('OpenQA::VcsProvider');
+my $vcs_mock = Test::MockModule->new('OpenQA::VcsProvider::GitHub');
 my $minion_job_id;
 my $status_reports = 0;
 my $expected_sha = '04a3f669ea13a4aa7cbd4569f578a66f7403c43d';
@@ -100,10 +100,10 @@ my $expected_statuses_url = "https://127.0.0.1/repos/os-autoinst/openQA/statuses
 my $expected_ci_check_state = 'pending';
 my $expected_ci_check_desc = undef;
 $vcs_mock->redefine(
-    report_status_to_github =>
-      sub ($self, $statuses_url, $params, $scheduled_product_id, $base_url_from_req, $callback) {
+    report_status_to_git =>
+      sub ($self, $params, $scheduled_product_id, $callback) {
         my $tx = $ua->build_tx(POST => 'http://dummy');
-        is $statuses_url, $expected_statuses_url, 'URL from webhook payload used for reporting back';
+        is $self->statuses_url, $expected_statuses_url, 'URL from webhook payload used for reporting back';
         is $params->{state}, $expected_ci_check_state, "check reported to be $expected_ci_check_state";
         is $params->{description}, $expected_ci_check_desc, 'check description';
         ++$status_reports;
