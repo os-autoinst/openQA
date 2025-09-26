@@ -172,6 +172,8 @@ install-generic: generate-assets
 	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-scheduler.service.requires/postgresql.service
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires
 	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires/postgresql.service
+	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-webui.service.requires
+	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-webui.service.requires/postgresql.service
 	install -D -m 644 usr/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf "$(DESTDIR)"/usr/lib/sysctl.d/01-openqa-reload-worker-auto-restart.conf
 #
 # install openQA apparmor profile

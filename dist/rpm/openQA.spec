@@ -614,6 +614,7 @@ fi
 # init
 %dir %{_unitdir}
 %{_unitdir}/openqa-webui.service
+%dir %{_unitdir}/openqa-webui.service.requires
 %{_unitdir}/openqa-livehandler.service
 %{_unitdir}/openqa-gru.service
 %dir %{_unitdir}/openqa-gru.service.requires
@@ -823,6 +824,7 @@ fi
 %{_unitdir}/openqa-gru.service.requires/postgresql.service
 %{_unitdir}/openqa-scheduler.service.requires/postgresql.service
 %{_unitdir}/openqa-websockets.service.requires/postgresql.service
+%{_unitdir}/openqa-webui.service.requires/postgresql.service
 %{_datadir}/openqa/script/setup-db
 %{_datadir}/openqa/script/dump-db
 %{_bindir}/openqa-setup-db
