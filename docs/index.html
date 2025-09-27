@@ -740,18 +740,19 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_more_query_parameters_for_configuring_last_builds_gh575">28.14. More query parameters for configuring last builds gh#575</a></li>
 <li><a href="#_web_ui_controls_to_filter_only_tagged_or_all_builds_gh807">28.15. Web UI controls to filter only tagged or all builds gh#807</a></li>
 <li><a href="#_test_result_badges_gh5022">28.16. Test result badges gh#5022</a></li>
-<li><a href="#carry-over">28.17. Carry over of bug references from previous jobs in same scenario</a></li>
-<li><a href="#_pinning_comments_as_group_description">28.18. Pinning comments as group description</a></li>
-<li><a href="#_dark_mode">28.19. Dark mode</a></li>
-<li><a href="#_developer_mode">28.20. Developer mode</a>
+<li><a href="#_build_a_continuous_openqa_monitoring_dashboard">28.17. Build a continuous openQA monitoring dashboard</a></li>
+<li><a href="#carry-over">28.18. Carry over of bug references from previous jobs in same scenario</a></li>
+<li><a href="#_pinning_comments_as_group_description">28.19. Pinning comments as group description</a></li>
+<li><a href="#_dark_mode">28.20. Dark mode</a></li>
+<li><a href="#_developer_mode">28.21. Developer mode</a>
 <ul class="sectlevel3">
-<li><a href="#_workflow_for_creating_or_updating_needles">28.20.1. Workflow for creating or updating needles</a></li>
+<li><a href="#_workflow_for_creating_or_updating_needles">28.21.1. Workflow for creating or updating needles</a></li>
 </ul>
 </li>
-<li><a href="#_job_group_editor_gh2111">28.21. Job group editor gh#2111</a>
+<li><a href="#_job_group_editor_gh2111">28.22. Job group editor gh#2111</a>
 <ul class="sectlevel3">
-<li><a href="#_yaml_job_templates_editor">28.21.1. YAML job templates editor</a></li>
-<li><a href="#_deprecated_table_based_pre_migration">28.21.2. Deprecated: Table-based (pre-migration)</a></li>
+<li><a href="#_yaml_job_templates_editor">28.22.1. YAML job templates editor</a></li>
+<li><a href="#_deprecated_table_based_pre_migration">28.22.2. Deprecated: Table-based (pre-migration)</a></li>
 </ul>
 </li>
 </ul>
@@ -5491,7 +5492,55 @@ prefix the status with the build number.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="carry-over"><a class="anchor" href="#carry-over"></a><a class="link" href="#carry-over">28.17. Carry over of bug references from previous jobs in same scenario</a></h3>
+<h3 id="_build_a_continuous_openqa_monitoring_dashboard"><a class="anchor" href="#_build_a_continuous_openqa_monitoring_dashboard"></a><a class="link" href="#_build_a_continuous_openqa_monitoring_dashboard">28.17. Build a continuous openQA monitoring dashboard</a></h3>
+<div class="paragraph">
+<p>With just some common tools a dashboard showing the openQA index page with
+continuously updated results can be setup. Example setup using the
+<code>fullscreen=1</code> parameter to use the entire page for the build results:</p>
+</div>
+<div class="paragraph">
+<p>Content of /home/tux/.xinitrc</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-ch">#!/bin/bash</span>
+
+unclutter<span class="tok-w"> </span><span class="tok-p">&amp;</span>
+openbox<span class="tok-w"> </span><span class="tok-p">&amp;</span>
+xset<span class="tok-w"> </span>s<span class="tok-w"> </span>off
+xset<span class="tok-w"> </span>-dpms
+sleep<span class="tok-w"> </span><span class="tok-m">5</span>
+<span class="tok-nv">url</span><span class="tok-o">=</span><span class="tok-s2">&quot;https://openqa.opensuse.org?group=openSUSE Tumbleweed\$|openSUSE Leap [0-9]{2}.?[0-9]*\$|openSUSE Leap.\*JeOS\$|openSUSE Krypton|openQA|GNOME Next&amp;limit_builds=2&amp;time_limit_days=14&amp;&amp;show_tags=1&amp;fullscreen=1#build-results&quot;</span>
+chromium<span class="tok-w"> </span>--kiosk<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$url</span><span class="tok-s2">&quot;</span><span class="tok-w"> </span><span class="tok-p">&amp;</span>
+
+<span class="tok-k">while</span><span class="tok-w"> </span>sleep<span class="tok-w"> </span><span class="tok-m">300</span><span class="tok-w"> </span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
+<span class="tok-w">        </span>xdotool<span class="tok-w"> </span>windowactivate<span class="tok-w"> </span><span class="tok-k">$(</span>xdotool<span class="tok-w"> </span>search<span class="tok-w"> </span>--class<span class="tok-w"> </span>Chromium<span class="tok-k">)</span>
+<span class="tok-w">        </span>xdotool<span class="tok-w"> </span>key<span class="tok-w"> </span>F5
+<span class="tok-w">        </span>xdotool<span class="tok-w"> </span>windowactivate<span class="tok-w"> </span><span class="tok-k">$(</span>xdotool<span class="tok-w"> </span>getactivewindow<span class="tok-k">)</span>
+<span class="tok-k">done</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Content of /usr/share/lightdm/lightdm.conf.d/50-suse-defaults.conf</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[Seat:*]</span>
+<span class="tok-na">pam-service</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">lightdm</span>
+<span class="tok-na">pam-autologin-service</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">lightdm-autologin</span>
+<span class="tok-na">pam-greeter-service</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">lightdm-greeter</span>
+<span class="tok-na">xserver-command</span><span class="tok-o">=</span><span class="tok-s">/usr/bin/X</span>
+<span class="tok-na">session-wrapper</span><span class="tok-o">=</span><span class="tok-s">/etc/X11/xdm/Xsession</span>
+<span class="tok-na">greeter-setup-script</span><span class="tok-o">=</span><span class="tok-s">/etc/X11/xdm/Xsetup</span>
+<span class="tok-na">session-setup-script</span><span class="tok-o">=</span><span class="tok-s">/etc/X11/xdm/Xstartup</span>
+<span class="tok-na">session-cleanup-script</span><span class="tok-o">=</span><span class="tok-s">/etc/X11/xdm/Xreset</span>
+<span class="tok-na">autologin-user</span><span class="tok-o">=</span><span class="tok-s">tux</span>
+<span class="tok-na">autologin-timeout</span><span class="tok-o">=</span><span class="tok-s">0</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="carry-over"><a class="anchor" href="#carry-over"></a><a class="link" href="#carry-over">28.18. Carry over of bug references from previous jobs in same scenario</a></h3>
 <div class="paragraph">
 <p>Many test failures within the same scenario might be due to the same reason.
 To avoid human reviewers having to add the same bug references again and
@@ -5547,7 +5596,7 @@ in the job reason for incomplete jobs or job logs consider to
 </div>
 </div>
 <div class="sect2">
-<h3 id="_pinning_comments_as_group_description"><a class="anchor" href="#_pinning_comments_as_group_description"></a><a class="link" href="#_pinning_comments_as_group_description">28.18. Pinning comments as group description</a></h3>
+<h3 id="_pinning_comments_as_group_description"><a class="anchor" href="#_pinning_comments_as_group_description"></a><a class="link" href="#_pinning_comments_as_group_description">28.19. Pinning comments as group description</a></h3>
 <div class="paragraph">
 <p>This is possible by adding the keyword <code>pinned-description</code> anywhere in
 a comment on the group overview page. Then the comment will be shown at
@@ -5556,7 +5605,7 @@ or admin.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_dark_mode"><a class="anchor" href="#_dark_mode"></a><a class="link" href="#_dark_mode">28.19. Dark mode</a></h3>
+<h3 id="_dark_mode"><a class="anchor" href="#_dark_mode"></a><a class="link" href="#_dark_mode">28.20. Dark mode</a></h3>
 <div class="paragraph">
 <p>A dark mode theme can be enabled via "Appearance" settings for all logged in users. It can either be forced with
 the "dark mode" setting, or left to browser detection. Switching automatically between light and dark mode is natively
@@ -5578,7 +5627,7 @@ supported by most modern browsers and can also be controlled manually via flags:
 </div>
 </div>
 <div class="sect2">
-<h3 id="_developer_mode"><a class="anchor" href="#_developer_mode"></a><a class="link" href="#_developer_mode">28.20. Developer mode</a></h3>
+<h3 id="_developer_mode"><a class="anchor" href="#_developer_mode"></a><a class="link" href="#_developer_mode">28.21. Developer mode</a></h3>
 <div class="paragraph">
 <p>The developer mode allows to:</p>
 </div>
@@ -5603,7 +5652,7 @@ So I am not repeating that information here and rather explain the overall workf
 <a href="#debugdevelmode">steps for debugging the developer mode under 'Pitfalls'</a>.</p>
 </div>
 <div class="sect3">
-<h4 id="_workflow_for_creating_or_updating_needles"><a class="anchor" href="#_workflow_for_creating_or_updating_needles"></a><a class="link" href="#_workflow_for_creating_or_updating_needles">28.20.1. Workflow for creating or updating needles</a></h4>
+<h4 id="_workflow_for_creating_or_updating_needles"><a class="anchor" href="#_workflow_for_creating_or_updating_needles"></a><a class="link" href="#_workflow_for_creating_or_updating_needles">28.21.1. Workflow for creating or updating needles</a></h4>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -5637,12 +5686,12 @@ needle from any previous screenshot/match available.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_job_group_editor_gh2111"><a class="anchor" href="#_job_group_editor_gh2111"></a><a class="link" href="#_job_group_editor_gh2111">28.21. Job group editor <a href="https://github.com/os-autoinst/openQA/pull/2111">gh#2111</a></a></h3>
+<h3 id="_job_group_editor_gh2111"><a class="anchor" href="#_job_group_editor_gh2111"></a><a class="link" href="#_job_group_editor_gh2111">28.22. Job group editor <a href="https://github.com/os-autoinst/openQA/pull/2111">gh#2111</a></a></h3>
 <div class="paragraph">
 <p>Scenarios are defined as part of a job group. The <code>Edit job group</code> button exposes the editor.</p>
 </div>
 <div class="sect3">
-<h4 id="_yaml_job_templates_editor"><a class="anchor" href="#_yaml_job_templates_editor"></a><a class="link" href="#_yaml_job_templates_editor">28.21.1. YAML job templates editor</a></h4>
+<h4 id="_yaml_job_templates_editor"><a class="anchor" href="#_yaml_job_templates_editor"></a><a class="link" href="#_yaml_job_templates_editor">28.22.1. YAML job templates editor</a></h4>
 <div class="paragraph">
 <p>Settings can be specified as a key/value pair for each scenario. There is no
 equivalent in the table view so you need to migrate groups to use this feature.</p>
@@ -5659,7 +5708,7 @@ REST API routes.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_deprecated_table_based_pre_migration"><a class="anchor" href="#_deprecated_table_based_pre_migration"></a><a class="link" href="#_deprecated_table_based_pre_migration">28.21.2. Deprecated: Table-based (pre-migration)</a></h4>
+<h4 id="_deprecated_table_based_pre_migration"><a class="anchor" href="#_deprecated_table_based_pre_migration"></a><a class="link" href="#_deprecated_table_based_pre_migration">28.22.2. Deprecated: Table-based (pre-migration)</a></h4>
 <div class="paragraph">
 <p>In old versions openQA had a table-based UI for defining job templates, listed
 in a table per medium. Machines can be added by selecting the architecture
@@ -14383,7 +14432,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-26 04:44:46 UTC
+Last updated 2025-09-27 04:44:56 UTC
 </div>
 </div>
 </body>
