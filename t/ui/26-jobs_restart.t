@@ -68,6 +68,9 @@ sub prepare_database () {
             dependency => OpenQA::JobDependencies::Constants::PARALLEL,
         });
 
+    # ensure chained jobs 99937 and 99938 show up together on the first page
+    $jobs->search({id => {-in => [99937, 99938]}})->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC')});
+
     assume_all_assets_exist;
 }
 

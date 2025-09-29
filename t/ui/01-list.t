@@ -106,6 +106,9 @@ sub prepare_database {
             settings =>
               [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
 
+    # ensure chained jobs 99937 is still displayed on page one together with its chained dependency 99938
+    $jobs->search({id => 99937})->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 149 * ONE_HOUR, 'UTC')});
+
     assume_all_assets_exist;
 }
 
