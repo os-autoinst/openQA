@@ -7,7 +7,13 @@ image:
   name: registry.opensuse.org/devel/openqa/containers15.6/openqa_webui
   pullPolicy: Always
   tag: "latest"
+global:
+  security:
+    allowInsecureImages: true
 postgresql:
+  image:
+    repository: bitnamisecure/postgresql
+    tag: "latest"
   enabled: true
   fullnameOverride: db
   auth:
