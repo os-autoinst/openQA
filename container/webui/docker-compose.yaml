@@ -131,7 +131,7 @@ services:
       POSTGRES_USER: openqa
       POSTGRES_DB: openqa
     volumes:
-      - ./workdir/db:/var/lib/postgresql/data:Z
+      - ./workdir/db:/var/lib/postgresql/18/docker:Z
     healthcheck:
       test:
         - CMD-SHELL
