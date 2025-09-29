@@ -569,11 +569,11 @@ you use.
 ### host ###
 podman volume create mypostgres
 podman run -it --rm --name postgres-openqa \
-    -v mypostgres:/var/lib/postgresql/18/docker \
+    -v mypostgres:/var/lib/postgresql \
     -p 5432:5432 \
     -e POSTGRES_PASSWORD="x" \
     -d \
-    docker.io/library/postgres:18
+    docker.io/library/postgres
 
 # Optionally add this to mount a directory for sql dumps to import
 #    -v "$SQL_DUMP_DIR:/sqldumps" \

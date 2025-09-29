@@ -124,14 +124,14 @@ services:
       start_period: 5s
 
   db:
-    image: docker.io/library/postgres:18
+    image: docker.io/library/postgres
     restart: always
     environment:
       POSTGRES_PASSWORD: openqa
       POSTGRES_USER: openqa
       POSTGRES_DB: openqa
     volumes:
-      - ./workdir/db:/var/lib/postgresql/18/docker:Z
+      - ./workdir/db:/var/lib/postgresql:Z
     healthcheck:
       test:
         - CMD-SHELL
