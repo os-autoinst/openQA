@@ -55,12 +55,12 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-  - name: Wait for 2 days before validating merge
+  - name: Wait for some days before validating merge
     actions:
       label:
         add: [ waited ]
         remove: [ waiting ]
     conditions:
       - and:
-          - updated-at<2 days ago
+          - updated-at<4 days ago
           - author=dependabot[bot]
