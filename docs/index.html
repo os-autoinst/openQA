@@ -12822,11 +12822,11 @@ you use.</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### host ###</span>
 podman<span class="tok-w"> </span>volume<span class="tok-w"> </span>create<span class="tok-w"> </span>mypostgres
 podman<span class="tok-w"> </span>run<span class="tok-w"> </span>-it<span class="tok-w"> </span>--rm<span class="tok-w"> </span>--name<span class="tok-w"> </span>postgres-openqa<span class="tok-w"> </span><span class="tok-se">\</span>
-<span class="tok-w">    </span>-v<span class="tok-w"> </span>mypostgres:/var/lib/postgresql/data<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span>-v<span class="tok-w"> </span>mypostgres:/var/lib/postgresql<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span>-p<span class="tok-w"> </span><span class="tok-m">5432</span>:5432<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span>-e<span class="tok-w"> </span><span class="tok-nv">POSTGRES_PASSWORD</span><span class="tok-o">=</span><span class="tok-s2">&quot;x&quot;</span><span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span>-d<span class="tok-w"> </span><span class="tok-se">\</span>
-<span class="tok-w">    </span>docker.io/library/postgres:17
+<span class="tok-w">    </span>docker.io/library/postgres
 
 <span class="tok-c1"># Optionally add this to mount a directory for sql dumps to import</span>
 <span class="tok-c1">#    -v &quot;$SQL_DUMP_DIR:/sqldumps&quot; \</span></code></pre>
@@ -14432,7 +14432,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-27 04:44:56 UTC
+Last updated 2025-09-30 04:44:36 UTC
 </div>
 </div>
 </body>
