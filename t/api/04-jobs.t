@@ -292,6 +292,11 @@ subtest 'jobs for job settings' => sub {
       ->json_is({jobs => []});
     $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '%test%', list_value => '%test%'})->status_is(400)
       ->json_is({error_status => 400, error => 'Erroneous parameters (key invalid, list_value invalid)'});
+    my $value_error = 'either "value" or "list_value" needs to be specified';
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => 'KEY'});
+    $t->status_is(400)->json_is('/error', $value_error, 'error if no value or list_value specified');
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => 'KEY', value => 'foo', list_value => 'bar'});
+    $t->status_is(400)->json_is('/error', $value_error, 'error if value and list_value are both specified');
 
     $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
       ->json_is({jobs => [99926]});
@@ -968,6 +973,26 @@ subtest 'WORKER_CLASS correctly assigned when posting job' => sub {
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     ok $id = $t->tx->res->json->{id}, 'id returned (2)' or always_explain $t->tx->res->json;
     is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'svirt', 'specified WORKER_CLASS assigned';
+};
+
+subtest 'array settings correctly assigned when posting job' => sub {
+    my @test_values = qw(foo bar baz);
+    my $test_values_joined = join ',', @test_values;
+    my %array_params = (%jobs_post_params, 'ISSUES[]' => $test_values_joined);
+    my @expected_issues = map { {key => 'ISSUES[]', value => $_} } @test_values;
+    $t->post_ok('/api/v1/jobs', form => \%array_params)->status_is(200);
+    ok my $id = $t->tx->res->json->{id}, 'id returned (0)' or always_explain $t->tx->res->json;
+    my $job = $jobs->find($id);
+    my $issue_rows = $job->settings->search({key => 'ISSUES[]'}, {order_by => {-asc => 'id'}});
+    my @issues = map { {key => $_->key, value => $_->value} } $issue_rows->all;
+    is_deeply \@issues, \@expected_issues, 'issues stored as distinct rows';
+    is $job->settings_hash->{'ISSUES[]'}, $test_values_joined, 'ISSUES joined again when accessing hash';
+    $t->get_ok('/api/v1/jobs/' . $id)->status_is(200);
+    $t->json_is('/job/settings/ISSUES[]' => $test_values_joined, 'ISSUES joined again when queried via API');
+    for my $value (@test_values) {
+        $t->get_ok('/api/v1/job_settings/jobs' => form => {key => 'ISSUES[]', value => $value})->status_is(200);
+        $t->json_is('/jobs', [$id], "job can be retrieved using single value $value");
+    }
 };
 
 subtest 'priority correctly assigned when posting job' => sub {

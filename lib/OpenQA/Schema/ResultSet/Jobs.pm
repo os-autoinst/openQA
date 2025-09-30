@@ -196,8 +196,8 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my @job_settings;
     my $now = now;
     for my $key (keys %settings) {
-        my @values = $key eq 'WORKER_CLASS' ? split(m/,/, $settings{$key}) : ($settings{$key});
-        push(@job_settings, {t_created => $now, t_updated => $now, key => $key, value => $_}) for (@values);
+        my @values = $key =~ qr/(^WORKER_CLASS|\[\])$/ ? split(m/,/, $settings{$key}) : ($settings{$key});
+        push(@job_settings, {t_created => $now, t_updated => $now, key => $key, value => $_}) for @values;
     }
     $job->settings->populate(\@job_settings);
 

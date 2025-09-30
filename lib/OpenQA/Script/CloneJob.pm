@@ -15,6 +15,7 @@ use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
 use OpenQA::Script::CloneJobSUSE;
+use List::Util 'any';
 
 our @EXPORT = qw(
   clone_jobs
@@ -35,9 +36,11 @@ use constant JOB_SETTING_OVERRIDES => {
 
 my $TEST_NAME = TEST_NAME_ALLOWED_CHARS;
 my $TEST_NAME_PLUS_MINUS = TEST_NAME_ALLOWED_CHARS_PLUS_MINUS;
-my $SETTINGS_REGEX = qr|([A-Z0-9_]+)(:([$TEST_NAME]+(?:[$TEST_NAME_PLUS_MINUS]+[$TEST_NAME])?))?(\+)?=(.*)|;
+my $SETTINGS_REGEX = qr|([A-Z0-9_]+(\[\])?)(:([$TEST_NAME]+(?:[$TEST_NAME_PLUS_MINUS]+[$TEST_NAME])?))?(\+)?=(.*)|;
 
-sub is_global_setting ($key) { grep /^$key$/, GLOBAL_SETTINGS }
+sub is_global_setting ($key) {
+    any { $key eq $_ } GLOBAL_SETTINGS;
+}
 
 sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
     delete $settings->{NAME};    # usually autocreated
@@ -48,7 +51,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
             warn "command-line argument '$arg' is no valid setting and will be ignored\n";
             next;
         }
-        my ($key, $scope, $plus, $value) = ($1, $3, $4, $5);
+        my ($key, $scope, $plus, $value) = ($1, $4, $5, $6);
         next if defined $scope && ($settings->{TEST} // '') ne $scope;
         next if !defined $scope && !is_global_setting($key) && $depth > 1 && !$options->{'parental-inheritance'};
 

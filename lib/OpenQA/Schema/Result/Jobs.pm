@@ -410,7 +410,7 @@ sub settings_hash ($self, $prefetched = undef) {
     my $settings = $self->{_settings} = {};
     my $all = $prefetched || [$self->settings->all];
     for (@$all) {
-        # handle multi-value WORKER_CLASS
+        # handle multi-value WORKER_CLASS and array settings (like ISSUES[])
         if (defined $settings->{$_->key}) {
             $settings->{$_->key} .= ',' . $_->value;
         }
