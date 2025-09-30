@@ -55,7 +55,7 @@ sub startup {
         'reply.exception' => sub {
             my ($c, $error) = @_;
             $error = $c->$code($error)->stash('exception');
-            return unless $error =~ qr/(database disk image is malformed|no such (table|column))/;
+            return unless $error =~ qr/(database|no such (table|column))/;
 
             my $app = $c->app;
             $app->exit_code(1);    # ensure the return code is non-zero
