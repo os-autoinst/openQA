@@ -25,6 +25,7 @@ jobs:
       - name: Run chart-testing
         run: make test-helm-lint
   install-chart:
+    if: false  # disabled due to https://progress.opensuse.org/issues/188982
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
