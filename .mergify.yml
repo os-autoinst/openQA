@@ -13,7 +13,7 @@ pull_request_rules:
           # "unresolvable" is not reported in general:
           # https://trello.com/c/0N3jHq5M/2257-report-back-to-scm-when-build-results-arent-failed-and-succeeded
           # So we need to require the number of tests explicitly:
-          - "#check-success>=45"
+          - "#check-success>=51"
           - status-success=static-check-containers
           - status-success=webui-docker-compose
           - "#check-failure=0"
