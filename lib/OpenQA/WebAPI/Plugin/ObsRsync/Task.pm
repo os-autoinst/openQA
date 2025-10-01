@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Plugin::ObsRsync::Task;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Mojo::File;
 use IPC::Run;
+use OpenQA::Task::SignalGuard;
 use Feature::Compat::Try;
 
 sub register ($self, $app, $conf) {
@@ -76,6 +77,7 @@ sub run ($job, $args) {
 }
 
 sub update_dirty_status ($job, $args) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $project = $args->{project};
     my $helper = $app->obs_rsync;
@@ -84,6 +86,7 @@ sub update_dirty_status ($job, $args) {
 }
 
 sub update_obs_builds_text ($job, $args) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $alias = $args->{alias};
     my $helper = $app->obs_rsync;
