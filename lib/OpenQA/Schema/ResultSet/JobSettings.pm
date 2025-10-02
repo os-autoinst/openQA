@@ -5,15 +5,29 @@ package OpenQA::Schema::ResultSet::JobSettings;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use OpenQA::App;
+use List::Util qw(min);
 
 sub all_values_sorted ($self, $job_id, $key) {
     state $options = {distinct => 1, columns => 'value', order_by => 'value'};
     [map { $_->value } $self->search({job_id => $job_id, key => $key}, $options)];
 }
 
-sub jobs_for_setting ($self, $options) {
-    my $limit = OpenQA::App->singleton->config->{misc_limits}{job_settings_max_recent_jobs};
+sub jobs_for_setting_by_exact_key_and_value ($self, $key, $value, $limit) {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limit = min($limits->{generic_max_limit}, $limit // $limits->{generic_default_limit});
+    my $options = {columns => ['job_id'], rows => $limit, order_by => {-desc => 'id'}};
+    return [map { $_->job_id } $self->search({key => $key, value => $value}, $options)];
+}
 
+sub jobs_for_setting ($self, $options) {
+    # Return jobs for settings specified by a concrete key/value pair
+    my $value = $options->{value};
+    my $limit = $options->{limit};
+    return $self->jobs_for_setting_by_exact_key_and_value($options->{key}, $value, $limit) if defined $value;
+
+    # Return jobs for settings specified by a key with globbing and a value that can be part of a comma-separated list
+    my $server_side_limit = OpenQA::App->singleton->config->{misc_limits}{job_settings_max_recent_jobs};
+    $limit = min($server_side_limit, defined($limit) ? ($limit) : ());
     my $key_like = $options->{key};
     $key_like =~ s/\*/\%/g;
     my $list_value = $options->{list_value};
