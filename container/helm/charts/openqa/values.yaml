@@ -1,4 +1,10 @@
+global:
+  security:
+    allowInsecureImages: true
 postgresql:
+  image:
+    repository: bitnamisecure/postgresql
+    tag: "latest"
   enabled: true
   fullnameOverride: db
   auth:
