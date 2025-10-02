@@ -75,7 +75,7 @@ sub _needle_by_id_and_extension ($self, $extension) {
     my $needle_filename = $needle->name . $extension;
 
     push @{$self->static->paths}, $needle_dir;
-    return $self->_serve_static($needle_filename);
+    return $self->_serve_static($needle_filename, 1);
 }
 
 sub needle_image_by_id ($self) {
