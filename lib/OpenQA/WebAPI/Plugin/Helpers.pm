@@ -523,7 +523,7 @@ sub _param_hash ($c, $name) {
 sub _find_job_or_render_not_found ($c, $job_id, $query_settings = {}) {
     my $job = $c->schema->resultset('Jobs')->find(int($job_id), $query_settings);
     return $job if $job;
-    $c->render(json => {error => 'Job does not exist'}, status => 404);
+    $c->render(openapi => {error => 'Job does not exist'}, status => 404);
     return undef;
 }
 
