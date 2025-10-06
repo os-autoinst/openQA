@@ -49,6 +49,7 @@ sub _parse_subtest ($self, $result) {
 
     my $line = $result->as_string;
     return unless $line =~ /^#\s*(?<status>ok|not ok)\s+(?<index>\d+)\s+(?<name>[^#]*)/;
+    return if $line =~ /#\s*SKIP\b/i;
     my ($status, $index, $subtest_name) = @+{qw(status index name)};
 
     my $has_todo = $line =~ /#\s*TODO\b/i;
@@ -70,7 +71,6 @@ sub _parse_subtest ($self, $result) {
         $steps->{result} = 'softfail';
     }
 
-    return if $line =~ /#\s*SKIP\b/i;
     $self->_add_output({file => $filename, content => $line});
     $self->state->{m} = $m + 1;
 }

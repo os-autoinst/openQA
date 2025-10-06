@@ -44,3 +44,22 @@ not ok 10 selftests: cgroup: test_zswap # exit=1
 # selftests: cgroup: test_hugetlb_memcg
 # 1..0 # SKIP memory hugetlb accounting is disabled
 ok 5 selftests: cgroup: test_hugetlb_memcg # SKIP
+# selftests: cgroup: test_freezer
+# ok 1 test_cgfreezer_simple
+# ok 2 test_cgfreezer_tree
+# ok 3 test_cgfreezer_forkbomb
+# ok 4 test_cgfreezer_mkdir
+# ok 5 test_cgfreezer_rmdir
+# ok 6 test_cgfreezer_migrate
+# ok 7 test_cgfreezer_ptrace
+# ok 8 test_cgfreezer_stopped
+# ok 9 test_cgfreezer_ptraced
+# ok 10 test_cgfreezer_vfork
+# ok 11 # SKIP test_cgfreezer_time_empty
+# ok 12 # SKIP test_cgfreezer_time_simple
+# ok 13 # SKIP test_cgfreezer_time_populate
+# ok 14 # SKIP test_cgfreezer_time_migrate
+# ok 15 # SKIP test_cgfreezer_time_parent
+# ok 16 # SKIP test_cgfreezer_time_child
+# ok 17 # SKIP test_cgfreezer_time_nested
+ok 1 selftests: cgroup: test_freezer
