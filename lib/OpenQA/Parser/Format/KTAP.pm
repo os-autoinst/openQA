@@ -48,8 +48,8 @@ sub _parse_subtest ($self, $result) {
     $self->test or return;
 
     my $line = $result->as_string;
-    return unless $line =~ /^#\s*(?<status>ok|not ok)\s+\d+\s+(?<name>[^#]*)/;
-    my ($status, $subtest_name) = @+{qw(status name)};
+    return unless $line =~ /^#\s*(?<status>ok|not ok)\s+(?<index>\d+)\s+(?<name>[^#]*)/;
+    my ($status, $index, $subtest_name) = @+{qw(status index name)};
 
     my $has_todo = $line =~ /#\s*TODO\b/i;
     my $m = $self->state->{m};
@@ -59,7 +59,7 @@ sub _parse_subtest ($self, $result) {
     push @{$steps->{details}},
       {
         text => $filename,
-        title => $subtest_name,
+        title => $subtest_name || $index,
         result => $subtest_result,
       };
 
