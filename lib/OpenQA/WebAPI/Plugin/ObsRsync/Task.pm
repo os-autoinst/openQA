@@ -33,7 +33,11 @@ sub _retry_or_finish ($job, $helper, $project = undef, $retry_interval = undef, 
 #       a retry but is otherwise not concerned with any details (such as invoking rsync or creating openQA jobs).
 #       Jobs of this task are enqueued by the "/obs_rsync/#project/runs" route (POST request) which can be triggered via the
 #       "Sync now" button on the web UI (e.g. on a page like "/admin/obs_rsync/openSUSE:Factory:Staging:C").
+# note: Retrying this task in case it is interrupted is ok because script/rsync.sh skips folders which have already been
+#       handled via the symlink `.run_last`. So no duplicate openQA jobs will be created. The caveat is that the folder the
+#       script was processing when it was interrupted will end up synced/scheduled incompletely without a failing Minion job.
 sub run ($job, $args) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $project = $args->{project};
     my $helper = $app->obs_rsync;
