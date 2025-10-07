@@ -1222,19 +1222,19 @@ sub _log_snippet ($self, $file, $offset_name) {
     return \%ret;
 }
 
-sub _optimize_image ($image, $job_settings) {
+sub _optimize_image ($image, $job_settings, $optipng_bin = 'optipng', $pngquant_bin = 'pngquant') {
+    my $optimize_flag = $job_settings->{OPTIMIZE_IMAGES};
+    return 0 if defined($optimize_flag) && !$optimize_flag;
     log_debug("Optimizing $image");
-    {
-        # treat as "best-effort". If no pngquant nor optipng is found, ignore
-        no warnings;
-        if ($job_settings->{USE_PNGQUANT}) {
-            system('pngquant', '--force', '--output', $image, $image);
-        }
-        else {
-            system('optipng', '-quiet', '-o2', $image) if ($? == -1);
-        }
-    }
-    return undef;
+    my @params
+      = $job_settings->{USE_PNGQUANT}
+      ? ($pngquant_bin, '--force', '--output', $image, $image)
+      : ($optipng_bin, '-quiet', '-o2', $image);
+    system @params;
+    die "Failed to execute $params[0]: $!\n" if $? == -1;
+    die sprintf("%s failed with signal %d\n", $params[0], $? & 127) if $? & 127;
+    die sprintf("%s exited with non-zero return code %d\n", $params[0], $? >> 8) if $?;
+    return 1;
 }
 
 sub _ignore_known_images ($self, $known_images = undef) {

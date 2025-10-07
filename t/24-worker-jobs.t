@@ -1023,6 +1023,7 @@ subtest 'Job stopped while uploading' => sub {
     $client->sent_messages([]);
     $job->{_status} = 'running';
     $job->{_is_uploading_results} = 1;    # stopping the job should still go as far as uploading logs and assets
+    $job->{_settings}->{OPTIMIZE_IMAGES} = 0;
     $job->stop;
     is_deeply(
         $client->sent_messages,
@@ -1219,12 +1220,20 @@ subtest 'Dynamic schedule' => sub {
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
-subtest 'optipng' => sub {
-    is OpenQA::Worker::Job::_optimize_image('foo', {}), undef, 'optipng call is "best-effort"';
-};
-
-subtest 'pngquant' => sub {
-    is OpenQA::Worker::Job::_optimize_image('foo', {USE_PNGQUANT => 1}), undef, 'pngquant call is "best-effort"';
+subtest 'image optimization' => sub {
+    my $opt = \&OpenQA::Worker::Job::_optimize_image;
+    local $ENV{OPENQA_LOGFILE} = undef;
+    combined_like {
+        is $opt->('foo', {OPTIMIZE_IMAGES => 0}), 0, 'image optimization can be skipped';
+        throws_ok { $opt->('foo', {}) }
+        qr/(Failed to execute optipng|optipng exited with non-zero return code)/,
+          'failing to run optipng is a hard error';
+        throws_ok { $opt->('foo', {USE_PNGQUANT => 1}) }
+        qr/(Failed to execute pngquant|pngquant exited with non-zero return code)/,
+          'failing to run pngquant is a hard error';
+        is $opt->('bar', {}, 'true'), 1, 'successful optimization';
+    }
+    qr/Optimizing foo.*Optimizing bar/s, 'optimizing logged';
 };
 
 subtest '_read_module_result' => sub {
