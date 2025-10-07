@@ -967,7 +967,7 @@ subtest ktap_parse => sub {
     my $parser = OpenQA::Parser::Format::KTAP->new;
     $parser->load($ktap_file);
 
-    is $parser->results->size, 4, 'Expected four test groups';
+    is $parser->results->size, 5, 'Expected five test groups';
 
     my $result0 = $parser->results->get(0);
     is $result0->{name}, 'selftests:cgroup:test_core', 'The first test group has expected name';
@@ -982,6 +982,9 @@ subtest ktap_parse => sub {
 
     my $result3 = $parser->results->get(3);
     is $result3->result, 'skip', 'Group result is skipped';
+
+    my $result4 = $parser->results->get(4);
+    is scalar @{$result4->details}, 10, 'Has 10 subtest details';
 };
 
 subtest 'ktap_parse_incorrect_file' => sub {
