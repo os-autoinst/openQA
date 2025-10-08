@@ -317,7 +317,7 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
     $jobs->find(99988)->update({state => DONE, result => FAILED});
     $jobs->find(99993)->update({state => DONE, result => PASSED});
     $jobs->find(99994)->update({state => DONE, result => PASSED});
-    $t->get_ok('/api/v1/isos/job_stats?distri=opensuse&version=13.1&flavor=DVD')->status_is(200);
+    $t->get_ok('/api/v1/isos/job_stats?distri=opensuse&version=13.1&flavor=DVD&arch=i586&build=0091')->status_is(200);
     $schema->txn_rollback;
     my $json = $t->tx->res->json;
     is_deeply [sort keys %$json], [DONE, SCHEDULED], 'expected states present';

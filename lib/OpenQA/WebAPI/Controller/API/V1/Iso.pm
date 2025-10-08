@@ -60,9 +60,9 @@ sub show_scheduled_product {
 
 =item job_statistics()
 
-Returns job statistics about the most recent scheduled products for each ARCH
-matching the specified DISTRI, VERSION and FLAVOR. Scheduled products that are
-cancelling/cancelled are not considered.
+Returns job statistics about the most recent scheduled products matching the
+specified DISTRI, VERSION, FLAVOR, ARCH and BUILD parameters. Scheduled products
+that are cancelling/cancelled are not considered.
 
 This allows to determine whether all jobs that have been scheduled for a
 certain purpose are done and whether the jobs have passed. If jobs have been
@@ -90,7 +90,7 @@ could also be used to generate a more detailed report.
 
 sub job_statistics ($self) {
     my $validation = $self->validation;
-    my @param_keys = (qw(distri version flavor));
+    my @param_keys = (qw(distri version flavor arch build));
     $validation->required($_) for @param_keys;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
     my @params = map { $validation->param($_) } @param_keys;

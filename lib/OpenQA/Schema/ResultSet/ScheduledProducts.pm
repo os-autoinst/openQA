@@ -30,7 +30,7 @@ sub cancel_by_webhook_id ($self, $webhook_id, $reason) {
     return {jobs_cancelled => $count};
 }
 
-sub job_statistics ($self, $distri, $version, $flavor) {
+sub job_statistics ($self, $distri, $version, $flavor, $arch, $build) {
     my $sth = $self->result_source->schema->storage->dbh->prepare(
         <<~'END_SQL'
         WITH RECURSIVE
@@ -48,7 +48,7 @@ sub job_statistics ($self, $distri, $version, $flavor) {
                     FROM
                         scheduled_products
                     WHERE
-                        status in ('new', 'scheduling', 'scheduled') and distri = ? and version = ? and flavor = ?
+                        status in ('new', 'scheduling', 'scheduled') and distri = ? and version = ? and flavor = ? and arch = ? and build = ?
                     GROUP BY
                         arch
                 )
@@ -112,6 +112,8 @@ sub job_statistics ($self, $distri, $version, $flavor) {
     $sth->bind_param(1, $distri);
     $sth->bind_param(2, $version);
     $sth->bind_param(3, $flavor);
+    $sth->bind_param(4, $arch);
+    $sth->bind_param(5, $build);
     $sth->execute;
     return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
