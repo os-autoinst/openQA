@@ -61,8 +61,8 @@ sub show_scheduled_product {
 =item job_statistics()
 
 Returns job statistics about the most recent scheduled products for each ARCH
-matching the specified DISTRI, VERSION and FLAVOR. Only scheduled products that
-are cancelling/cancelled are not considered.
+matching the specified DISTRI, VERSION and FLAVOR. Scheduled products that are
+cancelling/cancelled are not considered.
 
 This allows to determine whether all jobs that have been scheduled for a
 certain purpose are done and whether the jobs have passed. If jobs have been
