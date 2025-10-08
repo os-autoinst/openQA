@@ -1,0 +1,81 @@
+#!/usr/bin/env perl
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+use Mojo::Base -strict, -signatures;
+use FindBin;
+use lib "$FindBin::RealBin/../lib";
+
+use Getopt::Long;
+Getopt::Long::Configure("no_ignore_case");
+use Config::IniFiles;
+use OpenQA::Config qw(show_config write_config);
+
+sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
+
+GetOptions(\my %options, 'help|h|?', 'backup=s', 'write') or usage(1);
+
+usage(0) if $options{help};
+
+my ($file, $section, $key, $val) = @ARGV;
+
+my $rc = 0;
+if ($options{write}) {
+    $rc = write_config($file, [$section, $key, $val], $options{backup});
+}
+else {
+    my $out = show_config($file, [$section, $key, $val]);
+    if (defined $out) {
+        chomp $out;
+        say $out;
+    }
+}
+exit($rc || 0);
+
+=pod
+
+=head1 SYNOPSIS
+
+openqa-config file.ini [section] [parameter] [value]
+
+Show or save config values in a file
+
+=over
+
+=item List sections
+
+    openqa-config file.ini
+
+=item List parameters and values in a section
+
+    openqa-config file.ini section
+
+=item Print value of a parameter
+
+    openqa-config file.ini section parameter
+
+=item Set new value of a parameter
+
+    openqa-config file.ini --write section parameter value
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--help>
+
+=over 4
+
+=item B<--write>
+
+Write new value to file
+
+=item B<--backup> suffix
+
+Copy original C<file.ini> to C<file.ini.suffix>
+
+=back
+
+=cut
