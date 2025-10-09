@@ -27,7 +27,7 @@ use Mojo::URL;
 use Mojo::IOLoop;
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT
   WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_TIMEOUT WORKER_EC_ASSET_FAILURE WORKER_EC_CACHE_FAILURE
-  WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE);
+  WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_BROKEN);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
@@ -234,6 +234,8 @@ subtest 'Format reason' => sub {
     $job->{_engine} = 1;    # pretend isotovideo has been started
     like $job->_format_reason({}, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: test execution exceeded/,
       'test timeout';
+    $job->{_result_upload_internal_error} = 'Unable…';
+    is $job->_format_reason({}, INCOMPLETE, WORKER_SR_BROKEN), 'worker broken: Unable…', 'internal upload error';
 };
 
 subtest 'Lost WebSocket connection' => sub {
@@ -1023,6 +1025,7 @@ subtest 'Job stopped while uploading' => sub {
     $client->sent_messages([]);
     $job->{_status} = 'running';
     $job->{_is_uploading_results} = 1;    # stopping the job should still go as far as uploading logs and assets
+    $job->{_settings}->{OPTIMIZE_IMAGES} = 0;
     $job->stop;
     is_deeply(
         $client->sent_messages,
@@ -1074,6 +1077,20 @@ subtest 'Job stopped while uploading' => sub {
       or always_explain $upload_stats->{uploaded_files};
     $client->sent_messages([]);
     $upload_stats->{uploaded_files} = [];
+};
+
+subtest 'Internal error occurrred during upload' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
+    my $callback_invoked = 0;
+    my $cb = sub { $callback_invoked = 1 };
+    combined_like {
+        $job->_upload_results_step_2_2_upload_images($cb, 'Unable to optimize image: foobar');
+        Mojo::IOLoop->one_tick;
+    }
+    qr/Unable to optimize image: foobar/, 'error is logged';
+    is $job->status, 'stopped', 'errors when optimizing are considered fatal so job is stopped';
+    like $job->{_result_upload_internal_error}, qr/Unable to optimize.*disable.*OPTIMIZE_IMAGES/, 'disabling suggested';
+    ok $callback_invoked, 'upload callback is invoked on fatal errors as well';
 };
 
 subtest 'Final upload triggered and job inncompleted when job stopped due to obsoletion' => sub {
@@ -1219,12 +1236,20 @@ subtest 'Dynamic schedule' => sub {
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
-subtest 'optipng' => sub {
-    is OpenQA::Worker::Job::_optimize_image('foo', {}), undef, 'optipng call is "best-effort"';
-};
-
-subtest 'pngquant' => sub {
-    is OpenQA::Worker::Job::_optimize_image('foo', {USE_PNGQUANT => 1}), undef, 'pngquant call is "best-effort"';
+subtest 'image optimization' => sub {
+    my $opt = \&OpenQA::Worker::Job::_optimize_image;
+    local $ENV{OPENQA_LOGFILE} = undef;
+    combined_like {
+        is $opt->('foo', {OPTIMIZE_IMAGES => 0}), 0, 'image optimization can be skipped';
+        throws_ok { $opt->('foo', {}) }
+        qr/(failed to execute optipng|optipng exited with non-zero return code)/,
+          'failing to run optipng is a hard error';
+        throws_ok { $opt->('foo', {USE_PNGQUANT => 1}) }
+        qr/(failed to execute pngquant|pngquant exited with non-zero return code)/,
+          'failing to run pngquant is a hard error';
+        is $opt->('bar', {}, 'true'), 1, 'successful optimization';
+    }
+    qr/Optimizing foo.*Optimizing bar/s, 'optimizing logged';
 };
 
 subtest '_read_module_result' => sub {

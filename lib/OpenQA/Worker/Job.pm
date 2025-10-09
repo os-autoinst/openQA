@@ -5,7 +5,7 @@ package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT
-  WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT
+  WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT
   WORKER_SR_DONE WORKER_SR_DIED);
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
@@ -547,6 +547,9 @@ sub _format_reason ($self, $state, $result, $reason) {
     return 'quit: worker has been stopped or restarted' if $reason eq WORKER_COMMAND_QUIT;
     # the result is sufficient here
     return undef if $reason eq WORKER_COMMAND_CANCEL;
+    # return upload errors due to the worker being broken itself
+    my $result_upload_error = $self->{_result_upload_internal_error} // $self->{_result_upload_error};
+    return "worker broken: $result_upload_error" if $reason eq WORKER_SR_BROKEN && $result_upload_error;
 
     # consider other reasons as os-autoinst specific; retrieve extended reason if available
     if ($state) {
@@ -584,7 +587,6 @@ sub _format_reason ($self, $state, $result, $reason) {
     return "$reason: terminated prematurely, see log output for details" if $reason eq WORKER_SR_DIED;
 
     # return API failure if final result upload ended with an error and there's no more relevant reason
-    my $result_upload_error = $self->{_result_upload_error};
     return "api failure: $result_upload_error" if $result_upload_error && $reason eq WORKER_SR_DONE;
 
     # discard the reason if it is just WORKER_SR_DONE or the same as the result; otherwise return it
@@ -870,12 +872,22 @@ sub _upload_results_step_2_1_upload_images ($self) {
     }
 }
 
+my $OPTIMIZE_ERROR = 'Unable to optimize image:';
+my $OPTIMIZE_SUGGESTION = 'You may disable optimizations via OPTIMIZE_IMAGES=0.';
+
 sub _upload_results_step_2_2_upload_images ($self, $callback, $error) {
-    chomp $error;
-    log_error($self->{_result_upload_error} = "Unable to upload images: $error") if $error;
     $self->{_images_to_send} = {};
     $self->{_files_to_send} = {};
-    $callback->();
+    return $callback->() unless $error;
+    chomp $error;
+    $error =~ s/\s+(at.*line|OpenQA::).*//s;    # avoid too lengthy log message so $OPTIMIZE_SUGGESTION is not elided
+    my $is_optimize_error = index($error, $OPTIMIZE_ERROR) == 0;
+    $error = $is_optimize_error ? "$error - $OPTIMIZE_SUGGESTION" : "Unable to upload images: $error";
+    log_error($self->{_result_upload_error} = $error);
+    return $callback->() unless $is_optimize_error;
+    $self->{_result_upload_internal_error} = $error;
+    $self->stop(WORKER_SR_BROKEN);
+    return $self->_upload_results_step_3_finalize(undef, $callback);
 }
 
 sub _upload_results_step_2_upload_images ($self, $callback) {
@@ -1222,19 +1234,19 @@ sub _log_snippet ($self, $file, $offset_name) {
     return \%ret;
 }
 
-sub _optimize_image ($image, $job_settings) {
+sub _optimize_image ($image, $job_settings, $optipng_bin = 'optipng', $pngquant_bin = 'pngquant') {
+    my $optimize_flag = $job_settings->{OPTIMIZE_IMAGES};
+    return 0 if defined($optimize_flag) && !$optimize_flag;
     log_debug("Optimizing $image");
-    {
-        # treat as "best-effort". If no pngquant nor optipng is found, ignore
-        no warnings;
-        if ($job_settings->{USE_PNGQUANT}) {
-            system('pngquant', '--force', '--output', $image, $image);
-        }
-        else {
-            system('optipng', '-quiet', '-o2', $image) if ($? == -1);
-        }
-    }
-    return undef;
+    my @command
+      = $job_settings->{USE_PNGQUANT}
+      ? ($pngquant_bin, '--force', '--output', $image, $image)
+      : ($optipng_bin, '-quiet', '-o2', $image);
+    system @command;
+    die "$OPTIMIZE_ERROR failed to execute $command[0]: $!\n" if $? == -1;
+    die sprintf("$OPTIMIZE_ERROR %s failed with signal %d\n", $command[0], $? & 127) if $? & 127;
+    die sprintf("$OPTIMIZE_ERROR %s exited with non-zero return code %d\n", $command[0], $? >> 8) if $?;
+    return 1;
 }
 
 sub _ignore_known_images ($self, $known_images = undef) {
