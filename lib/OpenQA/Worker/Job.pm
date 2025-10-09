@@ -873,14 +873,16 @@ sub _upload_results_step_2_1_upload_images ($self) {
 }
 
 my $OPTIMIZE_ERROR = 'Unable to optimize image:';
+my $OPTIMIZE_SUGGESTION = 'You may disable optimizations via OPTIMIZE_IMAGES=0.';
 
 sub _upload_results_step_2_2_upload_images ($self, $callback, $error) {
     $self->{_images_to_send} = {};
     $self->{_files_to_send} = {};
     return $callback->() unless $error;
     chomp $error;
+    $error =~ s/\s+(at.*line|OpenQA::).*//s;    # avoid too lengthy log message so $OPTIMIZE_SUGGESTION is not elided
     my $is_optimize_error = index($error, $OPTIMIZE_ERROR) == 0;
-    $error = "Unable to upload images: $error" unless $is_optimize_error;
+    $error = $is_optimize_error ? "$error - $OPTIMIZE_SUGGESTION" : "Unable to upload images: $error";
     log_error($self->{_result_upload_error} = $error);
     return $callback->() unless $is_optimize_error;
     $self->{_result_upload_internal_error} = $error;

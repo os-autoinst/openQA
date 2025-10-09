@@ -1089,6 +1089,7 @@ subtest 'Internal error occurrred during upload' => sub {
     }
     qr/Unable to optimize image: foobar/, 'error is logged';
     is $job->status, 'stopped', 'errors when optimizing are considered fatal so job is stopped';
+    like $job->{_result_upload_internal_error}, qr/Unable to optimize.*disable.*OPTIMIZE_IMAGES/, 'disabling suggested';
     ok $callback_invoked, 'upload callback is invoked on fatal errors as well';
 };
 
