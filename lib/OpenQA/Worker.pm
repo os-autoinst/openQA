@@ -278,8 +278,9 @@ sub init ($self) {
     # note: This assigns $self->current_error if there's an error and therefore prevents us from grabbing
     #       a job while broken. The error is propagated to the web UIs.
     $self->configure_cache_client;
-    $self->set_current_error_based_on_availability;
-    log_error 'Unavailable: ' . $self->current_error if $self->current_error;
+    my $current_error = $self->set_current_error_based_on_availability;
+    $self->current_error_is_fatal ? log_error('Unavailable: ' . $current_error) : log_warning($current_error)
+      if $current_error;
 
     # register error handler to stop the current job when a critical/unhandled error occurs
     Mojo::IOLoop->singleton->reactor->on(
