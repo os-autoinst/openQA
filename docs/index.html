@@ -11038,10 +11038,11 @@ appropriate timeout margin.</p>
 </div>
 <div class="paragraph">
 <p>On some less powerful systems (like Raspberry Pi), reducing screenshots size
-with optipng may take significant amount of time. In this case, you can switch
-to <code>pngquant</code> which is significantly faster, but uses lossy compression. To do
-that, install <code>pngquant</code> package and set <code>USE_PNGQUANT=1</code> in worker or job
-settings.</p>
+with <code>optipng</code> may take a significant amount of time. In this case, you can
+switch to <code>pngquant</code> which is significantly faster, but uses lossy compression.
+To do that, install <code>pngquant</code> package and set <code>USE_PNGQUANT=1</code> in worker or job
+settings. Alternatively, you may disable optimizing images altogether via the
+setting <code>OPTIMIZE_IMAGES=0</code>.</p>
 </div>
 </div>
 </div>
@@ -14432,7 +14433,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-30 04:44:36 UTC
+Last updated 2025-10-10 04:44:54 UTC
 </div>
 </div>
 </body>
