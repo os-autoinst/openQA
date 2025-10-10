@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: {{ include "webui.fullname" . }}-ingress
 spec:
-  ingressClassName: traefik
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
     - host: {{ .Values.baseUrl }}
       http:
