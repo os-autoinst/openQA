@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Result::ApiKeys;
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::Utils 'random_hex';
 
@@ -33,9 +33,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(key)]);
 __PACKAGE__->belongs_to(user => 'OpenQA::Schema::Result::Users', 'user_id');
 
-sub new {
-    my ($class, $attrs) = @_;
-
+sub new ($class, $attrs) {
     $attrs->{key} = random_hex() unless $attrs->{key};
     $attrs->{secret} = random_hex() unless $attrs->{secret};
 
