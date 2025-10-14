@@ -53,7 +53,7 @@ sub _limit ($job, $args = undef) {
 
     my $groups = $schema->resultset('JobGroups');
     my $gru = $app->gru;
-    my %options = (priority => 0, ttl => 2 * ONE_DAY);
+    my %options = (priority => -20, ttl => 2 * ONE_DAY);
     while (my $group = $groups->next) {
         my $preserved_important_jobs;
         $group->limit_results_and_logs(\$preserved_important_jobs);
