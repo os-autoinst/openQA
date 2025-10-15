@@ -5,7 +5,7 @@
 % end
 
 <figure id="video_viewer">
-    <video id="video" src="<%= url_for('test_file', testid => $testid, filename => param 'filename')->fragment('t=' . (param('t') // 0)) %>" controls>
-        <track default="" kind="subtitles" srclang="en" label="Timestamps" src="<%= url_for('test_file', testid => $testid, filename => 'video_time.vtt') %>">
+    <video id="video" src="<%= log_url($testid, param 'filename')->fragment('t=' . (param('t') // 0)) %>" controls>
+        <track default="" kind="subtitles" srclang="en" label="Timestamps" src="<%= log_url($testid, 'video_time.vtt') %>">
     </video>
 </figure>

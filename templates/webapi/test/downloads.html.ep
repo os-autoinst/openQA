@@ -14,7 +14,7 @@
         % content_for 'asset_box' => begin
             <li>
                 % if (defined $asset->size) {
-                    %= link_to url_for('test_asset_name', testid => $testid, assettype => $asset->type, assetname => $asset->name) => (id => "asset_".$asset->id) => begin
+                    %= link_to asset_url($asset, $testid) => (id => "asset_".$asset->id) => begin
                     %= $asset->name
                     % end
                     (<%= human_readable_size($asset->size) %>)

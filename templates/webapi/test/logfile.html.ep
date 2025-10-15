@@ -8,7 +8,7 @@
     filterEmbeddedLogFiles();
 % end
 
-% my $url = url_for('test_file', testid => $testid, filename => $filename);
+% my $url = log_url($testid, $filename);
 <div class="corner-buttons" style="margin-top: -5px;">
 <span id="filter-info"></span>
 <input id="filter-log-file" placeholder="substring or /regex/i" type="search">
