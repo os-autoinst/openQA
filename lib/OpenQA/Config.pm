@@ -8,8 +8,13 @@ use Config::IniFiles;
 use Exporter qw(import);
 use OpenQA::Log qw(log_info);
 use Mojo::File qw(path);
+use File::Copy qw(copy);
+use YAML::PP;
 
-our @EXPORT = qw(config_dir_within_app_home lookup_config_files parse_config_files parse_config_files_as_hash);
+our @EXPORT = qw(
+  config_dir_within_app_home lookup_config_files parse_config_files parse_config_files_as_hash
+  show_config write_config
+);
 
 sub _config_dirs ($config_dir_within_home) {
     return [[$ENV{OPENQA_CONFIG} // ()], [$config_dir_within_home // ()], ['/etc/openqa', '/usr/etc/openqa']];
@@ -55,5 +60,48 @@ sub parse_config_files_as_hash ($config_file_paths) {
     tie %config_hash, 'Config::IniFiles', (-import => $config_file);
     return \%config_hash;
 }
+
+sub show_config ($file, $params) {
+    my $conf = Config::IniFiles->new(-file => $file);
+    my ($section, $param, $val) = @$params;
+    unless (defined $section) {
+        my @sections = $conf->Sections;
+        return YAML::PP::Dump({Sections => \@sections});
+    }
+    unless (defined $param) {
+        my @keys = $conf->Parameters($section);
+        return YAML::PP::Dump(
+            {
+                "Parameters($section)" => {
+                    map { $_ => $conf->val($section, $_) } @keys
+                }});
+    }
+    unless (defined $val) {
+        $val = $conf->val($section, $param);
+        return $val;
+    }
+    return;
+}
+
+sub write_config ($file, $params, $backup = 0) {
+    my $conf = Config::IniFiles->new(-file => $file);
+    my ($section, $param, $val) = @$params;
+    if (!defined $section || !defined $param || !defined $val) {
+        warn "You need to pass section, parameter and value\n";
+        return 1;
+    }
+    $conf->newval($section, $param, $val);
+    if (my $bak = $backup) {
+        copy $file, "$file.$bak";
+    }
+    if (ref $file) {
+        # we have something other than just a filename; just print
+        $conf->OutputConfig;
+    }
+    else {
+        $conf->RewriteConfig();
+    }
+}
+
 
 1;
