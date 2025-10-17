@@ -109,7 +109,6 @@ sub download_asset ($self) {
 
     my $file = path(assetdir(), $path)->to_string;
     my $is_text = $self->_set_headers($file);
-    return if $self->_redirect_if_configured($is_text);
     return $self->reply->not_found unless -f $file && -r _;
     $self->reply->file($file);
 }
@@ -140,10 +139,6 @@ sub test_asset ($self) {
     # map to URL - mojo will canonicalize
     my $url = $self->url_for('download_asset', assetpath => $path);
 
-    # redirect to file domain if configured
-    my $file_domain = $self->app->config->{global}->{file_domain};
-    $url->host($file_domain) if ($file_domain);
-
     $self->app->log->debug("redirect to $url");
     # pass the redirect to the reverse proxy - might come back to use
     # in case there is no proxy (e.g. in tests)
@@ -164,7 +159,12 @@ sub _set_headers ($self, $path) {
                 $headers->header('X-Content-Type-Options', 'nosniff');
                 $is_text = 1;
             }
-            my $allow_insecure = $self->app->config->{global}->{file_security_policy} ne 'download-prompt';
+            my $file_security_policy = $self->app->config->{global}->{file_security_policy};
+            my $allow_insecure = $file_security_policy eq 'insecure-browsing';
+            if ($file_security_policy =~ m/^domain:/ and my $file_domain = $self->app->config->{global}->{file_domain})
+            {
+                $allow_insecure = 1 if $file_domain eq $self->req->url->to_abs->host_port;
+            }
             $as_attachment = 0 if ($allow_insecure || $filetype !~ m/(html|svg)/) && $ext ne 'iso';
         }
         # force saveAs
@@ -176,17 +176,6 @@ sub _set_headers ($self, $path) {
     return $is_text;
 }
 
-sub _redirect_if_configured ($self, $is_text) {
-    # skip harmless text files as the viewer doesn't follow redirects and those files are not problematic anyway
-    return 0 if $is_text || !defined(my $domain = $self->app->config->{global}->{file_domain});
-    # redirect to configured domain so potentially dangerious HTML files cannot use the current session
-    my $url = $self->req->url->to_abs;
-    return 0 if $url->host eq $domain;    # skip if already redirected
-    $url->host($domain);
-    $self->redirect_to($url);
-    return 1;
-}
-
 sub _serve_static ($self, $asset) {
     my $static = $self->static;
     my $log = $self->log;
@@ -196,9 +185,7 @@ sub _serve_static ($self, $asset) {
     return $self->reply->not_found unless $asset;
     $log->debug('found ' . pp($asset));
 
-    my $is_text = blessed $asset && $asset->isa('Mojo::Asset::File') && $self->_set_headers($asset->path);
-    return 1 if $self->_redirect_if_configured($is_text);
-
+    blessed $asset && $asset->isa('Mojo::Asset::File') && $self->_set_headers($asset->path);
     $static->serve_asset($self, $asset);
     return !!$self->rendered;
 }

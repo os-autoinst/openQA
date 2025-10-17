@@ -145,11 +145,15 @@ subtest 'redirection to different domain' => sub {
     my $config = $t->app->config->{global};
     $config->{file_security_policy} = 'domain:openqa-files';
     $config->{file_domain} = 'openqa-files';
-    $t->get_ok('/assets/repo/testrepo/README.html')->status_is(302);
-    $t->header_like(Location => qr|^http://openqa-files(:\d+)?/assets/repo/testrepo/README.html$|);
+    $t->get_ok('/assets/repo/testrepo/README.html')->status_is(200);
+    $t->header_is(
+        'Content-Disposition',
+        'attachment; filename=README.html;',
+        'HTML under original domain still served as attachment'
+    );
 
     $t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302);
-    $t->header_like(Location => qr|^//openqa-files(:\d+)?/assets/repo/testrepo/README$|);
+    $t->header_like(Location => qr|^/assets/repo/testrepo/README$|);
 };
 
 done_testing();
