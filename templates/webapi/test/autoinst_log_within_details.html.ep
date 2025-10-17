@@ -1,4 +1,4 @@
 <div>
     Likely error from autoinst-log.txt:<br>
-    <div class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => 'autoinst-log.txt') %>"></div>
+    <div class="embedded-logfile" data-src="<%= log_url($testid, 'autoinst-log.txt') %>"></div>
 </div>

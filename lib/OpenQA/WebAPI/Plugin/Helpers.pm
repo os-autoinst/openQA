@@ -381,6 +381,27 @@ sub register ($self, $app, $config) {
             }
             return $regex_problem && $context ? "$context: $regex_problem" : $regex_problem;
         });
+
+    $app->helper(
+        asset_url => sub ($c, $asset, $testid) {
+            my $url
+              = $c->url_for('test_asset_name', testid => $testid, assettype => $asset->type, assetname => $asset->name);
+            return _domain_url_for($c, $url);
+        });
+
+    $app->helper(
+        log_url => sub ($c, $testid, $resultfile) {
+            my $url = $c->url_for('test_file', testid => $testid, filename => $resultfile);
+            return _domain_url_for($c, $url);
+        });
+}
+
+sub _domain_url_for ($c, $url) {
+    if (my $file_domain = $c->app->config->{global}->{file_domain}) {
+        $url->host($file_domain);
+        $url->scheme($c->req->url->scheme // 'http');
+    }
+    return $url;
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

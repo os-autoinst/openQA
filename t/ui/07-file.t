@@ -141,6 +141,15 @@ $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->sta
 $t->get_ok('/assets/hdd/foo.qcow2')->status_is(200)->content_type_is('application/octet-stream');
 $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
+subtest 'asset links to different domain' => sub {
+    my $config = $t->app->config->{global};
+    $config->{file_security_policy} = 'domain:openqa-files';
+    $config->{file_domain} = 'openqa-files';
+    $t->get_ok('/tests/99938/downloads_ajax')->status_is(200);
+    my $link = $t->tx->res->dom->find('a')->grep(qr/vars.json/)->map(attr => 'href')->first;
+    like $link, qr{^http://openqa-files/}, 'Asset link uses file domain subdomain';
+};
+
 subtest 'redirection to different domain' => sub {
     my $config = $t->app->config->{global};
     $config->{file_security_policy} = 'domain:openqa-files';
