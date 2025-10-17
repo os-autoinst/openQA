@@ -150,13 +150,6 @@ subtest 'redirection to different domain' => sub {
 
     $t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302);
     $t->header_like(Location => qr|^//openqa-files(:\d+)?/assets/repo/testrepo/README$|);
-
-    # no redirect for images and thumbs
-    $t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')
-      ->header_is('Content-Length' => '48019');
-    $t->get_ok('/tests/99938/images/thumb/logpackages-1.png')->status_is(200)->content_type_is('image/png')
-      ->header_is('Content-Length' => '6769');
-    $t->get_ok('/image/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png')->status_is(200)->content_type_is('image/png');
 };
 
 done_testing();

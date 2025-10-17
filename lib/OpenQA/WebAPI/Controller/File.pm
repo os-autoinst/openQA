@@ -64,7 +64,7 @@ sub needle ($self) {
     push @{$self->static->paths}, $needledir;
 
     # name is an URL parameter and can't contain slashes, so it should be safe
-    return $self->_serve_static($name . $format, 1);
+    return $self->_serve_static($name . $format);
 }
 
 sub _needle_by_id_and_extension ($self, $extension) {
@@ -99,11 +99,6 @@ sub _set_test ($self) {
 sub test_file ($self) {
     return $self->reply->not_found unless $self->_set_test;
     return $self->_serve_static($self->param('filename'));
-}
-
-sub test_image ($self) {
-    return $self->reply->not_found unless $self->_set_test;
-    return $self->_serve_static($self->param('filename'), 1);
 }
 
 sub download_asset ($self) {
@@ -192,7 +187,7 @@ sub _redirect_if_configured ($self, $is_text) {
     return 1;
 }
 
-sub _serve_static ($self, $asset, $noredirect = 0) {
+sub _serve_static ($self, $asset) {
     my $static = $self->static;
     my $log = $self->log;
 
@@ -201,10 +196,8 @@ sub _serve_static ($self, $asset, $noredirect = 0) {
     return $self->reply->not_found unless $asset;
     $log->debug('found ' . pp($asset));
 
-    unless ($noredirect) {
-        my $is_text = blessed $asset && $asset->isa('Mojo::Asset::File') && $self->_set_headers($asset->path);
-        return 1 if $self->_redirect_if_configured($is_text);
-    }
+    my $is_text = blessed $asset && $asset->isa('Mojo::Asset::File') && $self->_set_headers($asset->path);
+    return 1 if $self->_redirect_if_configured($is_text);
 
     $static->serve_asset($self, $asset);
     return !!$self->rendered;
@@ -215,7 +208,7 @@ sub test_thumbnail ($self) {
     return $self->reply->not_found unless $self->_set_test;
 
     my $asset = $self->static->file('.thumbs/' . $self->param('filename'));
-    return $self->_serve_static($asset, 1);
+    return $self->_serve_static($asset);
 }
 
 # this is the agnostic route to images - usually served by apache directly
@@ -224,7 +217,7 @@ sub thumb_image ($self) {
 
     # name is an URL parameter and can't contain slashes, so it should be safe
     my $dir = $self->param('md5_dirname') || ($self->param('md5_1') . '/' . $self->param('md5_2'));
-    return $self->_serve_static("$dir/.thumbs/" . $self->param('md5_basename'), 1);
+    return $self->_serve_static("$dir/.thumbs/" . $self->param('md5_basename'));
 }
 
 1;
