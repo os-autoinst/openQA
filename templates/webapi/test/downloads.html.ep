@@ -1,10 +1,10 @@
 % if(@$resultfiles) {
     <h5>Result files</h5>
-    %= include 'test/result_file_list', resultfiles => $resultfiles
+    %= include 'test/result_file_list', resultfiles => $resultfiles, userfiles => 0
 % }
 % if (@$ulogs) {
     <h6>Uploaded logs</h6>
-    %= include 'test/result_file_list', resultfiles => $ulogs
+    %= include 'test/result_file_list', resultfiles => $ulogs, userfiles => 1
 % }
 
 % my $assets = $job->jobs_assets;
