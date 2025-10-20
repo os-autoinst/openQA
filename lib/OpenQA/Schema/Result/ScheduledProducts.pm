@@ -308,7 +308,7 @@ sub _create_jobs_in_database ($self, $jobs, $failed_job_info, $skip_chained_deps
     } keys %tmp_downloads;
     my $gru = OpenQA::App->singleton->gru;
     $gru->enqueue_download_jobs(\%downloads, $minion_ids);
-    $gru->enqueue_git_clones(\%clones, $successful_job_ids, $minion_ids) if keys %clones;
+    $gru->enqueue_git_clones(\%clones, $successful_job_ids, $minion_ids);
 }
 
 =over 4
