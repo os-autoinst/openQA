@@ -1698,6 +1698,7 @@ subtest 'handle git_clone without CASEDIR' => sub {
     my $params = {
         TEST => 'handle_git_clone',
         MACHINE => '64bit',
+        DISTRI => 'opensuse',
     };
     $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
 
@@ -1712,15 +1713,9 @@ subtest 'handle git_clone without CASEDIR' => sub {
         is $task, 'git_clone', 'git_clone task was scheduled';
         push @gru_task_values, $gru_task->args;
     }
-    is_deeply \@gru_task_values,
-      [
-        [
-            {
-                path('t/data/openqa/share/tests')->realpath => undef,
-                path('t/data/openqa/share/tests/needles')->realpath => undef,
-            }]
-      ],
-      'the git_clone gru tasks was created correctly';
+    my %expected_values = map { path("t/data/openqa/share/tests/opensuse$_")->realpath => undef } '', '/needles';
+    is_deeply \@gru_task_values, [[\%expected_values]], 'the git_clone gru tasks was created correctly'
+      or always_explain \@gru_task_values;
 
     subtest 'enqueue git_clone for job restarts' => sub {
         $job->update({state => 'done'});
