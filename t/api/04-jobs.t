@@ -1215,7 +1215,8 @@ subtest 'job details' => sub {
     $t->get_ok('/api/v1/jobs/99938/details')->status_is(200);
 
     $t->json_is('/job/logs/0', 'video.ogv', 'Test result logs are present');
-    $t->json_is('/job/ulogs/0', 'y2logs.tar.bz2', 'Test result uploaded logs are present');
+    $t->json_is('/job/ulogs/0', 'report.html', 'Test result uploaded logs are present (report.html)');
+    $t->json_is('/job/ulogs/1', 'y2logs.tar.bz2', 'Test result uploaded logs are present (y2logs.tar.bz2)');
 
 };
 

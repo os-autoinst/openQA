@@ -141,19 +141,59 @@ $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->sta
 $t->get_ok('/assets/hdd/foo.qcow2')->status_is(200)->content_type_is('application/octet-stream');
 $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
-subtest 'redirection to different domain' => sub {
-    my $config = $t->app->config->{global};
-    $config->{file_security_policy} = 'domain:openqa-files';
-    $config->{file_domain} = 'openqa-files';
-    $t->get_ok('/assets/repo/testrepo/README.html')->status_is(200);
-    $t->header_is(
-        'Content-Disposition',
-        'attachment; filename=README.html;',
-        'HTML under original domain still served as attachment'
-    );
+subtest 'file security policy' => sub {
 
-    $t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302);
-    $t->header_like(Location => qr|^/assets/repo/testrepo/README$|);
+    subtest 'file domain' => sub {
+        my $config = $t->app->config->{global};
+        $config->{file_security_policy} = 'domain:openqa-files';
+        $config->{file_domain} = 'openqa-files';
+        $t->get_ok('/tests/99938/downloads_ajax')->status_is(200);
+        my $link = $t->tx->res->dom->find('a')->grep(qr/vars.json/)->map(attr => 'href')->first;
+        like $link, qr{^/}, 'link to vars.json points to same domain';
+        $link = $t->tx->res->dom->find('a')->grep(qr/report.html/)->map(attr => 'href')->first;
+        like $link, qr{^http://openqa-files/}, 'link to user HTML file points to file domain subdomain';
+
+        for my $url (qw(/assets/repo/testrepo/README.html /tests/99938/file/report.html)) {
+            $t->get_ok($url)->status_is(200);
+            $t->header_like(
+                'Content-Disposition',
+                qr/attachment; filename=.*.html;/,
+                "$url - HTML under original domain served as attachment"
+            );
+        }
+
+        $t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302, 'asset is redirected to asset url');
+        $t->header_like(Location => qr|^/assets/repo/testrepo/README$|);
+    };
+
+    subtest 'insecure-browsing' => sub {
+        my $config = $t->app->config->{global};
+        delete $config->{file_domain};
+        $config->{file_security_policy} = 'insecure-browsing';
+        $t->get_ok('/tests/99938/downloads_ajax')->status_is(200);
+        my $link = $t->tx->res->dom->find('a')->grep(qr/report.html/)->map(attr => 'href')->first;
+        like $link, qr{^/}, 'link to HTML file points to same domain';
+
+        for my $url (qw(/assets/repo/testrepo/README.html /tests/99938/file/report.html)) {
+            $t->get_ok($url)->status_is(200);
+            $t->header_is('Content-Disposition', undef, "$url - Not served as attachment");
+        }
+    };
+
+    subtest 'download-prompt' => sub {
+        my $config = $t->app->config->{global};
+        $config->{file_security_policy} = 'download-prompt';
+        $t->get_ok('/tests/99938/downloads_ajax')->status_is(200);
+        my $link = $t->tx->res->dom->find('a')->grep(qr/report.html/)->map(attr => 'href')->first;
+        like $link, qr{^/}, 'link to HTML file points to same domain';
+
+        $t->get_ok('/assets/repo/testrepo/README.html')->status_is(200);
+        $t->header_is(
+            'Content-Disposition',
+            'attachment; filename=README.html;',
+            'HTML under original domain served as attachment'
+        );
+    };
 };
 
 done_testing();
