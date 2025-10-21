@@ -424,6 +424,33 @@ use Time::Seconds;
         ]
     },
     Jobs => {
+        id => 99983,
+        group_id => 1001,
+        clone_id => 99963,
+        priority => 35,
+        result => 'failed',
+        state => 'done',
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3 * ONE_HOUR, 'UTC'),
+        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 4 * ONE_HOUR, 'UTC'),
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
+        TEST => 'kde',
+        BUILD => '0091',
+        DISTRI => 'opensuse',
+        FLAVOR => 'DVD',
+        MACHINE => '64bit',
+        VERSION => '13.1',
+        jobs_assets => [{asset_id => 2},],
+        ARCH => 'x86_64',
+        result_dir => '00099962-opensuse-13.1-DVD-x86_64-Build0091-kde',
+        settings => [
+            {key => 'DESKTOP', value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
+            {key => 'DVD', value => '1'},
+            {key => 'RETRY', value => '1'},
+        ]
+    },
+    Jobs => {
         id => 99981,
         group_id => 1001,
         priority => 50,

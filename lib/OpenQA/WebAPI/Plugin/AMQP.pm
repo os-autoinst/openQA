@@ -15,6 +15,7 @@ use Scalar::Util qw(looks_like_number);
 
 my @job_events = qw(job_create job_delete job_cancel job_restart job_update_result job_done);
 my @comment_events = qw(comment_create comment_update comment_delete);
+my @minion_events = qw(hook_script_job_restart);
 
 sub new ($class, @args) {
     my $self = $class->SUPER::new(@args);
@@ -36,6 +37,9 @@ sub register ($self, $app, @args) {
             }
             for my $e (@comment_events) {
                 OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_comment_event(@_) });
+            }
+            for my $e (@minion_events) {
+                OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_minion_event(@_) });
             }
         });
 }
@@ -134,6 +138,11 @@ sub on_comment_event ($self, $args) {
     }
 
     $self->log_event($event, $hash);
+}
+
+sub on_minion_event ($self, $args) {
+    my ($user_id, $connection_id, $event, $event_data) = @$args;
+    $self->log_event($event, $event_data);
 }
 
 1;

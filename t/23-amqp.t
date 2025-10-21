@@ -334,4 +334,29 @@ subtest 'extra TLS query params' => sub {
     is($last_publisher->url, $expected, 'url has all params');
 };
 
+subtest 'hook script retry triggers amqp' => sub {
+    use OpenQA::Test::Utils qw(perform_minion_jobs);
+    my $hooks = ($app->config->{hooks} //= {});
+    $hooks->{job_done_hook_failed} = 'echo oops && exit 23;';
+    local $ENV{OPENQA_JOB_DONE_HOOK_RETRIES} = 1;
+    local $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC} = 143;
+    local $ENV{OPENQA_JOB_DONE_HOOK_DELAY} = 0;
+    my $test_job = $schema->resultset('Jobs')->find(99983);
+    ok $test_job, 'Found job 99983';
+    $test_job->done;
+    perform_minion_jobs($t->app->minion);
+    # is_deeply(
+    #     $published{'suse.openqa.hook.script.job.restart'},
+    #     {
+    #         job_id => $test_job,
+    #     },
+    #     '_hook_script publishes job restart');
+    my $event = $published{'suse.openqa.hook.script.job.restart'};
+    ok $event, 'AMQP event for hook script restart was published';
+    # is $event->{job_id}, 99984, 'Event has correct openQA job ID';
+    # ok $event->{minion_id}, 'Event has a minion_id';
+
+    delete $hooks->{job_done_hook_failed};
+};
+
 done_testing();

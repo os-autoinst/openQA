@@ -4,6 +4,7 @@
 package OpenQA::Task::Job::HookScript;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Task::SignalGuard;
+use OpenQA::Events;
 
 sub register ($self, $app, $config) {
     $app->minion->add_task(hook_script => \&_hook_script);
@@ -23,6 +24,7 @@ sub _hook_script ($job, $hook, $openqa_job_id, $options) {
 
     if ($retries && $skip_rc && defined $rc && $rc == $skip_rc && $job->retries < $retries) {
         $job->app->log->debug("Job @{[$job->id]}: Retrying @{[$job->retries]} times with linear delay: ${delay}s");
+        $job->app->events->emit('openqa_hook_script_job_restart', [{job_id => $openqa_job_id, minion_id => $job->id}]);
         $job->retry($delay ? {delay => $delay} : {});
     }
 }
