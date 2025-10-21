@@ -17,12 +17,12 @@
         % }
         % else {
             <i class="fa fa-file-o"></i>
-            <a href="<%= $userfiles ? log_url($testid, $resultfile) : url_for('test_file', testid => $testid, filename => $resultfile) %>">
+            <a href="<%= log_url($testid, $resultfile, $is_userfile) %>">
                 <%= $resultfile %>
             </a>
             % next;
         % }
-        <a href="<%= $userfiles ? log_url($testid, $resultfile) : url_for('test_file', testid => $testid, filename => $resultfile) %>" target="blank" title="Raw/download">
+        <a href="<%= log_url($testid, $resultfile, $is_userfile) %>" target="blank" title="Raw/download">
             <i class="fa fa-download"></i>
         </a>
     </li>

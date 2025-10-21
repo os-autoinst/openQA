@@ -383,14 +383,14 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(
-        log_url => sub ($c, $testid, $resultfile) {
+        log_url => sub ($c, $testid, $resultfile, $is_userfile = 1) {
             my $url = $c->url_for('test_file', testid => $testid, filename => $resultfile);
-            return _domain_url_for($c, $url);
+            return _domain_url_for($c, $url, $is_userfile);
         });
 }
 
-sub _domain_url_for ($c, $url) {
-    if (my $file_domain = $c->app->config->{global}->{file_domain}) {
+sub _domain_url_for ($c, $url, $is_userfile) {
+    if ($is_userfile and my $file_domain = $c->app->config->{global}->{file_domain}) {
         $url->host($file_domain);
         $url->scheme($c->req->url->scheme // 'http');
     }
