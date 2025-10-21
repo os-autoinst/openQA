@@ -346,7 +346,7 @@ sub _create_job ($self, $global_params, $job_suffix, $job_specific_params, $mini
     push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
     $self->gru->enqueue_download_jobs($downloads, $minion_ids);
     my $clones = create_git_clone_list($job_settings);
-    $self->gru->enqueue_git_clones($clones, [$job_id], $minion_ids) if keys %$clones;
+    $self->gru->enqueue_git_clones($clones, [$job_id], $minion_ids);
     return $job_id;
 }
 

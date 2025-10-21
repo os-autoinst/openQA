@@ -537,7 +537,7 @@ sub create_downloads_list ($job_settings) {
 }
 
 sub create_git_clone_list ($job_settings, $clones = {}) {
-    my $distri = $job_settings->{DISTRI};
+    return $clones unless my $distri = $job_settings->{DISTRI};
     my $config = OpenQA::App->singleton->config->{'scm git'};
     if ($config->{git_auto_update} eq 'yes') {
         # Potential existing git clones to update without having CASEDIR or NEEDLES_DIR

@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Task::Git::Clone;
 use OpenQA::Git::ServerAvailability qw(report_server_unavailable report_server_available SKIP FAIL);
+use OpenQA::Utils qw(create_git_clone_list);
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '20';
@@ -333,6 +334,16 @@ subtest 'git_update_all' => sub {
         };
       }
       if $gru_task;
+};
+
+subtest 'create_git_clone_list' => sub {
+    my (%clones, %job_settings);
+    create_git_clone_list(\%job_settings, \%clones);
+    is_deeply \%clones, {}, 'no clones added without distri' or always_explain \%clones;
+    $job_settings{DISTRI} = 'some-distri';
+    create_git_clone_list(\%job_settings, \%clones);
+    my %expected_clones = map { ("t/data/openqa/share/tests/some-distri$_" => undef) } '', '/needles';
+    is_deeply \%clones, \%expected_clones, 'clones added for distri' or always_explain \%clones;
 };
 
 subtest 'enqueue_git_clones' => sub {
