@@ -19,6 +19,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
+use Test::Output;
 use Test::Warnings qw(:report_warnings warning);
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json encode_json);
@@ -899,7 +900,8 @@ subtest 'job setting based retriggering' => sub {
     my $finalize_job_count_before = @{$get_jobs->('finalize_job_results')};
     $job->update({state => SCHEDULED, result => NONE});
     $job->done(result => FAILED);
-    perform_minion_jobs($minion);
+    stdout_like { perform_minion_jobs($minion) } qr/Job \d+ duplicated as \d+/,
+      'check debug message from auto_duplicate';
     is $jobs->count, $jobs_nr + 2, 'job retriggered as it FAILED (with retry)';
     $job->update;
     $job->discard_changes;
