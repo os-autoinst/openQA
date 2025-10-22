@@ -98,6 +98,19 @@ sub register ($self, $app, $config) {
         });
 
     $self->register_tasks;
+    my $plugins = $app->config->{global}->{plugins};
+    if (defined $plugins && $plugins =~ /\bAMQP\b/) {
+        push @{$app->plugins->namespaces}, 'OpenQA::WebAPI::Plugin'    # uncoverable statement
+          unless grep { $_ eq 'OpenQA::WebAPI::Plugin' } @{$app->plugins->namespaces};
+
+        try {
+            $app->plugin('AMQP');
+            Mojo::IOLoop->singleton->one_tick;    # handle async plugin registration
+        }
+        catch ($e) {
+            log_error("Failed to load AMQP plugin for Gru: $e");
+        }
+    }
 
     # Enable the Minion Admin interface under /minion
     my $auth = $app->routes->under('/minion')->to('session#ensure_admin');
