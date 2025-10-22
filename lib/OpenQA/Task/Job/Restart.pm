@@ -5,6 +5,7 @@ package OpenQA::Task::Job::Restart;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Time::Seconds;
+use OpenQA::Events;
 
 sub register ($self, $app, @args) {
     $app->minion->add_task(restart_job => \&_restart_job);
@@ -17,6 +18,12 @@ sub restart_delay { $ENV{OPENQA_JOB_RESTART_DELAY} // 5 }
 sub restart_openqa_job ($minion_job, $openqa_job) {
     my $cloned_job_or_error = $openqa_job->auto_duplicate;
     my $is_ok = ref $cloned_job_or_error || $cloned_job_or_error =~ qr/(already.*clone|direct parent)/i;
+    if ($is_ok) {
+        my $openqa_job_id = $openqa_job->id;
+        my %event_data = (id => $openqa_job_id, result => $cloned_job_or_error, auto => 1);
+        OpenQA::Events->singleton->emit_event('openqa_job_restart', data => \%event_data);
+    }
+
     $minion_job->note(
         ref $cloned_job_or_error
         ? (cluster_cloned => $cloned_job_or_error->{cluster_cloned})
