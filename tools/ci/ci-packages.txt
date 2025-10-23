@@ -79,7 +79,7 @@ perl-DBIx-Class-DeploymentHandler-0.002234
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001014
-perl-Devel-Cover-1.440.0
+perl-Devel-Cover-1.500.0
 perl-Devel-Cover-Report-Codecovbash-0.04
 perl-Devel-GlobalDestruction-0.14
 perl-Devel-OverloadInfo-0.005
@@ -105,7 +105,7 @@ perl-Filesys-Df-0.92
 perl-File-Which-1.22
 perl-Getopt-Long-Descriptive-0.111
 perl-Hash-Merge-0.302
-perl-HTML-Parser-3.72
+perl-HTML-Parser-3.830.0
 perl-HTML-Tagset-3.20
 perl-HTTP-Cookies-6.04
 perl-HTTP-Daemon-6.01
@@ -142,7 +142,7 @@ perl-Meta-Builder-0.004
 perl-Minion-10.310.0
 perl-Minion-Backend-SQLite-5.0.7
 perl-Mixin-Linewise-0.111
-perl-Module-Build-0.422400
+perl-Module-Build-0.423400
 perl-Module-Find-0.13
 perl-Module-Implementation-0.09
 perl-Module-Pluggable-5.2
@@ -212,7 +212,7 @@ perl-SQL-Translator-1.63
 perl-strictures-2.000006
 perl-String-Format-1.18
 perl-String-ShellQuote-1.04
-perl-Sub-Exporter-0.987
+perl-Sub-Exporter-0.991.0
 perl-Sub-Exporter-Progressive-0.001013
 perl-Sub-Identify-0.14
 perl-Sub-Install-0.928
