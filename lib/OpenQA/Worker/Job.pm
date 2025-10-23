@@ -11,7 +11,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
 use OpenQA::Log qw(log_error log_warning log_debug log_info redact_settings_in_file);
-use OpenQA::Utils qw(find_video_files usleep_backoff);
+use OpenQA::Utils qw(find_video_files usleep_backoff run_cmd_with_log_return_error);
 
 use Digest::MD5;
 use Fcntl;
@@ -1241,11 +1241,9 @@ sub _optimize_image ($image, $job_settings, $optipng_bin = 'optipng', $pngquant_
     my @command
       = $job_settings->{USE_PNGQUANT}
       ? ($pngquant_bin, '--force', '--output', $image, $image)
-      : ($optipng_bin, '-quiet', '-o2', $image);
-    system @command;
-    die "$OPTIMIZE_ERROR failed to execute $command[0]: $!\n" if $? == -1;
-    die sprintf("$OPTIMIZE_ERROR %s failed with signal %d\n", $command[0], $? & 127) if $? & 127;
-    die sprintf("$OPTIMIZE_ERROR %s exited with non-zero return code %d\n", $command[0], $? >> 8) if $?;
+      : ($optipng_bin, '-o2', $image);
+    my $res = run_cmd_with_log_return_error \@command, stdout => 'trace', stderr => 'trace';
+    die "$OPTIMIZE_ERROR $res->{message}\n" unless $res->{status};
     return 1;
 }
 
