@@ -305,6 +305,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
     my $stdout_level = $args{stdout} // 'debug';
     my $stderr_level = $args{stderr} // 'debug';
     my $output_file = $args{output_file};
+    my $program = $cmd->[0] // 'cmd';
     log_info('Running cmd: ' . join(' ', @$cmd));
     try {
         my ($stdin, $stdout, $stderr) = ('') x 3;
@@ -314,8 +315,8 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
         my $return_code = ($error_code & 127) ? (undef) : ($error_code >> 8);
         my $message
           = defined $return_code
-          ? ("cmd returned $return_code")
-          : sprintf('cmd died with signal %d', $error_code & 127);
+          ? ("$program returned $return_code")
+          : sprintf('%s died with signal %d', $program, $error_code & 127);
         my $expected_return_codes = $args{expected_return_codes};
         chomp $stderr;
         if (
@@ -337,6 +338,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
             return_code => $return_code,
             stdout => $stdout,
             stderr => $stderr,
+            message => $message,
         };
     }
     catch ($e) {
@@ -345,6 +347,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
             return_code => undef,
             stderr => 'an internal error occurred',
             stdout => '',
+            message => "failed to execute $program",
         };
     }
 }
