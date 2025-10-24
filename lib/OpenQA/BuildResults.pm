@@ -15,10 +15,8 @@ use Sort::Versions;
 use Time::Seconds;
 
 sub init_job_figures ($job_result) {
-
     # relevant distributions for the build (hash is used as a set)
     $job_result->{distris} = {};
-
     # number of passed/failed/... jobs
     $job_result->{passed} = 0;
     $job_result->{failed} = 0;
@@ -31,7 +29,6 @@ sub init_job_figures ($job_result) {
 }
 
 sub count_job ($job, $jr, $labels) {
-
     $jr->{total}++;
     if ($job->state eq OpenQA::Jobs::Constants::DONE) {
         if ($job->result eq OpenQA::Jobs::Constants::PASSED) {
@@ -69,18 +66,15 @@ sub count_job ($job, $jr, $labels) {
 }
 
 sub add_review_badge ($build_res) {
-
     $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total} ? 1 : 0;
     $build_res->{reviewed} = $build_res->{labeled} >= $build_res->{failed} ? 1 : 0;
     $build_res->{commented} = $build_res->{comments} >= $build_res->{failed} ? 1 : 0;
 }
 
 sub filter_subgroups ($group, $subgroup_filter) {
-
     my @group_ids;
     my @children;
     my $group_name = $group->name;
-
     for my $child ($group->children) {
         my $full_name = $child->full_name;
         if (grep { $_ eq '' || regex_match($_, $full_name) } @$subgroup_filter) {
@@ -95,29 +89,24 @@ sub filter_subgroups ($group, $subgroup_filter) {
 }
 
 sub find_child_groups ($group, $subgroup_filter) {
-
     # handle regular (non-parent) groups
     return {
         group_ids => [$group->id],
         children => [],
     } unless $group->can('children');
-
     # handle simple case where no filter for subgroups present
     return {
         group_ids => $group->child_group_ids,
         children => [$group->children],
     } unless @$subgroup_filter;
-
     return filter_subgroups($group, $subgroup_filter);
 }
 
 sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags) {
-
     # find relevant child groups taking filter into account
     my $child_groups = find_child_groups($group, $subgroup_filter);
     my $group_ids = $child_groups->{group_ids};
     my $children = $child_groups->{children};
-
     my @sorted_results;
     my %result = (
         build_results => \@sorted_results,
@@ -127,11 +116,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
             id => $group->id,
             name => $group->name
         });
-
-    if (defined($limit) && int($limit) <= 0) {
-        return \%result;
-    }
-
+    return \%result if defined($limit) && int($limit) <= 0;
     # build sorting
     my $buildver_sort_mode = BUILD_SORT_BY_NAME;
     $buildver_sort_mode = $group->build_version_sort if $group->can('build_version_sort');
@@ -147,11 +132,8 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         rows => $row_limit
     );
     my %search_filter = (group_id => {in => $group_ids});
-    if ($time_limit_days) {
-        $search_filter{t_created}
-          = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * $time_limit_days, 'UTC')};
-    }
-
+    $search_filter{t_created} = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * $time_limit_days, 'UTC')}
+      if $time_limit_days;
     # add search filter for tags
     # caveat: a tag that references only a build, not including a version, might be ambiguous
     if ($tags) {
@@ -165,7 +147,6 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         $search_filter{BUILD} = {-in => \@builds};
         $search_filter{VERSION} = {-in => \@versions} if @versions;
     }
-
     # find relevant builds
     my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
     my @builds = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
@@ -175,16 +156,13 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         $build->{key} = join('-', $version, $buildnr);
         $versions_per_build{$buildnr}->{$version} = 1;
     }
-    if ($buildver_sort_mode == BUILD_SORT_BY_NAME) {
-        @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
-    }
-
+    @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds
+      if $buildver_sort_mode == BUILD_SORT_BY_NAME;
     my $max_jobs = 0;
     my $now = DateTime->now;
     my $newest = ($buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB || $buildver_sort_mode == BUILD_SORT_BY_NAME) ? 0 : 1;
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
-
         my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
         my $jobs = $jobs_resultset->search(
             {
@@ -201,10 +179,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
             version_count => scalar keys %{$versions_per_build{$buildnr}},
         );
         init_job_figures(\%jr);
-        for my $child (@$children) {
-            init_job_figures($jr{children}->{$child->id} = {});
-        }
-
+        init_job_figures($jr{children}->{$_->id} = {}) for @$children;
         my %seen;
         my @jobs = map {
             my $key = $_->TEST . '-' . $_->ARCH . '-' . $_->FLAVOR . '-' . ($_->MACHINE // '');
