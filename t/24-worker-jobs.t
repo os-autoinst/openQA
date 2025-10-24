@@ -9,6 +9,8 @@ use Test::Warnings ':report_warnings';
 BEGIN {
     $ENV{OPENQA_UPLOAD_DELAY} = 0;
     $ENV{OPENQA_WORKER_ACCEPT_ATTEMPTS} = 2;
+    $ENV{OPENQA_WORKER_OPTIMIZE_ATTEMPTS} = 2;
+    $ENV{OPENQA_WORKER_OPTIMIZE_RETRY_DELAY} = 0;
 }
 
 use FindBin;

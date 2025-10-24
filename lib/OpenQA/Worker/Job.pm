@@ -38,6 +38,8 @@ use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
 use constant BASE_STATEFILE => 'base_state.json';
 use constant UPLOAD_DELAY => $ENV{OPENQA_UPLOAD_DELAY} // 5;
 use constant ACCEPT_ATTEMPTS => $ENV{OPENQA_WORKER_ACCEPT_ATTEMPTS} // 10;
+use constant OPTIMIZE_ATTEMPTS => $ENV{OPENQA_WORKER_OPTIMIZE_ATTEMPTS} // 5;
+use constant OPTIMIZE_RETRY_DELAY => $ENV{OPENQA_WORKER_OPTIMIZE_RETRY_DELAY} // 1;
 
 # define accessors for public read-only properties
 sub status { shift->{_status} }
@@ -1242,7 +1244,10 @@ sub _optimize_image ($image, $job_settings, $optipng_bin = 'optipng', $pngquant_
       = $job_settings->{USE_PNGQUANT}
       ? ($pngquant_bin, '--force', '--output', $image, $image)
       : ($optipng_bin, '-quiet', '-o2', $image);
-    system @command;
+    for (1 .. OPTIMIZE_ATTEMPTS) {
+        last if system(@command) == 0 || $? == -1;
+        sleep OPTIMIZE_RETRY_DELAY;
+    }
     die "$OPTIMIZE_ERROR failed to execute $command[0]: $!\n" if $? == -1;
     die sprintf("$OPTIMIZE_ERROR %s failed with signal %d\n", $command[0], $? & 127) if $? & 127;
     die sprintf("$OPTIMIZE_ERROR %s exited with non-zero return code %d\n", $command[0], $? >> 8) if $?;
