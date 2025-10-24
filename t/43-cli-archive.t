@@ -15,6 +15,7 @@ use OpenQA::CLI;
 use OpenQA::CLI::archive;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Utils qw(assetdir);
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
@@ -144,6 +145,17 @@ subtest 'Archive job with thumbnails' => sub {
     ok -f $results->child('details-isosize.json'), 'details-isosize.json exists';
     ok -f $results->child('autoinst-log.txt'), 'autoinst-log.txt exists';
     ok -d $results->child('thumbnails'), 'thumbnails';
+};
+
+subtest 'Archive job with assets' => sub {
+    note('Asset directory: ' . assetdir());
+    my $target = $dir->child('archive-with-assets')->make_path;
+    my ($stdout, $stderr, @result)
+      = capture_stdout sub { $cli->run('archive', @host, '--no-limit', 99963, $target->to_string) };
+    like $stdout, qr{Downloading.*/iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso}, 'download iso without size limit';
+    my $expected_iso = 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso';
+    my $iso_path = $target->child('iso', $expected_iso);
+    ok(-f $iso_path, "Asset was downloaded");
 };
 
 done_testing();

@@ -21,7 +21,8 @@ sub command ($self, @args) {
             url => $url,
             archive => $path,
             'with-thumbnails' => $options{'with-thumbnails'},
-            'asset-size-limit' => $options{'asset-size-limit'}});
+            'asset-size-limit' => $options{'asset-size-limit'},
+            'no-limit' => $options{'no-limit'}});
 
     return 0;
 }
