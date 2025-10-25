@@ -16,6 +16,7 @@ use OpenQA::Utils (
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
+use OpenQA::Events;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Setup;
 use OpenQA::ScreenshotDeletion;
@@ -1001,6 +1002,7 @@ sub auto_duplicate ($self, $args = {}) {
     $dup->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } keys %$clones};
     $dup->{comments_created} = $args->{comments};
     log_debug("Job $job_id duplicated as $clone_id");
+    OpenQA::Events->singleton->emit_event('job_restart', data => {id => $clone_id});
     return $dup;
 }
 

@@ -13,6 +13,7 @@ use Test::Output qw(combined_like stderr_like);
 use Test::MockModule;
 use OpenQA::App;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
+use OpenQA::Events;
 use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
@@ -43,8 +44,23 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     $workers->update_all({t_seen => undef});
     is($jobs->stale_ones->count, 3, 'jobs considered stale if t_seen is not set');
 
+    my @emitted_events;
+    my $mock_events = Test::MockModule->new('OpenQA::Events');
+    $mock_events->redefine(
+        emit_event => sub {
+            my ($self, $type, %args) = @_;
+            push @emitted_events, {type => $type, %args};
+        });
+
     stderr_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
     qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/, 'dead jobs logged';
+
+    is(scalar @emitted_events, 1, 'one event emitted for the duplicated job');
+    is_deeply(
+        $emitted_events[0],
+        {type => 'job_restart', data => {id => 99982}},
+        'job_restart event with correct type and data'
+    );
 
     for my $job_id (99961, 99963) {
         my $job = $jobs->find(99963);
