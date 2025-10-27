@@ -65,6 +65,7 @@ perl-CSS-Minifier-XS-0.13
 perl-Data-Dump-1.23
 perl-Data-Dumper-Concise-2.023
 perl-Data-OptList-0.114
+perl-Data-Section-0.200008
 perl-DateTime-1.45
 perl-DateTime-Format-Builder-0.81
 perl-DateTime-Format-Pg-0.16014
@@ -200,6 +201,7 @@ perl-Scope-Guard-0.21
 perl-Selenium-Remote-Driver-1.49
 perl-Socket6-0.28
 perl-Socket-MsgHdr-0.05
+perl-Software-License-0.104007
 perl-Sort-Versions-1.62
 perl-Specio-0.42
 perl-Specio-Library-Path-Tiny-0.05
@@ -229,7 +231,7 @@ perl-Test-Differences-0.64
 perl-Test-Exception-0.430000
 perl-Test-Fatal-0.014
 perl-Test-LongString-0.17
-perl-Test-MockModule-0.178.0
+perl-Test-MockModule-0.179.0
 perl-Test-MockObject-1.20200122
 perl-Test-Most-0.35
 perl-Test-Output-1.034
@@ -239,6 +241,7 @@ perl-Test-Warnings-0.32.0
 perl-Text-Brew-0.02
 perl-Text-Diff-1.45
 perl-Text-Glob-0.11
+perl-Text-Template-1.61
 perl-TimeDate-2.30
 perl-Time-Duration-Parse-0.16
 perl-Time-modules-2013.0912
