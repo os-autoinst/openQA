@@ -76,8 +76,7 @@ subtest 'invoke Git commands for real testing error handling' => sub {
     subtest 'invoking Git command outside of a Git repo' => sub {
         stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
         qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged';
-        like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: (N|n)ot a git repository \(or any",
-          'Git error returned';
+        like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: Not a git repository"i, 'Git error returned';
         combined_like {
             throws_ok { $git->check_sha('this-sha-does-not-exist') } qr/internal Git error/i,
             'check throws an exception'
