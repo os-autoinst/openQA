@@ -222,7 +222,7 @@ sub start ($self) {
     # update settings received from web UI with worker-specific stuff
     my $worker = $self->worker;
     my $global_worker_settings = $worker->settings->global_settings;
-    # TIMEOUT_SCALE: apply the factors from both the job settings and the worker settings
+    # apply the time scale factors from both the job settings and the worker settings
     my $timeout_scale = $global_worker_settings->{TIMEOUT_SCALE} // 1;
     $timeout_scale *= $job_settings->{TIMEOUT_SCALE} // 1;
     @{$job_settings}{keys %$global_worker_settings} = values %$global_worker_settings;
