@@ -1244,11 +1244,9 @@ subtest 'image optimization' => sub {
     combined_like {
         is $opt->('foo', {OPTIMIZE_IMAGES => 0}), 0, 'image optimization can be skipped';
         throws_ok { $opt->('foo', {}) }
-        qr/(failed to execute optipng|optipng exited with non-zero return code)/,
-          'failing to run optipng is a hard error';
+        qr/(failed to execute optipng|optipng returned)/, 'failing to run optipng is a hard error';
         throws_ok { $opt->('foo', {USE_PNGQUANT => 1}) }
-        qr/(failed to execute pngquant|pngquant exited with non-zero return code)/,
-          'failing to run pngquant is a hard error';
+        qr/(failed to execute pngquant|pngquant returned)/, 'failing to run pngquant is a hard error';
         is $opt->('bar', {}, 'true'), 1, 'successful optimization';
     }
     qr/Optimizing foo.*Optimizing bar/s, 'optimizing logged';
