@@ -78,10 +78,8 @@ driver_missing unless my $driver = call_driver;
 disable_timeout;
 
 sub goto_next_previous_tab {
-    wait_for_element(
-        trigger_function => sub { $driver->find_element_by_link_text('Next & previous results')->click },
-        selector => '.dt-container'
-    );
+    my $tab_link = wait_for_element(selector => 'Next & previous results', method => 'link_text');
+    wait_for_element(trigger_function => sub { $tab_link->click }, selector => '.dt-container');
     wait_for_ajax(msg => 'Next & previous table ready');
 }
 
