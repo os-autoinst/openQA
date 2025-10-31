@@ -46,7 +46,6 @@ sub _allocate_jobs ($self, $free_workers) {
     my $limit = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs};
     if ($limit >= 0 && $running >= $limit) {
         log_debug("max_running_jobs ($limit) exceeded, scheduling no additional jobs");
-        $self->emit('conclude');
         return ({}, {});
     }
     my $max_allocate = $limit >= 0 ? min(MAX_JOB_ALLOCATION, $limit - $running) : MAX_JOB_ALLOCATION;
@@ -157,17 +156,12 @@ sub schedule ($self) {
     my $free_workers = determine_free_workers($self->shuffle_workers);
     my $worker_count = $schema->resultset('Workers')->count;
     my $free_worker_count = @$free_workers;
-    unless ($free_worker_count) {
-        $self->emit('conclude');
-        return [];
-    }
 
     my $scheduled_jobs = $self->determine_scheduled_jobs;
     log_debug(
         "Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: " . scalar(keys %$scheduled_jobs));
 
     my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($free_workers);
-    return [] unless keys %$allocated_workers;
 
     my @successfully_allocated;
 
