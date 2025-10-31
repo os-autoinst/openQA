@@ -186,7 +186,7 @@ subtest 'stacking of parallel children' => sub {
     element_not_present '.toggle-parallel-children', 'parallel parent has not toggle icon';
     $jobs->find(99961)->update({FLAVOR => 'DVD', TEST => 'some-parallel-parent'});
     $driver->refresh;
-    my $toggle_button = $driver->find_element('.toggle-parallel-children');
+    my $toggle_button = wait_for_element(selector => '.toggle-parallel-children');
     ok $toggle_button, 'toggle button present' or return;
     element_visible '#res-99963', undef, undef, 'parallel child expanded if parent in same table';
     element_visible '#res-99937', undef, undef, 'job from other architecture expanded as well';
@@ -228,7 +228,7 @@ subtest 'stacking of cyclic parallel jobs' => sub {
     $jobs->find(99963)->update({state => RUNNING, result => NONE});
     $driver->refresh;
     $cycle->delete;
-    my $toggle_button = $driver->find_element('.toggle-parallel-children');
+    my $toggle_button = wait_for_element(selector => '.toggle-parallel-children');
     ok $toggle_button, 'toggle button present despite cycle (first job takes role of parent)' or return;
     element_visible '#res-99961', undef, undef, 'all parallel jobs expanded (1)';
     element_visible '#res-99963', undef, undef, 'all parallel jobs expanded (2)';
