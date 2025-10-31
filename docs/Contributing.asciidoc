@@ -638,7 +638,7 @@ mkdir $OPENQA_BASEDIR/openqa $OPENQA_CONFIG $OPENQA_BASEDIR/perl5 $OPENQA_BASEDI
 
 git clone git@github.com:os-autoinst/openQA $OPENQA_REPOS/openQA
 git clone git@github.com:os-autoinst/os-autoinst $OPENQA_REPOS/os-autoinst
-git clone git@github.com:os-autoinst/scripts $OPENQA_REPOS/scripts
+git clone git@github.com:os-autoinst/os-autoinst-scripts $OPENQA_REPOS/scripts
 ----
 
 ==== Config Files
