@@ -654,9 +654,9 @@ hash for tests and/or needles (see
 for details) and a concrete worker host (see
 <<WritingTests.asciidoc#_assigning_jobs_to_workers,Assigning jobs to workers>>).
 The script
-https://github.com/os-autoinst/scripts/blob/master/README.md#openqa-investigate---automatic-investigation-jobs-with-failure-analysis-in-openqa[`openqa-investigate`] helps automating retries like this. It will also
+https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#openqa-investigate---automatic-investigation-jobs-with-failure-analysis-in-openqa[`openqa-investigate`] helps automating retries like this. It will also
 automatically create
-https://github.com/os-autoinst/scripts/blob/master/README.md#more-details-and-examples-about-openqa-investigate-comments[a comment]
+https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#more-details-and-examples-about-openqa-investigate-comments[a comment]
 with the findings.
 
 To improve reproducibility one should also avoid relying on any external
@@ -2333,7 +2333,7 @@ It is also possible to create a GitHub workflow that will clone and monitor an
 openQA job which is mentioned in the PR description or comment. The scripts
 repository contains a pre-defined GitHub action for this. Checkout the
 documentation of the
-https://github.com/os-autoinst/scripts/blob/master/openqa-clone-and-monitor-job-from-pr[openqa-clone-and-monitor-job-from-pr]
+https://github.com/os-autoinst/os-autoinst-scripts/blob/master/openqa-clone-and-monitor-job-from-pr[openqa-clone-and-monitor-job-from-pr]
 script for further information and an example configuration.
 
 NOTE: These examples show how API credentials are supplied. It is important to
