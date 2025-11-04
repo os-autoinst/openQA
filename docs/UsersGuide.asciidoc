@@ -1648,7 +1648,7 @@ and have a traceable documentation of the actions taken.
   different generated reports, e.g. all tests that need review, tests that are
   linked to closed bugs, etc.
 * Use
-  https://github.com/os-autoinst/scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger[auto-review]
+  https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger[auto-review]
   to handle flaky issues and even automatically retrigger according tests
 * In case of known sporadic issues that can not be fixed quickly consider
   automatic retries of jobs http://open.qa/docs/#_automatic_retries_of_jobs

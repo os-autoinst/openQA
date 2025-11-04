@@ -1206,7 +1206,7 @@ environment variables `OPENQA_JOB_DONE_HOOK_TIMEOUT` and
 `timeout` command is used (see `timeout --help`).
 
 For example there is already an approach called "auto-review"
-https://github.com/os-autoinst/scripts/#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger
+https://github.com/os-autoinst/os-autoinst-scripts/#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger
 which offers helpful, external scripts. Config settings for
 openqa.opensuse.org enabling the auto-review scripts could look like:
 
