@@ -40,12 +40,12 @@ my $app = OpenQA::App->singleton;
 $app->log->level('info');
 
 throws_ok {
-    OpenQA::Worker::WebUIConnection->new('http://test-host', {});
+    OpenQA::Worker::WebUIConnection->new('http://127.0.0.1:1', {});
 }
-qr{API key and secret are needed for the worker connecting http://test-host.*}, 'auth required';
+qr{API key and secret are needed for the worker connecting http://127\.0\.0\.1:1.*}, 'auth required';
 
 my $client = OpenQA::Worker::WebUIConnection->new(
-    'http://test-host',
+    'http://127.0.0.1:1',
     {
         apikey => 'foo',
         apisecret => 'bar'
@@ -71,8 +71,8 @@ $client->worker(OpenQA::Test::FakeWorker->new);
 $client->working_directory('t/');
 
 is($client->status, 'new', 'client in status new');
-throws_ok { $client->send('get', '.'); } qr{attempt to send command to web UI http://test-host with no worker ID.*},
-  'registration required';
+throws_ok { $client->send('get', '.'); }
+qr{attempt to send command to web UI http://127\.0\.0\.1:1 with no worker ID.*}, 'registration required';
 
 # mock OpenQA::Worker::Job so it starts/stops the livelog also if the backend isn't running
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
@@ -97,7 +97,7 @@ subtest 'attempt to register and send a command' => sub {
         is $client->status, 'disabled', 'client failed to register after validation error';
         push @expected_events, {status => 'registering', error_message => undef},
           {
-            error_message => 'Failed to register at http://test-host: host did not return a worker ID',
+            error_message => 'Failed to register at http://127.0.0.1:1: host did not return a worker ID',
             status => 'disabled'
           };
     };
@@ -143,7 +143,7 @@ subtest 'attempt to register and send a command' => sub {
     is($callback_invoked, 1, 'callback has been invoked');
     is($client->worker->stop_current_job_called,
         0, 'not attempted to stop current job because it is from different web UI');
-    $client->worker->current_webui_host('http://test-host');
+    $client->worker->current_webui_host('http://127.0.0.1:1');
     $callback_invoked = 0;
     combined_like {
         $client->send(
@@ -167,7 +167,7 @@ subtest 'attempt to register and send a command' => sub {
     subtest 'emitted events' => sub {
         my $error_message = ref($happened_events[1]) eq 'HASH' ? delete $happened_events[1]->{error_message} : undef;
         is_deeply \@happened_events, \@expected_events, 'expected events emitted';
-        like $error_message, qr{Failed to register at http://test-host - connection error:.*}, 'error message';
+        like $error_message, qr{Failed to register at http://127.0.0.1:1 - connection error:.*}, 'error message';
     } or always_explain \@happened_events;
 };
 
@@ -175,10 +175,10 @@ subtest 'attempt to setup websocket connection' => sub {
     my @expected_events = (
         {
             status => 'disabled',
-            error_message => 'Unable to establish ws connection to http://test-host without worker ID'
+            error_message => 'Unable to establish ws connection to http://127.0.0.1:1 without worker ID'
         },
         {status => 'establishing_ws', error_message => undef},
-        {status => 'failed', error_message => 'Unable to upgrade to ws connection via http://test-host/api/v1/ws/42'},
+        {status => 'failed', error_message => 'Unable to upgrade to ws connection via http://127.0.0.1:1/api/v1/ws/42'},
     );
     @happened_events = ();
 
@@ -193,7 +193,7 @@ subtest 'attempt to setup websocket connection' => sub {
     $client->once(status_changed => sub ($status, @) { Mojo::IOLoop->stop if $status eq 'failed' });
     Mojo::IOLoop->start;
     is_deeply \@happened_events, \@expected_events, 'events emitted' or always_explain \@happened_events;
-    is $client->last_error, 'Unable to upgrade to ws connection via http://test-host/api/v1/ws/42', 'last error set';
+    is $client->last_error, 'Unable to upgrade to ws connection via http://127.0.0.1:1/api/v1/ws/42', 'last error set';
 };
 
 subtest 'clearning errors' => sub {
@@ -430,9 +430,9 @@ subtest 'command handler' => sub {
 
     # test at least some of the error cases
     combined_like { $command_handler->handle_command(undef, {}) }
-    qr/Ignoring WS message without type from http:\/\/test-host.*/, 'ignoring non-result message without type';
+    qr/Ignoring WS message without type from http:\/\/127\.0\.0\.1:1.*/, 'ignoring non-result message without type';
     combined_like { $command_handler->handle_command(undef, {type => WORKER_COMMAND_LIVELOG_STOP, jobid => 1}) }
-qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID 1 \(currently not executing a job\).*/,
+qr/Ignoring WS message from http:\/\/127\.0\.0\.1:1 with type livelog_stop and job ID 1 \(currently not executing a job\).*/,
       'ignoring job-specific message when no job running';
     $worker->current_error('some error');
     $app->log->level('debug');
@@ -477,7 +477,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     }
     qr/Refusing to grab job from .* already busy with a job from foo/,
       'ignoring job grab when busy with another web UI';
-    $worker->current_webui_host('http://test-host');
+    $worker->current_webui_host('http://127.0.0.1:1');
     $worker->current_job(OpenQA::Worker::Job->new($worker, $client, {id => 43}));
     $worker->current_job_ids([43]);
     combined_like {
@@ -566,7 +566,8 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     # test incompatible (so far the worker stops when receiving this message; there are likely better ways to handle it)
     is($worker->is_stopping, 0, 'not already stopping');
     combined_like { $command_handler->handle_command(undef, {type => 'incompatible'}) }
-    qr/running a version incompatible with web UI host http:\/\/test-host and therefore stopped/, 'problem is logged';
+    qr/running a version incompatible with web UI host http:\/\/127\.0\.0\.1:1 and therefore stopped/,
+      'problem is logged';
     is($worker->is_stopping, 1, 'worker is stopping on incompatible message');
 
     $client->webui_host('foo');
@@ -647,7 +648,7 @@ subtest 'tear down' => sub {
 };
 
 subtest 'destruction' => sub {
-    my $client = OpenQA::Worker::WebUIConnection->new('http://test-host', {apikey => 'foo', apisecret => 'bar'});
+    my $client = OpenQA::Worker::WebUIConnection->new('http://127.0.0.1:1', {apikey => 'foo', apisecret => 'bar'});
     my @removed_timers;
     my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
     $io_loop_mock->redefine(remove => sub ($self, $id, @) { push @removed_timers, $id });
