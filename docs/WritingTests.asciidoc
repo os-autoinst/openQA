@@ -2330,11 +2330,31 @@ feature is explained in further detail in the corresponding
 <<UsersGuide.asciidoc#scenarios_yaml,users guide section>>.
 
 It is also possible to create a GitHub workflow that will clone and monitor an
-openQA job which is mentioned in the PR description or comment. The scripts
-repository contains a pre-defined GitHub action for this. Checkout the
-documentation of the
-https://github.com/os-autoinst/os-autoinst-scripts/blob/master/openqa-clone-and-monitor-job-from-pr[openqa-clone-and-monitor-job-from-pr]
-script for further information and an example configuration.
+openQA job which is mentioned in the PR description using https://github.com/os-autoinst/os-autoinst-scripts/blob/master/openqa-clone-and-monitor-job-from-pr[openqa-clone-and-monitor-job-from-pr] with something like this:
+
+----
+name: Schedule openQA tests mentioned via @openqa:
+on:
+  pull_request_target:
+  workflow_dispatch:
+env:
+  OPENQA_HOST: ${{ secrets.OPENQA_URL }}
+  OPENQA_API_KEY: ${{ secrets.OPENQA_API_KEY }}
+  OPENQA_API_SECRET: ${{ secrets.OPENQA_API_SECRET }}
+  GH_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+  GH_REF: ${{ github.event.pull_request.head.ref }}
+  GH_PR_BODY: ${{ github.event.pull_request.body }}
+jobs:
+  clone_and_monitor_job_from_pr:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.opensuse.org/devel/openqa/containers/tumbleweed:client
+    steps:
+      - uses: os-autoinst/os-autoinst-scripts/actions/clone-job@master
+----
+
+In this example the body of the PR is passed via `GH_PR_BODY`. Comments can also
+be provided but this requires use of the GitHub API via the comments endpoint.
 
 NOTE: These examples show how API credentials are supplied. It is important to
 note that using `on:pull_request` would only work for PRs created on the main
