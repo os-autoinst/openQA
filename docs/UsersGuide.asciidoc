@@ -1499,6 +1499,17 @@ directory once they reach the expiration for regular job logs. This
 happens as part of the normal cleanup. In the web UI an icon indicates that
 a job was archived.
 
+This means a job is "in the archive" if:
+
+1. it is important.
+2. its age is between the retention of regular jobs and important jobs.
+3. thresholds for space-aware cleanup do not prevent the cleanup of job results
+   from happening at all (because if the cleanup is skipped, also archiving is
+   skipped).
+
+NOTE: Archiving does *not* prevent cleanup. If an archived important job exceeds
+the retention for important jobs it is still subject to cleanup.
+
 [id="asset_cleanup"]
 === Cleanup strategy for assets ===
 
