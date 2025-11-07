@@ -6860,6 +6860,37 @@ directory once they reach the expiration for regular job logs. This
 happens as part of the normal cleanup. In the web UI an icon indicates that
 a job was archived.</p>
 </div>
+<div class="paragraph">
+<p>This means a job is "in the archive" if:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>it is important.</p>
+</li>
+<li>
+<p>its age is between the retention of regular jobs and important jobs.</p>
+</li>
+<li>
+<p>thresholds for space-aware cleanup do not prevent the cleanup of job results
+from happening at all (because if the cleanup is skipped, also archiving is
+skipped).</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Archiving does <strong>not</strong> prevent cleanup. If an archived important job exceeds
+the retention for important jobs it is still subject to cleanup.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="asset_cleanup"><a class="anchor" href="#asset_cleanup"></a><a class="link" href="#asset_cleanup">32.2. Cleanup strategy for assets</a></h3>
@@ -14433,7 +14464,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-11-05 04:44:25 UTC
+Last updated 2025-11-07 04:44:20 UTC
 </div>
 </div>
 </body>
