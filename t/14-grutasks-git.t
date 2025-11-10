@@ -89,7 +89,7 @@ subtest 'git clone' => sub {
             elsif ($action eq 'branch') {
                 $stdout = 'master';
             }
-            elsif ($action eq 'diff-index') {
+            elsif ($action eq 'diff') {
                 $return_code = 1 if $path =~ m/dirty-status/;
                 $return_code = 2 if $path =~ m/dirty-error/;
             }
@@ -126,19 +126,19 @@ subtest 'git clone' => sub {
         # /sha2
         ['get-url'        => 'git -C /sha2 remote get-url origin'],
         ['rev-parse'      => 'git -C /sha2 rev-parse --verify -q def'],
-        ['check dirty'    => 'git -C /sha2 diff-index HEAD --exit-code'],
+        ['check dirty'    => 'git -C /sha2 diff --exit-code --stat'],
         ['current branch' => 'git -C /sha2 branch --show-current'],
         ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /sha2 fetch origin def"],
 
         # /branch
         ['get-url'        => 'git -C /branch/ remote get-url origin'],
-        ['check dirty'    => 'git -C /branch/ diff-index HEAD --exit-code'],
+        ['check dirty'    => 'git -C /branch/ diff --exit-code --stat'],
         ['current branch' => 'git -C /branch/ branch --show-current'],
         ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /branch/ fetch origin foobranch"],
 
         # /default/
         ['get-url'        => 'git -C /default/ remote get-url origin'],
-        ['check dirty'    => 'git -C /default/ diff-index HEAD --exit-code'],
+        ['check dirty'    => 'git -C /default/ diff --exit-code --stat'],
         ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git ls-remote --symref http://localhost/foo.git HEAD"],
         ['current branch' => 'git -C /default/ branch --show-current'],
         ['fetch default'  => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /default/ fetch origin master"],
@@ -147,7 +147,7 @@ subtest 'git clone' => sub {
         # /sha-branchname
         ['get-url'        => 'git -C /sha-branchname remote get-url origin'],
         ['rev-parse'      => 'git -C /sha-branchname rev-parse --verify -q a123'],
-        ['check dirty'    => 'git -C /sha-branchname diff-index HEAD --exit-code'],
+        ['check dirty'    => 'git -C /sha-branchname diff --exit-code --stat'],
         ['current branch' => 'git -C /sha-branchname branch --show-current'],
         ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /sha-branchname fetch origin a123"],
 
@@ -190,7 +190,7 @@ subtest 'git clone' => sub {
     subtest 'dirty git checkout' => sub {
         %$clone_dirs = ("$git_clones/dirty-status" => 'http://localhost/foo.git');
         stderr_like { $res = run_gru_job(@gru_args) }
-        qr(git diff-index HEAD), 'error about diff on stderr';
+        qr(git diff --exit-code --stat), 'error about diff on stderr';
         is $res->{state}, 'failed', 'minion job failed';
         like $res->{result}, qr/NOT updating dirty Git checkout.*can disable.*details/s, 'error message';
     };
@@ -228,7 +228,7 @@ subtest 'git clone' => sub {
         my $expected_calls = [
             # /opensuse
             ['get-url'        => 'git -C /opensuse remote get-url origin'],
-            ['check dirty'    => 'git -C /opensuse diff-index HEAD --exit-code'],
+            ['check dirty'    => 'git -C /opensuse diff --exit-code --stat'],
             ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
             ['current branch' => 'git -C /opensuse branch --show-current'],
             ['fetch default ' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /opensuse fetch origin master"],
@@ -236,7 +236,7 @@ subtest 'git clone' => sub {
 
             # /opensuse/needles
             ['get-url'        => 'git -C /opensuse/needles remote get-url origin'],
-            ['check dirty'    => 'git -C /opensuse/needles diff-index HEAD --exit-code'],
+            ['check dirty'    => 'git -C /opensuse/needles diff --exit-code --stat'],
             ['default remote' => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git ls-remote --symref http://osado HEAD"],
             ['current branch' => 'git -C /opensuse/needles branch --show-current'],
             ['fetch branch'   => "env 'GIT_SSH_COMMAND=ssh -oBatchMode=yes' GIT_ASKPASS= GIT_TERMINAL_PROMPT=false git -C /opensuse/needles fetch origin master"],
