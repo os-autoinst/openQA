@@ -171,7 +171,7 @@ sub reset_hard ($self, $branch) {
 }
 
 sub is_workdir_clean ($self) {
-    my $r = $self->_run_cmd(['diff-index', 'HEAD', '--exit-code'], \%CHECK_OPTIONS);
+    my $r = $self->_run_cmd(['diff', '--exit-code', '--stat'], \%CHECK_OPTIONS);
     die $self->_format_git_error($r, 'Internal Git error: Unexpected exit code ' . $r->{return_code})
       if $r->{return_code} > 1;
     return $r->{status};
