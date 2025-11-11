@@ -176,7 +176,7 @@ jobs:
       - restore_cache: *restore_npm_cache
       - run:
           name: "Install npm dependencies"
-          command: npm install
+          command: npm clean-install --ignore-scripts
       - save_cache: *save_npm_cache
 
   checkstyle: &test-template
