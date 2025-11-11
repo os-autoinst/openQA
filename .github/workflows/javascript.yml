@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - name: npm install
-        run: npm i
+      - name: npm clean-install
+        run: npm clean-install --ignore-scripts
       - name: npm run lint
         run: npm run lint
