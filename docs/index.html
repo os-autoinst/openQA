@@ -12659,10 +12659,11 @@ development after you setup a PostgreSQL database as mentioned in the previous
 section.</p>
 </div>
 <div class="paragraph">
-<p>You have to install/update web-related dependencies first using <code>npm install --ignore-scripts</code>.
-To start the webserver for development, use <code>scripts/openqa daemon</code>. The other
-daemons (mentioned in the <a href="images/architecture.svg">architecture diagram</a>)
-are started in the same way, e.g. <code>script/openqa-scheduler daemon</code>.</p>
+<p>You have to install/update web-related dependencies first using
+<code>npm clean-install --ignore-scripts</code>. To start the webserver for development,
+use <code>scripts/openqa daemon</code>. The other daemons (mentioned in the
+<a href="images/architecture.svg">architecture diagram</a>) are started in the same way,
+e.g. <code>script/openqa-scheduler daemon</code>.</p>
 </div>
 <div class="paragraph">
 <p>You can also have a look at the systemd unit files. Although it likely makes
@@ -13734,7 +13735,7 @@ easily via <code>npm</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>npm<span class="tok-w"> </span>install<span class="tok-w"> </span>jshint
+<pre class="pygments highlight"><code data-lang="sh"><span></span>npm<span class="tok-w"> </span>install<span class="tok-w"> </span>--no-save<span class="tok-w"> </span>--ignore-scripts<span class="tok-w"> </span>jshint
 node_modules/jshint/bin/jshint<span class="tok-w"> </span>path/to/javascript.js</code></pre>
 </div>
 </div>
@@ -14464,7 +14465,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-11-07 04:44:20 UTC
+Last updated 2025-11-12 04:44:17 UTC
 </div>
 </div>
 </body>
