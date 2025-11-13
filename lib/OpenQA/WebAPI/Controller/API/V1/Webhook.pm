@@ -144,7 +144,7 @@ sub product ($self) {
 
     # create scheduled product and enqueue minion job with parameter
     my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user, $webhook_id);
-    my $vcs = OpenQA::VcsProvider->new(app => $app);
+    my $vcs = OpenQA::VcsProvider->new(type => $webhook_id, app => $app);
     my $cb = sub ($ua, $tx, @) {
         if (my $err = $tx->error) {
             $scheduled_product->delete;
@@ -153,7 +153,9 @@ sub product ($self) {
         return $self->render(json => $scheduled_product->enqueue_minion_job(\%params));
     };
     $scheduled_product->discard_changes;    # load value of columns that have a default value
-    my $tx = $vcs->report_status_to_github($statuses_url, {state => 'pending'}, $scheduled_product->id, $base_url, $cb);
+    $vcs->statuses_url($statuses_url);
+    $vcs->base_url($base_url);
+    my $tx = $vcs->report_status_to_git({state => 'pending'}, $scheduled_product->id, $cb);
 }
 
 1;
