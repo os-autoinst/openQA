@@ -180,7 +180,6 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     }
 
     my $max_jobs = 0;
-    my $now = DateTime->now;
     my $newest = ($buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB || $buildver_sort_mode == BUILD_SORT_BY_NAME) ? 0 : 1;
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
