@@ -19,6 +19,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
+use Test::Output;
 use Test::Warnings qw(:report_warnings warning);
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json encode_json);
@@ -899,7 +900,8 @@ subtest 'job setting based retriggering' => sub {
     my $finalize_job_count_before = @{$get_jobs->('finalize_job_results')};
     $job->update({state => SCHEDULED, result => NONE});
     $job->done(result => FAILED);
-    perform_minion_jobs($minion);
+    stdout_like { perform_minion_jobs($minion) } qr/Job \d+ duplicated as \d+/,
+      'check debug message from auto_duplicate';
     is $jobs->count, $jobs_nr + 2, 'job retriggered as it FAILED (with retry)';
     $job->update;
     $job->discard_changes;
@@ -929,6 +931,32 @@ subtest 'job setting based retriggering' => sub {
     is $lastest_job->clone_id, undef, 'no clone exists for last retry';
     is $first_job->latest_job->id, $lastest_job->id, 'found the latest job from the first job';
     is $lastest_job->latest_job->id, $lastest_job->id, 'found the latest job from latest job itself';
+};
+
+subtest 'AMQP event emission for minion restarts' => sub {
+    my $events_module = Test::MockModule->new('OpenQA::Events');
+    my @emitted_events;
+    $events_module->redefine(
+        emit_event => sub ($self, $event_type, %args) {
+            push @emitted_events, {type => $event_type, data => $args{data}};
+            $events_module->original('emit_event')->($self, $event_type, %args);
+        });
+
+    my $minion = $t->app->minion;
+    my %_settings = %settings;
+    $_settings{TEST} = 'test_restart';
+    $_settings{RETRY} = '1';
+    my $job = _job_create(\%_settings);
+    my $job_id = $job->id;
+
+    @emitted_events = ();
+    $job->done(result => FAILED);
+    stdout_like { perform_minion_jobs($minion) } qr/Job \d+ duplicated as \d+/;
+    my @restart_events = grep { $_->{type} eq 'openqa_job_restart' } @emitted_events;
+    is scalar(@restart_events), 1, 'exactly one job restart event emitted';
+    my $event_data = $restart_events[0]->{data};
+    is $event_data->{id}, $job_id, 'event contains original job ID';
+    ok exists($event_data->{result}), 'event contains result';
 };
 
 subtest '"race" between status updates and stale job detection' => sub {
