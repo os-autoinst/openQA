@@ -180,7 +180,6 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     }
 
     my $max_jobs = 0;
-    my $now = DateTime->now;
     my $newest = ($buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB || $buildver_sort_mode == BUILD_SORT_BY_NAME) ? 0 : 1;
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
@@ -210,6 +209,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
             my $key = $_->TEST . '-' . $_->ARCH . '-' . $_->FLAVOR . '-' . ($_->MACHINE // '');
             $seen{$key}++ ? () : $_;
         } $jobs->all;
+        next unless @jobs;
         my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
         for my $job (@jobs) {
             $jr{distris}->{$job->DISTRI} = 1;
