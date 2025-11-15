@@ -1,5 +1,5 @@
 enabled: true
-baseUrl: openqa.host
+baseUrl: openqa.example.com
 useHttps: false
 key: 1234567890ABCDEF
 secret: 1234567890ABCDEF
@@ -7,6 +7,9 @@ image:
   name: registry.opensuse.org/devel/openqa/containers15.6/openqa_webui
   pullPolicy: Always
   tag: "latest"
+ingress:
+  enabled: true
+  className: "nginx"
 postgresql:
   enabled: true
   fullnameOverride: db
