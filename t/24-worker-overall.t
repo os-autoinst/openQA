@@ -987,5 +987,9 @@ subtest 'worker ipmi' => sub {
       'ipmitool called correctly';
 };
 
+subtest 'worker token generation' => sub {
+    is OpenQA::Worker::encode_token('my_host@123456@789ABC'), 'owqt-', 'can generate token';
+};
+
 
 done_testing();
