@@ -23,7 +23,7 @@ sub dashboard_build_results ($self) {
     $validation->optional('group');
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
 
-    my $limit_builds = $validation->param('limit_builds') // 3;
+    my $limit_builds = $validation->param('limit_builds') // $self->app->config->{global}->{frontpage_builds};
     my $time_limit_days = $validation->param('time_limit_days') // 14;
     my $only_tagged = $validation->param('only_tagged') // 0;
     my $default_expanded = $validation->param('default_expanded') // 0;
