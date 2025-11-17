@@ -120,6 +120,10 @@ configured in the repositories to encourage contributors to raise the tests
 coverage with every commit and pull request. New features and bug fixes are
 expected to be backed with the corresponding tests.
 
+For an architecture overview the AI generated openQA deepwiki can provide a good overview
+about the complete project but without a guarantee for correctness:
+https://deepwiki.com/os-autoinst/openQA
+
 == Technologies
 [id="technologies"]
 
