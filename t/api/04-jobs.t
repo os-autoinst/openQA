@@ -1002,6 +1002,25 @@ subtest 'priority correctly assigned when posting job' => sub {
     $t->json_is('/job/group', 'opensuse', 'group assigned (1)');
     $t->json_is('/job/priority', 50, 'global default priority assigned');
 
+    subtest 'priority malus due to high MAX_JOB_TIME' => sub {
+        my $max = 7300;
+        local $jobs_post_params{MAX_JOB_TIME} = $max;
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $max / 100, 'increased prio value');
+        my $limits = OpenQA::App->singleton->config->{misc_limits};
+
+        $limits->{max_job_time_prio_scale} = 10;
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $max / 10, 'custom scale value: increased prio value');
+
+        $limits->{max_job_time_prio_scale} = 0;
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50, 'feature disabled: prio value unchanged');
+    };
+
     # post new job in job group with customized default priority
     $schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
     $jobs_post_params{_GROUP} = 'opensuse test';

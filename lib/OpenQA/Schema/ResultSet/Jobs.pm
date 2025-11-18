@@ -11,6 +11,7 @@ use File::Basename 'basename';
 use IPC::Run;
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME);
 use OpenQA::Log qw(log_trace log_debug log_info);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
@@ -22,6 +23,7 @@ use Mojolicious::Validator;
 use Mojolicious::Validator::Validation;
 use Time::HiRes 'time';
 use DateTime;
+use Scalar::Util qw(looks_like_number);
 
 =head2 latest_build
 
@@ -189,6 +191,11 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
 
     # assign scheduled product
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
+
+    if (looks_like_number($settings{MAX_JOB_TIME}) and $settings{MAX_JOB_TIME} > DEFAULT_MAX_JOB_TIME) {
+        my $scale = OpenQA::App->singleton->config->{misc_limits}->{max_job_time_prio_scale};
+        $new_job_args{priority} += int($settings{MAX_JOB_TIME} / $scale) if $scale;
+    }
 
     my $job = $self->create(\%new_job_args);
 
