@@ -487,8 +487,9 @@ subtest 'filtering by machine' => sub {
         element_not_present("#$_") for qw(flavor_DVD_arch_i586 flavor_GNOME-Live_arch_i686 flavor_NET_arch_x86_64);
         is element_prop('filter-machine'), 'uefi', 'machine filter still visible in form';
 
-        my @job_rows = map { $_->get_text } @{$driver->find_elements('#content tbody tr')};
-        is_deeply \@job_rows, ['kde@uefi'], 'only the job with machine uefi is shown' or always_explain \@job_rows;
+        my $get_job_ids = qq|return Array.from(document.querySelectorAll('span[id^="res-"]')).map(e => e.id.substr(4))|;
+        my $job_ids = $driver->execute_script($get_job_ids);
+        is_deeply $job_ids, ['99982'], 'only the job with machine uefi is shown' or always_explain $job_ids;
 
         $driver->find_element('#filter-panel .card-header')->click();
         $driver->find_element('#filter-machine')->clear();

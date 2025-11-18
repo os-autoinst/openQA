@@ -278,7 +278,8 @@ subtest 'job overview' => sub {
     subtest 'limit parameter' => sub {
         $query->query(build => '0048', limit => 1);
         $t->get_ok($query->path_query)->status_is(200);
-        is(scalar(@{$t->tx->res->json}), 1, 'Expect only one job entry');
+        my $json = $t->tx->res->json;
+        is scalar @$json, 1, 'Expect only one job entry' or always_explain $json;
         $t->json_is('/0/id' => 99939, 'Check correct order');
     };
 };

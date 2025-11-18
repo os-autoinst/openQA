@@ -226,29 +226,15 @@ So this works in the same way as the test results overview in the GUI.
 sub overview ($self) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $failed_modules = $self->param_hash('failed_modules');
-    my $states = $self->param_hash('state');
-    my $results = $self->param_hash('result');
-    my $archs = $self->param_hash('arch');
-    my $machines = $self->param_hash('machine');
-
-    my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
+    my $jobs_rs = $self->schema->resultset('Jobs');
+    my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);
+    my @jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $search_args->{limit})->all;
 
     my @job_hashes;
     for my $job (@jobs) {
-        next if $states && !$states->{$job->state};
-        next if $results && !$results->{$job->result};
-        next if $archs && !$archs->{$job->ARCH};
-        next if $machines && !$machines->{$job->MACHINE};
-        if ($failed_modules) {
-            next if $job->result ne OpenQA::Jobs::Constants::FAILED;
-            next unless OpenQA::Utils::any_array_item_contained_by_hash($job->failed_modules, $failed_modules);
-        }
-        push(
-            @job_hashes,
-            {
-                id => $job->id,
-                name => $job->name,
-            });
+        next
+          if $failed_modules && !OpenQA::Utils::any_array_item_contained_by_hash($job->failed_modules, $failed_modules);
+        push @job_hashes, {id => $job->id, name => $job->name};
     }
     $self->render(json => \@job_hashes);
 }

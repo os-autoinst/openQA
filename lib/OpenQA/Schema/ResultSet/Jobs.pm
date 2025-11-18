@@ -353,16 +353,53 @@ sub _prepare_complex_query_search_args ($self, $args) {
     return (\@conds, \%attrs);
 }
 
-sub complex_query ($self, %args) {
-    # For args where we accept a list of values, allow passing either an
-    # array ref or a comma-separated list
+sub _accept_comma_separated_arg_values ($args) {
     for my $arg (qw(state ids result modules modules_result)) {
-        next unless $args{$arg};
-        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
+        next unless my $value = $args->{$arg};
+        $args->{$arg} = [split ',', $value] unless ref $value eq 'ARRAY';
     }
+}
+
+sub complex_query ($self, %args) {
+    _accept_comma_separated_arg_values(\%args);
     my ($conds, $attrs) = $self->_prepare_complex_query_search_args(\%args);
-    my $jobs = $self->search({-and => $conds}, $attrs);
-    return $jobs;
+    return $self->search({-and => $conds}, $attrs);
+}
+
+sub complex_query_latest_ids ($self, %args) {
+    # prepare basic search conditions and attributes
+    _accept_comma_separated_arg_values(\%args);
+    my ($conds, $attrs) = $self->_prepare_complex_query_search_args(\%args);
+    my $filters = $args{filters};
+    my $has_filters = $filters && @$filters > 0;
+    my $rows = $has_filters ? delete $attrs->{rows} : undef;  # when filtering, limit rows only in outer/filtering query
+    if (my $until = $args{until}) { push @$conds, {'me.t_created' => {'<=' => $until}} }
+
+    # set attributes to return only the latest job IDs for a certain combination of TEST, DISTRI, VERSION, …
+    $attrs->{order_by} = \['max(me.id) DESC'];
+    $attrs->{select} = ['max(me.id)'];
+    $attrs->{as} = ['id'];
+    $attrs->{group_by} = [qw(TEST DISTRI VERSION BUILD FLAVOR ARCH MACHINE)];
+
+    # execute the search; use a sub query if filtering is enabled
+    my $search = $self->search({-and => $conds}, $attrs);
+    if ($has_filters) {
+        # add another layer of querying for filters
+        # note: The filtering cannot be applied in the same query we do the grouping to return only the latest job IDs.
+        #       Otherwise adding filter parameters would lead to old jobs showing up. That is not wanted (and we have
+        #       therefore the test "filtering does not reveal old jobs" in `10-tests_overview.t` to test this).
+        my %filter_attrs = %$attrs;
+        $filter_attrs{rows} = $rows;
+        push @$filters, {'me.id' => {-in => $search->as_query}};
+        $search = $self->search({-and => $filters}, \%filter_attrs);
+    }
+    return [map { $_->id } $search->all];
+}
+
+sub latest_jobs_from_ids ($self, $latest_job_ids, $limit_from_initial_search) {
+    my %search_args = (id => {-in => $latest_job_ids});
+    my %options = (order_by => {-desc => 'id'}, rows => $limit_from_initial_search - 1);
+    return $self->search(\%search_args, \%options);
 }
 
 sub cancel_by_settings (
