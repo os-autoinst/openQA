@@ -116,10 +116,6 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my %settings = %$settings;
     my %new_job_args;
 
-    my $result_source = $self->result_source;
-    my $schema = $result_source->schema;
-    my $job_settings = $schema->resultset('JobSettings');
-
     my @invalid_keys = grep { $_ =~ /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
       keys %settings;
     die 'The ' . join(',', @invalid_keys) . " cannot include / in value\n" if @invalid_keys;
@@ -142,38 +138,7 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
         $new_job_args{priority} //= $group->default_priority;
     }
 
-    # handle dependencies
-    # note: The subsequent code only allows adding existing jobs as parents. Hence it is not
-    #       possible to create cyclic dependencies here.
-    my @dependency_definitions = (
-        {
-            setting_name => '_START_AFTER_JOBS',
-            dependency_type => OpenQA::JobDependencies::Constants::CHAINED,
-        },
-        {
-            setting_name => '_START_DIRECTLY_AFTER_JOBS',
-            dependency_type => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
-        },
-        {
-            setting_name => '_PARALLEL_JOBS',
-            dependency_type => OpenQA::JobDependencies::Constants::PARALLEL,
-        },
-    );
-    for my $dependency_definition (@dependency_definitions) {
-        next unless my $ids = delete $settings{$dependency_definition->{setting_name}};
-
-        # support array ref or comma separated values
-        $ids = [split(/\s*,\s*/, $ids)] if (ref($ids) ne 'ARRAY');
-
-        my $dependency_type = $dependency_definition->{dependency_type};
-        for my $id (@$ids) {
-            if ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-                my $parent_worker_classes = join(',', @{$job_settings->all_values_sorted($id, 'WORKER_CLASS')});
-                _handle_directly_chained_dep($parent_worker_classes, $id, \%settings);
-            }
-            push(@{$new_job_args{parents}}, {parent_job_id => $id, dependency => $dependency_type});
-        }
-    }
+    $self->_handle_dependency_settings(\%settings, \%new_job_args);
 
     for my $key (keys %settings) {
         my $value = $settings{$key};
@@ -215,6 +180,42 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
       if keys %$group_args && !$group;
     $job->calculate_blocked_by;
     return $job;
+}
+
+sub _handle_dependency_settings ($self, $settings, $new_job_args) {
+    my $job_settings = $self->result_source->schema->resultset('JobSettings');
+    # handle dependencies
+    # note: The subsequent code only allows adding existing jobs as parents. Hence it is not
+    #       possible to create cyclic dependencies here.
+    my @dependency_definitions = (
+        {
+            setting_name => '_START_AFTER_JOBS',
+            dependency_type => OpenQA::JobDependencies::Constants::CHAINED,
+        },
+        {
+            setting_name => '_START_DIRECTLY_AFTER_JOBS',
+            dependency_type => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
+        },
+        {
+            setting_name => '_PARALLEL_JOBS',
+            dependency_type => OpenQA::JobDependencies::Constants::PARALLEL,
+        },
+    );
+    for my $dependency_definition (@dependency_definitions) {
+        next unless my $ids = delete $settings->{$dependency_definition->{setting_name}};
+
+        # support array ref or comma separated values
+        $ids = [split /\s*,\s*/, $ids] if ref $ids ne 'ARRAY';
+
+        my $dependency_type = $dependency_definition->{dependency_type};
+        for my $id (@$ids) {
+            if ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
+                my $parent_worker_classes = join(',', @{$job_settings->all_values_sorted($id, 'WORKER_CLASS')});
+                _handle_directly_chained_dep($parent_worker_classes, $id, $settings);
+            }
+            push @{$new_job_args->{parents}}, {parent_job_id => $id, dependency => $dependency_type};
+        }
+    }
 }
 
 sub _handle_directly_chained_dep ($parent_classes, $id, $settings) {
