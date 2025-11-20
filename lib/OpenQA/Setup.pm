@@ -96,6 +96,7 @@ sub read_config ($app) {
             service_port_delta => $ENV{OPENQA_SERVICE_PORT_DELTA} // 2,
             access_control_allow_origin_header => undef,
             api_hmac_time_tolerance => 300,
+            frontpage_builds => 3,
         },
         rate_limits => {
             search => 5,

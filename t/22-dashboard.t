@@ -147,12 +147,21 @@ is_deeply(\@h4, [qw(Build87.5011 Build0048@0815 Build0048)], 'builds on parent-l
 @h4 = $t->tx->res->dom->find('div.collapse .h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse', 'opensuse'], 'opensuse now shown as child group (for each build)');
 
-# check build limit
+# check config file build limit
+my $ogfpb = $t->app->config->{global}->{frontpage_builds};
+$t->app->config->{global}->{frontpage_builds} = 1;
+$t->get_ok('/dashboard_build_results')->status_is(200);
+@h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
+is_deeply(\@h4, [qw(Build87.5011)], 'single build on parent-level shown (limit builds via config)');
+
+# check query param build limit works and overrides config file limit
 $t->get_ok('/dashboard_build_results?limit_builds=2')->status_is(200);
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
 is_deeply(\@h4, [qw(Build87.5011 Build0048@0815)], 'builds on parent-level shown (limit builds)');
 @h4 = $t->tx->res->dom->find('div.collapse .h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (limit builds)');
+
+$t->app->config->{global}->{frontpage_builds} = $ogfpb;
 
 # also add opensuse test to parent to actually check the grouping
 my $opensuse_test_group = $job_groups->find({name => 'opensuse test'});
