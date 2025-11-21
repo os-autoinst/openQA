@@ -10,7 +10,8 @@ use Mojo::Base 'DBIx::Class::ResultSet';
 sub job_groups_and_parents {
     my $self = shift;
 
-    my @parents = $self->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
+    my $params = {order_by => [{-asc => 'me.sort_order'}, {-asc => 'me.name'}], prefetch => 'children'};
+    my @parents = $self->search({}, $params)->all;
     my $schema = $self->result_source->schema;
     my @groups_without_parent = $schema->resultset('JobGroups')
       ->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
