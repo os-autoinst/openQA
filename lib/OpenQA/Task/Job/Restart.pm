@@ -18,9 +18,8 @@ sub restart_delay { $ENV{OPENQA_JOB_RESTART_DELAY} // 5 }
 sub restart_openqa_job ($minion_job, $openqa_job) {
     my $cloned_job_or_error = $openqa_job->auto_duplicate;
     my $is_ok = ref $cloned_job_or_error || $cloned_job_or_error =~ qr/(already.*clone|direct parent)/i;
-    if ($is_ok) {
-        my $openqa_job_id = $openqa_job->id;
-        my %event_data = (id => $openqa_job_id, result => $cloned_job_or_error, auto => 1);
+    if (ref $cloned_job_or_error) {
+        my %event_data = (id => $openqa_job->id, result => $cloned_job_or_error->{cluster_cloned}, auto => 1);
         OpenQA::Events->singleton->emit_event('openqa_job_restart', data => \%event_data);
     }
 
@@ -64,12 +63,8 @@ sub _init_amqp_plugin ($app) {
 
 sub _wait_for_event_publish ($app) {
     return undef unless $app->config->{amqp}->{enabled};
-    OpenQA::Events->singleton->once(
-        'amqp_handled',
-        sub {
-            Mojo::IOLoop->singleton->stop;
-        });
-    Mojo::IOLoop->singleton->start;
+    OpenQA::Events->singleton->once(amqp_handled => sub { Mojo::IOLoop->stop });
+    Mojo::IOLoop->start;
 }
 
 1;

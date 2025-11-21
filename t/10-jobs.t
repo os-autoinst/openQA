@@ -21,9 +21,9 @@ use Test::MockModule 'strict';
 use Test::Mojo;
 use Test::Output;
 use Test::Warnings qw(:report_warnings warning);
-use Mojo::File 'path';
+use Mojo::File qw(path tempdir);
 use Mojo::JSON qw(decode_json encode_json);
-use OpenQA::Test::Utils qw(perform_minion_jobs);
+use OpenQA::Test::Utils qw(perform_minion_jobs mock_io_loop);
 use OpenQA::Test::TimeLimit '30';
 
 binmode(STDOUT, ':encoding(UTF-8)');
@@ -933,30 +933,56 @@ subtest 'job setting based retriggering' => sub {
     is $lastest_job->latest_job->id, $lastest_job->id, 'found the latest job from latest job itself';
 };
 
-subtest 'AMQP event emission for minion restarts' => sub {
-    my $events_module = Test::MockModule->new('OpenQA::Events');
-    my @emitted_events;
-    $events_module->redefine(
-        emit_event => sub ($self, $event_type, %args) {
-            push @emitted_events, {type => $event_type, data => $args{data}};
-            $events_module->original('emit_event')->($self, $event_type, %args);
+subtest 'AMQP event emission for job restarts within Minion tasks' => sub {
+    my $plugin_mock = Test::MockModule->new('OpenQA::WebAPI::Plugin::AMQP');
+    my $conf = "[global]\nplugins=AMQP\n[amqp]\npublish_attempts = 2\npublish_retry_delay = 0\n";
+    my $tempdir = tempdir;
+    path($ENV{OPENQA_CONFIG} = $tempdir)->make_path->child('openqa.ini')->spew($conf);
+    my %published;
+    my @event_body;
+    my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
+    $io_loop_mock->redefine(start => sub { });
+    $plugin_mock->redefine(
+        publish_amqp => sub ($self, $topic, $data) {
+            $published{$topic} = $data;
+            Mojo::IOLoop->next_tick(sub { OpenQA::Events->singleton->emit('amqp_handled'); });
         });
 
+    my $events_mock = Test::MockModule->new('OpenQA::Events');
+    $events_mock->redefine(
+        emit => sub ($self, $type, $args) {
+            if ($type eq 'openqa_job_restart') {
+                @event_body = ($type, $args);
+            }
+            $events_mock->original('emit')->($self, $type, $args);
+        });
+    # use a new app; otherwise it runs slowly, maybe trying to run none-mocked stuff
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
     my $minion = $t->app->minion;
-    my %_settings = %settings;
-    $_settings{TEST} = 'test_restart';
-    $_settings{RETRY} = '1';
-    my $job = _job_create(\%_settings);
+    is $t->app->config->{amqp}->{enabled}, 1, 'AMQP enabled from config file';
+
+    my %retry_settings = %settings;
+    $retry_settings{TEST} = 'test_amqp_restart';
+    $retry_settings{RETRY} = '1';
+    my $job = $jobs->create_from_settings(\%retry_settings);
+    $job->discard_changes;
     my $job_id = $job->id;
 
-    @emitted_events = ();
+    %published = ();
     $job->done(result => FAILED);
     stdout_like { perform_minion_jobs($minion) } qr/Job \d+ duplicated as \d+/;
-    my @restart_events = grep { $_->{type} eq 'openqa_job_restart' } @emitted_events;
-    is scalar(@restart_events), 1, 'exactly one job restart event emitted';
-    my $event_data = $restart_events[0]->{data};
-    is $event_data->{id}, $job_id, 'event contains original job ID';
-    ok exists($event_data->{result}), 'event contains result';
+    is scalar keys %published, 1, 'exactly one job restart event emitted';
+    my $event = $published{'suse.openqa.job.restart'};
+    is $event->{id}, $job_id, 'event contains original job ID';
+    is $event->{auto}, 1, 'event marked as auto restart';
+    my ($user_id, $connection, $type, $data) = @{$event_body[1]};
+    is $user_id, undef, 'user_id is undef for Minion restart';
+    is $connection, undef, 'connection is undef for Minion restart';
+    is $type, 'openqa_job_restart', 'type matches event type';
+    is_deeply $data, $event, 'published event equals emitted event';
+    ok exists $data->{result}->{$job_id}, 'old job id is in result';
+    $job->discard_changes;
+    is $job->clone_id, $data->{result}->{$job_id}, 'clone_id points to reported id';
 };
 
 subtest '"race" between status updates and stale job detection' => sub {
