@@ -44,9 +44,9 @@
             % if ($allow_commenting) {
             <button type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Restart or comment jobs">
                 <span class="fa-stack group-comment-icon-stack">
-		  <i class="fa fa-comment fa-stack-2x text-danger-info" aria-hidden="true"></i>
-		  <i class="fa fa-undo fa-stack-1x" aria-hidden="true"></i>
-		</span>
+                    <i class="fa fa-comment fa-stack-2x text-danger-info" aria-hidden="true"></i>
+                    <i class="fa fa-undo fa-stack-1x" aria-hidden="true"></i>
+                </span>
             </button>
             % }
             % my @badges = qw(success secondary  warning     danger info      primary light   light);
