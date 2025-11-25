@@ -321,7 +321,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
     else {
         my %js_settings;
         # Check if the settings are between the arguments passed via query url
-        # they come in lowercase, so mace sure $key is lc'ed
+        # they come in lowercase, so make sure $key is lc'ed
         for my $key (qw(ISO HDD_1 WORKER_CLASS)) {
             $js_settings{$key} = $args->{lc $key} if defined $args->{lc $key};
         }
