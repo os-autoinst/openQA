@@ -28,6 +28,8 @@ sub new ($class, @args) {
 sub register ($self, $app, @args) {
     $self->{app} = $app;
     $self->{config} = $app->config;
+    my $config = $self->{config}->{amqp};
+    $config->{enabled} = 1;    # Needed for reloading the plugin later in the forked process
     Mojo::IOLoop->singleton->next_tick(
         sub {
             # register for events
@@ -68,18 +70,26 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
 
     $remaining_attempts //= $config->{publish_attempts};
     $retry_delay //= $config->{publish_retry_delay};
-    $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(sub { log_debug "$topic published" })
-      ->catch(
+    $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(
+        sub {
+            log_debug "$topic published";
+            OpenQA::Events->singleton->emit('amqp_handled');
+        }
+    )->catch(
         sub ($error) {
             my $left = looks_like_number $remaining_attempts && $remaining_attempts > 1 ? $remaining_attempts - 1 : 0;
             my $delay = $retry_delay * $config->{publish_retry_delay_factor};
             my ($event_id, $job_id) = ($event_data->{id} // 'none', $event_data->{job_id});
             my $additional_info = $job_id ? ", job ID: $job_id" : '';
             my $log_msg = "Publishing $topic failed: $error (event ID: $event_id$additional_info, $left attempts left)";
-            return log_error $log_msg unless $left;
             my $retry_function = sub ($loop) { $self->publish_amqp($topic, $event_data, $headers, $left, $delay) };
-            log_info $log_msg;
-            Mojo::IOLoop->timer($retry_delay => $retry_function) if $left;
+            if ($left) {
+                log_info $log_msg;
+                Mojo::IOLoop->timer($retry_delay => $retry_function);
+                return;
+            }
+            OpenQA::Events->singleton->emit('amqp_handled');
+            return log_error $log_msg;
         })->finally(sub { undef $publisher });
 }
 
