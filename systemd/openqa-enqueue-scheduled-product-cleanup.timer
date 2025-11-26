@@ -1,0 +1,9 @@
+[Unit]
+Description=Enqueues a scheduled product cleanup task for the openQA database every day.
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

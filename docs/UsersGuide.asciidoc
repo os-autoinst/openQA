@@ -1599,6 +1599,7 @@ The relevant Minion tasks are:
 - limit_audit_events
 - limit_bugs
 - limit_results_and_logs
+- limit_scheduled_products
 - limit_screenshots
 
 These are no-ops if a task is already running so they can safely be enqueued

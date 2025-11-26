@@ -75,52 +75,52 @@ sub assume_events_being_deleted {
 
 # note: The tested time constraints are defined in t/data/41-audit-log/openqa.ini.
 
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'all events considered recent enough to be kept');
 
 assume_all_events_before_x_days(15);
 assume_events_being_deleted(1080, 1081);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'other events deleted after 10 days');
 
 assume_all_events_before_x_days(25);
 assume_events_being_deleted(1000);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'startup events deleted after 20 days');
 
 assume_all_events_before_x_days(35);
 assume_events_being_deleted(1030, 1031);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'job group events deleted after 30 days');
 
 assume_all_events_before_x_days(45);
 assume_events_being_deleted(1020, 1021);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'job template events deleted after 40 days');
 
 assume_all_events_before_x_days(55);
 assume_events_being_deleted(1010, 1011);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'table events deleted after 50 days');
 
 assume_all_events_before_x_days(65);
 assume_events_being_deleted(1060, 1061);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'iso events deleted after 60 days');
 
 assume_all_events_before_x_days(75);
 assume_events_being_deleted(1050);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'user events deleted after 70 days');
 
 assume_all_events_before_x_days(85);
 assume_events_being_deleted(1070, 1071);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'asset events deleted after 80 days');
 
 assume_all_events_before_x_days(95);
 assume_events_being_deleted(1040);
-$events->delete_entries_exceeding_storage_duration;
+$events->delete_expired_entries;
 is_deeply(all_events_ids, [sort keys %fake_events], 'needle events deleted after 90 days');
 
 done_testing();

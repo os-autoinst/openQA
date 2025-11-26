@@ -10,7 +10,9 @@ use Time::Seconds;
 has 'task_name';
 has 'table';
 
-sub register ($self, $app, @) { $app->minion->add_task($self->task_name => sub { $self->_limit($app, @_) }) }
+sub register ($self, $app, @) {
+    $app->minion->add_task($self->task_name => sub { $self->_limit($app, @_) });
+}
 
 sub _limit ($self, $app, $job, @) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
@@ -21,7 +23,7 @@ sub _limit ($self, $app, $job, @) {
     return $job->finish("Previous $task_name job is still active") unless $guard;
     return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
-    $app->schema->resultset($self->table)->delete_entries_exceeding_storage_duration;
+    $app->schema->resultset($self->table)->delete_expired_entries;
 }
 
 1;
