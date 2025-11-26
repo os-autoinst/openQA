@@ -58,14 +58,15 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
     # create publisher and keep reference to avoid early destruction
     log_debug("Sending AMQP event: $topic");
     my $config = $self->{config}->{amqp};
-    my $url = Mojo::URL->new($config->{url});
-    $url->query({exchange => $config->{exchange}});
+    my $unsanitized_url = Mojo::URL->new($config->{url});
+    $unsanitized_url->query({exchange => $config->{exchange}});
     # append optional parameters
-    $url->query([cacertfile => $config->{cacertfile}]) if ($config->{cacertfile});
-    $url->query([certfile => $config->{certfile}]) if ($config->{certfile});
-    $url->query([keyfile => $config->{keyfile}]) if ($config->{keyfile});
-    $url = $url->to_unsafe_string;
-    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url);
+    $unsanitized_url->query([cacertfile => $config->{cacertfile}]) if ($config->{cacertfile});
+    $unsanitized_url->query([certfile => $config->{certfile}]) if ($config->{certfile});
+    $unsanitized_url->query([keyfile => $config->{keyfile}]) if ($config->{keyfile});
+    my $url = $unsanitized_url->clone;
+    $unsanitized_url = $unsanitized_url->to_unsafe_string;
+    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $unsanitized_url);
     log_debug("AMQP URL: $url");
 
     $remaining_attempts //= $config->{publish_attempts};
