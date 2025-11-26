@@ -276,7 +276,8 @@ my $amqp = OpenQA::WebAPI::Plugin::AMQP->new;
 $amqp->register($app);
 
 subtest 'amqp_publish call without headers' => sub {
-    $amqp->publish_amqp('some.topic', 'some message');
+    combined_like { $amqp->publish_amqp('some.topic', 'some message') } qr/AMQP URL: amqp:\/\/localhost:5672/,
+      'URL is logged without credentials';
     is($last_publisher->url, 'amqp://guest:guest@localhost:5672/?exchange=pubsub', 'url specified');
     is($published{body}, 'some message', 'message body correctly passed');
     is_deeply($published{headers}, {}, 'headers is empty hashref');
