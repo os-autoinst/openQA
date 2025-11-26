@@ -23,6 +23,7 @@ use Mojolicious::Validator;
 use Mojolicious::Validator::Validation;
 use Time::HiRes 'time';
 use DateTime;
+use List::Util qw(any);
 use Scalar::Util qw(looks_like_number);
 
 =head2 latest_build
@@ -55,20 +56,16 @@ sub latest_build ($self, %args) {
     $attrs{order_by} = {-desc => 'me.id'};    # More reliable for tests than t_created
     $attrs{columns} = qw(BUILD);
 
+    my $job_settings = $schema->resultset('JobSettings');
     foreach my $key (keys %args) {
+        my $key_uc = uc $key;
         my $value = $args{$key};
-
-        if (grep { $key eq $_ } qw(distri version flavor machine arch build test)) {
-            push(@conds, {'me.' . uc($key) => $value});
+        if (any { $key_uc eq $_ } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS) {
+            push @conds, {'me.' . $key_uc => $value};
         }
         else {
-
-            my $subquery = $schema->resultset('JobSettings')->search(
-                {
-                    key => uc($key),
-                    value => $value
-                });
-            push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+            my $subquery = $job_settings->search({key => $key_uc, value => $value});
+            push @conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}};
         }
     }
 
@@ -97,16 +94,8 @@ sub latest_jobs ($self, $until = undef) {
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $test = $job->TEST;
-        my $distri = $job->DISTRI;
-        my $version = $job->VERSION;
-        my $build = $job->BUILD;
-        my $flavor = $job->FLAVOR;
-        my $arch = $job->ARCH;
-        my $machine = $job->MACHINE // '';
-        my $key = "$distri-$version-$build-$test-$flavor-$arch-$machine";
-        next if $seen{$key}++;
-        push(@latest, $job);
+        my $key = join('-', map { $job->$_ // '' } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS);
+        push @latest, $job unless $seen{$key}++;
     }
 
     return @latest;
@@ -379,7 +368,7 @@ sub complex_query_latest_ids ($self, %args) {
     $attrs->{order_by} = \['max(me.id) DESC'];
     $attrs->{select} = ['max(me.id)'];
     $attrs->{as} = ['id'];
-    $attrs->{group_by} = [qw(TEST DISTRI VERSION BUILD FLAVOR ARCH MACHINE)];
+    $attrs->{group_by} = [OpenQA::Schema::Result::Jobs::MAIN_SETTINGS];
 
     # execute the search; use a sub query if filtering is enabled
     my $search = $self->search({-and => $conds}, $attrs);
@@ -417,7 +406,7 @@ sub cancel_by_settings (
     my %precond = %{$settings};
     my %cond;
 
-    for my $key (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
+    for my $key (OpenQA::Schema::Result::Jobs::MAIN_SETTINGS) {
         $cond{$key} = delete $precond{$key} if defined $precond{$key};
     }
     if (keys %precond) {
