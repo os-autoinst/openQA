@@ -418,7 +418,7 @@ sub settings_hash ($self, $prefetched = undef) {
             $settings->{$_->key} = $_->value;
         }
     }
-    for my $column (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
+    for my $column (MAIN_SETTINGS) {
         if (my $value = $self->$column) { $settings->{$column} = $value }
     }
     $settings->{NAME} = sprintf '%08d-%s', $self->id, $self->name;

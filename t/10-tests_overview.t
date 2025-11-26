@@ -151,10 +151,8 @@ subtest 'time parameter' => sub {
 };
 
 subtest 'limit parameter' => sub {
-    $t->get_ok(
-        '/tests/overview?distri=opensuse&version=Factory&limit=2&limit=2',
-        'no database error when specifying more than one limit'
-    );
+    $t->get_ok('/tests/overview?distri=opensuse&version=Factory&build=0048&limit=2&limit=2',
+        'no database error when specifying more than one limit');
     is $t->tx->res->dom->find('table.overview td.name')->size, 2, 'number of jobs limited';
 };
 

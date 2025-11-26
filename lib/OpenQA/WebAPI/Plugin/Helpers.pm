@@ -11,7 +11,7 @@ use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugr
 use OpenQA::Events;
 use OpenQA::Jobs::Constants qw(EXECUTION_STATES PRE_EXECUTION_STATES ABORTED_RESULTS FAILED NOT_COMPLETE_RESULTS);
 use Text::Glob qw(glob_to_regex_string);
-use List::Util qw(any);
+use List::Util qw(any min);
 use Feature::Compat::Try;
 
 sub register ($self, $app, $config) {
@@ -338,6 +338,9 @@ sub register ($self, $app, $config) {
     $app->helper('reply.validation_error' => \&_validation_error);
 
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
+    $app->helper(every_non_empty_param => \&_every_non_empty_param);
+    $app->helper(compute_overview_filtering_params => \&_compute_overview_filtering_params);
+
     $app->helper(groups_for_globs => \&_groups_for_globs);
     $app->helper(param_hash => \&_param_hash);
     $app->helper(
@@ -407,10 +410,9 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('groupid')->num(0, undef);
     $v->optional('modules', 'comma_separated');
     $v->optional('flavor', 'comma_separated');
-    $v->optional('limit', 'not_empty')->num(0, undef);
+    $v->optional('limit', 'not_empty')->num(1, undef);
 
     # add simple query params to search args
-    $search_args{limit} = $v->param('limit') if $v->is_valid('limit');
     for my $arg (qw(distri version flavor test)) {
         next unless $v->is_valid($arg);
         my @params = @{$v->every_param($arg) // []};
@@ -480,6 +482,10 @@ sub _compose_job_overview_search_args ($c) {
         }
     }
 
+    # limit results to return one row more than the configured/specified limit so we know when the limit is exceeded
+    my $configured_limit = $c->app->config->{misc_limits}->{tests_overview_max_jobs};
+    $search_args{limit} = ($v->is_valid('limit') ? min($configured_limit, $v->param('limit')) : $configured_limit) + 1;
+
     # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query()
     $search_args{scope} = 'current';
 
@@ -495,7 +501,29 @@ sub _compose_job_overview_search_args ($c) {
     # allow filtering by comment text
     if (my $c = $v->param('comment')) { $search_args{comment_text} = $c }
 
+    # allow filtering by several job settings
+    $search_args{filters} = $c->compute_overview_filtering_params;
+
     return (\%search_args, \@groups);
+}
+
+sub _every_non_empty_param ($c, $param_key) {
+    [map { split ',', $_ } @{$c->every_param($param_key)}]
+}
+
+sub _compute_overview_filtering_params ($c) {
+    my $states = $c->every_non_empty_param('state');
+    my $results = $c->every_non_empty_param('result');
+    my $archs = $c->every_non_empty_param('arch');
+    my $machines = $c->every_non_empty_param('machine');
+    my $failed_modules = $c->every_non_empty_param('failed_modules');
+    my %filters;
+    $filters{state} = {-in => $states} if @$states;
+    $filters{result} = {-in => $results} if @$results;
+    $filters{result} = FAILED if @$failed_modules;
+    $filters{ARCH} = {-in => $archs} if @$archs;
+    $filters{MACHINE} = {-in => $machines} if @$machines;
+    return [\%filters];
 }
 
 sub _groups_for_globs ($c) {
