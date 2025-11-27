@@ -6,8 +6,6 @@ package OpenQA::Schema::ResultSet::ScheduledProducts;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use OpenQA::Schema::Result::ScheduledProducts qw(CANCELLED);
 use OpenQA::App;
-use Time::Piece;
-use Time::ParseDate;
 
 sub create_with_event ($self, $params, $user, $webhook_id = undef) {
     my $scheduled_product = $self->create(
@@ -123,18 +121,15 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build) {
 sub delete_expired_entries ($self) {
     # delete all scheduled products without jobs that are older than "scheduled_product_min_storage_duration"
     my $min_storage_duration = OpenQA::App->singleton->config->{misc_limits}->{scheduled_product_min_storage_duration};
-    my $time_constraint = parsedate("$min_storage_duration days ago", PREFER_PAST => 1, DATE_REQUIRED => 1);
-    die "Configured scheduled_product_min_storage_duration is invalid\n" unless $time_constraint;
-    $time_constraint = localtime($time_constraint)->ymd;
     my $sth = $self->result_source->schema->storage->dbh->prepare(
         <<~'END_SQL'
         DELETE FROM scheduled_products
             WHERE
-                (t_created < ?)
+                (t_created < current_date - ?::interval)
                 AND (SELECT count(id) FROM jobs WHERE jobs.scheduled_product_id = scheduled_products.id LIMIT 1) = 0
         END_SQL
     );
-    $sth->execute($time_constraint);
+    $sth->execute("$min_storage_duration days");
 }
 
 1;
