@@ -666,6 +666,7 @@ fi
 %{_datadir}/openqa/script/openqa-enqueue-audit-event-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-bug-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-git-auto-update
+%{_datadir}/openqa/script/openqa-enqueue-needle-ref-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-result-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-scheduled-product-cleanup
 %{_datadir}/openqa/script/openqa-gru
@@ -673,7 +674,6 @@ fi
 %{_datadir}/openqa/script/openqa-webui-daemon
 %{_datadir}/openqa/script/upgradedb
 %{_datadir}/openqa/script/modify_needle
-%{_datadir}/openqa/script/openqa-enqueue-needle-ref-cleanup
 # TODO: define final user
 %defattr(-,geekotest,root)
 # attention: never package subdirectories owned by a user other
