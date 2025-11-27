@@ -118,4 +118,18 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build) {
     return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
 
+sub delete_expired_entries ($self) {
+    # delete all scheduled products without jobs that are older than "scheduled_product_min_storage_duration"
+    my $min_storage_duration = OpenQA::App->singleton->config->{misc_limits}->{scheduled_product_min_storage_duration};
+    my $sth = $self->result_source->schema->storage->dbh->prepare(
+        <<~'END_SQL'
+        DELETE FROM scheduled_products
+            WHERE
+                (t_created < current_date - ?::interval)
+                AND (SELECT count(id) FROM jobs WHERE jobs.scheduled_product_id = scheduled_products.id LIMIT 1) = 0
+        END_SQL
+    );
+    $sth->execute("$min_storage_duration days");
+}
+
 1;

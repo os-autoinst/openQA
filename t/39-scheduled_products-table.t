@@ -16,6 +16,7 @@ use OpenQA::Schema::Result::ScheduledProducts qw(ADDED SCHEDULED SCHEDULING CANC
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
 use OpenQA::Utils;
+use DateTime;
 
 OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -146,6 +147,14 @@ subtest 'settings not modified when creating jobs (so it can be retried)' => sub
     qr/invalid group \{"id":1\}.*invalid group \{"id":2\}/s, 'group settings processed';
     is_deeply \@settings_copy, \@settings, 'settings have not been modified' or always_explain \@settings_copy;
     is @ids, 2, 'two jobs created';
+};
+
+subtest 'cleanup' => sub {
+    $scheduled_products->search({id => 1})->update({t_created => DateTime->now->subtract(days => 35)});
+    $scheduled_products->delete_expired_entries;
+    ok !$scheduled_products->find(1), 'old scheduled product without jobs deleted';
+    ok $scheduled_products->find(2), 'new scheduled product without jobs still present)';
+    ok $scheduled_products->find(3), 'scheduled product with jobs still present';
 };
 
 done_testing();

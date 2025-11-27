@@ -192,6 +192,7 @@ subtest 'Test configuration default modes' => sub {
             worker_limit_retry_delay => ONE_HOUR / 4,
             mcp_max_result_size => 500000,
             max_job_time_prio_scale => 100,
+            scheduled_product_min_storage_duration => 34,
         },
         archiving => {
             archive_preserved_important_jobs => 0,

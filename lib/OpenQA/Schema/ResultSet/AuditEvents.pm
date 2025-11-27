@@ -24,7 +24,7 @@ my %patterns_for_event_categories = (
     needle => 'needle_%',
 );
 
-sub delete_entries_exceeding_storage_duration {
+sub delete_expired_entries {
     my ($self, %options) = @_;
 
     my @event_type_globs;

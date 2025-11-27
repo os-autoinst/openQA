@@ -44,6 +44,7 @@ sub register_tasks ($self) {
       OpenQA::Task::Job::Restart
       OpenQA::Task::Iso::Schedule
       OpenQA::Task::Bug::Limit
+      OpenQA::Task::ScheduledProduct::Limit
     );
 }
 

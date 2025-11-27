@@ -1,0 +1,9 @@
+[Unit]
+Description=openQA enqueue database scheduled product cleanup task
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
+
+[Service]
+Type=oneshot
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa-enqueue-scheduled-product-cleanup
