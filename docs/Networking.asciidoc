@@ -100,6 +100,14 @@ assigned by the openQA scheduler.
 The name of the bridge (default: `br1`) will be set in
 `/etc/sysconfig/os-autoinst-openvswitch`.
 
+A huge part of the magic happens in os-autoinst-openvswitch.
+On startup this daemon will create flow rules in the OVS bridge that allow the
+SUT VMs to talk to upstream networks despite being in a VLAN to isolate from other tests.
+These flow rules implement an address translation from the SUT IPs to intermediate IPs 
+so that it doesn't matter if multiple tests are running at the same time with conflicting IP addresses.
+These intermediate IP addresses can then be NATed (again) to upstream networks by regular
+iptables/NFT masquerading rules.
+
 ===== Configure virtual interfaces
 
 The script will add the bridge device and the tap devices for every
@@ -112,6 +120,11 @@ multi-machine worker hosts. Refer to the <<GRE tunnels>> section below
 for further information.
 
 ===== Configure NAT with firewalld
+
+NOTE: `os-autoinst-setup-multi-machine` can set this up for you, but using plain NFT instead
+(which `os-autoinst-setup-multi-machine` can setup as well) of firewalld is recommended
+due to firewalld's suboptimal performance with many tap interfaces present.
+
 The required firewall rules for masquerading (NAT) and zone configuration
 for the trusted zone will be set up. The bridge devices will be added to
 the zone.
@@ -233,9 +246,16 @@ IP addresses, subnets and interface names):
 
 ```
 ip link set dev eth0 up mtu 1380
+
+# for ipv4
 ip a add dev eth0 10.0.2.15/24
 ip r add default via 10.0.2.2
 echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+
+# for ipv6
+ip a add dev eth0 fec0::15/64
+ip r add default via fec0::2
+echo 'nameserver 2606:4700:4700::1111' > /etc/resolv.conf
 ```
 
 The MTU is chosen in accordance with what the openSUSE test distribution uses
