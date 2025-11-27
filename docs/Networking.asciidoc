@@ -100,13 +100,14 @@ assigned by the openQA scheduler.
 The name of the bridge (default: `br1`) will be set in
 `/etc/sysconfig/os-autoinst-openvswitch`.
 
-A huge part of the magic happens in os-autoinst-openvswitch.
-On startup this daemon will create flow rules in the OVS bridge that allow the
-SUT VMs to talk to upstream networks despite being in a VLAN to isolate from other tests.
-These flow rules implement an address translation from the SUT IPs to intermediate IPs 
-so that it doesn't matter if multiple tests are running at the same time with conflicting IP addresses.
-These intermediate IP addresses can then be NATed (again) to upstream networks by regular
-iptables/NFT masquerading rules.
+A huge part of the magic happens in os-autoinst-openvswitch. On startup this
+daemon will create flow rules in the OVS bridge that allow the SUT VMs to talk
+to upstream networks despite being in a VLAN to isolate from other tests.
+These flow rules implement an address translation from the SUT IPs to
+intermediate IPs so that it doesn't matter if multiple tests are running at
+the same time with conflicting IP addresses. These intermediate IP addresses
+can then be NATed (again) to upstream networks by regular iptables/NFT
+masquerading rules.
 
 ===== Configure virtual interfaces
 
@@ -121,9 +122,10 @@ for further information.
 
 ===== Configure NAT with firewalld
 
-NOTE: `os-autoinst-setup-multi-machine` can set this up for you, but using plain NFT instead
-(which `os-autoinst-setup-multi-machine` can setup as well) of firewalld is recommended
-due to firewalld's suboptimal performance with many tap interfaces present.
+NOTE: `os-autoinst-setup-multi-machine` can set this up for you, but using
+plain NFT instead (which `os-autoinst-setup-multi-machine` can setup as well)
+or firewalld is recommended due to firewalld's suboptimal performance with
+many tap interfaces present.
 
 The required firewall rules for masquerading (NAT) and zone configuration
 for the trusted zone will be set up. The bridge devices will be added to
