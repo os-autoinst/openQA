@@ -15,7 +15,7 @@ use OpenQA::Test::Utils qw(run_gru_job);
 use OpenQA::ScreenshotDeletion;
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
-use Test::Output qw(combined_like);
+use Test::Output qw(combined_like combined_unlike);
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use DateTime;
@@ -242,6 +242,25 @@ subtest 'no errors in database log' => sub {
     my $db_log_file = path($ENV{TEST_PG} =~ s/^.*host=//r, $prep->fetchrow_arrayref->[0]);
     my $log = Mojo::File->new($db_log_file)->slurp;
     unlike $log, qr/duplicate.*violates unique constraint "screenshots_filename"/, 'no unique constraint error';
+};
+
+subtest 'deleting untracked screenshots' => sub {
+    my $tempdir = tempdir;
+    my $subdir = $tempdir->child('0a4/a66')->make_path;
+    my $image = $subdir->child('0647f51a4bef105e96ad0fad32.png')->touch;
+    my $screenshot_path = '0a4/a66/0647f51a4bef105e96ad0fad32.png';
+    my $screenshot = $screenshots->create({filename => $screenshot_path, t_created => '2025-01-01'});
+    my $error_count;
+    combined_unlike { $error_count = $screenshots->scan_untracked_screenshots($tempdir, 1) }
+    qr/0647f51a4bef105e96ad0fad32/, 'filename of screenshot not logged';
+    ok -e $image, 'image that is still present in the database has been preserved';
+
+    is $error_count, 0, 'deletion happened without errors (0)';
+    $screenshot->delete;
+    combined_like { $error_count = $screenshots->scan_untracked_screenshots($tempdir, 1) }
+    qr/0647f51a4bef105e96ad0fad32/, 'filename of screenshot logged';
+    ok !-e $image, 'image that was deleted from the database has been deleted on disk as well';
+    is $error_count, 0, 'deletion happened without errors (1)';
 };
 
 done_testing();
