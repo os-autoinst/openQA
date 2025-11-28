@@ -5,7 +5,7 @@ package OpenQA::SignalBlocker;
 use Mojo::Base -base, -signatures;
 use Scalar::Util qw(weaken);
 
-my @SIGNALS = qw(TERM INT);
+my @SIGNALS = qw(TERM INT QUIT);
 
 # delays execution of signal handlers while an instance exists
 sub new ($class, @attributes) {

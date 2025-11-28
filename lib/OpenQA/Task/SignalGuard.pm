@@ -34,6 +34,7 @@ sub new ($class, $job, @attributes) {
 
 sub _handle_signal ($self_weak, $signal) {
     # abort job if the corresponding flag is set
+    return undef unless $self_weak;
     my $job = $self_weak->{_job};
     if ($self_weak->abort) {
         $job->note(signal_handler => "Received signal $signal, aborting");

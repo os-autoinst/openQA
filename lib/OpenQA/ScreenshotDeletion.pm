@@ -7,6 +7,7 @@ use Mojo::Base -base;
 use File::Basename qw(basename dirname);
 use File::Spec::Functions qw(catfile);
 use OpenQA::Log qw(log_debug);
+use OpenQA::SignalBlocker;
 use OpenQA::Utils qw(imagesdir);
 use Feature::Compat::Try;
 
@@ -30,6 +31,9 @@ sub delete_screenshot {
     # note: This might fail due to foreign key violation because a new screenshot link might
     #       have just been created. In this case the screenshot should not be deleted in the
     #       database or the file system.
+    #       Using OpenQA::SignalBlocker to delay handling cancellation signals to avoid doing
+    #       only some of the deletions if the Minion job is aborted.
+    my $signal_blocker = OpenQA::SignalBlocker->new;
     try { $self->{_deletion_query}->execute($screenshot_id) }
     catch ($e) { return undef }
     # keep track of the deleted size
