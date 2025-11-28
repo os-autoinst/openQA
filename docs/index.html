@@ -7019,6 +7019,9 @@ run tasks. Both can be used separately or in combination.</p>
 <p>limit_results_and_logs</p>
 </li>
 <li>
+<p>limit_scheduled_products</p>
+</li>
+<li>
 <p>limit_screenshots</p>
 </li>
 </ul>
@@ -11341,6 +11344,16 @@ assigned by the openQA scheduler.
 <p>The name of the bridge (default: <code>br1</code>) will be set in
 <code>/etc/sysconfig/os-autoinst-openvswitch</code>.</p>
 </div>
+<div class="paragraph">
+<p>A huge part of the magic happens in os-autoinst-openvswitch. On startup this
+daemon will create flow rules in the OVS bridge that allow the SUT VMs to talk
+to upstream networks despite being in a VLAN to isolate from other tests.
+These flow rules implement an address translation from the SUT IPs to
+intermediate IPs so that it doesn&#8217;t matter if multiple tests are running at
+the same time with conflicting IP addresses. These intermediate IP addresses
+can then be NATed (again) to upstream networks by regular iptables/NFT
+masquerading rules.</p>
+</div>
 </div>
 <div class="sect4">
 <h5 id="_configure_virtual_interfaces"><a class="anchor" href="#_configure_virtual_interfaces"></a><a class="link" href="#_configure_virtual_interfaces">Configure virtual interfaces</a></h5>
@@ -11367,6 +11380,21 @@ for further information.
 </div>
 <div class="sect4">
 <h5 id="_configure_nat_with_firewalld"><a class="anchor" href="#_configure_nat_with_firewalld"></a><a class="link" href="#_configure_nat_with_firewalld">Configure NAT with firewalld</a></h5>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<code>os-autoinst-setup-multi-machine</code> can set this up for you, but using
+plain NFT instead (which <code>os-autoinst-setup-multi-machine</code> can setup as well)
+or firewalld is recommended due to firewalld&#8217;s suboptimal performance with
+many tap interfaces present.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>The required firewall rules for masquerading (NAT) and zone configuration
 for the trusted zone will be set up. The bridge devices will be added to
@@ -11537,9 +11565,16 @@ IP addresses, subnets and interface names):</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span>ip link set dev eth0 up mtu 1380
+
+# for ipv4
 ip a add dev eth0 10.0.2.15/24
 ip r add default via 10.0.2.2
-echo &#39;nameserver 8.8.8.8&#39; &gt; /etc/resolv.conf</code></pre>
+echo &#39;nameserver 8.8.8.8&#39; &gt; /etc/resolv.conf
+
+# for ipv6
+ip a add dev eth0 fec0::15/64
+ip r add default via fec0::2
+echo &#39;nameserver 2606:4700:4700::1111&#39; &gt; /etc/resolv.conf</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -14470,7 +14505,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-11-19 04:45:08 UTC
+Last updated 2025-11-28 04:44:46 UTC
 </div>
 </div>
 </body>
