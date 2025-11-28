@@ -48,7 +48,11 @@ sub _parse_subtest ($self, $result) {
     $self->test or return;
 
     my $line = $result->as_string;
-    return unless $line =~ /^#\s*(?<status>ok|not ok)\s+(?<index>\d+)\s+(?<name>[^#]*)/;
+    unless ($line =~ /^#\s*(?<status>ok|not ok)\s+(?<index>\d+)\s+(?<name>[^#]*)/) {
+        push @{$steps->{unparsed_lines}}, $line;
+        return;
+    }
+    $steps->{parsed_lines_count}++;
     return if $line =~ /#\s*SKIP\b/i;
     my ($status, $index, $subtest_name) = @+{qw(status index name)};
 
@@ -92,6 +96,22 @@ sub _testgroup_finalize ($self, $result) {
 
     $steps->{name} = $self->test->{name};
     $steps->{test} = $self->test;
+
+    # If there are no parsed lines, default to simply show the whole log.
+    # This is better than not showing anything, impeding the user to see
+    # the buttons of adding product or test bugs and requiring them to
+    # search and open individual log assets.
+    if (!$steps->{parsed_lines_count}) {
+        my $filename = "KTAP-@{[$steps->{name}]}.txt";
+        push @{$steps->{details}},
+          {
+            text => $filename,
+            title => $steps->{name},
+            result => 'ok',
+          };
+        $self->_add_output({file => $filename, content => join("\n", @{$steps->{unparsed_lines}})});
+    }
+
     $self->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new($steps));
 
     $self->test(undef);
@@ -106,11 +126,11 @@ sub parse ($self, $KTAP) {
     while (my $result = $parser->next) {
         next if $result->type eq 'version' || $result->type eq 'plan';
 
-        if ($result->type eq 'comment' && $result->as_string =~ /^#\s*selftests:\s+/) {
-            $self->_testgroup_init($result->as_string);
-            next;
-        }
-        if ($result->type eq 'comment' && $result->as_string =~ /^#\s*(ok|not ok)\s+\d+\s+/) {
+        if ($result->type eq 'comment') {
+            if ($result->as_string =~ /^#\s*selftests:\s+/) {
+                $self->_testgroup_init($result->as_string);
+                next;
+            }
             $self->_parse_subtest($result);
             next;
         }
