@@ -1009,8 +1009,14 @@ subtest 'priority correctly assigned when posting job' => sub {
         $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
         $t->json_is('/job/priority', 50 + $max / 100, 'increased prio value');
-        my $limits = OpenQA::App->singleton->config->{misc_limits};
 
+        local $jobs_post_params{TIMEOUT_SCALE} = 2;
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $max * 2 / 100, 'increased prio value with TIMEOUT_SCALE');
+        delete $jobs_post_params{TIMEOUT_SCALE};
+
+        my $limits = OpenQA::App->singleton->config->{misc_limits};
         $limits->{max_job_time_prio_scale} = 10;
         $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);

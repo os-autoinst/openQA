@@ -147,9 +147,12 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
     my $debug_msg;
-    if (looks_like_number($settings{MAX_JOB_TIME}) and $settings{MAX_JOB_TIME} > DEFAULT_MAX_JOB_TIME) {
+    my $max_job_time = looks_like_number $settings{MAX_JOB_TIME} ? $settings{MAX_JOB_TIME} : 0;
+    my $timeout_scale = looks_like_number $settings{TIMEOUT_SCALE} ? $settings{TIMEOUT_SCALE} : 0;
+    $max_job_time *= $timeout_scale if $max_job_time and $timeout_scale > 1;
+    if ($max_job_time and $max_job_time > DEFAULT_MAX_JOB_TIME) {
         if (my $scale = OpenQA::App->singleton->config->{misc_limits}->{max_job_time_prio_scale}) {
-            my $malus = int($settings{MAX_JOB_TIME} / $scale);
+            my $malus = int($max_job_time / $scale);
             $debug_msg = sprintf 'Adding priority malus to newly created job (old: %d, malus: %s)',
               $new_job_args{priority}, $malus;
             $new_job_args{priority} += $malus;
