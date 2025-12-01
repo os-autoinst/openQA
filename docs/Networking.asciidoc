@@ -243,6 +243,15 @@ assign a unique MAC address (e.g. by adjusting the last two figures in the
 example; this will not conflict with MAC addresses used by os-autoinst) and use
 a tap device not used at the same time by a SUT-VM.
 
+NOTE: Different from the qemu user mode network setup there is no DHCP or
+router advertisement on the multi machine network. IP addresses, routes and DNS
+needs to be set up by test scripts. By default IP ranges are similar to the
+ones used by qemu usermode networking - except for the IPv6 default route which
+is via `fec0::2` for MM networks instead of `fe80::2` for usermode networks.
+
+NOTE: There is no default/builtin DNS server on MM networks - if you need DNS,
+use an upstream dns server on the local network of the worker host or the internet.
+
 Within the VM configure the network *like* this (you may need to adjust concrete
 IP addresses, subnets and interface names):
 
