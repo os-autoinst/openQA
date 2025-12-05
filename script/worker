@@ -24,11 +24,15 @@ specify instance number, ie pool directory to use
 
 =item B<--apikey> <value>
 
-specify the public key needed for API authentication
+specify the public key needed for API authentication. Overrides config file
+setting and environment variable C<OPENQA_API_KEY>. Use is discouraged due to
+risk of leaking credentials.
 
 =item B<--apisecret> <value>
 
-specify the secret key needed for API authentication
+specify the secret key needed for API authentication. Overrides config file
+setting and environment variable C<OPENQA_API_SECRET>. Use is discouraged due
+to risk of leaking credentials.
 
 =item B<--isotovideo> PATH
 
