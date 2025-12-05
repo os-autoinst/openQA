@@ -4,7 +4,7 @@
 
 = openQA
 
-{codecov} {circleci} {appliance} {deepwiki}
+{codecov} {circleci} {appliance}
 
 openQA is a testing framework that allows you to test GUI applications on one
 hand and bootloader and kernel on the other. In both cases, it is difficult to
