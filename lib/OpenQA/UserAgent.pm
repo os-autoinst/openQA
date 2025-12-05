@@ -15,6 +15,8 @@ has [qw(apikey apisecret base_url)];
 sub new {
     my $self = shift->SUPER::new(@_);
     my %args = @_;
+    $args{apikey} //= $ENV{OPENQA_API_KEY};
+    $args{apisecret} //= $ENV{OPENQA_API_SECRET};
     for my $i (qw(apikey apisecret)) {
         $self->$i($args{$i}) if $args{$i};
     }

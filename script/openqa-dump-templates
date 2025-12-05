@@ -25,9 +25,9 @@ Set API base URL component, default: '/api/v1'
 
 =item B<--apikey> KEY, B<--apisecret> SECRET
 
-Specify api key and secret to use, overrides use of config file ~/.config/openqa/client.conf
-
-override values from config file
+Specify api key and secret to use, overrides use of config file
+~/.config/openqa/client.conf and environment variable C<OPENQA_API_KEY>. Use
+is discouraged due to risk of leaking credentials.
 
 =item B<--group> GROUP
 
