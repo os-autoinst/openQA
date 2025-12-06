@@ -49,6 +49,16 @@ subtest 'authentication routes for plugins' => sub {
 
 client($t, apikey => undef, apisecret => undef);
 
+subtest 'key+secret from env variables' => sub {
+    my $t_new = Test::Mojo->new('OpenQA::WebAPI');
+    $t_new->delete_ok('/api/v1/assets/1')->status_is(403, 'clean user agent has no credentials');
+    local $ENV{OPENQA_API_KEY} = 'LANCELOTKEY01';
+    local $ENV{OPENQA_API_SECRET} = 'MANYPEOPLEKNOW';
+    client($t_new, apikey => undef, apisecret => undef);
+    $t_new->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is('/error' => 'Administrator level required', 'key read from env (but missing administrator level)');
+};
+
 subtest 'access limiting for non authenticated users' => sub {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     is $t->tx->res->headers->access_control_allow_origin, '*', 'CORS header set for non authenticated routes';
