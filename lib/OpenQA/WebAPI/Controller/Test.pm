@@ -688,6 +688,7 @@ sub _calculate_preferred_machines ($jobs) {
 sub _prepare_job_results ($self, $jobs, $job_ids) {
     my %archs;
     my %results;
+    my @job_ids;
     my $aggregated = {
         none => 0,
         passed => 0,
@@ -762,12 +763,13 @@ sub _prepare_job_results ($self, $jobs, $job_ids) {
         $results{$distri}{$version}{$flavor} //= {};
         $results{$distri}{$version}{$flavor}{$test} //= {};
         $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
+        push @job_ids, $id;
 
         # add description
         my $description = $settings_by_job_id{$id}->{JOB_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
-    return (\%archs, \%results, $aggregated);
+    return (\%archs, \%results, $aggregated, \@job_ids);
 }
 
 sub _prepare_groupids ($self) {
@@ -845,7 +847,7 @@ sub overview ($self) {
     my $limit = $search_args->{limit};    # one more than actual limit so we can check whether the limit was exceeded
     my $exceeded_limit = @$latest_job_ids >= $limit ? $limit - 1 : 0;
     my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $limit);
-    my ($archs, $results, $aggregated) = $self->_prepare_job_results($jobs, $latest_job_ids);
+    my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids);
 
     # determine distri/version from job results if not explicitly specified via search args
     my @distris = keys %$results;
@@ -886,7 +888,7 @@ sub overview ($self) {
         archs => $archs,
         results => $results,
         aggregated => $aggregated,
-        job_ids => $latest_job_ids,
+        job_ids => $job_ids,
         until => $until,
         parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},
         summary_parts => \@summary_parts,
