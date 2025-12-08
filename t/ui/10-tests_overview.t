@@ -637,6 +637,24 @@ subtest 'add comments' => sub {
         my $running_job_ids = map { $_->id } $jobs->search({state => RUNNING})->all;
         is $running_job_ids, 2, 'all relevant jobs restarted';
     };
+
+    subtest 'TODO filter' => sub {
+        $driver->get('/tests/overview?todo=1&build=0048&distri=opensuse&version=Factory&groupid=1001');
+        my $submit_button = $driver->find_element('#add-comments-controls button[id="commentJobsBtn"]');
+        $driver->find_element('button[title="Restart or comment jobs"]')->click;
+        $driver->find_element_by_id('text')->send_keys('comment text');
+        is $submit_button->get_text, 'Comment on all 1 jobs',
+          'submit button displayed with number of jobs (reduced by TODO filter)';
+        $submit_button->click;
+
+        # reload without TO-DO filter to check whether only the one job that matched the TO-DO filter was commented on
+        $driver->get('/tests/overview?build=0048&distri=opensuse&version=Factory&groupid=1001');
+        ok wait_for_element(selector => '[name=jobid_td_99938] .label_comment'),
+          'the one job that matched the TODO filter has a comment';
+        is @{$driver->find_elements('.status.fa.fa-circle')}, 3, 'more than one job displayed without TODO filter';
+        is @{$driver->find_elements('.label_comment')}, 1,
+          'only the one job that matched with the TODO filter has a comment';
+    };
 };
 
 subtest "job dependencies displayed on 'Test result overview' page" => sub {
