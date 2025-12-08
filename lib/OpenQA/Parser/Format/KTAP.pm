@@ -38,6 +38,8 @@ sub _testgroup_init ($self, $line) {
     $self->state->{steps} = OpenQA::Parser::Result->new(
         {
             details => [],
+            unparsed_lines => [],
+            parsed_lines_count => 0,
             result => 'passed',
         });
     $self->state->{m} = 0;
