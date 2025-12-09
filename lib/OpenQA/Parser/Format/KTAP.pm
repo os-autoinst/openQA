@@ -54,8 +54,8 @@ sub _parse_subtest ($self, $result) {
         push @{$steps->{unparsed_lines}}, $line;
         return;
     }
-    $steps->{parsed_lines_count}++;
     return if $line =~ /#\s*SKIP\b/i;
+    $steps->{parsed_lines_count}++;
     my ($status, $index, $subtest_name) = @+{qw(status index name)};
 
     my $has_todo = $line =~ /#\s*TODO\b/i;
