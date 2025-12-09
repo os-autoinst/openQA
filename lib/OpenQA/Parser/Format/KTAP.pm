@@ -38,6 +38,8 @@ sub _testgroup_init ($self, $line) {
     $self->state->{steps} = OpenQA::Parser::Result->new(
         {
             details => [],
+            unparsed_lines => [],
+            parsed_lines_count => 0,
             result => 'passed',
         });
     $self->state->{m} = 0;
@@ -52,8 +54,8 @@ sub _parse_subtest ($self, $result) {
         push @{$steps->{unparsed_lines}}, $line;
         return;
     }
-    $steps->{parsed_lines_count}++;
     return if $line =~ /#\s*SKIP\b/i;
+    $steps->{parsed_lines_count}++;
     my ($status, $index, $subtest_name) = @+{qw(status index name)};
 
     my $has_todo = $line =~ /#\s*TODO\b/i;
