@@ -94,6 +94,7 @@ sub _testgroup_finalize ($self, $result) {
     }
     elsif ($line =~ /#\s*SKIP\b/i) {
         $steps->{result} = 'skip';
+        $steps->{details} = [];
     }
 
     $steps->{name} = $self->test->{name};
