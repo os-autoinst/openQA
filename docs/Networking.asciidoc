@@ -123,8 +123,8 @@ for further information.
 ===== Configure NAT with firewalld
 
 NOTE: `os-autoinst-setup-multi-machine` can set this up for you, but using
-plain NFT instead (which `os-autoinst-setup-multi-machine` can setup as well)
-or firewalld is recommended due to firewalld's suboptimal performance with
+plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
+setup as well) is recommended due to firewalld's suboptimal performance with
 many tap interfaces present.
 
 The required firewall rules for masquerading (NAT) and zone configuration
