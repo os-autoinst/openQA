@@ -82,8 +82,12 @@ key = 1234567890ABCDEF
 secret = ABCDEF1234567890
 ----
 
-For ad-hoc use all `openqa-cli` subcommands use the `--apikey` and `--apisecret`
-options. Which will override whatever the config files may contain.
+Alternatively specify key and secret in environment variables `OPENQA_API_KEY`
+and `OPENQA_API_SECRET`.
+
+For ad-hoc use all `openqa-cli` subcommands use the `--apikey` and
+`--apisecret` options which will override whatever the environment or config
+files may contain.
 
 [source,sh]
 ----
