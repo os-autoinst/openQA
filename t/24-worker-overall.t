@@ -16,6 +16,7 @@ use Mojo::Util 'scope_guard';
 use Mojolicious;
 use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
+use Test::MockObject;
 use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_FINISH_OFF);
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
@@ -593,6 +594,16 @@ subtest 'check availability of Open vSwitch related D-Bus service' => sub {
     $worker->settings->global_settings->{WORKER_CLASS} = 'foo,bar';
     is $worker->check_availability, undef, 'worker considered always available if not a tap worker';
 };
+
+subtest 'check is_ovs_dbus_service_running of D-Bus service' => sub {
+    my $mock_net_dbus = Test::MockObject->new();
+    $worker->{_system_dbus} = $mock_net_dbus;
+    $mock_net_dbus->set_true('get_service');
+    is $worker->is_ovs_dbus_service_running, 1, 'OvS D-Bus service passed on passing get_service';
+    $mock_net_dbus->mock(get_service => sub { die "Fake error" });
+    is $worker->is_ovs_dbus_service_running, 0, 'OvS D-Bus service failed on failing get_service';
+};
+
 
 subtest 'handle client status changes' => sub {
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
