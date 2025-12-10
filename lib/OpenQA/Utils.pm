@@ -311,11 +311,17 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
         my @out_args = defined $output_file ? ('>', $output_file, '2>', \$stderr) : (\$stdout, \$stderr);
         my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, @out_args);
         my $error_code = $?;
-        my $return_code = ($error_code & 127) ? (undef) : ($error_code >> 8);
-        my $message
-          = defined $return_code
-          ? ("cmd returned $return_code")
-          : sprintf('cmd died with signal %d', $error_code & 127);
+        my $return_code;
+        my $signal;
+        my $message;
+        if ($error_code & 127) {
+            $signal = $error_code & 127;
+            $message = "cmd died with signal $signal";
+        }
+        else {
+            $return_code = $error_code >> 8;
+            $message = "cmd returned $return_code";
+        }
         my $expected_return_codes = $args{expected_return_codes};
         chomp $stderr;
         if (
@@ -337,6 +343,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
             return_code => $return_code,
             stdout => $stdout,
             stderr => $stderr,
+            signal => $signal,
         };
     }
     catch ($e) {
