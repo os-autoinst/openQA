@@ -11388,8 +11388,8 @@ for further information.
 </td>
 <td class="content">
 <code>os-autoinst-setup-multi-machine</code> can set this up for you, but using
-plain NFT instead (which <code>os-autoinst-setup-multi-machine</code> can setup as well)
-or firewalld is recommended due to firewalld&#8217;s suboptimal performance with
+plain NFT instead of firewalld (which <code>os-autoinst-setup-multi-machine</code> can
+setup as well) is recommended due to firewalld&#8217;s suboptimal performance with
 many tap interfaces present.
 </td>
 </tr>
@@ -11557,6 +11557,35 @@ qemu-system-x86_64 -m 2048 -enable-kvm -vnc :42 -snapshot \
 assign a unique MAC address (e.g. by adjusting the last two figures in the
 example; this will not conflict with MAC addresses used by os-autoinst) and use
 a tap device not used at the same time by a SUT-VM.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Different from the qemu user mode network setup there is no DHCP or
+router advertisement on the multi machine network. IP addresses, routes and DNS
+needs to be set up by test scripts. By default IP ranges are similar to the
+ones used by qemu usermode networking - except for the IPv6 default route which
+is via <code>fec0::2</code> for MM networks instead of <code>fe80::2</code> for usermode networks.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+There is no default/builtin DNS server on MM networks - if you need DNS,
+use an upstream dns server on the local network of the worker host or the internet.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Within the VM configure the network <strong>like</strong> this (you may need to adjust concrete
@@ -14505,7 +14534,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-11-28 04:44:46 UTC
+Last updated 2025-12-10 04:45:21 UTC
 </div>
 </div>
 </body>
