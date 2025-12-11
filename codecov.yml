@@ -7,22 +7,28 @@ comment:
 fixes:
   - "/home/circleci/openQA::"
 coverage:
+  round: down
+  precision: 2
   status:
     changes: false
     project:
       default:
         target: 98
+        threshold: 0
       fully_covered:
         target: 100.0
+        threshold: 0
         paths:
           - lib/openQA/Worker/
           - lib/openQA/Worker.pm
           - lib/OpenQA/Utils.pm
       tests:
         target: 100.0
+        threshold: 0
         paths:
           - t/
     patch:
       default:
         target: 100.0
+        threshold: 0
         branches: null
