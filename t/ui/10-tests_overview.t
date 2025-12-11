@@ -399,6 +399,8 @@ subtest 'filtering does not reveal old jobs' => sub {
 subtest 'filtering by module' => sub {
     my $module = 'kate';
     my $JOB_ICON_SELECTOR = 'td[id^="res_DVD_"]';
+    my $query_all_job_ids_sorted
+      = qq|return Array.from(document.querySelectorAll('[name^="jobid_td"')).map(e => e.attributes.name.value).sort()|;
     my $result = 'failed';
 
     subtest 'jobs containing the module with any result are present' => sub {
@@ -432,8 +434,8 @@ subtest 'filtering by module' => sub {
         element_visible('#res_DVD_i586_textmode');
         element_visible('#res_DVD_x86_64_doc');
     };
+    my $modules = 'kate,zypper_up';
     subtest 'jobs containing all the modules separated by comma are present' => sub {
-        my $modules = 'kate,zypper_up';
         my $number_of_found_jobs = 2;
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$modules&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
@@ -441,6 +443,11 @@ subtest 'filtering by module' => sub {
         is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$modules\" modules found");
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_i586_textmode');
+    };
+    subtest 'combining module result and test result filters' => sub {
+        $driver->get("/tests/overview?result=$result&modules_result=$result");
+        my $jobs = $driver->execute_script($query_all_job_ids_sorted);
+        is_deeply $jobs, [qw(jobid_td_99938 jobid_td_99946)], 'expected jobs present';
     };
 };
 
