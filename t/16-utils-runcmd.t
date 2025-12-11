@@ -63,6 +63,7 @@ subtest 'run (arbitrary) command' => sub {
     qr/.*cmd died with signal 9\n.*/i;
     is $res->{return_code}, undef, 'no exit code returned if command dies with a signal';
     ok !$res->{status}, 'status not ok if command dies with a signal';
+    is $res->{signal}, 9, 'signal returned in result';
 };
 
 subtest 'invoke Git commands for real testing error handling' => sub {
