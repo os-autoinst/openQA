@@ -836,10 +836,6 @@ sub _add_distri_and_version_to_summary ($array_to_add_parts_to, $distri, $versio
 sub overview ($self) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $config = OpenQA::App->singleton->config;
-    my $validation = $self->validation;
-    $validation->optional('t')->datetime;
-    my $until = $validation->param('t');
-    $search_args->{until} = $until;
     my $distri = $search_args->{distri};
     my $version = $search_args->{version};
     my $jobs_rs = $self->schema->resultset('Jobs');
@@ -889,7 +885,7 @@ sub overview ($self) {
         results => $results,
         aggregated => $aggregated,
         job_ids => $job_ids,
-        until => $until,
+        until => $search_args->{until},
         parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},
         summary_parts => \@summary_parts,
         only_distri => $only_distri,
