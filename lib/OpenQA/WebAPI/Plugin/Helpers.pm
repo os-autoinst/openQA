@@ -518,9 +518,9 @@ sub _compute_overview_filtering_params ($c) {
     my $machines = $c->every_non_empty_param('machine');
     my $failed_modules = $c->every_non_empty_param('failed_modules');
     my %filters;
-    $filters{state} = {-in => $states} if @$states;
-    $filters{result} = {-in => $results} if @$results;
-    $filters{result} = FAILED if @$failed_modules;
+    $filters{'me.state'} = {-in => $states} if @$states;
+    $filters{'me.result'} = {-in => $results} if @$results;
+    $filters{'me.result'} = FAILED if @$failed_modules;
     $filters{ARCH} = {-in => $archs} if @$archs;
     $filters{MACHINE} = {-in => $machines} if @$machines;
     return [\%filters];
