@@ -411,6 +411,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('modules', 'comma_separated');
     $v->optional('flavor', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(1, undef);
+    $v->optional('t')->datetime;
 
     # add simple query params to search args
     for my $arg (qw(distri version flavor test)) {
@@ -486,8 +487,9 @@ sub _compose_job_overview_search_args ($c) {
     my $configured_limit = $c->app->config->{misc_limits}->{tests_overview_max_jobs};
     $search_args{limit} = ($v->is_valid('limit') ? min($configured_limit, $v->param('limit')) : $configured_limit) + 1;
 
-    # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query()
-    $search_args{scope} = 'current';
+    # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query() unless t param is used
+    if (my $until = $v->param('t')) { $search_args{until} = $until }
+    else { $search_args{scope} = 'current' }
 
     # allow filtering by job ID
     my $ids = $v->every_param('id');

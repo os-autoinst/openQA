@@ -134,6 +134,9 @@ like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Incomplete: 1/);
 
 subtest 'time parameter' => sub {
+    # assume 99926 is a clone; this should not prevent it from showing up with the t= parameter
+    $jobs->find(99926)->update({clone_id => 99927});
+
     my $link_to_fixed = $t->tx->res->dom->at('#summary .time-params a');
     if (isnt($link_to_fixed, undef, 'link to "fixed" present')) {
         my $params = Mojo::Parameters->new(substr($link_to_fixed->attr('href') // '', 1));
