@@ -23,12 +23,14 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils (qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex),
     qw(download_rate download_speed usleep_backoff));
+use OpenQA::SignalBlocker;
 use OpenQA::Task::SignalGuard;
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
 use Test::MockObject;
 use Test::MockModule;
 use Mojo::File qw(path tempdir tempfile);
+use Mojo::Util qw(scope_guard);
 
 subtest 'service ports' => sub {
     local $ENV{OPENQA_BASE_PORT} = undef;
@@ -494,6 +496,32 @@ subtest 'signal handling in Minion jobs' => sub {
 };
 is $SIG{TERM}, $current_term_handler, 'SIGTERM handler restored after signal guard goes out of scope';
 is $SIG{INT}, $current_int_handler, 'SIGINT handler restored after signal guard goes out of scope';
+
+subtest 'signal blocker' => sub {
+    my $restore_signals = scope_guard sub {
+        $SIG{TERM} = $current_term_handler;
+        $SIG{TERM} = $current_int_handler;
+    };
+
+    my $sigterm_handled = 0;
+    my $sigint_handled = 0;
+    my $sigterm_handler = sub { ++$sigterm_handled };
+    my $sigint_handler = sub { ++$sigint_handled };
+    $SIG{TERM} = $sigterm_handler;
+    $SIG{INT} = $sigint_handler;
+
+    my $blocker = OpenQA::SignalBlocker->new;
+    kill $_ => $$ for qw(INT TERM);
+    is $sigterm_handled, 0, 'SIGTERM handler has not been called while $blocker still present';
+    is $sigint_handled, 0, 'SIGINT handler has not been called while $blocker still present';
+
+    undef $blocker;
+    is $sigterm_handled, 1, 'SIGTERM handler has been called after $blocker was destroyed';
+    is $sigint_handled, 1, 'SIGINT handler has been called after $blocker was destroyed';
+
+    is $SIG{TERM}, $sigterm_handler, 'SIGTERM handler was restored after $blocker was destroyed';
+    is $SIG{INT}, $sigint_handler, 'SIGINT handler was restored after $blocker was destroyed';
+};
 
 subtest 'human readable size' => sub {
     is(human_readable_size(0), '0 Byte', 'zero');
