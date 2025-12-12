@@ -17,6 +17,10 @@ has retry => 1;
 #       action twice.
 has abort => 0;
 
+# Code to execute when the minion server receives a signal to stop the server
+# If the call returns true, we just return and let the task handle it
+has 'callback';
+
 # retries the specified Minion job when receiving SIGTERM/SIGINT as long as the returned object exists
 # note: Prevents the job to fail with "Job terminated unexpectedly".
 sub new ($class, $job, @attributes) {
@@ -33,6 +37,9 @@ sub new ($class, $job, @attributes) {
 }
 
 sub _handle_signal ($self_weak, $signal) {
+    if (my $cb = $self_weak->callback) {
+        return if $cb->($signal);
+    }
     # abort job if the corresponding flag is set
     my $job = $self_weak->{_job};
     if ($self_weak->abort) {
