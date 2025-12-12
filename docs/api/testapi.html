@@ -924,7 +924,8 @@ into <code>wait_still_screen</code> for details.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Returns content of test variable <code>$variable</code> or the <code>$default</code> given as second argument or <code>undef</code></p>
+<p>Returns the contents of the test variable <code>$variable</code> if defined, otherwise
+the <code>$default</code> if specified, otherwise <code>undef</code>.</p>
 </div>
 </div>
 <div class="sect4">
@@ -967,7 +968,7 @@ to make sure that possibly deselected needles are now taken into account
 </div>
 </div>
 <div class="paragraph">
-<p>Returns true if test variable <code>$variable</code> is equal to <code>$value</code> or returns <code>undef</code>.</p>
+<p>Returns whether the test variable <code>$variable</code> is equal to <code>$value</code>.</p>
 </div>
 </div>
 <div class="sect4">
@@ -2159,7 +2160,7 @@ set_serialdev($new);</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-12-11 04:50:49 UTC
+Last updated 2025-12-12 04:48:39 UTC
 </div>
 </div>
 </body>
