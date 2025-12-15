@@ -19,8 +19,8 @@ coverage:
         target: 100.0
         threshold: 0
         paths:
-          - lib/openQA/Worker/
-          - lib/openQA/Worker.pm
+          - lib/OpenQA/Worker/
+          - lib/OpenQA/Worker.pm
           - lib/OpenQA/Utils.pm
       tests:
         target: 100.0
