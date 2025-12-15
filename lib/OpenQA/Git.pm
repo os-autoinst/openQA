@@ -10,6 +10,8 @@ use Mojo::File 'path';
 use OpenQA::Utils qw(run_cmd_with_log_return_error run_cmd_with_log config_autocommit_enabled);
 use OpenQA::App;
 use Feature::Compat::Try;
+use OpenQA::Error::Cmd;
+use Carp qw(croak);
 
 has 'app';
 has 'dir';
@@ -45,7 +47,12 @@ sub _run_cmd ($self, $args, $options = {}) {
         expected_return_codes => $options->{expected_return_codes},
         output_file => $options->{output_file});
     $self->app->log->error("Git command failed: @cmd - Error: $result->{stderr}") unless $result->{status};
+    $self->error($result, $options->{croak}) if $options->{croak} && !$result->{status};
     return $result;
+}
+
+sub error ($self, $result, $msg) {
+    croak(OpenQA::Error::Cmd->new(%$result, msg => $self->_format_git_error($result, $msg)));
 }
 
 sub _prepare_git_command ($self, $include_git_path) {
@@ -93,29 +100,31 @@ sub commit ($self, $args = undef) {
     for my $cmd (qw(add rm)) {
         next unless $args->{$cmd};
         push(@files, @{$args->{$cmd}});
-        my $res = $self->_run_cmd([$cmd, @{$args->{$cmd}}]);
-        return $self->_format_git_error($res, "Unable to $cmd via Git") unless $res->{status};
+        $self->_run_cmd([$cmd, @{$args->{$cmd}}], {croak => "Unable to $cmd via Git"});
     }
 
     # commit changes
     my $message = $args->{message};
     my $author = sprintf('--author=%s <%s>', $self->user->fullname, $self->user->email);
-    my $res = $self->_run_cmd(['commit', '-q', '-m', $message, $author, @files]);
-    return $self->_format_git_error($res, 'Unable to commit via Git') unless $res->{status};
+    $self->_run_cmd(['commit', '-q', '-m', $message, $author, @files], {croak => 'Unable to commit via Git'});
 
     # push changes
     if (($self->config->{do_push} || '') eq 'yes') {
-        $res = $self->_run_cmd(['push'], {batchmode => 1});
-        return undef if $res->{status};
-
         my $msg = 'Unable to push Git commit';
-        if ($res->{return_code} == 128 and $res->{stderr} =~ m/Authentication failed for .http/) {
-            $msg
-              .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
+        try {
+            $self->_run_cmd(['push'], {batchmode => 1, croak => $msg});
+            return undef;
         }
-        return $self->_format_git_error($res, $msg);
-    }
+        catch ($e) {
+            if ($e->return_code == 128 and $e->stderr =~ m/Authentication failed for .http/) {
+                $msg
+                  .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
+                $e->msg($msg);
+            }
+            croak $e;
+        }
 
+    }
     return undef;
 }
 

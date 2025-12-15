@@ -118,9 +118,9 @@ subtest 'delete needle' => sub {
         wait_for_ajax(with_minion => $minion);
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 1, 'but failed needle');
-        is(
+        like(
             $driver->find_element('#failed-needles li')->get_text(),
-"inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png",
+qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png},
             'right needle name and error message displayed'
         );
         $driver->find_element_by_id('close_delete')->click();

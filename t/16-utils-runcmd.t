@@ -75,9 +75,10 @@ subtest 'invoke Git commands for real testing error handling' => sub {
     my $res;
 
     subtest 'invoking Git command outside of a Git repo' => sub {
-        stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
-        qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged';
-        like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: Not a git repository"i, 'Git error returned';
+        throws_ok {
+            stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
+            qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged'
+        } qr/OpenQA::Error::Cmd: Unable to commit via Git.*\Q$empty_tmp_dir\E.*fatal: Not a git repository/i;
         combined_like {
             throws_ok { $git->check_sha('this-sha-does-not-exist') } qr/internal Git error/i,
             'check throws an exception'
@@ -259,10 +260,14 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
             }
             return \%mock_return_value;
         });
-    combined_like {
-        like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/, 'error handled during push';
-    }
-    qr/Error: mocked push error/, 'push error logged';
+    throws_ok {
+        combined_like {
+            like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/,
+              'error handled during push';
+        }
+        qr/Error: mocked push error/,
+        'push error logged'
+    } qr{OpenQA::Error::Cmd: Unable to push Git commit.*mocked push error};
     $git->config->{do_push} = '';
 };
 
