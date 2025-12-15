@@ -16,6 +16,7 @@ use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::TimeLimit '120';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist shared_hash prepare_clean_needles_dir prepare_default_needle);
+use OpenQA::Utils qw(ensure_timestamp_appended);
 use Cwd 'abs_path';
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
@@ -343,7 +344,7 @@ subtest 'Needle editor layout' => sub {
 };
 
 my $needlename = 'test-newneedle';
-my $needlename_from_candidate = "$needlename-from-candidate";
+my $needlename_from_candidate = ensure_timestamp_appended("$needlename-from-candidate");
 my $xoffset = my $yoffset = 200;
 
 subtest 'Create new needle' => sub {
@@ -612,13 +613,15 @@ subtest 'Deletion of needle is handled gracefully' => sub {
     ) or always_explain \@warnings;
 };
 
-subtest 'areas/tags verified via JavaScript' => sub {
+subtest 'areas/tags/timestamp verified via JavaScript' => sub {
     $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
+    $driver->find_element_by_id('needleeditor_name')->clear();
+    $driver->find_element_by_id('needleeditor_name')->send_keys('no-timestamp');
     $driver->find_element_by_id('save')->click();
     is(
         $driver->find_element('.alert-danger span')->get_text(),
-        "Unable to save needle:\nNo tags specified.\nNo areas defined.",
-        'areas/tags verified via JavaScript'
+        "Unable to save needle:\nNo valid timestamp.\nNo tags specified.\nNo areas defined.",
+        'areas/tags/timestamp verified via JavaScript'
     );
     $driver->find_element('.alert-danger button')->click();
 };
