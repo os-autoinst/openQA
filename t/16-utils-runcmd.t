@@ -340,16 +340,16 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
         sub fail ($self, $args) { $self->{fail_message} = $args }
     }    # uncoverable statement
 
-    sub _run_save_needle_test ($git_mock) {
+    sub _run_save_needle_test ($git_mock, $log_error = undef, $fail_message = undef) {
         my @log_errors;
         my $log_mock = Test::MockModule->new(ref $t->app->log);
         $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });
         my $job = bless({} => 'Test::FailingMinionJob');
         OpenQA::Task::Needle::Save::_save_needle($t->app, $job, $fake_needle);
 
-        like $log_errors[0], qr/Unable to fetch.*mocked/, 'error logged on fail';
+        like $log_errors[0], $log_error // qr/Unable to fetch.*mocked/, 'error logged on fail';
         like $job->{fail_message}->{error},
-          qr{<strong>Failed to save.*</strong>.*<pre>Unable to fetch.*mocked.*</pre>},
+          $fail_message // qr{<strong>Failed to save.*</strong>.*<pre>Unable to fetch.*mocked.*</pre>},
           'error message in fail';
     }
 
@@ -365,6 +365,13 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
     subtest 'fails when git_auto_commit is enabled and do_cleanup is disabled ' => sub {
         $t->app->config->{'scm git'}->{do_cleanup} = 'no';
         _run_save_needle_test($git_mock);
+    };
+
+    subtest 'fails when commit fails ' => sub {
+        $git_mock->redefine(set_to_latest_master => '');
+        $git_mock->redefine(commit => sub ($self, @) { $self->error({status => 0}, 'Commit error') });
+        local $fake_needle->{overwrite} = 1;
+        _run_save_needle_test($git_mock, (qr/OpenQA::Error::Cmd: Commit error/) x 2);
     };
 };
 
