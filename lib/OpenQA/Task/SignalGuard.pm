@@ -17,6 +17,8 @@ has retry => 1;
 #       action twice.
 has abort => 0;
 
+my $SIGNALED = 0;
+
 # retries the specified Minion job when receiving SIGTERM/SIGINT as long as the returned object exists
 # note: Prevents the job to fail with "Job terminated unexpectedly".
 sub new ($class, $job, @attributes) {
@@ -33,6 +35,7 @@ sub new ($class, $job, @attributes) {
 }
 
 sub _handle_signal ($self_weak, $signal) {
+    $SIGNALED = $signal;
     # abort job if the corresponding flag is set
     return undef unless $self_weak;
     my $job = $self_weak->{_job};
@@ -50,6 +53,8 @@ sub _handle_signal ($self_weak, $signal) {
     $job->retry;
     exit;
 }
+
+sub signaled ($class) { $SIGNALED }
 
 sub DESTROY ($self) {
     $SIG{TERM} = $self->{_old_term_handler};
