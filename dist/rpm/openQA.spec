@@ -326,6 +326,14 @@ Use this package to install munin scripts that allow to monitor some openQA
 statistics.
 %endif
 
+%package anubis
+Summary:        Anubis bot integration for openQA
+Requires:       docker
+Requires:       docker-compose
+Requires:       %{name} = %{version}
+
+%description anubis
+Use this package to install a anubis container alongside its default configuration
 
 %prep
 %setup -q
@@ -425,6 +433,15 @@ install -m 644 contrib/munin/config/minion.config %{buildroot}/%{_sysconfdir}/mu
 install -m 755 contrib/munin/utils/munin-mail %{buildroot}/%{_datadir}/openqa/script/munin-mail
 %endif
 
+# anubis
+install -d -m 755 %{buildroot}%{_sysconfdir}/anubis
+install -d -m 755 %{buildroot}%{_sysconfdir}/anubis/data/cfg
+install -m 644 contrib/anubis/botPolicy.yaml %{buildroot}%{_sysconfdir}/anubis/data/cfg/botPolicy.yaml
+install -m 644 contrib/anubis/docker-compose.yml %{buildroot}%{_sysconfdir}/anubis/docker-compose.yml
+install -m 600 contrib/anubis/anubis.env %{buildroot}%{_sysconfdir}/anubis/anubis.env
+install -D -m 644 contrib/anubis/openqa-anubis.service %{buildroot}%{_unitdir}/openqa-anubis.service
+# install -m 644 contrib/anubis/nginx-anubis.conf %{buildroot}%{_sysconfdir}/anubis/nginx-anubis.conf
+
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
     sed -e 's,%{_bindir}/env perl,%{_bindir}/perl,' -i $file
@@ -521,6 +538,15 @@ fi
 
 %post continuous-update
 %service_add_post openqa-continuous-update.timer
+
+%post anubis
+%service_add_post openqa-anubis.service
+
+%preun anubis
+%service_del_preun openqa-anubis.service
+
+%postun anubis
+%service_del_postun openqa-anubis.service
 
 %preun
 %service_del_preun %{openqa_services}
@@ -866,5 +892,16 @@ fi
 
 %files mcp
 %{_datadir}/openqa/lib/OpenQA/WebAPI/Plugin/MCP.pm
+
+%files anubis
+%defattr(-,root,root)
+%dir %{_sysconfdir}/anubis
+%dir %{_sysconfdir}/anubis/data
+%dir %{_sysconfdir}/anubis/data/cfg
+%config(noreplace) %{_sysconfdir}/anubis/data/cfg/botPolicy.yaml
+%config(noreplace) %{_sysconfdir}/anubis/docker-compose.yml
+%config(noreplace) %attr(0600, root, root) %{_sysconfdir}/anubis/anubis.env
+# %config(noreplace) %{_sysconfdir}/anubis/nginx-anubis.conf
+%{_unitdir}/openqa-anubis.service
 
 %changelog
