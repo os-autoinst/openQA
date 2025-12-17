@@ -140,17 +140,12 @@ sub _save_needle ($app, $minion_job, $args) {
     }
     return $minion_job->fail({error => "<strong>Error creating/updating needle:</strong><br>$!."}) unless $success;
 
-    # commit needle in Git repository
-    if ($git->autocommit_enabled) {
-        my $error = $git->commit(
-            {
-                add => ["$needlename.json", "$needlename.png"],
-                message => ($commit_message || sprintf('%s for %s', $needlename, $openqa_job->name)),
-            });
-        if ($error) {
-            $app->log->error($error);
-            return $minion_job->fail({error => _format_git_error($needlename, $error)});
-        }
+    try {
+        _commit_needle_in_git_repo($app, $git, $needlename, $openqa_job, $commit_message);
+    }
+    catch ($e) {
+        $app->log->error("$e");
+        return $minion_job->fail({error => _format_git_error($needlename, "$e")});
     }
 
     # create/update needle in database
@@ -168,6 +163,14 @@ sub _save_needle ($app, $minion_job, $args) {
         $info->{propose_restart} = 1;
     }
     return $minion_job->finish($info);
+}
+
+sub _commit_needle_in_git_repo ($app, $git, $needlename, $openqa_job, $commit_message) {
+    $git->commit(
+        {
+            add => ["$needlename.json", "$needlename.png"],
+            message => ($commit_message || sprintf('%s for %s', $needlename, $openqa_job->name)),
+        }) if $git->autocommit_enabled;
 }
 
 1;

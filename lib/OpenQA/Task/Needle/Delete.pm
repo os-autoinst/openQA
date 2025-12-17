@@ -8,6 +8,7 @@ use OpenQA::Utils;
 use Scalar::Util 'looks_like_number';
 use Time::Seconds 'ONE_HOUR';
 use OpenQA::Task::SignalGuard;
+use Feature::Compat::Try;
 
 sub register {
     my ($self, $app) = @_;
@@ -57,12 +58,15 @@ sub _delete_needles ($app, $minion_job, $args) {
         }
         for my $needle (@$needles) {
             my $needle_id = $needle->id;
-            if (my $error = $needle->remove($user)) {
+            try {
+                $needle->remove($user);
+            }
+            catch ($e) {
                 push @errors,
                   {
                     id => $needle_id,
                     display_name => $needle->filename,
-                    message => $error,
+                    message => ref $e ? $e->msg : $e,
                   };
                 next;
             }

@@ -17,6 +17,8 @@ use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Needles qw(locate_needle);
+use Feature::Compat::Try;
+use Carp qw(croak);
 
 __PACKAGE__->table('needles');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -178,12 +180,11 @@ sub remove ($self, $user) {
     my $git = OpenQA::Git->new({app => $app, dir => $self->directory->path, user => $user});
     if ($git->autocommit_enabled) {
         my $directory = $self->directory;
-        my $error = $git->commit(
+        $git->commit(
             {
                 rm => [$fname, $screenshot],
                 message => sprintf('Remove %s/%s', $directory->name, $self->filename),
             });
-        return $error if $error;
     }
     else {
         my @error_files;
@@ -192,7 +193,7 @@ sub remove ($self, $user) {
         if (@error_files) {
             my $error = 'Unable to delete ' . join(' and ', @error_files);
             $app->log->debug($error);
-            return $error;
+            croak $error;
         }
     }
     $self->check_file;

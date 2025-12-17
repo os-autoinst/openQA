@@ -75,9 +75,10 @@ subtest 'invoke Git commands for real testing error handling' => sub {
     my $res;
 
     subtest 'invoking Git command outside of a Git repo' => sub {
-        stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
-        qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged';
-        like $res, qr"^Unable to commit via Git \($empty_tmp_dir\): fatal: Not a git repository"i, 'Git error returned';
+        throws_ok {
+            stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
+            qr/.*\[warn\].*fatal: Not a git repository/i, 'Git error logged'
+        } qr/OpenQA::Error::Cmd: Unable to commit via Git.*\Q$empty_tmp_dir\E.*fatal: Not a git repository/i;
         combined_like {
             throws_ok { $git->check_sha('this-sha-does-not-exist') } qr/internal Git error/i,
             'check throws an exception'
@@ -259,10 +260,14 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
             }
             return \%mock_return_value;
         });
-    combined_like {
-        like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/, 'error handled during push';
-    }
-    qr/Error: mocked push error/, 'push error logged';
+    throws_ok {
+        combined_like {
+            like $git->commit({message => 'failed push test'}), qr/Unable to push Git commit/,
+              'error handled during push';
+        }
+        qr/Error: mocked push error/,
+        'push error logged'
+    } qr{OpenQA::Error::Cmd: Unable to push Git commit.*mocked push error};
     $git->config->{do_push} = '';
 };
 
@@ -335,16 +340,16 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
         sub fail ($self, $args) { $self->{fail_message} = $args }
     }    # uncoverable statement
 
-    sub _run_save_needle_test ($git_mock) {
+    sub _run_save_needle_test ($git_mock, $log_error = undef, $fail_message = undef) {
         my @log_errors;
         my $log_mock = Test::MockModule->new(ref $t->app->log);
         $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });
         my $job = bless({} => 'Test::FailingMinionJob');
         OpenQA::Task::Needle::Save::_save_needle($t->app, $job, $fake_needle);
 
-        like $log_errors[0], qr/Unable to fetch.*mocked/, 'error logged on fail';
+        like $log_errors[0], $log_error // qr/Unable to fetch.*mocked/, 'error logged on fail';
         like $job->{fail_message}->{error},
-          qr{<strong>Failed to save.*</strong>.*<pre>Unable to fetch.*mocked.*</pre>},
+          $fail_message // qr{<strong>Failed to save.*</strong>.*<pre>Unable to fetch.*mocked.*</pre>},
           'error message in fail';
     }
 
@@ -360,6 +365,13 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
     subtest 'fails when git_auto_commit is enabled and do_cleanup is disabled ' => sub {
         $t->app->config->{'scm git'}->{do_cleanup} = 'no';
         _run_save_needle_test($git_mock);
+    };
+
+    subtest 'fails when commit fails ' => sub {
+        $git_mock->redefine(set_to_latest_master => '');
+        $git_mock->redefine(commit => sub ($self, @) { $self->error({status => 0}, 'Commit error') });
+        local $fake_needle->{overwrite} = 1;
+        _run_save_needle_test($git_mock, (qr/OpenQA::Error::Cmd: Commit error/) x 2);
     };
 };
 

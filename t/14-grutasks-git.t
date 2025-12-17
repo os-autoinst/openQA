@@ -464,7 +464,9 @@ subtest 'delete_needles' => sub {
     $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
-            return {status => 0, stderr => 'lala', stdout => ''};
+            my $res = {status => 0, stderr => 'lala', stdout => ''};
+            OpenQA::Git->error($res, $args{croak}) if !$res->{status} && $args{croak};
+            return $res;
         });
     $args{needle_ids} = [5];
     stderr_like { $res = run_gru_job(@gru_args) } qr{Git command failed.*git.*rm}, 'expected stderr';
