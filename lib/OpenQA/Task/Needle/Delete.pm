@@ -62,12 +62,17 @@ sub _delete_needles ($app, $minion_job, $args) {
                 $needle->remove($user);
             }
             catch ($e) {
+                my $msg = "$e";
+                if (ref $e and $e->shutting_down) {
+                    $msg = "Aborted due to server restart, please try again in a bit ($msg)";
+                }
                 push @errors,
                   {
                     id => $needle_id,
                     display_name => $needle->filename,
-                    message => ref $e ? $e->msg : $e,
+                    message => $msg,
                   };
+                last if ref $e && $e->shutting_down;
                 next;
             }
             push @removed_ids, $needle_id;
