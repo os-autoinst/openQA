@@ -344,6 +344,7 @@ Use this package to install munin scripts that allow to monitor some openQA
 statistics.
 %endif
 
+<<<<<<< HEAD
 %package client-bash-completion
 Summary:        Bash Completion for %{name}
 Group:          Development/Tools/Other
@@ -360,6 +361,16 @@ Supplements:    (%{name}-client and zsh)
 
 %description client-zsh-completion
 The official zsh completion script for openqa-cli.
+=======
+%package anubis
+Summary:        Anubis bot integration for openQA
+Requires:       docker
+Requires:       docker-compose
+Requires:       %{name} = %{version}
+
+%description anubis
+Use this package to install a anubis container alongside its default configuration
+>>>>>>> 1673c0292 (Add a sub-package for Anubis configuration)
 
 %package llm-server
 Summary:        Local LLM Server features for openQA workers
@@ -466,6 +477,14 @@ install -m 644 contrib/munin/config/minion.config %{buildroot}/%{_sysconfdir}/mu
 install -m 755 contrib/munin/utils/munin-mail %{buildroot}/%{_datadir}/openqa/script/munin-mail
 %endif
 
+# anubis
+install -d -m 755 %{buildroot}%{_sysconfdir}/anubis
+install -d -m 755 %{buildroot}%{_sysconfdir}/anubis/data/cfg
+install -m 644 contrib/anubis/botPolicy.yaml %{buildroot}%{_sysconfdir}/anubis/data/cfg/botPolicy.yaml
+install -m 644 contrib/anubis/docker-compose.yml %{buildroot}%{_sysconfdir}/anubis/docker-compose.yml
+install -m 600 contrib/anubis/anubis.env %{buildroot}%{_sysconfdir}/anubis/anubis.env
+install -D -m 644 contrib/anubis/openqa-anubis.service %{buildroot}%{_unitdir}/openqa-anubis.service
+
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
     sed -e 's,%{_bindir}/env perl,%{_bindir}/perl,' -i $file
@@ -562,6 +581,15 @@ fi
 
 %post continuous-update
 %service_add_post openqa-continuous-update.timer
+
+%post anubis
+%service_add_post openqa-anubis.service
+
+%preun anubis
+%service_del_preun openqa-anubis.service
+
+%postun anubis
+%service_del_postun openqa-anubis.service
 
 %preun
 %service_del_preun %{openqa_services}
@@ -926,9 +954,21 @@ fi
 %files mcp
 %{_datadir}/openqa/lib/OpenQA/WebAPI/Plugin/MCP.pm
 
+<<<<<<< HEAD
 %files llm-server
 %dir %{_datadir}/containers
 %dir %{_datadir}/containers/systemd
 %{_datadir}/containers/systemd/openqa-llm-server.container
+=======
+%files anubis
+%defattr(-,root,root)
+%dir %{_sysconfdir}/anubis
+%dir %{_sysconfdir}/anubis/data
+%dir %{_sysconfdir}/anubis/data/cfg
+%config(noreplace) %{_sysconfdir}/anubis/data/cfg/botPolicy.yaml
+%config(noreplace) %{_sysconfdir}/anubis/docker-compose.yml
+%config(noreplace) %attr(0600, root, root) %{_sysconfdir}/anubis/anubis.env
+%{_unitdir}/openqa-anubis.service
+>>>>>>> f07626d1e (Add a sub-package for Anubis configuration)
 
 %changelog
