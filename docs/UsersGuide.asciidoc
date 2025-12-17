@@ -800,10 +800,10 @@ scenarios:
     opensuse-15.1-DVD-Updates-x86_64:
     - textmode
     - gnome:
-      machine: uefi
-      priority: 70
-      settings:
-        QEMUVGA: cirrus
+        machine: uefi
+        priority: 70
+        settings:
+          QEMUVGA: cirrus
 ```
 
 === Defaults
@@ -846,15 +846,15 @@ scenarios:
     opensuse-15.1-DVD-Updates-x86_64:
     - textmode
     - gnome:
-      machine: uefi
-      priority: 70
-      settings:
-        QEMUVGA: cirrus
+        machine: uefi
+        priority: 70
+        settings:
+          QEMUVGA: cirrus
     - gnome_staging:
-      testsuite: gnome
-      machine: [32bit, 64bit-staging]
-      settings:
-        FOO: '2'
+        testsuite: gnome
+        machine: [32bit, 64bit-staging]
+        settings:
+          FOO: '2'
 ```
 
 === YAML Aliases
@@ -879,15 +879,15 @@ scenarios:
     opensuse-15.1-DVD-Updates-x86_64:
     - textmode
     - gnome: &gnome
-      machine: uefi
-      priority: 70
-      settings:
-        QEMUVGA: cirrus
+        machine: uefi
+        priority: 70
+        settings:
+          QEMUVGA: cirrus
     - gnome_staging: &gnome_staging
-      testsuite: gnome
-      machine: [32bit, 64bit-staging]
-      settings:
-        FOO: '2'
+        testsuite: gnome
+        machine: [32bit, 64bit-staging]
+        settings:
+          FOO: '2'
     opensuse-15.2-GNOME-Live-x86_64:
     - textmode
     - gnome: *gnome
@@ -918,32 +918,32 @@ scenarios:
     opensuse-15.1-DVD-Updates-x86_64:
     - textmode
     - gnome:
-      machine: uefi
-      priority: 70
-      settings: &common1
-        QEMUVGA: cirrus
-        FOO: default foo
+        machine: uefi
+        priority: 70
+        settings: &common1
+          QEMUVGA: cirrus
+          FOO: default foo
     - gnome:
-      machine: [32bit, 64bit-staging]
-      priority: 70
-      settings: &common2
-        QEMUVGA: cirrus
-        FOO: default foo
-        BAR: default bar
+        machine: [32bit, 64bit-staging]
+        priority: 70
+        settings: &common2
+          QEMUVGA: cirrus
+          FOO: default foo
+          BAR: default bar
     - gnome_staging:
-      testsuite: gnome
-      machine: [32bit, 64bit-staging]
-      settings:
-        # Merge
-        <<: *common1
-        FOO: foo # overrides the value from the merge keys
+        testsuite: gnome
+        machine: [32bit, 64bit-staging]
+        settings:
+          # Merge
+          <<: *common1
+          FOO: foo # overrides the value from the merge keys
     - gnome_staging:
-      testsuite: gnome
-      machine: [32bit, 64bit-staging]
-      settings:
-        # Merge
-        <<: [*common1, *common2] # *common1 overrides *common2
-        FOO: foo # overrides the value from the merge keys
+        testsuite: gnome
+        machine: [32bit, 64bit-staging]
+        settings:
+          # Merge
+          <<: [*common1, *common2] # *common1 overrides *common2
+          FOO: foo # overrides the value from the merge keys
 ```
 
 
