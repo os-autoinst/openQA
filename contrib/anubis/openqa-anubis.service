@@ -1,0 +1,14 @@
+[Unit]
+Description=Anubis Bot for openQA
+Requires=docker.service
+After=docker.service network.target
+
+[Service]
+Restart=always
+EnvironmentFile=/etc/anubis/anubis.env
+WorkingDirectory=/etc/anubis
+ExecStart=/usr/bin/docker-compose up
+ExecStop=/usr/bin/docker-compose down
+
+[Install]
+WantedBy=multi-user.target
