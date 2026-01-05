@@ -33,6 +33,7 @@ use Feature::Compat::Try;
 use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 use constant CACHE_SERVICE_POLL_DELAY => $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} // 5;
 use constant CACHE_SERVICE_TEST_SYNC_ATTEMPTS => $ENV{OPENQA_CACHE_SERVICE_TEST_SYNC_ATTEMPTS} // 3;
+my %ASSETS_TO_SKIP = map { $_ => 1 } qw(UEFI_PFLASH_VARS KERNEL INITRD);
 
 my $isotovideo = '/usr/bin/isotovideo';
 my $workerpid;
@@ -64,7 +65,7 @@ sub detect_asset_keys ($vars) {
         # test (which we should treat as an hdd asset), or it may point
         # to an absolute filesystem location of e.g. a template file from
         # edk2 (which we shouldn't).
-        next if $key eq 'UEFI_PFLASH_VARS' && $value =~ m,^/,;
+        next if exists $ASSETS_TO_SKIP{$key} && $value =~ m,^/,;
         my $type = asset_type_from_setting($key, $value);
 
         # Exclude repo assets for now because the cache service does not

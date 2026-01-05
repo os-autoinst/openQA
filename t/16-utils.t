@@ -327,6 +327,8 @@ subtest asset_type_from_setting => sub {
     is asset_type_from_setting('UEFI_PFLASH_VARS'), 'hdd', 'simple from UEFI_PFLASH_VARS';
     is asset_type_from_setting('UEFI_PFLASH_VARS', 'relative'), 'hdd', 'relative from UEFI_PFLASH_VARS';
     is asset_type_from_setting('UEFI_PFLASH_VARS', '/absolute'), '', 'absolute from UEFI_PFLASH_VARS';
+    is asset_type_from_setting('KERNEL', '/vmlinuz'), 'other', 'absolute from KERNEL';
+    is asset_type_from_setting('KERNEL', 'vmlinuz'), 'other', 'relative from KERNEL';
 };
 
 subtest parse_assets_from_settings => sub {
@@ -370,6 +372,12 @@ subtest parse_assets_from_settings => sub {
     $assets = parse_assets_from_settings($settings);
     $refassets->{UEFI_PFLASH_VARS} = {type => 'hdd', name => 'uefi_pflash_vars.qcow2'};
     is_deeply $assets, $refassets, 'correct with relative UEFI_PFLASH_VARS';
+    # KERNEL/INITRD are treated similar to UEFI_PFLASH_VARS
+    $settings->{KERNEL} = '/path/vmlinuz';
+    $assets = parse_assets_from_settings($settings);
+    $refassets->{KERNEL} = {type => 'other', name => '/path/vmlinuz'};
+    is_deeply $assets, $refassets, 'correct with absolute KERNEL';
+
 };
 
 subtest 'base_host' => sub {

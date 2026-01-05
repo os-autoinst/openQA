@@ -147,6 +147,20 @@ subtest 'asset settings' => sub {
 
     $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
     is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or always_explain $got;
+
+    subtest 'absolute path on KERNEL and INITRD' => sub {
+        my $test_settings = {
+            KERNEL => '/usr/share/qemu/vmlinuz',
+            INITRD => '/usr/share/qemu/initrd',
+            ISO => 'test.iso',
+        };
+
+        my $test_expected = {'ISO' => 'iso'};
+
+        my $test_got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($test_settings);
+        is_deeply($test_got, $test_expected, 'KERNEL and INITRD with absolute paths are skipped from caching')
+          or always_explain $test_got;
+    }
 };
 
 subtest 'caching' => sub {
