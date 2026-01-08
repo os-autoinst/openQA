@@ -56,6 +56,15 @@ sub show_scheduled_product {
     $self->render(json => $scheduled_product->to_hash(@args));
 }
 
+sub _get_iso_params_and_validate ($self) {
+    my $validation = $self->validation;
+    my @param_keys = (qw(distri version flavor arch build));
+    $validation->required($_) for @param_keys;
+    return [map { $validation->param($_) } @param_keys] unless $validation->has_error;
+    $self->reply->validation_error({format => 'json'});
+    return 0;
+}
+
 =over 4
 
 =item job_statistics()
@@ -89,13 +98,30 @@ could also be used to generate a more detailed report.
 =cut
 
 sub job_statistics ($self) {
-    my $validation = $self->validation;
-    my @param_keys = (qw(distri version flavor arch build));
-    $validation->required($_) for @param_keys;
-    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
-    my @params = map { $validation->param($_) } @param_keys;
+    return undef unless my $params = $self->_get_iso_params_and_validate;
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    $self->render(json => $scheduled_products->job_statistics(@params));
+    $self->render(json => $scheduled_products->job_statistics(@$params));
+}
+
+=over 4
+
+=item update_note()
+
+Adds/updates a note on the latest scheduled product matching the specified
+DISTRI, VERSION, FLAVOR, ARCH and BUILD parameters. This note is shown on the
+web UI. The ID of the scheduled product where the note was added/updated is
+returned, e.g. `{updated_product_id: 42}`.
+
+=back
+
+=cut
+
+sub update_note ($self) {
+    my $validation = $self->validation;
+    $validation->required('note');
+    return undef unless my $params = $self->_get_iso_params_and_validate;
+    my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
+    $self->render(json => $scheduled_products->update_note(@$params, $validation->param('note')));
 }
 
 sub validate_create_parameters ($self) {

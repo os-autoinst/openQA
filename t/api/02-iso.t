@@ -310,6 +310,8 @@ is($server_64->{settings}->{PRECEDENCE}, 'overridden', 'precedence override (sui
 
 lj;
 
+my $params = 'distri=opensuse&version=13.1&flavor=DVD&arch=i586&build=0091';
+
 subtest 'job statistics can be queried about the scheduled product' => sub {
     $schema->txn_begin;
     # assume some of the scheduled jobs are already done
@@ -317,7 +319,7 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
     $jobs->find(99988)->update({state => DONE, result => FAILED});
     $jobs->find(99993)->update({state => DONE, result => PASSED});
     $jobs->find(99994)->update({state => DONE, result => PASSED});
-    $t->get_ok('/api/v1/isos/job_stats?distri=opensuse&version=13.1&flavor=DVD&arch=i586&build=0091')->status_is(200);
+    $t->get_ok("/api/v1/isos/job_stats?$params")->status_is(200);
     $schema->txn_rollback;
     my $json = $t->tx->res->json;
     is_deeply [sort keys %$json], [DONE, SCHEDULED], 'expected states present';
@@ -327,6 +329,18 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
     is_deeply [sort @{$json->{done}->{passed}->{job_ids}}], [99993, 99994], 'passed jobs';
     is_deeply [sort @{$json->{scheduled}->{none}->{job_ids}}], [99986, 99987, 99989, 99990, 99991, 99992],
       'scheduled jobs';
+};
+
+subtest 'note can be updated by distri, version, flavor, arch and build parameters' => sub {
+    $t->put_ok("/api/v1/experimental/isos/note?$params");
+    $t->status_is(400, 'error returned if parameter missing');
+    $t->put_ok("/api/v1/experimental/isos/note?$params&note=not+approving");
+    $t->status_is(200, 'update successful');
+    my $res = $t->tx->res->json;
+    ok my $id = $res->{updated_product_id}, 'scheduled product ID returned' or always_explain $res;
+    $t->get_ok("/api/v1/isos/$id")->status_is(200, 'returned scheduled product ID exists');
+    $t->json_is('/results/note' => 'not approving', 'note present');
+    always_explain $t->tx->res->json unless $t->success;
 };
 
 subtest 'old tests are cancelled unless they are marked as important' => sub {
