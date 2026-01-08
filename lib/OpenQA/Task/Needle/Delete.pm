@@ -12,10 +12,10 @@ use Feature::Compat::Try;
 
 sub register {
     my ($self, $app) = @_;
-    $app->minion->add_task(delete_needles => sub { _delete_needles($app, @_) });
+    $app->minion->add_task(delete_needles => sub { _task_delete_needles($app, @_) });
 }
 
-sub _delete_needles ($app, $minion_job, $args) {
+sub _task_delete_needles ($app, $minion_job, $args) {
     # SignalGuard will prevent the delete task to interrupt with no recovery,
     # instead will retry once the gru server returned up and running. The popup
     # on the frontend will wait until the retried job finished.
@@ -42,13 +42,23 @@ sub _delete_needles ($app, $minion_job, $args) {
     }
 
     $signal_guard->retry(0);
+    _delete_needles($app, $user, \%to_remove, \@removed_ids, \@errors);
 
-    for my $dir (sort keys %to_remove) {
-        my $needles = $to_remove{$dir};
+
+    return $minion_job->finish(
+        {
+            removed_ids => \@removed_ids,
+            errors => \@errors
+        });
+}
+
+sub _delete_needles ($app, $user, $to_remove, $removed_ids, $errors) {
+  DIR: for my $dir (sort keys %$to_remove) {
+        my $needles = $to_remove->{$dir};
         # prevent multiple git tasks to run in parallel
         my $guard;
         unless ($guard = $app->minion->guard("git_clone_${dir}_task", 2 * ONE_HOUR)) {
-            push @errors,
+            push @$errors,
               {
                 id => $_,
                 message => "Another git task for $dir is ongoing. Try again later.",
@@ -63,27 +73,22 @@ sub _delete_needles ($app, $minion_job, $args) {
             }
             catch ($e) {
                 my $msg = "$e";
-                if (ref $e and $e->shutting_down) {
+                my $shutting_down = ref $e && $e->shutting_down;
+                if ($shutting_down) {
                     $msg = "Aborted due to server restart, please try again in a bit ($msg)";
                 }
-                push @errors,
+                push @$errors,
                   {
                     id => $needle_id,
                     display_name => $needle->filename,
                     message => $msg,
                   };
-                last if ref $e && $e->shutting_down;
+                last DIR if $shutting_down;
                 next;
             }
-            push @removed_ids, $needle_id;
+            push @$removed_ids, $needle_id;
         }
     }
-
-    return $minion_job->finish(
-        {
-            removed_ids => \@removed_ids,
-            errors => \@errors
-        });
 }
 
 1;
