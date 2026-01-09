@@ -1,6 +1,6 @@
 // jshint esversion: 9
 
-function createElement(tag, content = [], attrs = {}) {
+function createElement(tag, content = [], attrs = {}, options = {}) {
   const elem = document.createElement(tag);
 
   for (const [key, value] of Object.entries(attrs)) {
@@ -10,6 +10,9 @@ function createElement(tag, content = [], attrs = {}) {
   }
 
   elem.append(...content);
+  if (options.preWrap) {
+    elem.style.whiteSpace = 'pre-wrap';
+  }
   return elem;
 }
 
@@ -244,4 +247,17 @@ function renderModuleTable(container, response) {
 
     tbody.appendChild(renderModuleRow(module, response.snippets));
   }
+}
+
+function renderJobLink(jobId) {
+  return createElement('a', [jobId], {href: '/tests/' + jobId});
+}
+
+function renderMessages(messages) {
+  return Array.isArray(messages) && messages.length > 1
+    ? createElement(
+        'ul',
+        messages.map(m => createElement('li', m, {}, {preWrap: true}))
+      )
+    : createElement('span', [messages], {}, {preWrap: true});
 }
