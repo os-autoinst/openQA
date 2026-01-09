@@ -500,8 +500,8 @@ httpsonly = 0
 [[database]]
 === Database
 
-openQA uses PostgreSQL as database. By default, a database with name `openqa`
-and `geekotest` user as owner is used. An automatic setup of a freshly 
+openQA requires PostgreSQL 14 or newer. By default, a database with name
+`openqa` and `geekotest` user as owner is used. An automatic setup of a freshly
 installed PostgreSQL instance can be done using https://github.com/os-autoinst/openQA/blob/master/script/setup-db[this script].
 The database connection can be configured in
 <<GettingStarted.asciidoc#_configuration,the database configuration file>>.
@@ -1420,7 +1420,7 @@ version:
 +
 [source,sh]
 ----
-oldver=10 newver=12
+oldver=17 newver=18
 sudo zypper in postgresql$newver-server postgresql$newver-contrib
 ----
 
