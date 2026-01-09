@@ -192,7 +192,7 @@ test_requires:
   curl:
   jq:
   os-autoinst:
-  postgresql-server:
+  postgresql-server: '>= 14'
   python3-setuptools:
   perl(App::cpanminus):
   perl(Selenium::Remote::Driver): '>= 1.23'
