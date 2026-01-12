@@ -6,14 +6,17 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Utils;
 use Scalar::Util 'looks_like_number';
-use Time::Seconds 'ONE_HOUR';
+use Time::Seconds qw(ONE_HOUR ONE_DAY);
 use OpenQA::Task::SignalGuard;
 use Feature::Compat::Try;
+use Carp qw(croak);
 
 sub register {
     my ($self, $app) = @_;
     $app->minion->add_task(delete_needles => sub { _task_delete_needles($app, @_) });
 }
+
+sub restart_delay { $ENV{OPENQA_GRU_SERVER_RESTART_DELAY} // 5 }
 
 sub _task_delete_needles ($app, $minion_job, $args) {
     # SignalGuard will prevent the delete task to interrupt with no recovery,
@@ -25,10 +28,11 @@ sub _task_delete_needles ($app, $minion_job, $args) {
     my $user = $schema->resultset('Users')->find($args->{user_id});
     my $needle_ids = $args->{needle_ids};
 
-    my (@removed_ids, @errors);
-
-    my %to_remove;
+    my (@errors, %to_remove);
+    my @removed_ids = @{$minion_job->info->{notes}->{removed_ids} || []};
+    my %removed = map { $_ => 1 } @removed_ids;
     for my $needle_id (@$needle_ids) {
+        next if $removed{$needle_id};
         my $needle = looks_like_number($needle_id) ? $needles->find($needle_id) : undef;
         if (!$needle) {
             push @errors,
@@ -42,8 +46,17 @@ sub _task_delete_needles ($app, $minion_job, $args) {
     }
 
     $signal_guard->retry(0);
-    _delete_needles($app, $user, \%to_remove, \@removed_ids, \@errors);
-
+    try {
+        _delete_needles($app, $user, \%to_remove, \@removed_ids, \@errors);
+    }
+    catch ($e) {
+        if (ref $e && $e->shutting_down) {
+            $minion_job->note(removed_ids => \@removed_ids);
+            # Explicitly set high value for expire, otherwise it would be only 60s
+            return $minion_job->retry({delay => restart_delay, expire => ONE_DAY});
+        }
+        croak $e;
+    }
 
     return $minion_job->finish(
         {
@@ -72,18 +85,13 @@ sub _delete_needles ($app, $user, $to_remove, $removed_ids, $errors) {
                 $needle->remove($user);
             }
             catch ($e) {
-                my $msg = "$e";
-                my $shutting_down = ref $e && $e->shutting_down;
-                if ($shutting_down) {
-                    $msg = "Aborted due to server restart, please try again in a bit ($msg)";
-                }
+                croak $e if ref $e && $e->shutting_down;
                 push @$errors,
                   {
                     id => $needle_id,
                     display_name => $needle->filename,
-                    message => $msg,
+                    message => "$e",
                   };
-                last DIR if $shutting_down;
                 next;
             }
             push @$removed_ids, $needle_id;
