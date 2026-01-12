@@ -380,6 +380,7 @@ sub startup ($self) {
     $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');
     $api_ro->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');
     $api_ro->get('/isos/job_stats')->name('apiv1_scheduled_product_job_stats')->to('iso#job_statistics');
+    $api_ro->put('/experimental/isos/note')->name('apiv1_scheduled_product_note')->to('iso#update_note');
 
     # api/v1/webhooks
     $api_ro->post('/webhooks/product')->name('apiv1_evaluate_webhook_product')->to('webhook#product');
