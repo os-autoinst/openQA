@@ -11,6 +11,7 @@ use OpenQA::Utils qw(run_cmd_with_log_return_error run_cmd_with_log config_autoc
 use OpenQA::App;
 use Feature::Compat::Try;
 use OpenQA::Error::Cmd;
+use OpenQA::Task::SignalGuard;
 use Carp qw(croak);
 
 has 'app';
@@ -36,6 +37,11 @@ sub _validate_attributes ($self) {
 }
 
 sub _run_cmd ($self, $args, $options = {}) {
+    if (my $signal = OpenQA::Task::SignalGuard->signaled and !$options->{force}) {
+        my $error
+          = OpenQA::Error->new(signal => $signal, msg => "Not running git command (@$args) because of signal $signal");
+        croak $error;
+    }
     my $include_git_path = $options->{include_git_path} // 1;
     my $batchmode = $options->{batchmode} // 0;
     my @cmd;
@@ -106,7 +112,14 @@ sub commit ($self, $args = undef) {
     # commit changes
     my $message = $args->{message};
     my $author = sprintf('--author=%s <%s>', $self->user->fullname, $self->user->email);
-    $self->_run_cmd(['commit', '-q', '-m', $message, $author, @files], {croak => 'Unable to commit via Git'});
+    try {
+        $self->_run_cmd(['commit', '-q', '-m', $message, $author, @files], {croak => 'Unable to commit via Git'});
+    }
+    catch ($e) {
+        $self->_run_cmd(['restore', '--staged', @files], {force => 1, croak => 'Unable to restore'})
+          if ref $e && $e->shutting_down;
+        croak $e;
+    }
 
     # push changes
     if (($self->config->{do_push} || '') eq 'yes') {
@@ -116,10 +129,17 @@ sub commit ($self, $args = undef) {
             return undef;
         }
         catch ($e) {
-            if ($e->return_code == 128 and $e->stderr =~ m/Authentication failed for .http/) {
-                $msg
-                  .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
-                $e->msg($msg);
+            if (ref $e) {
+                $self->_run_cmd(['reset', '--hard', 'HEAD^1'], {force => 1, croak => 'Unable to reset'})
+                  if $e->shutting_down;
+                if (    ref $e eq 'OpenQA::Error::Cmd'
+                    and $e->return_code == 128
+                    and $e->stderr =~ m/Authentication failed for .http/)
+                {
+                    $msg
+                      .= '. See https://open.qa/docs/#_setting_up_git_support on how to setup git support and possibly push via ssh.';
+                    $e->msg($msg);
+                }
             }
             croak $e;
         }

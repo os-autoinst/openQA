@@ -21,6 +21,9 @@ use Mojo::Util qw(dumper scope_guard);
 use Mojo::File qw(path tempdir);
 use Time::Seconds;
 use File::Copy::Recursive qw(dircopy);
+use Test::MockModule;
+use Test::MockObject;
+use OpenQA::Error;
 
 # Avoid using tester's ~/.gitconfig
 delete $ENV{HOME};
@@ -480,6 +483,22 @@ subtest 'delete_needles' => sub {
         is $res->{state}, 'finished', 'job finished';
         $error = $res->{result}->{errors}->[0];
         like $error->{message}, qr{Another git task for.*fedora.*is ongoing}, 'expected error message';
+    };
+
+    subtest 'error handling' => sub {
+        my $user = Test::MockObject->new;
+        my @needles = map { $schema->resultset('Needles')->new({id => $_}) } (23, 42);
+        my $mock_needle = Test::MockModule->new('OpenQA::Schema::Result::Needles');
+        $mock_needle->redefine(
+            remove => sub ($self, $user) {
+                return if $self->id == 23;
+                die OpenQA::Error->new(signal => 'INT', msg => "Not running git command (...) because of signal INT");
+            });
+        my %to_remove = ('/foo' => \@needles);
+        OpenQA::Task::Needle::Delete::_delete_needles($t->app, $user, \%to_remove, \my @removed_ids, \my @errors);
+        is $removed_ids[0], 23, 'Successfully removed first needle';
+        is $errors[0]->{id}, 42, 'Got error for second needle';
+        like $errors[0]->{message}, qr/Aborted due to server restart.*OpenQA::Error:/, 'Expected error message';
     };
 };
 

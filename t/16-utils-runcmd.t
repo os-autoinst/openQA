@@ -333,6 +333,65 @@ subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub
     ok $signal_guard->abort, 'signal guard is set to abort';
 };
 
+subtest 'OpenQA::Git signal handling' => sub {
+    my $signal_guard_mock = Test::MockModule->new('OpenQA::Task::SignalGuard');
+    my $git_mock = Test::MockModule->new('OpenQA::Git');
+    my $git = OpenQA::Git->new({app => $t->app, dir => $empty_tmp_dir, user => $first_user});
+
+    $git_mock->redefine(
+        run_cmd_with_log_return_error => sub { {status => 0, stdout => '', stderr => '', signal => 'INT'} });
+    throws_ok { $git->commit({add => ['file.txt']}) } qr{OpenQA::Error::Cmd: Unable to add via Git},
+      'Aborts git command when signal was received';
+
+    $signal_guard_mock->redefine(signaled => 'INT');
+    throws_ok { $git->commit({add => ['file.txt']}) } qr{OpenQA::Error: Not running git command.*signal INT},
+      'Does not execute command when signal was received';
+
+    $signal_guard_mock->unmock('signaled');
+
+    subtest 'rollback commit' => sub {
+
+        my @results = (
+            {status => 1, return_code => 0, stdout => 'add ok', stderr => '', signal => 0},
+            {status => 0, return_code => 0, stdout => '', stderr => '', signal => 'INT'},
+            {status => 1, return_code => 0, stdout => 'restore ok', stderr => '', signal => 0},
+        );
+        my @executed;
+        $git_mock->redefine(
+            run_cmd_with_log_return_error => sub ($cmd, %args) {
+                push @executed, $cmd;
+                return shift @results;
+            });
+        subtest 'git commit' => sub {
+            my @expected = (qr{git .* add file.txt}, qr{git .* commit}, qr{git .* restore.*file.txt});
+
+            throws_ok { $git->commit({add => ['file.txt'], message => 'test'}) }
+            qr{OpenQA::Error::Cmd: Unable to commit}, 'git commit fails';
+            for my $i (0 .. $#expected) {
+                like "@{$executed[$i]}", $expected[$i], "executed git command $i like expected";
+            }
+        };
+
+        subtest 'git push' => sub {
+            $git->config->{do_push} = 'yes';
+            @results = (
+                {status => 1, return_code => 0, stdout => 'add ok', stderr => '', signal => 0},
+                {status => 1, return_code => 0, stdout => 'commit ok', stderr => '', signal => 0},
+                {status => 0, return_code => 0, stdout => '', stderr => '', signal => 'INT'},
+                {status => 1, return_code => 0, stdout => 'restore ok', stderr => '', signal => 0},
+            );
+            my @expected = (qr{git .* add file.txt}, qr{git .* commit}, qr{git .* push}, qr{git .* reset .* HEAD\^1});
+
+            @executed = ();
+            throws_ok { $git->commit({add => ['file.txt'], message => 'test'}) } qr{OpenQA::Error::Cmd: Unable to push},
+              'git push failed';
+            for my $i (0 .. $#expected) {
+                like "@{$executed[$i]}", $expected[$i], "executed git command $i like expected";
+            }
+        };
+    };
+};
+
 subtest 'save_needle returns and logs error when set_to_latest_master fails' => sub {
 
     package Test::FailingMinionJob {
