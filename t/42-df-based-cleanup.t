@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -28,8 +29,7 @@ my $user = $schema->resultset('Users')->system;
 
 $app->log(Mojo::Log->new(level => 'debug'));
 
-sub job_log_like {
-    my ($regex, $test_name) = @_;
+sub job_log_like ($regex, $test_name) {
     my $job;
     combined_like { $job = run_gru_job($app, ensure_results_below_threshold => []) } $regex, $test_name;
     return $job;
@@ -249,6 +249,22 @@ subtest 'deleting results from important jobs sufficient' => sub {
     is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'Done with results dir after deleting results from important jobs',
       'finished within expected step';
+};
+
+subtest 'jobs in archive not considered' => sub {
+    # setup: as in the previous subtest but this time the important job is flagged as archived and is therefore
+    #        not supposed to be considered
+    %gained_disk_space_by_deleting_results_of_job = ($important_job_id => 1);
+    $jobs->find($important_job_id)->update({archived => 1});
+
+    my $job = job_log_like qr/
+        Deleting\svideo\sof\sjob\s$unimportant_job_id.*
+        Deleting\sresults\sof\sjob\s$unimportant_job_id.*
+        Deleting\svideo\sof\simportant\sjob\s$new_job_id.*
+    /xs, 'cleanup steps in right order without archived job mentioned';
+    is $job->{state}, 'failed', 'job considered failed';
+    is $job->{result}, 'Unable to cleanup enough results from results dir',
+      'not finished as job that could gain disk space is in the archive';
 };
 
 done_testing();
