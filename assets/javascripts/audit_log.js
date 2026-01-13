@@ -242,7 +242,7 @@ function renderSuccessfullyScheduledJobs(results) {
 function renderNotes(results, property, type = 'info') {
   const note = results[property];
   delete results[property];
-  return note !== undefined ? [createElement('div', [renderMessages(note)], {class: 'alert alert-' + type})] : [];
+  return note !== undefined ? [createElement('div', [renderMessages(note)], {class: `alert alert-${type}`})] : [];
 }
 
 function renderUnknownResults(results) {

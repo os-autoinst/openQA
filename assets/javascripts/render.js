@@ -250,7 +250,7 @@ function renderModuleTable(container, response) {
 }
 
 function renderJobLink(jobId) {
-  return createElement('a', [jobId], {href: '/tests/' + jobId});
+  return createElement('a', [jobId], {href: `/tests/${jobId}`});
 }
 
 function renderMessages(messages) {
