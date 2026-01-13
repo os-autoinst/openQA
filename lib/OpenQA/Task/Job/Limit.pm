@@ -153,6 +153,8 @@ sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
     return $margin_bytes;
 }
 
+sub _is_valid_percentage ($value) { looks_like_number($value) && $value >= 0 && $value <= 100 }
+
 sub _ensure_results_below_threshold ($job, @) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     # prevent multiple limit_* tasks to run in parallel
@@ -164,7 +166,7 @@ sub _ensure_results_below_threshold ($job, @) {
     my $min_free_percentage = $job->app->config->{misc_limits}->{results_min_free_disk_space_percentage};
     return $job->finish('No minimum free disk space percentage configured') unless defined $min_free_percentage;
     return $job->fail('Configured minimum free disk space is not a number between 0 and 100')
-      unless looks_like_number($min_free_percentage) && $min_free_percentage >= 0 && $min_free_percentage <= 100;
+      unless _is_valid_percentage($min_free_percentage);
 
     # check free percentage
     # caveat: We're using `df` here which might not be appropriate for any filesystem, e.g. one might want
