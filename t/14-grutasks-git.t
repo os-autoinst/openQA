@@ -495,10 +495,35 @@ subtest 'delete_needles' => sub {
                 die OpenQA::Error->new(signal => 'INT', msg => "Not running git command (...) because of signal INT");
             });
         my %to_remove = ('/foo' => \@needles);
-        OpenQA::Task::Needle::Delete::_delete_needles($t->app, $user, \%to_remove, \my @removed_ids, \my @errors);
+        my @removed_ids;
+        my @errors;
+        throws_ok {
+            OpenQA::Task::Needle::Delete::_delete_needles($t->app, $user, \%to_remove, \@removed_ids, \@errors)
+        }
+        qr{OpenQA::Error: Not running git command}, 'got error for second needle';
         is $removed_ids[0], 23, 'Successfully removed first needle';
-        is $errors[0]->{id}, 42, 'Got error for second needle';
-        like $errors[0]->{message}, qr/Aborted due to server restart.*OpenQA::Error:/, 'Expected error message';
+    };
+
+    subtest 'retry on server restart' => sub {
+        my $mock_needle = Test::MockModule->new('OpenQA::Task::Needle::Delete');
+        $mock_needle->redefine(
+            _delete_needles => sub ($, $, $, $removed_ids, $) {
+                push @$removed_ids, 23;
+                die OpenQA::Error->new(signal => 'INT', msg => "Not running git command (...) because of signal INT");
+            });
+        my $res = run_gru_job(@gru_args);
+        is $res->{state}, 'inactive', 'job inactive';
+        is $res->{notes}->{removed_ids}->[0], 23, 'removed ids are recorded';
+
+        subtest 'Unexpected error' => sub {
+            $mock_needle->redefine(_delete_needles => sub (@) { die "Something else" });
+            combined_like {
+                $res = run_gru_job(@gru_args);
+            }
+            qr{Gru job error: Something else}, 'error message logged';
+            is $res->{state}, 'failed', 'job failed';
+            like $res->{result}, qr{Something else}, 'error message recorded';
+        };
     };
 };
 
