@@ -183,11 +183,10 @@ sub _ensure_results_below_threshold ($job, @) {
     # note: If a new important build is scheduled while the cleanup is ongoing we must not accidentally clean these
     #       jobs up because our list of important builds is outdated. It would be possible to use a transaction
     #       to avoid this. However, this would make things more complicated because the actual screenshot deletion
-    #       must *not* run within that transaction so we needed to determine non-important jobs upfront. This
+    #       must *not* run within such a transaction. So we needed to determine non-important jobs upfront. This
     #       would eliminate the possibility to query jobs in ranges for better scalability. (The screenshot
-    #       deletion must not run within the transaction because we rely on getting a foreign key violation to
-    #       prevent deleting a screenshot which has in the meantime been linked to a new job. This conflict must
-    #       not only occur at the end of the transaction.)
+    #       deletion must not run within a transaction because we rely on getting a foreign key violation to
+    #       prevent deleting a screenshot which has in the meantime been linked to a new job.)
     my $schema = $app->schema;
     my ($max_job_id) = $schema->storage->dbh->selectrow_array('select max(id) from jobs');
     return $job->finish('Done, no jobs present') unless $max_job_id;
