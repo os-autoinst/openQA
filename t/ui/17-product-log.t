@@ -99,20 +99,10 @@ subtest 'trigger actions' => sub {
     # show results
     $action_links[1]->click();
     wait_for_ajax;
-    my $results = decode_json($driver->find_element('.modal-body')->get_text());
-    my $failed_job_info = $results->{failed_job_info};
-    is(scalar @{$results->{successful_job_ids}}, 9, '9 jobs successful');
-    is(scalar @{$failed_job_info}, 2, '2 errors present');
-    is_deeply(
-        $failed_job_info->[0]->{error_messages},
-        ['START_AFTER_TEST=kda@64bit not found - check for dependency typos and dependency cycles'],
-        'error message'
-    );
-    is_deeply(
-        $failed_job_info->[1]->{error_messages},
-        ['textmode@32bit has no child, check its machine placed or dependency setting typos'],
-        'error message'
-    );
+    my $results = $driver->find_element('.modal-body')->get_text;
+    like $results, qr/Successfully scheduled 9 job\(s\)/i, '9 jobs successful';
+    like $results, qr/99987: START_AFTER_TEST=kda\@64bit not found - check for/i, 'error message for 99987';
+    like $results, qr/99982: textmode\@32bit has no child, check its machine/i, 'error message for 99982';
     $driver->find_element('.modal-footer button')->click();
 
     # trigger rescheduling
@@ -164,7 +154,7 @@ subtest 'showing a particular scheduled product' => sub {
     is(scalar @rows, 1, 'only one row shown');
     like($rows[0]->get_text, qr/perci.*whatever\.iso/, 'row data');
     like($driver->find_element('#scheduled-products h3 + table')->get_text, qr/FOO.*bar/, 'settings');
-    like($driver->find_element('#scheduled-products h3 + pre')->get_text,
+    like($driver->find_element('#scheduled-products .alert-danger')->get_text,
         qr/check for dependency typos and dependency cycles/, 'results');
 };
 

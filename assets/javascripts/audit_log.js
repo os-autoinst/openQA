@@ -209,16 +209,68 @@ function showScheduledProductSettings(link) {
   }
 }
 
+function renderFailedJobInfo(results) {
+  const failedJobInfo = results.failed_job_info;
+  delete results.failed_job_info;
+  if (!Array.isArray(failedJobInfo) || failedJobInfo.length === 0) {
+    return [];
+  }
+  const heading = createElement('h4', 'Errors occurred when scheduling this product');
+  const failedElements = createElement(
+    'ul',
+    failedJobInfo.map(info => {
+      return createElement('li', [renderJobLink(info.job_id), ': ', renderMessages(info.error_messages)]);
+    })
+  );
+  return [createElement('div', [heading, failedElements], {class: 'alert alert-danger'})];
+}
+
+function renderSuccessfullyScheduledJobs(results) {
+  const successfulJobIDs = results.successful_job_ids;
+  delete results.successful_job_ids;
+  if (!Array.isArray(successfulJobIDs) || successfulJobIDs.length === 0) {
+    return [];
+  }
+  const heading = createElement('h4', `Successfully scheduled ${successfulJobIDs.length} job(s)`);
+  const jobLinks = successfulJobIDs.flatMap(id => [renderJobLink(id), ', ']);
+  if (jobLinks.length > 1) {
+    jobLinks.pop();
+  }
+  return [createElement('div', [heading, ...jobLinks], {class: 'alert alert-success'})];
+}
+
+function renderNotes(results, property, type = 'info') {
+  const note = results[property];
+  delete results[property];
+  return note !== undefined ? [createElement('div', [renderMessages(note)], {class: `alert alert-${type}`})] : [];
+}
+
+function renderUnknownResults(results) {
+  return Object.keys(results).length > 0 ? [createElement('pre', JSON.stringify(results, undefined, 4))] : [];
+}
+
 function renderScheduledProductResults(results) {
-  const element = document.createElement(results ? 'pre' : 'p');
-  element.textContent = results ? JSON.stringify(results, undefined, 4) : 'No results available.';
-  return element;
+  if (results === null || typeof results !== 'object') {
+    return createElement('p', 'No results available.');
+  }
+  delete results.error_code; // not meaningful to users and results.error is enough
+  return createElement('div', [
+    ...renderNotes(results, 'note'), // notes added by external tools via API
+    ...renderNotes(results, 'error', 'danger'), // error message in case scheduling was not possible at all
+    ...renderFailedJobInfo(results), // error messages about failed jobs in case the overall scheduling succeeded
+    ...renderSuccessfullyScheduledJobs(results), // IDs of successfully scheduled jobs
+    ...renderNotes(results, 'notes'), // notes added by openQA itself under certain conditions
+    ...renderUnknownResults(results) // everything not covered by the above
+  ]);
 }
 
 function showScheduledProductResults(link) {
   const rowData = dataForLink(link);
   if (rowData !== undefined) {
-    showScheduledProductModalDialog('Scheduled product results', renderScheduledProductResults(rowData.results));
+    showScheduledProductModalDialog(
+      'Scheduled product results',
+      renderScheduledProductResults(Object.create(rowData.results))
+    );
   }
 }
 
@@ -248,10 +300,10 @@ function rescheduleProduct(url) {
 
 function showSettingsAndResults(rowData) {
   const scheduledProductsDiv = $('#scheduled-products');
-  scheduledProductsDiv.append($('<h3>Settings</h3>'));
-  scheduledProductsDiv.append(renderScheduledProductSettings(rowData.settings));
   scheduledProductsDiv.append($('<h3>Results</h3>'));
   scheduledProductsDiv.append(renderScheduledProductResults(rowData.results));
+  scheduledProductsDiv.append($('<h3>Settings</h3>'));
+  scheduledProductsDiv.append(renderScheduledProductSettings(rowData.settings));
 }
 
 function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
