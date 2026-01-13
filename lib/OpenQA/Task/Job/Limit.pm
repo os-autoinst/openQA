@@ -7,7 +7,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
-use OpenQA::Utils qw(:DEFAULT resultdir check_df);
+use OpenQA::Utils qw(:DEFAULT resultdir archivedir check_df);
 use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage);
 use OpenQA::Task::SignalGuard;
 use Scalar::Util 'looks_like_number';
@@ -98,7 +98,7 @@ sub _limit ($job, $args = undef) {
     }
     $job->note(screenshot_cleanup => \@screenshot_cleanup_info);
     $gru->enqueue(ensure_results_below_threshold => {}, {parents => \@parent_minion_job_ids})
-      if $config->{results_min_free_disk_space_percentage};
+      if $config->{results_min_free_disk_space_percentage} or $config->{archive_min_free_disk_space_percentage};
 }
 
 sub _limit_screenshots {
@@ -142,6 +142,7 @@ sub _limit_screenshots {
 }
 
 sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
+    return 0 unless defined $min_free_percentage;
     my ($available_bytes, $total_bytes) = check_df($resultdir);
     my $free_percentage = $available_bytes / $total_bytes * 100;
     my $margin_percentage = $free_percentage - $min_free_percentage;
@@ -162,7 +163,9 @@ sub _delete_results ($jobs, $max_job_id, $not_important_cond, $important_cond, $
     #         with a huge number of jobs.
 
     my $from = $archived ? 'archive' : 'results dir';
-    log_debug "Deleting videos from non-important jobs starting from oldest job (balance is $margin_bytes)";
+    return (1, "Nothing to do for $from") if $margin_bytes >= 0;
+
+    log_debug "Deleting videos from non-important jobs starting from oldest job (from $from, balance is $margin_bytes)";
     my @job_id_args = (id => {'<=' => $max_job_id}, archived => $archived);
     my %jobs_params = (order_by => {-asc => 'id'});
     my $relevant_jobs = $jobs->search({@job_id_args, @$not_important_cond, logs_present => 1}, \%jobs_params);
@@ -172,7 +175,8 @@ sub _delete_results ($jobs, $max_job_id, $not_important_cond, $important_cond, $
           if ($margin_bytes += $openqa_job->delete_videos) >= 0;
     }
 
-    log_debug "Deleting results from non-important jobs starting from oldest job (balance is $margin_bytes)";
+    log_debug
+      "Deleting results from non-important jobs starting from oldest job (from $from, balance is $margin_bytes)";
     $relevant_jobs = $jobs->search({@job_id_args, @$not_important_cond}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of job ' . $openqa_job->id;
@@ -180,7 +184,7 @@ sub _delete_results ($jobs, $max_job_id, $not_important_cond, $important_cond, $
           if ($margin_bytes += $openqa_job->delete_results) >= 0;
     }
 
-    log_debug "Deleting videos from important jobs starting from oldest job (balance is $margin_bytes)";
+    log_debug "Deleting videos from important jobs starting from oldest job (from $from, balance is $margin_bytes)";
     $relevant_jobs = $jobs->search({@job_id_args, @$important_cond, logs_present => 1}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting video of important job ' . $openqa_job->id;
@@ -188,7 +192,7 @@ sub _delete_results ($jobs, $max_job_id, $not_important_cond, $important_cond, $
           if ($margin_bytes += $openqa_job->delete_videos) >= 0;
     }
 
-    log_debug "Deleting results from important jobs starting from oldest job (balance is $margin_bytes)";
+    log_debug "Deleting results from important jobs starting from oldest job (from $from, balance is $margin_bytes)";
     $relevant_jobs = $jobs->search({@job_id_args, @$important_cond}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of important job ' . $openqa_job->id;
@@ -207,23 +211,26 @@ sub _ensure_results_below_threshold ($job, @) {
       unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     # load configured free percentage
-    my $min_free_percentage = $job->app->config->{misc_limits}->{results_min_free_disk_space_percentage};
+    my $limits = $job->app->config->{misc_limits};
+    my $min_free_percentage = $limits->{results_min_free_disk_space_percentage};
+    my $min_free_percentage_ar = $limits->{archive_min_free_disk_space_percentage};
     return $job->finish('No minimum free disk space percentage configured') unless defined $min_free_percentage;
     return $job->fail('Configured minimum free disk space is not a number between 0 and 100')
       unless _is_valid_percentage($min_free_percentage);
+    return $job->fail('Configured archive_min_free_disk_space_percentage is not a number between 0 and 100')
+      if defined $min_free_percentage_ar && !_is_valid_percentage($min_free_percentage_ar);
 
     # check free percentage
     # caveat: We're using `df` here which might not be appropriate for any filesystem, e.g. one might want
     #         to use `btrfs filesystem df …` instead. It is conceivable to allow running a custom script here
     #         instead.
     my $resultdir = resultdir;
-    my $margin_bytes = 0;
-    my $df_chk = sub {
-        $margin_bytes = _check_remaining_disk_usage($job, $resultdir, $min_free_percentage);
-        return $margin_bytes >= 0;
-    };
+    my $archivedir = archivedir;
+    my $margin_bytes = _check_remaining_disk_usage($job, $resultdir, $min_free_percentage);
+    my $margin_bytes_ar = _check_remaining_disk_usage($job, $archivedir, $min_free_percentage_ar);
     $job->note(resultdir => $resultdir);
-    return $job->finish('Done, nothing to do') if $df_chk->();
+    $job->note(archivedir => $archivedir);
+    return $job->finish('Done, nothing to do') if $margin_bytes >= 0 && $margin_bytes_ar >= 0;
 
     # determine the last job *before* determining important builds
     # note: If a new important build is scheduled while the cleanup is ongoing we must not accidentally clean these
@@ -258,10 +265,15 @@ sub _ensure_results_below_threshold ($job, @) {
     $job->note(important_builds_with_version => \@important_builds_with_version);
     $job->note(important_builds_without_version => \@important_builds_without_version);
 
+    # delete results as far as necessary on the results dir and the archive dir
     my $jobs = $schema->resultset('Jobs');
-    my ($ok, $message) = _delete_results($jobs, $max_job_id, \@not_important_cond, \@important_cond, $margin_bytes, 0);
-    my $method = $ok ? 'finish' : 'fail';
-    $job->$method($message);
+    my ($ok_ar, @message_ar)
+      = defined $min_free_percentage_ar
+      ? _delete_results($jobs, $max_job_id, \@not_important_cond, \@important_cond, $margin_bytes_ar, 1)
+      : (1);
+    my ($ok, @message) = _delete_results($jobs, $max_job_id, \@not_important_cond, \@important_cond, $margin_bytes, 0);
+    my $method = $ok && $ok_ar ? 'finish' : 'fail';
+    $job->$method(join "\n", @message, @message_ar);
 }
 
 1;

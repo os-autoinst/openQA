@@ -254,7 +254,8 @@
                 <div class="col-sm-10">
                     <span id="editor-info">
                         <div>All time-related properties (measured in days) can be set to <em>0</em> to denote infinity.</div>
-                        % if (app->config->{misc_limits}->{results_min_free_disk_space_percentage}) {
+                        % my $limits = app->config->{misc_limits};
+                        % if ($limits->{results_min_free_disk_space_percentage} || $limits->{archive_min_free_disk_space_percentage}) {
                         <div>
                             Results and logs might be deleted earlier than configured to prevent running out of disk space. In this case only videos are deleted at
                             first and only if that is not sufficient the results are deleted. Important jobs are only considered if deleting other jobs was not sufficient.
