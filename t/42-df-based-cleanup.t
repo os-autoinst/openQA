@@ -161,7 +161,7 @@ subtest 'unable to make enough room; important job scheduled during the cleanup 
         Deleting\svideo\sof\simportant\sjob\s$important_job_id.*Deleting\sresults\sof\simportant\sjob\s$important_job_id
     /xs, 'cleanup steps in right order';
     is $job->{state}, 'failed', 'job considered failed';
-    is $job->{result}, 'Unable to cleanup enough results', 'unable to make enough room';
+    is $job->{result}, 'Unable to cleanup enough results from results dir', 'unable to make enough room';
 };
 
 my $new_job_id = $jobs->search({}, {rows => 1, order_by => {-desc => 'id'}})->first->id;
@@ -174,7 +174,8 @@ subtest 'deleting videos from non-important jobs sufficient' => sub {
 
     my $job = job_log_like qr/Deleting\svideo\sof\sjob\s$unimportant_job_id/s, 'cleanup steps in right order';
     is $job->{state}, 'finished', 'job considered successful';
-    is $job->{result}, 'Done after deleting videos from non-important jobs', 'finished within expected step';
+    is $job->{result}, 'Done with results dir after deleting videos from non-important jobs',
+      'finished within expected step';
 };
 
 subtest 'job done triggers cleanup' => sub {
@@ -204,7 +205,8 @@ subtest 'deleting videos from important jobs sufficient' => sub {
     my $job;
     my $output = combined_from { $job = run_gru_job($app, ensure_results_below_threshold => []) };
     is $job->{state}, 'finished', 'job considered successful';
-    is $job->{result}, 'Done after deleting videos from important jobs', 'finished within expected step';
+    is $job->{result}, 'Done with results dir after deleting videos from important jobs',
+      'finished within expected step';
     like $output, qr/Deleting video of important job $important_job_id/, 'video of "old" important job deleted';
     unlike $output, qr/Deleting video.*$new_job_id/, 'video of job more recent important job not considered';
 };
@@ -226,7 +228,8 @@ subtest 'deleting results from non-important jobs sufficient' => sub {
         Deleting\sresults\sof\sjob\s$unimportant_job_id
     /xs, 'cleanup steps in right order';
     is $job->{state}, 'finished', 'job considered successful';
-    is $job->{result}, 'Done after deleting results from non-important jobs', 'finished within expected step';
+    is $job->{result}, 'Done with results dir after deleting results from non-important jobs',
+      'finished within expected step';
 };
 
 $available_bytes_mock = 19;
@@ -244,7 +247,8 @@ subtest 'deleting results from important jobs sufficient' => sub {
         Deleting\sresults\sof\simportant\sjob\s$important_job_id
     /xs, 'cleanup steps in right order';
     is $job->{state}, 'finished', 'job considered successful';
-    is $job->{result}, 'Done after deleting results from important jobs', 'finished within expected step';
+    is $job->{result}, 'Done with results dir after deleting results from important jobs',
+      'finished within expected step';
 };
 
 done_testing();
