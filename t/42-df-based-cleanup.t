@@ -90,6 +90,7 @@ $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 100;
 my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my %gained_disk_space_by_deleting_video_of_job;
 my %gained_disk_space_by_deleting_results_of_job;
+my %gained_disk_space_by_deleting_screenshots_of_job;
 my $available_bytes_mock = 0;
 my $delete_video_hook;
 $job_mock->redefine(
@@ -103,7 +104,10 @@ $job_mock->redefine(
     delete_results => sub {
         my $job_id = $_[0]->id;
         note "delete_results called for job $job_id (bavail: $available_bytes_mock)";
-        return $gained_disk_space_by_deleting_results_of_job{$job_id} // 0;
+        return (
+            $gained_disk_space_by_deleting_results_of_job{$job_id} // 0,
+            $gained_disk_space_by_deleting_screenshots_of_job{$job_id} // 0
+        );
     });
 # note: Not adjusting $available_bytes_mock in these functions because the code does not rely on df except for the initial check.
 
@@ -306,6 +310,22 @@ subtest 'archive cleanup skipped if archive not full; result dir cleanup still a
     is $job->{state}, 'failed', 'job considered failed';
     is $job->{result}, join("\n", @expected_messages),
       'not finished as job that could gain disk space is in the archive';
+};
+
+subtest 'deleted screenshots always accounted to main storage' => sub {
+    # setup: assume that only the deletion of screenshots has freed the disk space when deleting archived job
+    $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 31;
+    %gained_disk_space_by_deleting_results_of_job = ();
+    %gained_disk_space_by_deleting_screenshots_of_job = ($important_job_id => 1);
+
+    my @expected_messages = ('Nothing to do for results dir', 'Unable to cleanup enough results from archive');
+    my $job = job_log_like qr/
+        Deleting\svideo\sof\simportant\sjob\s$important_job_id.*
+        Deleting\sresults\sof\simportant\sjob\s$important_job_id.*
+    /xs, 'cleanup steps in right order; important and archived job not considered as archive not full';
+    is $job->{state}, 'failed', 'job considered failed';
+    is $job->{result}, join("\n", @expected_messages),
+      'not finished as job that gained disk space only did so by deleting screenshots on main storage';
 };
 
 done_testing();

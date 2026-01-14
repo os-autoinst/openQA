@@ -189,7 +189,9 @@ subtest 'deleting screenshots of a single job' => sub {
 
     ok -d (my $result_dir = path($job->create_result_dir)), 'result directory created';
     $result_dir->child('foo')->spew('-----');
-    is $job->delete_results, 2 * (2 + 3) + 5, 'size of deleted results returned';
+    my ($deleted_results, $deleted_screenshots) = $job->delete_results;
+    is $deleted_results, 5, 'size of deleted results returned';
+    is $deleted_screenshots, 2 * (2 + 3), 'size of deleted screenshots returned';
     $job->discard_changes;
     is $job->logs_present, 0, 'logs not considered present anymore';
     is $job->result_size, 0, 'result size cleared';

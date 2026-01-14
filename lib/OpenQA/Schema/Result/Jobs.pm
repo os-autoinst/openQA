@@ -1195,11 +1195,11 @@ sub delete_videos ($self) {
 
 sub delete_results ($self) {
     # delete the entire results directory
-    my $deleted_size = 0;
+    my $deleted_size_res = 0;
     my $result_dir = $self->result_dir;
     if ($result_dir && -d $result_dir) {
         $result_dir = path($result_dir);
-        $deleted_size += _delete_returning_size_from_array([$result_dir->list_tree({hidden => 1})]);
+        $deleted_size_res += _delete_returning_size_from_array([$result_dir->list_tree({hidden => 1})]);
         $result_dir->remove_tree;
     }
 
@@ -1208,12 +1208,13 @@ sub delete_results ($self) {
     my $exclusively_used_screenshot_ids = $self->exclusively_used_screenshot_ids;
     my $schema = $self->result_source->schema;
     my $screenshots = $schema->resultset('Screenshots');
+    my $deleted_size_screenshots = 0;
     my $screenshot_deletion
-      = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, deleted_size => \$deleted_size);
+      = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, deleted_size => \$deleted_size_screenshots);
     $self->screenshot_links->delete;
     $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename) for @$exclusively_used_screenshot_ids;
     $self->update({logs_present => 0, result_size => 0});
-    return $deleted_size;
+    return ($deleted_size_res, $deleted_size_screenshots);
 }
 
 sub exclusively_used_screenshot_ids ($self) {
