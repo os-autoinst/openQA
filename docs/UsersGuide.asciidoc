@@ -1479,6 +1479,18 @@ Further remarks:
   section of <<GettingStarted.asciidoc#_configuration,the web UI configuration>>.
   Jobs outside of any group use the limits configured in the `[no_group_limits]`
   section of the web UI configuration.
+* The cleanup of logs/results uses time-based retentions and hence is
+  independant of actually available space on any assigned storage volumes. To
+  ensure enough free space on filesystem storing results one can use the
+  configuration settings `…_min_free_disk_space_percentage` to control automatic
+  cleanup behavior. These percentages extend the cleanup of logs/results so that
+  they are deleted until the specified percentage of filesystem space is free.
+  This extended deletion happens independently of configured thresholds. Old
+  jobs are deleted first. Videos are deleted first; further results are only
+  deleted if deleting videos is not sufficient. Un-important jobs are deleted
+  first; important jobs are only deleted if deleting un-important jobs is not
+  sufficient. The algorithm assumes that screenshots are stored on the same
+  partition test results are stored. This feature is still experimental.
 * The <<Installing.asciidoc#auditing,Auditing>> section explains the cleanup of
   the audit log.
 
