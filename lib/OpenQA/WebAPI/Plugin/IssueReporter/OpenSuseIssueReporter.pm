@@ -11,13 +11,11 @@ use OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseProgressIssue;
 sub register ($self, $app, $config) {
     $app->helper(
         report_external_issue => sub ($c) {
-            my @actions;
-
-            push @actions, @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseGenericBug::actions($c)};
-            push @actions, @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseKernelBug::actions($c)};
-            push @actions, @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseProgressIssue::actions($c)};
-
-            return \@actions;
+            return [
+                @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseGenericBug::actions($c)},
+                @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseKernelBug::actions($c)},
+                @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseProgressIssue::actions($c)},
+            ];
         });
 }
 
