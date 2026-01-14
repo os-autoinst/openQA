@@ -5,14 +5,17 @@ package OpenQA::WebAPI::Auth::Fake;
 use Mojo::Base -base, -signatures;
 use Time::Seconds;
 
+use constant KEY => $ENV{OPENQA_FAKE_AUTH_KEY} // '1234567890ABCDEF';
+use constant SECRET => $ENV{OPENQA_FAKE_AUTH_SECRET} // '1234567890ABCDEF';
+use constant EXPIRATION => $ENV{OPENQA_FAKE_AUTH_EXPIRATION_S} // ONE_DAY;
+
 sub auth_logout ($self) { return }
 
 sub auth_login ($self) {
     my $headers = $self->req->headers;
 
     my %users;
-    $users{Demo}
-      = {fullname => 'Demo User', email => 'demo@user.org', admin => 1, operator => 1, key => '1234567890ABCDEF'};
+    $users{Demo} = {fullname => 'Demo User', email => 'demo@user.org', admin => 1, operator => 1, key => KEY};
     $users{nobody}
       = {fullname => 'Nobody', email => 'nobody@example.com', admin => 0, operator => 0, key => '1111111111111111'};
     $users{otherdeveloper} = {
@@ -36,9 +39,9 @@ sub auth_login ($self) {
     $user->is_operator($userinfo->{operator});
     $user->update;
 
-    my $key = $user->api_keys->find_or_create({key => $userinfo->{key}, secret => '1234567890ABCDEF'});
+    my $key = $user->api_keys->find_or_create({key => $userinfo->{key}, secret => SECRET});
     # expire in a day after login
-    $key->update({t_expiration => DateTime->from_epoch(epoch => time + ONE_DAY)});
+    $key->update({t_expiration => DateTime->from_epoch(epoch => time + EXPIRATION)});
     $self->session->{user} = $userinfo->{username};
     return (error => 0);
 }
