@@ -627,11 +627,9 @@ sub job_next_previous_ajax ($self) {
     my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs([map $_->id, @jobs]);
 
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
-    my $latest = 1;
     my @data;
     for my $job (@jobs) {
         my $job_id = $job->id;
-        $latest = $job_id > $latest ? $job_id : $latest;
         my $rendered_data = 0;
         if (my $cd = $comment_data->{$job_id}) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
@@ -653,13 +651,13 @@ sub job_next_previous_ajax ($self) {
                 clone => $job->clone_id,
                 failedmodules => $failed_modules_by_job->{$job_id},
                 iscurrent => $job_id == $main_jobid ? 1 : undef,
-                islatest => $job_id == $latest ? 1 : undef,
                 finished => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
                 duration => $job->t_started
                   && $job->t_finished ? $self->format_time_duration($job->t_finished - $job->t_started) : 0,
                 comment_data => $rendered_data,
             });
     }
+    $data[0]->{islatest} = 1 if @data;
     $self->render(json => {data => \@data});
 }
 
