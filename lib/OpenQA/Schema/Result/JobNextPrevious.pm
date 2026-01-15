@@ -13,6 +13,7 @@ __PACKAGE__->table_class('DBIx::Class::ResultSource::View');
 
 # For the time being this is necessary even for virtual views
 __PACKAGE__->table('JobNextPrevious');
+__PACKAGE__->add_columns(source => {data_type => 'text'});
 
 # do not attempt to deploy() this view
 __PACKAGE__->result_source_instance->is_virtual(1);
@@ -26,13 +27,13 @@ __PACKAGE__->result_source_instance->view_definition(
                 AND me.DISTRI=? AND me.VERSION=? AND me.FLAVOR=? AND me.ARCH=?
                 AND me.TEST=? AND me.MACHINE=?
     )
-    (SELECT * FROM jobs
+    ((SELECT *, 'l' AS source FROM jobs
         WHERE DISTRI=? AND VERSION=? AND FLAVOR=? AND ARCH=? AND TEST=? AND MACHINE=?
         ORDER BY ID DESC LIMIT 1)
-    UNION (SELECT * FROM allofjobs WHERE id > ? ORDER BY ID ASC LIMIT ?)
-    UNION (SELECT * FROM allofjobs WHERE id < ? ORDER BY ID DESC LIMIT ?)
-    UNION (SELECT * FROM jobs WHERE id = ?)
-    ORDER BY ID DESC
+    UNION (SELECT *, 'n' AS source FROM allofjobs WHERE id > ? ORDER BY ID ASC LIMIT ? + 1)
+    UNION (SELECT *, 'p' AS source FROM allofjobs WHERE id < ? ORDER BY ID DESC LIMIT ? + 1)
+    UNION (SELECT *, 'c' AS source FROM jobs WHERE id = ?)
+    ORDER BY ID DESC)
     END_SQL
 );
 

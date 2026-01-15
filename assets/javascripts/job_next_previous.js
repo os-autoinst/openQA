@@ -28,6 +28,13 @@ function setupJobNextPrevious() {
         if (typeof params.next_limit != 'undefined') {
           d.next_limit = params.next_limit.toString();
         }
+      },
+      dataSrc: function (json) {
+        const info = json.info;
+        if (Array.isArray(info) && info.length > 0) {
+          addUniqueFlash('info', 'next_previous_info', info.join('<br/>'), $(tableElement), 'before');
+        }
+        return json.data;
       }
     },
     paging: true,
