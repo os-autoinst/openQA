@@ -6,6 +6,7 @@
 use Test::Most;
 use Test::Warnings ':report_warnings';
 use Test::MockModule 'strict';
+use Test::Output qw(combined_like);
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
 use FindBin;
@@ -87,7 +88,19 @@ subtest 'create result dir, delete results' => sub {
     path($ulogs_dir, $_)->spew($file_content) for @ulogs;
     is_deeply $job->test_uploadlog_list, \@ulogs, 'logs linked to job as uploaded';
     is_deeply $job->video_file_paths->map('basename')->to_array, [qw(video.ogv video.webm)], 'all videos considered';
+    ok my $initially_present_files = $result_dir->list_tree({hidden => 1})->size, 'result dir populated';
 
+    subtest 'dry-run flag' => sub {
+        combined_like {
+            ok +($job->delete_results(1))[0], 'size of results that would be deleted returned';
+            ok $job->delete_logs(1), 'size of logs that would be deleted returned';
+            ok $job->delete_videos(1), 'size of vidos that would be deleted returned';
+        }
+        qr/would delete.*autoinst-log\.txt/, 'deletions logged';
+        $job->discard_changes;
+        is $job->result_size, $initially_assumed_result_size, 'result size has not changed';
+        is $result_dir->list_tree({hidden => 1})->size, $initially_present_files, 'no files have been deleted';
+    };
     subtest 'delete logs' => sub {
         $job->delete_logs;
         $job->discard_changes;

@@ -85,6 +85,7 @@ subtest 'abort early if there is enough free disk space' => sub {
 
 $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
 $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 100;
+$app->config->{misc_limits}->{dry_min_free_disk_space_cleanup} = 1;
 
 # mock the actual deletion of videos and results; it it tested elsewhere
 my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
@@ -92,17 +93,20 @@ my %gained_disk_space_by_deleting_video_of_job;
 my %gained_disk_space_by_deleting_results_of_job;
 my %gained_disk_space_by_deleting_screenshots_of_job;
 my $available_bytes_mock = 0;
+my $dry_run_expected = 1;
 my $delete_video_hook;
 $job_mock->redefine(
-    delete_videos => sub {
-        my $job_id = $_[0]->id;
+    delete_videos => sub ($self, $dry) {
+        my $job_id = $self->id;
         $delete_video_hook->($job_id) if $delete_video_hook;
+        is $dry, $dry_run_expected, "dry run flag passed correctly when deleting videos of $job_id";
         note "delete_videos called for job $job_id (bavail: $available_bytes_mock)";
         return $gained_disk_space_by_deleting_video_of_job{$job_id} // 0;
     });
 $job_mock->redefine(
-    delete_results => sub {
-        my $job_id = $_[0]->id;
+    delete_results => sub ($self, $dry) {
+        my $job_id = $self->id;
+        is $dry, $dry_run_expected, "dry run flag passed correctly when results videos of $job_id";
         note "delete_results called for job $job_id (bavail: $available_bytes_mock)";
         return (
             $gained_disk_space_by_deleting_results_of_job{$job_id} // 0,
@@ -314,9 +318,11 @@ subtest 'archive cleanup skipped if archive not full; result dir cleanup still a
 
 subtest 'deleted screenshots always accounted to main storage' => sub {
     # setup: assume that only the deletion of screenshots has freed the disk space when deleting archived job
+    $app->config->{misc_limits}->{dry_min_free_disk_space_cleanup} = 0;
     $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 31;
     %gained_disk_space_by_deleting_results_of_job = ();
     %gained_disk_space_by_deleting_screenshots_of_job = ($important_job_id => 1);
+    $dry_run_expected = 0;
 
     my @expected_messages = ('Nothing to do for results dir', 'Unable to cleanup enough results from archive');
     my $job = job_log_like qr/

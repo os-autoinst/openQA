@@ -18,6 +18,7 @@ sub new {
     $self->{_deletion_query} = $args{dbh}->prepare('DELETE FROM screenshots WHERE id = ?');
     $self->{_imagesdir} = $args{imagesdir} // imagesdir();
     $self->{_deleted_size} = $args{deleted_size};
+    $self->{_dry} = $args{dry};
     return $self;
 }
 
@@ -26,6 +27,7 @@ sub delete_screenshot {
 
     my $screenshot_path = catfile($self->{_imagesdir}, $screenshot_filename);
     my $thumb_path = catfile(dirname($screenshot_path), '.thumbs', basename($screenshot_filename));
+    my $dry = $self->{_dry};
 
     # delete screenshot in database first
     # note: This might fail due to foreign key violation because a new screenshot link might
@@ -34,7 +36,7 @@ sub delete_screenshot {
     #       Using OpenQA::SignalBlocker to delay handling cancellation signals to avoid doing
     #       only some of the deletions if the Minion job is aborted.
     my $signal_blocker = OpenQA::SignalBlocker->new;
-    try { $self->{_deletion_query}->execute($screenshot_id) }
+    try { $self->{_deletion_query}->execute($screenshot_id) unless $dry }
     catch ($e) { return undef }
     # keep track of the deleted size
     my ($deleted_size, $screenshot_size, $thumb_size) = $self->{_deleted_size};
@@ -43,7 +45,7 @@ sub delete_screenshot {
         $thumb_size = -s $thumb_path;
     }
 
-    unless (unlink($screenshot_path, $thumb_path) == 2) {
+    if (!$dry && unlink($screenshot_path, $thumb_path) != 2) {
         if (-e $screenshot_path) {
             log_debug qq{Can't remove screenshot "$screenshot_path"};
         }
