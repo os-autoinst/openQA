@@ -234,7 +234,7 @@ sub check_report_links ($failed_module, $failed_step, $container = undef) {
     like($url[1], qr{(?:\?|&)product=openSUSE\+Distribution(?:&|$)}, 'kernel product bug sets product');
     like(
         $url[1],
-        qr{(?:\?|&)short_desc=%5BBuild\+0091%5D\+Kernel\+test\+fails\+in\+bootloader},
+        qr{(?:\?|&)short_desc=%5BQE%5D%5BBuild\+0091%5D\+Kernel\+test\+fails\+in\+bootloader},
         'kernel short_desc correct'
     );
     like($url[1], qr{(?:\?|&)comment=}, 'kernel product bug has comment template');

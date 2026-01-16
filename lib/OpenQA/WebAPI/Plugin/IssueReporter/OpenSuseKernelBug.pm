@@ -6,7 +6,8 @@ use Mojo::Base -strict, -signatures;
 use Mojo::Template;
 use Mojo::Loader qw(data_section);
 use Mojo::URL;
-use OpenQA::WebAPI::Plugin::IssueReporter::Context qw(get_context);
+use Mojo::File qw(path);
+use OpenQA::WebAPI::Plugin::IssueReporter::Context qw(get_context get_regression_links);
 use OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseBugzillaUtils
   qw(get_bugzilla_url get_bugzilla_distri_name get_bugzilla_product_name);
 
@@ -17,6 +18,16 @@ sub actions ($c) {
     my $bugzilla_distri = get_bugzilla_distri_name($raw_distri);
     my $bugzilla_product = get_bugzilla_product_name($job, $raw_distri, \$bugzilla_distri);
     my $bugzilla_url = get_bugzilla_url($raw_distri);
+    my ($first_known_bad, $last_good) = get_regression_links($c, $job);
+    my $latest = $c->url_for('latest')->query($job->scenario_hash)->to_abs;
+    my $kernel_report = '';
+
+    # kernel bug template can parse the kernel_bug_report.txt
+    # which is then pass to the bugzilla comment
+    if (my $dir = $job->result_dir) {
+        my $report = path($dir)->list_tree->grep(sub { $_->basename =~ /kernel_bug_report\.txt$/ })->first;
+        $kernel_report = $report->slurp if $report;
+    }
 
     # main part of the kernel bug report
     my $kernel_bug = _render(
@@ -25,13 +36,20 @@ sub actions ($c) {
             build => $ctx->{build},
             distri => $raw_distri,
             version => $ctx->{version},
+            first_known_bad => $first_known_bad,
+            last_good => $last_good,
+            latest => "$latest",
+            kernel_report => $kernel_report,
         });
 
     my $url = Mojo::URL->new($bugzilla_url)->query(
         {
-            short_desc => "[Build $ctx->{build}] Kernel test fails in $ctx->{module}",
+            short_desc => "[QE][Build $ctx->{build}] Kernel test fails in $ctx->{module}",
             comment => $kernel_bug,
             product => "$bugzilla_distri $bugzilla_product",
+            bug_file_loc => $ctx->{step_url},
+            cf_foundby => 'openQA',
+            component => 'Kernel',    #pre-fill the kernel component
         });
 
     return [
@@ -53,10 +71,16 @@ sub _render ($name, $vars) {
 __DATA__
 @@ kernel_bug.txt.ep
 
+% if ($kernel_report) {
+## Detailed kernel info:
+
+<%= $kernel_report %>
+% } else {
 == EDIT ==
 IMPORTANT: For kernel bugs please provide detailed kernel information (`uname -a`, rpm -qi kernel-default, ...)
+% }
 
-Build details:
-Build: <%= $build %>
-Distri: <%= $distri %>
-Version: <%= $version %>
+## Useful links
+Fails since (at least) Build: <%= $first_known_bad %>
+Last good: <%= $last_good %> (or more recent)
+The latest result in this scenario: <%= $latest %>
