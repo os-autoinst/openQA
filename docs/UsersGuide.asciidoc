@@ -1510,7 +1510,7 @@ This means a job is "in the archive" if:
 NOTE: Archiving does *not* prevent cleanup. If an archived important job exceeds
 the retention for important jobs it is still subject to cleanup.
 
-=== Space-aware cleanup of job results ===
+=== Space-aware cleanup ===
 The cleanup of logs/results uses time-based retentions and hence is independent
 of actually available space on any assigned storage volumes. To ensure enough
 free space on filesystem storing results one can use the configuration settings
@@ -1528,9 +1528,14 @@ The deletion happens in the following order:
 
 Within each group the oldest jobs are deleted first.
 
-WARNING: This feature is still experimental. It relies on `df` reporting a valid
-file system space usage. The algorithm also assumes that screenshots and test
-results are stored on the same file system.
+It is also possible to abort cleanup tasks early in case there is still
+enough headroom on relevant filesystems anyway. This can be enabled using the
+configuration settings `…_cleanup_max_free_percentage`.
+
+WARNING: The space-aware cleanup relies on `df` reporting a valid file system
+space usage. The algorithms also assume that screenshots and test results are
+stored on the same file system. The `…_min_free_disk_space_percentage` settings
+specifically are still experimental.
 
 [id="asset_cleanup"]
 === Cleanup strategy for assets ===
