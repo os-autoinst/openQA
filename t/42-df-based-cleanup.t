@@ -42,6 +42,13 @@ subtest 'no minimum free disk space percentage for results configured' => sub {
     is $job->{result}, 'No minimum free disk space percentage configured', 'noop if no minimum configured';
 };
 
+subtest 'abort early in case of misconfiguration' => sub {
+    $app->config->{misc_limits}->{results_min_free_disk_space_percentage} = 'foo';
+    my $job = job_log_like qr|results_.*_percentage.*foo.*not.*number|, 'error logged';
+    is $job->{state}, 'failed', 'result cleanup still considered successful';
+    like $job->{result}, qr|.*results_min_free_disk_space_percentage.*foo.*not.*|, 'result cleanup aborted early';
+};
+
 # provide fake data for df
 my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
 my %df_main_storage = (bavail => 11, blocks => 100);

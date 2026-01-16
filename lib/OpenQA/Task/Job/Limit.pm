@@ -156,6 +156,8 @@ sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
 
 sub _is_valid_percentage ($value) { looks_like_number($value) && $value >= 0 && $value <= 100 }
 
+sub _format_percentage_error ($key, $value) { "Configured $key ($value) is not a number between 0 and 100" }
+
 sub _account_for_deletion ($margin_bytes, $margin_bytes_main_storage, $deleted_results, $deleted_screenshots = 0) {
     $$margin_bytes += $deleted_results;
     $$margin_bytes_main_storage += $deleted_screenshots;
@@ -221,13 +223,13 @@ sub _ensure_results_below_threshold ($job, @) {
 
     # load configured free percentage
     my $limits = $job->app->config->{misc_limits};
-    my $min_free_percentage = $limits->{results_min_free_disk_space_percentage};
+    my $min_free_percentage = $limits->{results_min_free_disk_space_percentage} // 'none';
     my $min_free_percentage_ar = $limits->{archive_min_free_disk_space_percentage};
     my $dry = $limits->{dry_min_free_disk_space_cleanup};
-    return $job->finish('No minimum free disk space percentage configured') unless defined $min_free_percentage;
-    return $job->fail('Configured minimum free disk space is not a number between 0 and 100')
+    return $job->finish('No minimum free disk space percentage configured') if $min_free_percentage eq 'none';
+    return $job->fail(_format_percentage_error(results_min_free_disk_space_percentage => $min_free_percentage))
       unless _is_valid_percentage($min_free_percentage);
-    return $job->fail('Configured archive_min_free_disk_space_percentage is not a number between 0 and 100')
+    return $job->fail(_format_percentage_error(archive_min_free_disk_space_percentage => $min_free_percentage_ar))
       if defined $min_free_percentage_ar && !_is_valid_percentage($min_free_percentage_ar);
 
     # check free percentage
