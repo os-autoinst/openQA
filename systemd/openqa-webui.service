@@ -9,6 +9,8 @@ Documentation=https://open.qa/docs/#_run_the_web_ui
 User=geekotest
 ExecStart=/usr/share/openqa/script/openqa-webui-daemon
 ExecReload=kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
