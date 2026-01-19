@@ -1513,11 +1513,12 @@ the retention for important jobs it is still subject to cleanup.
 === Space-aware cleanup ===
 The cleanup of logs/results uses time-based retentions and hence is independent
 of actually available space on any assigned storage volumes. To ensure enough
-free space on file system storing results one can use the configuration settings
-`…_min_free_disk_space_percentage` to control automatic cleanup behavior. These
-percentages extend the cleanup of logs/results so that they are deleted until
-the specified percentage of file system space is free. This extended deletion
-happens independently of configured thresholds.
+free space on the file systems storing results one can use the configuration
+settings `…_min_free_disk_space_percentage` to control automatic cleanup
+behavior. These percentages extend the cleanup of logs/results so that they are
+deleted until the specified percentage of file system space is free. This
+extended deletion happens independently of configured time-based retention
+thresholds.
 
 The deletion happens in the following order:
 
@@ -1532,9 +1533,9 @@ It is also possible to abort cleanup tasks early in case there is still
 enough headroom on relevant file systems anyway. This can be enabled using the
 configuration settings `…_cleanup_max_free_percentage`.
 
-WARNING: The space-aware cleanup relies on `df` reporting a valid file system
-space usage. The algorithms also assume that screenshots and test results are
-stored on the same file system. The `…_min_free_disk_space_percentage` settings
+NOTE: The space-aware cleanup relies on `df` reporting a valid file system space
+usage. The algorithms also assume that screenshots and test results are stored
+on the same file system. The `…_min_free_disk_space_percentage` settings
 specifically are still experimental.
 
 [id="asset_cleanup"]
