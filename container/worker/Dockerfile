@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 #!BuildTag: openqa_worker:latest opensuse/openqa-worker:latest opensuse/openqa-worker:%PKG_VERSION% opensuse/openqa-worker:%PKG_VERSION%.%RELEASE%
-FROM opensuse/leap:15.6
+FROM opensuse/leap:16.0
 
 # labelprefix=org.opensuse.openqa-worker
 LABEL org.opencontainers.image.title="openQA worker container"
@@ -12,8 +12,8 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 # endlabelprefix
 
 # hadolint ignore=DL3037
-RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.6 devel_openQA && \
-    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.6/15.6 devel_openQA_Leap && \
+RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/16.0 devel_openQA && \
+    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:16.0/16.0 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper in -yl ca-certificates-mozilla curl gzip rsync xz && \
     zypper in -yl openQA-worker os-autoinst-s390-deps os-autoinst-ipmi-deps && \
