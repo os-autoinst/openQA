@@ -263,6 +263,7 @@ $driver->get('/tests/latest?previous_limit=1&next_limit=1#next_previous');
 wait_for_ajax();
 is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
     1, 'job next and previous of the latest job - 99981');
+element_not_present '#job_next_previous_table_wrapper .alert', 'no info about limit present';
 
 subtest 'bug reference shown' => sub {
     my @bug_labels = $driver->find_elements('#bug-99981 .label_bug');
@@ -306,6 +307,11 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     $t->get_ok('/tests/99910/ajax', 'query with (low) default limit for next and previous')->status_is(200);
     $jobs = $t->tx->res->json->{data};
     is ref $jobs, 'ARRAY', 'data returned (5)' and is scalar @$jobs, 6, 'default limit for next is effective';
+
+    $driver->get('/tests/99910?previous_limit=6&next_limit=0#next_previous');
+    my $info = wait_for_element selector => '#job_next_previous_table_wrapper .alert', desc => 'info shown';
+    like $info->get_text, qr/previous.*limit.*6.*next.*limit.*0/is,
+      'info about next and previous jobs being limited shown';
 };
 
 kill_driver();

@@ -627,11 +627,16 @@ sub job_next_previous_ajax ($self) {
     my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs([map $_->id, @jobs]);
 
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
-    my $latest = 1;
-    my @data;
+    my (@data, @info);
+    my %source_count;    # keep track of how many jobs of which source (latest, next, previous) we got for limiting
+    if (@jobs >= 2 && $jobs[0]->id == $jobs[1]->id) {
+        $source_count{$jobs[0]->source} += 1;
+        undef $jobs[0];
+    }
     for my $job (@jobs) {
+        next unless $job;
         my $job_id = $job->id;
-        $latest = $job_id > $latest ? $job_id : $latest;
+        $source_count{$job->source} += 1;
         my $rendered_data = 0;
         if (my $cd = $comment_data->{$job_id}) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
@@ -653,14 +658,23 @@ sub job_next_previous_ajax ($self) {
                 clone => $job->clone_id,
                 failedmodules => $failed_modules_by_job->{$job_id},
                 iscurrent => $job_id == $main_jobid ? 1 : undef,
-                islatest => $job_id == $latest ? 1 : undef,
                 finished => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
                 duration => $job->t_started
                   && $job->t_finished ? $self->format_time_duration($job->t_finished - $job->t_started) : 0,
                 comment_data => $rendered_data,
             });
     }
-    $self->render(json => {data => \@data});
+    $data[0]->{islatest} = 1 if @data;
+    if (($source_count{p} // 0) > $p_limit) {  # the query requests `$p_limit + 1` so we know when the limit was reached
+        push @info, "The number of \"Previous\" jobs exceeds the display limit of $p_limit.";
+        pop @data;    # discard the additional "Previous" job
+    }
+    if (($source_count{n} // 0) > $n_limit) {  # the query requests `$n_limit + 1` so we know when the limit was reached
+        push @info, "The number of \"Next\" jobs exceeds the display limit of $n_limit. "
+          . 'The first job on the table is still the latest.';
+        splice @data, 1, 1;    # discard the additional "Next" job (preserving the first job as it is always the latest)
+    }
+    $self->render(json => {info => \@info, data => \@data});
 }
 
 sub _calculate_preferred_machines ($jobs) {

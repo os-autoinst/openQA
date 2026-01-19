@@ -38,7 +38,7 @@ function makeFlashElement(text) {
   return typeof text === 'string' ? '<span>' + text + '</span>' : text;
 }
 
-function addFlash(status, text, container) {
+function addFlash(status, text, container, method = 'append') {
   // add flash messages by default on top of the page
   if (!container) {
     container = $('#flash-messages');
@@ -48,11 +48,11 @@ function addFlash(status, text, container) {
   div.append(makeFlashElement(text));
   div.append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
   div.addClass('alert-' + status);
-  container.append(div);
+  container[method](div);
   return div;
 }
 
-function addUniqueFlash(status, id, text, container) {
+function addUniqueFlash(status, id, text, container, method = 'append') {
   // add hash to store present flash messages
   if (!window.uniqueFlashMessages) {
     window.uniqueFlashMessages = {};
@@ -64,7 +64,7 @@ function addUniqueFlash(status, id, text, container) {
     return;
   }
 
-  var msgElement = addFlash(status, text, container);
+  const msgElement = addFlash(status, text, container, method);
   window.uniqueFlashMessages[id] = msgElement;
   msgElement.on('closed.bs.alert', function () {
     delete window.uniqueFlashMessages[id];
