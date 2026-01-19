@@ -1,6 +1,6 @@
 [Unit]
 Description=The openQA GRU daemon for various background tasks
-After=postgresql.service openqa-setup-db.service
+After=postgresql.service openqa-setup-db.service remote-fs.target
 Wants=openqa-setup-db.service
 
 [Service]
