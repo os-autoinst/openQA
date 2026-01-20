@@ -41,7 +41,7 @@ from scratch, you should probably go through the following order:
 5. Select individual 'Job groups' and decide what combinations make sense and
    need to be tested
 
-Machines, mediums, test suites and job templates  can all set various
+Machines, mediums, test suites and job templates can all set various
 configuration variables. The so called job templates within the job groups
 define how the test suites, mediums and machines should be combined in various
 ways to produce individual 'jobs'. All the variables from the test suite,
