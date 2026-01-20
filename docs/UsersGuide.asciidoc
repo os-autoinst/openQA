@@ -113,6 +113,13 @@ Some example variables used by openSUSE are:
 * `PROMO` marks the promotional product.
 * `RESCUECD` is set to 1 for rescue CD images.
 
+The version of a medium can be set to `\*`. Then this medium is considered if a
+product is scheduled with a `VERSION` parameter that does not match any other
+medium. This allows having only one medium per version. Note that having a
+medium with a concrete version and one with `*` at the same time is usually not
+a good idea as you will likely run into the scheduling error `no templates found
+for product …` (unless you actually have job templates for all these medium
+types).
 
 === Test Suites
 
@@ -1145,7 +1152,10 @@ Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
 `FLAVOR` and `ARCH` more parameters can be specified. Those additional
 parameters will be added as jobs settings in all triggered jobs.
 
- If there is no medium type matching the specified `VERSION`.
+If there is no medium type matching the specified `VERSION`, the lookup falls
+back to matching any medium with version `*`. Check out
+<<UsersGuide.asciidoc#_medium_types_products,the section about medium types>>
+for details.
 
 The parameters `MACHINE` and `TEST` additionally act as filters and `TEST`
 supports multiple comma-separated values. So adding e.g. `TEST=foo,bar` will
