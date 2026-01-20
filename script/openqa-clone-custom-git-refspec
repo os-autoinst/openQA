@@ -21,6 +21,9 @@ Examples:
  openqa-clone-custom-git-refspec -n -c '--show-progress' https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec https://github.com/foursixnine/os-autoinst-distri-opensuse/tree/oopsitsbrokenagain https://openqa.opensuse.org/tests/3128467 NEEDLES_DIR='https://github.com/foursixnine/os-autoinst-needles-opensuse.git#oopsitsbrokenagain'
 
+To output in "Markdown mode" call with environment variable "MARKDOWN=1".
+To output in "Badge mode" call with environment variable "BADGE=1".
+
 To use authenticated requests, you need to either provide a GitHub token by
 adding 'GITHUB_TOKEN=...' to a configuration file at
 'github-token.conf' in your $OPENQA_CONFIG folder or set the GITHUB_TOKEN environment variable.
@@ -171,6 +174,8 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
     [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^ - \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
+    elif [[ -n "$BADGE" ]]; then
+        eval "$cmd" | sed 's@^ - \([^ ]*\) -> \(.*\)$@* [![\1](\2/badge)](\2)@'
     else
         eval "$cmd"
     fi
