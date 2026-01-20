@@ -550,7 +550,7 @@ sub _generate_jobs {
         });
 
     unless (@products) {
-        push(@$notes, 'no products found for version ' . $args->{DISTRI} . ' falling back to "*"');
+        push(@$notes, qq|no products found for version "$args->{VERSION}", falling back to "*"|);
         @products = $schema->resultset('Products')->search(
             {
                 distri => _distri_key($args),
