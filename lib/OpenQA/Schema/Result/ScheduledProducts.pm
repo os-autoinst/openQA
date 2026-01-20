@@ -595,8 +595,8 @@ sub _generate_jobs {
         }
         for my $job_template (@templates) {
             # compose settings from product, machine, testsuite and job template itself
-           # note: That order also defines the precedence from lowest to highest. The only exception is the WORKER_CLASS
-            #       variable where all occurrences are merged.
+            # note: That order also defines the precedence from lowest to highest. The only exception is the
+            #       WORKER_CLASS variable where all occurrences are merged.
             my %settings;
             my %params = (
                 settings => \%settings,
