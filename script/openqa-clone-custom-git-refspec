@@ -170,7 +170,7 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
     local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST+=\"$test_suffix\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\""
     [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
-        eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
+        eval "$cmd" | sed 's/^ - \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
     else
         eval "$cmd"
     fi
