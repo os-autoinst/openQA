@@ -65,7 +65,7 @@ subtest 'running into error reply' => sub {
     is $schedule->host, $host, 'host set';
     is $res, 1, 'non-zero return-code if parameters missing';
 
-    combined_like { $res = $schedule->run(@options, @settings1) } qr/no products found for/,
+    combined_like { $res = $schedule->run(@options, @settings1) } qr/no products found for example-DVD-x86_64/,
       '"no products found" error';
     is $res, 1, 'non-zero return-code if no products could be found';
 };

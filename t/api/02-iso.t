@@ -22,6 +22,7 @@ OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-p
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $schema = $t->app->schema;
 my $job_templates = $schema->resultset('JobTemplates');
+my $products = $schema->resultset('Products');
 my $test_suites = $schema->resultset('TestSuites');
 my $jobs = $schema->resultset('Jobs');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
@@ -77,17 +78,16 @@ lj;
 # later on is found as important and handled accordingly
 $jobs->find(99928)->comments->create({text => 'any text', user_id => 99901});
 
+my @job_template_params = (
+    machine => {name => '64bit'},
+    test_suite => {name => 'textmode-2'},
+    prio => 42,
+    group_id => 1002,
+);
+
 subtest 'group filter and priority override' => sub {
     # add a job template for group 1002
-    my $job_template = $job_templates->create(
-        {
-            machine => {name => '64bit'},
-            test_suite => {name => 'textmode-2'},
-            prio => 42,
-            group_id => 1002,
-            product_id => 1,
-        });
-
+    my $job_template = $job_templates->create({@job_template_params, product_id => 1});
     my $res = schedule_iso($t, {%iso, PRECEDENCE => 'original', _GROUP => 'invalid group name'});
     is($res->json->{count}, 0, 'no jobs created if group invalid');
 
@@ -1052,6 +1052,19 @@ subtest 'Expand specified variables when scheduling iso' => sub {
     is($result->{TEST_SUITE_NAME}, 'foo', 'the TEST_SUITE_NAME was right');
     is($result->{JOB_DESCRIPTION}, undef, 'There is no job description');
     $schema->txn_rollback;
+};
+
+subtest 'fallback to version "*"' => sub {
+    my %prod_params = (distri => 'opensuse', version => '*', flavor => 'DVD', arch => 'i586', name => 'generic');
+    my $product = $products->create(\%prod_params);
+    ok $product->id, 'generic product created ' . $product->id;
+    my $job_template = $job_templates->create({@job_template_params, product_id => $product->id});
+    my $res = schedule_iso($t, {%iso, VERSION => 'foobar', _GROUP => 'opensuse test'});
+    my $scheduled_product = $scheduled_products->find($res->json->{scheduled_product_id});
+    my $results = $scheduled_product->results;
+    is @{$results->{successful_job_ids}}, 1, 'job successfully scheduled';
+    is $results->{notes}->[0], 'no products found for version "foobar", falling back to "*"', 'note present'
+      or always_explain $results;
 };
 
 done_testing();
