@@ -590,14 +590,13 @@ sub _generate_jobs {
         my @templates = $templates->all;
 
         unless (@templates) {
-            my $error = 'no templates found for ' . join('-', map { $args->{$_} } qw(DISTRI FLAVOR ARCH));
-            push(@$notes, $error);
+            push @$notes, my $error = 'no templates found for product ' . $product->name;
             return {error_message => $error, error_code => 404};
         }
         for my $job_template (@templates) {
             # compose settings from product, machine, testsuite and job template itself
-           # note: That order also defines the precedence from lowest to highest. The only exception is the WORKER_CLASS
-            #       variable where all occurrences are merged.
+            # note: That order also defines the precedence from lowest to highest. The only exception is the
+            #       WORKER_CLASS variable where all occurrences are merged.
             my %settings;
             my %params = (
                 settings => \%settings,

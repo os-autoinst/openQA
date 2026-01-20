@@ -41,7 +41,7 @@ from scratch, you should probably go through the following order:
 5. Select individual 'Job groups' and decide what combinations make sense and
    need to be tested
 
-Machines, mediums, test suites and job templates  can all set various
+Machines, mediums, test suites and job templates can all set various
 configuration variables. The so called job templates within the job groups
 define how the test suites, mediums and machines should be combined in various
 ways to produce individual 'jobs'. All the variables from the test suite,
@@ -97,22 +97,29 @@ of how the test machine is set up. A few important examples:
 === Medium Types (products)
 
 A medium type (product) in openQA is a simple description without any concrete
-meaning. It basically consists of a name and a set of variables that
-define or characterize this product in os-autoinst.
+meaning. It basically consists of a name and a set of variables that define or
+characterize this product in os-autoinst.
 
 Some example variables used by openSUSE are:
 
-* `ISO_MAXSIZE` contains the maximum size of the product. There is a
-  test that checks that the current size of the product is less or
-  equal than this variable.
+* `ISO_MAXSIZE` contains the maximum size of the product. There is a test that
+  checks that the current size of the product is less or equal than this
+  variable.
 * `DVD` if it is set to 1, this indicates that the medium is a DVD.
-* `LIVECD` if it is set to 1, this indicates that the medium is a live
-  image (can be a CD or USB)
-* `GNOME` this variable, if it is set to 1, indicates that it is a GNOME
-  only distribution.
+* `LIVECD` if it is set to 1, this indicates that the medium is a live image
+  (can be a CD or USB)
+* `GNOME` this variable, if it is set to 1, indicates that it is a GNOME only
+  distribution.
 * `PROMO` marks the promotional product.
 * `RESCUECD` is set to 1 for rescue CD images.
 
+The version of a medium can be set to `\*`. Then this medium is considered if a
+product is scheduled with a `VERSION` parameter that does not match any other
+medium. This allows having only one medium per version. Note that having a
+medium with a concrete version and one with `*` at the same time is usually not
+a good idea as you will likely run into the scheduling error `no templates found
+for product …` (unless you actually have job templates for all these medium
+types).
 
 === Test Suites
 
@@ -1144,6 +1151,11 @@ supplied via a <<UsersGuide.asciidoc#scenarios_yaml,YAML document>>.
 Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
 `FLAVOR` and `ARCH` more parameters can be specified. Those additional
 parameters will be added as jobs settings in all triggered jobs.
+
+If there is no medium type matching the specified `VERSION`, the lookup falls
+back to matching any medium with version `*`. Check out
+<<UsersGuide.asciidoc#_medium_types_products,the section about medium types>>
+for details.
 
 The parameters `MACHINE` and `TEST` additionally act as filters and `TEST`
 supports multiple comma-separated values. So adding e.g. `TEST=foo,bar` will
