@@ -590,8 +590,7 @@ sub _generate_jobs {
         my @templates = $templates->all;
 
         unless (@templates) {
-            my $error = 'no templates found for ' . join('-', map { $args->{$_} } qw(DISTRI FLAVOR ARCH));
-            push(@$notes, $error);
+            push @$notes, my $error = 'no templates found for product ' . $product->name;
             return {error_message => $error, error_code => 404};
         }
         for my $job_template (@templates) {
