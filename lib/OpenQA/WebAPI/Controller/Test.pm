@@ -666,13 +666,11 @@ sub job_next_previous_ajax ($self) {
     }
     $data[0]->{islatest} = 1 if @data;
     if (($source_count{p} // 0) > $p_limit) {  # the query requests `$p_limit + 1` so we know when the limit was reached
-        push @info, "The number of \"Previous\" jobs exceeds the display limit of $p_limit.";
-        pop @data;    # discard the additional "Previous" job
+        $data[-1]->{note} = "There are more \"Previous\" jobs but the display limit of $p_limit was exceeded.";
     }
     if (($source_count{n} // 0) > $n_limit) {  # the query requests `$n_limit + 1` so we know when the limit was reached
-        push @info, "The number of \"Next\" jobs exceeds the display limit of $n_limit. "
-          . 'The first job on the table is still the latest.';
-        splice @data, 1, 1;    # discard the additional "Next" job (preserving the first job as it is always the latest)
+        $data[1]->{note} = "Jobs have been omitted as the display limit of $n_limit for \"Next\" jobs was exceeded. "
+          . 'The first job in this table is still the latest.';
     }
     $self->render(json => {info => \@info, data => \@data});
 }
