@@ -368,6 +368,10 @@ sub delete ($self) {
         return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 400);
     }
 
+    if ($group->can('children') && scalar($group->children) != 0) {
+        return $self->render(json => {error => 'Parent job group ' . $group->id . ' is not empty'}, status => 400);
+    }
+
     my $res = $group->delete;
     return $self->render(
         json => {error => 'Specified job group ' . $group->id . ' exist but can not be deleted, though'})
