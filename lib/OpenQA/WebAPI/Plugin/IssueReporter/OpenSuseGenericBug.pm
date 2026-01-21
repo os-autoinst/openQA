@@ -36,7 +36,7 @@ sub actions ($c) {
 
     my $url = Mojo::URL->new($bugzilla_url)->query(
         {
-            short_desc => "[Build $ctx->{build}] openQA test fails in $ctx->{module}",
+            short_desc => "[QE][Build $ctx->{build}] openQA test fails in $ctx->{module}",
             comment => $body,
             product => "$distri_name $bugzilla_product",
             bug_file_loc => $ctx->{step_url},
