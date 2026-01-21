@@ -1,0 +1,59 @@
+openapi: 3.1.1
+info:
+  title: Test API with raw schema
+  version: 1.2.3
+components:
+  responses:
+    validation_response:
+      description: capture validation result
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              result:
+                properties:
+                  valid:
+                    type: boolean
+                  errors:
+                    type: array
+                    items:
+                      type: object
+paths:
+  /api/v1/jobs/{jobid}:
+    description: Retrieve job
+    parameters:
+    - &jobid
+      name: jobid
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      operationId: operation_jobs_show
+      responses:
+        200:
+          description: foo
+  /api/v1/jobs/{jobid}/details:
+    description: Retrieve job with details (logs, testresults)
+    parameters:
+    - *jobid
+    get:
+      operationId: operation_jobs_show_details
+      responses:
+        200:
+          description: foo
+  /api/v1/job_groups/{group_id}:
+    description: Retrieve Job Group
+    parameters:
+    - &roup_id
+      name: group_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      operationId: operation_groups_list
+      responses:
+        200:
+          description: foo
