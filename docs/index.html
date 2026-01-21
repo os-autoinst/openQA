@@ -4621,7 +4621,7 @@ need to be tested</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>Machines, mediums, test suites and job templates  can all set various
+<p>Machines, mediums, test suites and job templates can all set various
 configuration variables. The so called job templates within the job groups
 define how the test suites, mediums and machines should be combined in various
 ways to produce individual 'jobs'. All the variables from the test suite,
@@ -4713,8 +4713,8 @@ emulated USB stick.</p>
 <h3 id="_medium_types_products"><a class="anchor" href="#_medium_types_products"></a><a class="link" href="#_medium_types_products">27.3. Medium Types (products)</a></h3>
 <div class="paragraph">
 <p>A medium type (product) in openQA is a simple description without any concrete
-meaning. It basically consists of a name and a set of variables that
-define or characterize this product in os-autoinst.</p>
+meaning. It basically consists of a name and a set of variables that define or
+characterize this product in os-autoinst.</p>
 </div>
 <div class="paragraph">
 <p>Some example variables used by openSUSE are:</p>
@@ -4722,20 +4722,20 @@ define or characterize this product in os-autoinst.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>ISO_MAXSIZE</code> contains the maximum size of the product. There is a
-test that checks that the current size of the product is less or
-equal than this variable.</p>
+<p><code>ISO_MAXSIZE</code> contains the maximum size of the product. There is a test that
+checks that the current size of the product is less or equal than this
+variable.</p>
 </li>
 <li>
 <p><code>DVD</code> if it is set to 1, this indicates that the medium is a DVD.</p>
 </li>
 <li>
-<p><code>LIVECD</code> if it is set to 1, this indicates that the medium is a live
-image (can be a CD or USB)</p>
+<p><code>LIVECD</code> if it is set to 1, this indicates that the medium is a live image
+(can be a CD or USB)</p>
 </li>
 <li>
-<p><code>GNOME</code> this variable, if it is set to 1, indicates that it is a GNOME
-only distribution.</p>
+<p><code>GNOME</code> this variable, if it is set to 1, indicates that it is a GNOME only
+distribution.</p>
 </li>
 <li>
 <p><code>PROMO</code> marks the promotional product.</p>
@@ -4744,6 +4744,15 @@ only distribution.</p>
 <p><code>RESCUECD</code> is set to 1 for rescue CD images.</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>The version of a medium can be set to <code>*</code>. Then this medium is considered if a
+product is scheduled with a <code>VERSION</code> parameter that does not match any other
+medium. This allows having only one medium per version. Note that having a
+medium with a concrete version and one with <code>*</code> at the same time is usually not
+a good idea as you will likely run into the scheduling error <code>no templates found
+for product …</code> (unless you actually have job templates for all these medium
+types).</p>
 </div>
 </div>
 <div class="sect2">
@@ -6232,6 +6241,12 @@ supplied via a <a href="#scenarios_yaml">YAML document</a>.</p>
 <p>Additionally to the necessary template matching parameters <code>DISTRI</code>, <code>VERSION</code>,
 <code>FLAVOR</code> and <code>ARCH</code> more parameters can be specified. Those additional
 parameters will be added as jobs settings in all triggered jobs.</p>
+</div>
+<div class="paragraph">
+<p>If there is no medium type matching the specified <code>VERSION</code>, the lookup falls
+back to matching any medium with version <code>*</code>. Check out
+<a href="#_medium_types_products">the section about medium types</a>
+for details.</p>
 </div>
 <div class="paragraph">
 <p>The parameters <code>MACHINE</code> and <code>TEST</code> additionally act as filters and <code>TEST</code>
@@ -14539,7 +14554,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-10 04:44:23 UTC
+Last updated 2026-01-21 04:44:52 UTC
 </div>
 </div>
 </body>
