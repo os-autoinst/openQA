@@ -40,7 +40,7 @@ function setupJobNextPrevious() {
     paging: true,
     ordering: false,
     deferRender: true,
-    columns: [{width: '5%'}, {data: 'result'}, {data: 'build'}, {data: 'finished'}],
+    columns: [{width: '5%'}, {data: 'result'}, {data: 'build'}, {data: 'assigned_worker'}, {data: 'finished'}],
     processing: false,
     order: false,
     columnDefs: [
@@ -53,7 +53,8 @@ function setupJobNextPrevious() {
         render: renderJobResults
       },
       {targets: 2, render: renderBuild},
-      {targets: 3, render: renderFinishTime}
+      {targets: 3, render: renderWorker},
+      {targets: 4, render: renderFinishTime}
     ],
     initComplete: function (settings, json) {
       setPage(json);
@@ -129,6 +130,11 @@ function renderJobResults(data, type, row) {
 function renderBuild(data, type, row) {
   const link = urlWithBase('/tests/overview?distri=' + row.distri + '&version=' + row.version + '&build=' + row.build);
   return "<a href='" + link + "'>" + row.build + '</a>';
+}
+
+function renderWorker(data, type, row) {
+  var link = '/admin/workers/' + data;
+  return "<a href='" + link + "'>" + data + '</a>';
 }
 
 function renderFinishTime(data, type, row) {
