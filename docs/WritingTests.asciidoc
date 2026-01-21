@@ -2055,6 +2055,26 @@ For lower turn-around times during test development based on virtual machines
 the QEMU backend provides a feature that allows a job to start from a snapshot
 which can help in this situation.
 
+==== How snapshots work internally
+
+Snapshots use QEMU's block device overlay mechanism. Each snapshot creates an
+incremental overlay forming a chain:
+
+----
+[base.qcow2] <- [hd0-overlay1] <- [hd0-overlay2] <- [hd0-overlay3] (active)
+   snapshot1      snapshot2         snapshot3
+----
+
+* Each overlay contains only the changes (deltas) since its backing file
+* The rightmost "active layer" is where QEMU writes, consuming worker disk space
+* Each overlay is uniquely numbered to prevent filename conflicts
+* Reading traverses the chain backward until data is found
+
+When reverting (e.g., `SKIPTO=snapshot1`), all forward overlays are removed,
+the snapshot overlay is recreated, and execution continues from that state
+
+==== Snapshot modes
+
 Depending on the use case, there are two options to help:
 
 * Create and *preserve* snapshots for *every test* module run
@@ -2064,6 +2084,7 @@ Depending on the use case, there are two options to help:
     job).
   - This mode is useful for fixing non-fatal issues in tests and debugging SUT
     as more than just the snapshot of the last failed module is saved.
+  - Creates a chain of incremental overlays, one per test module
 
 * Create a snapshot *after every successful* test module while *always
   overwriting* the existing snapshot to preserve only the latest (`TESTDEBUG`)
@@ -2071,6 +2092,8 @@ Depending on the use case, there are two options to help:
     which can be limiting, but preserves disk space in comparison to
     `MAKETESTSNAPSHOTS`.
   - This mode is useful for iterative test development
+  - Reuses the snapshot name (`lastgood`) while maintaining proper overlay
+    chains internally
 
 In both modes there is no need to modify tests (i.e. adding `milestone` test
 flag as the behaviour is implied). In the later mode every test module is also
