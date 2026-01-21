@@ -15,6 +15,7 @@ use Mojo::File 'path';
 use Mojo::IOLoop;
 use Mojo::Util 'trim';
 use Feature::Compat::Try;
+use OpenQA::Constants qw(MAX_BIGINT);
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
@@ -100,6 +101,13 @@ sub startup ($self) {
     $r->add_type(step => qr/[1-9]\d*/);
     $r->add_type(barrier => qr/[0-9a-zA-Z_]+/);
     $r->add_type(str => qr/[A-Za-z]+/);
+    $r->add_type(bigint => qr/[0-9]{1,19}/);
+
+    $r->add_condition(
+        bigint_range => sub ($route, $c, $captures, $args) {
+            my $id = $captures->{$args // 'id'} // return 0;
+            return $id <= MAX_BIGINT ? 1 : 0;
+        });
 
     # register routes
     $r->post('/session')->to('session#create');
@@ -140,10 +148,10 @@ sub startup ($self) {
     my $assets_r = $require_auth_for_assets ? $auth_any_user : $r;
     $assets_r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
-    my $test_path = '/tests/<testid:num>';
-    my $test_r = $r->any($test_path);
+    my $test_path = '/tests/<testid:bigint>';
+    my $test_r = $r->any($test_path)->requires(bigint_range => 'testid');
     $test_r = $test_r->under('/')->to('test#referer_check');
-    my $test_auth = $auth->any($test_path => {format => 0});
+    my $test_auth = $auth->any($test_path => {format => 0})->requires(bigint_range => 'testid');
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/#moduleid/fails')->name('test_module_fails')->to('test#module_fails');
@@ -169,7 +177,8 @@ sub startup ($self) {
     $test_r->get('/video' => sub ($c) { $c->render_testfile('test/video') })->name('video');
     $test_r->get('/logfile' => sub ($c) { $c->render_testfile('test/logfile') })->name('logfile');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
-    $test_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');
+    $test_r->get('/asset/<assetid:bigint>')->name('test_asset_id')->to('file#test_asset')
+      ->requires(bigint_range => 'assetid');
     $test_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
     $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
@@ -184,18 +193,23 @@ sub startup ($self) {
     $step_auth->post('/')->name('save_needle_ajax')->to('step#save_needle_ajax');
     $step_r->get('/')->name('step')->to(action => 'view');
 
-    $r->get('/needles/<needle_id:num>/image')->name('needle_image_by_id')->to('file#needle_image_by_id');
-    $r->get('/needles/<needle_id:num>/json')->name('needle_json_by_id')->to('file#needle_json_by_id');
+    $r->get('/needles/<needle_id:bigint>/image')->name('needle_image_by_id')->to('file#needle_image_by_id')
+      ->requires(bigint_range => 'needle_id');
+    $r->get('/needles/<needle_id:bigint>/json')->name('needle_json_by_id')->to('file#needle_json_by_id')
+      ->requires(bigint_range => 'needle_id');
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
     # this route is used in the helper
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
     # but this route is actually matched (in case apache is not catching this earlier)
     # due to the split md5_dirname having a /
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
-    $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
-      ->to('main#job_group_overview', format => undef);
-    $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
-      ->to('main#parent_group_overview', format => undef);
+
+    $r->get('/group_overview/<groupid:bigint>' => [format => ['json', 'html']])->requires(bigint_range => 'groupid')
+      ->name('group_overview')->to('main#job_group_overview', format => undef);
+
+
+    $r->get('/parent_group_overview/<groupid:bigint>' => [format => ['json', 'html']])->name('parent_group_overview')
+      ->to('main#parent_group_overview', format => undef)->requires(bigint_range => 'groupid');
 
     # Favicon
     $r->get('/favicon.ico' => sub ($c) { $c->render_static('favicon.ico') });
@@ -210,7 +224,7 @@ sub startup ($self) {
     $r->get('/health')->name('health')->to('main#health');
 
     # shorter version of route to individual job results
-    $r->get('/t<testid:num>' => sub ($c) { $c->redirect_to('test') });
+    $r->get('/t<testid:bigint>' => sub ($c) { $c->redirect_to('test') })->requires(bigint_range => 'testid');
 
     # Redirection for old links to openQAv1
     $r->get('/results' => sub ($c) { $c->redirect_to('tests') });
@@ -230,22 +244,27 @@ sub startup ($self) {
     $pub_admin_r->get('/machines')->name('admin_machines')->to('machine#index');
     $pub_admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
 
-    $pub_admin_r->get('/job_templates/<groupid:num>')->name('admin_job_templates')->to('job_template#index');
+    $pub_admin_r->get('/job_templates/<groupid:bigint>')->name('admin_job_templates')->to('job_template#index')
+      ->requires(bigint_range => 'groupid');
 
     $pub_admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
-    $pub_admin_r->get('/job_group/<groupid:num>')->name('admin_job_group_row')->to('job_group#job_group_row');
-    $pub_admin_r->get('/parent_group/<groupid:num>')->name('admin_parent_group_row')->to('job_group#parent_group_row');
-    $pub_admin_r->get('/edit_parent_group/<groupid:num>')->name('admin_edit_parent_group')
-      ->to('job_group#edit_parent_group');
-    $pub_admin_r->get('/groups/connect/<groupid:num>')->name('job_group_new_media')->to('job_group#connect');
+    $pub_admin_r->get('/job_group/<groupid:bigint>')->name('admin_job_group_row')->to('job_group#job_group_row')
+      ->requires(bigint_range => 'groupid');
+    $pub_admin_r->get('/parent_group/<groupid:bigint>')->name('admin_parent_group_row')
+      ->to('job_group#parent_group_row')->requires(bigint_range => 'groupid');
+    $pub_admin_r->get('/edit_parent_group/<groupid:bigint>')->name('admin_edit_parent_group')
+      ->to('job_group#edit_parent_group')->requires(bigint_range => 'groupid');
+    $pub_admin_r->get('/groups/connect/<groupid:bigint>')->name('job_group_new_media')->to('job_group#connect')
+      ->requires(bigint_range => 'groupid');
 
     $pub_admin_r->get('/assets')->name('admin_assets')->to('asset#index');
     $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
     $pub_admin_r->get('/workers' => [format => ['json', 'html']])->name('admin_workers')
       ->to('workers#index', format => undef);
-    $pub_admin_r->get('/workers/<worker_id:num>')->name('admin_worker_show')->to('workers#show');
-    $pub_admin_r->get('/workers/<worker_id:num>/ajax')->name('admin_worker_previous_jobs_ajax')
-      ->to('workers#previous_jobs_ajax');
+    $pub_admin_r->get('/workers/<worker_id:bigint>')->name('admin_worker_show')->to('workers#show')
+      ->requires(bigint_range => 'worker_id');
+    $pub_admin_r->get('/workers/<worker_id:bigint>/ajax')->name('admin_worker_previous_jobs_ajax')
+      ->to('workers#previous_jobs_ajax')->requires(bigint_range => 'worker_id');
 
     $pub_admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
     $pub_admin_r->get('/productlog/ajax')->name('admin_product_log_ajax')->to('audit_log#productlog_ajax');
@@ -259,7 +278,8 @@ sub startup ($self) {
     $admin_r->delete('/needles/delete')->name('admin_needle_delete')->to('needle#delete');
     $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
     $admin_r->get('/auditlog/ajax')->name('audit_ajax')->to('audit_log#ajax');
-    $admin_r->post('/groups/connect/<groupid:num>')->name('job_group_save_media')->to('job_group#save_connect');
+    $admin_r->post('/groups/connect/<groupid:bigint>')->name('job_group_save_media')->to('job_group#save_connect')
+      ->requires(bigint_range => 'groupid');
 
     # Workers list as default option
     $op_r->get('/')->name('admin')->to('workers#index');
@@ -285,11 +305,11 @@ sub startup ($self) {
     push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
-        '/ws/<workerid:num>' => sub ($c) {
+        '/ws/<workerid:bigint>' => sub ($c) {
             my $workerid = $c->param('workerid');
             my $port = service_port('websocket');
             $c->redirect_to("http://localhost:$port/ws/$workerid");
-        });
+        })->requires(bigint_range => 'workerid');
     my $api_job_auth = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_jobtoken');
     my $api_r_job = $api_job_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     push @api_routes, $api_job_auth, $api_r_job;
@@ -298,20 +318,27 @@ sub startup ($self) {
 
     # api/v1/job_groups
     $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
-    $api_public_r->get('/job_groups/<group_id:num>')->name('apiv1_get_job_group')->to('job_group#list');
-    $api_public_r->get('/job_groups/<group_id:num>/jobs')->name('apiv1_get_job_group_jobs')->to('job_group#list_jobs');
-    $api_public_r->get('/job_groups/<group_id:num>/build_results')->name('apiv1_get_job_group_jobs')
-      ->to('job_group#build_results');
+    $api_public_r->get('/job_groups/<group_id:bigint>')->name('apiv1_get_job_group')->to('job_group#list')
+      ->requires(bigint_range => 'group_id');
+    $api_public_r->get('/job_groups/<group_id:bigint>/jobs')->name('apiv1_get_job_group_jobs')
+      ->to('job_group#list_jobs')->requires(bigint_range => 'group_id');
+    $api_public_r->get('/job_groups/<group_id:bigint>/build_results')->name('apiv1_get_job_group_jobs')
+      ->to('job_group#build_results')->requires(bigint_range => 'group_id');
     $api_ra->post('/job_groups')->name('apiv1_post_job_group')->to('job_group#create');
-    $api_ra->put('/job_groups/<group_id:num>')->name('apiv1_put_job_group')->to('job_group#update');
-    $api_ra->delete('/job_groups/<group_id:num>')->name('apiv1_delete_job_group')->to('job_group#delete');
+    $api_ra->put('/job_groups/<group_id:bigint>')->name('apiv1_put_job_group')->to('job_group#update')
+      ->requires(bigint_range => 'group_id');
+    $api_ra->delete('/job_groups/<group_id:bigint>')->name('apiv1_delete_job_group')->to('job_group#delete')
+      ->requires(bigint_range => 'group_id');
 
     # api/v1/parent_groups
     $api_public_r->get('/parent_groups')->name('apiv1_list_parent_groups')->to('job_group#list');
-    $api_public_r->get('/parent_groups/<group_id:num>')->name('apiv1_get_parent_group')->to('job_group#list');
+    $api_public_r->get('/parent_groups/<group_id:bigint>')->name('apiv1_get_parent_group')->to('job_group#list')
+      ->requires(bigint_range => 'group_id');
     $api_ra->post('/parent_groups')->name('apiv1_post_parent_group')->to('job_group#create');
-    $api_ra->put('/parent_groups/<group_id:num>')->name('apiv1_put_parent_group')->to('job_group#update');
-    $api_ra->delete('/parent_groups/<group_id:num>')->name('apiv1_delete_parent_group')->to('job_group#delete');
+    $api_ra->put('/parent_groups/<group_id:bigint>')->name('apiv1_put_parent_group')->to('job_group#update')
+      ->requires(bigint_range => 'group_id');
+    $api_ra->delete('/parent_groups/<group_id:bigint>')->name('apiv1_delete_parent_group')->to('job_group#delete')
+      ->requires(bigint_range => 'group_id');
 
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
@@ -323,11 +350,13 @@ sub startup ($self) {
     # api/v1/job_settings/jobs
     $api_public_r->get('/job_settings/jobs')->name('apiv1_get_jobs_for_job_settings')->to('job_settings#jobs');
 
-    my $job_r = $api_ro->any('/jobs/<jobid:num>');
+    my $job_r = $api_ro->any('/jobs/<jobid:bigint>')->requires(bigint_range => 'jobid');
     push @api_routes, $job_r;
-    $api_public_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
-    $api_public_r->get('/experimental/jobs/<jobid:num>/status')->name('apiv1_get_status')->to('job#get_status');
-    $api_public_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
+    $api_public_r->any('/jobs/<jobid:bigint>')->name('apiv1_job')->to('job#show')->requires(bigint_range => 'jobid');
+    $api_public_r->get('/experimental/jobs/<jobid:bigint>/status')->name('apiv1_get_status')->to('job#get_status')
+      ->requires(bigint_range => 'jobid');
+    $api_public_r->any('/jobs/<jobid:bigint>/details')->name('apiv1_job')->to('job#show', details => 1)
+      ->requires(bigint_range => 'jobid');
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
@@ -343,7 +372,7 @@ sub startup ($self) {
     # api/v1/bugs
     $api_public_r->get('/bugs')->name('apiv1_bugs')->to('bug#list');
     $api_ro->post('/bugs')->name('apiv1_create_bug')->to('bug#create');
-    my $bug_r = $api_ro->any('/bugs/<id:num>');
+    my $bug_r = $api_ro->any('/bugs/<id:bigint>')->requires(bigint_range => 'id');
     push @api_routes, $bug_r;
     $bug_r->get('/')->name('apiv1_show_bug')->to('bug#show');
     $bug_r->put('/')->name('apiv1_put_bug')->to('bug#update');
@@ -354,8 +383,10 @@ sub startup ($self) {
     $api_description{apiv1_worker}
       = 'Each entry contains the "hostname", the boolean flag "connected" which can be 0 or 1 depending on the connection to the websockets server and the field "status" which can be "dead", "idle", "running". A worker can be considered "up" when "connected=1" and "status!=dead"';
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
-    $api_public_r->any('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
-    $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
+    $api_public_r->any('/workers/<workerid:bigint>')->get('/')->name('apiv1_worker')->to('worker#show')
+      ->requires(bigint_range => 'workerid');
+    $api_ro->delete('/workers/<worker_id:bigint>')->name('apiv1_worker_delete')->to('worker#delete')
+      ->requires(bigint_range => 'worker_id');
 
     # api/v1/mutex
     $api_r_job->post('/mutex')->name('apiv1_mutex_create')->to('locks#mutex_create');
@@ -374,8 +405,8 @@ sub startup ($self) {
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');
 
     # api/v1/isos
-    $api_ro->get('/isos/<scheduled_product_id:num>')->name('apiv1_show_scheduled_product')
-      ->to('iso#show_scheduled_product');
+    $api_ro->get('/isos/<scheduled_product_id:bigint>')->name('apiv1_show_scheduled_product')
+      ->to('iso#show_scheduled_product')->requires(bigint_range => 'scheduled_product_id');
     $api_ro->post('/isos')->name('apiv1_create_iso')->to('iso#create');
     $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');
     $api_ro->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');
@@ -391,83 +422,108 @@ sub startup ($self) {
     $api_ro->post('/assets')->name('apiv1_post_asset')->to('asset#register');
     $api_assets_readonly->get('/assets')->name('apiv1_get_asset')->to('asset#list');
     $api_ra->post('/assets/cleanup')->name('apiv1_trigger_asset_cleanup')->to('asset#trigger_cleanup');
-    $api_assets_readonly->get('/assets/<id:num>')->name('apiv1_get_asset_id')->to('asset#get');
+    $api_assets_readonly->get('/assets/<id:bigint>')->name('apiv1_get_asset_id')->to('asset#get')
+      ->requires(bigint_range => 'id');
     $api_assets_readonly->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
-    $api_ra->delete('/assets/<id:num>')->name('apiv1_delete_asset')->to('asset#delete');
+    $api_ra->delete('/assets/<id:bigint>')->name('apiv1_delete_asset')->to('asset#delete')
+      ->requires(bigint_range => 'id');
     $api_ra->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
 
     # api/v1/test_suites
     $api_public_r->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
     $api_ra->post('test_suites')->to('table#create', table => 'TestSuites');
-    $api_public_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
-    $api_ra->put('test_suites/:id')->name('apiv1_put_test_suite')->to('table#update', table => 'TestSuites');
+    $api_public_r->get('test_suites/<id:bigint>')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
+    $api_ra->put('test_suites/<id:bigint>')->name('apiv1_put_test_suite')->to('table#update', table => 'TestSuites');
     # in case PUT is not supported
-    $api_ra->post('test_suites/:id')->name('apiv1_post_test_suite')->to('table#update', table => 'TestSuites');
-    $api_ra->delete('test_suites/:id')->name('apiv1_delete_test_suite')->to('table#destroy', table => 'TestSuites');
+    $api_ra->post('test_suites/<id:bigint>')->name('apiv1_post_test_suite')->to('table#update', table => 'TestSuites');
+    $api_ra->delete('test_suites/<id:bigint>')->name('apiv1_delete_test_suite')
+      ->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
     $api_public_r->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
     $api_ra->post('machines')->to('table#create', table => 'Machines');
-    $api_public_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
-    $api_ra->put('machines/:id')->name('apiv1_put_machine')->to('table#update', table => 'Machines');
+    $api_public_r->get('machines/<id:bigint>')->name('apiv1_machine')->to('table#list', table => 'Machines')
+      ->requires(bigint_range => 'id');
+    $api_ra->put('machines/<id:bigint>')->name('apiv1_put_machine')->to('table#update', table => 'Machines')
+      ->requires(bigint_range => 'id');
     # in case PUT is not supported
-    $api_ra->post('machines/:id')->name('apiv1_post_machine')->to('table#update', table => 'Machines');
-    $api_ra->delete('machines/:id')->name('apiv1_delete_machine')->to('table#destroy', table => 'Machines');
+    $api_ra->post('machines/<id:bigint>')->name('apiv1_post_machine')->to('table#update', table => 'Machines')
+      ->requires(bigint_range => 'id');
+    $api_ra->delete('machines/<id:bigint>')->name('apiv1_delete_machine')->to('table#destroy', table => 'Machines')
+      ->requires(bigint_range => 'id');
 
     # api/v1/products
     $api_public_r->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
     $api_ra->post('products')->to('table#create', table => 'Products');
-    $api_public_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
-    $api_ra->put('products/:id')->name('apiv1_put_product')->to('table#update', table => 'Products');
+    $api_public_r->get('products/<id:bigint>')->name('apiv1_product')->to('table#list', table => 'Products')
+      ->requires(bigint_range => 'id');
+    $api_ra->put('products/<id:bigint>')->name('apiv1_put_product')->to('table#update', table => 'Products')
+      ->requires(bigint_range => 'id');
     # in case PUT is not supported
-    $api_ra->post('products/:id')->name('apiv1_post_product')->to('table#update', table => 'Products');
-    $api_ra->delete('products/:id')->name('apiv1_delete_product')->to('table#destroy', table => 'Products');
+    $api_ra->post('products/<id:bigint>')->name('apiv1_post_product')->to('table#update', table => 'Products')
+      ->requires(bigint_range => 'id');
+    $api_ra->delete('products/<id:bigint>')->name('apiv1_delete_product')->to('table#destroy', table => 'Products')
+      ->requires(bigint_range => 'id');
 
     # api/v1/job_templates
     $api_public_r->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
     $api_ra->post('job_templates')->to('job_template#create');
-    $api_public_r->get('job_templates/<:job_template_id:num>')->name('apiv1_job_template')->to('job_template#list');
-    $api_ra->delete('job_templates/<:job_template_id:num>')->to('job_template#destroy');
+    $api_public_r->get('job_templates/<:job_template_id:bigint>')->name('apiv1_job_template')->to('job_template#list')
+      ->requires(bigint_range => 'job_template_id');
+    $api_ra->delete('job_templates/<:job_template_id:bigint>')->to('job_template#destroy')
+      ->requires(bigint_range => 'job_template_id');
 
     # api/v1/job_templates_scheduling
-    $api_public_r->get('job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
-      ->to('job_template#schedules', id => undef);
+    $api_public_r->get('job_templates_scheduling/<id:bigint>')->name('apiv1_job_templates_schedules')
+      ->to('job_template#schedules', id => undef)->requires(bigint_range => 'id');
     $api_public_r->get('job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
-    $api_ra->post('job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
+    # We can't use bigint_range here because for this route 'id' is optional
+    $api_ra->post('job_templates_scheduling/<id:bigint>')->to('job_template#update', id => undef);
     # Deprecated experimental aliases for the above routes
-    $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
-      ->to('job_template#schedules', id => undef);
+    $api_public_r->get('experimental/job_templates_scheduling/<id:bigint>')->name('apiv1_job_templates_schedules')
+      ->to('job_template#schedules', id => undef)->requires(bigint_range => 'id');
     $api_public_r->get('experimental/job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
-    $api_ra->post('experimental/job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
+    $api_ra->post('experimental/job_templates_scheduling/<id:bigint>')->to('job_template#update', id => undef)
+      ->requires(bigint_range => 'id');
 
     # api/v1/comments
-    $api_public_r->get('/jobs/<job_id:num>/comments')->name('apiv1_list_comments')->to('comment#list');
-    $api_public_r->get('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_get_comment')->to('comment#text');
-    $api_ru->post('/jobs/<job_id:num>/comments')->name('apiv1_post_comment')->to('comment#create');
-    $api_ru->put('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_put_comment')->to('comment#update');
-    $api_ra->delete('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_delete_comment')->to('comment#delete');
-    $api_public_r->get('/groups/<group_id:num>/comments')->name('apiv1_list_group_comment')->to('comment#list');
-    $api_public_r->get('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_get_group_comment')
-      ->to('comment#text');
-    $api_ru->post('/groups/<group_id:num>/comments')->name('apiv1_post_group_comment')->to('comment#create');
-    $api_ru->put('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_put_group_comment')
-      ->to('comment#update');
-    $api_ra->delete('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_delete_group_comment')
-      ->to('comment#delete');
-    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_list_parent_group_comment')
-      ->to('comment#list');
-    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
-      ->name('apiv1_get_parent_group_comment')->to('comment#text');
-    $api_ru->post('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_post_parent_group_comment')
-      ->to('comment#create');
-    $api_ru->put('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
-      ->name('apiv1_put_parent_group_comment')->to('comment#update');
-    $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
-      ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
+    $api_public_r->get('/jobs/<job_id:bigint>/comments')->name('apiv1_list_comments')->to('comment#list')
+      ->requires(bigint_range => 'job_id');
+    $api_public_r->get('/jobs/<job_id:bigint>/comments/<comment_id:bigint>')->name('apiv1_get_comment')
+      ->to('comment#text')->requires(bigint_range => 'job_id')->requires(bigint_range => 'comment_id');
+    $api_ru->post('/jobs/<job_id:bigint>/comments')->name('apiv1_post_comment')->to('comment#create')
+      ->requires(bigint_range => 'job_id');
+    $api_ru->put('/jobs/<job_id:bigint>/comments/<comment_id:bigint>')->name('apiv1_put_comment')->to('comment#update')
+      ->requires(bigint_range => 'job_id')->requires(bigint_range => 'comment_id');
+    $api_ra->delete('/jobs/<job_id:bigint>/comments/<comment_id:bigint>')->name('apiv1_delete_comment')
+      ->to('comment#delete')->requires(bigint_range => 'job_id')->requires(bigint_range => 'comment_id');
+    $api_public_r->get('/groups/<group_id:bigint>/comments')->name('apiv1_list_group_comment')->to('comment#list')
+      ->requires(bigint_range => 'group_id');
+    $api_public_r->get('/groups/<group_id:bigint>/comments/<comment_id:bigint>')->name('apiv1_get_group_comment')
+      ->to('comment#text')->requires(bigint_range => 'group_id')->requires(bigint_range => 'comment_id');
+    $api_ru->post('/groups/<group_id:bigint>/comments')->name('apiv1_post_group_comment')->to('comment#create')
+      ->requires(bigint_range => 'group_id');
+    $api_ru->put('/groups/<group_id:bigint>/comments/<comment_id:bigint>')->name('apiv1_put_group_comment')
+      ->to('comment#update')->requires(bigint_range => 'group_id')->requires(bigint_range => 'comment_id');
+    $api_ra->delete('/groups/<group_id:bigint>/comments/<comment_id:bigint>')->name('apiv1_delete_group_comment')
+      ->to('comment#delete')->requires(bigint_range => 'group_id')->requires(bigint_range => 'comment_id');
+    $api_public_r->get('/parent_groups/<parent_group_id:bigint>/comments')->name('apiv1_list_parent_group_comment')
+      ->to('comment#list')->requires(bigint_range => 'parent_group_id');
+    $api_public_r->get('/parent_groups/<parent_group_id:bigint>/comments/<comment_id:bigint>')
+      ->name('apiv1_get_parent_group_comment')->to('comment#text')->requires(bigint_range => 'parent_group_id')
+      ->requires(bigint_range => 'comment_id');
+    $api_ru->post('/parent_groups/<parent_group_id:bigint>/comments')->name('apiv1_post_parent_group_comment')
+      ->to('comment#create')->requires(bigint_range => 'parent_group_id');
+    $api_ru->put('/parent_groups/<parent_group_id:bigint>/comments/<comment_id:bigint>')
+      ->name('apiv1_put_parent_group_comment')->to('comment#update')->requires(bigint_range => 'parent_group_id')
+      ->requires(bigint_range => 'comment_id');
+    $api_ra->delete('/parent_groups/<parent_group_id:bigint>/comments/<comment_id:bigint>')
+      ->name('apiv1_delete_parent_group_comment')->to('comment#delete')->requires(bigint_range => 'parent_group_id')
+      ->requires(bigint_range => 'comment_id');
     $api_ru->post('/comments')->name('apiv1_post_comments')->to('comment#create_many');
     $api_ra->delete('/comments')->name('apiv1_delete_comments')->to('comment#delete_many');
 
-    $api_ra->delete('/user/<id:num>')->name('apiv1_delete_user')->to('user#delete');
+    $api_ra->delete('/user/<id:bigint>')->name('apiv1_delete_user')->to('user#delete')->requires(bigint_range => 'id');
 
     # api/v1/search
     $api_public_r->get('/experimental/search')->name('apiv1_search_query')->to('search#query');

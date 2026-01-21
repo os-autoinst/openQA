@@ -9,6 +9,8 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
+use Math::BigInt;
+use OpenQA::Constants qw(MAX_BIGINT);
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -46,6 +48,23 @@ subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
         $t->get_ok("/tests/$existing_job/modules/nonexistingmodule/steps/1/src.txt")->status_is(404);
         $t->get_ok("/tests/$existing_job/modules/nonexistingmodule/steps/1/edit")->status_is(404);
     };
+};
+
+subtest '404 pages for out of range integers' => sub {
+    # avoid formatting like 9.22337203685478e+18
+    my $big = Math::BigInt->new(MAX_BIGINT + 1);
+    my @routes = (
+        '/group_overview/ID', '/tests/ID',
+        '/tID', '/tests/ID/details_ajax',
+        '/tests/ID/status', '/needles/ID/image',
+        '/parent_group_overview/ID', '/admin/job_templates/ID',
+        '/api/v1/machines/ID'
+    );
+    for my $route (@routes) {
+        $t->get_ok($route =~ s/ID/$big/r)->status_is(404, $route);
+    }
+    $t->get_ok("/tests/80000/asset/$big")->status_is(404);
+    $t->get_ok("/tests/$big/asset/$big")->status_is(404);
 };
 
 

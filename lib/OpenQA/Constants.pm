@@ -9,6 +9,7 @@ use warnings;
 use Time::Seconds;
 use Exporter 'import';
 use Regexp::Common 'URI';
+use Config;
 
 # Minimal worker version that allows them to connect;
 # To be modified manually when we want to break compatibility and force workers to update
@@ -85,6 +86,8 @@ use constant DEFAULT_MAX_JOB_TIME => 2 * ONE_HOUR;
 # The max. time the job setup (asset caching, test syncing) is allowed to take before the worker stops it.
 use constant DEFAULT_MAX_SETUP_TIME => ONE_HOUR;
 
+use constant MAX_BIGINT => 2**(8 * $Config{ivsize} - 1) - 1;
+
 # The smallest time difference of database timestamps we usually distinguish in seconds
 # note: PostgreSQL actually provides a higher accuracy for the timestamp type. However,
 #       the automatic timestamp handling provided by DBIx only stores whole seconds. The
@@ -119,6 +122,7 @@ our @EXPORT_OK = qw(
   MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME
   DEFAULT_MAX_SETUP_TIME
+  MAX_BIGINT
   DB_TIMESTAMP_ACCURACY
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
   FRAGMENT_REGEX
