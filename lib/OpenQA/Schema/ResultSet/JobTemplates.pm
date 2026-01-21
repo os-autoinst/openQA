@@ -35,8 +35,12 @@ sub create_or_update_job_template {
     return {
         error => sprintf(
             "Product '%s' not found in database (arch: '%s', distri: '%s', flavor: '%s', version: '%s')",
-            $args->{product_name}, $args->{arch}, $args->{product_spec}->{distri},
-            $args->{product_spec}->{flavor}, $args->{product_spec}->{version})}
+            $args->{product_name},
+            $args->{arch},
+            $args->{product_spec}->{distri} // '?',
+            $args->{product_spec}->{flavor} // '?',
+            $args->{product_spec}->{version} // '?'
+        )}
       unless $product;
     my $test_suite;
     if (defined $args->{testsuite_name}) {
