@@ -23,6 +23,7 @@ coverage:
           - lib/OpenQA/Worker/
           - lib/OpenQA/Worker.pm
           - lib/OpenQA/Utils.pm
+          - lib/OpenQA/WebAPI/Controller/File.pm
       tests:
         target: 100.0
         threshold: 0
