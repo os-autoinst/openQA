@@ -580,7 +580,7 @@ sub viewimg ($self) {
 
     # render error message if there's nothing to show
     my $screenshot = $module_detail->{screenshot};
-    if (!$screenshot && !%needles_by_tag) {
+    if (!$screenshot && !keys %needles_by_tag) {
         $self->stash(textresult => 'Seems like os-autoinst has produced a result which openQA can not display.');
         return $self->render('step/viewtext');
     }
