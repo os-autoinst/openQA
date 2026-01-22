@@ -457,11 +457,7 @@ sub save_needle_ajax ($self) {
             $result->{restart} = $self->url_for('apiv1_restart', jobid => $job_id) if ($result->{propose_restart});
 
             $self->render(json => $result);
-        }
-    )->catch(
-        sub (@args) {    # uncoverable statement
-            $self->reply->gru_result(@args);    # uncoverable statement
-        });
+        })->catch(sub (@args) { $self->reply->gru_result(@args) });    # uncoverable statement
 }
 
 sub map_error_to_avg ($error) { int((1 - sqrt($error // 0)) * 100 + 0.5) }
