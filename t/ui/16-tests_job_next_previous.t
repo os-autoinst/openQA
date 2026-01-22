@@ -237,7 +237,7 @@ is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
 $driver->get('/tests/99947?previous_limit=10#next_previous');
 wait_for_ajax();
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
-is($entries, 11, '10 previous of 99947 and itself shown');
+is($entries, 12, '10 previous of 99947, 99947 itself and note about limit shown');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found current job 99947');
 $driver->find_element('[aria-label="Next"]')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99909')}, 1, 'found 10th previous job 99909');
@@ -245,7 +245,7 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99909')
 $driver->get('/tests/99901?next_limit=10#next_previous');
 wait_for_ajax();
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
-is($entries, 12, '10 next of 99901, itself and the latest shown');
+is($entries, 13, '10 next of 99901, 99901 itself, the latest and the note about the limit shown');
 $init_page = $driver->find_element_by_xpath("//*[\@class='dt-paging-button page-item active']")->get_text();
 is($init_page, 2, 'init page is 2 for 99901');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')}, 1, 'found current job 99901');
@@ -255,7 +255,7 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')
 $driver->get('/tests/99908?previous_limit=3&next_limit=2#next_previous');
 wait_for_ajax();
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) (entries|entry)$/;
-is($entries, 7, '3 previous and 2 next of 99901, itself and the latest shown');
+is($entries, 9, '3 previous and 2 next of 99901, 99901 itself, the latest and the limit notes shown');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99908')}, 1, 'found current job 99908');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found the latest job 99947');
 
@@ -286,32 +286,35 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     $t->get_ok('/tests/99910/ajax?previous_limit=0&next_limit=6', 'query with exceeding user-specified limit for next')
       ->status_is(200);
     my $jobs = $t->tx->res->json->{data};
-    is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 7, 'maximum limit for next is effective';
+    is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 9, 'maximum limit for next is effective';
 
     $t->get_ok('/tests/99910/ajax?previous_limit=6&next_limit=0',
         'query with exceeding user-specified limit for previous')->status_is(200);
     $jobs = $t->tx->res->json->{data};
-    is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 7, 'maximum limit for previous is effective';
+    is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 9, 'maximum limit for previous is effective';
 
     $t->get_ok('/tests/99910/ajax?previous_limit=3&next_limit=0', 'query with low user-specified limit for next')
       ->status_is(200);
     $jobs = $t->tx->res->json->{data};
-    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 5, 'user-specified limit for next is effective';
+    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 7, 'user-specified limit for next is effective';
 
     $t->get_ok('/tests/99910/ajax?previous_limit=0&next_limit=3', 'query with low user-specified limit for previous')
       ->status_is(200);
     $jobs = $t->tx->res->json->{data};
     is ref $jobs, 'ARRAY', 'data returned (4)'
-      and is scalar @$jobs, 5, 'user-specified limit for previous is effective';
+      and is scalar @$jobs, 7, 'user-specified limit for previous is effective';
 
     $t->get_ok('/tests/99910/ajax', 'query with (low) default limit for next and previous')->status_is(200);
     $jobs = $t->tx->res->json->{data};
-    is ref $jobs, 'ARRAY', 'data returned (5)' and is scalar @$jobs, 6, 'default limit for next is effective';
+    is ref $jobs, 'ARRAY', 'data returned (5)' and is scalar @$jobs, 8, 'default limit for next is effective';
 
     $driver->get('/tests/99910?previous_limit=6&next_limit=0#next_previous');
-    my $info = wait_for_element selector => '#job_next_previous_table_wrapper .alert', desc => 'info shown';
-    like $info->get_text, qr/previous.*limit.*6.*next.*limit.*0/is,
-      'info about next and previous jobs being limited shown';
+    my $info = wait_for_element
+      selector => '#job_next_previous_table tbody tr:nth-child(2)',
+      desc => 'next limit shown';
+    like $info->get_text, qr/omitted.*0.*next/is, 'info about next jobs being limited shown';
+    $info = wait_for_element selector => '#job_next_previous_table tbody tr:last-child', desc => 'previous limit shown';
+    like $info->get_text, qr/previous.*6.*exceeded/is, 'info about previous jobs being limited shown';
 };
 
 kill_driver();

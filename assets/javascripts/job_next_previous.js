@@ -28,19 +28,27 @@ function setupJobNextPrevious() {
         if (typeof params.next_limit != 'undefined') {
           d.next_limit = params.next_limit.toString();
         }
-      },
-      dataSrc: function (json) {
-        const info = json.info;
-        if (Array.isArray(info) && info.length > 0) {
-          addUniqueFlash('info', 'next_previous_info', info.join('<br/>'), $(tableElement), 'before');
-        }
-        return json.data;
       }
     },
     paging: true,
     ordering: false,
     deferRender: true,
     columns: [{width: '5%'}, {data: 'result'}, {data: 'build'}, {data: 'finished'}],
+    rowCallback: function (row, data) {
+      // set the colspan attribute and hide additional columns if a note is present
+      // note: DataTables does not seem to provide an API for this except for headers.
+      if (data.note === undefined) {
+        return;
+      }
+      const cells = row.children;
+      if (cells.length > 2) {
+        cells[1].colSpan = 3;
+        cells[1].style.textAlign = 'center';
+        while (cells.length > 2) {
+          row.removeChild(row.lastElementChild);
+        }
+      }
+    },
     processing: false,
     order: false,
     columnDefs: [
@@ -66,6 +74,9 @@ function setupJobNextPrevious() {
 }
 
 function renderMarks(data, type, row) {
+  if (row.note) {
+    return '';
+  }
   var html = '<span class="badge text-bg-primary float-right" title="';
   if (row.iscurrent == 1 && row.islatest == 1) {
     html += 'Current & Latest job">C&amp;L</span>';
@@ -78,6 +89,9 @@ function renderMarks(data, type, row) {
 }
 
 function renderJobResults(data, type, row) {
+  if (row.note) {
+    return row.note;
+  }
   var html = '';
   // job status
   html += '<span id="res-' + row.id + '">';
