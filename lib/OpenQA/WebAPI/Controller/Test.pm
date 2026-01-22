@@ -456,6 +456,25 @@ sub test_file_path ($self, $testcasedir, $dir, $data_uri) {
     return path($default_data_dir, $dir, $data_uri);
 }
 
+sub _casedir_url ($self, $job, $filepath) {
+    return undef unless my $casedir = $job->settings->single({key => 'CASEDIR'});
+    my $casedir_url = Mojo::URL->new($casedir->value);
+    # if CASEDIR points to a remote location let's assume it is a git repo that we can reference like gitlab/github
+    return undef unless $casedir_url->scheme;
+    my $refspec = $casedir_url->fragment;
+    # try to read vars.json from resultdir and replace branch by actual git hash if possible
+    try {
+        my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
+        my $vars = decode_json($vars_json);
+        $refspec = $vars->{TEST_GIT_HASH} if $vars->{TEST_GIT_HASH};
+    }
+    catch ($e) { }
+    return undef unless $refspec;
+    my $src_path = path('/blob', $refspec, $filepath);
+    # github treats '.git' as optional extension which needs to be stripped
+    $casedir_url->path($casedir_url->path =~ s/\.git//r . $src_path)->fragment('');
+}
+
 =over 4
 
 =item show_filesrc()
@@ -474,26 +493,7 @@ sub show_filesrc ($self) {
     my $data_uri = $self->stash('link_path');
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $filepath = $self->test_file_path($testcasedir, $dir, $data_uri);
-
-    if (my $casedir = $job->settings->single({key => 'CASEDIR'})) {
-        my $casedir_url = Mojo::URL->new($casedir->value);
-        # if CASEDIR points to a remote location let's assume it is a git repo
-        # that we can reference like gitlab/github
-        last unless $casedir_url->scheme;
-        my $refspec = $casedir_url->fragment;
-        # try to read vars.json from resultdir and replace branch by actual git hash if possible
-        try {
-            my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
-            my $vars = decode_json($vars_json);
-            $refspec = $vars->{TEST_GIT_HASH} if $vars->{TEST_GIT_HASH};
-        }
-        catch ($e) { }
-        my $src_path = path('/blob', $refspec, $filepath);
-        # github treats '.git' as optional extension which needs to be stripped
-        $casedir_url->path($casedir_url->path =~ s/\.git//r . $src_path);
-        $casedir_url->fragment('');
-        return $self->redirect_to($casedir_url);
-    }
+    if (my $casedir_url = $self->_casedir_url($job, $filepath)) { return $self->redirect_to($casedir_url) }
     my $setting_file_path = path($testcasedir, $filepath);
     return $self->reply->not_found unless $setting_file_path && -f $setting_file_path;
     my $context = path($setting_file_path)->slurp;
