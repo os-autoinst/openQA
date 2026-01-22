@@ -710,7 +710,7 @@ sub test_with_error ($needle_to_modify, $error, $tags, $expect, $test_name) {
     my $random_number = int(rand(100000));
     $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/1");
     wait_for_ajax(msg => 'step of yast2_lan test module loaded');
-    my $candidates = find_candidate_needles(@$tags > 0);
+    my $candidates = find_candidate_needles($tags ? @$tags > 0 : 1);
     is_deeply $candidates, $expect, $test_name // 'candidates displayed as expected' or always_explain $candidates;
 }
 
@@ -744,6 +744,15 @@ subtest 'test candidate list' => sub {
     );
     test_with_error(0, 0, ['sudo-passwordprompt', 'some-other-tag'],
         \%expected_candidates, 'needles appear twice, each time under different tag');
+
+    subtest 'no tags present' => sub {
+        my $needle_file = path('t/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt.json');
+        my %area = (xpos => 200, ypos => 200, width => 384, height => 217, type => 'match', match => 99);
+        my %needle = (area => [\%area], properties => [], tags => undef);
+        $needle_file->spew(encode_json(\%needle));
+        %expected_candidates = ('tags unknown' => ['100%: sudo-passwordprompt']);
+        test_with_error(0, 0, undef, \%expected_candidates, 'candidates with unknown tags');
+    };
 
     $driver->get('/tests/99946#step/installer_timezone/1');
     wait_for_ajax(msg => 'step of installer_timezone test module loaded');
