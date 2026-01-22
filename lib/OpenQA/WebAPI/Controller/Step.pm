@@ -462,24 +462,22 @@ sub save_needle_ajax ($self) {
 
 sub map_error_to_avg ($error) { int((1 - sqrt($error // 0)) * 100 + 0.5) }
 
-sub calc_matches ($needle, $areas) {
-    my $matches = $needle->{matches};
-    for my $area (@$areas) {
-        my %match = (
-            xpos => int $area->{x},
-            ypos => int $area->{y},
-            width => int $area->{w},
-            height => int $area->{h},
-            type => $area->{result},
-            similarity => int($area->{similarity} + 0.5),
-        );
-        if (my $click_point = $area->{click_point}) {
-            $match{click_point} = $click_point;
-        }
-        push(@$matches, \%match);
-    }
+sub _calc_match ($area) {
+    return {
+        xpos => int $area->{x},
+        ypos => int $area->{y},
+        width => int $area->{w},
+        height => int $area->{h},
+        type => $area->{result},
+        similarity => int($area->{similarity} + 0.5),
+        click_point => $area->{click_point},
+    };
+}
+
+sub _calc_matches ($needle, $areas) {
+    push @{$needle->{matches}}, map { _calc_match($_) } @$areas;
     $needle->{avg_similarity} //= map_error_to_avg($needle->{error});
-    return;
+    return $needle;
 }
 
 sub viewimg ($self) {
@@ -538,8 +536,7 @@ sub viewimg ($self) {
                 primary_match => 1,
                 selected => 1,
             };
-            calc_matches($info, $module_detail->{area});
-            $primary_match = $info;
+            $primary_match = _calc_matches($info, $module_detail->{area});
             $append_needle_info->($needleinfo->{tags} => $info);
         }
     }
@@ -560,8 +557,7 @@ sub viewimg ($self) {
                 areas => $needleinfo->{area},
                 matches => [],
             };
-            calc_matches($info, $needle->{area});
-            $append_needle_info->($needleinfo->{tags} => $info);
+            $append_needle_info->($needleinfo->{tags} => _calc_matches($info, $needle->{area}));
         }
     }
 
