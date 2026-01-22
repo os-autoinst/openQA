@@ -71,6 +71,12 @@ subtest 'preset not found' => sub {
     like $flash_messages->get_text, qr/'foo' does not exist/i, 'error if preset does not exist';
 };
 
+subtest 'scenario definitions YAML is invalid' => sub {
+    $driver->get("$url/tests/create?preset=invalid-yaml");
+    my $flash_messages = $driver->find_element_by_id('flash-messages');
+    like $flash_messages->get_text, qr/unable to parse/i, 'parsing error shown';
+};
+
 subtest 'preset information can be loaded from INI file, note about non-existing scenario definitions' => sub {
     $driver->get("$url/tests/create?preset=bar");
     my $flash_messages = $driver->find_element_by_id('flash-messages')->get_text;
