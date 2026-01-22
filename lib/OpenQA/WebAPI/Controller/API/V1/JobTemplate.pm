@@ -225,11 +225,25 @@ The response will have these fields, depending on the options used:
 Note that an I<openqa_jobtemplate_create> event is emitted with the same fields contained
 in the response if any changes to the database were made.
 
+=cut
+
+sub update ($self) {
+    $self->_update;
+}
+
+=item update_by_name()
+
+Like 'update', but the template is identified by the group name.
+
 =back
 
 =cut
 
-sub update ($self) {
+sub update_by_name ($self) {
+    $self->_update;
+}
+
+sub _update ($self) {
     my $validation = $self->validation;
     # Note: id is a regular param because it's part of the path
     $validation->required('name') unless $self->param('id');

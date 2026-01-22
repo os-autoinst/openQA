@@ -478,7 +478,9 @@ sub startup ($self) {
       ->to('job_template#schedules', id => undef)->requires(bigint_range => 'id');
     $api_public_r->get('job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
     # We can't use bigint_range here because for this route 'id' is optional
-    $api_ra->post('job_templates_scheduling/<id:bigint>')->to('job_template#update', id => undef);
+    $api_ra->post('job_templates_scheduling')->to('job_template#update_by_name', id => undef);
+    $api_ra->post('job_templates_scheduling/<id:bigint>')->to('job_template#update', id => undef)
+      ->requires(bigint_range => 'id');
     # Deprecated experimental aliases for the above routes
     $api_public_r->get('experimental/job_templates_scheduling/<id:bigint>')->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef)->requires(bigint_range => 'id');
