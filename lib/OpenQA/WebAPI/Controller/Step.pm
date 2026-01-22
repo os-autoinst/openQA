@@ -239,15 +239,10 @@ sub edit ($self) {
         $default_needle->{properties} = [];
         my $name = $self->param('moduleid');
         if (@{$screenshot->{tags}}) {
-            my $ftag = $screenshot->{tags}->[0];
             # concat the module name and the tag unless the tag already starts
             # with the module name
-            if ($ftag =~ m/^$name/) {
-                $name = $ftag;
-            }
-            else {
-                $name .= "-$ftag";
-            }
+            my $ftag = $screenshot->{tags}->[0];
+            $name = ($ftag =~ m/^$name/) ? $ftag : "$name-$ftag";
         }
         $screenshot->{suggested_name} = ensure_timestamp_appended($name);
     }
