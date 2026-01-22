@@ -159,6 +159,14 @@ subtest 'show job modules execution time' => sub {
     }
 };
 
+subtest 'displaying audio result' => sub {
+    my $aplay_step = $driver->find_element('[href="#step/aplay/4"]');
+    $aplay_step->click;
+    my $audio_element = wait_for_element selector => '#preview_container_in audio', desc => 'audio player shown';
+    like $audio_element->get_attribute('src'), qr|/tests/99937/file/aplay-3\.wav$|, 'expected audio file referenced';
+    $aplay_step->click;
+};
+
 subtest 'displaying image result with candidates' => sub {
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     my $needles = find_candidate_needles;

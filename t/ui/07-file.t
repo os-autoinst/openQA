@@ -90,6 +90,10 @@ subtest 'needle download' => sub {
     $t->get_ok("/needles/opensuse/inst-subdirectory.png?jsonfile=$abs_needle_path/subdirectory/inst-subdirectory.json")
       ->status_is(200)->content_type_is('image/png')->content_is("png\n");
 
+    my $other_subdir = Mojo::File->new('t/data/openqa/share/tests/subdir');
+    $t->get_ok("/needles/subdir/needle.png?jsonfile=$other_subdir/needle.json");
+    $t->status_is(404, 'can specify path in any subdir under t/data/openqa/share/tests without running into 403 error');
+
     # getting needle image and json by ID also does not work for needles
     # in subdirectories, but arguably should do and should be tested:
     #$t->get_ok('/needles/2/image')->status_is(200)->content_type_is('image/png')->content_is("png\n");
@@ -119,6 +123,7 @@ $t->get_ok('/tests/99946/asset/5')->status_is(302)
 
 # verify error on invalid downloads
 $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
+$t->get_ok('/tests/99938/asset/0/foo')->status_is(400)->content_like(qr/wrong parameters/i);
 
 $t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302)
   ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/repo\/testrepo\/README/);
