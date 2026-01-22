@@ -262,36 +262,30 @@ sub edit ($self) {
     $self->render('step/edit');
 }
 
+sub _new_match ($area) {
+    return {
+        xpos => int $area->{x},
+        ypos => int $area->{y},
+        width => int $area->{w},
+        height => int $area->{h},
+        click_point => $area->{click_point},
+        type => 'match',
+    };
+}
+
 sub _new_screenshot ($self, $tags, $image_name, $matches = undef) {
-    my @matches;
-    my %screenshot = (
+    return {
         name => 'screenshot',
         title => 'Screenshot',
         imagename => $image_name,
         imagedir => '',
         imageurl => $self->url_for('test_img', filename => $image_name)->to_string(),
         area => [],
-        matches => \@matches,
+        matches => $matches ? [map { _new_match($_) } @$matches] : [],
         properties => [],
         json => '',
         tags => $tags,
-    );
-    return \%screenshot unless $matches;
-
-    for my $area (@$matches) {
-        my %match = (
-            xpos => int $area->{x},
-            ypos => int $area->{y},
-            width => int $area->{w},
-            height => int $area->{h},
-            type => 'match',
-        );
-        if (my $click_point = $area->{click_point}) {
-            $match{click_point} = $click_point;
-        }
-        push(@matches, \%match);
-    }
-    return \%screenshot;
+    };
 }
 
 sub _basic_needle_info (
