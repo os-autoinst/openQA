@@ -12,6 +12,7 @@ use OpenQA::Test::TimeLimit '18';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use Mojo::File 'path';
+use Mojo::JSON qw(encode_json decode_json);
 
 my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
@@ -28,8 +29,8 @@ my $job_id = 99938;
 my $foo_path = 'foo/foo.txt';
 my $uri_path_from_root_dir = "/tests/$job_id/settings/$foo_path";
 my $uri_path_from_default_data_dir = "/tests/$job_id/settings/bar/foo.txt";
-$schema->resultset('Jobs')->find($job_id)
-  ->settings->create({key => 'SOME_URLS', value => 'https://foo http://bar http://baz'});
+my $job = $schema->resultset('Jobs')->find($job_id);
+$job->settings->create({key => 'SOME_URLS', value => 'https://foo http://bar http://baz'});
 
 driver_missing unless my $driver = call_driver;
 my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
@@ -54,6 +55,19 @@ is(scalar @number_of_elem, 4, 'only configured setting keys and URLs render as l
 note 'Checking link navigation to the source';
 $driver->find_element_by_link($foo_path)->click();
 is($driver->get_current_url(), "$url$uri_path_from_root_dir", 'Link is accessed with correct URI');
+
+subtest 'redirection to Git platform via CASEDIR and TEST_GIT_HASH variables' => sub {
+    $job->settings->create({key => 'CASEDIR', value => 'https://git/foo/bar.git'});
+    my $vars_json_file = path($job->result_dir, 'vars.json');
+    my $vars_json = decode_json($vars_json_file->slurp);
+    $vars_json->{TEST_GIT_HASH} = 'some-hash';
+    $vars_json_file->spew(encode_json($vars_json));
+    $t->get_ok($uri_path_from_root_dir)->status_is(302);
+    $t->header_is(Location => 'https://git/foo/bar/blob/some-hash/foo/foo.txt#', 'redirected to Git platform');
+
+    $vars_json_file->spew('invalid JSON');
+    $t->get_ok($uri_path_from_root_dir)->status_is(200, 'normal response if vars.json is invalid');
+};
 
 subtest 'scheduled product settings' => sub {
     $driver->get('/admin/productlog?id=' . $product_id->id);
