@@ -1158,19 +1158,22 @@ sub modules_with_job_prefetched ($self) {
       ->search({job_id => $self->id}, {prefetch => 'job', order_by => 'me.id'});
 }
 
-sub _delete_returning_size ($file_path) {
+sub _delete_returning_size ($file_path, $dry) {
     return 0 unless my @lstat = lstat $file_path;    # file does not exist
-    return 0 unless unlink $file_path;    # don't return size when unable to delete file
+    return 0
+      unless $dry
+      ? log_info("would delete $file_path")
+      : unlink $file_path;    # don't return size when unable to delete file
     return $lstat[7];
 }
 
-sub _delete_returning_size_from_array ($array_of_collections) {
+sub _delete_returning_size_from_array ($array_of_collections, $dry) {
     my $deleted_size = 0;
-    $deleted_size += $_->reduce(sub { $a + _delete_returning_size($b) }, 0) for @$array_of_collections;
+    $deleted_size += $_->reduce(sub { $a + _delete_returning_size($b, $dry) }, 0) for @$array_of_collections;
     return $deleted_size;
 }
 
-sub delete_logs ($self) {
+sub delete_logs ($self, $dry = 0) {
     my $result_dir = $self->result_dir;
     return undef unless $result_dir;
     my @files = (
@@ -1178,29 +1181,30 @@ sub delete_logs ($self) {
         path($result_dir, 'ulogs')->list_tree({hidden => 1}),
         find_video_files($result_dir),
     );
-    my $deleted_size = _delete_returning_size_from_array(\@files);
-    $self->update({logs_present => 0, result_size => \"greatest(0, result_size - $deleted_size)"});
+    my $deleted_size = _delete_returning_size_from_array(\@files, $dry);
+    $self->update({logs_present => 0, result_size => \"greatest(0, result_size - $deleted_size)"}) unless $dry;
     return $deleted_size;
 }
 
-sub delete_videos ($self) {
+sub delete_videos ($self, $dry = 0) {
     my $result_dir = $self->result_dir;
     return 0 unless $result_dir;
 
     my @files = (find_video_files($result_dir), Mojo::Collection->new(path($result_dir, 'video_time.vtt')));
-    my $deleted_size = _delete_returning_size_from_array(\@files);
-    $self->update({result_size => \"greatest(0, result_size - $deleted_size)"});   # considering logs still present here
+    my $deleted_size = _delete_returning_size_from_array(\@files, $dry);
+    $self->update({result_size => \"greatest(0, result_size - $deleted_size)"})
+      unless $dry;    # considering logs still present here
     return $deleted_size;
 }
 
-sub delete_results ($self) {
+sub delete_results ($self, $dry = 0) {
     # delete the entire results directory
-    my $deleted_size = 0;
+    my $deleted_size_res = 0;
     my $result_dir = $self->result_dir;
     if ($result_dir && -d $result_dir) {
         $result_dir = path($result_dir);
-        $deleted_size += _delete_returning_size_from_array([$result_dir->list_tree({hidden => 1})]);
-        $result_dir->remove_tree;
+        $deleted_size_res += _delete_returning_size_from_array([$result_dir->list_tree({hidden => 1})], $dry);
+        $result_dir->remove_tree unless $dry;
     }
 
     # delete all screenshot links and all exclusively used screenshots
@@ -1208,12 +1212,16 @@ sub delete_results ($self) {
     my $exclusively_used_screenshot_ids = $self->exclusively_used_screenshot_ids;
     my $schema = $self->result_source->schema;
     my $screenshots = $schema->resultset('Screenshots');
-    my $screenshot_deletion
-      = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, deleted_size => \$deleted_size);
+    my $deleted_size_screenshots = 0;
+    my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(
+        dbh => $schema->storage->dbh,
+        deleted_size => \$deleted_size_screenshots,
+        dry => $dry
+    );
     $self->screenshot_links->delete;
     $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename) for @$exclusively_used_screenshot_ids;
-    $self->update({logs_present => 0, result_size => 0});
-    return $deleted_size;
+    $self->update({logs_present => 0, result_size => 0}) unless $dry;
+    return ($deleted_size_res, $deleted_size_screenshots);
 }
 
 sub exclusively_used_screenshot_ids ($self) {

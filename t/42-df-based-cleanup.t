@@ -13,6 +13,7 @@ require OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
 use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
 use OpenQA::Test::Utils qw(perform_minion_jobs run_gru_job);
+use OpenQA::Utils qw(assetdir resultdir archivedir);
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like combined_from);
@@ -41,13 +42,24 @@ subtest 'no minimum free disk space percentage for results configured' => sub {
     is $job->{result}, 'No minimum free disk space percentage configured', 'noop if no minimum configured';
 };
 
-# mock the result of df
+subtest 'abort early in case of misconfiguration' => sub {
+    $app->config->{misc_limits}->{results_min_free_disk_space_percentage} = 'foo';
+    my $job = job_log_like qr|results_.*_percentage.*foo.*not.*number|, 'error logged';
+    is $job->{state}, 'failed', 'result cleanup still considered successful';
+    like $job->{result}, qr|.*results_min_free_disk_space_percentage.*foo.*not.*|, 'result cleanup aborted early';
+};
+
+# provide fake data for df
 my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
-my $available_bytes_mock = 0;
-my %gained_disk_space_by_deleting_results_of_job;
+my %df_main_storage = (bavail => 11, blocks => 100);
+my %df_archivedir = (bavail => 30, blocks => 100);
+my %df_fake_data = (resultdir() => \%df_main_storage, archivedir() => \%df_archivedir);
+my $mock_df = sub () {
+    $df_mock->redefine(df => sub ($dir, @) { $df_fake_data{$dir} // \%df_main_storage });
+};
+$mock_df->();
 
 subtest 'abort early if there is enough free disk space' => sub {
-    $df_mock->redefine(df => {bavail => 11, blocks => 100});
 
     $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
     my $job = run_gru_job($app, limit_results_and_logs => []);
@@ -72,30 +84,41 @@ subtest 'abort early if there is enough free disk space' => sub {
     combined_like { ok !finish_job_if_disk_usage_below_percentage(@check_args), 'invalid df ignored' }
       qr/df failed.*Proceeding with cleanup/s, 'warning about invalid df logged';
 
-    $df_mock->redefine(df => {bavail => 10, blocks => 100});
+    %df_main_storage = (bavail => 10, blocks => 100);
+    $mock_df->();
     ok !finish_job_if_disk_usage_below_percentage(@check_args), 'cleanup done if not enough free disk space available';
     is $job->{state}, undef, 'job not finished when proceeding with cleanup';
 };
 
 $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
 $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 100;
+$app->config->{misc_limits}->{dry_min_free_disk_space_cleanup} = 1;
 
 # mock the actual deletion of videos and results; it it tested elsewhere
 my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my %gained_disk_space_by_deleting_video_of_job;
+my %gained_disk_space_by_deleting_results_of_job;
+my %gained_disk_space_by_deleting_screenshots_of_job;
+my $available_bytes_mock = 0;
+my $dry_run_expected = 1;
 my $delete_video_hook;
 $job_mock->redefine(
-    delete_videos => sub {
-        my $job_id = $_[0]->id;
+    delete_videos => sub ($self, $dry) {
+        my $job_id = $self->id;
         $delete_video_hook->($job_id) if $delete_video_hook;
+        is $dry, $dry_run_expected, "dry run flag passed correctly when deleting videos of $job_id";
         note "delete_videos called for job $job_id (bavail: $available_bytes_mock)";
         return $gained_disk_space_by_deleting_video_of_job{$job_id} // 0;
     });
 $job_mock->redefine(
-    delete_results => sub {
-        my $job_id = $_[0]->id;
+    delete_results => sub ($self, $dry) {
+        my $job_id = $self->id;
+        is $dry, $dry_run_expected, "dry run flag passed correctly when results videos of $job_id";
         note "delete_results called for job $job_id (bavail: $available_bytes_mock)";
-        return $gained_disk_space_by_deleting_results_of_job{$job_id} // 0;
+        return (
+            $gained_disk_space_by_deleting_results_of_job{$job_id} // 0,
+            $gained_disk_space_by_deleting_screenshots_of_job{$job_id} // 0
+        );
     });
 # note: Not adjusting $available_bytes_mock in these functions because the code does not rely on df except for the initial check.
 
@@ -103,7 +126,7 @@ $job_mock->redefine(
 $app->config->{misc_limits}->{results_min_free_disk_space_percentage} = 20;
 
 subtest 'df returns bad data' => sub {
-    $df_mock->redefine(df => {bavail => 10, blocks => 5});
+    %df_main_storage = (bavail => 10, blocks => 5);
     my $expected_log = qr{Unable to determine disk usage of \'.*/data/openqa/testresults\'};
     my $job = job_log_like $expected_log, 'error logged';
     is $job->{state}, 'failed', 'job considered failed';
@@ -112,7 +135,7 @@ subtest 'df returns bad data' => sub {
 
 subtest 'nothing to do' => sub {
     # setup: There is just enough disk space to not trigger the cleanup.
-    $df_mock->redefine(df => {bavail => 40, blocks => 200});
+    %df_main_storage = (bavail => 40, blocks => 200);
 
     my $job = run_gru_job($app, ensure_results_below_threshold => []);
     is $job->{state}, 'finished', 'job considered successful';
@@ -122,7 +145,7 @@ subtest 'nothing to do' => sub {
 subtest 'no jobs present' => sub {
     # setup: There is just not enough disk space but we have not created any jobs so there's still nothing
     #        to cleanup.
-    $df_mock->redefine(df => {bavail => 39, blocks => 200});
+    %df_main_storage = (bavail => 39, blocks => 200);
 
     my $job = run_gru_job($app, ensure_results_below_threshold => []);
     is $job->{state}, 'finished', 'job considered successful';
@@ -215,8 +238,7 @@ subtest 'deleting videos from important jobs sufficient' => sub {
 %gained_disk_space_by_deleting_video_of_job = ();
 
 # mock df for the subsequent tests so we would actually gain additional disk space over time
-$available_bytes_mock = 19;
-$df_mock->redefine(df => sub { {bavail => $available_bytes_mock, blocks => 100} });
+%df_main_storage = (bavail => 19, blocks => 100);
 
 subtest 'deleting results from non-important jobs sufficient' => sub {
     # setup: delete_results is now mocked to make it look like deleting the results of the unimportant job cleaned
@@ -231,8 +253,6 @@ subtest 'deleting results from non-important jobs sufficient' => sub {
     is $job->{result}, 'Done with results dir after deleting results from non-important jobs',
       'finished within expected step';
 };
-
-$available_bytes_mock = 19;
 
 subtest 'deleting results from important jobs sufficient' => sub {
     # setup: delete_results is now mocked to make it look like deleting the results of the important job cleaned
@@ -251,7 +271,7 @@ subtest 'deleting results from important jobs sufficient' => sub {
       'finished within expected step';
 };
 
-subtest 'jobs in archive not considered' => sub {
+subtest 'jobs in archive not considered by default' => sub {
     # setup: as in the previous subtest but this time the important job is flagged as archived and is therefore
     #        not supposed to be considered
     %gained_disk_space_by_deleting_results_of_job = ($important_job_id => 1);
@@ -265,6 +285,60 @@ subtest 'jobs in archive not considered' => sub {
     is $job->{state}, 'failed', 'job considered failed';
     is $job->{result}, 'Unable to cleanup enough results from results dir',
       'not finished as job that could gain disk space is in the archive';
+};
+
+subtest 'jobs in archive considered via archive_min_free_disk_space_percentage' => sub {
+    # setup: as in the previous subtest but this time the job is supposed to be deleted from the archive
+    $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 31;
+
+    my @expected_messages = (
+        'Unable to cleanup enough results from results dir',
+        'Done with archive after deleting results from important jobs',
+    );
+
+    my $job = job_log_like qr/
+        Deleting\svideo\sof\simportant\sjob\s$important_job_id.*
+        Deleting\sresults\sof\simportant\sjob\s$important_job_id.*
+        Deleting\svideo\sof\sjob\s$unimportant_job_id.*
+        Deleting\sresults\sof\sjob\s$unimportant_job_id.*
+        Deleting\svideo\sof\simportant\sjob\s$new_job_id.*
+    /xs, 'cleanup steps in right order';
+    is $job->{state}, 'failed', 'job considered failed';
+    is $job->{result}, join("\n", @expected_messages),
+      'not finished as job that could gain disk space is in the archive';
+};
+
+subtest 'archive cleanup skipped if archive not full; result dir cleanup still attempted' => sub {
+    # setup: as in the previous subtest but this time the archive is not full
+    $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 30;
+
+    my @expected_messages = ('Unable to cleanup enough results from results dir', 'Nothing to do for archive');
+    my $job = job_log_like qr/
+        Deleting\svideo\sof\sjob\s$unimportant_job_id.*
+        Deleting\sresults\sof\sjob\s$unimportant_job_id.*
+        Deleting\svideo\sof\simportant\sjob\s$new_job_id.*
+    /xs, 'cleanup steps in right order; important and archived job not considered as archive not full';
+    is $job->{state}, 'failed', 'job considered failed';
+    is $job->{result}, join("\n", @expected_messages),
+      'not finished as job that could gain disk space is in the archive';
+};
+
+subtest 'deleted screenshots always accounted to main storage' => sub {
+    # setup: assume that only the deletion of screenshots has freed the disk space when deleting archived job
+    $app->config->{misc_limits}->{dry_min_free_disk_space_cleanup} = 0;
+    $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 31;
+    %gained_disk_space_by_deleting_results_of_job = ();
+    %gained_disk_space_by_deleting_screenshots_of_job = ($important_job_id => 1);
+    $dry_run_expected = 0;
+
+    my @expected_messages = ('Nothing to do for results dir', 'Unable to cleanup enough results from archive');
+    my $job = job_log_like qr/
+        Deleting\svideo\sof\simportant\sjob\s$important_job_id.*
+        Deleting\sresults\sof\simportant\sjob\s$important_job_id.*
+    /xs, 'cleanup steps in right order; important and archived job not considered as archive not full';
+    is $job->{state}, 'failed', 'job considered failed';
+    is $job->{result}, join("\n", @expected_messages),
+      'not finished as job that gained disk space only did so by deleting screenshots on main storage';
 };
 
 done_testing();
