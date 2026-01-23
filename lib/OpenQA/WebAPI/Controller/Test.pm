@@ -134,8 +134,9 @@ sub _load_scenario_definitions ($self, $preset) {
     return undef if exists $preset->{scenario_definitions};
     return undef unless my $distri = $preset->{distri};
     return undef unless my $casedir = testcasedir($distri, $preset->{version});
+    my $scenario_definitions_path = $preset->{scenario_definitions_path} // 'scenario-definitions.yaml';
     my $defs_yaml;
-    try { $defs_yaml = path($casedir, 'scenario-definitions.yaml')->slurp('UTF-8') }
+    try { $defs_yaml = path($casedir, $scenario_definitions_path)->slurp('UTF-8') }
     catch ($e) {
         return $self->stash(flash_error => "Unable to read scenario definitions for the specified preset: $e")
           unless $e =~ /no.*file/i;
