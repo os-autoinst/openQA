@@ -97,6 +97,9 @@
                   % }
                   %= link_to "Appearance" => url_for('appearance') => class => 'dropdown-item'
                   %= link_to "API help" => url_for('api_help') => class => 'dropdown-item'
+                  % if (config->{global}{mcp_enabled} eq 'read_only') {
+                      %= link_to 'MCP help' => url_for('mcp_help') => class => 'dropdown-item'
+                  % }
                   %= link_to 'Changelog' => url_for('changelog') => class => 'dropdown-item'
                   %= link_to 'Logout' => url_for('logout') => 'data-method' => 'delete' => class => 'dropdown-item'
                 </div>
