@@ -203,11 +203,8 @@ sub startup ($self) {
     # but this route is actually matched (in case apache is not catching this earlier)
     # due to the split md5_dirname having a /
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
-
     $r->get('/group_overview/<groupid:bigint>' => [format => ['json', 'html']])->requires(bigint_range => 'groupid')
       ->name('group_overview')->to('main#job_group_overview', format => undef);
-
-
     $r->get('/parent_group_overview/<groupid:bigint>' => [format => ['json', 'html']])->name('parent_group_overview')
       ->to('main#parent_group_overview', format => undef)->requires(bigint_range => 'groupid');
 
@@ -432,12 +429,15 @@ sub startup ($self) {
     # api/v1/test_suites
     $api_public_r->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
     $api_ra->post('test_suites')->to('table#create', table => 'TestSuites');
-    $api_public_r->get('test_suites/<id:bigint>')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
-    $api_ra->put('test_suites/<id:bigint>')->name('apiv1_put_test_suite')->to('table#update', table => 'TestSuites');
+    $api_public_r->get('test_suites/<id:bigint>')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites')
+      ->requires(bigint_range => 'id');
+    $api_ra->put('test_suites/<id:bigint>')->name('apiv1_put_test_suite')->to('table#update', table => 'TestSuites')
+      ->requires(bigint_range => 'id');
     # in case PUT is not supported
-    $api_ra->post('test_suites/<id:bigint>')->name('apiv1_post_test_suite')->to('table#update', table => 'TestSuites');
+    $api_ra->post('test_suites/<id:bigint>')->name('apiv1_post_test_suite')->to('table#update', table => 'TestSuites')
+      ->requires(bigint_range => 'id');
     $api_ra->delete('test_suites/<id:bigint>')->name('apiv1_delete_test_suite')
-      ->to('table#destroy', table => 'TestSuites');
+      ->to('table#destroy', table => 'TestSuites')->requires(bigint_range => 'id');
 
     # api/v1/machines
     $api_public_r->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
@@ -479,8 +479,7 @@ sub startup ($self) {
     $api_public_r->get('job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
     # We can't use bigint_range here because for this route 'id' is optional
     $api_ra->post('job_templates_scheduling')->to('job_template#update_by_name', id => undef);
-    $api_ra->post('job_templates_scheduling/<id:bigint>')->to('job_template#update', id => undef)
-      ->requires(bigint_range => 'id');
+    $api_ra->post('job_templates_scheduling/<id:bigint>')->to('job_template#update')->requires(bigint_range => 'id');
     # Deprecated experimental aliases for the above routes
     $api_public_r->get('experimental/job_templates_scheduling/<id:bigint>')->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef)->requires(bigint_range => 'id');
