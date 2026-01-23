@@ -262,14 +262,16 @@ sub edit ($self) {
     $self->render('step/edit');
 }
 
+sub _new_click_point ($click_point) { $click_point ? (click_point => $click_point) : () }
+
 sub _new_match ($area) {
     return {
         xpos => int $area->{x},
         ypos => int $area->{y},
         width => int $area->{w},
         height => int $area->{h},
-        click_point => $area->{click_point},
         type => 'match',
+        _new_click_point($area->{click_point}),
     };
 }
 
@@ -470,7 +472,7 @@ sub _calc_match ($area) {
         height => int $area->{h},
         type => $area->{result},
         similarity => int($area->{similarity} + 0.5),
-        click_point => $area->{click_point},
+        _new_click_point($area->{click_point}),
     };
 }
 
