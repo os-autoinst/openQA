@@ -1534,12 +1534,22 @@ thresholds.
 
 The deletion happens in the following order:
 
-1. Videos of unimportant jobs
-2. Results of unimportant jobs
-3. Videos of important jobs
-4. Results of important jobs
+1. Videos of unimportant jobs are deleted
+2. Results of unimportant jobs are deleted
+3. Videos of important jobs are deleted
+4. Results of important jobs are deleted
 
-Within each group the oldest jobs are deleted first.
+Within each group the oldest jobs are deleted first. The deletion is stopped as
+soon as the specified percentage of space is free again. This is evaluated after
+handling each individual job. The archive is cleaned up first.
+
+When enabling `archive_via_min_free_disk_space_cleanup` jobs will be archived
+as long as the archive is not full. That means cleanup actions will be performed
+in this order:
+
+1. Unimportant jobs are archived if there is enough room in the archive
+2. Important jobs are archived if there is enough room in the archive
+3. Continue with steps 1 to 4 from the previously mentioned list.
 
 It is also possible to abort cleanup tasks early in case there is still
 enough headroom on relevant file systems anyway. This can be enabled using the
