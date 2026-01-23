@@ -88,4 +88,22 @@ sub list_api_keys ($self) {
     $self->render(json => \@keys);
 }
 
+=over 4
+
+=item delete_api_key()
+
+Delete a specific API key of the current user.
+
+=back
+
+=cut
+
+sub delete_api_key ($self) {
+    my $user = $self->current_user;
+    my $key = $user->api_keys->find({key => $self->param('key')});
+    return $self->render(json => {error => 'Not found'}, status => 404) unless $key;
+    $key->delete;
+    $self->render(json => {result => 1});
+}
+
 1;

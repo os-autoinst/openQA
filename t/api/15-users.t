@@ -67,4 +67,14 @@ subtest 'test list_api_keys' => sub {
     ok !exists $res->[0]{secret}, 'secret is not returned in list';
 };
 
+subtest 'test delete_api_key' => sub {
+    my $count_before = scalar @$res;
+    $t->delete_ok("/api/v1/users/me/api_keys/$key1")->status_is(200, 'delete api key');
+    $res = $t->get_ok('/api/v1/users/me/api_keys')->status_is(200)->tx->res->json;
+    is scalar @$res, $count_before - 1, 'one key less';
+    ok !((grep { $_->{key} eq $key1 } @$res)), "key $key1 no longer in list";
+
+    $t->delete_ok("/api/v1/users/me/api_keys/NONEXISTENT")->status_is(404, 'delete nonexistent key');
+};
+
 done_testing();
