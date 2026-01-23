@@ -57,6 +57,8 @@ subtest 'key+secret from env variables' => sub {
     client($t_new, apikey => undef, apisecret => undef);
     $t_new->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is('/error' => 'Administrator level required', 'key read from env (but missing administrator level)');
+    $t_new->post_ok('/api/v1/isos')->status_is(403)
+      ->json_is('/error' => 'Operator level required', 'key read from env (but missing operator level)');
 };
 
 subtest 'access limiting for non authenticated users' => sub {
