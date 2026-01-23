@@ -2055,6 +2055,26 @@ For lower turn-around times during test development based on virtual machines
 the QEMU backend provides a feature that allows a job to start from a snapshot
 which can help in this situation.
 
+==== How snapshots work internally
+
+Snapshots use QEMU's block device overlay mechanism. Each snapshot creates an
+incremental overlay forming a chain:
+
+----
+[base.qcow2] <- [hd0-overlay1] <- [hd0-overlay2] <- [hd0-overlay3] (active)
+   snapshot1      snapshot2         snapshot3
+----
+
+* Each overlay contains only the changes (deltas) since its backing file
+* The rightmost "active layer" is where QEMU writes, consuming worker disk space
+* Each overlay is uniquely numbered to prevent filename conflicts
+* Reading traverses the chain backward until data is found
+
+When reverting (e.g., `SKIPTO=snapshot1`), all forward overlays are removed,
+the snapshot overlay is recreated, and execution continues from that state
+
+==== Snapshot modes
+
 Depending on the use case, there are two options to help:
 
 * Create and *preserve* snapshots for *every test* module run
@@ -2064,6 +2084,7 @@ Depending on the use case, there are two options to help:
     job).
   - This mode is useful for fixing non-fatal issues in tests and debugging SUT
     as more than just the snapshot of the last failed module is saved.
+  - Creates a chain of incremental overlays, one per test module
 
 * Create a snapshot *after every successful* test module while *always
   overwriting* the existing snapshot to preserve only the latest (`TESTDEBUG`)
@@ -2071,9 +2092,11 @@ Depending on the use case, there are two options to help:
     which can be limiting, but preserves disk space in comparison to
     `MAKETESTSNAPSHOTS`.
   - This mode is useful for iterative test development
+  - Reuses the snapshot name (`lastgood`) while maintaining proper overlay
+    chains internally
 
 In both modes there is no need to modify tests (i.e. adding `milestone` test
-flag as the behaviour is implied). In the later mode every test module is also
+flag as the behaviour is implied). In the latter mode every test module is also
 considered `fatal`. This means the job is aborted after the first failed test
 module.
 
@@ -2082,7 +2105,7 @@ module.
 
 * Run the worker with `--no-cleanup` parameter. This will preserve the hard
   disks after test runs. If the worker(s) are being started via the systemd
-  unit, then this can achieved by using the `openqa-worker-no-cleanup@.service`
+  unit, then this can be achieved by using the `openqa-worker-no-cleanup@.service`
   unit instead of `openqa-worker@.service`.
 
 * Set `MAKETESTSNAPSHOTS=1` on a job. This will make openQA save a snapshot for
@@ -2095,20 +2118,20 @@ openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 MAKETES
 ----
 
 * Create a job again, this time setting the `SKIPTO` variable to the snapshot
-* you need. Again, `openqa-clone-job` comes handy here:
+  you need. Again, `openqa-clone-job` comes handy here:
 
 [source,sh]
 ----
 openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=consoletest-yast2_i
 ----
 
-* Use qemu-img snapshot -l something.img to find out what snapshots are in the
+* Use `qemu-img snapshot -l something.img` to find out what snapshots are in the
   image. Snapshots are named `"test module category"-"test module name"` (e.g.
   `installation-start_install`).
 
 ==== Storing only the last successful snapshot
 
-* Run the worker with `--no-cleanup parameter`. This will preserve the hard
+* Run the worker with `--no-cleanup` parameter. This will preserve the hard
   disks after test runs.
 * Set `TESTDEBUG=1` on a job. This will make openQA save a snapshot after each
   successful test module run. Snapshots are overwritten. The snapshot is named
@@ -2120,9 +2143,9 @@ openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 TESTDEB
 ----
 
 * Create a job again, this time setting the `SKIPTO` variable to the snapshot
-  which failed on previous run. Make sure the new job will also have
-  `TESTDEBUG=1` set. This can be ensured by the use of the clone_job script on
-  the clone source job or specifying the variable explicitly:
+  which failed on the previous run. Make sure the new job will also have
+  `TESTDEBUG=1` set. This can be ensured by the use of the `clone_job` script on
+  the clone source job or by specifying the variable explicitly:
 
 [source,sh]
 ----
