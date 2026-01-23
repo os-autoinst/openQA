@@ -39,6 +39,7 @@ is $app->schema->resultset('Users')->find(99902)->feature_version, 42, 'feature 
 my $res = $t->post_ok('/api/v1/users/me/api_keys')->status_is(200, 'create api key')->tx->res->json;
 ok $res->{key}, 'key returned';
 is $res->{t_expiration}, undef, 'default expiration is undef (never)';
+my $key1 = $res->{key};
 
 my $new_key = $app->schema->resultset('ApiKeys')->find({key => $res->{key}});
 ok $new_key, 'key found in DB';
@@ -55,6 +56,15 @@ subtest 'create_api_key with expiration' => sub {
 subtest 'create_api_key with invalid expiration' => sub {
     $t->post_ok('/api/v1/users/me/api_keys' => form => {expiration => 'invalid'})
       ->status_is(400, 'invalid expiration rejected');
+};
+
+subtest 'test list_api_keys' => sub {
+    my $key2 = $res->{key};
+    $res = $t->get_ok('/api/v1/users/me/api_keys')->status_is(200, 'list api keys')->tx->res->json;
+    ok scalar @$res >= 2, 'at least two keys found';
+    ok((grep { $_->{key} eq $key1 } @$res), "key $key1 found in list");
+    ok((grep { $_->{key} eq $key2 } @$res), "key $key2 found in list");
+    ok !exists $res->[0]{secret}, 'secret is not returned in list';
 };
 
 done_testing();

@@ -65,4 +65,27 @@ sub create_api_key ($self) {
     $self->render(json => {id => $apikey->id, key => $apikey->key, t_expiration => $apikey->t_expiration});
 }
 
+=over 4
+
+=item list_api_keys()
+
+List API keys of the current user.
+
+=back
+
+=cut
+
+sub list_api_keys ($self) {
+    my $user = $self->current_user;
+    my @keys = map {
+        {
+            key => $_->key,
+            t_expiration => $_->t_expiration,
+            t_created => $_->t_created,
+            t_updated => $_->t_updated,
+        }
+    } $user->api_keys->all;
+    $self->render(json => \@keys);
+}
+
 1;

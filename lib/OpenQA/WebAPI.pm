@@ -469,6 +469,7 @@ sub startup ($self) {
 
     $api_ra->delete('/user/<id:num>')->name('apiv1_delete_user')->to('user#delete');
 
+    $api_ru->get('/users/me/api_keys')->name('apiv1_list_user_api_keys')->to('user#list_api_keys');
     $api_ru->post('/users/me/api_keys')->name('apiv1_create_user_api_key')->to('user#create_api_key');
 
     # api/v1/search
