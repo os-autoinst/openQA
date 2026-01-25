@@ -806,11 +806,12 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#cleanup">32. Cleanup of assets, results and other data</a>
 <ul class="sectlevel2">
 <li><a href="#archiving">32.1. Automatic archiving of old jobs</a></li>
-<li><a href="#asset_cleanup">32.2. Cleanup strategy for assets</a></li>
-<li><a href="#_configuring_limit_for_assets_within_job_groups">32.3. Configuring limit for assets within job groups</a></li>
-<li><a href="#_configuring_limit_for_groupless_assets">32.4. Configuring limit for groupless assets</a></li>
-<li><a href="#_timers_and_triggers">32.5. Timers and triggers</a></li>
-<li><a href="#_disabling_cleanup">32.6. Disabling cleanup</a></li>
+<li><a href="#_space_aware_cleanup">32.2. Space-aware cleanup</a></li>
+<li><a href="#asset_cleanup">32.3. Cleanup strategy for assets</a></li>
+<li><a href="#_configuring_limit_for_assets_within_job_groups">32.4. Configuring limit for assets within job groups</a></li>
+<li><a href="#_configuring_limit_for_groupless_assets">32.5. Configuring limit for groupless assets</a></li>
+<li><a href="#_timers_and_triggers">32.6. Timers and triggers</a></li>
+<li><a href="#_disabling_cleanup">32.7. Disabling cleanup</a></li>
 </ul>
 </li>
 <li><a href="#_cli_interface">33. CLI interface</a></li>
@@ -934,8 +935,10 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_backend_variables_for_faster_test_execution">42.2. Backend variables for faster test execution</a></li>
 <li><a href="#_using_snapshots_to_speed_up_development_of_tests">42.3. Using snapshots to speed up development of tests</a>
 <ul class="sectlevel3">
-<li><a href="#snapshots-for-each-module">42.3.1. Enable snapshots for each module</a></li>
-<li><a href="#_storing_only_the_last_successful_snapshot">42.3.2. Storing only the last successful snapshot</a></li>
+<li><a href="#_how_snapshots_work_internally">42.3.1. How snapshots work internally</a></li>
+<li><a href="#_snapshot_modes">42.3.2. Snapshot modes</a></li>
+<li><a href="#snapshots-for-each-module">42.3.3. Enable snapshots for each module</a></li>
+<li><a href="#_storing_only_the_last_successful_snapshot">42.3.4. Storing only the last successful snapshot</a></li>
 </ul>
 </li>
 <li><a href="#_defining_a_custom_test_schedule_or_custom_test_modules">42.4. Defining a custom test schedule or custom test modules</a>
@@ -6535,7 +6538,7 @@ from public view in the web-UI).</p>
 </div>
 <div class="paragraph">
 <p>Assets may be shared between the web-UI and the workers by having them literally use a shared
-filesystem (this used to be the only option), or by having the workers download them from the
+file system (this used to be the only option), or by having the workers download them from the
 server when needed and cache them locally. Checkout the documentation about
 <a href="#asset-caching">asset caching</a> for more on this.</p>
 </div>
@@ -6908,7 +6911,62 @@ the retention for important jobs it is still subject to cleanup.
 </div>
 </div>
 <div class="sect2">
-<h3 id="asset_cleanup"><a class="anchor" href="#asset_cleanup"></a><a class="link" href="#asset_cleanup">32.2. Cleanup strategy for assets</a></h3>
+<h3 id="_space_aware_cleanup"><a class="anchor" href="#_space_aware_cleanup"></a><a class="link" href="#_space_aware_cleanup">32.2. Space-aware cleanup</a></h3>
+<div class="paragraph">
+<p>The cleanup of logs/results uses time-based retentions and hence is independent
+of actually available space on any assigned storage volumes. To ensure enough
+free space on the file systems storing results one can use the configuration
+settings <code>…_min_free_disk_space_percentage</code> to control automatic cleanup
+behavior. These percentages extend the cleanup of logs/results so that they are
+deleted until the specified percentage of file system space is free. This
+extended deletion happens independently of configured time-based retention
+thresholds.</p>
+</div>
+<div class="paragraph">
+<p>The deletion happens in the following order:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Videos of unimportant jobs</p>
+</li>
+<li>
+<p>Results of unimportant jobs</p>
+</li>
+<li>
+<p>Videos of important jobs</p>
+</li>
+<li>
+<p>Results of important jobs</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Within each group the oldest jobs are deleted first.</p>
+</div>
+<div class="paragraph">
+<p>It is also possible to abort cleanup tasks early in case there is still
+enough headroom on relevant file systems anyway. This can be enabled using the
+configuration settings <code>…_cleanup_max_free_percentage</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The space-aware cleanup relies on <code>df</code> reporting a valid file system space
+usage. The algorithms also assume that screenshots and test results are stored
+on the same file system. The <code>…_min_free_disk_space_percentage</code> settings
+specifically are still experimental.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="asset_cleanup"><a class="anchor" href="#asset_cleanup"></a><a class="link" href="#asset_cleanup">32.3. Cleanup strategy for assets</a></h3>
 <div class="paragraph">
 <p>To find out whether an asset should be removed, openQA determines by which
 groups the asset is used. If at least one job within a certain job group is
@@ -6965,7 +7023,7 @@ preserved.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_limit_for_assets_within_job_groups"><a class="anchor" href="#_configuring_limit_for_assets_within_job_groups"></a><a class="link" href="#_configuring_limit_for_assets_within_job_groups">32.3. Configuring limit for assets within job groups</a></h3>
+<h3 id="_configuring_limit_for_assets_within_job_groups"><a class="anchor" href="#_configuring_limit_for_assets_within_job_groups"></a><a class="link" href="#_configuring_limit_for_assets_within_job_groups">32.4. Configuring limit for assets within job groups</a></h3>
 <div class="paragraph">
 <p>To configure the maximum size for the assets of a group, open 'Job groups'
 in the operators menu and select a group. The size limit for assets can be
@@ -6978,7 +7036,7 @@ assets which belong to that group and not to any other group.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_limit_for_groupless_assets"><a class="anchor" href="#_configuring_limit_for_groupless_assets"></a><a class="link" href="#_configuring_limit_for_groupless_assets">32.4. Configuring limit for groupless assets</a></h3>
+<h3 id="_configuring_limit_for_groupless_assets"><a class="anchor" href="#_configuring_limit_for_groupless_assets"></a><a class="link" href="#_configuring_limit_for_groupless_assets">32.5. Configuring limit for groupless assets</a></h3>
 <div class="paragraph">
 <p>Assets not belonging to jobs within a group are deleted automatically
 after a certain number of days. That duration can be adjusted by setting
@@ -7009,7 +7067,7 @@ asset was updated within the timespan it will not be removed.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_timers_and_triggers"><a class="anchor" href="#_timers_and_triggers"></a><a class="link" href="#_timers_and_triggers">32.5. Timers and triggers</a></h3>
+<h3 id="_timers_and_triggers"><a class="anchor" href="#_timers_and_triggers"></a><a class="link" href="#_timers_and_triggers">32.6. Timers and triggers</a></h3>
 <div class="paragraph">
 <p>Cleanup can be triggered in different ways. One option is to use
 <code>minion_task_triggers</code> and specify tasks via <code>on_job_done</code>. Another way to do
@@ -7049,7 +7107,7 @@ corresponding config file section.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_disabling_cleanup"><a class="anchor" href="#_disabling_cleanup"></a><a class="link" href="#_disabling_cleanup">32.6. Disabling cleanup</a></h3>
+<h3 id="_disabling_cleanup"><a class="anchor" href="#_disabling_cleanup"></a><a class="link" href="#_disabling_cleanup">32.7. Disabling cleanup</a></h3>
 <div class="paragraph">
 <p>By default the cleanup is enabled with systemd timers if available. To
 completely disable cleanup make sure that no minion cleanup tasks are enabled
@@ -9686,6 +9744,41 @@ needles anyway</p>
 the QEMU backend provides a feature that allows a job to start from a snapshot
 which can help in this situation.</p>
 </div>
+<div class="sect3">
+<h4 id="_how_snapshots_work_internally"><a class="anchor" href="#_how_snapshots_work_internally"></a><a class="link" href="#_how_snapshots_work_internally">42.3.1. How snapshots work internally</a></h4>
+<div class="paragraph">
+<p>Snapshots use QEMU&#8217;s block device overlay mechanism. Each snapshot creates an
+incremental overlay forming a chain:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[base.qcow2] &lt;- [hd0-overlay1] &lt;- [hd0-overlay2] &lt;- [hd0-overlay3] (active)
+   snapshot1      snapshot2         snapshot3</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Each overlay contains only the changes (deltas) since its backing file</p>
+</li>
+<li>
+<p>The rightmost "active layer" is where QEMU writes, consuming worker disk space</p>
+</li>
+<li>
+<p>Each overlay is uniquely numbered to prevent filename conflicts</p>
+</li>
+<li>
+<p>Reading traverses the chain backward until data is found</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When reverting (e.g., <code>SKIPTO=snapshot1</code>), all forward overlays are removed,
+the snapshot overlay is recreated, and execution continues from that state</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_snapshot_modes"><a class="anchor" href="#_snapshot_modes"></a><a class="link" href="#_snapshot_modes">42.3.2. Snapshot modes</a></h4>
 <div class="paragraph">
 <p>Depending on the use case, there are two options to help:</p>
 </div>
@@ -9705,6 +9798,9 @@ job).</p>
 <p>This mode is useful for fixing non-fatal issues in tests and debugging SUT
 as more than just the snapshot of the last failed module is saved.</p>
 </li>
+<li>
+<p>Creates a chain of incremental overlays, one per test module</p>
+</li>
 </ul>
 </div>
 </li>
@@ -9721,6 +9817,10 @@ which can be limiting, but preserves disk space in comparison to
 <li>
 <p>This mode is useful for iterative test development</p>
 </li>
+<li>
+<p>Reuses the snapshot name (<code>lastgood</code>) while maintaining proper overlay
+chains internally</p>
+</li>
 </ul>
 </div>
 </li>
@@ -9728,18 +9828,19 @@ which can be limiting, but preserves disk space in comparison to
 </div>
 <div class="paragraph">
 <p>In both modes there is no need to modify tests (i.e. adding <code>milestone</code> test
-flag as the behaviour is implied). In the later mode every test module is also
+flag as the behaviour is implied). In the latter mode every test module is also
 considered <code>fatal</code>. This means the job is aborted after the first failed test
 module.</p>
 </div>
+</div>
 <div class="sect3">
-<h4 id="snapshots-for-each-module"><a class="anchor" href="#snapshots-for-each-module"></a><a class="link" href="#snapshots-for-each-module">42.3.1. Enable snapshots for each module</a></h4>
+<h4 id="snapshots-for-each-module"><a class="anchor" href="#snapshots-for-each-module"></a><a class="link" href="#snapshots-for-each-module">42.3.3. Enable snapshots for each module</a></h4>
 <div class="ulist">
 <ul>
 <li>
 <p>Run the worker with <code>--no-cleanup</code> parameter. This will preserve the hard
 disks after test runs. If the worker(s) are being started via the systemd
-unit, then this can achieved by using the <code>openqa-worker-no-cleanup@.service</code>
+unit, then this can be achieved by using the <code>openqa-worker-no-cleanup@.service</code>
 unit instead of <code>openqa-worker@.service</code>.</p>
 </li>
 <li>
@@ -9757,10 +9858,8 @@ adding the setting:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Create a job again, this time setting the <code>SKIPTO</code> variable to the snapshot</p>
-</li>
-<li>
-<p>you need. Again, <code>openqa-clone-job</code> comes handy here:</p>
+<p>Create a job again, this time setting the <code>SKIPTO</code> variable to the snapshot
+you need. Again, <code>openqa-clone-job</code> comes handy here:</p>
 </li>
 </ul>
 </div>
@@ -9772,7 +9871,7 @@ adding the setting:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Use qemu-img snapshot -l something.img to find out what snapshots are in the
+<p>Use <code>qemu-img snapshot -l something.img</code> to find out what snapshots are in the
 image. Snapshots are named <code>"test module category"-"test module name"</code> (e.g.
 <code>installation-start_install</code>).</p>
 </li>
@@ -9780,11 +9879,11 @@ image. Snapshots are named <code>"test module category"-"test module name"</code
 </div>
 </div>
 <div class="sect3">
-<h4 id="_storing_only_the_last_successful_snapshot"><a class="anchor" href="#_storing_only_the_last_successful_snapshot"></a><a class="link" href="#_storing_only_the_last_successful_snapshot">42.3.2. Storing only the last successful snapshot</a></h4>
+<h4 id="_storing_only_the_last_successful_snapshot"><a class="anchor" href="#_storing_only_the_last_successful_snapshot"></a><a class="link" href="#_storing_only_the_last_successful_snapshot">42.3.4. Storing only the last successful snapshot</a></h4>
 <div class="ulist">
 <ul>
 <li>
-<p>Run the worker with <code>--no-cleanup parameter</code>. This will preserve the hard
+<p>Run the worker with <code>--no-cleanup</code> parameter. This will preserve the hard
 disks after test runs.</p>
 </li>
 <li>
@@ -9803,9 +9902,9 @@ successful test module run. Snapshots are overwritten. The snapshot is named
 <ul>
 <li>
 <p>Create a job again, this time setting the <code>SKIPTO</code> variable to the snapshot
-which failed on previous run. Make sure the new job will also have
-<code>TESTDEBUG=1</code> set. This can be ensured by the use of the clone_job script on
-the clone source job or specifying the variable explicitly:</p>
+which failed on the previous run. Make sure the new job will also have
+<code>TESTDEBUG=1</code> set. This can be ensured by the use of the <code>clone_job</code> script on
+the clone source job or by specifying the variable explicitly:</p>
 </li>
 </ul>
 </div>
@@ -14554,7 +14653,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-21 04:44:52 UTC
+Last updated 2026-01-25 04:43:46 UTC
 </div>
 </div>
 </body>
