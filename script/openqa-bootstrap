@@ -149,6 +149,9 @@ if [[ -z $skip_suse_tests ]]; then
     if [[ ! -e /var/lib/openqa/tests/sle ]]; then
         ln -s opensuse /var/lib/openqa/tests/sle
     fi
+    if [[ ! -e /var/lib/openqa/tests/aeon ]]; then
+        ln -s opensuse /var/lib/openqa/tests/aeon
+    fi
 
     if ping -c1 gitlab.suse.de.; then
         sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
