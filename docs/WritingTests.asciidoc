@@ -1994,6 +1994,123 @@ tools and make use of them on its own:
    tests passed, with a few being skipped.
 ----
 
+===== Configuration of openQA MCP in *Gemini*
+
+The application `gemini-cli` is the MCP `host` able to use the MCP Client 
+capabilities that will address the requests to the openQA MCP Server.
+
+====== 1. Requirements
+
+* *Node.js*: preferably the latest
+https://nodejs.org/en/download[version]
+* *Gemini-cli*: install it following the
+https://geminicli.com/docs/get-started/[Gemini CLI documentation] or
+https://github.com/google-gemini/gemini-cli?tab=readme-ov-file#-installation[GitHub]
+* *Google credentials*: generate a
+https://aistudio.google.com/app/api-keys[Google API Key] (Free or Pro
+account) or follow the instruction about
+https://geminicli.com/docs/get-started/authentication/[authentication]
+* *openQA API Credentials*: from
+https://openqa.opensuse.org/api_keys[Manage APY Keys], login and get
+_Key_ and _Secret_ for the openQA _Username_. To do that, the user shall
+have at last '`_operator_`' role.
+
+====== 2. Environment Variables
+
+* Set the paramers in MCP host configuration or in your shell or into a
+local `.env` file:
+
+[width="100%",cols="<34%,<33%,<33%",options="header",]
+|===
+|Parameter |Description |Value
+|`GEMINI++_++API++_++KEY` |the Google API key string, from AI Studio
+|`++<++string++>++`
+
+|`OPENQA++_++API++_++KEY` |openQA user API Key |`Username:Key:Secret`
+
+|`OPENQA++_++HOST` |Target openQA Instance |https://openqa.opensuse.org
+
+|`OPENQA++_++MCP++_++URL` |openQA MCP server endpoint
+|`https://openqa.opensuse.org/experimental/mcp`
+|===
+
+====== 3. Gemini Configuration
+
+Add these blocks to your`.gemini/settings.json`, _allowedDomains_ in
+`mcpServers` and _openqa_ in `mcpSettings` objects:
+
+[source,json]
+----
+{
+  ...,
+  "mcpSettings": {
+    "allowedDomains": [
+      "${OPENQA_HOST}"
+    ]
+  },
+  "mcpServers": {
+    "openqa": {
+      "type": "http",
+      "url": "${OPENQA_MCP_URL}",
+      "headers": {
+        "Authorization": "Bearer ${OPENQA_API_KEY}"
+      }
+    }
+  }
+}
+----
+
+'''''
+
+====== 4. Available Tools
+
+The following are the _Tools_ exposed by the MCP server that the Client
+can use to work on openQA:
+
+* `openqa++_++get++_++job++_++info`
+
+  Fetches all metadata for a specific Job ID. Useful for checking current
+  status or result variables.
+  - Input: `job++_++id` (e.g., `1234567`)
+
+* `openqa++_++get++_++log++_++files`
+
+  Retrieves the raw text of specific log files directly from the server.
+  - Input: `job++_++id`, `filename` (e.g., `autoinst-log.txt`)
+
+* `openqa++_++search++_++jobs`
+
+  Searches for jobs by build, architecture, or distribution.
+  - Input: `build`, `arch`, `distri`
+
+===== 5. Start gemini
+
+after installation and configuration is completed, run `gemini`; then,
+to check that MCP is connected, at the prompt box `'++>++'` type:
+
+`/mcp list`
+
+the openqa tools should be listed correctly.
+
+If you need to change Google authentication, type:
+
+`/auth login`
+
+and choose a method (n.3 requires Google Cloud settings):
+
+[arabic]
+. Login with Google
+. Use https://aistudio.google.com/app/api-keys[Gemini API Key]
+. https://geminicli.com/docs/get-started/authentication/#vertex-ai[Vertex AI]
+
+Now we can try it:
+
+* open the OPENQA++_++HOST in a browser,
+* click on any _Build_ link,
+* select a failed (red) test and read the `#ID` number,
+* in `gemini` ask i.e.: _Why the openqa job `#ID` failed ?_:
+* look at the result and try more queries.
+
 
 == Test Development tricks
 === Trigger new tests by modifying settings from existing test runs
