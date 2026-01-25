@@ -53,7 +53,19 @@ paths:
       tags: [ job ]
       x-mojo-name: apiv1_job_prio
       x-mojo-to: job#prio
+      parameters:
+      # With this we can forbid any query parameter
+      # See also https://github.com/OAI/OpenAPI-Specification/issues/2511#issuecomment-2076106211
+      #- &no_query_params
+      #  in: query
+      #  name: dummy
+      #  style: form
+      #  explode: true
+      #  schema:
+      #    type: object
+      #    additionalProperties: false
       requestBody:
+        required: true
         content:
           application/x-www-form-urlencoded:
             schema:

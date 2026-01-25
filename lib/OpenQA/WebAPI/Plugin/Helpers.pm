@@ -592,22 +592,19 @@ sub _validation_error {
 
 sub _openapi_validate ($c) {
     #warn __PACKAGE__.':'.__LINE__.": =============== _openapi_validate\n";
-    my $pairs = $c->req->query_params->pairs;
-    #warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$pairs], ['pairs']);
-    if (uc($c->req->method) ne 'GET' and @$pairs) {
-        # Ignore any parameter in the query string when using POST/PUT etc.
+    my $query_names = $c->req->query_params->names;
+    # Either use the dummy query param (see anchor &no_query_params in the spec)
+    # or ignore them by removing them programmatically:
+    if (uc($c->req->method) ne 'GET' and @$query_names) {
         # Because the OpenAPI plugin only validates body parameters as defined in the spec
-        print STDERR __PACKAGE__.':'.__LINE__.": !!!!!!!!!!! removing query parameter(s) (@$pairs)\n";
-        my $all = $c->req->params;
-        #warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$all], ['all']);
-        for my $p (@$pairs) {
+        print STDERR __PACKAGE__.':'.__LINE__.": !!!!!!!!!!! removing query parameter(s) (@$query_names)\n";
+        for my $p (@$query_names) {
             $c->req->query_params->remove($p);
-            # Unless this param is also set in the body params, remove it from
-            # global params. Removing it only from query_params is not enough
-            $c->req->params->remove($p) unless defined $c->req->body_params->{$p};
+            # Remove it from global and body params. Removing it only from
+            # query_params is not enough.
+            $c->req->body_params->remove($p);
+            $c->req->params->remove($p);
         }
-        $all = $c->req->params;
-        #warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$all], ['all']);
     }
     return 1 unless my @errors = $c->openapi->validate;
     my %errors;
