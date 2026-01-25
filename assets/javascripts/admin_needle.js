@@ -103,7 +103,7 @@ function setupAdminNeedles() {
     var outstandingList = $('#outstanding-needles');
     var failedList = $('#failed-needles');
     var deletionProgressElement = $('#deletion-progress');
-    var url = $('#confirm_delete').data('delete-url') + '?id=';
+    var url = $('#confirm_delete').data('delete-url');
 
     // hide/show elements
     $('#deletion-question').hide();
@@ -158,7 +158,11 @@ function setupAdminNeedles() {
         deleteBunchOfNeedles();
       };
 
-      fetchWithCSRF(url + nextIDs.join('&id='), {method: 'DELETE'})
+      const body = new FormData();
+      $.each(nextIDs, function (index, id) {
+        body.append('id', id);
+      });
+      fetchWithCSRF(url, {method: 'DELETE', body: body})
         .then(response => {
           return response
             .json()
