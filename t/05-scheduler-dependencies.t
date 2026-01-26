@@ -345,11 +345,17 @@ subtest 'failed parallel parent causes parallel children to fails as PARALLEL_FA
 
 sub _check_mm_api {
     my $explain_tx_res = sub {
-        always_explain $t->tx->res->content;    # uncoverable statement
+        always_explain $t->tx->res->body;    # uncoverable statement
     };
     $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id])->or($explain_tx_res);
     $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => [])->or($explain_tx_res);
     $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id])->or($explain_tx_res);
+
+    my %children = ($jobF->id => RUNNING, $jobE->id => DONE);
+    $t->get_ok('/api/v1/mm/children')->status_is(200)->json_is('/jobs' => \%children)->or($explain_tx_res);
+
+    my @parents = (99983);
+    $t->get_ok('/api/v1/mm/parents')->status_is(200)->json_is('/jobs' => \@parents)->or($explain_tx_res);
 }
 subtest 'MM API for children status - available only for running jobs' => sub {
     isnt(my $job_token = $sent->{job}->{$jobC->id}->{worker}->get_property('JOBTOKEN'), undef, 'JOBTOKEN is present');
