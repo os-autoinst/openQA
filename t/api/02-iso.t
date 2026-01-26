@@ -85,6 +85,11 @@ my @job_template_params = (
     group_id => 1002,
 );
 
+subtest 'querying non-existent scheduled product' => sub {
+    $t->get_ok('/api/v1/isos/999')->status_is(404);
+    $t->json_is('/error' => 'Scheduled product does not exist.');
+};
+
 subtest 'group filter and priority override' => sub {
     # add a job template for group 1002
     my $job_template = $job_templates->create({@job_template_params, product_id => 1});
