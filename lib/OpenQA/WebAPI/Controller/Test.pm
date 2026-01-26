@@ -163,6 +163,9 @@ qq(You first need to clone the <a href="https://github.com/os-autoinst/os-autoin
 sub create ($self) {
     my $preset_key = $self->param('preset');
     my $preset = $self->_load_test_preset($preset_key);
+    my $user = $self->current_user;
+    $self->stash(flash_warning => 'You have to request operator permissions before you can create tests.')
+      unless $user && $user->is_operator;
     if (defined $preset) {
         $self->stash(flash_info => $preset->{info});
         $self->_load_scenario_definitions($preset);

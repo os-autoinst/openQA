@@ -10,7 +10,7 @@
          <li class='nav-item' id="all_tests">
             %= link_to 'All Tests' => url_for('tests') => class => 'nav-link', title => 'Lists all tests grouped by state'
          </li>
-          % if ($current_user && $current_user->is_operator) {
+          % if ($current_user) {
           <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
                  id="create-tests-action" title="Creates one or multiple tests"

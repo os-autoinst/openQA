@@ -93,7 +93,7 @@ sub auth_operator ($self) {
     return 0 if !$self->auth;
     return 1 if $self->is_operator || $self->is_admin;
 
-    $self->render(json => {error => 'Administrator level required'}, status => 403);
+    $self->render(json => {error => 'Operator level required'}, status => 403);
     return 0;
 }
 

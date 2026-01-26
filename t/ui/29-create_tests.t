@@ -17,10 +17,15 @@ driver_missing unless my $driver = call_driver;
 my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
 subtest 'navigation to form' => sub {
+    $driver->get("$url/tests/create");
+    like $driver->find_element('#flash-messages')->get_text, qr/request operator/,
+      'permission warning shown for non-operator users';
     $driver->get("$url/login");
     $driver->find_element_by_id('create-tests-action')->click;
     $driver->find_element_by_link_text('Example test')->click;
     $driver->title_is('openQA: Create example test', 'on page to create example test');
+    unlike $driver->find_element('#flash-messages')->get_text, qr/request operator/,
+      'no permission warning shown for operator users';
 };
 
 subtest 'form is pre-filled' => sub {
