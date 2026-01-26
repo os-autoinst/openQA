@@ -70,8 +70,8 @@ From there, you can trigger a new job or clone an existing one, e.g.:
 
 [source,sh]
 ----
-openqa-cli schedule --monitor \
-    --param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml \
+openqa-cli schedule --monitor async=1 \
+    SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/os-autoinst/os-autoinst-distri-example/refs/heads/main/scenario-definitions.yaml \
     DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 \
     TEST=simple_boot _GROUP_ID=0 BUILD=test \
     CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-example.git \

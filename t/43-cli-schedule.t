@@ -14,6 +14,8 @@ use OpenQA::CLI::monitor;
 use OpenQA::CLI::schedule;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils qw(perform_minion_jobs);
+use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::Server::Daemon;
 use Mojo::File qw(tempdir tempfile);
 use Test::Output qw(combined_like);
@@ -26,7 +28,7 @@ my $schedule = OpenQA::CLI::schedule->new;
 
 # change API to simulate job state/result changes
 my $job_controller_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Job');
-my @job_mock_results = (PASSED, SOFTFAILED, PASSED, USER_CANCELLED);    # results to assume for job 1, job 2, …
+my @job_mock_results = (PASSED, SOFTFAILED, PASSED, USER_CANCELLED, PASSED, SOFTFAILED);
 $job_controller_mock->redefine(
     get_status => sub ($self) {
         # reply as usual
@@ -44,6 +46,18 @@ my $host = "http://127.0.0.1:$port";
 $app->log->level($ENV{HARNESS_IS_VERBOSE} ? 'debug' : 'error');
 $app->config->{'scm git'}->{git_auto_update} = 'no';
 
+my $fake_scheduled_product_status;
+my $iso_controller_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Iso');
+$iso_controller_mock->redefine(
+    create => sub ($self) {
+        # reply as usual
+        $iso_controller_mock->original('create')->($self);
+        # schedule the product immediately or fake the status
+        return perform_minion_jobs $app->minion unless $fake_scheduled_product_status;
+        my $sp = $self->schema->resultset('ScheduledProducts')->search({}, {order_by => {-desc => 'id'}, rows => 1});
+        $sp->update({status => $fake_scheduled_product_status});
+    });
+
 combined_like { OpenQA::CLI->new->run('help', 'schedule') } qr/Usage: openqa-cli schedule/, 'help';
 subtest 'unknown options' => sub {
     like warning {
@@ -57,6 +71,7 @@ my @options = (@basic_options, '-m');
 my @scenarios = ('--param-file', "SCENARIO_DEFINITIONS_YAML=$FindBin::Bin/data/09-schedule_from_file.yaml");
 my @settings1 = (qw(DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 TEST=simple_boot));
 my @settings2 = (qw(DISTRI=opensuse VERSION=13.1 FLAVOR=DVD ARCH=i586 BUILD=0091 TEST=autoyast_btrfs));
+my @settings3 = (@settings2, qw(async=1));
 
 subtest 'running into error reply' => sub {
     my $res;
@@ -86,6 +101,16 @@ subtest 'scheduling and monitoring set of two jobs' => sub {
     combined_like { $res = $schedule->run(@options, @scenarios, @settings2) } qr/count.*2.*passed.*user_cancelled/s,
       'response logged if one job was cancelled';
     is $res, 2, 'non-zero return-code if at least one job is not ok';
+
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings3) }
+    qr|"successful_job_ids":\[\d+,\d+\].*passed.*softfailed|s, 'response logged if async=1 flag was used';
+    is $res, 0, 'zero return-code if all jobs are ok with async=1 flag';
+
+    $fake_scheduled_product_status = OpenQA::Schema::Result::ScheduledProducts::CANCELLED;
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings3) }
+    qr|Scheduled product \d+ ended up cancelled|s,
+      'response logged if scheduled product was cancelled when async=1 flag was used';
+    is $res, 1, 'non-zero return-code if scheduled product was cancelled with async=1 flag';
 };
 
 subtest 'monitor jobs as a separate command' => sub {
@@ -94,6 +119,7 @@ subtest 'monitor jobs as a separate command' => sub {
     my $jobs = $schema->resultset('Jobs');
     $jobs->create({id => $_, TEST => "test-$_"}) for (100 .. 103);
     @job_mock_results = (PASSED, SOFTFAILED);
+    undef $fake_scheduled_product_status;
     combined_like { $res = $monitor->run(@basic_options, 100, 101) } qr/100.*101/s, 'status logged (passing case)';
     is $res, 0, 'zero return-code if all jobs ok';
     @job_mock_results = (PASSED, FAILED);
