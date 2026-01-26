@@ -56,13 +56,13 @@ sub _restart_job ($minion_job, @args) {
 }
 
 sub _init_amqp_plugin ($app) {
-    return undef unless $app->config->{amqp}->{enabled};
-    $app->plugin('AMQP');    # Needs to be loaded again from forked process
+    return undef unless $app->config->{amqp}->{plugin};
+    $app->plugin($app->config->{amqp}->{plugin});    # Needs to be loaded again from forked process
     Mojo::IOLoop->singleton->one_tick;
 }
 
 sub _wait_for_event_publish ($app) {
-    return undef unless $app->config->{amqp}->{enabled};
+    return undef unless $app->config->{amqp}->{plugin};
     OpenQA::Events->singleton->once(amqp_handled => sub { Mojo::IOLoop->stop });
     Mojo::IOLoop->start;
 }
