@@ -10,7 +10,7 @@ sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/1
 tools/retry sudo zypper --gpg-auto-import-keys ref
 sudo zypper -n install --download-only $(sed -e 's/\r//' < tools/ci/ci-packages.txt)
 #sudo rpm -i -f $(find /var/cache/zypp/packages/ | grep 'foo.rpm$')
-sudo zypper -n install perl-App-cpanminus perl-XML-SAX perl-XML-SAX-Expat
+sudo zypper -n install perl-App-cpanminus perl-XML-SAX perl-XML-SAX-Expat perl-Syntax-Keyword-Try
 sudo cpanm TAP::Harness::JUnit
 
 echo "build_cache.sh done"
