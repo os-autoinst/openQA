@@ -192,7 +192,9 @@ function changeJobPrio(jobId, delta, linkElement) {
 
   var newPrio = currentPrio + delta;
 
-  fetchWithCSRF(urlWithBase(`/api/v1/jobs/${jobId}/prio?prio=${newPrio}`), {method: 'POST'})
+  const body = new FormData();
+  body.append('prio', newPrio);
+  fetchWithCSRF(urlWithBase(`/api/v1/jobs/${jobId}/prio`), {method: 'POST', body: body})
     .then(response => {
       return response
         .json()
