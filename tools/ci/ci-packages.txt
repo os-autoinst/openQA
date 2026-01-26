@@ -6,19 +6,13 @@ hostname
 iproute2
 iputils
 jq
-libcbor0_10
-libcmark0_30_2
-libfido2
 libhidapi-hidraw0
 libjq1
 libmnl0
-libonig4
-libssh2
 libxtables12
 lsof
 openssh-clients
 openssh-common
-openssh-fips
 optipng
 perl-Algorithm-C3
 perl-Algorithm-Diff
@@ -91,7 +85,6 @@ perl-Dist-CheckConflicts
 perl-Encode-Locale
 perl-Eval-Closure
 perl-Exception-Class
-perl-Exporter-Declare
 perl-Exporter-Tiny
 perl-Feature-Compat-Try
 perl-File-chdir
@@ -139,7 +132,6 @@ perl-Log-Contextual
 perl-LWP-MediaTypes
 perl-LWP-Protocol-https
 perl-MCP
-perl-Meta-Builder
 perl-Minion
 perl-Minion-Backend-SQLite
 perl-Mixin-Linewise
@@ -184,10 +176,8 @@ perl-Path-Tiny
 perl-Perl-Critic
 perl-Perl-Critic-Community
 perl-Perl-Critic-Policy-Variables-ProhibitLoopOnHash
-perl-Perl-Critic-Pulp
 perl-PerlIO-utf8_strict
 perl-Perl-Tidy
-perl-Pod-MinimumVersion
 perl-Pod-POM
 perl-Pod-Spell
 perl-PPI
@@ -209,7 +199,6 @@ perl-SQL-Abstract
 perl-SQL-Abstract-Classic
 perl-SQL-Abstract-Pg
 perl-SQL-SplitStatement
-perl-SQL-Tokenizer
 perl-SQL-Translator
 perl-strictures
 perl-String-Format
@@ -223,7 +212,6 @@ perl-Sub-Quote
 perl-Sub-Uplevel
 perl-SUPER
 perl-Syntax-Keyword-Try
-perl-TAP-Harness-JUnit
 perl-Task-Weaken
 perl-Test-CheckGitStatus
 perl-Test-Deep
@@ -266,9 +254,6 @@ perl-YAML
 perl-YAML-LibYAML
 perl-YAML-PP
 psmisc
-python3-pathspec
-python3-PyYAML
-python3-yamllint
 ShellCheck
 shfmt
 sqlite3
