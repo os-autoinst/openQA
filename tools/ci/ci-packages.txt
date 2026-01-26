@@ -177,7 +177,6 @@ perl-Perl-Critic
 perl-Perl-Critic-Community
 perl-Perl-Critic-Policy-Variables-ProhibitLoopOnHash
 perl-PerlIO-utf8_strict
-perl-Perl-Tidy
 perl-Pod-POM
 perl-Pod-Spell
 perl-PPI
