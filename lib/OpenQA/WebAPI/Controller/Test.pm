@@ -982,8 +982,10 @@ sub _add_dependency_to_graph ($dependency_data, $parent_job_id, $child_job_id, $
     my $cluster = $dependency_data->{cluster};
     if ($job1_cluster_id && $job2_cluster_id) {
         # both jobs are already part of a cluster: merge clusters unless they're already the same
-        push(@{$cluster->{$job1_cluster_id}}, @{delete $cluster_by_job->{$job2_cluster_id}})
-          unless $job1_cluster_id eq $job2_cluster_id;
+        return undef if $job1_cluster_id eq $job2_cluster_id;
+        my $jobs_to_move = delete $cluster->{$job2_cluster_id};
+        push(@{$cluster->{$job1_cluster_id}}, @$jobs_to_move);
+        $cluster_by_job->{$_} = $job1_cluster_id for @$jobs_to_move;
     }
     elsif ($job1_cluster_id) {
         # only job1 is already in a cluster: move job2 into that cluster, too
