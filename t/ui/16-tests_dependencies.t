@@ -15,8 +15,38 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::SeleniumTest;
 use OpenQA::Schema::Result::JobDependencies;
-use OpenQA::JobDependencies::Constants qw(CHAINED DIRECTLY_CHAINED);
+use OpenQA::JobDependencies::Constants qw(CHAINED DIRECTLY_CHAINED PARALLEL);
 use OpenQA::Jobs::Constants;
+use OpenQA::WebAPI::Controller::Test;
+
+subtest 'detailed behavior of merging parallel jobs into clusters' => sub {
+    my (%clusters, %cluster_by_job);
+    my %data = (cluster => \%clusters, cluster_by_job => \%cluster_by_job);
+    my $add_parallel_dependency = sub ($parent_job_id, $child_job_id) {
+        OpenQA::WebAPI::Controller::Test::_add_dependency_to_graph(\%data, $parent_job_id, $child_job_id, PARALLEL);
+    };
+
+    $add_parallel_dependency->(1, 2);
+    is_deeply \%clusters, {cluster_2 => [2, 1]}, 'new cluster created';
+
+    $add_parallel_dependency->(3, 4);
+    is_deeply \%clusters, {cluster_2 => [2, 1], cluster_4 => [4, 3]}, 'another distinct cluster created';
+    is_deeply \%cluster_by_job, {1 => 'cluster_2', 2 => 'cluster_2', 3 => 'cluster_4', 4 => 'cluster_4'},
+      'clusters tracked by job';
+
+    $add_parallel_dependency->(3, 5);
+    is_deeply \%clusters, {cluster_2 => [2, 1], cluster_4 => [4, 3, 5]}, 'child added into existing cluster';
+
+    $add_parallel_dependency->(6, 5);
+    is_deeply \%clusters, {cluster_2 => [2, 1], cluster_4 => [4, 3, 5, 6]}, 'parent added into existing cluster';
+
+    $add_parallel_dependency->(3, 5);
+    is_deeply \%clusters, {cluster_2 => [2, 1], cluster_4 => [4, 3, 5, 6]}, 'no change if jobs already in same cluster';
+
+    $add_parallel_dependency->(6, 1);
+    is_deeply \%clusters, {cluster_2 => [2, 1, 4, 3, 5, 6]}, 'the two existing clusters were merged';
+    is_deeply \%cluster_by_job, {map { $_ => 'cluster_2' } 1 .. 6}, 'all jobs in one cluster after merge';
+};
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database::generate_schema_name;
@@ -225,6 +255,17 @@ subtest 'graph rendering' => sub {
         $check_element_quandity->('.edgePath', 2, 'two edges present (direct parent and sibling)');
         $check_element_quandity->('.node', 3, 'three nodes present (direct parent and sibling)');
     };
+};
+
+subtest 'overall behavior with advanced clusters' => sub {
+    $dependencies->create({child_job_id => 99940, parent_job_id => 99963, dependency => PARALLEL});
+    $dependencies->create({child_job_id => 80000, parent_job_id => 99940, dependency => PARALLEL});
+    my $json = $t->get_ok('/tests/99961/dependencies_ajax')->status_is(200)->tx->res->json;
+    my @expected_cluster = (80000, 99940, 99961, 99963), my $present_clusters = $json->{cluster};
+    my @present_cluster_ids = keys %$present_clusters;
+    is @present_cluster_ids, 1, 'exactly one cluster present';
+    is_deeply [sort @{$present_clusters->{$present_cluster_ids[0]}}], \@expected_cluster,
+      'parallel jobs shown in one big cluster';
 };
 
 kill_driver();
