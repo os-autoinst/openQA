@@ -239,15 +239,10 @@ sub edit ($self) {
         $default_needle->{properties} = [];
         my $name = $self->param('moduleid');
         if (@{$screenshot->{tags}}) {
-            my $ftag = $screenshot->{tags}->[0];
             # concat the module name and the tag unless the tag already starts
             # with the module name
-            if ($ftag =~ m/^$name/) {
-                $name = $ftag;
-            }
-            else {
-                $name .= "-$ftag";
-            }
+            my $ftag = $screenshot->{tags}->[0];
+            $name = ($ftag =~ m/^$name/) ? $ftag : "$name-$ftag";
         }
         $screenshot->{suggested_name} = ensure_timestamp_appended($name);
     }
@@ -267,36 +262,32 @@ sub edit ($self) {
     $self->render('step/edit');
 }
 
+sub _new_click_point ($click_point) { $click_point ? (click_point => $click_point) : () }
+
+sub _new_match ($area) {
+    return {
+        xpos => int $area->{x},
+        ypos => int $area->{y},
+        width => int $area->{w},
+        height => int $area->{h},
+        type => 'match',
+        _new_click_point($area->{click_point}),
+    };
+}
+
 sub _new_screenshot ($self, $tags, $image_name, $matches = undef) {
-    my @matches;
-    my %screenshot = (
+    return {
         name => 'screenshot',
         title => 'Screenshot',
         imagename => $image_name,
         imagedir => '',
         imageurl => $self->url_for('test_img', filename => $image_name)->to_string(),
         area => [],
-        matches => \@matches,
+        matches => $matches ? [map { _new_match($_) } @$matches] : [],
         properties => [],
         json => '',
         tags => $tags,
-    );
-    return \%screenshot unless $matches;
-
-    for my $area (@$matches) {
-        my %match = (
-            xpos => int $area->{x},
-            ypos => int $area->{y},
-            width => int $area->{w},
-            height => int $area->{h},
-            type => 'match',
-        );
-        if (my $click_point = $area->{click_point}) {
-            $match{click_point} = $click_point;
-        }
-        push(@matches, \%match);
-    }
-    return \%screenshot;
+    };
 }
 
 sub _basic_needle_info (
@@ -468,33 +459,27 @@ sub save_needle_ajax ($self) {
             $result->{restart} = $self->url_for('apiv1_restart', jobid => $job_id) if ($result->{propose_restart});
 
             $self->render(json => $result);
-        }
-    )->catch(
-        sub (@args) {    # uncoverable statement
-            $self->reply->gru_result(@args);    # uncoverable statement
-        });
+        })->catch(sub (@args) { $self->reply->gru_result(@args) });    # uncoverable statement
 }
 
 sub map_error_to_avg ($error) { int((1 - sqrt($error // 0)) * 100 + 0.5) }
 
-sub calc_matches ($needle, $areas) {
-    my $matches = $needle->{matches};
-    for my $area (@$areas) {
-        my %match = (
-            xpos => int $area->{x},
-            ypos => int $area->{y},
-            width => int $area->{w},
-            height => int $area->{h},
-            type => $area->{result},
-            similarity => int($area->{similarity} + 0.5),
-        );
-        if (my $click_point = $area->{click_point}) {
-            $match{click_point} = $click_point;
-        }
-        push(@$matches, \%match);
-    }
+sub _calc_match ($area) {
+    return {
+        xpos => int $area->{x},
+        ypos => int $area->{y},
+        width => int $area->{w},
+        height => int $area->{h},
+        type => $area->{result},
+        similarity => int($area->{similarity} + 0.5),
+        _new_click_point($area->{click_point}),
+    };
+}
+
+sub _calc_matches ($needle, $areas) {
+    push @{$needle->{matches}}, map { _calc_match($_) } @$areas;
     $needle->{avg_similarity} //= map_error_to_avg($needle->{error});
-    return;
+    return $needle;
 }
 
 sub viewimg ($self) {
@@ -553,8 +538,7 @@ sub viewimg ($self) {
                 primary_match => 1,
                 selected => 1,
             };
-            calc_matches($info, $module_detail->{area});
-            $primary_match = $info;
+            $primary_match = _calc_matches($info, $module_detail->{area});
             $append_needle_info->($needleinfo->{tags} => $info);
         }
     }
@@ -575,8 +559,7 @@ sub viewimg ($self) {
                 areas => $needleinfo->{area},
                 matches => [],
             };
-            calc_matches($info, $needle->{area});
-            $append_needle_info->($needleinfo->{tags} => $info);
+            $append_needle_info->($needleinfo->{tags} => _calc_matches($info, $needle->{area}));
         }
     }
 
@@ -599,7 +582,7 @@ sub viewimg ($self) {
 
     # render error message if there's nothing to show
     my $screenshot = $module_detail->{screenshot};
-    if (!$screenshot && !%needles_by_tag) {
+    if (!$screenshot && !keys %needles_by_tag) {
         $self->stash(textresult => 'Seems like os-autoinst has produced a result which openQA can not display.');
         return $self->render('step/viewtext');
     }

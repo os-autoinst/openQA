@@ -18,7 +18,7 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist shared_hash prepare_clean_needles_dir prepare_default_needle);
 use Cwd 'abs_path';
 use Mojo::File qw(path tempdir);
-use Mojo::JSON 'decode_json';
+use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'sha1_sum';
 use Date::Format 'time2str';
 use POSIX 'strftime';
@@ -468,6 +468,23 @@ subtest 'Saving needle with only OCR areas' => sub {
         'error displayed for OCR-only needle'
     );
     $driver->find_element('#flash-messages .alert:last-child .btn-close')->click();
+};
+
+subtest 'Displaying options to take images and areas from existing needles' => sub {
+    my $needle_file = path('t/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt.json');
+    my %area = (xpos => 200, ypos => 200, width => 384, height => 217, type => 'match', match => 99);
+    my %needle = (area => [\%area], properties => [], tags => ['sudo-passwordprompt']);
+    $needle_file->spew(encode_json(\%needle));
+    $driver->get('/tests/99946/modules/yast2_lan/steps/1/edit');
+    my $get_options = sub ($id) {
+        wait_for_element selector => "#$id";
+        $driver->execute_script("return Array.from(document.getElementById('$id').options).map(o => o.value);");
+    };
+    my $image_options = $get_options->('image_select');
+    my $area_options = $get_options->('area_select');
+    my $expected_options = [qw(screenshot sudo-passwordprompt test-newneedle test-newneedle-from-candidate)];
+    is_deeply $image_options, $expected_options, 'options to take image from shown';
+    is_deeply $area_options, $expected_options, 'options to take areas from shown';
 };
 
 my $decoded_json;
