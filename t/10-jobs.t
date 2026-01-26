@@ -963,7 +963,7 @@ subtest 'AMQP event emission for job restarts within Minion tasks' => sub {
     # use a new app; otherwise it runs slowly, maybe trying to run none-mocked stuff
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     my $minion = $t->app->minion;
-    is $t->app->config->{amqp}->{enabled}, 1, 'AMQP enabled from config file';
+    is $t->app->config->{amqp}->{plugin}, 'AMQP', 'AMQP enabled from config file';
 
     my %retry_settings = %settings;
     $retry_settings{TEST} = 'test_amqp_restart';

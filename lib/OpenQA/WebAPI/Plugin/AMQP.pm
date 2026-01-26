@@ -29,7 +29,11 @@ sub register ($self, $app, @args) {
     $self->{app} = $app;
     $self->{config} = $app->config;
     my $config = $self->{config}->{amqp};
-    $config->{enabled} = 1;    # Needed for reloading the plugin later in the forked process
+    # this gives us the plugin's name; we need to know it to reload
+    # the correct plugin later in the forked process, and it may not
+    # be AMQP, it may be a subclass like FedoraMessaging
+    $config->{plugin} = (split /::/, ref $self)[-1];
+    log_debug 'AMQP plugin name discovered as: ' . $config->{plugin};
     Mojo::IOLoop->singleton->next_tick(
         sub {
             # register for events
