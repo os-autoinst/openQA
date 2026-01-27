@@ -83,9 +83,8 @@ sub list_api_keys ($self) {
             t_expiration => $_->t_expiration,
             t_created => $_->t_created,
             t_updated => $_->t_updated,
-        }
-    } $user->api_keys->all;
-    $self->render(json => \@keys);
+        } } $user->api_keys->all;
+    $self->render(json => {keys => \@keys});
 }
 
 =over 4

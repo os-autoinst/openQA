@@ -61,18 +61,19 @@ subtest 'create_api_key with invalid expiration' => sub {
 subtest 'test list_api_keys' => sub {
     my $key2 = $res->{key};
     $res = $t->get_ok('/api/v1/users/me/api_keys')->status_is(200, 'list api keys')->tx->res->json;
-    ok scalar @$res >= 2, 'at least two keys found';
-    ok((grep { $_->{key} eq $key1 } @$res), "key $key1 found in list");
-    ok((grep { $_->{key} eq $key2 } @$res), "key $key2 found in list");
-    ok !exists $res->[0]{secret}, 'secret is not returned in list';
+    my $api_keys = $res->{keys};
+    ok scalar @$api_keys >= 2, 'at least two keys found';
+    ok((grep { $_->{key} eq $key1 } @$api_keys), "key $key1 found in list");
+    ok((grep { $_->{key} eq $key2 } @$api_keys), "key $key2 found in list");
+    ok !exists $api_keys->[0]{secret}, 'secret is not returned in list';
 };
 
 subtest 'test delete_api_key' => sub {
-    my $count_before = scalar @$res;
+    my $count_before = scalar @{$res->{keys}};
     $t->delete_ok("/api/v1/users/me/api_keys/$key1")->status_is(200, 'delete api key');
     $res = $t->get_ok('/api/v1/users/me/api_keys')->status_is(200)->tx->res->json;
-    is scalar @$res, $count_before - 1, 'one key less';
-    ok !((grep { $_->{key} eq $key1 } @$res)), "key $key1 no longer in list";
+    is scalar @{$res->{keys}}, $count_before - 1, 'one key less';
+    ok !((grep { $_->{key} eq $key1 } @{$res->{keys}})), "key $key1 no longer in list";
 
     $t->delete_ok("/api/v1/users/me/api_keys/NONEXISTENT")->status_is(404, 'delete nonexistent key');
 };
