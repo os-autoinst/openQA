@@ -59,8 +59,10 @@ sub create_api_key ($self) {
         json => {error => 'Date must be in format ' . DateTime::Format::Pg->format_datetime(DateTime->now())},
         status => 400
     ) if $validation->has_error;
-    $expiration = DateTime::Format::Pg->parse_datetime($validation->param('expiration'))
-      if $validation->is_valid('expiration');
+    $expiration
+      = $validation->is_valid('expiration')
+      ? DateTime::Format::Pg->parse_datetime($validation->param('expiration'))
+      : DateTime->now->add(years => 1);
     my $apikey = $user->api_keys->create({t_expiration => $expiration});
     $self->render(json => {id => $apikey->id, key => $apikey->key, t_expiration => $apikey->t_expiration});
 }
@@ -83,7 +85,8 @@ sub list_api_keys ($self) {
             t_expiration => $_->t_expiration,
             t_created => $_->t_created,
             t_updated => $_->t_updated,
-        } } $user->api_keys->all;
+        }
+    } $user->api_keys->all;
     $self->render(json => {keys => \@keys});
 }
 

@@ -38,7 +38,8 @@ is $app->schema->resultset('Users')->find(99902)->feature_version, 42, 'feature 
 
 my $res = $t->post_ok('/api/v1/users/me/api_keys')->status_is(200, 'create api key')->tx->res->json;
 ok $res->{key}, 'key returned';
-is $res->{t_expiration}, undef, 'default expiration is undef (never)';
+my $expected_year = time2str('%Y', time + ONE_YEAR, 'UTC');
+like $res->{t_expiration}, qr/^$expected_year-/, 'default expiration is set to 1 year from now';
 my $key1 = $res->{key};
 
 my $new_key = $app->schema->resultset('ApiKeys')->find({key => $res->{key}});
@@ -46,11 +47,13 @@ ok $new_key, 'key found in DB';
 is $new_key->user_id, 99902, 'key belongs to correct user';
 
 subtest 'create_api_key with expiration' => sub {
-    my $expiration = time2str('%Y-%m-%d %H:%M:%S', time + ONE_YEAR, 'UTC');
+    my $expiration_time = time + ONE_YEAR;
+    my $expiration = time2str('%Y-%m-%d %H:%M:%S', $expiration_time, 'UTC');
     $res = $t->post_ok('/api/v1/users/me/api_keys' => form => {expiration => $expiration})
       ->status_is(200, 'create api key with expiration')->tx->res->json;
     ok $res->{key}, 'key returned';
-    like $res->{t_expiration}, qr/^[0-9]+/, 'expiration looks like date';
+    my $expected_year = time2str('%Y', $expiration_time, 'UTC');
+    like $res->{t_expiration}, qr/^$expected_year-/, 'expiration matches expected year';
 };
 
 subtest 'create_api_key with invalid expiration' => sub {
