@@ -11,7 +11,7 @@ use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error);
 use OpenQA::Utils (
     qw(create_git_clone_list parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
-    qw(run_cmd_with_log_return_error needledir testcasedir gitrepodir find_video_files)
+    qw(run_cmd_with_log_return_error needledir testcasedir git_commit_url find_video_files)
 );
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
@@ -1928,6 +1928,8 @@ sub investigate ($self, %args) {
     my %inv;
     return {error => 'No result directory available for current job'} unless $self->result_dir();
     my $ignore = OpenQA::App->singleton->config->{global}->{job_investigate_ignore};
+    my $self_file = eval { Mojo::File->new($self->result_dir(), 'vars.json')->slurp };
+    my $self_vars = decode_json($self_file // '{}');
     for my $prev (@previous) {
         if ($prev->should_show_investigation) {
             $inv{first_bad} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
@@ -1936,10 +1938,7 @@ sub investigate ($self, %args) {
         next unless $prev->result =~ /(?:passed|softfailed)/;
         $inv{last_good} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
         last unless $prev->result_dir;
-        my ($prev_file, $self_file) = map {
-            eval { Mojo::File->new($_->result_dir(), 'vars.json')->slurp }
-              // undef
-        } ($prev, $self);
+        my $prev_file = eval { Mojo::File->new($prev->result_dir(), 'vars.json')->slurp };
         $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'worker_packages.txt');
         $inv{diff_sut_packages_to_last_good} = $self->packages_diff($prev, $ignore, 'sut_packages.txt');
         last unless $self_file && $prev_file;
@@ -1947,18 +1946,18 @@ sub investigate ($self, %args) {
         # files missing. This is a best-effort approach.
         my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
         $inv{diff_to_last_good} = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
-        my ($before, $after) = map { decode_json($_) } ($prev_file, $self_file);
+        my $prev_vars = decode_json($prev_file // '{}');
         my $dir = testcasedir($self->DISTRI, $self->VERSION);
-        my $refspec_range = "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}";
+        my $refspec_range = "$prev_vars->{TEST_GIT_HASH}..$self_vars->{TEST_GIT_HASH}";
         my $diff_limit = $args{git_limit} ? $args{git_limit} / 2 : undef;
         $inv{test_log} = $self->git_log_diff($dir, $refspec_range, $args{git_limit});
         $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
         $inv{test_diff_stat} = $self->git_diff($dir, $refspec_range, $diff_limit) if $inv{test_log};
         # no need for duplicating needles git log if the git repo is the same
         # as for tests
-        if ($after->{TEST_GIT_HASH} ne $after->{NEEDLES_GIT_HASH}) {
+        if ($self_vars->{TEST_GIT_HASH} ne $self_vars->{NEEDLES_GIT_HASH}) {
             $dir = needledir($self->DISTRI, $self->VERSION);
-            my $refspec_needles_range = "$before->{NEEDLES_GIT_HASH}..$after->{NEEDLES_GIT_HASH}";
+            my $refspec_needles_range = "$prev_vars->{NEEDLES_GIT_HASH}..$self_vars->{NEEDLES_GIT_HASH}";
             $inv{needles_log} = $self->git_log_diff($dir, $refspec_needles_range, $args{git_limit});
             $inv{needles_log} ||= 'No needle changes recorded, test regression due to needles unlikely';
             $inv{needles_diff_stat} = $self->git_diff($dir, $refspec_needles_range, $diff_limit) if $inv{needles_log};
@@ -1966,8 +1965,8 @@ sub investigate ($self, %args) {
         last;
     }
     $inv{last_good} //= 'not found';
-    $inv{testgiturl} = gitrepodir(distri => $self->DISTRI);
-    $inv{needlegiturl} = gitrepodir(distri => $self->DISTRI, needles => 1);
+    $inv{testgiturl} = git_commit_url($self_vars->{TEST_GIT_URL});
+    $inv{needlegiturl} = git_commit_url($self_vars->{NEEDLES_GIT_URL});
     return \%inv;
 }
 

@@ -23,7 +23,6 @@ use Exporter 'import';
 use OpenQA::App;
 use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX FRAGMENT_REGEX);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
-use Config::Tiny;
 use Time::HiRes qw(tv_interval);
 use File::Basename;
 use File::Spec;
@@ -98,7 +97,7 @@ our @EXPORT = qw(
   needledir
   productdir
   testcasedir
-  gitrepodir
+  git_commit_url
   is_in_tests
   save_base64_png
   run_cmd_with_log
@@ -215,11 +214,11 @@ sub testcasedir ($distri = undef, $version = undef, $rootfortests = undef) {
     return $dir;
 }
 
-=head2 gitrepodir
+=head2 git_commit_url
 
-  gitrepodir(distri => DISTRI, version => VERSION)
+  git_commit_url(distri => DISTRI, version => VERSION)
 
-I<gitrepodir> reads the F<.git/config> of the projects and returns
+I<git_commit_url> reads the F<.git/config> of the projects and returns
 the http(s) address of the remote repository B<origin>.
 The parameters are used to get the correct project directories either for
 needles or tests.
@@ -228,18 +227,13 @@ If the I<.git> directory not found it returns an empty string.
 
 =cut
 
-sub gitrepodir (@args) {
-    my %args = (distri => '', version => '', @args);
-    my $path = $args{needles} ? needledir($args{distri}, $args{version}) : testcasedir($args{distri}, $args{version});
-    my $filename = (-e path($path, '.git')) ? path($path, '.git', 'config') : '';
-    my $config = Config::Tiny->read($filename, 'utf8');
-    return '' unless defined $config;
-    if ($config->{'remote "origin"'}{url} =~ /^http(s?)/) {
-        my $repo_url = $config->{'remote "origin"'}{url};
+sub git_commit_url ($repo_url) {
+    return '' unless defined $repo_url;
+    if ($repo_url =~ m/^http(s?)/) {
         $repo_url =~ s{\.git$}{/commit/};
         return $repo_url;
     }
-    my @url_tokenized = split(':', $config->{'remote "origin"'}{url});
+    my @url_tokenized = split /:/, $repo_url;
     $url_tokenized[1] =~ s{\.git$}{/commit/};
     my @githost = split('@', $url_tokenized[0]);
     return "https://$githost[1]/$url_tokenized[1]";
