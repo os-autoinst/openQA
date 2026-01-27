@@ -2058,8 +2058,8 @@ single-instance container. You can spawn a new shell via:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli<span class="tok-w"> </span>schedule<span class="tok-w"> </span>--monitor<span class="tok-w"> </span><span class="tok-se">\</span>
-<span class="tok-w">    </span>--param-file<span class="tok-w"> </span><span class="tok-nv">SCENARIO_DEFINITIONS_YAML</span><span class="tok-o">=</span>scenario-definitions.yaml<span class="tok-w"> </span><span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli<span class="tok-w"> </span>schedule<span class="tok-w"> </span>--monitor<span class="tok-w"> </span><span class="tok-nv">async</span><span class="tok-o">=</span><span class="tok-m">1</span><span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">    </span><span class="tok-nv">SCENARIO_DEFINITIONS_YAML_FILE</span><span class="tok-o">=</span>https://raw.githubusercontent.com/os-autoinst/os-autoinst-distri-example/refs/heads/main/scenario-definitions.yaml<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span><span class="tok-nv">DISTRI</span><span class="tok-o">=</span>example<span class="tok-w"> </span><span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">0</span><span class="tok-w"> </span><span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>DVD<span class="tok-w"> </span><span class="tok-nv">ARCH</span><span class="tok-o">=</span>x86_64<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span><span class="tok-nv">TEST</span><span class="tok-o">=</span>simple_boot<span class="tok-w"> </span><span class="tok-nv">_GROUP_ID</span><span class="tok-o">=</span><span class="tok-m">0</span><span class="tok-w"> </span><span class="tok-nv">BUILD</span><span class="tok-o">=</span><span class="tok-nb">test</span><span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">    </span><span class="tok-nv">CASEDIR</span><span class="tok-o">=</span>https://github.com/os-autoinst/os-autoinst-distri-example.git<span class="tok-w"> </span><span class="tok-se">\</span>
@@ -14653,7 +14653,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-25 04:43:46 UTC
+Last updated 2026-01-27 04:43:51 UTC
 </div>
 </div>
 </body>
