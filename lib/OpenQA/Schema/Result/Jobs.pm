@@ -11,7 +11,7 @@ use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error);
 use OpenQA::Utils (
     qw(create_git_clone_list parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
-    qw(run_cmd_with_log_return_error needledir testcasedir gitrepodir find_video_files)
+    qw(run_cmd_with_log_return_error needledir testcasedir git_commit_url find_video_files)
 );
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
@@ -1966,8 +1966,8 @@ sub investigate ($self, %args) {
         last;
     }
     $inv{last_good} //= 'not found';
-    $inv{testgiturl} = gitrepodir(distri => $self->DISTRI);
-    $inv{needlegiturl} = gitrepodir(distri => $self->DISTRI, needles => 1);
+    $inv{testgiturl} = git_commit_url(distri => $self->DISTRI);
+    $inv{needlegiturl} = git_commit_url(distri => $self->DISTRI, needles => 1);
     return \%inv;
 }
 

@@ -98,7 +98,7 @@ our @EXPORT = qw(
   needledir
   productdir
   testcasedir
-  gitrepodir
+  git_commit_url
   is_in_tests
   save_base64_png
   run_cmd_with_log
@@ -215,11 +215,11 @@ sub testcasedir ($distri = undef, $version = undef, $rootfortests = undef) {
     return $dir;
 }
 
-=head2 gitrepodir
+=head2 git_commit_url
 
-  gitrepodir(distri => DISTRI, version => VERSION)
+  git_commit_url(distri => DISTRI, version => VERSION)
 
-I<gitrepodir> reads the F<.git/config> of the projects and returns
+I<git_commit_url> reads the F<.git/config> of the projects and returns
 the http(s) address of the remote repository B<origin>.
 The parameters are used to get the correct project directories either for
 needles or tests.
@@ -228,7 +228,7 @@ If the I<.git> directory not found it returns an empty string.
 
 =cut
 
-sub gitrepodir (@args) {
+sub git_commit_url (@args) {
     my %args = (distri => '', version => '', @args);
     my $path = $args{needles} ? needledir($args{distri}, $args{version}) : testcasedir($args{distri}, $args{version});
     my $filename = (-e path($path, '.git')) ? path($path, '.git', 'config') : '';

@@ -397,7 +397,7 @@ subtest 'project directory functions' => sub {
         is resultdir, '/var/lib/openqa/testresults', 'resultdir';
         is assetdir, '/var/lib/openqa/share/factory', 'assetdir';
         is imagesdir, '/var/lib/openqa/images', 'imagesdir';
-        is gitrepodir, '', 'no gitrepodir when distri is not defined';
+        is git_commit_url, '', 'no git_commit_url when distri is not defined';
     };
     subtest 'custom OPENQA_BASEDIR' => sub {
         local $ENV{OPENQA_BASEDIR} = '/tmp/test';
@@ -408,14 +408,14 @@ subtest 'project directory functions' => sub {
         is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
         my $mocked_git = path(sharedir . '/tests/opensuse/.git');
         $mocked_git->remove_tree if -e $mocked_git;
-        is gitrepodir(distri => $distri), '', 'empty when .git is missing';
+        is git_commit_url(distri => $distri), '', 'empty when .git is missing';
         $mocked_git->make_path;
         $mocked_git->child('config')
           ->spew(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
-        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+        is git_commit_url(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
         $mocked_git->child('config')
           ->spew(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
-        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+        is git_commit_url(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
     };
     subtest 'custom OPENQA_BASEDIR and OPENQA_SHAREDIR' => sub {
         local $ENV{OPENQA_BASEDIR} = '/tmp/test';
@@ -425,8 +425,8 @@ subtest 'project directory functions' => sub {
         is resultdir, '/tmp/test/openqa/testresults', 'resultdir';
         is assetdir, '/tmp/share/factory', 'assetdir';
         is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
-        is gitrepodir, '', 'no gitrepodir when distri is not defined';
-        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+        is git_commit_url, '', 'no git_commit_url when distri is not defined';
+        is git_commit_url(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
     };
 };
 
