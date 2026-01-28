@@ -158,6 +158,23 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
             $new_job_args{priority} += $malus;
         }
     }
+    # apply resources throttling control
+    if (my $throttling
+        = OpenQA::App->singleton && OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_data})
+    {
+        my $throttling_info;
+        for my $resource (keys %$throttling) {
+            next if !defined $settings{$resource};
+            my $scale = $throttling->{$resource}->{scale};
+            my $reference = $throttling->{$resource}->{reference};
+            my $prio = int(($settings{$resource} - $reference) * $scale);
+            $throttling_info .= "$resource, scale: $scale" . ($reference ? ", reference: $reference;" : ';');
+            $new_job_args{priority} += $prio;
+        }
+        $debug_msg .= sprintf("\nAdjusting job priority by %s based on resource requirement(s): %s",
+            $new_job_args{priority}, $throttling_info)
+          if $throttling_info;
+    }
 
     my $job = $self->create(\%new_job_args);
     log_debug(sprintf "(Job %d) $debug_msg", $job->id) if $debug_msg;

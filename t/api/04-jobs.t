@@ -1052,6 +1052,42 @@ subtest 'priority correctly assigned when posting job' => sub {
         $t->json_is('/job/priority', 50, 'feature disabled: prio value unchanged');
     };
 
+    subtest 'priority scaled up due to QEMURAM demand' => sub {
+        my $add = 20;
+        local $jobs_post_params{QEMURAM} = 4096;
+
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $add, 'increased prio value');
+    };
+
+    subtest 'priority improved due to QEMURAM low demand' => sub {
+        my $add = -10;
+        local $jobs_post_params{QEMURAM} = 1024;
+
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $add, 'decreased prio value');
+    };
+
+    subtest 'priority scaled up due to HDDSIZEGB demand' => sub {
+        my $add = 2;
+        local $jobs_post_params{HDDSIZEGB} = 40;
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters}
+          = 'XXX :0.2,  FAKE_HDDSIZEGB:0.01, HDDSIZEGB:0.05,  YYY: 0.1';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $add, 'increased prio value');
+    };
+
     # post new job in job group with customized default priority
     $schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
     $jobs_post_params{_GROUP} = 'opensuse test';

@@ -54,11 +54,26 @@ sub _load_config ($app, $defaults, $mode_specific_defaults) {
         _read_config_file($config, $config_file, $defaults, $mode_defaults);
         $config->{ini_config} = $config_file;
     }
-
     # ensure default values are assigned; warn if config files were supplied at all
     _read_config_file($config, undef, $defaults, $mode_defaults);
     $app->log->warn('No configuration files supplied, will fallback to default configuration') unless $config_file;
     return $config;
+}
+
+sub _load_prio_throttling ($app, $config) {
+    return unless my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
+    # floating point number
+    my $n = qr/[+-]?(?:\d+\.?\d*|\.\d+)/;
+    # Unit format = Param.name: scale: reference(optional)
+    my $u = qr/([A-Z_][A-Z0-9_]*):($n)(?::($n))?/i;
+    $throttling =~ s/\s+//g;
+    unless ($throttling =~ qr/^$u(?:,$u)*$/i) {
+        $app->log->warn("Wrong format in openqa.ini 'prio_throttling_parameters': $throttling");
+        return;
+    }
+    my %hash = map { my ($k, $s, $r) = $_ =~ /$u/g; $k => {scale => $s, reference => $r // 0} }
+      split ',', $throttling;
+    return \%hash;
 }
 
 sub read_config ($app) {
@@ -243,6 +258,8 @@ sub read_config ($app) {
             mcp_max_result_size => 500000,
             max_job_time_prio_scale => 100,
             scheduled_product_min_storage_duration => 34,
+            prio_throttling_parameters => '',
+            prio_throttling_data => undef,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
@@ -293,6 +310,7 @@ sub read_config ($app) {
     if (my $minion_fail_job_blocklist = $config->{influxdb}->{ignored_failed_minion_jobs}) {
         $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
     }
+    $config->{misc_limits}->{prio_throttling_data} = _load_prio_throttling($app, $config);
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . join('', map { ":not(.result_$_)" } split(/\s+/, $results));
