@@ -149,6 +149,7 @@ my $jS2 = job_create_with_worker('testC', $jP);
 set_token_header($t->ua, 'token' . $jS1);
 $t->post_ok($m_prefix, form => {name => 'sblock1'})->status_is(200);
 $t->post_ok($m_prefix, form => {name => 'sblock2'})->status_is(200);
+$t->post_ok($m_prefix, form => {name => 'sblock2'})->status_is(409, 'return code in case of conflict (mutex)');
 # Use lock from sibling 2
 set_token_header($t->ua, 'token' . $jS2);
 # Lock & check in DB
@@ -187,7 +188,9 @@ $t->post_ok($b_prefix)->status_is(400);
 # create barrier without number of expected tasks fails
 $t->post_ok($b_prefix, form => {name => 'barrier1'})->status_is(400);
 # create barrier succeeds with 1 expected task
-$t->post_ok($b_prefix, form => {name => 'barrier1', tasks => 1},)->status_is(200);
+$t->post_ok($b_prefix, form => {name => 'barrier1', tasks => 1})->status_is(200);
+$t->post_ok($b_prefix, form => {name => 'barrier1', tasks => 1});
+$t->status_is(409, 'return code in case of conflict (barrier)');
 # barrier is unlocked after one task
 $t->post_ok($b_prefix . '/barrier1', form => {action => 'wait'})->status_is(200);
 # barrier is still unlocked for the same task
