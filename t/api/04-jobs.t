@@ -471,6 +471,14 @@ subtest 'duplicate route' => sub {
 subtest 'parameter validation on artefact upload' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact?file=not-a-file&md5=not-an-md5sum&image=1')->status_is(400);
     $t->json_is({error_status => 400, error => 'Erroneous parameters (file invalid, md5 invalid)'});
+
+    combined_like { $t->post_ok('/api/v1/jobs/34563/artefact')->status_is(404) } qr/artefact for non-existing job/,
+      'upload without job logged';
+    $t->json_is({error_status => 404, error => 'Specified job 34563 does not exist'});
+
+    combined_like { $t->post_ok('/api/v1/jobs/99926/artefact')->status_is(404) }
+    qr/artefact for job with no worker assigned/, 'upload without worker logged';
+    $t->json_is({error_status => 404, error => 'No worker assigned'});
 };
 
 my $expected_result_size = 0;
