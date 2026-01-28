@@ -23,6 +23,7 @@
         % }
         % if (is_admin) {
             <a href="#" onclick="return showAddJobGroup(this);" class="fa fa-2 fa-plus" title="Add new job group in <%= $group->name %>"></a>
+            <a href="#" onclick="return deleteGroup(this, true);" class="fa fa-trash" title="Delete parent group <%= $group->name %>"></a>
         % }
         <span class="fa fa-2 fa-folder" aria-hidden="true"></span>
         <span class="parent-group-name">

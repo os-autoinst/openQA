@@ -18,6 +18,7 @@
                 ondragstart="dragParentGroup(event, this.parentElement);"
             >
             </div>
+            <a href="#" onclick="return deleteGroup(this, false);" class="fa fa-trash" title="Delete job group <%= $group->name %>"></a>
         % }
         <i class="fa fa-bars"></i>
         <span>
