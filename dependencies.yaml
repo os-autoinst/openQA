@@ -188,6 +188,7 @@ test_requires:
   '%worker_requires':
   openssh-common:
   curl:
+  file:
   jq:
   os-autoinst:
   postgresql-server: '>= 14'
