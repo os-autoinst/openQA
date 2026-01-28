@@ -829,7 +829,12 @@ subtest 'async flag' => sub {
 subtest 're-schedule product' => sub {
     plan skip_all => 'previous test "async flag" has not scheduled a product' unless $scheduled_product_id;
 
-    my $res = schedule_iso($t, {scheduled_product_clone_id => $scheduled_product_id}, 200, {async => 1});
+    my $res = schedule_iso($t, {scheduled_product_clone_id => 'foobar'}, 400);
+    like $res->body, qr/scheduled_product_id.*invalid/, 'error returned if scheduled product to clone from is invalid';
+    $res = schedule_iso($t, {scheduled_product_clone_id => 1234567}, 404);
+    like $res->body, qr/to clone.*not found/, 'error returned if scheduled product to clone from does not exist';
+
+    $res = schedule_iso($t, {scheduled_product_clone_id => $scheduled_product_id}, 200, {async => 1});
     my $json = $res->json;
     my $cloned_scheduled_product_id = $json->{scheduled_product_id};
     ok($cloned_scheduled_product_id, 'scheduled product ID returned');
