@@ -11,7 +11,6 @@ requires 'Carp';
 requires 'Carp::Always', '>= 0.14.02';
 requires 'CommonMark';
 requires 'Config::IniFiles';
-requires 'Config::Tiny';
 requires 'Cpanel::JSON::XS', '>= 4.09';
 requires 'Cwd';
 requires 'DBD::Pg', '>= 3.007004';
