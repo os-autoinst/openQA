@@ -243,6 +243,7 @@ sub read_config ($app) {
             mcp_max_result_size => 500000,
             max_job_time_prio_scale => 100,
             scheduled_product_min_storage_duration => 34,
+            prio_throttling_parameters => '',
         },
         archiving => {
             archive_preserved_important_jobs => 0,
@@ -292,6 +293,12 @@ sub read_config ($app) {
     $minion_task_triggers->{$_} = [split(/\s+/, $minion_task_triggers->{$_})] for keys %{$minion_task_triggers};
     if (my $minion_fail_job_blocklist = $config->{influxdb}->{ignored_failed_minion_jobs}) {
         $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
+    }
+    my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
+    if ($throttling && length $throttling) {
+        $config->{misc_limits}->{prio_throttling_parameters} =~ s/\s+//g;
+        die("Wrong formatting for 'prio_throttling_parameters' in openqa.ini")
+          unless ($throttling =~ /^[A-Z_]+=\d+:\d+(?:,[A-Z_]+=\d+:\d+)*$/i);
     }
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
