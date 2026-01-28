@@ -32,6 +32,7 @@ coverage:
           - lib/OpenQA/WebAPI/Controller/API/V1/JobTemplate.pm
           - lib/OpenQA/WebAPI/Controller/API/V1/Locks.pm
           - lib/OpenQA/WebAPI/Controller/API/V1/Mm.pm
+          - lib/OpenQA/WebAPI/Controller/API/V1/Search.pm
       tests:
         target: 100.0
         threshold: 0
