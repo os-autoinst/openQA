@@ -70,6 +70,7 @@ is $cfg->{audit}->{blocklist}, 'job_grab', 'blocklist updated';
 my $schema = $t->app->schema;
 my $assets = $schema->resultset('Assets');
 my $jobs = $schema->resultset('Jobs');
+my $workers = $schema->resultset('Workers');
 my $comments = $schema->resultset('Comments');
 my $products = $schema->resultset('Products');
 my $testsuites = $schema->resultset('TestSuites');
@@ -790,6 +791,26 @@ subtest 'update job status' => sub {
           or always_explain $response;
         # note: The arrays are supposed to be sorted so it is fine to assume a fix order here.
     };
+
+    $schema->txn_begin;
+
+    subtest 'update running job using assigned worker' => sub {
+        my $job = $jobs->search({id => 99963});
+        my $worker = $workers->search({job_id => 99963});
+
+        $job->update({state => RUNNING, result => NONE, assigned_worker_id => 2, t_finished => undef});
+        $worker->update({job_id => undef});
+        $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 2}})->status_is(200);
+        is $worker->count, 1, 'job of assigned worker updated';
+
+        $job->update({state => RUNNING, result => NONE, assigned_worker_id => undef});
+        $worker->update({job_id => undef});
+        $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 2}})->status_is(400);
+        $t->json_like('/error' => qr/worker 2.*not.*assigned/, 'error about update without assigned worker');
+        is $worker->count, 0, 'job of worker not updated';
+    };
+
+    $schema->txn_rollback;
 
     subtest 'wrong parameters' => sub {
         combined_like {
