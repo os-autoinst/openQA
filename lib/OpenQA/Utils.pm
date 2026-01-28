@@ -230,11 +230,12 @@ If the I<.git> directory not found it returns an empty string.
 sub git_commit_url ($repo_url) {
     return '' unless defined $repo_url;
     if ($repo_url =~ m/^http(s?)/) {
-        $repo_url =~ s{\.git$}{/commit/};
-        return $repo_url;
+        $repo_url =~ s{\.git$}{};
+        return $repo_url . '/commit/';
     }
     my @url_tokenized = split /:/, $repo_url;
-    $url_tokenized[1] =~ s{\.git$}{/commit/};
+    $url_tokenized[1] =~ s{\.git$}{};
+    $url_tokenized[1] .= '/commit/';
     my @githost = split('@', $url_tokenized[0]);
     return "https://$githost[1]/$url_tokenized[1]";
 }

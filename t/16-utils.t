@@ -410,6 +410,10 @@ subtest 'project directory functions' => sub {
         is git_commit_url("git\@github.com:$repo.git"), "https://github.com/$repo/commit/", 'correct git url for ssh';
         is git_commit_url("https://github.com/$repo.git"), "https://github.com/$repo/commit/",
           'correct git url for http';
+        is git_commit_url("git\@github.com:$repo"), "https://github.com/$repo/commit/",
+          'correct ssh url without .git extension';
+        is git_commit_url("https://github.com/$repo"), "https://github.com/$repo/commit/",
+          'correct https url without .git extension';
     };
     subtest 'custom OPENQA_BASEDIR and OPENQA_SHAREDIR' => sub {
         local $ENV{OPENQA_BASEDIR} = '/tmp/test';
