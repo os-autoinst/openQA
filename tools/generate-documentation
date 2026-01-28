@@ -200,15 +200,25 @@ check_asciidoctor() {
 install_asciidoctor() {
     # install dependencies
     gem install asciidoctor
-    gem install pygments.rb -v 2.4.1 # newer versions need Ruby 2.6
-    [[ ${formats[pdf]} ]] && {
-        gem install public_suffix -v 4.0.7 # newer versions need Ruby 2.6
-        gem install css_parser -v 1.12.0   # newer versions need Ruby 2.7
-        gem install ttfunk -v 1.7.0
-        gem install Ascii85 -v 1.1.1         # newer versions need Ruby 2.7
-        gem install afm -v 0.2.2             # newer versions need Ruby 3.2.0
-        gem install asciidoctor-pdf -v 1.6.2 # newer versions need Ruby 2.7
-    }
+
+    ruby_version=$(ruby --version | cut -f 2 -d ' ')
+    if [[ $ruby_version =~ ^2 ]]; then
+        gem install pygments.rb -v 2.4.1 # newer versions need Ruby 2.6
+        [[ ${formats[pdf]} ]] && {
+            gem install public_suffix -v 4.0.7 # newer versions need Ruby 2.6
+            gem install css_parser -v 1.12.0   # newer versions need Ruby 2.7
+            gem install ttfunk -v 1.7.0
+            gem install Ascii85 -v 1.1.1         # newer versions need Ruby 2.7
+            gem install afm -v 0.2.2             # newer versions need Ruby 3.2.0
+            gem install asciidoctor-pdf -v 1.6.2 # newer versions need Ruby 2.7
+        }
+    else
+        gem install pygments.rb
+        [[ ${formats[pdf]} ]] && {
+            gem install asciidoctor-pdf
+        }
+    fi
+
     cpanm -M https://cpan.metacpan.org --install Pod::AsciiDoctor
 }
 
