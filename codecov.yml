@@ -27,6 +27,7 @@ coverage:
           - lib/OpenQA/WebAPI/Controller/Step.pm
           - lib/OpenQA/WebAPI/Controller/Test.pm
           - lib/OpenQA/WebAPI/Controller/API/V1/Iso.pm
+          - lib/OpenQA/WebAPI/Controller/API/V1/Job.pm
           - lib/OpenQA/WebAPI/Controller/API/V1/Mm.pm
       tests:
         target: 100.0
