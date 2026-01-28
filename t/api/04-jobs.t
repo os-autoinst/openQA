@@ -469,11 +469,8 @@ subtest 'duplicate route' => sub {
 };
 
 subtest 'parameter validation on artefact upload' => sub {
-    $t->post_ok('/api/v1/jobs/99963/artefact?file=not-a-file&md5=not-an-md5sum&image=1')->status_is(400)->json_is(
-        {
-            error_status => 400,
-            error => 'Erroneous parameters (file invalid, md5 invalid)',
-        });
+    $t->post_ok('/api/v1/jobs/99963/artefact?file=not-a-file&md5=not-an-md5sum&image=1')->status_is(400);
+    $t->json_is({error_status => 400, error => 'Erroneous parameters (file invalid, md5 invalid)'});
 };
 
 my $expected_result_size = 0;
