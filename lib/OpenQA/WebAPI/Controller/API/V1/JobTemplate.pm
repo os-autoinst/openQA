@@ -415,19 +415,7 @@ sub create ($self) {
     else {
         $self->emit_event(openqa_jobtemplate_create => $json);
     }
-
-    $self->respond_to(
-        json => {json => $json, status => $status},
-        html => sub {
-            if ($error) {
-                $self->flash(error => "Error adding the job template: $error");
-            }
-            else {
-                $self->flash(info => 'Job template added');
-            }
-            $self->res->code(303);
-            $self->redirect_to($self->req->headers->referrer);
-        });
+    $self->render(json => $json, status => $status);
 }
 
 =over 4
@@ -473,18 +461,7 @@ sub destroy ($self) {
     }
 
     $json->{error} = $error if $error;
-    $self->respond_to(
-        json => {json => $json, status => $status},
-        html => sub {
-            if ($error) {
-                $self->flash(error => "Error deleting the job template: $error");
-            }
-            else {
-                $self->flash(info => 'Job template deleted');
-            }
-            $self->res->code(303);
-            $self->redirect_to($self->req->headers->referrer);
-        });
+    $self->render(json => $json, status => $status);
 }
 
 1;
