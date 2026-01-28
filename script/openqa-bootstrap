@@ -112,8 +112,8 @@ su postgres -c "$OPENQA_DIR/script/setup-db" "$dbuser" "$dbname"
 proxy_args=""
 [[ -n "$setup_web_proxy" ]] && proxy_args="--proxy=$setup_web_proxy"
 setup=$OPENQA_DIR/script/configure-web-proxy
-if command -v $setup; then
-    bash -ex $setup "$proxy_args"
+if command -v "$setup"; then
+    bash -ex "$setup" "$proxy_args"
 else
     curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex -s -- "$proxy_args"
 fi

@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::User;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
+use DateTime::Format::Pg;
+use Feature::Compat::Try;
 
 =pod
 
@@ -30,13 +32,80 @@ Deletes an existing user.
 
 =cut
 
-sub delete {
-    my ($self) = @_;
+sub delete ($self) {
     my $user = $self->schema->resultset('Users')->find($self->param('id'));
     return $self->render(json => {error => 'Not found'}, status => 404) unless $user;
     my $result = $user->delete();
     $self->emit_event('openqa_user_deleted', {username => $user->username});
     $self->render(json => {result => $result});
+}
+
+=over 4
+
+=item create_api_key()
+
+Create a new API key.
+
+=back
+
+=cut
+
+sub create_api_key ($self) {
+    my $user = $self->current_user;
+    my $expiration;
+    my $validation = $self->validation;
+    $validation->optional('expiration', 'seconds_optional')->datetime;
+    return $self->render(
+        json => {error => 'Date must be in format ' . DateTime::Format::Pg->format_datetime(DateTime->now())},
+        status => 400
+    ) if $validation->has_error;
+    $expiration
+      = $validation->is_valid('expiration')
+      ? DateTime::Format::Pg->parse_datetime($validation->param('expiration'))
+      : DateTime->now->add(years => 1);
+    my $apikey = $user->api_keys->create({t_expiration => $expiration});
+    $self->render(json => {id => $apikey->id, key => $apikey->key, t_expiration => $apikey->t_expiration});
+}
+
+=over 4
+
+=item list_api_keys()
+
+List API keys of the current user.
+
+=back
+
+=cut
+
+sub list_api_keys ($self) {
+    my $user = $self->current_user;
+    my @keys = map {
+        {
+            key => $_->key,
+            t_expiration => $_->t_expiration,
+            t_created => $_->t_created,
+            t_updated => $_->t_updated,
+        }
+    } $user->api_keys->all;
+    $self->render(json => {keys => \@keys});
+}
+
+=over 4
+
+=item delete_api_key()
+
+Delete a specific API key of the current user.
+
+=back
+
+=cut
+
+sub delete_api_key ($self) {
+    my $user = $self->current_user;
+    my $key = $user->api_keys->find({key => $self->param('key')});
+    return $self->render(json => {error => 'Not found'}, status => 404) unless $key;
+    $key->delete;
+    $self->render(json => {result => 1});
 }
 
 1;
