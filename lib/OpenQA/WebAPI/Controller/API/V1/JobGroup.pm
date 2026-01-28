@@ -38,9 +38,7 @@ Reports true if the job group given to the method is a parent group.
 
 =cut
 
-sub is_parent ($self) {
-    return $self->req->url->path =~ qr/.*\/parent_groups/;
-}
+sub is_parent ($self) { $self->req->url->path =~ qr/.*\/parent_groups/ }
 
 =over 4
 
@@ -52,9 +50,7 @@ Returns results for a set of groups.
 
 =cut
 
-sub resultset ($self) {
-    return $self->schema->resultset($self->is_parent ? 'JobGroupParents' : 'JobGroups');
-}
+sub resultset ($self) { $self->schema->resultset($self->is_parent ? 'JobGroupParents' : 'JobGroups') }
 
 =over 4
 
@@ -67,18 +63,10 @@ Returns information from a job group given its ID.
 =cut
 
 sub find_group ($self) {
-    my $group_id = $self->param('group_id');
-    if (!defined $group_id) {
-        $self->render(json => {error => 'No group ID specified'}, status => 400);
-        return;
-    }
-
-    my $group = $self->resultset->find($group_id);
-    if (!$group) {
-        $self->render(json => {error => "Job group $group_id does not exist"}, status => 404);
-        return;
-    }
-
+    return $self->render(json => {error => 'No group ID specified'}, status => 400) && 0
+      unless defined(my $group_id = $self->param('group_id'));
+    return $self->render(json => {error => "Job group $group_id does not exist"}, status => 404) && 0
+      unless my $group = $self->resultset->find($group_id);
     return $group;
 }
 
@@ -297,8 +285,7 @@ Updates the properties of a job group.
 =cut
 
 sub update ($self) {
-    my $group = $self->find_group;
-    return unless $group;
+    return unless my $group = $self->find_group;
 
     my $validation = $self->validation;
     # Don't check group name if sorting group by dragging
@@ -336,8 +323,7 @@ List jobs belonging to a job group.
 =cut
 
 sub list_jobs ($self) {
-    my $group = $self->find_group;
-    return unless $group;
+    return unless my $group = $self->find_group;
 
     my @jobs;
     if ($self->param('expired')) {
@@ -361,8 +347,7 @@ If not empty (there are existing jobs), it will return an error.
 =cut
 
 sub delete ($self) {
-    my $group = $self->find_group();
-    return unless $group;
+    return unless my $group = $self->find_group;
 
     if ($group->can('jobs') && scalar($group->jobs) != 0) {
         return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 400);

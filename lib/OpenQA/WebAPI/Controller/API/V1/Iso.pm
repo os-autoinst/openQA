@@ -38,21 +38,12 @@ Returns (status) information and jobs for a previously scheduled product via cre
 
 =cut
 
-sub show_scheduled_product {
-    my ($self) = @_;
-
+sub show_scheduled_product ($self) {
     my $scheduled_product_id = $self->param('scheduled_product_id');
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    my $scheduled_product = $scheduled_products->find($scheduled_product_id);
-    if (!$scheduled_product) {
-        return $self->render(
-            json => {error => 'Scheduled product does not exist.'},
-            status => 404,
-        );
-    }
-
+    return $self->render(json => {error => 'Scheduled product does not exist.'}, status => 404)
+      unless my $scheduled_product = $scheduled_products->find($scheduled_product_id);
     my @args = (include_job_ids => $self->param('include_job_ids'));
-
     $self->render(json => $scheduled_product->to_hash(@args));
 }
 

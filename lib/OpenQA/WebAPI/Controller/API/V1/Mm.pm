@@ -1,10 +1,11 @@
-# Copyright 2015 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Mm;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-use OpenQA::Jobs::Constants;
+use OpenQA::Jobs::Constants qw(RUNNING SCHEDULED DONE);
+use OpenQA::JobDependencies::Constants qw(PARALLEL);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 
@@ -38,24 +39,22 @@ JSON block with the list.
 
 # this needs 2 calls to do anything useful
 # IMHO it should be replaced with get_children and removed
-sub get_children_status {
-    my ($self) = @_;
-    my $state = $self->stash('state');
-    if ($state eq 'running') {
-        $state = OpenQA::Jobs::Constants::RUNNING;
-    }
-    elsif ($state eq 'scheduled') {
-        $state = OpenQA::Jobs::Constants::SCHEDULED;
-    }
-    else {
-        $state = OpenQA::Jobs::Constants::DONE;
-    }
-    my $jobid = $self->stash('job_id');
 
-    my @res = $self->schema->resultset('Jobs')
-      ->search({'parents.parent_job_id' => $jobid, state => $state}, {columns => ['id'], join => 'parents'});
-    my @res_ids = map { $_->id } @res;
-    return $self->render(json => {jobs => \@res_ids}, status => 200);
+my %STATE_MAPPING = (running => RUNNING, scheduled => SCHEDULED);
+
+sub get_children_status ($self) {
+    my $state = $STATE_MAPPING{$self->stash('state')} // DONE;
+    my $jobid = $self->stash('job_id');
+    my $jobs = $self->schema->resultset('Jobs');
+    my %attr = (columns => ['id'], join => 'parents');
+    my @res = $jobs->search({'parents.parent_job_id' => $jobid, state => $state}, \%attr);
+    return $self->render(json => {jobs => [map { $_->id } @res]}, status => 200);
+}
+
+sub _find_jobs ($self, $id_column, $dependency_column, $columns, $join) {
+    my $job_id = $self->stash('job_id');
+    my $jobs = $self->schema->resultset('Jobs');
+    [$jobs->search({$id_column => $job_id, $dependency_column => PARALLEL}, {columns => $columns, join => $join})->all];
 }
 
 =over 4
@@ -69,17 +68,9 @@ children jobs, their id and state is returned in a JSON block.
 
 =cut
 
-sub get_children {
-    my ($self) = @_;
-    my $jobid = $self->stash('job_id');
-
-    my @res
-      = $self->schema->resultset('Jobs')
-      ->search(
-        {'parents.parent_job_id' => $jobid, 'parents.dependency' => OpenQA::JobDependencies::Constants::PARALLEL},
-        {columns => ['id', 'state'], join => 'parents'});
-    my %res_ids = map { ($_->id, $_->state) } @res;
-    return $self->render(json => {jobs => \%res_ids}, status => 200);
+sub get_children ($self) {
+    my $jobs = $self->_find_jobs('parents.parent_job_id', 'parents.dependency', ['id', 'state'], 'parents');
+    $self->render(json => {jobs => {map { ($_->id, $_->state) } @$jobs}}, status => 200);
 }
 
 =over 4
@@ -93,17 +84,9 @@ parents jobs, their id is returned in a JSON block.
 
 =cut
 
-sub get_parents {
-    my ($self) = @_;
-    my $jobid = $self->stash('job_id');
-
-    my @res
-      = $self->schema->resultset('Jobs')
-      ->search(
-        {'children.child_job_id' => $jobid, 'children.dependency' => OpenQA::JobDependencies::Constants::PARALLEL},
-        {columns => ['id'], join => 'children'});
-    my @res_ids = map { $_->id } @res;
-    return $self->render(json => {jobs => \@res_ids}, status => 200);
+sub get_parents ($self) {
+    my $jobs = $self->_find_jobs('children.child_job_id', 'children.dependency', ['id'], 'children');
+    return $self->render(json => {jobs => [map { $_->id } @$jobs]}, status => 200);
 }
 
 1;
