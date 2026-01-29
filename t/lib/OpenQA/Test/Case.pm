@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Test::Case;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 require OpenQA::Test::Database;
 use Exporter 'import';
@@ -14,18 +14,13 @@ use Mojo::JSON 'decode_json';
 
 our @EXPORT_OK = qw(find_most_recent_event);
 
-sub new {
-    my ($class, %options) = @_;
+sub new ($class, %options) {
     my $self = $class->SUPER::new;
-
     $ENV{OPENQA_CONFIG} = $options{config_directory} // 't/data';
-
     return $self;
 }
 
-sub init_data {
-    my ($self, %options) = @_;
-
+sub init_data ($self, %options) {
     my $schema = OpenQA::Test::Database->new->create(%options);
 
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -34,9 +29,7 @@ sub init_data {
     return $schema;
 }
 
-sub login {
-    my ($self, $test, $username) = @_;
-
+sub login ($self, $test, $username, %attrs) {
     my $app = $test->app;
     my $sessions = $app->sessions;
     my $c = $app->build_controller;
@@ -46,7 +39,7 @@ sub login {
     # Hack the existing session cookie and add a user to pretend we logged in
     $c->req->cookies($cookie);
     $sessions->load($c);
-    OpenQA::Schema->singleton->resultset('Users')->create_user($username);
+    OpenQA::Schema->singleton->resultset('Users')->create_user($username, %attrs);
     $c->session->{user} = $username;
     $sessions->store($c);
     $cookie->value($c->res->cookie($name)->value);
@@ -55,14 +48,9 @@ sub login {
 }
 
 ## test helpers
-sub trim_whitespace {
-    my ($str) = @_;
-    return $str =~ s/\s+/ /gr =~ s/(^\s)|(\s$)//gr;
-}
+sub trim_whitespace ($str) { return $str =~ s/\s+/ /gr =~ s/(^\s)|(\s$)//gr }
 
-sub find_most_recent_event {
-    my ($schema, $event) = @_;
-
+sub find_most_recent_event ($schema, $event) {
     my $result
       = $schema->resultset('AuditEvents')->find({event => $event}, {rows => 1, order_by => {-desc => 'id'}});
     return undef unless $result;
