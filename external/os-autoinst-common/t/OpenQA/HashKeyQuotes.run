@@ -8,6 +8,9 @@ $h{"line\nbreak"} = 2;
 $h{'special!'} = 3;
 $h{'concatenate_' . 'strings'} = 4;
 $h{bare2 } = 5;
+$h{"0123"} = 6;
+$h{"Inf"} = 7;
+$h{"3_14"} = 7;
 
 ## name Failing
 ## failures 4

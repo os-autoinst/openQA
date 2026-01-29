@@ -9,6 +9,7 @@ use experimental 'signatures';
 use base 'Perl::Critic::Policy';
 
 use Perl::Critic::Utils qw( :severities :classification :ppi );
+use Scalar::Util qw(looks_like_number);
 
 our $VERSION = '0.0.1';
 
@@ -29,6 +30,8 @@ sub violates ($self, $elem, $document) {
     my $k = $elem->can('literal') ? $elem->literal : $elem->string;
 
     # skip anything that has a special symbol in the content
+    return () if looks_like_number $k;
+    return () if $k =~ m/^[0-9_]+$/;
     return () unless $k =~ m/^\w+$/;
 
     # report violation
