@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright 2015-2021 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
@@ -17,10 +17,11 @@ use Test::MockModule;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::App;
+use OpenQA::Constants 'WORKER_COMMAND_CANCEL';
 use OpenQA::Events;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
-use OpenQA::Test::Case;
+use OpenQA::Test::Case 'find_most_recent_event';
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Utils 'perform_minion_jobs';
 use OpenQA::Jobs::Constants;
@@ -869,26 +870,23 @@ subtest 'validation of test name' => sub {
 };
 
 subtest 'cancel job' => sub {
-    $t->post_ok('/api/v1/jobs/99963/cancel')->status_is(200);
-    is_deeply(
-        OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel'),
-        {id => 99963, reason => undef},
-        'Cancellation was logged correctly'
-    );
+    isnt $jobs->find(99963)->result, NONE, 'job 99963 has already a result at this point';
+    $t->post_ok('/api/v1/jobs/99963/cancel');
+    $t->status_is(200, 'cancellation considered successful even if job already has a result');
+    is_deeply find_most_recent_event($schema, 'job_cancel'), {id => 99963, reason => undef}, 'cancellation was logged';
 
-    $t->post_ok('/api/v1/jobs/99963/cancel?reason=Undecided')->status_is(200);
-    is_deeply(
-        OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel'),
-        {id => 99963, reason => 'Undecided'},
-        'Cancellation was logged with reason'
-    );
+    $jobs->search({id => 99963})->update({assigned_worker_id => 1, result => NONE});
+    combined_like { $t->post_ok('/api/v1/jobs/99963/cancel?reason=Undecided') } qr/Failed dispatching message/s,
+      'tried to send cancellation to worker';
+    $t->status_is(200, 'cancellation considered successful even if sending command to worker failed');
+    is_deeply find_most_recent_event($schema, 'job_cancel'), {id => 99963, reason => 'Undecided'},
+      'cancellation was logged with reason';
 
     my $form = {TEST => 'spam_eggs'};
     $t->post_ok('/api/v1/jobs', form => $form)->status_is(200);
     $t->post_ok('/api/v1/jobs/cancel', form => $form)->status_is(200);
     is($t->tx->res->json->{result}, 1, 'number of affected jobs returned') or always_explain $t->tx->res->json;
-    is_deeply(OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
-        $form, 'Cancellation was logged with settings');
+    is_deeply find_most_recent_event($schema, 'job_cancel_by_settings'), $form, 'cancellation was logged with settings';
 };
 
 # helper to find a build in the JSON results

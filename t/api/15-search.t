@@ -109,7 +109,7 @@ subtest 'Job templates' => sub {
     );
 
     my $test_suite_apple = $test_suites->create({name => 'apple'});
-    $job_templates->create(
+    my $job_template = $job_templates->create(
         {
             group_id => $group->id,
             product_id => $product->id,
@@ -121,6 +121,14 @@ subtest 'Job templates' => sub {
     $t->json_is(
         '/data/results/templates/0' => {occurrence => 'Cool Group', contents => "apple\n"},
         'job template was found by using test suite name'
+    );
+
+    $job_template->update({name => 'fancy-example-2'});
+    $t->get_ok('/api/v1/experimental/search?q=fancy-example', 'search successful');
+    $t->json_is(
+        '/data/results/templates/0' =>
+          {occurrence => 'Cool Group', contents => "fancy-example\nVery posh\nfancy-example-2\n"},
+        'two job templates were found by using the job template name'
     );
 };
 

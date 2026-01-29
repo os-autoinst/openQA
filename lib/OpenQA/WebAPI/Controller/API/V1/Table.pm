@@ -1,5 +1,4 @@
-# Copyright 2014 SUSE LLC
-#           (C) 2015 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Table;
@@ -224,21 +223,17 @@ sub _verify_table_usage {
       : undef;
 }
 
-sub update {
-    my ($self) = @_;
+sub update ($self) {
     my $table = $self->param('table');
-
     my $entry = {};
     my ($error_message, $settings, $keys) = $self->_prepare_settings($table, $entry);
-
     return $self->render(json => {error => $error_message}, status => 400) if defined $error_message;
 
-    my $schema = $self->schema;
-
     my $error;
-    my $ret;
+    my $status = 400;
+    my $schema = $self->schema;
     my $update = sub {
-        my $rc = $schema->resultset($table)->find({id => $self->param('id')});
+        return $status = 404 unless my $rc = $schema->resultset($table)->find({id => $self->param('id')});
         # Tables used in a group configured in YAML must not be renamed
         if (
             (($table eq 'TestSuites' || $table eq 'Machines') && $rc->name ne $self->param('name'))
@@ -250,38 +245,25 @@ sub update {
                     || $rc->version ne $self->param('version'))))
         {
             my $error_message = $self->_verify_table_usage($table, $self->param('id'));
-            $ret = 0;
             die "$error_message\n" if $error_message;
         }
-        if ($rc) {
-            $rc->update($entry);
-            for my $var (@$settings) {
-                $rc->update_or_create_related('settings', $var);
-            }
-            $rc->delete_related('settings', {key => {'not in' => [@$keys]}});
-            $ret = 1;
-        }
-        else {
-            $ret = 0;
-        }
+        $rc->update($entry);
+        $rc->update_or_create_related('settings', $_) for @$settings;
+        $rc->delete_related('settings', {key => {'not in' => [@$keys]}});
     };
 
     try {
         $schema->txn_do($update);
+        $status = 200;
     }
     catch ($e) {
         # The first line of the backtrace gives us the error message we want
         $error = (split /\n/, $e)[0];
     }
+    return $self->render(json => {error => $error // 'Not found'}, status => $status) unless $status == 200;
 
-    if ($ret && $ret == 0) {
-        return $self->render(json => {error => 'Not found'}, status => 404);
-    }
-    if (!$ret) {
-        return $self->render(json => {error => $error}, status => 400);
-    }
     $self->emit_event('openqa_table_update', {table => $table, name => $entry->{name}, settings => $settings});
-    $self->render(json => {result => int($ret)});
+    $self->render(json => {result => 1});
 }
 
 =over 4
