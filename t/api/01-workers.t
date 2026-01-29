@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright 2014-2020 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
@@ -8,6 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use Test::Mojo;
+use Test::MockModule;
 use Test::Warnings qw(:all :report_warnings);
 use Test::Output qw(combined_like);
 use Mojo::URL;
@@ -100,6 +101,13 @@ $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'w
   ->json_is('/error' => 'Erroneous parameters (worker_class missing)');
 
 $registration_params{worker_class} = 'bar';
+my $worker_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Worker');
+$worker_mock->redefine(_register => sub (@) { die "some error\n" });
+$t->post_ok('/api/v1/workers', form => \%registration_params);
+$t->status_is(500, 'internal error occurred during registration');
+$t->json_is('/error', "Failed: some error\n");
+
+undef $worker_mock;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(426, 'worker informed to upgrade');
 
 $workers->find(\%worker_key)->update({error => 'cache not available'});
@@ -305,6 +313,13 @@ subtest 'delete offline worker' => sub {
             instance => 5,
             t_seen => time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY, 'UTC'),
         });
+
+    my $worker_mock = Test::MockModule->new('OpenQA::Schema::Result::Workers');
+    $worker_mock->redefine(delete => sub (@) { die "some deletion error\n" });
+    $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(409, 'error during deletion returned as a conflict');
+    $t->json_is('/error', "some deletion error\n");
+
+    undef $worker_mock;
     $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, 'offline worker deleted');
 
     is_deeply(
