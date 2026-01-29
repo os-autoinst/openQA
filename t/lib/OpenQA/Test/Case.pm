@@ -1,15 +1,18 @@
-# Copyright 2014-2020 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Test::Case;
 use Mojo::Base -base;
 
 require OpenQA::Test::Database;
+use Exporter 'import';
 use OpenQA::Test::Testresults;
 use OpenQA::Schema::Result::Users;
 use OpenQA::Schema;
 use Date::Format 'time2str';
 use Mojo::JSON 'decode_json';
+
+our @EXPORT_OK = qw(find_most_recent_event);
 
 sub new {
     my ($class, %options) = @_;
