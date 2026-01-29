@@ -165,7 +165,7 @@ sub _account_for_deletion ($margin_bytes, $margin_bytes_main_storage, $deleted_r
 }
 
 sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_cond, $margin_bytes,
-    $margin_bytes_main_storage, $archived)
+    $margin_bytes_main_storage, $margin_bytes_archive_storage, $archived)
 {
     # caveat: The subsequent cleanup simply deletes stuff from old jobs first. It does not take the retention periods
     #         configured on job group level into account anymore.
@@ -174,6 +174,19 @@ sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_c
 
     my $from = $archived ? 'archive' : 'results dir';
     return (1, "Nothing to do for $from") if $$margin_bytes >= 0;
+
+    if ($margin_bytes_archive_storage && !$archived) {
+      log_debug "Archiving non-important jobs starting from oldest job";
+      my $relevant_jobs = $jobs->search({@job_id_args, @$not_important_cond, logs_present => 1}, \%jobs_params);
+      while (my $openqa_job = $relevant_jobs->next) {
+        # TODO: Archive if $openqa_job->result_size fits $$margin_bytes_archive_storage. Do accounting and early
+        #       return similar to other cases.
+      }
+
+      log_debug "Archiving important jobs starting from oldest job";
+      # TODO: Similar to before but for important jobs; we should probably avoid the duplication here and in
+      #       subsequent code at this point. This should probably be the first step (before this WIP commit).
+    }
 
     log_debug
       "Deleting videos from non-important jobs starting from oldest job (from $from, balance is $$margin_bytes)";
@@ -225,6 +238,7 @@ sub _ensure_results_below_threshold ($job, @) {
     my $limits = $job->app->config->{misc_limits};
     my $min_free_percentage = $limits->{results_min_free_disk_space_percentage} // 'none';
     my $min_free_percentage_ar = $limits->{archive_min_free_disk_space_percentage};
+    my $archive = $limits->{archive_via_min_free_disk_space_cleanup};
     my $dry = $limits->{dry_min_free_disk_space_cleanup};
     return $job->finish('No minimum free disk space percentage configured') if $min_free_percentage eq 'none';
     return $job->fail(_format_percentage_error(results_min_free_disk_space_percentage => $min_free_percentage))
@@ -282,11 +296,11 @@ sub _ensure_results_below_threshold ($job, @) {
     my ($ok_ar, @message_ar)
       = defined $min_free_percentage_ar
       ? _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes_ar,
-        \$margin_bytes, 1)
+        \$margin_bytes, undef, 1)
       : (1);
     my ($ok, @message)
       = _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes,
-        \$margin_bytes, 0);
+        \$margin_bytes, $archive ? \$margin_bytes_ar : undef, 0);
     my $method = $ok && $ok_ar ? 'finish' : 'fail';
     $job->$method(join "\n", @message, @message_ar);
 }
