@@ -1,5 +1,6 @@
 package OpenQA::Test::PatchDeparse;
 use Test::Most;
+# Can be removed once support for Perl <= 5.26 is dropped
 
 # Monkeypatch B::Deparse
 # https://progress.opensuse.org/issues/40895
@@ -54,12 +55,6 @@ no strict 'refs';
 # ----> PATCH
 #>>>
 
-}
-elsif ($B::Deparse::VERSION) {
-    # when we update to a new perl version, this will remind us about checking
-    # if the bug is still there
-    diag
-      "Using B::Deparse v$B::Deparse::VERSION. If you see 'uninitialized' warnings, update patch in t/lib/OpenQA/Test/PatchDeparse.pm";
 }
 ## use critic
 1;
