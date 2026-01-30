@@ -29,7 +29,7 @@ sub init_data ($self, %options) {
     return $schema;
 }
 
-sub login ($self, $test, $username, %attrs) {
+sub login ($self, $test, $username) {
     my $app = $test->app;
     my $sessions = $app->sessions;
     my $c = $app->build_controller;
@@ -39,7 +39,7 @@ sub login ($self, $test, $username, %attrs) {
     # Hack the existing session cookie and add a user to pretend we logged in
     $c->req->cookies($cookie);
     $sessions->load($c);
-    OpenQA::Schema->singleton->resultset('Users')->create_user($username, %attrs);
+    OpenQA::Schema->singleton->resultset('Users')->create_user($username);
     $c->session->{user} = $username;
     $sessions->store($c);
     $cookie->value($c->res->cookie($name)->value);
