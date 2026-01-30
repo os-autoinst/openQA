@@ -1941,7 +1941,7 @@ mcp_enabled = read-only
 
 Once enabled the experimental MCP endpoint becomes available under the path
 `/experimental/mcp`. At the moment all implemented MCP tools are read-only,
-that means LLMs can review infomation provided by openQA, but are unable to
+that means LLMs can review information provided by openQA, but are unable to
 make changes or trigger actions. Once write operations become available
 with future updates, they will have to be enabled with a different setting
 in `openqa.ini` for security reasons.
