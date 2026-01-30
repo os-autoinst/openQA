@@ -52,14 +52,21 @@ Here is an example in Perl:
 
 [source,perl]
 -------------------------------------------------------------------
-use Mojo::Base "basetest";
+use Mojo::Base 'basetest', -signatures;
 use testapi;
 
 sub run {
     # write in this block the code for your test.
 }
 -------------------------------------------------------------------
-* **Note:** `Mojo::Base` _automatically enables: strict, warnings, utf8, perl5.16. See https://docs.mosjolicious.org/Mojo/Base#DESCRIPTION[Mojo::Base Description]_
+
+NOTE: The line `use Mojo::Base …` automatically enables modern Perl
+conventions/features which is highly recommended. Check out the
+https://docs.mojolicious.org/Mojo/Base#DESCRIPTION[Mojo::Base description] for
+details. Alternatively, you may set the test variable
+`ENABLE_MODERN_PERL_FEATURES=1` (e.g. in `main.pm` before invoking `loadtest`).
+This only applies to test modules, though. In other Perl modules and `main.pm`
+modern Perl features still need to be enabled manually.
 
 And here is an example in Python:
 
