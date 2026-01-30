@@ -410,3 +410,40 @@ function handleQuery(query) {
     .then(success)
     .catch(error);
 }
+function deleteGroup(elem, isParent) {
+  const li = $(elem).closest('li');
+  const idAttr = li.attr('id');
+  const id = parseInt(idAttr.replace(isParent ? 'parent_group_' : 'job_group_', ''));
+  const name = li
+    .find(isParent ? '.parent-group-name' : 'span > a')
+    .text()
+    .trim();
+  const type = isParent ? 'parent group' : 'job group';
+
+  if (!confirm(`Are you sure you want to delete the ${type} "${name}"?`)) {
+    return false;
+  }
+
+  const url = `/api/v1/${isParent ? 'parent_groups' : 'job_groups'}/${id}`;
+
+  fetchWithCSRF(url, {method: 'DELETE'})
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(json => {
+          throw json.error || response.statusText;
+        });
+      }
+      return response.json();
+    })
+    .then(() => {
+      li.fadeOut('slow', function () {
+        $(this).remove();
+      });
+    })
+    .catch(error => {
+      console.error(error);
+      alert(`Error deleting ${type}: ${error}`);
+    });
+
+  return false;
+}
