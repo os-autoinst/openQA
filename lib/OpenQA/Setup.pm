@@ -298,7 +298,7 @@ sub read_config ($app) {
     if ($throttling && length $throttling) {
         $config->{misc_limits}->{prio_throttling_parameters} =~ s/\s+//g;
         die("Wrong formatting for 'prio_throttling_parameters' in openqa.ini")
-          unless ($throttling =~ /^[A-Z_]+=\d+:\d+(?:,[A-Z_]+=\d+:\d+)*$/i);
+          unless ($throttling =~ /^[A-Z_]+:\d+(?:,[A-Z_]+:\d+)*$/i);
     }
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
