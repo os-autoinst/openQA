@@ -273,6 +273,13 @@ subtest 'asset status' => sub {
       ->json_is('/error' => 'Asset cleanup is currently ongoing.');
     $t->get_ok('/admin/assets/status')
       ->status_is(200, 'asset status rendered from cache file although cleanup is ongoing');
+
+    my $assets_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Assets');
+    $assets_mock->redefine(status_cache_file => '');
+    $assets_mock->redefine(status => undef);
+    $limit_assets_active = 0;
+    $t->get_ok('/admin/assets/status')->status_is(500, 'server error if unable to serve from cache');
+    $t->json_like('/error' => qr/cache.*not.*generated/i, 'error message returned');
 };
 
 
