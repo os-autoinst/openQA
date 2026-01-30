@@ -43,7 +43,7 @@ function fetchHtmlEntry(url, targetElement) {
       return response.text();
     })
     .then(response => {
-      var element = $(response);
+      const element = $(response);
       element.hide();
       targetElement.prepend(element);
       $('#new_group_creating').hide();
@@ -138,7 +138,7 @@ function createGroup(form) {
   return false;
 }
 
-var dragData = undefined;
+let dragData = undefined;
 
 function removeAllDropIndicators() {
   // workaround for Firefox which doesn't trigger leaveDrag when moving the mouse very fast
@@ -148,8 +148,8 @@ function removeAllDropIndicators() {
 
 function checkDrop(event, parentDivElement) {
   if (dragData) {
-    var parentLiElement = parentDivElement.parentElement;
-    var isTopLevel = parentLiElement.parentElement.id === 'job_group_list';
+    const parentLiElement = parentDivElement.parentElement;
+    const isTopLevel = parentLiElement.parentElement.id === 'job_group_list';
 
     if (dragData.isParent && !isTopLevel) {
       return;
@@ -215,7 +215,7 @@ function insertParentGroup(event, parentLiElement) {
 function insertGroup(event, siblingDivElement) {
   event.preventDefault();
   if (dragData) {
-    var siblingLiElement = siblingDivElement.parentElement;
+    const siblingLiElement = siblingDivElement.parentElement;
     dragData.liElement.hide();
     dragData.liElement.insertAfter($(siblingLiElement));
     dragData.liElement.fadeIn('slow');
@@ -228,7 +228,7 @@ function dragGroup(event, groupDivElement) {
   event.dataTransfer.setData('make', 'firefox happy');
 
   // this variable is actually used to store the data (to preserve DOM element)
-  var groupLiElement = groupDivElement.parentElement;
+  const groupLiElement = groupDivElement.parentElement;
   dragData = {
     id: groupLiElement.id,
     liElement: $(groupLiElement),
@@ -239,7 +239,7 @@ function dragGroup(event, groupDivElement) {
 
 function dragParentGroup(event, groupDivElement) {
   event.dataTransfer.setData('make', 'firefox happy');
-  var groupLiElement = groupDivElement.parentElement;
+  const groupLiElement = groupDivElement.parentElement;
   dragData = {
     id: groupLiElement.id,
     liElement: $(groupLiElement),
@@ -248,8 +248,8 @@ function dragParentGroup(event, groupDivElement) {
   };
 }
 
-var ajaxQueries = [];
-var showPanelTimeout = undefined;
+let ajaxQueries = [];
+let showPanelTimeout = undefined;
 
 function saveReorganizedGroups() {
   // wipe scheduled queries (for still uncommitted changes new queries will be added)
@@ -262,12 +262,12 @@ function saveReorganizedGroups() {
   $('#reorganize_groups_progress').show();
   $('#reorganize_groups_error').hide();
 
-  var jobGroupList = $('#job_group_list');
-  var updateParentGroupUrl = jobGroupList.data('put-parent-group-url');
-  var updateJobGroupUrl = jobGroupList.data('put-job-group-url');
+  const jobGroupList = $('#job_group_list');
+  const updateParentGroupUrl = jobGroupList.data('put-parent-group-url');
+  const updateJobGroupUrl = jobGroupList.data('put-job-group-url');
 
   // event handlers for AJAX queries
-  var handleError = function (error) {
+  const handleError = function (error) {
     console.error(error);
     $('#reorganize_groups_panel').show();
     $('#reorganize_groups_error').show();
@@ -276,14 +276,14 @@ function saveReorganizedGroups() {
     $('html, body').animate({scrollTop: 0}, 1000);
   };
 
-  var handleSuccess = function (response, groupLi, index, parentId) {
+  const handleSuccess = function (response, groupLi, index, parentId) {
     if (!response) {
       handleError('Server returned nothing');
       return;
     }
 
     if (!response.nothingToDo) {
-      var id = response.id;
+      const id = response.id;
       if (!id) {
         handleError('Server returned no ID');
         return;
@@ -348,8 +348,8 @@ function saveReorganizedGroups() {
         .find('ul')
         .children('li')
         .each(function (childGroupIndex) {
-          var jobGroupLi = $(this);
-          var jobGroupId = parseInt(this.id.substr(10));
+          const jobGroupLi = $(this);
+          const jobGroupId = parseInt(this.id.substr(10));
 
           if (childGroupIndex != jobGroupLi.data('initial-index') || groupId != jobGroupLi.data('initial-parent')) {
             // index or parent of job group changed -> update parent and sort order
@@ -409,4 +409,41 @@ function handleQuery(query) {
     })
     .then(success)
     .catch(error);
+}
+function deleteGroup(elem, isParent) {
+  const li = $(elem).closest('li');
+  const idAttr = li.attr('id');
+  const id = parseInt(idAttr.replace(isParent ? 'parent_group_' : 'job_group_', ''));
+  const name = li
+    .find(isParent ? '.parent-group-name' : 'span > a')
+    .text()
+    .trim();
+  const type = isParent ? 'parent group' : 'job group';
+
+  if (!confirm(`Are you sure you want to delete the ${type} "${name}"?`)) {
+    return false;
+  }
+
+  const url = `/api/v1/${isParent ? 'parent_groups' : 'job_groups'}/${id}`;
+
+  fetchWithCSRF(url, {method: 'DELETE'})
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(json => {
+          throw json.error || response.statusText;
+        });
+      }
+      return response.json();
+    })
+    .then(() => {
+      li.fadeOut('slow', function () {
+        $(this).remove();
+      });
+    })
+    .catch(error => {
+      console.error(error);
+      alert(`Error deleting ${type}: ${error}`);
+    });
+
+  return false;
 }

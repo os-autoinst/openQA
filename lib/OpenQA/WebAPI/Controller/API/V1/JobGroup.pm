@@ -349,8 +349,12 @@ If not empty (there are existing jobs), it will return an error.
 sub delete ($self) {
     return unless my $group = $self->find_group;
 
-    if ($group->can('jobs') && scalar($group->jobs) != 0) {
-        return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 400);
+    if ($group->can('jobs') && $group->jobs->count != 0) {
+        return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 409);
+    }
+
+    if ($group->can('children') && $group->children->count != 0) {
+        return $self->render(json => {error => 'Parent job group ' . $group->id . ' is not empty'}, status => 409);
     }
 
     my $res = $group->delete;

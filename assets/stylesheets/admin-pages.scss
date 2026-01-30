@@ -198,11 +198,14 @@ a.add-parent-group {
             margin: 3px;
         }
     }
-    a.fa-plus {
+    a.fa-plus, a.fa-trash {
         float: right;
         display: inline-block;
         margin: 5px;
-        text-decoration: none;
+        color: $gray-600;
+        &:hover {
+            color: $blue-600;
+        }
     }
     div.dragover {
         margin-bottom: -3px;

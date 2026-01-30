@@ -365,8 +365,8 @@ subtest 'delete job/parent group and error when listing non-existing group' => s
 };
 
 subtest 'prevent deleting non-empty job group' => sub() {
-    $t->delete_ok('/api/v1/job_groups/1002')->status_is(400);
-    is_deeply($t->tx->res->json, {error => 'Job group 1002 is not empty', error_status => 400});
+    $t->delete_ok('/api/v1/job_groups/1002')->status_is(409);
+    is_deeply($t->tx->res->json, {error => 'Job group 1002 is not empty', error_status => 409});
     $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
     is_deeply($t->tx->res->json, {ids => [99961]}, '1002 contains one job');
     $t->get_ok('/api/v1/job_groups/1002/jobs?expired=1')->status_is(200);
@@ -379,6 +379,19 @@ subtest 'prevent deleting non-empty job group' => sub() {
     is_deeply($t->tx->res->json, {ids => []}, '1002 contains no more jobs');
     $t->delete_ok('/api/v1/job_groups/1002')->status_is(200);
     $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(404);
+};
+
+subtest 'prevent deleting non-empty parent group' => sub() {
+    my $parent_id = $t->post_ok('/api/v1/parent_groups', form => {name => 'Non-empty Parent'})->tx->res->json->{id};
+    $t->post_ok('/api/v1/job_groups', form => {name => 'Child Group', parent_id => $parent_id})->status_is(200);
+
+    $t->delete_ok("/api/v1/parent_groups/$parent_id")->status_is(409);
+    is_deeply($t->tx->res->json, {error => "Parent job group $parent_id is not empty", error_status => 409});
+
+    # Cleanup
+    my $child_id = $t->app->schema->resultset('JobGroups')->find({name => 'Child Group'})->id;
+    $t->delete_ok("/api/v1/job_groups/$child_id")->status_is(200);
+    $t->delete_ok("/api/v1/parent_groups/$parent_id")->status_is(200);
 };
 
 subtest 'prevent create/update duplicate job group on top level' => sub() {
