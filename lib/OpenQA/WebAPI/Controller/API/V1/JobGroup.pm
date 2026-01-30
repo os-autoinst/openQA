@@ -350,7 +350,11 @@ sub delete ($self) {
     return unless my $group = $self->find_group;
 
     if ($group->can('jobs') && scalar($group->jobs) != 0) {
-        return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 400);
+        return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 409);
+    }
+
+    if ($group->can('children') && scalar($group->children) != 0) {
+        return $self->render(json => {error => 'Parent job group ' . $group->id . ' is not empty'}, status => 409);
     }
 
     my $res = $group->delete;
