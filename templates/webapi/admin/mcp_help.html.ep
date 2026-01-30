@@ -1,0 +1,8 @@
+% layout 'bootstrap';
+% title 'MCP help';
+  <h2><%= title %></h2>
+  %= include 'layouts/info'
+  <p>
+      To configure an MCP client to connect to openQA, check out the
+      <%= link_to 'documentation about MCP support' => url_for('https://open.qa/docs/#_mcp_support') %>.
+  </p>
