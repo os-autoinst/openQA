@@ -1052,6 +1052,26 @@ subtest 'priority correctly assigned when posting job' => sub {
         $t->json_is('/job/priority', 50, 'feature disabled: prio value unchanged');
     };
 
+    subtest 'priority malus due to high QEMURAM demand' => sub {
+        my $add = 40;
+        local $jobs_post_params{QEMURAM} = 4096;
+        my $limits = OpenQA::App->singleton->config->{misc_limits};
+        $limits->{prio_throttling_parameters} = 'QEMURAM:0.01';
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $add, 'increased prio value');
+    };
+
+    subtest 'priority malus due to high HDDSIZEGB demand' => sub {
+        my $add = 2;
+        local $jobs_post_params{HDDSIZEGB} = 40;
+        my $limits = OpenQA::App->singleton->config->{misc_limits};
+        $limits->{prio_throttling_parameters} = 'XXX :0.2,  FAKE_HDDSIZEGB:0.01, HDDSIZEGB:0.05,  YYY: 0.1';
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $add, 'increased prio value');
+    };
+
     # post new job in job group with customized default priority
     $schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
     $jobs_post_params{_GROUP} = 'opensuse test';

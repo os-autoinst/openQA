@@ -101,6 +101,15 @@ sub latest_jobs ($self, $until = undef) {
     return @latest;
 }
 
+sub load_throttling_config ($config_string) {
+    # parse to hash "{ PAR1 => MAL1, PAR2 => MAL2, ...}"
+    # the prio_throttling_parameters configuration string; see openqa.ini
+    return unless ($config_string && $config_string =~ /:/);
+    $config_string =~ s/\s+//g;
+    my %hash = map { my ($k, $v) = split /:/, $_, 2 } split /,/, $config_string;
+    return \%hash;
+}
+
 sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my %settings = %$settings;
     my %new_job_args;
@@ -155,6 +164,18 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
             my $malus = int($max_job_time / $scale);
             $debug_msg = sprintf 'Adding priority malus to newly created job (old: %d, malus: %s)',
               $new_job_args{priority}, $malus;
+            $new_job_args{priority} += $malus;
+        }
+    }
+    my $throttling = OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_parameters};
+    $throttling = load_throttling_config($throttling);
+    # apply resources throttling control
+    if ($throttling) {
+        for my $resource (keys %$throttling) {
+            next if !defined $settings{$resource};
+            my $malus = int($settings{$resource} * $throttling->{$resource});
+            $debug_msg = sprintf 'Adding priority malus to newly created job due to %s (old: %d, malus: %s)',
+              $resource, $new_job_args{priority}, $malus;
             $new_job_args{priority} += $malus;
         }
     }

@@ -53,12 +53,12 @@ my $mock_jobs = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my $schema = OpenQA::Test::Database->new->create;
 my $needledir_archlinux = 't/data/openqa/share/tests/archlinux/needles';
 my $needledir_fedora = 't/data/openqa/share/tests/fedora/needles';
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 # create dummy job
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 # create dummy module
 $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
 my $module = $job->modules->find({name => 'a'});
-my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub process {
     return unless (m/.json$/);
