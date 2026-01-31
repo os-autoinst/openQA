@@ -158,6 +158,42 @@ sub _is_valid_percentage ($value) { looks_like_number($value) && $value >= 0 && 
 
 sub _format_percentage_error ($key, $value) { "Configured $key ($value) is not a number between 0 and 100" }
 
+sub _get_storage_struct ($limits) {
+    my @storage_struct;
+    my $results_percentage = $limits->{results_min_free_disk_space_percentage};
+    my $archive_percentage = $limits->{archive_min_free_disk_space_percentage};
+
+    if (defined $results_percentage && $results_percentage ne 'none') {
+        push @storage_struct,
+          {
+            config_key => 'results_min_free_disk_space_percentage',
+            percentage => $results_percentage,
+            dir => resultdir,
+            archived => 0,
+          };
+    }
+
+    if (defined $archive_percentage) {
+        push @storage_struct,
+          {
+            config_key => 'archive_min_free_disk_space_percentage',
+            percentage => $archive_percentage,
+            dir => archivedir,
+            archived => 1,
+          };
+    }
+    return \@storage_struct;
+}
+
+sub _validate_storage_locations (@storage_struct) {
+    for my $tstdir (@storage_struct) {
+        return _format_percentage_error($tstdir->{config_key} => $tstdir->{percentage})
+          unless _is_valid_percentage($tstdir->{percentage});
+    }
+    return undef;
+}
+
+
 sub _account_for_deletion ($margin_bytes, $margin_bytes_main_storage, $deleted_results, $deleted_screenshots = 0) {
     $$margin_bytes += $deleted_results;
     $$margin_bytes_main_storage += $deleted_screenshots;
@@ -223,26 +259,25 @@ sub _ensure_results_below_threshold ($job, @) {
 
     # load configured free percentage
     my $limits = $job->app->config->{misc_limits};
-    my $min_free_percentage = $limits->{results_min_free_disk_space_percentage} // 'none';
-    my $min_free_percentage_ar = $limits->{archive_min_free_disk_space_percentage};
+    my $storage = _get_storage_struct($limits);
+    return $job->finish('No minimum free disk space percentage configured') unless @$storage;
+    if (my $error = _validate_storage_locations(@$storage)) { return $job->fail($error) }
     my $dry = $limits->{dry_min_free_disk_space_cleanup};
-    return $job->finish('No minimum free disk space percentage configured') if $min_free_percentage eq 'none';
-    return $job->fail(_format_percentage_error(results_min_free_disk_space_percentage => $min_free_percentage))
-      unless _is_valid_percentage($min_free_percentage);
-    return $job->fail(_format_percentage_error(archive_min_free_disk_space_percentage => $min_free_percentage_ar))
-      if defined $min_free_percentage_ar && !_is_valid_percentage($min_free_percentage_ar);
 
     # check free percentage
     # caveat: We're using `df` here which might not be appropriate for any filesystem, e.g. one might want
     #         to use `btrfs filesystem df …` instead. It is conceivable to allow running a custom script here
     #         instead.
-    my $resultdir = resultdir;
-    my $archivedir = archivedir;
-    my $margin_bytes = _check_remaining_disk_usage($job, $resultdir, $min_free_percentage);
-    my $margin_bytes_ar = _check_remaining_disk_usage($job, $archivedir, $min_free_percentage_ar);
-    $job->note(resultdir => $resultdir);
-    $job->note(archivedir => $archivedir);
-    return $job->finish('Done, nothing to do') if $margin_bytes >= 0 && $margin_bytes_ar >= 0;
+    for my $tstdir (@$storage) {
+        $tstdir->{margin_bytes} = _check_remaining_disk_usage($job, $tstdir->{dir}, $tstdir->{percentage});
+        $job->note($tstdir->{archived} ? 'archivedir' : 'resultdir' => $tstdir->{dir});
+    }
+
+    my $all_within_threshold = 1;
+    for my $tstdir (@$storage) {
+        $all_within_threshold = 0 if $tstdir->{margin_bytes} < 0;
+    }
+    return $job->finish('Done, nothing to do') if $all_within_threshold;
 
     # determine the last job *before* determining important builds
     # note: If a new important build is scheduled while the cleanup is ongoing we must not accidentally clean these
@@ -279,16 +314,33 @@ sub _ensure_results_below_threshold ($job, @) {
 
     # delete results as far as necessary on the results dir and the archive dir
     my $jobs = $schema->resultset('Jobs');
-    my ($ok_ar, @message_ar)
-      = defined $min_free_percentage_ar
-      ? _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes_ar,
-        \$margin_bytes, 1)
-      : (1);
-    my ($ok, @message)
-      = _delete_results($dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond, \$margin_bytes,
-        \$margin_bytes, 0);
-    my $method = $ok && $ok_ar ? 'finish' : 'fail';
-    $job->$method(join "\n", @message, @message_ar);
+    my @messages;
+    my $all_ok = 1;
+
+    my ($results_dir) = grep { !$_->{archived} } @$storage;
+    my ($archive_dir) = grep { $_->{archived} } @$storage;
+    if ($archive_dir) {
+        my ($ok, @message) = _delete_results(
+            $dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond,
+            \$archive_dir->{margin_bytes},
+            \$results_dir->{margin_bytes}, 1
+        );
+        push @messages, @message;
+        $all_ok &&= $ok;
+    }
+
+    if ($results_dir) {
+        my ($ok, @message) = _delete_results(
+            $dry, $jobs, $max_job_id, \@not_important_cond, \@important_cond,
+            \$results_dir->{margin_bytes},
+            \$results_dir->{margin_bytes}, 0
+        );
+        push @messages, @message;
+        $all_ok &&= $ok;
+    }
+
+    my $method = $all_ok ? 'finish' : 'fail';
+    $job->$method(join "\n", @messages);
 }
 
 1;
