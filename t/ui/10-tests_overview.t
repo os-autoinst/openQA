@@ -315,6 +315,14 @@ subtest 'filtering by flavor' => sub {
     }
 };
 
+subtest 'reset filters' => sub {
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&flavor=DVD');
+    like $driver->get_current_url, qr/flavor=DVD/, 'url contains flavor filter';
+    $driver->find_element('#filter-panel .card-header')->click();
+    $driver->find_element('#filter-reset-button')->click();
+    unlike $driver->get_current_url, qr/flavor=DVD/, 'url no longer contains flavor filter after reset';
+};
+
 sub check_textmode_test ($test_row) {
     wait_for_element selector => '#flavor_DVD_arch_i586', like => qr/i586/;
     my @job_rows = map { $_->get_text } @{$driver->find_elements('#content tbody tr')};

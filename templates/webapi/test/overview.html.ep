@@ -197,6 +197,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Apply</button>
+                <a href="<%= url_for('tests_overview') %>" class="btn btn-secondary" id="filter-reset-button">Reset Filters</a>
             </form>
         </div>
     </div>
