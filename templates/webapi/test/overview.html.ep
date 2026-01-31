@@ -197,6 +197,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Apply</button>
+                <button type="button" class="btn btn-secondary" id="filter-reset-button">Reset Filters</button>
             </form>
         </div>
     </div>

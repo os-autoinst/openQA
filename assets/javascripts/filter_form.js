@@ -26,6 +26,15 @@ function setupFilterForm(options) {
       );
     }
   });
+
+  $('#filter-reset-button').on('click', function () {
+    const form = $('#filter-form');
+    form.find('input[type="text"], input[type="number"]').val('');
+    form.find('input[type="checkbox"]').prop('checked', false);
+    form.find('input[hidden]').remove();
+    form.find('select').val([]).trigger('chosen:updated');
+    $('#filter-panel .card-header span').text('no filter present, click to toggle filter form');
+  });
 }
 
 function parseFilterArguments(paramHandler) {
