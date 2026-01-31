@@ -26,6 +26,56 @@ function setupFilterForm(options) {
       );
     }
   });
+
+  $('#filter-reset-button').on('click', function () {
+    const form = $('#filter-form');
+    form.find('input[type="text"], input[type="number"]').val('');
+    form.find('input[type="checkbox"]').prop('checked', false).prop('indeterminate', false);
+    form.find('input[hidden]').remove();
+    form.find('select').val([]).trigger('chosen:updated');
+    $('#filter-panel .card-header span').text('no filter present, click to toggle filter form');
+  });
+
+  const updateMasterCheckbox = function (container) {
+    const master = container.find('.filter-bulk-master');
+    if (!master.length) return;
+    const checkboxes = container.find('input[type="checkbox"]:not(.filter-bulk-master)');
+    const checkedCount = checkboxes.filter(':checked').length;
+
+    if (checkedCount === 0) {
+      master.prop('checked', false);
+      master.prop('indeterminate', false);
+    } else if (checkedCount === checkboxes.length) {
+      master.prop('checked', true);
+      master.prop('indeterminate', false);
+    } else {
+      master.prop('checked', false);
+      master.prop('indeterminate', true);
+    }
+  };
+
+  $('#filter-results, #filter-states').on('click', '.filter-bulk-master', function () {
+    const container = $(this).closest('.mb-3');
+    const isChecked = $(this).prop('checked');
+    container.find('input[type="checkbox"]:not(.filter-bulk-master)').prop('checked', isChecked);
+  });
+
+  $('#filter-results, #filter-states').on('change', 'input[type="checkbox"]:not(.filter-bulk-master)', function () {
+    updateMasterCheckbox($(this).closest('.mb-3'));
+  });
+
+  $('#filter-results, #filter-states').on('click', '.filter-bulk-invert', function (e) {
+    e.preventDefault();
+    const container = $(this).closest('.mb-3');
+    container.find('input[type="checkbox"]:not(.filter-bulk-master)').each(function () {
+      $(this).prop('checked', !$(this).prop('checked'));
+    });
+    updateMasterCheckbox(container);
+  });
+
+  $('#filter-results, #filter-states').each(function () {
+    updateMasterCheckbox($(this));
+  });
 }
 
 function parseFilterArguments(paramHandler) {
