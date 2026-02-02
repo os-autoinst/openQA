@@ -102,8 +102,7 @@ sub latest_jobs ($self, $until = undef) {
 }
 
 sub load_throttling_config ($config_string) {
-    # parse to hash "{ PAR1 => MAL1, PAR2 => MAL2, ...}"
-    # the prio_throttling_parameters configuration string; see openqa.ini
+    # convert in hash the prio_throttling_parameters string configured in openqa.ini
     return unless ($config_string && $config_string =~ /:/);
     $config_string =~ s/\s+//g;
     my %hash = map { my ($k, $v) = split /:/, $_, 2 } split /,/, $config_string;

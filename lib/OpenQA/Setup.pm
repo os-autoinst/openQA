@@ -61,6 +61,15 @@ sub _load_config ($app, $defaults, $mode_specific_defaults) {
     return $config;
 }
 
+sub validate_prio_throttling_format ($config) {
+    my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
+    if ($throttling && length $throttling) {
+        $config->{misc_limits}->{prio_throttling_parameters} =~ s/\s+//g;
+        die("Wrong formatting for 'prio_throttling_parameters' in openqa.ini")
+          unless ($throttling =~ /^[A-Z_]+:\d+(?:,[A-Z_]+:\d+)*$/i);
+    }
+}
+
 sub read_config ($app) {
     my %defaults = (
         global => {
@@ -294,12 +303,9 @@ sub read_config ($app) {
     if (my $minion_fail_job_blocklist = $config->{influxdb}->{ignored_failed_minion_jobs}) {
         $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
     }
-    my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
-    if ($throttling && length $throttling) {
-        $config->{misc_limits}->{prio_throttling_parameters} =~ s/\s+//g;
-        die("Wrong formatting for 'prio_throttling_parameters' in openqa.ini")
-          unless ($throttling =~ /^[A-Z_]+:\d+(?:,[A-Z_]+:\d+)*$/i);
-    }
+
+    validate_prio_throttling_format($config);
+
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . join('', map { ":not(.result_$_)" } split(/\s+/, $results));
