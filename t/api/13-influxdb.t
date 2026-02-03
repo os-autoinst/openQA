@@ -16,7 +16,8 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebSockets;
 
-my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl');
+my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl');
+$schema->resultset('Jobs')->search({id => 99963})->update({assigned_worker_id => 1});
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{global}->{base_url} = 'http://example.com';
@@ -26,6 +27,7 @@ $t->get_ok('/admin/influxdb/jobs')->status_is(200)->content_is(
 openqa_jobs_by_group,url=http://example.com,group=No\\ Group scheduled=1i
 openqa_jobs_by_group,url=http://example.com,group=opensuse running=1i,scheduled=1i
 openqa_jobs_by_group,url=http://example.com,group=opensuse\\ test running=1i
+openqa_jobs_by_worker,url=http://example.com,worker=localhost running=1i
 openqa_jobs_by_arch,url=http://example.com,arch=i586 scheduled=2i
 openqa_jobs_by_arch,url=http://example.com,arch=x86_64 running=2i
 '
