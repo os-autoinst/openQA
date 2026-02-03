@@ -38,6 +38,8 @@ my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 $t->get_ok($url . '/admin/auditlog')->status_is(302);
 $t->get_ok($url . '/login')->status_is(302);
 $t->get_ok($url . '/admin/auditlog')->status_is(200);
+$t->get_ok($url . '/admin/auditlog?eventid=42')->status_is(200);
+$t->content_like(qr/searchquery.*id:42/, 'specified ID passed as search query');
 
 # login-in as Demo
 $driver->title_is('openQA', 'on main page');
