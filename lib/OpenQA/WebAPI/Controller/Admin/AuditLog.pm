@@ -11,14 +11,10 @@ use Time::ParseDate;
 use Mojo::JSON 'encode_json';
 use OpenQA::WebAPI::ServerSideDataTable;
 
-sub index {
-    my ($self) = @_;
+sub index ($self) {
+    my $event_id = $self->param('eventid');
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
-    if ($self->param('eventid')) {
-        $self->stash('search', 'id:' . $self->param('eventid'));
-        return $self->render('admin/audit_log/index');
-    }
-    $self->stash('search', $self->param('search'));
+    $self->stash(search => $event_id ? "id:$event_id" : $self->param('search'));
     $self->render('admin/audit_log/index');
 }
 
