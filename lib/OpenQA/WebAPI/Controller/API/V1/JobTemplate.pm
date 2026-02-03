@@ -65,7 +65,7 @@ and test suite (id and name).
 sub list ($self) {
     my @templates;
     try { @templates = $self->_get_templates }
-    catch ($e) { return $self->render(json => {error => $e}, status => 404) }
+    catch ($e) { return $self->render(json => {error => $e}, status => 404) }    # uncoverable statement
     $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
 
@@ -363,7 +363,7 @@ sub create ($self) {
             group_id => $group_id,
             test_suite_id => $validation->param('test_suite_id')};
         try { push @ids, $schema->resultset('JobTemplates')->create($values)->id }
-        catch ($e) { $error = $e }
+        catch ($e) { $error = $e }    # uncoverable statement
     }
     elsif ($validation->param('prio_only')) {
         for my $param (qw(group_id test_suite_id)) {
@@ -380,7 +380,7 @@ sub create ($self) {
             push @ids, $_->id for $job_templates->all;
             $job_templates->update({prio => $prio});
         }
-        catch ($e) { $error = $e }
+        catch ($e) { $error = $e }    # uncoverable statement
     }
     else {
         for my $param (qw(group_name machine_name test_suite_name arch distri flavor version)) {
@@ -399,7 +399,7 @@ sub create ($self) {
             prio => $prio,
             test_suite => {name => $validation->param('test_suite_name')}};
         try { push @ids, $schema->resultset('JobTemplates')->create($values)->id }
-        catch ($e) { $error = $e }
+        catch ($e) { $error = $e }    # uncoverable statement
     }
 
     my $status;
@@ -442,7 +442,7 @@ sub destroy ($self) {
     elsif ($job_template) {
         my $rs;
         try { $rs = $job_template->delete }
-        catch ($e) { $json->{error} = $e }
+        catch ($e) { $json->{error} = $e }    # uncoverable statement
         if ($rs) {
             $json->{result} = int($rs);
             $self->emit_event('openqa_jobtemplate_delete', {id => $self->param('job_template_id')});

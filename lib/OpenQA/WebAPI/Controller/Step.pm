@@ -395,7 +395,7 @@ sub src ($self) {
     return $self->reply->not_found unless $scriptpath && -e $scriptpath;
     my $script;
     try { $script = path($scriptpath)->slurp }
-    catch ($e) { return $self->reply->not_found }
+    catch ($e) { return $self->reply->not_found }    # uncoverable statement
     $self->render(script => decode_utf8($script), scriptpath => $scriptpath);
 }
 

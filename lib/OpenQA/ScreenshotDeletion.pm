@@ -37,8 +37,8 @@ sub delete_screenshot {
     #       only some of the deletions if the Minion job is aborted.
     my $signal_blocker = OpenQA::SignalBlocker->new;
     try { $self->{_deletion_query}->execute($screenshot_id) unless $dry }
-    catch ($e) { return undef }
-    # keep track of the deleted size
+    catch ($e) { return undef }    # uncoverable statement
+                                   # keep track of the deleted size
     my ($deleted_size, $screenshot_size, $thumb_size) = $self->{_deleted_size};
     if ($deleted_size) {
         $screenshot_size = -s $screenshot_path;

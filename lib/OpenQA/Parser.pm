@@ -157,7 +157,7 @@ sub restore_tree_section {
             $hash->[$key] = restore_el($value) if reftype $hash eq 'ARRAY';
         };
     }
-    catch ($e) { confess $e }
+    catch ($e) { confess $e }    # uncoverable statement
 }
 
 sub _load_tree {
@@ -176,7 +176,7 @@ sub _load_tree {
             }
         }
     }
-    catch ($e) { confess "Failed parsing tree: $e" }
+    catch ($e) { confess "Failed parsing tree: $e" }    # uncoverable statement
     return $self;
 }
 

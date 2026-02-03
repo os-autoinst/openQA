@@ -63,7 +63,7 @@ sub ajax ($self) {
             push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
         }
     }
-    catch ($e) { return $self->render(json => {error => ($e =~ s/ at .*//sr)}, status => 400) }
+    catch ($e) { return $self->render(json => {error => ($e =~ s/ at .*//sr)}, status => 400) }  # uncoverable statement
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,

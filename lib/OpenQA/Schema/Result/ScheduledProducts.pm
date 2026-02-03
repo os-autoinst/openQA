@@ -210,7 +210,7 @@ sub schedule_iso ($self, $args, $guard) {
     $self->discard_changes;
     my $result = do {
         try { $self->_schedule_iso($args, $guard) }
-        catch ($e) { {error => $e} }
+        catch ($e) { {error => $e} }    # uncoverable statement
     };
     $self->set_done($result);
 

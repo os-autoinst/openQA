@@ -214,7 +214,7 @@ sub cache_ref ($self, $ref, $url, $relative_path, $output_file, $allow_arbitrary
             path($output_file)->touch;
             return undef;
         }
-        catch ($e) { return $e }
+        catch ($e) { return $e }    # uncoverable statement
     }
 
     $self->app->log->debug(

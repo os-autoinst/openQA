@@ -117,7 +117,7 @@ sub update_obs_builds_text ($job, $args) {
             $exit_code = $?;
             return ($exit_code, $error);
         }
-        catch ($e) { return ($exit_code, $error // $e); }
+        catch ($e) { return ($exit_code, $error // $e); }    # uncoverable statement
     };
 
     my ($exit_code, $error) = $helper->for_every_batch($alias, $sub);

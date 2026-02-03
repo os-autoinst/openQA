@@ -633,7 +633,7 @@ sub is_qemu_running ($self) {
 
 sub is_ovs_dbus_service_running ($self) {
     try { defined &Net::DBus::system or require Net::DBus }
-    catch ($e) { return 0 }
+    catch ($e) { return 0 }    # uncoverable statement
     unless (defined $self->{_system_dbus}) {
         $self->{_system_dbus} = Net::DBus->system(nomainloop => 1);
         # this avoids piling up signals we never do anything with - POO #183833
@@ -827,7 +827,7 @@ sub _setup_pool_directory ($self) {
     return 'No pool directory assigned.' unless $pool_directory;
 
     try { $self->{_pool_directory_lock_fd} = $self->_lock_pool_directory }
-    catch ($e) { return 'Unable to lock pool directory: ' . $e }
+    catch ($e) { return 'Unable to lock pool directory: ' . $e }    # uncoverable statement
     return undef;
 }
 

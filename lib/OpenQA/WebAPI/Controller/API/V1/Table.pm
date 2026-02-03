@@ -127,7 +127,7 @@ sub list ($self) {
                 offset => $offset
             });
     }
-    catch ($e) { return $self->render(json => {error => $e}, status => 404) }
+    catch ($e) { return $self->render(json => {error => $e}, status => 404) }    # uncoverable statement
 
     # Pagination
     pop @all if my $has_more = @all > $limit;
