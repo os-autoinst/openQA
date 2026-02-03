@@ -30,6 +30,7 @@ coverage:
           - lib/OpenQA/WebAPI/Controller/Admin/Asset.pm
           - lib/OpenQA/WebAPI/Controller/Admin/AuditLog.pm
           - lib/OpenQA/WebAPI/Controller/Admin/Influxdb.pm
+          - lib/OpenQA/WebAPI/Controller/Admin/JobGroup.pm
       tests:
         target: 100.0
         threshold: 0

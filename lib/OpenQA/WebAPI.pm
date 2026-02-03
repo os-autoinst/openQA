@@ -238,7 +238,6 @@ sub startup ($self) {
     $pub_admin_r->get('/parent_group/<groupid:num>')->name('admin_parent_group_row')->to('job_group#parent_group_row');
     $pub_admin_r->get('/edit_parent_group/<groupid:num>')->name('admin_edit_parent_group')
       ->to('job_group#edit_parent_group');
-    $pub_admin_r->get('/groups/connect/<groupid:num>')->name('job_group_new_media')->to('job_group#connect');
 
     $pub_admin_r->get('/assets')->name('admin_assets')->to('asset#index');
     $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
@@ -260,7 +259,6 @@ sub startup ($self) {
     $admin_r->delete('/needles/delete')->name('admin_needle_delete')->to('needle#delete');
     $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
     $admin_r->get('/auditlog/ajax')->name('audit_ajax')->to('audit_log#ajax');
-    $admin_r->post('/groups/connect/<groupid:num>')->name('job_group_save_media')->to('job_group#save_connect');
 
     # Workers list as default option
     $op_r->get('/')->name('admin')->to('workers#index');
