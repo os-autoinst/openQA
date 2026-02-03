@@ -1,5 +1,4 @@
-#!/usr/bin/env perl
-# Copyright 2015-2020 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
