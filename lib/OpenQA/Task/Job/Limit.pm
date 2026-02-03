@@ -195,14 +195,15 @@ sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_c
     my @search = (id => {'<=' => $max_job_id}, archived => $archived);
     my @common = ($jobs, $from, $margin_bytes, $margin_bytes_main_storage, $dry);
     my @res;
-    return @res
-      if @res = _delete_jobs('video', 'non-important', {@search, @$not_important_cond, logs_present => 1}, @common);
-    return @res
-      if @res = _delete_jobs('results', 'non-important', {@search, @$not_important_cond}, @common);
-    return @res
-      if @res = _delete_jobs('video', 'important', {@search, @$important_cond, logs_present => 1}, @common);
-    return @res
-      if @res = _delete_jobs('results', 'important', {@search, @$important_cond}, @common);
+    for my $step_args (
+        ['video', 'non-important', {@search, @$not_important_cond, logs_present => 1}, @common],
+        ['results', 'non-important', {@search, @$not_important_cond}, @common],
+        ['video', 'important', {@search, @$important_cond, logs_present => 1}, @common],
+        ['results', 'important', {@search, @$important_cond}, @common],
+      )
+    {
+        return @res if @res = _delete_jobs(@$step_args);
+    }
     return (0, "Unable to cleanup enough results from $from");
 }
 
