@@ -15,10 +15,10 @@ aliases:
 
   - &restore_fullstack_cache
     keys:
-      - v1-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
+      - v2-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
 
   - &save_fullstack_cache
-    key: v1-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
+    key: v2-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
     paths:
       - "/var/cache/autoinst"
 
