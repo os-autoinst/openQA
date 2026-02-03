@@ -101,14 +101,6 @@ sub latest_jobs ($self, $until = undef) {
     return @latest;
 }
 
-sub load_throttling_config ($config_string) {
-    # convert in hash the prio_throttling_parameters string configured in openqa.ini
-    return unless ($config_string && $config_string =~ /:/);
-    $config_string =~ s/\s+//g;
-    my %hash = map { my ($k, $v) = split /:/, $_, 2 } split /,/, $config_string;
-    return \%hash;
-}
-
 sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my %settings = %$settings;
     my %new_job_args;
@@ -166,17 +158,20 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
             $new_job_args{priority} += $malus;
         }
     }
-    my $throttling = OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_parameters};
-    $throttling = load_throttling_config($throttling);
     # apply resources throttling control
-    if ($throttling) {
+    if (my $throttling = OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_data}) {
+        my $throttling_info;
         for my $resource (keys %$throttling) {
             next if !defined $settings{$resource};
-            my $malus = int($settings{$resource} * $throttling->{$resource});
-            $debug_msg = sprintf 'Adding priority malus to newly created job due to %s (old: %d, malus: %s)',
-              $resource, $new_job_args{priority}, $malus;
-            $new_job_args{priority} += $malus;
+            my $scale = $throttling->{$resource}->{scale};
+            my $reference = $throttling->{$resource}->{reference};
+            my $prio = int(($settings{$resource} - $reference) * $scale);
+            $throttling_info .= $resource . ", scale: $scale" . ($reference ? ", reference: $reference;" : ';');
+            $new_job_args{priority} += $prio;
         }
+        $debug_msg .= sprintf("\nAdjusting job priority by %s based on resource requirement(s):\n %s",
+            $new_job_args{priority}, $throttling_info)
+          if $throttling_info;
     }
 
     my $job = $self->create(\%new_job_args);

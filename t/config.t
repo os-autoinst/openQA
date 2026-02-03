@@ -9,6 +9,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use Test::MockModule;
+use Test::MockObject;
 use Mojolicious;
 use Mojo::Base -signatures;
 use Mojo::Log;
@@ -216,6 +217,7 @@ subtest 'Test configuration default modes' => sub {
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{logging}->{level} = 'debug';
     $test_config->{global}->{service_port_delta} = 2;
+    $test_config->{misc_limits}->{prio_throttling_data} = undef;
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
     ok delete $config->{'test_preset example'}, 'default values for example tests assigned';
     is_deeply $config, $test_config, '"test" configuration';
@@ -391,6 +393,80 @@ subtest 'Lookup precedence/hiding' => sub {
     @expected = ("$t_dir/override/openqa.ini.d/override-drop-in.ini");
     $t_dir->child('override')->child('openqa.ini.d')->make_path->child('override-drop-in.ini')->touch;
     is_deeply lookup_config_files(@args), \@expected, 'drop-in in overriden dir hides all other config';
+};
+
+subtest 'check throttling configuration validation and application' => sub {
+    my $log_mock = Test::MockObject->new();
+    my $warn_called = 0;
+    my $warn_msg;
+    my $app_mock = Test::MockObject->new();
+    my $quiet_log = Mojo::Log->new(level => 'warn');
+    my $t_dir = tempdir;
+    local $ENV{OPENQA_CONFIG} = $t_dir;
+    my $data = "
+        [misc_limits]
+        max_job_time_prio_scale = 100
+        prio_throttling_parameters = DEFAULT1 : 0.5: 20, DEFAULT2: 1.0
+    ";
+    $t_dir->child('openqa.ini')->spew($data);
+    $log_mock->mock('warn', sub { $warn_called = 1; $warn_msg = $_[1]; });
+    $app_mock->mock('log', sub { $log_mock });
+
+    OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
+    my $config = OpenQA::Setup::read_config($app);
+
+    subtest 'prio_throttling_parameters loaded from openqa.ini' => sub {
+        my $prio_params = $config->{misc_limits}->{prio_throttling_parameters};
+        $prio_params =~ s/\s+//g;
+        is $prio_params, "DEFAULT1:0.5:20,DEFAULT2:1.0", 'prio_throttling_parameter correctly loaded from openqa.ini';
+    };
+
+    subtest 'no prio_throttling_parameters' => sub {
+        $config->{misc_limits}->{prio_throttling_parameters} = undef;
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app_mock, $config);
+        is $config->{misc_limits}->{prio_throttling_data}, undef, 'prio_throttling_data is undef when no parameters';
+        is $warn_called, 0, 'no warning for undef';
+    };
+
+    subtest 'valid prio_throttling_parameters' => sub {
+        $warn_called = 0;
+        $config->{misc_limits}->{prio_throttling_parameters} = 'KEY1ONE:1.5:2,KEY2TWO:3';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app_mock, $config);
+        is_deeply $config->{misc_limits}->{prio_throttling_data},
+          {KEY1ONE => {scale => 1.5, reference => 2}, KEY2TWO => {scale => 3, reference => 0}},
+          'prio_throttling_data parsed correctly';
+    };
+
+    subtest 'invalid prio_throttling_parameters' => sub {
+        $warn_called = 0;
+        $config->{misc_limits}->{prio_throttling_parameters} = 'invalid';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app_mock, $config);
+        is_deeply $config->{misc_limits}->{prio_throttling_data}, undef,
+          'prio_throttling_data is empty hash for invalid';
+        is $warn_called, 1, 'warning called for invalid format';
+        like $warn_msg, qr/Wrong format/, 'warning message correct';
+    };
+
+    subtest 'empty string' => sub {
+        $warn_called = 0;
+        $config->{misc_limits}->{prio_throttling_parameters} = '';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app_mock, $config);
+        is $config->{misc_limits}->{prio_throttling_data}, undef, 'prio_throttling_data is undef for empty string';
+        is $warn_called, 0, 'no warning for empty';
+    };
+
+    subtest 'multiple keys' => sub {
+        $warn_called = 0;
+        $config->{misc_limits}->{prio_throttling_parameters} = 'A:1.04,B:2:3,C:0.04:5';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app_mock, $config);
+        is_deeply $config->{misc_limits}->{prio_throttling_data},
+          {
+            A => {scale => 1.04, reference => 0},
+            B => {scale => 2, reference => 3},
+            C => {scale => 0.04, reference => 5}
+          },
+          'prio_throttling_data parses multiple correctly';
+    };
 };
 
 done_testing();

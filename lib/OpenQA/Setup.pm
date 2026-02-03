@@ -54,20 +54,28 @@ sub _load_config ($app, $defaults, $mode_specific_defaults) {
         _read_config_file($config, $config_file, $defaults, $mode_defaults);
         $config->{ini_config} = $config_file;
     }
-
     # ensure default values are assigned; warn if config files were supplied at all
     _read_config_file($config, undef, $defaults, $mode_defaults);
     $app->log->warn('No configuration files supplied, will fallback to default configuration') unless $config_file;
     return $config;
 }
 
-sub validate_prio_throttling_format ($config) {
-    my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
-    if ($throttling && length $throttling) {
-        $config->{misc_limits}->{prio_throttling_parameters} =~ s/\s+//g;
-        die("Wrong formatting for 'prio_throttling_parameters' in openqa.ini")
-          unless ($throttling =~ /^[A-Z_]+:\d+(?:,[A-Z_]+:\d+)*$/i);
+sub _load_prio_throttling ($app, $config) {
+    return
+      unless my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
+
+    my %hash;
+    my $n = qr/[+-]?(?:\d+\.?\d*|\.\d+)/;    # number
+    my $u = qr/([A-Z_][A-Z0-9_]*):($n)(?::($n))?/i;    # Key:N:M = $1:$2:$3
+    $throttling =~ s/\s+//g;
+    unless ($throttling =~ qr/^$u(?:,$u)*$/i) {
+        $app->log->warn("Wrong format in openqa.ini 'prio_throttling_parameters': $throttling");
+        return;
     }
+    while ($throttling =~ /,?$u/g) {
+        $hash{$1} = {scale => $2, reference => $3 // 0};
+    }
+    return \%hash;
 }
 
 sub read_config ($app) {
@@ -253,6 +261,7 @@ sub read_config ($app) {
             max_job_time_prio_scale => 100,
             scheduled_product_min_storage_duration => 34,
             prio_throttling_parameters => '',
+            prio_throttling_data => undef,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
@@ -304,7 +313,7 @@ sub read_config ($app) {
         $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
     }
 
-    validate_prio_throttling_format($config);
+    $config->{misc_limits}->{prio_throttling_data} = _load_prio_throttling($app, $config);
 
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}

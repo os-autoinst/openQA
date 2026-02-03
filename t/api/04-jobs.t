@@ -1052,21 +1052,37 @@ subtest 'priority correctly assigned when posting job' => sub {
         $t->json_is('/job/priority', 50, 'feature disabled: prio value unchanged');
     };
 
-    subtest 'priority malus due to high QEMURAM demand' => sub {
-        my $add = 40;
+    subtest 'priority scaled up due to QEMURAM demand' => sub {
+        my $add = 20;
         local $jobs_post_params{QEMURAM} = 4096;
-        my $limits = OpenQA::App->singleton->config->{misc_limits};
-        $limits->{prio_throttling_parameters} = 'QEMURAM:0.01';
+
+        my $config = OpenQA::Setup::read_config($t->app);    # OpenQA::App->singleton->config;
+        $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
         $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
         $t->json_is('/job/priority', 50 + $add, 'increased prio value');
     };
 
-    subtest 'priority malus due to high HDDSIZEGB demand' => sub {
+    subtest 'priority improved due to QEMURAM low demand' => sub {
+        my $add = -10;
+        local $jobs_post_params{QEMURAM} = 1024;
+
+        my $config = OpenQA::Setup::read_config($t->app);    # OpenQA::App->singleton->config;
+        $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', 50 + $add, 'decreased prio value');
+    };
+
+    subtest 'priority scaled up due to HDDSIZEGB demand' => sub {
         my $add = 2;
         local $jobs_post_params{HDDSIZEGB} = 40;
-        my $limits = OpenQA::App->singleton->config->{misc_limits};
-        $limits->{prio_throttling_parameters} = 'XXX :0.2,  FAKE_HDDSIZEGB:0.01, HDDSIZEGB:0.05,  YYY: 0.1';
+        my $config = OpenQA::Setup::read_config($t->app);    # OpenQA::App->singleton->config;
+        $config->{misc_limits}->{prio_throttling_parameters}
+          = 'XXX :0.2,  FAKE_HDDSIZEGB:0.01, HDDSIZEGB:0.05,  YYY: 0.1';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
         $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
         $t->json_is('/job/priority', 50 + $add, 'increased prio value');
