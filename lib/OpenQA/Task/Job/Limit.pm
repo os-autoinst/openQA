@@ -164,6 +164,22 @@ sub _account_for_deletion ($margin_bytes, $margin_bytes_main_storage, $deleted_r
     return $$margin_bytes >= 0;
 }
 
+my %PLURALS = (video => 'videos', results => 'results');
+my %JOB_PREFIXES = ('non-important' => '', important => 'important ');
+
+sub _delete_jobs ($what, $job_specifier, $search_conds, $jobs, $from, $margin_bytes, $margin_bytes_main_storage, $dry) {
+    log_debug
+      "Deleting $what from $job_specifier jobs starting from oldest job (from $from, balance is $$margin_bytes)";
+    my $action = "delete_$PLURALS{$what}";
+    my $log_message = "Deleting $what of $JOB_PREFIXES{$job_specifier}job ";
+    for my $openqa_job ($jobs->search($search_conds, {order_by => {-asc => 'id'}})) {
+        log_debug $log_message . $openqa_job->id;
+        return (1, "Done with $from after deleting $PLURALS{$what} from $job_specifier jobs")
+          if _account_for_deletion $margin_bytes, $margin_bytes_main_storage, $openqa_job->$action($dry);
+    }
+    return ();
+}
+
 sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_cond, $margin_bytes,
     $margin_bytes_main_storage, $archived)
 {
@@ -175,42 +191,18 @@ sub _delete_results ($dry, $jobs, $max_job_id, $not_important_cond, $important_c
     my $from = $archived ? 'archive' : 'results dir';
     return (1, "Nothing to do for $from") if $$margin_bytes >= 0;
 
-    log_debug
-      "Deleting videos from non-important jobs starting from oldest job (from $from, balance is $$margin_bytes)";
-    my @job_id_args = (id => {'<=' => $max_job_id}, archived => $archived);
-    my %jobs_params = (order_by => {-asc => 'id'});
-    my $relevant_jobs = $jobs->search({@job_id_args, @$not_important_cond, logs_present => 1}, \%jobs_params);
-    while (my $openqa_job = $relevant_jobs->next) {
-        log_debug 'Deleting video of job ' . $openqa_job->id;
-        return (1, "Done with $from after deleting videos from non-important jobs")
-          if _account_for_deletion $margin_bytes, $margin_bytes_main_storage, $openqa_job->delete_videos($dry);
+    my @search = (id => {'<=' => $max_job_id}, archived => $archived);
+    my @common = ($jobs, $from, $margin_bytes, $margin_bytes_main_storage, $dry);
+    my @res;
+    for my $step_args (
+        ['video', 'non-important', {@search, @$not_important_cond, logs_present => 1}, @common],
+        ['results', 'non-important', {@search, @$not_important_cond}, @common],
+        ['video', 'important', {@search, @$important_cond, logs_present => 1}, @common],
+        ['results', 'important', {@search, @$important_cond}, @common],
+      )
+    {
+        return @res if @res = _delete_jobs(@$step_args);
     }
-
-    log_debug
-      "Deleting results from non-important jobs starting from oldest job (from $from, balance is $$margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, @$not_important_cond}, \%jobs_params);
-    while (my $openqa_job = $relevant_jobs->next) {
-        log_debug 'Deleting results of job ' . $openqa_job->id;
-        return (1, "Done with $from after deleting results from non-important jobs")
-          if _account_for_deletion $margin_bytes, $margin_bytes_main_storage, $openqa_job->delete_results($dry);
-    }
-
-    log_debug "Deleting videos from important jobs starting from oldest job (from $from, balance is $$margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, @$important_cond, logs_present => 1}, \%jobs_params);
-    while (my $openqa_job = $relevant_jobs->next) {
-        log_debug 'Deleting video of important job ' . $openqa_job->id;
-        return (1, "Done with $from after deleting videos from important jobs")
-          if _account_for_deletion $margin_bytes, $margin_bytes_main_storage, $openqa_job->delete_videos($dry);
-    }
-
-    log_debug "Deleting results from important jobs starting from oldest job (from $from, balance is $$margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, @$important_cond}, \%jobs_params);
-    while (my $openqa_job = $relevant_jobs->next) {
-        log_debug 'Deleting results of important job ' . $openqa_job->id;
-        return (1, "Done with $from after deleting results from important jobs")
-          if _account_for_deletion $margin_bytes, $margin_bytes_main_storage, $openqa_job->delete_results($dry);
-    }
-
     return (0, "Unable to cleanup enough results from $from");
 }
 
