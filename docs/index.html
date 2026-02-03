@@ -7281,7 +7281,7 @@ actual test code and the test needs to be loaded in the distribution&#8217;s
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">Mojo::Base</span><span class="tok-w"> </span><span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-n">signatures</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
 <span class="tok-k">sub</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-w"> </span><span class="tok-p">{</span>
@@ -7289,12 +7289,23 @@ actual test code and the test needs to be loaded in the distribution&#8217;s
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Note:</strong> <code>Mojo::Base</code> <em>automatically enables: strict, warnings, utf8, perl5.16. See <a href="https://docs.mosjolicious.org/Mojo/Base#DESCRIPTION">Mojo::Base Description</a></em></p>
-</li>
-</ul>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The line <code>use Mojo::Base …</code> automatically enables modern Perl
+conventions/features which is highly recommended. Check out the
+<a href="https://docs.mojolicious.org/Mojo/Base#DESCRIPTION">Mojo::Base description</a> for
+details. Alternatively, you may set the test variable
+<code>ENABLE_MODERN_PERL_FEATURES=1</code> (e.g. in <code>main.pm</code> before invoking <code>loadtest</code>).
+This only applies to test modules, though. In other Perl modules and <code>main.pm</code>
+modern Perl features still need to be enabled manually.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>And here is an example in Python:</p>
@@ -9590,7 +9601,7 @@ needs to be enabled manually in <code>openqa.ini</code>.</p>
 <div class="paragraph">
 <p>Once enabled the experimental MCP endpoint becomes available under the path
 <code>/experimental/mcp</code>. At the moment all implemented MCP tools are read-only,
-that means LLMs can review infomation provided by openQA, but are unable to
+that means LLMs can review information provided by openQA, but are unable to
 make changes or trigger actions. Once write operations become available
 with future updates, they will have to be enabled with a different setting
 in <code>openqa.ini</code> for security reasons.</p>
@@ -14653,7 +14664,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-27 04:43:51 UTC
+Last updated 2026-02-03 04:44:54 UTC
 </div>
 </div>
 </body>
