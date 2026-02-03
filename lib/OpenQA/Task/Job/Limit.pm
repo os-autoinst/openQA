@@ -164,14 +164,13 @@ sub _account_for_deletion ($margin_bytes, $margin_bytes_main_storage, $deleted_r
     return $$margin_bytes >= 0;
 }
 
-my %ACTIONS = (video => 'delete_videos', results => 'delete_results');
 my %PLURALS = (video => 'videos', results => 'results');
 my %JOB_PREFIXES = ('non-important' => '', important => 'important ');
 
 sub _delete_jobs ($what, $job_specifier, $search_conds, $jobs, $from, $margin_bytes, $margin_bytes_main_storage, $dry) {
     log_debug
       "Deleting $what from $job_specifier jobs starting from oldest job (from $from, balance is $$margin_bytes)";
-    my $action = $ACTIONS{$what};
+    my $action = "delete_$PLURALS{$what}";
     my $log_message = "Deleting $what of $JOB_PREFIXES{$job_specifier}job ";
     for my $openqa_job ($jobs->search($search_conds, {order_by => {-asc => 'id'}})) {
         log_debug $log_message . $openqa_job->id;
