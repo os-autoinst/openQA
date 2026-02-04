@@ -1,114 +1,146 @@
 function setupFilterForm(options) {
   // make filter form expandable
-  $('#filter-panel .card-header').on('click', function () {
-    $('#filter-panel .card-body').toggle(200);
-    if ($('#filter-panel').hasClass('filter-panel-bottom')) {
-      $('html,body').animate({
-        scrollTop: $(document).height()
-      });
-    }
-  });
+  const cardHeader = document.querySelector('#filter-panel .card-header');
+  if (cardHeader) {
+    cardHeader.addEventListener('click', function () {
+      const cardBody = document.querySelector('#filter-panel .card-body');
+      if (cardBody) {
+        $(cardBody).toggle(200);
+        if (document.getElementById('filter-panel').classList.contains('filter-panel-bottom')) {
+          window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'smooth'});
+        }
+      }
+    });
+  }
 
-  $('#filter-panel .help_popover').on('click', function (event) {
-    event.stopPropagation();
+  document.querySelectorAll('#filter-panel .help_popover').forEach(helpPopover => {
+    helpPopover.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
   });
 
   if (options && options.preventLoadingIndication) {
     return;
   }
 
-  $('#filter-form').on('submit', function (event) {
-    if ($('#filter-form').serialize() !== window.location.search.substring(1)) {
-      // show progress indication
-      $('#filter-form').hide();
-      $('#filter-panel .card-body').append(
-        '<span id="filter-progress"><i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span></span>'
-      );
-    }
-  });
+  const filterForm = document.getElementById('filter-form');
+  if (filterForm) {
+    filterForm.addEventListener('submit', function () {
+      const currentQuery = window.location.search.substring(1);
+      const formData = new FormData(filterForm);
+      const newQuery = new URLSearchParams(formData).toString();
 
-  $('#filter-reset-button').on('click', function () {
-    const form = $('#filter-form');
-    form.find('input[type="text"], input[type="number"]').val('');
-    form.find('input[type="checkbox"]').prop('checked', false).prop('indeterminate', false);
-    form.find('input[hidden]').remove();
-    form.find('select').val([]).trigger('chosen:updated');
-    $('#filter-panel .card-header span').text('no filter present, click to toggle filter form');
-  });
+      if (newQuery !== currentQuery) {
+        // show progress indication
+        filterForm.hidden = true;
+        const cardBody = document.querySelector('#filter-panel .card-body');
+        if (cardBody) {
+          const progress = document.createElement('span');
+          progress.id = 'filter-progress';
+          progress.innerHTML = '<i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span>';
+          cardBody.appendChild(progress);
+        }
+      }
+    });
+  }
+
+  const resetBtn = document.getElementById('filter-reset-button');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      if (!filterForm) return;
+      filterForm.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+        input.value = '';
+      });
+      filterForm.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.checked = false;
+        input.indeterminate = false;
+      });
+      filterForm.querySelectorAll('input[hidden]').forEach(input => {
+        input.remove();
+      });
+      $(filterForm).find('select').val([]).trigger('chosen:updated');
+      document.querySelector('#filter-panel .card-header span').textContent =
+        'no filter present, click to toggle filter form';
+    });
+  }
 
   const updateMasterCheckbox = function (container) {
-    const master = container.find('.filter-bulk-master');
-    if (!master.length) return;
-    const checkboxes = container.find('input[type="checkbox"]:not(.filter-bulk-master)');
-    const checkedCount = checkboxes.filter(':checked').length;
+    const master = container.querySelector('.filter-bulk-master');
+    if (!master) return;
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master)');
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
 
     if (checkedCount === 0) {
-      master.prop('checked', false);
-      master.prop('indeterminate', false);
+      master.checked = false;
+      master.indeterminate = false;
     } else if (checkedCount === checkboxes.length) {
-      master.prop('checked', true);
-      master.prop('indeterminate', false);
+      master.checked = true;
+      master.indeterminate = false;
     } else {
-      master.prop('checked', false);
-      master.prop('indeterminate', true);
+      master.checked = false;
+      master.indeterminate = true;
     }
   };
 
-  $('#filter-results, #filter-states').on('click', '.filter-bulk-master', function () {
-    const container = $(this).closest('.mb-3');
-    const isChecked = $(this).prop('checked');
-    container.find('input[type="checkbox"]:not(.filter-bulk-master)').prop('checked', isChecked);
-  });
+  document.querySelectorAll('#filter-results, #filter-states').forEach(container => {
+    container.addEventListener('click', function (e) {
+      const master = e.target.closest('.filter-bulk-master');
+      if (master) {
+        const mb3 = master.closest('.mb-3');
+        const isChecked = master.checked;
+        mb3.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master)').forEach(cb => {
+          cb.checked = isChecked;
+        });
+        return;
+      }
 
-  $('#filter-results, #filter-states').on('change', 'input[type="checkbox"]:not(.filter-bulk-master)', function () {
-    updateMasterCheckbox($(this).closest('.mb-3'));
-  });
-
-  $('#filter-results, #filter-states').on('click', '.filter-bulk-invert', function (e) {
-    e.preventDefault();
-    const container = $(this).closest('.mb-3');
-    container.find('input[type="checkbox"]:not(.filter-bulk-master)').each(function () {
-      $(this).prop('checked', !$(this).prop('checked'));
+      const invert = e.target.closest('.filter-bulk-invert');
+      if (invert) {
+        e.preventDefault();
+        const mb3 = invert.closest('.mb-3');
+        mb3.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master)').forEach(cb => {
+          cb.checked = !cb.checked;
+        });
+        updateMasterCheckbox(mb3);
+      }
     });
-    updateMasterCheckbox(container);
-  });
 
-  $('#filter-results, #filter-states').each(function () {
-    updateMasterCheckbox($(this));
+    container.addEventListener('change', function (e) {
+      if (e.target.matches('input[type="checkbox"]:not(.filter-bulk-master)')) {
+        updateMasterCheckbox(e.target.closest('.mb-3'));
+      }
+    });
+
+    updateMasterCheckbox(container);
   });
 }
 
 function parseFilterArguments(paramHandler) {
-  var varPairs = window.location.search.substring(1).split('&');
-  var filterLabels = [];
-  var hiddenInputs = [];
-  for (var j = 0; j < varPairs.length; ++j) {
-    var pair = varPairs[j].split('=');
-    if (pair.length > 1) {
-      var key = decodeURIComponent(pair[0].replace(/\+/g, '%20'));
-      var val = decodeURIComponent(pair[1].replace(/\+/g, '%20'));
-      if (val.length < 1) {
-        continue;
-      }
-      var filterLabel = paramHandler(key, val);
-      if (filterLabel) {
-        filterLabels.push(filterLabel);
-      } else {
-        var input = $('<input/>');
-        input.attr('value', val);
-        input.attr('name', key);
-        input.attr('hidden', true);
-        hiddenInputs.push(input);
-      }
+  const params = new URLSearchParams(window.location.search);
+  const filterLabels = [];
+  const form = document.getElementById('filter-form');
+  const hiddenInputs = [];
+
+  params.forEach((val, key) => {
+    if (val.length < 1) return;
+    const filterLabel = paramHandler(key, val);
+    if (filterLabel) {
+      filterLabels.push(filterLabel);
+    } else {
+      const input = document.createElement('input');
+      input.value = val;
+      input.name = key;
+      input.hidden = true;
+      hiddenInputs.push(input);
     }
+  });
+
+  if (form) {
+    form.append(...hiddenInputs);
   }
-  for (var i = 0; i < hiddenInputs.length; i++) {
-    $('#filter-form').append(hiddenInputs[i]);
-  }
+
   if (filterLabels.length > 0) {
-    $('#filter-panel .card-header')
-      .find('span')
-      .text('current: ' + filterLabels.join(', '));
+    document.querySelector('#filter-panel .card-header span').textContent = 'current: ' + filterLabels.join(', ');
   }
   return filterLabels;
 }
