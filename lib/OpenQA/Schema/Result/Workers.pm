@@ -215,10 +215,10 @@ sub send_command {
     my $client = OpenQA::WebSockets::Client->singleton;
     try { $client->send_msg($self->id, $args{command}, $args{job_id}) }
     catch ($e) {
-        log_error(
+        log_info(
             sprintf(
                 'Failed dispatching message to websocket server over ipc for worker "%s:%n": %s',
-                $self->host, $self->instance, $e
+                $self->host || '?', $self->instance || '?', $e
             ));
         return undef;
     }
