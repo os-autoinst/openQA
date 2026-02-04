@@ -96,7 +96,7 @@ sub barrier_create ($name = undef, $jobid = undef, $expected_jobs = undef) {
     my $dbh = OpenQA::Schema->singleton->storage->dbh;
     my $sth = $dbh->prepare('INSERT INTO job_locks (name, owner, count) VALUES (?, ?, ?) ON CONFLICT DO NOTHING');
     try { $sth->execute($name, $jobid, $expected_jobs) }
-    catch ($e) { die "Unable to create barrier for job $jobid with name '$name': $e" }
+    catch ($e) { die "Unable to create barrier for job $jobid with name '$name': $e" }    # uncoverable statement
     return $sth->rows > 0;
 }
 

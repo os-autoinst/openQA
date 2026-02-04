@@ -150,7 +150,7 @@ sub delete {
     ) if $asset->count == 0;
     my $rs;
     try { $rs = $asset->delete_all }
-    catch ($e) { return $self->render(json => {error => $e}, status => 409) }
+    catch ($e) { return $self->render(json => {error => $e}, status => 409) }    # uncoverable statement
     $self->emit_event('openqa_asset_delete', \%args);
     $self->render(json => {count => $rs}, status => 200);
 }

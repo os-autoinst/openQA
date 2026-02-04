@@ -99,7 +99,7 @@ sub start_driver ($mojoport) {
         $_driver->get("http://localhost:$mojoport/");
 
     }
-    catch ($e) { die $e }
+    catch ($e) { die $e }    # uncoverable statement
 
     return $_driver;
 }

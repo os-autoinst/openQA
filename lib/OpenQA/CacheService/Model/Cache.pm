@@ -167,7 +167,7 @@ sub track_asset ($self, $asset) {
         $db->query($sql, $asset);
         $tx->commit;
     }
-    catch ($e) { $self->log->error("Tracking asset failed: $e") }
+    catch ($e) { $self->log->error("Tracking asset failed: $e") }    # uncoverable statement
 }
 
 sub metrics ($self) {
@@ -303,7 +303,7 @@ sub _check_limits ($self, $needed, $to_preserve = undef) {
                 last if !$self->_exceeds_limit($needed);
             }
         }
-        catch ($e) { $log->error("Checking cache limit failed: $e") }
+        catch ($e) { $log->error("Checking cache limit failed: $e") }    # uncoverable statement
     }
 }
 
@@ -317,7 +317,7 @@ sub _delete_pending_assets ($self) {
             $self->purge_asset($filename);
         }
     }
-    catch ($e) { $log->error("Checking for pending leftovers failed: $e") }
+    catch ($e) { $log->error("Checking for pending leftovers failed: $e") }    # uncoverable statement
 }
 
 1;

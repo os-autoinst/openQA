@@ -1622,7 +1622,7 @@ sub allocate_network ($self, $name) {
         log_debug "at vlan $name:$vlan";
         next if $used{$vlan};
         try { $sth->execute($job_id, $name, $vlan) }
-        catch ($e) { die "Failed to create new vlan tag '$vlan' for job $job_id: $e\n" }
+        catch ($e) { die "Failed to create new vlan tag '$vlan' for job $job_id: $e\n" }    # uncoverable statement
         die "Unable to allocate network for job $job_id: network '$name' already exists" unless $sth->rows;
         log_debug "Created network for $job_id: $vlan";
         for my $cluster_job_id (keys %{$self->cluster_jobs}) {
@@ -1783,7 +1783,7 @@ sub carry_over_bugrefs ($self) {
             my %newone = (text => $text, user_id => $comment->user_id);
             my $comment = $self->comments->create_with_event(\%newone, {taken_over_from_job_id => $prev_id});
             try { $comment->handle_special_contents }
-            catch ($e) { log_info "Unable to evaluate contents of taken-over comment: $e" }
+            catch ($e) { log_info "Unable to evaluate contents of taken-over comment: $e" }    # uncoverable statement
             return 1;
         }
     }

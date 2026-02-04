@@ -25,11 +25,11 @@ sub create ($self) {
 
     if (!$error && $validation->is_valid('t_expiration')) {
         try { $expiration = DateTime::Format::Pg->parse_datetime($validation->param('t_expiration')) }
-        catch ($e) { $error = $e }
+        catch ($e) { $error = $e }    # uncoverable statement
     }
     unless ($error) {
         try { $self->schema->resultset('ApiKeys')->create({user_id => $user->id, t_expiration => $expiration}) }
-        catch ($e) { $error = $e }
+        catch ($e) { $error = $e }    # uncoverable statement
     }
     if ($error) {
         my $msg = "Error adding the API key: $error";

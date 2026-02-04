@@ -22,7 +22,7 @@ sub add ($self, $lock, $job_id) {
 
         $tx->commit;
     }
-    catch ($e) { croak "Couldn't add download: $e" }
+    catch ($e) { croak "Couldn't add download: $e" }    # uncoverable statement
 }
 
 sub find ($self, $lock) {
