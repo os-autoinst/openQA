@@ -143,7 +143,7 @@ my $url_with_escaped_parameters
   . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&comment=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
-$driver->find_element('#filter-form button')->click();
+$driver->find_element('#filter-form button[type="submit"]')->click();
 my $url_after_filter = "$url_with_escaped_parameters#";
 my $desc = 'escaped URL parameters are passed correctly';
 wait_until sub { $driver->get_current_url eq $url_after_filter }, $desc, 10;
@@ -685,6 +685,41 @@ subtest "job dependencies displayed on 'Test result overview' page" => sub {
     is scalar @parent_deps, 1, 'parent job was highlighted';
     is $driver->find_child_element($parent_deps[0], '#res_DVD_i586_kde')->get_attribute('name'), 'jobid_td_99937',
       'parent job was highlighted correctly';
+};
+
+subtest 'filter helper links' => sub {
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => '#filter-results .filter-bulk-master', is_displayed => 1);
+    my $results_div = $driver->find_element('#filter-results');
+    my $master = $driver->find_child_element($results_div, '.filter-bulk-master');
+    subtest 'select all' => sub {
+        $master->click();
+        my @checkboxes = $driver->find_child_elements($results_div, 'input[type="checkbox"]:not(.filter-bulk-master)');
+        my $all_selected = 1;
+        for my $cb (@checkboxes) { $all_selected = 0 unless $cb->is_selected; }
+        ok $all_selected, 'all checkboxes selected after master checkbox click';
+        ok $master->is_selected, 'master checkbox is checked';
+    };
+    subtest 'select none' => sub {
+        $master->click();
+        my @checkboxes = $driver->find_child_elements($results_div, 'input[type="checkbox"]:not(.filter-bulk-master)');
+        my $none_selected = 1;
+        for my $cb (@checkboxes) { $none_selected = 0 if $cb->is_selected; }
+        ok $none_selected, 'all checkboxes deselected after master checkbox click again';
+        ok !$master->is_selected, 'master checkbox is unchecked';
+    };
+    subtest 'partially selected' => sub {
+        $driver->find_element_by_id('filter-passed')->click();
+        is $master->get_attribute('indeterminate'), 'true', 'master checkbox is indeterminate when partially selected';
+
+        $driver->find_child_element($results_div, '.filter-bulk-invert')->click();
+        ok(!$driver->find_element_by_id('filter-passed')->is_selected, '"passed" deselected after invert');
+        ok($driver->find_element_by_id('filter-failed')->is_selected, '"failed" selected after invert');
+    };
+    $driver->find_element('#filter-form button[type="submit"]')->click();
+    wait_until sub { $driver->get_current_url =~ qr/result=/ }, 'form submitted after using helper links';
+    like $driver->get_current_url, qr/result=/, 'URL contains result parameter';
 };
 
 kill_driver();

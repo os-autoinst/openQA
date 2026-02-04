@@ -85,13 +85,25 @@
         <div class="card-body">
             <form action="#" method="get" id="filter-form">
                 <div class="mb-3" id="filter-results">
-                    <strong>Job result</strong>
+                    <div class="d-flex align-items-center mb-1">
+                        <input type="checkbox" class="filter-bulk-master form-check-input me-2" title="Select all / None">
+                        <strong class="me-2">Job result</strong>
+                        <span class="small">
+                            <a href="#" class="filter-bulk-invert text-decoration-none" title="Invert selection"><i class="fa fa-refresh"></i></a>
+                        </span>
+                    </div>
                     % for my $result (OpenQA::Jobs::Constants::RESULTS) {
                         <label class="form-label"><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
                     % }
                 </div>
                 <div class="mb-3" id="filter-states">
-                    <strong>Job state</strong>
+                    <div class="d-flex align-items-center mb-1">
+                        <input type="checkbox" class="filter-bulk-master form-check-input me-2" title="Select all / None">
+                        <strong class="me-2">Job state</strong>
+                        <span class="small">
+                            <a href="#" class="filter-bulk-invert text-decoration-none" title="Invert selection"><i class="fa fa-refresh"></i></a>
+                        </span>
+                    </div>
                     % for my $state (OpenQA::Jobs::Constants::STATES) {
                         <label class="form-label"><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
                     % }
