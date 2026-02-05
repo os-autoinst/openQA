@@ -38,6 +38,8 @@ my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 $t->get_ok($url . '/admin/auditlog')->status_is(302);
 $t->get_ok($url . '/login')->status_is(302);
 $t->get_ok($url . '/admin/auditlog')->status_is(200);
+$t->get_ok($url . '/admin/auditlog?eventid=42')->status_is(200);
+$t->content_like(qr/searchquery.*id:42/, 'specified ID passed as search query');
 
 # login-in as Demo
 $driver->title_is('openQA', 'on main page');
@@ -73,9 +75,21 @@ subtest 'audit log entries' => sub {
     check_data_table_entries 5, 'again all rows displayed when filtering for only newer than today';
     $search->clear;
 
+    $search->send_keys('id:2');
+    check_data_table_entries 1, 'only one row shown when filtering by ID';
+    $search->clear;
+
+    $search->send_keys('newer:yesterday');
+    check_data_table_entries 5, 'again all rows displayed when filtering for only newer than yesterday';
+    $search->clear;
+
     $search->send_keys('older:today');
     $entries = check_data_table_entries 1, 'one row for empty table when filtering for only older than today';
     is $driver->find_child_element($entries->[0], 'td')->get_attribute('class'), 'dt-empty', 'but DataTable is empty';
+    $search->clear;
+
+    $search->send_keys('older:invalid');
+    check_data_table_entries 5, 'invalid search term ignored';
     $search->clear;
 
     $search->send_keys('user:system event:startup date:today');

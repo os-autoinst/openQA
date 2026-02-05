@@ -51,45 +51,4 @@ sub edit_parent_group {
     $self->group_page('JobGroupParents', 'admin/group/parent_group_property_editor');
 }
 
-sub connect {
-    my ($self) = @_;
-
-    my $schema = $self->schema;
-    $self->stash('group', $schema->resultset('JobGroups')->find($self->param('groupid')));
-    my $products = $schema->resultset('Products')->search(undef, {order_by => 'name'});
-    $self->stash('products', $products);
-    my $tests = $schema->resultset('TestSuites')->search(undef, {order_by => 'name'});
-    $self->stash('tests', $tests);
-    my $machines = $schema->resultset('Machines')->search(undef, {order_by => 'name'});
-    $self->stash('machines', $machines);
-
-    $self->render('admin/group/connect');
-}
-
-sub save_connect {
-    my ($self) = @_;
-
-    my $schema = $self->schema;
-    my $group = $schema->resultset('JobGroups')->find($self->param('groupid'));
-    if (!$group) {
-        $self->flash(error => 'Specified group ID ' . $self->param('groupid') . 'doesn\'t exist.');
-        return $self->redirect_to('admin_groups');
-    }
-
-    my $values = {
-        prio => $self->param('prio') // $group->default_priority,
-        product_id => $self->param('medium'),
-        machine_id => $self->param('machine'),
-        group_id => $group->id,
-        test_suite_id => $self->param('test')};
-    try { $schema->resultset('JobTemplates')->create($values)->id }
-    catch ($e) {
-        $self->flash(error => $e);
-        return $self->redirect_to('job_group_new_media', groupid => $group->id);
-    }
-
-    $self->emit_event('openqa_jobgroup_connect', $values);
-    return $self->redirect_to('admin_job_templates', groupid => $group->id);
-}
-
 1;
