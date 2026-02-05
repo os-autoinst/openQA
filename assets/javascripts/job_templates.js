@@ -6,13 +6,15 @@ var editor;
 function setupJobTemplates(url, id) {
   job_templates_url = url;
   job_group_id = id;
-  $.ajax(url + '?group_id=' + id).done(loadJobTemplates);
+  fetch(url + '?group_id=' + id)
+    .then(response => response.json())
+    .then(loadJobTemplates);
 }
 
 function loadJobTemplates(data) {
   var mediagroups = {};
   var groups = [];
-  $.each(data.JobTemplates, function (i, jt) {
+  data.JobTemplates.forEach(jt => {
     var media = mediagroups[jt.product.group];
     if (!media) {
       groups.push(jt.product.group);
@@ -22,44 +24,58 @@ function loadJobTemplates(data) {
     mediagroups[jt.product.group] = media;
   });
   groups.sort();
-  $.each(groups, function (i, group) {
+  groups.forEach(group => {
     buildMediumGroup(group, mediagroups[group]);
   });
   var width = alignCols() - 16;
-  $('#loading').remove();
-  $('.chosen-select').chosen({width: width + 'px'});
-  $(document).on('change', '.chosen-select', chosenChanged);
+  const loading = document.getElementById('loading');
+  if (loading) {
+    loading.remove();
+  }
+  const chosenSelects = document.querySelectorAll('.chosen-select');
+  if (typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen === 'function') {
+    jQuery(chosenSelects).chosen({width: width + 'px'});
+    jQuery(document).on('change', '.chosen-select', chosenChanged);
+  }
 }
 
 function highlightChosen(chosen) {
-  var container = chosen.parent('td').find('.chosen-container');
-  container.fadeTo('fast', 0.3).fadeTo('fast', 1);
+  if (chosen instanceof jQuery) chosen = chosen[0];
+  const container = chosen.parentElement.querySelector('.chosen-container');
+  if (container) {
+    container.style.opacity = 0.3;
+    setTimeout(() => {
+      container.style.opacity = 1;
+    }, 200);
+  }
 }
 
 function templateRemoved(chosen, deselected) {
-  var jid = chosen.find('option[value="' + deselected + '"]').data('jid');
-  $.ajax({
-    url: job_templates_url + '/' + jid,
-    type: 'DELETE',
-    dataType: 'json'
-  })
-    .done(function () {
+  if (chosen instanceof jQuery) chosen = chosen[0];
+  const option = chosen.querySelector('option[value="' + deselected + '"]');
+  const jid = option ? option.dataset.jid : null;
+  fetchWithCSRF(job_templates_url + '/' + jid, {method: 'DELETE'})
+    .then(() => {
       highlightChosen(chosen);
     })
-    .fail(addFailed);
+    .catch(addFailed);
 }
 
 function addFailed(data) {
   // display something without alert
-  if (Object.prototype.hasOwnProperty.call(data, 'responseJSON')) {
-    alert(data.responseJSON.error);
+  if (data && typeof data === 'object' && data.error) {
+    alert(data.error);
   } else {
     alert('unknown error');
   }
 }
 
 function addSucceeded(chosen, selected, data) {
-  chosen.find('option[value="' + selected + '"]').data('jid', data['id']);
+  if (chosen instanceof jQuery) chosen = chosen[0];
+  const option = chosen.querySelector('option[value="' + selected + '"]');
+  if (option) {
+    option.dataset.jid = data['id'];
+  }
   highlightChosen(chosen);
 }
 
@@ -88,48 +104,49 @@ function formatPriority(prio) {
 }
 
 function templateAdded(chosen, selected) {
-  var tr = chosen.parents('tr');
+  if (chosen instanceof jQuery) chosen = chosen[0];
+  const tr = chosen.closest('tr');
   finalizeTest(tr);
-  var postData = {
-    prio: formatPriority(tr.find('.prio input').val()),
-    group_id: job_group_id,
-    product_id: chosen.data('product-id'),
-    machine_id: chosen.find('option[value="' + selected + '"]').data('machine-id'),
-    test_suite_id: tr.data('test-id')
-  };
+  const prioInput = tr.querySelector('.prio input');
+  const option = chosen.querySelector('option[value="' + selected + '"]');
+  var postData = new FormData();
+  postData.append('prio', formatPriority(prioInput.value));
+  postData.append('group_id', job_group_id);
+  postData.append('product_id', chosen.dataset.productId);
+  postData.append('machine_id', option.dataset.machineId);
+  postData.append('test_suite_id', tr.dataset.testId);
 
-  $.ajax({
-    url: job_templates_url,
-    type: 'POST',
-    dataType: 'json',
-    data: postData
+  fetchWithCSRF(job_templates_url, {
+    method: 'POST',
+    body: postData
   })
-    .fail(addFailed)
-    .done(function (data) {
+    .then(response => response.json())
+    .then(data => {
       addSucceeded(chosen, selected, data);
-    });
+    })
+    .catch(addFailed);
 }
 
 function priorityChanged(priorityInput) {
-  var tr = priorityInput.parents('tr');
+  if (priorityInput instanceof jQuery) priorityInput = priorityInput[0];
+  const tr = priorityInput.closest('tr');
 
   // just skip if there are no machines added anyways
-  var hasMachines = tr.find('td.arch select option:selected').length > 0;
+  const hasMachines = Array.from(tr.querySelectorAll('td.arch select')).some(select => select.value);
   if (!hasMachines) {
     return;
   }
 
-  $.ajax({
-    url: job_templates_url,
-    type: 'POST',
-    dataType: 'json',
-    data: {
-      prio: formatPriority(priorityInput.val()),
-      prio_only: true,
-      group_id: job_group_id,
-      test_suite_id: tr.data('test-id')
-    }
-  }).fail(addFailed);
+  const postData = new FormData();
+  postData.append('prio', formatPriority(priorityInput.value));
+  postData.append('prio_only', true);
+  postData.append('group_id', job_group_id);
+  postData.append('test_suite_id', tr.dataset.testId);
+
+  fetchWithCSRF(job_templates_url, {
+    method: 'POST',
+    body: postData
+  }).catch(addFailed);
 }
 
 function chosenChanged(evt, param) {
@@ -350,12 +367,21 @@ function toggleEdit() {
 }
 
 function toggleTemplateEditor() {
-  $('#media').toggle(250);
-  var form = $('#editor-form');
-  form.toggle(250);
-  form.find('.buttons').hide();
-  form.find('.progress-indication').show();
-  $('#toggle-yaml-editor').toggleClass('btn-secondary');
+  const media = document.getElementById('media');
+  if (media) {
+    media.style.display = media.style.display === 'none' ? '' : 'none';
+  }
+  const form = document.getElementById('editor-form');
+  if (!form) {
+    return;
+  }
+  form.style.display = form.style.display === 'none' ? '' : 'none';
+  form.querySelector('.buttons').style.display = 'none';
+  form.querySelector('.progress-indication').style.display = '';
+  const toggleYamlEditor = document.getElementById('toggle-yaml-editor');
+  if (toggleYamlEditor) {
+    toggleYamlEditor.classList.toggle('btn-secondary');
+  }
   if (editor === undefined) {
     editor = ace.edit('editor-template', {
       mode: 'ace/mode/yaml',
@@ -382,17 +408,18 @@ function toggleTemplateEditor() {
       }
     };
   }
-  $.ajax({
-    url: form.data('put-url'),
-    dataType: 'json'
-  }).done(prepareTemplateEditor);
+  fetch(form.dataset.putUrl)
+    .then(response => response.json())
+    .then(prepareTemplateEditor);
 }
 
 function prepareTemplateEditor(data) {
   editor.setValue(data, -1);
-  var form = $('#editor-form');
-  form.find('.progress-indication').hide();
-  form.find('.buttons').show();
+  const form = document.getElementById('editor-form');
+  if (form) {
+    form.querySelector('.progress-indication').style.display = 'none';
+    form.querySelector('.buttons').style.display = '';
+  }
   if (!user_is_admin) {
     return;
   }
@@ -401,11 +428,14 @@ function prepareTemplateEditor(data) {
 }
 
 function submitTemplateEditor(button) {
-  var form = $('#editor-form');
-  form.find('.buttons').hide();
-  form.find('.progress-indication').show();
-  var result = form.find('.result');
-  result.text('Applying changes...');
+  const form = document.getElementById('editor-form');
+  if (!form) {
+    return;
+  }
+  form.querySelector('.buttons').style.display = 'none';
+  form.querySelector('.progress-indication').style.display = '';
+  const result = form.querySelector('.result');
+  result.textContent = 'Applying changes...';
 
   // Reset to the minimum viable YAML if empty
   var template = editor.getValue();
@@ -421,7 +451,7 @@ function submitTemplateEditor(button) {
     editor.setValue(template, -1);
   }
 
-  var data = fetchWithCSRF(form.data('put-url'), {
+  fetchWithCSRF(form.dataset.putUrl, {
     method: 'POST',
     headers: {Accept: 'application/json'},
     body: new URLSearchParams({
@@ -429,7 +459,7 @@ function submitTemplateEditor(button) {
       preview: button !== 'save' ? 1 : 0,
       expand: button === 'expand' ? 1 : 0,
       template: template,
-      reference: form.data('reference')
+      reference: form.dataset.reference
     })
   })
     .then(response => {
@@ -438,14 +468,15 @@ function submitTemplateEditor(button) {
     .then(data => {
       // handle errors with YAML syntax
       if (Object.prototype.hasOwnProperty.call(data, 'error')) {
-        result.text('There was a problem applying the changes:');
+        result.textContent = 'There was a problem applying the changes:';
         var errors = data.error;
-        var list = $('<ul/>').appendTo(result);
-        $.each(errors, function (i) {
-          var message = Object.prototype.hasOwnProperty.call(errors[i], 'message')
-            ? errors[i].message + ': ' + errors[i].path
-            : errors[i];
-          $('<li/>').text(message).appendTo(list);
+        var list = document.createElement('ul');
+        result.appendChild(list);
+        errors.forEach(err => {
+          var message = Object.prototype.hasOwnProperty.call(err, 'message') ? err.message + ': ' + err.path : err;
+          var li = document.createElement('li');
+          li.textContent = message;
+          list.appendChild(li);
         });
         return;
       }
@@ -453,49 +484,60 @@ function submitTemplateEditor(button) {
       var mode, value;
       switch (button) {
         case 'expand':
-          result.text('Result of expanding the YAML:');
+          result.textContent = 'Result of expanding the YAML:';
           mode = 'ace/mode/yaml';
           value = data.result;
           break;
         case 'preview':
-          result.text('Preview of the changes:');
+          result.textContent = 'Preview of the changes:';
           mode = 'ace/mode/diff';
           value = data.changes;
           break;
-        case 'save':
+        case 'save': {
           // Once a valid YAML template was saved we no longer offer the legacy editor
-          $('#toggle-yaml-editor').hide();
-          $('#media-add').hide();
+          const toggleYamlEditor = document.getElementById('toggle-yaml-editor');
+          if (toggleYamlEditor) {
+            toggleYamlEditor.style.display = 'none';
+          }
+          const mediaAdd = document.getElementById('media-add');
+          if (mediaAdd) {
+            mediaAdd.style.display = 'none';
+          }
           // Update the reference to the saved document
-          form.data('reference', editor.getValue());
+          form.dataset.reference = editor.getValue();
 
-          result.text('YAML saved!');
+          result.textContent = 'YAML saved!';
           mode = 'ace/mode/diff';
           value = data.changes;
           break;
+        }
       }
 
       if (value) {
         const previewElement = document.createElement('pre');
         previewElement.appendChild(document.createTextNode(value));
-        const preview = ace.edit(previewElement, {
+        ace.edit(previewElement, {
           mode: mode,
           readOnly: true,
           maxLines: Infinity
         });
         editor.session.setUseWrapMode(true);
-        result.append(previewElement);
+        result.appendChild(previewElement);
       } else {
-        $('<strong/>').text(' No changes were made!').appendTo(result);
+        const strong = document.createElement('strong');
+        strong.textContent = ' No changes were made!';
+        result.appendChild(strong);
       }
     })
     .catch(error => {
-      result.text('There was a problem applying the changes:');
-      $('<p/>').text(error).appendTo(result);
+      result.textContent = 'There was a problem applying the changes:';
+      const p = document.createElement('p');
+      p.textContent = error;
+      result.appendChild(p);
     })
     .finally(() => {
-      form.find('.buttons').show();
-      form.find('.progress-indication').hide();
+      form.querySelector('.buttons').style.display = '';
+      form.querySelector('.progress-indication').style.display = 'none';
     });
 }
 
@@ -565,10 +607,9 @@ function showAdvancedFieldsIfJsonRefersToThem(response) {
 }
 
 function submitProperties(form) {
-  var editorForm = $(form);
-  editorForm.find('.buttons').hide();
-  editorForm.find('.progress-indication').show();
-  fetchWithCSRF(editorForm.data('put-url'), {method: 'PUT', body: new FormData(form)})
+  form.querySelector('.buttons').style.display = 'none';
+  form.querySelector('.progress-indication').style.display = '';
+  fetchWithCSRF(form.dataset.putUrl, {method: 'PUT', body: new FormData(form)})
     .then(response => {
       return response
         .json()
@@ -591,21 +632,26 @@ function submitProperties(form) {
         typeof warnings === 'object' && Object.keys(warnings).length > 0
           ? ', but <strong>there are warnings</strong> (see highlighted fields)'
           : '';
-      showSubmitResults(editorForm, `<i class="fa fa-save"></i> Changes applied${remark}`);
+      showSubmitResults(form, `<i class="fa fa-save"></i> Changes applied${remark}`);
 
       // show new name
-      var newJobName = $('#editor-name').val();
-      $('#job-group-name').text(newJobName);
+      var newJobName = document.getElementById('editor-name').value;
+      const jobGroupNameEl = document.getElementById('job-group-name');
+      if (jobGroupNameEl) {
+        jobGroupNameEl.textContent = newJobName;
+      }
       document.title = document.title.substr(0, 17) + newJobName;
       // update initial value for default priority (used when adding new job template)
-      var defaultPrioInput = $('#editor-default-priority');
-      var defaultPrio = defaultPrioInput.val();
-      defaultPrioInput.data('initial-value', defaultPrio);
-      $('td.prio input').attr('placeholder', defaultPrio);
+      var defaultPrioInput = document.getElementById('editor-default-priority');
+      var defaultPrio = defaultPrioInput.value;
+      defaultPrioInput.dataset.initialValue = defaultPrio;
+      document.querySelectorAll('td.prio input').forEach(input => {
+        input.setAttribute('placeholder', defaultPrio);
+      });
     })
     .catch(error => {
       showSubmitResults(
-        editorForm,
+        form,
         `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${error}</strong>`
       );
     });

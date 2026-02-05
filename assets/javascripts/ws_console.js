@@ -1,8 +1,8 @@
 function followLog() {
-  if (!document.followLogCheckBox.prop('checked')) {
+  if (!document.followLogCheckBox.checked) {
     return;
   }
-  document.logElement[0].scrollTop = document.logElement[0].scrollHeight;
+  document.logElement.scrollTop = document.logElement.scrollHeight;
 }
 
 function logLine(msg) {
@@ -100,23 +100,26 @@ function submitWebSocketCommand(event) {
 
 function setupWebSocketConsole() {
   // determine ws URL
-  var form = $('#ws_console_form');
-  var url = form.data('url');
-  if (!url.length) {
+  var form = document.getElementById('ws_console_form');
+  if (!form) {
     return;
   }
-  url = makeWsUrlAbsolute(url, form.data('service-port-delta'));
+  var url = form.dataset.url;
+  if (!url || !url.length) {
+    return;
+  }
+  url = makeWsUrlAbsolute(url, form.dataset.servicePortDelta);
 
   // establish and handle web socket connection
   window.wsUrl = url;
-  window.wsUsingProxy = form.data('using-proxy');
+  window.wsUsingProxy = form.dataset.usingProxy;
   window.wsProxyConnectionConcluded = false;
   window.stashedCommands = [];
-  document.logElement = $('#log');
-  document.followLogCheckBox = $('#follow_log');
+  document.logElement = document.getElementById('log');
+  document.followLogCheckBox = document.getElementById('follow_log');
   establishWebSocketConnection();
 
   // send command when user presses return
-  form.submit(submitWebSocketCommand);
+  form.addEventListener('submit', submitWebSocketCommand);
   document.getElementById('msg').focus();
 }
