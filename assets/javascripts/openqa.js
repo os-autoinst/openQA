@@ -471,7 +471,7 @@ function renderTestState(item, job) {
 function updateTestState(job, name, timeago, reason) {
   renderTestState(name, job);
   if (job.t_finished) {
-    timeago.textContent = jQuery.timeago(job.t_finished);
+    timeago.textContent = window.timeago.format(job.t_finished);
   }
   if (job.reason) {
     reason.textContent = job.reason;
@@ -667,108 +667,4 @@ function renderHttpUrlAsLink(value, oneUrlPerLine = false) {
     fragment.appendChild(document.createTextNode(value.substring(lastIndex)));
   }
   return fragment.hasChildNodes() ? fragment : document.createTextNode(value);
-}
-
-function getXhrError(jqXHR, textStatus, errorThrown) {
-  return jqXHR.responseJSON?.error || jqXHR.responseText || errorThrown || textStatus;
-}
-
-if (typeof window !== 'undefined' && window.jQuery) {
-  (function ($) {
-    // jQuery 4.0.0 removed several deprecated APIs. These shims maintain compatibility
-    // with 3rd-party plugins (timeago, chosen) that still rely on these methods.
-    // See: https://github.com/jquery/jquery/issues/4884
-    //
-    // NOTE: timeago declares "jquery": ">=1.5.0 <4.0" in its package.json, meaning it is
-    // officially incompatible with jQuery 4. The shims above ($.trim, $.isFunction) cover
-    // the current usage. If timeago is upgraded or other removed APIs are hit, this may break.
-    // Consider replacing timeago with a jQuery 4-compatible alternative (e.g. vanilla JS
-    // relative time formatting) to remove this dependency.
-
-    // $.active: Removed in jQuery 4. Required by Selenium wait_for_ajax in t/lib/OpenQA/SeleniumTest.pm.
-    // Note: Only tracks jQuery $.ajax calls, not fetch(). SeleniumTest.pm checks runningFetchRequests separately.
-    if ($.active === undefined) {
-      $.active = 0;
-      if (typeof document !== 'undefined') {
-        $(document).on('ajaxSend', function () {
-          $.active = ($.active || 0) + 1;
-        });
-        $(document).on('ajaxComplete', function () {
-          $.active = Math.max(0, ($.active || 1) - 1);
-        });
-      }
-    }
-
-    // $.trim: Removed in jQuery 4. Used by timeago/jquery.timeago.js and chosen-js/chosen.jquery.js
-    if ($.trim === undefined) {
-      $.trim = function (str) {
-        return String(str).trim();
-      };
-    }
-
-    // $.isFunction: Removed in jQuery 4. Used by timeago/jquery.timeago.js
-    if ($.isFunction === undefined) {
-      $.isFunction = function (fn) {
-        return typeof fn === 'function';
-      };
-    }
-
-    // $.isArray: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isArray === undefined) {
-      $.isArray = Array.isArray;
-    }
-
-    // $.isPlainObject: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isPlainObject === undefined) {
-      $.isPlainObject = function (obj) {
-        return obj !== null && typeof obj === 'object' && Object.getPrototypeOf(obj) === Object.prototype;
-      };
-    }
-
-    // $.isEmptyObject: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
-    if ($.isEmptyObject === undefined) {
-      $.isEmptyObject = function (obj) {
-        return Object.keys(obj).length === 0;
-      };
-    }
-
-    // $.inArray: Behavior changed in jQuery 4 (now delegates to Array.prototype.indexOf).
-    // Used by chosen-js/chosen.jquery.js. Shim for compatibility.
-    if ($.inArray === undefined) {
-      $.inArray = function (elem, arr, i) {
-        return arr ? Array.prototype.indexOf.call(arr, elem, i) : -1;
-      };
-    }
-  })(window.jQuery);
-
-  $(document).ready(function () {
-    setTimeout(function () {
-      const $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
-      if ($dropdownToggle.length) {
-        $dropdownToggle.off('click');
-        $dropdownToggle.on('click', function (e) {
-          const $el = $(this);
-          const $parent = $(this).offsetParent('.dropdown-menu');
-          if (!$(this).next().hasClass('show')) {
-            $(this).parents('.dropdown-menu').first().find('.show').removeClass('show');
-          }
-          const $subMenu = $(this).next('.dropdown-menu');
-          $subMenu.toggleClass('show');
-          $(this).parent('li').toggleClass('show');
-
-          if (!$parent.parent().hasClass('navbar-nav')) {
-            $el.next().css({top: $el[0].offsetTop + 'px', left: $parent.outerWidth() - 4 + 'px'});
-          }
-
-          return false;
-        });
-      }
-
-      const $dropdown = $('.nav-item.dropdown');
-      $dropdown.off('hidden.bs.dropdown');
-      $dropdown.on('hidden.bs.dropdown', function (e) {
-        $(this).find('.dropdown-menu .show').removeClass('show');
-      });
-    }, 0);
-  });
 }
