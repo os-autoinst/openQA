@@ -81,19 +81,18 @@ function addSucceeded(chosen, selected, data) {
 
 // after a machine was added the select is final
 function finalizeTest(tr) {
-  var test_select = tr.find('td.name select');
-  if (!test_select.length) return;
+  const test_select = tr.querySelector('td.name select');
+  if (!test_select) return;
 
   // disable select and assign the selected ID to the row
-  test_select.prop('disabled', true);
-  tr.data('test-id', test_select.find('option:selected').data('test-id'));
+  test_select.disabled = true;
+  tr.dataset.testId = test_select.options[test_select.selectedIndex].dataset.testId;
 
   // make test unavailable in other selections
-  var tbody = tr.parents('tbody');
-  presentTests = findPresentTests(tbody);
-  tbody.find('td.name select').each(function (index, select) {
-    select = $(select);
-    if (!select.prop('disabled')) {
+  const tbody = tr.closest('tbody');
+  const presentTests = findPresentTests(tbody);
+  tbody.querySelectorAll('td.name select').forEach(function (select) {
+    if (!select.disabled) {
       filterTestSelection(select, presentTests);
     }
   });
@@ -104,7 +103,6 @@ function formatPriority(prio) {
 }
 
 function templateAdded(chosen, selected) {
-  if (chosen instanceof jQuery) chosen = chosen[0];
   const tr = chosen.closest('tr');
   finalizeTest(tr);
   const prioInput = tr.querySelector('.prio input');
@@ -128,7 +126,6 @@ function templateAdded(chosen, selected) {
 }
 
 function priorityChanged(priorityInput) {
-  if (priorityInput instanceof jQuery) priorityInput = priorityInput[0];
   const tr = priorityInput.closest('tr');
 
   // just skip if there are no machines added anyways
@@ -151,32 +148,37 @@ function priorityChanged(priorityInput) {
 
 function chosenChanged(evt, param) {
   if (param.deselected) {
-    templateRemoved($(this), param.deselected);
+    templateRemoved(evt.target, param.deselected);
   } else {
-    templateAdded($(this), param.selected);
+    templateAdded(evt.target, param.selected);
   }
 }
 
-function testChanged() {
-  var select = $(this);
-  var selectedValue = select.find('option:selected').val();
-  var noSelection = !selectedValue || selectedValue.length === 0;
-  var tr = select.parents('tr');
-  var chosens = tr.find('.chosen-select');
-  var inputs = tr.find('input');
-  chosens.prop('disabled', noSelection).trigger('chosen:updated');
-  inputs.prop('disabled', noSelection);
+function testChanged(evt) {
+  const select = evt.target;
+  const selectedValue = select.value;
+  const noSelection = !selectedValue || selectedValue.length === 0;
+  const tr = select.closest('tr');
+  const chosens = tr.querySelectorAll('.chosen-select');
+  const inputs = tr.querySelectorAll('input');
+  chosens.forEach(chosen => {
+    chosen.disabled = noSelection;
+    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen === 'function') {
+      jQuery(chosen).trigger('chosen:updated');
+    }
+  });
+  inputs.forEach(input => (input.disabled = noSelection));
 }
 
 function findPresentTests(table) {
-  var presentTests = [];
-  table.find('td.name').each(function (index, td) {
-    var test;
-    var select = $(td).find('select');
-    if (select.length && select.prop('disabled')) {
-      test = select.val();
+  const presentTests = [];
+  table.querySelectorAll('td.name').forEach(function (td) {
+    let test;
+    const select = td.querySelector('select');
+    if (select && select.disabled) {
+      test = select.value;
     } else {
-      test = td.innerText.trim();
+      test = td.textContent.trim();
     }
     if (test) {
       presentTests.push(test);
@@ -186,9 +188,9 @@ function findPresentTests(table) {
 }
 
 function filterTestSelection(select, presentTests) {
-  select.find('option').each(function (index, option) {
-    if (presentTests.indexOf(option.innerText.trim()) >= 0) {
-      $(option).remove();
+  Array.from(select.options).forEach(function (option) {
+    if (presentTests.indexOf(option.textContent.trim()) >= 0) {
+      option.remove();
     }
   });
 }
@@ -196,7 +198,8 @@ function filterTestSelection(select, presentTests) {
 function makePrioCell(prio, disabled) {
   // use default priority if no prio passed; also disable the input in this case
   var useDefaultPrio = !prio;
-  var defaultPrio = $('#editor-default-priority').data('initial-value');
+  var defaultPrioEl = document.getElementById('editor-default-priority');
+  var defaultPrio = defaultPrioEl ? defaultPrioEl.dataset.initialValue : null;
   if (!defaultPrio) {
     defaultPrio = 50;
   }
@@ -204,47 +207,75 @@ function makePrioCell(prio, disabled) {
     prio = defaultPrio;
   }
 
-  var td = $('<td class="prio"></td>');
-  var prioInput = $('<input type="number"></input>');
+  const td = document.createElement('td');
+  td.className = 'prio';
+  const prioInput = document.createElement('input');
+  prioInput.type = 'number';
   if (!useDefaultPrio) {
-    prioInput.val(prio);
+    prioInput.value = prio;
   }
-  prioInput.change(function () {
-    priorityChanged($(this));
+  prioInput.addEventListener('change', function () {
+    priorityChanged(this);
   });
-  prioInput.prop('disabled', disabled);
-  prioInput.attr('placeholder', defaultPrio);
-  prioInput.appendTo(td);
+  prioInput.disabled = disabled;
+  prioInput.setAttribute('placeholder', defaultPrio);
+  td.appendChild(prioInput);
   return td;
 }
 
 function buildMediumGroup(group, media) {
-  var div = $('<div class="jobtemplate-medium"/>').appendTo('#media');
-  div.append('<div class="jobtemplate-header">' + group + '</div>');
-  var table = $('<table class="table table-striped mediagroup" id="' + group + '"/>').appendTo(div);
-  var thead = $('<thead/>').appendTo(table);
-  var tr = $('<tr/>').appendTo(thead);
-  var tname = tr.append($('<th class="name">Test</th>'));
-  var prioHeading = $('<th class="prio">Prio</th>');
-  prioHeading.css('white-space', 'nowrap');
-  var prioHelpPopover = $(
-    '<a href="#" class="help_popover fa fa-question-circle"" data-content="' +
-      'The priority can be set for each row specifically. However, the priority might be left empty as well. ' +
-      'In this case default priority for the whole job group is used (displayed in italic font)." data-bs-toggle="popover" ' +
-      'data-trigger="focus" role="button"></a>'
+  const mediaContainer = document.getElementById('media');
+  const div = document.createElement('div');
+  div.className = 'jobtemplate-medium';
+  mediaContainer.appendChild(div);
+
+  const header = document.createElement('div');
+  header.className = 'jobtemplate-header';
+  header.textContent = group;
+  div.appendChild(header);
+
+  const table = document.createElement('table');
+  table.className = 'table table-striped mediagroup';
+  table.id = group;
+  div.appendChild(table);
+
+  const thead = document.createElement('thead');
+  table.appendChild(thead);
+  const trHead = document.createElement('tr');
+  thead.appendChild(trHead);
+
+  const thName = document.createElement('th');
+  thName.className = 'name';
+  thName.textContent = 'Test';
+  trHead.appendChild(thName);
+
+  const thPrio = document.createElement('th');
+  thPrio.className = 'prio';
+  thPrio.style.whiteSpace = 'nowrap';
+  thPrio.textContent = 'Prio ';
+  const prioHelpPopover = document.createElement('a');
+  prioHelpPopover.href = '#';
+  prioHelpPopover.className = 'help_popover fa fa-question-circle';
+  prioHelpPopover.setAttribute(
+    'data-content',
+    'The priority can be set for each row specifically. However, the priority might be left empty as well. ' +
+      'In this case default priority for the whole job group is used (displayed in italic font).'
   );
-  prioHelpPopover.popover({html: true});
-  prioHeading.append(prioHelpPopover);
-  tr.append(prioHeading);
+  prioHelpPopover.setAttribute('data-bs-toggle', 'popover');
+  prioHelpPopover.setAttribute('data-trigger', 'focus');
+  prioHelpPopover.setAttribute('role', 'button');
+  thPrio.appendChild(prioHelpPopover);
+  new bootstrap.Popover(prioHelpPopover, {html: true});
+  trHead.appendChild(thPrio);
+
   var archs = {};
   var tests = {};
-  var prio = 444;
-  $.each(media, function (index, temp) {
+  media.forEach(function (temp) {
     var a = archs[temp.product.arch];
     if (!a) a = {};
     if (!Object.prototype.hasOwnProperty.call(a, temp.test_suite.name)) {
       a[temp.test_suite.name] = [];
-      table.data('product-' + temp.product.arch, temp.product.id);
+      table.dataset['product' + temp.product.arch] = temp.product.id;
       a['_id'] = temp.product.id;
     }
     a[temp.test_suite.name].push(temp);
@@ -255,36 +286,61 @@ function buildMediumGroup(group, media) {
     };
   });
   var archnames = Object.keys(archs).sort();
-  table.data('archs', archnames);
+  table.dataset.archs = JSON.stringify(archnames);
   var testnames = Object.keys(tests).sort();
-  $.each(archnames, function (index, arch) {
-    var a = $('<th class="arch arch_' + arch + '">' + arch + '</th>').appendTo(tr);
+  archnames.forEach(function (arch) {
+    const thArch = document.createElement('th');
+    thArch.className = 'arch arch_' + arch;
+    thArch.textContent = arch;
+    trHead.appendChild(thArch);
   });
-  var tbody = $('<tbody/>').appendTo(table);
-  $.each(testnames, function (ti, test) {
-    var tr = $('<tr class="test_' + test + '"/>').appendTo(tbody);
-    tr.data('test-id', tests[test]['id']);
-    var shortname = test;
-    if (test.length >= 70) {
-      shortname = '<span title=' + test + '>' + test.substr(0, 67) + '…</span>';
-    }
-    $('<td class="name">' + shortname + '</td>').appendTo(tr);
-    makePrioCell(tests[test].prio, false).appendTo(tr);
 
-    $.each(archnames, function (archIndex, arch) {
-      var td = $('<td class="arch"/>').appendTo(tr);
-      var select = $('#machines-template').clone().appendTo(td);
-      select.attr('id', group + '-' + arch + '-' + test);
-      select.attr('data-product-id', archs[arch]['_id']);
-      select.addClass('chosen-select');
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+  testnames.forEach(function (test) {
+    const tr = document.createElement('tr');
+    tr.className = 'test_' + test;
+    tr.dataset.testId = tests[test].id;
+    tbody.appendChild(tr);
+
+    var shortname = test;
+    const tdName = document.createElement('td');
+    tdName.className = 'name';
+    if (test.length >= 70) {
+      const span = document.createElement('span');
+      span.title = test;
+      span.textContent = test.substr(0, 67) + '…';
+      tdName.appendChild(span);
+    } else {
+      tdName.textContent = test;
+    }
+    tr.appendChild(tdName);
+
+    tr.appendChild(makePrioCell(tests[test].prio, false));
+
+    archnames.forEach(function (arch) {
+      const tdArch = document.createElement('td');
+      tdArch.className = 'arch';
+      tr.appendChild(tdArch);
+
+      const machinesTemplate = document.getElementById('machines-template');
+      const select = machinesTemplate.cloneNode(true);
+      select.style.display = '';
+      select.id = group + '-' + arch + '-' + test;
+      select.dataset.productId = archs[arch]._id;
+      select.classList.add('chosen-select');
+      tdArch.appendChild(select);
+
       if (
         Object.prototype.hasOwnProperty.call(archs, arch) &&
         Object.prototype.hasOwnProperty.call(archs[arch], test)
       ) {
-        $.each(archs[arch][test], function (mi, temp) {
-          var option = select.find("option[value='" + temp.machine.name + "']").prop('selected', true);
-          // remember the id for DELETE
-          option.data('jid', temp.id);
+        archs[arch][test].forEach(function (temp) {
+          const option = select.querySelector("option[value='" + temp.machine.name + "']");
+          if (option) {
+            option.selected = true;
+            option.dataset.jid = temp.id;
+          }
         });
       }
     });
@@ -292,18 +348,35 @@ function buildMediumGroup(group, media) {
 }
 
 function addArchSpacer(table, position, method) {
-  $(table).find('thead th.arch').eq(position)[method]('<th class="arch">&nbsp;</th>');
-  $(table)
-    .find('tbody tr')
-    .each(function () {
-      $(this).find('td.arch').eq(position)[method]('<td class="arch">&nbsp;</td>');
-    });
+  const ths = table.querySelectorAll('thead th.arch');
+  const targetTh = ths[position];
+  const newTh = document.createElement('th');
+  newTh.className = 'arch';
+  newTh.innerHTML = '&nbsp;';
+  if (method === 'after') {
+    targetTh.after(newTh);
+  } else {
+    targetTh.before(newTh);
+  }
+
+  table.querySelectorAll('tbody tr').forEach(function (tr) {
+    const tds = tr.querySelectorAll('td.arch');
+    const targetTd = tds[position];
+    const newTd = document.createElement('td');
+    newTd.className = 'arch';
+    newTd.innerHTML = '&nbsp;';
+    if (method === 'after') {
+      targetTd.after(newTd);
+    } else {
+      targetTd.before(newTd);
+    }
+  });
 }
 
 function findHeaderWithAllArchitectures() {
-  var headerWithAllArchs = [];
-  $('table.mediagroup thead').each(function () {
-    var archs = $(this).find('th.arch');
+  let headerWithAllArchs = [];
+  document.querySelectorAll('table.mediagroup thead').forEach(function (thead) {
+    const archs = Array.from(thead.querySelectorAll('th.arch'));
     if (archs.length > headerWithAllArchs.length) headerWithAllArchs = archs;
   });
   return headerWithAllArchs;
@@ -311,16 +384,16 @@ function findHeaderWithAllArchitectures() {
 
 function fillEmptySpace(table, tableHead, headerWithAllArchs) {
   if (tableHead.length < headerWithAllArchs.length) {
-    headerWithAllArchs.each(function (i) {
+    headerWithAllArchs.forEach(function (h, i) {
       // Used all ths, fill the rest
       if (tableHead.length == i) {
         for (var j = i; j < headerWithAllArchs.length; j++) {
           addArchSpacer(table, j - 1, 'after');
         }
         return false;
-      } else if (this.innerHTML != tableHead.get(i).innerHTML) {
+      } else if (h.innerHTML != tableHead[i].innerHTML) {
         addArchSpacer(table, i, 'before');
-        tableHead = $(table).find('thead th.arch');
+        tableHead = Array.from(table.querySelectorAll('thead th.arch'));
       }
     });
   }
@@ -328,34 +401,40 @@ function fillEmptySpace(table, tableHead, headerWithAllArchs) {
 
 function alignCols() {
   // Set minimal width
-  $('th.name,th.prio').width('0');
+  document.querySelectorAll('th.name, th.prio').forEach(el => (el.style.width = '0'));
 
   // Find biggest minimal width
   var namewidth = 450;
-  $('td.name').each(function (index, test) {
-    if ($(this).outerWidth() > namewidth) namewidth = $(this).outerWidth();
+  document.querySelectorAll('td.name').forEach(function (test) {
+    if (test.offsetWidth > namewidth) namewidth = test.offsetWidth;
   });
   namewidth = Math.ceil(namewidth);
 
   var headerWithAllArchs = findHeaderWithAllArchitectures();
 
   // Fill empty space
-  $('table.mediagroup').each(function (index, table) {
-    fillEmptySpace(table, $(this).find('thead th.arch'), headerWithAllArchs);
+  document.querySelectorAll('table.mediagroup').forEach(function (table) {
+    fillEmptySpace(table, Array.from(table.querySelectorAll('thead th.arch')), headerWithAllArchs);
   });
 
   // Compute arch width
-  var archwidth = $('.jobtemplate-header').outerWidth() - namewidth - $('th.prio').outerWidth();
+  const jobtemplateHeader = document.querySelector('.jobtemplate-header');
+  const thPrio = document.querySelector('th.prio');
+  var archwidth =
+    (jobtemplateHeader ? jobtemplateHeader.offsetWidth : 1000) - namewidth - (thPrio ? thPrio.offsetWidth : 50);
   archwidth = Math.floor(archwidth / headerWithAllArchs.length) - 1;
 
-  $('th.name').outerWidth(namewidth);
-  $('th.arch').outerWidth(archwidth);
+  document.querySelectorAll('th.name').forEach(el => (el.style.width = namewidth + 'px'));
+  document.querySelectorAll('th.arch').forEach(el => (el.style.width = archwidth + 'px'));
 
   return archwidth;
 }
 
 function toggleEdit() {
-  $('#properties').toggle(250);
+  const properties = document.getElementById('properties');
+  if (properties) {
+    properties.style.display = properties.style.display === 'none' ? '' : 'none';
+  }
   validateJobGroupForm(document.getElementById('group_properties_form'));
   if ((window.groupPropertiesEditorVisisble = !window.groupPropertiesEditorVisisble)) {
     document.getElementById('job-config-page-heading').innerHTML = 'Job';
@@ -408,7 +487,7 @@ function toggleTemplateEditor() {
       }
     };
   }
-  fetch(form.dataset.putUrl)
+  fetch(form.dataset.putUrl, {headers: {Accept: 'application/json'}})
     .then(response => response.json())
     .then(prepareTemplateEditor);
 }
@@ -542,9 +621,12 @@ function submitTemplateEditor(button) {
 }
 
 function showSubmitResults(form, result) {
-  form.find('.buttons').show();
-  form.find('.properties-progress-indication').hide();
-  form.find('.properties-status').html(result);
+  const buttons = form.querySelector('.buttons');
+  if (buttons) buttons.style.display = '';
+  const progress = form.querySelector('.properties-progress-indication');
+  if (progress) progress.style.display = 'none';
+  const status = form.querySelector('.properties-status');
+  if (status) status.innerHTML = result;
 }
 
 // adds/removes "is-invalid"/"invalid-feedback" classes/elements within the specified form for the specified response
@@ -608,7 +690,8 @@ function showAdvancedFieldsIfJsonRefersToThem(response) {
 
 function submitProperties(form) {
   form.querySelector('.buttons').style.display = 'none';
-  form.querySelector('.progress-indication').style.display = '';
+  const progress = form.querySelector('.properties-progress-indication');
+  if (progress) progress.style.display = '';
   fetchWithCSRF(form.dataset.putUrl, {method: 'PUT', body: new FormData(form)})
     .then(response => {
       return response
