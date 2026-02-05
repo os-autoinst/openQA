@@ -226,18 +226,12 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
     my @not_important_cond = (
         TAG_ID_COLUMN, => {-not_in => $important_builds_with_version},
         BUILD => {-not_in => $important_builds_without_version});
-    my $expired_jobs = $jobs->search(
-        {
-            @not_important_cond,
-            text => {like => 'label:linked%'},
-            'me.t_created' => $timecond,
-            @group_cond,
-        },
-        {order_by => 'me.id', join => 'comments'});
-    my @linked_jobs = map { $_->id } $expired_jobs->all;
+    my @linked_jobs_cond = (text => {like => 'label:linked%'}, 'me.t_created' => $timecond, @group_cond);
+    my @linked_jobs_search = ({@not_important_cond, @linked_jobs_cond}, {order_by => 'me.id', join => 'comments'});
+    my @linked_job_ids = map { $_->id } $jobs->search(@linked_jobs_search)->all;
 
     # define condition for expired jobs in unimportant builds
-    my @ors = ({@not_important_cond, 'me.t_created' => $timecond, id => {-not_in => \@linked_jobs}});
+    my @ors = ({@not_important_cond, 'me.t_created' => $timecond, id => {-not_in => \@linked_job_ids}});
 
     # define condition for expired jobs in important builds
     my ($important_timestamp, @important_cond);
@@ -247,7 +241,7 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
             -or => [
                 TAG_ID_COLUMN, => {-in => $important_builds_with_version},
                 BUILD => {-in => $important_builds_without_version},
-                id => {-in => \@linked_jobs}]);
+                id => {-in => \@linked_job_ids}]);
         push @ors, {@important_cond, 'me.t_created' => {'<' => $important_timestamp}};
     }
 
