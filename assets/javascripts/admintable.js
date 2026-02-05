@@ -489,9 +489,7 @@ function setupAdminTable(isAdmin) {
 
   // make the height of text areas fit its contents
   dataTable.on('draw', function () {
-    table.find('textarea').each(function () {
-      updateTextArea(this);
-    });
+    tableEl.querySelectorAll('textarea').forEach(updateTextArea);
   });
 
   // set/update page-global state (there can only be one admin table at a page anyways)

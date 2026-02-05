@@ -23,10 +23,11 @@ function setupAdminAssets() {
   };
 
   // setup data table
-  const assetsTable = $('#assets');
-  window.assetsTable = assetsTable.DataTable({
+  const assetsTableEl = document.getElementById('assets');
+  if (!assetsTableEl) return;
+  window.assetsTable = new DataTable('#assets', {
     ajax: {
-      url: assetsTable.data('status-url'),
+      url: assetsTableEl.dataset.statusUrl,
       data: ajaxQueryParams,
       dataSrc: function (json) {
         showLastAssetStatusUpdate(json);
@@ -40,8 +41,10 @@ function setupAdminAssets() {
           (response && response.error ? response.error : thrown) +
           ' <a class="btn btn-primary" href="javascript: reloadAssetsTable();">Retry</a>';
         addFlash('danger', errorMsg);
-        $('#assets-by-group-loading').hide();
-        $('#assets-status').text('failed to load');
+        const loading = document.getElementById('assets-by-group-loading');
+        if (loading) loading.style.display = 'none';
+        const status = document.getElementById('assets-status');
+        if (status) status.textContent = 'failed to load';
       }
     },
     columns: [{data: 'name'}, {data: 'max_job'}, {data: 'size'}, {data: 'groups'}],
@@ -114,9 +117,11 @@ function setupAdminAssets() {
 }
 
 function reloadAssetsTable() {
-  $('#assets-by-group-loading').show();
-  $('#assets-status').text('loading');
-  $('#flash-messages div.alert').remove();
+  const loading = document.getElementById('assets-by-group-loading');
+  if (loading) loading.style.display = 'block';
+  const status = document.getElementById('assets-status');
+  if (status) status.textContent = 'loading';
+  document.querySelectorAll('#flash-messages div.alert').forEach(el => el.remove());
   window.assetsTable.ajax.reload();
 }
 
@@ -174,7 +179,8 @@ function triggerAssetCleanup(form) {
 
 function showLastAssetStatusUpdate(assetStatus) {
   if (assetStatus.last_update) {
-    $('#assets-status').html('last update: ' + renderTimeAgo(assetStatus.last_update, 'display'));
+    const status = document.getElementById('assets-status');
+    if (status) status.innerHTML = 'last update: ' + renderTimeAgo(assetStatus.last_update, 'display');
   }
 }
 
@@ -187,17 +193,18 @@ function makeQualifiedGroupIdForAsset(assetInfo) {
 }
 
 function makeAssetsByGroup(assetStatus) {
-  var assetsByGroupHeading = $('#assets-by-group-heading');
-  var assetsByGroupList = $('#assets-by-group');
+  const assetsByGroupHeading = document.getElementById('assets-by-group-heading');
+  const assetsByGroupList = document.getElementById('assets-by-group');
   var totalSize = 0;
   var jobGroups = assetStatus.groups;
   var parentGroups = assetStatus.parents;
   var assets = assetStatus.data;
 
-  $('#assets-by-group-loading').hide();
+  const loading = document.getElementById('assets-by-group-loading');
+  if (loading) loading.style.display = 'none';
 
   // make the asset list for the particular groups
-  var assetsByGroup = {};
+  var assetsByGroupByQualifiedId = {};
   assets
     .sort(function (b, a) {
       return a.name.localeCompare(b.name);
@@ -209,22 +216,27 @@ function makeAssetsByGroup(assetStatus) {
 
       // make the ul element but don't populate the li elements already
       var qualifiedGroupId = makeQualifiedGroupIdForAsset(asset);
-      var assetUl = assetsByGroup[qualifiedGroupId];
-      if (!assetUl) {
-        assetsByGroup[qualifiedGroupId] = assetUl = $('<ul></ul>');
-        assetUl.assets = [];
+      var assetGroup = assetsByGroupByQualifiedId[qualifiedGroupId];
+      if (!assetGroup) {
+        assetGroup = assetsByGroupByQualifiedId[qualifiedGroupId] = {
+          assets: [],
+          initialized: false,
+          ul: document.createElement('ul')
+        };
 
         // add method lazy-initialize the ul element
-        assetUl.populate = function () {
+        assetGroup.populate = function () {
           this.assets.forEach(function (asset) {
-            var assetLi = $('<li></li>');
-            assetLi.text(asset.name);
-            assetLi.append('<span>' + renderDataSize(asset.size) + '</span>');
-            assetUl.append(assetLi);
+            const assetLi = document.createElement('li');
+            assetLi.textContent = asset.name;
+            const sizeSpan = document.createElement('span');
+            sizeSpan.textContent = renderDataSize(asset.size);
+            assetLi.appendChild(sizeSpan);
+            assetGroup.ul.appendChild(assetLi);
           });
         };
       }
-      assetUl.assets.push(asset);
+      assetGroup.assets.push(asset);
     });
 
   // add li element for each group, sorted by used asset size and group name
@@ -244,22 +256,28 @@ function makeAssetsByGroup(assetStatus) {
       }
 
       var groupId = groupInfo.id !== null ? groupInfo.id : 0;
-      var parents = groupInfo.parents;
       var isParent = groupInfo.parent_id === undefined; // parentless job groups have parent_id set to null
-      var groupLi = $('<li></li>');
+      const groupLi = document.createElement('li');
       var qualifiedGroupId = isParent ? 'parent-group-' + groupId : 'group-' + groupId;
       var checkboxId = qualifiedGroupId + '-checkbox';
 
       // add input for expanding/collapsing
-      var groupCheckbox = $('<input id="' + checkboxId + '" type="checkbox"></input>');
-      groupLi.append(groupCheckbox);
-      var label = $('<label for="' + checkboxId + '">' + groupInfo.group + '</label>');
-      groupLi.append(label);
+      const groupCheckbox = document.createElement('input');
+      groupCheckbox.id = checkboxId;
+      groupCheckbox.type = 'checkbox';
+      groupLi.appendChild(groupCheckbox);
+      const label = document.createElement('label');
+      label.setAttribute('for', checkboxId);
+      label.textContent = groupInfo.group;
+      groupLi.appendChild(label);
 
       // add configure button
       if (window.isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== 'Untracked') {
         var path = isParent ? '/admin/edit_parent_group/' + groupId : '/admin/job_templates/' + groupId;
-        groupLi.append('<a href="' + path + '"><i class="fa fa-wrench" title="Configure"></i></a>');
+        const configLink = document.createElement('a');
+        configLink.href = path;
+        configLink.innerHTML = '<i class="fa fa-wrench" title="Configure"></i>';
+        groupLi.appendChild(configLink);
       }
 
       // add size
@@ -269,23 +287,26 @@ function makeAssetsByGroup(assetStatus) {
       if (groupInfo.size_limit_gb) {
         sizeString += ' / ' + groupInfo.size_limit_gb + ' GiB';
       }
-      groupLi.append('<span>' + sizeString + '</span>');
+      const sizeSpan = document.createElement('span');
+      sizeSpan.textContent = sizeString;
+      groupLi.appendChild(sizeSpan);
 
       // setup lazy-loading for list of assets
-      var assetUl = assetsByGroup[qualifiedGroupId];
-      if (assetUl) {
-        groupCheckbox.change(function () {
-          if (assetUl.initialized) {
+      var assetGroup = assetsByGroupByQualifiedId[qualifiedGroupId];
+      if (assetGroup) {
+        groupCheckbox.addEventListener('change', function () {
+          if (assetGroup.initialized) {
             return;
           }
-          assetUl.populate();
-          groupLi.append(assetUl);
-          assetUl.initialized = true;
+          assetGroup.populate();
+          groupLi.appendChild(assetGroup.ul);
+          assetGroup.initialized = true;
         });
       }
 
-      assetsByGroupList.append(groupLi);
+      if (assetsByGroupList) assetsByGroupList.appendChild(groupLi);
     });
 
-  assetsByGroupHeading.text('Assets by group (total ' + renderDataSize(totalSize) + ')');
+  if (assetsByGroupHeading)
+    assetsByGroupHeading.textContent = 'Assets by group (total ' + renderDataSize(totalSize) + ')';
 }
