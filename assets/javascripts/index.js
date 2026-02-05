@@ -6,50 +6,56 @@ function setupIndexPage() {
   setupFilterForm({preventLoadingIndication: true});
 
   // set default values of filter form
-  var filterForm = $('#filter-form');
-  var filterFullScreenCheckBox = $('#filter-fullscreen');
-  var showTagsCheckBox = $('#filter-show-tags');
-  var onlyTaggedCheckBox = $('#filter-only-tagged');
-  var defaultExpanedCheckBox = $('#filter-default-expanded');
-  filterFullScreenCheckBox.prop('checked', false);
-  showTagsCheckBox.prop('checked', false);
-  onlyTaggedCheckBox.prop('checked', false);
-  onlyTaggedCheckBox.on('change', function () {
-    var checked = onlyTaggedCheckBox.prop('checked');
-    if (checked) {
-      showTagsCheckBox.prop('checked', true);
-    }
-    showTagsCheckBox.prop('disabled', checked);
-  });
-  defaultExpanedCheckBox.prop('checked', false);
+  const filterForm = document.getElementById('filter-form');
+  const filterFullScreenCheckBox = document.getElementById('filter-fullscreen');
+  const showTagsCheckBox = document.getElementById('filter-show-tags');
+  const onlyTaggedCheckBox = document.getElementById('filter-only-tagged');
+  const defaultExpanedCheckBox = document.getElementById('filter-default-expanded');
+  if (filterFullScreenCheckBox) filterFullScreenCheckBox.checked = false;
+  if (showTagsCheckBox) showTagsCheckBox.checked = false;
+  if (onlyTaggedCheckBox) {
+    onlyTaggedCheckBox.checked = false;
+    onlyTaggedCheckBox.addEventListener('change', function () {
+      const checked = onlyTaggedCheckBox.checked;
+      if (checked) {
+        showTagsCheckBox.checked = true;
+      }
+      showTagsCheckBox.disabled = checked;
+    });
+  }
+  if (defaultExpanedCheckBox) defaultExpanedCheckBox.checked = false;
 
   // apply query parameters to filter form
   var handleFilterParams = function (key, val) {
     if (key === 'show_tags') {
-      showTagsCheckBox.prop('checked', val !== '0');
+      showTagsCheckBox.checked = val !== '0';
       return 'show tags';
     } else if (key === 'only_tagged') {
-      onlyTaggedCheckBox.prop('checked', val !== '0');
-      onlyTaggedCheckBox.trigger('change');
+      onlyTaggedCheckBox.checked = val !== '0';
+      onlyTaggedCheckBox.dispatchEvent(new Event('change'));
       return 'only tagged';
     } else if (key === 'group') {
-      $('#filter-group').prop('value', val);
+      const el = document.getElementById('filter-group');
+      if (el) el.value = val;
       return "group '" + val + "'";
     } else if (key === 'limit_builds') {
-      $('#filter-limit-builds').prop('value', val);
+      const el = document.getElementById('filter-limit-builds');
+      if (el) el.value = val;
       return val + ' builds per group';
     } else if (key === 'time_limit_days') {
-      $('#filter-time-limit-days').prop('value', val);
+      const el = document.getElementById('filter-time-limit-days');
+      if (el) el.value = val;
       return val + ' days old or newer';
     } else if (key === 'fullscreen') {
-      filterFullScreenCheckBox.prop('checked', val !== '0');
+      filterFullScreenCheckBox.checked = val !== '0';
       return 'fullscreen';
     } else if (key === 'interval') {
       window.autoreload = val !== 0 ? val : undefined;
-      $('#filter-autorefresh-interval').prop('value', val);
+      const el = document.getElementById('filter-autorefresh-interval');
+      if (el) el.value = val;
       return 'auto refresh';
     } else if (key === 'default_expanded') {
-      defaultExpanedCheckBox.prop('checked', val !== '0');
+      defaultExpanedCheckBox.checked = val !== '0';
       return 'expanded';
     }
   };
@@ -58,46 +64,53 @@ function setupIndexPage() {
   loadBuildResults();
 
   // prevent page reload when submitting filter form (when we load build results via AJAX anyways)
-  filterForm.submit(function (event) {
-    if (!window.updatingBuildResults) {
-      var queryParams = filterForm.serialize();
-      loadBuildResults(queryParams);
-      history.replaceState({}, document.title, window.location.pathname + '?' + queryParams);
-      parseFilterArguments(handleFilterParams);
-    }
-    toggleFullscreenMode($('#filter-fullscreen').is(':checked'));
-    autoRefreshRestart();
-    event.preventDefault();
-  });
+  if (filterForm) {
+    filterForm.addEventListener('submit', function (event) {
+      if (!window.updatingBuildResults) {
+        const queryParams = new URLSearchParams(new FormData(filterForm)).toString();
+        loadBuildResults(queryParams);
+        history.replaceState({}, document.title, window.location.pathname + '?' + queryParams);
+        parseFilterArguments(handleFilterParams);
+      }
+      toggleFullscreenMode(document.getElementById('filter-fullscreen').checked);
+      autoRefreshRestart();
+      event.preventDefault();
+    });
+  }
 
-  toggleFullscreenMode(filterFullScreenCheckBox.is(':checked'));
+  toggleFullscreenMode(filterFullScreenCheckBox && filterFullScreenCheckBox.checked);
   autoRefreshRestart();
 }
 
 function loadBuildResults(queryParams) {
-  var buildResultsElement = $('#build-results');
-  var loadingElement = $('#build-results-loading');
-  var filterForm = $('#filter-form');
-  var filterFormApplyButton = $('#filter-apply-button');
+  const buildResultsElement = document.getElementById('build-results');
+  const loadingElement = document.getElementById('build-results-loading');
+  const filterForm = document.getElementById('filter-form');
+  const filterFormApplyButton = document.getElementById('filter-apply-button');
 
   if (!window.autoreload) {
-    loadingElement.show();
-    buildResultsElement.html('');
+    if (loadingElement) loadingElement.style.display = 'block';
+    if (buildResultsElement) buildResultsElement.innerHTML = '';
   }
-  filterFormApplyButton.prop('disabled', true);
+  if (filterFormApplyButton) filterFormApplyButton.disabled = true;
   window.updatingBuildResults = true;
 
   var showBuildResults = function (buildResults) {
-    loadingElement.hide();
-    buildResultsElement.html(buildResults);
-    $('.timeago').timeago();
+    if (loadingElement) loadingElement.style.display = 'none';
+    if (buildResultsElement) buildResultsElement.innerHTML = buildResults;
+    document.querySelectorAll('.timeago').forEach(el => {
+      if (typeof jQuery !== 'undefined' && typeof jQuery.fn.timeago === 'function') {
+        $(el).timeago();
+      }
+    });
     alignBuildLabels();
-    filterFormApplyButton.prop('disabled', false);
+    if (filterFormApplyButton) filterFormApplyButton.disabled = false;
     window.updatingBuildResults = false;
   };
 
   // query build results via AJAX using parameters from filter form
-  var url = new URL(buildResultsElement.data('build-results-url'), window.location.href);
+  if (!buildResultsElement) return;
+  var url = new URL(buildResultsElement.dataset.buildResultsUrl, window.location.href);
   url.search = queryParams ? queryParams : window.location.search.substr(1);
   fetch(url)
     .then(response => {
