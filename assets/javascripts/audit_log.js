@@ -90,7 +90,7 @@ function getElementForEventType(type, eventData) {
 }
 
 function loadAuditLogTable() {
-  $('#audit_log_table').DataTable({
+  new DataTable('#audit_log_table', {
     lengthMenu: [20, 40, 100],
     processing: true,
     serverSide: true,
@@ -288,27 +288,51 @@ function rescheduleProductForActionLink(link) {
 }
 
 function rescheduleProduct(url) {
-  $.post({
-    url: url,
-    success: (data, textStatus, jqXHR) => {
-      const id = jqXHR.responseJSON?.scheduled_product_id;
+  fetchWithCSRF(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+    .then(response => {
+      return response
+        .json()
+        .then(json => {
+          // Attach the parsed JSON to the response object for further use
+          return {response, json};
+        })
+        .catch(() => {
+          // If parsing fails, handle it as a non-JSON response
+          return response.text().then(text => ({response, text}));
+        });
+    })
+    .then(({response, json, text}) => {
+      if (!response.ok || (json && json.error)) {
+        throw json?.error || text || `Server returned ${response.status}: ${response.statusText}`;
+      }
+      const id = json.scheduled_product_id;
       const msg =
         typeof id === 'number'
           ? 'The product has been re-triggered as <a href="/admin/productlog?id=' + id + '">' + id + '</a>.'
           : 'Re-scheduling the product has been triggered.';
       addFlash('info', msg);
-    },
-    error: (jqXHR, textStatus, errorThrown) => {
-      addFlash('danger', 'Unable to trigger re-scheduling: ' + getXhrError(jqXHR, textStatus, errorThrown));
-    }
-  });
+    })
+    .catch(error => {
+      addFlash('danger', 'Unable to trigger re-scheduling: ' + error);
+    });
 }
 
 function showSettingsAndResults(rowData) {
-  const scheduledProductsDiv = $('#scheduled-products');
-  scheduledProductsDiv.append($('<h3>Results</h3>'));
+  const scheduledProductsDiv = document.getElementById('scheduled-products');
+  if (!scheduledProductsDiv) return;
+  const h3Results = document.createElement('h3');
+  h3Results.textContent = 'Results';
+  scheduledProductsDiv.append(h3Results);
   scheduledProductsDiv.append(renderScheduledProductResults(rowData.results));
-  scheduledProductsDiv.append($('<h3>Settings</h3>'));
+  const h3Settings = document.createElement('h3');
+  h3Settings.textContent = 'Settings';
+  scheduledProductsDiv.append(h3Settings);
   scheduledProductsDiv.append(renderScheduledProductSettings(rowData.settings));
 }
 
@@ -318,10 +342,11 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
   let settingsAndResultsShown = false;
   if (id) {
     dataTableUrl += '?id=' + encodeURIComponent(id);
-    $('#scheduled-products h2').text('Scheduled product ' + id);
+    const h2 = document.querySelector('#scheduled-products h2');
+    if (h2) h2.textContent = 'Scheduled product ' + id;
   }
 
-  scheduledProductsTable = $('#product_log_table').DataTable({
+  scheduledProductsTable = new DataTable('#product_log_table', {
     lengthMenu: [10, 25, 50],
     processing: true,
     serverSide: true,
@@ -332,7 +357,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
       dataType: 'json',
       dataSrc: function (json) {
         const data = json.data;
-        if (id && !settingsAndResultsShown) {
+        if (id && !settingsAndResultsShown && data.length > 0) {
           showSettingsAndResults(data[0]);
           settingsAndResultsShown = true;
         }
@@ -435,7 +460,9 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
   // remove unneccassary elements when showing only one particular product
   if (id) {
     const wrapper = document.getElementById('product_log_table_wrapper');
-    wrapper.removeChild(wrapper.firstChild);
-    wrapper.removeChild(wrapper.lastChild);
+    if (wrapper) {
+      wrapper.removeChild(wrapper.firstChild);
+      wrapper.removeChild(wrapper.lastChild);
+    }
   }
 }
