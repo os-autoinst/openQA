@@ -6,24 +6,34 @@ let restart_url;
 let cancel_url;
 
 function addClassToArray(data, theclass) {
-  for (i = 0; i < data.length; ++i) $('#job_' + data[i]).addClass(theclass);
+  for (let i = 0; i < data.length; ++i) {
+    const el = document.getElementById('job_' + data[i]);
+    if (el) el.classList.add(theclass);
+  }
 }
 
 function removeClassFromArray(data, theclass) {
-  for (i = 0; i < data.length; ++i) $('#job_' + data[i]).removeClass(theclass);
+  for (let i = 0; i < data.length; ++i) {
+    const el = document.getElementById('job_' + data[i]);
+    if (el) el.classList.remove(theclass);
+  }
 }
 
 function highlightJobs() {
-  addClassToArray($(this).data('children'), 'highlight_child');
-  addClassToArray($(this).data('parents'), 'highlight_parent');
+  const children = JSON.parse(this.dataset.children || '[]');
+  const parents = JSON.parse(this.dataset.parents || '[]');
+  addClassToArray(children, 'highlight_child');
+  addClassToArray(parents, 'highlight_parent');
 }
 
-function unhighlightJobs(children, parents) {
+function unhighlightJobs() {
   if (document.activeElement == this) {
     return;
   }
-  removeClassFromArray($(this).data('children'), 'highlight_child');
-  removeClassFromArray($(this).data('parents'), 'highlight_parent');
+  const children = JSON.parse(this.dataset.children || '[]');
+  const parents = JSON.parse(this.dataset.parents || '[]');
+  removeClassFromArray(children, 'highlight_child');
+  removeClassFromArray(parents, 'highlight_parent');
 }
 
 function highlightJobsHtml(children, parents) {
@@ -189,8 +199,8 @@ function decreaseJobPrio(jobId, linkElement) {
 }
 
 function changeJobPrio(jobId, delta, linkElement) {
-  const prioValueElement = $(linkElement).parent().find('.prio-value');
-  const currentPrio = parseInt(prioValueElement.text());
+  const prioValueElement = linkElement.parentElement.querySelector('.prio-value');
+  const currentPrio = parseInt(prioValueElement.textContent);
   if (Number.isNaN(currentPrio)) {
     addFlash('danger', 'Unable to set prio.');
     return;
@@ -216,7 +226,7 @@ function changeJobPrio(jobId, delta, linkElement) {
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
-      prioValueElement.text(newPrio);
+      prioValueElement.textContent = newPrio;
     })
     .catch(error => {
       addFlash('danger', `Unable to set the priority value of job ${jobId}: ${error}`);
@@ -289,7 +299,7 @@ function renderTestLists() {
         } else if (json.max_running_jobs !== undefined && json.max_running_jobs >= 0) {
           text += ' (limited by server config)';
         }
-        $('#running_jobs_heading').text(text);
+        document.getElementById('running_jobs_heading').textContent = text;
         return json.data;
       }
     },
@@ -323,7 +333,7 @@ function renderTestLists() {
       dataSrc: function (json) {
         // update heading when JSON is available
         let blockedCount = 0;
-        jQuery.each(json.data, function (index, row) {
+        json.data.forEach(row => {
           if (row && typeof row.blocked_by_id === 'number') {
             ++blockedCount;
           }
@@ -332,8 +342,8 @@ function renderTestLists() {
         if (blockedCount > 0) {
           text += ' (' + blockedCount + ' blocked by other jobs)';
         }
-        $('#scheduled_jobs_heading').text(text);
-        $('#scheduled_jobs_warning').toggleClass('d-none', !json.job_skipped_by_disk_limits);
+        document.getElementById('scheduled_jobs_heading').textContent = text;
+        document.getElementById('scheduled_jobs_warning').classList.toggle('d-none', !json.job_skipped_by_disk_limits);
         return json.data;
       }
     },
@@ -375,7 +385,7 @@ function renderTestLists() {
       url: makeAjaxUrlWithFiltering(),
       dataSrc: function (json) {
         // update heading when JSON is available
-        $('#finished_jobs_heading').text('Last ' + json.data.length + ' finished jobs');
+        document.getElementById('finished_jobs_heading').textContent = 'Last ' + json.data.length + ' finished jobs';
         return json.data;
       }
     },
@@ -459,104 +469,140 @@ function renderTestLists() {
     finishedJobsResultFilter.val(filter).trigger('chosen:updated').trigger('change');
   }
 
-  $(document).on('mouseover', '.parent_child', highlightJobs);
-  $(document).on('mouseout', '.parent_child', unhighlightJobs);
-  $(document).on('focusin', '.parent_child', highlightJobs);
-  $(document).on('focusout', '.parent_child', unhighlightJobs);
+  document.addEventListener('mouseover', e => {
+    const target = e.target.closest('.parent_child');
+    if (target) highlightJobs.call(target);
+  });
+  document.addEventListener('mouseout', e => {
+    const target = e.target.closest('.parent_child');
+    if (target) unhighlightJobs.call(target);
+  });
+  document.addEventListener('focusin', e => {
+    const target = e.target.closest('.parent_child');
+    if (target) highlightJobs.call(target);
+  });
+  document.addEventListener('focusout', e => {
+    const target = e.target.closest('.parent_child');
+    if (target) unhighlightJobs.call(target);
+  });
 
   setupTestButtons();
 }
 
 function setupTestButtons() {
-  $(document).on('click', '.restart', function (event) {
-    event.preventDefault();
-    const restartLink = this;
-    $.post(restartLink.href).done(function (data, res, xhr) {
-      const responseJSON = xhr.responseJSON;
-      const flashTarget = $('#flash-messages-finished-jobs');
-      if (typeof responseJSON !== 'object' || !Array.isArray(responseJSON.test_url)) {
-        addFlash('danger', '<strong>Unable to restart job.</strong>', flashTarget);
-        return;
-      }
-      showJobRestartResults(
-        responseJSON,
-        undefined,
-        forceJobRestartViaRestartLink.bind(undefined, restartLink),
-        flashTarget
-      );
-      const urls = responseJSON.test_url[0];
-      $.each(urls, function (key, value) {
-        // Skip to mark the job that is not shown in current page
-        if (!$('#job_' + key).length) {
-          return true;
-        }
-        const td = $('#job_' + key)
-          .closest('tr')
-          .children('td.test');
-        const restart_link = td.children('a.restart');
-        const i = restart_link.find('i').removeClass('fa-rotate-left');
-        td.append(' <a href="' + value + '" title="new test">(restarted)</a>');
-        restart_link.replaceWith(i);
-      });
-    });
-  });
+  document.addEventListener('click', function (event) {
+    const restartLink = event.target.closest('.restart');
+    if (restartLink) {
+      event.preventDefault();
+      fetchWithCSRF(restartLink.href, {method: 'POST'})
+        .then(response => response.json())
+        .then(responseJSON => {
+          const flashTarget = document.getElementById('flash-messages-finished-jobs');
+          if (typeof responseJSON !== 'object' || !Array.isArray(responseJSON.test_url)) {
+            addFlash('danger', '<strong>Unable to restart job.</strong>', flashTarget);
+            return;
+          }
+          showJobRestartResults(
+            responseJSON,
+            undefined,
+            forceJobRestartViaRestartLink.bind(undefined, restartLink),
+            flashTarget
+          );
+          const urls = responseJSON.test_url[0];
+          Object.entries(urls).forEach(([key, value]) => {
+            // Skip to mark the job that is not shown in current page
+            const jobElement = document.getElementById('job_' + key);
+            if (!jobElement) {
+              return;
+            }
+            const tr = jobElement.closest('tr');
+            const td = tr.querySelector('td.test');
+            const restart_link_el = td.querySelector('a.restart');
+            const i = restart_link_el.querySelector('i');
+            i.classList.remove('fa-rotate-left');
+            const newLink = document.createElement('a');
+            newLink.href = value;
+            newLink.title = 'new test';
+            newLink.textContent = '(restarted)';
+            td.append(' ', newLink);
+            restart_link_el.replaceWith(i);
+          });
+        })
+        .catch(error => {
+          console.error('Restart failed:', error);
+          addFlash('danger', '<strong>Unable to restart job.</strong>');
+        });
+    }
 
-  $(document).on('click', '.cancel', function (event) {
-    event.preventDefault();
-    const cancel_link = $(this);
-    const test = $(this).parent('td');
-    $.post(cancel_link.attr('href')).done(function (data) {
-      $(test).append(' (cancelled)');
-    });
-    const i = $(this).find('i').removeClass('fa-circle-xmark');
-    $(this).replaceWith(i);
+    const cancelLink = event.target.closest('.cancel');
+    if (cancelLink) {
+      event.preventDefault();
+      fetchWithCSRF(cancelLink.href, {method: 'POST'})
+        .then(() => {
+          const td = cancelLink.parentElement;
+          td.append(' (cancelled)');
+          const i = cancelLink.querySelector('i');
+          i.classList.remove('fa-circle-xmark');
+          cancelLink.replaceWith(i);
+        })
+        .catch(error => console.error('Cancel failed:', error));
+    }
   });
 }
 
 function setupResultButtons() {
-  $('.restart-result').click(function (event) {
-    event.preventDefault();
-    restartJob(this.href, this.dataset.jobid);
-    // prevent posting twice by clicking #restart-result
-    return false;
+  document.querySelectorAll('.restart-result').forEach(el => {
+    el.addEventListener('click', function (event) {
+      event.preventDefault();
+      restartJob(this.href, this.dataset.jobid);
+    });
   });
 }
 
 function setupLazyLoadingFailedSteps() {
   // lazy-load failed steps when the tooltip is shown
-  $('.failedmodule').on('show.bs.tooltip', function () {
-    // skip if we have already loaded failed steps before
-    const failedModuleElement = this;
-    if (failedModuleElement.hasFailedSteps) {
-      return;
-    }
-    failedModuleElement.hasFailedSteps = true;
-
-    // query failed steps via AJAX
-    $.getJSON(failedModuleElement.dataset.bsAsync, function (fails) {
-      // hide tooltip if we have nothing to show
-      if (
-        typeof fails !== 'object' ||
-        fails.first_failed_step === undefined ||
-        !Array.isArray(fails.failed_needles) ||
-        !fails.failed_needles.length
-      ) {
-        failedModuleElement.dataset.bsOriginalTitle = '';
-        $(failedModuleElement).tooltip('hide');
+  document.querySelectorAll('.failedmodule').forEach(failedModuleElement => {
+    failedModuleElement.addEventListener('show.bs.tooltip', function () {
+      // skip if we have already loaded failed steps before
+      if (failedModuleElement.hasFailedSteps) {
         return;
       }
+      failedModuleElement.hasFailedSteps = true;
 
-      // update href to include the first failed step
-      failedModuleElement.href = failedModuleElement.href.replace(/\/1$/, '/' + fails.first_failed_step);
+      // query failed steps via AJAX
+      fetch(failedModuleElement.dataset.bsAsync)
+        .then(response => {
+          if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+          return response.json();
+        })
+        .then(fails => {
+          const tooltip = bootstrap.Tooltip.getInstance(failedModuleElement);
+          // hide tooltip if we have nothing to show
+          if (
+            typeof fails !== 'object' ||
+            fails.first_failed_step === undefined ||
+            !Array.isArray(fails.failed_needles) ||
+            !fails.failed_needles.length
+          ) {
+            failedModuleElement.dataset.bsOriginalTitle = '';
+            if (tooltip) tooltip.hide();
+            return;
+          }
 
-      // show tooltip again with updated data
-      const list = fails.failed_needles.map(needle => `<li>${needle}</li>`).join('');
-      failedModuleElement.dataset.bsOriginalTitle = `<p>Failed needles:</p><ul>${list}</ul>`;
-      $(failedModuleElement).tooltip('show');
-    }).fail(function () {
-      // hide tooltip on error
-      this.hasFailedSteps = false;
-      $(failedModuleElement).tooltip('hide');
+          // update href to include the first failed step
+          failedModuleElement.href = failedModuleElement.href.replace(/\/1$/, '/' + fails.first_failed_step);
+
+          // show tooltip again with updated data
+          const list = fails.failed_needles.map(needle => `<li>${needle}</li>`).join('');
+          failedModuleElement.dataset.bsOriginalTitle = `<p>Failed needles:</p><ul>${list}</ul>`;
+          if (tooltip) tooltip.show();
+        })
+        .catch(() => {
+          // hide tooltip on error
+          failedModuleElement.hasFailedSteps = false;
+          const tooltip = bootstrap.Tooltip.getInstance(failedModuleElement);
+          if (tooltip) tooltip.hide();
+        });
     });
   });
 }
