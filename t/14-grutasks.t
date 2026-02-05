@@ -462,8 +462,9 @@ subtest 'labeled jobs considered important' => sub {
     is $minion->jobs({tasks => ['archive_job_results']})->total, 0, 'no archiving jobs enqueued so far';
 
     # create important job which was finished 12 days ago
+    # note: Setting `logs_present => 0` to show that jobs without logs are also subject to archiving.
     my $job = $app->schema->resultset('Jobs')->find(99938);
-    $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
+    $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC'), logs_present => 0});
     $job->group->update({keep_logs_in_days => 5, keep_important_logs_in_days => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
     my $user = $app->schema->resultset('Users')->find({username => 'system'});
@@ -502,8 +503,8 @@ subtest 'labeled jobs considered important' => sub {
         ok -e $filename, 'results exist under archive path';
     }
 
-    # assume job was finished 22 days ago
-    $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC')});
+    # assume job was finished 22 days ago and logs are present to test cleanup of archived job
+    $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC'), logs_present => 1});
     run_gru_job($app, 'limit_results_and_logs');
     ok !-e $filename, 'results of important job cleaned up if exceeding retention period for important jobs';
 };
