@@ -110,15 +110,24 @@ function updateQueryParams(params) {
   const search = [];
   const hash = document.location.hash;
   Object.entries(params).forEach(([key, values]) => {
-    values.forEach(value => {
-      if (value === undefined) {
+    if (Array.isArray(values)) {
+      values.forEach(value => {
+        if (value === undefined) {
+          search.push(encodeURIComponent(key));
+        } else {
+          search.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+        }
+      });
+    } else {
+      if (values === undefined) {
         search.push(encodeURIComponent(key));
       } else {
-        search.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+        search.push(encodeURIComponent(key) + '=' + encodeURIComponent(values));
       }
-    });
+    }
   });
-  history.replaceState({}, document.title, `?${search.join('&')}${hash}`);
+  const searchString = search.length > 0 ? '?' + search.join('&') : '';
+  history.replaceState({}, document.title, searchString + hash);
 }
 
 function renderDataSize(sizeInByte) {
