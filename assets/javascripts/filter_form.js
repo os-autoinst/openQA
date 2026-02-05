@@ -5,7 +5,11 @@ function setupFilterForm(options) {
     cardHeader.addEventListener('click', function () {
       const cardBody = document.querySelector('#filter-panel .card-body');
       if (cardBody) {
-        $(cardBody).toggle(200);
+        if (cardBody.style.display === 'none' || cardBody.style.display === '') {
+          cardBody.style.display = 'block';
+        } else {
+          cardBody.style.display = 'none';
+        }
         if (document.getElementById('filter-panel').classList.contains('filter-panel-bottom')) {
           window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'smooth'});
         }
@@ -58,7 +62,12 @@ function setupFilterForm(options) {
       filterForm.querySelectorAll('input[hidden]').forEach(input => {
         input.remove();
       });
-      $(filterForm).find('select').val([]).trigger('chosen:updated');
+      filterForm.querySelectorAll('select').forEach(select => {
+        Array.from(select.options).forEach(opt => (opt.selected = false));
+        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen === 'function') {
+          $(select).trigger('chosen:updated');
+        }
+      });
       document.querySelector('#filter-panel .card-header span').textContent =
         'no filter present, click to toggle filter form';
     });
