@@ -2,7 +2,10 @@ let user_is_admin;
 let editor;
 
 function toggleEdit() {
-  $('#properties').toggle(250);
+  const properties = document.getElementById('properties');
+  if (properties) {
+    properties.style.display = properties.style.display === 'none' ? '' : 'none';
+  }
   validateJobGroupForm(document.getElementById('group_properties_form'));
   if ((window.groupPropertiesEditorVisisble = !window.groupPropertiesEditorVisisble)) {
     document.getElementById('job-config-page-heading').innerHTML = 'Job';
@@ -47,7 +50,7 @@ function setupTemplateEditor() {
       }
     };
   }
-  fetch(form.dataset.putUrl)
+  fetch(form.dataset.putUrl, {headers: {Accept: 'application/json'}})
     .then(response => response.json())
     .then(prepareTemplateEditor);
 }
@@ -172,9 +175,12 @@ function submitTemplateEditor(button) {
 }
 
 function showSubmitResults(form, result) {
-  form.querySelector('.buttons').style.display = '';
-  form.querySelector('.properties-progress-indication').style.display = 'none';
-  form.querySelector('.properties-status').innerHTML = result;
+  const buttons = form.querySelector('.buttons');
+  if (buttons) buttons.style.display = '';
+  const progress = form.querySelector('.properties-progress-indication');
+  if (progress) progress.style.display = 'none';
+  const status = form.querySelector('.properties-status');
+  if (status) status.innerHTML = result;
 }
 
 // adds/removes "is-invalid"/"invalid-feedback" classes/elements within the specified form for the specified response
@@ -238,7 +244,8 @@ function showAdvancedFieldsIfJsonRefersToThem(response) {
 
 function submitProperties(form) {
   form.querySelector('.buttons').style.display = 'none';
-  form.querySelector('.progress-indication').style.display = '';
+  const progress = form.querySelector('.properties-progress-indication');
+  if (progress) progress.style.display = '';
   fetchWithCSRF(form.dataset.putUrl, {method: 'PUT', body: new FormData(form)})
     .then(response => {
       return response
