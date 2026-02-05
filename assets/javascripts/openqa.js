@@ -18,9 +18,6 @@ function getCookie(cname) {
 function setupForAll() {
   document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => new bootstrap.Popover(e, {html: true}));
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e, {html: true}));
-  $.ajaxSetup({
-    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
-  });
 }
 
 function getCSRFToken() {
@@ -35,20 +32,36 @@ function fetchWithCSRF(resource, options) {
 }
 
 function makeFlashElement(text) {
-  return typeof text === 'string' ? '<span>' + text + '</span>' : text;
+  if (typeof text === 'string') {
+    const span = document.createElement('span');
+    span.innerHTML = text;
+    return span;
+  }
+  return text;
 }
 
 function addFlash(status, text, container, method = 'append') {
   // add flash messages by default on top of the page
   if (!container) {
-    container = $('#flash-messages');
+    container = document.getElementById('flash-messages');
   }
 
-  var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
-  div.append(makeFlashElement(text));
-  div.append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
-  div.addClass('alert-' + status);
-  container[method](div);
+  const div = document.createElement('div');
+  div.className = `alert alert-primary alert-dismissible fade show alert-${status}`;
+  div.setAttribute('role', 'alert');
+  div.appendChild(makeFlashElement(text));
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'btn-close';
+  closeButton.setAttribute('data-bs-dismiss', 'alert');
+  closeButton.setAttribute('aria-label', 'Close');
+  div.appendChild(closeButton);
+
+  if (method === 'prepend') {
+    container.prepend(div);
+  } else {
+    container.append(div);
+  }
   return div;
 }
 
@@ -60,21 +73,21 @@ function addUniqueFlash(status, id, text, container, method = 'append') {
   // update existing flash message
   const existingFlashMessage = window.uniqueFlashMessages[id];
   if (existingFlashMessage) {
-    existingFlashMessage.find('span').first().replaceWith(makeFlashElement(text));
+    existingFlashMessage.querySelector('span').replaceWith(makeFlashElement(text));
     return;
   }
 
   const msgElement = addFlash(status, text, container, method);
   window.uniqueFlashMessages[id] = msgElement;
-  msgElement.on('closed.bs.alert', function () {
+  msgElement.addEventListener('closed.bs.alert', function () {
     delete window.uniqueFlashMessages[id];
   });
 }
 
 function toggleChildGroups(link) {
-  var buildRow = $(link).parents('.build-row');
-  buildRow.toggleClass('children-collapsed');
-  buildRow.toggleClass('children-expanded');
+  const buildRow = link.closest('.build-row');
+  buildRow.classList.toggle('children-collapsed');
+  buildRow.classList.toggle('children-expanded');
   return false;
 }
 
@@ -96,8 +109,8 @@ function updateQueryParams(params) {
   }
   const search = [];
   const hash = document.location.hash;
-  $.each(params, function (key, values) {
-    $.each(values, function (index, value) {
+  Object.entries(params).forEach(([key, values]) => {
+    values.forEach(value => {
       if (value === undefined) {
         search.push(encodeURIComponent(key));
       } else {
@@ -111,13 +124,13 @@ function updateQueryParams(params) {
 function renderDataSize(sizeInByte) {
   var unitFactor = 1073741824; // one GiB
   var sizeWithUnit = 0;
-  $.each([' GiB', ' MiB', ' KiB', ' byte'], function (index, unit) {
+  for (const unit of [' GiB', ' MiB', ' KiB', ' byte']) {
     if (!unitFactor || sizeInByte >= unitFactor) {
       sizeWithUnit = Math.round((sizeInByte / unitFactor) * 100) / 100 + unit;
-      return false;
+      break;
     }
     unitFactor >>= 10;
-  });
+  }
   return sizeWithUnit;
 }
 
