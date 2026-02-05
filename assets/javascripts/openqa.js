@@ -471,7 +471,7 @@ function renderTestState(item, job) {
 function updateTestState(job, name, timeago, reason) {
   renderTestState(name, job);
   if (job.t_finished) {
-    timeago.textContent = jQuery.timeago(job.t_finished);
+    timeago.textContent = window.timeago.format(job.t_finished);
   }
   if (job.reason) {
     reason.textContent = job.reason;
@@ -671,8 +671,4 @@ function renderHttpUrlAsLink(value, oneUrlPerLine = false) {
     fragment.appendChild(document.createTextNode(value.substring(lastIndex)));
   }
   return fragment.hasChildNodes() ? fragment : document.createTextNode(value);
-}
-
-function getXhrError(jqXHR, textStatus, errorThrown) {
-  return jqXHR.responseJSON?.error || jqXHR.responseText || errorThrown || textStatus;
 }
