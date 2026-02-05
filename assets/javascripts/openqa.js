@@ -36,17 +36,11 @@ function fetchWithCSRF(resource, options) {
   return window.fetch(resource, options);
 }
 
-function handleJSONResponseOrThrow(response) {
+function handleJSONResponse(response) {
   return response
     .json()
-    .then(json => {
-      // Attach the parsed JSON to the response object for further use
-      return {response, json};
-    })
-    .catch(() => {
-      // If parsing fails, handle it as a non-JSON response
-      throw `Server returned ${response.status}: ${response.statusText}`;
-    });
+    .then(json => ({response, json}))
+    .catch(() => response.text().then(text => ({response, text})));
 }
 
 function makeFlashElement(text) {
