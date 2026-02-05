@@ -14,10 +14,13 @@ function toggleEdit() {
 }
 
 function setupTemplateEditor() {
-  const form = $('#editor-form');
-  form.show();
-  form.find('.buttons').hide();
-  form.find('.progress-indication').show();
+  const form = document.getElementById('editor-form');
+  if (!form) {
+    return;
+  }
+  form.style.display = '';
+  form.querySelector('.buttons').style.display = 'none';
+  form.querySelector('.progress-indication').style.display = '';
   if (editor === undefined) {
     editor = ace.edit('editor-template', {
       mode: 'ace/mode/yaml',
@@ -44,17 +47,18 @@ function setupTemplateEditor() {
       }
     };
   }
-  $.ajax({
-    url: form.data('put-url'),
-    dataType: 'json'
-  }).done(prepareTemplateEditor);
+  fetch(form.dataset.putUrl)
+    .then(response => response.json())
+    .then(prepareTemplateEditor);
 }
 
 function prepareTemplateEditor(data) {
   editor.setValue(data, -1);
-  const form = $('#editor-form');
-  form.find('.progress-indication').hide();
-  form.find('.buttons').show();
+  const form = document.getElementById('editor-form');
+  if (form) {
+    form.querySelector('.progress-indication').style.display = 'none';
+    form.querySelector('.buttons').style.display = '';
+  }
   if (!user_is_admin) {
     return;
   }
@@ -63,11 +67,14 @@ function prepareTemplateEditor(data) {
 }
 
 function submitTemplateEditor(button) {
-  const form = $('#editor-form');
-  form.find('.buttons').hide();
-  form.find('.progress-indication').show();
-  const result = form.find('.result');
-  result.text('Applying changes...');
+  const form = document.getElementById('editor-form');
+  if (!form) {
+    return;
+  }
+  form.querySelector('.buttons').style.display = 'none';
+  form.querySelector('.progress-indication').style.display = '';
+  const result = form.querySelector('.result');
+  result.textContent = 'Applying changes...';
 
   // Reset to the minimum viable YAML if empty
   let template = editor.getValue();
@@ -83,7 +90,7 @@ function submitTemplateEditor(button) {
     editor.setValue(template, -1);
   }
 
-  const data = fetchWithCSRF(form.data('put-url'), {
+  fetchWithCSRF(form.dataset.putUrl, {
     method: 'POST',
     headers: {Accept: 'application/json'},
     body: new URLSearchParams({
@@ -91,7 +98,7 @@ function submitTemplateEditor(button) {
       preview: button !== 'save' ? 1 : 0,
       expand: button === 'expand' ? 1 : 0,
       template: template,
-      reference: form.data('reference')
+      reference: form.dataset.reference
     })
   })
     .then(response => {
@@ -100,14 +107,15 @@ function submitTemplateEditor(button) {
     .then(data => {
       // handle errors with YAML syntax
       if (Object.prototype.hasOwnProperty.call(data, 'error')) {
-        result.text('There was a problem applying the changes:');
+        result.textContent = 'There was a problem applying the changes:';
         const errors = data.error;
-        const list = $('<ul/>').appendTo(result);
-        $.each(errors, function (i) {
-          const message = Object.prototype.hasOwnProperty.call(errors[i], 'message')
-            ? errors[i].message + ': ' + errors[i].path
-            : errors[i];
-          $('<li/>').text(message).appendTo(list);
+        const list = document.createElement('ul');
+        result.appendChild(list);
+        errors.forEach(err => {
+          const message = Object.prototype.hasOwnProperty.call(err, 'message') ? err.message + ': ' + err.path : err;
+          const li = document.createElement('li');
+          li.textContent = message;
+          list.appendChild(li);
         });
         return;
       }
@@ -115,53 +123,58 @@ function submitTemplateEditor(button) {
       let mode, value;
       switch (button) {
         case 'expand':
-          result.text('Result of expanding the YAML:');
+          result.textContent = 'Result of expanding the YAML:';
           mode = 'ace/mode/yaml';
           value = data.result;
           break;
         case 'preview':
-          result.text('Preview of the changes:');
+          result.textContent = 'Preview of the changes:';
           mode = 'ace/mode/diff';
           value = data.changes;
           break;
-        case 'save':
+        case 'save': {
           // Update the reference to the saved document
-          form.data('reference', editor.getValue());
+          form.dataset.reference = editor.getValue();
 
-          result.text('YAML saved!');
+          result.textContent = 'YAML saved!';
           mode = 'ace/mode/diff';
           value = data.changes;
           break;
+        }
       }
 
       if (value) {
         const previewElement = document.createElement('pre');
         previewElement.appendChild(document.createTextNode(value));
-        const preview = ace.edit(previewElement, {
+        ace.edit(previewElement, {
           mode: mode,
           readOnly: true,
           maxLines: Infinity
         });
         editor.session.setUseWrapMode(true);
-        result.append(previewElement);
+        result.appendChild(previewElement);
       } else {
-        $('<strong/>').text(' No changes were made!').appendTo(result);
+        const strong = document.createElement('strong');
+        strong.textContent = ' No changes were made!';
+        result.appendChild(strong);
       }
     })
     .catch(error => {
-      result.text('There was a problem applying the changes:');
-      $('<p/>').text(error).appendTo(result);
+      result.textContent = 'There was a problem applying the changes:';
+      const p = document.createElement('p');
+      p.textContent = error;
+      result.appendChild(p);
     })
     .finally(() => {
-      form.find('.buttons').show();
-      form.find('.progress-indication').hide();
+      form.querySelector('.buttons').style.display = '';
+      form.querySelector('.progress-indication').style.display = 'none';
     });
 }
 
 function showSubmitResults(form, result) {
-  form.find('.buttons').show();
-  form.find('.properties-progress-indication').hide();
-  form.find('.properties-status').html(result);
+  form.querySelector('.buttons').style.display = '';
+  form.querySelector('.properties-progress-indication').style.display = 'none';
+  form.querySelector('.properties-status').innerHTML = result;
 }
 
 // adds/removes "is-invalid"/"invalid-feedback" classes/elements within the specified form for the specified response
@@ -224,13 +237,9 @@ function showAdvancedFieldsIfJsonRefersToThem(response) {
 }
 
 function submitProperties(form) {
-  const editorForm = $(form);
-  editorForm.find('.buttons').hide();
-  editorForm.find('.progress-indication').show();
-  fetchWithCSRF(editorForm.data('put-url'), {
-    method: 'PUT',
-    body: new FormData(form)
-  })
+  form.querySelector('.buttons').style.display = 'none';
+  form.querySelector('.progress-indication').style.display = '';
+  fetchWithCSRF(form.dataset.putUrl, {method: 'PUT', body: new FormData(form)})
     .then(response => {
       return response
         .json()
@@ -248,7 +257,7 @@ function submitProperties(form) {
       const overallError = updateValidation(form, json);
       if (overallError) {
         showSubmitResults(
-          editorForm,
+          form,
           `<i class="fa-solid fa-circle-exclamation"></i> Unable to apply changes: <strong>${overallError}</strong>`
         );
         return;
@@ -259,27 +268,32 @@ function submitProperties(form) {
         typeof warnings === 'object' && Object.keys(warnings).length > 0
           ? ', but <strong>there are warnings</strong> (see highlighted fields)'
           : '';
-      showSubmitResults(editorForm, `<i class="fa-solid fa-floppy-disk"></i> Changes applied${remark}`);
+      showSubmitResults(form, `<i class="fa-solid fa-floppy-disk"></i> Changes applied${remark}`);
 
       // show new name
-      const newJobName = $('#editor-name').val();
-      $('#job-group-name').text(newJobName);
+      const newJobName = document.getElementById('editor-name').value;
+      const jobGroupNameEl = document.getElementById('job-group-name');
+      if (jobGroupNameEl) {
+        jobGroupNameEl.textContent = newJobName;
+      }
       document.title = document.title.substr(0, 17) + newJobName;
       // update initial value for default priority (used when adding new job template)
-      const defaultPrioInput = $('#editor-default-priority');
-      const defaultPrio = defaultPrioInput.val();
-      defaultPrioInput.data('initial-value', defaultPrio);
-      $('td.prio input').attr('placeholder', defaultPrio);
+      const defaultPrioInput = document.getElementById('editor-default-priority');
+      const defaultPrio = defaultPrioInput.value;
+      defaultPrioInput.dataset.initialValue = defaultPrio;
+      document.querySelectorAll('td.prio input').forEach(input => {
+        input.setAttribute('placeholder', defaultPrio);
+      });
     })
     .catch(error => {
       showSubmitResults(
-        editorForm,
+        form,
         `<i class="fa-solid fa-circle-exclamation"></i> Unable to apply changes: <strong>${error}</strong>`
       );
     })
     .finally(() => {
-      editorForm.find('.buttons').show();
-      editorForm.find('.progress-indication').hide();
+      form.querySelector('.buttons').style.display = '';
+      form.querySelector('.progress-indication').style.display = 'none';
     });
 
   return false;
