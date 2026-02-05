@@ -99,8 +99,11 @@ function loadBuildResults(queryParams) {
     if (loadingElement) loadingElement.style.display = 'none';
     if (buildResultsElement) buildResultsElement.innerHTML = buildResults;
     document.querySelectorAll('.timeago').forEach(el => {
-      if (typeof jQuery !== 'undefined' && typeof jQuery.fn.timeago === 'function') {
-        $(el).timeago();
+      if (window.timeago && typeof window.timeago.format === 'function') {
+        const date = el.getAttribute('title') || el.getAttribute('datetime');
+        if (date) {
+          el.textContent = window.timeago.format(date);
+        }
       }
     });
     alignBuildLabels();

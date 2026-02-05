@@ -123,8 +123,11 @@ function stackParallelChildren(depElement, dependencyInfo) {
 function setupOverview() {
   setupLazyLoadingFailedSteps();
   document.querySelectorAll('.timeago').forEach(el => {
-    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.timeago === 'function') {
-      $(el).timeago();
+    if (window.timeago && typeof window.timeago.format === 'function') {
+      const date = el.getAttribute('title') || el.getAttribute('datetime');
+      if (date) {
+        el.textContent = window.timeago.format(date);
+      }
     }
   });
   $('.cancel').on('ajax:success', function (event, xhr, status) {

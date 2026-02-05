@@ -184,6 +184,9 @@ function hidePreviewContainer() {
 }
 
 function setCurrentPreview(stepPreviewContainer, force) {
+  if (stepPreviewContainer && typeof jQuery !== 'undefined' && !(stepPreviewContainer instanceof jQuery)) {
+    stepPreviewContainer = jQuery(stepPreviewContainer);
+  }
   // just hide current preview
   if (
     !(stepPreviewContainer && stepPreviewContainer.length && !stepPreviewContainer.hasClass('current_preview')) &&
