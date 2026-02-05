@@ -457,7 +457,7 @@ subtest 'limit audit events' => sub {
     is($audit_events->search({event => 'startup'})->count, 1, 'old startup event deleted');
 };
 
-subtest 'labeled jobs considered important' => sub {
+subtest 'archiving and labeling jobs to be considered important' => sub {
     my $minion = $app->minion;
     is $minion->jobs({tasks => ['archive_job_results']})->total, 0, 'no archiving jobs enqueued so far';
 
