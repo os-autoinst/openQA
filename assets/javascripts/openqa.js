@@ -714,11 +714,14 @@ if (typeof window !== 'undefined' && window.jQuery) {
     if ($.active === undefined) {
       $.active = 0;
       const originalAjax = $.ajax;
+      $.ajax.active = 0; // maintain compatibility for scripts checking $.ajax.active
       $.ajax = function (url, options) {
         $.active++;
+        $.ajax.active++;
         const jqXHR = originalAjax.apply(this, arguments);
         jqXHR.always(() => {
           $.active = Math.max(0, $.active - 1);
+          $.ajax.active = Math.max(0, $.ajax.active - 1);
         });
         return jqXHR;
       };
