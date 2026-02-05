@@ -3,27 +3,24 @@ function NeedleDiff(id, width, height) {
     return new NeedleDiff(id, width, height);
   }
 
-  const canvas = $('<canvas/>');
-  const container = $('#' + id);
+  const canvas = document.createElement('canvas');
+  const container = document.getElementById(id);
   let divide = 0.5;
 
-  this.ctx = canvas[0].getContext('2d');
+  this.ctx = canvas.getContext('2d');)
   this.screenshotImg = null;
   this.needleImg = null;
   this.areas = [];
   this.matches = [];
 
-  // Event handlers
-  canvas.on('mousemove', handler);
-  canvas.on('mousedown', handler);
-  canvas.on('mouseup', handler);
-
   const self = this;
 
+  // Event handlers
   function handler(ev) {
     if (ev.offsetX == undefined) {
-      ev._x = ev.pageX - canvas.offset().left;
-      ev._y = ev.pageY - canvas.offset().top;
+      const rect = canvas.getBoundingClientRect();
+      ev._x = ev.pageX - (rect.left + window.scrollX);
+      ev._y = ev.pageY - (rect.top + window.scrollY);
     } else {
       ev._x = ev.offsetX;
       ev._y = ev.offsetY;
@@ -35,10 +32,14 @@ function NeedleDiff(id, width, height) {
     }
   }
 
+  canvas.addEventListener('mousemove', handler);
+  canvas.addEventListener('mousedown', handler);
+  canvas.addEventListener('mouseup', handler);
+
   // Draw canvas into its container
-  canvas.attr('width', width);
-  canvas.attr('height', height);
-  container.append(canvas);
+  canvas.width = width;
+  canvas.height = height;
+  container.appendChild(canvas);)
 
   Object.defineProperty(this, 'container', {
     get: function () {
@@ -281,9 +282,9 @@ NeedleDiff.prototype.mousemove = function (event) {
 
   // Change cursor
   if (Math.abs(this.divide - divide) < 0.01) {
-    this.container.css('cursor', 'col-resize');
+    this.container.style.cursor = 'col-resize';
   } else {
-    this.container.css('cursor', 'auto');
+    this.container.style.cursor = 'auto';
   }
 };
 
@@ -319,9 +320,9 @@ NeedleDiff.shapecolor = function (type) {
 };
 
 function setDiffScreenshot(screenshotSrc) {
-  $('<img src="' + screenshotSrc + '">').on('load', function () {
-    const image = $(this).get(0);
-
+  const image = new Image();
+  image.src = screenshotSrc;
+  image.addEventListener('load', function () {
     // set screenshot resolution
     window.differ = new NeedleDiff('needle_diff', image.width, image.height);
     window.differ.screenshotImg = image;
@@ -373,38 +374,44 @@ function setNeedle(sel, kind) {
     return;
   }
 
-  const currentSelection = $('#needlediff_selector tbody tr.selected');
+  const currentSelection = document.querySelector('#needlediff_selector tbody tr.selected');
   if (sel) {
     // set needle for newly selected item
-    currentSelection.removeClass('selected');
-    sel.addClass('selected');
+    if (currentSelection) {
+      currentSelection.classList.remove('selected');
+    }
+    sel.classList.add('selected');
     // update label/button text
-    let label = sel.data('label');
+    let label = sel.dataset.label;
     if (!label) {
       label = 'Screenshot';
     }
-    $('#current_needle_label').text(label);
+    document.getElementById('current_needle_label').textContent = label;
   } else {
     // set needle for current selection
     sel = currentSelection;
   }
 
   // set areas/matches
-  document.getElementById('screenshot_button').disabled = !sel.length;
-  if (sel.length) {
+  var screenshotButton = document.getElementById('screenshot_button');
+  if (screenshotButton) {
+    screenshotButton.disabled = !sel;
+  }
+  if (sel) {
     // show actual candidate
-    window.differ.areas = sel.data('areas');
-    window.differ.matches = sel.data('matches');
+    window.differ.areas = JSON.parse(sel.dataset.areas);
+    window.differ.matches = JSON.parse(sel.dataset.matches);
   } else {
     // show only a screenshot
     window.differ.areas = window.differ.matches = [];
   }
 
   // set image
-  const src = sel.data('image');
+  const src = sel ? sel.dataset.image : null;
   if (src) {
-    $('<img src="' + src + '">').on('load', function () {
-      const image = $(this).get(0);
+    const image = new Image();
+    image.src = src;
+    image.addEventListener('load', function () {
       window.differ.needleImg = image;
       window.differ.fullNeedleImg = assignFullNeedleImg ? image : null;
       window.differ.draw();
@@ -418,8 +425,12 @@ function setNeedle(sel, kind) {
   // close menu again, except user is selecting text to copy
   const needleDiffSelector = document.getElementById('needlediff_selector');
   const selection = window.getSelection();
-  const userSelectedText = !selection.isCollapsed && $.contains(needleDiffSelector, selection.anchorNode);
-  if (!userSelectedText && $(needleDiffSelector).is(':visible')) {
-    new bootstrap.Dropdown('#candidatesMenu').toggle();
+  const userSelectedText =
+    !selection.isCollapsed && needleDiffSelector && needleDiffSelector.contains(selection.anchorNode);
+  if (!userSelectedText && needleDiffSelector && needleDiffSelector.offsetParent !== null) {
+    const candidatesMenu = document.getElementById('candidatesMenu');
+    if (candidatesMenu) {
+      bootstrap.Dropdown.getOrCreateInstance(candidatesMenu).toggle();
+    }
   }
 }
