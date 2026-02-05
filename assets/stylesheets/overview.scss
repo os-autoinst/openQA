@@ -21,12 +21,11 @@
     margin-left: 0.5rem;
 }
 
+#summary .badge-btn.btn-outline-light {
+    color: black;
+}
 #summary .badge {
-    font-size: 90%;
-    padding: 4px 6px 4px;
-    border-radius: 0.5rem;
-    color: #fff;
-    background-color: #bbb;
+    top: 0px;
 }
 #summary .time-params {
     font-weight: lighter;

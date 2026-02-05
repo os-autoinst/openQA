@@ -106,6 +106,17 @@ my %BADGE_CHARLENS = (
     '[0-9]' => 0.64
 );
 
+my %SUMMARY_CATEGORY_QUERY = (
+    passed => {result => PASSED, state => undef},
+    softfailed => {result => SOFTFAILED, state => undef},
+    failed => {result => FAILED, state => undef},
+    not_complete => {result => [NOT_COMPLETE_RESULTS], state => undef},
+    scheduled => {result => undef, state => SCHEDULED},
+    running => {result => undef, state => [EXECUTION_STATES]},
+    aborted => {result => [ABORTED_RESULTS], state => undef},
+    none => {result => NONE, state => undef},
+);
+
 sub referer_check ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
@@ -904,6 +915,7 @@ sub overview ($self) {
         until => $search_args->{until},
         parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},
         summary_parts => \@summary_parts,
+        summary_category_query => \%SUMMARY_CATEGORY_QUERY,
         only_distri => $only_distri,
         limit_exceeded => $exceeded_limit,
     );
