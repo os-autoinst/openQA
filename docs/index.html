@@ -438,9 +438,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 pre.pygments .hll { background-color: #ffffcc }
 pre.pygments { background: #f8f8f8; }
 pre.pygments .tok-c { color: #3D7B7B; font-style: italic } /* Comment */
-pre.pygments .tok-err { border: 1px solid #FF0000 } /* Error */
+pre.pygments .tok-err { border: 1px solid #F00 } /* Error */
 pre.pygments .tok-k { color: #008000; font-weight: bold } /* Keyword */
-pre.pygments .tok-o { color: #666666 } /* Operator */
+pre.pygments .tok-o { color: #666 } /* Operator */
 pre.pygments .tok-ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
 pre.pygments .tok-cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
 pre.pygments .tok-cp { color: #9C6500 } /* Comment.Preproc */
@@ -449,6 +449,7 @@ pre.pygments .tok-c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
 pre.pygments .tok-cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
 pre.pygments .tok-gd { color: #A00000 } /* Generic.Deleted */
 pre.pygments .tok-ge { font-style: italic } /* Generic.Emph */
+pre.pygments .tok-ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
 pre.pygments .tok-gr { color: #E40000 } /* Generic.Error */
 pre.pygments .tok-gh { color: #000080; font-weight: bold } /* Generic.Heading */
 pre.pygments .tok-gi { color: #008400 } /* Generic.Inserted */
@@ -456,34 +457,34 @@ pre.pygments .tok-go { color: #717171 } /* Generic.Output */
 pre.pygments .tok-gp { color: #000080; font-weight: bold } /* Generic.Prompt */
 pre.pygments .tok-gs { font-weight: bold } /* Generic.Strong */
 pre.pygments .tok-gu { color: #800080; font-weight: bold } /* Generic.Subheading */
-pre.pygments .tok-gt { color: #0044DD } /* Generic.Traceback */
+pre.pygments .tok-gt { color: #04D } /* Generic.Traceback */
 pre.pygments .tok-kc { color: #008000; font-weight: bold } /* Keyword.Constant */
 pre.pygments .tok-kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
 pre.pygments .tok-kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
 pre.pygments .tok-kp { color: #008000 } /* Keyword.Pseudo */
 pre.pygments .tok-kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
 pre.pygments .tok-kt { color: #B00040 } /* Keyword.Type */
-pre.pygments .tok-m { color: #666666 } /* Literal.Number */
+pre.pygments .tok-m { color: #666 } /* Literal.Number */
 pre.pygments .tok-s { color: #BA2121 } /* Literal.String */
 pre.pygments .tok-na { color: #687822 } /* Name.Attribute */
 pre.pygments .tok-nb { color: #008000 } /* Name.Builtin */
-pre.pygments .tok-nc { color: #0000FF; font-weight: bold } /* Name.Class */
-pre.pygments .tok-no { color: #880000 } /* Name.Constant */
-pre.pygments .tok-nd { color: #AA22FF } /* Name.Decorator */
+pre.pygments .tok-nc { color: #00F; font-weight: bold } /* Name.Class */
+pre.pygments .tok-no { color: #800 } /* Name.Constant */
+pre.pygments .tok-nd { color: #A2F } /* Name.Decorator */
 pre.pygments .tok-ni { color: #717171; font-weight: bold } /* Name.Entity */
 pre.pygments .tok-ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
-pre.pygments .tok-nf { color: #0000FF } /* Name.Function */
+pre.pygments .tok-nf { color: #00F } /* Name.Function */
 pre.pygments .tok-nl { color: #767600 } /* Name.Label */
-pre.pygments .tok-nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+pre.pygments .tok-nn { color: #00F; font-weight: bold } /* Name.Namespace */
 pre.pygments .tok-nt { color: #008000; font-weight: bold } /* Name.Tag */
 pre.pygments .tok-nv { color: #19177C } /* Name.Variable */
-pre.pygments .tok-ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
-pre.pygments .tok-w { color: #bbbbbb } /* Text.Whitespace */
-pre.pygments .tok-mb { color: #666666 } /* Literal.Number.Bin */
-pre.pygments .tok-mf { color: #666666 } /* Literal.Number.Float */
-pre.pygments .tok-mh { color: #666666 } /* Literal.Number.Hex */
-pre.pygments .tok-mi { color: #666666 } /* Literal.Number.Integer */
-pre.pygments .tok-mo { color: #666666 } /* Literal.Number.Oct */
+pre.pygments .tok-ow { color: #A2F; font-weight: bold } /* Operator.Word */
+pre.pygments .tok-w { color: #BBB } /* Text.Whitespace */
+pre.pygments .tok-mb { color: #666 } /* Literal.Number.Bin */
+pre.pygments .tok-mf { color: #666 } /* Literal.Number.Float */
+pre.pygments .tok-mh { color: #666 } /* Literal.Number.Hex */
+pre.pygments .tok-mi { color: #666 } /* Literal.Number.Integer */
+pre.pygments .tok-mo { color: #666 } /* Literal.Number.Oct */
 pre.pygments .tok-sa { color: #BA2121 } /* Literal.String.Affix */
 pre.pygments .tok-sb { color: #BA2121 } /* Literal.String.Backtick */
 pre.pygments .tok-sc { color: #BA2121 } /* Literal.String.Char */
@@ -498,12 +499,12 @@ pre.pygments .tok-sr { color: #A45A77 } /* Literal.String.Regex */
 pre.pygments .tok-s1 { color: #BA2121 } /* Literal.String.Single */
 pre.pygments .tok-ss { color: #19177C } /* Literal.String.Symbol */
 pre.pygments .tok-bp { color: #008000 } /* Name.Builtin.Pseudo */
-pre.pygments .tok-fm { color: #0000FF } /* Name.Function.Magic */
+pre.pygments .tok-fm { color: #00F } /* Name.Function.Magic */
 pre.pygments .tok-vc { color: #19177C } /* Name.Variable.Class */
 pre.pygments .tok-vg { color: #19177C } /* Name.Variable.Global */
 pre.pygments .tok-vi { color: #19177C } /* Name.Variable.Instance */
 pre.pygments .tok-vm { color: #19177C } /* Name.Variable.Magic */
-pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
+pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 </style>
 </head>
 <body class="book toc2 toc-left">
@@ -7312,9 +7313,9 @@ modern Perl features still need to be enabled manually.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span> <span class="tok-nn">testapi</span> <span class="tok-kn">import</span> <span class="tok-o">*</span>
+<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-w"> </span><span class="tok-kn">import</span> <span class="tok-o">*</span>
 
-<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-c1"># write in this block the code for your test.</span></code></pre>
 </div>
 </div>
@@ -7323,10 +7324,10 @@ modern Perl features still need to be enabled manually.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nf">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
 
-<span class="tok-kr">function</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
-    <span class="tok-c1">-- write in this block the code for your test.</span>
+<span class="tok-kr">function</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-nv">self</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-c1">-- write in this block the code for your test.</span>
 <span class="tok-kr">end</span></code></pre>
 </div>
 </div>
@@ -7338,11 +7339,11 @@ that the subroutine marked with <code>*1</code> are optional.</em></p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-c1"># Written in type-hinted python to indicate explicitly return types</span>
-<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span>
-<span class="tok-k">def</span> <span class="tok-nf">test_flags</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">dict</span> <span class="tok-c1"># *1</span>
-<span class="tok-k">def</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
-<span class="tok-k">def</span> <span class="tok-nf">pre_run_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
-<span class="tok-k">def</span> <span class="tok-nf">post_run_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span></code></pre>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">dict</span> <span class="tok-c1"># *1</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">pre_run_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">post_run_hook</span><span class="tok-p">():</span> <span class="tok-o">-&gt;</span> <span class="tok-kc">None</span> <span class="tok-c1"># *1</span></code></pre>
 </div>
 </div>
 <div class="sect3">
@@ -7424,8 +7425,8 @@ behavior for all backends even though it is not possible to roll back.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-kr">function</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
-    <span class="tok-kr">return</span> <span class="tok-p">{</span><span class="tok-n">fatal</span> <span class="tok-o">=</span> <span class="tok-mi">1</span><span class="tok-p">}</span>
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-kr">function</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-nv">self</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-kr">return</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-nv">fatal</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">}</span>
 <span class="tok-kr">end</span></code></pre>
 </div>
 </div>
@@ -7524,11 +7525,11 @@ passed as positional arguments, for example <code>"key", "value"</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span> <span class="tok-nn">testapi</span> <span class="tok-kn">import</span> <span class="tok-o">*</span>
+<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-w"> </span><span class="tok-kn">import</span> <span class="tok-o">*</span>
 
 <span class="tok-c1"># [...] omitted for brevity</span>
 
-<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">require</span><span class="tok-p">(</span><span class="tok-s1">&#39;x11utils&#39;</span><span class="tok-p">)</span>
 
     <span class="tok-c1"># Start vncviewer - notice the named arguments passed as positional arguments</span>
@@ -7556,8 +7557,8 @@ which works similar to Perl&#8217;s native <code>use</code> function.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span> <span class="tok-c1">-- imports all functions that testapi.pm exports</span>
-<span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">,</span> <span class="tok-p">{</span><span class="tok-s2">&quot;check_screen&quot;</span><span class="tok-p">})</span> <span class="tok-c1">-- only imports the check_screen function from the testapi</span></code></pre>
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nf">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-c1">-- imports all functions that testapi.pm exports</span>
+<span class="tok-nf">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-s2">&quot;check_screen&quot;</span><span class="tok-p">})</span><span class="tok-w"> </span><span class="tok-c1">-- only imports the check_screen function from the testapi</span></code></pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -7579,14 +7580,14 @@ The <code>use()</code> function will import everything into the global scope.
 <div class="content">
 <pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-c1">-- example test library to be imported by lua test modules</span>
 
-<span class="tok-kd">local</span> <span class="tok-n">modname</span> <span class="tok-o">=</span> <span class="tok-s2">&quot;luatestlib&quot;</span>
-<span class="tok-kd">local</span> <span class="tok-n">M</span> <span class="tok-o">=</span> <span class="tok-p">{}</span>
-<span class="tok-nb">_G</span><span class="tok-p">[</span><span class="tok-n">modname</span><span class="tok-p">]</span> <span class="tok-o">=</span> <span class="tok-n">M</span>
-<span class="tok-nb">package.loaded</span><span class="tok-p">[</span><span class="tok-n">modname</span><span class="tok-p">]</span> <span class="tok-o">=</span> <span class="tok-n">M</span>
+<span class="tok-kd">local</span><span class="tok-w"> </span><span class="tok-nv">modname</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;luatestlib&quot;</span>
+<span class="tok-kd">local</span><span class="tok-w"> </span><span class="tok-nv">M</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">{}</span>
+<span class="tok-nb">_G</span><span class="tok-p">[</span><span class="tok-nv">modname</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nv">M</span>
+<span class="tok-nb">package.loaded</span><span class="tok-p">[</span><span class="tok-nv">modname</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nv">M</span>
 
-<span class="tok-kr">function</span> <span class="tok-nc">M</span><span class="tok-p">.</span><span class="tok-nf">testfunc3</span><span class="tok-p">()</span>
-    <span class="tok-nb">print</span><span class="tok-p">(</span><span class="tok-s2">&quot;testfunc3&quot;</span><span class="tok-p">)</span>
-    <span class="tok-kr">return</span> <span class="tok-mi">44</span>
+<span class="tok-kr">function</span><span class="tok-w"> </span><span class="tok-nc">M</span><span class="tok-p">.</span><span class="tok-nf">testfunc3</span><span class="tok-p">()</span>
+<span class="tok-w">    </span><span class="tok-nb">print</span><span class="tok-p">(</span><span class="tok-s2">&quot;testfunc3&quot;</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-kr">return</span><span class="tok-w"> </span><span class="tok-mi">44</span>
 <span class="tok-kr">end</span></code></pre>
 </div>
 </div>
@@ -7607,8 +7608,8 @@ Lua libraries are - other than perl libraries - imported into their own scope.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nb">require</span> <span class="tok-s1">&#39;luatestlib&#39;</span>
-<span class="tok-n">luatestlib</span><span class="tok-p">.</span><span class="tok-n">testfunc3</span><span class="tok-p">()</span> <span class="tok-c1">-- returns 44</span></code></pre>
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nb">require</span><span class="tok-w"> </span><span class="tok-s1">&#39;luatestlib&#39;</span>
+<span class="tok-nv">luatestlib</span><span class="tok-p">.</span><span class="tok-nf">testfunc3</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-c1">-- returns 44</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -7632,9 +7633,9 @@ passed as positional arguments of alternating key and value entries.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s1">&#39;vncviewer :0&#39;</span><span class="tok-p">,</span>
-    <span class="tok-s1">&#39;target_match&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;virtman-gnome_virt-install&#39;</span><span class="tok-p">,</span>
-    <span class="tok-s1">&#39;match_timeout&#39;</span><span class="tok-p">,</span> <span class="tok-mi">100</span>
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nf">x11_start_program</span><span class="tok-p">(</span><span class="tok-s1">&#39;vncviewer :0&#39;</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-s1">&#39;target_match&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s1">&#39;virtman-gnome_virt-install&#39;</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-s1">&#39;match_timeout&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">100</span>
 <span class="tok-p">)</span></code></pre>
 </div>
 </div>
@@ -7750,9 +7751,9 @@ implementing the interface described above.</p>
 <div id="testmodule_python_webui" class="listingblock">
 <div class="title">Example: Test for the openQA web UI written in Python</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span> <span class="tok-nn">testapi</span> <span class="tok-kn">import</span> <span class="tok-o">*</span>
+<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span><span class="tok-w"> </span><span class="tok-nn">testapi</span><span class="tok-w"> </span><span class="tok-kn">import</span> <span class="tok-o">*</span>
 
-<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-n">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-logged-in&#39;</span><span class="tok-p">)</span>
     <span class="tok-n">assert_and_click</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-search&#39;</span><span class="tok-p">)</span>
     <span class="tok-n">type_string</span><span class="tok-p">(</span><span class="tok-s1">&#39;shutdown.pm&#39;</span><span class="tok-p">)</span>
@@ -7768,14 +7769,14 @@ implementing the interface described above.</p>
     <span class="tok-c1"># See the explanation in the &quot;Notes on the Python API&quot; section.</span>
     <span class="tok-n">perl</span><span class="tok-o">.</span><span class="tok-n">x11utils</span><span class="tok-o">.</span><span class="tok-n">x11_start_program</span><span class="tok-p">(</span><span class="tok-s1">&#39;flatpak run com.obsproject.Studio&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;target_match&#39;</span><span class="tok-p">,</span> <span class="tok-s1">&#39;obsproject-wizard&#39;</span><span class="tok-p">)</span>
 
-<span class="tok-k">def</span> <span class="tok-nf">switch_to_root_console</span><span class="tok-p">():</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">switch_to_root_console</span><span class="tok-p">():</span>
     <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">)</span>
 
-<span class="tok-k">def</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-n">switch_to_root_console</span><span class="tok-p">()</span>
     <span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-p">)</span>
 
-<span class="tok-k">def</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+<span class="tok-k">def</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
     <span class="tok-k">return</span> <span class="tok-p">{</span><span class="tok-s1">&#39;fatal&#39;</span><span class="tok-p">:</span> <span class="tok-mi">1</span><span class="tok-p">}</span></code></pre>
 </div>
 </div>
@@ -7785,23 +7786,23 @@ implementing the interface described above.</p>
 <h3 id="_example_lua_test_module"><a class="anchor" href="#_example_lua_test_module"></a><a class="link" href="#_example_lua_test_module">39.6. Example Lua test module</a></h3>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-n">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
+<pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nf">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
 
-<span class="tok-kr">function</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
-    <span class="tok-n">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-logged-in&#39;</span><span class="tok-p">)</span>
-    <span class="tok-n">assert_and_click</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-search&#39;</span><span class="tok-p">)</span>
-    <span class="tok-n">type_string</span><span class="tok-p">(</span><span class="tok-s1">&#39;shutdown.pm&#39;</span><span class="tok-p">)</span>
-    <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ret&#39;</span><span class="tok-p">)</span>
-    <span class="tok-err">…</span>
+<span class="tok-kr">function</span><span class="tok-w"> </span><span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-nv">self</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-nf">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-logged-in&#39;</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-nf">assert_and_click</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-search&#39;</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-nf">type_string</span><span class="tok-p">(</span><span class="tok-s1">&#39;shutdown.pm&#39;</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-nf">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ret&#39;</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-err">…</span>
 <span class="tok-kr">end</span>
 
-<span class="tok-kr">function</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
-    <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">)</span>
-    <span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-p">)</span>
+<span class="tok-kr">function</span><span class="tok-w"> </span><span class="tok-nf">post_fail_hook</span><span class="tok-p">(</span><span class="tok-nv">self</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-nf">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-nf">assert_script_run</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-p">)</span>
 <span class="tok-kr">end</span>
 
-<span class="tok-kr">function</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-n">self</span><span class="tok-p">)</span>
-    <span class="tok-kr">return</span> <span class="tok-p">{</span><span class="tok-n">fatal</span> <span class="tok-o">=</span> <span class="tok-mi">1</span><span class="tok-p">}</span>
+<span class="tok-kr">function</span><span class="tok-w"> </span><span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-nv">self</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-kr">return</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-nv">fatal</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">}</span>
 <span class="tok-kr">end</span></code></pre>
 </div>
 </div>
@@ -14664,7 +14665,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-02-03 04:44:54 UTC
+Last updated 2026-02-05 04:45:06 UTC
 </div>
 </div>
 </body>
