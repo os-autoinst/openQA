@@ -13,12 +13,12 @@ function showAddGroupModal(parentId, title) {
 function showAddJobGroup(plusElement) {
   let parentId, title;
   if (plusElement) {
-    const parentLiElement = $(plusElement).closest('li');
-    parentId = parentLiElement.prop('id').substr(13);
+    const parentLiElement = plusElement.closest('li');
+    parentId = parentLiElement.id.substr(13);
     if (parentId !== 'none') {
       parentId = parseInt(parentId);
     }
-    title = 'Add job group in ' + parentLiElement.find('.parent-group-name').text().trim();
+    title = 'Add job group in ' + parentLiElement.querySelector('.parent-group-name').textContent.trim();
   } else {
     parentId = 'none';
     title = 'Add new job group on top-level';
@@ -31,9 +31,12 @@ function showAddParentGroup() {
 }
 
 function showError(message) {
-  $('#new_group_creating').hide();
-  $('#new_group_error').show();
-  $('#new_group_error_message').text(message ? message : 'something went wrong');
+  const creating = document.getElementById('new_group_creating');
+  if (creating) creating.style.display = 'none';
+  const error = document.getElementById('new_group_error');
+  if (error) error.style.display = 'block';
+  const errorMsg = document.getElementById('new_group_error_message');
+  if (errorMsg) errorMsg.textContent = message ? message : 'something went wrong';
 }
 
 function fetchHtmlEntry(url, targetElement) {
@@ -42,13 +45,23 @@ function fetchHtmlEntry(url, targetElement) {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       return response.text();
     })
-    .then(response => {
-      const element = $(response);
-      element.hide();
+    .then(html => {
+      const template = document.createElement('template');
+      template.innerHTML = html.trim();
+      const element = template.content.firstChild;
+      element.style.display = 'none';
       targetElement.prepend(element);
-      $('#new_group_creating').hide();
-      $('#add_group_modal').modal('hide');
-      element.fadeIn('slow');
+      const creating = document.getElementById('new_group_creating');
+      if (creating) creating.style.display = 'none';
+      const modalElement = document.getElementById('add_group_modal');
+      const modal = bootstrap.Modal.getInstance(modalElement);
+      if (modal) modal.hide();
+      element.style.display = 'block';
+      element.style.opacity = 0;
+      setTimeout(() => {
+        element.style.transition = 'opacity 0.5s';
+        element.style.opacity = 1;
+      }, 10);
     })
     .catch(error => {
       console.error(error);
@@ -58,7 +71,7 @@ function fetchHtmlEntry(url, targetElement) {
 
 function countEmptyInputs(form) {
   return Array.from(form.querySelectorAll('input')).reduce(
-    (count, e) => count + (e.type !== 'number' && !jQuery.trim(e.value).length),
+    (count, e) => count + (e.type !== 'number' && !e.value.trim().length),
     0
   );
 }
@@ -70,40 +83,46 @@ function validateJobGroupForm(form) {
   if (form.dataset.eventHandlersInitialized) {
     return;
   }
-  $('input', form).on('keyup change', function () {
-    if (this.type === 'number') {
+  form.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keyup', () => validateInput(input));
+    input.addEventListener('change', () => validateInput(input));
+  });
+
+  function validateInput(input) {
+    if (input.type === 'number') {
       return;
     }
-    if (!jQuery.trim(this.value).length) {
-      this.classList.add('is-invalid');
-      button.disabled = ++emptyInputs;
+    if (!input.value.trim().length) {
+      input.classList.add('is-invalid');
     } else {
-      this.classList.remove('is-invalid');
-      button.disabled = --emptyInputs > 0;
+      input.classList.remove('is-invalid');
     }
-  });
+    button.disabled = countEmptyInputs(form) > 0;
+  }
   form.dataset.eventHandlersInitialized = true;
 }
 
 function createGroup(form) {
-  $('#new_group_error').hide();
-  $('#new_group_creating').show();
+  const error = document.getElementById('new_group_error');
+  if (error) error.style.display = 'none';
+  const creating = document.getElementById('new_group_creating');
+  if (creating) creating.style.display = 'block';
 
   let data = new FormData(form);
   let postUrl, rowUrl, targetElement;
   if (form.dataset.createParent !== 'false') {
     postUrl = form.dataset.postParentGroupUrl;
     rowUrl = form.dataset.parentGroupRowUrl;
-    targetElement = $('#job_group_list');
+    targetElement = document.getElementById('job_group_list');
   } else {
     postUrl = form.dataset.postJobGroupUrl;
     rowUrl = form.dataset.jobGroupRowUrl;
     const parentId = form.dataset.parentId;
     if (parentId !== 'none') {
-      targetElement = $('#parent_group_' + parentId).find('ul');
+      targetElement = document.getElementById('parent_group_' + parentId).querySelector('ul');
       data.set('parent_id', parentId);
     } else {
-      targetElement = $('#job_group_list');
+      targetElement = document.getElementById('job_group_list');
     }
   }
 
@@ -142,8 +161,8 @@ let dragData = undefined;
 
 function removeAllDropIndicators() {
   // workaround for Firefox which doesn't trigger leaveDrag when moving the mouse very fast
-  $('.dragover').removeClass('dragover');
-  $('.parent-dragover').removeClass('parent-dragover');
+  document.querySelectorAll('.dragover').forEach(el => el.classList.remove('dragover'));
+  document.querySelectorAll('.parent-dragover').forEach(el => el.classList.remove('parent-dragover'));
 }
 
 function checkDrop(event, parentDivElement) {
@@ -157,7 +176,7 @@ function checkDrop(event, parentDivElement) {
 
     event.preventDefault();
     removeAllDropIndicators();
-    $(parentLiElement).addClass('dragover');
+    parentLiElement.classList.add('dragover');
   }
 }
 
@@ -172,23 +191,23 @@ function checkParentDrop(event, parentDivElement, enforceParentDrop, noChildDrop
 
     removeAllDropIndicators();
     if ((dragData.enforceParentDrop = enforceParentDrop) || dragData.isParent) {
-      $(parentDivElement).addClass('parent-dragover');
+      parentDivElement.classList.add('parent-dragover');
     } else {
-      $(parentDivElement).addClass('dragover');
+      parentDivElement.classList.add('dragover');
     }
   }
 }
 
 function leaveDrag(event, parentDivElement) {
-  $(parentDivElement).removeClass('dragover');
-  $(parentDivElement).removeClass('parent-dragover');
-  $(parentDivElement.parentElement).removeClass('dragover');
+  parentDivElement.classList.remove('dragover');
+  parentDivElement.classList.remove('parent-dragover');
+  parentDivElement.parentElement.classList.remove('dragover');
 }
 
 function concludeDrop(dropTargetElement) {
   // workaround for Firefox which doesn't emit the leaveDrag event reliably
-  $(dropTargetElement).removeClass('dragover');
-  $(dropTargetElement).removeClass('parent-dragover');
+  dropTargetElement.classList.remove('dragover');
+  dropTargetElement.classList.remove('parent-dragover');
 
   // invalidate drag data
   dragData = undefined;
@@ -200,14 +219,19 @@ function concludeDrop(dropTargetElement) {
 function insertParentGroup(event, parentLiElement) {
   event.preventDefault();
   if (dragData) {
-    dragData.liElement.hide();
+    dragData.liElement.style.display = 'none';
 
     if (dragData.isParent || dragData.enforceParentDrop) {
-      dragData.liElement.insertBefore($(parentLiElement).parent());
+      parentLiElement.parentElement.insertBefore(dragData.liElement, parentLiElement);
     } else {
-      dragData.liElement.prependTo($(parentLiElement).parent().find('ul'));
+      parentLiElement.querySelector('ul').prepend(dragData.liElement);
     }
-    dragData.liElement.fadeIn('slow');
+    dragData.liElement.style.display = 'block';
+    dragData.liElement.style.opacity = 0;
+    setTimeout(() => {
+      dragData.liElement.style.transition = 'opacity 0.5s';
+      dragData.liElement.style.opacity = 1;
+    }, 10);
     concludeDrop(parentLiElement);
   }
 }
@@ -216,33 +240,38 @@ function insertGroup(event, siblingDivElement) {
   event.preventDefault();
   if (dragData) {
     const siblingLiElement = siblingDivElement.parentElement;
-    dragData.liElement.hide();
-    dragData.liElement.insertAfter($(siblingLiElement));
-    dragData.liElement.fadeIn('slow');
+    dragData.liElement.style.display = 'none';
+    siblingLiElement.after(dragData.liElement);
+    dragData.liElement.style.display = 'block';
+    dragData.liElement.style.opacity = 0;
+    setTimeout(() => {
+      dragData.liElement.style.transition = 'opacity 0.5s';
+      dragData.liElement.style.opacity = 1;
+    }, 10);
     concludeDrop(siblingLiElement);
   }
 }
 
 function dragGroup(event, groupDivElement) {
   // workaround for Firefox which insists on having data in dataTransfer
-  event.dataTransfer.setData('make', 'firefox happy');
+  event.dataTransfer.setData('text/plain', 'firefox happy');
 
   // this variable is actually used to store the data (to preserve DOM element)
   const groupLiElement = groupDivElement.parentElement;
   dragData = {
     id: groupLiElement.id,
-    liElement: $(groupLiElement),
+    liElement: groupLiElement,
     isParent: false,
     isTopLevel: groupLiElement.parentElement.id === 'job_group_list'
   };
 }
 
 function dragParentGroup(event, groupDivElement) {
-  event.dataTransfer.setData('make', 'firefox happy');
+  event.dataTransfer.setData('text/plain', 'firefox happy');
   const groupLiElement = groupDivElement.parentElement;
   dragData = {
     id: groupLiElement.id,
-    liElement: $(groupLiElement),
+    liElement: groupLiElement,
     isParent: true,
     isTopLevel: true
   };
@@ -257,23 +286,30 @@ function saveReorganizedGroups() {
 
   // to avoid flickering, show the panel a little bit delayed
   showPanelTimeout = setTimeout(function () {
-    $('#reorganize_groups_panel').show();
+    const panel = document.getElementById('reorganize_groups_panel');
+    if (panel) panel.style.display = 'block';
   }, 500);
-  $('#reorganize_groups_progress').show();
-  $('#reorganize_groups_error').hide();
+  const progress = document.getElementById('reorganize_groups_progress');
+  if (progress) progress.style.display = 'block';
+  const error = document.getElementById('reorganize_groups_error');
+  if (error) error.style.display = 'none';
 
-  const jobGroupList = $('#job_group_list');
-  const updateParentGroupUrl = jobGroupList.data('put-parent-group-url');
-  const updateJobGroupUrl = jobGroupList.data('put-job-group-url');
+  const jobGroupList = document.getElementById('job_group_list');
+  const updateParentGroupUrl = jobGroupList.dataset.putParentGroupUrl;
+  const updateJobGroupUrl = jobGroupList.dataset.putJobGroupUrl;
 
   // event handlers for AJAX queries
   const handleError = function (error) {
     console.error(error);
-    $('#reorganize_groups_panel').show();
-    $('#reorganize_groups_error').show();
-    $('#reorganize_groups_progress').hide();
-    $('#reorganize_groups_error_message').text(error ? error : 'something went wrong');
-    $('html, body').animate({scrollTop: 0}, 1000);
+    const panel = document.getElementById('reorganize_groups_panel');
+    if (panel) panel.style.display = 'block';
+    const errorEl = document.getElementById('reorganize_groups_error');
+    if (errorEl) errorEl.style.display = 'block';
+    const progressEl = document.getElementById('reorganize_groups_progress');
+    if (progressEl) progressEl.style.display = 'none';
+    const errorMsg = document.getElementById('reorganize_groups_error_message');
+    if (errorMsg) errorMsg.textContent = error ? error : 'something went wrong';
+    window.scrollTo({top: 0, behavior: 'smooth'});
   };
 
   const handleSuccess = function (response, groupLi, index, parentId) {
@@ -290,9 +326,9 @@ function saveReorganizedGroups() {
       }
 
       // update initial value (to avoid queries for already committed changes)
-      groupLi.data('initial-index', index);
+      groupLi.dataset.initialIndex = index;
       if (parentId) {
-        groupLi.data('initial-parent', parentId);
+        groupLi.dataset.initialParent = parentId;
       }
     }
 
@@ -305,28 +341,30 @@ function saveReorganizedGroups() {
         clearTimeout(showPanelTimeout);
         showPanelTimeout = undefined;
       }
-      $('#reorganize_groups_progress').hide();
-      $('#reorganize_groups_error').hide();
-      $('#reorganize_groups_panel').hide();
+      const progressEl = document.getElementById('reorganize_groups_progress');
+      if (progressEl) progressEl.style.display = 'none';
+      const errorEl = document.getElementById('reorganize_groups_error');
+      if (errorEl) errorEl.style.display = 'none';
+      const panel = document.getElementById('reorganize_groups_panel');
+      if (panel) panel.style.display = 'none';
     }
   };
 
   // determine what changed to make required AJAX queries
-  jobGroupList.children('li').each(function (groupIndex) {
-    const groupLi = $(this);
+  Array.from(jobGroupList.children).forEach((groupLi, groupIndex) => {
     let isParent, groupId, updateGroupUrl;
-    if (this.id.indexOf('job_group_') === 0) {
+    if (groupLi.id.indexOf('job_group_') === 0) {
       isParent = false;
-      groupId = parseInt(this.id.substr(10));
+      groupId = parseInt(groupLi.id.substr(10));
       updateGroupUrl = updateJobGroupUrl;
-    } else if (this.id.indexOf('parent_group_') === 0) {
+    } else if (groupLi.id.indexOf('parent_group_') === 0) {
       isParent = true;
-      groupId = parseInt(this.id.substr(13));
+      groupId = parseInt(groupLi.id.substr(13));
       updateGroupUrl = updateParentGroupUrl;
     }
 
-    const parentId = groupLi.data('initial-parent');
-    if (groupIndex != groupLi.data('initial-index') || parentId !== 'none') {
+    const parentId = groupLi.dataset.initialParent;
+    if (groupIndex != groupLi.dataset.initialIndex || parentId !== 'none') {
       // index of parent group changed -> update sort order
       ajaxQueries.push({
         url: updateGroupUrl + groupId,
@@ -344,30 +382,26 @@ function saveReorganizedGroups() {
     }
 
     if (isParent) {
-      groupLi
-        .find('ul')
-        .children('li')
-        .each(function (childGroupIndex) {
-          const jobGroupLi = $(this);
-          const jobGroupId = parseInt(this.id.substr(10));
+      Array.from(groupLi.querySelector('ul').children).forEach((jobGroupLi, childGroupIndex) => {
+        const jobGroupId = parseInt(jobGroupLi.id.substr(10));
 
-          if (childGroupIndex != jobGroupLi.data('initial-index') || groupId != jobGroupLi.data('initial-parent')) {
-            // index or parent of job group changed -> update parent and sort order
-            ajaxQueries.push({
-              url: updateJobGroupUrl + jobGroupId,
-              method: 'PUT',
-              body: {
-                sort_order: childGroupIndex,
-                parent_id: groupId,
-                drag: 1
-              },
-              success: function (response) {
-                handleSuccess(response, jobGroupLi, childGroupIndex, groupId);
-              },
-              error: handleError
-            });
-          }
-        });
+        if (childGroupIndex != jobGroupLi.dataset.initialIndex || groupId != jobGroupLi.dataset.initialParent) {
+          // index or parent of job group changed -> update parent and sort order
+          ajaxQueries.push({
+            url: updateJobGroupUrl + jobGroupId,
+            method: 'PUT',
+            body: {
+              sort_order: childGroupIndex,
+              parent_id: groupId,
+              drag: 1
+            },
+            success: function (response) {
+              handleSuccess(response, jobGroupLi, childGroupIndex, groupId);
+            },
+            error: handleError
+          });
+        }
+      });
     }
   });
 
@@ -411,13 +445,10 @@ function handleQuery(query) {
     .catch(error);
 }
 function deleteGroup(elem, isParent) {
-  const li = $(elem).closest('li');
-  const idAttr = li.attr('id');
+  const li = elem.closest('li');
+  const idAttr = li.id;
   const id = parseInt(idAttr.replace(isParent ? 'parent_group_' : 'job_group_', ''));
-  const name = li
-    .find(isParent ? '.parent-group-name' : 'span > a')
-    .text()
-    .trim();
+  const name = li.querySelector(isParent ? '.parent-group-name' : 'span > a').textContent.trim();
   const type = isParent ? 'parent group' : 'job group';
 
   if (!confirm(`Are you sure you want to delete the ${type} "${name}"?`)) {
@@ -436,9 +467,9 @@ function deleteGroup(elem, isParent) {
       return response.json();
     })
     .then(() => {
-      li.fadeOut('slow', function () {
-        $(this).remove();
-      });
+      li.style.transition = 'opacity 0.5s';
+      li.style.opacity = 0;
+      setTimeout(() => li.remove(), 500);
     })
     .catch(error => {
       console.error(error);

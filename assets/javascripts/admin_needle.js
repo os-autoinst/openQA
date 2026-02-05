@@ -1,18 +1,22 @@
 function setupAdminNeedles() {
   function ajaxUrl() {
-    var url = $('#needles').data('ajax-url');
-    var lastMatch = $('#last_match_filter').val();
-    var lastSeen = $('#last_seen_filter').val();
+    const needlesEl = document.getElementById('needles');
+    if (!needlesEl) return '';
+    var url = needlesEl.dataset.ajaxUrl;
+    var lastMatch = document.getElementById('last_match_filter').value;
+    var lastSeen = document.getElementById('last_seen_filter').value;
     if (lastMatch === 'custom') {
-      lastMatch = $('#sel_custom_last_match').val() + $('#last_date_match').val();
+      lastMatch =
+        document.getElementById('sel_custom_last_match').value + document.getElementById('last_date_match').value;
     }
     if (lastSeen === 'custom') {
-      lastSeen = $('#sel_custom_last_seen').val() + $('#last_date_seen').val();
+      lastSeen =
+        document.getElementById('sel_custom_last_seen').value + document.getElementById('last_date_seen').value;
     }
     return url + '?last_match=' + encodeURIComponent(lastMatch) + '&last_seen=' + encodeURIComponent(lastSeen);
   }
 
-  var table = $('#needles').DataTable({
+  var table = new DataTable('#needles', {
     ajax: ajaxUrl(),
     deferRender: true,
     columns: [{data: 'directory'}, {data: 'filename'}, {data: 'last_seen'}, {data: 'last_match'}],
@@ -59,107 +63,137 @@ function setupAdminNeedles() {
     ]
   });
 
-  $('#select_all').click(function () {
-    $('input').prop('checked', true);
-  });
-  $('#unselect_all').click(function () {
-    $('input').prop('checked', false);
-  });
-  $('#delete_all').click(function () {
-    $('#deletion-question').show();
-    $('#deletion-ongoing').hide();
-    $('#deletion-finished').hide();
-    $('#failed-needles').empty();
-    $('#outstanding-needles').empty();
-    $('#really_delete').show();
-    $('#close_delete').show();
-    $('#x_delete').show();
-    $('#abort_delete').hide();
-
-    var ids = [];
-    $('input:checked').each(function (index) {
-      var li = $('<li/>');
-      var label = $(this).parent('td').find('label');
-      li.html(label.html());
-      li.attr('id', 'deletion-item-' + label.data('id'));
-      ids.push(label.data('id'));
-      $('#outstanding-needles').append(li);
+  const selectAll = document.getElementById('select_all');
+  if (selectAll) {
+    selectAll.addEventListener('click', function () {
+      document.querySelectorAll('input[type="checkbox"]').forEach(el => (el.checked = true));
     });
-    if (ids.length > 0) {
-      $('#really_delete').data('ids', ids);
-      new bootstrap.Modal('#confirm_delete').show();
-    }
-  });
+  }
+  const unselectAll = document.getElementById('unselect_all');
+  if (unselectAll) {
+    unselectAll.addEventListener('click', function () {
+      document.querySelectorAll('input[type="checkbox"]').forEach(el => (el.checked = false));
+    });
+  }
+  const deleteAll = document.getElementById('delete_all');
+  if (deleteAll) {
+    deleteAll.addEventListener('click', function () {
+      const deletionQuestion = document.getElementById('deletion-question');
+      if (deletionQuestion) deletionQuestion.style.display = 'block';
+      const deletionOngoing = document.getElementById('deletion-ongoing');
+      if (deletionOngoing) deletionOngoing.style.display = 'none';
+      const deletionFinished = document.getElementById('deletion-finished');
+      if (deletionFinished) deletionFinished.style.display = 'none';
+      const failedNeedles = document.getElementById('failed-needles');
+      if (failedNeedles) failedNeedles.innerHTML = '';
+      const outstandingNeedles = document.getElementById('outstanding-needles');
+      if (outstandingNeedles) outstandingNeedles.innerHTML = '';
+      const reallyDelete = document.getElementById('really_delete');
+      if (reallyDelete) reallyDelete.style.display = 'inline-block';
+      const closeDelete = document.getElementById('close_delete');
+      if (closeDelete) closeDelete.style.display = 'inline-block';
+      const xDelete = document.getElementById('x_delete');
+      if (xDelete) xDelete.style.display = 'inline-block';
+      const abortDelete = document.getElementById('abort_delete');
+      if (abortDelete) abortDelete.style.display = 'none';
 
-  $('#really_delete').click(function () {
-    return startDeletion($(this).data('ids'));
-  });
+      var ids = [];
+      document.querySelectorAll('input:checked').forEach(function (checkbox) {
+        const label = checkbox.closest('td').querySelector('label');
+        if (!label) return;
+        const li = document.createElement('li');
+        li.innerHTML = label.innerHTML;
+        li.id = 'deletion-item-' + label.dataset.id;
+        ids.push(label.dataset.id);
+        if (outstandingNeedles) outstandingNeedles.appendChild(li);
+      });
+      if (ids.length > 0) {
+        if (reallyDelete) reallyDelete.dataset.ids = JSON.stringify(ids);
+        new bootstrap.Modal('#confirm_delete').show();
+      }
+    });
+  }
 
-  $('#abort_delete').click(function () {
-    $('#outstanding-needles').data('aborted', true);
-  });
+  const reallyDelete = document.getElementById('really_delete');
+  if (reallyDelete) {
+    reallyDelete.addEventListener('click', function () {
+      return startDeletion(JSON.parse(this.dataset.ids));
+    });
+  }
+
+  const abortDelete = document.getElementById('abort_delete');
+  if (abortDelete) {
+    abortDelete.addEventListener('click', function () {
+      const outstandingNeedles = document.getElementById('outstanding-needles');
+      if (outstandingNeedles) outstandingNeedles.dataset.aborted = 'true';
+    });
+  }
 
   function startDeletion(ids) {
-    var outstandingList = $('#outstanding-needles');
-    var failedList = $('#failed-needles');
-    var deletionProgressElement = $('#deletion-progress');
-    var url = $('#confirm_delete').data('delete-url');
+    const outstandingList = document.getElementById('outstanding-needles');
+    const failedList = document.getElementById('failed-needles');
+    const deletionProgressElement = document.getElementById('deletion-progress');
+    const confirmDeleteModalEl = document.getElementById('confirm_delete');
+    const url = confirmDeleteModalEl.dataset.deleteUrl;
 
     // hide/show elements
-    $('#deletion-question').hide();
-    $('#deletion-ongoing').show();
-    $('#really_delete').hide();
-    $('#close_delete').hide();
-    $('#x_delete').hide();
-    $('#abort_delete').show();
+    document.getElementById('deletion-question').style.display = 'none';
+    document.getElementById('deletion-ongoing').style.display = 'block';
+    document.getElementById('really_delete').style.display = 'none';
+    document.getElementById('close_delete').style.display = 'none';
+    document.getElementById('x_delete').style.display = 'none';
+    document.getElementById('abort_delete').style.display = 'inline-block';
 
     // ensure previous 'aborted'-flag is cleared
-    $('#outstanding-needles').data('aborted', false);
+    if (outstandingList) outstandingList.dataset.aborted = 'false';
 
     // failed needles will be displayed at the top first, so it makes sense
     // to scroll there
-    $('#confirm_delete').animate({scrollTop: 0}, 'fast');
+    confirmDeleteModalEl.scrollTo({top: 0, behavior: 'smooth'});
 
     // define function to delete a bunch of needles at once
     // note: Deleting all needles at once could lead to timeouts and the progress could not be tracked at all.
     var needlesToDeleteAtOnce = 5;
     var deleteBunchOfNeedles = function () {
       // handle all needles being deleted (or at least attempted to be deleted)
-      if (outstandingList.data('aborted') || ids.length <= 0) {
+      if (outstandingList.dataset.aborted === 'true' || ids.length <= 0) {
         reloadNeedlesTable();
-        $('#deletion-ongoing').hide();
-        $('#abort_delete').hide();
-        $('#deletion-finished').show();
-        $('#close_delete').show();
-        $('#x_delete').show();
+        document.getElementById('deletion-ongoing').style.display = 'none';
+        document.getElementById('abort_delete').style.display = 'none';
+        document.getElementById('deletion-finished').style.display = 'block';
+        document.getElementById('close_delete').style.display = 'inline-block';
+        document.getElementById('x_delete').style.display = 'inline-block';
         if (ids.length) {
           // allow to continue deleting outstanding needles after abort
-          $('#really_delete').show();
+          document.getElementById('really_delete').style.display = 'inline-block';
         }
         return true;
       }
 
       // update progress
-      deletionProgressElement.text(ids.length);
+      if (deletionProgressElement) deletionProgressElement.textContent = ids.length;
 
       // determine the next needle IDs to delete
       var nextIDs = ids.splice(0, needlesToDeleteAtOnce);
 
       // define function to handle single error affecting all deletions (e.g. GRU task TTL exceeded)
       var handleSingleError = function (singleError) {
-        $.each(nextIDs, function (index, id) {
-          var errorElement = $('<li></li>');
-          errorElement.append($('#deletion-item-' + id).text());
-          errorElement.append($('<br>'));
+        nextIDs.forEach(function (id) {
+          const errorElement = document.createElement('li');
+          const item = document.getElementById('deletion-item-' + id);
+          if (item) {
+            errorElement.append(item.textContent);
+            errorElement.append(document.createElement('br'));
+            item.remove();
+          }
           errorElement.append(singleError);
-          failedList.append(errorElement);
-          $('#deletion-item-' + id).remove();
+          if (failedList) failedList.appendChild(errorElement);
         });
         deleteBunchOfNeedles();
       };
 
       const body = new FormData();
-      $.each(nextIDs, function (index, id) {
+      nextIDs.forEach(function (id) {
         body.append('id', id);
       });
       fetchWithCSRF(url, {method: 'DELETE', body: body})
@@ -189,24 +223,26 @@ function setupAdminNeedles() {
 
           // add individual error messages
           if (response.errors) {
-            $.each(response.errors, function (index, error) {
-              var errorElement = $('<li></li>');
+            response.errors.forEach(function (error) {
+              const errorElement = document.createElement('li');
               var errorContext = error.display_name;
               if (!errorContext) {
-                errorContext = $('#deletion-item-' + error.id).text();
+                const item = document.getElementById('deletion-item-' + error.id);
+                if (item) errorContext = item.textContent;
               }
               if (errorContext) {
                 errorElement.append(errorContext);
-                errorElement.append($('<br>'));
+                errorElement.append(document.createElement('br'));
               }
               errorElement.append(error.message);
-              failedList.append(errorElement);
+              if (failedList) failedList.appendChild(errorElement);
             });
           }
 
           // delete needles from outstanding list
-          $.each(nextIDs, function (index, id) {
-            $('#deletion-item-' + id).remove();
+          nextIDs.forEach(function (id) {
+            const item = document.getElementById('deletion-item-' + id);
+            if (item) item.remove();
           });
 
           deleteBunchOfNeedles();
@@ -228,24 +264,37 @@ function setupAdminNeedles() {
     table.ajax.reload();
   }
 
-  $('#last_seen_filter').change(function () {
-    if ($('#last_seen_filter').val() === 'custom') {
-      $('#custom_last_seen').show();
-    } else {
-      $('#custom_last_seen').hide();
-      reloadNeedlesTable();
-    }
-  });
-  $('#last_match_filter').change(function () {
-    if ($('#last_match_filter').val() === 'custom') {
-      $('#custom_last_match').show();
-    } else {
-      $('#custom_last_match').hide();
-      reloadNeedlesTable();
-    }
-  });
-  $('#btn_custom_last_seen').click(reloadNeedlesTable);
-  $('#btn_custom_last_match').click(reloadNeedlesTable);
-  $('#custom_last_match').toggle($('#last_match_filter').val() === 'custom');
-  $('#custom_last_seen').toggle($('#last_seen_filter').val() === 'custom');
+  const lastSeenFilter = document.getElementById('last_seen_filter');
+  if (lastSeenFilter) {
+    lastSeenFilter.addEventListener('change', function () {
+      const customLastSeen = document.getElementById('custom_last_seen');
+      if (this.value === 'custom') {
+        if (customLastSeen) customLastSeen.style.display = 'block';
+      } else {
+        if (customLastSeen) customLastSeen.style.display = 'none';
+        reloadNeedlesTable();
+      }
+    });
+  }
+  const lastMatchFilter = document.getElementById('last_match_filter');
+  if (lastMatchFilter) {
+    lastMatchFilter.addEventListener('change', function () {
+      const customLastMatch = document.getElementById('custom_last_match');
+      if (this.value === 'custom') {
+        if (customLastMatch) customLastMatch.style.display = 'block';
+      } else {
+        if (customLastMatch) customLastMatch.style.display = 'none';
+        reloadNeedlesTable();
+      }
+    });
+  }
+  const btnCustomLastSeen = document.getElementById('btn_custom_last_seen');
+  if (btnCustomLastSeen) btnCustomLastSeen.addEventListener('click', reloadNeedlesTable);
+  const btnCustomLastMatch = document.getElementById('btn_custom_last_match');
+  if (btnCustomLastMatch) btnCustomLastMatch.addEventListener('click', reloadNeedlesTable);
+
+  const customLastMatch = document.getElementById('custom_last_match');
+  if (customLastMatch) customLastMatch.style.display = lastMatchFilter.value === 'custom' ? 'block' : 'none';
+  const customLastSeen = document.getElementById('custom_last_seen');
+  if (customLastSeen) customLastSeen.style.display = lastSeenFilter.value === 'custom' ? 'block' : 'none';
 }
