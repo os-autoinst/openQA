@@ -130,40 +130,41 @@ function setupOverview(options) {
       }
     }
   });
-  $('.cancel').on('ajax:success', function (event, xhr, status) {
-    this.textContent = ''; // hide the icon
-    const icon = this.closest('td').querySelector('.status');
-    if (icon) {
-      icon.classList.remove('state_scheduled', 'state_running');
-      icon.classList.add('state_cancelled');
-      icon.title = 'Cancelled';
-      icon.style.opacity = 0.5;
-      setTimeout(() => (icon.style.opacity = 1.0), 500);
-    }
+  document.querySelectorAll('.cancel').forEach(el => {
+    el.addEventListener('ajax:success', function () {
+      this.textContent = ''; // hide the icon
+      const icon = this.closest('td').querySelector('.status');
+      if (icon) {
+        icon.classList.remove('state_scheduled', 'state_running');
+        icon.classList.add('state_cancelled');
+        icon.title = 'Cancelled';
+        icon.style.opacity = 0.5;
+        setTimeout(() => (icon.style.opacity = 1.0), 500);
+      }
+    });
   });
-  $('.restart').on('ajax:success', function (event, xhr, status) {
-    if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
-      addFlash('danger', '<strong>Unable to restart job.</strong>');
-      return;
-    }
-    showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));
-<<<<<<< HEAD
-    const newId = xhr.result[0];
-    const oldId = 0;
-    const newIdMap = xhr.result[0];
-    Object.entries(newIdMap).forEach(([key, value]) => {
-      const restarted = document.querySelector('.restart[data-jobid="' + key + '"]');
-      if (!restarted) {
+  document.querySelectorAll('.restart').forEach(el => {
+    el.addEventListener('ajax:success', function (event) {
+      const xhr = event.detail[0];
+      if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
+        addFlash('danger', '<strong>Unable to restart job.</strong>');
         return;
       }
-      restarted.textContent = ''; // hide the icon
-      const td = restarted.closest('td');
-      const icon = td.querySelector('.status');
-      if (icon) {
-        icon.classList.remove('state_done', 'state_cancelled');
-        icon.classList.add('state_scheduled');
-        icon.title = 'Scheduled';
-
+      showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));
+      const newIdMap = xhr.result[0];
+      Object.entries(newIdMap).forEach(([key, value]) => {
+        const restarted = document.querySelector('.restart[data-jobid="' + key + '"]');
+        if (!restarted) {
+          return;
+        }
+        restarted.textContent = ''; // hide the icon
+        const td = restarted.closest('td');
+        const icon = td.querySelector('.status');
+        if (icon) {
+          icon.classList.remove('state_done', 'state_cancelled');
+          icon.classList.add('state_scheduled');
+          icon.title = 'Scheduled';
+        }
         // remove the result class
         td.querySelectorAll('.result_passed, .result_failed, .result_softfailed').forEach(el => {
           el.classList.remove('result_passed', 'result_failed', 'result_softfailed');
@@ -171,7 +172,7 @@ function setupOverview(options) {
 
         // If the API call returns a new id, a new job have been created to replace
         // the old one. In other case, the old job is being reused
-        if (value) {
+        if (value && icon) {
           const link = icon.closest('a');
           const oldId = restarted.dataset.jobid;
           const newUrl = link.getAttribute('href').replace(oldId, value);
@@ -179,9 +180,11 @@ function setupOverview(options) {
           link.classList.add('restarted');
         }
 
-        icon.style.opacity = 0.5;
-        setTimeout(() => (icon.style.opacity = 1.0), 500);
-      }
+        if (icon) {
+          icon.style.opacity = 0.5;
+          setTimeout(() => (icon.style.opacity = 1.0), 500);
+        }
+      });
     });
   });
   const dependencies = document.getElementsByClassName('dependency');
@@ -221,8 +224,7 @@ function setupOverview(options) {
 
   // initialize filter for modules results
   const modulesResultFilter = document.getElementById('modules_result');
-  if (modulesResultFilter && typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen === 'function') {
-    $(modulesResultFilter).chosen({width: '100%'});
+  if (modulesResultFilter) {
     modulesResultFilter.addEventListener('change', function (event) {
       // update query params
       var params = parseQueryParams();
@@ -262,9 +264,6 @@ function setupOverview(options) {
         Array.from(modulesResultFilter.options).forEach(opt => {
           if (opt.value === val) opt.selected = true;
         });
-        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen === 'function') {
-          $(modulesResultFilter).trigger('chosen:updated');
-        }
         modulesResultFilter.dispatchEvent(new Event('change'));
       }
       return formatFilter(val);
