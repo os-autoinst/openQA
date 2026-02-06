@@ -66,13 +66,13 @@ function setupAdminNeedles() {
   const selectAll = document.getElementById('select_all');
   if (selectAll) {
     selectAll.addEventListener('click', function () {
-      document.querySelectorAll('input[type="checkbox"]').forEach(el => (el.checked = true));
+      document.querySelectorAll('#needles input[type="checkbox"]').forEach(el => (el.checked = true));
     });
   }
   const unselectAll = document.getElementById('unselect_all');
   if (unselectAll) {
     unselectAll.addEventListener('click', function () {
-      document.querySelectorAll('input[type="checkbox"]').forEach(el => (el.checked = false));
+      document.querySelectorAll('#needles input[type="checkbox"]').forEach(el => (el.checked = false));
     });
   }
   const deleteAll = document.getElementById('delete_all');
@@ -98,13 +98,14 @@ function setupAdminNeedles() {
       if (abortDelete) abortDelete.style.display = 'none';
 
       var ids = [];
-      document.querySelectorAll('input:checked').forEach(function (checkbox) {
-        const label = checkbox.closest('td').querySelector('label');
+      document.querySelectorAll('#needles input:checked').forEach(function (checkbox) {
+        const id = checkbox.id.replace('input-', '');
+        const label = document.querySelector('label[for="' + checkbox.id + '"]');
         if (!label) return;
         const li = document.createElement('li');
         li.innerHTML = label.innerHTML;
-        li.id = 'deletion-item-' + label.dataset.id;
-        ids.push(label.dataset.id);
+        li.id = 'deletion-item-' + id;
+        ids.push(id);
         if (outstandingNeedles) outstandingNeedles.appendChild(li);
       });
       if (ids.length > 0) {
@@ -192,71 +193,60 @@ function setupAdminNeedles() {
         deleteBunchOfNeedles();
       };
 
-      const body = new FormData();
-      nextIDs.forEach(function (id) {
-        body.append('id', id);
-      });
-      fetchWithCSRF(url, {method: 'DELETE', body: body})
-        .then(response => {
-          return response
-            .json()
-            .then(json => {
-              // Attach the parsed JSON to the response object for further use
-              return {response, json};
-            })
-            .catch(() => {
-              // If parsing fails, handle it as a non-JSON response
-              throw `Server returned ${response.status}: ${response.statusText}`;
-            });
-        })
-        .then(({response, json}) => {
-          // we got parsable json and this api method has pretty custom errors
-          // so let's ignore the http status in this case and use json based error handling below
-          return json;
-        })
-        .then(response => {
-          // add error affecting all deletions
-          var singleError = response.error;
-          if (singleError) {
-            return handleSingleError(singleError);
-          }
+      var request = new XMLHttpRequest();
+      request.open('DELETE', url, true);
+      request.setRequestHeader('X-CSRF-TOKEN', getCSRFToken());
+      request.onload = function () {
+        // handle non-JSON response (e.g. server error)
+        var response;
+        try {
+          response = JSON.parse(this.responseText);
+        } catch (e) {
+          return handleSingleError('Server returned ' + this.status + ': ' + this.statusText);
+        }
 
-          // add individual error messages
-          if (response.errors) {
-            response.errors.forEach(function (error) {
-              const errorElement = document.createElement('li');
-              var errorContext = error.display_name;
-              if (!errorContext) {
-                const item = document.getElementById('deletion-item-' + error.id);
-                if (item) errorContext = item.textContent;
-              }
-              if (errorContext) {
-                errorElement.append(errorContext);
-                errorElement.append(document.createElement('br'));
-              }
-              errorElement.append(error.message);
-              if (failedList) failedList.appendChild(errorElement);
-            });
-          }
+        // add error affecting all deletions
+        var singleError = response.error;
+        if (singleError) {
+          return handleSingleError(singleError);
+        }
 
-          // delete needles from outstanding list
-          nextIDs.forEach(function (id) {
-            const item = document.getElementById('deletion-item-' + id);
-            if (item) item.remove();
+        // add individual error messages
+        if (response.errors) {
+          response.errors.forEach(function (error) {
+            const errorElement = document.createElement('li');
+            var errorContext = error.display_name;
+            if (!errorContext) {
+              const item = document.getElementById('deletion-item-' + error.id);
+              if (item) errorContext = item.textContent;
+            }
+            if (errorContext) {
+              errorElement.append(errorContext);
+              errorElement.append(document.createElement('br'));
+            }
+            errorElement.append(error.message);
+            if (failedList) failedList.appendChild(errorElement);
           });
+        }
 
-          deleteBunchOfNeedles();
-        })
-        .catch(error => {
-          console.error(error);
-          handleSingleError(error);
+        // delete needles from outstanding list
+        nextIDs.forEach(function (id) {
+          const item = document.getElementById('deletion-item-' + id);
+          if (item) item.remove();
         });
 
-      return true;
+        deleteBunchOfNeedles();
+      };
+      request.onerror = function () {
+        handleSingleError(this.statusText || 'Unknown error');
+      };
+
+      const body = new FormData();
+      nextIDs.forEach(id => body.append('id', id));
+      request.send(body);
     };
 
     deleteBunchOfNeedles();
-    return true;
   }
 
   function reloadNeedlesTable(response) {
