@@ -33,25 +33,34 @@ function loadJobTemplates(data) {
     loading.remove();
   }
   const chosenSelects = document.querySelectorAll('.chosen-select');
-  if (typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen === 'function') {
-    jQuery(chosenSelects).chosen({width: width + 'px'});
-    jQuery(document).on('change', '.chosen-select', chosenChanged);
-  }
+  chosenSelects.forEach(select => {
+    select.dataset.lastSelection = JSON.stringify(Array.from(select.selectedOptions).map(o => o.value));
+    select.addEventListener('change', nativeChosenChanged);
+  });
 }
 
 function highlightChosen(chosen) {
-  if (chosen instanceof jQuery) chosen = chosen[0];
-  const container = chosen.parentElement.querySelector('.chosen-container');
-  if (container) {
-    container.style.opacity = 0.3;
-    setTimeout(() => {
-      container.style.opacity = 1;
-    }, 200);
-  }
+  chosen.style.opacity = 0.3;
+  setTimeout(() => {
+    chosen.style.opacity = 1;
+  }, 200);
+}
+
+function nativeChosenChanged(evt) {
+  const select = evt.target;
+  const currentSelection = Array.from(select.selectedOptions).map(o => o.value);
+  const lastSelection = JSON.parse(select.dataset.lastSelection || '[]');
+
+  const added = currentSelection.filter(x => !lastSelection.includes(x));
+  const removed = lastSelection.filter(x => !currentSelection.includes(x));
+
+  added.forEach(val => templateAdded(select, val));
+  removed.forEach(val => templateRemoved(select, val));
+
+  select.dataset.lastSelection = JSON.stringify(currentSelection);
 }
 
 function templateRemoved(chosen, deselected) {
-  if (chosen instanceof jQuery) chosen = chosen[0];
   const option = chosen.querySelector('option[value="' + deselected + '"]');
   const jid = option ? option.dataset.jid : null;
   fetchWithCSRF(job_templates_url + '/' + jid, {method: 'DELETE'})
@@ -71,7 +80,6 @@ function addFailed(data) {
 }
 
 function addSucceeded(chosen, selected, data) {
-  if (chosen instanceof jQuery) chosen = chosen[0];
   const option = chosen.querySelector('option[value="' + selected + '"]');
   if (option) {
     option.dataset.jid = data['id'];
@@ -146,14 +154,6 @@ function priorityChanged(priorityInput) {
   }).catch(addFailed);
 }
 
-function chosenChanged(evt, param) {
-  if (param.deselected) {
-    templateRemoved(evt.target, param.deselected);
-  } else {
-    templateAdded(evt.target, param.selected);
-  }
-}
-
 function testChanged(evt) {
   const select = evt.target;
   const selectedValue = select.value;
@@ -163,9 +163,6 @@ function testChanged(evt) {
   const inputs = tr.querySelectorAll('input');
   chosens.forEach(chosen => {
     chosen.disabled = noSelection;
-    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen === 'function') {
-      jQuery(chosen).trigger('chosen:updated');
-    }
   });
   inputs.forEach(input => (input.disabled = noSelection));
 }
