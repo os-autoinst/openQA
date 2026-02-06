@@ -412,16 +412,15 @@ function renderTestLists() {
     document.getElementById(filter + 'filter').onchange = () => table.ajax.reload();
   });
 
-  // initialize filter for result (of finished jobs) as chosen
-  var finishedJobsResultFilter = $('#finished-jobs-result-filter');
-  finishedJobsResultFilter.chosen();
+  // initialize filter for result (of finished jobs)
+  var finishedJobsResultFilter = document.getElementById('finished-jobs-result-filter');
   // ensure the table is re-drawn when a filter is added/removed
-  finishedJobsResultFilter.change(function (event) {
+  finishedJobsResultFilter.addEventListener('change', function (event) {
     // update data table
     table.draw();
     // update query params
     var params = parseQueryParams();
-    params.resultfilter = finishedJobsResultFilter.val();
+    params.resultfilter = $(finishedJobsResultFilter).val();
     updateQueryParams(params);
   });
 
@@ -431,7 +430,7 @@ function renderTestLists() {
       return true; // Do not filter other tables
     }
 
-    var selectedResults = finishedJobsResultFilter.find('option:selected');
+    var selectedResults = finishedJobsResultFilter.selectedOptions;
     // don't apply filter if no result is selected
     if (!selectedResults.length) {
       return true;
@@ -456,7 +455,7 @@ function renderTestLists() {
   // apply filter from query params
   var filter = parseQueryParams().resultfilter;
   if (filter) {
-    finishedJobsResultFilter.val(filter).trigger('chosen:updated').trigger('change');
+    $(finishedJobsResultFilter).val(filter).trigger('change');
   }
 
   document.addEventListener('mouseover', e => {
@@ -623,7 +622,10 @@ function showJobDependency(deps) {
   return result;
 }
 
-$(document).on('click', '.copy-jobid', function (event) {
-  event.preventDefault();
-  navigator.clipboard.writeText(this.dataset.jobid);
+document.addEventListener('click', function (event) {
+  const target = event.target.closest('.copy-jobid');
+  if (target) {
+    event.preventDefault();
+    navigator.clipboard.writeText(target.dataset.jobid);
+  }
 });

@@ -21,14 +21,11 @@
     "ace-builds": "^1.43.4",
     "anser": "^2.3.2",
     "bootstrap": "^5.3.8",
-    "chosen-js": "^1.8.7",
     "d3": "^7.9.0",
     "dagre-d3": "^0.6.4",
     "datatables.net-bs5": "^2.3.4",
     "fork-awesome": "^1.2.0",
     "jquery": "^3.7.1",
-    "jquery-ujs": "^1.2.3",
-    "timeago": "^1.6.7",
     "timeago.js": "^4.0.2"
   },
   "overrides": {

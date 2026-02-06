@@ -148,7 +148,7 @@ function renderBuild(data, type, row) {
 function renderFinishTime(data, type, row) {
   var html = '';
   if (data != null) {
-    html += '<abbr class="timeago" title="' + data + '">' + jQuery.timeago(data) + ' </abbr>';
+    html += '<abbr class="timeago" title="' + data + '">' + window.timeago.format(data) + ' </abbr>';
     html += '( ' + row.duration + ' )';
   } else {
     if (row.state == 'running' || row.state == 'scheduled') {

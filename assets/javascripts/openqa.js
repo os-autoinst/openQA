@@ -672,3 +672,123 @@ function renderHttpUrlAsLink(value, oneUrlPerLine = false) {
   }
   return fragment.hasChildNodes() ? fragment : document.createTextNode(value);
 }
+
+function handleRemote(element) {
+  const method = (element.getAttribute('data-method') || 'GET').toUpperCase();
+  const url = element.getAttribute('href') || element.getAttribute('action');
+  const data = new FormData();
+  if (element.tagName === 'FORM') {
+    const formData = new FormData(element);
+    for (const [key, value] of formData.entries()) {
+      data.append(key, value);
+    }
+  }
+
+  const options = {
+    method: method,
+    headers: {
+      Accept: '*/*;q=0.5, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript'
+    }
+  };
+
+  if (method !== 'GET' && method !== 'HEAD') {
+    options.body = data;
+  }
+
+  fetchWithCSRF(url, options)
+    .then(response => {
+      const contentType = response.headers.get('content-type');
+      if (contentType && (contentType.includes('application/javascript') || contentType.includes('text/javascript'))) {
+        return response.text().then(text => {
+          eval(text);
+          return {response, data: text};
+        });
+      }
+      return response
+        .json()
+        .then(json => ({response, data: json}))
+        .catch(() => response.text().then(text => ({response, data: text})));
+    })
+    .then(({response, data}) => {
+      if (response.ok) {
+        element.dispatchEvent(
+          new CustomEvent('ajax:success', {
+            bubbles: true,
+            cancelable: true,
+            detail: [data, response.statusText, response]
+          })
+        );
+      } else {
+        element.dispatchEvent(
+          new CustomEvent('ajax:error', {
+            bubbles: true,
+            cancelable: true,
+            detail: [response, response.statusText, data]
+          })
+        );
+      }
+    })
+    .catch(error => {
+      element.dispatchEvent(
+        new CustomEvent('ajax:error', {bubbles: true, cancelable: true, detail: [null, 'error', error]})
+      );
+    })
+    .finally(() => {
+      element.dispatchEvent(new CustomEvent('ajax:complete', {bubbles: true, cancelable: true}));
+    });
+}
+
+function handleMethod(element) {
+  const method = element.getAttribute('data-method').toUpperCase();
+  const url = element.getAttribute('href');
+  const csrfParam = document.querySelector('meta[name="csrf-param"]')?.content || 'csrf_token';
+  const csrfToken = getCSRFToken();
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = url;
+  form.style.display = 'none';
+
+  if (method !== 'POST') {
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = method;
+    form.appendChild(methodInput);
+  }
+
+  const csrfInput = document.createElement('input');
+  csrfInput.type = 'hidden';
+  csrfInput.name = csrfParam;
+  csrfInput.value = csrfToken;
+  form.appendChild(csrfInput);
+
+  const submit = document.createElement('input');
+  submit.type = 'submit';
+  form.appendChild(submit);
+
+  document.body.appendChild(form);
+  submit.click();
+}
+
+document.addEventListener('click', event => {
+  const element = event.target.closest(
+    'a[data-method], a[data-confirm], a[data-remote], button[data-remote], input[data-remote]'
+  );
+  if (!element) return;
+
+  const confirmMsg = element.getAttribute('data-confirm');
+  if (confirmMsg && !window.confirm(confirmMsg)) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  if (element.getAttribute('data-remote')) {
+    event.preventDefault();
+    handleRemote(element);
+  } else if (element.getAttribute('data-method')) {
+    event.preventDefault();
+    handleMethod(element);
+  }
+});
