@@ -20,10 +20,44 @@ function setupForAll() {
   document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => new bootstrap.Popover(e, {html: true}));
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e, {html: true}));
 }
+}
 
 function getCSRFToken() {
   return document.querySelector('meta[name="csrf-token"]').content;
 }
+
+window.runningFetchRequests = 0;
+function updateFetchTracking(delta) {
+  window.runningFetchRequests += delta;
+}
+const originalFetch = window.fetch;
+window.fetch = function () {
+  updateFetchTracking(1);
+  return originalFetch.apply(this, arguments).finally(() => {
+    updateFetchTracking(-1);
+  });
+};
+
+const originalXHR = window.XMLHttpRequest;
+window.XMLHttpRequest = function () {
+  const xhr = new originalXHR();
+  const originalSend = xhr.send;
+  xhr.send = function () {
+    updateFetchTracking(1);
+    let decremented = false;
+    const decrement = () => {
+      if (!decremented) {
+        updateFetchTracking(-1);
+        decremented = true;
+      }
+    };
+    xhr.addEventListener('load', decrement);
+    xhr.addEventListener('error', decrement);
+    xhr.addEventListener('abort', decrement);
+    return originalSend.apply(xhr, arguments);
+  };
+  return xhr;
+};
 
 function fetchWithCSRF(resource, options) {
   options ??= {};
@@ -351,82 +385,97 @@ function htmlEscape(str) {
 function renderSearchResults(query, url) {
   const spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
-  const request = new XMLHttpRequest();
-  request.open('GET', urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)));
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)), {
+    headers: {Accept: 'application/json'}
+  })
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.data) {
         throw 'Invalid search results';
       }
-    } catch (error) {
-      request.onerror();
-      return;
-    }
-    spinner.style.display = 'none';
-    const heading = document.getElementById('results-heading');
-    heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
-    const results = document.createElement('div');
-    results.id = 'results';
-    results.className = 'list-group';
-    const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
+      spinner.style.display = 'none';
+      const heading = document.getElementById('results-heading');
+      heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
+      const results = document.createElement('div');
+      results.id = 'results';
+      results.className = 'list-group';
+      const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
 
-    Object.keys(types).forEach(function (searchtype) {
-      const searchresults = json.data.results[searchtype];
-      if (searchresults.length > 0) {
-        const item = document.createElement('div');
-        item.className = 'list-group-item';
-        const header = document.createElement('h3');
-        item.appendChild(header);
-        header.id = searchtype;
-        const bold = document.createElement('strong');
-        const textnode = document.createTextNode(types[searchtype] + ': ' + searchresults.length);
-        bold.appendChild(textnode);
-        header.appendChild(bold);
-        results.append(item);
-      }
-      searchresults.forEach(function (value, index) {
-        const item = document.createElement('div');
-        item.className = 'list-group-item';
-        const header = document.createElement('div');
-        header.className = 'd-flex w-100 justify-content-between';
-        const title = document.createElement('h5');
-        title.className = 'occurrence mb-1';
-        title.appendChild(document.createTextNode(value.occurrence));
-        header.appendChild(title);
-        item.appendChild(header);
-        if (value.contents) {
-          const contents = document.createElement('pre');
-          contents.className = 'contents mb-1';
-          contents.appendChild(document.createTextNode(value.contents));
-          item.appendChild(contents);
+      Object.keys(types).forEach(function (searchtype) {
+        const searchresults = json.data.results[searchtype];
+        if (searchresults.length > 0) {
+          const item = document.createElement('div');
+          item.className = 'list-group-item';
+          const header = document.createElement('h3');
+          item.appendChild(header);
+          header.id = searchtype;
+          const bold = document.createElement('strong');
+          const textnode = document.createTextNode(types[searchtype] + ': ' + searchresults.length);
+          bold.appendChild(textnode);
+          header.appendChild(bold);
+          results.append(item);
         }
-        results.append(item);
+        searchresults.forEach(function (value, index) {
+          const item = document.createElement('div');
+          item.className = 'list-group-item';
+          const header = document.createElement('div');
+          header.className = 'd-flex w-100 justify-content-between';
+          const title = document.createElement('h5');
+          title.className = 'occurrence mb-1';
+          title.appendChild(document.createTextNode(value.occurrence));
+          header.appendChild(title);
+          item.appendChild(header);
+          if (value.contents) {
+            const contents = document.createElement('pre');
+            contents.className = 'contents mb-1';
+            contents.appendChild(document.createTextNode(value.contents));
+            item.appendChild(contents);
+          }
+          results.append(item);
+        });
       });
-    });
-    const oldResults = document.getElementById('results');
-    oldResults.parentElement.replaceChild(results, oldResults);
-  };
-  request.onerror = function () {
-    spinner.style.display = 'none';
-    let msg = this.statusText;
-    try {
-      const json = JSON.parse(this.responseText);
-      if (json && json.error) {
-        msg = json.error.split(/\n/)[0];
-      } else if (json && json.error_status) {
-        msg = json.error_status;
+      const oldResults = document.getElementById('results');
+      oldResults.parentElement.replaceChild(results, oldResults);
+    })
+    .catch(error => {
+      spinner.style.display = 'none';
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          addFlash('danger', 'Search resulted in error: ' + msg);
+        });
+      } else {
+        addFlash('danger', 'Search resulted in error: ' + msg);
       }
-    } catch (error) {
-      msg = error;
-    }
-    addFlash('danger', 'Search resulted in error: ' + msg);
-  };
-  request.send();
+    });
+      });
+      const oldResults = document.getElementById('results');
+      oldResults.parentElement.replaceChild(results, oldResults);
+    })
+    .catch(error => {
+      spinner.style.display = 'none';
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          addFlash('danger', 'Search resulted in error: ' + msg);
+        });
+      } else {
+        addFlash('danger', 'Search resulted in error: ' + msg);
+      }
+    });
 }
 
 function testStateHTML(job) {
@@ -484,18 +533,16 @@ function updateTestState(job, name, timeElem, reason) {
 }
 
 function renderJobStatus(item, id) {
-  const request = new XMLHttpRequest();
-  request.open('GET', urlWithBase('/api/v1/jobs/' + id));
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(urlWithBase('/api/v1/jobs/' + id), {headers: {Accept: 'application/json'}})
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.job) {
         throw 'Invalid job details returned';
       }
+<<<<<<< HEAD
     } catch (error) {
       request.onerror();
       return;
@@ -526,70 +573,30 @@ function renderJobStatus(item, id) {
         msg = json.error.split(/\n/)[0];
       } else if (json && json.error_status) {
         msg = json.error_status;
-      }
-    } catch (error) {
-      msg = error;
-    }
-    item.appendChild(document.createTextNode(msg));
-  };
-  request.send();
-}
-
-function renderActivityView(ajaxUrl) {
-  const spinner = document.getElementById('progress-indication');
-  spinner.style.display = 'block';
-  const request = new XMLHttpRequest();
-  const query = new URLSearchParams();
-  query.append('search[value]', 'event:job_');
-  query.append('order[0][column]', '1'); // t_created
-  query.append('order[0][dir]', 'desc');
-  request.open('GET', ajaxUrl + '?' + query.toString());
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
-      if (!json.data) {
-        throw 'Invalid events returned';
-      }
+||||||| parent of 43283f29d (refactor(ui): finalize jQuery removal from core scripts and templates)
     } catch (error) {
       request.onerror();
       return;
     }
-    spinner.style.display = 'none';
-    const results = document.createElement('div');
-    results.id = 'results';
-    results.className = 'list-group';
-    const uniqueJobs = new Set();
-    json.data.forEach(function (value, index) {
-      // The audit log interprets _ as a wildcard so we enforce the prefix here
-      if (!/job_/.test(value.event)) {
-        return;
-      }
-      // We want only the latest result of each job
-      let id;
-      try {
-        id = JSON.parse(value.event_data || 'null')?.id;
-      } catch (e) {
-        return;
-      }
-      if (!id || uniqueJobs.has(id)) {
-        return;
-      }
-      uniqueJobs.add(id);
-
-      const item = document.createElement('div');
-      item.className = 'list-group-item';
-      renderJobStatus(item, id);
-      results.append(item);
-    });
-    const oldResults = document.getElementById('results');
-    oldResults.parentElement.replaceChild(results, oldResults);
+    const header = document.createElement('div');
+    header.className = 'd-flex w-100 justify-content-between';
+    const title = document.createElement('h5');
+    title.className = 'event_name mb-1';
+    const name = document.createElement('a');
+    header.appendChild(name);
+    header.appendChild(title);
+    const timeago = document.createElement('abbr');
+    timeago.className = 'timeago';
+    header.appendChild(timeago);
+    item.appendChild(header);
+    const details = document.createElement('pre');
+    details.className = 'details mb-1';
+    const reason = document.createTextNode('');
+    details.appendChild(reason);
+    item.appendChild(details);
+    updateTestState(json.job, name, timeago, reason);
   };
   request.onerror = function () {
-    spinner.style.display = 'none';
     let msg = this.statusText;
     try {
       const json = JSON.parse(this.responseText);
@@ -597,13 +604,104 @@ function renderActivityView(ajaxUrl) {
         msg = json.error.split(/\n/)[0];
       } else if (json && json.error_status) {
         msg = json.error_status;
+=======
+      const header = document.createElement('div');
+      header.className = 'd-flex w-100 justify-content-between';
+      const title = document.createElement('h5');
+      title.className = 'event_name mb-1';
+      const name = document.createElement('a');
+      header.appendChild(name);
+      header.appendChild(title);
+      const timeago = document.createElement('abbr');
+      timeago.className = 'timeago';
+      header.appendChild(timeago);
+      item.appendChild(header);
+      const details = document.createElement('pre');
+      details.className = 'details mb-1';
+      const reason = document.createTextNode('');
+      details.appendChild(reason);
+      item.appendChild(details);
+      updateTestState(json.job, name, timeago, reason);
+    })
+    .catch(error => {
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          item.appendChild(document.createTextNode(msg));
+        });
+      } else {
+        item.appendChild(document.createTextNode(msg));
+>>>>>>> 43283f29d (refactor(ui): finalize jQuery removal from core scripts and templates)
       }
-    } catch (error) {
-      msg = error;
-    }
-    addFlash('danger', 'Search resulted in error: ' + msg);
-  };
-  request.send();
+    });
+      }
+    });
+}
+
+function renderActivityView(ajaxUrl) {
+  const spinner = document.getElementById('progress-indication');
+  spinner.style.display = 'block';
+  const query = new URLSearchParams();
+  query.append('search[value]', 'event:job_');
+  query.append('order[0][column]', '1'); // t_created
+  query.append('order[0][dir]', 'desc');
+  fetch(ajaxUrl + '?' + query.toString(), {headers: {Accept: 'application/json'}})
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
+      if (!json.data) {
+        throw 'Invalid events returned';
+      }
+      spinner.style.display = 'none';
+      const results = document.createElement('div');
+      results.id = 'results';
+      results.className = 'list-group';
+      const uniqueJobs = new Set();
+      json.data.forEach(function (value, index) {
+        // The audit log interprets _ as a wildcard so we enforce the prefix here
+        if (!/job_/.test(value.event)) {
+          return;
+        }
+        // We want only the latest result of each job
+        const id = JSON.parse(value.event_data).id;
+        if (uniqueJobs.has(id)) {
+          return;
+        }
+        uniqueJobs.add(id);
+
+        const item = document.createElement('div');
+        item.className = 'list-group-item';
+        renderJobStatus(item, id);
+        results.append(item);
+      });
+      const oldResults = document.getElementById('results');
+      oldResults.parentElement.replaceChild(results, oldResults);
+    })
+    .catch(error => {
+      spinner.style.display = 'none';
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          addFlash('danger', 'Search resulted in error: ' + msg);
+        });
+      } else {
+        addFlash('danger', 'Search resulted in error: ' + msg);
+      }
+    });
+      }
+    });
 }
 
 function renderComments(row) {
