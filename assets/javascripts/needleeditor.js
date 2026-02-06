@@ -210,27 +210,24 @@ NeedleEditor.prototype.LoadProperty = function (property) {
 };
 
 NeedleEditor.prototype.LoadNeedle = function (url) {
-  const editor = this;
-  const cv = this.cv;
-  const x = new XMLHttpRequest();
-  x.onreadystatechange = function () {
-    if (this.readyState != 4) {
-      return;
-    }
-    if (this.status == 200) {
-      editor.needle = JSON.parse(this.responseText);
+  fetch(url)
+    .then(response => {
+      if (response.status === 200) return response.json();
+      if (response.status === 404) return JSON.parse('{ "area": [], "tags": [] , "properties": [] }');
+      throw response;
+    })
+    .then(data => {
+      editor.needle = data;
       editor.init();
-    } else if (this.status == 404) {
-      editor.needle = JSON.parse('{ "area": [], "tags": [] , "properties": [] }');
-      editor.init();
-    } else {
+    })
+    .catch(error => {
       const ctx = editor.canvas.getContext('2d');
       ctx.font = '20pt Verdana';
-      ctx.fillText('Failed to load Needle, Code ' + this.status, 10, 50);
-    }
-  };
-  x.open('GET', url, true);
-  x.send();
+      ctx.fillText('Failed to load Needle, Code ' + (error.status || error), 10, 50);
+    });
+      ctx.font = '20pt Verdana';
+      ctx.fillText('Failed to load Needle, Code ' + (error.status || error), 10, 50);
+    });
 };
 
 NeedleEditor.prototype.LoadAreas = function (areas) {
@@ -521,7 +518,7 @@ function saveNeedle(overwrite) {
   const propWorkaround = document.getElementById('property_workaround');
   const inputWorkaroundDesc = document.getElementById('input_workaround_desc');
   if (!overwrite && propWorkaround && propWorkaround.checked && inputWorkaroundDesc && !inputWorkaroundDesc.value) {
-    ('You set the workaround property for this needle without a description. Are you sure you want to save without a description?');
+    const confirmMessage = 'You set the workaround property for this needle without a description. Are you sure you want to save without a description?';
     if (!confirm(confirmMessage)) {
       return false;
     }
