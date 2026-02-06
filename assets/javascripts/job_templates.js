@@ -247,18 +247,7 @@ function submitProperties(form) {
   const progress = form.querySelector('.properties-progress-indication');
   if (progress) progress.style.display = '';
   fetchWithCSRF(form.dataset.putUrl, {method: 'PUT', body: new FormData(form)})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       showAdvancedFieldsIfJsonRefersToThem(json);
       const overallError = updateValidation(form, json);
