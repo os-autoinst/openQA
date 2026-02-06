@@ -109,7 +109,7 @@ my @tds = $driver->find_child_elements($job99946, 'td');
 is((shift @tds)->get_text(), 'C', '99946 is current job');
 is((shift @tds)->get_text(), 'zypper_up', 'failed module of 99946');
 is((shift @tds)->get_text(), '0091', 'build of 99946 is 0091');
-is((shift @tds)->get_text(), 'about 3 hours ago ( 01:00 hours )', 'finished and duration of 99946');
+like((shift @tds)->get_text(), qr/(about )?3 hours ago \( 01:00 hours \)/, 'finished and duration of 99946');
 
 my $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
 @tds = $driver->find_child_elements($job99947, 'td');
@@ -139,7 +139,7 @@ is((shift @tds)->get_text(), 'C', '99901 is current job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
 is($state->get_attribute('title'), 'Done: passed', 'the latest job 99901 was passed');
 is((shift @tds)->get_text(), '0091', 'build of 99901 is 0091');
-is((shift @tds)->get_text(), 'about 4 hours ago ( 01:00 hours )', 'finished and duration of 99901');
+like((shift @tds)->get_text(), qr/(about )?4 hours ago \( 01:00 hours \)/, 'finished and duration of 99901');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99902')}, 1, 'found nearest next job 99902');
 $driver->find_element('[aria-label="Previous"]')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')}, 1, 'found farmost next job 99946');
@@ -158,7 +158,7 @@ is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
 is($state->get_attribute('title'), 'Done: passed', 'the latest job 99947 was passed');
 is((shift @tds)->get_text(), '0092', 'build of 99947 is 0092');
-is((shift @tds)->get_text(), 'about 2 hours ago ( 01:58 hours )', 'finished and duration of 99947');
+like((shift @tds)->get_text(), qr/(about )?2 hours ago \( 01:58 hours \)/, 'finished and duration of 99947');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')},
     1, 'found nearest previous job 99946');
 $driver->find_element('[aria-label="Next"]')->click();

@@ -4,7 +4,6 @@
 %= include 'layouts/info'
 
 % content_for 'ready_function' => begin
-    $('.timeago').timeago();
     toggleFullscreenMode(<%= $fullscreen %>);
     autoRefresh(<%= $fullscreen %>, <%= $interval %>);
     alignBuildLabels();

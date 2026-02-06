@@ -35,7 +35,7 @@
               return '<%= $url_base %>' + path;
             % }
           }
-          $(function() {
+          document.addEventListener('DOMContentLoaded', function() {
             setupForAll();
             backToTop();
             %= content_for 'ready_function'
