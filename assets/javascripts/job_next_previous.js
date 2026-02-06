@@ -18,7 +18,7 @@ function setupJobNextPrevious() {
   };
 
   var tableElement = document.getElementById('job_next_previous_table');
-  var table = $(tableElement).DataTable({
+  var table = new DataTable(tableElement, {
     ajax: {
       url: tableElement.dataset.ajaxUrl,
       data: function (d) {
