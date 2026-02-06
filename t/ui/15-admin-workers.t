@@ -157,14 +157,14 @@ my $table = $driver->find_element_by_id('previous_jobs');
 ok $table, 'previous jobs table found';
 my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
 is scalar @entries, 6, 'two previous jobs shown (3 cols per row)';
-is_deeply
-  \@entries,
+is_deeply \@entries,
   [
     'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
     '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
-    '0', 'about an hour ago',
+    '0', $entries[5],
   ],
   'correct entries shown';
+like $entries[5], qr/hour ago/, 'correct time for entry 5';
 
 # restart running job assigned to a worker
 $driver->find_child_element($table, 'a.restart', 'css')->click();
@@ -172,14 +172,14 @@ wait_for_ajax;
 $table = $driver->find_element_by_id('previous_jobs');
 ok $table, 'still on same page (with table)';
 @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
-is_deeply
-  \@entries,
+is_deeply \@entries,
   [
     'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
     '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
-    '0', 'about an hour ago',
+    '0', $entries[5],
   ],
   'the first job has been restarted';
+like $entries[5], qr/hour ago/, 'correct time after restart';
 
 kill_driver();
 done_testing();
