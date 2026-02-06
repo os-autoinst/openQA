@@ -277,7 +277,7 @@ function renderTestLists() {
   });
 
   // initialize data tables for running, scheduled and finished jobs
-  $('#running').DataTable({
+  const runningTable = new DataTable('#running', {
     order: [], // no initial resorting
     ajax: {
       url: urlWithBase('/tests/list_running_ajax?') + ajaxQueryParams.toString(),
@@ -314,7 +314,7 @@ function renderTestLists() {
       }
     ]
   });
-  $('#scheduled').DataTable({
+  const scheduledTable = new DataTable('#scheduled', {
     order: [], // no initial resorting
     ajax: {
       url: urlWithBase('/tests/list_scheduled_ajax?') + ajaxQueryParams.toString(),
@@ -363,7 +363,7 @@ function renderTestLists() {
     });
     return urlWithBase('/tests/list_ajax?') + ajaxQueryParams.toString();
   };
-  const table = $('#results').DataTable({
+  const table = new DataTable('#results', {
     lengthMenu: [
       [10, 25, 50],
       [10, 25, 50]
@@ -422,7 +422,7 @@ function renderTestLists() {
   });
 
   // add a handler for the actual filtering
-  $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+  DataTable.ext.search.push(function (settings, data, dataIndex) {
     if (settings.nTable.getAttribute('id') !== 'results') {
       return true; // Do not filter other tables
     }
