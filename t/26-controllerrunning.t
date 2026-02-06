@@ -64,6 +64,10 @@ subtest streaming => sub {
         $controller->tx($faketx);
         $controller->stash('job', Job->new);
 
+        # start stream first without log file present
+        $controller->streamtext('test.txt');
+        ok !!Mojo::IOLoop->stream($id), 'stream exists';
+
         # setup fake textfile
         my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
         my $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
@@ -72,7 +76,6 @@ subtest streaming => sub {
 
         # test text streaming
         $controller->streamtext('test.txt');
-        ok !!Mojo::IOLoop->stream($id), 'stream exists';
         like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo bar\\n"\]/, 'body buffer contains "Foo bar"';
         like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo baz\\n"\]/, 'body buffer contains "Foo baz"';
         like $controller->tx->res->content->{body_buffer}, qr/data: \["bar\\n"\]/, 'body buffer contains "bar"';
@@ -146,6 +149,19 @@ subtest streaming => sub {
         is $controller->res->code, 404, 'no worker';
         is_deeply \@messages, [], 'no worker' or always_explain \@messages;
         monkey_patch 'Job', worker => $orig;
+    };
+
+    subtest 'livelog and liveterminal' => sub {
+        my $controller_mock = Test::MockModule->new('OpenQA::Shared::Controller::Running');
+        my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
+        my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
+        my @file_names;
+        $controller_mock->redefine(streamtext => sub ($c, $file_name) { push @file_names, $file_name });
+        $controller->tx($faketx);
+        $controller->livelog;
+        $controller->liveterminal;
+        is_deeply \@file_names, [qw(autoinst-log-live.txt serial-terminal-live.txt)],
+          'logfiles for livelog and liveterminal streamed';
     };
 } or always_explain $log_messages;
 
