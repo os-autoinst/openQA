@@ -215,18 +215,7 @@ function changeJobPrio(jobId, delta, linkElement) {
   const body = new FormData();
   body.append('prio', newPrio);
   fetchWithCSRF(urlWithBase(`/api/v1/jobs/${jobId}/prio`), {method: 'POST', body: body})
-    .then(response => {
-      return response
-        .json()
-        .then(json => {
-          // Attach the parsed JSON to the response object for further use
-          return {response, json};
-        })
-        .catch(() => {
-          // If parsing fails, handle it as a non-JSON response
-          throw `Server returned ${response.status}: ${response.statusText}`;
-        });
-    })
+    .then(handleJSONResponseOrThrow)
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
@@ -287,7 +276,7 @@ function renderTestLists() {
   });
 
   // initialize data tables for running, scheduled and finished jobs
-  $('#running').DataTable({
+  const runningTable = new DataTable('#running', {
     order: [], // no initial resorting
     ajax: {
       url: urlWithBase('/tests/list_running_ajax?') + ajaxQueryParams.toString(),
@@ -330,7 +319,7 @@ function renderTestLists() {
       }
     ]
   });
-  $('#scheduled').DataTable({
+  const scheduledTable = new DataTable('#scheduled', {
     order: [], // no initial resorting
     ajax: {
       url: urlWithBase('/tests/list_scheduled_ajax?') + ajaxQueryParams.toString(),
@@ -403,7 +392,7 @@ function renderTestLists() {
     });
     return urlWithBase('/tests/list_ajax?') + ajaxQueryParams.toString();
   };
-  const table = $('#results').DataTable({
+  const table = new DataTable('#results', {
     lengthMenu: [
       [10, 25, 50],
       [10, 25, 50]
@@ -462,8 +451,8 @@ function renderTestLists() {
   });
 
   // add a handler for the actual filtering
-  $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-    if ($(settings.nTable).attr('id') !== 'results') {
+  DataTable.ext.search.push(function (settings, data, dataIndex) {
+    if (settings.nTable.getAttribute('id') !== 'results') {
       return true; // Do not filter other tables
     }
 
@@ -490,6 +479,7 @@ function renderTestLists() {
   });
 
   // apply filter from query params
+  const filter = parseQueryParams().resultfilter;
   if (filter) {
     const filters = Array.isArray(filter) ? filter : [filter];
     Array.from(finishedJobsResultFilter.options).forEach(opt => {
