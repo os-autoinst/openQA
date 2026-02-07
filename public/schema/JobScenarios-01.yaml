@@ -66,7 +66,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      ^[\p{Word} _*.+-]+$:
+      ^[\p{Word} _*.+-]+(\@\([\w,-]+\))?$:
         type: object
         description: The name of the job template
         additionalProperties: false
@@ -74,6 +74,10 @@ properties:
           product:
             type: string
           machine:
-            type: string
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  - type: string
           settings: *settings-definition
           priority: *priority-definition
