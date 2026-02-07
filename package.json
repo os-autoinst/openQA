@@ -33,6 +33,7 @@
   "overrides": {
     "dagre-d3": {
       "d3": "npm:d3"
-    }
+    },
+    "minimatch": "10.1.2"
   }
 }
