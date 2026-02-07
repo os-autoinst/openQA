@@ -720,8 +720,15 @@ subtest 'Manage API keys' => sub {
     };
 
     subtest 'delete key' => sub {
-        $driver->find_child_element($tbody, 'a[title=Delete]')->click;
-        unlike(api_keys_tbody->get_text, qr/1234567890ABCDEF/, 'default API key present');
+        $driver->find_child_element(api_keys_tbody, 'a[title=Delete]')->click;
+        wait_for_ajax_and_animations();
+        wait_until(
+            sub {
+                ($driver->execute_script("return document.getElementById('api-keys-tbody')?.innerText") // '')
+                  !~ qr/1234567890ABCDEF/;
+            },
+            'default API key gone'
+        );
         like($driver->find_element_by_id('flash-messages')->get_text, qr/API key delete/, 'flash message for deletion');
     };
 
