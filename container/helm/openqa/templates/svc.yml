@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "webui.fullname" . }}
+  name: {{ include "openqa.fullname" . }}
   labels:
-    {{- include "webui.labels" . | nindent 4 }}
+    {{- include "openqa.labels" . | nindent 4 }}
 spec:
   ports:
     - name: webui
@@ -15,4 +15,4 @@ spec:
     - name: scheduler
       port: 9529
   selector:
-    {{- include "webui.selectorLabels" . | nindent 4 }}
+    {{- include "openqa.selectorLabels" . | nindent 4 }}
