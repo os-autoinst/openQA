@@ -25,9 +25,22 @@ function setupFilterForm(options) {
 
   const filterForm = document.getElementById('filter-form');
   if (filterForm) {
-    filterForm.addEventListener('submit', function () {
+    filterForm.addEventListener('submit', function (event) {
+      event.preventDefault();
       const currentQuery = window.location.search.substring(1);
       const formData = new FormData(filterForm);
+
+      // optimize results and states to use negative filters if shorter
+      ['result', 'state'].forEach(key => {
+        const checkboxes = Array.from(filterForm.querySelectorAll(`input[name="${key}"]`));
+        const checked = checkboxes.filter(cb => cb.checked);
+        if (checked.length > 1 && checked.length === checkboxes.length - 1) {
+          const unchecked = checkboxes.find(cb => !cb.checked);
+          formData.delete(key);
+          formData.set(`${key}__n`, unchecked.value);
+        }
+      });
+
       const newQuery = new URLSearchParams(formData).toString();
 
       if (newQuery !== currentQuery) {
@@ -40,6 +53,7 @@ function setupFilterForm(options) {
           progress.innerHTML = '<i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span>';
           cardBody.appendChild(progress);
         }
+        window.location.search = newQuery;
       }
     });
   }
