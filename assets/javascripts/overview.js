@@ -120,7 +120,7 @@ function stackParallelChildren(depElement, dependencyInfo) {
     initCollapsedParallelChildren(relatedRow, relatedTable, dependencyInfo.parents.Parallel);
 }
 
-function setupOverview() {
+function setupOverview(options) {
   setupLazyLoadingFailedSteps();
   $('.timeago').timeago();
   $('.cancel').bind('ajax:success', function (event, xhr, status) {
@@ -198,7 +198,7 @@ function setupOverview() {
   ensureParallelParentsComeFirst();
   collapseOkParallelChildren();
 
-  setupFilterForm();
+  setupFilterForm(options);
   const form = document.getElementById('filter-form');
   form.todo = false;
 

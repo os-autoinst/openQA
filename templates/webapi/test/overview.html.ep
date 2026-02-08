@@ -6,7 +6,7 @@
 
 % content_for 'ready_function' => begin
   window.overviewParallelChildrenCollapsableResultsSel = '<%= $parallel_children_collapsable_results_sel %>';
-  setupOverview();
+  setupOverview({metaMapping: <%== Mojo::JSON::to_json($meta_mapping) %>});
 % end
 
 % if ($limit_exceeded) {
@@ -96,6 +96,10 @@
                     % for my $result (OpenQA::Jobs::Constants::RESULTS) {
                         <label class="form-label"><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
                     % }
+                    <hr class="my-1">
+                    % for my $result (OpenQA::Jobs::Constants::META_RESULTS) {
+                        <label class="form-label" title="Meta-category: <%= $result %>"><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>" class="filter-meta"> <strong><%= ucfirst $result =~ s/_/ /r %></strong></label>
+                    % }
                 </div>
                 <div class="mb-3" id="filter-states">
                     <div class="d-flex align-items-center mb-1">
@@ -107,6 +111,10 @@
                     </div>
                     % for my $state (OpenQA::Jobs::Constants::STATES) {
                         <label class="form-label"><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
+                    % }
+                    <hr class="my-1">
+                    % for my $state (OpenQA::Jobs::Constants::META_STATES) {
+                        <label class="form-label" title="Meta-category: <%= $state %>"><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>" class="filter-meta"> <strong><%= ucfirst $state =~ s/_/ /r %></strong></label>
                     % }
                 </div>
                 <div class="row" id="filter-arch-flavor">

@@ -9,7 +9,13 @@ use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
-use OpenQA::Jobs::Constants qw(EXECUTION_STATES PRE_EXECUTION_STATES ABORTED_RESULTS FAILED NOT_COMPLETE_RESULTS);
+use OpenQA::Jobs::Constants qw(
+  EXECUTION_STATES PRE_EXECUTION_STATES ABORTED_RESULTS FAILED NOT_COMPLETE_RESULTS
+  COMPLETE NOT_COMPLETE ABORTED COMPLETE_RESULTS
+  OK NOT_OK OK_RESULTS NOT_OK_RESULTS
+  PRE_EXECUTION EXECUTION FINAL FINAL_STATES
+  META_RESULTS META_STATES META_MAPPING
+);
 use Text::Glob qw(glob_to_regex_string);
 use List::Util qw(any min);
 use Feature::Compat::Try;
@@ -518,6 +524,16 @@ sub _compute_overview_filtering_params ($c) {
     my $results = $c->every_non_empty_param('result');
     my $states_not = $c->every_non_empty_param('state__not');
     my $results_not = $c->every_non_empty_param('result__not');
+
+    # expansion of meta-values
+    my $expand = sub ($params, $meta) {
+        [map { $meta->{$_} ? @{$meta->{$_}} : $_ } @$params]
+    };
+    $states = $expand->($states, META_MAPPING->{state});
+    $results = $expand->($results, META_MAPPING->{result});
+    $states_not = $expand->($states_not, META_MAPPING->{state});
+    $results_not = $expand->($results_not, META_MAPPING->{result});
+
     my $archs = $c->every_non_empty_param('arch');
     my $machines = $c->every_non_empty_param('machine');
     my $failed_modules = $c->every_non_empty_param('failed_modules');
