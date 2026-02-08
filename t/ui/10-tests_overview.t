@@ -138,13 +138,14 @@ my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
 is(scalar @filtered_out, 0, 'result filter correctly applied');
 
 # Test whether all URL parameter are passed correctly
-my $url_with_escaped_parameters
-  = $baseurl
-  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&comment=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+my $url = $baseurl . 'tests/overview?';
+my $empty_params = 'arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&comment=&';
+my $escaped_params = 'distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+my $url_with_escaped_parameters = $url . $empty_params . $escaped_params;
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button[type="submit"]')->click();
-my $url_after_filter = $url_with_escaped_parameters;
+my $url_after_filter = $url . $escaped_params;
 my $desc = 'escaped URL parameters are passed correctly';
 wait_until sub { $driver->get_current_url eq $url_after_filter }, $desc, 10;
 is $driver->get_current_url, $url_after_filter, $desc;
@@ -776,6 +777,19 @@ subtest 'Inverted filters optimization' => sub {
         ok !$driver->find_element_by_id('filter-done')->is_selected, 'done not selected';
         ok $driver->find_element_by_id('filter-running')->is_selected, 'running selected';
     };
+};
+
+subtest 'empty query parameters are removed' => sub {
+    $driver->get('/tests/overview');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => 'input[name="arch"]', is_displayed => 1);
+    $driver->find_element('input[name="arch"]')->send_keys('x86_64');
+    $driver->find_element('#filter-form button[type="submit"]')->click();
+    wait_until sub { $driver->get_current_url =~ qr/arch=x86_64/ }, 'form submitted';
+    my $url = $driver->get_current_url;
+    like $url, qr/arch=x86_64/, 'URL contains arch parameter';
+    unlike $url, qr/flavor=/, 'URL does not contain empty flavor parameter';
+    unlike $url, qr/machine=/, 'URL does not contain empty machine parameter';
 };
 
 kill_driver();
