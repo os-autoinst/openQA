@@ -918,6 +918,20 @@ sub overview ($self) {
         summary_category_query => \%SUMMARY_CATEGORY_QUERY,
         only_distri => $only_distri,
         limit_exceeded => $exceeded_limit,
+        meta_mapping => {
+            result => {
+                COMPLETE() => [COMPLETE_RESULTS],
+                NOT_COMPLETE() => [NOT_COMPLETE_RESULTS],
+                ABORTED() => [ABORTED_RESULTS],
+                OK() => [OK_RESULTS],
+                NOT_OK() => [NOT_OK_RESULTS],
+            },
+            state => {
+                PRE_EXECUTION() => [PRE_EXECUTION_STATES],
+                EXECUTION() => [EXECUTION_STATES],
+                FINAL() => [FINAL_STATES],
+            },
+        },
     );
     $self->stash(\%stash);
     $self->respond_to(json => {json => \%stash}, html => {template => 'test/overview'});
