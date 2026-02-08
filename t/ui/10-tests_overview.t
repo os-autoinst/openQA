@@ -144,7 +144,7 @@ my $url_with_escaped_parameters
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button[type="submit"]')->click();
-my $url_after_filter = "$url_with_escaped_parameters#";
+my $url_after_filter = $url_with_escaped_parameters;
 my $desc = 'escaped URL parameters are passed correctly';
 wait_until sub { $driver->get_current_url eq $url_after_filter }, $desc, 10;
 is $driver->get_current_url, $url_after_filter, $desc;
@@ -718,8 +718,64 @@ subtest 'filter helper links' => sub {
         ok($driver->find_element_by_id('filter-failed')->is_selected, '"failed" selected after invert');
     };
     $driver->find_element('#filter-form button[type="submit"]')->click();
-    wait_until sub { $driver->get_current_url =~ qr/result=/ }, 'form submitted after using helper links';
-    like $driver->get_current_url, qr/result=/, 'URL contains result parameter';
+    wait_until sub { $driver->get_current_url =~ qr/result__not?=/ }, 'form submitted after using helper links';
+    like $driver->get_current_url, qr/result__not?=/, 'URL contains result parameter';
+};
+
+subtest 'Inverted filters optimization' => sub {
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+    $driver->find_element('#filter-panel .card-header')->click();
+
+    my $results_div = $driver->find_element('#filter-results');
+    my $results_master = $driver->find_child_element($results_div, '.filter-bulk-master');
+
+    subtest 'Inverted results' => sub {
+        $results_master->click() unless $results_master->is_selected;
+        $driver->find_element_by_id('filter-passed')->click();
+        $driver->find_element('#filter-form button[type="submit"]')->click();
+        wait_until sub { $driver->get_current_url =~ qr/result__not=passed/ },
+          'URL optimized to use result__not=passed';
+        like $driver->get_current_url, qr/result__not=passed/, 'URL contains result__not=passed';
+        $driver->find_element('#filter-panel .card-header')->click();
+        ok !$driver->find_element_by_id('filter-passed')->is_selected, 'filter-passed is NOT selected after reload';
+        ok $driver->find_element_by_id('filter-failed')->is_selected, 'filter-failed is selected after reload';
+    };
+
+    subtest 'Inverted states' => sub {
+        $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+        $driver->find_element('#filter-panel .card-header')->click();
+        my $states_div = $driver->find_element('#filter-states');
+        my $states_master = $driver->find_child_element($states_div, '.filter-bulk-master');
+        $states_master->click() unless $states_master->is_selected;
+        $driver->find_element_by_id('filter-done')->click();
+        $driver->find_element('#filter-form button[type="submit"]')->click();
+        wait_until sub { $driver->get_current_url =~ qr/state__not=done/ }, 'URL optimized to use state__not=done';
+        like $driver->get_current_url, qr/state__not=done/, 'URL contains state__not=done';
+        $driver->find_element('#filter-panel .card-header')->click();
+        ok !$driver->find_element_by_id('filter-done')->is_selected, 'filter-done is NOT selected after reload';
+        ok $driver->find_element_by_id('filter-running')->is_selected, 'filter-running is selected after reload';
+    };
+
+    subtest 'Multiple inverted filters' => sub {
+        $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_child_element($driver->find_element('#filter-results'), '.filter-bulk-master')->click();
+        $driver->find_element_by_id('filter-passed')->click();
+        $driver->find_element_by_id('filter-failed')->click();
+        $driver->find_child_element($driver->find_element('#filter-states'), '.filter-bulk-master')->click();
+        $driver->find_element_by_id('filter-done')->click();
+        $driver->find_element('#filter-form button[type="submit"]')->click();
+        wait_until sub {
+            my $url = $driver->get_current_url;
+            $url =~ qr/result__not=passed/ && $url =~ qr/result__not=failed/ && $url =~ qr/state__not=done/;
+        }, 'URL optimized with multiple inverted filters';
+        $driver->find_element('#filter-panel .card-header')->click();
+        ok !$driver->find_element_by_id('filter-passed')->is_selected, 'passed not selected';
+        ok !$driver->find_element_by_id('filter-failed')->is_selected, 'failed not selected';
+        ok $driver->find_element_by_id('filter-softfailed')->is_selected, 'softfailed selected';
+        ok !$driver->find_element_by_id('filter-done')->is_selected, 'done not selected';
+        ok $driver->find_element_by_id('filter-running')->is_selected, 'running selected';
+    };
 };
 
 kill_driver();

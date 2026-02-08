@@ -516,16 +516,21 @@ sub _every_non_empty_param ($c, $param_key) {
 sub _compute_overview_filtering_params ($c) {
     my $states = $c->every_non_empty_param('state');
     my $results = $c->every_non_empty_param('result');
+    my $states_not = $c->every_non_empty_param('state__not');
+    my $results_not = $c->every_non_empty_param('result__not');
     my $archs = $c->every_non_empty_param('arch');
     my $machines = $c->every_non_empty_param('machine');
     my $failed_modules = $c->every_non_empty_param('failed_modules');
-    my %filters;
-    $filters{'me.state'} = {-in => $states} if @$states;
-    $filters{'me.result'} = {-in => $results} if @$results;
-    $filters{'me.result'} = FAILED if @$failed_modules;
-    $filters{ARCH} = {-in => $archs} if @$archs;
-    $filters{MACHINE} = {-in => $machines} if @$machines;
-    return [\%filters];
+    my @conds = (
+        (@$states ? {'me.state' => {-in => $states}} : ()),
+        (@$results ? {'me.result' => {-in => $results}} : ()),
+        (@$states_not ? {'me.state' => {-not_in => $states_not}} : ()),
+        (@$results_not ? {'me.result' => {-not_in => $results_not}} : ()),
+        (@$failed_modules ? {'me.result' => FAILED} : ()),
+        (@$archs ? {ARCH => {-in => $archs}} : ()),
+        (@$machines ? {MACHINE => {-in => $machines}} : ()),
+    );
+    return \@conds;
 }
 
 sub _groups_for_globs ($c) {
