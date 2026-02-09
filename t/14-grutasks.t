@@ -87,6 +87,9 @@ my $parent_groups = $schema->resultset('JobGroupParents');
 my $assets = $schema->resultset('Assets');
 my $job_assets = $schema->resultset('JobsAssets');
 
+# prevent creating archiving tasks for job 99947
+$jobs->find(99947)->update({archived => 1});
+
 # move group 1002 into a parent group
 # note: This shouldn't change much because 1002 will be the only child and the same limit applies.
 #       However, the size of exclusively kept assets is moved to the parent-level.
@@ -463,7 +466,6 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
 
     # create important job which was finished 12 days ago
     # note: Setting `logs_present => 0` to show that jobs without logs are also subject to archiving.
-    my $jobs = $app->schema->resultset('Jobs');
     my $job = $jobs->find(99938);
     $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC'), logs_present => 0});
     $job->group->update({keep_logs_in_days => 5, keep_important_logs_in_days => 20});
@@ -509,10 +511,10 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
     run_gru_job($app, 'limit_results_and_logs');
     ok !-e $filename, 'results of important job cleaned up if exceeding retention period for important jobs';
 
-    subtest 'archiving via job result retentions' => sub {
+    subtest 'archiving via job result retentions, important retention might be infinity' => sub {
         my $job = $jobs->find(99937);
         $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 55, 'UTC'), logs_present => 0});
-        $job->group->update({keep_results_in_days => 50, keep_important_results_in_days => 60});
+        $job->group->update({keep_results_in_days => 50, keep_important_results_in_days => 0});
         $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
         run_gru_job($app, 'limit_results_and_logs');
         perform_minion_jobs($t->app->minion);
