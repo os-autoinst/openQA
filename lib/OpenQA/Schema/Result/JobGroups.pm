@@ -249,20 +249,25 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
     if ($important_timestamp && $preserved_important_jobs_out) {
         my @time_cond = (-and => [{'me.t_created' => $timecond}, {'me.t_created' => {'>=' => $important_timestamp}}]);
         my @search_args = ({@important_cond, @group_cond, @time_cond}, {order_by => qw(id)});
-        $$preserved_important_jobs_out = $jobs->search(@search_args);
+        push @$preserved_important_jobs_out, $jobs->search(@search_args);
     }
 
     # make query for expired jobs
     return $jobs->search({-and => {@group_cond, -or => \@ors}}, {order_by => qw(id)});
 }
 
-sub find_expired_jobs ($self) {
-    my $expired = $self->_find_expired_jobs($self->keep_jobs_in_days, $self->keep_important_jobs_in_days);
+sub find_expired_jobs ($self, $preserved_important_jobs_out = undef) {
+    my $expired = $self->_find_expired_jobs($self->keep_jobs_in_days, $self->keep_important_jobs_in_days,
+        $preserved_important_jobs_out);
     return $expired ? [$expired->all] : [];
 }
 
-sub find_jobs_with_expired_results ($self) {
-    my $expired = $self->_find_expired_jobs($self->keep_results_in_days, $self->keep_important_results_in_days);
+sub find_jobs_with_expired_results ($self, $preserved_important_jobs_out = undef) {
+    my $expired = $self->_find_expired_jobs(
+        $self->keep_results_in_days,
+        $self->keep_important_results_in_days,
+        $preserved_important_jobs_out
+    );
     return $expired ? [$expired->all] : [];
 }
 
@@ -274,14 +279,14 @@ sub find_jobs_with_expired_logs ($self, $preserved_important_jobs_out = undef) {
 
 # helper function for cleanup task
 sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef) {
-    my $expired_jobs = $self->find_expired_jobs;
-    $_->delete for @$expired_jobs;
-
-    my $expired_results_jobs = $self->find_jobs_with_expired_results;
-    $_->delete_results for @$expired_results_jobs;
-
     my $config = OpenQA::App->singleton->config;
     my $preserved = $config->{archiving}->{archive_preserved_important_jobs} ? $preserved_important_jobs_out : undef;
+    my $expired_jobs = $self->find_expired_jobs($preserved);
+    $_->delete for @$expired_jobs;
+
+    my $expired_results_jobs = $self->find_jobs_with_expired_results($preserved);
+    $_->delete_results for @$expired_results_jobs;
+
     my $jobs_with_expired_logs = $self->find_jobs_with_expired_logs($preserved);
     $_->delete_logs for @$jobs_with_expired_logs;
 }

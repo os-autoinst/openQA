@@ -507,6 +507,21 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
     $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC'), logs_present => 1});
     run_gru_job($app, 'limit_results_and_logs');
     ok !-e $filename, 'results of important job cleaned up if exceeding retention period for important jobs';
+
+    subtest 'archiving via job result retentions' => sub {
+        my $job = $app->schema->resultset('Jobs')->find(99937);
+        $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 55, 'UTC'), logs_present => 0});
+        $job->group->update({keep_results_in_days => 50, keep_important_results_in_days => 60});
+        $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
+        run_gru_job($app, 'limit_results_and_logs');
+        perform_minion_jobs($t->app->minion);
+        my $minion_jobs = $minion->jobs({tasks => ['archive_job_results']});
+        if (is $minion_jobs->total, 2, 'another archiving job enqueued') {
+            my $archiving_job = $minion_jobs->next;
+            is_deeply $archiving_job->{args}, [99937], 'archiving job is for right openQA job'
+              or always_explain $archiving_job->{args};
+        }
+    };
 };
 
 subtest 'Non-Gru task' => sub {
