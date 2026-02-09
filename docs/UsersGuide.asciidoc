@@ -1541,9 +1541,14 @@ The deletion happens in the following order:
 
 Within each group the oldest jobs are deleted first.
 
-It is also possible to abort cleanup tasks early in case there is still
+It is also possible to abort cleanup and archiving early in case there is still
 enough headroom on relevant file systems anyway. This can be enabled using the
-configuration settings `…_cleanup_max_free_percentage`.
+configuration settings `…_cleanup_max_free_percentage`. Be aware that this can
+lead to very extensive and long cleanups if the cleanup is triggered after all.
+This is especially the case on instances where many jobs run. If the (long)
+cleanup is interrupted/retried because `openqa-gru.service` is restarted, these
+configuration settings may also lead to incomplete cleanup and archiving as long
+as there is enough headroom on the relevant file systems.
 
 NOTE: The space-aware cleanup relies on `df` reporting a valid file system space
 usage. The algorithms also assume that screenshots and test results are stored
