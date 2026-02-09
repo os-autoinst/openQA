@@ -370,7 +370,12 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
     my $job_token = $worker_properties->{JOBTOKEN} // random_string();
     $worker->set_property(JOBTOKEN => $job_token);
     $job_hashref->{settings}->{JOBTOKEN} = $job_token;
-
+    unless (exists $job_hashref->{settings}->{CASEDIR}) {
+        if (my $dist_dir = OpenQA::App->singleton->config->{global}->{distribution_dir}) {
+            log_debug "CASEDIR is not set, setting it to distribution_dir=$dist_dir";
+            $job_hashref->{settings}->{CASEDIR} = $dist_dir;
+        }
+    }
     my $updated_settings = $self->register_assets_from_settings();
 
     @{$job_hashref->{settings}}{keys %$updated_settings} = values %$updated_settings
