@@ -44,7 +44,7 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils
-  qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs);
+  qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs wait_for);
 use OpenQA::Test::TimeLimit '90';
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
@@ -421,7 +421,10 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     }
     'assets';
 
-    ok($cache_client->asset_exists('localhost', $_), "Asset $_ downloaded correctly") for @assets;
+    for my $asset (@assets) {
+        ok(wait_for(sub { $cache_client->asset_exists('localhost', $asset) }, "Asset $asset downloaded correctly"),
+            "Asset $asset downloaded correctly");
+    }
 
     @assets = map { 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2' } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
@@ -434,9 +437,15 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     }
     'assets';
 
-    ok($cache_client->asset_exists('localhost', 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2'),
-        "Asset $_ downloaded correctly")
-      for @assets;
+    for my $asset (@assets) {
+        ok(
+            wait_for(
+                sub { $cache_client->asset_exists('localhost', 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2') },
+                "Asset $asset downloaded correctly"
+            ),
+            "Asset $asset downloaded correctly"
+        );
+    }
 
     $_->stop for ($worker_2, $worker_3, $worker_4);
 };
@@ -482,6 +491,7 @@ subtest 'Test Minion Sync task' => sub {
 subtest 'Minion monitoring with InfluxDB' => sub {
     my $app = $t->app;
     my $cache = $app->cache;
+    $cache->reset_download_count;
     my $metrics = $cache->metrics;
     my $rate = $metrics->{download_rate};
     my $count = $metrics->{download_count};

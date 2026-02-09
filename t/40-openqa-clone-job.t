@@ -9,7 +9,8 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Utils qw(run_cmd test_cmd);
 use Test::MockModule;
-$ENV{OPENQA_CONFIG} = '';
+
+$ENV{OPENQA_CONFIG} = "$FindBin::Bin/data";
 
 sub test_once {
     # Report failure at the callsite instead of the test function

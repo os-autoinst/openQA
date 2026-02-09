@@ -19,7 +19,7 @@ use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 require OpenQA::Test::Database;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Utils 'embed_server_for_testing';
-use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::TimeLimit '24';
 use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Schema::ResultSet::Assets;

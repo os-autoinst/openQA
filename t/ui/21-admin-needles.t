@@ -105,7 +105,7 @@ subtest 'delete needle' => sub {
     wait_for_ajax(with_minion => $minion);
     $driver->find_element_by_id('delete_all')->click();
 
-    is($driver->find_element_by_id('confirm_delete')->is_displayed(), 1, 'modal dialog');
+    ok(wait_for_element(selector => '#confirm_delete', is_displayed => 1), 'modal dialog');
     is($driver->find_element('#confirm_delete .modal-title')->get_text(), 'Needle deletion', 'title matches');
     is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion');
     is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles so far');
@@ -130,8 +130,14 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
     wait_for_ajax(with_minion => $minion);    # required due to server-side datatable
     $_->click() for $driver->find_elements('td input', 'css');
     $driver->find_element_by_id('delete_all')->click();
-    my @outstanding_needles = $driver->find_elements('#outstanding-needles li', 'css');
-    is(scalar @outstanding_needles, 2, 'still two needle outstanding for deletion');
+    my @outstanding_needles;
+    wait_until(
+        sub {
+            @outstanding_needles = $driver->find_elements('#outstanding-needles li', 'css');
+            return scalar @outstanding_needles == 2;
+        },
+        'still two needle outstanding for deletion'
+    );
     is((shift @outstanding_needles)->get_text(), 'inst-timezone-text.json', 'right needle names displayed');
     is((shift @outstanding_needles)->get_text(), 'never-matched.json', 'right needle names displayed');
     is(scalar @{$driver->find_elements('#failed-needles li', 'css')},
@@ -148,7 +154,8 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
         for my $file_name (@needle_files) {
             is(-f $needle_dir . $file_name, undef, $file_name . ' is gone');
         }
-        is($driver->find_element('#needles tbody tr')->get_text(), 'No data available in table', 'no needles left');
+        wait_until(sub { $driver->find_element('#needles tbody tr')->get_text() eq 'No data available in table' },
+            'no needles left');
     };
 };
 
