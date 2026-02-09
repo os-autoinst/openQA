@@ -5,7 +5,7 @@ package OpenQA::Worker::Engines::isotovideo;
 use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::JobSettings;
-use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
+use OpenQA::Log qw(log_error log_info log_debug log_warning log_trace get_channel_handle format_settings);
 use OpenQA::Utils
   qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir needledir);
 use POSIX qw(:sys_wait_h strftime uname _exit);
@@ -390,7 +390,21 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
 
     # ensure a CASEDIR and a PRODUCTDIR is assigned and create a symlink if required
     my $absolute_paths = $vars->{ABSOLUTE_TEST_CONFIG_PATHS};
-    my @vars_for_default_dirs = ($vars->{DISTRI}, $vars->{VERSION}, $shared_cache);
+    # Use CASEDIR if set (already resovled by Jobs.pm), otherwise fall back to DISTRI
+    my $casedir_basename
+      = $vars->{CASEDIR}
+      && !file_name_is_absolute($vars->{CASEDIR})
+      && !looks_like_url_with_scheme($vars->{CASEDIR}) ? $vars->{CASEDIR} : undef;
+    my $distri = $casedir_basename // $vars->{DISTRI};
+    my @vars_for_default_dirs = ($distri, $vars->{VERSION}, $shared_cache);
+    log_trace(
+        sprintf(
+            'Resolving distribution directory: CASEDIR=%s, DISTRI=%s, resolved distri=%s',
+            $vars->{CASEDIR} // 'undef',
+            $vars->{DISTRI} // 'undef', $distri
+        ),
+        channels => 'autoinst'
+    );
     my $default_casedir = testcasedir(@vars_for_default_dirs);
     my $default_productdir = productdir(@vars_for_default_dirs);
     my $target_name = path($default_casedir)->basename;
