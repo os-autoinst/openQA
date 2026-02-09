@@ -463,7 +463,8 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
 
     # create important job which was finished 12 days ago
     # note: Setting `logs_present => 0` to show that jobs without logs are also subject to archiving.
-    my $job = $app->schema->resultset('Jobs')->find(99938);
+    my $jobs = $app->schema->resultset('Jobs');
+    my $job = $jobs->find(99938);
     $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC'), logs_present => 0});
     $job->group->update({keep_logs_in_days => 5, keep_important_logs_in_days => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
@@ -509,7 +510,7 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
     ok !-e $filename, 'results of important job cleaned up if exceeding retention period for important jobs';
 
     subtest 'archiving via job result retentions' => sub {
-        my $job = $app->schema->resultset('Jobs')->find(99937);
+        my $job = $jobs->find(99937);
         $job->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 55, 'UTC'), logs_present => 0});
         $job->group->update({keep_results_in_days => 50, keep_important_results_in_days => 60});
         $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
@@ -521,6 +522,21 @@ subtest 'archiving and labeling jobs to be considered important' => sub {
             is_deeply $archiving_job->{args}, [99937], 'archiving job is for right openQA job'
               or always_explain $archiving_job->{args};
         }
+    };
+
+    subtest 'archiving conditions' => sub {
+        my @to_archive;
+        $jobs->find(99937)->group->find_jobs_with_expired_results(\@to_archive);
+        is_deeply \@to_archive, [], 'already archived job not considered for archiving again';
+
+        subtest 'archiving job without results dir' => sub {
+            my $job = $jobs->find(99936);
+            ok !$job->archived, 'job not initially archived';
+            ok !$job->result_dir, 'job has no result dir';
+            $job->archive;
+            $job->discard_changes;
+            ok $job->archived, 'job archived';
+        };
     };
 };
 

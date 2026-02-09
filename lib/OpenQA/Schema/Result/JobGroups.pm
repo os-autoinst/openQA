@@ -248,7 +248,10 @@ sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserve
     # make additional query for jobs not being expired because they're important
     if ($important_timestamp && $preserved_important_jobs_out) {
         my @time_cond = (-and => [{'me.t_created' => $timecond}, {'me.t_created' => {'>=' => $important_timestamp}}]);
-        my @search_args = ({@important_cond, @group_cond, @time_cond}, {order_by => qw(id)});
+        my @search_args = (
+            {@important_cond, @group_cond, @time_cond, archived => 0, state => {-in => [FINAL_STATES]}},
+            {order_by => qw(id)},
+        );
         push @$preserved_important_jobs_out, $jobs->search(@search_args);
     }
 

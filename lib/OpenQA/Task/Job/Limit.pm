@@ -59,9 +59,7 @@ sub _limit ($job, $args = undef) {
         $group->limit_results_and_logs(\@preserved_important_jobs);
 
         # archive openQA jobs that were preserved because they are important
-        for my $job (@preserved_important_jobs) {
-            $gru->enqueue(archive_job_results => [$job->id], \%options) if $job->archivable_result_dir;
-        }
+        $gru->enqueue(archive_job_results => [$_->id], \%options) for @preserved_important_jobs;
     }
 
     $ensure_task_retry_on_termination_signal_guard->retry(0);
