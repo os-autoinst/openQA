@@ -95,9 +95,11 @@ subtest streaming => sub {
         ok $c_finished, 'controller has closed after file removed';
     };
 
-    subtest image => sub {
+    my $setup_and_start_streaming = sub {
         $c_finished = 0;
-        $app->attr(schema => sub { FakeSchema->new() });
+        @messages = ();
+        $app->attr(schema => sub { FakeSchema->new });
+
         my $controller = OpenQA::Shared::Controller::Running->new(app => $app);
         my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
         $controller->tx($faketx);
@@ -108,23 +110,44 @@ subtest streaming => sub {
         is_deeply \@messages, [[43, 'livelog_start', 42]], 'livelog started' or always_explain \@messages;
         Mojo::IOLoop->one_tick;
         is $controller->res->body, '', 'body still empty as there is no image yet';
+        return ($controller, $faketx);
+    };
 
+    my $setup_temp_dir_and_stream_again = sub ($controller) {
         my $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
+        my $expected_png_data = "data: data:image/png;base64,bm90IGFjdHVhbGx5IGEgUE5H\n\n";
         my $fake_png = $tmpdir->child('01-fake.png');
         my $last_png = $tmpdir->child('last.png');
         $fake_png->spew('not actually a PNG');
-        symlink $fake_png->basename, $last_png or die "Unable to symlink: $!";
+        symlink $fake_png->basename, $last_png or die "Unable to symlink $last_png: $!";
         combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (1)';
-        is $controller->res->content->{body_buffer}, "data: data:image/png;base64,bm90IGFjdHVhbGx5IGEgUE5H\n\n",
-          'base64-encoded fake PNG sent';
-        $last_png->remove;
-        symlink '02-fake.png', $last_png or die "Unable to symlink: $!";
+        is $controller->res->content->{body_buffer}, $expected_png_data, 'base64-encoded fake PNG sent';
         ok !$c_finished, 'controller has not been finished yet';
+        $last_png->remove;
+        return ($tmpdir, $last_png);
+    };
+
+    subtest 'streaming image and subsequent error handling when image cannot be read' => sub {
+        my ($controller, $faketx) = $setup_and_start_streaming->();
+        my ($tmpdir, $last_png) = $setup_temp_dir_and_stream_again->($controller);
+        symlink '02-fake.png', $last_png or die "Unable to symlink: $!";
         combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (2)';
         like $controller->res->content->{body_buffer}, qr/data: Unable to read image: Can't open file.*\n\n/,
           'error sent if PNG does not exist';
         Mojo::IOLoop->one_tick;
         ok $c_finished, 'controller has been finished';
+    };
+
+    subtest 'show special image when backend has terminated' => sub {
+        my ($controller, $faketx) = $setup_and_start_streaming->();
+        my ($tmpdir, $last_png) = $setup_temp_dir_and_stream_again->($controller);
+        my $png_2 = $tmpdir->child('02-fake.png');
+        symlink $png_2, $last_png or die "Unable to symlink $last_png: $!";
+        symlink '01-fake.png', $png_2 or die "Unable to symlink $png_2: $!";
+        my $buffer_len_before = length($controller->res->content->{body_buffer});
+        Mojo::IOLoop->one_tick;
+        cmp_ok length($controller->res->content->{body_buffer}), '>', $buffer_len_before, 'additional data sent';
+        ok !$c_finished, 'controller has not finished yet';
     };
 
     subtest fake => sub {
