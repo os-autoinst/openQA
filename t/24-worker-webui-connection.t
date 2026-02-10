@@ -505,6 +505,7 @@ qr/Ignoring WS message from http:\/\/127\.0\.0\.1:1 with type livelog_stop and j
         [
             \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
             \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
+            $rejection->([42], 'currently stopping'),    # rejection due to stopping state
             $rejection->(['but no settings'], 'the provided job is invalid'),
             $rejection->(['42'], 'job info lacks execution sequence'),
             $rejection->(['42'], 'already busy with a job from foo'),

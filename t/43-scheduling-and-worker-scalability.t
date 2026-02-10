@@ -220,21 +220,17 @@ subtest 'assign and run jobs' => sub {
         is_deeply([sort @allocated_worker_ids], [sort @expected_worker_ids], 'all workers allocated');
     }
     for my $try (1 .. $polling_tries_jobs) {
-        last if $jobs->search({state => DONE})->count == $job_count;
-        if ($jobs->search({state => SCHEDULED})->count > max(0, $remaining_jobs)) {
-            # uncoverable statement
-            note('At least one job has been set back to scheduled; aborting to wait until all jobs are done');
-            last;    # uncoverable statement
-        }
-        if ($remaining_jobs > 0) {
-            note("Trying to assign remaining $remaining_jobs jobs");
+        my $done_count = $jobs->search({state => DONE})->count;
+        last if $done_count == $job_count;
+        my $scheduled_count = $jobs->search({state => SCHEDULED})->count;
+        if ($scheduled_count > 0) {
+            note("Trying to assign $scheduled_count scheduled jobs");
             if (my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule) {
                 my $assigned_job_count = scalar @$allocated;
-                $remaining_jobs -= $assigned_job_count;
                 note("Assigned $assigned_job_count more jobs: " . dumper($allocated)) if $assigned_job_count > 0;
             }
         }
-        note("Waiting until all jobs are done, try $try");
+        note("Waiting until all jobs are done ($done_count/$job_count), try $try");
         sleep $polling_interval;
     }
     my $done = is($jobs->search({state => DONE})->count, $job_count, 'all jobs done');
