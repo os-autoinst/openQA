@@ -49,17 +49,18 @@
                 </span>
             </button>
             % }
-            % my @badges = qw(success secondary  warning     danger info      primary light   light);
-            % my @labels = qw(Passed  Incomplete Soft-Failed Failed Scheduled Running Aborted None);
+            % my @badges = qw(success warning     danger secondary  info      primary light   light);
+            % my @labels = qw(Passed  Soft-Failed Failed Incomplete Scheduled Running Aborted None);
             % my $index  = 0;
-            % for my $category (qw(passed not_complete softfailed failed scheduled running aborted none)) {
+            % for my $category (qw(passed softfailed failed not_complete scheduled running aborted none)) {
                 % my ($label, $badge) = ($labels[$index], $badges[$index++]);
                 % next unless my $count = delete $aggregated->{$category};
-                <%= $label %>: <span class="badge text-bg-<%= $badge %>"><%= $count %></span>
+                <a href="<%= url_with->query($summary_category_query->{$category}) %>" class="badge-btn btn btn-sm btn-outline-<%= $badge %> mb-1 d-inline-flex align-items-center"><%= $label %>: <span class="badge text-bg-<%= $badge %> ms-1"><%= $count %></span></a>
             % }
             % if (my $unknown_count = sum values %$aggregated) {
                 Unknown: <span class="badge text-bg-light"><%= $unknown_count %></span>
             % }
+            <a href="<%= url_with->query({result => undef, state => undef}) %>" class="btn btn-sm btn-outline-secondary mb-1 d-inline-flex align-items-center">All</a>
         </div>
     </div>
     <div class="card" id="filter-panel">
