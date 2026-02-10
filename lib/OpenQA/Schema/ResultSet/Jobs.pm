@@ -146,35 +146,7 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     # assign scheduled product
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
-    my $debug_msg;
-    my $max_job_time = looks_like_number $settings{MAX_JOB_TIME} ? $settings{MAX_JOB_TIME} : 0;
-    my $timeout_scale = looks_like_number $settings{TIMEOUT_SCALE} ? $settings{TIMEOUT_SCALE} : 0;
-    $max_job_time *= $timeout_scale if $max_job_time and $timeout_scale > 1;
-    if ($max_job_time and $max_job_time > DEFAULT_MAX_JOB_TIME) {
-        if (my $scale = OpenQA::App->singleton->config->{misc_limits}->{max_job_time_prio_scale}) {
-            my $malus = int($max_job_time / $scale);
-            $debug_msg = sprintf 'Adding priority malus to newly created job (old: %d, malus: %s)',
-              $new_job_args{priority}, $malus;
-            $new_job_args{priority} += $malus;
-        }
-    }
-    # apply resources throttling control
-    if (my $throttling
-        = OpenQA::App->singleton && OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_data})
-    {
-        my $throttling_info;
-        for my $resource (keys %$throttling) {
-            next if !defined $settings{$resource};
-            my $scale = $throttling->{$resource}->{scale};
-            my $reference = $throttling->{$resource}->{reference};
-            my $prio = int(($settings{$resource} - $reference) * $scale);
-            $throttling_info .= "$resource, scale: $scale" . ($reference ? ", reference: $reference;" : ';');
-            $new_job_args{priority} += $prio;
-        }
-        $debug_msg .= sprintf("\nAdjusting job priority by %s based on resource requirement(s): %s",
-            $new_job_args{priority}, $throttling_info)
-          if $throttling_info;
-    }
+    my $debug_msg = _apply_prio_throttling(\%settings, \%new_job_args);
 
     my $job = $self->create(\%new_job_args);
     log_debug(sprintf "(Job %d) $debug_msg", $job->id) if $debug_msg;
@@ -196,6 +168,42 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     $job->calculate_blocked_by;
     return $job;
 }
+
+sub _apply_prio_throttling ($settings, $new_job_args) {
+    my $debug_msg;
+    my $max_job_time = looks_like_number $settings->{MAX_JOB_TIME} ? $settings->{MAX_JOB_TIME} : 0;
+    my $timeout_scale = looks_like_number $settings->{TIMEOUT_SCALE} ? $settings->{TIMEOUT_SCALE} : 0;
+    $max_job_time *= $timeout_scale if $max_job_time and $timeout_scale > 1;
+    if ($max_job_time and $max_job_time > DEFAULT_MAX_JOB_TIME) {
+        if (my $scale = OpenQA::App->singleton->config->{misc_limits}->{max_job_time_prio_scale}) {
+            my $malus = int($max_job_time / $scale);
+            $debug_msg = sprintf 'Adding priority malus to newly created job (old: %d, malus: %s)',
+              $new_job_args->{priority}, $malus;
+            $new_job_args->{priority} += $malus;
+        }
+    }
+
+    if (my $throttling
+        = OpenQA::App->singleton && OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_data})
+    {
+        my $throttling_info;
+        for my $resource (keys %$throttling) {
+            next unless defined $settings->{$resource};
+            my $scale = $throttling->{$resource}->{scale};
+            my $reference = $throttling->{$resource}->{reference};
+            my $prio = int(($settings->{$resource} - $reference) * $scale);
+            $throttling_info .= "$resource, scale: $scale" . ($reference ? ", reference: $reference;" : ';');
+            $new_job_args->{priority} += $prio;
+        }
+        $debug_msg .= sprintf(
+            '. Adjusting job priority by %s based on resource requirement(s): %s',
+            $new_job_args->{priority},
+            $throttling_info
+        ) if $throttling_info;
+    }
+    return $debug_msg;
+}
+
 
 sub _handle_dependency_settings ($self, $settings, $new_job_args) {
     my $job_settings = $self->result_source->schema->resultset('JobSettings');
