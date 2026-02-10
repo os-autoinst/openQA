@@ -1021,35 +1021,73 @@ subtest 'array settings correctly assigned when posting job' => sub {
 };
 
 subtest 'priority correctly assigned when posting job' => sub {
+    my $default_prio = 50;
+
     # post new job and check default priority
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
     $t->json_is('/job/group', 'opensuse', 'group assigned (1)');
-    $t->json_is('/job/priority', 50, 'global default priority assigned');
+    $t->json_is('/job/priority', $default_prio, 'global default priority assigned');
 
     subtest 'priority malus due to high MAX_JOB_TIME' => sub {
-        my $max = 7300;
-        local $jobs_post_params{MAX_JOB_TIME} = $max;
+        my %new_job_args = (priority => $default_prio);
+        my $max_time = 7300;
+        local $jobs_post_params{MAX_JOB_TIME} = $max_time;
         $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-        $t->json_is('/job/priority', 50 + $max / 100, 'increased prio value');
+        $t->json_is('/job/priority', $default_prio + $max_time / 100, 'increased prio value');
 
         local $jobs_post_params{TIMEOUT_SCALE} = 2;
-        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-        $t->json_is('/job/priority', 50 + $max * 2 / 100, 'increased prio value with TIMEOUT_SCALE');
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $max_time * 2 / 100, 'increased prio value with TIMEOUT_SCALE';
         delete $jobs_post_params{TIMEOUT_SCALE};
 
         my $limits = OpenQA::App->singleton->config->{misc_limits};
+        %new_job_args = (priority => $default_prio);
         $limits->{max_job_time_prio_scale} = 10;
-        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-        $t->json_is('/job/priority', 50 + $max / 10, 'custom scale value: increased prio value');
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $max_time / 10, 'custom scale value: increased prio value';
 
+        %new_job_args = (priority => $default_prio);
         $limits->{max_job_time_prio_scale} = 0;
-        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-        $t->json_is('/job/priority', 50, 'feature disabled: prio value unchanged');
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio, 'feature disabled: prio value unchanged';
+    };
+
+    subtest 'priority scaled up due to QEMURAM demand' => sub {
+        my %new_job_args = (priority => $default_prio);
+        my $add = 20;
+        local $jobs_post_params{QEMURAM} = 4096;
+
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $add, 'increased prio value';
+    };
+
+    subtest 'priority improved due to QEMURAM low demand' => sub {
+        my %new_job_args = (priority => $default_prio);
+        my $add = -10;
+        local $jobs_post_params{QEMURAM} = 1024;
+
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $add, 'decreased prio value';
+    };
+
+    subtest 'priority scaled up due to HDDSIZEGB demand' => sub {
+        my %new_job_args = (priority => $default_prio);
+        my $add = 2;
+        local $jobs_post_params{HDDSIZEGB} = 40;
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters}
+          = 'XXX :0.2,  FAKE_HDDSIZEGB:0.01, HDDSIZEGB:0.05,  YYY: 0.1';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $add, 'increased prio value';
     };
 
     # post new job in job group with customized default priority
