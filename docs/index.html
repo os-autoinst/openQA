@@ -6946,9 +6946,14 @@ thresholds.</p>
 <p>Within each group the oldest jobs are deleted first.</p>
 </div>
 <div class="paragraph">
-<p>It is also possible to abort cleanup tasks early in case there is still
+<p>It is also possible to abort cleanup and archiving early in case there is still
 enough headroom on relevant file systems anyway. This can be enabled using the
-configuration settings <code>…_cleanup_max_free_percentage</code>.</p>
+configuration settings <code>…_cleanup_max_free_percentage</code>. Be aware that this can
+lead to very extensive and long cleanups if the cleanup is triggered after all.
+This is especially the case on instances where many jobs run. If the (long)
+cleanup is interrupted/retried because <code>openqa-gru.service</code> is restarted, these
+configuration settings may also lead to incomplete cleanup and archiving as long
+as there is enough headroom on the relevant file systems.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -14665,7 +14670,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-02-07 04:45:47 UTC
+Last updated 2026-02-10 04:44:06 UTC
 </div>
 </div>
 </body>
