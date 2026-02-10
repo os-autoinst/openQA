@@ -1,7 +1,8 @@
 [Unit]
 Description=Setup local PostgreSQL database for openQA
 Requires=postgresql.service
-After=postgresql.service
+After=postgresql.service network.target remote-fs.target
+Before=openqa-scheduler.service openqa-livehandler.service
 
 [Service]
 User=postgres
