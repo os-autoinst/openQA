@@ -46,7 +46,7 @@ function all_together_apache() {
     su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
     su geekotest -c /usr/share/openqa/script/openqa-gru &
     su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
-    apache2ctl start
+    apachectl start
     su geekotest -c /usr/share/openqa/script/openqa-webui-daemon
 }
 
