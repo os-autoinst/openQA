@@ -248,14 +248,12 @@ sub delete ($self) {
 
 sub is_final ($self) { OpenQA::Jobs::Constants::meta_state($self->state) eq OpenQA::Jobs::Constants::FINAL }
 
-sub archivable_result_dir ($self) {
-    return undef if $self->archived || !$self->is_final;
-    my $result_dir = $self->result_dir;
-    return $result_dir && -d $result_dir ? $result_dir : undef;
-}
-
 sub archive ($self, $signal_guard = undef) {
-    return undef unless my $normal_result_dir = $self->archivable_result_dir;
+    return undef if $self->archived || !$self->is_final;
+
+    # flag jobs without results as archived and return early
+    my $normal_result_dir = $self->result_dir;
+    return $self->update({archived => 1}) unless $normal_result_dir && -d $normal_result_dir;
 
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
     # create destination directory manually because directory creation of File::Copy::Recursive has a race condition
