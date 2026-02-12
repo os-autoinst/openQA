@@ -1,9 +1,10 @@
+{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "webui.fullname" . }}-ingress
+  name: {{ include "openqa.fullname" . }}-ingress
 spec:
-  ingressClassName: traefik
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
     - host: {{ .Values.baseUrl }}
       http:
@@ -12,20 +13,21 @@ spec:
           pathType: Prefix
           backend:
             service:
-              name: {{ include "webui.fullname" . }}
+              name: {{ include "openqa.fullname" . }}
               port:
                 name: webui
         - path: /api/v1/ws
           pathType: Prefix
           backend:
             service:
-              name: {{ include "webui.fullname" . }}
+              name: {{ include "openqa.fullname" . }}
               port:
                 name: websockets
         - path: /livehandler
           pathType: Prefix
           backend:
             service:
-              name: {{ include "webui.fullname" . }}
+              name: {{ include "openqa.fullname" . }}
               port:
                 name: livehandler
+{{- end }}
