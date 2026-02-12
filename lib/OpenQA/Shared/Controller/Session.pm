@@ -2,19 +2,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Shared::Controller::Session;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Carp 'croak';
 
-sub ensure_user {
-    my ($self) = @_;
+sub ensure_user ($self) {
     return 1 if $self->current_user;
     $self->redirect_to($self->url_for('login')->query(return_page => $self->req->url));
     return undef;
 }
 
-sub ensure_operator {
-    my ($self) = @_;
+sub ensure_operator ($self) {
     $self->redirect_to($self->url_for('login')->query(return_page => $self->req->url)) and return undef
       unless $self->current_user;
     $self->render(text => 'Forbidden', status => 403) and return undef unless $self->is_operator;
@@ -23,8 +21,7 @@ sub ensure_operator {
     return undef;
 }
 
-sub ensure_admin {
-    my ($self) = @_;
+sub ensure_admin ($self) {
     unless ($self->current_user) {
         if (($self->tx->req->headers->accept // '') eq 'application/json') {
             $self->render(json => {'error' => 'No valid user session'}, status => 401);
@@ -40,9 +37,7 @@ sub ensure_admin {
     return undef;
 }
 
-sub destroy {
-    my ($self) = @_;
-
+sub destroy ($self) {
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
     if (my $sub = $auth_module->can('auth_logout')) { $self->$sub }
@@ -50,8 +45,7 @@ sub destroy {
     $self->redirect_to('index');
 }
 
-sub create {
-    my ($self) = @_;
+sub create ($self) {
     my $ref = $self->req->headers->referrer;
     my $config = $self->app->config;
     my $auth_method = $config->{auth}->{method};
@@ -76,8 +70,7 @@ sub create {
     return $self->redirect_to($ref);
 }
 
-sub response {
-    my ($self) = @_;
+sub response ($self) {
     my $ref = $self->flash('ref');
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
@@ -95,8 +88,7 @@ sub response {
     return $self->redirect_to($ref);
 }
 
-sub test {
-    my $self = shift;
+sub test ($self) {
     $self->render(text => 'You can see this because you are ' . $self->current_user->username);
 }
 
