@@ -1,6 +1,6 @@
 enabled: true
 image:
-  name: registry.opensuse.org/devel/openqa/containers15.6/openqa_worker
+  name: registry.opensuse.org/devel/openqa/containers16.0/openqa_worker
   pullPolicy: Always
   tag: "latest"
 openqa:
