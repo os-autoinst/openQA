@@ -43,6 +43,8 @@ combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_requ
 subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`' => sub {
     my $t = test_auth_method_startup('Fake', "require_for_assets = 1\n");
     $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are Demo/);
+    $t->app->helper(valid_csrf => sub { 0 });
+    $t->post_ok('/admin/users/1')->status_is(403)->content_like(qr/bad csrf token/i);
     $t->ua->max_redirects(1);    # follow redirection from `/tests/…/asset/…` to `/assets/…`
     my $expected_redirect = '/login?return_page=%2Fassets%2Fiso%2Ftest.iso';
     $t->get_ok('/assets/iso/test.iso')->status_is(200)->content_is('asset-ok', 'can access asset when logged in');
