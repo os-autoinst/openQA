@@ -78,94 +78,122 @@ const DISPLAY_LOG_LIMIT = 5;
 const DISPLAY_LINE_LIMIT = 10;
 
 function checkPreviewVisible(stepPreviewContainer, preview) {
+  if (!stepPreviewContainer || !preview) return;
   // scroll the element to the top if the preview is not in view
-  if (stepPreviewContainer.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
-    $('body, html').animate(
-      {
-        scrollTop: stepPreviewContainer.offset().top - 3
-      },
-      250
-    );
+  const containerOffsetTop = stepPreviewContainer.getBoundingClientRect().top + window.scrollY;
+  if (containerOffsetTop + preview.offsetHeight > window.scrollY + window.innerHeight) {
+    window.scrollTo({
+      top: containerOffsetTop - 3,
+      behavior: 'auto'
+    });
   }
 
-  var rrow = $('#result-row');
+  var rrow = document.getElementById('result-row');
+  if (!rrow) return;
   var extraMargin = 40;
-  var endOfPreview = stepPreviewContainer.offset().top + preview.height() + extraMargin;
-  var endOfRow = rrow.height() + rrow.offset().top;
+  var endOfPreview = containerOffsetTop + preview.offsetHeight + extraMargin;
+  var endOfRow = rrow.offsetHeight + (rrow.getBoundingClientRect().top + window.scrollY);
   if (endOfPreview > endOfRow) {
     // only enlarge the margin - otherwise the page scrolls back
-    rrow.css('margin-bottom', endOfPreview - endOfRow + extraMargin);
+    rrow.style.marginBottom = endOfPreview - endOfRow + extraMargin + 'px';
   }
 }
 
 function previewSuccess(stepPreviewContainer, data, force) {
+  if (!stepPreviewContainer) return;
   // skip if preview has been dismissed
-  if (!stepPreviewContainer.hasClass('current_preview')) {
+  if (!stepPreviewContainer.classList.contains('current_preview')) {
     return;
   }
 
   // find the outher and inner preview container
-  var pin = $('#preview_container_in');
-  var pout = $('#preview_container_out');
-  if (!pin.length || !pout.length) {
+  var pin = document.getElementById('preview_container_in');
+  var pout = document.getElementById('preview_container_out');
+  if (!pin || !pout) {
     console.error('showing preview/needle diff: Preview container not found');
     return;
   }
 
   // insert and initialize preview data
-  pin.html(data);
-  pout.insertAfter(stepPreviewContainer);
-  if (!(pin.find('pre').length || pin.find('audio').length)) {
-    var imageSource = pin.find('#step_view').data('image');
+  pin.innerHTML = data;
+  stepPreviewContainer.parentNode.insertBefore(pout, stepPreviewContainer.nextSibling);
+  if (!(pin.querySelector('pre') || pin.querySelector('audio'))) {
+    var stepView = pin.querySelector('#step_view');
+    var imageSource = stepView ? stepView.dataset.image : null;
     if (!imageSource) {
       console.error('showing preview/needle diff: No image source found');
       return;
     }
     setDiffScreenshot(imageSource);
   }
-  pin.css('left', -($('.result').width() + $('.component').width() + 2 * 16));
-  var tdWidth = $('.current_preview').parents('td').width();
-  pout
-    .width(tdWidth)
-    .hide()
-    .fadeIn({
-      duration: force ? 0 : 150,
-      complete: function () {
-        checkPreviewVisible(stepPreviewContainer, pin);
-      }
-    });
-  $('[data-bs-toggle="popover"]').popover({html: true});
+  const resultElement = document.querySelector('.result');
+  const componentElement = document.querySelector('.component');
+  pin.style.left =
+    -(
+      (resultElement ? resultElement.offsetWidth : 0) +
+      (componentElement ? componentElement.offsetWidth : 0) +
+      2 * 16
+    ) + 'px';
+  var tdWidth = stepPreviewContainer.closest('td').offsetWidth;
+  pout.style.width = tdWidth + 'px';
+  pout.style.display = 'none';
+
+  const complete = function () {
+    checkPreviewVisible(stepPreviewContainer, pin);
+  };
+
+  pout.style.display = 'block';
+  complete();
+
+  pin.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el, {html: true}));
+
   // make persistent dropdowns persistent by preventing click-event propagation
-  $('.dropdown-persistent').on('click', function (event) {
-    event.stopPropagation();
+  pin.querySelectorAll('.dropdown-persistent').forEach(el => {
+    el.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
   });
   // ensure keydown event happening when button has focus is propagated to the right handler
-  $('.candidates-selection .dropdown-toggle').on('keydown', function (event) {
-    event.stopPropagation();
-    handleKeyDownOnTestDetails(event);
+  pin.querySelectorAll('.candidates-selection .dropdown-toggle').forEach(el => {
+    el.addEventListener('keydown', function (event) {
+      event.stopPropagation();
+      handleKeyDownOnTestDetails(event);
+    });
   });
   // handle click on the diff selection
-  $('.trigger-diff').on('click', function (event) {
-    var trigger = $(this);
-    setNeedle(trigger.parents('tr'), trigger.data('diff'));
-    event.stopPropagation();
+  pin.querySelectorAll('.trigger-diff').forEach(el => {
+    el.addEventListener('click', function (event) {
+      const tr = this.closest('tr');
+      if (tr) setNeedle(tr, this.dataset.diff);
+      event.stopPropagation();
+    });
   });
   // prevent hiding drop down when showing needle info popover
-  $('.show-needle-info').on('click', function (event) {
-    event.stopPropagation();
+  pin.querySelectorAll('.show-needle-info').forEach(el => {
+    el.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
   });
   // hide needle info popover when hiding drop down
-  $('#needlediff_dropdown').on('hide.bs.dropdown', function (event) {
-    $('#needlediff_selector [data-bs-toggle="popover"]').popover('hide');
-  });
+  var needleDiffDropdown = document.getElementById('needlediff_dropdown');
+  if (needleDiffDropdown) {
+    needleDiffDropdown.addEventListener('hide.bs.dropdown', function (event) {
+      document.querySelectorAll('#needlediff_selector [data-bs-toggle="popover"]').forEach(el => {
+        var popover = bootstrap.Popover.getInstance(el);
+        if (popover) popover.hide();
+      });
+    });
+  }
 }
 
 function toggleTextPreview(textResultDomElement) {
-  var textResultElement = $(textResultDomElement).parent();
-  if (textResultElement.hasClass('current_preview')) {
+  if (!textResultDomElement) return;
+  var textResultElement = textResultDomElement.parentElement;
+  if (!textResultElement) return;
+  if (textResultElement.classList.contains('current_preview')) {
     // skip if current selection has selected text
     var selection = window.getSelection();
-    if (!selection.isCollapsed && $.contains(textResultDomElement, selection.anchorNode)) {
+    if (!selection.isCollapsed && textResultDomElement.contains(selection.anchorNode)) {
       return;
     }
     // hide current selection (selected element has been clicked again)
@@ -177,98 +205,101 @@ function toggleTextPreview(textResultDomElement) {
 }
 
 function hidePreviewContainer() {
-  var previewContainer = $('#preview_container_out');
-  if (previewContainer.is(':visible')) {
-    previewContainer.fadeOut(150);
+  var previewContainer = document.getElementById('preview_container_out');
+  if (previewContainer) {
+    previewContainer.style.display = 'none';
   }
 }
 
 function setCurrentPreview(stepPreviewContainer, force) {
   // just hide current preview
-  if (
-    !(stepPreviewContainer && stepPreviewContainer.length && !stepPreviewContainer.hasClass('current_preview')) &&
-    !force
-  ) {
-    $('.current_preview').removeClass('current_preview');
+  if (!(stepPreviewContainer && !stepPreviewContainer.classList.contains('current_preview')) && !force) {
+    document.querySelectorAll('.current_preview').forEach(el => el.classList.remove('current_preview'));
     hidePreviewContainer();
     setPageHashAccordingToCurrentTab('', true);
     return;
   }
 
   // unselect previous preview
-  $('.current_preview').removeClass('current_preview');
+  document.querySelectorAll('.current_preview').forEach(el => el.classList.remove('current_preview'));
 
   // show preview for results with text data
-  var textResultElement = stepPreviewContainer.find('span.text-result');
-  if (textResultElement.length) {
-    stepPreviewContainer.addClass('current_preview');
+  var textResultElement = stepPreviewContainer.querySelector('span.text-result');
+  if (textResultElement) {
+    stepPreviewContainer.classList.add('current_preview');
     hidePreviewContainer();
-    setPageHashAccordingToCurrentTab(textResultElement.data('href'), true);
+    setPageHashAccordingToCurrentTab(textResultElement.dataset.href, true);
 
     // ensure element is in viewport
-    var aOffset = stepPreviewContainer.offset().top;
-    if (aOffset < window.scrollY || aOffset + stepPreviewContainer.height() > window.scrollY + window.innerHeight) {
-      $('html').animate(
-        {
-          scrollTop: aOffset
-        },
-        500
-      );
+    var aOffset = stepPreviewContainer.getBoundingClientRect().top + window.scrollY;
+    if (aOffset < window.scrollY || aOffset + stepPreviewContainer.offsetHeight > window.scrollY + window.innerHeight) {
+      window.scrollTo({
+        top: aOffset,
+        behavior: 'auto'
+      });
     }
     return;
   }
 
   // show preview for other/regular results
-  var link = stepPreviewContainer.find('a');
+  var link = stepPreviewContainer.querySelector('a');
   if (!link) {
     return;
   }
-  if (link.data('text')) {
-    stepPreviewContainer.addClass('current_preview');
-    setPageHashAccordingToCurrentTab(link.attr('href'), true);
-    const text = unescape(link.data('text'));
+  if (link.dataset.text) {
+    stepPreviewContainer.classList.add('current_preview');
+    setPageHashAccordingToCurrentTab(link.getAttribute('href'), true);
+    const text = unescape(link.dataset.text);
     previewSuccess(stepPreviewContainer, text, force);
     return;
   }
-  if (!link.data('url')) {
+  if (!link.dataset.url) {
     return;
   }
-  stepPreviewContainer.addClass('current_preview');
-  setPageHashAccordingToCurrentTab(link.attr('href'), true);
-  $.get({
-    url: link.data('url'),
-    success: function (data) {
-      previewSuccess(stepPreviewContainer, data, force);
+  stepPreviewContainer.classList.add('current_preview');
+  setPageHashAccordingToCurrentTab(link.getAttribute('href'), true);
+  fetch(link.dataset.url, {
+    method: 'GET',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
     }
-  }).fail(function () {
-    console.warn('Failed to load data from: ' + link.data('url'));
-    setCurrentPreview(null);
-  });
+  })
+    .then(response => {
+      if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+      return response.text();
+    })
+    .then(data => {
+      previewSuccess(stepPreviewContainer, data, force);
+    })
+    .catch(error => {
+      console.warn('Failed to load data from: ' + link.dataset.url, error);
+    });
 }
 
 function selectPreview(which) {
-  var currentPreview = $('.current_preview');
-  var linkContainer = currentPreview[which]();
+  var currentPreview = document.querySelector('.current_preview');
+  if (!currentPreview) return;
+  var linkContainer = which === 'next' ? currentPreview.nextElementSibling : currentPreview.previousElementSibling;
   // skip possibly existing elements between the preview links (eg. the preview container might be between)
-  while (linkContainer.length && !linkContainer.hasClass('links_a')) {
-    linkContainer = linkContainer[which]();
+  while (linkContainer && !linkContainer.classList.contains('links_a')) {
+    linkContainer = which === 'next' ? linkContainer.nextElementSibling : linkContainer.previousElementSibling;
   }
   // select next/prev detail in current step
-  if (linkContainer.length) {
+  if (linkContainer) {
     setCurrentPreview(linkContainer);
     return;
   }
   // select first/last detail in next/prev module
-  var linkSelector = '.links_a:' + (which === 'next' ? 'first' : 'last');
-  var row = currentPreview.parents('tr');
+  var row = currentPreview.closest('tr');
   for (;;) {
-    row = row[which]();
-    if (!row.length) {
+    if (!row) break;
+    row = which === 'next' ? row.nextElementSibling : row.previousElementSibling;
+    if (!row) {
       return;
     }
-    linkContainer = row.find(linkSelector);
-    if (linkContainer.length) {
-      setCurrentPreview(linkContainer);
+    var links = row.querySelectorAll('.links_a');
+    if (links.length) {
+      setCurrentPreview(which === 'next' ? links[0] : links[links.length - 1]);
       return;
     }
   }
@@ -284,36 +315,62 @@ function prevPreview() {
 
 function prevNeedle() {
   // select previous in current tag
-  var currentSelection = $('#needlediff_selector tbody tr.selected');
-  var newSelection = currentSelection.prev();
-  if (!newSelection.length) {
+  var currentSelection = document.querySelector('#needlediff_selector tbody tr.selected');
+  if (!currentSelection) return;
+  var newSelection = currentSelection.previousElementSibling;
+  if (!newSelection) {
     // select last in previous tag
-    newSelection = currentSelection.parents('li').prevAll().find('tbody tr').last();
+    var currentLi = currentSelection.closest('li');
+    if (currentLi) {
+      var prevLi = currentLi.previousElementSibling;
+      while (prevLi) {
+        var trs = prevLi.querySelectorAll('tbody tr');
+        if (trs.length) {
+          newSelection = trs[trs.length - 1];
+          break;
+        }
+        prevLi = prevLi.previousElementSibling;
+      }
+    }
   }
-  setNeedle(newSelection);
+  if (newSelection) {
+    setNeedle(newSelection);
+  }
 }
 
 function nextNeedle() {
-  var currentSelection = $('#needlediff_selector tbody tr.selected');
+  var currentSelection = document.querySelector('#needlediff_selector tbody tr.selected');
   var newSelection;
-  if (!currentSelection.length) {
+  if (!currentSelection) {
     // select first needle in first tag
-    newSelection = $('#needlediff_selector tbody tr:first-child').first();
+    newSelection = document.querySelector('#needlediff_selector tbody tr');
   } else {
     // select next in current tag
-    newSelection = currentSelection.next();
-    if (!newSelection.length) {
+    newSelection = currentSelection.nextElementSibling;
+    if (!newSelection) {
       // select first of next tag
-      newSelection = currentSelection.parents('li').nextAll().find('tbody tr').first();
+      var currentLi = currentSelection.closest('li');
+      if (currentLi) {
+        var nextLi = currentLi.nextElementSibling;
+        while (nextLi) {
+          var trs = nextLi.querySelectorAll('tbody tr');
+          if (trs.length) {
+            newSelection = trs[0];
+            break;
+          }
+          nextLi = nextLi.nextElementSibling;
+        }
+      }
     }
   }
-  if (newSelection.length) {
+  if (newSelection) {
     setNeedle(newSelection);
   }
 }
 
 function handleKeyDownOnTestDetails(e) {
-  var ftn = $(':focus').prop('tagName');
+  var focusedElement = document.activeElement;
+  var ftn = focusedElement ? focusedElement.tagName : '';
   if (ftn === 'INPUT' || ftn === 'TEXTAREA') {
     return;
   }
@@ -378,15 +435,17 @@ function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
 
 function setupTabHandling() {
   // invoke handlers when a tab gets shown or hidden
-  $('#result_tabs a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-    if (e.target) {
-      const tabName = tabNameForNavElement(e.target);
-      activateTab(tabName);
-      setPageHashAccordingToCurrentTab(tabName);
-    }
-    if (e.relatedTarget) {
-      deactivateTab(tabNameForNavElement(e.relatedTarget));
-    }
+  document.querySelectorAll('#result_tabs a[data-bs-toggle="tab"]').forEach(el => {
+    el.addEventListener('shown.bs.tab', function (e) {
+      if (e.target) {
+        const tabName = tabNameForNavElement(e.target);
+        activateTab(tabName);
+        setPageHashAccordingToCurrentTab(tabName);
+      }
+      if (e.relatedTarget) {
+        deactivateTab(tabNameForNavElement(e.relatedTarget));
+      }
+    });
   });
   // show relevant nav elements from the start
   showRelevantTabNavElements();
@@ -459,21 +518,21 @@ function activateTabAccordingToHashChange() {
   }
 
   // check for tabs, steps or comments matching the hash
-  let link = $(`[href='${hash}'], [data-href='${hash}']`);
+  let link = document.querySelector(`[href='${hash}'], [data-href='${hash}']`);
   let tabName = hash.substr(1);
   let isStep = hash.startsWith('#step/');
   if (hash.startsWith('#line-') || isStep) {
-    if (isStep) {
+    if (isStep && link) {
       setCurrentPreviewFromStepLinkIfPossible(link);
       // note: It is not a problem if the details haven't been loaded so far. Once the details become available the hash
       //       is checked again and the exact step preview will be shown.
     }
-    link = $("[href='#details']");
+    link = document.querySelector("[href='#details']");
     tabName = 'details';
   } else if (hash.startsWith('#comment-')) {
-    link = $("[href='#comments']");
+    link = document.querySelector("[href='#comments']");
     tabName = 'comments';
-  } else if (link.attr('role') !== 'tab' || link.prop('aria-expanded')) {
+  } else if (!link || link.getAttribute('role') !== 'tab' || link.classList.contains('active')) {
     setCurrentPreview(null);
     return;
   }
@@ -481,7 +540,8 @@ function activateTabAccordingToHashChange() {
   // show the tab only if supposed to be shown for the current job state; otherwise fall back to the default tab
   const tabConfig = tabConfiguration[tabName];
   if (tabConfig && (!tabConfig.conditionForShowingNavItem || tabConfig.conditionForShowingNavItem())) {
-    link.tab('show');
+    var tab = bootstrap.Tab.getOrCreateInstance(link);
+    tab.show();
   } else {
     window.location.hash = '#';
   }
@@ -605,7 +665,7 @@ function filterLogLines(input, viaSearchBox = true) {
   const regex = match ? new RegExp(match[1], match[2]) : undefined;
   input.dataset.lastString = string;
   displaySearchInfo('Searching…');
-  $('.embedded-logfile').each(function (index, logFileElement) {
+  document.querySelectorAll('.embedded-logfile').forEach(logFileElement => {
     const content = logFileElement.content;
     if (content === undefined) {
       return;
@@ -706,7 +766,7 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
 }
 
 function loadEmbeddedLogFiles(filter) {
-  $('.embedded-logfile').each(function (index, logFileElement) {
+  document.querySelectorAll('.embedded-logfile').forEach(logFileElement => {
     if (logFileElement.dataset.contentsLoaded) {
       return;
     }
@@ -721,7 +781,7 @@ function loadEmbeddedLogFiles(filter) {
         logFileElement.dataset.contentsLoaded = true;
       })
       .catch(error => {
-        log.error(error);
+        console.error(error);
         logFileElement.appendChild(document.createTextNode(`Unable to load logfile: ${error}`));
       });
   });
@@ -789,87 +849,99 @@ function renderTestModules(response) {
   // display the preview for the current step according to the hash
   const hash = window.location.hash;
   if (hash.search('#step/') === 0) {
-    setCurrentPreviewFromStepLinkIfPossible($("[href='" + hash + "'], [data-href='" + hash + "']"));
+    setCurrentPreviewFromStepLinkIfPossible(
+      document.querySelector("[href='" + hash + "'], [data-href='" + hash + "']")
+    );
   }
 
   // setup event handlers for the window
   if (!this.hasWindowEventHandlers) {
     // setup keyboard navigation through test details
-    $(window).keydown(handleKeyDownOnTestDetails);
+    window.addEventListener('keydown', handleKeyDownOnTestDetails);
 
     // ensure the size of the preview container is adjusted when the window size changes
-    $(window).resize(function () {
-      const currentPreview = $('.current_preview');
-      if (currentPreview.length) {
-        setCurrentPreview($('.current_preview'), true);
+    window.addEventListener('resize', function () {
+      const currentPreview = document.querySelector('.current_preview');
+      if (currentPreview) {
+        setCurrentPreview(currentPreview, true);
       }
     });
     this.hasWindowEventHandlers = true;
   }
 
   // setup result filter, define function to apply filter changes
-  const detailsFilter = $('#details-filter');
-  const detailsNameFilter = $('#details-name-filter');
-  const detailsFailedOnlyFilter = $('#details-only-failed-filter');
-  const resultsTable = $('#results');
+  const detailsFilter = document.getElementById('details-filter');
+  const detailsNameFilter = document.getElementById('details-name-filter');
+  const detailsFailedOnlyFilter = document.getElementById('details-only-failed-filter');
+  const resultsTable = document.getElementById('results');
   let anyFilterEnabled = false;
   let nameFilter = '';
   let nameFilterEnabled = false;
   let failedOnlyFilterEnabled = false;
   const applyFilterChanges = function (event) {
+    if (!resultsTable) return;
     // determine enabled filter
-    anyFilterEnabled = !detailsFilter.hasClass('hidden');
+    anyFilterEnabled = detailsFilter && !detailsFilter.classList.contains('hidden');
     if (anyFilterEnabled) {
-      nameFilter = detailsNameFilter.val();
+      nameFilter = detailsNameFilter ? detailsNameFilter.value : '';
       nameFilterEnabled = nameFilter.length !== 0;
-      failedOnlyFilterEnabled = detailsFailedOnlyFilter.prop('checked');
+      failedOnlyFilterEnabled = detailsFailedOnlyFilter ? detailsFailedOnlyFilter.checked : false;
       anyFilterEnabled = nameFilterEnabled || failedOnlyFilterEnabled;
     }
 
     // show everything if no filter present
     if (!anyFilterEnabled) {
-      resultsTable.find('tbody tr').show();
+      resultsTable.querySelectorAll('tbody tr').forEach(tr => (tr.style.display = ''));
       return;
     }
 
     // hide all categories
-    resultsTable.find('tbody tr td[colspan="3"]').parent('tr').hide();
+    resultsTable.querySelectorAll('tbody tr td[colspan="3"]').forEach(td => {
+      if (td.parentElement) td.parentElement.style.display = 'none';
+    });
 
     // show/hide table rows considering filter
-    $.each(resultsTable.find('tbody .result'), function (index, td) {
-      const tdElement = $(td);
-      const trElement = tdElement.parent('tr');
+    resultsTable.querySelectorAll('tbody .result').forEach(td => {
+      const trElement = td.parentElement;
+      if (!trElement) return;
+      const componentTd = trElement.querySelector('td.component');
       const stepMaches =
-        (!nameFilterEnabled || trElement.find('td.component').text().indexOf(nameFilter) >= 0) &&
-        (!failedOnlyFilterEnabled || tdElement.hasClass('resultfailed') || tdElement.hasClass('resultsoftfailed'));
-      trElement[stepMaches ? 'show' : 'hide']();
+        (!nameFilterEnabled || (componentTd && componentTd.textContent.indexOf(nameFilter) >= 0)) &&
+        (!failedOnlyFilterEnabled ||
+          td.classList.contains('resultfailed') ||
+          td.classList.contains('resultsoftfailed'));
+      trElement.style.display = stepMaches ? '' : 'none';
     });
   };
 
-  detailsNameFilter.keyup(applyFilterChanges);
-  detailsFailedOnlyFilter.change(applyFilterChanges);
+  if (detailsNameFilter) detailsNameFilter.addEventListener('keyup', applyFilterChanges);
+  if (detailsFailedOnlyFilter) detailsFailedOnlyFilter.addEventListener('change', applyFilterChanges);
 
   // setup filter toggle
-  $('.details-filter-toggle').on('click', function (event) {
-    event.preventDefault();
-    detailsFilter.toggleClass('hidden');
-    applyFilterChanges();
+  document.querySelectorAll('.details-filter-toggle').forEach(el => {
+    el.addEventListener('click', function (event) {
+      event.preventDefault();
+      if (detailsFilter) {
+        detailsFilter.classList.toggle('hidden');
+        applyFilterChanges();
+      }
+    });
   });
 }
 
 function renderExternalTab(response) {
   this.panelElement.innerHTML = response;
 
-  var externalTable = $('#external-table');
+  var tableEl = document.getElementById('external-table');
   // skip if table is not present (meaning no external results available) or if the table has
   // already been initialized
-  if (!externalTable.length || externalTable.data('initialized')) {
+  if (!tableEl || tableEl.dataset.initialized) {
     return;
   }
 
   // make the table use DataTable
-  externalTable.data('initialized', true);
-  externalTable = externalTable.DataTable({
+  tableEl.dataset.initialized = 'true';
+  const externalTable = new DataTable(tableEl, {
     lengthMenu: [
       [10, 25, 50, 100],
       [10, 25, 50, 100]
@@ -878,23 +950,25 @@ function renderExternalTab(response) {
   });
 
   // setup filtering
-  var onlyFailedCheckbox = $('#external-only-failed-filter');
-  onlyFailedCheckbox.change(function (event) {
-    externalTable.draw();
-  });
-  $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-    // don't apply filter if checkbox not checked
-    if (!onlyFailedCheckbox.prop('checked')) {
-      return true;
-    }
-    // filter out everything but failures and softfailures
-    var rowData = externalTable.row(dataIndex).data();
-    if (!rowData) {
-      return false;
-    }
-    var result = rowData[2];
-    return result && (result.indexOf('result_fail') > 0 || result.indexOf('result_softfail') > 0);
-  });
+  var onlyFailedCheckbox = document.getElementById('external-only-failed-filter');
+  if (onlyFailedCheckbox) {
+    onlyFailedCheckbox.addEventListener('change', function (event) {
+      externalTable.draw();
+    });
+    DataTable.ext.search.push(function (settings, data, dataIndex) {
+      // don't apply filter if checkbox not checked
+      if (!onlyFailedCheckbox.checked) {
+        return true;
+      }
+      // filter out everything but failures and softfailures
+      var rowData = externalTable.row(dataIndex).data();
+      if (!rowData) {
+        return false;
+      }
+      var result = rowData[2];
+      return result && (result.indexOf('result_fail') > 0 || result.indexOf('result_softfail') > 0);
+    });
+  }
 }
 
 function renderLiveTab(response) {
@@ -913,44 +987,42 @@ function renderLiveTab(response) {
 function renderCommentsTab(response) {
   const tabPanelElement = this.panelElement;
   tabPanelElement.innerHTML = response;
-  $(tabPanelElement).find('[data-bs-toggle="popover"]').popover({html: true});
+  tabPanelElement.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el, {html: true}));
   // Add job status icons to /t123 urls
-  const hostname = $(location).attr('host');
-  $(tabPanelElement)
-    .find('a')
-    .each(function (index, element) {
-      const href = $(element).attr('href');
-      if (href === undefined) {
-        return;
-      }
-      const re = new RegExp('^(?:https?://' + hostname + ')?/(?:tests/|t)([0-9]+)$');
-      const found = href.match(re);
-      if (!found) {
-        return;
-      }
-      const id = found[1];
-      const url = urlWithBase('/api/v1/experimental/jobs/' + id + '/status');
-      fetch(url)
-        .then(response => {
-          if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-          return response.json();
-        })
-        .then(job => {
-          if (job.error) throw job.error;
-          const span = document.createElement('span');
-          span.className = 'openqa-testref';
-          const i = document.createElement('i');
-          const stateHTML = testStateHTML(job);
-          i.className = stateHTML[0];
-          span.title = stateHTML[1];
-          span.appendChild(i);
-          element.parentNode.replaceChild(span, element);
-          span.appendChild(element);
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    });
+  const hostname = window.location.host;
+  tabPanelElement.querySelectorAll('a').forEach(element => {
+    const href = element.getAttribute('href');
+    if (!href) {
+      return;
+    }
+    const re = new RegExp('^(?:https?://' + hostname + ')?/(?:tests/|t)([0-9]+)$');
+    const found = href.match(re);
+    if (!found) {
+      return;
+    }
+    const id = found[1];
+    const url = urlWithBase('/api/v1/experimental/jobs/' + id + '/status');
+    fetch(url)
+      .then(response => {
+        if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
+        return response.json();
+      })
+      .then(job => {
+        if (job.error) throw job.error;
+        const span = document.createElement('span');
+        span.className = 'openqa-testref';
+        const i = document.createElement('i');
+        const stateHTML = testStateHTML(job);
+        i.className = stateHTML[0];
+        span.title = stateHTML[1];
+        span.appendChild(i);
+        element.parentNode.replaceChild(span, element);
+        span.appendChild(element);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  });
 }
 
 function renderInvestigationTab(response) {
@@ -1151,7 +1223,10 @@ function renderDependencyTab(response) {
   if (tabPanelElement.classList.contains('active')) {
     renderGraph();
   } else {
-    $("[href='#dependencies']").on('shown.bs.tab', renderGraph);
+    const tabLink = document.querySelector("[href='#dependencies']");
+    if (tabLink) {
+      tabLink.addEventListener('shown.bs.tab', renderGraph, {once: true});
+    }
   }
 }
 
@@ -1269,7 +1344,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
       return tooltipText;
     })
     .each(function (v) {
-      $(this).tooltip({
+      new bootstrap.Tooltip(this, {
         html: true,
         placement: 'right'
       });

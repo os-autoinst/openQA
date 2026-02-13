@@ -5,9 +5,14 @@ function setupFilterForm(options) {
     cardHeader.addEventListener('click', function () {
       const cardBody = document.querySelector('#filter-panel .card-body');
       if (cardBody) {
-        $(cardBody).toggle(200);
-        if (document.getElementById('filter-panel').classList.contains('filter-panel-bottom')) {
-          window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'smooth'});
+        const isHidden = window.getComputedStyle(cardBody).display === 'none';
+        if (isHidden) {
+          cardBody.style.display = 'block';
+          if (document.getElementById('filter-panel').classList.contains('filter-panel-bottom')) {
+            window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'smooth'});
+          }
+        } else {
+          cardBody.style.display = 'none';
         }
       }
     });
@@ -58,7 +63,9 @@ function setupFilterForm(options) {
       filterForm.querySelectorAll('input[hidden]').forEach(input => {
         input.remove();
       });
-      $(filterForm).find('select').val([]).trigger('chosen:updated');
+      filterForm.querySelectorAll('select option').forEach(opt => {
+        opt.selected = false;
+      });
       document.querySelector('#filter-panel .card-header span').textContent =
         'no filter present, click to toggle filter form';
     });

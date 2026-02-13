@@ -18,14 +18,55 @@ function getCookie(cname) {
 function setupForAll() {
   document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => new bootstrap.Popover(e, {html: true}));
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e, {html: true}));
-  $.ajaxSetup({
-    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
+  setupTimeago();
+}
+
+function setupTimeago(container = document) {
+  if (!window.timeago || typeof window.timeago.format !== 'function') return;
+  container.querySelectorAll('.timeago').forEach(el => {
+    const date = el.getAttribute('title') || el.getAttribute('datetime');
+    if (date && date.length > 5 && date !== 'never') {
+      el.textContent = window.timeago.format(date);
+    }
   });
 }
 
 function getCSRFToken() {
   return document.querySelector('meta[name="csrf-token"]').content;
 }
+
+window.runningFetchRequests = 0;
+function updateFetchTracking(delta) {
+  window.runningFetchRequests += delta;
+}
+const originalFetch = window.fetch;
+window.fetch = function () {
+  updateFetchTracking(1);
+  return originalFetch.apply(this, arguments).finally(() => {
+    updateFetchTracking(-1);
+  });
+};
+
+const originalXHR = window.XMLHttpRequest;
+window.XMLHttpRequest = function () {
+  const xhr = new originalXHR();
+  const originalSend = xhr.send;
+  xhr.send = function () {
+    updateFetchTracking(1);
+    let decremented = false;
+    const decrement = () => {
+      if (!decremented) {
+        updateFetchTracking(-1);
+        decremented = true;
+      }
+    };
+    xhr.addEventListener('load', decrement);
+    xhr.addEventListener('error', decrement);
+    xhr.addEventListener('abort', decrement);
+    return originalSend.apply(xhr, arguments);
+  };
+  return xhr;
+};
 
 function fetchWithCSRF(resource, options) {
   options ??= {};
@@ -35,20 +76,36 @@ function fetchWithCSRF(resource, options) {
 }
 
 function makeFlashElement(text) {
-  return typeof text === 'string' ? '<span>' + text + '</span>' : text;
+  if (typeof text === 'string') {
+    const span = document.createElement('span');
+    span.innerHTML = text;
+    return span;
+  }
+  return text;
 }
 
 function addFlash(status, text, container, method = 'append') {
   // add flash messages by default on top of the page
   if (!container) {
-    container = $('#flash-messages');
+    container = document.getElementById('flash-messages');
   }
 
-  var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
-  div.append(makeFlashElement(text));
-  div.append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
-  div.addClass('alert-' + status);
-  container[method](div);
+  const div = document.createElement('div');
+  div.className = `alert alert-primary alert-dismissible fade show alert-${status}`;
+  div.setAttribute('role', 'alert');
+  div.appendChild(makeFlashElement(text));
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'btn-close';
+  closeButton.setAttribute('data-bs-dismiss', 'alert');
+  closeButton.setAttribute('aria-label', 'Close');
+  div.appendChild(closeButton);
+
+  if (method === 'prepend') {
+    container.prepend(div);
+  } else {
+    container.append(div);
+  }
   return div;
 }
 
@@ -60,21 +117,21 @@ function addUniqueFlash(status, id, text, container, method = 'append') {
   // update existing flash message
   const existingFlashMessage = window.uniqueFlashMessages[id];
   if (existingFlashMessage) {
-    existingFlashMessage.find('span').first().replaceWith(makeFlashElement(text));
+    existingFlashMessage.querySelector('span').replaceWith(makeFlashElement(text));
     return;
   }
 
   const msgElement = addFlash(status, text, container, method);
   window.uniqueFlashMessages[id] = msgElement;
-  msgElement.on('closed.bs.alert', function () {
+  msgElement.addEventListener('closed.bs.alert', function () {
     delete window.uniqueFlashMessages[id];
   });
 }
 
 function toggleChildGroups(link) {
-  var buildRow = $(link).parents('.build-row');
-  buildRow.toggleClass('children-collapsed');
-  buildRow.toggleClass('children-expanded');
+  const buildRow = link.closest('.build-row');
+  buildRow.classList.toggle('children-collapsed');
+  buildRow.classList.toggle('children-expanded');
   return false;
 }
 
@@ -96,28 +153,37 @@ function updateQueryParams(params) {
   }
   const search = [];
   const hash = document.location.hash;
-  $.each(params, function (key, values) {
-    $.each(values, function (index, value) {
-      if (value === undefined) {
+  Object.entries(params).forEach(([key, values]) => {
+    if (Array.isArray(values)) {
+      values.forEach(value => {
+        if (value === undefined) {
+          search.push(encodeURIComponent(key));
+        } else {
+          search.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+        }
+      });
+    } else {
+      if (values === undefined) {
         search.push(encodeURIComponent(key));
       } else {
-        search.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+        search.push(encodeURIComponent(key) + '=' + encodeURIComponent(values));
       }
-    });
+    }
   });
-  history.replaceState({}, document.title, `?${search.join('&')}${hash}`);
+  const searchString = search.length > 0 ? '?' + search.join('&') : '';
+  history.replaceState({}, document.title, searchString + hash);
 }
 
 function renderDataSize(sizeInByte) {
   var unitFactor = 1073741824; // one GiB
   var sizeWithUnit = 0;
-  $.each([' GiB', ' MiB', ' KiB', ' byte'], function (index, unit) {
+  for (const unit of [' GiB', ' MiB', ' KiB', ' byte']) {
     if (!unitFactor || sizeInByte >= unitFactor) {
       sizeWithUnit = Math.round((sizeInByte / unitFactor) * 100) / 100 + unit;
-      return false;
+      break;
     }
     unitFactor >>= 10;
-  });
+  }
   return sizeWithUnit;
 }
 
@@ -328,82 +394,77 @@ function htmlEscape(str) {
 function renderSearchResults(query, url) {
   var spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
-  var request = new XMLHttpRequest();
-  request.open('GET', urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)));
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    var json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)), {
+    headers: {Accept: 'application/json'}
+  })
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.data) {
         throw 'Invalid search results';
       }
-    } catch (error) {
-      request.onerror();
-      return;
-    }
-    spinner.style.display = 'none';
-    var heading = document.getElementById('results-heading');
-    heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
-    var results = document.createElement('div');
-    results.id = 'results';
-    results.className = 'list-group';
-    const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
+      spinner.style.display = 'none';
+      var heading = document.getElementById('results-heading');
+      heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
+      var results = document.createElement('div');
+      results.id = 'results';
+      results.className = 'list-group';
+      const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
 
-    Object.keys(types).forEach(function (searchtype) {
-      var searchresults = json.data.results[searchtype];
-      if (searchresults.length > 0) {
-        const item = document.createElement('div');
-        item.className = 'list-group-item';
-        const header = document.createElement('h3');
-        item.appendChild(header);
-        header.id = searchtype;
-        const bold = document.createElement('strong');
-        const textnode = document.createTextNode(types[searchtype] + ': ' + searchresults.length);
-        bold.appendChild(textnode);
-        header.appendChild(bold);
-        results.append(item);
-      }
-      searchresults.forEach(function (value, index) {
-        const item = document.createElement('div');
-        item.className = 'list-group-item';
-        const header = document.createElement('div');
-        header.className = 'd-flex w-100 justify-content-between';
-        const title = document.createElement('h5');
-        title.className = 'occurrence mb-1';
-        title.appendChild(document.createTextNode(value.occurrence));
-        header.appendChild(title);
-        item.appendChild(header);
-        if (value.contents) {
-          const contents = document.createElement('pre');
-          contents.className = 'contents mb-1';
-          contents.appendChild(document.createTextNode(value.contents));
-          item.appendChild(contents);
+      Object.keys(types).forEach(function (searchtype) {
+        var searchresults = json.data.results[searchtype];
+        if (searchresults.length > 0) {
+          const item = document.createElement('div');
+          item.className = 'list-group-item';
+          const header = document.createElement('h3');
+          item.appendChild(header);
+          header.id = searchtype;
+          const bold = document.createElement('strong');
+          const textnode = document.createTextNode(types[searchtype] + ': ' + searchresults.length);
+          bold.appendChild(textnode);
+          header.appendChild(bold);
+          results.append(item);
         }
-        results.append(item);
+        searchresults.forEach(function (value, index) {
+          const item = document.createElement('div');
+          item.className = 'list-group-item';
+          const header = document.createElement('div');
+          header.className = 'd-flex w-100 justify-content-between';
+          const title = document.createElement('h5');
+          title.className = 'occurrence mb-1';
+          title.appendChild(document.createTextNode(value.occurrence));
+          header.appendChild(title);
+          item.appendChild(header);
+          if (value.contents) {
+            const contents = document.createElement('pre');
+            contents.className = 'contents mb-1';
+            contents.appendChild(document.createTextNode(value.contents));
+            item.appendChild(contents);
+          }
+          results.append(item);
+        });
       });
-    });
-    const oldResults = document.getElementById('results');
-    oldResults.parentElement.replaceChild(results, oldResults);
-  };
-  request.onerror = function () {
-    spinner.style.display = 'none';
-    let msg = this.statusText;
-    try {
-      const json = JSON.parse(this.responseText);
-      if (json && json.error) {
-        msg = json.error.split(/\n/)[0];
-      } else if (json && json.error_status) {
-        msg = json.error_status;
+      const oldResults = document.getElementById('results');
+      oldResults.parentElement.replaceChild(results, oldResults);
+    })
+    .catch(error => {
+      spinner.style.display = 'none';
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          addFlash('danger', 'Search resulted in error: ' + msg);
+        });
+      } else {
+        addFlash('danger', 'Search resulted in error: ' + msg);
       }
-    } catch (error) {
-      msg = error;
-    }
-    addFlash('danger', 'Search resulted in error: ' + msg);
-  };
-  request.send();
+    });
 }
 
 function testStateHTML(job) {
@@ -449,7 +510,7 @@ function renderTestState(item, job) {
 function updateTestState(job, name, timeago, reason) {
   renderTestState(name, job);
   if (job.t_finished) {
-    timeago.textContent = jQuery.timeago(job.t_finished);
+    timeago.textContent = window.timeago.format(job.t_finished);
   }
   if (job.reason) {
     reason.textContent = job.reason;
@@ -461,121 +522,107 @@ function updateTestState(job, name, timeago, reason) {
 }
 
 function renderJobStatus(item, id) {
-  const request = new XMLHttpRequest();
-  request.open('GET', urlWithBase('/api/v1/jobs/' + id));
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(urlWithBase('/api/v1/jobs/' + id), {headers: {Accept: 'application/json'}})
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.job) {
         throw 'Invalid job details returned';
       }
-    } catch (error) {
-      request.onerror();
-      return;
-    }
-    const header = document.createElement('div');
-    header.className = 'd-flex w-100 justify-content-between';
-    const title = document.createElement('h5');
-    title.className = 'event_name mb-1';
-    const name = document.createElement('a');
-    header.appendChild(name);
-    header.appendChild(title);
-    const timeago = document.createElement('abbr');
-    timeago.className = 'timeago';
-    header.appendChild(timeago);
-    item.appendChild(header);
-    const details = document.createElement('pre');
-    details.className = 'details mb-1';
-    const reason = document.createTextNode('');
-    details.appendChild(reason);
-    item.appendChild(details);
-    updateTestState(json.job, name, timeago, reason);
-  };
-  request.onerror = function () {
-    var msg = this.statusText;
-    try {
-      var json = JSON.parse(this.responseText);
-      if (json && json.error) {
-        msg = json.error.split(/\n/)[0];
-      } else if (json && json.error_status) {
-        msg = json.error_status;
+      const header = document.createElement('div');
+      header.className = 'd-flex w-100 justify-content-between';
+      const title = document.createElement('h5');
+      title.className = 'event_name mb-1';
+      const name = document.createElement('a');
+      header.appendChild(name);
+      header.appendChild(title);
+      const timeago = document.createElement('abbr');
+      timeago.className = 'timeago';
+      header.appendChild(timeago);
+      item.appendChild(header);
+      const details = document.createElement('pre');
+      details.className = 'details mb-1';
+      const reason = document.createTextNode('');
+      details.appendChild(reason);
+      item.appendChild(details);
+      updateTestState(json.job, name, timeago, reason);
+    })
+    .catch(error => {
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          item.appendChild(document.createTextNode(msg));
+        });
+      } else {
+        item.appendChild(document.createTextNode(msg));
       }
-    } catch (error) {
-      msg = error;
-    }
-    item.appendChild(document.createTextNode(msg));
-  };
-  request.send();
+    });
 }
 
 function renderActivityView(ajaxUrl) {
   const spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
-  const request = new XMLHttpRequest();
   const query = new URLSearchParams();
   query.append('search[value]', 'event:job_');
   query.append('order[0][column]', '0'); // t_created
   query.append('order[0][dir]', 'desc');
-  request.open('GET', ajaxUrl + '?' + query.toString());
-  request.setRequestHeader('Accept', 'application/json');
-  request.onload = function () {
-    // Make sure we have valid JSON here
-    // And check that we have valid data, errors are not valid data
-    let json;
-    try {
-      json = JSON.parse(this.responseText);
+  fetch(ajaxUrl + '?' + query.toString(), {headers: {Accept: 'application/json'}})
+    .then(response => {
+      if (!response.ok) throw response;
+      return response.json();
+    })
+    .then(json => {
       if (!json.data) {
         throw 'Invalid events returned';
       }
-    } catch (error) {
-      request.onerror();
-      return;
-    }
-    spinner.style.display = 'none';
-    const results = document.createElement('div');
-    results.id = 'results';
-    results.className = 'list-group';
-    const uniqueJobs = new Set();
-    json.data.forEach(function (value, index) {
-      // The audit log interprets _ as a wildcard so we enforce the prefix here
-      if (!/job_/.test(value.event)) {
-        return;
-      }
-      // We want only the latest result of each job
-      const id = JSON.parse(value.event_data).id;
-      if (uniqueJobs.has(id)) {
-        return;
-      }
-      uniqueJobs.add(id);
+      spinner.style.display = 'none';
+      const results = document.createElement('div');
+      results.id = 'results';
+      results.className = 'list-group';
+      const uniqueJobs = new Set();
+      json.data.forEach(function (value, index) {
+        // The audit log interprets _ as a wildcard so we enforce the prefix here
+        if (!/job_/.test(value.event)) {
+          return;
+        }
+        // We want only the latest result of each job
+        const id = JSON.parse(value.event_data).id;
+        if (uniqueJobs.has(id)) {
+          return;
+        }
+        uniqueJobs.add(id);
 
-      var item = document.createElement('div');
-      item.className = 'list-group-item';
-      renderJobStatus(item, id);
-      results.append(item);
-    });
-    var oldResults = document.getElementById('results');
-    oldResults.parentElement.replaceChild(results, oldResults);
-  };
-  request.onerror = function () {
-    spinner.style.display = 'none';
-    var msg = this.statusText;
-    try {
-      var json = JSON.parse(this.responseText);
-      if (json && json.error) {
-        msg = json.error.split(/\n/)[0];
-      } else if (json && json.error_status) {
-        msg = json.error_status;
+        var item = document.createElement('div');
+        item.className = 'list-group-item';
+        renderJobStatus(item, id);
+        results.append(item);
+      });
+      var oldResults = document.getElementById('results');
+      oldResults.parentElement.replaceChild(results, oldResults);
+    })
+    .catch(error => {
+      spinner.style.display = 'none';
+      let msg = error.statusText || error;
+      if (error.json) {
+        error.json().then(json => {
+          if (json && json.error) {
+            msg = json.error.split(/\n/)[0];
+          } else if (json && json.error_status) {
+            msg = json.error_status;
+          }
+          addFlash('danger', 'Search resulted in error: ' + msg);
+        });
+      } else {
+        addFlash('danger', 'Search resulted in error: ' + msg);
       }
-    } catch (error) {
-      msg = error;
-    }
-    addFlash('danger', 'Search resulted in error: ' + msg);
-  };
-  request.send();
+    });
 }
 
 function renderComments(row) {
@@ -651,6 +698,122 @@ function renderHttpUrlAsLink(value, oneUrlPerLine = false) {
   return fragment.hasChildNodes() ? fragment : document.createTextNode(value);
 }
 
-function getXhrError(jqXHR, textStatus, errorThrown) {
-  return jqXHR.responseJSON?.error || jqXHR.responseText || errorThrown || textStatus;
+function handleRemote(element) {
+  const method = (element.getAttribute('data-method') || 'GET').toUpperCase();
+  const url = element.getAttribute('href') || element.getAttribute('action');
+  const data = new FormData();
+  if (element.tagName === 'FORM') {
+    const formData = new FormData(element);
+    for (const [key, value] of formData.entries()) {
+      data.append(key, value);
+    }
+  }
+
+  const options = {
+    method: method,
+    headers: {
+      Accept: '*/*;q=0.5, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript'
+    }
+  };
+
+  if (method !== 'GET' && method !== 'HEAD') {
+    options.body = data;
+  }
+
+  fetchWithCSRF(url, options)
+    .then(response => {
+      const contentType = response.headers.get('content-type');
+      if (contentType && (contentType.includes('application/javascript') || contentType.includes('text/javascript'))) {
+        return response.text().then(text => {
+          eval(text);
+          return {response, data: text};
+        });
+      }
+      return response
+        .json()
+        .then(json => ({response, data: json}))
+        .catch(() => response.text().then(text => ({response, data: text})));
+    })
+    .then(({response, data}) => {
+      if (response.ok) {
+        element.dispatchEvent(
+          new CustomEvent('ajax:success', {
+            bubbles: true,
+            cancelable: true,
+            detail: [data, response.statusText, response]
+          })
+        );
+      } else {
+        element.dispatchEvent(
+          new CustomEvent('ajax:error', {
+            bubbles: true,
+            cancelable: true,
+            detail: [response, response.statusText, data]
+          })
+        );
+      }
+    })
+    .catch(error => {
+      element.dispatchEvent(
+        new CustomEvent('ajax:error', {bubbles: true, cancelable: true, detail: [null, 'error', error]})
+      );
+    })
+    .finally(() => {
+      element.dispatchEvent(new CustomEvent('ajax:complete', {bubbles: true, cancelable: true}));
+    });
 }
+
+function handleMethod(element) {
+  const method = element.getAttribute('data-method').toUpperCase();
+  const url = element.getAttribute('href');
+  const csrfParam = document.querySelector('meta[name="csrf-param"]')?.content || 'csrf_token';
+  const csrfToken = getCSRFToken();
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = url;
+  form.style.display = 'none';
+
+  if (method !== 'POST') {
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = method;
+    form.appendChild(methodInput);
+  }
+
+  const csrfInput = document.createElement('input');
+  csrfInput.type = 'hidden';
+  csrfInput.name = csrfParam;
+  csrfInput.value = csrfToken;
+  form.appendChild(csrfInput);
+
+  const submit = document.createElement('input');
+  submit.type = 'submit';
+  form.appendChild(submit);
+
+  document.body.appendChild(form);
+  submit.click();
+}
+
+document.addEventListener('click', event => {
+  const element = event.target.closest(
+    'a[data-method], a[data-confirm], a[data-remote], button[data-remote], input[data-remote]'
+  );
+  if (!element) return;
+
+  const confirmMsg = element.getAttribute('data-confirm');
+  if (confirmMsg && !window.confirm(confirmMsg)) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  if (element.getAttribute('data-remote')) {
+    event.preventDefault();
+    handleRemote(element);
+  } else if (element.getAttribute('data-method')) {
+    event.preventDefault();
+    handleMethod(element);
+  }
+});

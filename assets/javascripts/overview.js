@@ -122,49 +122,69 @@ function stackParallelChildren(depElement, dependencyInfo) {
 
 function setupOverview() {
   setupLazyLoadingFailedSteps();
-  $('.timeago').timeago();
-  $('.cancel').bind('ajax:success', function (event, xhr, status) {
-    $(this).text(''); // hide the icon
-    var icon = $(this).parents('td').find('.status');
-    icon.removeClass('state_scheduled').removeClass('state_running');
-    icon.addClass('state_cancelled');
-    icon.attr('title', 'Cancelled');
-    icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
-  });
-  $('.restart').bind('ajax:success', function (event, xhr, status) {
-    if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
-      addFlash('danger', '<strong>Unable to restart job.</strong>');
-      return;
+  document.querySelectorAll('.timeago').forEach(el => {
+    if (window.timeago && typeof window.timeago.format === 'function') {
+      const date = el.getAttribute('title') || el.getAttribute('datetime');
+      if (date) {
+        el.textContent = window.timeago.format(date);
+      }
     }
-    showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));
-    var newId = xhr.result[0];
-    var oldId = 0;
-    $.each(newId, function (key, value) {
-      if (!$('.restart[data-jobid="' + key + '"]').length) {
-        return true;
+  });
+  document.querySelectorAll('.cancel').forEach(el => {
+    el.addEventListener('ajax:success', function () {
+      this.textContent = ''; // hide the icon
+      const icon = this.closest('td').querySelector('.status');
+      if (icon) {
+        icon.classList.remove('state_scheduled', 'state_running');
+        icon.classList.add('state_cancelled');
+        icon.title = 'Cancelled';
+        icon.style.opacity = 0.5;
+        setTimeout(() => (icon.style.opacity = 1.0), 500);
       }
-      var restarted = $('.restart[data-jobid="' + key + '"]');
-      restarted.text(''); // hide the icon
-      var icon = restarted.parents('td').find('.status');
-      icon.removeClass('state_done').removeClass('state_cancelled');
-      icon.addClass('state_scheduled');
-      icon.attr('title', 'Scheduled');
-      // remove the result class
-      restarted.parents('td').find('.result_passed').removeClass('result_passed');
-      restarted.parents('td').find('.result_failed').removeClass('result_failed');
-      restarted.parents('td').find('.result_softfailed').removeClass('result_softfailed');
-
-      // If the API call returns a new id, a new job have been created to replace
-      // the old one. In other case, the old job is being reused
-      if (value) {
-        var link = icon.parents('a');
-        var oldId = restarted.data('jobid');
-        var newUrl = link.attr('href').replace(oldId, value);
-        link.attr('href', newUrl);
-        link.addClass('restarted');
+    });
+  });
+  document.querySelectorAll('.restart').forEach(el => {
+    el.addEventListener('ajax:success', function (event) {
+      const xhr = event.detail[0];
+      if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
+        addFlash('danger', '<strong>Unable to restart job.</strong>');
+        return;
       }
+      showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));
+      const newIdMap = xhr.result[0];
+      Object.entries(newIdMap).forEach(([key, value]) => {
+        const restarted = document.querySelector('.restart[data-jobid="' + key + '"]');
+        if (!restarted) {
+          return;
+        }
+        restarted.textContent = ''; // hide the icon
+        const td = restarted.closest('td');
+        const icon = td.querySelector('.status');
+        if (icon) {
+          icon.classList.remove('state_done', 'state_cancelled');
+          icon.classList.add('state_scheduled');
+          icon.title = 'Scheduled';
+        }
+        // remove the result class
+        td.querySelectorAll('.result_passed, .result_failed, .result_softfailed').forEach(el => {
+          el.classList.remove('result_passed', 'result_failed', 'result_softfailed');
+        });
 
-      icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
+        // If the API call returns a new id, a new job have been created to replace
+        // the old one. In other case, the old job is being reused
+        if (value && icon) {
+          const link = icon.closest('a');
+          const oldId = restarted.dataset.jobid;
+          const newUrl = link.getAttribute('href').replace(oldId, value);
+          link.setAttribute('href', newUrl);
+          link.classList.add('restarted');
+        }
+
+        if (icon) {
+          icon.style.opacity = 0.5;
+          setTimeout(() => (icon.style.opacity = 1.0), 500);
+        }
+      });
     });
   });
   var dependencies = document.getElementsByClassName('dependency');
@@ -203,15 +223,14 @@ function setupOverview() {
   form.todo = false;
 
   // initialize filter for modules results
-  const modulesResultFilter = $('#modules_result');
-  modulesResultFilter.chosen({width: '100%'});
-  modulesResultFilter.change(function (event) {
-    // update query params
-    var params = parseQueryParams();
-    params.modules_results = modulesResultFilter.val();
-  });
-
-  modulesResultFilter.chosen({width: '100%'});
+  const modulesResultFilter = document.getElementById('modules_result');
+  if (modulesResultFilter) {
+    modulesResultFilter.addEventListener('change', function (event) {
+      // update query params
+      var params = parseQueryParams();
+      params.modules_results = Array.from(modulesResultFilter.selectedOptions).map(opt => opt.value);
+    });
+  }
 
   // find specified results
   const flags = {result: {}, state: {}};
@@ -224,15 +243,24 @@ function setupOverview() {
       flags[key][val] = true;
       return formatFilter(val);
     } else if (key === 'todo') {
-      form.todo.checked = val !== '0';
+      const todoCheck = document.getElementById('filter-todo');
+      if (todoCheck) todoCheck.checked = val !== '0';
       return 'TODO';
     } else if (key === 'modules_result') {
       modulesResults.push(val);
-      modulesResultFilter.val(modulesResults).trigger('chosen:updated').trigger('change');
+      if (modulesResultFilter) {
+        Array.from(modulesResultFilter.options).forEach(opt => {
+          if (opt.value === val) opt.selected = true;
+        });
+        modulesResultFilter.dispatchEvent(new Event('change'));
+      }
       return formatFilter(val);
-    } else if (form[key] && form[key].value != null) {
-      form[key].value += form[key].value.length > 0 ? `,${val}` : val;
-      return val;
+    } else {
+      const input = document.getElementById('filter-' + key.replace(/_/g, '-')) || form.elements[key];
+      if (input && input.value !== undefined) {
+        input.value += input.value.length > 0 ? `,${val}` : val;
+        return val;
+      }
     }
   });
 

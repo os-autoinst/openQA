@@ -18,7 +18,7 @@ function setupJobNextPrevious() {
   };
 
   var tableElement = document.getElementById('job_next_previous_table');
-  var table = $(tableElement).DataTable({
+  var table = new DataTable(tableElement, {
     ajax: {
       url: tableElement.dataset.ajaxUrl,
       data: function (d) {
@@ -148,7 +148,7 @@ function renderBuild(data, type, row) {
 function renderFinishTime(data, type, row) {
   var html = '';
   if (data != null) {
-    html += '<abbr class="timeago" title="' + data + '">' + jQuery.timeago(data) + ' </abbr>';
+    html += '<abbr class="timeago" title="' + data + '">' + window.timeago.format(data) + ' </abbr>';
     html += '( ' + row.duration + ' )';
   } else {
     if (row.state == 'running' || row.state == 'scheduled') {

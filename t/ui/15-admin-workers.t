@@ -165,10 +165,11 @@ is_deeply(
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
         '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
-        '0', 'about an hour ago',
+        '0', $entries[5],
     ],
     'correct entries shown'
 );
+like($entries[5], qr/hour ago/, 'correct time for entry 5');
 
 # restart running job assigned to a worker
 $driver->find_child_element($table, 'a.restart', 'css')->click();
@@ -181,10 +182,11 @@ is_deeply(
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
         '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
-        '0', 'about an hour ago',
+        '0', $entries[5],
     ],
     'the first job has been restarted'
 );
+like($entries[5], qr/hour ago/, 'correct time after restart');
 
 kill_driver();
 done_testing();

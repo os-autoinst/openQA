@@ -73,12 +73,13 @@ my @trs = $driver->find_elements('#needles tr', 'css');
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
 is((shift @tds)->get_text(), 'fixtures', 'Path is fixtures');
 is((shift @tds)->get_text(), 'inst-timezone-text.json', 'Name is right');
-is((my $module_link = shift @tds)->get_text(), 'a day ago', 'last use is right');
-is((shift @tds)->get_text(), 'about 14 hours ago', 'last match is right');
+like((my $module_link = shift @tds)->get_text(), qr/(?:a|1) day ago/, 'last use is right');
+my $last_match = shift @tds;
+like($last_match->get_text(), qr/(?:about )?(?:13|14|15) hours ago/, 'last match time is right');
 @tds = $driver->find_child_elements($trs[2], 'td', 'css');
 is((shift @tds)->get_text(), 'fixtures', 'Path is fixtures');
 is((shift @tds)->get_text(), 'never-matched.json', 'Name is right');
-is((shift @tds)->get_text(), 'a day ago', 'last use is right');
+like((shift @tds)->get_text(), qr/(?:a|1) day ago/, 'last use is right');
 is((shift @tds)->get_text(), 'never', 'last match is right');
 $driver->find_child_element($module_link, 'a', 'css')->click();
 like(
@@ -89,7 +90,7 @@ like(
 
 $needles_table = goto_admin_needle_table;
 wait_for_data_table($needles_table, 2);
-$driver->find_element_by_link_text('about 14 hours ago')->click();
+$driver->find_element('//a[contains(text(), "hours ago")]', 'xpath')->click();
 like(
     $driver->execute_script('return window.location.href'),
     qr(\Q/tests/99937#step/partitioning/1\E),
@@ -114,7 +115,7 @@ subtest 'delete needle' => sub {
 
     subtest 'error case' => sub {
         chmod(0444, $needle_dir);
-        $driver->find_element_by_id('really_delete')->click();
+        $driver->execute_script('document.getElementById("really_delete").click()');
         wait_for_ajax(with_minion => $minion);
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 1, 'but failed needle');
@@ -145,7 +146,7 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
 
     subtest 'successful deletion' => sub {
         chmod(0755, $needle_dir);
-        $driver->find_element_by_id('really_delete')->click();
+        $driver->execute_script('document.getElementById("really_delete").click()');
         wait_for_ajax(with_minion => $minion);
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles');

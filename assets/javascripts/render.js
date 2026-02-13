@@ -97,7 +97,9 @@ function renderModuleRow(module, snippets) {
 
   const result = E('td', [module.result], {class: 'result ' + moduleResultCSS(module.result)});
   const showPreviewForLink = function () {
-    setCurrentPreview($(this).parent()); // show the preview when clicking on step links
+    if (window.setCurrentPreview) {
+      setCurrentPreview(this.parentElement); // show the preview when clicking on step links
+    }
     return false;
   };
 

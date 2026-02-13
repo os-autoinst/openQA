@@ -148,15 +148,18 @@ my $polling_tries_workers = $seconds_to_wait_per_worker / $polling_interval * $w
 my $polling_tries_jobs = $seconds_to_wait_per_job / $polling_interval * $job_count;
 
 subtest 'wait for workers to be idle' => sub {
-    # wait for all workers to register
-    my @worker_search_args = ({'properties.key' => 'WEBSOCKET_API_VERSION'}, {join => 'properties'});
+    # wait for all workers to register and establish a websocket connection
+    # note: establishing the websocket connection is confirmed by waiting until an initial status update has
+    #       been received (which updates t_seen)
+    my @worker_search_args
+      = ({'properties.key' => 'WEBSOCKET_API_VERSION', 't_seen' => {'!=' => undef}}, {join => 'properties'});
     my $actual_count = 0;
     for my $try (1 .. $polling_tries_workers) {
         last if ($actual_count = $workers->search(@worker_search_args)->count) == $worker_count;
-        note("Waiting until all workers are registered, try $try");    # uncoverable statement
+        note("Waiting until all workers are registered and connected, try $try");    # uncoverable statement
         sleep $polling_interval;    # uncoverable statement
     }
-    is $actual_count, $worker_count, 'all workers registered';
+    is $actual_count, $worker_count, 'all workers registered and connected';
 
     # wait for expected number of workers to become limited
     my $limited_workers = max(0, $worker_count - $worker_limit);
@@ -219,18 +222,15 @@ subtest 'assign and run jobs' => sub {
         # uncoverable statement
         is_deeply([sort @allocated_worker_ids], [sort @expected_worker_ids], 'all workers allocated');
     }
+
     for my $try (1 .. $polling_tries_jobs) {
-        last if $jobs->search({state => DONE})->count == $job_count;
-        if ($jobs->search({state => SCHEDULED})->count > max(0, $remaining_jobs)) {
-            # uncoverable statement
-            note('At least one job has been set back to scheduled; aborting to wait until all jobs are done');
-            last;    # uncoverable statement
-        }
-        if ($remaining_jobs > 0) {
-            note("Trying to assign remaining $remaining_jobs jobs");
+        my $done_count = $jobs->search({state => DONE})->count;
+        last if $done_count == $job_count;
+        my $to_assign = $jobs->search({state => SCHEDULED})->count;
+        if ($to_assign > 0) {
+            note("Trying to assign remaining $to_assign jobs");
             if (my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule) {
                 my $assigned_job_count = scalar @$allocated;
-                $remaining_jobs -= $assigned_job_count;
                 note("Assigned $assigned_job_count more jobs: " . dumper($allocated)) if $assigned_job_count > 0;
             }
         }

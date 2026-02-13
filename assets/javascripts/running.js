@@ -14,16 +14,16 @@ function reloadBrokenThumbnails(force) {
   if (!force && testStatus.img_reload_time++ % 7 !== 0) {
     return;
   }
-  $('.links img').each(function () {
-    if (this.naturalWidth >= 1) {
+  document.querySelectorAll('.links img').forEach(function (img) {
+    if (img.naturalWidth >= 1) {
       return;
     }
-    if (!this.retries) {
-      this.retries = 0;
+    if (!img.retries) {
+      img.retries = 0;
     }
-    if (this.retries <= 3) {
-      this.retries++;
-      this.src = this.src.split('?')[0] + '?' + Date.now();
+    if (img.retries <= 3) {
+      img.retries++;
+      img.src = img.src.split('?')[0] + '?' + Date.now();
     }
   });
 }
@@ -125,7 +125,7 @@ function updateTestStatus(newStatus) {
           (currentOptgroup || moduleSelect).appendChild(option);
         });
         moduleSelect.dataset.moduleCount = modules.length;
-        updateModuleSelection($(moduleSelect).find('option'), developerMode.currentModuleIndex);
+        updateModuleSelection(moduleSelect.querySelectorAll('option'), developerMode.currentModuleIndex);
       }
 
       // handle case when results table has not been created yet or no modules are present yet
@@ -158,7 +158,7 @@ function updateTestStatus(newStatus) {
         }
         // detach the preview container if it is contained by the row to be relaced
         const resultRow = resultCell.parentNode;
-        if ($.contains(resultRow, previewContainer)) {
+        if (previewContainer && resultRow.contains(previewContainer)) {
           previewContainer.style.display = 'none';
           document.body.appendChild(previewContainer);
         }
@@ -249,14 +249,13 @@ function addDataListener(elem, callback) {
       //       certain length.
       var maxLiveLogLength = 50 * 1024;
 
-      var firstElement = elem[0];
-      var currentData = firstElement.innerHTML;
+      var currentData = elem.innerHTML;
       var newData = ansiToHtml(JSON.parse(event.data)[0]);
       var newLength = currentData.length + newData.length;
 
       // append if not exceeding the limit; otherwise cut the front
       if (newLength < maxLiveLogLength) {
-        firstElement.innerHTML += newData;
+        elem.innerHTML += newData;
       } else {
         var catData = currentData + newData;
         var newStartIndex = newLength - maxLiveLogLength;
@@ -264,7 +263,7 @@ function addDataListener(elem, callback) {
         // discard one (probably) partial line (in accordance with OpenQA::Shared::Controller::Running::streamtext)
         for (; newStartIndex < catData.length && catData[newStartIndex] !== '\n'; ++newStartIndex);
 
-        firstElement.innerHTML = catData.substr(newStartIndex);
+        elem.innerHTML = catData.substr(newStartIndex);
       }
       if (callback) {
         callback();
@@ -273,7 +272,7 @@ function addDataListener(elem, callback) {
   }
 
   // add new event source and add listener
-  elem.eventSource = new EventSource(elem.data('url'));
+  elem.eventSource = new EventSource(elem.dataset.url);
   elem.eventSource.addEventListener('message', elem.eventCallback, false);
 }
 
@@ -289,24 +288,29 @@ function initLivelogAndTerminal() {
   // find log elements
   logElements = [
     {
-      panel: $('#live-log-panel'),
-      log: $('#livelog'),
+      panel: document.getElementById('live-log-panel'),
+      log: document.getElementById('livelog'),
       callback: scrollToBottomOfLiveLog
     },
     {
-      panel: $('#live-terminal-panel'),
-      log: $('#liveterminal')
+      panel: document.getElementById('live-terminal-panel'),
+      log: document.getElementById('liveterminal')
     }
   ];
 
   // enable expanding/collapsing live log/terminal
-  $.each(logElements, function (index, value) {
+  logElements.forEach(value => {
+    if (!value.panel) return;
     liveViewElements.push(value);
     value.panel.bodyVisible = false;
-    value.panel.find('.card-header').on('click', function () {
+    value.panel.querySelector('.card-header').addEventListener('click', function () {
       // toggle visibility
-      var body = value.panel.find('.card-body');
-      body.toggle(200);
+      const body = value.panel.querySelector('.card-body');
+      if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block';
+      } else {
+        body.style.display = 'none';
+      }
       value.panel.bodyVisible = !value.panel.bodyVisible;
 
       // toggle receiving updates
@@ -314,9 +318,7 @@ function initLivelogAndTerminal() {
         addDataListener(value.log, value.callback);
 
         // scroll to bottom of panel when expanding
-        $('html,body').animate({
-          scrollTop: value.panel.offset().top + value.panel.height()
-        });
+        value.panel.scrollIntoView({behavior: 'smooth', block: 'end'});
       } else {
         removeDataListener(value.log);
       }
@@ -351,17 +353,16 @@ function initLivestream() {
   const servicePortDelta = Number.parseInt(document.getElementById('developer-panel').dataset.servicePortDelta);
   const url = makeUrlAbsolute(livestream.dataset.url, servicePortDelta);
   livestream.dataset.url = url;
-  const elements = $(livestream);
-  elements.eventCallback = function (event) {
+  livestream.eventCallback = function (event) {
     loadCanvas(livestream, event.data);
     last_event = event;
   };
-  liveViewElements.push({log: elements});
+  liveViewElements.push({log: livestream});
 }
 
 function disableLivestream() {
   const livestreamElement = liveViewElements[liveViewElements.length - 1];
-  if (livestreamElement && livestreamElement.log.attr('id') === 'livestream') {
+  if (livestreamElement && livestreamElement.log.id === 'livestream') {
     removeDataListener(livestreamElement.log);
     liveViewElements.pop();
   }
@@ -393,9 +394,17 @@ function refreshInfoPanel() {
       document.getElementById('favicon-16').href = infoBoxContent.dataset['faviconUrl-16'];
       document.getElementById('favicon-svg').href = infoBoxContent.dataset.faviconUrlSvg;
       setInfoPanelClassName(testStatus.state, testStatus.result);
-      const infoBoxJQuery = $(infoBoxContent);
-      infoBoxJQuery.find('.timeago').timeago();
-      infoBoxJQuery.find('[data-bs-toggle="popover"]').popover({html: true});
+      if (window.timeago && typeof window.timeago.format === 'function') {
+        infoBoxContent.querySelectorAll('.timeago').forEach(el => {
+          const date = el.getAttribute('title') || el.getAttribute('datetime');
+          if (date) {
+            el.textContent = window.timeago.format(date);
+          }
+        });
+      }
+      infoBoxContent
+        .querySelectorAll('[data-bs-toggle="popover"]')
+        .forEach(e => new bootstrap.Popover(e, {html: true}));
       setupResultButtons();
     })
     .catch(error => {
@@ -448,7 +457,7 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
 // starts consuming streams for live stream, live log and serial output
 // (called when live view tab is shown)
 function resumeLiveView() {
-  $.each(liveViewElements, function (index, value) {
+  liveViewElements.forEach(value => {
     // skip streams which are shown in an expandible panel which is currently collapsed
     if (value.panel && !value.panel.bodyVisible) {
       return;
@@ -460,7 +469,7 @@ function resumeLiveView() {
 // stops consuming streams for live stream, live log and serial output
 // (called when any tab except the live view tab is shown)
 function pauseLiveView() {
-  $.each(liveViewElements, function (index, value) {
+  liveViewElements.forEach(value => {
     removeDataListener(value.log);
   });
 }
@@ -564,46 +573,57 @@ function setupDeveloperPanel() {
   }
   window.developerPanelInitialized = true;
 
-  var panel = $('#developer-panel');
-  var flashMessages = document.getElementById('developer-flash-messages');
+  const panel = document.getElementById('developer-panel');
+  if (!panel) {
+    return;
+  }
+  const flashMessages = document.getElementById('developer-flash-messages');
 
   // set overall status variables
-  developerMode.ownUserId = panel.data('own-user-id');
-  developerMode.isAccessible = panel.data('is-accessible'); // actually assigns a boolean (and not eg. the string 'false')
+  developerMode.ownUserId = panel.dataset.ownUserId;
+  developerMode.isAccessible = panel.dataset.isAccessible === 'true' || panel.dataset.isAccessible === '1';
 
   // find URLs for web socket connections
-  developerMode.develWsUrl = panel.data('developer-url');
-  developerMode.statusOnlyWsUrl = panel.data('status-only-url');
-  developerMode.servicePortDelta = panel.data('service-port-delta');
+  developerMode.develWsUrl = panel.dataset.developerUrl;
+  developerMode.statusOnlyWsUrl = panel.dataset.statusOnlyUrl;
+  developerMode.servicePortDelta = panel.dataset.servicePortDelta;
 
   // setup toggle for body
-  var panelHeader = panel.find('.card-header');
+  const panelHeader = panel.querySelector('.card-header');
   if (developerMode.isAccessible) {
-    panelHeader.on('click', function (event) {
+    panelHeader.addEventListener('click', function (event) {
       // skip if flash message clicked
-      if ($.contains(flashMessages, event.target)) {
+      if (flashMessages && flashMessages.contains(event.target)) {
         return;
       }
 
       // toggle visibility of body
-      var panelBody = panel.find('.card-body');
+      const panelBody = panel.querySelector('.card-body');
       developerMode.panelExpanded = !developerMode.panelExpanded;
       developerMode.panelActuallyExpanded = developerMode.panelExpanded;
       if (!developerMode.panelExpanded) {
         developerMode.panelExplicitelyCollapsed = true;
       }
-      panelBody.toggle(200);
+      if (panelBody) {
+        if (panelBody.style.display === 'none' || panelBody.style.display === '') {
+          panelBody.style.display = 'block';
+        } else {
+          panelBody.style.display = 'none';
+        }
+      }
     });
   } else {
-    panelHeader.css('cursor', 'default');
+    panelHeader.style.cursor = 'default';
   }
 
   // ensure help popover doesn't toggle
-  const popover = panel.find('.help_popover');
-  popover.popover({html: true});
-  popover.on('click', function (event) {
-    event.stopPropagation();
-  });
+  const popoverEl = panel.querySelector('.help_popover');
+  if (popoverEl) {
+    new bootstrap.Popover(popoverEl, {html: true});
+    popoverEl.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
+  }
 
   // add handler for static form elements
   document.getElementById('developer-pause-on-mismatch').onchange = handlePauseOnMismatchSelected;
@@ -632,30 +652,35 @@ function updateModuleSelection(moduleToPauseAtOptions, moduleIndex) {
 // updates the developer panel, must be called after modifying developerMode
 function updateDeveloperPanel() {
   // hide/show elements according to data-hidden and data-visible attributes
-  var developerModeElements = $('.developer-mode-element');
-  developerModeElements.each(function (index) {
-    var element = $(this);
-    var visibleOn = element.data('visible-on');
-    var hiddenOn = element.data('hidden-on');
-    var hide = (hiddenOn && developerMode.allTrue(hiddenOn)) || (visibleOn && !developerMode.allTrue(visibleOn));
+  const developerModeElements = document.querySelectorAll('.developer-mode-element');
+  developerModeElements.forEach(element => {
+    const visibleOn = element.dataset.visibleOn;
+    const hiddenOn = element.dataset.hiddenOn;
+    const hide = (hiddenOn && developerMode.allTrue(hiddenOn)) || (visibleOn && !developerMode.allTrue(visibleOn));
     if (hide) {
-      element.hide();
-      element.tooltip('hide');
-    } else if (element.hasClass('btn')) {
-      element.css('display', 'inline-block');
+      element.style.display = 'none';
+      const tooltip = bootstrap.Tooltip.getInstance(element);
+      if (tooltip) {
+        tooltip.hide();
+      }
+    } else if (element.classList.contains('btn')) {
+      element.style.display = 'inline-block';
     } else {
-      element.show();
+      element.style.display = '';
     }
   });
 
   // set panel visibility
-  var panel = $('#developer-panel');
-  if (!testStatus.running) {
-    // hide entire panel if test is not running anymore
-    panel.hide();
+  const panel = document.getElementById('developer-panel');
+  if (!panel) {
     return;
   }
-  panel.show();
+  if (!testStatus.running) {
+    // hide entire panel if test is not running anymore
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
 
   // expand the controls if the test is paused (unless previously manually collapsed)
   if (developerMode.ownSession && developerMode.isPaused && !developerMode.panelExplicitelyCollapsed) {
@@ -663,22 +688,23 @@ function updateDeveloperPanel() {
   }
 
   // toggle panel body if its current state doesn't match developerMode.panelExpanded
-  var panelBody = panel.find('.card-body');
-  if (developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
+  const panelBody = panel.querySelector('.card-body');
+  if (panelBody && developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
     developerMode.panelActuallyExpanded = developerMode.panelExpanded;
-    panelBody.toggle(200);
+    panelBody.style.display = developerMode.panelExpanded ? 'block' : 'none';
   }
 
   // find modules and determine the index of the current module
-  var moduleToPauseAtSelect = $('#developer-pause-at-module');
-  var moduleToPauseAtOptions = moduleToPauseAtSelect.find('option');
-  var modules = moduleToPauseAtOptions
-    .map(function () {
-      var option = $(this);
-      var category = option.parent('optgroup').attr('label');
-      return category ? category + '-' + option.val() : option.val();
-    })
-    .get();
+  const moduleToPauseAtSelect = document.getElementById('developer-pause-at-module');
+  if (!moduleToPauseAtSelect) {
+    return;
+  }
+  const moduleToPauseAtOptions = Array.from(moduleToPauseAtSelect.querySelectorAll('option'));
+  const modules = moduleToPauseAtOptions.map(option => {
+    const optgroup = option.parentElement;
+    const category = optgroup && optgroup.nodeName === 'OPTGROUP' ? optgroup.label : null;
+    return category ? category + '-' + option.value : option.value;
+  });
   var currentModuleIndex = modules.indexOf(developerMode.currentModule);
 
   // hide modules which have already been executed when the current module index has changed
@@ -740,17 +766,16 @@ function updateDeveloperPanel() {
   var sessionInfo;
   if (developerMode.develSessionDeveloper) {
     sessionInfo = 'owned by ' + developerMode.develSessionDeveloper + ' (';
-    sessionInfoElement.text(sessionInfo);
+    sessionInfoElement.textContent = sessionInfo;
 
-    var timeagoElement = $(
-      '<abbr class="timeago" title="' +
-        developerMode.develSessionStartedAt +
-        ' Z">' +
-        developerMode.develSessionStartedAt +
-        '</abbr>'
-    );
+    var timeagoElement = document.createElement('abbr');
+    timeagoElement.className = 'timeago';
+    timeagoElement.title = developerMode.develSessionStartedAt + ' Z';
+    timeagoElement.textContent = developerMode.develSessionStartedAt;
     sessionInfoElement.append(timeagoElement);
-    timeagoElement.timeago();
+    if (window.timeago && typeof window.timeago.format === 'function') {
+      timeagoElement.textContent = window.timeago.format(developerMode.develSessionStartedAt);
+    }
 
     var tabsOpenInfo =
       ', developer has ' +
@@ -759,17 +784,22 @@ function updateDeveloperPanel() {
       ' open)';
     sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
 
-    var globalSessionInfoElement = $('#developer-global-session-info:hidden');
-    if (globalSessionInfoElement.length) {
-      globalSessionInfoElement.text('Developer session has been opened by ' + developerMode.develSessionDeveloper);
-      globalSessionInfoElement.show();
+    var globalSessionInfoElement = document.getElementById('developer-global-session-info');
+    if (
+      globalSessionInfoElement &&
+      (globalSessionInfoElement.style.display === 'none' || globalSessionInfoElement.hidden)
+    ) {
+      globalSessionInfoElement.textContent =
+        'Developer session has been opened by ' + developerMode.develSessionDeveloper;
+      globalSessionInfoElement.style.display = 'block';
+      globalSessionInfoElement.hidden = false;
     }
   } else if (!developerMode.badConfiguration) {
     sessionInfo = 'regular test execution';
     if (developerMode.isAccessible && !developerMode.panelExpanded) {
       sessionInfo += ' - click to expand';
     }
-    sessionInfoElement.text(sessionInfo);
+    sessionInfoElement.textContent = sessionInfo;
   }
 
   // update form elements
@@ -778,13 +808,12 @@ function updateDeveloperPanel() {
     return;
   }
   // -> update module to pause at
-  if (moduleToPauseAtSelect.length) {
+  if (moduleToPauseAtSelect) {
     // update module to pause at and ensure handler is registered (element might be replaced in updateTestStatus())
-    var selectElement = moduleToPauseAtSelect[0];
-    selectElement.selectedIndex = toPauseAtIndex;
-    if (!selectElement.handlerRegistered) {
-      selectElement.onchange = handleModuleToPauseAtSelected;
-      selectElement.handlerRegistered = true;
+    moduleToPauseAtSelect.selectedIndex = toPauseAtIndex;
+    if (!moduleToPauseAtSelect.handlerRegistered) {
+      moduleToPauseAtSelect.onchange = handleModuleToPauseAtSelected;
+      moduleToPauseAtSelect.handlerRegistered = true;
     }
   }
   // -> update whether the test will pause on assert screen timeout
@@ -797,12 +826,14 @@ function updateDeveloperPanel() {
     pauseOnMismatchSelect.selectedIndex = 0; // "Fail on mismatch as usual" option
   }
   // -> update whether to pause at the next command
-  if (developerMode.pauseOnNextCommand !== undefined) {
-    $('#developer-pause-on-next-command').prop('checked', developerMode.pauseOnNextCommand);
+  const pauseOnNextCommandCheck = document.getElementById('developer-pause-on-next-command');
+  if (pauseOnNextCommandCheck && developerMode.pauseOnNextCommand !== undefined) {
+    pauseOnNextCommandCheck.checked = developerMode.pauseOnNextCommand;
   }
   // -> update whether to pause on failure
-  if (developerMode.pauseOnFailure !== undefined) {
-    $('#developer-pause-on-failure').prop('checked', developerMode.pauseOnFailure);
+  const pauseOnFailureCheck = document.getElementById('developer-pause-on-failure');
+  if (pauseOnFailureCheck && developerMode.pauseOnFailure !== undefined) {
+    pauseOnFailureCheck.checked = developerMode.pauseOnFailure;
   }
 }
 
@@ -814,11 +845,21 @@ function handleModuleToPauseAtSelected() {
   }
 
   // determine the selected module including the category, eg. "installation-welcome"
-  var selectedModuleOption = $('#developer-pause-at-module').find('option:selected');
-  var category = selectedModuleOption.parent('optgroup').attr('label');
+  const select = document.getElementById('developer-pause-at-module');
+  if (!select) {
+    return;
+  }
+  const selectedModuleOption = select.options[select.selectedIndex];
+  if (!selectedModuleOption) {
+    return;
+  }
+  const category =
+    selectedModuleOption.parentElement && selectedModuleOption.parentElement.nodeName === 'OPTGROUP'
+      ? selectedModuleOption.parentElement.label
+      : null;
   var selectedModuleName = null;
   if (category) {
-    selectedModuleName = category + '-' + selectedModuleOption.text();
+    selectedModuleName = category + '-' + selectedModuleOption.textContent;
   }
   if (selectedModuleName !== developerMode.moduleToPauseAt) {
     sendWsCommand({
@@ -834,7 +875,7 @@ function handlePauseOnMismatchSelected() {
     return;
   }
 
-  var selectedValue = $('#developer-pause-on-mismatch').val();
+  var selectedValue = document.getElementById('developer-pause-on-mismatch').value;
   var pauseOn;
   switch (selectedValue) {
     case 'fail':
@@ -955,7 +996,7 @@ function addLivehandlerFlash(status, id, text) {
   text +=
     '<p><hr>For troubleshooting, checkout the <a href="https://open.qa/docs/#debugdevelmode" \
     target="blank">documentation about debugging the developer mode setup</a>.</p>';
-  addUniqueFlash(status, id, text, $('#developer-flash-messages'));
+  addUniqueFlash(status, id, text, document.getElementById('developer-flash-messages'));
 }
 
 function handleMessageFromWebsocketConnection(wsConnection, msg) {
@@ -1178,7 +1219,7 @@ function processWsCommand(obj) {
           developerMode.hasWsError = false;
 
           // handle messages from os-autoinst command server
-          $.each(messageToStatusVariable, function (index, msgToStatusValue) {
+          messageToStatusVariable.forEach(msgToStatusValue => {
             var msg = msgToStatusValue.msg;
             if (!(msg in data)) {
               return;

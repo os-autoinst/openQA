@@ -156,9 +156,9 @@ subtest 'Current jobs' => sub {
     }
 
     my $first = wait_for_element(selector => '#results .list-group-item:first-child .timeago:not(:empty)');
-    is $first->get_text, 'about an hour ago', 'first job';
+    like $first->get_text, qr/(?:about )?(?:an?|1) hour ago/, 'first job';
     my $last = wait_for_element(selector => '#results .list-group-item:nth-child(2) .timeago:not(:empty)');
-    is $last->get_text, 'about 10 hours ago', 'last job';
+    like $last->get_text, qr/(?:about )?10 hours ago/, 'last job';
 };
 
 END { kill_driver() }
