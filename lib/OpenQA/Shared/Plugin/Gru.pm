@@ -18,6 +18,8 @@ use Mojo::File qw(path);
 use Mojo::JSON qw(decode_json);
 use Feature::Compat::Try;
 
+use constant TRACK_INTERVAL => $ENV{OPENQA_GRU_TASK_TRACK_INTERVAL} // 0.5;
+
 has app => undef, weak => 1;
 has 'dsn';
 
@@ -309,7 +311,7 @@ sub enqueue_and_keep_track {
     }
 
     # keep track of the Minion job and continue rendering if it has completed
-    return $self->app->minion->result_p($minion_id, {interval => 0.5})->then(
+    return $self->app->minion->result_p($minion_id, {interval => TRACK_INTERVAL})->then(
         sub {
             my ($info) = @_;
 
