@@ -2296,7 +2296,9 @@ follows:
 * If `CASEDIR` or `NEEDLES_DIR` is customized the customized location is used
   instead of the default repository.
 * If only one of `CASEDIR` or `NEEDLES_DIR` is customized the other variable
-  will still be initialized to point to the default repository.
+  will still be initialized to point to the default repository. In case of 
+  undefined `CASEDIR` the variable will attempt to set the value of 
+  `DISTRIBUTION_DIR` from the openQA global settings.
 * A relative `NEEDLES_DIR` is treated to be relative to the default `CASEDIR`
   (even if `CASEDIR` is customized). To have it treated to be relative to the
   custom `CASEDIR`, prefix the relative path with `%CASEDIR%/`. So specifying

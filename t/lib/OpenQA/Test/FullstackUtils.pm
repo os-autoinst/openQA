@@ -24,6 +24,7 @@ use OpenQA::Test::Utils 'wait_for_or_bail_out';
 
 my $JOB_SETUP = {
     ISO => 'Core-7.2.iso',
+    CASEDIR => 'tinycore',
     DISTRI => 'tinycore',
     ARCH => 'i386',
     QEMU => 'i386',

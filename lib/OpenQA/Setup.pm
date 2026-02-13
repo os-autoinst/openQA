@@ -80,6 +80,7 @@ sub read_config ($app) {
     my %defaults = (
         global => {
             appname => 'openQA',
+            distribution_dir => 'opensuse',
             base_url => undef,
             branding => 'openSUSE',
             download_domains => undef,

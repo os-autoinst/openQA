@@ -206,12 +206,15 @@ sub testcasedir ($distri = undef, $version = undef, $rootfortests = undef) {
         $rootfortests ||= $dir if -d $dir;
     }
     $rootfortests ||= $defaultroot;
-    $distri //= '';
-    # TODO actually "distri" is misused here. It should rather be something
-    # like the name of the repository with all tests
-    my $dir = catdir($rootfortests, $distri);
-    $dir .= "-$version" if $version && -e "$dir-$version";
-    return $dir;
+    try {
+        my $dir = catdir($rootfortests, $distri);
+        $dir .= "-$version" if $version && -e "$dir-$version";
+        log_info "testcasedir path exists at $dir" if (-e $dir || -l $dir);
+        return $dir;
+    }
+    catch ($e) {
+        log_error "testcasdir failed using '$distri': $e";
+    }
 }
 
 =head2 git_commit_url
