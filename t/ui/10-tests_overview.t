@@ -138,13 +138,14 @@ my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
 is(scalar @filtered_out, 0, 'result filter correctly applied');
 
 # Test whether all URL parameter are passed correctly
-my $url_with_escaped_parameters
-  = $baseurl
-  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&comment=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+my $url = $baseurl . 'tests/overview?';
+my $empty_params = 'arch=&flavor=&machine=&test=&modules=&module_re=&group_glob=&not_group_glob=&comment=&';
+my $escaped_params = 'distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+my $url_with_escaped_parameters = $url . $empty_params . $escaped_params;
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button[type="submit"]')->click();
-my $url_after_filter = "$url_with_escaped_parameters#";
+my $url_after_filter = $url . $escaped_params;
 my $desc = 'escaped URL parameters are passed correctly';
 wait_until sub { $driver->get_current_url eq $url_after_filter }, $desc, 10;
 is $driver->get_current_url, $url_after_filter, $desc;
@@ -695,18 +696,20 @@ subtest 'filter helper links' => sub {
     my $master = $driver->find_child_element($results_div, '.filter-bulk-master');
     subtest 'select all' => sub {
         $master->click();
-        my @checkboxes = $driver->find_child_elements($results_div, 'input[type="checkbox"]:not(.filter-bulk-master)');
+        my @checkboxes = $driver->find_child_elements($results_div,
+            'input[type="checkbox"]:not(.filter-bulk-master):not(.filter-meta)');
         my $all_selected = 1;
         for my $cb (@checkboxes) { $all_selected = 0 unless $cb->is_selected; }
-        ok $all_selected, 'all checkboxes selected after master checkbox click';
+        ok $all_selected, 'all base checkboxes selected after master checkbox click';
         ok $master->is_selected, 'master checkbox is checked';
     };
     subtest 'select none' => sub {
         $master->click();
-        my @checkboxes = $driver->find_child_elements($results_div, 'input[type="checkbox"]:not(.filter-bulk-master)');
+        my @checkboxes = $driver->find_child_elements($results_div,
+            'input[type="checkbox"]:not(.filter-bulk-master):not(.filter-meta)');
         my $none_selected = 1;
         for my $cb (@checkboxes) { $none_selected = 0 if $cb->is_selected; }
-        ok $none_selected, 'all checkboxes deselected after master checkbox click again';
+        ok $none_selected, 'all base checkboxes deselected after master checkbox click again';
         ok !$master->is_selected, 'master checkbox is unchecked';
     };
     subtest 'partially selected' => sub {
@@ -718,8 +721,122 @@ subtest 'filter helper links' => sub {
         ok($driver->find_element_by_id('filter-failed')->is_selected, '"failed" selected after invert');
     };
     $driver->find_element('#filter-form button[type="submit"]')->click();
-    wait_until sub { $driver->get_current_url =~ qr/result=/ }, 'form submitted after using helper links';
-    like $driver->get_current_url, qr/result=/, 'URL contains result parameter';
+    wait_until sub { $driver->get_current_url =~ qr/result(__n)?=/ }, 'form submitted after using helper links';
+    like $driver->get_current_url, qr/result(__n)?=/, 'URL contains result parameter';
+};
+
+subtest 'empty query parameters are removed' => sub {
+    $driver->get('/tests/overview');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => 'input[name="arch"]', is_displayed => 1);
+
+    # set one value and leave others empty
+    $driver->find_element('input[name="arch"]')->send_keys('x86_64');
+    $driver->find_element('#filter-form button[type="submit"]')->click();
+
+    wait_until sub { $driver->get_current_url =~ qr/arch=x86_64/ }, 'form submitted';
+    my $url = $driver->get_current_url;
+    like $url, qr/arch=x86_64/, 'URL contains arch parameter';
+    unlike $url, qr/flavor=/, 'URL does not contain empty flavor parameter';
+    unlike $url, qr/machine=/, 'URL does not contain empty machine parameter';
+};
+
+subtest 'meta-filter checkboxes' => sub {
+    $driver->get('/tests/overview');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => '#filter-complete', is_displayed => 1);
+
+    ok $driver->find_element_by_id('filter-complete'), 'complete meta-result checkbox present';
+    ok $driver->find_element_by_id('filter-final'), 'final meta-state checkbox present';
+
+    $driver->find_element_by_id('filter-complete')->click();
+    $driver->find_element('#filter-form button[type="submit"]')->click();
+
+    wait_until sub { $driver->get_current_url =~ qr/result=complete/ }, 'form submitted with meta-result';
+    like $driver->get_current_url, qr/result=complete/, 'URL contains meta-result parameter';
+};
+
+subtest 'meta-checkbox updates individual checkboxes' => sub {
+    $driver->get('/tests/overview');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => '#filter-ok', is_displayed => 1);
+
+    my $ok_cb = $driver->find_element_by_id('filter-ok');
+    my $passed_cb = $driver->find_element_by_id('filter-passed');
+    my $softfailed_cb = $driver->find_element_by_id('filter-softfailed');
+
+    ok !$passed_cb->is_selected, 'passed checkbox initially unchecked';
+    ok !$softfailed_cb->is_selected, 'softfailed checkbox initially unchecked';
+
+    $ok_cb->click();
+
+    ok $passed_cb->is_selected, 'passed checkbox checked after meta-ok click';
+    ok $softfailed_cb->is_selected, 'softfailed checkbox checked after meta-ok click';
+
+    $ok_cb->click();
+
+    ok !$passed_cb->is_selected, 'passed checkbox unchecked after meta-ok click again';
+    ok !$softfailed_cb->is_selected, 'softfailed checkbox unchecked after meta-ok click again';
+};
+
+subtest 'redundant parameters are removed' => sub {
+    $driver->get('/tests/overview');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => '#filter-ok', is_displayed => 1);
+
+    # select "ok" meta and also manually select "passed" (which is redundant)
+    $driver->find_element_by_id('filter-ok')->click();
+    my $passed_cb = $driver->find_element_by_id('filter-passed');
+    ok $passed_cb->is_selected, 'passed selected by meta-ok';
+    # Uncheck and check passed to make it explicitly present if it wasn't
+    # (though meta-ok already checks it, we want to ensure the logic handles it)
+    $passed_cb->click();
+    $passed_cb->click();
+
+    $driver->find_element('#filter-form button[type="submit"]')->click();
+
+    wait_until sub { $driver->get_current_url =~ qr/result=ok/ }, 'form submitted';
+    my $url = $driver->get_current_url;
+    like $url, qr/result=ok/, 'URL contains result=ok';
+    unlike $url, qr/result=passed/, 'URL does not contain redundant result=passed';
+};
+
+subtest 'all but one results in negative filter' => sub {
+    $driver->get('/tests/overview');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => '#filter-results', is_displayed => 1);
+
+    # select all base results
+    my $results_div = $driver->find_element('#filter-results');
+    $driver->find_child_element($results_div, '.filter-bulk-master')->click();
+
+    # deselect "passed"
+    $driver->find_element_by_id('filter-passed')->click();
+
+    $driver->find_element('#filter-form button[type="submit"]')->click();
+
+    wait_until sub { $driver->get_current_url =~ qr/result__n=passed/ }, 'form submitted';
+    like $driver->get_current_url, qr/result__n=passed/, 'URL contains result__n=passed';
+};
+
+subtest 'meta-checkboxes are ignored by bulk operations' => sub {
+    $driver->get('/tests/overview');
+    $driver->find_element('#filter-panel .card-header')->click();
+    wait_for_element(selector => '#filter-ok', is_displayed => 1);
+
+    my $results_div = $driver->find_element('#filter-results');
+    my $master = $driver->find_child_element($results_div, '.filter-bulk-master');
+    my $ok_cb = $driver->find_element_by_id('filter-ok');
+
+    ok !$ok_cb->is_selected, 'meta-ok initially unchecked';
+
+    $master->click();
+    ok $driver->find_element_by_id('filter-passed')->is_selected, 'passed selected by master';
+    ok !$ok_cb->is_selected, 'meta-ok NOT selected by master';
+
+    $driver->find_child_element($results_div, '.filter-bulk-invert')->click();
+    ok !$driver->find_element_by_id('filter-passed')->is_selected, 'passed deselected by invert';
+    ok !$ok_cb->is_selected, 'meta-ok still NOT selected by invert';
 };
 
 kill_driver();

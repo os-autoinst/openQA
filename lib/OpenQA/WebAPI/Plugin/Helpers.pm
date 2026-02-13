@@ -9,7 +9,13 @@ use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
-use OpenQA::Jobs::Constants qw(EXECUTION_STATES PRE_EXECUTION_STATES ABORTED_RESULTS FAILED NOT_COMPLETE_RESULTS);
+use OpenQA::Jobs::Constants qw(
+  EXECUTION_STATES PRE_EXECUTION_STATES ABORTED_RESULTS FAILED NOT_COMPLETE_RESULTS
+  COMPLETE NOT_COMPLETE ABORTED COMPLETE_RESULTS
+  OK NOT_OK OK_RESULTS NOT_OK_RESULTS
+  PRE_EXECUTION EXECUTION FINAL FINAL_STATES
+  META_RESULTS META_STATES
+);
 use Text::Glob qw(glob_to_regex_string);
 use List::Util qw(any min);
 use Feature::Compat::Try;
@@ -516,12 +522,38 @@ sub _every_non_empty_param ($c, $param_key) {
 sub _compute_overview_filtering_params ($c) {
     my $states = $c->every_non_empty_param('state');
     my $results = $c->every_non_empty_param('result');
+    my $states_n = $c->every_non_empty_param('state__n');
+    my $results_n = $c->every_non_empty_param('result__n');
+
+    # expansion of meta-values
+    my %meta_states = (
+        PRE_EXECUTION() => [PRE_EXECUTION_STATES],
+        EXECUTION() => [EXECUTION_STATES],
+        FINAL() => [FINAL_STATES],
+    );
+    my %meta_results = (
+        COMPLETE() => [COMPLETE_RESULTS],
+        NOT_COMPLETE() => [NOT_COMPLETE_RESULTS],
+        ABORTED() => [ABORTED_RESULTS],
+        OK() => [OK_RESULTS],
+        NOT_OK() => [NOT_OK_RESULTS],
+    );
+    my $expand = sub ($params, $meta) {
+        [map { $meta->{$_} ? @{$meta->{$_}} : $_ } @$params]
+    };
+    $states = $expand->($states, \%meta_states);
+    $results = $expand->($results, \%meta_results);
+    $states_n = $expand->($states_n, \%meta_states);
+    $results_n = $expand->($results_n, \%meta_results);
+
     my $archs = $c->every_non_empty_param('arch');
     my $machines = $c->every_non_empty_param('machine');
     my $failed_modules = $c->every_non_empty_param('failed_modules');
     my %filters;
     $filters{'me.state'} = {-in => $states} if @$states;
     $filters{'me.result'} = {-in => $results} if @$results;
+    $filters{'me.state'} = {-not_in => $states_n} if @$states_n;
+    $filters{'me.result'} = {-not_in => $results_n} if @$results_n;
     $filters{'me.result'} = FAILED if @$failed_modules;
     $filters{ARCH} = {-in => $archs} if @$archs;
     $filters{MACHINE} = {-in => $machines} if @$machines;

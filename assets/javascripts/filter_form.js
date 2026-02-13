@@ -25,10 +25,53 @@ function setupFilterForm(options) {
 
   const filterForm = document.getElementById('filter-form');
   if (filterForm) {
-    filterForm.addEventListener('submit', function () {
+    filterForm.addEventListener('submit', function (event) {
+      event.preventDefault();
       const currentQuery = window.location.search.substring(1);
       const formData = new FormData(filterForm);
-      const newQuery = new URLSearchParams(formData).toString();
+
+      // optimize results and states to use negative filters if shorter
+      ['result', 'state'].forEach(key => {
+        const checkboxes = Array.from(filterForm.querySelectorAll(`input[name="${key}"]:not(.filter-meta)`));
+        const checked = checkboxes.filter(cb => cb.checked);
+        if (checked.length > 1 && checked.length === checkboxes.length - 1) {
+          const unchecked = checkboxes.find(cb => !cb.checked);
+          formData.delete(key);
+          formData.set(`${key}__n`, unchecked.value);
+        }
+      });
+
+      const params = new URLSearchParams(formData);
+
+      // remove redundant constituent values if meta-values are present
+      if (options && options.metaMapping) {
+        ['result', 'state'].forEach(key => {
+          const mapping = options.metaMapping[key];
+          if (!mapping) return;
+          const currentValues = params.getAll(key);
+          if (currentValues.length === 0) return;
+
+          let newValues = [...currentValues];
+          Object.keys(mapping).forEach(metaValue => {
+            if (currentValues.includes(metaValue)) {
+              const constituents = mapping[metaValue];
+              newValues = newValues.filter(val => !constituents.includes(val));
+            }
+          });
+
+          if (newValues.length !== currentValues.length) {
+            params.delete(key);
+            newValues.forEach(val => params.append(key, val));
+          }
+        });
+      }
+
+      const keysToDelete = [];
+      params.forEach((val, key) => {
+        if (val === '') keysToDelete.push(key);
+      });
+      keysToDelete.forEach(key => params.delete(key));
+      const newQuery = params.toString();
 
       if (newQuery !== currentQuery) {
         // show progress indication
@@ -40,6 +83,7 @@ function setupFilterForm(options) {
           progress.innerHTML = '<i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span>';
           cardBody.appendChild(progress);
         }
+        window.location.search = newQuery;
       }
     });
   }
@@ -67,7 +111,7 @@ function setupFilterForm(options) {
   const updateMasterCheckbox = function (container) {
     const master = container.querySelector('.filter-bulk-master');
     if (!master) return;
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master)');
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master):not(.filter-meta)');
     const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
 
     if (checkedCount === 0) {
@@ -88,7 +132,7 @@ function setupFilterForm(options) {
       if (master) {
         const mb3 = master.closest('.mb-3');
         const isChecked = master.checked;
-        mb3.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master)').forEach(cb => {
+        mb3.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master):not(.filter-meta)').forEach(cb => {
           cb.checked = isChecked;
         });
         return;
@@ -98,7 +142,7 @@ function setupFilterForm(options) {
       if (invert) {
         e.preventDefault();
         const mb3 = invert.closest('.mb-3');
-        mb3.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master)').forEach(cb => {
+        mb3.querySelectorAll('input[type="checkbox"]:not(.filter-bulk-master):not(.filter-meta)').forEach(cb => {
           cb.checked = !cb.checked;
         });
         updateMasterCheckbox(mb3);
@@ -106,13 +150,37 @@ function setupFilterForm(options) {
     });
 
     container.addEventListener('change', function (e) {
-      if (e.target.matches('input[type="checkbox"]:not(.filter-bulk-master)')) {
+      if (e.target.matches('input[type="checkbox"]:not(.filter-bulk-master):not(.filter-meta)')) {
         updateMasterCheckbox(e.target.closest('.mb-3'));
       }
     });
 
     updateMasterCheckbox(container);
   });
+
+  if (options && options.metaMapping) {
+    const filterForm = document.getElementById('filter-form');
+    if (filterForm) {
+      ['result', 'state'].forEach(key => {
+        const mapping = options.metaMapping[key];
+        if (!mapping) return;
+        Object.keys(mapping).forEach(metaValue => {
+          const metaCheckbox = filterForm.querySelector(`input[name="${key}"][value="${metaValue}"]`);
+          if (!metaCheckbox) return;
+          metaCheckbox.addEventListener('change', function () {
+            const isChecked = this.checked;
+            mapping[metaValue].forEach(val => {
+              const cb = filterForm.querySelector(`input[name="${key}"][value="${val}"]`);
+              if (cb) {
+                cb.checked = isChecked;
+                cb.dispatchEvent(new Event('change', {bubbles: true}));
+              }
+            });
+          });
+        });
+      });
+    }
+  }
 }
 
 function parseFilterArguments(paramHandler) {
