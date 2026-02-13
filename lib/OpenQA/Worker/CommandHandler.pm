@@ -148,14 +148,12 @@ sub _can_grab_job {
     # refuse new job(s) if the worker is in an error state or stopping
     if ($worker->is_stopping) {
         $reason_to_reject_job = 'currently stopping';
-        # note: Not rejecting the job here; declaring the worker as offline which is done in any case
-        #       should be sufficient.
     }
     elsif (my $current_error = _reevaluate_and_return_current_error($client, $worker)) {
         $reason_to_reject_job = $current_error;
-        $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
     }
     if (defined $reason_to_reject_job) {
+        $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
         log_debug("Refusing to grab job from $webui_host: $reason_to_reject_job");
         return 0;
     }
