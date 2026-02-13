@@ -22,7 +22,7 @@ sub exit_code (&) {
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils (qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex),
-    qw(download_rate download_speed usleep_backoff));
+    qw(download_rate download_speed usleep_backoff resolve_distribution_dir));
 use OpenQA::SignalBlocker;
 use OpenQA::Task::SignalGuard;
 use OpenQA::Test::TimeLimit '10';
@@ -378,6 +378,37 @@ subtest parse_assets_from_settings => sub {
     $refassets->{KERNEL} = {type => 'other', name => '/path/vmlinuz'};
     is_deeply $assets, $refassets, 'correct with absolute KERNEL';
 
+};
+
+subtest 'resolve_distribution_dir' => sub {
+    use OpenQA::App;
+    use Mojolicious;
+    use Test::Output 'combined_like';
+
+    my $vars = {DISTRI => 'aeon'};
+    my $worker_global_settings = {};
+    is resolve_distribution_dir($vars, $worker_global_settings), 'aeon', 'fallback to DISTRI when no other settings';
+    $vars = {DISTRI => 'aeon', DISTRIBUTION_DIR => 'opensuse'};
+    is resolve_distribution_dir($vars, $worker_global_settings), 'opensuse', 'DISTRIBUTION_DIR in vars takes priority';
+    $vars = {DISTRI => 'aeon'};
+    $worker_global_settings = {DISTRIBUTION_DIR => 'fedora'};
+    is resolve_distribution_dir($vars, $worker_global_settings), 'fedora', 'worker DISTRIBUTION_DIR overrides DISTRI';
+    $vars = {DISTRI => 'aeon', DISTRIBUTION_DIR => 'opensuse'};
+    is resolve_distribution_dir($vars, $worker_global_settings), 'opensuse', 'job setting overrides worker setting';
+
+    subtest 'test with app config' => sub {
+        my $app = Mojolicious->new;
+        $app->config->{global}->{distribution_dir} = 'tumbleweed';
+        OpenQA::App->set_singleton($app);
+
+        $vars = {DISTRI => 'aeon'};
+        $worker_global_settings = {};
+        is resolve_distribution_dir($vars, $worker_global_settings), 'tumbleweed', 'app config is used when available';
+        $vars = {DISTRI => 'aeon', DISTRIBUTION_DIR => 'opensuse'};
+        $worker_global_settings = {DISTRIBUTION_DIR => 'fedora'};
+        combined_like { resolve_distribution_dir($vars, $worker_global_settings) }
+        qr/resolve distribution_dir to opensuse/, 'log message contains resolved distribution directory';
+    };
 };
 
 subtest 'base_host' => sub {

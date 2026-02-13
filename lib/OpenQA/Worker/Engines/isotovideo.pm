@@ -7,7 +7,7 @@ use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_
 use OpenQA::JobSettings;
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
 use OpenQA::Utils
-  qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir needledir);
+  qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir needledir resolve_distribution_dir);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
@@ -390,7 +390,9 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
 
     # ensure a CASEDIR and a PRODUCTDIR is assigned and create a symlink if required
     my $absolute_paths = $vars->{ABSOLUTE_TEST_CONFIG_PATHS};
-    my @vars_for_default_dirs = ($vars->{DISTRI}, $vars->{VERSION}, $shared_cache);
+    my $global_settings = $job->worker->settings->global_settings;
+    my $distri = resolve_distribution_dir($vars, $global_settings);
+    my @vars_for_default_dirs = ($distri, $vars->{VERSION}, $shared_cache);
     my $default_casedir = testcasedir(@vars_for_default_dirs);
     my $default_productdir = productdir(@vars_for_default_dirs);
     my $target_name = path($default_casedir)->basename;
