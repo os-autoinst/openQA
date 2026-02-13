@@ -223,6 +223,16 @@ function setupOverview() {
     if (key === 'result' || key === 'state') {
       flags[key][val] = true;
       return formatFilter(val);
+    } else if (key === 'result__n' || key === 'state__n') {
+      const baseKey = key.slice(0, -3);
+      const containerId = 'filter-' + baseKey + 's';
+      const container = document.getElementById(containerId);
+      if (container) {
+        Array.from(container.querySelectorAll(`input[name="${baseKey}"]`)).forEach(cb => {
+          if (cb.value !== val) flags[baseKey][cb.value] = true;
+        });
+      }
+      return 'NOT ' + formatFilter(val);
     } else if (key === 'todo') {
       form.todo.checked = val !== '0';
       return 'TODO';
