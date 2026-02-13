@@ -144,7 +144,7 @@ my $url_with_escaped_parameters
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button[type="submit"]')->click();
-my $url_after_filter = "$url_with_escaped_parameters#";
+my $url_after_filter = $url_with_escaped_parameters;
 my $desc = 'escaped URL parameters are passed correctly';
 wait_until sub { $driver->get_current_url eq $url_after_filter }, $desc, 10;
 is $driver->get_current_url, $url_after_filter, $desc;
@@ -718,8 +718,8 @@ subtest 'filter helper links' => sub {
         ok($driver->find_element_by_id('filter-failed')->is_selected, '"failed" selected after invert');
     };
     $driver->find_element('#filter-form button[type="submit"]')->click();
-    wait_until sub { $driver->get_current_url =~ qr/result=/ }, 'form submitted after using helper links';
-    like $driver->get_current_url, qr/result=/, 'URL contains result parameter';
+    wait_until sub { $driver->get_current_url =~ qr/result(__n|__not)?=/ }, 'form submitted after using helper links';
+    like $driver->get_current_url, qr/result(__n|__not)?=/, 'URL contains result parameter';
 };
 
 kill_driver();
