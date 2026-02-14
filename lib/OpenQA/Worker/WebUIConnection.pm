@@ -169,6 +169,11 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
                 my $error = $tx->error;
                 my $retry_after = $tx->res->headers->header('Retry-After');
                 my $error_message = "Unable to upgrade to ws connection via $websocket_url";
+
+                if ($tx->res->error && $tx->res->error->{message}) {
+                    $error_message .= sprintf(", %s in %s", $tx->res->error->{message}, $tx->req->url);
+                }
+
                 $error_message .= ", code $error->{code}" if ($error && $error->{code});
                 $self->_set_status(failed => {ws_error_message => $error_message, retry_after => $retry_after});
                 return undef;
