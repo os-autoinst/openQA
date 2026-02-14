@@ -321,6 +321,7 @@ sub startup ($self) {
 
     # api/v1/job_settings/jobs
     $api_public_r->get('/job_settings/jobs')->name('apiv1_get_jobs_for_job_settings')->to('job_settings#jobs');
+    $api_public_r->get('/job_settings/blocked_jobs')->name('apiv1_get_blocked_jobs')->to('job_settings#failed_jobs');
 
     my $job_r = $api_ro->any('/jobs/<jobid:num>');
     push @api_routes, $job_r;
