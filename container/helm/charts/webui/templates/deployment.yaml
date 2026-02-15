@@ -16,6 +16,10 @@ spec:
       labels:
         {{- include "webui.selectorLabels" . | nindent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: "postgres:latest"
+          command: ["sh", "-c", "until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done;"]
       containers:
         # Future enhancement option: a container with rsync for setup with cache service
         - name: {{ include "webui.fullname" . }}-scheduler
@@ -101,6 +105,8 @@ spec:
             - name: config
               mountPath: /data/conf
               readOnly: true
+            - name: share-factory
+              mountPath: /var/lib/openqa/share/factory
           env:
             - name: MODE
               value: "webui"
@@ -113,9 +119,15 @@ spec:
           readinessProbe:
             exec:
               command: ["curl", "-f", "http://localhost:9526"]
+            # Give the app 15 seconds to start before probing
+            initialDelaySeconds: 15
+            # Give the probe 5 seconds to respond
+            timeoutSeconds: 5
       restartPolicy: Always
       volumes:
         - name: data
+          emptyDir: {}
+        - name: share-factory
           emptyDir: {}
         - name: config
           configMap:
