@@ -24,8 +24,7 @@ coverage:
           - lib/OpenQA/Worker.pm
           - lib/OpenQA/Utils.pm
           - lib/OpenQA/WebAPI/Controller/
-          - lib/OpenQA/Shared/Controller/Running.pm
-          - lib/OpenQA/Shared/Controller/Session.pm
+          - lib/OpenQA/Shared/
       tests:
         target: 100.0
         threshold: 0

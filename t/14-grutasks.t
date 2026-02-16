@@ -39,8 +39,13 @@ use Time::Seconds;
 
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
-# Avoid using tester's ~/.gitconfig
-delete $ENV{HOME};
+BEGIN {
+    # Check for status updates of Minion jobs in enqueue_and_keep_track immediately
+    $ENV{OPENQA_GRU_TASK_TRACK_INTERVAL} = 0;
+
+    # Avoid using tester's ~/.gitconfig
+    delete $ENV{HOME};
+}
 
 # Avoid tampering with git checkout
 my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
@@ -151,6 +156,59 @@ $minion->add_task(
         warn 'About to throw';    # uncoverable statement
         die 'Thrown fail';    # uncoverable statement
     });
+
+subtest 'enqueue and keep track of gru task' => sub {
+    my $backend = $minion->backend;
+    my $gru_mock = Test::MockModule->new('OpenQA::Shared::Plugin::Gru');
+    $gru_mock->redefine(has_workers => 1);
+
+    my %job_count;
+    my $enqueue_and_keep_track = sub ($task_name, $args, $handler) {
+        my ($id, @results);
+        my $p = $app->gru->enqueue_and_keep_track(
+            task_name => $task_name,
+            task_description => 'test task',
+            task_args => $args
+        );
+        my $handle = sub (@res) { push @results, @res };
+        $p->then($handle)->catch($handle)->finally(sub () { Mojo::IOLoop->stop });
+        $job_count{$task_name}++;
+        $id = Mojo::IOLoop->recurring(
+            0 => sub ($loop) {
+                my $jobs = $backend->list_jobs(0, undef, {tasks => [$task_name]})->{jobs};
+                return unless @$jobs;
+                $loop->remove($id);
+                is @$jobs, $job_count{$task_name}, 'one job has been created';
+                $handler->($jobs->[0]);
+            });
+        Mojo::IOLoop->start;
+        return @results;
+    };
+
+    subtest 'job is removed' => sub {
+        my ($result, $error_code) = $enqueue_and_keep_track->(
+            some_random_task => [],
+            sub ($job) { $backend->remove_job($job->{id}) });
+        like $result->{error}, qr/Minion job \d+.*removed/, 'specific error message present';
+        is $error_code, 500, 'the minion job vanishing is considered a server error';
+    };
+
+    subtest 'job fails' => sub {
+        my ($result, $error_code) = $enqueue_and_keep_track->(
+            gru_manual_task => ['fail'],
+            sub ($job) { perform_minion_jobs($minion) });
+        like $result->{error}, qr/task failed.*Manual fail/, 'specific error message present';
+        is $error_code, 500, 'the minion job failing is considered a server error';
+    };
+
+    subtest 'job succeeds' => sub {
+        my ($result, $error_code) = $enqueue_and_keep_track->(
+            gru_manual_task => ['user_error'],
+            sub ($job) { perform_minion_jobs($minion) });
+        is $result, 'Manual user error', 'result returned';
+        is $error_code, undef, 'no error returned';
+    };
+};
 
 # list initially existing assets
 my $dbh = $schema->storage->dbh;
