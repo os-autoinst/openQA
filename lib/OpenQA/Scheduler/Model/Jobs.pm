@@ -28,8 +28,14 @@ has scheduled_jobs => sub { {} };
 has shuffle_workers => 1;
 
 sub determine_free_workers ($shuffle = 0) {
-    my @free_workers = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
-      OpenQA::Schema->singleton->resultset('Workers')->search({job_id => undef, error => undef})->all;
+    my @free_workers = grep { !$_->dead } OpenQA::Schema->singleton->resultset('Workers')->search(
+        {
+            job_id => undef,
+            error => undef,
+            'properties.key' => 'WEBSOCKET_API_VERSION',
+            'properties.value' => WEBSOCKET_API_VERSION
+        },
+        {join => 'properties'})->all;
     return $shuffle ? shuffle(\@free_workers) : \@free_workers;
 }
 
