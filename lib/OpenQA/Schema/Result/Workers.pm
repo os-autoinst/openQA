@@ -127,8 +127,9 @@ sub dead {
 }
 
 sub websocket_api_version ($self) {
-    return $self->{_websocket_api_version} if exists $self->{_websocket_api_version};
-    return $self->{_websocket_api_version} = $self->get_property('WEBSOCKET_API_VERSION');
+    my $v = $self->{_websocket_api_version} // $self->get_property('WEBSOCKET_API_VERSION');
+    return $self->{_websocket_api_version} = $v if $v;
+    return undef;
 }
 
 sub check_class {
