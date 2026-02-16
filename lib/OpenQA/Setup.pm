@@ -112,6 +112,7 @@ sub read_config ($app) {
             access_control_allow_origin_header => undef,
             api_hmac_time_tolerance => 300,
             frontpage_builds => 3,
+            scenario_definitions_allowed_hosts => 'github.com raw.githubusercontent.com',
         },
         rate_limits => {
             search => 5,

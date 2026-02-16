@@ -18,12 +18,13 @@ sub register ($self, $app, @) {
     $app->minion->add_task(schedule_iso => sub { _schedule_iso($app, @_) });
 }
 
-sub _download_scenario_definitions ($minion_job, $scheduled_product, $scheduling_params) {
+sub _download_scenario_definitions ($app, $minion_job, $scheduled_product, $scheduling_params) {
     return 1 unless my $file = $scheduling_params->{SCENARIO_DEFINITIONS_YAML_FILE};
     my $url = Mojo::URL->new($file);
     my $scheme = $url->scheme;
     return 1 unless $scheme eq 'http' || $scheme eq 'https';
-    return 1 unless $url->host eq 'raw.githubusercontent.com';    # restrict this for now to GitHub
+    state $allowed_hosts = {map { ($_ => 1) } split ' ', $app->config->{global}->{scenario_definitions_allowed_hosts}};
+    return 1 unless $allowed_hosts->{$url->host};
     my $ua = Mojo::UserAgent->new(SCENARIO_DEFS_YAML_UA_ARGS);
     my $tx = $ua->get($url);
     if (my $err = $tx->error) {
@@ -43,7 +44,7 @@ sub _schedule_iso ($app, $minion_job, $args, @) {
     my $scheduling_params = $args->{scheduling_params};
     return $minion_job->fail({error => "Scheduled product with ID $scheduled_product_id does not exist."})
       unless my $scheduled_product = $app->schema->resultset('ScheduledProducts')->find($scheduled_product_id);
-    return undef unless _download_scenario_definitions($minion_job, $scheduled_product, $scheduling_params);
+    return undef unless _download_scenario_definitions($app, $minion_job, $scheduled_product, $scheduling_params);
     $minion_job->finish(
         $scheduled_product->schedule_iso($scheduling_params, $ensure_task_retry_on_termination_signal_guard));
 }
