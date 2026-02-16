@@ -189,7 +189,7 @@ subtest 'enqueue and keep track of gru task' => sub {
         my ($result, $error_code) = $enqueue_and_keep_track->(
             some_random_task => [],
             sub ($job) { $backend->remove_job($job->{id}) });
-        like $result->{error}, qr/task failed.*dashboard.*details/, 'generic error message present';
+        like $result->{error}, qr/Minion job \d+.*removed/, 'specific error message present';
         is $error_code, 500, 'the minion job vanishing is considered a server error';
     };
 

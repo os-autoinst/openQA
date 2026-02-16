@@ -308,8 +308,13 @@ sub enqueue_and_keep_track ($self, %args) {
     }
 
     # keep track of the Minion job and continue rendering if it has completed
-    return $self->app->minion->result_p($minion_id, {interval => TRACK_INTERVAL})
-      ->then(sub (@results) { ref $results[0] ne 'HASH' ? Mojo::Promise->reject : $results[0]->{result} })->catch(
+    return $self->app->minion->result_p($minion_id, {interval => TRACK_INTERVAL})->then(
+        sub (@results) {
+            ref $results[0] ne 'HASH'
+              ? Mojo::Promise->reject({result => {error => "Minion job $minion_id was removed."}})
+              : $results[0]->{result};
+        }
+    )->catch(
         sub (@results) {
             # pass result hash with error message (used by save/delete needle tasks)
             my $result = ref $results[0] eq 'HASH' ? $results[0]->{result} : undef;
