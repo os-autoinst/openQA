@@ -545,15 +545,15 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     like $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm}, 'qemu-kvm is shown in log viewer';
 
     $driver->find_element('#filter-log-file')->send_keys('kate');
-    like $driver->find_element('#filter-info')->get_text, qr{Showing 3 / 1292 lines},
-      'Showing filter result info for substring';
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 3 / 1292 lines} },
+        'Showing filter result info for substring');
     unlike $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm},
       'qemu-kvm is not shown when filtering for something else';
     $driver->find_element('#filter-log-file')->clear;
-    like $driver->find_element('#filter-info')->get_text, qr{^$}, 'Filter result info cleared';
+    wait_until(sub { $driver->find_element('#filter-info')->get_text eq '' }, 'Filter result info cleared');
     $driver->find_element('#filter-log-file')->send_keys('/kate-[12]/');
-    like $driver->find_element('#filter-info')->get_text, qr{Showing 2 / 1292 lines},
-      'Showing filter result info for regex';
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 2 / 1292 lines} },
+        'Showing filter result info for regex');
 
     my $url = Mojo::URL->new($driver->execute_script('return document.location.toString()'));
     is $url->query->param('filename'), 'autoinst-log.txt', 'URL still contains filename after filtering';

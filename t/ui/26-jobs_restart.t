@@ -102,8 +102,7 @@ subtest 'restart job from info panel in test results' => sub {
         $driver->find_element('#restart-result-skip-ok-children')
           ->attribute_like('href', qr/skip_ok_result_children=1/, 'skip OK children API URL correct');
         $driver->find_element('#restart-result-skip-children')->click;
-        wait_for_ajax(msg => 'wait for redirection to clone job');
-        like $driver->get_current_url, qr{/tests/99982}, 'shows cloned job';
+        wait_until(sub { $driver->get_current_url =~ qr{/tests/99982} }, 'shows cloned job');
         $jobs->find(99982)->delete;
     };
     subtest 'child job shows options for advanced restart' => sub {
@@ -159,9 +158,8 @@ subtest 'restart job from info panel in test results' => sub {
     subtest 'successful restart' => sub {
         is($driver->get('/tests/99946'), 1, 'go to job 99946');
         update_last_job_id;
-        $driver->find_element('#restart-result')->click();
-        wait_for_ajax(msg => 'successful restart from info panel in test results');
-        like($driver->get_current_url(), expected_job_id_regex, 'auto refresh to restarted job');
+        $driver->find_element('#restart-result')->click;
+        wait_until(sub { $driver->get_current_url =~ expected_job_id_regex }, 'auto refresh to restarted job');
         like($driver->find_element('#info_box .card-header')->get_text(),
             qr/textmode\@32bit/, 'restarted job is correct');
     };
@@ -182,8 +180,7 @@ subtest 'check single job restart in /tests page' => sub {
         );
         is($td->get_text(), 'kde@64bit-uefi', 'job not marked as restarted');
         $driver->find_element('#flash-messages-finished-jobs button.force-restart')->click();
-        wait_for_ajax(msg => 'forced job restart');
-        is($td->get_text(), 'kde@64bit-uefi (restarted)', 'job is marked as restarted');
+        wait_until(sub { $td->get_text() =~ qr/kde\@64bit-uefi \(restarted\)/ }, 'job is marked as restarted');
         $_->click for $driver->find_elements('#flash-messages-finished-jobs button.close');
 
     };
@@ -192,8 +189,7 @@ subtest 'check single job restart in /tests page' => sub {
         my $td = $driver->find_element('#job_99926 td.test');
         is($td->get_text(), 'minimalx@32bit', '99926 is minimalx@32bit');
         $driver->find_child_element($td, '.restart', 'css')->click();
-        wait_for_ajax(msg => 'successful job restart');
-        is($td->get_text(), 'minimalx@32bit (restarted)', 'job is marked as restarted');
+        wait_until(sub { $td->get_text() =~ qr/minimalx\@32bit \(restarted\)/ }, 'job is marked as restarted');
         like($driver->find_child_element($td, "./a[\@title='new test']", 'xpath')->get_attribute('href'),
             expected_job_id_regex, 'restart link is correct');
 
