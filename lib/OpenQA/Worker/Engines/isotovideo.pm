@@ -390,12 +390,14 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
 
     # ensure a CASEDIR and a PRODUCTDIR is assigned and create a symlink if required
     my $absolute_paths = $vars->{ABSOLUTE_TEST_CONFIG_PATHS};
-    my @vars_for_default_dirs = ($vars->{DISTRI}, $vars->{VERSION}, $shared_cache);
+    my $casedir = $vars->{CASEDIR};
+    my $effective_distri = defined $casedir && !looks_like_url_with_scheme($casedir) ? $casedir : $vars->{DISTRI};
+    my @vars_for_default_dirs = ($effective_distri, $vars->{VERSION}, $shared_cache);
     my $default_casedir = testcasedir(@vars_for_default_dirs);
     my $default_productdir = productdir(@vars_for_default_dirs);
     my $target_name = path($default_casedir)->basename;
-    my $has_custom_dir = $vars->{CASEDIR} || $vars->{PRODUCTDIR};
-    my $casedir = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
+    my $has_custom_dir = $casedir || $vars->{PRODUCTDIR};
+    $casedir = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
     unless (_is_job_only_relying_on_git($vars)) {
         if ($casedir eq $target_name) {
             $vars->{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
