@@ -6447,7 +6447,9 @@ instance.</p>
 on the openQA host. One can also specify an HTTP/HTTPs URL via that variable
 when <code>async=1</code> is used (see
 <a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a>
-for details). Then this file is downloaded by the openQA host.</p>
+for details). Then this file is downloaded by the openQA host. The specified
+host name must be allowed via the configuration setting
+<code>scenario_definitions_allowed_hosts</code>.</p>
 </div>
 <div class="paragraph">
 <p>The YAML document itself should define at least one or more job templates:</p>
@@ -14670,7 +14672,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-02-14 04:45:34 UTC
+Last updated 2026-02-18 04:45:29 UTC
 </div>
 </div>
 </body>
