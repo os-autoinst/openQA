@@ -6,4 +6,4 @@ dependencies:
   repository: file://charts/worker/
   version: 0.1.0
 digest: sha256:bb76c96658f4ce7cb4e4d1ad0a416e96a1e2166cf85ca88657c1f913a5db8d48
-generated: "2026-02-15T07:00:20.959554751+01:00"
+generated: "2026-02-19T13:35:59.913711989+01:00"

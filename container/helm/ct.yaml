@@ -1,4 +1,5 @@
 # See https://github.com/helm/chart-testing#configuration
+# With Gateway API CRD disabled for chart-testing
 chart-dirs:
   - .
 chart-repos:

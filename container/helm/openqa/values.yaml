@@ -1,5 +1,5 @@
 enabled: true
-baseUrl: openqa.host.org
+baseUrl: openqa.internal
 useHttps: false
 key: 1234567890ABCDEF
 secret: 1234567890ABCDEF
@@ -9,9 +9,10 @@ image:
   tag: "latest"
 service:
   type: ClusterIP
-ingress:
+gateway:
   enabled: true
-  className: "nginx"
+  className: "eg"
+  port: 80
 postgresql:
   enabled: true
   fullnameOverride: db
