@@ -13,15 +13,30 @@ a parent chart, _openqa_.
 
 ## Installation
 
-Make sure, first that a Kubernetes cluster is running
+Make sure first that a Kubernetes cluster is running:
+
 ```bash
 minikube start
-minikube addons enable ingress
-minikube status      
+minikube status
 ```
 
-To install openQA, update helm dependencies and install the parent chart
-from the `container/helm` directory:
+### Gateway API setup
+
+The chart uses the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/)
+for external access. This has to be installed once before the provision of the
+cluster. Install the Gateway API CRDs and
+[Envoy Gateway](https://gateway.envoyproxy.io/) controller:
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/<GW_VERSION>/standard-install.yaml --server-side
+helm install eg oci://docker.io/envoyproxy/gateway-helm \
+  -n envoy-gateway-system --create-namespace --skip-crds
+```
+
+### Install the chart
+
+Update helm dependencies (if needed) and install the parent chart from the
+`container/helm` directory:
 
 ```bash
 cd container/helm
@@ -43,23 +58,33 @@ helm status --show-resources openqa
 
 ## Accessing the Web UI
 
-By default the service type is `ClusterIP`, which requires an Ingress
-controller for external access.
+### Via Gateway API (recommended)
 
-### Via Ingress (recommended)
+The chart creates a `Gateway` and `HTTPRoute` by default. For minikube, run
+`minikube tunnel` in a separate terminal to assign an external IP to the
+gateway's LoadBalancer service.
 
-The chart ships with Ingress enabled by default. The installation steps above
-already enable the Ingress controller via `minikube addons enable ingress`.
-Point the hostname configured in `values.yaml` (`baseUrl`) to your cluster.
-For local development, add an entry to `/etc/hosts`:
+Find the gateway address:
 
-```
-127.0.0.1 openqa.host.org
+```bash
+kubectl get gateway
 ```
 
-Then access the UI at http://openqa.host.org.
+Add the gateway address to `/etc/hosts`, pointing to the hostname configured
+in `values.yaml` (`baseUrl`):
+
+```
+<GATEWAY_ADDRESS> openqa.internal
+```
+
+Then access the UI at http://openqa.internal.
+
+**Note:** In production, the cloud provider (AWS, GCP, etc.) provisions the
+LoadBalancer automatically — no tunnel or manual IP configuration is needed.
 
 ### Via port-forward (quick testing)
+
+No gateway setup needed. Forward the service port directly:
 
 ```bash
 kubectl port-forward svc/openqa 8080:80
@@ -72,7 +97,7 @@ Then access the UI at http://localhost:8080.
 The easiest way to run a job is to clone one from an existing openQA instance:
 
 ```bash
-openqa-clone-job --from https://openqa.opensuse.org --host http://openqa.host.org <JOB_ID>
+openqa-clone-job --from https://openqa.opensuse.org --host http://openqa.internal <JOB_ID>
 ```
 
 Pick a job ID from https://openqa.opensuse.org. This copies the job settings
@@ -81,7 +106,7 @@ and downloads the needed assets.
 Alternatively, use `openqa-cli` to post a job directly:
 
 ```bash
-openqa-cli api --host http://openqa.host.org -X POST jobs \
+openqa-cli api --host http://openqa.internal -X POST jobs \
   DISTRI=opensuse VERSION=Tumbleweed FLAVOR=DVD ARCH=x86_64 TEST=minimalx
 ```
 
