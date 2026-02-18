@@ -31,7 +31,7 @@ subtest 'MCP disabled' => sub {
 };
 
 subtest 'MCP enabled' => sub {
-    $t->app->config->{global}{mcp_enabled} = 'read_only';
+    $t->app->config->{global}{mcp_enabled} = 'read-only';
     my $mcp_help = 'MCP help ';
     $t->get_ok('/tests')->status_is(200);
     my $actions = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#user-action')->all_text);
