@@ -223,6 +223,18 @@ function setupOverview() {
     if (key === 'result' || key === 'state') {
       flags[key][val] = true;
       return formatFilter(val);
+    } else if (key === 'result__not' || key === 'state__not') {
+      const baseKey = key.slice(0, -5);
+      const isFirst = !flags[baseKey].__inverted;
+      flags[baseKey].__inverted = true;
+      document.querySelectorAll(`#filter-${baseKey}s input[name="${baseKey}"]`).forEach(cb => {
+        if (isFirst) {
+          flags[baseKey][cb.value] = cb.value !== val;
+        } else if (cb.value === val) {
+          flags[baseKey][cb.value] = false;
+        }
+      });
+      return 'NOT ' + formatFilter(val);
     } else if (key === 'todo') {
       form.todo.checked = val !== '0';
       return 'TODO';

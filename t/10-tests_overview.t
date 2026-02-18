@@ -444,6 +444,29 @@ $t->get_ok(
 like(get_summary, qr/current time/i, 'Job was successful, so failed_modules does not show it');
 $t->element_exists_not('#res-99946', 'no module has failed');
 
+subtest 'Inverted filters' => sub {
+    $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&result__not=passed')->status_is(200);
+    my $summary = get_summary;
+    unlike($summary, qr/Passed: [1-9]/i, 'Passed jobs are excluded');
+    like($summary, qr/Scheduled: 2 Running: 2 None: 1/i, 'Other jobs remain');
+    $t->get_ok('/tests/overview?distri=opensuse&version=Factory&build=0048&result__not=failed&result__not=softfailed')
+      ->status_is(200);
+    $summary = get_summary;
+    unlike($summary, qr/Failed: [1-9]/i, 'Failed jobs are excluded');
+    unlike($summary, qr/Soft-Failed: [1-9]/i, 'Soft-failed jobs are excluded');
+    $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&state__not=done')->status_is(200);
+    $summary = get_summary;
+    unlike($summary, qr/Passed: [1-9]/i, 'Passed jobs (which are done) are excluded');
+    like($summary, qr/Scheduled: 2 Running: 2/i, 'Other states remain');
+
+    $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&state__not=done&state__not=running')
+      ->status_is(200);
+    $summary = get_summary;
+    unlike($summary, qr/Passed: [1-9]/i, 'Passed jobs (done) are excluded');
+    unlike($summary, qr/Running: [1-9]/i, 'Running jobs are excluded');
+    like($summary, qr/Scheduled: 2/i, 'Scheduled jobs remain');
+};
+
 subtest 'Maximum jobs limit' => sub {
     $t->get_ok('/tests/overview')->status_is(200)->element_exists_not('#max-jobs-limit')
       ->element_count_is('table.overview td.name', 7);
