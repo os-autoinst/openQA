@@ -66,12 +66,7 @@ function setupFilterForm(options) {
         });
       }
 
-      const keysToDelete = [];
-      params.forEach((val, key) => {
-        if (val === '') keysToDelete.push(key);
-      });
-      keysToDelete.forEach(key => params.delete(key));
-      const newQuery = params.toString();
+      const newQuery = new URLSearchParams(Array.from(params).filter(([, value]) => value !== '')).toString();
 
       if (newQuery !== currentQuery) {
         // show progress indication
