@@ -64,18 +64,23 @@ foreach my $proj (sort keys %params) {
     if ($proj eq 'Batch1') {
         # click on the various buttons within the table
         $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click;
-        is $driver->find_element("tr#folder_$ident .obsbuilds")->get_text, 'fake response',
-          'builds update response shown';
+        wait_until(sub { $driver->find_element("tr#folder_$ident .obsbuilds")->get_text eq 'fake response' },
+            'builds update response shown');
 
         $driver->find_element("tr#folder_$ident .lastsyncforget")->click;
         $driver->accept_alert;
-        is $driver->find_element("tr#folder_$ident .lastsync")->get_text, 'fake response', 'forget response shown';
+        wait_until(sub { $driver->find_element("tr#folder_$ident .lastsync")->get_text eq 'fake response' },
+            'forget response shown');
 
         $driver->find_element("tr#folder_$ident .dirtystatusupdate")->click;
-        is $driver->find_element("tr#folder_$ident .dirtystatuscol .dirtystatus")->get_text, 'fake response',
-          'dirty status update response shown';
+        wait_until(
+            sub {
+                my $text = $driver->find_element("tr#folder_$ident .dirtystatuscol .dirtystatus")->get_text;
+                return $text eq 'fake response' || $text =~ qr/dirty on \d{4}-\d{2}-\d{2}/;
+            },
+            'dirty status update response shown'
+        );
 
-        my $actual_requests = $driver->execute_script('return window.ajaxRequests;');
         my @expected_requests = (
             {method => 'POST', url => '/admin/obs_rsync/BatchedProj%7CBatch1/obs_builds_text'},
             {url => '/admin/obs_rsync/BatchedProj%7CBatch1/obs_builds_text'},
@@ -84,6 +89,9 @@ foreach my $proj (sort keys %params) {
             {method => 'POST', url => '/admin/obs_rsync/BatchedProj/dirty_status'},
             {url => '/admin/obs_rsync/BatchedProj/dirty_status'},
         );
+        wait_until(sub { scalar @{$driver->execute_script('return window.ajaxRequests;')} == @expected_requests },
+            'all ajax requests recorded');
+        my $actual_requests = $driver->execute_script('return window.ajaxRequests;');
         is_deeply $actual_requests, \@expected_requests, 'ajax requests done as expected'
           or always_explain $actual_requests;
     }

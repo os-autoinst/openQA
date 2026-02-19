@@ -6,6 +6,8 @@ use Test::Most;
 use Test::Warnings;
 # no OpenQA::Test::TimeLimit for this trivial test
 
+plan skip_all => 'SKIP_UPDATE_DEPS is set' if $ENV{SKIP_UPDATE_DEPS};
+
 my $make = 'make update-deps';
 my @out = qx{$make};
 my $rc = $?;

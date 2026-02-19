@@ -134,7 +134,10 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
     wait_until(
         sub {
             @outstanding_needles = $driver->find_elements('#outstanding-needles li', 'css');
-            return scalar @outstanding_needles == 2;
+            return
+                 scalar @outstanding_needles == 2
+              && $outstanding_needles[0]->get_text() eq 'inst-timezone-text.json'
+              && $outstanding_needles[1]->get_text() eq 'never-matched.json';
         },
         'still two needle outstanding for deletion'
     );
