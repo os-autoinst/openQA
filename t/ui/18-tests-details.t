@@ -770,8 +770,13 @@ subtest 'test candidate list' => sub {
         selector => '#needlediff_selector .show-needle-info',
         is_displayed => 1,
         trigger_function => sub () {
-            # open the candidates menu at the beginning and try again before every second check
-            return if $clicks != 0 && ($clicks % 2) == 1;
+            # open the candidates menu at the beginning and try clicking again after 50 checks (so after around 5 s)
+            # note: Opening the menu is retried because it is not working reliably (see poo#164745). Trying to open
+            #       after every 2nd attempt (as introduced in a134be8) is also not reliable as the 2nd click might
+            #       accidentally close the menu again if it shows up after all (see poo#196829). So we now give the
+            #       menu around 5 seconds to show up. If it hasn't shown up then, it is most likely also not going to
+            #       show up anymore and we can try clicking again.
+            return if $clicks != 0 && ($clicks % 50) == 0;
             wait_for_element(selector => '#candidatesMenu', is_displayed => 1)->click;
             ++$clicks;
         })->click;
