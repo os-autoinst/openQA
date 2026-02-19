@@ -7,8 +7,10 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 
 use OpenQA::Needles;
+use OpenQA::Archive;
 use OpenQA::Utils qw(:DEFAULT prjdir assetdir imagesdir);
 use File::Basename;
+use Feature::Compat::Try;
 use File::Spec;
 use File::Spec::Functions 'catfile';
 use Data::Dump 'pp';
@@ -143,6 +145,22 @@ sub test_asset ($self) {
     # pass the redirect to the reverse proxy - might come back to use
     # in case there is no proxy (e.g. in tests)
     return $self->redirect_to($url);
+}
+
+sub archive ($self) {
+    return $self->reply->not_found unless my $job = $self->schema->resultset('Jobs')->find($self->param('testid'));
+    my $archive_path;
+    try {
+        $archive_path = OpenQA::Archive::create_job_archive($job);
+    }
+    catch ($e) {
+        $self->app->log->error('Failed to create archive for job ' . $job->id . ": $e");
+        return $self->render(text => 'Internal Server Error', status => 500);
+    }
+    $self->res->headers->content_type('application/zip');
+    my $filename = 'job_' . $job->id . '.zip';
+    $self->res->headers->content_disposition('attachment; filename=' . $filename . ';');
+    return $self->reply->file($archive_path->to_string);
 }
 
 sub _set_headers ($self, $path) {
