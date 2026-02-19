@@ -321,7 +321,7 @@ sub enqueue_and_keep_track ($self, %args) {
             return Mojo::Promise->reject($result, 500) if ref $result eq 'HASH' && $result->{error};
 
             # format error message (fallback for general case)
-            my $msg = ref $result eq '' && $result ? $result : 'Checkout Minion dashboard for further details.';
+            my $msg = ref $result eq '' && $result ? $result : 'check out Minion dashboard for further details.';
             return Mojo::Promise->reject({error => "Task for $task_description failed: $msg", result => $result}, 500);
         });
 }

@@ -903,7 +903,7 @@ Example 2:
 
 Then, in job templates, add test suite(s) and all of its dependent test
 suite(s). Keep in mind to place the machines which have been explicitly defined
-in a variable for each dependent test suite. Checkout the following example
+in a variable for each dependent test suite. Check out the following example
 sections to get a better understanding.
 
 ==== Handling of related jobs on failure / cancellation / restart
@@ -2361,7 +2361,7 @@ feature is explained in further detail in the corresponding
 
 It is also possible to create a GitHub workflow that will clone and monitor an
 openQA job which is mentioned in the PR description or comment. The scripts
-repository contains a pre-defined GitHub action for this. Checkout the
+repository contains a pre-defined GitHub action for this. Check out the
 documentation of the
 https://github.com/os-autoinst/os-autoinst-scripts/blob/master/openqa-clone-and-monitor-job-from-pr[openqa-clone-and-monitor-job-from-pr]
 script for further information and an example configuration.
@@ -2391,7 +2391,7 @@ additional CI runner required and the authentication also works when a PR is
 created from a fork repository branch which extra configuration.
 
 The test scenarios for your repository need to be defined in the file
-`scenario-definitions.yaml` at the root of your repository. Checkout the
+`scenario-definitions.yaml` at the root of your repository. Check out the
 https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml[scenario definitions]
 from the example distribution for an example. You may append a parameter like
 `SCENARIO_DEFINITIONS_YAML=path/of/yaml` to the query parameters of the webhook
@@ -2401,7 +2401,7 @@ to change the lookup path of this file.
 It is also possible to avoid using openQA at all and run the backend
 `isotovideo` directly within the CI runner. This simplifies the setup as no
 openQA instance is needed but of course test results cannot be examined using
-a web interface as usual. Checkout the
+a web interface as usual. Check out the
 https://github.com/os-autoinst/os-autoinst-distri-example/blob/main/README.md#local-testing-and-ci-environment[README of the example test distribution]
 for more information.
 
@@ -2445,9 +2445,9 @@ created or updated.
 5. Keep SSL enabled. (Be sure your openQA instance is reachable via HTTPS.)
 6. Select "Let me select individual events." and then "Pull requests".
 7. Ensure "Active" is checked and confirm.
-8. GitHub should now have been delivering a "ping" event. Checkout whether
+8. GitHub should now have been delivering a "ping" event. Check out whether
    it could be delivered. If you have gotten a 200 response then everything
-   is setup correctly. Otherwise, checkout the response of the delivery to
+   is setup correctly. Otherwise, check out the response of the delivery to
    investigate what is wrong.
 
 == Integrating test results from external systems

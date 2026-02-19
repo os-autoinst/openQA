@@ -28,7 +28,7 @@ sub is_in_temp_dir ($file_path) {
 sub needle_temp_dir ($dir, $ref) { path($tmp_dir, basename(dirname($dir)), $ref, 'needles') }
 
 sub _locate_needle_for_ref ($relative_needle_path, $needles_dir, $needles_ref, $needle_url) {
-    # checkout needle from git - return absolute path to json file on success and undef on error
+    # check out needle from git - return absolute path to json file on success and undef on error
     return undef unless defined $needles_ref;
     my $app = OpenQA::App->singleton;
     my $allow_arbitrary_url_fetch = $app->config->{'scm git'}->{allow_arbitrary_url_fetch} eq 'yes';

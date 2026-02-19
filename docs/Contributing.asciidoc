@@ -244,14 +244,14 @@ for a container with all dependencies.
 
 The following explains in detail what is necessary to develop openQA code.
 
-For a setup with containers you can checkout the
+For a setup with containers you can check out the
 <<Contributing.asciidoc#quick-container-development-setup,Quick container
 development setup>> below with a complete list of instructions.
 
 Otherwise follow the detailed steps below. This setup is applicable to a
 container environment as well as without.
 
-For developing openQA and os-autoinst itself it makes sense to checkout the
+For developing openQA and os-autoinst itself it makes sense to check out the
 <<Contributing.asciidoc#repo-urls,Git repositories>> and either execute
 existing tests or start the daemons manually.
 
@@ -818,12 +818,12 @@ To initialize or update the database manually before restarting the web UI you c
 either `./script/initdb --init_database` or `./script/upgradedb --upgrade_database`.
 
 Migrations that affect possibly big tables should be tested against a local import of
-a production database to see how much time they need. Checkout the
+a production database to see how much time they need. Check out the
 <<Contributing.asciidoc#_importing_production_data,Importing production data>> section
 for details.
 
 A migration can cause the analyser to regress so it produces worse query plans leading
-to impaired performance. Checkout the
+to impaired performance. Check out the
 <<Installing.asciidoc#_working_on_database_related_performance_problems,Working on database-related performance problems>>
 section for how to tackle this problem.
 
@@ -915,7 +915,7 @@ To watch the execution of the UI tests, set the environment variable `NOT_HEADLE
 [[run-tests-in-container]]
 === Run tests within a container
 The container used in this section of the documentation is not identical with the container used
-within the CI. To run tests within the CI environment locally, checkout the
+within the CI. To run tests within the CI environment locally, check out the
 <<Contributing.asciidoc#circleci-local-container,CircleCI documentation>> below.
 
 To run tests in a container please be sure that a container runtime
