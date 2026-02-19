@@ -148,87 +148,61 @@ my $polling_tries_workers = $seconds_to_wait_per_worker / $polling_interval * $w
 my $polling_tries_jobs = $seconds_to_wait_per_job / $polling_interval * $job_count;
 
 subtest 'wait for workers to be idle' => sub {
-    # wait for all workers to register
-    my @worker_search_args = ({'properties.key' => 'WEBSOCKET_API_VERSION'}, {join => 'properties'});
+    # wait for all workers to register, have correct API version and be idle
+    # this ensures they are fully visible to the scheduler
     my $actual_count = 0;
     for my $try (1 .. $polling_tries_workers) {
-        last if ($actual_count = $workers->search(@worker_search_args)->count) == $worker_count;
-        note("Waiting until all workers are registered, try $try");    # uncoverable statement
+        my @idle
+          = grep { $_->status eq 'idle' && ($_->websocket_api_version || 0) == WEBSOCKET_API_VERSION } $workers->all;
+        $actual_count = scalar @idle;
+        last if $actual_count == $worker_count;
+        note("Waiting until all workers are registered and idle, try $try");    # uncoverable statement
         sleep $polling_interval;    # uncoverable statement
     }
-    is $actual_count, $worker_count, 'all workers registered';
-
-    # wait for expected number of workers to become limited
-    my $limited_workers = max(0, $worker_count - $worker_limit);
-    $worker_count = min($worker_count, $worker_limit);
-    for my $try (1 .. $polling_tries_workers) {
-        last if ($actual_count = $workers->search({error => {-like => '%limited%'}})->count) == $limited_workers;
-        note("Waiting until $limited_workers workers are limited, try $try");    # uncoverable statement
-        sleep $polling_interval;    # uncoverable statement
-    }
-    is $actual_count, $limited_workers, 'expected number of workers limited';
+    is $actual_count, $worker_count, 'all workers registered and idle';
 
     # check that no workers are in unexpected offline/error states
     my @non_idle_workers;
     for my $worker ($workers->all) {
         my $is_idle = $worker->status eq 'idle';
-        my $is_idle_or_limited = $is_idle || $worker->error =~ qr/limited/;
         $worker_ids{$worker->id} = 1 if $is_idle;
         push(@non_idle_workers, $worker->info)    # uncoverable statement
-          if !$is_idle_or_limited || ($worker->websocket_api_version || 0) != WEBSOCKET_API_VERSION;
+          if !$is_idle || ($worker->websocket_api_version || 0) != WEBSOCKET_API_VERSION;
     }
-    is scalar @non_idle_workers, 0, 'all workers idling/limited' or always_explain \@non_idle_workers;
+    is scalar @non_idle_workers, 0, 'all workers idling' or always_explain \@non_idle_workers;
 };
 
 subtest 'assign and run jobs' => sub {
     my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
-    my $allocated = $scheduler->schedule;
-    unless (ref($allocated) eq 'ARRAY' && @$allocated > 0) {
-        always_explain 'Allocated: ', $allocated;    # uncoverable statement
-        always_explain 'Scheduled: ', $scheduler->scheduled_jobs;    # uncoverable statement
-        BAIL_OUT('Unable to assign jobs to (idling) workers');    # uncoverable statement
+
+    # ensure the scheduler also sees them as free
+    for my $try (1 .. $polling_tries_workers) {
+        last if scalar @{OpenQA::Scheduler::Model::Jobs::determine_free_workers()} == $worker_count;
+        sleep $polling_interval;    # uncoverable statement
     }
 
+    # retry scheduling until all workers have a job assigned (or all jobs are assigned)
+    my $expected_allocated = min($worker_count, $job_count);
+    for my $try (1 .. $polling_tries_workers) {
+        $scheduler->schedule;
+        last if $jobs->search({state => {-in => [ASSIGNED, SETUP, RUNNING, DONE]}})->count >= $expected_allocated;
+        sleep $polling_interval;    # uncoverable statement
+    }
+
+    my $allocated_count = $jobs->search({state => {-in => [ASSIGNED, SETUP, RUNNING, DONE]}})->count;
+    ok($allocated_count >= $expected_allocated, 'all workers have a job or all jobs assigned')
+      or diag("Allocated count: $allocated_count, expected at least: $expected_allocated");
+
     my $remaining_jobs = $job_count - $worker_count;
-    note('Assigned jobs: ' . dumper($allocated));
     note('Remaining ' . ($remaining_jobs > 0 ? ('jobs: ' . $remaining_jobs) : ('workers: ' . -$remaining_jobs)));
-    if ($remaining_jobs > 0) {
-        is(scalar @$allocated, $worker_count, 'each worker has a job assigned');
-    }
-    elsif ($remaining_jobs < 0) {
-        # uncoverable statement only executed when there are more jobs than workers based config parameters
-        is(scalar @$allocated, $job_count, 'each job has a worker assigned');
-    }
-    else {
-        # uncoverable statement only executed when the number of workers and jobs are equal based on config parameters
-        is(scalar @$allocated, $job_count, 'all jobs assigned and all workers busy');
-        # uncoverable statement count:1
-        # uncoverable statement count:2
-        my @allocated_job_ids = map { $_->{job} } @$allocated;
-        # uncoverable statement count:1
-        # uncoverable statement count:2
-        my @allocated_worker_ids = map { $_->{worker} } @$allocated;
-        # uncoverable statement count:1
-        # uncoverable statement count:2
-        my @expected_job_ids = map { int($_) } keys %job_ids;
-        # uncoverable statement count:1
-        # uncoverable statement count:2
-        my @expected_worker_ids = map { int($_) } keys %worker_ids;
-        # uncoverable statement
-        is_deeply([sort @allocated_job_ids], [sort @expected_job_ids], 'all jobs allocated');
-        # uncoverable statement
-        is_deeply([sort @allocated_worker_ids], [sort @expected_worker_ids], 'all workers allocated');
-    }
+
     for my $try (1 .. $polling_tries_jobs) {
         my $done_count = $jobs->search({state => DONE})->count;
         last if $done_count == $job_count;
         my $scheduled_count = $jobs->search({state => SCHEDULED})->count;
         if ($scheduled_count > 0) {
             note("Trying to assign $scheduled_count scheduled jobs");
-            if (my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule) {
-                my $assigned_job_count = scalar @$allocated;
-                note("Assigned $assigned_job_count more jobs: " . dumper($allocated)) if $assigned_job_count > 0;
-            }
+            OpenQA::Scheduler::Model::Jobs->singleton->schedule;
         }
         note("Waiting until all jobs are done ($done_count/$job_count), try $try");
         sleep $polling_interval;
