@@ -267,6 +267,12 @@ sub default_config () {
         archiving => {
             archive_preserved_important_jobs => 0,
         },
+        job_details_archive => {
+            job_details_archive_cache_dir => undef,
+            job_details_archive_cache_limit_gb => 5,
+            job_details_archive_cache_min_free_percentage => 10,
+            job_details_archive_cache_watermark_percentage => 80,
+        },
         job_settings_ui => {
             keys_to_render_as_links => '',
             default_data_dir => 'data',
