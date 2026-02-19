@@ -47,6 +47,7 @@ subtest 'Test configuration default modes' => sub {
     my $test_config = {
         global => {
             appname => 'openQA',
+            distribution_dir => 'opensuse',
             branding => 'openSUSE',
             hsts => 365,
             audit_enabled => 1,
