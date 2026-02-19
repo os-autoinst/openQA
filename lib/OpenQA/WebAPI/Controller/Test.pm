@@ -918,6 +918,7 @@ sub overview ($self) {
         summary_category_query => \%SUMMARY_CATEGORY_QUERY,
         only_distri => $only_distri,
         limit_exceeded => $exceeded_limit,
+        meta_mapping => META_MAPPING,
     );
     $self->stash(\%stash);
     $self->respond_to(json => {json => \%stash}, html => {template => 'test/overview'});

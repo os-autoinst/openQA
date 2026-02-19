@@ -467,6 +467,19 @@ subtest 'Inverted filters' => sub {
     like($summary, qr/Scheduled: 2/i, 'Scheduled jobs remain');
 };
 
+subtest 'Meta-filters' => sub {
+    $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&result=complete')->status_is(200);
+    my $summary = get_summary;
+    like($summary, qr/Passed: 3/i, 'Passed jobs are included via "complete" meta-result');
+    $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&state=final')->status_is(200);
+    $summary = get_summary;
+    like($summary, qr/Passed: 3/i, 'Done jobs are included via "final" meta-state');
+    $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&result__not=complete')->status_is(200);
+    $summary = get_summary;
+    unlike($summary, qr/Passed: [1-9]/i, 'Passed jobs are excluded via NOT "complete"');
+    like($summary, qr/Scheduled: 2 Running: 2/i, 'Other categories remain');
+};
+
 subtest 'Maximum jobs limit' => sub {
     $t->get_ok('/tests/overview')->status_is(200)->element_exists_not('#max-jobs-limit')
       ->element_count_is('table.overview td.name', 7);

@@ -57,6 +57,7 @@ use constant {
     EXECUTION => 'execution',
     FINAL => 'final',
 };
+use constant META_STATES => (PRE_EXECUTION, EXECUTION, FINAL);
 
 # results for the overall job
 use constant {
@@ -92,6 +93,24 @@ use constant {
     COMPLETE => 'complete',
     NOT_COMPLETE => 'not_complete',
     ABORTED => 'aborted',
+    OK => 'ok',
+    NOT_OK => 'not_ok',
+};
+use constant META_RESULTS => (COMPLETE, NOT_COMPLETE, ABORTED, OK, NOT_OK);
+
+use constant META_MAPPING => {
+    state => {
+        PRE_EXECUTION() => [PRE_EXECUTION_STATES],
+        EXECUTION() => [EXECUTION_STATES],
+        FINAL() => [FINAL_STATES],
+    },
+    result => {
+        COMPLETE() => [COMPLETE_RESULTS],
+        NOT_COMPLETE() => [NOT_COMPLETE_RESULTS],
+        ABORTED() => [ABORTED_RESULTS],
+        OK() => [OK_RESULTS],
+        NOT_OK() => [NOT_OK_RESULTS],
+    },
 };
 
 # results for particular job modules
@@ -120,21 +139,29 @@ our @EXPORT = qw(
   CANCELLED
   COMPLETE_RESULTS
   DONE
+  EXECUTION
   EXECUTION_STATES
   FAILED
+  FINAL
   FINAL_STATES
   INCOMPLETE
+  NOT_COMPLETE
   NOT_COMPLETE_RESULTS
   ABORTED
   ABORTED_RESULTS
-  NONE
-  NOT_OK_RESULTS
-  OBSOLETED
+  COMPLETE
+  COMPLETE_RESULTS
+  OK
   OK_RESULTS
+  NOT_OK
+  NOT_OK_RESULTS
+  NONE
+  OBSOLETED
   PARALLEL_FAILED
   PARALLEL_RESTARTED
   PASSED
   PENDING_STATES
+  PRE_EXECUTION
   PRE_EXECUTION_STATES
   PRISTINE_STATES
   RESULTS
@@ -148,6 +175,9 @@ our @EXPORT = qw(
   USER_CANCELLED
   USER_RESTARTED
   MODULE_RESULTS
+  META_RESULTS
+  META_STATES
+  META_MAPPING
   COMMON_RESULT_FILES
   TIMEOUT_EXCEEDED
   DEFAULT_JOB_PRIORITY
