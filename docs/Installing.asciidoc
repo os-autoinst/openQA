@@ -1664,6 +1664,9 @@ the workers create their own instance directories.
     - configurable via the test variable `CASEDIR` (see backend variables documentation)
     - this default is provided by openQA; when starting isotovideo manually the `CASEDIR` variable *must* be
       initialized by hand
+    - relative paths are relative to `$sharedir/tests`; to avoid symlinking,
+      use e.g. `CASEDIR=opensuse` for `$sharedir/tests/opensuse` despite
+      differing `DISTRI`
     - might contain the sub directory `lib` for placing Perl modules used by the tests
 * the "product directory": contains the test schedule (`main.pm`) for a certain product within a test distribution
     - by default identical to the "test case directory"
