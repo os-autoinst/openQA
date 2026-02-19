@@ -41,7 +41,13 @@ function setupFilterForm(options) {
         }
       });
 
-      const newQuery = new URLSearchParams(formData).toString();
+      const params = new URLSearchParams(formData);
+      const keysToDelete = [];
+      params.forEach((val, key) => {
+        if (val === '') keysToDelete.push(key);
+      });
+      keysToDelete.forEach(key => params.delete(key));
+      const newQuery = params.toString();
 
       if (newQuery !== currentQuery) {
         // show progress indication
