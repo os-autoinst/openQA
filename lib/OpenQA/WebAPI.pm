@@ -167,6 +167,7 @@ sub startup ($self) {
     $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
     $test_r->get('/settings/:dir/*link_path')->name('filesrc')->to('test#show_filesrc');
     $test_r->get('/video' => sub ($c) { $c->render_testfile('test/video') })->name('video');
+    $test_r->get('/archive')->name('test_archive')->to('file#archive');
     $test_r->get('/logfile' => sub ($c) { $c->render_testfile('test/logfile') })->name('logfile');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
     $test_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');

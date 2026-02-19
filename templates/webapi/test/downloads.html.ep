@@ -1,3 +1,9 @@
+<div class="mb-3">
+    %= link_to url_for('test_archive', testid => $job->id) => (class => 'btn btn-primary', title => 'Download all test results and assets as a ZIP archive') => begin
+        <i class="fa fa-download"></i> Download All (ZIP)
+    % end
+</div>
+
 % if(@$resultfiles) {
     <h5>Result files</h5>
     %= include 'test/result_file_list', resultfiles => $resultfiles, is_userfile => 0
