@@ -466,7 +466,20 @@ subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
         my $vars_data = get_job_json_data($pool_directory);
         is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to name of symlink';
         is $result->{error}, undef, 'no error occurred (4)';
+    };
 
+    subtest 'good case: custom "default" CASEDIR specified overriding DISTRI' => sub {
+        my %settings = (DISTRI => 'opensuse', CASEDIR => 'fedora', NEEDLES_DIR => 'https://foo', JOBTOKEN => 'token');
+        my ($job, $result) = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => \%settings});
+        combined_like { $result = _run_engine($job) }
+        qr {Symlinked from "t/data/openqa/share/tests/fedora" to "$pool_directory/fedora"},
+          'symlink for CASEDIR=fedora created, taking precedence over DISTRI=opensuse';
+        my $vars_data = get_job_json_data($pool_directory);
+        is $vars_data->{CASEDIR}, 'fedora', 'relative CASEDIR is set to name of symlink';
+        is $vars_data->{NEEDLES_DIR}, 'https://foo', 'NEEDLES_DIR from Git not affected';
+        is $result->{error}, undef, 'no error occurred (5)';
+        is readlink path($pool_directory, $vars_data->{CASEDIR}), testcasedir('fedora', undef, undef),
+          'tests symlink points to fedora tests as per CASEDIR=fedora';
     };
 
     subtest 'error case: custom CASEDIR specified, fail to symlink needles because cache directory does not exist' =>
