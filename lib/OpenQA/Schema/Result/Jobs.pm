@@ -11,7 +11,7 @@ use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error);
 use OpenQA::Utils (
     qw(create_git_clone_list parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
-    qw(run_cmd_with_log_return_error needledir testcasedir git_commit_url find_video_files)
+    qw(run_cmd_with_log_return_error needledir testcasedir git_commit_url find_video_files resolve_distribution_dir)
 );
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
@@ -370,6 +370,12 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
     my $job_token = $worker_properties->{JOBTOKEN} // random_string();
     $worker->set_property(JOBTOKEN => $job_token);
     $job_hashref->{settings}->{JOBTOKEN} = $job_token;
+
+    unless (exists $job_hashref->{settings}->{DISTRIBUTION_DIR}) {
+        if (my $dist_dir = OpenQA::App->singleton->config->{global}->{distribution_dir}) {
+            $job_hashref->{settings}->{DISTRIBUTION_DIR} = $dist_dir;
+        }
+    }
 
     my $updated_settings = $self->register_assets_from_settings();
 
@@ -1657,7 +1663,8 @@ sub release_networks ($self) { $self->networks->delete }
 
 sub needle_dir ($self) {
     unless ($self->{_needle_dir}) {
-        my $distri = $self->DISTRI;
+        my $settings = $self->settings_hash;
+        my $distri = resolve_distribution_dir($settings);
         my $version = $self->VERSION;
         $self->{_needle_dir} = OpenQA::Utils::needledir($distri, $version);
     }

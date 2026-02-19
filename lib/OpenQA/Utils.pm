@@ -97,6 +97,7 @@ our @EXPORT = qw(
   needledir
   productdir
   testcasedir
+  resolve_distribution_dir
   git_commit_url
   is_in_tests
   save_base64_png
@@ -212,6 +213,27 @@ sub testcasedir ($distri = undef, $version = undef, $rootfortests = undef) {
     my $dir = catdir($rootfortests, $distri);
     $dir .= "-$version" if $version && -e "$dir-$version";
     return $dir;
+}
+
+
+=head2 resolve_distribution_dir
+
+  resolve_distribution_dir($vars, $worker_global_settings)
+
+I<resolve_distribution_dir> returns the resolved distribution directory name
+as a string, following a senquantial order:
+
+job settings > App global settings > worker config > DISTRI variable
+
+=cut
+
+sub resolve_distribution_dir ($vars, $worker_global_settings = undef) {
+    my $app = OpenQA::App->singleton;
+    my $global_conf = $app ? $app->config->{global}->{distribution_dir} : undef;
+    my $distri_dir = $vars->{DISTRIBUTION_DIR} // $global_conf
+      // ($worker_global_settings ? $worker_global_settings->{DISTRIBUTION_DIR} : undef) // $vars->{DISTRI};
+    log_debug "resolve distribution_dir to $distri_dir";
+    return $distri_dir;
 }
 
 =head2 git_commit_url
