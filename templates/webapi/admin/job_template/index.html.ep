@@ -70,7 +70,7 @@
         <h3 id="job-config-templates-heading" style="display: none;">Job templates</h3>
         <p>
             A job template is a combination of machine, product and test suite settings. These combination are used
-            to produce actual jobs within a certain job group. Checkout
+            to produce actual jobs within a certain job group. Check out
             <a href="http://open.qa/docs/#_using_job_templates_to_automate_jobs_creation" target="blank">the documentation</a>
             for more details.
         </p>

@@ -56,7 +56,7 @@ It is also possible to use `tests` and `factory` from within the `openqa_data`
 container (so you do not have any dependency on your host system) or to leave
 out the `openqa_data` container altogether (so you have only `webui` and
 `worker` containers and data is loaded and saved completely into your host
-system). If this is what you prefer, checkout the sections
+system). If this is what you prefer, check out the sections
 <<ContainerizedSetup.asciidoc#_keeping_all_data_in_the_data_volume_container,Keeping all data in the Data Volume Container>>
 and
 <<ContainerizedSetup.asciidoc#_keeping_all_data_on_the_host_system,Keeping all data on the host system>>

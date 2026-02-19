@@ -300,7 +300,7 @@ can place default values deviating from upstream defaults.
 
 The client configuration can also be put under `~/.config/openqa/client.conf`.
 
-For development, checkout the section about
+For development, check out the section about
 <<Contributing.asciidoc#_customize_configuration_directory,customizing the configuration directory>>.
 
 ==== Drop-in configurations
@@ -397,7 +397,7 @@ this document should help you to get started faster.
 
 === Getting tests
 You can point `CASEDIR` and `NEEDLES_DIR` to Git repositories. openQA will
-checkout those repositories automatically and no manual setup is needed.
+check out those repositories automatically and no manual setup is needed.
 
 Otherwise you will need to clone tests and needles manually. For this,
 clone a subdirectory under `/var/lib/openqa/tests` for each test distribution

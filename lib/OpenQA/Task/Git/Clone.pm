@@ -121,7 +121,7 @@ sub _git_clone ($git, $ctx, $path, $url, $origin_url) {
     die <<~"END_OF_MESSAGE" unless $git->is_workdir_clean;
         NOT updating dirty Git checkout at '$path'.
         In case this is expected (e.g. on a development openQA instance) you can disable auto-updating.
-        Then the Git checkout will no longer be kept up-to-date, though. Checkout http://open.qa/docs/#_getting_tests for details.
+        Then the Git checkout will no longer be kept up-to-date, though. Check out http://open.qa/docs/#_getting_tests for details.
         END_OF_MESSAGE
 
     unless ($requested_branch) {

@@ -215,7 +215,7 @@ sub create_url_handler ($options) {
         api => $local_url->host,
         apikey => $options->{apikey},
         apisecret => $options->{apisecret});
-    die "API key/secret for '$options->{host}' missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
+    die "API key/secret for '$options->{host}' missing. Check out '$0 --help' for the config file syntax/lookup.\n"
       if !$options->{'export-command'} && !($local->apikey && $local->apisecret);
 
     # configure user agents for the source host (usually a remote host)

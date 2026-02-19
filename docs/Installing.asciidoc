@@ -156,10 +156,10 @@ and
 https://github.com/os-autoinst/openQA/tree/master/container/worker/conf[worker/conf]
 directory listings on GitHub.
 
-To learn more about how to run workers checkout the
+To learn more about how to run workers check out the
 <<Installing.asciidoc#_run_openqa_workers,Run openQA workers section>>.
 
-For creating a first test job, checkout the
+For creating a first test job, check out the
 <<UsersGuide.asciidoc#_triggering_tests,Triggering tests section>>. Note that the
 commands mentioned there can also be invoked within a container, e.g.:
 
@@ -170,7 +170,7 @@ podman run \
    openqa-cli --help
 ----
 
-Checkout the
+Check out the
 <<ContainerizedSetup.asciidoc#containerizedsetup,containerized setup section>>
 for more details.
 
@@ -1485,7 +1485,7 @@ sudo -u postgres /usr/lib/postgresql$newver/bin/pg_upgrade --link \
 +
 IMPORTANT: Be sure to use pg_upgrade from the target version (like it is done here) and
 also no newer version which is possibly installed on the system as well.
-Checkout the https://www.postgresql.org/docs/current/pgupgrade.html[PostgreSQL documentation]
+Check out the https://www.postgresql.org/docs/current/pgupgrade.html[PostgreSQL documentation]
 for details.
 +
 NOTE: This step only takes a few seconds for multiple production DBs because the `--link`
@@ -1531,7 +1531,7 @@ sudo -u postgres rm -r /var/lib/pgsql/data.$oldver
 ----
 
 == Working on database-related performance problems
-Without extra setup, PostgreSQL already gathers many statistics, checkout
+Without extra setup, PostgreSQL already gathers many statistics, check out
 https://www.postgresql.org/docs/current/monitoring-stats.html[the official documentation].
 
 === Enable further statistics
@@ -1571,15 +1571,15 @@ are using indexes (and not just sequential scans).
    changes.
 
 === Further resources
-* Checkout
+* Check out
   https://www.postgresql.org/docs/current/sql-explain.html[the official documentation]
   for more details about `EXPLAIN`. There is also
   https://explain.depesz.com[service] for formatting those explanations to be
   more readable.
-* Checkout
+* Check out
   https://www.postgresql.org/docs/current/sql-vacuum.html[the official documentation]
   for more details about `VACUUM ANALYZE`.
-* Checkout the following
+* Check out the following
   https://www.postgresql.org/docs/current/performance-tips.html[documentation pages].
 
 == Filesystem layout

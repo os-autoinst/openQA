@@ -23,7 +23,7 @@ environment variables:
     to be considered (default: $min_mtime)
   OPENQA_PACKAGE_CACHE_REPO_GLOB: the glob to find relevant packages
     (default: $glob)
-Checkout "openqa-clean-repo-cache --help" for details.
+Check out "openqa-clean-repo-cache --help" for details.
 
 Options:
  -h, --help         display this help

@@ -648,7 +648,7 @@ set of test module as in a predecessor job fails the latest bug reference
 is carried over.
 
 NOTE: The lookup-depth is limited. The search for candidates will also stop
-early if too many different kinds of failures were seen. Checkout the
+early if too many different kinds of failures were seen. Check out the
 descriptions of the relevant settings in the `carry_over` section of
 <<GettingStarted.asciidoc#_configuration,the web UI configuration>> for details.
 
@@ -1019,7 +1019,7 @@ without needing to install openQA itself. Call `openqa-cli --help` for help.
 The sub-commands provide further help, e.g. `openqa-cli api --help` contains
 a lot of examples.
 
-This section focuses on particular API use-cases. Checkout the
+This section focuses on particular API use-cases. Check out the
 <<Client.asciidoc#client,openQA client>> section for further information about
 the client itself, how authentication works and how plain `curl` can be used.
 
@@ -1341,7 +1341,7 @@ from public view in the web-UI).
 
 Assets may be shared between the web-UI and the workers by having them literally use a shared
 file system (this used to be the only option), or by having the workers download them from the
-server when needed and cache them locally. Checkout the documentation about
+server when needed and cache them locally. Check out the documentation about
 <<Installing.asciidoc#asset-caching,asset caching>> for more on this.
 
 === Specifying assets required by a job ===
@@ -1450,7 +1450,7 @@ unless `concurrent` is set to `1` in the `[cleanup]` settings of
 <<GettingStarted.asciidoc#_configuration,the web UI configuration>>. Many other
 cleanup-related settings can be found within the web UI configuration as well,
 e.g. the `[…_limits]` sections contain various tweaks and allow to change certain
-defaults. Checkout the sub section
+defaults. Check out the sub section
 <<UsersGuide.asciidoc#_timers_and_triggers,Timers and triggers>> to learn more
 about how those jobs are triggered.
 
