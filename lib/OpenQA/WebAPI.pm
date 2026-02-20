@@ -139,6 +139,7 @@ sub startup ($self) {
     my $require_auth_for_assets = $config->{auth}->{require_for_assets};
     my $assets_r = $require_auth_for_assets ? $auth_any_user : $r;
     $assets_r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
+    $assets_r->get('/archives/*archivepath')->name('download_archive')->to('file#download_archive');
 
     my $test_path = '/tests/<testid:num>';
     my $test_r = $r->any($test_path);

@@ -63,7 +63,9 @@ subtest 'Archive download' => sub {
     my $asset_path = path(assetdir(), 'iso', 'test.iso');
     $asset_path->dirname->make_path;
     $asset_path->spew('iso data');
-    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(200)->content_type_is('application/zip')
+    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(302)
+      ->header_like('Location' => qr|/archives/job_|);
+    $t->get_ok($t->tx->res->headers->location)->status_is(200)->content_type_is('application/zip')
       ->header_is('Content-Disposition' => 'attachment; filename=job_' . $job->id . '.zip;');
     my $zip_content = $t->tx->res->body;
     my $zip_file = $tmp->child('downloaded.zip');
@@ -84,7 +86,8 @@ subtest 'Archive caching' => sub {
     my $mtime = $cache_file->stat->mtime;
     utime $mtime - 10, $mtime - 10, $cache_file->to_string;
     $mtime = $cache_file->stat->mtime;
-    $t->get_ok('/tests/' . $job_id . '/archive')->status_is(200);
+    $t->get_ok('/tests/' . $job_id . '/archive')->status_is(302);
+    $t->get_ok($t->tx->res->headers->location)->status_is(200);
     is $cache_file->stat->mtime, $mtime, 'Cached file was reused';
 };
 
