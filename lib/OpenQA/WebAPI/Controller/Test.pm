@@ -607,6 +607,10 @@ sub _badge ($self, $job) {
         $status = 200;
     }
 
+    $self->_render_badge($badge_text, $badge_color, $status);
+}
+
+sub _render_badge ($self, $badge_text, $badge_color, $status = 200) {
     # determine the approximate required width of the badge
     my $charlen = 11;
     my $badge_prefix_width = 85;
@@ -619,6 +623,19 @@ sub _badge ($self, $job) {
     $self->stash({badge_text => $badge_text, badge_color => $badge_color, badge_width => $badge_width});
     $self->res->headers->cache_control('max-age=0, no-cache');
     $self->render('test/badge', format => 'svg', status => $status);
+}
+
+sub overview_badge ($self) {
+    my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    my $jobs_rs = $self->schema->resultset('Jobs');
+    my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);
+    my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $search_args->{limit});
+    my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids);
+    my $status = (grep { $aggregated->{$_} } qw(failed not_complete softfailed running scheduled passed aborted))[0]
+      // 'none';
+    my %badge_result_mapping = (not_complete => 'incomplete', aborted => 'cancelled', none => 'cancelled');
+    my $badge_color_key = $badge_result_mapping{$status} // $status;
+    $self->_render_badge($status =~ tr/_/ /r, $BADGE_RESULT_COLORS{$badge_color_key});
 }
 
 sub job_next_previous_ajax ($self) {
