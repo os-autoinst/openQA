@@ -193,9 +193,9 @@ sub imagesdir () { prjdir() . '/images' }
 # To be backwards compatible we need to search for all combinations of "old/new
 # testrepository name" and "old/new folder structure" within the
 # testrepository.
-sub productdir ($distri = undef, $version = undef, $rootfortests = undef) {
-    my $dir = testcasedir($distri, $version, $rootfortests);
-    return "$dir/products/$distri" if $distri && -e "$dir/products/$distri";
+sub productdir ($effective_distri = undef, $version = undef, $rootfortests = undef, $distri = undef) {
+    my $dir = testcasedir($effective_distri, $version, $rootfortests);
+    return "$dir/products/$distri" if ($distri //= $effective_distri) && -e "$dir/products/$distri";
     return $dir;
 }
 
