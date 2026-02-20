@@ -394,7 +394,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     my $effective_distri = defined $casedir && !looks_like_url_with_scheme($casedir) ? $casedir : $vars->{DISTRI};
     my @vars_for_default_dirs = ($effective_distri, $vars->{VERSION}, $shared_cache);
     my $default_casedir = testcasedir(@vars_for_default_dirs);
-    my $default_productdir = productdir(@vars_for_default_dirs);
+    my $default_productdir = productdir(@vars_for_default_dirs, $vars->{DISTRI});
     my $target_name = path($default_casedir)->basename;
     my $has_custom_dir = $casedir || $vars->{PRODUCTDIR};
     $casedir = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
