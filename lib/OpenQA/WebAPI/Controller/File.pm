@@ -115,6 +115,17 @@ sub download_asset ($self) {
     $self->reply->file($file);
 }
 
+sub download_archive ($self) {
+    # so minimal security is good enough
+    my $path = $self->param('archivepath');
+    return $self->reply->not_found if $path =~ qr/\.\./;
+    my $file = path(OpenQA::Archive::archive_cache_dir(), $path)->to_string;
+    return $self->reply->not_found unless -f $file && -r _;
+    $self->res->headers->content_type('application/zip');
+    $self->res->headers->content_disposition("attachment; filename=$path;");
+    $self->reply->file($file);
+}
+
 sub test_asset ($self) {
     my $jobid = $self->param('testid');
     my %cond = ('me.id' => $jobid);
@@ -157,10 +168,8 @@ sub archive ($self) {
         $self->app->log->error('Failed to create archive for job ' . $job->id . ": $e");
         return $self->render(text => 'Internal Server Error', status => 500);
     }
-    $self->res->headers->content_type('application/zip');
-    my $filename = 'job_' . $job->id . '.zip';
-    $self->res->headers->content_disposition('attachment; filename=' . $filename . ';');
-    return $self->reply->file($archive_path->to_string);
+    my $url = $self->url_for('download_archive', archivepath => $archive_path->basename);
+    return $self->redirect_to($url);
 }
 
 sub _set_headers ($self, $path) {
