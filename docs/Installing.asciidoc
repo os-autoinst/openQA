@@ -1783,6 +1783,53 @@ converted to a URL which requires this notation.
 This is also the reason why host specific section headers need to
 have double brackets (one for the ini format, one for the IPv6 host notation).
 
+== Security
+This section describes available setup options administrators can consider when
+installing openQA to improve security and isolation.
+
+=== Isolation
+You may consider enabling AppArmor. Profiles are
+https://github.com/os-autoinst/openQA/tree/master/profiles/apparmor.d[provided by openQA]
+and part of the `openQA` and `openQA-worker` packages for openSUSE.
+
+Alternatively, you can also use the already mentioned
+<<#container_setup,container based setup>> or look into
+https://en.opensuse.org/openSUSE:Security_Features#Systemd_hardening_effort[hardening via systemd].
+An example for setting up an openQA worker host so that the openQA worker slots
+run within containers isolated from each other can be found
+https://progress.opensuse.org/projects/openqav3/wiki/Wiki#o3-s390-and-other-eg-bare-metal-workers-running-as-podman-containers-on-o3-worker-openqaworker23[in our Wiki about the openqa.opensuse.org setup].
+
+Without taking any of those additional measures the openQA services will at
+least still run as a distinct user (when using upstream-provided systemd unit
+files).
+
+=== Authentication
+Authentication via OpenID is enabled by default. Do **not** change the
+authentication method to `Fake` unless access is otherwise restricted.
+
+Note that read-access to most data is possible even without being logged-in. So
+you need to be careful exposing an instance to the public even if authentication
+is enabled. To protect assets, the configuration setting
+`[auth] require_for_assets = 1` can be used. To prevent setting values from
+being logged, setting keys like `_SECRET_…` and `…_PASSWORD` can be used.
+
+=== Configuration settings with security implications
+The `download_domains` and `scenario_definitions_allowed_hosts` settings specify
+domains that will be trusted for downloads via `_URL` job settings and via
+`SCENARIO_DEFINITIONS_YAML_FILE=https://…` respectively. There are some defaults
+for these settings in place you might want to review by checking out the
+`openqa.ini` config template.
+
+Settings under `[scm git]` lead to openQA automatically checking out Git
+repositories specified via certain job settings. The setting `git_auto_clone` is
+enabled by default; you might want to disable it if you are concerned with
+arbitrary repository checkouts being stored on the host the openQA web UI is
+running. Note that these settings only control the openQA web UI. The
+os-autoinst backend will still clone repositories specified via `CASEDIR` and
+`NEEDLES_DIR` *regardless* of the `[scm git]` settings.
+
+Other relevant settings: `hsts`, `file_security_policy`
+
 == Troubleshooting
 [id="troubleshooting"]
 
