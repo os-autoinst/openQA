@@ -1,0 +1,16 @@
+<div class="mb-3" id="filter-<%= $id_suffix %>">
+    <div class="d-flex align-items-center mb-1">
+        <input type="checkbox" class="filter-bulk-master form-check-input me-2" title="Select all / None">
+        <strong class="me-2"><%= $label %></strong>
+        <span class="small">
+            <a href="#" class="filter-bulk-invert text-decoration-none" title="Invert selection"><i class="fa fa-refresh"></i></a>
+        </span>
+    </div>
+    % for my $item (@$items) {
+        <label class="form-label"><input value="<%= $item %>" name="<%= $name %>" type="checkbox" id="filter-<%= $item %>"> <%= label_from_const $item %></label>
+    % }
+    <hr class="my-1">
+    % for my $item (@$meta_items) {
+        <label class="form-label" title="Meta-category: <%= $item %>"><input value="<%= $item %>" name="<%= $name %>" type="checkbox" id="filter-<%= $item %>" class="filter-meta"> <strong><%= label_from_const $item %></strong></label>
+    % }
+</div>
