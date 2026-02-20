@@ -7,6 +7,8 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '50';
 use Mojo::IOLoop;
+use Test::MockObject;
+
 use OpenQA::Test::Utils 'perform_minion_jobs';
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
@@ -122,6 +124,16 @@ subtest 'test lock after failure' => sub {
     perform_minion_jobs($t->app->minion);
 
     lock_test();
+};
+
+subtest 'Finish job when retry count exceeded' => sub {
+    use_ok('OpenQA::WebAPI::Plugin::ObsRsync::Task');
+    my $finish_return;
+    my $job = Test::MockObject->new->mock('retries', sub { 42 })->set_true('retry')->set_true('finish')
+      ->mock('finish', sub { shift; $finish_return = [@_]; return 1 });
+    OpenQA::WebAPI::Plugin::ObsRsync::Task::_retry_or_finish($job, undef, undef, 1, 1);
+
+    like $finish_return->[0]{message}, qr/Exceeded retry count \d+\. Consider job will be re-triggered later/;
 };
 
 done_testing();
