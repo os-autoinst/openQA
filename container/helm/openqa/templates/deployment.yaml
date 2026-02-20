@@ -1,24 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "webui.fullname" . }}
+  name: {{ include "openqa.fullname" . }}
   labels:
-    {{- include "webui.labels" . | nindent 4 }}
+    {{- include "openqa.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "webui.selectorLabels" . | nindent 6 }}
+      {{- include "openqa.selectorLabels" . | nindent 6 }}
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        {{- include "webui.selectorLabels" . | nindent 8 }}
+        {{- include "openqa.selectorLabels" . | nindent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: "postgres:latest"
+          command: ["sh", "-c", "until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done;"]
       containers:
         # Future enhancement option: a container with rsync for setup with cache service
-        - name: {{ include "webui.fullname" . }}-scheduler
+        - name: {{ include "openqa.fullname" . }}-scheduler
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
@@ -37,7 +41,7 @@ spec:
           readinessProbe:
             exec:
               command: ["curl", "-f", "http://localhost:9529"]
-        - name: {{ include "webui.fullname" . }}-websockets
+        - name: {{ include "openqa.fullname" . }}-websockets
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
@@ -56,7 +60,18 @@ spec:
           readinessProbe:
             exec:
               command: ["curl", "-f", "http://localhost:9527"]
-        - name: {{ include "webui.fullname" . }}-gru
+            # Give the app 15 seconds to start before probing
+            initialDelaySeconds: 15
+            # Give the probe 5 seconds to respond
+            timeoutSeconds: 5
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - "/bin/sh"
+                  - "-c"
+                  - "sleep 15; curl -v http://localhost:9526/login > /tmp/curl_result.log"
+        - name: {{ include "openqa.fullname" . }}-gru
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
@@ -73,7 +88,7 @@ spec:
           readinessProbe:
             exec:
               command: ["grep", "started", "/var/log/gru.log"]
-        - name: {{ include "webui.fullname" . }}-livehandler
+        - name: {{ include "openqa.fullname" . }}-livehandler
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
@@ -92,7 +107,7 @@ spec:
           readinessProbe:
             exec:
               command: ["curl", "-f", "http://localhost:9528"]
-        - name: {{ include "webui.fullname" . }}-webui
+        - name: {{ include "openqa.fullname" . }}-webui
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
@@ -113,13 +128,29 @@ spec:
           readinessProbe:
             exec:
               command: ["curl", "-f", "http://localhost:9526"]
+        - name: {{ include "openqa.fullname" . }}-nginx
+          image: "nginx:alpine"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
       restartPolicy: Always
       volumes:
         - name: data
           emptyDir: {}
         - name: config
           configMap:
-            name: {{ include "webui.fullname" . }}-configmap
+            name: {{ include "openqa.fullname" . }}-configmap
             items:
               - key: client_conf
                 path: client.conf
@@ -127,3 +158,10 @@ spec:
                 path: openqa.ini
               - key: database_ini
                 path: database.ini
+        - name: nginx-config
+          configMap:
+            name: {{ include "openqa.fullname" . }}-configmap
+            items:
+              - key: nginx_conf
+                path: nginx.conf
+
