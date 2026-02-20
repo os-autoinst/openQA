@@ -160,15 +160,33 @@ sub test_asset ($self) {
 
 sub archive ($self) {
     return $self->reply->not_found unless my $job = $self->schema->resultset('Jobs')->find($self->param('testid'));
-    my $archive_path;
+    my $job_id = $job->id;
+    my $archive_name = "job_$job_id.zip";
+    my $cache_dir = path(OpenQA::Archive::archive_cache_dir());
+    my $archive_path = $cache_dir->child($archive_name);
+    return $self->_redirect_to_archive($archive_path) if -e $archive_path;
     try {
-        $archive_path = OpenQA::Archive::create_job_archive($job);
+        if (my $minion = $self->app->can('minion') ? $self->app->minion : undef) {
+            $self->app->log->info("Enqueuing create_zip_archive for job $job_id");
+            $minion->enqueue(
+                create_zip_archive => [$job_id],
+                {notes => {job_id => $job_id}, priority => -10, expire => 3600});
+        }
+        else {
+            # Fallback for environments without a fully-functional Minion (e.g. tests)
+            return $self->_redirect_to_archive(OpenQA::Archive::create_job_archive($job));
+        }
     }
     catch ($e) {
-        $self->app->log->error('Failed to create archive for job ' . $job->id . ": $e");
+        $self->app->log->error("Archive creation failed: $e");
         return $self->render(text => 'Internal Server Error', status => 500);
     }
+    $self->render('test/archive_wait', job => $job);
+}
+
+sub _redirect_to_archive ($self, $archive_path) {
     my $url = $self->url_for('download_archive', archivepath => $archive_path->basename);
+    $self->app->log->debug("redirect to $url");
     return $self->redirect_to($url);
 }
 
