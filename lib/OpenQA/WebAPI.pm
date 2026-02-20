@@ -127,6 +127,8 @@ sub startup ($self) {
     $op_auth->post('/tests/clone')->name('tests_clone')->to('test#clone');
     $r->get('/tests/overview' => [format => ['json', 'html']])->name('tests_overview')
       ->to('test#overview', format => undef);
+    $r->get('/tests/overview/badge' => [format => ['svg']])->name('tests_overview_badge')
+      ->to('test#overview_badge', format => 'svg');
     $r->get('/tests/latest')->name('latest')->to('test#latest');
     $r->get('/tests/latest/badge')->name('latest_test_result_badge')->to('test#latest_badge');
 
