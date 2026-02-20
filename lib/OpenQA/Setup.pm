@@ -287,6 +287,7 @@ sub default_config () {
             worker_limit_retry_delay => ONE_HOUR / 4,
             mcp_max_result_size => 500000,
             scheduled_product_min_storage_duration => 34,
+            create_zip_archive_limit => 2,
             throttle_failing_job_threshold => 2,
             throttle_failing_job_prio_step => 10,
             throttle_failing_job_history_length => 20,

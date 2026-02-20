@@ -165,6 +165,9 @@
 < javascripts/running.js
 < javascripts/disable_status_updates.js [mode==test]
 
+! archive_wait.js
+< javascripts/archive_wait.js
+
 ! create_tests.js
 < javascripts/create_tests.js
 
