@@ -21,6 +21,7 @@ use List::Util qw(any min);
 use Feature::Compat::Try;
 
 sub register ($self, $app, $config) {
+    $app->helper(label_from_const => sub ($c, $val) { ucfirst $val =~ tr/_/ /r });
     $app->helper(
         format_time => sub {
             my ($c, $timedate, $format) = @_;
