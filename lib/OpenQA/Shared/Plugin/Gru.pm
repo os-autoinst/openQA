@@ -41,6 +41,7 @@ sub register_tasks ($self) {
       OpenQA::Task::Needle::LimitTempRefs
       OpenQA::Task::Job::Limit
       OpenQA::Task::Job::ArchiveResults
+      OpenQA::Task::Job::CreateZipArchive
       OpenQA::Task::Job::FinalizeResults
       OpenQA::Task::Job::HookScript
       OpenQA::Task::Job::Restart
