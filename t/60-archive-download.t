@@ -91,4 +91,20 @@ subtest 'Archive caching' => sub {
     is $cache_file->stat->mtime, $mtime, 'Cached file was reused';
 };
 
+subtest 'Hide "Download All" button when no content' => sub {
+    my $job = $schema->resultset('Jobs')->create(
+        {
+            DISTRI => 'archtest',
+            VERSION => '1.0',
+            FLAVOR => 'test',
+            ARCH => 'x86_64',
+            TEST => 'empty_job',
+            state => 'done',
+            result => 'passed',
+        });
+
+    $t->get_ok('/tests/' . $job->id . '/downloads_ajax')->status_is(200)
+      ->element_exists_not('a[title="Download all test results and assets as a ZIP archive"]');
+};
+
 done_testing;
