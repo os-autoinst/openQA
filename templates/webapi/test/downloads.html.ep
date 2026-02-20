@@ -1,3 +1,12 @@
+% my $assets = $job->jobs_assets;
+% if (@$resultfiles || @$ulogs || $assets->count) {
+<div class="mb-3">
+    %= link_to url_for('test_archive', testid => $job->id) => (class => 'btn btn-primary', title => 'Download all test results and assets as a ZIP archive') => begin
+        <i class="fa fa-download"></i> Download All (ZIP)
+    % end
+</div>
+% }
+
 % if(@$resultfiles) {
     <h5>Result files</h5>
     %= include 'test/result_file_list', resultfiles => $resultfiles, is_userfile => 0
@@ -7,7 +16,6 @@
     %= include 'test/result_file_list', resultfiles => $ulogs, is_userfile => 1
 % }
 
-% my $assets = $job->jobs_assets;
 % while (my $asset = $assets->next) {
     % $asset = $asset->asset;
     % unless ($asset->hidden) {

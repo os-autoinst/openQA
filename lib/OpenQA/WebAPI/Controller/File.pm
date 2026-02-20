@@ -7,8 +7,10 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 
 use OpenQA::Needles;
+use OpenQA::Archive;
 use OpenQA::Utils qw(:DEFAULT prjdir assetdir imagesdir);
 use File::Basename;
+use Feature::Compat::Try;
 use File::Spec;
 use File::Spec::Functions 'catfile';
 use Data::Dump 'pp';
@@ -113,6 +115,17 @@ sub download_asset ($self) {
     $self->reply->file($file);
 }
 
+sub download_archive ($self) {
+    # so minimal security is good enough
+    my $path = $self->param('archivepath');
+    return $self->reply->not_found if $path =~ qr/\.\./;
+    my $file = path(OpenQA::Archive::archive_cache_dir(), $path)->to_string;
+    return $self->reply->not_found unless -f $file && -r _;
+    $self->res->headers->content_type('application/zip');
+    $self->res->headers->content_disposition("attachment; filename=$path;");
+    $self->reply->file($file);
+}
+
 sub test_asset ($self) {
     my $jobid = $self->param('testid');
     my %cond = ('me.id' => $jobid);
@@ -143,6 +156,41 @@ sub test_asset ($self) {
     # pass the redirect to the reverse proxy - might come back to use
     # in case there is no proxy (e.g. in tests)
     return $self->redirect_to($url);
+}
+
+sub archive ($self) {
+    return $self->reply->not_found unless my $job = $self->schema->resultset('Jobs')->find($self->param('testid'));
+    my $job_id = $job->id;
+    my $archive_name = "job_$job_id.zip";
+    my $cache_dir = path(OpenQA::Archive::archive_cache_dir());
+    my $archive_path = $cache_dir->child($archive_name);
+    if (-e $archive_path) {
+        my $url = $self->url_for('download_archive', archivepath => $archive_path->basename);
+        $self->app->log->debug("redirect to $url");
+        return $self->redirect_to($url);
+    }
+    try {
+        my $minion = $self->app->can('minion') ? $self->app->minion : undef;
+        if ($minion && $minion->backend->can('list_jobs')) {
+            my $jobs = $minion->backend->list_jobs(0, 1,
+                {tasks => ['create_zip_archive'], notes => {job_id => $job_id}, states => ['inactive', 'active']});
+            unless (@{$jobs->{jobs}}) {
+                $self->app->log->info("Enqueuing create_zip_archive for job $job_id");
+                $minion->enqueue(create_zip_archive => [$job_id], {notes => {job_id => $job_id}});
+            }
+        }
+        else {
+            # Fallback for environments without a fully-functional Minion (e.g. tests)
+            my $archive_path = OpenQA::Archive::create_job_archive($job);
+            my $url = $self->url_for('download_archive', archivepath => $archive_path->basename);
+            return $self->redirect_to($url);
+        }
+    }
+    catch ($e) {
+        $self->app->log->error("Archive creation failed: $e");
+        return $self->render(text => 'Internal Server Error', status => 500);
+    }
+    $self->render('test/archive_wait', job => $job);
 }
 
 sub _set_headers ($self, $path) {

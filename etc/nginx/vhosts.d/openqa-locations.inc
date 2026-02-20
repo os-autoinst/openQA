@@ -7,4 +7,9 @@
 #    #return 301 http://$host-files$request_uri;
 #}
 
+## Optional faster archive downloads
+#location ~ ^/archives/(.*)$ {
+#    include vhosts.d/openqa-archives.inc;
+#}
+
 include vhosts.d/openqa-endpoints.inc;
