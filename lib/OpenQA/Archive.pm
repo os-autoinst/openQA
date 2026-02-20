@@ -41,8 +41,9 @@ sub create_job_archive ($job) {
     my $archive_name = "job_$job_id.zip";
     my $archive_path = $cache_dir->child($archive_name);
     my $lock_path = $cache_dir->child("$archive_name.lock");
-    open(my $lock_fh, '>', $lock_path->to_string) or die "Could not open lock file $lock_path: $!";
-    flock($lock_fh, LOCK_EX) or die "Could not lock $lock_path: $!";
+    open(my $lock_fh, '>', $lock_path->to_string)
+      or die "Could not open lock file $lock_path: $!";    # uncoverable statement
+    flock($lock_fh, LOCK_EX) or die "Could not lock $lock_path: $!";    # uncoverable statement
     if (-e $archive_path) {
         close($lock_fh);
         return $archive_path;
@@ -78,7 +79,7 @@ sub create_job_archive ($job) {
         die "Failed to create archive: $status";
     }
     rename($temp_path->to_string, $archive_path->to_string)
-      or die "Could not rename $temp_path to $archive_path: $!";
+      or die "Could not rename $temp_path to $archive_path: $!";    # uncoverable statement
     close($lock_fh);
     $lock_path->remove;
     return $archive_path;
@@ -94,7 +95,7 @@ sub cleanup_cache () {
     my $cache_dir = path(archive_cache_dir());
     return unless -d $cache_dir;
     try { _perform_cache_cleanup($cache_dir) }
-    catch ($e) { log_error("Failed to cleanup archive cache: $e") }
+    catch ($e) { log_error("Failed to cleanup archive cache: $e") }    # uncoverable statement
 }
 
 sub _perform_cache_cleanup ($cache_dir) {
