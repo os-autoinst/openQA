@@ -249,10 +249,10 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
 
 subtest 'server-side limit with pagination' => sub {
     subtest 'input validation' => sub {
-        $t->get_ok('/api/v1/workers?limit=a')->status_is(400)
-          ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
-        $t->get_ok('/api/v1/workers?offset=a')->status_is(400)
-          ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
+        $t->get_ok('/api/v1/workers?limit=a')->status_is(400)->json_is('/error_status' => 400)
+          ->json_is('/error' => 'Erroneous parameters (limit: Expected integer - got string.)');
+        $t->get_ok('/api/v1/workers?offset=a')->status_is(400)->json_is('/error_status' => 400)
+          ->json_is('/error' => 'Erroneous parameters (offset: Expected integer - got string.)');
     };
 
     subtest 'navigation with limit' => sub {

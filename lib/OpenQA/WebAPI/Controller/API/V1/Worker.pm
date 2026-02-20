@@ -30,27 +30,14 @@ Implements API methods relating to OpenQA Workers.
 
 =head1 METHODS
 
-=over 4
-
-=item list()
-
-Returns a list of workers with useful information for each including its ID, the host
-where the worker is located, the worker instance, the worker status and the worker's
-websocket status.
-
-=back
-
 =cut
 
 sub list ($self) {
-    my $validation = $self->validation;
-    $validation->optional('limit')->num;
-    $validation->optional('offset')->num;
-    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+    $self->reply->openapi_validate or return;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
-    my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
-    my $offset = $validation->param('offset') // 0;
+    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
+    my $offset = $self->param('offset') // 0;
 
     my @all = $self->schema->resultset('Workers')->search({}, {rows => $limit + 1, offset => $offset})->all;
 

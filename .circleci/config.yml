@@ -190,6 +190,7 @@ jobs:
       - store_artifacts: *store_logs
       - run: *install_cached_packages
       - restore_cache: *restore_npm_cache
+      - run: sudo cpanm -n 'Mojolicious::Plugin::OpenAPI'
       - run: *make_test
       - persist_to_workspace:
           root: .
@@ -212,6 +213,7 @@ jobs:
       - run: *install_cached_packages
       - restore_cache: *restore_npm_cache
       - run: *build_autoinst
+      - run: sudo cpanm -n 'Mojolicious::Plugin::OpenAPI'
       - run: *make_test
       - persist_to_workspace:
           root: .
