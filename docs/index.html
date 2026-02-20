@@ -1705,7 +1705,7 @@ can place default values deviating from upstream defaults.</p>
 <p>The client configuration can also be put under <code>~/.config/openqa/client.conf</code>.</p>
 </div>
 <div class="paragraph">
-<p>For development, checkout the section about
+<p>For development, check out the section about
 <a href="#_customize_configuration_directory">customizing the configuration directory</a>.</p>
 </div>
 </div>
@@ -1833,7 +1833,7 @@ this document should help you to get started faster.</p>
 <h3 id="_getting_tests"><a class="anchor" href="#_getting_tests"></a><a class="link" href="#_getting_tests">5.1. Getting tests</a></h3>
 <div class="paragraph">
 <p>You can point <code>CASEDIR</code> and <code>NEEDLES_DIR</code> to Git repositories. openQA will
-checkout those repositories automatically and no manual setup is needed.</p>
+check out those repositories automatically and no manual setup is needed.</p>
 </div>
 <div class="paragraph">
 <p>Otherwise you will need to clone tests and needles manually. For this,
@@ -2158,11 +2158,11 @@ and
 directory listings on GitHub.</p>
 </div>
 <div class="paragraph">
-<p>To learn more about how to run workers checkout the
+<p>To learn more about how to run workers check out the
 <a href="#_run_openqa_workers">Run openQA workers section</a>.</p>
 </div>
 <div class="paragraph">
-<p>For creating a first test job, checkout the
+<p>For creating a first test job, check out the
 <a href="#_triggering_tests">Triggering tests section</a>. Note that the
 commands mentioned there can also be invoked within a container, e.g.:</p>
 </div>
@@ -2174,7 +2174,7 @@ commands mentioned there can also be invoked within a container, e.g.:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Checkout the
+<p>Check out the
 <a href="#containerizedsetup">containerized setup section</a>
 for more details.</p>
 </div>
@@ -3939,7 +3939,7 @@ sudo<span class="tok-w"> </span>systemctl<span class="tok-w"> </span>stop<span c
 <td class="content">
 Be sure to use pg_upgrade from the target version (like it is done here) and
 also no newer version which is possibly installed on the system as well.
-Checkout the <a href="https://www.postgresql.org/docs/current/pgupgrade.html">PostgreSQL documentation</a>
+Check out the <a href="https://www.postgresql.org/docs/current/pgupgrade.html">PostgreSQL documentation</a>
 for details.
 </td>
 </tr>
@@ -4021,7 +4021,7 @@ The start script checks the version of the data directory and starts the correct
 <h2 id="_working_on_database_related_performance_problems"><a class="anchor" href="#_working_on_database_related_performance_problems"></a><a class="link" href="#_working_on_database_related_performance_problems">21. Working on database-related performance problems</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Without extra setup, PostgreSQL already gathers many statistics, checkout
+<p>Without extra setup, PostgreSQL already gathers many statistics, check out
 <a href="https://www.postgresql.org/docs/current/monitoring-stats.html">the official documentation</a>.</p>
 </div>
 <div class="sect2">
@@ -4093,19 +4093,19 @@ changes.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Checkout
+<p>Check out
 <a href="https://www.postgresql.org/docs/current/sql-explain.html">the official documentation</a>
 for more details about <code>EXPLAIN</code>. There is also
 <a href="https://explain.depesz.com">service</a> for formatting those explanations to be
 more readable.</p>
 </li>
 <li>
-<p>Checkout
+<p>Check out
 <a href="https://www.postgresql.org/docs/current/sql-vacuum.html">the official documentation</a>
 for more details about <code>VACUUM ANALYZE</code>.</p>
 </li>
 <li>
-<p>Checkout the following
+<p>Check out the following
 <a href="https://www.postgresql.org/docs/current/performance-tips.html">documentation pages</a>.</p>
 </li>
 </ul>
@@ -4304,6 +4304,11 @@ the workers create their own instance directories.</p>
 <li>
 <p>this default is provided by openQA; when starting isotovideo manually the <code>CASEDIR</code> variable <strong>must</strong> be
 initialized by hand</p>
+</li>
+<li>
+<p>relative paths are relative to <code>$sharedir/tests</code>; to avoid symlinking,
+use e.g. <code>CASEDIR=opensuse</code> for <code>$sharedir/tests/opensuse</code> despite
+differing <code>DISTRI</code></p>
 </li>
 <li>
 <p>might contain the sub directory <code>lib</code> for placing Perl modules used by the tests</p>
@@ -5586,7 +5591,7 @@ is carried over.
 </td>
 <td class="content">
 The lookup-depth is limited. The search for candidates will also stop
-early if too many different kinds of failures were seen. Checkout the
+early if too many different kinds of failures were seen. Check out the
 descriptions of the relevant settings in the <code>carry_over</code> section of
 <a href="#_configuration">the web UI configuration</a> for details.
 </td>
@@ -6061,7 +6066,7 @@ The sub-commands provide further help, e.g. <code>openqa-cli api --help</code> c
 a lot of examples.</p>
 </div>
 <div class="paragraph">
-<p>This section focuses on particular API use-cases. Checkout the
+<p>This section focuses on particular API use-cases. Check out the
 <a href="#client">openQA client</a> section for further information about
 the client itself, how authentication works and how plain <code>curl</code> can be used.</p>
 </div>
@@ -6542,7 +6547,7 @@ from public view in the web-UI).</p>
 <div class="paragraph">
 <p>Assets may be shared between the web-UI and the workers by having them literally use a shared
 file system (this used to be the only option), or by having the workers download them from the
-server when needed and cache them locally. Checkout the documentation about
+server when needed and cache them locally. Check out the documentation about
 <a href="#asset-caching">asset caching</a> for more on this.</p>
 </div>
 <div class="sect2">
@@ -6753,7 +6758,7 @@ unless <code>concurrent</code> is set to <code>1</code> in the <code>[cleanup]</
 <a href="#_configuration">the web UI configuration</a>. Many other
 cleanup-related settings can be found within the web UI configuration as well,
 e.g. the <code>[…_limits]</code> sections contain various tweaks and allow to change certain
-defaults. Checkout the sub section
+defaults. Check out the sub section
 <a href="#_timers_and_triggers">Timers and triggers</a> to learn more
 about how those jobs are triggered.</p>
 </div>
@@ -8345,7 +8350,7 @@ which are supposed to run on different machines.</p>
 <div class="paragraph">
 <p>Then, in job templates, add test suite(s) and all of its dependent test
 suite(s). Keep in mind to place the machines which have been explicitly defined
-in a variable for each dependent test suite. Checkout the following example
+in a variable for each dependent test suite. Check out the following example
 sections to get a better understanding.</p>
 </div>
 </div>
@@ -10278,7 +10283,7 @@ feature is explained in further detail in the corresponding
 <div class="paragraph">
 <p>It is also possible to create a GitHub workflow that will clone and monitor an
 openQA job which is mentioned in the PR description or comment. The scripts
-repository contains a pre-defined GitHub action for this. Checkout the
+repository contains a pre-defined GitHub action for this. Check out the
 documentation of the
 <a href="https://github.com/os-autoinst/os-autoinst-scripts/blob/master/openqa-clone-and-monitor-job-from-pr">openqa-clone-and-monitor-job-from-pr</a>
 script for further information and an example configuration.</p>
@@ -10332,7 +10337,7 @@ created from a fork repository branch which extra configuration.</p>
 </div>
 <div class="paragraph">
 <p>The test scenarios for your repository need to be defined in the file
-<code>scenario-definitions.yaml</code> at the root of your repository. Checkout the
+<code>scenario-definitions.yaml</code> at the root of your repository. Check out the
 <a href="https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml">scenario definitions</a>
 from the example distribution for an example. You may append a parameter like
 <code>SCENARIO_DEFINITIONS_YAML=path/of/yaml</code> to the query parameters of the webhook
@@ -10345,7 +10350,7 @@ to change the lookup path of this file.</p>
 <p>It is also possible to avoid using openQA at all and run the backend
 <code>isotovideo</code> directly within the CI runner. This simplifies the setup as no
 openQA instance is needed but of course test results cannot be examined using
-a web interface as usual. Checkout the
+a web interface as usual. Check out the
 <a href="https://github.com/os-autoinst/os-autoinst-distri-example/blob/main/README.md#local-testing-and-ci-environment">README of the example test distribution</a>
 for more information.</p>
 </div>
@@ -10432,9 +10437,9 @@ You need to use the same credentials as in step 2.</p>
 <p>Ensure "Active" is checked and confirm.</p>
 </li>
 <li>
-<p>GitHub should now have been delivering a "ping" event. Checkout whether
+<p>GitHub should now have been delivering a "ping" event. Check out whether
 it could be delivered. If you have gotten a 200 response then everything
-is setup correctly. Otherwise, checkout the response of the delivery to
+is setup correctly. Otherwise, check out the response of the delivery to
 investigate what is wrong.</p>
 </li>
 </ol>
@@ -12569,7 +12574,7 @@ for a container with all dependencies.</p>
 <p>The following explains in detail what is necessary to develop openQA code.</p>
 </div>
 <div class="paragraph">
-<p>For a setup with containers you can checkout the
+<p>For a setup with containers you can check out the
 <a href="#quick-container-development-setup">Quick container
 development setup</a> below with a complete list of instructions.</p>
 </div>
@@ -12578,7 +12583,7 @@ development setup</a> below with a complete list of instructions.</p>
 container environment as well as without.</p>
 </div>
 <div class="paragraph">
-<p>For developing openQA and os-autoinst itself it makes sense to checkout the
+<p>For developing openQA and os-autoinst itself it makes sense to check out the
 <a href="#repo-urls">Git repositories</a> and either execute
 existing tests or start the daemons manually.</p>
 </div>
@@ -13360,13 +13365,13 @@ either <code>./script/initdb --init_database</code> or <code>./script/upgradedb 
 </div>
 <div class="paragraph">
 <p>Migrations that affect possibly big tables should be tested against a local import of
-a production database to see how much time they need. Checkout the
+a production database to see how much time they need. Check out the
 <a href="#_importing_production_data">Importing production data</a> section
 for details.</p>
 </div>
 <div class="paragraph">
 <p>A migration can cause the analyser to regress so it produces worse query plans leading
-to impaired performance. Checkout the
+to impaired performance. Check out the
 <a href="#_working_on_database_related_performance_problems">Working on database-related performance problems</a>
 section for how to tackle this problem.</p>
 </div>
@@ -13486,7 +13491,7 @@ and running <code>prove</code>).</p>
 <h3 id="run-tests-in-container"><a class="anchor" href="#run-tests-in-container"></a><a class="link" href="#run-tests-in-container">72.2. Run tests within a container</a></h3>
 <div class="paragraph">
 <p>The container used in this section of the documentation is not identical with the container used
-within the CI. To run tests within the CI environment locally, checkout the
+within the CI. To run tests within the CI environment locally, check out the
 <a href="#circleci-local-container">CircleCI documentation</a> below.</p>
 </div>
 <div class="paragraph">
@@ -14125,7 +14130,7 @@ recommended. This guide is written with this setup in mind.</p>
 container (so you do not have any dependency on your host system) or to leave
 out the <code>openqa_data</code> container altogether (so you have only <code>webui</code> and
 <code>worker</code> containers and data is loaded and saved completely into your host
-system). If this is what you prefer, checkout the sections
+system). If this is what you prefer, check out the sections
 <a href="#_keeping_all_data_in_the_data_volume_container">Keeping all data in the Data Volume Container</a>
 and
 <a href="#_keeping_all_data_on_the_host_system">Keeping all data on the host system</a>
@@ -14672,7 +14677,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-02-18 04:45:29 UTC
+Last updated 2026-02-20 04:44:44 UTC
 </div>
 </div>
 </body>
