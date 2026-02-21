@@ -214,8 +214,10 @@ my $SIGCHLD_HANDLER = sub {
     # produces a test failure in case any relevant sub process terminated with a non-zero exit code
     # note: This function is supposed to be called from the SIGCHLD handler. It seems to have no effect to
     #       call die or BAIL_OUT from that handler so fail and _exit is used instead.
-    while ((my $pid = waitpid(-1, WNOHANG)) > 0) {
-        next unless my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
+    for my $pid (keys %RELEVANT_CHILD_PIDS) {
+        my $wait_pid = waitpid($pid, WNOHANG);
+        next unless $wait_pid > 0;
+        my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
         my $exit_status = $?;
         my $exit_signal = $exit_status & 127;
         _fail_and_exit "sub process $child_name terminated by signal $exit_signal", $exit_signal if $exit_signal;
