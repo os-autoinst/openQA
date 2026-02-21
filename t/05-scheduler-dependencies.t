@@ -4,11 +4,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test2::V0 -no_srand => 1;
-use Test::More (); #qw(no_plan explain);
-
-#use Test::Most;
-
-sub always_explain { Test::More::explain(@_) }
+use Test::More ();
+sub always_explain { diag Test::More::explain(@_) }
 
 BEGIN { $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} = 5 }
 
@@ -28,7 +25,6 @@ use OpenQA::JobDependencies::Constants;
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Test::Utils 'embed_server_for_testing';
-use Test::MockModule;
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
 my $jobs = $schema->resultset('Jobs');
@@ -83,20 +79,21 @@ sub _schedule {
 }
 
 # mock sending jobs to a worker
-my $jobs_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
-my $mock_send_called;
 my $sent = {};
-$jobs_result_mock->redefine(
-    ws_send => sub {
-        my ($self, $worker) = @_;
-        my $hashref = $self->prepare_for_work($worker);
-        _jobs_update_state([$self], RUNNING);
-        $hashref->{assigned_worker_id} = $worker->id;
-        $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
-        $sent->{job}->{$self->id} = {worker => $worker, job => $self, jobhash => $hashref};
-        $mock_send_called++;
-        return {state => {msg_sent => 1}};
-    });
+my $jobs_result_mock = mock 'OpenQA::Schema::Result::Jobs' => (
+    track => 1,
+    override => [
+        ws_send => sub {
+            my ($self, $worker) = @_;
+            my $hashref = $self->prepare_for_work($worker);
+            _jobs_update_state([$self], RUNNING);
+            $hashref->{assigned_worker_id} = $worker->id;
+            $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
+            $sent->{job}->{$self->id} = {worker => $worker, job => $self, jobhash => $hashref};
+            return {state => {msg_sent => 1}};
+        }
+    ],
+);
 
 # create workers
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
@@ -1092,7 +1089,8 @@ subtest 'blocked-by computation in complicated mix of chained and parallel depen
     is($jobG->blocked_by_parent_job, $jobD->id);
   };
 
-ok $mock_send_called, 'mocked ws_send method has been called';
+my $called = $jobs_result_mock->sub_tracking->{ws_send};
+ok (scalar @$called, 'mocked ws_send method has been called');
 
 subtest 'WORKER_CLASS validated when creating directly chained dependencies' => sub {
     $jobA = _job_create({%default_job_settings, TEST => 'chained-A', WORKER_CLASS => 'foo'});
@@ -1239,7 +1237,6 @@ subtest 'PARALLEL_ONE_HOST_ONLY is taken into account when determining scheduled
 };
 
 # conduct further tests with mocked scheduled jobs and free workers
-my $mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
 my @mocked_common_cluster_info = (directly_chained_children => []);
 my %mocked_cluster_info = (1 => {@mocked_common_cluster_info});
 my @mocked_common_job_info = (
@@ -1253,8 +1250,13 @@ my @mocked_free_workers
   = OpenQA::Schema->singleton->resultset('Workers')->search({job_id => undef}, {rows => 3, order_by => 'id'})->all;
 is scalar @mocked_free_workers, 3, 'test setup provides 3 free workers';
 my $spare_worker = pop @mocked_free_workers;
-$mock->redefine(determine_free_workers => sub { \@mocked_free_workers });
-$mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%mocked_jobs); \%mocked_jobs });
+
+my $mock = mock 'OpenQA::Scheduler::Model::Jobs' => (
+    override => [
+        determine_free_workers => sub { \@mocked_free_workers },
+        determine_scheduled_jobs => sub { shift->scheduled_jobs(\%mocked_jobs); \%mocked_jobs },
+    ],
+);
 
 # prevent writing to a log file to enable use of combined_like in the following tests
 $t->app->log(Mojo::Log->new(level => 'debug'));
