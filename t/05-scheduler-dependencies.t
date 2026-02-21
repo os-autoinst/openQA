@@ -3,7 +3,12 @@
 # Copyright 2014-2021 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-use Test::Most;
+use Test2::V0 -no_srand => 1;
+use Test::More (); #qw(no_plan explain);
+
+#use Test::Most;
+
+sub always_explain { Test::More::explain(@_) }
 
 BEGIN { $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} = 5 }
 
@@ -127,9 +132,9 @@ subtest 'assign multiple jobs to worker' => sub {
     is(ref(my $job_info = $json->{job_info}), 'HASH', 'job info sent') or always_explain $sent_messages;
     is($json->{type}, WORKER_COMMAND_GRAB_JOBS, 'event type present');
     is($job_info->{assigned_worker_id}, $worker_id, 'worker ID present');
-    is_deeply($job_info->{ids}, \@job_ids, 'job IDs present');
-    is_deeply($job_info->{sequence}, \@job_sequence, 'job sequence present');
-    is_deeply([sort keys %{$job_info->{data}}], \@job_ids, 'data for all jobs present');
+    is($job_info->{ids}, \@job_ids, 'job IDs present');
+    is($job_info->{sequence}, \@job_sequence, 'job sequence present');
+    is([sort keys %{$job_info->{data}}], \@job_ids, 'data for all jobs present');
 
     # check whether all jobs have the same token
     my $job_token;
@@ -303,17 +308,17 @@ sub log_job_info {
     note "job $_: " . $jobs{$_}->id for sort keys %jobs;    # uncoverable statement
 }
 subtest 'cluster info' => sub {
-    is_deeply($jobA->cluster_jobs, exp_cluster_jobs_for 'A', 'cluster info for job A');
+    is($jobA->cluster_jobs, exp_cluster_jobs_for 'A', 'cluster info for job A');
     is($jobA->blocked_by_id, undef, 'job A is unblocked');
-    is_deeply($jobB->cluster_jobs, exp_cluster_jobs_for 'B', 'cluster info for job B');
+    is($jobB->cluster_jobs, exp_cluster_jobs_for 'B', 'cluster info for job B');
     is($jobB->blocked_by_id, undef, 'job B is unblocked');
-    is_deeply($jobC->cluster_jobs, exp_cluster_jobs_for 'C', 'cluster info for job C');
+    is($jobC->cluster_jobs, exp_cluster_jobs_for 'C', 'cluster info for job C');
     is($jobC->blocked_by_id, undef, 'job C is unblocked');
-    is_deeply($jobD->cluster_jobs, exp_cluster_jobs_for 'D', 'cluster info for job D');
+    is($jobD->cluster_jobs, exp_cluster_jobs_for 'D', 'cluster info for job D');
     is($jobD->blocked_by_id, undef, 'job D is unblocked');
-    is_deeply($jobE->cluster_jobs, exp_cluster_jobs_for 'E', 'cluster info for job E');
+    is($jobE->cluster_jobs, exp_cluster_jobs_for 'E', 'cluster info for job E');
     is($jobE->blocked_by_id, undef, 'job E is unblocked');
-    is_deeply($jobF->cluster_jobs, exp_cluster_jobs_for 'F', 'cluster info for job F');
+    is($jobF->cluster_jobs, exp_cluster_jobs_for 'F', 'cluster info for job F');
     is($jobF->blocked_by_id, undef, 'job F is unblocked');
 } or log_job_info;
 
@@ -403,32 +408,32 @@ subtest 'clone and schedule parallel cluster' => sub {
     $job = _job_deps($jobA2);
     is($job->{state}, SCHEDULED, 'no change');
     is($job->{clone_id}, undef, 'no clones');
-    is_deeply($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'cloned deps');
+    is($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobB2);
     is($job->{state}, SCHEDULED, 'cloned jobs are scheduled');
     is($job->{clone_id}, undef, 'no clones');
-    is_deeply($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'cloned deps');
+    is($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobC2);
     is($job->{state}, SCHEDULED, 'cloned jobs are scheduled');
     is($job->{clone_id}, undef, 'no clones');
-    is_deeply($job->{parents}, {Parallel => [$jobB2], Chained => [], 'Directly chained' => []}, 'cloned deps');
+    is($job->{parents}, {Parallel => [$jobB2], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobD2);
     is($job->{state}, SCHEDULED, 'no change');
     is($job->{clone_id}, undef, 'no clones');
-    is_deeply($job->{parents}, {Parallel => [$jobA2], Chained => [], 'Directly chained' => []}, 'cloned deps');
+    is($job->{parents}, {Parallel => [$jobA2], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobE2);
     is($job->{state}, SCHEDULED, 'no change');
     is($job->{clone_id}, undef, 'no clones');
-    is_deeply([sort @{$job->{parents}->{Parallel}}], [sort ($jobC2, $jobD2)], 'cloned deps');
+    is([sort @{$job->{parents}->{Parallel}}], [sort ($jobC2, $jobD2)], 'cloned deps');
 
     $job = _job_deps($jobF2);
     is($job->{state}, SCHEDULED, 'cloned jobs are scheduled');
     is($job->{clone_id}, undef, 'no clones');
-    is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => [], 'Directly chained' => []}, 'cloned deps');
+    is($job->{parents}, {Parallel => [$jobC2], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     subtest 'cloning does not change MM API' => \&_check_mm_api;
 
@@ -500,7 +505,7 @@ subtest 'simple chained dependency cloning' => sub {
     # current state:
     # X <---- Y
     # done    sch.
-    is_deeply(
+    is(
         $jobY->to_hash(deps => 1)->{parents},
         {Chained => [$jobX->id], Parallel => [], 'Directly chained' => []},
         'parents of jobY'
@@ -514,7 +519,7 @@ subtest 'simple chained dependency cloning' => sub {
     my $jobY2 = $jobY->clone;
     ok(defined $jobY2, 'jobY was cloned too');
     is($jobY2->blocked_by_id, $jobX2->id, 'JobY2 is blocked');
-    is_deeply(
+    is(
         $jobY2->to_hash(deps => 1)->{parents},
         {Chained => [$jobX2->id], Parallel => [], 'Directly chained' => []},
         'JobY parents fit'
@@ -567,7 +572,7 @@ subtest 'simple chained dependency cloning' => sub {
     my $jobY3_id = $jobY2->clone_id;
     my $jobY3 = _job_deps($jobY3_id);
     is($jobY2->clone->blocked_by_id, $jobX3->id, 'jobY3 blocked');
-    is_deeply(
+    is(
         $jobY3->{parents},
         {Chained => [$jobX3->id], Parallel => [], 'Directly chained' => []},
         'jobY3 parent is now jobX3'
@@ -610,7 +615,7 @@ subtest 'duplicate parallel siblings' => sub {
     is($jobJ2, $jobJ->clone->id, 'J2 cloned with parallel parent dep');
     my $jobH2 = _job_deps($jobJ2)->{parents}->{Parallel}->[0];
     is($jobH2, $jobH->clone->id, 'H2 cloned with parallel parent dep');
-    is_deeply(
+    is(
         _job_deps($jobH2)->{children}->{Parallel},
         [$jobK->clone->id, $jobJ2],
         'K2 cloned with parallel children dep'
@@ -636,11 +641,11 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     my $jobQ_deps = _job_deps($jobQ->id);
     my @sorted_got = sort(@{$jobQ_deps->{children}->{Chained}});
     my @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA')
+    is(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA')
       or always_explain \@sorted_got;
     @sorted_got = sort(@{$jobQ_deps->{children}->{'Directly chained'}});
     @sorted_exp = sort(($jobTA->id));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA') or always_explain \@sorted_got;
+    is(\@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA') or always_explain \@sorted_got;
     is($jobT->blocked_by_id, $jobQ->id, 'JobT is blocked by job supposed to run before');
     is($jobTA->blocked_by_id, $jobQ->id, 'JobT2 is blocked by job supposed to run *directly* before');
     is($jobW->blocked_by_id, $jobQ->id, 'JobW is blocked by job supposed to run before');
@@ -699,78 +704,78 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     #         job so all cloned jobs are consistently part of the new dependency tree.
     @sorted_got = sort(@{$jobQ->{children}->{Chained}});
     @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is still chained parent to all original jobs')
+    is(\@sorted_got, \@sorted_exp, 'jobQ is still chained parent to all original jobs')
       or always_explain \@sorted_got;
     @sorted_got = sort(@{$jobQ2->{children}->{Chained}});
     @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}));
-    is_deeply(\@sorted_got, \@sorted_exp,
+    is(\@sorted_got, \@sorted_exp,
         'jobQ2 is chained parent to all cloned jobs (except jobTA2 which is directly chained)')
       or always_explain \@sorted_got;
 
     # check directly chained children
     @sorted_got = sort(@{$jobQ->{children}->{'Directly chained'}});
     @sorted_exp = sort(($jobTA->{id}));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is still the only directly chained parent to jobTA')
+    is(\@sorted_got, \@sorted_exp, 'jobQ is still the only directly chained parent to jobTA')
       or always_explain \@sorted_got;
     @sorted_got = sort(@{$jobQ2->{children}->{'Directly chained'}});
     @sorted_exp = sort(($jobTA2->{id}));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobQ2 is directly chained parent to clone jobTA2')
+    is(\@sorted_got, \@sorted_exp, 'jobQ2 is directly chained parent to clone jobTA2')
       or always_explain \@sorted_got;
 
     # check chained parents
     @sorted_got = sort(@{$jobTA2->{parents}->{Chained}});
     @sorted_exp = sort(());
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 not regularly chained after jobQ') or always_explain \@sorted_got;
+    is(\@sorted_got, \@sorted_exp, 'jobTA2 not regularly chained after jobQ') or always_explain \@sorted_got;
 
     # check directly chained parents
     @sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
     @sorted_exp = sort(($jobQ2->{id}));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ') or always_explain \@sorted_got;
+    is(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ') or always_explain \@sorted_got;
     @sorted_got = sort(@{$jobTA->{parents}->{'Directly chained'}});
     @sorted_exp = sort(($jobQ->{id}));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobTA is still directly chained after jobQ') or always_explain \@sorted_got;
+    is(\@sorted_got, \@sorted_exp, 'jobTA is still directly chained after jobQ') or always_explain \@sorted_got;
     @sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
     @sorted_exp = sort(($jobQ2->{id}));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after clone jobQ2') or always_explain \@sorted_got;
+    is(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after clone jobQ2') or always_explain \@sorted_got;
 
     # check parallel parents
     @sorted_got = sort(@{$jobT2->{parents}->{Parallel}});
     @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}));
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ')
+    is(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ')
       or always_explain \@sorted_got;
     @sorted_got = sort(@{$jobTA2->{parents}->{Parallel}});
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobTA is parallel child of all jobs except jobQ')
+    is(\@sorted_got, \@sorted_exp, 'jobTA is parallel child of all jobs except jobQ')
       or always_explain \@sorted_got;
 
     # check children of "parallel parents"
-    is_deeply(
+    is(
         $jobW2->{children},
         {Chained => [], Parallel => [$jobT2->{id}, $jobTA2->{id}], 'Directly chained' => []},
         'jobW2 has no child dependency to sibling'
     ) or always_explain $jobW2->{children};
-    is_deeply(
+    is(
         $jobU2->to_hash(deps => 1)->{children},
         {Chained => [], Parallel => [$jobT2->{id}, $jobTA2->{id}], 'Directly chained' => []},
         'jobU2 has no child dependency to sibling'
     ) or always_explain $jobU2->to_hash(deps => 1)->{children};
-    is_deeply(
+    is(
         $jobR2->{children},
         {Chained => [], Parallel => [$jobT2->{id}, $jobTA2->{id}], 'Directly chained' => []},
         'jobR2 has no child dependency to sibling'
     ) or always_explain $jobR2->{children};
 
     # check parents of "parallel parents"
-    is_deeply(
+    is(
         $jobW2->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
 'jobW2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or always_explain $jobW2->{parents};
-    is_deeply(
+    is(
         $jobU2->to_hash(deps => 1)->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
 'jobU2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or always_explain $jobU2->to_hash(deps => 1)->{parents};
-    is_deeply(
+    is(
         $jobR2->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
 'jobR2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
@@ -805,9 +810,9 @@ subtest 'clonging of clones' => sub {
     my $jobI2 = _job_deps($jobI->{clone_id});
     my $jobP2 = _job_deps($jobP->clone->id);
 
-    is_deeply($jobI->{parents}->{Parallel}, [$jobO->id], 'jobI retain its original parent');
-    is_deeply($jobI2->{parents}->{Parallel}, [$jobO2->{id}], 'jobI2 got new parent');
-    is_deeply($jobO2->{parents}->{Parallel}, [$jobP2->{id}], 'clone jobO2 gets new parent jobP2');
+    is($jobI->{parents}->{Parallel}, [$jobO->id], 'jobI retain its original parent');
+    is($jobI2->{parents}->{Parallel}, [$jobO2->{id}], 'jobI2 got new parent');
+    is($jobO2->{parents}->{Parallel}, [$jobP2->{id}], 'clone jobO2 gets new parent jobP2');
 
     # get Jobs RS from ids for cloned jobs
     $jobO2 = $jobs->find($jobO2->{id});
@@ -835,8 +840,8 @@ subtest 'clonging of clones' => sub {
     my $jobO3 = _job_deps($jobO2->clone->id);
     my $jobP3 = _job_deps($jobP2->clone->id);
 
-    is_deeply($jobI2->{parents}->{Parallel}, [$jobO3->{id}], 'jobI2 got new parent jobO3');
-    is_deeply($jobO3->{parents}->{Parallel}, [$jobP3->{id}], 'clone jobO3 gets new parent jobP3');
+    is($jobI2->{parents}->{Parallel}, [$jobO3->{id}], 'jobI2 got new parent jobO3');
+    is($jobO3->{parents}->{Parallel}, [$jobP3->{id}], 'clone jobO3 gets new parent jobP3');
 };
 
 subtest 'clone chained child with siblings; then clone chained parent' =>
@@ -870,17 +875,17 @@ subtest 'clone chained child with siblings; then clone chained parent' =>
     #   |- C
     #   \- D
     my $jobBc_h = _job_deps($jobBc->id);
-    is_deeply($jobBc_h->{parents}->{Chained}, [$jobA->id], 'jobBc has jobA as chained parent');
+    is($jobBc_h->{parents}->{Chained}, [$jobA->id], 'jobBc has jobA as chained parent');
     is($jobBc_h->{settings}{TEST}, $jobB->TEST, 'jobBc test and jobB test are equal');
 
     ok(!$jobC->clone, 'jobC was not cloned');
     my $jobC_h = _job_deps($jobC->id);
-    is_deeply($jobC_h->{parents}->{Chained}, [$jobA->id], 'jobC has jobA as chained parent');
+    is($jobC_h->{parents}->{Chained}, [$jobA->id], 'jobC has jobA as chained parent');
     is($jobC_h->{settings}{TEST}, $jobC->TEST, 'jobBc test and jobB test are equal');
 
     ok(!$jobD->clone, 'jobD was not cloned');
     my $jobD_h = _job_deps($jobD->id);
-    is_deeply($jobD_h->{parents}->{Chained}, [$jobA->id], 'jobD has jobA as chained parent');
+    is($jobD_h->{parents}->{Chained}, [$jobA->id], 'jobD has jobA as chained parent');
     is($jobD_h->{settings}{TEST}, $jobD->TEST, 'jobBc test and jobB test are equal');
 
     # hack jobs to appear running to scheduler
@@ -908,17 +913,17 @@ subtest 'clone chained child with siblings; then clone chained parent' =>
     #    \- D2
     ok($jobB->clone->clone, 'jobB clone jobBd was cloned');
     my $jobB2_h = _job_deps($jobB->clone->clone->clone->id);
-    is_deeply($jobB2_h->{parents}->{Chained}, [$jobA2->id], 'jobB2 has jobA2 as chained parent');
+    is($jobB2_h->{parents}->{Chained}, [$jobA2->id], 'jobB2 has jobA2 as chained parent');
     is($jobB2_h->{settings}{TEST}, $jobB->TEST, 'jobB2 test and jobB test are equal');
 
     ok($jobC->clone, 'jobC was cloned');
     my $jobC2_h = _job_deps($jobC->clone->clone->id);
-    is_deeply($jobC2_h->{parents}->{Chained}, [$jobA2->id], 'jobC2 has jobA2 as chained parent');
+    is($jobC2_h->{parents}->{Chained}, [$jobA2->id], 'jobC2 has jobA2 as chained parent');
     is($jobC2_h->{settings}{TEST}, $jobC->TEST, 'jobC2 test and jobC test are equal');
 
     ok($jobD->clone, 'jobD was cloned');
     my $jobD2_h = _job_deps($jobD->clone->clone->id);
-    is_deeply($jobD2_h->{parents}->{Chained}, [$jobA2->id], 'jobD2 has jobA2 as chained parent');
+    is($jobD2_h->{parents}->{Chained}, [$jobA2->id], 'jobD2 has jobA2 as chained parent');
     is($jobD2_h->{settings}{TEST}, $jobD->TEST, 'jobD2 test and jobD test are equal');
 
     my $jobA2_h = _job_deps($jobA2->id);
@@ -927,7 +932,7 @@ subtest 'clone chained child with siblings; then clone chained parent' =>
     # and the DB query doesn't enforce any order
     my @clone_deps = sort { $a <=> $b } @{$jobA2_h->{children}->{Chained}};
     my @deps = sort { $a <=> $b } ($jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id});
-    is_deeply(\@clone_deps, \@deps, 'jobA2 has jobB2, jobC2 and jobD2 as children');
+    is(\@clone_deps, \@deps, 'jobA2 has jobB2, jobC2 and jobD2 as children');
   };
 
 subtest 'clone chained parent while children are running' => sub {
@@ -951,7 +956,7 @@ subtest 'clone chained parent while children are running' => sub {
     for ($jobB, $jobC, $jobD) {
         ok($_->clone, 'job cloned');
         my $h = _job_deps($_->clone->id);
-        is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent');
+        is($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent');
     }
 
     # set jobA2 as running and clone it
@@ -967,7 +972,7 @@ subtest 'clone chained parent while children are running' => sub {
     for ($jobB, $jobC, $jobD) {
         ok($_->clone->clone, 'job correctly not cloned');
         my $h = _job_deps($_->clone->clone->id);
-        is_deeply($h->{parents}{Chained}, [$jobA3->id], 'job has jobA3 as parent');
+        is($h->{parents}{Chained}, [$jobA3->id], 'job has jobA3 as parent');
     }
 };
 
@@ -995,12 +1000,12 @@ subtest 'clone chained parent with chained sub-tree' => sub {
         for ($jobB, $jobC, $jobD) {
             ok($_->clone, 'job cloned');
             my $h = _job_deps($_->clone->id);
-            is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent')
+            is($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent')
               or explain($h->{parents}{Chained});
         }
         for ($jobC, $jobD) {
             my $h = _job_deps($_->clone->id);
-            is_deeply($h->{parents}{Parallel}, [$jobB->clone->id], 'job has jobB2 as parallel parent');
+            is($h->{parents}{Parallel}, [$jobB->clone->id], 'job has jobB2 as parallel parent');
         }
     };
 
@@ -1098,8 +1103,8 @@ subtest 'WORKER_CLASS validated when creating directly chained dependencies' => 
     $jobC = _job_create({%default_job_settings, TEST => 'chained-C'}, undef, [], [$jobB->id]);
     is($jobC->settings->find({key => 'WORKER_CLASS'})->value, 'bar', 'job C inherits worker class from B');
     $job_settings->create({job_id => $jobC->id, key => 'WORKER_CLASS', value => 'baz'});
-    throws_ok(
-        sub { _job_create({%default_job_settings, TEST => 'chained-D', WORKER_CLASS => 'foo'}, [], [], [$jobC->id]) },
+    like(
+        dies(sub { _job_create({%default_job_settings, TEST => 'chained-D', WORKER_CLASS => 'foo'}, [], [], [$jobC->id]) }),
         qr/Specified WORKER_CLASS \(foo\) does not match the one from directly chained parent .* \(bar,baz\)/,
         'creation of job with mismatching worker class prevented'
     );
@@ -1140,14 +1145,14 @@ subtest 'skip "ok" children' => sub {
     subtest 'dependencies of cloned jobs' => sub {
         my @expected_job_ids = map { $_->clone_id } ($parent, $child_2, $child_2_child_1, $child_3);
         is ref $new_job_cluster->{$_}, 'HASH', "new cluster contains job $_" for @expected_job_ids;
-        is_deeply [sort @{$new_job_cluster->{$clone->id}{directly_chained_children}}],
+        is ([sort @{$new_job_cluster->{$clone->id}{directly_chained_children}}],
           [$child_2->clone_id, $child_3->clone_id],
-          'parent contains all children, except the skipped one (as per poo#150917)';
+          'parent contains all children, except the skipped one (as per poo#150917)');
         my @child_1_parents = map { $_->parent_job_id } $child_1->parents->all;
-        is_deeply \@child_1_parents, [$parent->id],
-          'skipped job has only the old parent and not also the new parent (as per poo#150917)';
-        is_deeply [sort @{$new_job_cluster->{$child_2_child_1->clone_id}{directly_chained_parents}}],
-          [$child_2->clone_id], 'parent for child of child assigned';
+        is (\@child_1_parents, [$parent->id],
+          'skipped job has only the old parent and not also the new parent (as per poo#150917)');
+        is ([sort @{$new_job_cluster->{$child_2_child_1->clone_id}{directly_chained_parents}}],
+          [$child_2->clone_id], 'parent for child of child assigned');
     } or $log_jobs->() or always_explain $new_job_cluster;
 };
 
@@ -1259,22 +1264,22 @@ subtest 'error cases' => sub {
 
     combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
     qr/Failed to retrieve jobs \(1\) in the DB, reason: only got 0 jobs/, 'job not present in DB';
-    is_deeply $allocated, [], 'no job allocated (1)' or always_explain $allocated;
+    is ($allocated, [], 'no job allocated (1)') or always_explain $allocated;
 
     my $job = $jobs->create({id => 1, state => ASSIGNED, TEST => $mocked_jobs{1}->{test}});
     combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
     qr/1.*no longer scheduled, skipping/, 'skippinng job which is no longer scheduled';
-    is_deeply $allocated, [], 'no job allocated (2)' or always_explain $allocated;
+    is ($allocated, [], 'no job allocated (2)') or always_explain $allocated;
 
     $job->update({state => SCHEDULED, assigned_worker_id => $mocked_free_workers[0]->id});
     combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
     qr/Worker already got jobs, skipping/, 'skippinng if worker already has jobs';
-    is_deeply $allocated, [], 'no job allocated (2)' or always_explain $allocated;
+    is ($allocated, [], 'no job allocated (2)') or always_explain $allocated;
 
     $job->update({assigned_worker_id => $spare_worker->id});
     combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
     qr/1.*already a worker assigned, skipping/, 'skippinng job which has already worker assigned';
-    is_deeply $allocated, [], 'no job allocated (3)' or always_explain $allocated;
+    is ($allocated, [], 'no job allocated (3)') or always_explain $allocated;
 };
 
 subtest 'starvation of parallel jobs prevented' => sub {
@@ -1297,7 +1302,7 @@ subtest 'starvation of parallel jobs prevented' => sub {
     qr/Need to schedule 3 parallel jobs for job 1.*Discarding job (1|2|3).*Discarding job (1|2|3)/s,
       'discarding jobs due to incomplete parallel cluster';
     is $mocked_jobs{1}->{priority_offset}, 10, 'priority of parallel parent increased (once per child)';
-    is_deeply $allocated_workers, {}, 'no workers "held" so far while still increased prio'
+    is ($allocated_workers, {}, 'no workers "held" so far while still increased prio')
       or always_explain $allocated_workers;
 
     # run the scheduler again assuming highest prio for parallel parent; worker supposed to be "held"
@@ -1305,7 +1310,7 @@ subtest 'starvation of parallel jobs prevented' => sub {
     combined_like { ($allocated_workers) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs($free_workers) }
     qr/Holding worker .* for job (1|2|3) to avoid starvation.*Holding worker .* for job (1|2|3) to avoid starvation/s,
       'holding 2 workers (for 2 of our parallel jobs while 3rd worker is unavailable)';
-    is_deeply [sort keys %$allocated_workers], [map { $_->id } @mocked_free_workers], 'both free workers "held"';
+    is ([sort keys %$allocated_workers], [map { $_->id } @mocked_free_workers], 'both free workers "held"');
     ok $_ >= 1 && $_ <= 3, "worker held for expected job ($_)" for values %$allocated_workers;
 };
 
@@ -1319,8 +1324,8 @@ subtest 'partially blocked clusters are not scheduled' => sub {
         ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs($free_workers)
     }
     qr/Skipping job .* because dependent jobs are not ready/, 'skipping job if dependent jobs not ready';
-    is_deeply $allocated_jobs, {}, 'no jobs allocated' or always_explain $allocated_jobs;
-    is_deeply $allocated_workers, {}, 'no workers allocated' or always_explain $allocated_workers;
+    is ($allocated_jobs, {}, 'no jobs allocated') or always_explain $allocated_jobs;
+    is ($allocated_workers, {}, 'no workers allocated') or always_explain $allocated_workers;
 };
 
 done_testing();
