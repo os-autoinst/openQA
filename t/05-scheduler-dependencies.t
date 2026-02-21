@@ -124,13 +124,20 @@ subtest 'assign multiple jobs to worker' => sub {
 
     OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
 
-    is(scalar @$sent_messages, 1, 'exactly one message sent');
-    ref_ok(my $json = $sent_messages->[0]->{json}, 'HASH', 'json data sent');
-    ref_ok(my $job_info = $json->{job_info}, 'HASH', 'job info sent') or always_explain $sent_messages;
-    is($json->{type}, WORKER_COMMAND_GRAB_JOBS, 'event type present');
-    is($job_info->{assigned_worker_id}, $worker_id, 'worker ID present');
-    is($job_info->{ids}, \@job_ids, 'job IDs present');
-    is($job_info->{sequence}, \@job_sequence, 'job sequence present');
+    is $sent_messages, [
+        {
+            json => {
+                job_info => {
+                    assigned_worker_id => $worker_id,
+                    ids => \@job_ids,
+                    sequence => \@job_sequence,
+                    data => E()
+                },
+                type => WORKER_COMMAND_GRAB_JOBS,
+            }
+        }
+    ];
+    my $job_info = $sent_messages->[0]->{json}->{job_info};
     is([sort keys %{$job_info->{data}}], \@job_ids, 'data for all jobs present');
 
     # check whether all jobs have the same token
@@ -636,13 +643,9 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
 
     # check dependencies of job Q
     my $jobQ_deps = _job_deps($jobQ->id);
-    my @sorted_got = sort(@{$jobQ_deps->{children}->{Chained}});
-    my @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
-    is(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA')
-      or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobQ_deps->{children}->{'Directly chained'}});
-    @sorted_exp = sort(($jobTA->id));
-    is(\@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA') or always_explain \@sorted_got;
+    my $check = bag { item $_ for $jobW->id, $jobU->id, $jobR->id, $jobT->id; end() };
+    is $jobQ_deps->{children}->{Chained}, $check, 'jobQ is chained parent to all jobs except jobTA';
+    is $jobQ_deps->{children}->{'Directly chained'}, [$jobTA->id], 'jobQ is directly chained parent to jobTA';
     is($jobT->blocked_by_id, $jobQ->id, 'JobT is blocked by job supposed to run before');
     is($jobTA->blocked_by_id, $jobQ->id, 'JobT2 is blocked by job supposed to run *directly* before');
     is($jobW->blocked_by_id, $jobQ->id, 'JobW is blocked by job supposed to run before');
@@ -699,19 +702,14 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     # note 4: As stated in note 2, jobQ2 has only been cloded due to its dependency with jobTA. However,
     #         the other jobs are still supposed to be associated with the clone jobQ2 instead of the original
     #         job so all cloned jobs are consistently part of the new dependency tree.
-    @sorted_got = sort(@{$jobQ->{children}->{Chained}});
-    @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
-    is(\@sorted_got, \@sorted_exp, 'jobQ is still chained parent to all original jobs')
-      or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobQ2->{children}->{Chained}});
-    @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}));
-    is(\@sorted_got, \@sorted_exp,
-        'jobQ2 is chained parent to all cloned jobs (except jobTA2 which is directly chained)')
-      or always_explain \@sorted_got;
+    $check = bag { item $_ for $jobW->id, $jobU->id, $jobR->id, $jobT->id; end() };
+    is $jobQ->{children}->{Chained}, $check, 'jobQ is still chained parent to all original jobs';
+    $check = bag { item $_ for $jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}; end() };
+    is $jobQ2->{children}->{Chained}, $check, 'jobQ2 is chained parent to all cloned jobs (except jobTA2 which is directly chained)';
 
     # check directly chained children
-    @sorted_got = sort(@{$jobQ->{children}->{'Directly chained'}});
-    @sorted_exp = sort(($jobTA->{id}));
+    my @sorted_got = sort(@{$jobQ->{children}->{'Directly chained'}});
+    my @sorted_exp = sort(($jobTA->{id}));
     is(\@sorted_got, \@sorted_exp, 'jobQ is still the only directly chained parent to jobTA')
       or always_explain \@sorted_got;
     @sorted_got = sort(@{$jobQ2->{children}->{'Directly chained'}});
