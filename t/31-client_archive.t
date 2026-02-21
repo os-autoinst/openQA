@@ -26,7 +26,7 @@ subtest 'OpenQA::Client:Archive tests' => sub {
 
 
     my $dd_output = `dd if=/dev/zero of=$limittest_path/limittest.tar.bz2 bs=1M count=2 2>&1`;
-    is(-s "$limittest_path/limittest.tar.bz2", 2 * 1024 * 1024, 'limit test file is created')
+    is -s "$limittest_path/limittest.tar.bz2", 2 * 1024 * 1024, 'limit test file is created'
       or note "dd output: $dd_output";
 
     lives_ok {
@@ -41,17 +41,17 @@ subtest 'OpenQA::Client:Archive tests' => sub {
     'Archive functionality works as expected would perform correctly';
 
     my $file = $destination->child('testresults', 'details-zypper_up.json');
-    ok(-e $file, 'details-zypper_up.json file exists') or diag $file;
+    ok -e $file, 'details-zypper_up.json file exists' or diag $file;
     $file = $destination->child('testresults', 'video.ogv');
 
-    ok(-e $file, 'Test video file exists') or diag $file;
+    ok -e $file, 'Test video file exists' or diag $file;
     $file = $destination->child('testresults', 'ulogs', 'y2logs.tar.bz2');
 
-    ok(-e $file, 'Test uploaded logs file exists') or diag $file;
+    ok -e $file, 'Test uploaded logs file exists' or diag $file;
     $file = $destination->child('testresults', 'ulogs', 'limittest.tar.bz2');
 
-    ok(!-e $file, 'Test uploaded logs file was not created') or diag $file;
-    is($t->ua->max_response_size, $limit, "Max response size for UA is correct ($limit)");
+    ok !-e $file, 'Test uploaded logs file was not created' or diag $file;
+    is $t->ua->max_response_size, $limit, "Max response size for UA is correct ($limit)";
 
 };
 

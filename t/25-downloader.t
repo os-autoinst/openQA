@@ -149,7 +149,7 @@ subtest 'Size differs' => sub {
     $cache_log = '';
 };
 
-subtest 'Non-compressed files kept as-is (no complaint about unknown archive format)' => sub {
+subtest 'Non-compressed files kept as-is - no complaint about unknown archive format' => sub {
     $to = $tempdir->child('test.txt');
     my $from = "http://$host/test";
     # don't check the error message as it is not interesting

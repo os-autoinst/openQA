@@ -163,37 +163,37 @@ my $app = $t->app;
 my $helper = $app->obs_rsync;
 
 subtest 'test api repo helper' => sub {
-    is($helper->get_api_repo('Proj1'), 'standard');
-    is($helper->get_api_repo('Proj1::appliances'), 'appliances');
-    is($helper->get_api_repo('Proj2'), 'images');
-    is($helper->get_api_repo('BatchedProj'), 'containers');
+    is $helper->get_api_repo('Proj1'), 'standard';
+    is $helper->get_api_repo('Proj1::appliances'), 'appliances';
+    is $helper->get_api_repo('Proj2'), 'images';
+    is $helper->get_api_repo('BatchedProj'), 'containers';
 };
 
 subtest 'test api package helper' => sub {
-    is($helper->get_api_package('Proj1'), '');
-    is($helper->get_api_package('Proj2'), '0product');
-    is($helper->get_api_package('BatchedProj'), '000product');
+    is $helper->get_api_package('Proj1'), '';
+    is $helper->get_api_package('Proj2'), '0product';
+    is $helper->get_api_package('BatchedProj'), '000product';
 };
 
 subtest 'test api url helper' => sub {
-    is($helper->get_api_dirty_status_url('Proj1'), "$host/build/Proj1/_result");
-    is($helper->get_api_dirty_status_url('Proj2'), "$host/build/Proj2/_result?package=0product");
-    is($helper->get_api_dirty_status_url('BatchedProj'), "$host/build/BatchedProj/_result?package=000product");
+    is $helper->get_api_dirty_status_url('Proj1'), "$host/build/Proj1/_result";
+    is $helper->get_api_dirty_status_url('Proj2'), "$host/build/Proj2/_result?package=0product";
+    is $helper->get_api_dirty_status_url('BatchedProj'), "$host/build/BatchedProj/_result?package=000product";
 };
 
 subtest 'test builds_text helper' => sub {
-    is($helper->get_obs_builds_text('Proj1', 1), '470.1');
-    is($helper->get_obs_builds_text('BatchedProj', 1), '4704, 4703, 470.2, 469.1');
-    is($helper->get_obs_builds_text('BatchedProj|Batch1', 1), '470.2, 469.1');
-    is($helper->get_obs_builds_text('BatchedProj|Batch2', 1), '4704, 4703');
+    is $helper->get_obs_builds_text('Proj1', 1), '470.1';
+    is $helper->get_obs_builds_text('BatchedProj', 1), '4704, 4703, 470.2, 469.1';
+    is $helper->get_obs_builds_text('BatchedProj|Batch1', 1), '470.2, 469.1';
+    is $helper->get_obs_builds_text('BatchedProj|Batch2', 1), '4704, 4703';
 };
 
 subtest 'test status_dirty helper' => sub {
-    is($helper->is_status_dirty('Proj0'), undef, 'status unknown');
-    is($helper->is_status_dirty('Proj1'), 1, 'status dirty');
-    is($helper->is_status_dirty('Proj2'), 1, 'status publishing');
-    is($helper->is_status_dirty('Proj3'), 0, 'status unpublished');
-    is($helper->is_status_dirty('Proj3::standard'), 0, 'status published');
+    is $helper->is_status_dirty('Proj0'), undef, 'status unknown';
+    is $helper->is_status_dirty('Proj1'), 1, 'status dirty';
+    is $helper->is_status_dirty('Proj2'), 1, 'status publishing';
+    is $helper->is_status_dirty('Proj3'), 0, 'status unpublished';
+    is $helper->is_status_dirty('Proj3::standard'), 0, 'status published';
 };
 
 # no inactive gru jobs is displayed in project list
@@ -220,14 +220,14 @@ $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr
   ->content_like(qr/publishing/);
 
 subtest 'build service ssh authentication' => sub {
-    is($helper->is_status_dirty('ProjWithAuth'), 1, 're-authenticate with ssh auth');
+    is $helper->is_status_dirty('ProjWithAuth'), 1, 're-authenticate with ssh auth';
 };
 
 subtest 'build service authentication: signature generation' => sub {
     $mocked_time = 1664187470;
     note 'time right now: ' . time();
-    is(time(), $mocked_time, 'Time is not frozen!');
-    is($helper->is_status_dirty('ProjTestingSignature'), 1, 'signature matches fixture');
+    is time(), $mocked_time, 'Time is not frozen!';
+    is $helper->is_status_dirty('ProjTestingSignature'), 1, 'signature matches fixture';
     $mocked_time = undef;
 };
 

@@ -143,26 +143,24 @@ subtest 'verify_chunks' => sub {
 
     OpenQA::Files->write_chunks($t_dir => $copied_file);
 
-    is(OpenQA::Files->verify_chunks($t_dir => $copied_file), undef, 'Verify chunks passes');
+    is OpenQA::Files->verify_chunks($t_dir => $copied_file), undef, 'Verify chunks passes';
     $copied_file->spew('');
 
-    is(
-        OpenQA::Files->verify_chunks($t_dir => $copied_file)->message(),
-        'Can\'t verify written data from chunk',
-        'Cannot verify chunks passes'
-    );
+    is
+      OpenQA::Files->verify_chunks($t_dir => $copied_file)->message(),
+      'Can\'t verify written data from chunk',
+      'Cannot verify chunks passes';
     is $copied_file->slurp, '', 'File is empty now';
 
-    is(OpenQA::Files->write_verify_chunks($t_dir => $copied_file), undef, 'Write and verify passes');
+    is OpenQA::Files->write_verify_chunks($t_dir => $copied_file), undef, 'Write and verify passes';
 
     is $original->file->slurp, path($copied_file)->slurp, 'Same content';
 
     $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
-    like(
-        OpenQA::Files->verify_chunks($t_dir => $copied_file),
-        qr/^Can't verify written data from chunk/,
-        'Verify chunks fail'
-    );
+    like
+      OpenQA::Files->verify_chunks($t_dir => $copied_file),
+      qr/^Can't verify written data from chunk/,
+      'Verify chunks fail';
     isnt $original->file->slurp, path($copied_file)->slurp, 'Not same content';
 };
 
@@ -171,7 +169,7 @@ sub compare {
     my $original = file_path($FindBin::Bin, 'data', $file);
     my $pieces = $original->split($chunk_size);
 
-    is(OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!');
+    is OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!';
 
     for (my $i = 1; $i <= $pieces->size; $i++) {
         my $piece = $original->get_piece($i => $chunk_size);

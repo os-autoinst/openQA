@@ -137,7 +137,7 @@ subtest 'upload other assets' => sub {
 
     $t->ua->upload->once(
         'upload_chunk.response' => sub {
-            ok(-d $chunkdir, 'Chunk directory exists');
+            ok -d $chunkdir, 'Chunk directory exists';
         });
 
     lives_ok {
@@ -195,7 +195,7 @@ subtest 'upload failures' => sub {
     $t->ua->upload->on(
         'upload_chunk.error' => sub {
             $errored++;
-            is(pop()->res->json->{status}, 'foobar', 'Error message status is correct');
+            is pop()->res->json->{status}, 'foobar', 'Error message status is correct';
         });
 
     lives_ok {

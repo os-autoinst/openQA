@@ -43,11 +43,11 @@ my $scheduled_product;
 subtest 'handling assets with invalid name' => sub {
     $scheduled_product = $scheduled_products->create(\%settings);
     $schema->txn_begin;
-    is_deeply(
-        $scheduled_product->schedule_iso({REPO_0 => ''}, $signal_guard),
-        {error => 'Asset type and name must not be empty.'},
-        'schedule_iso prevents adding assets with empty name',
-    );
+    is_deeply
+      $scheduled_product->schedule_iso({REPO_0 => ''}, $signal_guard),
+      {error => 'Asset type and name must not be empty.'},
+      'schedule_iso prevents adding assets with empty name',
+      ;
     $schema->txn_rollback;
 
     like $scheduled_product->schedule_iso({_DEPRIORITIZEBUILD => 1, TEST => 'foo'}, undef)->{error},
@@ -58,14 +58,14 @@ subtest 'handling assets with invalid name' => sub {
     is $scheduled_product->status, SCHEDULED, 'product marked as scheduled, though';
 
     $scheduled_product = $scheduled_products->create(\%settings);
-    is_deeply(
-        $scheduled_product->schedule_iso({REPO_0 => 'invalid'}, $signal_guard),
-        {
-            successful_job_ids => [],
-            failed_job_info => [],
-        },
-        'schedule_iso allows non-existent assets though',
-    );
+    is_deeply
+      $scheduled_product->schedule_iso({REPO_0 => 'invalid'}, $signal_guard),
+      {
+        successful_job_ids => [],
+        failed_job_info => [],
+      },
+      'schedule_iso allows non-existent assets though',
+      ;
 
     $scheduled_product->discard_changes;
     is $scheduled_product->status, SCHEDULED, 'product marked as scheduled, though';

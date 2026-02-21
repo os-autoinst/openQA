@@ -43,7 +43,7 @@ $assets->find($_)->update({last_use_job_id => 99963}) for (2, 3);
 
 my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 
-note('Asset directory: ' . assetdir());
+note 'Asset directory: ' . assetdir();
 
 subtest 'configurable concurrency' => sub {
     my $fake_job = Test::FakeJob->new(app => $app);
@@ -135,21 +135,21 @@ sub prepare_asset_status {
 
     # ignore exact size of untracked assets since it depends on presence of other files (see %ignored_assets)
     my $groups = $asset_status->{groups};
-    is_deeply([sort keys %$groups], [0, 1001, 1002], 'groups present');
-    ok(delete $groups->{0}->{size}, 'size of untracked assets');
-    ok(delete $groups->{0}->{picked}, 'untracked assets picked');
+    is_deeply [sort keys %$groups], [0, 1001, 1002], 'groups present';
+    ok delete $groups->{0}->{size}, 'size of untracked assets';
+    ok delete $groups->{0}->{picked}, 'untracked assets picked';
 
     my $assets_with_max_job = $asset_status->{assets};
     my $assets_with_max_job_count = 0;
     my %assets_without_max_job;
     for my $asset (@$assets_with_max_job) {
         my $name = $asset->{name};
-        ok(delete $asset->{t_created}, "asset $name has t_created");
+        ok delete $asset->{t_created}, "asset $name has t_created";
 
         # check that all assets which have no max_job at all are considered last
         if ($asset->{max_job}) {
             $assets_with_max_job_count += 1;
-            fail('assets without max_job should go last') if keys %assets_without_max_job;
+            fail 'assets without max_job should go last' if keys %assets_without_max_job;
             next;
         }
 
@@ -163,7 +163,7 @@ sub prepare_asset_status {
         );
         next unless $assets_under_test{$name};
 
-        ok(delete $asset->{id}, "asset $name has ID");
+        ok delete $asset->{id}, "asset $name has ID";
         $assets_without_max_job{delete $asset->{name}} = $asset;
     }
     splice(@$assets_with_max_job, $assets_with_max_job_count);
@@ -368,14 +368,14 @@ subtest 'tracked assets' => sub {
     }
     # Assets here include non-iso in iso, files in other, CURRENT repos
     for my $name (qw(iso/whatever.sha256 other/misc.xml repo/otherrepo-CURRENT)) {
-        ok(-e assetdir() . '/' . $name, "$name exists in the test folder");
-        ok(grep(/$name$/, @tracked_assets), "$name picked up for cleanup")
+        ok -e assetdir() . '/' . $name, "$name exists in the test folder";
+        ok grep(/$name$/, @tracked_assets), "$name picked up for cleanup"
           || always_explain join(' ', sort @tracked_assets);
     }
     # Ignored assets include repo links, file links
     for my $name (qw(repo/somethingrepo other/misc2.xml)) {
-        ok(-e assetdir() . '/' . $name, "$name exists in the test folder");
-        ok(!grep(/$name$/, @tracked_assets), "$name ignored") || always_explain join(' ', sort @tracked_assets);
+        ok -e assetdir() . '/' . $name, "$name exists in the test folder";
+        ok !grep(/$name$/, @tracked_assets), "$name ignored" || always_explain join(' ', sort @tracked_assets);
     }
 };
 
@@ -384,7 +384,7 @@ subtest 'handling assets with invalid name' => sub {
     my $asset_count = $schema->resultset('Assets')->count;
 
     # check whether registering an asset with empty name is prevented
-    is($schema->resultset('Assets')->register(repo => ''), undef, 'registering an empty asset prevented');
+    is $schema->resultset('Assets')->register(repo => ''), undef, 'registering an empty asset prevented';
 
     # handling within OpenQA::Schema::Result::Jobs::register_assets_from_settings
     my $job = $schema->resultset('Jobs')->first;
@@ -396,11 +396,11 @@ subtest 'handling assets with invalid name' => sub {
     stdout_like { $job->register_assets_from_settings() }
     qr/not registering asset in\/valid containing \//,
       'warning on attempt to register asset with invalid name from settings';
-    is($schema->resultset('Assets')->count, $asset_count, 'no further assets registered');
+    is $schema->resultset('Assets')->count, $asset_count, 'no further assets registered';
 
     # add an asset with empty name nevertheless to test that it is ignored (in subsequent subtest)
     my $empty_asset = $schema->resultset('Assets')->create({type => 'repo', name => ''});
-    ok($empty_asset, 'asset with empty name registered (to test ignoring it)');
+    ok $empty_asset, 'asset with empty name registered (to test ignoring it)';
     $empty_asset_id = $empty_asset->id;
 };
 
@@ -419,14 +419,14 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
     my @expected_assets = map { $_ . $expected_asset_base_name } ('00099937-', '');
     my $child_job = $schema->resultset('Jobs')->find(99938);
     $child_job->register_assets_from_settings;
-    is_deeply(\@located_assets, \@expected_assets, 'chained parent considered') or always_explain \@located_assets;
+    is_deeply \@located_assets, \@expected_assets, 'chained parent considered' or always_explain \@located_assets;
 
     # assume there's one directly chained parent
     @located_assets = ();
     $child_job->parents->update({dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED});
     $child_job->discard_changes;
     $child_job->register_assets_from_settings;
-    is_deeply(\@located_assets, \@expected_assets, 'directly chained parent considered')
+    is_deeply \@located_assets, \@expected_assets, 'directly chained parent considered'
       or always_explain \@located_assets;
 
     # assume there's one parallel parent
@@ -434,7 +434,7 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
     $child_job->parents->update({dependency => OpenQA::JobDependencies::Constants::PARALLEL});
     $child_job->discard_changes;
     $child_job->register_assets_from_settings;
-    is_deeply(\@located_assets, [$expected_asset_base_name], 'parallel parent not considered')
+    is_deeply \@located_assets, [$expected_asset_base_name], 'parallel parent not considered'
       or always_explain \@located_assets;
 };
 
@@ -449,10 +449,10 @@ subtest 'asset status with pending state, max_job and max_job by group' => sub {
     qr/Skipping asset $empty_asset_id because its name is empty/, 'warning about skipped asset';
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     $assets_with_max_job->[5]->{id} = undef;    # might vary
-    is_deeply($asset_status->{groups}, \%expected_groups, 'groups');
-    is_deeply($asset_status->{parents}, \%expected_parents, 'parents');
-    is_deeply($assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job');
-    is_deeply($assets_without_max_job, \%expected_assets_without_max_job, 'assets without max job');
+    is_deeply $asset_status->{groups}, \%expected_groups, 'groups';
+    is_deeply $asset_status->{parents}, \%expected_parents, 'parents';
+    is_deeply $assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job';
+    is_deeply $assets_without_max_job, \%expected_assets_without_max_job, 'assets without max job';
 };
 
 subtest 'asset status without pending state, max_job and max_job by group' => sub {
@@ -461,7 +461,7 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
     # execute OpenQA::Task::Asset::Limit::_limit() so the last_use_job_id column of the asset table
     # is populated and so the order of the assets should be the same as in the previous subtest
     OpenQA::Task::Asset::Limit::_limit($app, $job);
-    is($job->fail, undef, 'job did not fail');
+    is $job->fail, undef, 'job did not fail';
 
     # adjust expected assets
     for my $asset (@expected_assets_with_max_job) {
@@ -483,25 +483,22 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
     );
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     $assets_with_max_job->[5]->{id} = undef;    # might vary
-    is_deeply($assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job')
+    is_deeply $assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job'
       or always_explain $assets_with_max_job;
-    is(
-        join(' ', sort keys %$assets_without_max_job),
-        join(' ', sort keys %expected_assets_without_max_job),
-        'assets without max job'
-    );
+    is
+      join(' ', sort keys %$assets_without_max_job),
+      join(' ', sort keys %expected_assets_without_max_job),
+      'assets without max job';
 };
 
 subtest 'size of exclusively kept assets tracked' => sub {
     my @groups = ($schema->resultset('JobGroups')->all, $schema->resultset('JobGroupParents')->all);
     my %exclusively_kept_assets = map { $_->id => $_->exclusively_kept_asset_size } @groups;
-    is_deeply(
-        \%exclusively_kept_assets,
-        {
-            '1001' => 12,
-            '1002' => 0,    # value not present because 1002 is in parent group 1
-            '1' => 16,    # everything from 1002
-        }) or always_explain \%exclusively_kept_assets;
+    is_deeply \%exclusively_kept_assets, {
+        '1001' => 12,
+        '1002' => 0,    # value not present because 1002 is in parent group 1
+        '1' => 16,    # everything from 1002
+    } or always_explain \%exclusively_kept_assets;
 };
 
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {
@@ -513,7 +510,7 @@ subtest 'limit for keeping untracked assets is overridable in settings' => sub {
     $app->config->{misc_limits}->{untracked_assets_storage_duration} = 2;
     stdout_like { OpenQA::Task::Asset::Limit::_limit($app, $job) }
     qr/Asset .* is not in any job group and will be deleted in 2 days/, 'override works';
-    is($job->fail, undef, 'job did not fail');
+    is $job->fail, undef, 'job did not fail';
     # Reset limit to default
     $app->config->{misc_limits}->{untracked_assets_storage_duration} = 14;
 };
@@ -523,7 +520,7 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
     # Reset mtime to the current time
     for my $filename (qw(iso/Core-7.2.iso hdd/openSUSE-12.2-x86_64.hda hdd/openSUSE-12.3-x86_64.hda)) {
         my $fullpath = Mojo::File->new(assetdir(), $filename)->to_abs;
-        ok(utime(time, time, $fullpath), "Reset mtime of $filename");
+        ok utime(time, time, $fullpath), "Reset mtime of $filename";
     }
 
     stdout_like { OpenQA::Task::Asset::Limit::_limit($app, $job) }
@@ -532,25 +529,25 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
     $app->config->{'assets/storage_duration'}->{'Core-'} = 30;
     $app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'} = 10;
     my $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });
-    is($job->fail, undef, 'job did not fail');
-    like($stdout, qr/Asset .+Core-.+ will be deleted in 30 days/, 'simple pattern override works');
-    like($stdout, qr/Asset .+openSUSE-12\.2-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.2');
-    like($stdout, qr/Asset .+openSUSE-12\.3-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.3');
+    is $job->fail, undef, 'job did not fail';
+    like $stdout, qr/Asset .+Core-.+ will be deleted in 30 days/, 'simple pattern override works';
+    like $stdout, qr/Asset .+openSUSE-12\.2-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.2';
+    like $stdout, qr/Asset .+openSUSE-12\.3-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.3';
 
     # Half-way into the limit the remaining time is shorter
     my $now = DateTime->now->add(DateTime::Duration->new(days => 15, end_of_month => 'wrap'));
     my $mock_datetime = Test::MockModule->new('DateTime');
     $mock_datetime->redefine(now => sub { return $now; });
     $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });
-    is($job->fail, undef, 'job did not fail');
-    like($stdout, qr/Asset .+Core-.+ will be deleted in 15 days/, 'simple pattern half-way in');
+    is $job->fail, undef, 'job did not fail';
+    like $stdout, qr/Asset .+Core-.+ will be deleted in 15 days/, 'simple pattern half-way in';
 
     # mtime is newer than the time of registration
     my $mtime = $now->add(DateTime::Duration->new(days => 3, end_of_month => 'wrap'));
     utime $mtime->epoch, $mtime->epoch, Mojo::File->new($core72iso_path)->to_abs;
     $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });
-    is($job->fail, undef, 'job did not fail');
-    like($stdout, qr/Asset .+Core-.+ will be deleted in 12 days/, 'newer mtime takes precedence');
+    is $job->fail, undef, 'job did not fail';
+    like $stdout, qr/Asset .+Core-.+ will be deleted in 12 days/, 'newer mtime takes precedence';
 
     # Drop non-default pattern limits
     delete $app->config->{'assets/storage_duration'}->{'Core-'};
@@ -567,16 +564,16 @@ subtest 'error handling' => sub {
                 die 'insert or update on table "assets" violates foreign key constraint "assets_fk_last_use_job_id"';
             });
         OpenQA::Task::Asset::Limit::_limit($app, $job);
-        is_deeply($job->retry, {delay => 60}, 'job will be tried again in a minute');
-        is($job->fail, undef, 'job not failed');
+        is_deeply $job->retry, {delay => 60}, 'job will be tried again in a minute';
+        is $job->fail, undef, 'job not failed';
     };
 
     subtest 'unknown error' => sub {
         my $job = Test::FakeJob->new(app => $app);
         $assets_mock->redefine(status => sub { die 'strange error' });
         OpenQA::Task::Asset::Limit::_limit($app, $job);
-        is($job->retry, undef, 'job not retried on unknown error');
-        like($job->fail, qr/strange error/, 'job fails on unknown error');
+        is $job->retry, undef, 'job not retried on unknown error';
+        like $job->fail, qr/strange error/, 'job fails on unknown error';
     };
 };
 

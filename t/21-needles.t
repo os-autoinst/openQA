@@ -75,7 +75,7 @@ my $needles = $schema->resultset('Needles');
 my $needle_dirs = $schema->resultset('NeedleDirs');
 
 subtest 'handling of last update' => sub {
-    is($needles->count({last_updated => undef}), 0, 'all needles should have last_updated set');
+    is $needles->count({last_updated => undef}), 0, 'all needles should have last_updated set';
 
     my $needle = $needles->find(
         {
@@ -96,22 +96,21 @@ subtest 'handling of last update' => sub {
     my $new_last_match = time2str('%Y-%m-%dT%H:%M:%S', time);
     $needle->update({last_matched_time => $new_last_match});
     $needle->discard_changes;
-    is($needle->last_updated, $t_created, 'last_updated not altered');
-    ok($t_updated lt $needle->t_updated, 't_updated still updated');
-    is($needle->last_matched_time, $new_last_match, 'last match updated');
+    is $needle->last_updated, $t_created, 'last_updated not altered';
+    ok $t_updated lt $needle->t_updated, 't_updated still updated';
+    is $needle->last_matched_time, $new_last_match, 'last match updated';
 
     my $other_needle
       = $needles->update_needle_from_editor($needle->directory->path, 'test-rootneedle', {tags => [qw(foo bar)]},);
-    is($other_needle->dir_id, $needle->dir_id, 'directory has not changed');
-    is($other_needle->filename, $needle->filename, 'filename has not changed');
-    is($other_needle->id, $needle->id, 'updated the same needle');
+    is $other_needle->dir_id, $needle->dir_id, 'directory has not changed';
+    is $other_needle->filename, $needle->filename, 'filename has not changed';
+    is $other_needle->id, $needle->id, 'updated the same needle';
 
     $needle->discard_changes;
     my $last_actual_update2 = $needle->last_updated;
-    ok(
-        $last_actual_update lt $last_actual_update2,
-        "last_updated changed after updating needle from editor ($last_actual_update < $last_actual_update2)",
-    );
+    ok $last_actual_update lt $last_actual_update2,
+      "last_updated changed after updating needle from editor ($last_actual_update < $last_actual_update2)",
+      ;
 };
 
 sub needle_count ($filename, $path = '%fedora/needles') {
@@ -156,25 +155,23 @@ subtest 'needle scan' => sub {
 };
 
 subtest 'handling relative paths in update_needle' => sub {
-    is($module->job->needle_dir,
-        $needledir_fedora, 'needle dir of job deduced from settings (prerequisite for handling relative paths)');
+    is $module->job->needle_dir,
+      $needledir_fedora, 'needle dir of job deduced from settings (prerequisite for handling relative paths)';
 
     subtest 'handle needle path relative to share dir (legacy os-autoinst)' => sub {
         my $needle
           = OpenQA::Schema::Result::Needles::update_needle('tests/fedora/needles/test-rootneedle.json', $module, 0);
-        is(
-            $needle->path,
-            abs_path('t/data/openqa/share/tests/fedora/needles/test-rootneedle.json'),
-            'needle path correct'
-        );
+        is
+          $needle->path,
+          abs_path('t/data/openqa/share/tests/fedora/needles/test-rootneedle.json'),
+          'needle path correct';
     };
     subtest 'handle needle path relative to needle dir' => sub {
         my $needle = OpenQA::Schema::Result::Needles::update_needle('test-rootneedle.json', $module, 0);
-        is(
-            $needle->path,
-            abs_path('t/data/openqa/share/tests/fedora/needles/test-rootneedle.json'),
-            'needle path correct'
-        );
+        is
+          $needle->path,
+          abs_path('t/data/openqa/share/tests/fedora/needles/test-rootneedle.json'),
+          'needle path correct';
     };
     subtest 'handle needle path to non existent needle' => sub {
         my $needle;
@@ -182,7 +179,7 @@ subtest 'handling relative paths in update_needle' => sub {
             $needle = OpenQA::Schema::Result::Needles::update_needle('test-does-not-exist.json', $module, 0);
         }
         qr/Needle file test-does-not-exist\.json not found within $needledir_fedora/, 'error logged';
-        is($needle, undef, 'no needle created');
+        is $needle, undef, 'no needle created';
     };
 };
 

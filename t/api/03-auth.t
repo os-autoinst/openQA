@@ -66,15 +66,14 @@ subtest 'access limiting for non authenticated users' => sub {
     is $t->tx->res->headers->access_control_allow_origin, '*', 'CORS header set for non authenticated routes';
     $t->get_ok('/api/v1/products')->status_is(200);
     $t->delete_ok('/api/v1/assets/1')->status_is(403, 'delete forbidden');
-    is_deeply(
-        $t->tx->res->json,
-        {
-            error => 'no api key',
-            error_status => 403,
-        },
-        'error returned as JSON'
-    );
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is_deeply
+      $t->tx->res->json,
+      {
+        error => 'no api key',
+        error_status => 403,
+      },
+      'error returned as JSON';
+    is $mock_asset_remove_callcount, 0, 'asset deletion function was not called';
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
     $t->put_ok('/api/v1/user_plugin')->status_is(403);
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
@@ -89,7 +88,7 @@ subtest 'access limiting for authenticated users but not operators nor admins' =
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/assets')->status_is(403, 'restricted (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is $mock_asset_remove_callcount, 0, 'asset deletion function was not called';
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
     $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
@@ -102,7 +101,7 @@ subtest 'access limiting for authenticated operators but not admins' => sub {
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is $mock_asset_remove_callcount, 0, 'asset deletion function was not called';
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
     $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
@@ -116,7 +115,7 @@ subtest 'access granted for admins' => sub {
     $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(200, 'accessible (admin only)');
     is $t->tx->res->headers->access_control_allow_origin, '*', 'CORS header set for authenticated routes';
-    is($mock_asset_remove_callcount, 1, 'asset deletion function was called');
+    is $mock_asset_remove_callcount, 1, 'asset deletion function was called';
     # reset the call count
     $mock_asset_remove_callcount = 0;
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
@@ -130,10 +129,10 @@ subtest 'wrong api key - expired' => sub {
     $t->ua->apisecret('WHOCARESAFTERALL');
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->post_ok('/api/v1/products/1')->status_is(403);
-    is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
+    is $t->tx->res->json->{error}, 'api key expired', 'key expired error';
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is $t->tx->res->json->{error}, 'api key expired', 'key expired error';
+    is $mock_asset_remove_callcount, 0, 'asset deletion function was not called';
 };
 
 subtest 'wrong api key - not maching key + secret' => sub {
@@ -142,20 +141,20 @@ subtest 'wrong api key - not maching key + secret' => sub {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->post_ok('/api/v1/products/1')->status_is(403);
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is $mock_asset_remove_callcount, 0, 'asset deletion function was not called';
 };
 
 subtest 'correct key but wrong secret' => sub {
     $t->ua->apikey('ARTHURKEY01');
     $t->ua->apisecret('INVALIDSECRET');
     $t->post_ok('/api/v1/products/1')->status_is(403);
-    is($t->tx->res->json->{error}, 'unknown error (wrong secret?)', 'wrong secret error');
+    is $t->tx->res->json->{error}, 'unknown error (wrong secret?)', 'wrong secret error';
 };
 
 subtest 'no key, no secret' => sub {
     $t->ua->apikey('NOTEXISTINGKEY');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is $mock_asset_remove_callcount, 0, 'asset deletion function was not called';
 };
 
 subtest 'wrong api key - replay attack' => sub {
@@ -180,7 +179,7 @@ subtest 'wrong api key - replay attack' => sub {
         '/error' => 'timestamp mismatch - check whether clocks on the local host and the web UI host are in sync',
         'timestamp mismatch error'
     );
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is $mock_asset_remove_callcount, 0, 'asset deletion function was not called';
 };
 
 subtest 'personal access token' => sub {

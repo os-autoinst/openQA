@@ -39,23 +39,22 @@ sub test_get_comment_groups_json ($id, $supposed_text) {
             last;
         }
     }
-    ok($found_comment, 'comment found in .json');
+    ok $found_comment, 'comment found in .json';
 }
 
 sub test_get_comment_invalid_job_or_group ($in, $id, $comment_id) {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->status_is(404, 'comment not found');
-    like(
-        $t->tx->res->json->{error},
-        qr/$id does not exist/,
-        $in eq 'jobs' ? "Job $id does not exist" : "Job group $id does not exist"
-    );
+    like
+      $t->tx->res->json->{error},
+      qr/$id does not exist/,
+      $in eq 'jobs' ? "Job $id does not exist" : "Job group $id does not exist";
 }
 
 sub test_get_comment_invalid_comment ($in, $id, $comment_id) {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->status_is(404, 'comment not found');
-    is($t->tx->res->json->{error}, "Comment $comment_id does not exist", 'comment does not exist');
+    is $t->tx->res->json->{error}, "Comment $comment_id does not exist", 'comment does not exist';
 }
 
 sub test_create_comment ($in, $id, $text) {
@@ -127,7 +126,7 @@ sub test_comments ($in, $id) {
 "<p>This is a cool test \x{2620} - <a href=\"http://open.qa\">http://open.qa</a> - this message will be\\nappended if editing works \x{2620}</p>\n",
             'markdown correct'
           );
-        is(scalar @{$t->tx->res->json}, 1, 'one comment present');
+        is scalar @{$t->tx->res->json}, 1, 'one comment present';
     };
 
     subtest 'update comment without text' => sub {
@@ -201,7 +200,7 @@ subtest 'admin can delete comments' => sub {
     client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
     my $new_comment_id = test_create_comment(jobs => 99981, $test_message);
     $t->delete_ok("/api/v1/jobs/99981/comments/$new_comment_id")->status_is(200, 'comment can be deleted by admin');
-    is($t->tx->res->json->{id}, $new_comment_id, 'deleted comment was the requested one');
+    is $t->tx->res->json->{id}, $new_comment_id, 'deleted comment was the requested one';
     test_get_comment_invalid_comment(jobs => 99981, $new_comment_id);
 
     subtest 'delete comment with invalid job or group' => sub {

@@ -31,7 +31,7 @@ test_once '', qr/Need.*parameter/, 'hint shown for mandatory parameter missing',
 test_once '--help', qr/Usage:/, 'help text shown', 0, 'help screen is regarded as success';
 test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 1, 'help screen but no success recorded';
 my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
-isnt run_once($args), 0, 'without network we fail (without error)';
+isnt run_once($args), 0, 'without network we fail without error';
 # mock any external access with all arguments
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my/branch"}, "body": "Lorem ipsum"}'; true};
 $ENV{curl_openqa}

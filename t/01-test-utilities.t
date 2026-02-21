@@ -20,8 +20,8 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
     my $test_would_have_failed = 0;
     $test_utils_mock->redefine(
         _fail_and_exit => sub {
-            like(shift, qr/sub process test-process-1 terminated with exit code \d+/, 'message of test failure');
-            isnt(shift, 0, 'exit code of test failure is non-zero');
+            like shift, qr/sub process test-process-1 terminated with exit code \d+/, 'message of test failure';
+            isnt shift, 0, 'exit code of test failure is non-zero';
             $test_would_have_failed = 1;
         });
     my $out = combined_from {
@@ -38,7 +38,7 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
     like $out,
       qr/Stopping test-process-1 process because a Perl warning occurred: Use of uninitialized value in concatenation/,
       'warning logged';
-    ok($test_would_have_failed, 'test would have failed');
+    ok $test_would_have_failed, 'test would have failed';
 
     # stop the process via stop_service
     # previously tested handling of SIGCHLD/warnings does not interfere
@@ -53,7 +53,7 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
         exit -1;    # uncoverable statement
     };
     stop_service($ipc_run_harness);
-    is($test_would_have_failed, 0, 'manual termination via stop_service does not trigger _fail_and_exit');
+    is $test_would_have_failed, 0, 'manual termination via stop_service does not trigger _fail_and_exit';
 };
 
 done_testing();

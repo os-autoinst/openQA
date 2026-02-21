@@ -96,14 +96,14 @@ subtest 'latest jobs' => sub {
 
 
 subtest 'has_dependencies' => sub {
-    ok($jobs->find(99961)->has_dependencies, 'positive case: job is parent');
-    ok($jobs->find(99963)->has_dependencies, 'positive case: job is child');
-    ok(!$jobs->find(99946)->has_dependencies, 'negative case');
+    ok $jobs->find(99961)->has_dependencies, 'positive case: job is parent';
+    ok $jobs->find(99963)->has_dependencies, 'positive case: job is child';
+    ok !$jobs->find(99946)->has_dependencies, 'negative case';
 };
 
 subtest 'has_modules' => sub {
-    ok($jobs->find(99937)->has_modules, 'positive case');
-    ok(!$jobs->find(99926)->has_modules, 'negative case');
+    ok $jobs->find(99937)->has_modules, 'positive case';
+    ok !$jobs->find(99926)->has_modules, 'negative case';
 };
 
 subtest 'name/label/scenario and description' => sub {
@@ -119,17 +119,17 @@ subtest 'name/label/scenario and description' => sub {
             name => 'minimalx',
             description => 'foobar',
         });
-    is($job->scenario_description, 'foobar', 'description returned');
+    is $job->scenario_description, 'foobar', 'description returned';
     $minimalx_testsuite->delete;
 };
 
 subtest 'hard-coded initial job module statistics consistent; no automatic handling via DBIx hooks interferes' => sub {
     my $job = $jobs->find(99946);
     my $modules = $job->modules;
-    is($job->passed_module_count, $modules->search({result => PASSED})->count, 'number of passed modules');
-    is($job->softfailed_module_count, $modules->search({result => SOFTFAILED})->count, 'number of softfailed modules');
-    is($job->failed_module_count, $modules->search({result => FAILED})->count, 'number of failed modules');
-    is($job->skipped_module_count, $modules->search({result => SKIPPED})->count, 'number of skipped modules');
+    is $job->passed_module_count, $modules->search({result => PASSED})->count, 'number of passed modules';
+    is $job->softfailed_module_count, $modules->search({result => SOFTFAILED})->count, 'number of softfailed modules';
+    is $job->failed_module_count, $modules->search({result => FAILED})->count, 'number of failed modules';
+    is $job->skipped_module_count, $modules->search({result => SKIPPED})->count, 'number of skipped modules';
 };
 
 subtest 'job with all modules passed => overall is passsed' => sub {
@@ -142,14 +142,14 @@ subtest 'job with all modules passed => overall is passsed' => sub {
     }
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
-    is($job->passed_module_count, 4, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
-    is($job->failed_module_count, 0, 'number of failed modules not incremented');
-    is($job->skipped_module_count, 0, 'number of skipped modules not incremented');
+    is $job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed';
+    is $job->passed_module_count, 4, 'number of passed modules incremented';
+    is $job->softfailed_module_count, 0, 'number of softfailed modules not incremented';
+    is $job->failed_module_count, 0, 'number of failed modules not incremented';
+    is $job->skipped_module_count, 0, 'number of skipped modules not incremented';
 };
 
 subtest 'job with one skipped module => overall is failed' => sub {
@@ -164,14 +164,14 @@ subtest 'job with one skipped module => overall is failed' => sub {
     }
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is($job->passed_module_count, 4, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
-    is($job->failed_module_count, 0, 'number of failed modules not incremented');
-    is($job->skipped_module_count, 1, 'number of skipped modules incremented');
+    is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
+    is $job->passed_module_count, 4, 'number of passed modules incremented';
+    is $job->softfailed_module_count, 0, 'number of softfailed modules not incremented';
+    is $job->failed_module_count, 0, 'number of failed modules not incremented';
+    is $job->skipped_module_count, 1, 'number of skipped modules incremented';
 };
 
 subtest 'job with at least one module failed => overall is failed' => sub {
@@ -184,14 +184,14 @@ subtest 'job with at least one module failed => overall is failed' => sub {
     }
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is($job->passed_module_count, 3, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
-    is($job->failed_module_count, 1, 'number of failed modules incremented');
-    is($job->skipped_module_count, 0, 'number of skipped modules not incremented');
+    is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
+    is $job->passed_module_count, 3, 'number of passed modules incremented';
+    is $job->softfailed_module_count, 0, 'number of softfailed modules not incremented';
+    is $job->failed_module_count, 1, 'number of failed modules incremented';
+    is $job->skipped_module_count, 0, 'number of skipped modules not incremented';
 };
 
 subtest 'job with at least one softfailed and rest passed => overall is softfailed' => sub {
@@ -206,14 +206,14 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     $job->update_module('d', {result => 'ok', details => [], dents => 1});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
-    is($job->passed_module_count, 3, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 1, 'number of softfailed modules incremented');
-    is($job->failed_module_count, 0, 'number of failed modules not incremented');
-    is($job->skipped_module_count, 0, 'number of skipped modules not incremented');
+    is $job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed';
+    is $job->passed_module_count, 3, 'number of passed modules incremented';
+    is $job->softfailed_module_count, 1, 'number of softfailed modules incremented';
+    is $job->failed_module_count, 0, 'number of failed modules not incremented';
+    is $job->skipped_module_count, 0, 'number of skipped modules not incremented';
 };
 
 subtest 'inserting the same module twice keeps the job module statistics intact' => sub {
@@ -225,10 +225,10 @@ subtest 'inserting the same module twice keeps the job module statistics intact'
     $job->discard_changes;
 
     subtest 'all modules passed; b not accounted twice' => sub {
-        is($job->passed_module_count, 3, 'number of passed modules incremented');
-        is($job->softfailed_module_count, 0, 'number of softfailed modules still zero');
-        is($job->failed_module_count, 0, 'number of failed modules still zero');
-        is($job->skipped_module_count, 0, 'number of skipped modules still zero');
+        is $job->passed_module_count, 3, 'number of passed modules incremented';
+        is $job->softfailed_module_count, 0, 'number of softfailed modules still zero';
+        is $job->failed_module_count, 0, 'number of failed modules still zero';
+        is $job->skipped_module_count, 0, 'number of skipped modules still zero';
     };
 };
 
@@ -246,10 +246,10 @@ subtest 'job with at least one failed module and one softfailed => overall is fa
     $job->update_module('d', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
 };
 
 subtest 'job with all modules passed and at least one ignore_failure failed => overall passed' => sub {
@@ -264,10 +264,10 @@ subtest 'job with all modules passed and at least one ignore_failure failed => o
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    is $job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed';
 };
 
 subtest
@@ -286,10 +286,10 @@ subtest
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
+    is $job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed';
   };
 
 subtest
@@ -306,10 +306,10 @@ subtest
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
   };
 
 subtest 'job with first ignore_failure failed and rest softfails => overall is softfailed' => sub {
@@ -322,10 +322,10 @@ subtest 'job with first ignore_failure failed and rest softfails => overall is s
     $job->update_module('b', {result => 'ok', details => [], dents => 1});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
+    is $job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed';
 };
 
 subtest 'job with one ignore_failure pass => overall is passed' => sub {
@@ -336,10 +336,10 @@ subtest 'job with one ignore_failure pass => overall is passed' => sub {
     $job->update_module('a', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    is $job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed';
 };
 
 subtest 'job with one ignore_failure fail => overall is passed' => sub {
@@ -350,10 +350,10 @@ subtest 'job with one ignore_failure fail => overall is passed' => sub {
     $job->update_module('a', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    is $job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed';
 };
 
 subtest 'job with at least one softfailed => overall is softfailed' => sub {
@@ -371,10 +371,10 @@ subtest 'job with at least one softfailed => overall is softfailed' => sub {
     $job->update;
     $job->discard_changes;
 
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
+    is $job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed';
 };
 
 subtest 'job with no modules => overall is incomplete' => sub {
@@ -400,10 +400,10 @@ subtest 'carry over, including soft-fails' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
+    is $job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed';
     my $user = $users->create_user('foo');
     $job->comments->create({text => 'bsc#101', user_id => $user->id});
 
@@ -415,13 +415,13 @@ subtest 'carry over, including soft-fails' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
+    is $job->comments, 0, 'no comment';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
-    is($job->comments, 1, 'one comment');
-    like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
+    is $job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed';
+    is $job->comments, 1, 'one comment';
+    like $job->comments->first->text, qr/\Qbsc#101\E/, 'right take over';
 
     $_settings{BUILD} = '668';
     $job = _job_create(\%_settings);
@@ -441,8 +441,8 @@ subtest 'carry over, including soft-fails' => sub {
     $job->update_module('b', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
+    is $job->comments, 0, 'no comment';
 
     subtest 'additional investigation notes provided on new failed' => sub {
         my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
@@ -464,43 +464,43 @@ subtest 'carry over, including soft-fails' => sub {
           ->copy_to(path(($job->_previous_scenario_jobs)[1]->result_dir(), 'worker_packages.txt'));
         path('t/data/first_bad_packages.txt')->copy_to(path($job->result_dir(), 'worker_packages.txt'));
         $job->done;
-        is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-        ok(my $inv = $job->investigate, 'job can provide investigation details');
-        ok($inv, 'job provides failure investigation');
-        is(ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash');
-        is($last_good->{text}, 99997, 'last_good hash has the text');
-        is($last_good->{type}, 'link', 'last_good hash has the type');
-        is($last_good->{link}, '/tests/99997', 'last_good hash has the correct link');
-        is(ref(my $first_bad = $inv->{first_bad}), 'HASH', 'previous job identified as first bad and it is a hash');
-        is($first_bad->{text}, 99998, 'first_bad hash has the text');
-        is($first_bad->{type}, 'link', 'first_bad hash has the type');
-        is($first_bad->{link}, '/tests/99998', 'first_bad hash has the correct link');
-        like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*669/m, 'diff for job settings is shown');
-        unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
-        like($inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown');
-        is($inv->{test_log}, $fake_git_log, 'test git log is evaluated');
-        is($inv->{needles_log}, $fake_git_log, 'needles git log is evaluated');
+        is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
+        ok my $inv = $job->investigate, 'job can provide investigation details';
+        ok $inv, 'job provides failure investigation';
+        is ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash';
+        is $last_good->{text}, 99997, 'last_good hash has the text';
+        is $last_good->{type}, 'link', 'last_good hash has the type';
+        is $last_good->{link}, '/tests/99997', 'last_good hash has the correct link';
+        is ref(my $first_bad = $inv->{first_bad}), 'HASH', 'previous job identified as first bad and it is a hash';
+        is $first_bad->{text}, 99998, 'first_bad hash has the text';
+        is $first_bad->{type}, 'link', 'first_bad hash has the type';
+        is $first_bad->{link}, '/tests/99998', 'first_bad hash has the correct link';
+        like $inv->{diff_to_last_good}, qr/^\+.*BUILD.*669/m, 'diff for job settings is shown';
+        unlike $inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included';
+        like $inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown';
+        is $inv->{test_log}, $fake_git_log, 'test git log is evaluated';
+        is $inv->{needles_log}, $fake_git_log, 'needles git log is evaluated';
         $fake_git_log = '';
-        ok($inv = $job->investigate, 'job investigation ok for no test changes');
-        is($inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
+        ok $inv = $job->investigate, 'job investigation ok for no test changes';
+        is $inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes';
 
         subtest 'investigation can display test_log with git stats when one commit' => sub {
             $fake_git_log = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1";
-            ok($inv = $job->investigate, 'job investigation ok with test changes');
+            ok $inv = $job->investigate, 'job investigation ok with test changes';
             my $actual_lines = split(/\n/, $inv->{test_log});
             my $expected_lines = 5;
-            is($actual_lines, $expected_lines, 'test_log have correct number of lines');
-            like($inv->{test_log}, qr/^.*file changed/m, 'git log with test changes');
+            is $actual_lines, $expected_lines, 'test_log have correct number of lines';
+            like $inv->{test_log}, qr/^.*file changed/m, 'git log with test changes';
         };
         subtest 'investigation can display test_log with git stats when more than one commit' => sub {
             $got_limit = 0;
             $fake_git_log
               = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1 test1\n mylogfile1 | 1 +\n 1 file changed, 1 insertion(+)\n";
-            ok($inv = $job->investigate(git_limit => 23), 'job investigation ok with test changes');
+            ok $inv = $job->investigate(git_limit => 23), 'job investigation ok with test changes';
             my $actual_lines = split(/\n/, $inv->{test_log});
             my $expected_lines = 7;
-            is($actual_lines, $expected_lines, 'test_log has the correct number of lines');
-            like($inv->{test_log}, qr/^.*file changed/m, 'git log with test changes');
+            is $actual_lines, $expected_lines, 'test_log has the correct number of lines';
+            like $inv->{test_log}, qr/^.*file changed/m, 'git log with test changes';
             is $got_limit, 23, 'git_limit was correctly passed';
         };
     };
@@ -536,7 +536,7 @@ subtest 'carry over, including soft-fails' => sub {
         is ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash';
         is $inv->{diff_to_last_good}, undef, 'diff_to_last_good does not exist';
         is $last_good->{link}, '/tests/99997', 'last_good hash has the correct link';
-        like($inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown');
+        like $inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown';
     };
 
     subtest 'external hook is called on done job if specified' => sub {
@@ -550,13 +550,13 @@ subtest 'carry over, including soft-fails' => sub {
         perform_minion_jobs($t->app->minion);
         $job->update({state => RUNNING});
         $job->discard_changes;
-        is($job->reason, undef, 'no hook is called by default');
+        is $job->reason, undef, 'no hook is called by default';
         $ENV{OPENQA_JOB_DONE_HOOK_INCOMPLETE} = 'should not be called';
         $job->done;
         perform_minion_jobs($t->app->minion);
         $job->discard_changes;
 
-        is($job->reason, undef, 'hook not called if result does not match');
+        is $job->reason, undef, 'hook not called if result does not match';
         $ENV{OPENQA_JOB_DONE_HOOK_FAILED} = 'true';
         $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} = '10m';
         $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} = '5s';
@@ -564,7 +564,7 @@ subtest 'carry over, including soft-fails' => sub {
         $job->done;
         perform_minion_jobs($t->app->minion);
         $job->discard_changes;
-        is($job->reason, 'timeout --kill-after=5s 10m true', 'hook called if result matches');
+        is $job->reason, 'timeout --kill-after=5s 10m true', 'hook called if result matches';
         $job->update({reason => undef, state => RUNNING});
 
         delete $ENV{OPENQA_JOB_DONE_HOOK_FAILED};
@@ -577,7 +577,7 @@ subtest 'carry over, including soft-fails' => sub {
         $job->done;
         perform_minion_jobs($t->app->minion);
         my $notes = $t->app->minion->jobs({tasks => ['finalize_job_results']})->next->{notes};
-        is($notes->{hook_id}, undef, 'hook not called despite matching result due to _TRIGGER_JOB_DONE_HOOK=0');
+        is $notes->{hook_id}, undef, 'hook not called despite matching result due to _TRIGGER_JOB_DONE_HOOK=0';
 
         $job->settings->search({key => '_TRIGGER_JOB_DONE_HOOK'})->delete;
         $job->update({state => RUNNING});
@@ -586,8 +586,8 @@ subtest 'carry over, including soft-fails' => sub {
         perform_minion_jobs($t->app->minion);
         my $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
         $notes = $job_info->{notes};
-        is($notes->{hook_cmd}, 'echo hook called', 'real hook cmd in notes if result matches (1)');
-        like($notes->{hook_result}, qr/hook called/, 'real hook cmd from config called if result matches (1)');
+        is $notes->{hook_cmd}, 'echo hook called', 'real hook cmd in notes if result matches (1)';
+        like $notes->{hook_result}, qr/hook called/, 'real hook cmd from config called if result matches (1)';
         is $notes->{hook_rc}, 0, 'exit code of the hook cmd is zero';
         $notes = $t->app->minion->jobs({tasks => ['finalize_job_results']})->next->{notes};
         is $notes->{hook_job}, $job_info->{id}, 'hook_script job is linked to finalize_result job';
@@ -598,8 +598,8 @@ subtest 'carry over, including soft-fails' => sub {
         perform_minion_jobs($t->app->minion);
         $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
         $notes = $job_info->{notes};
-        is($notes->{hook_cmd}, 'echo oops && exit 23;', 'real hook cmd in notes if result matches (2)');
-        like($notes->{hook_result}, qr/oops/, 'real hook cmd from config called if result matches (2)');
+        is $notes->{hook_cmd}, 'echo oops && exit 23;', 'real hook cmd in notes if result matches (2)';
+        like $notes->{hook_result}, qr/oops/, 'real hook cmd from config called if result matches (2)';
         is $notes->{hook_rc}, 23, 'exit code of the hook cmd is as expected';
         is $job_info->{retries}, 0, 'hook script has not been retried';
 
@@ -609,7 +609,7 @@ subtest 'carry over, including soft-fails' => sub {
         $job->done;
         perform_minion_jobs($t->app->minion);
         $notes = $t->app->minion->jobs({tasks => ['finalize_job_results']})->next->{notes};
-        is($notes->{hook_job}, undef, 'generic hook not called by default');
+        is $notes->{hook_job}, undef, 'generic hook not called by default';
 
         $hooks->{job_done_hook_enable_failed} = 1;
         $t->app->minion->reset({all => 1});
@@ -621,8 +621,8 @@ subtest 'carry over, including soft-fails' => sub {
         $job->done;
         perform_minion_jobs($t->app->minion);
         $notes = $t->app->minion->jobs({tasks => ['hook_script']})->next->{notes};
-        is($notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled for result');
-        like($notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled for result');
+        is $notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled for result';
+        like $notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled for result';
 
         delete $hooks->{job_done_hook_enable_failed};
         $job->update({state => UPLOADING});
@@ -630,8 +630,8 @@ subtest 'carry over, including soft-fails' => sub {
         $job->done;
         perform_minion_jobs($t->app->minion);
         $notes = $t->app->minion->jobs({tasks => ['hook_script']})->next->{notes};
-        is($notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled via job setting');
-        like($notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled via job setting');
+        is $notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled via job setting';
+        like $notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled via job setting';
 
         subtest 'Retry hook script with exit code 142' => sub {
             # Defaults (no retry)
@@ -642,11 +642,11 @@ subtest 'carry over, including soft-fails' => sub {
             $job->done;
             perform_minion_jobs($t->app->minion);
             $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
-            is_deeply($job_info->{args}[2],
-                {delay => 60, retries => $default_retries, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
+            is_deeply $job_info->{args}[2],
+              {delay => 60, retries => $default_retries, skip_rc => 142, kill_timeout => '30s', timeout => '5m'};
             $notes = $job_info->{notes};
-            is($notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (3)');
-            like($notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (3)');
+            is $notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (3)';
+            like $notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (3)';
             is $notes->{hook_rc}, 143, 'exit code of the hook cmd is as expected';
             is $job_info->{retries}, 0, 'hook script has not been retried';
 
@@ -659,11 +659,11 @@ subtest 'carry over, including soft-fails' => sub {
             $job->done;
             perform_minion_jobs($t->app->minion);
             $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
-            is_deeply($job_info->{args}[2],
-                {delay => 0, retries => 2, skip_rc => 143, kill_timeout => '30s', timeout => '5m'});
+            is_deeply $job_info->{args}[2],
+              {delay => 0, retries => 2, skip_rc => 143, kill_timeout => '30s', timeout => '5m'};
             $notes = $job_info->{notes};
-            is($notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (4)');
-            like($notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (4)');
+            is $notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (4)';
+            like $notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (4)';
             is $notes->{hook_rc}, 143, 'exit code of the hook cmd is as expected';
             is $job_info->{retries}, 2, 'hook script has been retried';
 
@@ -680,11 +680,11 @@ subtest 'carry over, including soft-fails' => sub {
             perform_minion_jobs($t->app->minion);
             $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
             is $job_info->{state}, 'finished', 'hook script has been retried without delay';
-            is_deeply($job_info->{args}[2],
-                {delay => 0, retries => 4, skip_rc => 143, kill_timeout => '30s', timeout => '5m'});
+            is_deeply $job_info->{args}[2],
+              {delay => 0, retries => 4, skip_rc => 143, kill_timeout => '30s', timeout => '5m'};
             $notes = $job_info->{notes};
-            is($notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (4)');
-            like($notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (4)');
+            is $notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (4)';
+            like $notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (4)';
             is $notes->{hook_rc}, 143, 'exit code of the hook cmd is as expected';
             is $job_info->{retries}, 4, 'hook script has been retried';
 
@@ -699,11 +699,11 @@ subtest 'carry over, including soft-fails' => sub {
             perform_minion_jobs($t->app->minion);
             $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
             is $job_info->{state}, 'inactive', 'hook script has been retried with long delay';
-            is_deeply($job_info->{args}[2],
-                {delay => 60, retries => $default_retries, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
+            is_deeply $job_info->{args}[2],
+              {delay => 60, retries => $default_retries, skip_rc => 142, kill_timeout => '30s', timeout => '5m'};
             $notes = $job_info->{notes};
-            is($notes->{hook_cmd}, 'echo delayed && exit 142;', 'real hook cmd in notes if result matches (5)');
-            like($notes->{hook_result}, qr/delayed/, 'real hook cmd from config called if result matches (5)');
+            is $notes->{hook_cmd}, 'echo delayed && exit 142;', 'real hook cmd in notes if result matches (5)';
+            like $notes->{hook_result}, qr/delayed/, 'real hook cmd from config called if result matches (5)';
             is $notes->{hook_rc}, 142, 'exit code of the hook cmd is as expected';
             is $job_info->{retries}, 1, 'hook script has been retried once because of delay';
         };
@@ -717,11 +717,10 @@ subtest 'carry over, including soft-fails' => sub {
             my $minion = $t->app->minion;
             perform_minion_jobs($minion);
             $job_info = $minion->jobs({tasks => ['hook_script']})->next;
-            is_deeply(
-                $job_info->{args}[2],
-                {delay => 60, retries => 4, skip_rc => 142, kill_timeout => '30s', timeout => '5m'},
-                'args contain expected parameters'
-            );
+            is_deeply
+              $job_info->{args}[2],
+              {delay => 60, retries => 4, skip_rc => 142, kill_timeout => '30s', timeout => '5m'},
+              'args contain expected parameters';
             is $job_info->{retries}, 1, 'hook script has been already tried once since has been queued';
             is $job_info->{state}, 'inactive', 'job ends up inactive due to retry';
             my $linear_delay = $job_info->{delayed} - $job_info->{retried};
@@ -753,10 +752,10 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    is $job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed';
     my $user = $users->create_user('foo');
     $job->comments->create({text => 'bsc#101', user_id => $user->id});
 
@@ -768,13 +767,13 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
+    is $job->comments, 0, 'no comment';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
-    is($job->comments, 1, 'one comment');
-    like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
+    is $job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed';
+    is $job->comments, 1, 'one comment';
+    like $job->comments->first->text, qr/\Qbsc#101\E/, 'right take over';
 
     $_settings{BUILD} = '672';
     $job = _job_create(\%_settings);
@@ -784,12 +783,12 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
+    is $job->comments, 0, 'no comment';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is($job->comments, 0, 'one comment with failure investigation');
+    is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
+    is $job->comments, 0, 'one comment with failure investigation';
 };
 
 subtest 'job with only important passes => overall is passed' => sub {
@@ -807,10 +806,10 @@ subtest 'job with only important passes => overall is passed' => sub {
     $job->update;
     $job->discard_changes;
 
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    is $job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed';
 };
 
 subtest 'job with skipped modules' => sub {
@@ -840,12 +839,12 @@ subtest 'job with skipped modules' => sub {
         $job->update_module('b', {result => $tm->[1], details => []});
         $job->done;
         $job->discard_changes;
-        is($job->result, $tm->[2], sprintf('job result: %s + %s => %s', @tm_str));
-        is($job->passed_module_count, $module_count{ok}, 'check number of passed modules');
-        is($job->softfailed_module_count, $module_count{softfail}, 'check number of softfailed modules');
-        is($job->failed_module_count, $module_count{fail}, 'check number of failed modules');
-        is($job->skipped_module_count, $module_count{undef}, 'check number of skipped modules');
-        is($job->externally_skipped_module_count, $module_count{skip}, 'check number of externally skipped modules');
+        is $job->result, $tm->[2], sprintf('job result: %s + %s => %s', @tm_str);
+        is $job->passed_module_count, $module_count{ok}, 'check number of passed modules';
+        is $job->softfailed_module_count, $module_count{softfail}, 'check number of softfailed modules';
+        is $job->failed_module_count, $module_count{fail}, 'check number of failed modules';
+        is $job->skipped_module_count, $module_count{undef}, 'check number of skipped modules';
+        is $job->externally_skipped_module_count, $module_count{skip}, 'check number of externally skipped modules';
     }
 };
 
@@ -861,13 +860,13 @@ subtest 'delete job assigned as last use for asset' => sub {
     $some_asset->update({last_use_job_id => $some_job->id});
 
     # delete that job
-    ok($some_job->delete, 'job deletion ok');
-    ok(!$some_job->in_storage, 'job no in storage anymore');
+    ok $some_job->delete, 'job deletion ok';
+    ok !$some_job->in_storage, 'job no in storage anymore';
 
     # assert whether asset is still present
     $some_asset = $assets->find($asset_id);
-    ok($some_asset, 'asset still exists');
-    is($some_asset->last_use_job_id, undef, 'last job unset');
+    ok $some_asset, 'asset still exists';
+    is $some_asset->last_use_job_id, undef, 'last job unset';
 };
 
 subtest 'job setting based retriggering' => sub {

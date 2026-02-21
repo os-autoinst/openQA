@@ -51,19 +51,19 @@ subtest 'Create custom job module' => sub {
     my $content = Encode::encode('UTF-8', 'Whatäver!');
     my $output = OpenQA::Parser::Result::Output->new(file => 'Test-CUSTOM.txt', content => $content);
 
-    is($job->failed_module_count, 0, 'no failed modules before');
+    is $job->failed_module_count, 0, 'no failed modules before';
     $job->custom_module($result => $output);
     $job->update;
     $job->discard_changes;
-    is($job->passed_module_count, 0, 'number of passed modules not incremented');
-    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
-    is($job->failed_module_count, 1, 'number of failed modules incremented');
-    is($job->skipped_module_count, 0, 'number of skipped modules not incremented');
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->passed_module_count, 0, 'number of passed modules not incremented';
+    is $job->softfailed_module_count, 0, 'number of softfailed modules not incremented';
+    is $job->failed_module_count, 1, 'number of failed modules incremented';
+    is $job->skipped_module_count, 0, 'number of skipped modules not incremented';
+    is $job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is($job->result_size, length $content, 'size of custom module taken into account');
+    is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
+    is $job->result_size, length $content, 'size of custom module taken into account';
 
     is(($job->failed_modules)->[0], 'CUSTOM', 'modules can have custom result');
 };
@@ -77,7 +77,7 @@ subtest 'create result dir, delete results' => sub {
     my $job = $jobs->create({TEST => 'delete-logs', logs_present => 1, result_size => $initially_assumed_result_size});
     $job->discard_changes;
     my $result_dir = path($job->create_result_dir);
-    ok(-d $result_dir, 'result directory created');
+    ok -d $result_dir, 'result directory created';
 
     # create fake results
     my $ulogs_dir = path($result_dir, 'ulogs')->make_path;
@@ -92,7 +92,7 @@ subtest 'create result dir, delete results' => sub {
 
     subtest 'dry-run flag' => sub {
         combined_like {
-            ok +($job->delete_results(1))[0], 'size of results that would be deleted returned';
+            ok + ($job->delete_results(1))[0], 'size of results that would be deleted returned';
             ok $job->delete_logs(1), 'size of logs that would be deleted returned';
             ok $job->delete_videos(1), 'size of vidos that would be deleted returned';
         }
@@ -195,7 +195,7 @@ subtest 'saving results' => sub {
     my $arbitrary_job_module = $schema->resultset('JobModules')->first;
     $arbitrary_job_module->save_results(\%some_test_results);
     my $details_file = path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json');
-    is_deeply(decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved');
+    is_deeply decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved';
 };
 
 subtest 'loading results with missing file in details' => sub {
@@ -223,7 +223,7 @@ subtest 'loading results with missing file in details' => sub {
     ok -f path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json'),
       'details file exists';
     $some_test_results->{details}[0]{text_data} = 'Unable to read before_test-1.txt.';
-    is_deeply($arbitrary_job_module->results, $some_test_results);
+    is_deeply $arbitrary_job_module->results, $some_test_results;
 };
 
 done_testing();

@@ -121,15 +121,14 @@ $registration_params{instance} = 42;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
   ->json_is('/id' => 3, 'new worker id is 3');
 always_explain $t->tx->res->json unless $t->success;
-is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_register'),
-    {
-        id => $t->tx->res->json->{id},
-        host => 'localhost',
-        instance => 42,
-    },
-    'worker event was logged correctly'
-);
+is_deeply
+  OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_register'),
+  {
+    id => $t->tx->res->json->{id},
+    host => 'localhost',
+    instance => 42,
+  },
+  'worker event was logged correctly';
 
 subtest 'incompleting previous job on worker registration' => sub {
     # assume the worker runs some job
@@ -146,14 +145,14 @@ subtest 'incompleting previous job on worker registration' => sub {
         websocket_api_version => WEBSOCKET_API_VERSION,
     );
 
-    is($jobs->find($running_job_id)->state, RUNNING, 'job is running in the first place');
+    is $jobs->find($running_job_id)->state, RUNNING, 'job is running in the first place';
 
     subtest 'previous job not incompleted when still being worked on' => sub {
         $t->post_ok('/api/v1/workers', form => \%registration_params)
           ->status_is(200, 'register existing worker passing job ID')
           ->json_is('/id' => $worker_id, 'worker ID returned');
         return always_explain $t->tx->res->json unless $t->success;
-        is($jobs->find($running_job_id)->state, RUNNING, 'assigned job still running');
+        is $jobs->find($running_job_id)->state, RUNNING, 'assigned job still running';
     };
 
     my $expected_breakage = '';
@@ -322,14 +321,13 @@ subtest 'delete offline worker' => sub {
     undef $worker_mock;
     $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, 'offline worker deleted');
 
-    is_deeply(
-        OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_delete'),
-        {
-            id => $offline_worker_id,
-            name => 'offline_test:5'
-        },
-        'Delete worker was logged correctly.'
-    );
+    is_deeply
+      OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_delete'),
+      {
+        id => $offline_worker_id,
+        name => 'offline_test:5'
+      },
+      'Delete worker was logged correctly.';
 
     $t->delete_ok('/api/v1/workers/99')->status_is(404, 'worker not found');
     $t->delete_ok('/api/v1/workers/1')->status_is(400, 'deleting online worker prevented');

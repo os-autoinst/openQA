@@ -210,41 +210,38 @@ subtest 'dependency JSON after duplicating jobs' => sub {
 subtest 'job without dependencies' => sub {
     $driver->get('/tests/99981');
     my @dependencies_links = $driver->find_elements('Dependencies', 'link_text');
-    is_deeply(\@dependencies_links, [], 'no dependency tab if no dependencies present');
+    is_deeply \@dependencies_links, [], 'no dependency tab if no dependencies present';
 };
 
 subtest 'graph rendering' => sub {
     $driver->get('/tests/99938');
     $driver->find_element_by_link_text('Dependencies')->click();
     wait_for_ajax();
-    ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings');
+    ok javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings';
 
     my $graph = $driver->find_element_by_id('dependencygraph');
     my $check_element_quandity = sub {
         my ($selector, $expected_count, $test_name) = @_;
         my @child_elements = $driver->find_child_elements($graph, $selector);
-        is(scalar @child_elements, $expected_count, $test_name);
+        is scalar @child_elements, $expected_count, $test_name;
     };
     $check_element_quandity->('.cluster', 1, 'one cluster present');
     $check_element_quandity->('.edgePath', 3, 'three edges present');
     $check_element_quandity->('.node', 5, 'five nodes present');
 
-    like(
-        get_tooltip(99938),
-        qr/.*opensuse-Factory-DVD-x86_64-Build0048-doc\@64bit.*START_AFTER_TEST=kde.*/,
-        'tooltip for doc job'
-    );
-    like(
-        get_tooltip(99963),
-        qr/.*opensuse-13.1-DVD-x86_64-Build0091-kde\@64bit.*START_AFTER_TEST=doc.*PARALLEL_WITH=kde.*/,
-        'tooltip for kde job 99963'
-    );
-    like(
-        get_tooltip(99927),
-        qr/.*opensuse-13.1-DVD-i586-Build0091-RAID0\@32bit.*START_DIRECTLY_AFTER_TEST=kde.*/,
-        'tooltip for RAID0 job 99927'
-    );
-    like(get_tooltip(99961), qr/.*opensuse-13.1-NET-x86_64-Build0091-kde\@64bit.*<\/p>/, 'tooltip for kde job 99963');
+    like
+      get_tooltip(99938),
+      qr/.*opensuse-Factory-DVD-x86_64-Build0048-doc\@64bit.*START_AFTER_TEST=kde.*/,
+      'tooltip for doc job';
+    like
+      get_tooltip(99963),
+      qr/.*opensuse-13.1-DVD-x86_64-Build0091-kde\@64bit.*START_AFTER_TEST=doc.*PARALLEL_WITH=kde.*/,
+      'tooltip for kde job 99963';
+    like
+      get_tooltip(99927),
+      qr/.*opensuse-13.1-DVD-i586-Build0091-RAID0\@32bit.*START_DIRECTLY_AFTER_TEST=kde.*/,
+      'tooltip for RAID0 job 99927';
+    like get_tooltip(99961), qr/.*opensuse-13.1-NET-x86_64-Build0091-kde\@64bit.*<\/p>/, 'tooltip for kde job 99963';
 
     subtest 'cloned job' => sub {
         $driver->get('/tests/99945');

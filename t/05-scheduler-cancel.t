@@ -38,70 +38,68 @@ sub job_get {
 }
 
 my $job = job_get(99963);
-is_deeply(
-    $job->cluster_jobs,
-    {
-        99961 => {
-            is_parent_or_initial_job => 1,
-            ok => 0,
-            state => RUNNING,
-            chained_children => [],
-            chained_parents => [],
-            directly_chained_children => [],
-            directly_chained_parents => [],
-            parallel_children => [99963],
-            parallel_parents => [],
-        },
-        99963 => {
-            is_parent_or_initial_job => 1,
-            ok => 0,
-            state => RUNNING,
-            chained_children => [],
-            chained_parents => [],
-            directly_chained_children => [],
-            directly_chained_parents => [],
-            parallel_children => [],
-            parallel_parents => [99961],
-        },
+is_deeply
+  $job->cluster_jobs,
+  {
+    99961 => {
+        is_parent_or_initial_job => 1,
+        ok => 0,
+        state => RUNNING,
+        chained_children => [],
+        chained_parents => [],
+        directly_chained_children => [],
+        directly_chained_parents => [],
+        parallel_children => [99963],
+        parallel_parents => [],
     },
-    '99963 is part of a duett'
-);
+    99963 => {
+        is_parent_or_initial_job => 1,
+        ok => 0,
+        state => RUNNING,
+        chained_children => [],
+        chained_parents => [],
+        directly_chained_children => [],
+        directly_chained_parents => [],
+        parallel_children => [],
+        parallel_parents => [99961],
+    },
+  },
+  '99963 is part of a duett';
 my $new_job = $job->auto_duplicate;
-ok($new_job, 'got new job id ' . $new_job->id);
+ok $new_job, 'got new job id ' . $new_job->id;
 
-is($new_job->state, 'scheduled', 'new job is scheduled');
-is_deeply(
-    $new_job->cluster_jobs,
-    {
-        99982 => {
-            is_parent_or_initial_job => 1,
-            ok => 0,
-            state => SCHEDULED,
-            chained_children => [],
-            chained_parents => [],
-            directly_chained_children => [],
-            directly_chained_parents => [],
-            parallel_children => [99983],
-            parallel_parents => [],
-        },
-        99983 => {
-            is_parent_or_initial_job => 1,
-            ok => 0,
-            state => SCHEDULED,
-            chained_children => [],
-            chained_parents => [],
-            directly_chained_children => [],
-            directly_chained_parents => [],
-            parallel_children => [],
-            parallel_parents => [99982],
-        },
+is $new_job->state, 'scheduled', 'new job is scheduled';
+is_deeply
+  $new_job->cluster_jobs,
+  {
+    99982 => {
+        is_parent_or_initial_job => 1,
+        ok => 0,
+        state => SCHEDULED,
+        chained_children => [],
+        chained_parents => [],
+        directly_chained_children => [],
+        directly_chained_parents => [],
+        parallel_children => [99983],
+        parallel_parents => [],
     },
-    'new job is part of a new duett'
-);
+    99983 => {
+        is_parent_or_initial_job => 1,
+        ok => 0,
+        state => SCHEDULED,
+        chained_children => [],
+        chained_parents => [],
+        directly_chained_children => [],
+        directly_chained_parents => [],
+        parallel_children => [],
+        parallel_parents => [99982],
+    },
+  },
+  'new job is part of a new duett';
 
 $job = job_get(99963);
-is($job->state, 'running', 'old job is running');
-is($job->t_finished, undef, 'There is a no finish time yet');
+is $job->state, 'running', 'old job is running';
+is $job->t_finished, undef, 'There is a no finish time yet';
 
 sub lj {
     # check the call succeeds every time, only output if verbose
@@ -131,49 +129,49 @@ is $job->reason, 'cancelled by scheduled product 42', 'jobs cancellation reason 
 lj;
 
 $job = $new_job->discard_changes;
-is($job->state, 'cancelled', 'new job is cancelled');
-ok($job->t_finished, 'There is a finish time');
+is $job->state, 'cancelled', 'new job is cancelled';
+ok $job->t_finished, 'There is a finish time';
 
 $job = job_get(99963);
-is($job->state, 'cancelled', 'old job cancelled as well');
+is $job->state, 'cancelled', 'old job cancelled as well';
 
 $job = job_get(99982);
-is($job->state, 'cancelled', 'new job 99982 cancelled');
+is $job->state, 'cancelled', 'new job 99982 cancelled';
 
 $job = job_get(99983);
-is($job->state, 'cancelled', 'new job 99983 cancelled');
+is $job->state, 'cancelled', 'new job 99983 cancelled';
 
 $job = job_get(99928);
-is($job->state, 'scheduled', 'unrelated job 99928 still scheduled');
+is $job->state, 'scheduled', 'unrelated job 99928 still scheduled';
 $job = job_get(99927);
-is($job->state, 'scheduled', 'unrelated job 99927 still scheduled');
+is $job->state, 'scheduled', 'unrelated job 99927 still scheduled';
 
 $job = job_get(99928);
 $ret = $job->cancel(USER_CANCELLED);
-is($ret, 1, 'one job cancelled by id');
+is $ret, 1, 'one job cancelled by id';
 
 $job = job_get(99928);
-is($job->state, 'cancelled', 'job 99928 cancelled');
+is $job->state, 'cancelled', 'job 99928 cancelled';
 $job = job_get(99927);
-is($job->state, 'scheduled', 'unrelated job 99927 still scheduled');
+is $job->state, 'scheduled', 'unrelated job 99927 still scheduled';
 
 
 $new_job = job_get(99981)->auto_duplicate;
-ok($new_job, 'duplicate new job for iso test');
+ok $new_job, 'duplicate new job for iso test';
 
 $job = $new_job;
-is($job->state, 'scheduled', 'new job is scheduled');
+is $job->state, 'scheduled', 'new job is scheduled';
 
 lj;
 
 $form = {ISO => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'};
 $ret = $schema->resultset('Jobs')->cancel_by_settings($form);
-is($ret, 1, 'one job cancelled by iso');
-is_deeply(OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
-    $form, 'Cancellation was logged with settings');
+is $ret, 1, 'one job cancelled by iso';
+is_deeply OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
+  $form, 'Cancellation was logged with settings';
 
 $job = job_get(99927);
-is($job->state, 'scheduled', 'unrelated job 99927 still scheduled');
+is $job->state, 'scheduled', 'unrelated job 99927 still scheduled';
 
 my %settings = (
     DISTRI => 'Unicorn',
@@ -215,11 +213,11 @@ subtest 'chained or directly chained parent fails -> children are canceled (skip
     $jobC->discard_changes;
     $jobD->discard_changes;
 
-    is($jobB->state, OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
-    is($jobC->state, OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
-    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED, 'B result is skipped');
-    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED, 'C (regularly chained) result is skipped');
-    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED, 'D (directly chained) result is skipped');
+    is $jobB->state, OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled';
+    is $jobC->state, OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled';
+    is $jobB->result, OpenQA::Jobs::Constants::SKIPPED, 'B result is skipped';
+    is $jobC->result, OpenQA::Jobs::Constants::SKIPPED, 'C (regularly chained) result is skipped';
+    is $jobD->result, OpenQA::Jobs::Constants::SKIPPED, 'D (directly chained) result is skipped';
 
     # note: A feasible alternative would be making it the worker's responsibility to set
     #       *directly* chained jobs to SKIPPED. However, it is likely safer to let the web UI handle
@@ -238,11 +236,11 @@ subtest 'cancelling directly chained jobs' => sub {
     $to_cancel_job->cancel(USER_CANCELLED);
     $_->discard_changes for @jobs;
 
-    is($parent_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'parent not cancelled');
-    is($to_cancel_job->state, OpenQA::Jobs::Constants::CANCELLED, 'cancelled job is cancelled');
-    is($sibling_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'sibling not cancelled');
-    is($child_job->state, OpenQA::Jobs::Constants::CANCELLED, 'child job is cancelled');
-    is($child_job2->state, OpenQA::Jobs::Constants::CANCELLED, 'child job with multiple parents is cancelled');
+    is $parent_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'parent not cancelled';
+    is $to_cancel_job->state, OpenQA::Jobs::Constants::CANCELLED, 'cancelled job is cancelled';
+    is $sibling_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'sibling not cancelled';
+    is $child_job->state, OpenQA::Jobs::Constants::CANCELLED, 'child job is cancelled';
+    is $child_job2->state, OpenQA::Jobs::Constants::CANCELLED, 'child job with multiple parents is cancelled';
 };
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
@@ -294,16 +292,16 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     $jobB->discard_changes;
     $jobC->discard_changes;
 
-    is($jobB->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
-    is($jobB->state, OpenQA::Jobs::Constants::RUNNING, 'B is still running');
-    is($jobB->t_finished, undef, 'B does not has t_finished set since it is still running');
-    is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
-    is_deeply(\@sent_commands, [qw(cancel cancel)], 'both cancel commands issued');
+    is $jobB->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed';
+    is $jobB->state, OpenQA::Jobs::Constants::RUNNING, 'B is still running';
+    is $jobB->t_finished, undef, 'B does not has t_finished set since it is still running';
+    is $jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed';
+    is_deeply \@sent_commands, [qw(cancel cancel)], 'both cancel commands issued';
 
     # assume B has actually been cancelled
     $jobB->update({state => OpenQA::Jobs::Constants::DONE});
-    ok($jobB->t_finished, 'B has t_finished set after being actually cancelled')
-      and ok($jobB->t_finished ge $now, 'B has t_finished set to a sane value');
+    ok $jobB->t_finished, 'B has t_finished set after being actually cancelled'
+      and ok $jobB->t_finished ge $now, 'B has t_finished set to a sane value';
 
     ok $server_called, 'Mocked ws_send function has been called';
 };
@@ -334,12 +332,12 @@ subtest 'chained or directly chained parent fails -> parallel parents of childre
     $jobC->discard_changes;
     $jobD->discard_changes;
 
-    is($jobB->state, OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
-    is($jobC->state, OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
-    is($jobD->state, OpenQA::Jobs::Constants::CANCELLED, 'D state is cancelled');
-    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED, 'B result is skipped');
-    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED, 'C result is skipped');
-    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED, 'D result is skipped');
+    is $jobB->state, OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled';
+    is $jobC->state, OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled';
+    is $jobD->state, OpenQA::Jobs::Constants::CANCELLED, 'D state is cancelled';
+    is $jobB->result, OpenQA::Jobs::Constants::SKIPPED, 'B result is skipped';
+    is $jobC->result, OpenQA::Jobs::Constants::SKIPPED, 'C result is skipped';
+    is $jobD->result, OpenQA::Jobs::Constants::SKIPPED, 'D result is skipped';
 };
 
 subtest 'parallel child with one parent fails -> parent is cancelled' => sub {
@@ -355,7 +353,7 @@ subtest 'parallel child with one parent fails -> parent is cancelled' => sub {
     $jobB->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobA->discard_changes;
 
-    is($jobA->state, OpenQA::Jobs::Constants::CANCELLED, 'A state is cancelled');
+    is $jobA->state, OpenQA::Jobs::Constants::CANCELLED, 'A state is cancelled';
 };
 
 subtest 'cancellation behaviour of parallel cluster when one job is skipped or fails' => sub {

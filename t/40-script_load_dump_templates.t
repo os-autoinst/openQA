@@ -36,7 +36,7 @@ sub decode { Cpanel::JSON::XS->new->relaxed->decode(path(shift)->slurp); }
 
 sub check_property ($schema, $table, $property, $values) {
     my @gotprops = sort map { $_->$property } $schema->resultset($table)->all;
-    is_deeply(\@gotprops, $values, "$property entries in $table as expected") or always_explain \@gotprops;
+    is_deeply \@gotprops, $values, "$property entries in $table as expected" or always_explain \@gotprops;
 }
 
 test_once '--help', qr/Usage:/, 'help text shown', 0, 'openqa-load-templates with no arguments shows usage';

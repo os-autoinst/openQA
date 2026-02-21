@@ -61,7 +61,7 @@ driver_missing unless my $driver = call_driver;
 sub inject_java_script {
     my ($java_script) = @_;
 
-    note("injecting JavaScript: $java_script\n");
+    note "injecting JavaScript: $java_script\n";
     $driver->execute_script($java_script);
 }
 
@@ -125,11 +125,10 @@ $driver->get('/login');
 
 # navigate to a finished test
 $driver->get('/tests/99926?status_updates=0');
-like(
-    $driver->find_element('#info_box .card-body')->get_text(),
-    qr/Developer session was opened during testrun by artie/,
-    'responsible developer shown for finished test'
-);
+like
+  $driver->find_element('#info_box .card-body')->get_text(),
+  qr/Developer session was opened during testrun by artie/,
+  'responsible developer shown for finished test';
 
 # navigate to live view of running test
 $driver->get('/tests/99961?status_updates=0#live');
@@ -151,7 +150,7 @@ $driver->execute_script(
 
 subtest 'devel UI hidden when running, but modules not initialized' => sub {
     my $info_text = find_status_text $driver;
-    like($info_text, qr/State\: running.*Assigned worker\: remotehost\:1/s, 'job is running');
+    like $info_text, qr/State\: running.*Assigned worker\: remotehost\:1/s, 'job is running';
     element_hidden('#developer-global-session-info');
     element_hidden('#developer-vnc-notice');
     element_hidden('#developer-panel');
@@ -587,8 +586,8 @@ subtest 'process state changes from os-autoinst/worker' => sub {
     };
 
     subtest 'upload progress handled' => sub {
-        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
-            0, 'details for current module initially not considered uploaded');
+        is js_variable('developerMode.detailsForCurrentModuleUploaded'),
+          0, 'details for current module initially not considered uploaded';
 
         fake_state(
             developerMode => {
@@ -601,60 +600,60 @@ subtest 'process state changes from os-autoinst/worker' => sub {
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_images\":5,\"outstanding_files\":7,\"upload_up_to_current_module\":true}}" });'
         );
 
-        is(js_variable('developerMode.outstandingImagesToUpload'), 5, 'outstanding images updated');
-        is(js_variable('developerMode.outstandingFilesToUpload'), 7, 'outstanding files updated');
-        is(js_variable('developerMode.uploadingUpToCurrentModule'), 1, 'uploading up to current module updated');
-        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
-            0, 'details for current module still not considered uploaded');
+        is js_variable('developerMode.outstandingImagesToUpload'), 5, 'outstanding images updated';
+        is js_variable('developerMode.outstandingFilesToUpload'), 7, 'outstanding files updated';
+        is js_variable('developerMode.uploadingUpToCurrentModule'), 1, 'uploading up to current module updated';
+        is js_variable('developerMode.detailsForCurrentModuleUploaded'),
+          0, 'details for current module still not considered uploaded';
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_files\":0}}" });'
         );
-        is(js_variable('developerMode.outstandingImagesToUpload'), 5, 'outstanding images not changed');
-        is(js_variable('developerMode.outstandingFilesToUpload'), 0, 'outstanding files updated');
-        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
-            0, 'details for current module still not considered uploaded');
+        is js_variable('developerMode.outstandingImagesToUpload'), 5, 'outstanding images not changed';
+        is js_variable('developerMode.outstandingFilesToUpload'), 0, 'outstanding files updated';
+        is js_variable('developerMode.detailsForCurrentModuleUploaded'),
+          0, 'details for current module still not considered uploaded';
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_images\":0,\"outstanding_files\":0,\"upload_up_to_current_module\":true}}" });'
         );
-        is(js_variable('developerMode.outstandingImagesToUpload'), 0, 'outstanding images updated');
-        is(js_variable('developerMode.outstandingFilesToUpload'), 0, 'outstanding files has bot changed');
-        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
-            1, 'details for current module considered uploaded');
+        is js_variable('developerMode.outstandingImagesToUpload'), 0, 'outstanding images updated';
+        is js_variable('developerMode.outstandingFilesToUpload'), 0, 'outstanding files has bot changed';
+        is js_variable('developerMode.detailsForCurrentModuleUploaded'),
+          1, 'details for current module considered uploaded';
     };
 
     my $script_start
       = 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"';
 
     subtest 'curent API function handled' => sub {
-        is(js_variable('developerMode.currentApiFunction'), undef, 'current API function not set so far');
+        is js_variable('developerMode.currentApiFunction'), undef, 'current API function not set so far';
 
         $driver->execute_script($script_start . 'current_api_function\":\"assert_screen\"}}" });');
-        is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
-        is(js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set');
+        is js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set';
+        is js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set';
 
         $driver->execute_script($script_start
               . 'current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":\"generic-desktop\",\"timeout\":30}}}" });'
         );
-        is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
-        is(js_variable('developerMode.currentApiFunctionArgs'), 'generic-desktop', 'current API function set');
+        is js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set';
+        is js_variable('developerMode.currentApiFunctionArgs'), 'generic-desktop', 'current API function set';
 
         $driver->execute_script($script_start . 'current_api_function\":\"wait_serial\"}}" });');
-        is(js_variable('developerMode.currentApiFunction'), 'wait_serial', 'current API function set');
-        is(js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set');
+        is js_variable('developerMode.currentApiFunction'), 'wait_serial', 'current API function set';
+        is js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set';
 
         $driver->execute_script($script_start
               . 'current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":[\"foo\",\"bar\"],\"timeout\":30}}}" });'
         );
-        is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
-        is_deeply(js_variable('developerMode.currentApiFunctionArgs'), ['foo', 'bar'], 'current API function set');
+        is js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set';
+        is_deeply js_variable('developerMode.currentApiFunctionArgs'), ['foo', 'bar'], 'current API function set';
     };
 
     subtest 'handling of test being paused on failure: reason shown, ignoring failure offered' => sub {
         $driver->execute_script($script_start . 'test_execution_paused\":\"test died: foo at line x\"}}" });');
-        is(js_variable('developerMode.isPaused'), 'test died: foo at line x', 'reason for pause set');
-        is(js_variable('developerMode.onFailure'), 'true', 'considered paused due to failure');
+        is js_variable('developerMode.isPaused'), 'test died: foo at line x', 'reason for pause set';
+        is js_variable('developerMode.onFailure'), 'true', 'considered paused due to failure';
         click_header();
         element_visible('#developer-panel .card-header', qr/reason: test died: foo at line x/);
         element_visible('#developer-panel .card-body', [qr/Resume test execution/, qr/Ignore failure and resume/]);

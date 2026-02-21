@@ -51,8 +51,8 @@ my $worker_count = $ENV{SCALABILITY_TEST_WORKER_COUNT};
 my $job_count = $ENV{SCALABILITY_TEST_JOB_COUNT} // $worker_count;
 BAIL_OUT 'invalid SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT'
   unless looks_like_number($worker_count) && looks_like_number($job_count) && $worker_count > 0 && $job_count > 0;
-note("Running scalability test with $worker_count worker(s) and $job_count job(s).");
-note('Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust this.');
+note "Running scalability test with $worker_count worker(s) and $job_count job(s).";
+note 'Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust this.';
 
 # setup basedir, config dir and database
 my $tempdir = setup_fullstack_temp_dir('scalability');
@@ -93,17 +93,17 @@ my @worker_args = (
     "--apikey=$api_key", "--apisecret=$api_secret", "--host=$webui_host", "--isotovideo=$isotovideo_path",
     '--verbose', '--no-cleanup',
 );
-note("Tests dir: $testsdir");
-note("Result dir: $resultdir");
+note "Tests dir: $testsdir";
+note "Result dir: $resultdir";
 
 # spawn workers
-note("Spawning $worker_count workers");
+note "Spawning $worker_count workers";
 
 sub spawn_worker {
     my ($instance) = @_;
 
     local $ENV{PERL5OPT} = '';    # uncoverable statement
-    note("Starting worker '$instance'");    # uncoverable statement
+    note "Starting worker '$instance'";    # uncoverable statement
     $0 = 'openqa-worker';    # uncoverable statement
     start ['perl', $worker_path, "--instance=$instance", @worker_args];    # uncoverable statement
 }
@@ -111,7 +111,7 @@ my %worker_ids;
 my @workers = map { spawn_worker($_) } (1 .. $worker_count);
 
 # create jobs
-note("Creating $job_count jobs");
+note "Creating $job_count jobs";
 
 sub log_jobs {
     # uncoverable sub only used in case of failures
@@ -122,7 +122,7 @@ sub log_jobs {
         sprintf('id: %s, state: %s, result: %s, reason: %s', $_->id, $_->state, $_->result, $_->reason // 'none')
       } $jobs->search({}, {order_by => 'id'});
     # uncoverable statement
-    diag("All jobs:\n - " . join("\n - ", @job_info));
+    diag "All jobs:\n - " . join("\n - ", @job_info);
 }
 my %job_ids;
 my $distri = 'opensuse';
@@ -156,7 +156,7 @@ subtest 'wait for workers to be idle' => sub {
           = grep { $_->status eq 'idle' && ($_->websocket_api_version || 0) == WEBSOCKET_API_VERSION } $workers->all;
         $actual_count = scalar @idle;
         last if $actual_count == $worker_count;
-        note("Waiting until all workers are registered and idle, try $try");    # uncoverable statement
+        note "Waiting until all workers are registered and idle, try $try";    # uncoverable statement
         sleep $polling_interval;    # uncoverable statement
     }
     is $actual_count, $worker_count, 'all workers registered and idle';
@@ -190,25 +190,25 @@ subtest 'assign and run jobs' => sub {
     }
 
     my $allocated_count = $jobs->search({state => {-in => [ASSIGNED, SETUP, RUNNING, DONE]}})->count;
-    ok($allocated_count >= $expected_allocated, 'all workers have a job or all jobs assigned')
-      or diag("Allocated count: $allocated_count, expected at least: $expected_allocated");
+    ok $allocated_count >= $expected_allocated, 'all workers have a job or all jobs assigned'
+      or diag "Allocated count: $allocated_count, expected at least: $expected_allocated";
 
     my $remaining_jobs = $job_count - $worker_count;
-    note('Remaining ' . ($remaining_jobs > 0 ? ('jobs: ' . $remaining_jobs) : ('workers: ' . -$remaining_jobs)));
+    note 'Remaining ' . ($remaining_jobs > 0 ? ('jobs: ' . $remaining_jobs) : ('workers: ' . -$remaining_jobs));
 
     for my $try (1 .. $polling_tries_jobs) {
         my $done_count = $jobs->search({state => DONE})->count;
         last if $done_count == $job_count;
         my $scheduled_count = $jobs->search({state => SCHEDULED})->count;
         if ($scheduled_count > 0) {
-            note("Trying to assign $scheduled_count scheduled jobs");
+            note "Trying to assign $scheduled_count scheduled jobs";
             OpenQA::Scheduler::Model::Jobs->singleton->schedule;
         }
-        note("Waiting until all jobs are done ($done_count/$job_count), try $try");
+        note "Waiting until all jobs are done ($done_count/$job_count), try $try";
         sleep $polling_interval;
     }
-    my $done = is($jobs->search({state => DONE})->count, $job_count, 'all jobs done');
-    my $passed = is($jobs->search({result => PASSED})->count, $job_count, 'all jobs passed');
+    my $done = is $jobs->search({state => DONE})->count, $job_count, 'all jobs done';
+    my $passed = is $jobs->search({result => PASSED})->count, $job_count, 'all jobs passed';
     log_jobs unless $done && $passed;
 };
 
@@ -221,10 +221,10 @@ subtest 'stop all workers' => sub {
             push(@non_offline_workers, $worker->id) unless $worker->dead;
         }
         last unless @non_offline_workers;
-        note("Waiting until all workers are offline, try $try");    # uncoverable statement
+        note "Waiting until all workers are offline, try $try";    # uncoverable statement
         sleep $polling_interval;    # uncoverable statement
     }
-    ok(!@non_offline_workers, 'all workers offline') or always_explain \@non_offline_workers;
+    ok !@non_offline_workers, 'all workers offline' or always_explain \@non_offline_workers;
 };
 
 done_testing;

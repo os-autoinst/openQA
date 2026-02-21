@@ -6,6 +6,6 @@ use Test::Most;
 
 use Test::Warnings ':report_warnings';
 
-is(system('script/openqa-label-all --help'), 0);
+is system('script/openqa-label-all --help'), 0;
 
 done_testing();

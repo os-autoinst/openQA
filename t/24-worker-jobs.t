@@ -220,18 +220,17 @@ subtest 'Format reason' => sub {
     # call the function explicitly; further cases are covered in subsequent subtests where the
     # function is called indirectly
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1234});
-    is($job->_format_reason({}, PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"');
+    is $job->_format_reason({}, PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"';
     $job->{_result_upload_error} = 'Unable…';
-    is(
-        $job->_format_reason({}, PASSED, WORKER_SR_DONE),
-        'api failure: Unable…',
-        'upload error considered API failure'
-    );
-    like($job->_format_reason({}, INCOMPLETE, WORKER_SR_DIED), qr/died: .+/, 'generic phrase appended to died');
-    is($job->_format_reason({}, 'foo', 'foo'), undef, 'no reason added if it equals the result');
-    is($job->_format_reason({}, 'foo', 'foobar'),
-        'foobar', 'unknown reason "passed as-is" if it differs from the result');
-    is($job->_format_reason({}, USER_CANCELLED, WORKER_COMMAND_CANCEL), undef, 'cancel omitted');
+    is
+      $job->_format_reason({}, PASSED, WORKER_SR_DONE),
+      'api failure: Unable…',
+      'upload error considered API failure';
+    like $job->_format_reason({}, INCOMPLETE, WORKER_SR_DIED), qr/died: .+/, 'generic phrase appended to died';
+    is $job->_format_reason({}, 'foo', 'foo'), undef, 'no reason added if it equals the result';
+    is $job->_format_reason({}, 'foo', 'foobar'),
+      'foobar', 'unknown reason "passed as-is" if it differs from the result';
+    is $job->_format_reason({}, USER_CANCELLED, WORKER_COMMAND_CANCEL), undef, 'cancel omitted';
     like $job->_format_reason({}, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: setup exceeded/, 'setup timeout';
     $job->{_engine} = 1;    # pretend isotovideo has been started
     like $job->_format_reason({}, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: test execution exceeded/,
@@ -264,11 +263,10 @@ subtest 'Interrupted WebSocket connection' => sub {
     is $job->status, 'accepted',
       'ws disconnects are not considered fatal one the job is accepted so it is still in accepted state';
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 1, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 1, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 };
 
@@ -283,11 +281,10 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
     is $job->status, 'stopped', 'job is abandoned if unable to confirm to the web UI that we are working on it';
     throws_ok { $job->start } qr/attempt to start job which is not accepted/, 'starting job prevented unless accepted';
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 2, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 2, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 };
 
@@ -319,37 +316,36 @@ subtest 'Clean up pool directory' => sub {
     ok !-e $pool_directory->child('autoinst-log.txt'), 'autoinst-log.txt file has been deleted';
     ok -e $pool_directory->child('worker-log.txt'), 'worker log is there';
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            usual_status_updates(job_id => 3),
-            {
-                json => undef,
-                path => 'jobs/3/set_done',
-                result => 'incomplete',
-                reason => 'setup failure: this is not a real isotovideo',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+    is_deeply
+      $client->sent_messages,
+      [
+        usual_status_updates(job_id => 3),
+        {
+            json => undef,
+            path => 'jobs/3/set_done',
+            result => 'incomplete',
+            reason => 'setup failure: this is not a real isotovideo',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 3, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 3, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is_deeply(
-        $uploaded_files,
-        [[{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}]],
-        'would have uploaded logs'
-    ) or always_explain $uploaded_files;
+    is_deeply
+      $uploaded_files,
+      [[{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}]],
+      'would have uploaded logs'
+      or always_explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
+    is_deeply $uploaded_assets, [], 'no assets uploaded because this test so far has none'
       or always_explain $uploaded_assets;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
@@ -384,7 +380,7 @@ subtest 'Job aborted because backend process died' => sub {
     wait_until_job_status_ok($job, 'accepted');
     $job->start;
     wait_until_job_status_ok($job, 'stopped');
-    is(@{$client->sent_messages}[-1]->{reason}, "backend died: $extended_reason", 'reason propagated')
+    is @{$client->sent_messages}[-1]->{reason}, "backend died: $extended_reason", 'reason propagated'
       or always_explain $client->sent_messages;
 
     $state_file->remove;
@@ -408,7 +404,7 @@ subtest 'Job aborted because backend process died, multiple lines' => sub {
     $job->start;
     wait_until_job_status_ok($job, 'stopped');
 
-    is(@{$client->sent_messages}[-1]->{reason}, 'died: Lorem ipsum', 'only first line added to reason')
+    is @{$client->sent_messages}[-1]->{reason}, 'died: Lorem ipsum', 'only first line added to reason'
       or always_explain $client->sent_messages;
 
     $state_file->remove;
@@ -431,18 +427,17 @@ subtest 'Job aborted, broken state file' => sub {
     wait_until_job_status_ok($job, 'accepted');
     $job->start;
     combined_like { wait_until_job_status_ok($job, 'stopped') } qr/failed to parse.*JSON/, 'warning about corrupt JSON';
-    is(
-        @{$client->sent_messages}[-1]->{reason},
-        'terminated prematurely: Encountered corrupted state file, see log output for details',
-        'reason propagated'
-    ) or always_explain $client->sent_messages;
+    is
+      @{$client->sent_messages}[-1]->{reason},
+      'terminated prematurely: Encountered corrupted state file, see log output for details', 'reason propagated'
+      or always_explain $client->sent_messages;
     combined_like {
         my $state = $job->_read_state_file;
-        is(
-            $job->_format_reason($state, PASSED, 'done'),
-            'done: terminated with corrupted state file',
-            'reason in case the job is nevertheless done'
-          )
+        is
+          $job->_format_reason($state, PASSED, 'done'),
+          'done: terminated with corrupted state file',
+          'reason in case the job is nevertheless done'
+
           or always_explain $client->sent_messages
     }
     qr/but failed to parse the JSON/, 'JSON error logged';
@@ -484,31 +479,30 @@ subtest 'Job aborted during setup' => sub {
     is $job->status, 'stopped', 'job is stopped due to the mocked error';
     is $job->setup_error, 'worker interrupted', 'setup error recorded';
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            usual_status_updates(job_id => 8, duplicate => 1),
-            {
-                json => undef,
-                path => 'jobs/8/set_done',
-                result => 'incomplete',
-                reason => 'quit: worker has been stopped or restarted',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+    is_deeply
+      $client->sent_messages,
+      [
+        usual_status_updates(job_id => 8, duplicate => 1),
+        {
+            json => undef,
+            path => 'jobs/8/set_done',
+            result => 'incomplete',
+            reason => 'quit: worker has been stopped or restarted',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 8, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 8, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'no assets uploaded')
+    is_deeply $uploaded_assets, [], 'no assets uploaded'
       or always_explain $uploaded_assets;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
@@ -529,26 +523,26 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
     }
     qr/Failed to duplicate/, 'error logged about duplication';
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            usual_status_updates(job_id => 9, duplicate => 1),
-            {
-                json => undef,
-                path => 'jobs/9/set_done',
-                result => 'incomplete',
-                reason => 'api failure: fake API error on duplication after quit',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+    is_deeply
+      $client->sent_messages,
+      [
+        usual_status_updates(job_id => 9, duplicate => 1),
+        {
+            json => undef,
+            path => 'jobs/9/set_done',
+            result => 'incomplete',
+            reason => 'api failure: fake API error on duplication after quit',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
-    is_deeply($client->websocket_connection->sent_messages, [], 'no WebSocket messages expected')
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket messages expected'
       or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'no assets uploaded') or always_explain $uploaded_assets;
+    is_deeply $uploaded_assets, [], 'no assets uploaded' or always_explain $uploaded_assets;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
     $client->fail_job_duplication(0);
 };
@@ -603,13 +597,13 @@ subtest 'Successful job' => sub {
     qr/isotovideo has been started/, 'isotovideo startup logged';
     subtest 'settings only allowed to be set within worker config deleted' => sub {
         my $settings = $job->settings;
-        is($settings->{EXTERNAL_VIDEO_ENCODER_CMD},
-            undef, 'video encoder settings deleted (should only be set within worker config)');
-        is($settings->{GENERAL_HW_CMD_DIR},
-            undef, 'general hw cmd dir deleted (should only be set within worker config)');
-        is($settings->{EXTERNAL_VIDEO_ENCODER_BAR},
-            'foo', 'settings (including video encoder settings) added from config');
-        is($settings->{FOO}, 'bar', 'arbitrary settings kept');
+        is $settings->{EXTERNAL_VIDEO_ENCODER_CMD},
+          undef, 'video encoder settings deleted (should only be set within worker config)';
+        is $settings->{GENERAL_HW_CMD_DIR},
+          undef, 'general hw cmd dir deleted (should only be set within worker config)';
+        is $settings->{EXTERNAL_VIDEO_ENCODER_BAR},
+          'foo', 'settings (including video encoder settings) added from config';
+        is $settings->{FOO}, 'bar', 'arbitrary settings kept';
     };
 
     is $is_uploading, 0, 'uploading results concluded';
@@ -618,47 +612,46 @@ subtest 'Successful job' => sub {
     is $job->status, 'stopped', 'job is stopped successfully';
     is $job->is_uploading_results, 0, 'uploading results concluded';
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            {
-                json => {
-                    status => {
-                        cmd_srv_url => $engine_url,
-                        test_execution_paused => 0,
-                        worker_hostname => undef,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/4/status'
+    is_deeply
+      $client->sent_messages,
+      [
+        {
+            json => {
+                status => {
+                    cmd_srv_url => $engine_url,
+                    test_execution_paused => 0,
+                    worker_hostname => undef,
+                    worker_id => 1
+                }
             },
-            usual_status_updates(job_id => 4),
-            {
-                json => undef,
-                path => 'jobs/4/set_done',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+            path => 'jobs/4/status'
+        },
+        usual_status_updates(job_id => 4),
+        {
+            json => undef,
+            path => 'jobs/4/set_done',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 4, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 4, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
     # check whether asset upload has succeeded
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is_deeply($uploaded_files, $ref_uploaded_files, 'would have uploaded logs') or always_explain $uploaded_files;
+    is_deeply $uploaded_files, $ref_uploaded_files, 'would have uploaded logs' or always_explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply(
-        $uploaded_assets,
-        [[{asset => 'public', file => {file => "$pool_directory/assets_public/test.txt", filename => 'test.txt'}}]],
-        'would have uploaded assets'
-    ) or always_explain $uploaded_assets;
+    is_deeply
+      $uploaded_assets,
+      [[{asset => 'public', file => {file => "$pool_directory/assets_public/test.txt", filename => 'test.txt'}}]],
+      'would have uploaded assets'
+      or always_explain $uploaded_assets;
 
     # assume asset upload would have failed
     $job_mock->redefine(_upload_log_file_or_asset => sub ($job, $params) { $params->{ulog} });
@@ -666,15 +659,15 @@ subtest 'Successful job' => sub {
     $job->_set_status(running => {});
     $job->stop(WORKER_SR_DONE);
     wait_until_job_status_ok($job, 'stopped');
-    is_deeply(
-        $client->sent_messages,
-        [
-            {json => {status => {uploading => 1, worker_id => 1}}, path => 'jobs/4/status'},
-            {json => undef, path => 'jobs/4/set_done', worker_id => 1, result => 'incomplete', reason => 'api failure'},
-            {json => undef, path => 'jobs/4/set_done', worker_id => 1},
-        ],
-        'expected REST-API calls happened (last API call is actually useless and could be avoided)'
-    ) or always_explain $client->sent_messages;
+    is_deeply
+      $client->sent_messages,
+      [
+        {json => {status => {uploading => 1, worker_id => 1}}, path => 'jobs/4/status'},
+        {json => undef, path => 'jobs/4/set_done', worker_id => 1, result => 'incomplete', reason => 'api failure'},
+        {json => undef, path => 'jobs/4/set_done', worker_id => 1},
+      ],
+      'expected REST-API calls happened (last API call is actually useless and could be avoided)'
+      or always_explain $client->sent_messages;
     ok defined $job_ok && !$job_ok, 'job not considered successful';
     is $client->register_called, 1, 're-registration attempted';
     $client->register_called(0)->sent_messages([])->websocket_connection->sent_messages([]);
@@ -694,28 +687,28 @@ subtest 'Skip job' => sub {
     is $job->status, 'stopping', 'job is considered "stopping"';
     wait_until_job_status_ok($job, 'stopped');
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            {
-                json => undef,
-                path => 'jobs/4/set_done',
-                result => 'skipped',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+    is_deeply
+      $client->sent_messages,
+      [
+        {
+            json => undef,
+            path => 'jobs/4/set_done',
+            result => 'skipped',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
-    is_deeply($client->websocket_connection->sent_messages, [], 'job not accepted via WebSocket')
+    is_deeply $client->websocket_connection->sent_messages, [], 'job not accepted via WebSocket'
       or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is_deeply($uploaded_files, [], 'no files uploaded') or always_explain $uploaded_files;
+    is_deeply $uploaded_files, [], 'no files uploaded' or always_explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'no assets uploaded') or always_explain $uploaded_assets;
+    is_deeply $uploaded_assets, [], 'no assets uploaded' or always_explain $uploaded_assets;
 };
 
 subtest 'Livelog' => sub {
@@ -751,76 +744,75 @@ subtest 'Livelog' => sub {
 
     is_deeply \@status, [qw(accepting accepted setup running stopping stopped)], 'expected status changes';
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            {
-                json => {
-                    status => {
-                        cmd_srv_url => $engine_url,
-                        log => {},
-                        serial_log => {},
-                        serial_terminal => {},
-                        serial_terminal_user => {
-                            'data' => $user_console_text,
-                            'offset' => 0
-                        },
-                        test_execution_paused => 0,
-                        worker_hostname => undef,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/5/status'
+    is_deeply
+      $client->sent_messages,
+      [
+        {
+            json => {
+                status => {
+                    cmd_srv_url => $engine_url,
+                    log => {},
+                    serial_log => {},
+                    serial_terminal => {},
+                    serial_terminal_user => {
+                        'data' => $user_console_text,
+                        'offset' => 0
+                    },
+                    test_execution_paused => 0,
+                    worker_hostname => undef,
+                    worker_id => 1
+                }
             },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url => $engine_url,
-                        log => {},
-                        serial_log => {},
-                        serial_terminal => {},
-                        serial_terminal_user => {
-                            'data' => '',
-                            'offset' => length($user_console_text)
-                        },
-                        test_execution_paused => 0,
-                        worker_hostname => undef,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/5/status'
+            path => 'jobs/5/status'
+        },
+        {
+            json => {
+                status => {
+                    cmd_srv_url => $engine_url,
+                    log => {},
+                    serial_log => {},
+                    serial_terminal => {},
+                    serial_terminal_user => {
+                        'data' => '',
+                        'offset' => length($user_console_text)
+                    },
+                    test_execution_paused => 0,
+                    worker_hostname => undef,
+                    worker_id => 1
+                }
             },
-            {
-                json => {
-                    outstanding_files => 0,
-                    outstanding_images => 0,
-                    upload_up_to => undef,
-                    upload_up_to_current_module => undef
-                },
-                path => '/liveviewhandler/api/v1/jobs/5/upload_progress'
+            path => 'jobs/5/status'
+        },
+        {
+            json => {
+                outstanding_files => 0,
+                outstanding_images => 0,
+                upload_up_to => undef,
+                upload_up_to_current_module => undef
             },
-            usual_status_updates(job_id => 5),
-            {
-                json => undef,
-                path => 'jobs/5/set_done',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+            path => '/liveviewhandler/api/v1/jobs/5/upload_progress'
+        },
+        usual_status_updates(job_id => 5),
+        {
+            json => undef,
+            path => 'jobs/5/set_done',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 5, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 5, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is_deeply($uploaded_files, $ref_uploaded_files, 'would have uploaded logs') or always_explain $uploaded_files;
+    is_deeply $uploaded_files, $ref_uploaded_files, 'would have uploaded logs' or always_explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
+    is_deeply $uploaded_assets, [], 'no assets uploaded because this test so far has none'
       or always_explain $uploaded_assets;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 
@@ -873,51 +865,50 @@ subtest 'handling API failures' => sub {
 
     is_deeply \@status, [qw(accepting accepted setup running stopping stopped)], 'expected status changes';
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            {
-                json => {
-                    status => {
-                        cmd_srv_url => $engine_url,
-                        test_execution_paused => 0,
-                        worker_hostname => undef,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/6/status'
+    is_deeply
+      $client->sent_messages,
+      [
+        {
+            json => {
+                status => {
+                    cmd_srv_url => $engine_url,
+                    test_execution_paused => 0,
+                    worker_hostname => undef,
+                    worker_id => 1
+                }
             },
-            usual_status_updates(job_id => 6, no_overall_status => 1),
-            {
-                json => undef,
-                path => 'jobs/6/set_done',
-                result => 'incomplete',
-                reason => 'api failure: fake API error',
-                worker_id => 1,
-            },
-            {
-                json => undef,
-                path => 'jobs/6/set_done',
-                reason => 'api failure: fake API error',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+            path => 'jobs/6/status'
+        },
+        usual_status_updates(job_id => 6, no_overall_status => 1),
+        {
+            json => undef,
+            path => 'jobs/6/set_done',
+            result => 'incomplete',
+            reason => 'api failure: fake API error',
+            worker_id => 1,
+        },
+        {
+            json => undef,
+            path => 'jobs/6/set_done',
+            reason => 'api failure: fake API error',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 6, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 6, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is_deeply($uploaded_files, [], 'file upload skipped after API failure')
+    is_deeply $uploaded_files, [], 'file upload skipped after API failure'
       or always_explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'asset upload skipped after API failure')
+    is_deeply $uploaded_assets, [], 'asset upload skipped after API failure'
       or always_explain $uploaded_assets;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
@@ -960,62 +951,61 @@ subtest 'handle upload failure' => sub {
 
     is_deeply \@status, [qw(accepting accepted setup running stopping stopped)], 'expected status changes';
 
-    is_deeply(
-        $client->sent_messages,
-        [
-            {
-                json => {
-                    status => {
-                        cmd_srv_url => $engine_url,
-                        test_execution_paused => 0,
-                        worker_hostname => undef,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/7/status'
+    is_deeply
+      $client->sent_messages,
+      [
+        {
+            json => {
+                status => {
+                    cmd_srv_url => $engine_url,
+                    test_execution_paused => 0,
+                    worker_hostname => undef,
+                    worker_id => 1
+                }
             },
-            usual_status_updates(job_id => 7, no_overall_status => 1),
-            {
-                json => undef,
-                path => 'jobs/7/set_done',
-                result => 'incomplete',
-                reason => 'api failure',
-                worker_id => 1,
-            },
-            {
-                json => undef,
-                path => 'jobs/7/set_done',
-                worker_id => 1,
-            }
-        ],
-        'expected REST-API calls happened'
-    ) or always_explain $client->sent_messages;
+            path => 'jobs/7/status'
+        },
+        usual_status_updates(job_id => 7, no_overall_status => 1),
+        {
+            json => undef,
+            path => 'jobs/7/set_done',
+            result => 'incomplete',
+            reason => 'api failure',
+            worker_id => 1,
+        },
+        {
+            json => undef,
+            path => 'jobs/7/set_done',
+            worker_id => 1,
+        }
+      ],
+      'expected REST-API calls happened'
+      or always_explain $client->sent_messages;
     $client->sent_messages([]);
 
     # note: It is intended that there are not further details about the API failure. The API error
     #       set for job 6 in the previous subtest is *not* supposed to be reported for the next job.
 
-    is_deeply(
-        $client->websocket_connection->sent_messages,
-        [{json => {jobid => 7, type => 'accepted'}}],
-        'job accepted via WebSocket'
-    ) or always_explain $client->websocket_connection->sent_messages;
+    is_deeply
+      $client->websocket_connection->sent_messages,
+      [{json => {jobid => 7, type => 'accepted'}}], 'job accepted via WebSocket'
+      or always_explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
     # Verify that the upload has been skipped
     my $ok = 1;
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is(scalar @$uploaded_files, 2, 'only 2 files uploaded; stopped after first failure') or $ok = 0;
+    is scalar @$uploaded_files, 2, 'only 2 files uploaded; stopped after first failure' or $ok = 0;
     my $log_name = $uploaded_files->[0][0]->{file}->{filename};
-    ok($log_name eq 'bar' || $log_name eq 'foo', 'one of the logs attempted to be uploaded') or $ok = 0;
-    is_deeply(
-        $uploaded_files->[1],
-        [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
-        'uploading autoinst log tried even though other logs failed'
-    ) or $ok = 0;
+    ok $log_name eq 'bar' || $log_name eq 'foo', 'one of the logs attempted to be uploaded' or $ok = 0;
+    is_deeply
+      $uploaded_files->[1],
+      [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
+      'uploading autoinst log tried even though other logs failed'
+      or $ok = 0;
     always_explain $uploaded_files unless $ok;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'asset upload skipped after previous upload failure')
+    is_deeply $uploaded_assets, [], 'asset upload skipped after previous upload failure'
       or always_explain $uploaded_assets;
     $log_dir->remove_tree;
     $asset_dir->remove_tree;
@@ -1029,14 +1019,14 @@ subtest 'Job stopped while uploading' => sub {
     $job->{_is_uploading_results} = 1;    # stopping the job should still go as far as uploading logs and assets
     $job->{_settings}->{OPTIMIZE_IMAGES} = 0;
     $job->stop;
-    is_deeply(
-        $client->sent_messages,
-        [{json => {status => {uploading => 1, worker_id => 1}}, path => 'jobs/7/status'}],
-        'despite the ongoing result upload stopping has started by sending a job status update'
-    ) or always_explain $client->sent_messages;
+    is_deeply
+      $client->sent_messages,
+      [{json => {status => {uploading => 1, worker_id => 1}}, path => 'jobs/7/status'}],
+      'despite the ongoing result upload stopping has started by sending a job status update'
+      or always_explain $client->sent_messages;
     wait_until_uploading_logs_and_assets_concluded($job);
     is $job->status, 'stopping', 'job has not been stopped yet';
-    is_deeply($upload_stats->{uploaded_files}, $ref_uploaded_files, 'logs uploaded')
+    is_deeply $upload_stats->{uploaded_files}, $ref_uploaded_files, 'logs uploaded'
       or always_explain $upload_stats->{uploaded_files};
     $upload_stats->{uploaded_files} = [];
 
@@ -1204,7 +1194,7 @@ subtest 'Dynamic schedule' => sub {
     $job->_upload_results_step_0_prepare(sub { });
     $job->_upload_results_step_0_prepare(sub { });
     $job->_upload_results_step_0_prepare(sub { });
-    is($read_schedule, 1, 'test_order.json has only been read once');
+    is $read_schedule, 1, 'test_order.json has only been read once';
 
     combined_unlike {
         $job->_upload_results_step_0_prepare(sub { })
@@ -1348,8 +1338,8 @@ subtest 'ignoring known images and files' => sub {
     $job->{_known_files} = ['filename2'];
     $job->_ignore_known_images;
     $job->_ignore_known_files;
-    is_deeply([keys %{$job->images_to_send}], ['md5sum2'], 'known image ignored; only unknown image left');
-    is_deeply([keys %{$job->files_to_send}], ['filename1'], 'known file ignored; only unknown file left');
+    is_deeply [keys %{$job->images_to_send}], ['md5sum2'], 'known image ignored; only unknown image left';
+    is_deeply [keys %{$job->files_to_send}], ['filename1'], 'known file ignored; only unknown file left';
 };
 
 subtest 'known images and files populated from status update' => sub {
@@ -1368,8 +1358,8 @@ subtest 'known images and files populated from status update' => sub {
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
     $job->_upload_results_step_0_prepare(sub () { });
-    is_deeply($job->known_images, \@fake_known_images, 'known images populated from status update');
-    is_deeply($job->known_files, \@fake_known_files, 'known files populated from status update');
+    is_deeply $job->known_images, \@fake_known_images, 'known images populated from status update';
+    is_deeply $job->known_files, \@fake_known_files, 'known files populated from status update';
 };
 
 subtest 'override job reason when qemu terminated with known issues by parsing autoinst-log' => sub {

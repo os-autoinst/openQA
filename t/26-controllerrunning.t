@@ -215,7 +215,7 @@ subtest init => sub {
     $ret = $c->init();
     is $ret, 1, 'Init returns 1';
     my $job = $c->stash('job');
-    isa_ok($job, 'Job', 'Init correctly stashes the fake Job');
+    isa_ok $job, 'Job', 'Init correctly stashes the fake Job';
 
     # Job can be found, but with no worker
     monkey_patch 'Job', worker => sub { undef };

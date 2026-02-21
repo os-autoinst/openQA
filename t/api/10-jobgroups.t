@@ -79,47 +79,47 @@ subtest 'build results' => sub {
 
 subtest 'list job groups' => sub() {
     $t->get_ok('/api/v1/job_groups')->status_is(200);
-    is_deeply(
-        $t->tx->res->json,
-        [
-            {
-                build_version_sort => BUILD_SORT_BY_NAME,
-                carry_over_bugrefs => 1,
-                default_priority => 50,
-                description => "## Test description\n\nwith bugref bsc#1234",
-                exclusively_kept_asset_size => undef,
-                id => $opensuse_group,
-                keep_important_jobs_in_days => 0,
-                keep_important_logs_in_days => 120,
-                keep_important_results_in_days => 0,
-                keep_jobs_in_days => 730,
-                keep_logs_in_days => 30,
-                keep_results_in_days => 365,
-                name => 'opensuse',
-                parent_id => undef,
-                size_limit_gb => 100,
-                sort_order => 0,
-                template => undef,
-            },
-            {
-                build_version_sort => BUILD_SORT_BY_NAME,
-                carry_over_bugrefs => 1,
-                default_priority => 50,
-                description => undef,
-                exclusively_kept_asset_size => undef,
-                id => 1002,
-                keep_important_jobs_in_days => 0,
-                keep_important_logs_in_days => 120,
-                keep_important_results_in_days => 0,
-                keep_jobs_in_days => 730,
-                keep_logs_in_days => 30,
-                keep_results_in_days => 365,
-                name => 'opensuse test',
-                parent_id => undef,
-                size_limit_gb => 100,
-                sort_order => 0,
-                template => undef,
-            }]);
+    is_deeply
+      $t->tx->res->json,
+      [
+        {
+            build_version_sort => BUILD_SORT_BY_NAME,
+            carry_over_bugrefs => 1,
+            default_priority => 50,
+            description => "## Test description\n\nwith bugref bsc#1234",
+            exclusively_kept_asset_size => undef,
+            id => $opensuse_group,
+            keep_important_jobs_in_days => 0,
+            keep_important_logs_in_days => 120,
+            keep_important_results_in_days => 0,
+            keep_jobs_in_days => 730,
+            keep_logs_in_days => 30,
+            keep_results_in_days => 365,
+            name => 'opensuse',
+            parent_id => undef,
+            size_limit_gb => 100,
+            sort_order => 0,
+            template => undef,
+        },
+        {
+            build_version_sort => BUILD_SORT_BY_NAME,
+            carry_over_bugrefs => 1,
+            default_priority => 50,
+            description => undef,
+            exclusively_kept_asset_size => undef,
+            id => 1002,
+            keep_important_jobs_in_days => 0,
+            keep_important_logs_in_days => 120,
+            keep_important_results_in_days => 0,
+            keep_jobs_in_days => 730,
+            keep_logs_in_days => 30,
+            keep_results_in_days => 365,
+            name => 'opensuse test',
+            parent_id => undef,
+            size_limit_gb => 100,
+            sort_order => 0,
+            template => undef,
+        }];
 };
 
 subtest 'create parent group' => sub() {
@@ -155,32 +155,31 @@ subtest 'create parent group' => sub() {
 
     my $new_id = $t->tx->res->json->{id};
     $t->get_ok('/api/v1/parent_groups/' . $new_id)->status_is(200);
-    is_deeply(
-        $t->tx->res->json,
-        [
-            {
-                build_version_sort => BUILD_SORT_BY_NAME,
-                carry_over_bugrefs => 1,
-                default_keep_important_jobs_in_days => 0,
-                default_keep_important_logs_in_days => 45,
-                default_keep_important_results_in_days => 0,
-                default_keep_jobs_in_days => 730,
-                default_keep_logs_in_days => 30,
-                default_keep_results_in_days => 365,
-                default_priority => 50,
-                description => undef,
-                exclusively_kept_asset_size => undef,
-                id => $new_id,
-                name => 'Cool parent group',
-                size_limit_gb => 200,
-                sort_order => undef,
-            },
-        ],
-        'list created parent group'
-    );
+    is_deeply
+      $t->tx->res->json,
+      [
+        {
+            build_version_sort => BUILD_SORT_BY_NAME,
+            carry_over_bugrefs => 1,
+            default_keep_important_jobs_in_days => 0,
+            default_keep_important_logs_in_days => 45,
+            default_keep_important_results_in_days => 0,
+            default_keep_jobs_in_days => 730,
+            default_keep_logs_in_days => 30,
+            default_keep_results_in_days => 365,
+            default_priority => 50,
+            description => undef,
+            exclusively_kept_asset_size => undef,
+            id => $new_id,
+            name => 'Cool parent group',
+            size_limit_gb => 200,
+            sort_order => undef,
+        },
+      ],
+      'list created parent group';
 
     my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_create');
-    is($event->{id}, $new_id, 'event contains parent group id');
+    is $event->{id}, $new_id, 'event contains parent group id';
 };
 
 my $cool_group_id;
@@ -222,38 +221,37 @@ subtest 'create job group' => sub() {
 
     $cool_group_id = $t->tx->res->json->{id};
     $t->get_ok('/api/v1/job_groups/' . $cool_group_id)->status_is(200);
-    is_deeply(
-        $t->tx->res->json,
-        [
-            {
-                build_version_sort => BUILD_SORT_BY_NAME,
-                carry_over_bugrefs => 1,
-                default_priority => 50,
-                description => 'Test2',
-                exclusively_kept_asset_size => undef,
-                id => $cool_group_id,
-                keep_important_jobs_in_days => 0,
-                keep_important_logs_in_days => 45,
-                keep_important_results_in_days => 0,
-                keep_jobs_in_days => 730,
-                keep_logs_in_days => 30,
-                keep_results_in_days => 365,
-                name => 'Cool group',
-                parent_id => undef,
-                size_limit_gb => 200,
-                sort_order => undef,
-                template => undef,
-            },
-        ],
-        'list created job group'
-    );
+    is_deeply
+      $t->tx->res->json,
+      [
+        {
+            build_version_sort => BUILD_SORT_BY_NAME,
+            carry_over_bugrefs => 1,
+            default_priority => 50,
+            description => 'Test2',
+            exclusively_kept_asset_size => undef,
+            id => $cool_group_id,
+            keep_important_jobs_in_days => 0,
+            keep_important_logs_in_days => 45,
+            keep_important_results_in_days => 0,
+            keep_jobs_in_days => 730,
+            keep_logs_in_days => 30,
+            keep_results_in_days => 365,
+            name => 'Cool group',
+            parent_id => undef,
+            size_limit_gb => 200,
+            sort_order => undef,
+            template => undef,
+        },
+      ],
+      'list created job group';
 
     $t->get_ok('/dashboard_build_results.json')->status_is(200);
     my $res = $t->tx->res->json;
-    is(@{$res->{results}}, 2, 'empty job groups are not shown on index page');
+    is @{$res->{results}}, 2, 'empty job groups are not shown on index page';
 
     my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_create');
-    is($event->{id}, $cool_group_id, 'event contains group id');
+    is $event->{id}, $cool_group_id, 'event contains group id';
 };
 
 subtest 'update job group' => sub() {
@@ -306,7 +304,7 @@ subtest 'update job group' => sub() {
         })->status_is(200);
 
     my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_update');
-    is($event->{id}, $opensuse_group, 'event contains group id');
+    is $event->{id}, $opensuse_group, 'event contains group id';
 
     $t->put_ok(
         "/api/v1/job_groups/$opensuse_group",
@@ -352,31 +350,30 @@ subtest 'delete job/parent group and error when listing non-existing group' => s
         $t->delete_ok("/api/v1/$variant/3498371")->status_is(404);
         my $new_id = $t->post_ok("/api/v1/$variant", form => {name => 'To delete'})->tx->res->json->{id};
         my $delete_id = $t->delete_ok("/api/v1/$variant/$new_id")->status_is(200)->tx->res->json->{id};
-        is($delete_id, $new_id, 'correct ID returned');
+        is $delete_id, $new_id, 'correct ID returned';
         my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_delete');
-        is($event->{id}, $new_id, 'event contains id');
+        is $event->{id}, $new_id, 'event contains id';
         $t->get_ok("/api/v1/$variant/$new_id")->status_is(404);
-        is_deeply(
-            $t->tx->res->json,
-            {error => "Group $new_id does not exist", error_status => 404},
-            'error about non-existing group'
-        );
+        is_deeply
+          $t->tx->res->json,
+          {error => "Group $new_id does not exist", error_status => 404},
+          'error about non-existing group';
     }
 };
 
 subtest 'prevent deleting non-empty job group' => sub() {
     $t->delete_ok('/api/v1/job_groups/1002')->status_is(409);
-    is_deeply($t->tx->res->json, {error => 'Job group 1002 is not empty', error_status => 409});
+    is_deeply $t->tx->res->json, {error => 'Job group 1002 is not empty', error_status => 409};
     $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
-    is_deeply($t->tx->res->json, {ids => [99961]}, '1002 contains one job');
+    is_deeply $t->tx->res->json, {ids => [99961]}, '1002 contains one job';
     $t->get_ok('/api/v1/job_groups/1002/jobs?expired=1')->status_is(200);
-    is_deeply($t->tx->res->json, {ids => []}, '1002 contains no expired job');
+    is_deeply $t->tx->res->json, {ids => []}, '1002 contains no expired job';
     my $rd = 't/data/openqa/testresults/00099/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde';
-    ok(-d $rd, 'result dir of job exists');
+    ok -d $rd, 'result dir of job exists';
     $t->delete_ok('/api/v1/jobs/99961')->status_is(200);
-    ok(!-d $rd, 'result dir of job gone');
+    ok !-d $rd, 'result dir of job gone';
     $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
-    is_deeply($t->tx->res->json, {ids => []}, '1002 contains no more jobs');
+    is_deeply $t->tx->res->json, {ids => []}, '1002 contains no more jobs';
     $t->delete_ok('/api/v1/job_groups/1002')->status_is(200);
     $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(404);
 };
@@ -386,7 +383,7 @@ subtest 'prevent deleting non-empty parent group' => sub() {
     $t->post_ok('/api/v1/job_groups', form => {name => 'Child Group', parent_id => $parent_id})->status_is(200);
 
     $t->delete_ok("/api/v1/parent_groups/$parent_id")->status_is(409);
-    is_deeply($t->tx->res->json, {error => "Parent job group $parent_id is not empty", error_status => 409});
+    is_deeply $t->tx->res->json, {error => "Parent job group $parent_id is not empty", error_status => 409};
 
     # Cleanup
     my $child_id = $t->app->schema->resultset('JobGroups')->find({name => 'Child Group'})->id;
@@ -416,31 +413,30 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
             keep_important_logs_in_days => 100
         })->status_is(200, 'Update existing group without parent');
     $t->get_ok("/api/v1/job_groups/$cool_group_id")->status_is(200);
-    is_deeply(
-        $t->tx->res->json,
-        [
-            {
-                build_version_sort => BUILD_SORT_BY_NAME,
-                carry_over_bugrefs => 1,
-                default_priority => 50,
-                description => 'Updated group without parent',
-                exclusively_kept_asset_size => undef,
-                id => $cool_group_id,
-                keep_important_jobs_in_days => 0,
-                keep_important_logs_in_days => 100,
-                keep_important_results_in_days => 0,
-                keep_jobs_in_days => 730,
-                keep_logs_in_days => 30,
-                keep_results_in_days => 365,
-                name => 'Cool group',
-                parent_id => undef,
-                size_limit_gb => 300,
-                sort_order => undef,
-                template => undef,
-            },
-        ],
-        'Update Cool group without parent'
-    );
+    is_deeply
+      $t->tx->res->json,
+      [
+        {
+            build_version_sort => BUILD_SORT_BY_NAME,
+            carry_over_bugrefs => 1,
+            default_priority => 50,
+            description => 'Updated group without parent',
+            exclusively_kept_asset_size => undef,
+            id => $cool_group_id,
+            keep_important_jobs_in_days => 0,
+            keep_important_logs_in_days => 100,
+            keep_important_results_in_days => 0,
+            keep_jobs_in_days => 730,
+            keep_logs_in_days => 30,
+            keep_results_in_days => 365,
+            name => 'Cool group',
+            parent_id => undef,
+            size_limit_gb => 300,
+            sort_order => undef,
+            template => undef,
+        },
+      ],
+      'Update Cool group without parent';
 };
 
 subtest 'prevent create parent/job group with empty or blank name' => sub() {
@@ -489,11 +485,10 @@ subtest 'prevent create/update duplicate job group on same parent group' => sub(
             name => 'group1',
             parent_id => $parent_group_id
         })->status_is(400);
-    like(
-        $t->tx->res->json->{error},
-        qr/duplicate key/,
-        'Unable to create group due to not allow duplicated job group on the same parent job group'
-    );
+    like
+      $t->tx->res->json->{error},
+      qr/duplicate key/,
+      'Unable to create group due to not allow duplicated job group on the same parent job group';
     my $group2_id = $t->post_ok(
         '/api/v1/job_groups',
         form => {
@@ -505,11 +500,10 @@ subtest 'prevent create/update duplicate job group on same parent group' => sub(
         form => {
             name => 'group1',
         })->status_is(400);
-    like(
-        $t->tx->res->json->{error},
-        qr/duplicate key/,
-        'Unable to update group due to not allow duplicated job group on the same parent job group'
-    );
+    like
+      $t->tx->res->json->{error},
+      qr/duplicate key/,
+      'Unable to update group due to not allow duplicated job group on the same parent job group';
 };
 
 subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => sub {

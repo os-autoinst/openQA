@@ -18,7 +18,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $arthur = $t->app->schema->resultset('Users')->find({username => 'arthur'});
 my $key = $t->app->schema->resultset('ApiKeys')->create({user_id => $arthur->id});
-like($key->key, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random key attribute');
-like($key->secret, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random secret attribute');
+like $key->key, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random key attribute';
+like $key->secret, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random secret attribute';
 
 done_testing();

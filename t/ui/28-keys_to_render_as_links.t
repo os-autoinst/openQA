@@ -51,10 +51,10 @@ ok $driver->find_element_by_link('http://baz'), 'multi URL rendered as link (3)'
 is $driver->find_element_by_link('http://baz')->get_css_attribute('display'), 'block';
 note 'Making sure that no other settings are rendered as links';
 my @number_of_elem = $driver->find_elements('#settings_box a');
-is(scalar @number_of_elem, 4, 'only configured setting keys and URLs render as links');
+is scalar @number_of_elem, 4, 'only configured setting keys and URLs render as links';
 note 'Checking link navigation to the source';
 $driver->find_element_by_link($foo_path)->click();
-is($driver->get_current_url(), "$url$uri_path_from_root_dir", 'Link is accessed with correct URI');
+is $driver->get_current_url(), "$url$uri_path_from_root_dir", 'Link is accessed with correct URI';
 
 subtest 'redirection to Git platform via CASEDIR and TEST_GIT_HASH variables' => sub {
     $job->settings->create({key => 'CASEDIR', value => 'https://git/foo/bar.git'});

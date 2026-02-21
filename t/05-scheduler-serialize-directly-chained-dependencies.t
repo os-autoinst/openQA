@@ -101,39 +101,39 @@ my %cluster_info = (
 my @expected_sequence = (2, 3);
 my ($computed_sequence, $visited)
   = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(2, \%cluster_info);
-is_deeply($computed_sequence, \@expected_sequence, 'sub sequence starting from job 2')
+is_deeply $computed_sequence, \@expected_sequence, 'sub sequence starting from job 2'
   or always_explain $computed_sequence;
-is_deeply([sort @$visited], [2, 3], 'relevant jobs visited');
+is_deeply [sort @$visited], [2, 3], 'relevant jobs visited';
 
 @expected_sequence = (1, [2, 3], [4, 5]);
 ($computed_sequence, $visited)
   = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(1, \%cluster_info);
-is_deeply($computed_sequence, \@expected_sequence, 'sub sequence starting from job 1')
+is_deeply $computed_sequence, \@expected_sequence, 'sub sequence starting from job 1'
   or always_explain $computed_sequence;
-is_deeply([sort @$visited], [1, 2, 3, 4, 5], 'relevant jobs visited');
+is_deeply [sort @$visited], [1, 2, 3, 4, 5], 'relevant jobs visited';
 
 @expected_sequence = (0, [1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12);
 ($computed_sequence, $visited)
   = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
-is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 0')
+is_deeply $computed_sequence, \@expected_sequence, 'whole sequence starting from job 0'
   or always_explain $computed_sequence;
-is_deeply([sort @$visited], [0, 1, 10, 11, 12, 2, 3, 4, 5, 6, 7, 8, 9], 'relevant jobs visited');
+is_deeply [sort @$visited], [0, 1, 10, 11, 12, 2, 3, 4, 5, 6, 7, 8, 9], 'relevant jobs visited';
 
 @expected_sequence = (13, 14);
 ($computed_sequence, $visited)
   = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(13, \%cluster_info);
-is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 13')
+is_deeply $computed_sequence, \@expected_sequence, 'whole sequence starting from job 13'
   or always_explain $computed_sequence;
-is_deeply([sort @$visited], [13, 14], 'relevant jobs visited');
+is_deeply [sort @$visited], [13, 14], 'relevant jobs visited';
 
 subtest 'jobs which are not scheduled anymore are skipped' => sub {
     $cluster_info{$_}->{state} = DONE for (1, 9);
     @expected_sequence = (0, 6, 7, [8, [10, 11]], 12);
     ($computed_sequence, $visited)
       = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
-    is_deeply($computed_sequence, \@expected_sequence, 'subchains starting from 1 and 9 skipped')
+    is_deeply $computed_sequence, \@expected_sequence, 'subchains starting from 1 and 9 skipped'
       or always_explain $computed_sequence;
-    is_deeply([sort @$visited], [0, 10, 11, 12, 6, 7, 8], 'relevant jobs visited');
+    is_deeply [sort @$visited], [0, 10, 11, 12, 6, 7, 8], 'relevant jobs visited';
 };
 
 $cluster_info{$_}->{state} = SCHEDULED for (1, 9);
@@ -146,7 +146,7 @@ my $sort_function = sub {
 @expected_sequence = (0, 12, 7, 6, [8, [10, 11], 9], [1, [2, 3], [4, 5]]);
 ($computed_sequence, $visited)
   = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info, $sort_function);
-is_deeply($computed_sequence, \@expected_sequence, 'sorting criteria overrides sorting by ID')
+is_deeply $computed_sequence, \@expected_sequence, 'sorting criteria overrides sorting by ID'
   or always_explain $computed_sequence;
 
 # introduce a cycle
@@ -164,9 +164,9 @@ subtest 'simple tree with one root and just leafs' => sub {
     @expected_sequence = (0, 1, 6, 7, 8, 12);
     ($computed_sequence, $visited)
       = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
-    is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 0')
+    is_deeply $computed_sequence, \@expected_sequence, 'whole sequence starting from job 0'
       or always_explain $computed_sequence;
-    is_deeply([sort @$visited], [0, 1, 12, 6, 7, 8], 'relevant jobs visited');
+    is_deeply [sort @$visited], [0, 1, 12, 6, 7, 8], 'relevant jobs visited';
 
     # note: The first job in an array is always the parent and the other ones are direct children
     #       of the first job. So we simply get an array with all jobs in order, starting with
@@ -178,9 +178,9 @@ subtest 'simple chain with only one job after another' => sub {
     @expected_sequence = (0, [1, [2, [3, [4, [5, [6, 7]]]]]]);
     ($computed_sequence, $visited)
       = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
-    is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 0')
+    is_deeply $computed_sequence, \@expected_sequence, 'whole sequence starting from job 0'
       or always_explain $computed_sequence;
-    is_deeply([sort @$visited], [0, 1, 2, 3, 4, 5, 6, 7], 'relevant jobs visited');
+    is_deeply [sort @$visited], [0, 1, 2, 3, 4, 5, 6, 7], 'relevant jobs visited';
 
     # note: For the same reason as stated in the previous subtest we need to open a nested array
     #       for each job here.

@@ -48,15 +48,15 @@ subtest 'reschedule assigned jobs' => sub {
     $worker_1->reschedule_assigned_jobs;
     $worker_1->discard_changes;
 
-    is($worker_1->job_id, undef, 'current job has been un-assigned');
+    is $worker_1->job_id, undef, 'current job has been un-assigned';
     for my $job_id ((99961, 99963)) {
         my $job = $jobs->find($job_id);
-        is($job->state, SCHEDULED, "job $job_id is scheduled again");
-        is($job->assigned_worker_id, undef, "job $job_id has no worker assigned anymore");
+        is $job->state, SCHEDULED, "job $job_id is scheduled again";
+        is $job->assigned_worker_id, undef, "job $job_id has no worker assigned anymore";
     }
     my $passed_job = $jobs->find(99937);
-    is($passed_job->state, PASSED, 'passed job not affected');
-    is($passed_job->assigned_worker_id, $worker_1->id, 'passed job still associated with worker');
+    is $passed_job->state, PASSED, 'passed job not affected';
+    is $passed_job->assigned_worker_id, $worker_1->id, 'passed job still associated with worker';
 };
 
 $db->txn_rollback;
@@ -64,25 +64,25 @@ $db->txn_rollback;
 subtest 'delete job which is currently assigned to worker' => sub {
     my $worker_1 = $workers->find({host => 'localhost', instance => 1});
     my $job_of_worker_1 = $worker_1->job;
-    is($job_of_worker_1->id, 99963, 'job 99963 belongs to worker 1 as specified in fixtures');
+    is $job_of_worker_1->id, 99963, 'job 99963 belongs to worker 1 as specified in fixtures';
 
     $job_of_worker_1->delete;
 
     $worker_1 = $workers->find({host => 'localhost', instance => 1});
-    ok($worker_1, 'worker 1 still exists')
-      and is($worker_1->job, undef, 'job has been unassigned');
+    ok $worker_1, 'worker 1 still exists'
+      and is $worker_1->job, undef, 'job has been unassigned';
 };
 
 subtest 'delete job from worker history' => sub {
     my $worker_1 = $workers->find({host => 'localhost', instance => 1});
     my $job = $jobs->find(99926);
     $job->update({assigned_worker_id => $worker_1->id});
-    is_deeply([map { $_->id } $worker_1->previous_jobs->all], [99926], 'previous job assigned');
+    is_deeply [map { $_->id } $worker_1->previous_jobs->all], [99926], 'previous job assigned';
 
     $job->delete;
     $worker_1 = $workers->find({host => 'localhost', instance => 1});
-    ok($worker_1, 'worker 1 still exists')
-      and is_deeply([map { $_->id } $worker_1->previous_jobs->all], [], 'previous jobs empty again');
+    ok $worker_1, 'worker 1 still exists'
+      and is_deeply [map { $_->id } $worker_1->previous_jobs->all], [], 'previous jobs empty again';
 };
 
 subtest 'tmpdir handling when preparing worker for job' => sub {

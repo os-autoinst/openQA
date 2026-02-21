@@ -21,11 +21,10 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 $t->delete_ok('/api/v1/user/99904')->status_is(200, 'admins can delete users');
-is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'user_deleted'),
-    {username => 'Demo'},
-    'Delete was logged correctly'
-);
+is_deeply
+  OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'user_deleted'),
+  {username => 'Demo'},
+  'Delete was logged correctly';
 
 $t->delete_ok('/api/v1/user/99999')->status_is(404, 'a non-existent user cannot be deleted');
 

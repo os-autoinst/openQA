@@ -43,7 +43,7 @@ subtest 'Test configuration default modes' => sub {
     OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
     $app->mode('test');
     my $config = read_config($app, 'reading config from default with mode test');
-    is(length($config->{_openid_secret}), 16, 'config has openid_secret');
+    is length($config->{_openid_secret}), 16, 'config has openid_secret';
     my $test_config = {
         global => {
             appname => 'openQA',
@@ -274,16 +274,15 @@ subtest 'Test configuration override from file' => sub {
     ok $app->config->{audit}->{blocklist} eq 'job_grab job_done', 'audit blocklist migrated from deprecated key name';
     is $app->config->{'assets/storage_duration'}->{'-CURRENT'}, 40, 'assets/storage_duration';
 
-    is_deeply(
-        $app->config->{global}->{recognized_referers},
-        [qw(bugzilla.suse.com bugzilla.opensuse.org progress.opensuse.org github.com)],
-        'referers parsed correctly'
-    );
+    is_deeply
+      $app->config->{global}->{recognized_referers},
+      [qw(bugzilla.suse.com bugzilla.opensuse.org progress.opensuse.org github.com)],
+      'referers parsed correctly';
 
-    is_deeply($app->config->{minion_task_triggers}->{on_job_done},
-        [qw(spam eggs)], 'parse minion task triggers correctly');
-    is_deeply($app->config->{influxdb}->{ignored_failed_minion_jobs},
-        [qw(foo boo)], 'parse ignored_failed_minion_jobs correctly');
+    is_deeply $app->config->{minion_task_triggers}->{on_job_done},
+      [qw(spam eggs)], 'parse minion task triggers correctly';
+    is_deeply $app->config->{influxdb}->{ignored_failed_minion_jobs},
+      [qw(foo boo)], 'parse ignored_failed_minion_jobs correctly';
 
     is $app->config->{default_group_limits}->{job_storage_duration}, 0,
       'default job_storage_duration extended to result_storage_duration';

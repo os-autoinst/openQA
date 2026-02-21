@@ -104,11 +104,10 @@ my $decode_textarea;
 
 sub goto_editor_for_installer_timezone {
     $driver->get('/tests/99946');
-    is(
-        $driver->get_title(),
-        'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
-        'tests/99946 followed'
-    );
+    is
+      $driver->get_title(),
+      'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
+      'tests/99946 followed';
     # init the preview
     wait_for_ajax(with_minion => $minion);
 
@@ -125,8 +124,8 @@ sub add_needle_tag {
     $elem->send_keys($tagname);
     $driver->find_element_by_id('tag_add_button')->click();
     wait_for_ajax(with_minion => $minion);
-    is($driver->find_element_by_xpath("//input[\@value=\"$tagname\"]")->is_selected(),
-        1, 'new tag found and was checked');
+    is $driver->find_element_by_xpath("//input[\@value=\"$tagname\"]")->is_selected(),
+      1, 'new tag found and was checked';
 }
 
 sub add_workaround_property () {
@@ -161,31 +160,30 @@ sub change_needle_value {
     my ($xoffset, $yoffset) = @_;
 
     my $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    ok($decode_new_textarea->{area}, 'json has area');
-    ok($decode_new_textarea->{properties}, 'json has properties');
-    ok($decode_new_textarea->{tags}, 'json has tags');
+    ok $decode_new_textarea->{area}, 'json has area';
+    ok $decode_new_textarea->{properties}, 'json has properties';
+    ok $decode_new_textarea->{tags}, 'json has tags';
 
     create_needle($xoffset, $yoffset);
 
     # check the value of textarea again
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{xpos}, $xoffset, 'new xpos correct');
-    is($decode_new_textarea->{area}[0]->{ypos}, $yoffset, 'new ypos correct');
-    is($decode_new_textarea->{area}[0]->{click_point}, undef, 'initially no click_point');
+    is $decode_new_textarea->{area}[0]->{xpos}, $xoffset, 'new xpos correct';
+    is $decode_new_textarea->{area}[0]->{ypos}, $yoffset, 'new ypos correct';
+    is $decode_new_textarea->{area}[0]->{click_point}, undef, 'initially no click_point';
 
     # test match type
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{type}, 'match', 'type is match');
+    is $decode_new_textarea->{area}[0]->{type}, 'match', 'type is match';
     $driver->double_click;    # the match type change to exclude
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{type}, 'exclude', 'type is exclude');
+    is $decode_new_textarea->{area}[0]->{type}, 'exclude', 'type is exclude';
     $driver->double_click;    # the match type change to ocr
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{type}, 'ocr', 'type is ocr');
+    is $decode_new_textarea->{area}[0]->{type}, 'ocr', 'type is ocr';
     $driver->double_click;    # the match type change back to match
 
-    unlike($driver->find_element_by_id('change-match')->get_attribute('class'),
-        qr/disabled/, 'match level now enabled');
+    unlike $driver->find_element_by_id('change-match')->get_attribute('class'), qr/disabled/, 'match level now enabled';
 
     # test match level
     $driver->find_element_by_id('change-match')->click();
@@ -205,19 +203,18 @@ sub change_needle_value {
     $driver->find_element_by_id('toggle-click-coordinates')->click();
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     my $area = $decode_new_textarea->{area}[0];
-    is_deeply(
-        $area->{click_point},
-        {
-            xpos => $area->{width} / 2,
-            ypos => $area->{height} / 2,
-        },
-        'click_point added with coordinates in the center of the needle by default'
-    );
+    is_deeply
+      $area->{click_point},
+      {
+        xpos => $area->{width} / 2,
+        ypos => $area->{height} / 2,
+      },
+      'click_point added with coordinates in the center of the needle by default';
 
     # test removing click point
     $driver->find_element_by_id('toggle-click-coordinates')->click();
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{click_point}, undef, 'click_point removed');
+    is $decode_new_textarea->{area}[0]->{click_point}, undef, 'click_point removed';
 }
 
 sub overwrite_needle {
@@ -234,40 +231,36 @@ sub overwrite_needle {
     wait_for_ajax(with_minion => $minion);
     my $diag;
     $diag = $driver->find_element_by_id('modal-overwrite');
-    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, 'overwrite dialog shown');
-    is(
-        $driver->find_child_element($diag, '.modal-title', 'css')->get_text(),
-        'Sure to overwrite test-newneedle?',
-        'Needle part of the title'
-    );
+    is $driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, 'overwrite dialog shown';
+    is
+      $driver->find_child_element($diag, '.modal-title', 'css')->get_text(),
+      'Sure to overwrite test-newneedle?',
+      'Needle part of the title';
 
     $driver->find_element_by_id('modal-overwrite-confirm')->click();
 
     wait_for_ajax(with_minion => $minion);
-    is(
-        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
-        'Needle test-newneedle created/updated - restart job',
-        'highlight appears correct'
-    );
-    ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
+    is
+      $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
+      'Needle test-newneedle created/updated - restart job',
+      'highlight appears correct';
+    ok -f "$dir/$needlename.json", "$needlename.json overwritten";
 
     $driver->find_element('#flash-messages .alert:last-child span a')->click();
     # restart is an ajax call, for some reason the check/sleep interval must be at least 1 sec for this call
     wait_for_ajax(interval => 1, minion => $minion);
-    is(
-        $driver->get_title(),
-        'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
-        'no longer on needle editor'
-    );
+    is
+      $driver->get_title(),
+      'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
+      'no longer on needle editor';
 }
 
 sub check_flash_for_saving_logpackages {
     wait_for_ajax(with_minion => $minion);
-    like(
-        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
-        qr/Needle logpackages-before-package-selection-\d{8} created\/updated - restart job/,
-        'highlight appears correct'
-    );
+    like
+      $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
+      qr/Needle logpackages-before-package-selection-\d{8} created\/updated - restart job/,
+      'highlight appears correct';
     $driver->find_element('#flash-messages .btn-close')->click();
 }
 
@@ -285,13 +278,13 @@ subtest 'Open needle editor for installer_timezone' => sub {
     # we're back on the main page
     $driver->title_is('openQA', 'back on main page');
 
-    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
+    is $driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo';
 
     goto_editor_for_installer_timezone();
 
     # no warnings about missing/bad needles present (yet)
     my @warnings = $driver->find_elements('#editor_warnings', 'css');
-    is(scalar @warnings, 0, 'no warnings');
+    is scalar @warnings, 0, 'no warnings';
 };
 
 subtest 'Needle editor layout' => sub {
@@ -308,7 +301,7 @@ subtest 'Needle editor layout' => sub {
     is element_prop('needleeditor_name'), "inst-timezone-text-$today", 'has correct needle name';
 
     # ENV-VIDEOMODE-text and inst-timezone tag are selected
-    is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, 'tag selected');
+    is $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, 'tag selected';
 
     # workaround property isn't selected
     is element_prop('property_workaround', 'checked'), 0, 'workaround property unselected';
@@ -316,17 +309,17 @@ subtest 'Needle editor layout' => sub {
 
     $decode_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     # the value already defined in t/data/default-needle.json
-    is(@{$decode_textarea->{area}}, 2, 'exclude areas always present');
-    is($decode_textarea->{area}[0]->{xpos}, 0, 'xpos correct');
-    is($decode_textarea->{area}[0]->{ypos}, 0, 'ypos correct');
-    is($decode_textarea->{area}[0]->{width}, 384, 'width correct');
-    is($decode_textarea->{area}[0]->{height}, 217, 'height correct');
-    is($decode_textarea->{area}[0]->{type}, 'match', 'type correct');
-    is($decode_textarea->{area}[1]->{xpos}, 175, 'xpos correct');
-    is($decode_textarea->{area}[1]->{ypos}, 45, 'ypos correct');
-    is($decode_textarea->{area}[1]->{width}, 160, 'width correct');
-    is($decode_textarea->{area}[1]->{height}, 60, 'height correct');
-    is($decode_textarea->{area}[1]->{type}, 'exclude', 'type correct');
+    is @{$decode_textarea->{area}}, 2, 'exclude areas always present';
+    is $decode_textarea->{area}[0]->{xpos}, 0, 'xpos correct';
+    is $decode_textarea->{area}[0]->{ypos}, 0, 'ypos correct';
+    is $decode_textarea->{area}[0]->{width}, 384, 'width correct';
+    is $decode_textarea->{area}[0]->{height}, 217, 'height correct';
+    is $decode_textarea->{area}[0]->{type}, 'match', 'type correct';
+    is $decode_textarea->{area}[1]->{xpos}, 175, 'xpos correct';
+    is $decode_textarea->{area}[1]->{ypos}, 45, 'ypos correct';
+    is $decode_textarea->{area}[1]->{width}, 160, 'width correct';
+    is $decode_textarea->{area}[1]->{height}, 60, 'height correct';
+    is $decode_textarea->{area}[1]->{type}, 'exclude', 'type correct';
 
     # toggling 'take matches' has no effect
     $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
@@ -389,11 +382,10 @@ subtest 'Create new needle' => sub {
     $driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
     $driver->find_element_by_id('save')->click();
     wait_for_ajax(with_minion => $minion);
-    is(
-        $driver->find_element('.alert-danger span')->get_text(),
-        "Unable to save needle:\nNo areas defined.",
-        'areas verified via JavaScript when "Copy areas from: None" selected'
-    );
+    is
+      $driver->find_element('.alert-danger span')->get_text(),
+      "Unable to save needle:\nNo areas defined.",
+      'areas verified via JavaScript when "Copy areas from: None" selected';
     # dismiss the alert (can't use click because of fade effect)
     $driver->execute_script('$(".alert-danger").remove()');
 
@@ -409,14 +401,13 @@ subtest 'Create new needle' => sub {
     wait_for_ajax(with_minion => $minion);
 
     # check state highlight appears with valid content
-    is(
-        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
-        'Needle test-newneedle created/updated - restart job',
-        'highlight appears correct'
-    );
+    is
+      $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
+      'Needle test-newneedle created/updated - restart job',
+      'highlight appears correct';
     # check files are exists
-    ok(-f "$dir/$needlename.json", "$needlename.json created");
-    ok(-f "$dir/$needlename.png", "$needlename.png created");
+    ok -f "$dir/$needlename.json", "$needlename.json created";
+    ok -f "$dir/$needlename.png", "$needlename.png created";
     my $commit_args = shared_hash;
     like delete $commit_args->{message}, qr/Example.*\n.*Multi.*\n.*line/s, 'commit message matches';
     is_deeply $commit_args, {add => [qw(test-newneedle.json test-newneedle.png)]}, 'files added to commit'
@@ -426,7 +417,7 @@ subtest 'Create new needle' => sub {
     add_needle_tag('test-overwritetag');
     add_workaround_property();
 
-    like($driver->find_element_by_id('change-match')->get_attribute('class'), qr/disabled/, 'match level disabled');
+    like $driver->find_element_by_id('change-match')->get_attribute('class'), qr/disabled/, 'match level disabled';
 
     # change area
     change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area
@@ -462,11 +453,10 @@ subtest 'Saving needle with only OCR areas' => sub {
     $driver->double_click;    # the match tpye change to ocr
     $driver->find_element_by_id('save')->click();
     wait_for_ajax(msg => 'wait for needle with only OCR areas created', with_minion => $minion);
-    like(
-        $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
-        qr/Cannot create a needle with only OCR areas/,
-        'error displayed for OCR-only needle'
-    );
+    like
+      $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
+      qr/Cannot create a needle with only OCR areas/,
+      'error displayed for OCR-only needle';
     $driver->find_element('#flash-messages .alert:last-child .btn-close')->click();
 };
 
@@ -498,17 +488,15 @@ subtest 'Verify new needle\'s JSON' => sub {
     for my $tag (@{$decoded_json->{tags}}) {
         $match = 1 if ($tag eq 'test-overwritetag');
     }
-    is($match, 1, 'found new tag in new needle');
-    is(
-        $decoded_json->{area}[0]->{xpos},
-        $decode_textarea->{area}[0]->{xpos} + $xoffset,
-        'new xpos stored to new needle'
-    );
-    is(
-        $decoded_json->{area}[0]->{ypos},
-        $decode_textarea->{area}[0]->{ypos} + $yoffset,
-        'new ypos stored to new needle'
-    );
+    is $match, 1, 'found new tag in new needle';
+    is
+      $decoded_json->{area}[0]->{xpos},
+      $decode_textarea->{area}[0]->{xpos} + $xoffset,
+      'new xpos stored to new needle';
+    is
+      $decoded_json->{area}[0]->{ypos},
+      $decode_textarea->{area}[0]->{ypos} + $yoffset,
+      'new ypos stored to new needle';
 } or always_explain $decoded_json;
 
 sub assert_needle_appears_in_selection {
@@ -516,12 +504,11 @@ sub assert_needle_appears_in_selection {
 
     my $selection = $driver->find_element_by_id($selection_id);
     my $new_needle_options = $driver->find_child_elements($selection, "./option[\@value='$needlename']", 'xpath');
-    is(scalar @$new_needle_options, 1, "needle appears in $selection_id selection");
-    is(
-        OpenQA::Test::Case::trim_whitespace($new_needle_options->[0]->get_text()),
-        'new: ' . $needlename,
-        "needle title in $selection_id selection correct"
-    );
+    is scalar @$new_needle_options, 1, "needle appears in $selection_id selection";
+    is
+      OpenQA::Test::Case::trim_whitespace($new_needle_options->[0]->get_text()),
+      'new: ' . $needlename,
+      "needle title in $selection_id selection correct";
     return $new_needle_options;
 }
 
@@ -551,14 +538,14 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
     # check selecting/displaying image
     my $current_image_script = 'return nEditor.bgImage.src;';
     my $current_image = $driver->execute_script($current_image_script);
-    like($current_image, qr/.*installer_timezone-1\.png/, 'screenshot shown by default');
+    like $current_image, qr/.*installer_timezone-1\.png/, 'screenshot shown by default';
     # select image of new needle
     $image_option->[0]->click();
     wait_for_ajax(with_minion => $minion);
     $current_image = $driver->execute_script($current_image_script);
-    like($current_image, qr/.*test-newneedle\.png\?.*/, 'new needle image shown');
-    like($current_image, qr/.*version=13\.1.*/, 'new needle image shown');
-    like($current_image, qr/.*jsonfile=.*test-newneedle\.json.*/, 'new needle image shown');
+    like $current_image, qr/.*test-newneedle\.png\?.*/, 'new needle image shown';
+    like $current_image, qr/.*version=13\.1.*/, 'new needle image shown';
+    like $current_image, qr/.*jsonfile=.*test-newneedle\.json.*/, 'new needle image shown';
 };
 
 my @expected_needle_warnings;
@@ -589,7 +576,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
 
     $driver->get($driver->get_current_url);
     my @needle_names = map { $_->get_text() } $driver->find_elements('#tags_select option');
-    is_deeply(\@needle_names, \@expected_needle_names, 'new needles limited to 5 most recent')
+    is_deeply \@needle_names, \@expected_needle_names, 'new needles limited to 5 most recent'
       or always_explain \@needle_names;
 };
 
@@ -610,11 +597,10 @@ subtest 'Broken needle is handled gracefully' => sub {
     $driver->refresh;
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     my @warnings = (split /\n/, $driver->find_element('#editor_warnings span')->get_text());
-    like(
-        $warnings[0],
-        qr/Could not parse needle inst-timezone-text for opensuse 13\.1: .+ at character offset/,
-        'warning about broken needle displayed'
-    ) or always_explain \@warnings;
+    like $warnings[0],
+      qr/Could not parse needle inst-timezone-text for opensuse 13\.1: .+ at character offset/,
+      'warning about broken needle displayed'
+      or always_explain \@warnings;
 };
 
 subtest 'Deletion of needle is handled gracefully' => sub {
@@ -622,21 +608,19 @@ subtest 'Deletion of needle is handled gracefully' => sub {
     $driver->refresh;
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     my @warnings = (split /\n/, $driver->find_element('#editor_warnings span')->get_text());
-    is(
-        $warnings[0],
-        'Could not parse needle inst-timezone-text for opensuse 13.1: File not found',
-        'warning about missing needle displayed'
-    ) or always_explain \@warnings;
+    is $warnings[0],
+      'Could not parse needle inst-timezone-text for opensuse 13.1: File not found',
+      'warning about missing needle displayed'
+      or always_explain \@warnings;
 };
 
 subtest 'areas/tags verified via JavaScript' => sub {
     $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
     $driver->find_element_by_id('save')->click();
-    is(
-        $driver->find_element('.alert-danger span')->get_text(),
-        "Unable to save needle:\nNo tags specified.\nNo areas defined.",
-        'areas/tags verified via JavaScript'
-    );
+    is
+      $driver->find_element('.alert-danger span')->get_text(),
+      "Unable to save needle:\nNo tags specified.\nNo areas defined.",
+      'areas/tags verified via JavaScript';
     $driver->find_element('.alert-danger button')->click();
 };
 
@@ -647,23 +631,22 @@ subtest 'show needle editor for screenshot (without any tags)' => sub {
     wait_for_ajax(with_minion => $minion);
     $driver->find_element('.step_actions .create_new_needle')->click();
     wait_for_ajax(with_minion => $minion);
-    is(OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
-        'Screenshot', 'images taken from screenshot');
+    is OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
+      'Screenshot', 'images taken from screenshot';
 };
 
 subtest 'open needle editor for running test' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->ua->max_redirects(1);
     warnings { $t->get_ok('/tests/99980/edit') };
-    note(   'ignoring warning "DateTime objects passed to search() are not supported properly"'
-          . ' at lib/OpenQA/WebAPI/Controller/Step.pm line 211');
+    note 'ignoring warning "DateTime objects passed to search() are not supported properly"'
+      . ' at lib/OpenQA/WebAPI/Controller/Step.pm line 211';
     $t->status_is(200);
     $t->text_is(title => 'openQA: Needle Editor', 'needle editor shown for running test');
-    is(
-        $t->tx->req->url->path->to_string,
-        '/tests/99980/modules/installation_mode/steps/2/edit',
-        'redirected to correct module/step'
-    );
+    is
+      $t->tx->req->url->path->to_string,
+      '/tests/99980/modules/installation_mode/steps/2/edit',
+      'redirected to correct module/step';
 };
 
 subtest 'error handling when opening needle editor for running test' => sub {
@@ -699,7 +682,7 @@ subtest '(created) needles can be accessed over API' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->get_ok('/needles/opensuse/test-newneedle.png')->status_is(200)->content_type_is('image/png');
     my @warnings = warnings { $t->get_ok('/needles/opensuse/doesntexist.png')->status_is(404) };
-    map { like($_, qr/No such file or directory/, 'expected warning') } @warnings;
+    map { like $_, qr/No such file or directory/, 'expected warning' } @warnings;
 
     $t->get_ok(
         '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
@@ -708,13 +691,13 @@ subtest '(created) needles can be accessed over API' => sub {
         $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')
           ->status_is(403, 'access to files outside the test directory not granted (absolute)');
     };
-    map { like($_, qr/is not in a subdir of/, 'expected warning') } @warnings;
+    map { like $_, qr/is not in a subdir of/, 'expected warning' } @warnings;
     @warnings = warnings {
         $t->get_ok(
 '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/../../../../try/to/break_out.json'
         )->status_is(403, 'access to files outside the test directory not granted (relative)');
     };
-    map { like($_, qr/cannot contain ../, 'expected warning') } @warnings;
+    map { like $_, qr/cannot contain ../, 'expected warning' } @warnings;
 
     my $tmp_dir = 't/tmp_needles';
     File::Path::rmtree($tmp_dir);

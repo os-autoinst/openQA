@@ -56,7 +56,7 @@ $driver->title_is('openQA', 'back on main page');
 
 sub goto_admin_needle_table {
     my $login_link = $driver->find_element('#user-action > a');
-    is($login_link->get_text(), 'Logged in as Demo', 'logged in as demo');
+    is $login_link->get_text(), 'Logged in as Demo', 'logged in as demo';
     # the following should work, but apparently doesn't - at least when executing tests in CI:
     #   $login_link->click();
     #   $driver->find_element_by_link_text('Needles')->click();
@@ -81,20 +81,18 @@ is((shift @tds)->get_text(), 'never-matched.json', 'Name is right');
 is((shift @tds)->get_text(), 'a day ago', 'last use is right');
 is((shift @tds)->get_text(), 'never', 'last match is right');
 $driver->find_child_element($module_link, 'a', 'css')->click();
-like(
-    $driver->execute_script('return window.location.href'),
-    qr(\Q/tests/99937#step/partitioning_finish/1\E),
-    'redirected to right module'
-);
+like
+  $driver->execute_script('return window.location.href'),
+  qr(\Q/tests/99937#step/partitioning_finish/1\E),
+  'redirected to right module';
 
 $needles_table = goto_admin_needle_table;
 wait_for_data_table($needles_table, 2);
 $driver->find_element_by_link_text('about 14 hours ago')->click();
-like(
-    $driver->execute_script('return window.location.href'),
-    qr(\Q/tests/99937#step/partitioning/1\E),
-    'redirected to right module too'
-);
+like
+  $driver->execute_script('return window.location.href'),
+  qr(\Q/tests/99937#step/partitioning/1\E),
+  'redirected to right module too';
 
 $needles_table = goto_admin_needle_table;
 wait_for_data_table($needles_table, 2);
@@ -105,24 +103,23 @@ subtest 'delete needle' => sub {
     wait_for_ajax(with_minion => $minion);
     $driver->find_element_by_id('delete_all')->click();
 
-    ok(wait_for_element(selector => '#confirm_delete', is_displayed => 1), 'modal dialog');
-    is($driver->find_element('#confirm_delete .modal-title')->get_text(), 'Needle deletion', 'title matches');
-    is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion');
-    is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles so far');
-    is($driver->find_element('#outstanding-needles li')->get_text(),
-        'inst-timezone-text.json', 'right needle name displayed');
+    ok wait_for_element(selector => '#confirm_delete', is_displayed => 1), 'modal dialog';
+    is $driver->find_element('#confirm_delete .modal-title')->get_text(), 'Needle deletion', 'title matches';
+    is scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion';
+    is scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles so far';
+    is $driver->find_element('#outstanding-needles li')->get_text(),
+      'inst-timezone-text.json', 'right needle name displayed';
 
     subtest 'error case' => sub {
         chmod(0444, $needle_dir);
         $driver->find_element_by_id('really_delete')->click();
         wait_for_ajax(with_minion => $minion);
-        is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
-        is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 1, 'but failed needle');
-        like(
-            $driver->find_element('#failed-needles li')->get_text(),
+        is scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles';
+        is scalar @{$driver->find_elements('#failed-needles li', 'css')}, 1, 'but failed needle';
+        like
+          $driver->find_element('#failed-needles li')->get_text(),
 qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png},
-            'right needle name and error message displayed'
-        );
+          'right needle name and error message displayed';
         $driver->find_element_by_id('close_delete')->click();
     };
 
@@ -143,19 +140,19 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
     );
     is((shift @outstanding_needles)->get_text(), 'inst-timezone-text.json', 'right needle names displayed');
     is((shift @outstanding_needles)->get_text(), 'never-matched.json', 'right needle names displayed');
-    is(scalar @{$driver->find_elements('#failed-needles li', 'css')},
-        0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog');
+    is scalar @{$driver->find_elements('#failed-needles li', 'css')},
+      0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog';
 
     subtest 'successful deletion' => sub {
         chmod(0755, $needle_dir);
         $driver->find_element_by_id('really_delete')->click();
         wait_for_ajax(with_minion => $minion);
-        is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
-        is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles');
+        is scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles';
+        is scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles';
         $driver->find_element_by_id('close_delete')->click();
         wait_for_ajax(with_minion => $minion);    # required due to server-side datatable
         for my $file_name (@needle_files) {
-            is(-f $needle_dir . $file_name, undef, $file_name . ' is gone');
+            is -f $needle_dir . $file_name, undef, $file_name . ' is gone';
         }
         wait_until(sub { $driver->find_element('#needles tbody tr')->get_text() eq 'No data available in table' },
             'no needles left');
@@ -164,24 +161,21 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
 
 subtest 'pass invalid IDs to needle deletion route' => sub {
     my $func = 'function(error) { window.deleteMsg = JSON.stringify(error); }';
-    ok(
-        !$driver->execute_script(
-            "jQuery.ajax({url: '/admin/needles/delete?id=42&id=foo', type: 'DELETE', success: $func});"),
-        'delete needle with ID 42'
-    );
+    ok !$driver->execute_script(
+        "jQuery.ajax({url: '/admin/needles/delete?id=42&id=foo', type: 'DELETE', success: $func});"),
+      'delete needle with ID 42';
     wait_for_ajax(with_minion => $minion);
     my $error = decode_json($driver->execute_script('return window.deleteMsg;'));
-    is_deeply(
-        $error,
-        {
-            errors => [
-                {id => 42, message => 'Unable to find needle with ID "42"'},
-                {id => 'foo', message => 'Unable to find needle with ID "foo"'},
-            ],
-            removed_ids => []
-        },
-        'error returned'
-    );
+    is_deeply
+      $error,
+      {
+        errors => [
+            {id => 42, message => 'Unable to find needle with ID "42"'},
+            {id => 'foo', message => 'Unable to find needle with ID "foo"'},
+        ],
+        removed_ids => []
+      },
+      'error returned';
 };
 
 subtest 'custom needles search' => sub {
@@ -223,32 +217,32 @@ subtest 'custom needles search' => sub {
 
     $needles_table = goto_admin_needle_table;
     wait_for_data_table($needles_table, 4);
-    is($driver->find_element_by_id('custom_last_seen')->is_displayed(), 0, 'do not show last seen custom area');
-    is($driver->find_element_by_id('custom_last_match')->is_displayed(), 0, 'do not show last match custom area');
+    is $driver->find_element_by_id('custom_last_seen')->is_displayed(), 0, 'do not show last seen custom area';
+    is $driver->find_element_by_id('custom_last_match')->is_displayed(), 0, 'do not show last match custom area';
 
     my @last_seen_options = $driver->find_elements('#last_seen_filter option');
     my @last_match_options = $driver->find_elements('#last_match_filter option');
 
     $last_seen_options[7]->click();
-    is($driver->find_element_by_id('custom_last_seen')->is_displayed(), 1, 'show last seen custom area');
+    is $driver->find_element_by_id('custom_last_seen')->is_displayed(), 1, 'show last seen custom area';
     $driver->find_element_by_id('btn_custom_last_seen')->click();
     wait_for_ajax(msg => 'custom needle seen "last" range (default 6 months ago)', with_minion => $minion);
 
     wait_for_data_table($needles_table, 2);
     my @needle_trs = $driver->find_elements('#needles tbody tr');
     my @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly');
+    is $needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly';
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'five_month-undef.json', 'search five_month-undef needle correctly');
+    is $needle_tds[1]->get_text(), 'five_month-undef.json', 'search five_month-undef needle correctly';
 
     $last_match_options[7]->click();
-    is($driver->find_element_by_id('custom_last_match')->is_displayed(), 1, 'show last match custom area');
+    is $driver->find_element_by_id('custom_last_match')->is_displayed(), 1, 'show last match custom area';
     $driver->find_element_by_id('btn_custom_last_match')->click();
     wait_for_data_table($needles_table, 1);
     @needle_trs = $driver->find_elements('#needles tbody tr');
-    is(scalar(@needle_trs), 1, 'only show five_month needle');
+    is scalar(@needle_trs), 1, 'only show five_month needle';
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'five_month.json', 'search needle correctly');
+    is $needle_tds[1]->get_text(), 'five_month.json', 'search needle correctly';
 
     my @sel_custom_last_seen = $driver->find_elements('#sel_custom_last_seen option');
     my @sel_custom_last_match = $driver->find_elements('#sel_custom_last_match option');
@@ -257,16 +251,16 @@ subtest 'custom needles search' => sub {
     wait_for_data_table($needles_table, 1);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
-    is($needle_tds[0]->get_text(), 'No matching records found', 'There is no match needle');
+    is $needle_tds[0]->get_text(), 'No matching records found', 'There is no match needle';
 
     $sel_custom_last_match[1]->click();
     $driver->find_element_by_id('btn_custom_last_match')->click();
     wait_for_data_table($needles_table, 2);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly');
+    is $needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly';
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly');
+    is $needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly';
 
     $last_seen_options[0]->click();
     wait_for_data_table($needles_table, 3);    # minimize chance for race condition, see poo#167611
@@ -274,13 +268,13 @@ subtest 'custom needles search' => sub {
     wait_for_data_table($needles_table, 4);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly');
+    is $needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly';
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'five_month-undef.json', 'search five_month-undef needle correctly');
+    is $needle_tds[1]->get_text(), 'five_month-undef.json', 'search five_month-undef needle correctly';
     @needle_tds = $driver->find_child_elements($needle_trs[3], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly');
+    is $needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly';
     @needle_tds = $driver->find_child_elements($needle_trs[2], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly');
+    is $needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly';
 
     my @last_links = $driver->find_child_elements($needle_trs[0], 'a', 'css');
     is scalar(@last_links), 1, 'one link for last use of five_month-undef.json present' or return;

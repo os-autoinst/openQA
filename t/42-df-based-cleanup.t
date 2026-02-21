@@ -209,14 +209,14 @@ subtest 'job done triggers cleanup' => sub {
     perform_minion_jobs($t->app->minion);
     $important_job->discard_changes;
     my $minion_job = $t->app->minion->jobs->next;
-    is($minion_job->{task}, 'limit_results_and_logs', 'cleanup triggered');
+    is $minion_job->{task}, 'limit_results_and_logs', 'cleanup triggered';
 
     $app->config->{minion_task_triggers}->{on_job_done} = [];
     $important_job->done;
     perform_minion_jobs($t->app->minion);
     $important_job->discard_changes;
     $minion_job = $t->app->minion->jobs->next;
-    is($minion_job->{task}, 'finalize_job_results', 'no cleanup when not enabled');
+    is $minion_job->{task}, 'finalize_job_results', 'no cleanup when not enabled';
     $t->app->log->level($old);
 };
 

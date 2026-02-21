@@ -213,8 +213,8 @@ subtest 'enqueue and keep track of gru task' => sub {
 # list initially existing assets
 my $dbh = $schema->storage->dbh;
 my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
-note('initially existing assets:');
-note(dumper($initial_aessets));
+note 'initially existing assets:';
+note dumper($initial_aessets);
 
 sub find_kept_assets_with_last_jobs {
     my $last_used_jobs = $assets->search(
@@ -230,9 +230,9 @@ sub find_kept_assets_with_last_jobs {
             order_by => {-asc => 'last_use_job_id'}});
     return [map { {asset => $_->name, job => $_->last_use_job_id} } $last_used_jobs->all];
 }
-is_deeply(find_kept_assets_with_last_jobs, [], 'initially, none of the assets has the job of its last use assigned');
-is($job_groups->find(1001)->exclusively_kept_asset_size,
-    undef, 'initially no size for exclusively kept assets accumulated');
+is_deeply find_kept_assets_with_last_jobs, [], 'initially, none of the assets has the job of its last use assigned';
+is $job_groups->find(1001)->exclusively_kept_asset_size,
+  undef, 'initially no size for exclusively kept assets accumulated';
 
 # understanding / revising these tests requires understanding the
 # assets in the test database. As I write this, there are 6 assets
@@ -262,8 +262,8 @@ my $gib = 1024 * 1024 * 1024;
 $assets->update({size => 18 * $gib});
 run_gru_job($t->app, 'limit_assets');
 
-is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 18GiB");
-is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 18GiB");
+is_deeply mock_removed(), [], "nothing should have been 'removed' at size 18GiB";
+is_deeply mock_deleted(), [], "nothing should have been 'deleted' at size 18GiB";
 
 my @expected_last_jobs_no_removal = (
     {asset => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso', job => 99926},
@@ -274,17 +274,17 @@ my @expected_last_jobs_no_removal = (
     {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981},
 );
 
-is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs correctly assigned');
+is_deeply find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs correctly assigned';
 
 # job group 1001 should exclusively keep 3, 1, 5 and 4
-is($job_groups->find(1001)->exclusively_kept_asset_size,
-    72 * $gib, 'kept assets for group 1001 accumulated (18 GiB per asset)');
+is $job_groups->find(1001)->exclusively_kept_asset_size,
+  72 * $gib, 'kept assets for group 1001 accumulated (18 GiB per asset)';
 # parent group 1 should exclusively keep 2 and 6 belonging to its job group 1002
-is($parent_groups->find(1)->exclusively_kept_asset_size,
-    36 * $gib, 'kept assets for group 1 accumulated (18 GiB per asset)');
+is $parent_groups->find(1)->exclusively_kept_asset_size,
+  36 * $gib, 'kept assets for group 1 accumulated (18 GiB per asset)';
 # 1002 should exclusively keep 2 and 6
-is($job_groups->find(1002)->exclusively_kept_asset_size,
-    0, 'nothing accumulated for individual job group within parent');
+is $job_groups->find(1002)->exclusively_kept_asset_size,
+  0, 'nothing accumulated for individual job group within parent';
 
 
 # at size 24GiB, group 1001 is over the 80% threshold but under the 100GiB
@@ -292,56 +292,43 @@ is($job_groups->find(1002)->exclusively_kept_asset_size,
 $assets->update({size => 24 * $gib});
 run_gru_job($t->app, 'limit_assets');
 
-is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 24GiB");
-is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 24GiB");
+is_deeply mock_removed(), [], "nothing should have been 'removed' at size 24GiB";
+is_deeply mock_deleted(), [], "nothing should have been 'deleted' at size 24GiB";
 
-is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs have not been altered');
+is_deeply find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs have not been altered';
 
 # job group 1001 should exclusively keep the same as above
-is(
-    $job_groups->find(1001)->exclusively_kept_asset_size,
-    4 * 24 * $gib,
-    'kept assets for group 1001 accumulated, job over threshold not taken into account (24 GiB per asset)'
-);
+is $job_groups->find(1001)->exclusively_kept_asset_size, 4 * 24 * $gib,
+  'kept assets for group 1001 accumulated, job over threshold not taken into account (24 GiB per asset)';
 # parent group 1 should exclusively keep the same as above
-is(
-    $parent_groups->find(1)->exclusively_kept_asset_size,
-    2 * 24 * $gib,
-    'kept assets for group 1002 accumulated (24 GiB per asset)'
-);
+is $parent_groups->find(1)->exclusively_kept_asset_size, 2 * 24 * $gib,
+  'kept assets for group 1002 accumulated (24 GiB per asset)';
 
 # at size 26GiB, 1001 is over the limit, so removal should occur. Removing
 # just one asset - #4 - will get under the 80GiB threshold.
 $assets->update({size => 26 * $gib});
 run_gru_job($t->app, 'limit_assets');
 
-is(scalar @{mock_removed()}, 1, "asset is 'removed' at size 26GiB");
-is(scalar @{mock_deleted()}, 1, "asset is 'deleted' at size 26GiB");
+is scalar @{mock_removed()}, 1, "asset is 'removed' at size 26GiB";
+is scalar @{mock_deleted()}, 1, "asset is 'deleted' at size 26GiB";
 
-is_deeply(
-    find_kept_assets_with_last_jobs,
-    [
-        {asset => 'openSUSE-13.1-x86_64.hda', job => 99946},
-        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', job => 99947},
-        {asset => 'testrepo', job => 99961},
-        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', job => 99963},
-        {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
-    ],
-    'last jobs still present but first one deleted'
-);
+is_deeply
+  find_kept_assets_with_last_jobs,
+  [
+    {asset => 'openSUSE-13.1-x86_64.hda', job => 99946},
+    {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', job => 99947},
+    {asset => 'testrepo', job => 99961},
+    {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', job => 99963},
+    {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
+  ],
+  'last jobs still present but first one deleted';
 
 # job group 1001 should exclusively keep 3, 5 and 1
-is(
-    $job_groups->find(1001)->exclusively_kept_asset_size,
-    3 * 26 * $gib,
-    'kept assets for group 1001 accumulated and deleted asset not taken into account (26 GiB per asset)'
-);
+is $job_groups->find(1001)->exclusively_kept_asset_size, 3 * 26 * $gib,
+  'kept assets for group 1001 accumulated and deleted asset not taken into account (26 GiB per asset)';
 # parent group 1 should exclusively keep 2 and 6 belonging to its job group 1002
-is(
-    $parent_groups->find(1)->exclusively_kept_asset_size,
-    2 * 26 * $gib,
-    'kept assets for group 1002 accumulated (26 GiB per asset)'
-);
+is $parent_groups->find(1)->exclusively_kept_asset_size, 2 * 26 * $gib,
+  'kept assets for group 1002 accumulated (26 GiB per asset)';
 
 reset_mocked_asset_deletions;
 
@@ -349,33 +336,26 @@ reset_mocked_asset_deletions;
 $assets->update({size => 34 * $gib});
 run_gru_job($t->app, 'limit_assets');
 
-is(scalar @{mock_removed()}, 1, "asset is 'removed' at size 34GiB");
-is(scalar @{mock_deleted()}, 1, "asset is 'deleted' at size 34GiB");
+is scalar @{mock_removed()}, 1, "asset is 'removed' at size 34GiB";
+is scalar @{mock_deleted()}, 1, "asset is 'deleted' at size 34GiB";
 
-is_deeply(
-    find_kept_assets_with_last_jobs,
-    [
-        {asset => 'openSUSE-13.1-x86_64.hda', job => 99946},
-        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', job => 99947},
-        {asset => 'testrepo', job => 99961},
-        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', job => 99963},
-        {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
-    ],
-    'last jobs still present but first two deleted'
-);
+is_deeply
+  find_kept_assets_with_last_jobs,
+  [
+    {asset => 'openSUSE-13.1-x86_64.hda', job => 99946},
+    {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', job => 99947},
+    {asset => 'testrepo', job => 99961},
+    {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', job => 99963},
+    {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
+  ],
+  'last jobs still present but first two deleted';
 
 # 1001 should exclusively keep 1, 3 and 5
-is(
-    $job_groups->find(1001)->exclusively_kept_asset_size,
-    2 * 34 * $gib,
-    'kept assets for group 1001 accumulated and deleted asset not taken into account (34 GiB per asset)'
-);
+is $job_groups->find(1001)->exclusively_kept_asset_size, 2 * 34 * $gib,
+  'kept assets for group 1001 accumulated and deleted asset not taken into account (34 GiB per asset)';
 # parent group 1 should exclusively keep 2 and 6 belonging to its job group 1002
-is(
-    $parent_groups->find(1)->exclusively_kept_asset_size,
-    2 * 34 * $gib,
-    'kept assets for group 1002 accumulated (34 GiB per asset)'
-);
+is $parent_groups->find(1)->exclusively_kept_asset_size, 2 * 34 * $gib,
+  'kept assets for group 1002 accumulated (34 GiB per asset)';
 
 reset_mocked_asset_deletions;
 
@@ -387,8 +367,8 @@ subtest 'assets associated with pending jobs are preserved' => sub {
     my $other_asset_name = 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso';
     my $most_reject_job_for_asset_1 = $job_assets->find({asset_id => 1}, {order_by => {-desc => 'job_id'}, rows => 1});
     $most_reject_job_for_asset_1 = $most_reject_job_for_asset_1->job if $most_reject_job_for_asset_1;
-    is($most_reject_job_for_asset_1->id,
-        99947, "job 99947 is actually the most recent job of asset $pending_asset_name");
+    is $most_reject_job_for_asset_1->id,
+      99947, "job 99947 is actually the most recent job of asset $pending_asset_name";
     my $pending_job = $jobs->find(99947);
     $pending_job->update({state => RUNNING, result => NONE, t_created => '1970-01-01 00:00:00'});
 
@@ -401,11 +381,11 @@ subtest 'assets associated with pending jobs are preserved' => sub {
     subtest 'pending asset preserved' => sub {
         run_gru_job($t->app, 'limit_assets');
         my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
-        is_deeply($removed_assets, [$other_asset_name],
-            "only other asset $other_asset_name has been removed with 99947 pending")
+        is_deeply $removed_assets, [$other_asset_name],
+          "only other asset $other_asset_name has been removed with 99947 pending"
           or always_explain $removed_assets;
-        is_deeply($deleted_assets, [$other_asset_name],
-            "only other asset $other_asset_name has been deleted with 99947 pending")
+        is_deeply $deleted_assets, [$other_asset_name],
+          "only other asset $other_asset_name has been deleted with 99947 pending"
           or always_explain $deleted_assets;
     };
 
@@ -419,11 +399,11 @@ subtest 'assets associated with pending jobs are preserved' => sub {
 
         run_gru_job($t->app, 'limit_assets');
         my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
-        is_deeply($removed_assets, [$other_asset_name],
-            "only other asset $other_asset_name has been removed with 99947 pending")
+        is_deeply $removed_assets, [$other_asset_name],
+          "only other asset $other_asset_name has been removed with 99947 pending"
           or always_explain $removed_assets;
-        is_deeply($deleted_assets, [$other_asset_name],
-            "only other asset $other_asset_name has been deleted with 99947 pending")
+        is_deeply $deleted_assets, [$other_asset_name],
+          "only other asset $other_asset_name has been deleted with 99947 pending"
           or always_explain $deleted_assets;
         $another_associated_job->discard_changes;
         $another_associated_job->delete;
@@ -435,16 +415,16 @@ subtest 'assets associated with pending jobs are preserved' => sub {
         $pending_job->update({state => DONE, result => PASSED});
         run_gru_job($t->app, 'limit_assets');
         my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
-        is_deeply(
-            [sort @$removed_assets],
-            [$pending_asset_name, $other_asset_name],
-            "asset $pending_asset_name has been removed with 99947 no longer pending"
-        ) or always_explain $removed_assets;
-        is_deeply(
-            [sort @$deleted_assets],
-            [$pending_asset_name, $other_asset_name],
-            "asset $pending_asset_name has been deleted with 99947 no longer pending"
-        ) or always_explain $deleted_assets;
+        is_deeply
+          [sort @$removed_assets],
+          [$pending_asset_name, $other_asset_name],
+          "asset $pending_asset_name has been removed with 99947 no longer pending"
+          or always_explain $removed_assets;
+        is_deeply
+          [sort @$deleted_assets],
+          [$pending_asset_name, $other_asset_name],
+          "asset $pending_asset_name has been deleted with 99947 no longer pending"
+          or always_explain $deleted_assets;
     # note: The main purpose of this subtest is to cross-check whether this test is actually working. If the asset would
       #       still not be cleaned up here that would mean the pending state makes no difference for this test and it is
         #       therefore meaningless.
@@ -512,11 +492,11 @@ subtest 'limit audit events' => sub {
     my $app = $t->app;
     my $audit_events = $app->schema->resultset('AuditEvents');
     my $startup_events = $audit_events->search({event => 'startup'});
-    is($startup_events->count, 2, 'two startup events present');
+    is $startup_events->count, 2, 'two startup events present';
 
     $startup_events->first->update({t_created => '2019-01-01'});
     run_gru_job($t->app, 'limit_audit_events');
-    is($audit_events->search({event => 'startup'})->count, 1, 'old startup event deleted');
+    is $audit_events->search({event => 'startup'})->count, 1, 'old startup event deleted';
 };
 
 subtest 'archiving and labeling jobs to be considered important' => sub {
@@ -843,7 +823,7 @@ subtest 'download assets with correct permissions' => sub {
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Download of "$assetpath" successful/, 'download logged';
     ok -f $assetpath, 'asset downloaded';
-    is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
+    is S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions';
     is $info->{state}, 'finished', 'job considered finished (successful download)';
     is $info->{user_error}, undef, 'no error passed to user (successful download)';
 
@@ -915,19 +895,19 @@ subtest 'finalize job results' => sub {
         my $b_txt = path('t/data/14-module-b.txt')->copy_to($job->result_dir . '/b-0.txt');
         combined_like { $job->done; } qr/_carry_over_candidate/, 'no unexpected log output from resultset';
         $_->discard_changes for ($job, $child_job);
-        is($job->result, FAILED, 'job result is failed');
-        is($child_job->state, CANCELLED, 'child job cancelled');
-        is($child_job->result, SKIPPED, 'child job skipped');
+        is $job->result, FAILED, 'job result is failed';
+        is $child_job->state, CANCELLED, 'child job cancelled';
+        is $child_job->result, SKIPPED, 'child job skipped';
         perform_minion_jobs($minion);
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
-        is($minion_jobs->total, 1, 'one minion job created; no minion job for skipped child job created')
-          and is($minion_jobs->next->{state}, 'finished', 'the minion job succeeded');
-        ok(!-e $a_txt, 'extra txt file for module a actually gone');
-        ok(!-e $b_txt, 'extra txt file for module b actually gone');
+        is $minion_jobs->total, 1, 'one minion job created; no minion job for skipped child job created'
+          and is $minion_jobs->next->{state}, 'finished', 'the minion job succeeded';
+        ok !-e $a_txt, 'extra txt file for module a actually gone';
+        ok !-e $b_txt, 'extra txt file for module b actually gone';
         my @modlist = $job->modules;
-        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo', 'text data for module a still present');
-        is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n", 'text data for module b still present');
-        is($a_details->stat->mode & 0644, 0644, 'details JSON globally readable');
+        is $modlist[0]->results->{details}->[0]->{text_data}, 'Foo', 'text data for module a still present';
+        is $modlist[1]->results->{details}->[0]->{text_data}, "正解\n", 'text data for module b still present';
+        is $a_details->stat->mode & 0644, 0644, 'details JSON globally readable';
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
@@ -946,10 +926,10 @@ subtest 'finalize job results' => sub {
         combined_like { run_gru_job($app, finalize_job_results => [$job->id]) }
         qr/error: Finalizing.*failed/, 'error in finalizing handled';
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
-        if (is($minion_jobs->total, 1, 'one minion job executed')) {
+        if (is $minion_jobs->total, 1, 'one minion job executed') {
             my $info = $minion_jobs->next;
-            is($info->{state}, 'failed', 'the minion job failed');
-            like($info->{notes}->{failed_modules}->{a}, qr/malformed JSON string/, 'the minion job failed')
+            is $info->{state}, 'failed', 'the minion job failed';
+            like $info->{notes}->{failed_modules}->{a}, qr/malformed JSON string/, 'the minion job failed'
               or always_explain $info->{notes};
         }
     };

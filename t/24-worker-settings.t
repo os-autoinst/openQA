@@ -37,20 +37,20 @@ is_deeply $settings->global_settings, {@common_settings, TERMINATE_AFTER_JOBS_DO
   'global settings, spaces trimmed'
   or always_explain $settings->global_settings;
 
-is($settings->file_path, "$FindBin::Bin/data/24-worker-settings/workers.ini", 'file path set');
-is_deeply($settings->parse_errors, [], 'no parse errors occurred');
+is $settings->file_path, "$FindBin::Bin/data/24-worker-settings/workers.ini", 'file path set';
+is_deeply $settings->parse_errors, [], 'no parse errors occurred';
 
-is_deeply($settings->webui_hosts, ['http://localhost:9527', 'https://remotehost'], 'web UI hosts, spaces trimmed')
+is_deeply $settings->webui_hosts, ['http://localhost:9527', 'https://remotehost'], 'web UI hosts, spaces trimmed'
   or always_explain $settings->webui_hosts;
 
-is_deeply(
-    $settings->webui_host_specific_settings,
-    {
-        'http://localhost:9527' => {HOST_SPECIFIC => 'setting (localhost)'},
-        'https://remotehost' => {HOST_SPECIFIC => 'specific setting (remotehost)'},
-    },
-    'web UI host specific settings'
-) or always_explain $settings->webui_host_specific_settings;
+is_deeply
+  $settings->webui_host_specific_settings,
+  {
+    'http://localhost:9527' => {HOST_SPECIFIC => 'setting (localhost)'},
+    'https://remotehost' => {HOST_SPECIFIC => 'specific setting (remotehost)'},
+  },
+  'web UI host specific settings'
+  or always_explain $settings->webui_host_specific_settings;
 
 delete $ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE};
 
@@ -69,10 +69,10 @@ subtest 'apply settings to app' => sub {
     $mock->redefine(setup_log => sub ($app, @) { $setup_log_app = $app; $setup_log_called = 1 });
     my $app = OpenQA::Worker::App->new;
     $settings->apply_to_app($app);
-    is($app->level, 'test', 'log level applied');
-    is($app->log_dir, 'log/dir', 'log dir applied');
-    is($setup_log_called, 1, 'setup_log called');
-    is($setup_log_app, $app, 'setup_log called with the right application');
+    is $app->level, 'test', 'log level applied';
+    is $app->log_dir, 'log/dir', 'log dir applied';
+    is $setup_log_called, 1, 'setup_log called';
+    is $setup_log_app, $app, 'setup_log called with the right application';
 };
 
 subtest 'instance-specific and WORKER_CLASS-specific settings' => sub {
@@ -118,7 +118,7 @@ subtest 'instance-specific and WORKER_CLASS-specific settings' => sub {
 subtest 'settings file with errors' => sub {
     $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings-error";
     my $settings = OpenQA::Worker::Settings->new(1);
-    is_deeply($settings->parse_errors, ['3: parameter found outside a section'], 'error logged')
+    is_deeply $settings->parse_errors, ['3: parameter found outside a section'], 'error logged'
       or always_explain $settings->parse_errors;
 };
 

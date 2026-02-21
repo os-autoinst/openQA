@@ -104,11 +104,11 @@ subtest 'needle download' => sub {
 # check the download links
 $t->get_ok('/tests/99946/downloads_ajax')->status_is(200)->element_exists('#asset_1')->element_exists('#asset_5');
 my $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#asset_1')->text);
-is($res, 'openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-is($t->tx->res->dom->at('#asset_1')->{href}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+is $res, 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
+is $t->tx->res->dom->at('#asset_1')->{href}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso';
 $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#asset_5')->text);
-is($res, 'openSUSE-13.1-x86_64.hda');
-is($t->tx->res->dom->at('#asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda');
+is $res, 'openSUSE-13.1-x86_64.hda';
+is $t->tx->res->dom->at('#asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda';
 $t->get_ok('/tests/99938/downloads_ajax')->status_is(200)
   ->element_exists('a[href=/tests/99938/video?filename=video.ogv]', 'link to video player contains filename');
 

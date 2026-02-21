@@ -56,8 +56,8 @@ $client->on(
     status_changed => sub {
         my ($event_client, $event_data) = @_;
 
-        is($event_client, $client, 'client passed correctly');
-        is(ref $event_data, 'HASH', 'event data is a HASH');
+        is $event_client, $client, 'client passed correctly';
+        is ref $event_data, 'HASH', 'event data is a HASH';
         push(
             @happened_events,
             {
@@ -70,7 +70,7 @@ $client->on(
 $client->worker(OpenQA::Test::FakeWorker->new);
 $client->working_directory('t/');
 
-is($client->status, 'new', 'client in status new');
+is $client->status, 'new', 'client in status new';
 throws_ok { $client->send('get', '.'); }
 qr{attempt to send command to web UI http://127\.0\.0\.1:1 with no worker ID.*}, 'registration required';
 
@@ -116,13 +116,13 @@ subtest 'attempt to register and send a command' => sub {
         tries => 1,
         callback => sub {
             my ($res) = @_;
-            is($res, undef, 'undefined result returned in the error case');
+            is $res, undef, 'undefined result returned in the error case';
             $callback_invoked = 1;
         },
     );
     Mojo::IOLoop->start;
-    is($callback_invoked, 1, 'callback has been invoked');
-    is($client->worker->stop_current_job_called, 0, 'not attempted to stop current job');
+    is $callback_invoked, 1, 'callback has been invoked';
+    is $client->worker->stop_current_job_called, 0, 'not attempted to stop current job';
 
     # test failing REST API call *not* ignoring errors
     $callback_invoked = 0;
@@ -133,16 +133,16 @@ subtest 'attempt to register and send a command' => sub {
             tries => 1,
             callback => sub {
                 my ($res) = @_;
-                is($res, undef, 'undefined result returned in the error case');
+                is $res, undef, 'undefined result returned in the error case';
                 $callback_invoked = 1;
             },
         );
         Mojo::IOLoop->start;
     }
     qr/Connection error:.*(remaining tries: 0)/s, 'error logged';
-    is($callback_invoked, 1, 'callback has been invoked');
-    is($client->worker->stop_current_job_called,
-        0, 'not attempted to stop current job because it is from different web UI');
+    is $callback_invoked, 1, 'callback has been invoked';
+    is $client->worker->stop_current_job_called,
+      0, 'not attempted to stop current job because it is from different web UI';
     $client->worker->current_webui_host('http://127.0.0.1:1');
     $callback_invoked = 0;
     combined_like {
@@ -152,7 +152,7 @@ subtest 'attempt to register and send a command' => sub {
             tries => 1,
             callback => sub {
                 my ($res) = @_;
-                is($res, undef, 'undefined result returned in the error case');
+                is $res, undef, 'undefined result returned in the error case';
                 $callback_invoked = 1;
             },
         );
@@ -160,9 +160,9 @@ subtest 'attempt to register and send a command' => sub {
     }
     qr/Connection error:.*(remaining tries: 0)/s, 'error logged';
 
-    is($callback_invoked, 1, 'callback has been invoked');
-    is($client->worker->stop_current_job_called,
-        WORKER_SR_API_FAILURE, 'attempted to stop current job with reason "api-failure"');
+    is $callback_invoked, 1, 'callback has been invoked';
+    is $client->worker->stop_current_job_called,
+      WORKER_SR_API_FAILURE, 'attempted to stop current job with reason "api-failure"';
 
     subtest 'emitted events' => sub {
         my $error_message = ref($happened_events[1]) eq 'HASH' ? delete $happened_events[1]->{error_message} : undef;
@@ -242,7 +242,7 @@ subtest 'retry behavior' => sub {
     $web_ui_connection_mock->redefine(
         _retry_delay => sub {
             my ($self, $is_webui_busy) = @_;
-            is($is_webui_busy, $web_ui_supposed_to_be_considered_busy, 'retry delay applied accordingly');
+            is $is_webui_busy, $web_ui_supposed_to_be_considered_busy, 'retry delay applied accordingly';
             $retry_delay_invoked += 1;
             return 0;
         });
@@ -254,7 +254,7 @@ subtest 'retry behavior' => sub {
         json => {status => 'running'},
         callback => sub {
             my ($res) = @_;
-            is($res, undef, 'undefined result returned in the error case');
+            is $res, undef, 'undefined result returned in the error case';
             $callback_invoked += 1;
         },
     );
@@ -272,8 +272,8 @@ subtest 'retry behavior' => sub {
         send_once(\@send_args,
 qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some timeout \(remaining tries: 1\).*Connection error: some timeout \(remaining tries: 0\)/s
         );
-        is($fake_ua->start_count, 3, 'tried 3 times');
-        is($callback_invoked, 1, 'callback invoked exactly one time');
+        is $fake_ua->start_count, 3, 'tried 3 times';
+        is $callback_invoked, 1, 'callback invoked exactly one time';
 
         $callback_invoked = $retry_delay_invoked = 0;
         $fake_ua->start_count(0);
@@ -290,9 +290,9 @@ qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some
             send_once(\@send_args,
 qr/$code response: some timeout \(remaining tries: 2\).*$code response: some timeout \(remaining tries: 1\).*$code response: some timeout \(remaining tries: 0\)/s
             );
-            is($fake_ua->start_count, $start_count, "tried 3 times for $code");
-            is($callback_invoked, $callback_count++, "callback invoked exactly one time for $code");
-            is($retry_delay_invoked, $retry_delay_count, "retry delay queried for $code");
+            is $fake_ua->start_count, $start_count, "tried 3 times for $code";
+            is $callback_invoked, $callback_count++, "callback invoked exactly one time for $code";
+            is $retry_delay_invoked, $retry_delay_count, "retry delay queried for $code";
             $start_count += 3;
             $retry_delay_count += 2;
         }
@@ -307,9 +307,9 @@ qr/$code response: some timeout \(remaining tries: 2\).*$code response: some tim
         send_once(\@send_args,
             qr/500 response: some error \(remaining tries: 1\).*500 response: some error \(remaining tries: 0\)/s,
             undef, tries => 2);
-        is($fake_ua->start_count, 2, 'tried 2 times');
-        is($callback_invoked, 1, 'callback invoked exactly one time');
-        is($retry_delay_invoked, 1, 'retry delay queried');
+        is $fake_ua->start_count, 2, 'tried 2 times';
+        is $callback_invoked, 1, 'callback invoked exactly one time';
+        is $retry_delay_invoked, 1, 'retry delay queried';
     };
 
     subtest 'no retry after 4XX (with exceptions)' => sub {
@@ -333,9 +333,9 @@ qr/$code response: some timeout \(remaining tries: 2\).*$code response: some tim
                 qr/$fake_error->{code} response: $fake_error->{message} \(remaining tries: 0\)/,
                 "$fake_error->{code} logged"
             );
-            is($fake_ua->start_count, $start_count++, "tried 1 time for $fake_error->{code}");
-            is($callback_invoked, $callback_count++, "callback invoked exactly one time for $fake_error->{code}");
-            is($retry_delay_invoked, 0, "retry delay not queried $fake_error->{code}");
+            is $fake_ua->start_count, $start_count++, "tried 1 time for $fake_error->{code}";
+            is $callback_invoked, $callback_count++, "callback invoked exactly one time for $fake_error->{code}";
+            is $retry_delay_invoked, 0, "retry delay not queried $fake_error->{code}";
         }
     };
 
@@ -344,24 +344,24 @@ qr/$code response: some timeout \(remaining tries: 2\).*$code response: some tim
         $fake_ua->start_count(0);
         $client->send(@send_args, tries => 3, ignore_errors => 1);
         Mojo::IOLoop->start;
-        is($fake_ua->start_count, 1, 'no retry attempts');
-        is($callback_invoked, 1, 'callback invoked exactly one time');
-        is($retry_delay_invoked, 0, 'retry delay not queried');
+        is $fake_ua->start_count, 1, 'no retry attempts';
+        is $callback_invoked, 1, 'callback invoked exactly one time';
+        is $retry_delay_invoked, 0, 'retry delay not queried';
     };
 
     $client->ua($default_ua);
 };
 
 subtest 'retry delay configurable' => sub {
-    is($client->_retry_delay(0), 10, 'default delay used from global settings');
-    is($client->_retry_delay(1), 90, '"busy" delay used from global settings');
+    is $client->_retry_delay(0), 10, 'default delay used from global settings';
+    is $client->_retry_delay(1), 90, '"busy" delay used from global settings';
 
     $client->worker->settings->webui_host_specific_settings->{$client->webui_host} = {
         RETRY_DELAY => 30,
         RETRY_DELAY_IF_WEBUI_BUSY => 120,
     };
-    is($client->_retry_delay(0), 30, 'default delay used from host-specific settings');
-    is($client->_retry_delay(1), 120, '"busy" delay used from host-sepcific settings');
+    is $client->_retry_delay(0), 30, 'default delay used from host-specific settings';
+    is $client->_retry_delay(1), 120, '"busy" delay used from host-sepcific settings';
 };
 
 subtest 'send status' => sub {
@@ -369,7 +369,7 @@ subtest 'send status' => sub {
     $client->worker->current_error('some error');
     $client->websocket_connection($ws);
     $client->send_status();
-    is_deeply($ws->sent_messages, [{json => {fake_status => 1, reason => 'some error'}}], 'status sent')
+    is_deeply $ws->sent_messages, [{json => {fake_status => 1, reason => 'some error'}}], 'status sent'
       or always_explain $ws->sent_messages;
     combined_like { $client->send_status_delayed } qr/some error.*checking again/, 'error logged in callback';
 };
@@ -382,17 +382,17 @@ subtest 'quit' => sub {
     subtest 'there is an active ws connection' => sub {
         $client->websocket_connection($ws);
         $client->quit($callback);
-        is_deeply($ws->sent_messages, [{json => {type => 'quit'}}], 'quit sent')
+        is_deeply $ws->sent_messages, [{json => {type => 'quit'}}], 'quit sent'
           or always_explain $ws->sent_messages;
         Mojo::IOLoop->one_tick;
-        ok($callback_called, 'callback passed to websocket send');
+        ok $callback_called, 'callback passed to websocket send';
     };
     subtest 'there is no active ws connection' => sub {
         $callback_called = 0;
         $client->websocket_connection(undef);
         $client->quit($callback);
         Mojo::IOLoop->one_tick;
-        ok($callback_called, 'callback nevertheless invoked on next tick');
+        ok $callback_called, 'callback nevertheless invoked on next tick';
     };
 };
 
@@ -404,20 +404,20 @@ subtest 'rejecting jobs' => sub {
     subtest 'rejecting job postponed while not connected' => sub {
         $client->websocket_connection(undef);
         $client->reject_jobs([1, 2, 3], 'just a test', $callback);
-        is_deeply($ws->sent_messages, [], 'no message send when not connected')
+        is_deeply $ws->sent_messages, [], 'no message send when not connected'
           or always_explain $ws->sent_messages;
-        ok(!$callback_called, 'callback not invoked so far');
+        ok !$callback_called, 'callback not invoked so far';
     };
     subtest 'job rejected when connected' => sub {
         $client->websocket_connection($ws);
         $client->emit('connected');
         Mojo::IOLoop->one_tick;
-        is_deeply(
-            $ws->sent_messages,
-            [{json => {type => 'rejected', job_ids => [1, 2, 3], reason => 'just a test'}}],
-            'rejected sent when connected again'
-        ) or always_explain $ws->sent_messages;
-        ok($callback_called, 'callback invoked');
+        is_deeply
+          $ws->sent_messages,
+          [{json => {type => 'rejected', job_ids => [1, 2, 3], reason => 'just a test'}}],
+          'rejected sent when connected again'
+          or always_explain $ws->sent_messages;
+        ok $callback_called, 'callback invoked';
     };
 };
 
@@ -500,44 +500,42 @@ qr/Ignoring WS message from http:\/\/127\.0\.0\.1:1 with type livelog_stop and j
     $worker->is_busy(0);
     my $rejection = sub { {json => {job_ids => shift, reason => shift, type => 'rejected'}} };
     my %fake_error_status = (json => {fake_status => 1, reason => 'some error'});
-    is_deeply(
-        $ws->sent_messages,
-        [
-            \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
-            \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
-            $rejection->([42], 'currently stopping'),    # rejection due to stopping state
-            $rejection->(['but no settings'], 'the provided job is invalid'),
-            $rejection->(['42'], 'job info lacks execution sequence'),
-            $rejection->(['42'], 'already busy with a job from foo'),
-            $rejection->(['42'], 'already busy with job(s) 43'),
-        ],
-        'jobs have been rejected in the error cases (when possible), no rejection for job 43'
-    ) or always_explain $ws->sent_messages;
+    is_deeply $ws->sent_messages, [
+        \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
+        \%fake_error_status, $rejection->([42], 'some error'),    # status + rejection due to error state
+        $rejection->([42], 'currently stopping'),    # rejection due to stopping state
+        $rejection->(['but no settings'], 'the provided job is invalid'),
+        $rejection->(['42'], 'job info lacks execution sequence'),
+        $rejection->(['42'], 'already busy with a job from foo'),
+        $rejection->(['42'], 'already busy with job(s) 43'),
+      ],
+      'jobs have been rejected in the error cases (when possible), no rejection for job 43'
+      or always_explain $ws->sent_messages;
 
     # test accepting a job
-    is($worker->current_job, undef, 'no job accepted so far');
+    is $worker->current_job, undef, 'no job accepted so far';
     my %cmd = (type => WORKER_COMMAND_GRAB_JOB, job => {id => 25, settings => {FOO => 'bar'}});
     $command_handler->handle_command(undef, \%cmd);
     my $accepted_job = $worker->current_job;
-    is_deeply($accepted_job->info, {id => 25, settings => {FOO => 'bar'}}, 'job accepted');
+    is_deeply $accepted_job->info, {id => 25, settings => {FOO => 'bar'}}, 'job accepted';
 
     # test live mode related commands
-    is($accepted_job->livelog_viewers, 0, 'developer session not started in the first place');
-    is($accepted_job->livelog_viewers, 0, 'no livelog viewers in the first place');
+    is $accepted_job->livelog_viewers, 0, 'developer session not started in the first place';
+    is $accepted_job->livelog_viewers, 0, 'no livelog viewers in the first place';
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_LIVELOG_START, jobid => 25});
-    is($accepted_job->livelog_viewers, 1, 'livelog started');
+    is $accepted_job->livelog_viewers, 1, 'livelog started';
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_DEVELOPER_SESSION_START, jobid => 25});
-    is($accepted_job->developer_session_running, 1, 'developer session running');
+    is $accepted_job->developer_session_running, 1, 'developer session running';
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_LIVELOG_STOP, jobid => 25});
-    is($accepted_job->livelog_viewers, 0, 'livelog stopped');
+    is $accepted_job->livelog_viewers, 0, 'livelog stopped';
     combined_like { $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 21}) }
     qr/Ignoring WS message.*for job 21.*not running/, 'livelog command for other job ignored';
 
     # stopping job
-    is($accepted_job->status, 'new',
-        'since our fake worker does not start the job is is still supposed to be in state "new" so far');
+    is $accepted_job->status, 'new',
+      'since our fake worker does not start the job is is still supposed to be in state "new" so far';
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_QUIT, jobid => 25});
-    is($accepted_job->status, 'stopped', 'job has been stopped');
+    is $accepted_job->status, 'stopped', 'job has been stopped';
 
     # test accepting multiple jobs
     $worker->current_job(undef);
@@ -550,8 +548,8 @@ qr/Ignoring WS message from http:\/\/127\.0\.0\.1:1 with type livelog_stop and j
         },
     );
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_GRAB_JOBS, job_info => \%job_info});
-    is_deeply($worker->enqueued_job_info,
-        \%job_info, 'job info successfully validated and passed to enqueue_jobs_and_accept_first')
+    is_deeply $worker->enqueued_job_info,
+      \%job_info, 'job info successfully validated and passed to enqueue_jobs_and_accept_first'
       or always_explain $worker->enqueued_job_info;
 
     # test refusing multiple jobs due because job data is missing
@@ -561,15 +559,15 @@ qr/Ignoring WS message from http:\/\/127\.0\.0\.1:1 with type livelog_stop and j
         $command_handler->handle_command(undef, {type => WORKER_COMMAND_GRAB_JOBS, job_info => \%job_info})
     }
     qr/Refusing to grab job.*: job data for job 28 is missing/, 'ignoring grab job if no valid job info provided';
-    is_deeply($worker->enqueued_job_info, undef, 'no jobs enqueued if validation failed')
+    is_deeply $worker->enqueued_job_info, undef, 'no jobs enqueued if validation failed'
       or always_explain $worker->enqueued_job_info;
 
     # test incompatible (so far the worker stops when receiving this message; there are likely better ways to handle it)
-    is($worker->is_stopping, 0, 'not already stopping');
+    is $worker->is_stopping, 0, 'not already stopping';
     combined_like { $command_handler->handle_command(undef, {type => 'incompatible'}) }
     qr/running a version incompatible with web UI host http:\/\/127\.0\.0\.1:1 and therefore stopped/,
       'problem is logged';
-    is($worker->is_stopping, 1, 'worker is stopping on incompatible message');
+    is $worker->is_stopping, 1, 'worker is stopping on incompatible message';
 
     $client->webui_host('foo');
     $worker->current_webui_host('bar');
@@ -632,11 +630,11 @@ subtest 'status timer interval' => sub {
 subtest 'last error' => sub {
     $client->{_last_error} = 'some error';
     $client->add_context_to_last_error('setup');
-    is($client->last_error, 'some error on setup', 'context added');
+    is $client->last_error, 'some error on setup', 'context added';
 
     $client->reset_last_error;
     $client->add_context_to_last_error('setup');
-    is($client->last_error, undef, 'add_context_to_last_error does nothing if there is no last error');
+    is $client->last_error, undef, 'add_context_to_last_error does nothing if there is no last error';
 
     $client->_set_status(failed => {error_message => 'foo'});
     is $client->last_error, 'foo', 'error message set as last error if no other error recorded';

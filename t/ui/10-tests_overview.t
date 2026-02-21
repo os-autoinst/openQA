@@ -135,7 +135,7 @@ $driver->find_element_by_id('filter-failed')->click();
 apply_filter('failed');    # failed selected, passed and todo unselected
 $driver->find_element_by_id('res_DVD_x86_64_doc');
 my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
-is(scalar @filtered_out, 0, 'result filter correctly applied');
+is scalar @filtered_out, 0, 'result filter correctly applied';
 
 # Test whether all URL parameter are passed correctly
 my $url = $baseurl . 'tests/overview?';
@@ -155,22 +155,22 @@ $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&
 my $fmod = $driver->find_elements('.failedmodule', 'css')->[1];
 $driver->mouse_move_to_location(element => $fmod, xoffset => 8, yoffset => 8);
 wait_for_ajax;
-like($driver->find_elements('.failedmodule', 'css')->[1]->get_attribute('href'),
-    qr/\/kate\/1$/, 'ajax update failed module step');
+like $driver->find_elements('.failedmodule', 'css')->[1]->get_attribute('href'),
+  qr/\/kate\/1$/, 'ajax update failed module step';
 
 my @descriptions = $driver->find_elements('td.name a', 'css');
-is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
+is scalar @descriptions, 2, 'only test suites with description content are shown as links';
 $descriptions[0]->click();
 is wait_for_element(selector => '.popover-header')->get_text, 'kde', 'description popover shows content';
 
 # Test bug status
 my @closed_bugs = $driver->find_elements('#bug-99937 .bug_closed', 'css');
-is(scalar @closed_bugs, 1, 'closed bug correctly shown');
+is scalar @closed_bugs, 1, 'closed bug correctly shown';
 
 my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
 @closed_bugs = $driver->find_elements('#bug-99946 .bug_closed', 'css');
-is(scalar @open_bugs, 1, 'open bug correctly shown, and only once despite the 2 comments');
-is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
+is scalar @open_bugs, 1, 'open bug correctly shown, and only once despite the 2 comments';
+is scalar @closed_bugs, 0, 'open bug not shown as closed bug';
 
 sub check_build_0091_defaults {
     wait_for_element selector => '#flavor_DVD_arch_i586', is_displayed => 1, like => qr/i586/;
@@ -327,11 +327,11 @@ subtest 'filtering by test' => sub {
     subtest 'request for specific test' => sub {
         $driver->get('/tests/overview?test=textmode');
         check_textmode_test 'textmode';
-        like(
-            OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
-            qr/Overall Summary of opensuse 13\.1 build 0092/,
-            'summary states "opensuse 13.1" although no explicit search params',
-        );
+        like
+          OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
+          qr/Overall Summary of opensuse 13\.1 build 0092/,
+          'summary states "opensuse 13.1" although no explicit search params',
+          ;
     };
 
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
@@ -346,11 +346,11 @@ subtest 'filtering by test' => sub {
 
 subtest 'empty flavor value does not result in all jobs being loaded (regression test)' => sub {
     $driver->get('/tests/overview?test=textmode&flavor=');
-    like(
-        OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
-        qr/Overall Summary of opensuse 13\.1 build 0092/,
-        'summary states "opensuse 13.1" although no explicit search params',
-    );
+    like
+      OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
+      qr/Overall Summary of opensuse 13\.1 build 0092/,
+      'summary states "opensuse 13.1" although no explicit search params',
+      ;
 };
 
 subtest 'filtering by distri' => sub {
@@ -362,11 +362,10 @@ subtest 'filtering by distri' => sub {
     subtest 'distri filters are ORed' => sub {
         $driver->get('/tests/overview?distri=foo&distri=opensuse&distri=bar&version=13.1&build=0091');
         check_build_0091_defaults;
-        is(
-            OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header strong')->get_text()),
-            'foo/opensuse/bar 13.1',
-            'filter also visible in summary'
-        );
+        is
+          OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header strong')->get_text()),
+          'foo/opensuse/bar 13.1',
+          'filter also visible in summary';
         my $form_inputs = $driver->find_elements('#filter-form input');
         my @distris = grep { $_->get_attribute('name') eq 'distri' && $_->get_attribute('hidden') } @$form_inputs;
         is scalar(@distris), 3, 'Got expected number of distri form fields';
@@ -383,14 +382,14 @@ subtest 'filtering by distri' => sub {
 
 subtest 'filtering does not reveal old jobs' => sub {
     $driver->get('/tests/overview?arch=&result=failed&distri=opensuse&version=13.1&build=0091&groupid=1001');
-    is($driver->find_element('#summary .text-bg-danger')->get_text(), '1', 'filtering for failures gives only one job');
-    is(scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job still shown');
-    is(scalar @{$driver->find_elements('#res-99920')}, 0, 'and old kde job not revealed');
+    is $driver->find_element('#summary .text-bg-danger')->get_text(), '1', 'filtering for failures gives only one job';
+    is scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job still shown';
+    is scalar @{$driver->find_elements('#res-99920')}, 0, 'and old kde job not revealed';
 
     $driver->get('/tests/overview?arch=&failed_modules=zypper_up&distri=opensuse&version=13.1&build=0091&groupid=1001');
-    is($driver->find_element('#summary .text-bg-danger')->get_text(),
-        '1', 'filtering for failed modules works for latest job');
-    is(scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job matches failed modules filter');
+    is $driver->find_element('#summary .text-bg-danger')->get_text(),
+      '1', 'filtering for failed modules works for latest job';
+    is scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job matches failed modules filter';
 
     $driver->get('/tests/overview?arch=&failed_modules=bar&distri=opensuse&version=13.1&build=0091&groupid=1001');
     is scalar @{$driver->find_elements('#summary .text-bg-danger')}, 0,
@@ -409,7 +408,7 @@ subtest 'filtering by module' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified module are shown in the results
-        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found");
+        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found";
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_x86_64_kde');
         element_visible('#res_DVD_x86_64_doc');
@@ -420,7 +419,7 @@ subtest 'filtering by module' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified module and result are shown in the results
-        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found");
+        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found";
         element_visible('#res_DVD_i586_kde');
     };
     subtest 'jobs containing all the modules with the specified result are present' => sub {
@@ -428,8 +427,8 @@ subtest 'filtering by module' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified result are shown in the results
-        is(scalar @jobs, $number_of_found_jobs,
-            "$number_of_found_jobs jobs where modules with \"$result\" result found");
+        is scalar @jobs, $number_of_found_jobs,
+          "$number_of_found_jobs jobs where modules with \"$result\" result found";
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_x86_64_kde');
         element_visible('#res_DVD_i586_textmode');
@@ -441,7 +440,7 @@ subtest 'filtering by module' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$modules&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
         # Assert that all the jobs with the specified modules and result are shown in the results
-        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$modules\" modules found");
+        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$modules\" modules found";
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_i586_textmode');
     };
@@ -462,7 +461,7 @@ subtest 'filtering by module_re' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re");
         my @jobs = $driver->find_elements($job_icon_selector);
         # Assert that all the jobs with the specified module are shown in the results
-        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" regexp module found");
+        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" regexp module found";
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_x86_64_kde');
         element_visible('#res_DVD_x86_64_doc');
@@ -473,7 +472,7 @@ subtest 'filtering by module_re' => sub {
         $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re&modules_result=$result");
         my @jobs = $driver->find_elements($job_icon_selector);
         # Assert that all the jobs with the specified module and result are shown in the results
-        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" module regexp found");
+        is scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" module regexp found";
         element_visible('#res_DVD_i586_kde');
     };
 
@@ -591,17 +590,17 @@ subtest 'filter by result and state' => sub {
 
 subtest "job template names displayed on 'Test result overview' page" => sub {
     $driver->get('/group_overview/1002');
-    is($driver->find_element('.progress-bar-unfinished')->get_text(),
-        '1 unfinished', 'expected number of unfinished jobs');
+    is $driver->find_element('.progress-bar-unfinished')->get_text(),
+      '1 unfinished', 'expected number of unfinished jobs';
 
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002');
     my @tds = $driver->find_elements('#results_DVD tbody tr .name');
-    is($tds[0]->get_text(), 'kde_variant', 'job template name kde_variant displayed correctly');
+    is $tds[0]->get_text(), 'kde_variant', 'job template name kde_variant displayed correctly';
 
     my @descriptions = $driver->find_elements('td.name a', 'css');
-    is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
+    is scalar @descriptions, 2, 'only test suites with description content are shown as links';
     $descriptions[0]->click();
-    is(wait_for_element(selector => '.popover-header')->get_text, 'kde_variant', 'description popover shows content');
+    is wait_for_element(selector => '.popover-header')->get_text, 'kde_variant', 'description popover shows content';
 };
 
 subtest 'add comments' => sub {
@@ -717,8 +716,8 @@ subtest 'filter helper links' => sub {
         is $master->get_attribute('indeterminate'), 'true', 'master checkbox is indeterminate when partially selected';
 
         $driver->find_child_element($results_div, '.filter-bulk-invert')->click();
-        ok(!$driver->find_element_by_id('filter-passed')->is_selected, '"passed" deselected after invert');
-        ok($driver->find_element_by_id('filter-failed')->is_selected, '"failed" selected after invert');
+        ok !$driver->find_element_by_id('filter-passed')->is_selected, '"passed" deselected after invert';
+        ok $driver->find_element_by_id('filter-failed')->is_selected, '"failed" selected after invert';
     };
     $driver->find_element('#filter-form button[type="submit"]')->click();
     wait_until sub { $driver->get_current_url =~ qr/result__not?=/ }, 'form submitted after using helper links';

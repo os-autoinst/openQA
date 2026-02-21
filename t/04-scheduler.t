@@ -92,7 +92,7 @@ sub job_get_hash {
 }
 
 my $current_jobs = list_jobs();
-is_deeply($current_jobs, [], 'assert database has no jobs to start with')
+is_deeply $current_jobs, [], 'assert database has no jobs to start with'
   or BAIL_OUT('database not properly initialized');
 
 # test worker_register and worker_get
@@ -108,15 +108,15 @@ sub register_worker ($host = 'host', $instance = 1) { $c->_register($schema, $ho
 
 my ($id, $worker, $worker_db_obj);
 subtest 'worker registration' => sub {
-    is($id = register_worker, 1, 'new worker registered');
+    is $id = register_worker, 1, 'new worker registered';
 
     $worker_db_obj = $workers->find($id);
     $worker = $worker_db_obj->info;
 
-    is($worker->{id}, $id, 'id set');
-    is($worker->{host}, 'host', 'host set');
-    is($worker->{instance}, '1', 'instance set');
-    is(register_worker, $id, 're-registered worker got same id');
+    is $worker->{id}, $id, 'id set';
+    is $worker->{host}, 'host', 'host set';
+    is $worker->{instance}, '1', 'instance set';
+    is register_worker, $id, 're-registered worker got same id';
 };
 
 # test job_create and job_get
@@ -166,23 +166,23 @@ my $job_ref = {
 };
 my $iso = sprintf('%s/iso/%s', assetdir(), $settings{ISO});
 my $job = $jobs->create_from_settings(\%settings);
-is($job->id, 1, 'job_create');
+is $job->id, 1, 'job_create';
 
 my %settings2 = %settings;
 $settings2{NAME} = 'OTHER NAME';
 $settings2{BUILD} = '44';
 my $job2 = $jobs->create_from_settings(\%settings2);
-is($job2->id, 2);
+is $job2->id, 2;
 
 subtest 'calling again with same settings' => sub {
     my $job3 = $jobs->create_from_settings(\%settings2);
-    is($job3->id, 3, 'calling again with same settings yields new job');
+    is $job3->id, 3, 'calling again with same settings yields new job';
     $jobs->find($job3->id)->delete;
 };
 
 $job->set_prio(40);
 my $new_job = job_get_hash($job->id);
-is_deeply($new_job, $job_ref, 'job_get');
+is_deeply $new_job, $job_ref, 'job_get';
 
 subtest 'job listing' => sub {
     my $expected_jobs = [
@@ -247,43 +247,43 @@ subtest 'job listing' => sub {
     ];
 
     $current_jobs = list_jobs();
-    is_deeply($current_jobs, $expected_jobs, 'All list_jobs');
+    is_deeply $current_jobs, $expected_jobs, 'All list_jobs';
 
     my %args = (state => SCHEDULED);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, $expected_jobs, 'All list_jobs with state scheduled');
+    is_deeply $current_jobs, $expected_jobs, 'All list_jobs with state scheduled';
 
     %args = (state => RUNNING);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [], 'All list_jobs with state running');
+    is_deeply $current_jobs, [], 'All list_jobs with state running';
 
     %args = (build => '666');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[1]], 'list_jobs with build');
+    is_deeply $current_jobs, [$expected_jobs->[1]], 'list_jobs with build';
 
     %args = (iso => 'whatever.iso');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, $expected_jobs, 'list_jobs with iso');
+    is_deeply $current_jobs, $expected_jobs, 'list_jobs with iso';
 
     %args = (build => '666', state => SCHEDULED);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[1]], 'list_jobs combining a setting (BUILD) and state');
+    is_deeply $current_jobs, [$expected_jobs->[1]], 'list_jobs combining a setting (BUILD) and state';
 
     %args = (iso => 'whatever.iso', build => '666');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[1]], 'list_jobs combining two settings (ISO and BUILD)');
+    is_deeply $current_jobs, [$expected_jobs->[1]], 'list_jobs combining two settings (ISO and BUILD)';
 
     %args = (build => 'whatever.iso', iso => '666');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [], 'list_jobs messing two settings up');
+    is_deeply $current_jobs, [], 'list_jobs messing two settings up';
 
     %args = (ids => [1, 2], state => [SCHEDULED, DONE]);
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, $expected_jobs, 'jobs with specified IDs and states (array ref)');
+    is_deeply $current_jobs, $expected_jobs, 'jobs with specified IDs and states (array ref)';
 
     %args = (ids => '2,3', state => 'scheduled,done');
     $current_jobs = list_jobs(%args);
-    is_deeply($current_jobs, [$expected_jobs->[0]], 'jobs with specified IDs (comma list)');
+    is_deeply $current_jobs, [$expected_jobs->[0]], 'jobs with specified IDs (comma list)';
 };
 
 # assume the worker has just been seen
@@ -295,8 +295,8 @@ $worker_db_obj->update({t_seen => $last_seen});
 subtest 'job grab (WORKER_CLASS mismatch)' => sub {
     my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $worker_db_obj->discard_changes;
-    is(undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS');
-    is_deeply($allocated, [], 'no workers/jobs allocated');
+    is undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS';
+    is_deeply $allocated, [], 'no workers/jobs allocated';
 };
 
 subtest 'job grab (failed to send job to worker)' => sub {
@@ -307,7 +307,7 @@ subtest 'job grab (failed to send job to worker)' => sub {
     combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule() } qr/reason: fake error/,
       'error logged';
     $worker_db_obj->discard_changes;
-    is_deeply($allocated, [], 'no workers/jobs allocated');
+    is_deeply $allocated, [], 'no workers/jobs allocated';
 };
 
 subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {
@@ -331,7 +331,7 @@ subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {
 subtest 'scheduler limits' => sub {
     my @workers;
     for my $wid (2 .. 5) {
-        is(my $id = register_worker(host => $wid), $wid, 'new worker registered');
+        is my $id = register_worker(host => $wid), $wid, 'new worker registered';
         my $worker = $workers->find($id);
         $worker->set_property(WORKER_CLASS => 'qemu_x86_64');
         push @workers, $worker;
@@ -400,102 +400,102 @@ subtest 'job grab (successful assignment)' => sub {
 
     my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
     my $rjobs_after = list_jobs(state => ASSIGNED);
-    ok($grabbed->{settings}->{JOBTOKEN}, 'job token present');
+    ok $grabbed->{settings}->{JOBTOKEN}, 'job token present';
     $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
-    is_deeply($grabbed->{settings}, $job_ref->{settings}, 'settings correct');
-    ok(!$grabbed->{t_started}, 'job start timestamp not present as job is not started');
-    is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), 'number of running jobs');
-    is($rjobs_after->[-1]->{assigned_worker_id}, 1, 'assigned worker set');
+    is_deeply $grabbed->{settings}, $job_ref->{settings}, 'settings correct';
+    ok !$grabbed->{t_started}, 'job start timestamp not present as job is not started';
+    is scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), 'number of running jobs';
+    is $rjobs_after->[-1]->{assigned_worker_id}, 1, 'assigned worker set';
 
     $grabbed = job_get($job->id);
-    is($grabbed->assigned_worker_id, $worker->{id}, 'worker assigned to job');
-    is($grabbed->worker->id, $worker->{id}, 'job assigned to worker');
-    is($grabbed->state, ASSIGNED, 'job is in assigned state');
+    is $grabbed->assigned_worker_id, $worker->{id}, 'worker assigned to job';
+    is $grabbed->worker->id, $worker->{id}, 'job assigned to worker';
+    is $grabbed->state, ASSIGNED, 'job is in assigned state';
 };
 
 my ($job_id, $job3_id);
 
 subtest 'worker re-registration' => sub {
     # register worker again with no job while the web UI thinks it has an assigned job
-    is(register_worker, $id, 'worker re-registered');
+    is register_worker, $id, 'worker re-registered';
 
     # the assigned job is supposed to be re-scheduled
     $job->discard_changes;
     $worker_db_obj->discard_changes;
-    is($job->state, SCHEDULED, 'previous job has been re-scheduled');
-    is($job->result, NONE, 'previous job has no result yet');
-    is($job->settings_hash->{JOBTOKEN}, undef, 'the job token of the previous job has been cleared');
-    cmp_ok($worker_db_obj->t_seen, '>', $last_seen, 'last seen timestamp of worker updated on registration');
-    is($worker_db_obj->job_id, undef, 'previous job is no longer considered the current job of the worker');
+    is $job->state, SCHEDULED, 'previous job has been re-scheduled';
+    is $job->result, NONE, 'previous job has no result yet';
+    is $job->settings_hash->{JOBTOKEN}, undef, 'the job token of the previous job has been cleared';
+    cmp_ok $worker_db_obj->t_seen, '>', $last_seen, 'last seen timestamp of worker updated on registration';
+    is $worker_db_obj->job_id, undef, 'previous job is no longer considered the current job of the worker';
 
     # register worker again with no job while the web UI thinks it as a running job
     $job->update({state => RUNNING});
     $worker_db_obj->update({job_id => $job->id});
     $worker_db_obj->set_property(JOB_TOKEN => 'assume we have a token');
-    is(register_worker, $id, 'worker re-registered');
+    is register_worker, $id, 'worker re-registered';
 
     # the assigned job is supposed to be incompleted
     $job->discard_changes;
     $worker_db_obj->discard_changes;
-    is($job->state, DONE, 'previous job has is considered done');
-    is($job->result, INCOMPLETE, 'previous job been incompleted');
-    is($job->settings_hash->{JOBTOKEN}, undef, 'the job token of the previous job has been cleared');
-    is($worker_db_obj->job_id, undef, 'previous job is no longer considered the current job of the worker');
+    is $job->state, DONE, 'previous job has is considered done';
+    is $job->result, INCOMPLETE, 'previous job been incompleted';
+    is $job->settings_hash->{JOBTOKEN}, undef, 'the job token of the previous job has been cleared';
+    is $worker_db_obj->job_id, undef, 'previous job is no longer considered the current job of the worker';
 
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
-    isnt($job->id, $grabbed->{id}, 'new job grabbed') or die always_explain $grabbed;
-    isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, 'job token differs')
+    isnt $job->id, $grabbed->{id}, 'new job grabbed' or die always_explain $grabbed;
+    isnt $grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, 'job token differs'
       or die always_explain $grabbed->to_hash;
 
     # update refs for is_deeply compare
     $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
     $job_ref->{settings}->{NAME} = $grabbed->{settings}->{NAME};
 
-    is_deeply($grabbed->{settings}, $job_ref->{settings}, 'settings correct');
+    is_deeply $grabbed->{settings}, $job_ref->{settings}, 'settings correct';
     $job3_id = $job->id;
     $job_id = $grabbed->{id};
 };
 
 subtest 'setting job to done' => sub {
     $job = job_get($job_id);
-    is($job->done(result => PASSED), PASSED, 'job_set_done');
+    is $job->done(result => PASSED), PASSED, 'job_set_done';
     $job = job_get($job_id);
-    is($job->state, DONE, 'job_set_done changed state');
-    is($job->result, PASSED, 'job_set_done changed result');
-    ok($job->t_finished =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, 'job end timestamp updated');
-    ok(!$job->settings_hash->{JOBTOKEN}, 'job token not present after job done');
+    is $job->state, DONE, 'job_set_done changed state';
+    is $job->result, PASSED, 'job_set_done changed result';
+    ok $job->t_finished =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, 'job end timestamp updated';
+    ok !$job->settings_hash->{JOBTOKEN}, 'job token not present after job done';
 
     $current_jobs = list_jobs(result => PASSED);
-    is(scalar @{$current_jobs}, 1, 'there is one passed job listed');
+    is scalar @{$current_jobs}, 1, 'there is one passed job listed';
 };
 
 subtest 'set_prio' => sub {
     $jobs->find($job_id)->set_prio(100);
     $job = job_get($job_id);
-    is($job->priority, 100, 'prio changed');
+    is $job->priority, 100, 'prio changed';
 };
 
 subtest 'job deletion' => sub {
     my $result = $jobs->find($job_id)->delete;
     my $no_job_id = job_get($job_id);
-    ok($result && !defined $no_job_id, 'first job deleted');
+    ok $result && !defined $no_job_id, 'first job deleted';
     $job->discard_changes;
 
     $result = $jobs->find($job2->id)->delete;
     $no_job_id = job_get($job2->id);
-    ok($result && !defined $no_job_id, '2nd job deleted');
+    ok $result && !defined $no_job_id, '2nd job deleted';
 
     $result = $jobs->find($job3_id)->delete;
     $no_job_id = job_get($job3_id);
-    ok($result && !defined $no_job_id, '3rd job deleted');
+    ok $result && !defined $no_job_id, '3rd job deleted';
 
     $current_jobs = list_jobs();
-    is_deeply($current_jobs, [], 'no jobs listed anymore');
+    is_deeply $current_jobs, [], 'no jobs listed anymore';
 };
 
 my $asset = $schema->resultset('Assets')->register('iso', $settings{ISO});
-is($asset->name, $settings{ISO}, 'asset register returns same');
+is $asset->name, $settings{ISO}, 'asset register returns same';
 
 subtest 'test job cancellation after max job scheduled time timeout' => sub {
     my $old_time = (DateTime->now(time_zone => 'UTC') - DateTime::Duration->new(days => 8));
@@ -504,9 +504,9 @@ subtest 'test job cancellation after max job scheduled time timeout' => sub {
     undef $ws_send_error;
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $job5->discard_changes;
-    is($job5->state, CANCELLED, 'Job 5 is cancelled by scheduler');
-    is($job5->result, OBSOLETED, 'Job5 result is OBSOLETED');
-    is($job5->reason, 'scheduled for more than 7 days');
+    is $job5->state, CANCELLED, 'Job 5 is cancelled by scheduler';
+    is $job5->result, OBSOLETED, 'Job5 result is OBSOLETED';
+    is $job5->reason, 'scheduled for more than 7 days';
 };
 
 sub _get_job_networks ($job_networks) {

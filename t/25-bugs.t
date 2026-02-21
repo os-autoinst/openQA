@@ -20,13 +20,13 @@ my $app = $t->app;
 my $c = $app->build_controller;
 
 my $bug = $bugs->get_bug('poo#200');
-ok(!defined $bug, 'bug not refreshed');
+ok !defined $bug, 'bug not refreshed';
 
 $bugs->find(1)->update({refreshed => 1, title => 'foo bar < " & ß'});
 $bug = $bugs->get_bug('poo#200');
-ok($bug->refreshed, 'bug refreshed');
-ok($bug->bugid, 'bugid matched');
-is($c->bugtitle_for('poo#200', $bug), "Bug referenced: poo#200\nfoo bar < \" & ß", 'bug title not already escaped');
+ok $bug->refreshed, 'bug refreshed';
+ok $bug->bugid, 'bugid matched';
+is $c->bugtitle_for('poo#200', $bug), "Bug referenced: poo#200\nfoo bar < \" & ß", 'bug title not already escaped';
 
 subtest 'Unreferenced bugs cleanup job works' => sub {
     # create some more bugs
@@ -43,11 +43,11 @@ subtest 'Unreferenced bugs cleanup job works' => sub {
             user_id => 1,
             text => 'poo#202',
         });
-    ok($bugs->count > 0, 'Bugs available for cleanup');
+    ok $bugs->count > 0, 'Bugs available for cleanup';
 
     run_gru_job($app, 'limit_bugs');
-    is($bugs->count, 1, 'Bugs cleaned up');
-    ok($bugs->find({bugid => 'poo#202'}), 'Bug poo#202 not cleaned up due to reference from comment');
+    is $bugs->count, 1, 'Bugs cleaned up';
+    ok $bugs->find({bugid => 'poo#202'}), 'Bug poo#202 not cleaned up due to reference from comment';
 };
 
 done_testing();

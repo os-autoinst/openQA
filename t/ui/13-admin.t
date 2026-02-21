@@ -46,15 +46,15 @@ plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
   unless can_load(modules => {'Selenium::Remote::WDKeys' => undef,});
 
 $driver->title_is('openQA');
-is($driver->find_element('#user-action a')->get_text, 'Login', 'no one logged in');
+is $driver->find_element('#user-action a')->get_text, 'Login', 'no one logged in';
 $driver->find_element_by_link_text('Login')->click;
 $driver->title_is('openQA', 'back on main page');
-is($driver->find_element('#user-action a')->get_text, 'Logged in as Demo', 'logged in as demo');
+is $driver->find_element('#user-action a')->get_text, 'Logged in as Demo', 'logged in as demo';
 
 # expand user menu
 $driver->find_element('#user-action a')->click();
-like($driver->find_element_by_id('user-action')->get_text, qr/Operators Menu/, 'demo is operator');
-like($driver->find_element_by_id('user-action')->get_text, qr/Administrators Menu/, 'demo is admin');
+like $driver->find_element_by_id('user-action')->get_text, qr/Operators Menu/, 'demo is operator';
+like $driver->find_element_by_id('user-action')->get_text, qr/Administrators Menu/, 'demo is admin';
 
 subtest 'Minion dashboard' => sub {
     $driver->find_element_by_link_text('Minion Dashboard')->click;
@@ -81,7 +81,7 @@ subtest 'add product' => sub() {
     wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers, 6, '6 columns');
+    is @headers, 6, '6 columns';
     is((shift @headers)->get_text(), 'Distri', '1st column');
     is((shift @headers)->get_text(), 'Version', '2nd column');
     is((shift @headers)->get_text(), 'Flavor', '3rd column');
@@ -97,42 +97,42 @@ subtest 'add product' => sub() {
     is((shift @cells)->get_text(), 'DVD', 'flavor');
     is((shift @cells)->get_text(), 'i586', 'arch');
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons/media before');
+    is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons/media before';
 
-    is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
+    is $driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium';
 
     $elem = $driver->find_element('.admintable tbody tr:last-child');
-    is($elem->get_text(), '', 'new row empty');
+    is $elem->get_text(), '', 'new row empty';
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
-    is(@fields, 4, '4 input fields');
+    is @fields, 4, '4 input fields';
     (shift @fields)->send_keys('sle');    # distri
     (shift @fields)->send_keys('13');    # version
     (shift @fields)->send_keys('DVD');    # flavor
     (shift @fields)->send_keys('arm19');    # arch
-    is(scalar @{$driver->find_child_elements($elem, '//textarea', 'xpath')}, 1, '1 textarea');
+    is scalar @{$driver->find_child_elements($elem, '//textarea', 'xpath')}, 1, '1 textarea';
 
-    is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
+    is $driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added';
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, '4 edit buttons/media afterwards');
+    is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, '4 edit buttons/media afterwards';
 
     # check the distri name will be lowercase after added a new one
-    is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
+    is $driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium';
 
     $elem = $driver->find_element('.admintable tbody tr:last-child');
-    is($elem->get_text(), '', 'new row empty');
+    is $elem->get_text(), '', 'new row empty';
     @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
-    is(@fields, 4, '4 input fields');
+    is @fields, 4, '4 input fields';
     (shift @fields)->send_keys('OpeNSusE');    # distri name has capital letter and many upper/lower case combined
     (shift @fields)->send_keys('13.2');    # version
     (shift @fields)->send_keys('DVD');    # flavor
     (shift @fields)->send_keys('ppc64le');    # arch
     @fields = $driver->find_child_elements($elem, '//textarea', 'xpath');
-    is(@fields, 1, '1 textarea');
+    is @fields, 1, '1 textarea';
     (shift @fields)->send_keys("DVD=2\nIOS_MAXSIZE=4700372992");
 
-    is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
+    is $driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added';
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 5, '5 edit buttons/media afterwards');
+    is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 5, '5 edit buttons/media afterwards';
 };
 
 subtest 'add machine' => sub() {
@@ -144,7 +144,7 @@ subtest 'add machine' => sub() {
     wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers, 4, '4 columns');
+    is @headers, 4, '4 columns';
     is((shift @headers)->get_text(), 'Name', '1st column');
     is((shift @headers)->get_text(), 'Backend', '2nd column');
     is((shift @headers)->get_text(), 'Settings', '3th column');
@@ -158,23 +158,23 @@ subtest 'add machine' => sub() {
     is((shift @cells)->get_text(), 'qemu', 'backend');
     is((shift @cells)->get_text(), "LAPTOP=1\nQEMUCPU=qemu64", 'cpu');
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons before');
+    is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons before';
 
-    is($driver->find_element_by_xpath('//input[@value="New machine"]')->click(), 1, 'new machine');
+    is $driver->find_element_by_xpath('//input[@value="New machine"]')->click(), 1, 'new machine';
 
     $elem = $driver->find_element('.admintable tbody tr:last-child');
-    is($elem->get_text(), '', 'new row empty');
+    is $elem->get_text(), '', 'new row empty';
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
-    is(@fields, 2, '2 input fields');
+    is @fields, 2, '2 input fields';
     (shift @fields)->send_keys('HURRA');    # name
     (shift @fields)->send_keys('ipmi');    # backend
     @fields = $driver->find_child_elements($elem, '//textarea', 'xpath');
-    is(@fields, 1, '1 textarea');
+    is @fields, 1, '1 textarea';
     (shift @fields)->send_keys("SERIALDEV=ttyS1\nTIMEOUT_SCALE=3\nWORKER_CLASS=64bit-ipmi");    # cpu
-    is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
+    is $driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added';
     wait_for_ajax;
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, '4 edit buttons afterwards');
+    is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, '4 edit buttons afterwards';
 };
 
 subtest 'add test suite' => sub() {
@@ -187,7 +187,7 @@ subtest 'add test suite' => sub() {
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     my $column_count = 4;
-    is(@headers, $column_count, 'all columns');
+    is @headers, $column_count, 'all columns';
     is((shift @headers)->get_text(), 'Name', '1st column');
     is((shift @headers)->get_text(), 'Settings', '2th column');
     is((shift @headers)->get_text(), 'Description', '3rd column');
@@ -197,44 +197,42 @@ subtest 'add test suite' => sub() {
     $elem = $driver->find_element('.admintable tbody');
     my @cells = $driver->find_child_elements($elem, 'td');
 
-    is(scalar @cells, 7 * $column_count, 'all seven rows present');
-    is($cells[0 * $column_count + 0]->get_text(), 'RAID0', 'name');
-    is($cells[0 * $column_count + 1]->get_text(), "DESKTOP=kde\nINSTALLONLY=1\nRAIDLEVEL=0", 'settings');
-    is($cells[0 * $column_count + 2]->get_text(), '', 'description');
-    is($cells[1 * $column_count + 0]->get_text(), 'advanced_kde', 'name (2nd row)');
-    is($cells[1 * $column_count + 2]->get_text(), 'See kde for simple test', 'description (2nd row)');
-    is(scalar @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 7, '7 edit buttons before');
+    is scalar @cells, 7 * $column_count, 'all seven rows present';
+    is $cells[0 * $column_count + 0]->get_text(), 'RAID0', 'name';
+    is $cells[0 * $column_count + 1]->get_text(), "DESKTOP=kde\nINSTALLONLY=1\nRAIDLEVEL=0", 'settings';
+    is $cells[0 * $column_count + 2]->get_text(), '', 'description';
+    is $cells[1 * $column_count + 0]->get_text(), 'advanced_kde', 'name (2nd row)';
+    is $cells[1 * $column_count + 2]->get_text(), 'See kde for simple test', 'description (2nd row)';
+    is scalar @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 7, '7 edit buttons before';
 
     # search (settings taken into account, cleared when adding new row)
     my $search_input = $driver->find_element('.dt-search input');
     $search_input->send_keys('DESKTOP=kdeINSTALLONLY=1');
     @cells = $driver->find_child_elements($elem, 'td');
-    is(scalar @cells, 1 * $column_count, 'everything filtered out but one row');
-    is($cells[0 * $column_count + 0]->get_text(), 'RAID0', 'remaining row has correct name');
-    is(
-        $cells[0 * $column_count + 1]->get_text(),
-        "DESKTOP=kde\nINSTALLONLY=1\nRAIDLEVEL=0",
-        'remaining row has correct settings'
-    );
+    is scalar @cells, 1 * $column_count, 'everything filtered out but one row';
+    is $cells[0 * $column_count + 0]->get_text(), 'RAID0', 'remaining row has correct name';
+    is $cells[0 * $column_count + 1]->get_text(),
+      "DESKTOP=kde\nINSTALLONLY=1\nRAIDLEVEL=0",
+      'remaining row has correct settings';
 
-    is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
-    is(element_prop_by_selector('.dt-search input'), '((DESKTOP=kdeINSTALLONLY=1)|(new row))', 'search cleared');
+    is $driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite';
+    is element_prop_by_selector('.dt-search input'), '((DESKTOP=kdeINSTALLONLY=1)|(new row))', 'search cleared';
     @cells = $driver->find_child_elements($elem, 'td');
-    is(scalar @cells, 2 * $column_count, 'filtered row and empty row present');
-    is($cells[0 * $column_count + 0]->get_text(), 'RAID0', 'filtered row has correct name');
-    is($cells[1 * $column_count + 0]->get_text(), '', 'name of new row is empty');
-    is($cells[1 * $column_count + 1]->get_text(), '', 'settings of new row are empty');
-    is($cells[1 * $column_count + 2]->get_text(), '', 'description of new row is empty');
+    is scalar @cells, 2 * $column_count, 'filtered row and empty row present';
+    is $cells[0 * $column_count + 0]->get_text(), 'RAID0', 'filtered row has correct name';
+    is $cells[1 * $column_count + 0]->get_text(), '', 'name of new row is empty';
+    is $cells[1 * $column_count + 1]->get_text(), '', 'settings of new row are empty';
+    is $cells[1 * $column_count + 2]->get_text(), '', 'description of new row is empty';
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
-    is(@fields, 1, '1 input field');
+    is @fields, 1, '1 input field';
     (shift @fields)->send_keys('xfce');    # name
     @fields = $driver->find_child_elements($elem, '//textarea', 'xpath');
-    is(@fields, 2, '2 textareas');
+    is @fields, 2, '2 textareas';
 
-    is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
+    is $driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added';
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')},
-        2, '2 edit buttons afterwards (for row matching previously entered filter and submitted row)');
+    is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')},
+      2, '2 edit buttons afterwards (for row matching previously entered filter and submitted row)';
 
     # clear admin table search
     $driver->execute_script('window.adminTable.search("")');
@@ -242,54 +240,54 @@ subtest 'add test suite' => sub() {
     # can add entry with single, double quotes, special chars
     my ($suiteName, $suiteKey, $suiteValue) = qw(t"e\\st'Suite\' te\'\\st"Ke"y; te'\""stVa;l%&ue);
 
-    is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
+    is $driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite';
     $elem = $driver->find_element('.admintable tbody tr:last-child');
-    is($elem->get_text(), '', 'new row empty');
+    is $elem->get_text(), '', 'new row empty';
     $driver->find_child_element($elem, '//input[@type="text"]', 'xpath')->send_keys($suiteName);
     $driver->find_child_element($elem, '//textarea', 'xpath')->send_keys("$suiteKey=$suiteValue");
-    is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
+    is $driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added';
     # leave the ajax some time
     wait_for_ajax;
 # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
     $elem = $driver->find_element('.alert span');
-    like($elem->get_text(), qr/Invalid characters/, 'error shown for invalid chars in settings key');
+    like $elem->get_text(), qr/Invalid characters/, 'error shown for invalid chars in settings key';
 
     # reload page to clear any form fields or flash messages
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Test suites')->click();
 
     $suiteKey = 'testKey';    # now try it again with a valid key
-    is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
+    is $driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite';
     $elem = $driver->find_element('.admintable tbody tr:last-child');
-    is($elem->get_text(), '', 'new row empty');
+    is $elem->get_text(), '', 'new row empty';
     $driver->find_child_element($elem, '//input[@type="text"]', 'xpath')->send_keys($suiteName);
     $driver->find_child_element($elem, '//textarea', 'xpath')->send_keys("$suiteKey=$suiteValue");
-    is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
+    is $driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added';
     # leave the ajax some time
     wait_for_ajax;
 
     $elem = $driver->find_element('.admintable tbody tr:nth-child(7)')
       ;    # sorting by name so `t"e\st'Suite\'` is supposed to be the 7th element
-    is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
+    is $elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key';
     # try to edit and save
-    ok($driver->find_child_element($elem, './td/button[@title="Edit"]', 'xpath')->click(), 'editing enabled');
+    ok $driver->find_child_element($elem, './td/button[@title="Edit"]', 'xpath')->click(), 'editing enabled';
     wait_for_ajax;
 
     $elem = $driver->find_element('.admintable tbody tr:nth-child(7) td textarea');
-    is(element_prop_by_selector('.admintable tbody tr:nth-child(7) td input[type="text"]'),
-        $suiteName, 'suite name edit box match');
-    is($elem->get_text, "testKey=$suiteValue", 'textarea matches sanitized key and value');
-    ok($driver->find_child_element($elem, '//button[@title="Update"]', 'xpath')->click(), 'editing saved');
+    is element_prop_by_selector('.admintable tbody tr:nth-child(7) td input[type="text"]'),
+      $suiteName, 'suite name edit box match';
+    is $elem->get_text, "testKey=$suiteValue", 'textarea matches sanitized key and value';
+    ok $driver->find_child_element($elem, '//button[@title="Update"]', 'xpath')->click(), 'editing saved';
 
     # reread and compare to original
     wait_for_ajax;
     $elem = $driver->find_element('.admintable tbody tr:nth-child(7)');
-    is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
+    is $elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key';
 
     $elem = $driver->find_element('.dt-search input');
     $elem->send_keys('^kde');
     @fields = $driver->find_elements('.admintable tbody tr');
-    is(@fields, 1, 'search using regex');
+    is @fields, 1, 'search using regex';
 };
 
 subtest 'add job group' => sub() {
@@ -303,25 +301,24 @@ subtest 'add job group' => sub() {
     my @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is((shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
-    is(@parent_group_entries, 0, 'only parentless groups present');
+    is @parent_group_entries, 0, 'only parentless groups present';
 
     # disable animations to speed up test
     $driver->execute_script('$(\'#add_group_modal\').removeClass(\'fade\'); jQuery.fx.off = true;');
 
     # add new parentless group, leave name empty (which should lead to error)
     $driver->find_element_by_xpath('//a[@title="Add new job group on top-level"]')->click();
-    is($driver->find_element('#create_group_button')->get_attribute('disabled'),
-        'true', 'create group submit button is disabled if name is empty');
+    is $driver->find_element('#create_group_button')->get_attribute('disabled'),
+      'true', 'create group submit button is disabled if name is empty';
     # now leave group name with blank which also lead to error
     my $groupname = $driver->find_element_by_id('new_group_name');
     $groupname->send_keys('   ');
-    is($driver->find_element('#create_group_button')->get_attribute('disabled'),
-        'true', 'create group submit button is disabled if name only consists of white-spaces');
-    is(
-        $driver->find_element('#new_group_name')->get_attribute('class'),
-        'form-control is-invalid',
-        'group name input marked as invalid'
-    );
+    is $driver->find_element('#create_group_button')->get_attribute('disabled'),
+      'true', 'create group submit button is disabled if name only consists of white-spaces';
+    is
+      $driver->find_element('#new_group_name')->get_attribute('class'),
+      'form-control is-invalid',
+      'group name input marked as invalid';
 
     # add new parentless group (dialog should still be open), this time enter a name
     $groupname->clear;
@@ -337,7 +334,7 @@ subtest 'add job group' => sub() {
     is((shift @parent_group_entries)->get_text(), 'Cool Group', 'new parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group from fixtures present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group from fixtures present');
-    is(@parent_group_entries, 0, 'no further grops present');
+    is @parent_group_entries, 0, 'no further grops present';
 
     # add new parent group
     $driver->find_element_by_xpath('//a[@title="Add new folder"]')->click();
@@ -348,10 +345,10 @@ subtest 'add job group' => sub() {
     # check whether parent is present
     $list_element = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is(@parent_group_entries, 4,
-        'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
+    is @parent_group_entries, 4,
+      'now 4 top-level groups present (one is new parent, remaining are parentless job groups)';
     my $new_groups_entry = shift @parent_group_entries;
-    is($new_groups_entry->get_text(), 'New parent group', 'new group present');
+    is $new_groups_entry->get_text(), 'New parent group', 'new group present';
 
     # test Drag & Drop: done manually
 
@@ -361,8 +358,8 @@ subtest 'add job group' => sub() {
 
     $list_element = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is(@parent_group_entries, 4,
-        'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
+    is @parent_group_entries, 4,
+      'now 4 top-level groups present (one is new parent, remaining are parentless job groups)';
     is((shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group from fixtures present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group from fixtures present');
     is((shift @parent_group_entries)->get_text(), 'Cool Group', 'new parentless group present');
@@ -394,13 +391,12 @@ subtest 'job property editor' => sub() {
         # update group name with empty
         $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{backspace});
-        is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
-            'true', 'group properties save button is disabled if name is left empty');
-        is(
-            $driver->find_element('#editor-name')->get_attribute('class'),
-            'form-control is-invalid',
-            'editor name input marked as invalid'
-        );
+        is $driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
+          'true', 'group properties save button is disabled if name is left empty';
+        is
+          $driver->find_element('#editor-name')->get_attribute('class'),
+          'form-control is-invalid',
+          'editor name input marked as invalid';
         $driver->refresh();
         $driver->find_element_by_id('toggle-group-properties')->click();
 
@@ -408,13 +404,12 @@ subtest 'job property editor' => sub() {
         $groupname = $driver->find_element_by_id('editor-name');
         $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $groupname->send_keys('   ');
-        is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
-            'true', 'group properties save button is disabled if name is blank');
-        is(
-            $driver->find_element('#editor-name')->get_attribute('class'),
-            'form-control is-invalid',
-            'editor name input marked as invalid'
-        );
+        is $driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
+          'true', 'group properties save button is disabled if name is blank';
+        is
+          $driver->find_element('#editor-name')->get_attribute('class'),
+          'form-control is-invalid',
+          'editor name input marked as invalid';
         $driver->refresh();
         $driver->find_element_by_id('toggle-group-properties')->click();
     };
@@ -431,8 +426,8 @@ subtest 'job property editor' => sub() {
         $ele = $driver->find_element_by_id('editor-keep-results-in-days');
         $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $ele->send_keys('501');
-        is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
-            undef, 'group properties save button is enabled');
+        is $driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
+          undef, 'group properties save button is enabled';
         $driver->find_element_by_id('editor-carry-over-bugrefs')->click();
         $driver->find_element('#properties p.buttons button.btn-primary')->click();
         wait_for_ajax(msg => 'ensure there is no race condition, even though the page is reloaded');
@@ -489,51 +484,51 @@ subtest 'edit job templates' => sub() {
         $driver->get('/admin/job_templates/1003');
         wait_for_ajax;
         my $form = $driver->find_element_by_id('editor-form');
-        ok($form->is_displayed(), 'editor form is shown by default');
-        ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
-        is(scalar @{$driver->find_elements('Test new medium as part of this group', 'link_text')},
-            0, 'link to add a new medium (via legacy editor) not shown');
+        ok $form->is_displayed(), 'editor form is shown by default';
+        ok $form->child('.progress-indication')->is_hidden(), 'spinner is hidden';
+        is scalar @{$driver->find_elements('Test new medium as part of this group', 'link_text')},
+          0, 'link to add a new medium (via legacy editor) not shown';
         my $yaml = $driver->execute_script('return editor.getValue();');
-        like($yaml, qr/products:\s*{}.*scenarios:\s*{}/s, 'default YAML was fetched') or always_explain $yaml;
+        like $yaml, qr/products:\s*{}.*scenarios:\s*{}/s, 'default YAML was fetched' or always_explain $yaml;
     };
 
     my ($yaml, $form);
     subtest 'open YAML editor for legacy group' => sub {
         $driver->get('/admin/job_templates/1001');
         $form = $driver->find_element_by_id('editor-form');
-        ok($form->is_hidden(), 'editor form is not shown by default');
+        ok $form->is_hidden(), 'editor form is not shown by default';
         $driver->find_element_by_id('toggle-yaml-editor')->click();
         wait_for_ajax;
-        ok($form->is_displayed(), 'editor form is shown');
-        ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
+        ok $form->is_displayed(), 'editor form is shown';
+        ok $form->child('.progress-indication')->is_hidden(), 'spinner is hidden';
         $yaml = $driver->execute_script('return editor.getValue();');
-        like($yaml, qr/scenarios:/, 'YAML was fetched') or always_explain $yaml;
+        like $yaml, qr/scenarios:/, 'YAML was fetched' or always_explain $yaml;
     };
 
     # Preview
     $driver->find_element_by_id('preview-template')->click();
     my $result = $form->child('.result');
     wait_for_ajax;
-    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or always_explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
+    like $result->get_text(), qr/Preview of the changes/, 'preview shown' or always_explain $result->get_text();
+    like $result->get_text(), qr/No changes were made!/, 'preview, nothing changed'
       or always_explain $result->get_text();
 
     # Expansion
     $driver->find_element_by_id('expand-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Result of expanding the YAML/, 'expansion shown')
+    like $result->get_text(), qr/Result of expanding the YAML/, 'expansion shown'
       or always_explain $result->get_text();
-    like($result->get_text(), qr/settings: \{\}/, 'expanded YAML has empty settings')
+    like $result->get_text(), qr/settings: \{\}/, 'expanded YAML has empty settings'
       or always_explain $result->get_text();
-    unlike($result->get_text(), qr/defaults:/, 'expanded YAML has no defaults')
+    unlike $result->get_text(), qr/defaults:/, 'expanded YAML has no defaults'
       or always_explain $result->get_text();
 
     # Save
     $driver->find_element_by_id('save-template')->click();
     $result = $form->child('.result');
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
+    like $result->get_text(), qr/YAML saved!/, 'saving confirmed' or always_explain $result->get_text();
+    like $result->get_text(), qr/No changes were made!/, 'preview, nothing changed'
       or always_explain $result->get_text();
 
     # Make changes to existing YAML
@@ -544,30 +539,30 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$yaml\");");
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or always_explain $result->get_text();
-    ok(index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown')
+    like $result->get_text(), qr/Preview of the changes/, 'preview shown' or always_explain $result->get_text();
+    ok index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown'
       or always_explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
-    ok(index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown')
+    like $result->get_text(), qr/YAML saved!/, 'saving confirmed' or always_explain $result->get_text();
+    ok index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown'
       or always_explain $result->get_text();
 
     # No changes
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or always_explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
+    like $result->get_text(), qr/Preview of the changes/, 'preview shown' or always_explain $result->get_text();
+    like $result->get_text(), qr/No changes were made!/, 'preview, nothing changed'
       or always_explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/, 'saved, nothing changed')
+    like $result->get_text(), qr/YAML saved!/, 'saving confirmed' or always_explain $result->get_text();
+    like $result->get_text(), qr/No changes were made!/, 'saved, nothing changed'
       or always_explain $result->get_text();
 
     # Legacy UI is hidden and no longer available
-    ok($driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden');
-    ok($driver->find_element_by_id('media')->is_hidden(), 'media editor hidden');
+    ok $driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden';
+    ok $driver->find_element_by_id('media')->is_hidden(), 'media editor hidden';
 
     # More changes on top of the previous ones
     $yaml .= "    - advanced_kde_high_prio:\n";
@@ -577,15 +572,15 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$yaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
+    like $result->get_text(), qr/YAML saved!/, 'saving confirmed' or always_explain $result->get_text();
 
     # Empty the editor
     $driver->execute_script("editor.setValue('');");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or always_explain $result->get_text();
+    like $result->get_text(), qr/YAML saved!/, 'saving confirmed' or always_explain $result->get_text();
     $yaml = $driver->execute_script('return editor.getValue();');
-    is($yaml, "products: {}\nscenarios: {}\n", 'YAML was reset to default') or always_explain $yaml;
+    is $yaml, "products: {}\nscenarios: {}\n", 'YAML was reset to default' or always_explain $yaml;
 
     my $first_tab = $driver->get_current_window_handle();
     # Make changes in a separate tab
@@ -598,9 +593,9 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/, 'second tab saved') or always_explain $result->get_text();
+    like $result->get_text(), qr/YAML saved!/, 'second tab saved' or always_explain $result->get_text();
     my $saved_yaml = $driver->execute_script('return editor.getValue();');
-    is($saved_yaml, "$yaml\n", 'YAML got a final linebreak') or always_explain $yaml;
+    is $saved_yaml, "$yaml\n", 'YAML got a final linebreak' or always_explain $yaml;
     # Try and save, after the database has already been modified
     $driver->switch_to_window($first_tab);
     $form = $driver->find_element_by_id('editor-form');
@@ -609,21 +604,21 @@ subtest 'edit job templates' => sub() {
     $driver->execute_script("editor.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/Template was modified/, 'conflict reported') or always_explain $result->get_text();
+    like $result->get_text(), qr/Template was modified/, 'conflict reported' or always_explain $result->get_text();
 
     # Make the YAML invalid
     $driver->execute_script('editor.setValue("invalid: true");');
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
-    like($result->get_text(), qr/There was a problem applying the changes/, 'error shown');
+    like $result->get_text(), qr/There was a problem applying the changes/, 'error shown';
 
     # Group properties remain accessible
     $driver->find_element_by_id('toggle-group-properties')->click();
-    ok($driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can be edited');
+    ok $driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can be edited';
     $driver->refresh();
     wait_for_ajax;
     $driver->find_element_by_id('toggle-group-properties')->click();
-    ok($driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can still be edited after refresh');
+    ok $driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can still be edited after refresh';
 };
 
 sub get_cell_contents {
@@ -637,74 +632,68 @@ subtest 'asset list' => sub {
     open(my $fh, '>', $asset_path);
     print $fh "ISO\n";
     close($fh);
-    ok(-e $asset_path, 'dummy asset present at ' . $asset_path);
+    ok -e $asset_path, 'dummy asset present at ' . $asset_path;
 
     my $asset_table_url = '/admin/assets?force_refresh=1';
     $driver->get($asset_table_url);
     $driver->title_is('openQA: Assets', 'on asset');
     wait_for_ajax;
 
-    ok(-f 't/data/openqa/webui/cache/asset-status.json', 'cache file created');
+    ok -f 't/data/openqa/webui/cache/asset-status.json', 'cache file created';
 
     # table of assets
-    is_deeply(
-        get_cell_contents('tr:nth-child(4)'),
-        ['iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso', '99947', '4 byte', '1001'],
-        'asset with unknown last use and size'
-    );
-    is_deeply(
-        get_cell_contents('tr:nth-child(2)'),
-        ['iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', '99963', '4 byte', '1001 1002'],
-        'asset with last use'
-    );
+    is_deeply
+      get_cell_contents('tr:nth-child(4)'),
+      ['iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso', '99947', '4 byte', '1001'],
+      'asset with unknown last use and size';
+    is_deeply
+      get_cell_contents('tr:nth-child(2)'),
+      ['iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', '99963', '4 byte', '1001 1002'],
+      'asset with last use';
 
     # assets by group
     my @assets_by_group = map { $_->get_text() } $driver->find_elements('#assets-by-group > li');
     if (scalar(@assets_by_group) > 0 && $assets_by_group[0] =~ qr/Untracked.*/) {
-        note('ignoring untracked assets in your checkout (likely created by previous tests)');
+        note 'ignoring untracked assets in your checkout (likely created by previous tests)';
         splice(@assets_by_group, 0, 1);
     }
-    is_deeply(
-        \@assets_by_group,
-        ["opensuse test\n16 byte / 100 GiB", "opensuse\n16 byte / 100 GiB"],
-        'groups of "assets by group"'
-    );
+    is_deeply
+      \@assets_by_group,
+      ["opensuse test\n16 byte / 100 GiB", "opensuse\n16 byte / 100 GiB"],
+      'groups of "assets by group"';
     $driver->click_element_ok('#group-1001-checkbox + label', 'css');
-    is_deeply(
-        [map { $_->get_text() } $driver->find_elements('#group-1001-checkbox ~ ul li')],
-        [
-            "iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso\n4 byte",
-            "iso/openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso\n4 byte",
-            "iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso\n4 byte",
-            "hdd/fixed/openSUSE-13.1-x86_64.hda\n4 byte"
-        ],
-        'assets of "assets by group"'
-    );
+    is_deeply
+      [map { $_->get_text() } $driver->find_elements('#group-1001-checkbox ~ ul li')],
+      [
+        "iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso\n4 byte",
+        "iso/openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso\n4 byte",
+        "iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso\n4 byte",
+        "hdd/fixed/openSUSE-13.1-x86_64.hda\n4 byte"
+      ],
+      'assets of "assets by group"';
 
     # delete one of the assets
     my $asset4_td = $driver->find_element('tr:nth-child(6) td:first-child');
     my $asset4_a = $driver->find_child_element($asset4_td, 'a');
-    is($asset4_td->get_text(), 'iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso')
+    is $asset4_td->get_text(), 'iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'
       and $asset4_a->click();
     wait_for_ajax;
 
-    like(
-        $driver->find_element('div#flash-messages .alert span')->get_text,
-        qr/The asset was deleted successfully/,
-        'delete asset successfully'
-    );
+    like
+      $driver->find_element('div#flash-messages .alert span')->get_text,
+      qr/The asset was deleted successfully/,
+      'delete asset successfully';
     $asset4_a->click();
     wait_for_ajax;
-    is(
-        $driver->find_element('div#flash-messages .alert-danger span')->get_text,
+    is
+      $driver->find_element('div#flash-messages .alert-danger span')->get_text,
 'Error deleting asset: The asset might have already been removed and only the cached view has not been updated yet.',
-        'The asset has been removed'
-    );
+      'The asset has been removed';
 
     # FIXME/caveat: since the table doesn't show livedata the deletion is currently immediately
     #               visible
 
-    ok(!-e $asset_path, 'dummy asset should have been removed');
+    ok !-e $asset_path, 'dummy asset should have been removed';
     unlink($asset_path);
 };
 
@@ -716,7 +705,7 @@ subtest 'Manage API keys' => sub {
     subtest 'view keys' => sub {
         $driver->get('/api_keys');
         $tbody = api_keys_tbody;
-        like($tbody->get_text, qr/1234567890ABCDEF/, 'default API key present');
+        like $tbody->get_text, qr/1234567890ABCDEF/, 'default API key present';
     };
 
     subtest 'delete key' => sub {
@@ -729,7 +718,7 @@ subtest 'Manage API keys' => sub {
             },
             'default API key gone'
         );
-        like($driver->find_element_by_id('flash-messages')->get_text, qr/API key delete/, 'flash message for deletion');
+        like $driver->find_element_by_id('flash-messages')->get_text, qr/API key delete/, 'flash message for deletion';
     };
 
     subtest 'create key with expiration date' => sub {
@@ -738,19 +727,19 @@ subtest 'Manage API keys' => sub {
             selector => '#api-keys-tbody > tr',
             description => 'key row present'
         ) or return;
-        like($row->get_text, qr/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, 'new key has expiration date');
+        like $row->get_text, qr/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, 'new key has expiration date';
     };
 
     subtest 'create key without expiration date' => sub {
         $tbody = api_keys_tbody;
-        unlike($tbody->get_text, qr/never/, 'no key without expiration date present so far');
+        unlike $tbody->get_text, qr/never/, 'no key without expiration date present so far';
         $driver->find_element_by_id('expiration')->click;
         my $row = wait_for_element(
             trigger_function => sub { $driver->find_element('#api-keys-form input[type=submit]')->click },
             selector => '#api-keys-tbody tr:nth-child(2)',
             description => 'key row present (without expiration)'
         ) or return;
-        like($row->get_text, qr/never/, 'new key has expiration date');
+        like $row->get_text, qr/never/, 'new key has expiration date';
     };
 };
 

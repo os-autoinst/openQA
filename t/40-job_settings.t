@@ -85,8 +85,8 @@ subtest expand_placeholders => sub {
         CASEDIR => 'foo',
         NEEDLES_DIR => '%CASEDIR%/bar/%%%CASEDIR%%/foo',
     };
-    is($error, undef, 'no error returned');
-    is_deeply($settings, $match_settings, 'Settings replaced');
+    is $error, undef, 'no error returned';
+    is_deeply $settings, $match_settings, 'Settings replaced';
 };
 
 subtest circular_reference => sub {
@@ -103,11 +103,10 @@ subtest circular_reference => sub {
         VERSION => '15-SP1',
         MACHINE => '64bit',
     };
-    like(
-        OpenQA::JobSettings::expand_placeholders($circular_settings),
-        qr/The key (\w+) contains a circular reference, its value is %\w+%/,
-        'circular reference exit successfully'
-    );
+    like
+      OpenQA::JobSettings::expand_placeholders($circular_settings),
+      qr/The key (\w+) contains a circular reference, its value is %\w+%/,
+      'circular reference exit successfully';
 };
 
 subtest 'handle_plus_in_settings' => sub {
@@ -118,7 +117,7 @@ subtest 'handle_plus_in_settings' => sub {
         'DISTRI' => 'opensuse',
     };
     OpenQA::JobSettings::handle_plus_in_settings($settings);
-    is_deeply($settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly');
+    is_deeply $settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly';
 };
 
 subtest 'two-pass variable expansion' => sub {
@@ -131,7 +130,7 @@ subtest 'two-pass variable expansion' => sub {
     is OpenQA::JobSettings::expand_placeholders(\%settings, 0), undef, 'worker pass of expand_placeholders';
     is $settings{FOO}, 'http:///', 'placeholder referring to non-existing key finally removed by worker';
     is $settings{NEEDLES_DIR}, '%CASEDIR%/needles',
-      '%CASEDIR% preserved during worker pass (handled instead by _engine_workit_step_2)';
+      '%CASEDIR% preserved during worker pass, handled instead by _engine_workit_step_2';
 };
 
 done_testing;
