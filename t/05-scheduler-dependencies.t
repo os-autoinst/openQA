@@ -125,8 +125,8 @@ subtest 'assign multiple jobs to worker' => sub {
     OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
 
     is(scalar @$sent_messages, 1, 'exactly one message sent');
-    is(ref(my $json = $sent_messages->[0]->{json}), 'HASH', 'json data sent');
-    is(ref(my $job_info = $json->{job_info}), 'HASH', 'job info sent') or always_explain $sent_messages;
+    ref_ok(my $json = $sent_messages->[0]->{json}, 'HASH', 'json data sent');
+    ref_ok(my $job_info = $json->{job_info}, 'HASH', 'job info sent') or always_explain $sent_messages;
     is($json->{type}, WORKER_COMMAND_GRAB_JOBS, 'event type present');
     is($job_info->{assigned_worker_id}, $worker_id, 'worker ID present');
     is($job_info->{ids}, \@job_ids, 'job IDs present');
@@ -138,7 +138,7 @@ subtest 'assign multiple jobs to worker' => sub {
     my $job_data = $job_info->{data};
     for my $job_id (keys %$job_data) {
         my $data = $job_data->{$job_id};
-        is(ref(my $settings = $data->{settings}), 'HASH', "job $job_id has settings");
+        ref_ok(my $settings = $data->{settings}, 'HASH', "job $job_id has settings");
         is($settings->{JOBTOKEN}, $job_token //= $settings->{JOBTOKEN}, "job $job_id has same job token");
     }
     ok($job_token, 'job token present');
