@@ -72,7 +72,7 @@ $users->create(
     }) for (qw(Demo otherdeveloper));
 
 # make sure the assets are prefetched
-ok Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0');
+ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
 # start Selenium test driver and other daemons
 my $port = service_port 'webui';

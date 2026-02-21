@@ -238,6 +238,7 @@ subtest 'unable to delete screenshot' => sub {
 
 subtest 'no errors in database log' => sub {
     my $prep = $schema->storage->dbh->prepare('select pg_current_logfile()');
+    return plan skip_all => "TEST_PG not set" unless $ENV{TEST_PG};
     $prep->execute;
     my $db_log_file = path($ENV{TEST_PG} =~ s/^.*host=//r, $prep->fetchrow_arrayref->[0]);
     my $log = Mojo::File->new($db_log_file)->slurp;

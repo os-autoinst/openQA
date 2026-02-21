@@ -71,7 +71,7 @@ my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 # initialize database, start daemons
 my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
-ok Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched';
+ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
 my $mojoport = service_port 'websocket';
 $ws = create_websocket_server($mojoport, 0);
 my $driver = call_driver({mojoport => service_port 'webui'});

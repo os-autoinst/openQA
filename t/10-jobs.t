@@ -42,14 +42,14 @@ my $fake_git_log = 'deadbeef Break test foo';
 
 subtest 'adding job module without required fields' => sub {
     my $res = $jobs->first->insert_module({name => undef, category => 'foo', script => 'unk'});
-    is 0, $res, 'no job module inserted if name missing';
+    is $res, 0, 'no job module inserted if name missing';
 };
 
 subtest 'handling of concurrent deletions in code updating jobs' => sub {
     ok my $job = $jobs->find(99927), 'job exists in first place';
 
     # delete job "in the middle" via another schema
-    my $schema2 = OpenQA::Schema->connect($ENV{TEST_PG});
+    my $schema2 = OpenQA::Schema->connect($ENV{TEST_PG} // 'DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg');
     $schema2->storage->on_connect_do("SET search_path TO \"$schema_name\"");
     $schema2->resultset('Jobs')->search({id => 99927})->delete;
 
