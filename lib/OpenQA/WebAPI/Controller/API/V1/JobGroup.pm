@@ -400,10 +400,18 @@ sub build_results ($self) {
     my $show_tags = $validation->param('show_tags') // $only_tagged;
 
     my $tags = $show_tags ? $group->tags : undef;
-    my $cbr
-      = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
-        $time_limit_days, $only_tagged ? $tags : undef,
-        [], $tags);
+    my $max_jobs_per_build = $self->app->config->{misc_limits}->{job_group_overview_max_jobs};
+    my $cbr;
+    try {
+        $cbr
+          = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
+            $time_limit_days, $only_tagged ? $tags : undef,
+            [], $tags, $max_jobs_per_build);
+    }
+    catch ($e) {
+        die $e unless $e =~ qr/^(invalid regex: |Build .* has .* jobs, which exceeds the limit)/;
+        return $self->render(json => {error => "$e"}, status => 400);
+    }
     $self->render(json => $cbr);
 }
 

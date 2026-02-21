@@ -242,6 +242,7 @@ sub read_config ($app) {
             generic_default_limit => 10000,
             generic_max_limit => 100000,
             tests_overview_max_jobs => 2000,
+            job_group_overview_max_jobs => 5000,
             all_tests_default_finished_jobs => 500,
             all_tests_max_finished_jobs => 5000,
             list_templates_default_limit => 5000,
