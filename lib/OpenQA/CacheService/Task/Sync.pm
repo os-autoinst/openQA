@@ -7,6 +7,7 @@ use OpenQA::Task::SignalGuard;
 
 use Mojo::URL;
 use Time::Seconds;
+use IPC::Run qw(run);
 
 use constant RSYNC_TIMEOUT => $ENV{OPENQA_RSYNC_TIMEOUT} // (30 * ONE_MINUTE);
 use constant RSYNC_RETRIES => $ENV{OPENQA_RSYNC_RETRIES} // 3;
@@ -41,9 +42,15 @@ sub _cache_tests ($job, $from = undef, $to = undef) {
     my $status;
     my $full_output = '';
     for my $retry (1 .. RSYNC_RETRIES) {
-        my $output = `@cmd`;
-        $status = $? >> 8;
-        $full_output .= "Try $retry:\n" . $output . "\n";
+        my ($in, $out, $err) = ('') x 3;
+        my $ipc_run_succeeded;
+        {
+            local $SIG{CHLD} = 'DEFAULT';
+            $ipc_run_succeeded = run(\@cmd, \$in, \$out, \$err);
+        }
+        $status = $ipc_run_succeeded ? 0 : (($? >> 8) || 255);
+        $status = 255 if $status > 255;    # Handle cases where $? >> 8 is huge due to $? = -1
+        $full_output .= "Try $retry:\nSTDOUT:\n$out\nSTDERR:\n$err\n";
         last unless $status;
         sleep RSYNC_RETRY_PERIOD;
     }
