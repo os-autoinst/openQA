@@ -195,6 +195,7 @@ subtest 'Test configuration default modes' => sub {
             mcp_max_result_size => 500000,
             scheduled_product_min_storage_duration => 34,
             prio_throttling_parameters => 'MAX_JOB_TIME:0.007',
+            job_group_overview_max_jobs => 5000,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
