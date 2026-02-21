@@ -134,14 +134,15 @@ sub _group_overview ($self, $resultset, $template) {
 
     my $tags = $group->tags;
     my $cbr;
+    my $max_jobs_per_build = $self->app->config->{misc_limits}->{job_group_overview_max_jobs};
     try {
         $cbr
           = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
             $time_limit_days, $only_tagged ? $tags : undef,
-            $group_params, $tags);
+            $group_params, $tags, $max_jobs_per_build);
     }
     catch ($e) {
-        die $e unless $e =~ qr/^invalid regex: /;
+        die $e unless $e =~ qr/^(invalid regex: |Build .* has .* jobs, which exceeds the limit)/;
         return $self->_respond_error_for_group_overview($e);
     }
     my $build_results = $cbr->{build_results};
