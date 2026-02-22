@@ -214,3 +214,4 @@ style_check_requires:
   perl(Code::TidyAll):
   ShellCheck:
   shfmt:
+  python3-gitlint:
