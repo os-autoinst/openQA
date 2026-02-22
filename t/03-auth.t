@@ -23,6 +23,13 @@ my $file_api_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::File');
 $file_api_mock->redefine(download_asset => sub ($self) { $self->render(text => 'asset-ok') });
 $file_api_mock->redefine(test_asset => sub ($self) { $self->redirect_to('/assets/iso/test.iso') });
 
+# Mock assets to avoid "Too many open files" errors due to multiple app startups
+my $assets_mock = Test::MockModule->new('OpenQA::Assets');
+$assets_mock->redefine(
+    setup => sub ($server) {
+        $server->helper(asset => sub { '/dummy' });
+    });
+
 my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 $ENV{OPENQA_CONFIG} = $tempdir;
 OpenQA::Test::Database->new->create;
@@ -31,6 +38,7 @@ sub test_auth_method_startup ($auth, @options) {
     my @conf = ("[auth]\n", "method = \t  $auth \t\n");
     $tempdir->child('openqa.ini')->spew(join('', @conf, @options, "[openid]\n", "httpsonly = 0\n"));
     my $t = Test::Mojo->new('OpenQA::WebAPI');
+    $t->app->helper(icon_url => sub { '/favicon.ico' });
     is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
     $t->get_ok('/login' => {Referer => 'http://open.qa/tests/42'});
 }
