@@ -349,10 +349,10 @@ coverage-report-html:
 coverage-html: coverage
 	$(MAKE) coverage-report-html
 
-public/favicon.ico: assets/images/logo.svg
+public/favicon.ico: $(wildcard assets/images/*.svg)
 	for w in 16 32 64 128; do \
 		(cd assets/images/ && for i in *.svg; do \
-			inkscape -e $${i%.svg}-$$w.png -w $$w $$i; \
+			inkscape -o $${i%.svg}-$$w.png -w $$w $$i; \
 		done); \
 	done
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico

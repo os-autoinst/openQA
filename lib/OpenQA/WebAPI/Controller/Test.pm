@@ -18,7 +18,7 @@ use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
-use List::Util qw(min);
+use List::Util qw(first min);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
 
@@ -872,6 +872,9 @@ sub overview ($self) {
     my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $limit);
     my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids);
 
+    my %counts = (%$aggregated, failed => $aggregated->{failed} || ($aggregated->{unknown} // 0));
+    my $aggregate_status = (first { $counts{$_} } STATUS_PRIORITY) // 'passed';
+
     # determine distri/version from job results if not explicitly specified via search args
     my @distris = keys %$results;
     my $formatted_distri;
@@ -911,6 +914,7 @@ sub overview ($self) {
         archs => $archs,
         results => $results,
         aggregated => $aggregated,
+        aggregate_status => $aggregate_status,
         job_ids => $job_ids,
         until => $search_args->{until},
         parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},

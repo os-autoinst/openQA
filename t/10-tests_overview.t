@@ -22,6 +22,25 @@ my $schema = $t->app->schema;
 sub get_summary { OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text) }
 
 my $jobs = $schema->resultset('Jobs');
+
+sub create_job {
+    my %args = @_;
+    return $jobs->create(
+        {
+            group_id => 1001,
+            priority => 50,
+            state => 'done',
+            BUILD => '0001',
+            ARCH => 'x86_64',
+            MACHINE => '64bit',
+            DISTRI => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR => 'DVD',
+            TEST => 'test',
+            %args,
+        });
+}
+
 $jobs->find(99928)->update({blocked_by_id => 99927});
 $jobs->find($_)->comments->create({text => 'foobar', user_id => 99901}) for 99946, 99963;
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'})->status_is(200);
@@ -178,6 +197,36 @@ like get_summary, qr/current time Failed: 1/i;
 $t->element_exists('#res_DVD_x86_64_doc .result_failed');
 $t->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
+subtest 'summary card border' => sub {
+    # Create a job that is softfailed
+    my $softfailed_job = create_job(
+        result => OpenQA::Jobs::Constants::SOFTFAILED,
+        TEST => 'softfailed_test',
+        VERSION => 'SoftFailVersion',
+        DISTRI => 'softfail_distri',
+    );
+
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'})
+      ->status_is(200);
+    $t->element_exists('#summary.border-success', 'softfailed results in border-success');
+    $t->element_exists_not('#summary.border-danger', 'softfailed does NOT result in border-danger');
+
+    # Add a failed job to the same distri/version to see it change to border-danger
+    my $failed_job = create_job(
+        result => OpenQA::Jobs::Constants::FAILED,
+        TEST => 'failed_test',
+        VERSION => 'SoftFailVersion',
+        DISTRI => 'softfail_distri',
+    );
+
+    $t->get_ok('/tests/overview' => form => {distri => 'softfail_distri', version => 'SoftFailVersion'})
+      ->status_is(200);
+    $t->element_exists('#summary.border-danger', 'failed + softfailed results in border-danger');
+
+    $softfailed_job->delete();
+    $failed_job->delete();
+};
+
 subtest 'clickable summary buttons' => sub {
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'})
       ->status_is(200);
@@ -207,17 +256,13 @@ subtest 'clickable summary buttons' => sub {
 
 subtest 'todo-flag on test overview' => sub {
     $schema->txn_begin;
-    $jobs->create(
-        {
-            id => 99964,
-            BUILD => '0048',
-            group_id => 1001,
-            TEST => 'server_client_parallel',
-            DISTRI => 'opensuse',
-            VERSION => 'Factory',
-            state => 'done',
-            result => 'parallel_failed',
-        });
+    create_job(
+        id => 99964,
+        BUILD => '0048',
+        TEST => 'server_client_parallel',
+        VERSION => 'Factory',
+        result => 'parallel_failed',
+    );
     $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
     like get_summary, qr/current time Failed: 1/i, 'todo=1 shows only unlabeled left failed';
@@ -281,15 +326,13 @@ my $jobGroup = $schema->resultset('JobGroups')->create(
         name => 'opensuse test 2'
     });
 
-my $job = $jobs->create(
-    {
-        id => 99964,
-        BUILD => '0092',
-        group_id => 1003,
-        TEST => 'kde',
-        DISTRI => 'opensuse',
-        VERSION => '13.1'
-    });
+my $job = create_job(
+    id => 99964,
+    BUILD => '0092',
+    group_id => 1003,
+    TEST => 'kde',
+    state => 'scheduled',
+);
 
 $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1003')->status_is(200);
 $summary = get_summary;
@@ -480,6 +523,22 @@ subtest 'Maximum jobs limit' => sub {
       ->element_count_is('table.overview td.name', 2);
     $t->get_ok('/tests/overview?result=incomplete')->status_is(200)->element_exists_not('#max-jobs-limit')
       ->element_count_is('table.overview td.name', 0);
+};
+
+subtest 'aggregate favicon' => sub {
+    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'})->status_is(200);
+    $t->element_exists('link#favicon-16[href*="logo-aggregate-running-16.png"]');
+    $t->element_exists('link#favicon-svg[href*="logo-aggregate-running.svg"]');
+
+    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'})
+      ->status_is(200);
+    $t->element_exists('link#favicon-16[href*="logo-aggregate-failed-16.png"]');
+    $t->element_exists('link#favicon-svg[href*="logo-aggregate-failed.svg"]');
+
+    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed'})
+      ->status_is(200);
+    $t->element_exists('link#favicon-16[href*="logo-aggregate-passed-16.png"]');
+    $t->element_exists('link#favicon-svg[href*="logo-aggregate-passed.svg"]');
 };
 
 done_testing();
