@@ -6,7 +6,6 @@ package OpenQA::Schema::Result::ScheduledProducts;
 ## no critic (OpenQA::RedundantStrictWarning)
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
-use Mojo::Base -base, -signatures;
 use DBIx::Class::Timestamps 'now';
 use Exporter 'import';
 use File::Basename;
@@ -26,9 +25,7 @@ use Carp;
 use constant {
     ADDED => 'added',    # no jobs have been created yet
     SCHEDULING => 'scheduling',    # jobs are being created
-    SCHEDULED => 'scheduled',    # all jobs have been created
     CANCELLING => 'cancelling',    # jobs are being cancelled (so far only possible as reaction to webhook event)
-    CANCELLED => 'cancelled',    # all jobs have been cancelled (so far only possible as reaction to webhook event)
 };
 
 __PACKAGE__->table('scheduled_products');
