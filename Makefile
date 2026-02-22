@@ -344,7 +344,7 @@ public/favicon.ico: assets/images/logo.svg
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt
+test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt test-gitlint
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
@@ -372,6 +372,15 @@ test-yaml:
 test-shfmt:
 	@which shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
+
+.PHONY: test-gitlint
+test-gitlint:
+	@which gitlint >/dev/null 2>&1 || (echo "Command 'gitlint' not found, can not execute commit message checks. Install with 'python3-gitlint' (openSUSE) or 'pip install gitlint-core'" && false)
+	@if git rev-parse --verify master >/dev/null 2>&1 && [ "$$(git rev-parse HEAD)" != "$$(git rev-parse master)" ]; then \
+		gitlint --commits master..HEAD; \
+	else \
+		gitlint; \
+	fi
 
 .PHONY: test-check-containers
 test-check-containers:
