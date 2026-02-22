@@ -356,7 +356,7 @@ public/favicon.ico: assets/images/logo.svg
 		done); \
 	done
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
-	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png
+	rm assets/images/*-32.png assets/images/*-64.png assets/images/*-128.png
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
