@@ -163,7 +163,7 @@ sub track_asset ($self, $asset) {
         my $db = $self->sqlite->db;
         my $tx = $db->begin('exclusive');
         my $sql = "INSERT INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))"
-          . 'ON CONFLICT (filename) DO UPDATE SET pending=1';
+          . "ON CONFLICT (filename) DO UPDATE SET pending=1, last_use=strftime('%s','now')";
         $db->query($sql, $asset);
         $tx->commit;
     }
@@ -208,8 +208,9 @@ sub _update_asset ($self, $asset, $etag, $size) {
     my $log = $self->log;
     my $db = $self->sqlite->db;
     my $tx = $db->begin('exclusive');
-    my $sql = "UPDATE assets set etag = ?, size = ?, last_use = strftime('%s','now'), pending = 0 where filename = ?";
-    $db->query($sql, $etag, $size, $asset);
+    my $sql = q{INSERT INTO assets (filename, etag, size, last_use, pending) VALUES (?, ?, ?, strftime('%s','now'), 0) }
+      . q{ON CONFLICT (filename) DO UPDATE SET etag=excluded.etag, size=excluded.size, last_use=excluded.last_use, pending=0};
+    $db->query($sql, $asset, $etag, $size);
     $tx->commit;
 
     my $asset_size = human_readable_size($size);
