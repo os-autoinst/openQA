@@ -16,7 +16,10 @@ BEGIN {
     $ENV{OPENQA_CACHE_ATTEMPTS} = 3;
     $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0;
     $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
+    $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
+    $ENV{OPENQA_BASE_PORT} = 20000 + int(rand(10000));
+    $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
 
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
