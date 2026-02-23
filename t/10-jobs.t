@@ -20,7 +20,7 @@ use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
 use Test::Output;
-use Test::Warnings qw(:report_warnings warning);
+use Test::Warnings qw(:report_warnings);
 use Mojo::File qw(path tempdir);
 use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Utils qw(perform_minion_jobs mock_io_loop);
@@ -1072,17 +1072,18 @@ subtest 'git log diff' => sub {
     $job_mock->redefine(
         run_cmd_with_log_return_error => sub ($cmd, %opt) {
             my $rc = 0;
-            my $stdout = '';
+            my ($stdout, $stderr) = ('') x 2;
             if ("@$cmd" =~ m/rev-list --count/) {
                 if ("@$cmd" =~ m/revlistfail/) { $stdout = 'git failed'; $rc = 1; }
                 elsif ("@$cmd" =~ m/nonumber/) { $stdout = 'NaN'; }
+                elsif ("@$cmd" =~ m/invalidrange/) { $stderr = 'fatal: Invalid revision range'; $rc = 1; }
                 else { $stdout = 10; }
             }
             elsif ("@$cmd" =~ m/diff --stat/) {
                 if ("@$cmd" =~ m/difffail/) { $stdout = 'git failed'; $rc = 1; }
                 else { $stdout = '2 files changed'; }
             }
-            return {stdout => $stdout, return_code => $rc, stderr => ''};
+            return {stdout => $stdout, stderr => $stderr, return_code => $rc};
         });
     my %_settings = %settings;
     $_settings{TEST} = 'L';
@@ -1091,23 +1092,26 @@ subtest 'git log diff' => sub {
     my $too_big = $job->git_diff('/foo', '123..456', 5);
     like $too_big, qr{Too many commits}, 'Too many commits';
 
-    my $warning = warning {
+    combined_like {
         my $non_numeric = $job->git_diff('/foo', 'nonumber..123456', 10);
         like $non_numeric, qr{Cannot display diff because of a git problem}, 'rev-list --count returned no number';
-    };
-    like $warning, qr{returned non-numeric string}, 'rev-list --count returned no number - warning is logged';
+    }
+    qr{returned non-numeric string}, 'rev-list --count returned no number - warning is logged';
 
-    $warning = warning {
+    combined_like {
         my $fail = $job->git_diff('/foo', 'revlistfail..456', 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git rev-list exited with non-zero';
-    };
-    like $warning, qr{git failed}, 'git rev-list exited with non-zero - warning is logged';
+    }
+    qr{git failed}, 'git rev-list exited with non-zero - warning is logged';
 
-    $warning = warning {
+    combined_like {
         my $fail = $job->git_diff('/foo', 'difffail..456', 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git diff exited with non-zero';
-    };
-    like $warning, qr{git failed}, 'git diff exited with non-zero - warning is logged';
+    }
+    qr{git failed}, 'git diff exited with non-zero - warning is logged';
+
+    my $res = $job->git_diff('/foo', 'invalidrange', 10);
+    like $res, qr{Cannot display diff: Invalid revision range}, 'error about invalid range returned';
 
     my $ok = $job->git_diff('/foo', '123..456', 10);
     like $ok, qr{2 files changed}, 'expected git_diff output';

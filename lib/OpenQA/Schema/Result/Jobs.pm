@@ -1893,24 +1893,27 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout} // 20;
     my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
     my $res = run_cmd_with_log_return_error($cmd);
+    my $out = $res->{stdout} . $res->{stderr};
     if ($res->{return_code}) {
-        warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
+        return "Cannot display diff: $1" if $res->{stderr} =~ m/(invalid revision range)/i;
+        log_warning "Problem with [@$cmd] rc=$res->{return_code}: $out";
         return 'Cannot display diff because of a git problem';
     }
     chomp(my $count = $res->{stdout});
     if ($count =~ tr/0-9//c) {
-        warn "Problem with [@$cmd]: returned non-numeric string '$count'";
+        log_warning "Problem with [@$cmd]: returned non-numeric string '$count'";
         return 'Cannot display diff because of a git problem';
     }
     return "Too many commits ($count) to create a diff between $refspec_range (maximum: $limit)" if $count > $limit;
 
     $cmd = ['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range];
     $res = run_cmd_with_log_return_error($cmd, stdout => 'trace');
+    $out = $res->{stdout} . $res->{stderr};
     if ($res->{return_code}) {
-        warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
+        log_warning "Problem with [@$cmd] rc=$res->{return_code}: $out";
         return 'Cannot display diff because of a git problem';
     }
-    return $res->{stdout} . $res->{stderr};
+    return $out;
 }
 
 =head2 investigate
