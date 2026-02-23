@@ -82,20 +82,20 @@ subtest 'add product' => sub() {
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is @headers, 6, '6 columns';
-    is((shift @headers)->get_text(), 'Distri', '1st column');
-    is((shift @headers)->get_text(), 'Version', '2nd column');
-    is((shift @headers)->get_text(), 'Flavor', '3rd column');
-    is((shift @headers)->get_text(), 'Arch', '4th column');
-    is((shift @headers)->get_text(), 'Settings', '5th column');
-    is((shift @headers)->get_text(), 'Actions', '6th column');
+    is +(shift @headers)->get_text(), 'Distri', '1st column';
+    is +(shift @headers)->get_text(), 'Version', '2nd column';
+    is +(shift @headers)->get_text(), 'Flavor', '3rd column';
+    is +(shift @headers)->get_text(), 'Arch', '4th column';
+    is +(shift @headers)->get_text(), 'Settings', '5th column';
+    is +(shift @headers)->get_text(), 'Actions', '6th column';
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(1)');
     my @cells = $driver->find_child_elements($elem, 'td');
-    is((shift @cells)->get_text(), 'opensuse', 'distri');
-    is((shift @cells)->get_text(), '13.1', 'version');
-    is((shift @cells)->get_text(), 'DVD', 'flavor');
-    is((shift @cells)->get_text(), 'i586', 'arch');
+    is +(shift @cells)->get_text(), 'opensuse', 'distri';
+    is +(shift @cells)->get_text(), '13.1', 'version';
+    is +(shift @cells)->get_text(), 'DVD', 'flavor';
+    is +(shift @cells)->get_text(), 'i586', 'arch';
 
     is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons/media before';
 
@@ -145,18 +145,18 @@ subtest 'add machine' => sub() {
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is @headers, 4, '4 columns';
-    is((shift @headers)->get_text(), 'Name', '1st column');
-    is((shift @headers)->get_text(), 'Backend', '2nd column');
-    is((shift @headers)->get_text(), 'Settings', '3th column');
-    is((shift @headers)->get_text(), 'Actions', '4th column');
+    is +(shift @headers)->get_text(), 'Name', '1st column';
+    is +(shift @headers)->get_text(), 'Backend', '2nd column';
+    is +(shift @headers)->get_text(), 'Settings', '3th column';
+    is +(shift @headers)->get_text(), 'Actions', '4th column';
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)');
     my @cells = $driver->find_child_elements($elem, 'td');
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @cells)->get_text(), 'Laptop_64', 'name');
-    is((shift @cells)->get_text(), 'qemu', 'backend');
-    is((shift @cells)->get_text(), "LAPTOP=1\nQEMUCPU=qemu64", 'cpu');
+    is +(shift @cells)->get_text(), 'Laptop_64', 'name';
+    is +(shift @cells)->get_text(), 'qemu', 'backend';
+    is +(shift @cells)->get_text(), "LAPTOP=1\nQEMUCPU=qemu64", 'cpu';
 
     is @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, '3 edit buttons before';
 
@@ -188,10 +188,10 @@ subtest 'add test suite' => sub() {
     my @headers = $driver->find_child_elements($elem, 'th');
     my $column_count = 4;
     is @headers, $column_count, 'all columns';
-    is((shift @headers)->get_text(), 'Name', '1st column');
-    is((shift @headers)->get_text(), 'Settings', '2th column');
-    is((shift @headers)->get_text(), 'Description', '3rd column');
-    is((shift @headers)->get_text(), 'Actions', '4th column');
+    is +(shift @headers)->get_text(), 'Name', '1st column';
+    is +(shift @headers)->get_text(), 'Settings', '2th column';
+    is +(shift @headers)->get_text(), 'Description', '3rd column';
+    is +(shift @headers)->get_text(), 'Actions', '4th column';
 
     # check whether all rows/cells are present and check some cell values
     $elem = $driver->find_element('.admintable tbody');
@@ -299,8 +299,8 @@ subtest 'add job group' => sub() {
     # check whether all job groups from fixtures are displayed
     my $list_element = $driver->find_element_by_id('job_group_list');
     my @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is((shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group present');
-    is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
+    is +(shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group present';
+    is +(shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present';
     is @parent_group_entries, 0, 'only parentless groups present';
 
     # disable animations to speed up test
@@ -331,9 +331,9 @@ subtest 'add job group' => sub() {
     # new group should be present
     $list_element = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is((shift @parent_group_entries)->get_text(), 'Cool Group', 'new parentless group present');
-    is((shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group from fixtures present');
-    is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group from fixtures present');
+    is +(shift @parent_group_entries)->get_text(), 'Cool Group', 'new parentless group present';
+    is +(shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group from fixtures present';
+    is +(shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group from fixtures present';
     is @parent_group_entries, 0, 'no further grops present';
 
     # add new parent group
@@ -360,10 +360,10 @@ subtest 'add job group' => sub() {
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is @parent_group_entries, 4,
       'now 4 top-level groups present (one is new parent, remaining are parentless job groups)';
-    is((shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group from fixtures present');
-    is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group from fixtures present');
-    is((shift @parent_group_entries)->get_text(), 'Cool Group', 'new parentless group present');
-    is((shift @parent_group_entries)->get_text(), 'New parent group', 'new group present');
+    is +(shift @parent_group_entries)->get_text(), 'opensuse', 'first parentless group from fixtures present';
+    is +(shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group from fixtures present';
+    is +(shift @parent_group_entries)->get_text(), 'Cool Group', 'new parentless group present';
+    is +(shift @parent_group_entries)->get_text(), 'New parent group', 'new group present';
 };
 
 subtest 'job property editor' => sub() {

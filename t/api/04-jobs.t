@@ -566,7 +566,7 @@ subtest 'Test failure - if chunks are broken' => sub {
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
             $t->json_like('/error' => qr/Can't verify written data from chunk/) unless $_->is_last();
             ok !-d $chunkdir, 'Chunk directory does not exists' if $_->is_last;
-            ok((-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there') unless $_->is_last;
+            ok +(-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there' unless $_->is_last;
         });
 
     ok !-d $chunkdir, 'Chunk directory does not exists - upload failed';
@@ -609,7 +609,7 @@ subtest 'Failed upload, public assets' => sub {
     $t->post_ok('/api/v1/jobs/99963/upload_state' => form =>
           {filename => 'hdd_image.qcow2', scope => 'public', state => 'fail'});
     ok !-d $chunkdir, 'Chunk directory was removed';
-    ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
+    ok +(!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed';
 };
 
 subtest 'Failed upload, private assets' => sub {
@@ -634,7 +634,7 @@ subtest 'Failed upload, private assets' => sub {
         });
 
     ok !-d $chunkdir, 'Chunk directory was removed';
-    ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
+    ok +(!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed';
 
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
 };

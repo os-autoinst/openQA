@@ -65,7 +65,7 @@ subtest 'Create custom job module' => sub {
     is $job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed';
     is $job->result_size, length $content, 'size of custom module taken into account';
 
-    is(($job->failed_modules)->[0], 'CUSTOM', 'modules can have custom result');
+    is +($job->failed_modules)->[0], 'CUSTOM', 'modules can have custom result';
 };
 
 subtest 'create result dir, delete results' => sub {

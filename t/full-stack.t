@@ -71,7 +71,7 @@ my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 # initialize database, start daemons
 my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
-ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
+ok +Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched';
 my $mojoport = service_port 'websocket';
 $ws = create_websocket_server($mojoport, 0);
 my $driver = call_driver({mojoport => service_port 'webui'});
@@ -284,8 +284,8 @@ subtest 'incomplete job because of setup failure' => sub {
     wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
     my $log_content = $autoinst_log->slurp;
     like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
-    like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes');
-    like((split(/\n/, $log_content))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
+    like +(split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes';
+    like +(split(/\n/, $log_content))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged';
     stop_worker;    # Ensure that the worker can be killed with TERM signal
   }
   or bail_with_log 4,
@@ -358,8 +358,8 @@ subtest 'Cache tests' => sub {
         like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
         like $log_content, qr/11116544/, 'Test 5 Core-7.2.iso size is correct';
         like $log_content, qr/Result: done/, 'Test 5 result done';
-        like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present');
-        like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'uploading of autoinst-log.txt logged');
+        like +(split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present';
+        like +(split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'uploading of autoinst-log.txt logged';
         my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
         ok -s $worker_log, 'worker log file generated' or return;
         $log_content = $worker_log->slurp;
@@ -416,8 +416,8 @@ subtest 'Cache tests' => sub {
         ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created' or return;
         my $log_content = $autoinst_log->slurp;
         like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes';
-        like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present');
-        like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'uploaded autoinst-log');
+        like +(split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present';
+        like +(split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'uploaded autoinst-log';
     } or print_log 7;
 
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
@@ -439,8 +439,8 @@ subtest 'Cache tests' => sub {
         ok -s $autoinst_log, 'autoinst-log.txt file created' or return;
         my $log_content = $autoinst_log->slurp;
         like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'worker notes present';
-        like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present');
-        like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'autoinst-log uploaded');
+        like +(split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present';
+        like +(split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'autoinst-log uploaded';
         like $log_content, qr/(Failed to download.*non-existent.qcow2|Download of.*non-existent.qcow2.*failed)/,
           'failure message found in log';
         like $log_content, qr/Result: setup failure/, 'job result result';

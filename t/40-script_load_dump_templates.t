@@ -92,8 +92,8 @@ subtest 'test changing existing entries' => sub {
 
     # check overwriting testsuite settings
     $t->get_ok("http://$host/api/v1/test_suites/$test_suite_id")->status_is(200);
-    is((grep { $_->{key} eq 'UEFI' } @{$t->tx->res->json->{TestSuites}->[0]->{settings}})[0]->{value},
-        '1', 'value changed back during update');
+    is + (grep { $_->{key} eq 'UEFI' } @{$t->tx->res->json->{TestSuites}->[0]->{settings}})[0]->{value},
+      '1', 'value changed back during update';
 };
 
 # the test fixtures that we loaded contain:

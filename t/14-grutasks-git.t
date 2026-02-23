@@ -265,7 +265,7 @@ subtest 'git clone' => sub {
         my $start = time;
         $res = run_gru_job(@gru_args);
         is $res->{state}, 'inactive', 'job is inactive';
-        ok(($res->{delayed} - $start) > 30, 'job delayed as expected');
+        ok + ($res->{delayed} - $start) > 30, 'job delayed as expected';
     };
 };
 

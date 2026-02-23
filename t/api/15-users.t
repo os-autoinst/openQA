@@ -65,8 +65,8 @@ subtest 'test list_api_keys' => sub {
     $res = $t->get_ok('/api/v1/users/me/api_keys')->status_is(200, 'list api keys')->tx->res->json;
     my $api_keys = $res->{keys};
     ok scalar @$api_keys >= 2, 'at least two keys found';
-    ok((grep { $_->{key} eq $key1 } @$api_keys), "key $key1 found in list");
-    ok((grep { $_->{key} eq $key2 } @$api_keys), "key $key2 found in list");
+    ok +(grep { $_->{key} eq $key1 } @$api_keys), "key $key1 found in list";
+    ok +(grep { $_->{key} eq $key2 } @$api_keys), "key $key2 found in list";
     ok !exists $api_keys->[0]{secret}, 'secret is not returned in list';
 };
 

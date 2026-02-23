@@ -33,9 +33,9 @@ my $pg = Test::MockObject->new->set_true('dsn', 'username', 'password', 'search_
 my $pg_module = Test::MockModule->new('Mojo::Pg')->redefine(new => $pg);
 ok $gru->register($app, undef), 'can register gru plugin';
 $pg->called_ok('username', 'pg connection initialized with username');
-is(($pg->call_args(0))[1], $connect_info->{user}, 'pg connection username is correct');
-is(($pg->call_args(2))[1], $connect_info->{password}, 'pg connection password is correct');
-is(($app->call_args(4))[1], 'Minion', 'minion initialized');
-is(($app->call_args(4))[2]->{Pg}, $pg, 'pg connection initialized on minion');
+is + ($pg->call_args(0))[1], $connect_info->{user}, 'pg connection username is correct';
+is + ($pg->call_args(2))[1], $connect_info->{password}, 'pg connection password is correct';
+is + ($app->call_args(4))[1], 'Minion', 'minion initialized';
+is + ($app->call_args(4))[2]->{Pg}, $pg, 'pg connection initialized on minion';
 
 done_testing;
