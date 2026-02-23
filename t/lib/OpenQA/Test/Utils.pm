@@ -573,12 +573,13 @@ sub test_cmd {
 sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
     my ($function, $description, $args) = @_;
     my $timeout = $args->{timeout} // 60;
-    my $interval = $args->{interval} // .1;
+    my $interval = $args->{interval} // $ENV{OPENQA_TEST_WAIT_INTERVAL} // .1;
 
     note "Waiting for '$description' to become available (timeout: $timeout)";
-    while ($timeout > 0) {
+    my $end = Time::HiRes::time() + $timeout;
+    while (Time::HiRes::time() < $end) {
         return 1 if $function->();
-        $timeout -= sleep $interval;    # uncoverable statement (function might return early one line up)
+        sleep $interval;
     }
     return 0;    # uncoverable statement (only invoked if tests would fail)
 }
