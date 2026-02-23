@@ -17,6 +17,7 @@ plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 my %allowed_types = (
     'text/x-perl' => 1,
     'text/x-python' => 1,
+    'text/x-script.python' => 1,
     'text/x-shellscript' => 1,
 );
 
