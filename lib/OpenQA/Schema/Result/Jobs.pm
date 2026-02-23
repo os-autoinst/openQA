@@ -1894,12 +1894,12 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
     my $res = run_cmd_with_log_return_error($cmd);
     if ($res->{return_code}) {
-        warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
+        log_warning "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
         return 'Cannot display diff because of a git problem';
     }
     chomp(my $count = $res->{stdout});
     if ($count =~ tr/0-9//c) {
-        warn "Problem with [@$cmd]: returned non-numeric string '$count'";
+        log_warning "Problem with [@$cmd]: returned non-numeric string '$count'";
         return 'Cannot display diff because of a git problem';
     }
     return "Too many commits ($count) to create a diff between $refspec_range (maximum: $limit)" if $count > $limit;
@@ -1907,7 +1907,7 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     $cmd = ['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range];
     $res = run_cmd_with_log_return_error($cmd, stdout => 'trace');
     if ($res->{return_code}) {
-        warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
+        log_warning "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
         return 'Cannot display diff because of a git problem';
     }
     return $res->{stdout} . $res->{stderr};

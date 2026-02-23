@@ -20,7 +20,7 @@ use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
 use Test::Output;
-use Test::Warnings qw(:report_warnings warning);
+use Test::Warnings qw(:report_warnings);
 use Mojo::File qw(path tempdir);
 use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Utils qw(perform_minion_jobs mock_io_loop);
@@ -1091,23 +1091,23 @@ subtest 'git log diff' => sub {
     my $too_big = $job->git_diff('/foo', '123..456', 5);
     like $too_big, qr{Too many commits}, 'Too many commits';
 
-    my $warning = warning {
+    combined_like {
         my $non_numeric = $job->git_diff('/foo', 'nonumber..123456', 10);
         like $non_numeric, qr{Cannot display diff because of a git problem}, 'rev-list --count returned no number';
-    };
-    like $warning, qr{returned non-numeric string}, 'rev-list --count returned no number - warning is logged';
+    }
+    qr{returned non-numeric string}, 'rev-list --count returned no number - warning is logged';
 
-    $warning = warning {
+    combined_like {
         my $fail = $job->git_diff('/foo', 'revlistfail..456', 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git rev-list exited with non-zero';
-    };
-    like $warning, qr{git failed}, 'git rev-list exited with non-zero - warning is logged';
+    }
+    qr{git failed}, 'git rev-list exited with non-zero - warning is logged';
 
-    $warning = warning {
+    combined_like {
         my $fail = $job->git_diff('/foo', 'difffail..456', 10);
         like $fail, qr{Cannot display diff because of a git problem}, 'git diff exited with non-zero';
-    };
-    like $warning, qr{git failed}, 'git diff exited with non-zero - warning is logged';
+    }
+    qr{git failed}, 'git diff exited with non-zero - warning is logged';
 
     my $ok = $job->git_diff('/foo', '123..456', 10);
     like $ok, qr{2 files changed}, 'expected git_diff output';
