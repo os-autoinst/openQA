@@ -82,7 +82,7 @@ sub start_servers () {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     perform_minion_jobs($t->app->minion);
-    wait_for_or_bail_out { $cache_client->info->available } 'cache service';
+    wait_for_or_bail_out { $cache_client->info->available } 'cache service', {interval => 0.5};
 }
 
 sub test_default_usage ($id, $asset) {
@@ -140,17 +140,19 @@ sub test_sync ($run) {
 }
 
 sub test_download ($id, $asset) {
-    unlink path($cachedir)->child($asset);
+    unlink path($cachedir, "localhost")->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     ok !$cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
 
     my $status = $cache_client->status($asset_request);
     perform_minion_jobs($t->app->minion);
-    $status = $cache_client->status($asset_request) until !$status->is_downloading;
+    wait_for_or_bail_out { !$cache_client->status($asset_request)->is_downloading } "asset";
+    $status = $cache_client->status($asset_request);
 
     # And then goes to PROCESSED state
-    ok $status->is_processed, 'only other state is processed';
+    ok !$status->has_error, 'no error in status' or die always_explain $status;
+    ok $status->is_processed, 'only other state is processed' or die always_explain $status;
     ok exists $status->data->{has_download_error}, 'whether a download error happened is added to status info';
     ok !$status->data->{has_download_error}, 'no download error occurred';
 
@@ -330,13 +332,15 @@ subtest 'Race for same asset' => sub {
 
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
     my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
+    my $worker = cache_minion_worker;
+    $worker->start;
+
     my $q = queue;
     $q->pool->maximum_processes($concurrent);
     $q->queue->maximum_processes($tot_proc);
 
     my $concurrent_test = sub {
         if (!$cache_client->enqueue($asset_request)) {
-            perform_minion_jobs($t->app->minion);
             wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
             my $ret = $cache_client->asset_exists('localhost', $asset);
             Devel::Cover::report() if Devel::Cover->can('report');
@@ -347,6 +351,7 @@ subtest 'Race for same asset' => sub {
     $q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(1)) for 1 .. $tot_proc;
 
     $q->consume();
+    $worker->stop;
     is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
     $q->done->each(
         sub {
@@ -362,7 +367,7 @@ subtest 'Default usage' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
     my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($asset);
+    unlink path($cachedir, 'localhost')->child($asset);
     ok !$cache_client->asset_exists('localhost', $asset), 'Asset absent'
       or die diag 'Asset already exists - abort test';
 
@@ -385,7 +390,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
     my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($asset);
+    unlink path($cachedir, 'localhost')->child($asset);
     ok !$cache_client->asset_exists('localhost', $asset), 'Asset absent'
       or die diag 'Asset already exists - abort test';
 
@@ -412,9 +417,14 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     my $worker_4 = cache_minion_worker;
 
     $_->start for ($worker_2, $worker_3, $worker_4);
+    wait_for_or_bail_out {
+        my $stats = $cache_client->info->data;
+        ($stats->{active_workers} // 0) + ($stats->{inactive_workers} // 0) >= 3
+    }
+    '3 minion workers';
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
-    unlink path($cachedir)->child($_) for @assets;
+    unlink path($cachedir, "localhost")->child($_) for @assets;
     my %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;
@@ -425,12 +435,13 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     'assets';
 
     for my $asset (@assets) {
-        ok wait_for(sub { $cache_client->asset_exists('localhost', $asset) }, "Asset $asset downloaded correctly"),
-          "Asset $asset downloaded correctly";
+        my $status = $cache_client->status($requests{$asset});
+        ok $status->is_success, "Asset $asset downloaded successfully" or die always_explain $status;
+        ok $cache_client->asset_exists('localhost', $asset), "Asset $asset exists on disk";
     }
 
     @assets = map { 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2' } 1 .. $tot_proc;
-    unlink path($cachedir)->child($_) for @assets;
+    unlink path($cachedir, "localhost")->child($_) for @assets;
     %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;
@@ -441,9 +452,10 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     'assets';
 
     for my $asset (@assets) {
-        ok wait_for(sub { $cache_client->asset_exists('localhost', 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2') },
-            "Asset $asset downloaded correctly"),
-          "Asset $asset downloaded correctly";
+        my $status = $cache_client->status($requests{$asset});
+        ok $status->is_success, "Asset $asset downloaded successfully" or die always_explain $status;
+        ok $cache_client->asset_exists('localhost', 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2'),
+          "Asset $asset exists on disk";
     }
 
     $_->stop for ($worker_2, $worker_3, $worker_4);
