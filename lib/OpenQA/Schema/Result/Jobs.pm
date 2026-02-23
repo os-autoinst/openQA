@@ -1894,6 +1894,7 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
     my $res = run_cmd_with_log_return_error($cmd);
     if ($res->{return_code}) {
+        return "Cannot display diff: $1" if $res->{stderr} =~ m/(invalid revision range)/i;
         log_warning "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
         return 'Cannot display diff because of a git problem';
     }

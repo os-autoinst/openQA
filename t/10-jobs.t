@@ -1072,17 +1072,18 @@ subtest 'git log diff' => sub {
     $job_mock->redefine(
         run_cmd_with_log_return_error => sub ($cmd, %opt) {
             my $rc = 0;
-            my $stdout = '';
+            my ($stdout, $stderr) = ('') x 2;
             if ("@$cmd" =~ m/rev-list --count/) {
                 if ("@$cmd" =~ m/revlistfail/) { $stdout = 'git failed'; $rc = 1; }
                 elsif ("@$cmd" =~ m/nonumber/) { $stdout = 'NaN'; }
+                elsif ("@$cmd" =~ m/invalidrange/) { $stderr = 'fatal: Invalid revision range'; $rc = 1; }
                 else { $stdout = 10; }
             }
             elsif ("@$cmd" =~ m/diff --stat/) {
                 if ("@$cmd" =~ m/difffail/) { $stdout = 'git failed'; $rc = 1; }
                 else { $stdout = '2 files changed'; }
             }
-            return {stdout => $stdout, return_code => $rc, stderr => ''};
+            return {stdout => $stdout, stderr => $stderr, return_code => $rc};
         });
     my %_settings = %settings;
     $_settings{TEST} = 'L';
@@ -1108,6 +1109,9 @@ subtest 'git log diff' => sub {
         like $fail, qr{Cannot display diff because of a git problem}, 'git diff exited with non-zero';
     }
     qr{git failed}, 'git diff exited with non-zero - warning is logged';
+
+    my $res = $job->git_diff('/foo', 'invalidrange', 10);
+    like $res, qr{Cannot display diff: Invalid revision range}, 'error about invalid range returned';
 
     my $ok = $job->git_diff('/foo', '123..456', 10);
     like $ok, qr{2 files changed}, 'expected git_diff output';
