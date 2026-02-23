@@ -252,4 +252,68 @@ ok $opensuse->template, 'opensuse group has template';
 # make sure all job templates are for opensuse group not fedora group
 check_property($schema, 'JobTemplates', 'group_id', [$opensuse->id, $opensuse->id, $opensuse->id]);
 
+subtest 'missing fields in job templates' => sub {
+    $schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates JobGroups);
+    # prepare dependencies: machine and testsuite
+    $schema->resultset('Machines')->create({name => '64bit', backend => 'qemu'});
+    $schema->resultset('TestSuites')->create({name => 'textmode'});
+    $schema->resultset('Products')
+      ->create({name => '', arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => '42.3'});
+    $schema->resultset('Products')
+      ->create({name => '', arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => '*'});
+
+    my ($fh, $tempfilename) = tempfile(UNLINK => 1, SUFFIX => '.pl');
+    print $fh <<'EOF';
+{
+    JobGroups => [],
+    JobTemplates => [
+        {
+            machine => {name => '64bit'},
+            product => {
+                arch => 'x86_64',
+                distri => 'opensuse',
+                flavor => 'DVD',
+                version => '42.3',
+            },
+            test_suite => {name => 'textmode'},
+        },
+        {
+            machine => {name => '64bit'},
+            product => {
+                arch => 'x86_64',
+                distri => 'opensuse',
+                flavor => 'DVD',
+                version => '*',
+            },
+            test_suite => {name => 'textmode'},
+        },
+    ],
+    Machines => [],
+    Products => [],
+    TestSuites => [
+        {
+            name => 'textmode',
+            prio => 60,
+        },
+    ],
+}
+EOF
+    close $fh;
+
+    my $args = "$base_args $tempfilename";
+    # 2 JobTemplates, 1 TestSuite (others exist but will be '0 added')
+    my $expected = qr/JobTemplates +=> \{ added => 2, of => 2 \}/;
+    test_once $args, $expected, 'imported templates with missing fields';
+
+    my @jts = sort { $a->product->version cmp $b->product->version } $schema->resultset('JobTemplates')->all;
+    is @jts, 2, 'two job templates loaded';
+    is $jts[0]->product->version, '*', 'first jt has version *';
+    is $jts[0]->group->name, 'opensuse', 'correct group name for version *';
+    is $jts[0]->prio, 60, 'prio migrated from test suite';
+
+    is $jts[1]->product->version, '42.3', 'second jt has version 42.3';
+    is $jts[1]->group->name, 'opensuse-42.3', 'correct group name for version 42.3';
+    is $jts[1]->prio, 60, 'prio migrated from test suite';
+};
+
 done_testing;
