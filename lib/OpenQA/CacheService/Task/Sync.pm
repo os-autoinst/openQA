@@ -52,6 +52,9 @@ sub _cache_tests ($job, $from = undef, $to = undef) {
         $status = 255 if $status > 255;    # Handle cases where $? >> 8 is huge due to $? = -1
         $full_output .= "Try $retry:\nSTDOUT:\n$out\nSTDERR:\n$err\n";
         last unless $status;
+        my $msg = "rsync error: $status\n$err";
+        $ctx->error($msg);
+        $full_output .= "$msg\n";
         sleep RSYNC_RETRY_PERIOD;
     }
     $job->note(output => "[info] [#$job_id] Calling: $cmd\n$full_output");
