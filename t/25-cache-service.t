@@ -507,55 +507,40 @@ subtest 'Minion monitoring with InfluxDB' => sub {
         is $check_count->(), 0, 'count back at 0';
     };
 
-    my $url = $cache_client->url('/influxdb/minion');
+    my $cs_port = service_port "cache_service";
+    my $url = $cache_client->url("/influxdb/minion");
     my $ua = $cache_client->ua;
-    my $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'three workers still running';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=2i,registered=2i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
+
+    my $check_influx
+      = sub ($active_jobs, $inactive_jobs, $failed_jobs, $delayed_jobs, $active_workers, $inactive_workers,
+        $registered_workers, $msg)
+    {
+        my $res = $ua->get($url)->result;
+        is $res->body, <<"EOF", $msg;
+openqa_minion_jobs,url=http://127.0.0.1:${cs_port} active=${active_jobs}i,delayed=${delayed_jobs}i,failed=${failed_jobs}i,inactive=${inactive_jobs}i
+openqa_minion_workers,url=http://127.0.0.1:${cs_port} active=${active_workers}i,inactive=${inactive_workers}i,registered=${registered_workers}i
+openqa_download_count,url=http://127.0.0.1:${cs_port} count=${count}i
+openqa_download_rate,url=http://127.0.0.1:${cs_port} bytes=${rate}i
 EOF
+    };
+
+    $check_influx->(0, 0, 0, 0, 0, 2, 2, 'three workers still running');
 
     my $minion = $app->minion;
     my $worker = $minion->repair->worker->register;
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'four workers running now';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(0, 0, 0, 0, 0, 3, 3, 'four workers running now');
 
     $minion->add_task(test => sub { });
     my $job_id = $minion->enqueue('test');
     my $job_id2 = $minion->enqueue('test');
     my $job = $worker->dequeue(0);
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'two jobs';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=1i,delayed=0i,failed=0i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=1i,inactive=2i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(1, 1, 0, 0, 1, 2, 3, 'two jobs');
 
     $job->fail('test');
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'one job failed';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=1i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(0, 1, 1, 0, 0, 3, 3, 'one job failed');
 
     $job->retry({delay => ONE_HOUR});
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'job is being retried';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(0, 2, 0, 1, 0, 3, 3, 'job is being retried');
 };
 
 subtest 'Concurrent downloads of the same file' => sub {
