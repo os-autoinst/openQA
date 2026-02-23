@@ -165,6 +165,11 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
           [[{min_screenshot_id => 1, max_screenshot_id => 4, screenshots_per_batch => 200000}]],
           'limit_screenshots task with default batch size from config enqueued'
           or always_explain $enququed_minion_job_args;
+
+        my $job_info = run_gru_job($app, limit_results_and_logs => [{}]);
+        like $job_info->{notes}->{screenshot_cleanup}, qr/skipping.*still 1.*job/i,
+          'screenshot limit tasks not enqueued again'
+          or always_explain $job_info;
     };
 
 };
