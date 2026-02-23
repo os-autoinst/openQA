@@ -212,7 +212,53 @@ function renderModuleRow(module, snippets) {
   return E('tr', [component, result, links], {id: rowid});
 }
 
-function renderModuleTable(container, response) {
+// Default batch size for chunked rendering to balance responsiveness and overhead
+const DEFAULT_BATCH_SIZE = 50;
+
+/**
+ * Process an array of items in batches using requestAnimationFrame for cooperative multitasking.
+ * This prevents blocking the UI thread during long-running operations.
+ *
+ * @param {Array} items - Array of items to process
+ * @param {Function} processor - Function called for each item with (item, index) as arguments
+ * @param {Object} options - Processing options
+ * @param {number} [options.batchSize=50] - Number of items to process per frame
+ * @param {Function} [options.shouldContinue=() => true] - Callback returning boolean to control interruption
+ * @returns {Promise<boolean>} Promise resolving to true if completed, false if interrupted
+ * @throws {Error} If processor throws an error during execution
+ */
+function batchProcess(items, processor, options = {}) {
+  const {batchSize = DEFAULT_BATCH_SIZE, shouldContinue = () => true} = options;
+  let currentIndex = 0;
+
+  return new Promise((resolve, reject) => {
+    function processNextBatch() {
+      if (!shouldContinue()) {
+        resolve(false); // Interrupted
+        return;
+      }
+
+      const end = Math.min(currentIndex + batchSize, items.length);
+      try {
+        for (; currentIndex < end; currentIndex++) {
+          processor(items[currentIndex], currentIndex);
+        }
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      if (currentIndex < items.length) {
+        requestAnimationFrame(processNextBatch);
+      } else {
+        resolve(true); // Completed
+      }
+    }
+    processNextBatch();
+  });
+}
+
+async function renderModuleTable(container, response, shouldContinue = () => true) {
   container.innerHTML = response.snippets.header;
 
   const E = createElement;
@@ -226,7 +272,7 @@ function renderModuleTable(container, response) {
   }
 
   if (response.modules === undefined || response.modules === null) {
-    return;
+    return Promise.resolve(true);
   }
 
   const thead = E('thead', [
@@ -236,17 +282,18 @@ function renderModuleTable(container, response) {
 
   container.appendChild(E('table', [thead, tbody], {id: 'results', class: 'table table-striped'}));
 
-  for (const idx in response.modules) {
-    const module = response.modules[idx];
-
-    if (module.category) {
-      tbody.appendChild(
-        E('tr', [E('td', [E('i', [], {class: 'fa fa-folder-open'}), '\u00a0' + module.category], {colspan: 3})])
-      );
-    }
-
-    tbody.appendChild(renderModuleRow(module, response.snippets));
-  }
+  return batchProcess(
+    response.modules,
+    module => {
+      if (module.category) {
+        tbody.appendChild(
+          E('tr', [E('td', [E('i', [], {class: 'fa fa-folder-open'}), '\u00a0' + module.category], {colspan: 3})])
+        );
+      }
+      tbody.appendChild(renderModuleRow(module, response.snippets));
+    },
+    {shouldContinue}
+  );
 }
 
 function renderJobLink(jobId) {

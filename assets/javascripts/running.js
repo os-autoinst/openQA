@@ -142,7 +142,8 @@ function updateTestStatus(newStatus) {
       const previewContainer = document.getElementById('preview_container_out');
       const resultCells = resultsTable.getElementsByClassName('result');
       testStatus.textDataMissing = false;
-      modules.forEach(function (module, moduleIndex) {
+
+      batchProcess(modules, (module, moduleIndex) => {
         const resultCell = resultCells[moduleIndex];
         if (!resultCell) {
           return;
@@ -164,16 +165,21 @@ function updateTestStatus(newStatus) {
         }
         // actually update the row
         resultRow.replaceWith(renderModuleRow(module, snippets));
-      });
+      })
+        .then(completed => {
+          if (!completed) return;
+          testStatus.running = newStatus.running;
+          developerMode.detailsForCurrentModuleUploaded = false;
+          updateDeveloperMode();
 
-      testStatus.running = newStatus.running;
-      developerMode.detailsForCurrentModuleUploaded = false;
-      updateDeveloperMode();
-
-      // reload broken thumbnails one last time
-      if (newState === 'done') {
-        reloadBrokenThumbnails(true);
-      }
+          // reload broken thumbnails one last time
+          if (newState === 'done') {
+            reloadBrokenThumbnails(true);
+          }
+        })
+        .catch(error => {
+          console.error('Error batch processing test modules:', error);
+        });
     })
     .catch(error => {
       console.log('ERROR: modlist fail');
