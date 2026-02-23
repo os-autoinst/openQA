@@ -27,6 +27,12 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     exit
 fi
 
+if [[ $# -gt 0 && $1 != -* ]]; then
+    # this script doesn't take non-option arguments currently
+    echo "Unknown command: $1"
+    exit 1
+fi
+
 dir="${OPENQA_BASEDIR:-/var/lib}/openqa/share/tests"
 if [ -w / ]; then
     if [ ! -e "$dir/$dist" ]; then
