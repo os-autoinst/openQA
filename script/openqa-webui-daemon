@@ -17,6 +17,7 @@ function start_service {
 
     # start openQA in the background
     # note: Our API commands are very expensive, so the default timeouts are too tight.
+    # note: -w (workers/preforks) should match max_conns in /etc/nginx/vhosts.d/openqa-upstreams.inc
     "$openqa_dir"/openqa prefork -m "$OPENQA_WEBUI_MODE" --proxy -i 100 -H 900 -w 30 -c 1 -G 800 -P "$pid_file" "${openqa_args[@]}" &
     pid=$!
 
