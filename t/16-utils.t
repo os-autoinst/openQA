@@ -397,7 +397,6 @@ subtest 'project directory functions' => sub {
         is resultdir, '/var/lib/openqa/testresults', 'resultdir';
         is assetdir, '/var/lib/openqa/share/factory', 'assetdir';
         is imagesdir, '/var/lib/openqa/images', 'imagesdir';
-        is git_commit_url(undef), '', 'no git_commit_url when distri is not defined';
     };
     subtest 'custom OPENQA_BASEDIR' => sub {
         local $ENV{OPENQA_BASEDIR} = '/tmp/test';
@@ -414,6 +413,11 @@ subtest 'project directory functions' => sub {
           'correct ssh url without .git extension';
         is git_commit_url("https://github.com/$repo"), "https://github.com/$repo/commit/",
           'correct https url without .git extension';
+    };
+    subtest 'handling of invalid input by git_commit_url' => sub {
+        is git_commit_url(undef), '', 'no git_commit_url when repo hash is not defined';
+        is git_commit_url('foo/bar'), '', 'no git_commit_url without protocol';
+        is git_commit_url('foo:bar'), '', 'no git_commit_url without Git host';
     };
     subtest 'custom OPENQA_BASEDIR and OPENQA_SHAREDIR' => sub {
         local $ENV{OPENQA_BASEDIR} = '/tmp/test';
