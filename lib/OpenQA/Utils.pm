@@ -234,9 +234,11 @@ sub git_commit_url ($repo_url) {
         return $repo_url . '/commit/';
     }
     my @url_tokenized = split /:/, $repo_url;
+    return '' unless defined $url_tokenized[1];
     $url_tokenized[1] =~ s{\.git$}{};
     $url_tokenized[1] .= '/commit/';
     my @githost = split('@', $url_tokenized[0]);
+    return '' unless defined $githost[1];
     return "https://$githost[1]/$url_tokenized[1]";
 }
 
