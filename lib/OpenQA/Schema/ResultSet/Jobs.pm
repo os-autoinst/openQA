@@ -176,7 +176,7 @@ sub _apply_prio_throttling ($settings, $new_job_args) {
     $max_job_time *= $timeout_scale if $max_job_time and $timeout_scale > 1;
     if ($max_job_time and $max_job_time > DEFAULT_MAX_JOB_TIME) {
         if (my $scale = OpenQA::App->singleton->config->{misc_limits}->{max_job_time_prio_scale}) {
-            my $malus = int($max_job_time / $scale);
+            my $malus = int(($max_job_time - DEFAULT_MAX_JOB_TIME) / $scale);
             $debug_msg = sprintf 'Adding priority malus to newly created job (old: %d, malus: %s)',
               $new_job_args->{priority}, $malus;
             $new_job_args->{priority} += $malus;

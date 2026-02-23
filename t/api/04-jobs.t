@@ -17,7 +17,7 @@ use Test::MockModule;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::App;
-use OpenQA::Constants 'WORKER_COMMAND_CANCEL';
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL);
 use OpenQA::Events;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
@@ -1029,24 +1029,31 @@ subtest 'priority correctly assigned when posting job' => sub {
     $t->json_is('/job/group', 'opensuse', 'group assigned (1)');
     $t->json_is('/job/priority', $default_prio, 'global default priority assigned');
 
-    subtest 'priority malus due to high MAX_JOB_TIME' => sub {
+    subtest 'priority increased due to high MAX_JOB_TIME' => sub {
         my %new_job_args = (priority => $default_prio);
         my $max_time = 7300;
+        use constant DEFAULT_MAX_JOB_TIME => 7200;
         local $jobs_post_params{MAX_JOB_TIME} = $max_time;
         $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-        $t->json_is('/job/priority', $default_prio + $max_time / 100, 'increased prio value');
+        $t->json_is(
+            '/job/priority',
+            $default_prio + int(($max_time - DEFAULT_MAX_JOB_TIME) / 300),
+            'increased prio value'
+        );
 
         local $jobs_post_params{TIMEOUT_SCALE} = 2;
         OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
-        is $new_job_args{priority}, $default_prio + $max_time * 2 / 100, 'increased prio value with TIMEOUT_SCALE';
+        is $new_job_args{priority}, $default_prio + int(($max_time * 2 - DEFAULT_MAX_JOB_TIME) / 300),
+          'increased prio value with TIMEOUT_SCALE';
         delete $jobs_post_params{TIMEOUT_SCALE};
 
         my $limits = OpenQA::App->singleton->config->{misc_limits};
         %new_job_args = (priority => $default_prio);
         $limits->{max_job_time_prio_scale} = 10;
         OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
-        is $new_job_args{priority}, $default_prio + $max_time / 10, 'custom scale value: increased prio value';
+        is $new_job_args{priority}, $default_prio + int(($max_time - DEFAULT_MAX_JOB_TIME) / 10),
+          'custom scale value: increased prio value';
 
         %new_job_args = (priority => $default_prio);
         $limits->{max_job_time_prio_scale} = 0;

@@ -257,7 +257,7 @@ sub read_config ($app) {
             wait_for_grutask_retries => 6,    # exponential, ~4 minutes
             worker_limit_retry_delay => ONE_HOUR / 4,
             mcp_max_result_size => 500000,
-            max_job_time_prio_scale => 100,
+            max_job_time_prio_scale => 300,
             scheduled_product_min_storage_duration => 34,
             prio_throttling_parameters => '',
             prio_throttling_data => undef,
