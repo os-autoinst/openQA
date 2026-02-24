@@ -12,7 +12,9 @@ use OpenQA::Test::TimeLimit '400';
 use Test::Strict;
 
 push @Test::Strict::MODULES_ENABLING_STRICT, 'Test::Most';
+push @Test::Strict::MODULES_ENABLING_STRICT, 'Test2::V0';
 push @Test::Strict::MODULES_ENABLING_WARNINGS, 'Test::Most';
+push @Test::Strict::MODULES_ENABLING_WARNINGS, 'Test2::V0';
 
 $Test::Strict::TEST_SYNTAX = 1;
 $Test::Strict::TEST_STRICT = 1;
