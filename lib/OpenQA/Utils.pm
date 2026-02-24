@@ -306,6 +306,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
     try {
         my ($stdin, $stdout, $stderr) = ('') x 3;
         my @out_args = defined $output_file ? ('>', $output_file, '2>', \$stderr) : (\$stdout, \$stderr);
+        local $SIG{CHLD} = 'DEFAULT';
         my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, @out_args);
         my $error_code = $?;
         my $return_code;
@@ -338,6 +339,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
         return {
             status => $ipc_run_succeeded,
             return_code => $return_code,
+            exit_status => $ipc_run_succeeded ? 0 : (($return_code // 128 + ($signal // 127)) & 0xFF || 255),
             stdout => $stdout,
             stderr => $stderr,
             signal => $signal,
@@ -347,6 +349,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
         return {
             status => 0,
             return_code => undef,
+            exit_status => 255,
             stderr => 'an internal error occurred',
             stdout => '',
         };
