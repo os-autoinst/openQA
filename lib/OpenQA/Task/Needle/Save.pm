@@ -35,7 +35,7 @@ sub _json_validation {
     if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
         die 'no tag defined';
     }
-    my @not_ocr_area = grep { $_->{type} ne 'ocr' } @{$djson->{area}};
+    my @not_ocr_area = grep { ($_->{type} // '') ne 'ocr' } @{$djson->{area}};
     die 'Cannot create a needle with only OCR areas' if scalar(@not_ocr_area) == 0;
 
     my $areas = $djson->{area};
