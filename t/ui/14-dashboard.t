@@ -121,8 +121,8 @@ is scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group para
 
 subtest 'filter form' => sub {
     $driver->get('/');
-    like($driver->find_element('#filter-panel .help_popover')->get_attribute('data-bs-title'),
-        qr/Help/, 'help popover is shown');
+    like $driver->find_element('#filter-panel .help_popover')->get_attribute('data-bs-title'),
+      qr/Help/, 'help popover is shown';
     wait_for_ajax_and_animations;
     my $url = $driver->get_current_url;
     $driver->find_element('#filter-panel .card-header')->click();

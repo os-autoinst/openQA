@@ -115,8 +115,8 @@ subtest 'Scheduler worker job allocation' => sub {
     my $job_id2 = $allocated->[1]->{job};
     my $wr_id1 = $allocated->[0]->{worker};
     my $wr_id2 = $allocated->[1]->{worker};
-    my $different_workers = isnt($wr_id1, $wr_id2, 'jobs dispatched to different workers');
-    my $different_jobs = isnt($job_id1, $job_id2, 'each of the two jobs allocated to one of the workers');
+    my $different_workers = isnt $wr_id1, $wr_id2, 'jobs dispatched to different workers';
+    my $different_jobs = isnt $job_id1, $job_id2, 'each of the two jobs allocated to one of the workers';
     always_explain $allocated unless $different_workers && $different_jobs;
 
     $allocated = $job_model->schedule;

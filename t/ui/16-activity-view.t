@@ -34,7 +34,7 @@ my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 subtest 'Access activity view via the menu' => sub {
     $driver->find_element_by_link_text('Login')->click();
     $driver->title_is('openQA', 'on main page');
-    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
+    is $driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo';
 
     # revoke admin rights as those are not supposed to be required
     $demo_user = $schema->resultset('Users')->find({username => 'Demo'});
@@ -139,7 +139,7 @@ subtest 'Current jobs' => sub {
         my @links = $row->children('a');
         my $href = $links[0]->get_attribute('href');
         unless ($href =~ m{/tests/(\d+)}) {
-            fail("Link '$href' is not a test url");    # uncoverable statement
+            fail "Link '$href' is not a test url";    # uncoverable statement
             next;    # uncoverable statement
         }
         my $id = $1;
@@ -148,11 +148,11 @@ subtest 'Current jobs' => sub {
         my @i = $row->children('i');
         my @class = split ' ', $i[0]->get_attribute('class');
         ok((grep { $_ eq $exp_class } @class), "classname contains $exp_class")
-          or diag(Data::Dumper->Dump([\@class], ['class']));
+          or diag Data::Dumper->Dump([\@class], ['class']);
     }
     if (keys %state_result) {
         fail 'Missed the following jobs in the list:';    # uncoverable statement
-        diag(Data::Dumper->Dump([\%state_result], ['state_result']));    # uncoverable statement
+        diag Data::Dumper->Dump([\%state_result], ['state_result']);    # uncoverable statement
     }
 
     my $first = wait_for_element(selector => '#results .list-group-item:first-child .timeago:not(:empty)');

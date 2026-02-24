@@ -53,204 +53,204 @@ my $job_template3 = {
         'arch' => 'i586'
     }};
 $t->get_ok('/api/v1/job_templates')->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'JobTemplates' => [
-            {
-                'group_name' => 'opensuse',
+is_deeply
+  $t->tx->res->json,
+  {
+    'JobTemplates' => [
+        {
+            'group_name' => 'opensuse',
+            'id' => 1,
+            'test_suite' => {
+                'name' => 'textmode',
+                'id' => 1001
+            },
+            'prio' => 40,
+            'machine' => {
+                'name' => '32bit',
+                'id' => 1001
+            },
+            'product' => {
+                'distri' => 'opensuse',
+                'version' => '13.1',
+                'flavor' => 'DVD',
+                'arch' => 'i586',
+                'group' => 'opensuse-13.1-DVD',
+                'id' => 1
+            }
+        },
+        {
+            'product' => {
+                'distri' => 'opensuse',
+                'version' => '13.1',
+                'flavor' => 'DVD',
+                'group' => 'opensuse-13.1-DVD',
+                'arch' => 'i586',
+                'id' => 1
+            },
+            'machine' => {
+                'name' => '64bit',
+                'id' => 1002
+            },
+            'prio' => 40,
+            'id' => 2,
+            'test_suite' => {
+                'id' => 1001,
+                'name' => 'textmode'
+            },
+            'group_name' => 'opensuse'
+        },
+        $job_template3,
+        {
+            'machine' => {
+                'name' => '32bit',
+                'id' => 1001
+            },
+            'prio' => 40,
+            'product' => {
                 'id' => 1,
-                'test_suite' => {
-                    'name' => 'textmode',
-                    'id' => 1001
-                },
-                'prio' => 40,
-                'machine' => {
-                    'name' => '32bit',
-                    'id' => 1001
-                },
-                'product' => {
-                    'distri' => 'opensuse',
-                    'version' => '13.1',
-                    'flavor' => 'DVD',
-                    'arch' => 'i586',
-                    'group' => 'opensuse-13.1-DVD',
-                    'id' => 1
-                }
+                'arch' => 'i586',
+                'group' => 'opensuse-13.1-DVD',
+                'flavor' => 'DVD',
+                'version' => '13.1',
+                'distri' => 'opensuse'
             },
-            {
-                'product' => {
-                    'distri' => 'opensuse',
-                    'version' => '13.1',
-                    'flavor' => 'DVD',
-                    'group' => 'opensuse-13.1-DVD',
-                    'arch' => 'i586',
-                    'id' => 1
-                },
-                'machine' => {
-                    'name' => '64bit',
-                    'id' => 1002
-                },
-                'prio' => 40,
-                'id' => 2,
-                'test_suite' => {
-                    'id' => 1001,
-                    'name' => 'textmode'
-                },
-                'group_name' => 'opensuse'
+            'id' => 4,
+            'test_suite' => {
+                'id' => 1014,
+                'name' => 'client1'
             },
-            $job_template3,
-            {
-                'machine' => {
-                    'name' => '32bit',
-                    'id' => 1001
-                },
-                'prio' => 40,
-                'product' => {
-                    'id' => 1,
-                    'arch' => 'i586',
-                    'group' => 'opensuse-13.1-DVD',
-                    'flavor' => 'DVD',
-                    'version' => '13.1',
-                    'distri' => 'opensuse'
-                },
-                'id' => 4,
-                'test_suite' => {
-                    'id' => 1014,
-                    'name' => 'client1'
-                },
-                'group_name' => 'opensuse'
+            'group_name' => 'opensuse'
+        },
+        {
+            'test_suite' => {
+                'name' => 'client2',
+                'id' => 1016
             },
-            {
-                'test_suite' => {
-                    'name' => 'client2',
-                    'id' => 1016
-                },
-                'id' => 5,
-                'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'name' => '32bit',
-                    'id' => 1001
-                },
-                'product' => {
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'version' => '13.1',
-                    'arch' => 'i586',
-                    'group' => 'opensuse-13.1-DVD',
-                    'id' => 1
-                }
+            'id' => 5,
+            'group_name' => 'opensuse',
+            'prio' => 40,
+            'machine' => {
+                'name' => '32bit',
+                'id' => 1001
             },
-            {
-                'machine' => {
-                    'name' => '32bit',
-                    'id' => 1001
-                },
-                'prio' => 40,
-                'product' => {
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'version' => '13.1',
-                    'group' => 'opensuse-13.1-DVD',
-                    'arch' => 'i586',
-                    'id' => 1
-                },
-                'test_suite' => {
-                    'id' => 1015,
-                    'name' => 'server'
-                },
-                'id' => 6,
-                'group_name' => 'opensuse'
+            'product' => {
+                'distri' => 'opensuse',
+                'flavor' => 'DVD',
+                'version' => '13.1',
+                'arch' => 'i586',
+                'group' => 'opensuse-13.1-DVD',
+                'id' => 1
+            }
+        },
+        {
+            'machine' => {
+                'name' => '32bit',
+                'id' => 1001
             },
-            {
-                'group_name' => 'opensuse',
-                'test_suite' => {
-                    'name' => 'client1',
-                    'id' => 1014
-                },
-                'id' => 7,
-                'prio' => 40,
-                'machine' => {
-                    'name' => '64bit',
-                    'id' => 1002
-                },
-                'product' => {
-                    'version' => '13.1',
-                    'flavor' => 'DVD',
-                    'distri' => 'opensuse',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
-                    'arch' => 'i586'
-                }
+            'prio' => 40,
+            'product' => {
+                'distri' => 'opensuse',
+                'flavor' => 'DVD',
+                'version' => '13.1',
+                'group' => 'opensuse-13.1-DVD',
+                'arch' => 'i586',
+                'id' => 1
             },
-            {
-                'group_name' => 'opensuse',
-                'test_suite' => {
-                    'name' => 'client2',
-                    'id' => 1016
-                },
-                'id' => 8,
-                'product' => {
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
-                    'arch' => 'i586',
-                    'version' => '13.1',
-                    'flavor' => 'DVD',
-                    'distri' => 'opensuse'
-                },
-                'prio' => 40,
-                'machine' => {
-                    'name' => '64bit',
-                    'id' => 1002
-                }
+            'test_suite' => {
+                'id' => 1015,
+                'name' => 'server'
             },
-            {
-                'group_name' => 'opensuse',
-                'id' => 9,
-                'test_suite' => {
-                    'name' => 'server',
-                    'id' => 1015
-                },
-                'prio' => 40,
-                'machine' => {
-                    'name' => '64bit',
-                    'id' => 1002
-                },
-                'product' => {
-                    'arch' => 'i586',
-                    'group' => 'opensuse-13.1-DVD',
-                    'id' => 1,
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'version' => '13.1'
-                }
+            'id' => 6,
+            'group_name' => 'opensuse'
+        },
+        {
+            'group_name' => 'opensuse',
+            'test_suite' => {
+                'name' => 'client1',
+                'id' => 1014
             },
-            {
-                'product' => {
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'version' => '13.1',
-                    'arch' => 'i586',
-                    'group' => 'opensuse-13.1-DVD',
-                    'id' => 1
-                },
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1002,
-                    'name' => '64bit'
-                },
-                'group_name' => 'opensuse',
-                'test_suite' => {
-                    'name' => 'advanced_kde',
-                    'id' => 1017
-                },
-                'settings' => [{key => 'ADVANCED', value => '1'}, {key => 'DESKTOP', value => 'advanced_kde'},],
-                'id' => 10,
-            }]
-    },
-    'Initial job templates'
-) || always_explain $t->tx->res->json;
+            'id' => 7,
+            'prio' => 40,
+            'machine' => {
+                'name' => '64bit',
+                'id' => 1002
+            },
+            'product' => {
+                'version' => '13.1',
+                'flavor' => 'DVD',
+                'distri' => 'opensuse',
+                'id' => 1,
+                'group' => 'opensuse-13.1-DVD',
+                'arch' => 'i586'
+            }
+        },
+        {
+            'group_name' => 'opensuse',
+            'test_suite' => {
+                'name' => 'client2',
+                'id' => 1016
+            },
+            'id' => 8,
+            'product' => {
+                'id' => 1,
+                'group' => 'opensuse-13.1-DVD',
+                'arch' => 'i586',
+                'version' => '13.1',
+                'flavor' => 'DVD',
+                'distri' => 'opensuse'
+            },
+            'prio' => 40,
+            'machine' => {
+                'name' => '64bit',
+                'id' => 1002
+            }
+        },
+        {
+            'group_name' => 'opensuse',
+            'id' => 9,
+            'test_suite' => {
+                'name' => 'server',
+                'id' => 1015
+            },
+            'prio' => 40,
+            'machine' => {
+                'name' => '64bit',
+                'id' => 1002
+            },
+            'product' => {
+                'arch' => 'i586',
+                'group' => 'opensuse-13.1-DVD',
+                'id' => 1,
+                'distri' => 'opensuse',
+                'flavor' => 'DVD',
+                'version' => '13.1'
+            }
+        },
+        {
+            'product' => {
+                'distri' => 'opensuse',
+                'flavor' => 'DVD',
+                'version' => '13.1',
+                'arch' => 'i586',
+                'group' => 'opensuse-13.1-DVD',
+                'id' => 1
+            },
+            'prio' => 40,
+            'machine' => {
+                'id' => 1002,
+                'name' => '64bit'
+            },
+            'group_name' => 'opensuse',
+            'test_suite' => {
+                'name' => 'advanced_kde',
+                'id' => 1017
+            },
+            'settings' => [{key => 'ADVANCED', value => '1'}, {key => 'DESKTOP', value => 'advanced_kde'},],
+            'id' => 10,
+        }]
+  },
+  'Initial job templates'
+  || always_explain $t->tx->res->json;
 
 subtest 'to_yaml' => sub {
     my $yaml1 = path("$FindBin::Bin/../data/08-opensuse.yaml")->slurp;
@@ -261,7 +261,7 @@ subtest 'to_yaml' => sub {
     for my $group ($job_groups->search) {
         my $id = $group->id;
         my $yaml = $group->to_yaml;
-        cmp_ok($yaml, 'eq', $yaml{$group->id}, "group($id)->to_yaml");
+        cmp_ok $yaml, 'eq', $yaml{$group->id}, "group($id)->to_yaml";
     }
 };
 
@@ -278,7 +278,7 @@ subtest 'missing-linebreak' => sub {
         });
     $t->get_ok('/api/v1/job_templates_scheduling')->status_is(200);
     my $yaml = $t->tx->res->json;
-    is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
+    is_deeply ['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names'
       || always_explain $t->tx->res->body;
 };
 
@@ -293,7 +293,7 @@ $t->post_ok(
         description => 'descr',
     })->status_is(200);
 my $job_template_id1 = $t->tx->res->json->{id};
-ok($job_template_id1, "Created job template ($job_template_id1)");
+ok $job_template_id1, "Created job template ($job_template_id1)";
 
 $t->post_ok(
     '/api/v1/job_templates',
@@ -308,12 +308,11 @@ $t->post_ok(
         prio => 20
     })->status_is(200);
 my $job_template_id2 = $t->tx->res->json->{id};
-ok($job_template_id2, "Created job template ($job_template_id2)");
-is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
-    {ids => [$job_template_id2], id => 12},
-    'Create was logged correctly'
-);
+ok $job_template_id2, "Created job template ($job_template_id2)";
+is_deeply
+  OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
+  {ids => [$job_template_id2], id => 12},
+  'Create was logged correctly';
 
 subtest 'Lookup job templates' => sub {
     my $job_template1 = {
@@ -424,7 +423,7 @@ subtest 'Changing priority' => sub {
 'Erroneous parameters (arch missing, distri missing, flavor missing, group_name missing, machine_name missing, test_suite_name missing, version missing)',
             'setting prio for group/testsuite requires prio-only parameter'
         );
-        is($job_templates->search({prio => $prio})->count, 0, 'no rows affected');
+        is $job_templates->search({prio => $prio})->count, 0, 'no rows affected';
 
         $t->post_ok(
             '/api/v1/job_templates',
@@ -434,12 +433,11 @@ subtest 'Changing priority' => sub {
                 prio => $prio // 'inherit',
                 prio_only => 1,
             })->status_is(200)->json_is('' => {job_group_id => 1001, ids => [3, 11]}, 'two rows affected');
-        is($job_templates->search({prio => $prio})->count, 2, 'two rows now have prio ' . ($prio // 'inherit'));
-        is_deeply(
-            OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
-            {job_group_id => 1001, ids => [3, 11]},
-            'Create was logged correctly'
-        );
+        is $job_templates->search({prio => $prio})->count, 2, 'two rows now have prio ' . ($prio // 'inherit');
+        is_deeply
+          OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
+          {job_group_id => 1001, ids => [3, 11]},
+          'Create was logged correctly';
     }
 
     for my $prio ('-5', "30\n") {
@@ -453,44 +451,40 @@ subtest 'Changing priority' => sub {
             }
         )->status_is(400)
           ->json_is('/error' => 'Erroneous parameters (prio invalid)', "setting prio to '$prio' is an error");
-        is($job_templates->search({prio => $prio})->count, 0, 'no rows affected');
+        is $job_templates->search({prio => $prio})->count, 0, 'no rows affected';
     }
 };
 
 my $product = 'open-*.SUSE1';
 my $yaml = {};
 my $schema_filename = 'JobTemplates-01.yaml';
-is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)}, 2, 'Empty YAML is an error')
+is_deeply scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)}, 2, 'Empty YAML is an error'
   or always_explain dump_yaml($yaml);
 $yaml->{scenarios}{x86_64}{$product} = ['spam', 'eggs'];
-is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), ['/products: Missing property.'], 'No products defined')
+is_deeply $t->app->validate_yaml($yaml, $schema_filename, 1), ['/products: Missing property.'], 'No products defined'
   or always_explain dump_yaml($yaml);
 $yaml->{products}{$product} = {version => '42.1', flavor => 'DVD'};
-is_deeply(
-    @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
-    "/products/$product/distri: Missing property.",
-    'No distri specified'
-) or always_explain dump_yaml($yaml);
+is_deeply
+  @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
+  "/products/$product/distri: Missing property.", 'No distri specified'
+  or always_explain dump_yaml($yaml);
 $yaml->{products}{$product}{distri} = 'sle';
 delete $yaml->{products}{$product}{flavor};
-is_deeply(
-    @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
-    "/products/$product/flavor: Missing property.",
-    'No flavor specified'
-) or always_explain dump_yaml($yaml);
+is_deeply
+  @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
+  "/products/$product/flavor: Missing property.", 'No flavor specified'
+  or always_explain dump_yaml($yaml);
 $yaml->{products}{$product}{flavor} = 'DVD';
 delete $yaml->{products}{$product}{version};
-is_deeply(
-    $t->app->validate_yaml($yaml, $schema_filename, 1),
-    ["/products/$product/version: Missing property."],
-    'No version specified'
-) or always_explain dump_yaml($yaml);
+is_deeply
+  $t->app->validate_yaml($yaml, $schema_filename, 1),
+  ["/products/$product/version: Missing property."], 'No version specified'
+  or always_explain dump_yaml($yaml);
 $yaml->{products}{$product}{distribution} = 'sle';
-is_deeply(
-    @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
-    "/products/$product: Properties not allowed: distribution.",
-    'Invalid product property specified'
-) or always_explain dump_yaml($yaml);
+is_deeply
+  @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
+  "/products/$product: Properties not allowed: distribution.", 'Invalid product property specified'
+  or always_explain dump_yaml($yaml);
 delete $yaml->{products}{$product}{distribution};
 $yaml->{products}{$product}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
@@ -506,7 +500,7 @@ $yaml->{scenarios}{x86_64}{$product} = [
             priority => 33,
         },
     }];
-is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML valid as expected')
+is_deeply $t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML valid as expected'
   or always_explain dump_yaml($yaml);
 my $opensuse = $job_groups->find({name => 'opensuse'});
 # Make 40 our default priority, which matters when we look at the "defaults" key later
@@ -514,82 +508,73 @@ $opensuse->update({default_priority => 40});
 # Get all groups
 $t->get_ok('/api/v1/job_templates_scheduling')->status_is(200);
 $yaml = $t->tx->res->json;
-is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
+is_deeply ['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names'
   || always_explain $t->tx->res->body;
 # Get one group with defined scenarios, products and defaults
 $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200);
 #$yaml = $t->tx->res->body;
 # this test seems to be a tautology ;-)
-#is($t->tx->res->body, $yaml, 'No document start marker by default');
+#is $t->tx->res->body, $yaml, 'No document start marker by default';
 $yaml = load_yaml(string => $t->tx->res->json);
-is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML of single group is valid');
+is_deeply $t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML of single group is valid';
 my $yaml2 = load_yaml(file => "$FindBin::Bin/../data/08-opensuse-2.yaml");
-is_deeply($yaml, $yaml2, 'YAML for opensuse group') || always_explain $t->tx->res->body;
+is_deeply $yaml, $yaml2, 'YAML for opensuse group' || always_explain $t->tx->res->body;
 
 subtest 'content-type' => sub {
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, $accept_yaml)->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
-    is_deeply(load_yaml(string => $t->tx->res->body),
-        $yaml, '[Accept: text/yaml] Test suite with unicode characters encoded correctly')
+    is_deeply load_yaml(string => $t->tx->res->body),
+      $yaml, '[Accept: text/yaml] Test suite with unicode characters encoded correctly'
       || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => '*/*'})->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
-    is_deeply(load_yaml(string => $t->tx->res->body),
-        $yaml, '[Accept: */*] Test suite with unicode characters encoded correctly')
+    is_deeply load_yaml(string => $t->tx->res->body),
+      $yaml, '[Accept: */*] Test suite with unicode characters encoded correctly'
       || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => 'application/json'})->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
-    is_deeply(load_yaml(string => $t->tx->res->json),
-        $yaml, '[Accept: application/json] Test suite with unicode characters encoded correctly')
+    is_deeply load_yaml(string => $t->tx->res->json),
+      $yaml, '[Accept: application/json] Test suite with unicode characters encoded correctly'
       || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
-    is_deeply(load_yaml(string => $t->tx->res->json),
-        $yaml, '[no explicit Accept header] Test suite with unicode characters encoded correctly')
+    is_deeply load_yaml(string => $t->tx->res->json),
+      $yaml, '[no explicit Accept header] Test suite with unicode characters encoded correctly'
       || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling', $accept_yaml)->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     my $yaml = load_yaml(string => $t->tx->res->body);
-    is_deeply(
-        ['opensuse', 'opensuse test'],
-        [sort keys %$yaml],
-        '[Accept: text/yaml] YAML of all groups contains names'
-    ) || always_explain $t->tx->res->body;
+    is_deeply ['opensuse', 'opensuse test'], [sort keys %$yaml], '[Accept: text/yaml] YAML of all groups contains names'
+      || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling', {Accept => '*/*'})->status_is(200)
       ->content_type_is('text/yaml;charset=UTF-8');
     $yaml = load_yaml(string => $t->tx->res->body);
-    is_deeply(
-        ['opensuse', 'opensuse test'],
-        [sort keys %$yaml],
-        '[Accept: text/yaml] YAML of all groups contains names'
-    ) || always_explain $t->tx->res->body;
+    is_deeply ['opensuse', 'opensuse test'], [sort keys %$yaml], '[Accept: text/yaml] YAML of all groups contains names'
+      || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling', {Accept => 'application/json'})->status_is(200)
       ->content_type_is('application/json;charset=UTF-8');
     $yaml = $t->tx->res->json;
-    is_deeply(
-        ['opensuse', 'opensuse test'],
-        [sort keys %$yaml],
-        '[Accept: application/json] YAML of all groups contains names'
-    ) || always_explain $t->tx->res->body;
+    is_deeply ['opensuse', 'opensuse test'], [sort keys %$yaml],
+      '[Accept: application/json] YAML of all groups contains names'
+      || always_explain $t->tx->res->body;
 
     $t->get_ok('/api/v1/job_templates_scheduling')->status_is(200)->content_type_is('application/json;charset=UTF-8');
     $yaml = $t->tx->res->json;
-    is_deeply(
-        ['opensuse', 'opensuse test'],
-        [sort keys %$yaml],
-        '[no explicit Accept header] YAML of all groups contains names'
-    ) || always_explain $t->tx->res->body;
+    is_deeply
+      ['opensuse', 'opensuse test'],
+      [sort keys %$yaml], '[no explicit Accept header] YAML of all groups contains names'
+      || always_explain $t->tx->res->body;
 };
 
 subtest 'Migration' => sub {
     # Legacy group was created with no YAML
-    is($opensuse->template, undef, 'No YAML stored in the database');
+    is $opensuse->template, undef, 'No YAML stored in the database';
 
     # After posting YAML the exact template is stored
     $yaml = dump_yaml($yaml);
@@ -601,7 +586,7 @@ subtest 'Migration' => sub {
         })->status_is(200, 'YAML added to the database');
     return always_explain $t->tx->res->body unless $t->success;
     $opensuse->discard_changes;
-    is($opensuse->template, $yaml, 'YAML stored in the database');
+    is $opensuse->template, $yaml, 'YAML stored in the database';
     $yaml = "# comments help readability\n$yaml# or in the end\n";
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
@@ -610,7 +595,7 @@ subtest 'Migration' => sub {
             template => $yaml
         })->status_is(200, 'YAML with comments posted');
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id);
-    is($t->tx->res->json, $yaml, 'YAML with comments preserved in the database');
+    is $t->tx->res->json, $yaml, 'YAML with comments preserved in the database';
 };
 
 subtest 'Deprecated routes still work' => sub {
@@ -621,7 +606,7 @@ subtest 'Deprecated routes still work' => sub {
             template => $yaml
         })->status_is(200, 'YAML posted successfully');
     $t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id);
-    is($t->tx->res->json, $yaml, 'YAML retrieved from the database');
+    is $t->tx->res->json, $yaml, 'YAML retrieved from the database';
 };
 
 subtest 'Conflicts' => sub {
@@ -644,9 +629,9 @@ subtest 'Conflicts' => sub {
     );
 
     # Remove the trailing line-break which should not break validation
-    ok($yaml =~ m/\n\z/, 'YAML has trailing line-break');
+    ok $yaml =~ m/\n\z/, 'YAML has trailing line-break';
     chomp $yaml;
-    ok($yaml !~ m/\n\z/, 'YAML has no trailing line-break');
+    ok $yaml !~ m/\n\z/, 'YAML has no trailing line-break';
 
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
@@ -657,7 +642,7 @@ subtest 'Conflicts' => sub {
         })->status_is(200, 'posting with correct reference succeeds');
     return always_explain $t->tx->res->body unless $t->success;
     my $saved_yaml = $t->tx->res->json->{template};
-    ok($saved_yaml =~ m/\n\z/, 'Saved YAML has trailing line-break') or always_explain $saved_yaml;
+    ok $saved_yaml =~ m/\n\z/, 'Saved YAML has trailing line-break' or always_explain $saved_yaml;
 
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
@@ -672,8 +657,8 @@ subtest 'Conflicts' => sub {
 my $template = {};
 subtest 'Schema handling' => sub {
     for my $schema_filename (undef, 'NoSuchSchema', '../test.yaml', '/home/test.yaml', 'NoSuchSchema.yaml') {
-        is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)},
-            1, 'Validating with schema ' . ($schema_filename // 'undefined') . ' is an error')
+        is_deeply scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)},
+          1, 'Validating with schema ' . ($schema_filename // 'undefined') . ' is an error'
           or always_explain dump_yaml($yaml);
     }
 
@@ -748,7 +733,7 @@ subtest 'Empty testsuite is invalid' => sub {
 
 subtest 'Create and modify groups with YAML' => sub {
     my $job_group_id3 = $job_groups->create({name => 'foo'})->id;
-    ok($job_group_id3, "Created group foo ($job_group_id3)");
+    ok $job_group_id3, "Created group foo ($job_group_id3)";
 
     # Create group and job templates based on YAML template
     $yaml = load_yaml(file => "$FindBin::Bin/../data/08-create-modify-group.yaml");
@@ -775,52 +760,51 @@ subtest 'Create and modify groups with YAML' => sub {
     $form{preview} = $form{expand} = 1;
     $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
     $t->status_is(200, 'Posting preview successful');
-    is_deeply(
-        load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
-        {
-            products => {
-                'opensuse-13.1-DVD-i586' => {
-                    distri => 'opensuse',
-                    flavor => 'DVD',
-                    version => '13.1',
-                }
-            },
-            scenarios => {
-                i586 => {
-                    'opensuse-13.1-DVD-i586' => [
-                        {
-                            eggs => {
-                                machine => '32bit',
-                                priority => 20,
-                                settings => {BAR => 'updated later', FOO => 'removed later'},
-                            }
-                        },
-                        {
-                            foobar => {
-                                machine => '64bit',
-                                priority => 40,
-                                settings => {},
-                            }
-                        },
-                        {
-                            spam => {
-                                machine => '64bit',
-                                priority => 40,
-                                settings => {},
-                            }
-                        },
-                    ]}
-            },
+    is_deeply
+      load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
+      {
+        products => {
+            'opensuse-13.1-DVD-i586' => {
+                distri => 'opensuse',
+                flavor => 'DVD',
+                version => '13.1',
+            }
         },
-        'Expected result returned in response'
-    ) || always_explain $t->tx->res->body;
+        scenarios => {
+            i586 => {
+                'opensuse-13.1-DVD-i586' => [
+                    {
+                        eggs => {
+                            machine => '32bit',
+                            priority => 20,
+                            settings => {BAR => 'updated later', FOO => 'removed later'},
+                        }
+                    },
+                    {
+                        foobar => {
+                            machine => '64bit',
+                            priority => 40,
+                            settings => {},
+                        }
+                    },
+                    {
+                        spam => {
+                            machine => '64bit',
+                            priority => 40,
+                            settings => {},
+                        }
+                    },
+                ]}
+        },
+      },
+      'Expected result returned in response'
+      || always_explain $t->tx->res->body;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
-    is_deeply(
-        load_yaml(string => $t->tx->res->json),
-        {scenarios => {}, products => {}},
-        'No job group and templates added to the database'
-    ) || always_explain $t->tx->res->body;
-    is($audit_events->count, $audit_event_count, 'no audit event emitted in preview mode');
+    is_deeply
+      load_yaml(string => $t->tx->res->json),
+      {scenarios => {}, products => {}}, 'No job group and templates added to the database'
+      || always_explain $t->tx->res->body;
+    is $audit_events->count, $audit_event_count, 'no audit event emitted in preview mode';
 
     $t->post_ok(
         "/api/v1/job_templates_scheduling/$job_group_id3",
@@ -830,7 +814,7 @@ subtest 'Create and modify groups with YAML' => sub {
     $t->status_is(200, 'Changes applied to the database');
     return always_explain $t->tx->res->body unless $t->success;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
-    is_deeply(load_yaml(string => $t->tx->res->json), $yaml, 'Added job template reflected in the database')
+    is_deeply load_yaml(string => $t->tx->res->json), $yaml, 'Added job template reflected in the database'
       || always_explain $t->tx->res->body;
 
     subtest 'Modify test attributes in group according to YAML template' => sub {
@@ -851,12 +835,11 @@ subtest 'Create and modify groups with YAML' => sub {
                 template => dump_yaml($yaml)})->status_is(200, 'Test suite was updated');
 
         my $job_template = $job_templates->find({prio => 11});
-        is($job_template->machine_id, 1001, 'Updated machine reflected in the database');
-        is_deeply(
-            $job_template->settings_hash,
-            {FOO => 'default', BAR => 'updated value', NEW => 'new setting'},
-            'Modified attributes reflected in the database'
-        );
+        is $job_template->machine_id, 1001, 'Updated machine reflected in the database';
+        is_deeply
+          $job_template->settings_hash,
+          {FOO => 'default', BAR => 'updated value', NEW => 'new setting'},
+          'Modified attributes reflected in the database';
     };
 
     subtest 'Scenarios must be be unique across job groups' => sub {
@@ -893,13 +876,12 @@ subtest 'Create and modify groups with YAML' => sub {
 
         my $empty_testsuite
           = $test_suites->find({name => OpenQA::Schema::ResultSet::JobTemplates::EMPTY_TESTSUITE_NAME});
-        is(
-            $empty_testsuite->description,
-            OpenQA::Schema::ResultSet::JobTemplates::EMPTY_TESTSUITE_DESCRIPTION,
-            'Empty testsuite description ok'
-        );
-        is($job_templates->search({test_suite_id => $empty_testsuite->id})->count, 1, 'one row has empty testsuite');
-        is($job_templates->search({prio => 97})->count, 1, 'one row has prio 97');
+        is
+          $empty_testsuite->description,
+          OpenQA::Schema::ResultSet::JobTemplates::EMPTY_TESTSUITE_DESCRIPTION,
+          'Empty testsuite description ok';
+        is $job_templates->search({test_suite_id => $empty_testsuite->id})->count, 1, 'one row has empty testsuite';
+        is $job_templates->search({prio => 97})->count, 1, 'one row has prio 97';
         $schema->txn_rollback;
     };
 
@@ -918,11 +900,10 @@ subtest 'Create and modify groups with YAML' => sub {
 
         $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id);
         # Prepare expected result
-        is_deeply(
-            load_yaml(string => $t->tx->res->json),
-            load_yaml(string => $exp_yaml),
-            'YAML with merge keys equals YAML with resolved merge keys'
-        ) || always_explain $t->tx->res->body;
+        is_deeply
+          load_yaml(string => $t->tx->res->json),
+          load_yaml(string => $exp_yaml), 'YAML with merge keys equals YAML with resolved merge keys'
+          || always_explain $t->tx->res->body;
 
         $schema->txn_rollback;
     };
@@ -971,11 +952,10 @@ subtest 'Create and modify groups with YAML' => sub {
         return always_explain $t->tx->res->body unless $t->success;
         my $jobs = $schema->resultset('Jobs');
         my %tests = map { $_ => $jobs->find($_)->settings_hash->{NAME} } @{$t->tx->res->json->{ids}};
-        is_deeply(
-            [sort values %tests],
-            ['00099982-opensuse-13.1-DVD-i586-foobar@64bit', '00099983-opensuse-13.1-DVD-i586-foobar_eggs@64bit',],
-            'Jobs created'
-        );
+        is_deeply
+          [sort values %tests],
+          ['00099982-opensuse-13.1-DVD-i586-foobar@64bit', '00099983-opensuse-13.1-DVD-i586-foobar_eggs@64bit',],
+          'Jobs created';
     };
 
     subtest 'Post unmodified job template' => sub {
@@ -993,7 +973,7 @@ subtest 'Create and modify groups with YAML' => sub {
             'No-op import of existing job template'
         );
         $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
-        is_deeply(load_yaml(string => $t->tx->res->json), $yaml, 'Unmodified group should not result in any changes')
+        is_deeply load_yaml(string => $t->tx->res->json), $yaml, 'Unmodified group should not result in any changes'
           || always_explain $t->tx->res->body;
     };
 
@@ -1085,7 +1065,7 @@ subtest 'Create and modify groups with YAML' => sub {
 
 subtest 'References' => sub {
     my $job_group_id4 = $job_groups->create({name => 'test'})->id;
-    ok($job_group_id4, "Created group test ($job_group_id4)");
+    ok $job_group_id4, "Created group test ($job_group_id4)";
     $yaml = load_yaml(file => "$FindBin::Bin/../data/08-refs.yaml");
     $t->post_ok(
         "/api/v1/job_templates_scheduling/$job_group_id4",
@@ -1098,8 +1078,8 @@ subtest 'References' => sub {
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id4");
     # Prepare expected result
     @{$yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'}} = qw(spam eggs);
-    is_deeply(load_yaml(string => $t->tx->res->json),
-        $yaml, 'Added group with references should be reflected in the database')
+    is_deeply load_yaml(string => $t->tx->res->json),
+      $yaml, 'Added group with references should be reflected in the database'
       || always_explain $t->tx->res->body;
 
     # Event reflects changes to the YAML
@@ -1111,13 +1091,11 @@ subtest 'References' => sub {
             template => dump_yaml($yaml)})->status_is(200);
     return always_explain $t->tx->res->body unless $t->success;
 
-    is_deeply(
-        OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
-        {
-            id => $job_group_id4,
-            job_group_id => $job_group_id4,
-            ids => [37, 32, 38, 34, 39, 36],
-            changes => '@@ -22,7 +22,7 @@
+    is_deeply OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'), {
+        id => $job_group_id4,
+        job_group_id => $job_group_id4,
+        ids => [37, 32, 38, 34, 39, 36],
+        changes => '@@ -22,7 +22,7 @@
    i586:
      opensuse-13.1-DVD-i586: &2
      - spam
@@ -1126,14 +1104,13 @@ subtest 'References' => sub {
    ppc64:
      opensuse-13.1-DVD-ppc64: *2
    x86_64:'
-        },
-        'Diff reflects changes in the YAML'
-    );
+      },
+      'Diff reflects changes in the YAML';
 };
 
 subtest 'Hidden keys' => sub {
     my $job_group = $job_groups->create({name => 'hidden'});
-    ok($job_group, 'Created group hidden (' . $job_group->id . ')');
+    ok $job_group, 'Created group hidden (' . $job_group->id . ')';
     $yaml = load_yaml(file => "$FindBin::Bin/../data/08-hidden-keys.yaml");
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $job_group->id,
@@ -1149,8 +1126,8 @@ subtest 'Hidden keys' => sub {
       = [{kde_usb => {priority => 70, machine => '64bit', settings => {USB => '1'}}}];
     delete $yaml->{defaults};
     delete $yaml->{'.kde_template'};
-    is_deeply(load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
-        $yaml, 'Added group with hidden keys should be reflected in the database')
+    is_deeply load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
+      $yaml, 'Added group with hidden keys should be reflected in the database'
       || always_explain $t->tx->res->body;
     # Clean up to avoid affecting other subtests
     $job_group->delete;
@@ -1177,7 +1154,7 @@ subtest 'Staging' => sub {
         $schema->resultset('TestSuites')->create({name => $ts});
     }
     my $job_group_id4 = $job_groups->create({name => 'staging'})->id;
-    ok($job_group_id4, "Created group test ($job_group_id4)");
+    ok $job_group_id4, "Created group test ($job_group_id4)";
     # Create group based on YAML with references
     $yaml = load_yaml(file => "$FindBin::Bin/../data/08-refs-vars.yaml");
     $t->post_ok(
@@ -1194,24 +1171,23 @@ subtest 'Staging' => sub {
             flavor => ''
         })->status_is(200);
     for my $json (@{$t->tx->res->json->{JobTemplates}}) {
-        is_deeply(
-            $json->{settings},
-            [
-                {
-                    'key' => 'INSTALLATION_VALIDATION',
-                    'value' => ''
-                },
-                {
-                    'key' => 'INSTALLONLY',
-                    'value' => ''
-                },
-                {
-                    'key' => 'YAML_SCHEDULE',
-                    'value' => 'schedule/staging/%TEST%@64bit-staging.yaml'
-                }
-            ],
-            "Correct settings for $json->{product}->{flavor}"
-        );
+        is_deeply
+          $json->{settings},
+          [
+            {
+                'key' => 'INSTALLATION_VALIDATION',
+                'value' => ''
+            },
+            {
+                'key' => 'INSTALLONLY',
+                'value' => ''
+            },
+            {
+                'key' => 'YAML_SCHEDULE',
+                'value' => 'schedule/staging/%TEST%@64bit-staging.yaml'
+            }
+          ],
+          "Correct settings for $json->{product}->{flavor}";
     }
 };
 
@@ -1274,7 +1250,7 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
 };
 
 # Test suites which are part of a group managed in YAML can't be modified manually
-ok($opensuse->template, 'Group ' . $opensuse->name . ' is managed in YAML');
+ok $opensuse->template, 'Group ' . $opensuse->name . ' is managed in YAML';
 # set priority for particular test suite
 $t->post_ok(
     '/api/v1/job_templates',
@@ -1293,11 +1269,10 @@ $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);
 
 $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
 $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404);
-is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_delete'),
-    {id => "$job_template_id2"},
-    'Delete was logged correctly'
-);
+is_deeply
+  OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_delete'),
+  {id => "$job_template_id2"},
+  'Delete was logged correctly';
 
 # switch to operator (default client) and try some modifications
 client($t);

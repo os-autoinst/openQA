@@ -49,12 +49,12 @@ is $driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'lo
 
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Audit log')->click();
-like($driver->get_title(), qr/Audit log/, 'on audit log');
+like $driver->get_title(), qr/Audit log/, 'on audit log';
 
 subtest 'audit log entries' => sub {
     # search for name, event, date and combination
     my $search = $driver->find_element('.dt-search input');
-    ok($search, 'search box found');
+    ok $search, 'search box found';
 
     check_data_table_entries 5, 'all rows displayed without filter';
 
@@ -131,7 +131,7 @@ subtest 'clickable events' => sub {
     my $search = $driver->find_element('.dt-search input');
     $search->send_keys('event:table_create');
     my $entries = check_data_table_entries 3, 'most rows filtered out when searching for table create events';
-    ok($entries->[0]->child('.audit_event_details'), 'event detail link present');
+    ok $entries->[0]->child('.audit_event_details'), 'event detail link present';
 
     $t->post_ok("$url/api/v1/jobs" => $auth => form => {TEST => 'foo'})->status_is(200)->json_is({id => 1});
     $t->post_ok("$url/api/v1/jobs/1/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
@@ -148,8 +148,8 @@ subtest 'clickable events' => sub {
     $entries->[0]->child('.audit_event_details')->click;
     wait_for_ajax msg => 'details loaded';
     my @comments = $driver->find_elements('div.media-comment p', 'css');
-    is(scalar @comments, 1, 'one comment');
-    is($comments[0]->get_text(), 'Just a job test', 'right comment');
+    is scalar @comments, 1, 'one comment';
+    is $comments[0]->get_text(), 'Just a job test', 'right comment';
 };
 
 kill_driver();

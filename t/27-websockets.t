@@ -136,8 +136,8 @@ subtest 'web socket message handling' => sub {
             $t->finish_ok(1000, 'finished ws connection');
         }
         qr/Worker 1 accepted job 42\n/s, 'debug message logged when job matches previous assignment';
-        is($jobs->find(42)->state, SETUP, 'job is in setup state');
-        is($workers->find(1)->job_id, 42, 'job is considered the current job of the worker');
+        is $jobs->find(42)->state, SETUP, 'job is in setup state';
+        is $workers->find(1)->job_id, 42, 'job is considered the current job of the worker';
     };
 
     subtest 'multiple ws connections handled gracefully' => sub {
@@ -167,9 +167,9 @@ subtest 'web socket message handling' => sub {
         }
         qr/Worker 1 rejected job\(s\) 42, 43: foo.*Job 42 reset to state scheduled/s,
           'info logged when worker rejects job';
-        is($jobs->find(42)->state, SCHEDULED, 'job is again in scheduled state');
-        is($jobs->find(43)->state, DONE, 'completed job not affected');
-        is($workers->find(1)->job_id, undef, 'job not considered the current job of the worker anymore');
+        is $jobs->find(42)->state, SCHEDULED, 'job is again in scheduled state';
+        is $jobs->find(43)->state, DONE, 'completed job not affected';
+        is $workers->find(1)->job_id, undef, 'job not considered the current job of the worker anymore';
     };
 
     $schema->txn_rollback;
@@ -185,12 +185,12 @@ subtest 'web socket message handling' => sub {
             $t->finish_ok(1000, 'finished ws connection');
         }
         qr/Job 42 reset to state scheduled/s, 'info logged when worker rejects job';
-        is($jobs->find(42)->state, SCHEDULED,
-                'job is immediately set back to scheduled if assigned worker goes offline '
-              . 'gracefully before starting to work on the job');
+        is $jobs->find(42)->state, SCHEDULED,
+          'job is immediately set back to scheduled if assigned worker goes offline '
+          . 'gracefully before starting to work on the job';
         $worker->discard_changes;
-        ok($worker->dead, 'worker considered immediately dead when it goes offline gracefully');
-        like($worker->error, qr/graceful disconnect at .*/, 'graceful disconnect logged');
+        ok $worker->dead, 'worker considered immediately dead when it goes offline gracefully';
+        like $worker->error, qr/graceful disconnect at .*/, 'graceful disconnect logged';
     };
 
     $schema->txn_rollback;
@@ -234,7 +234,7 @@ subtest 'web socket message handling' => sub {
             $t->json_message_is({type => 'info', seen => 1});
         }
         qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s, 'update logged';
-        is($workers->find($worker_id)->error, 'test', 'broken message set');
+        is $workers->find($worker_id)->error, 'test', 'broken message set';
     };
 
     subtest 'worker status: idle but worker supposed to run a job' => sub {
@@ -245,8 +245,8 @@ subtest 'web socket message handling' => sub {
             $t->message_ok('message received');
         }
         qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s, 'update logged';
-        ok(!$status->{$worker_id}->{idle_despite_job_assignment},
-            'the idle message has not been remarked because there is no job assignment');
+        ok !$status->{$worker_id}->{idle_despite_job_assignment},
+          'the idle message has not been remarked because there is no job assignment';
 
         # assign now a job to the worker
         my $assigned_job_id = 99963;
@@ -261,9 +261,9 @@ subtest 'web socket message handling' => sub {
             $t->message_ok('message received');
         }
         qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s, 'update logged';
-        is($workers->find($worker_id)->error, undef, 'broken status unset');
-        is($status->{$worker_id}->{idle_despite_job_assignment}, 1, 'the first idle message has been remarked');
-        is($workers->find($worker_id)->job_id, $assigned_job_id, 'but job assignment has not been removed yet');
+        is $workers->find($worker_id)->error, undef, 'broken status unset';
+        is $status->{$worker_id}->{idle_despite_job_assignment}, 1, 'the first idle message has been remarked';
+        is $workers->find($worker_id)->job_id, $assigned_job_id, 'but job assignment has not been removed yet';
 
         # assume the worker sends another status update claiming it is free - the worker failed its 2nd attempt
         # to process the assignment so it is supposed to be removed
@@ -272,8 +272,8 @@ subtest 'web socket message handling' => sub {
             $t->message_ok('message received');
         }
         qr/Rescheduling jobs assigned to worker $worker_id/s, 'rescheduling logged';
-        is($workers->find($worker_id)->job_id, undef, 'job assignment removed on 2nd idle status');
-        is($jobs->find($assigned_job_id)->state, SCHEDULED, 'job set back to scheduled');
+        is $workers->find($worker_id)->job_id, undef, 'job assignment removed on 2nd idle status';
+        is $jobs->find($assigned_job_id)->state, SCHEDULED, 'job set back to scheduled';
     };
 
     subtest 'worker status: idle and worker supposed to be idle' => sub {
@@ -283,7 +283,7 @@ subtest 'web socket message handling' => sub {
             $t->message_ok('message received');
         }
         qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s, 'update logged';
-        is($workers->find($worker_id)->error, undef, 'broken status unset');
+        is $workers->find($worker_id)->error, undef, 'broken status unset';
     };
 
     combined_like {

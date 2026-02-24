@@ -55,7 +55,7 @@ foreach my $proj (sort keys %params) {
     is $driver->find_element("tr#folder_$ident .lastsyncbuilds")->get_text, $builds_text, "$proj sync builds";
 
     # at start no project fetches builds from obs
-    is($driver->find_element("tr#folder_$ident .obsbuilds")->get_text, '', "$proj obs builds empty");
+    is $driver->find_element("tr#folder_$ident .obsbuilds")->get_text, '', "$proj obs builds empty";
     my $status = $driver->find_element("tr#folder_$ident .dirtystatuscol .dirtystatus")->get_text;
     like $status, qr/dirty/, "$proj dirty status";
     like $status, qr/$repo/, "$proj repo in dirty status ($status)";

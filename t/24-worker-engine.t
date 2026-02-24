@@ -89,7 +89,7 @@ subtest 'isotovideo version' => sub {
 
     my $isotovideo = path($FindBin::Bin)->child('fake-isotovideo.pl');
     my $worker2 = OpenQA::Worker->new({apikey => 'foo', apisecret => 'bar', instance => 1, isotovideo => $isotovideo});
-    is($worker2->isotovideo_interface_version, 15, 'isotovideo version set from os-autoinst');
+    is $worker2->isotovideo_interface_version, 15, 'isotovideo version set from os-autoinst';
 };
 
 subtest 'asset settings' => sub {
@@ -133,20 +133,20 @@ subtest 'asset settings' => sub {
     };
 
     my $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
-    is_deeply($got, $expected, 'Asset settings are correct (relative PFLASH)') or always_explain $got;
+    is_deeply $got, $expected, 'Asset settings are correct (relative PFLASH)' or always_explain $got;
 
     # if UEFI_PFLASH_VARS is an absolute path, we should not treat it as an asset
     $settings->{UEFI_PFLASH_VARS} = '/absolute/path/OVMF_VARS.fd';
     delete($expected->{UEFI_PFLASH_VARS});
 
     $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
-    is_deeply($got, $expected, 'Asset settings are correct (absolute PFLASH)') or always_explain $got;
+    is_deeply $got, $expected, 'Asset settings are correct (absolute PFLASH)' or always_explain $got;
 
     delete($settings->{UEFI_PFLASH_VARS});
     delete($settings->{NUMDISKS});
 
     $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
-    is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or always_explain $got;
+    is_deeply $got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)' or always_explain $got;
 
     subtest 'absolute path on KERNEL and INITRD' => sub {
         my $test_settings = {
@@ -158,7 +158,7 @@ subtest 'asset settings' => sub {
         my $test_expected = {'ISO' => 'iso'};
 
         my $test_got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($test_settings);
-        is_deeply($test_got, $test_expected, 'KERNEL and INITRD with absolute paths are skipped from caching')
+        is_deeply $test_got, $test_expected, 'KERNEL and INITRD with absolute paths are skipped from caching'
           or always_explain $test_got;
     }
 };

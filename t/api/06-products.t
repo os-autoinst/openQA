@@ -17,46 +17,46 @@ OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-p
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
 $t->get_ok('/api/v1/products')->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'Products' => [
-            {
-                'arch' => 'i586',
-                'distri' => 'opensuse',
-                'flavor' => 'DVD',
-                'id' => 1,
-                'settings' => [
-                    {
-                        'key' => 'DVD',
-                        'value' => '1'
-                    },
-                    {
-                        'key' => 'ISO_MAXSIZE',
-                        'value' => '4700372992'
-                    }
-                ],
-                'version' => '13.1'
-            },
-            {
-                id => 2,
-                distri => 'sle',
-                version => '12-SP1',
-                flavor => 'Server-DVD-Updates',
-                arch => 'x86_64',
-                settings => [],
-            },
-            {
-                id => 3,
-                distri => 'opensuse',
-                version => '13.1',
-                flavor => 'DVD',
-                arch => 'ppc64',
-                settings => [],
-            }]
-    },
-    'Initial products'
-) || always_explain $t->tx->res->json;
+is_deeply
+  $t->tx->res->json,
+  {
+    'Products' => [
+        {
+            'arch' => 'i586',
+            'distri' => 'opensuse',
+            'flavor' => 'DVD',
+            'id' => 1,
+            'settings' => [
+                {
+                    'key' => 'DVD',
+                    'value' => '1'
+                },
+                {
+                    'key' => 'ISO_MAXSIZE',
+                    'value' => '4700372992'
+                }
+            ],
+            'version' => '13.1'
+        },
+        {
+            id => 2,
+            distri => 'sle',
+            version => '12-SP1',
+            flavor => 'Server-DVD-Updates',
+            arch => 'x86_64',
+            settings => [],
+        },
+        {
+            id => 3,
+            distri => 'opensuse',
+            version => '13.1',
+            flavor => 'DVD',
+            arch => 'ppc64',
+            settings => [],
+        }]
+  },
+  'Initial products'
+  || always_explain $t->tx->res->json;
 
 
 # no arch
@@ -84,40 +84,39 @@ $t->post_ok(
         }})->status_is(200);
 my $product_id = $t->tx->res->json->{id};
 my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
-is_deeply(
-    [sort keys %$event],
-    ['arch', 'description', 'distri', 'flavor', 'id', 'name', 'settings', 'table', 'version'],
-    'product event was logged correctly'
-);
+is_deeply
+  [sort keys %$event],
+  ['arch', 'description', 'distri', 'flavor', 'id', 'name', 'settings', 'table', 'version'],
+  'product event was logged correctly';
 
 $t->post_ok('/api/v1/products', json => {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => 13.2})
   ->status_is(400);    #already exists
 
 $t->get_ok("/api/v1/products/$product_id")->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'Products' => [
-            {
-                'arch' => 'x86_64',
-                'distri' => 'opensuse',
-                'flavor' => 'DVD',
-                'id' => $product_id,
-                'settings' => [
-                    {
-                        'key' => 'TEST',
-                        'value' => 'val1'
-                    },
-                    {
-                        'key' => 'TEST2',
-                        'value' => 'val1'
-                    }
-                ],
-                'version' => '13.2'
-            }]
-    },
-    'Add product'
-) || always_explain $t->tx->res->json;
+is_deeply
+  $t->tx->res->json,
+  {
+    'Products' => [
+        {
+            'arch' => 'x86_64',
+            'distri' => 'opensuse',
+            'flavor' => 'DVD',
+            'id' => $product_id,
+            'settings' => [
+                {
+                    'key' => 'TEST',
+                    'value' => 'val1'
+                },
+                {
+                    'key' => 'TEST2',
+                    'value' => 'val1'
+                }
+            ],
+            'version' => '13.2'
+        }]
+  },
+  'Add product'
+  || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/products/$product_id",
     json =>
@@ -125,26 +124,26 @@ $t->put_ok("/api/v1/products/$product_id",
   ->status_is(200);
 
 $t->get_ok("/api/v1/products/$product_id")->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'Products' => [
-            {
-                'arch' => 'x86_64',
-                'distri' => 'opensuse',
-                'flavor' => 'DVD',
-                'id' => $product_id,
-                'settings' => [
-                    {
-                        'key' => 'TEST2',
-                        'value' => 'val1'
-                    }
-                ],
-                'version' => '13.2'
-            }]
-    },
-    'Delete product variable'
-) || always_explain $t->tx->res->json;
+is_deeply
+  $t->tx->res->json,
+  {
+    'Products' => [
+        {
+            'arch' => 'x86_64',
+            'distri' => 'opensuse',
+            'flavor' => 'DVD',
+            'id' => $product_id,
+            'settings' => [
+                {
+                    'key' => 'TEST2',
+                    'value' => 'val1'
+                }
+            ],
+            'version' => '13.2'
+        }]
+  },
+  'Delete product variable'
+  || always_explain $t->tx->res->json;
 
 subtest 'server-side limit has precedence over user-specified limit' => sub {
     my $limits = OpenQA::App->singleton->config->{misc_limits};

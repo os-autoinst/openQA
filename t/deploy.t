@@ -25,7 +25,7 @@ use List::Util 'min';
 # which is still present
 my $oldest_still_supported_schema_version
   = min(@{path($FindBin::Bin, '../dbicdh/PostgreSQL/deploy')->list({dir => 1})->map('basename')});
-ok($oldest_still_supported_schema_version, 'found oldest still supported schema version');
+ok $oldest_still_supported_schema_version, 'found oldest still supported schema version';
 
 sub ensure_schema_is_created_and_empty {
     my $dbh = shift->storage->dbh;
@@ -48,9 +48,9 @@ throws_ok { $dh->version_storage->database_version } 'DBIx::Class::Exception',
   'DB not deployed by plain schema connection with deploy => 0';
 
 my $ret = $schema->deploy;
-ok($dh->version_storage->database_version, 'DB deployed');
-is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
-is($ret, 2, 'Expected return value (2) for a deployment');
+ok $dh->version_storage->database_version, 'DB deployed';
+is $dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version';
+is $ret, 2, 'Expected return value (2) for a deployment';
 
 OpenQA::Schema::disconnect_db;
 $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0, from_script => 1);
@@ -68,23 +68,23 @@ $dh = DBIx::Class::DeploymentHandler->new(
 $dh->install({version => $oldest_still_supported_schema_version});
 $schema->create_system_user;
 
-ok($dh->version_storage->database_version, 'DB deployed');
-is($dh->version_storage->database_version, $oldest_still_supported_schema_version, 'Schema at correct, old, version');
+ok $dh->version_storage->database_version, 'DB deployed';
+is $dh->version_storage->database_version, $oldest_still_supported_schema_version, 'Schema at correct, old, version';
 stderr_like { $ret = $schema->deploy }
 qr{Job IDs will be converted to bigint.*Worker database IDs.*Further database IDs}s, 'Expected warnings are logged';
 
 # insert default fixtures so this test is at least a little bit closer to migrations in production
 OpenQA::Test::Database->new->insert_fixtures($schema);
 
-ok($dh->version_storage->database_version, 'DB deployed');
-is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
-is($ret, 1, 'Expected return value (1) for an upgrade');
+ok $dh->version_storage->database_version, 'DB deployed';
+is $dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version';
+is $ret, 1, 'Expected return value (1) for an upgrade';
 
 # check another deployment call doesn't do a thing
 $ret = $schema->deploy;
-ok($dh->version_storage->database_version, 'DB deployed');
-is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
-is($ret, 0, 'Expected return value (0) for no action needed');
+ok $dh->version_storage->database_version, 'DB deployed';
+is $dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version';
+is $ret, 0, 'Expected return value (0) for no action needed';
 
 subtest 'serving common pages works after db migrations' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');

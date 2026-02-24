@@ -79,43 +79,43 @@ $driver->get($baseurl . '?limit_builds=20');
 wait_for_ajax_and_animations;
 
 # test expanding/collapsing
-is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, 'link to child group collapsed (in the first place)');
+is scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, 'link to child group collapsed (in the first place)';
 $driver->find_element_by_link_text('Build0091')->click();
 my $element = $driver->find_element_by_link_text('opensuse');
-ok($element->is_displayed(), 'link to child group expanded');
+ok $element->is_displayed(), 'link to child group expanded';
 $driver->find_element_by_link_text('Build0091')->click();
 
 subtest 'progress bar link' => sub {
     my $first_build_row = $driver->find_elements('.build-row')->[0];
     my $link = $driver->find_child_element($first_build_row, '.progress-bar-failed a');
-    is($link->get_text, '1 failed', 'link text');
+    is $link->get_text, '1 failed', 'link text';
     my $r = qr|.*/tests/overview\?result=failed&result=incomplete&result=timeout_exceeded&distri=opensuse&
     version=Factory&build=87\.5011&groupid=1001&groupid=1002|x;
-    like($link->get_attribute('href'), $r, 'link href');
+    like $link->get_attribute('href'), $r, 'link href';
 };
 
 # Looking for "is_hidden" does not turn out to be reliable so relying on xpath
 # lookup of collapsed entries instead
-ok($driver->find_element_by_xpath('//div[contains(@class,"children-collapsed")]//a'), 'link to child group collapsed');
+ok $driver->find_element_by_xpath('//div[contains(@class,"children-collapsed")]//a'), 'link to child group collapsed';
 
 # go to parent group overview
 $driver->find_element_by_link_text('Test parent')->click();
 wait_for_ajax_and_animations;
-ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_displayed(), 'link to child group displayed');
+ok $driver->find_element('#group1_build13_1-0091 .h4 a')->is_displayed(), 'link to child group displayed';
 my @links = $driver->find_elements('.h4 a', 'css');
-is(scalar @links, 19, 'all links expanded in the first place');
+is scalar @links, 19, 'all links expanded in the first place';
 $driver->find_element_by_link_text('Build0091')->click();
-ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed');
+ok $driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed';
 
 # check same name group within different parent group
-isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent'");
+isnt scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent'";
 
 # back to home and go to another parent group overview
 $driver->find_element_by_class('navbar-brand')->click();
 wait_for_ajax(msg => 'wait until job group results show up');
 $driver->find_element_by_link_text('Test parent 2')->click();
 wait_for_ajax_and_animations;
-isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent 2'");
+isnt scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent 2'";
 
 # test filtering for nested groups
 subtest 'filtering subgroups' => sub {
@@ -135,24 +135,22 @@ subtest 'filtering subgroups' => sub {
     wait_for_ajax();
     $url .= '?group=Test%20parent%20%2F%20.*%20test%24';
     $url .= '&default_expanded=1&limit_builds=30&time_limit_days=140&interval=';
-    is($driver->get_current_url, $url, 'URL parameters for filter are correct');
-    is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' filtered out");
-    isnt(scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'");
+    is $driver->get_current_url, $url, 'URL parameters for filter are correct';
+    is scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' filtered out";
+    isnt scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'";
 };
 
 subtest 'View grouped by group' => sub {
     $driver->get('/parent_group_overview/' . $parent_groups->find({name => 'Test parent'})->id);
     $driver->find_element_by_id('grouped_by_group_tab')->click();
-    is(
-        $driver->find_element_by_id('grouped_by_group_tab')->get_attribute('class'),
-        'active parent_group_overview_grouping_active',
-        'grouped by group link not active'
-    );
-    isnt(
-        $driver->find_element_by_id('grouped_by_build_tab')->get_attribute('class'),
-        'active parent_group_overview_grouping_active',
-        'grouped by group link remains active'
-    );
+    is
+      $driver->find_element_by_id('grouped_by_group_tab')->get_attribute('class'),
+      'active parent_group_overview_grouping_active',
+      'grouped by group link not active';
+    isnt
+      $driver->find_element_by_id('grouped_by_build_tab')->get_attribute('class'),
+      'active parent_group_overview_grouping_active',
+      'grouped by group link remains active';
     $driver->find_element_by_id('grouped_by_group')->is_displayed();
 };
 

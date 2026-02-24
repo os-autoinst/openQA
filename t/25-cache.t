@@ -83,7 +83,7 @@ is $cache->sqlite->migrations->latest, 5, 'Current version is the latest version
 is $cache->sqlite->migrations->active, 5, 'Current version is the active version';
 like $cache_log, qr/Creating cache directory tree for "$cachedir"/, 'Cache directory tree created';
 like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50 GiB/, 'Cache limit is default (50GB)';
-ok(-e $db_file, 'cache.sqlite is present');
+ok -e $db_file, 'cache.sqlite is present';
 $cache_log = '';
 
 # create three assets (1 and 3: registered and not pending; 2: not registered)
@@ -254,8 +254,8 @@ subtest 'cache purging after successful download' => sub {
     my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
     $cache_mock->redefine(
         _check_limits => sub ($self, $needed, $to_preserve) {
-            is($needed, 256, 'correct number of bytes would be freed');
-            like(join('', keys %$to_preserve), qr/$asset$/, 'downloaded asset would have been preserved')
+            is $needed, 256, 'correct number of bytes would be freed';
+            like join('', keys %$to_preserve), qr/$asset$/, 'downloaded asset would have been preserved'
               or always_explain $to_preserve;
             $cache_mock->original('_check_limits')->($self, $needed, $to_preserve);
         });
@@ -327,7 +327,7 @@ subtest 'cache directory is symlink' => sub {
 
     my $symlink = $cached->child('symlink')->to_string;
     unlink($symlink);
-    ok(symlink($cachedir, $symlink), "symlinking cache dir to $symlink");
+    ok symlink($cachedir, $symlink), "symlinking cache dir to $symlink";
     $cache->location($symlink);
 
     $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');

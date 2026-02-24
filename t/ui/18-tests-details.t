@@ -93,7 +93,7 @@ sub find_candidate_needles ($enabled_expected = 1) {
     my %needles_by_tag = map {
         # find tag name
         my @tag_elements = $driver->find_child_elements($_, 'thead > tr');
-        is(scalar @tag_elements, 1, 'exactly one tag header present' . "\n");
+        is scalar @tag_elements, 1, 'exactly one tag header present' . "\n";
 
         # find needle names
         my @needles;
@@ -102,7 +102,7 @@ sub find_candidate_needles ($enabled_expected = 1) {
             my @needle_parts = $driver->find_child_elements($needle_element, 'td');
             next unless @needle_parts;
 
-            is(scalar @needle_parts, 3, 'exactly three parts per needle present (percentage, name, diff buttons)');
+            is scalar @needle_parts, 3, 'exactly three parts per needle present (percentage, name, diff buttons)';
             push(@needles,
                     OpenQA::Test::Case::trim_whitespace($needle_parts[0]->get_text()) . '%: '
                   . OpenQA::Test::Case::trim_whitespace($needle_parts[1]->get_text()));
@@ -113,7 +113,7 @@ sub find_candidate_needles ($enabled_expected = 1) {
 
     # further assertions
     my $selected_needle_count = scalar @{$driver->find_elements('#needlediff_selector tr.selected')};
-    ok($selected_needle_count <= 1, "at most one needle is selected at a time ($selected_needle_count selected)");
+    ok $selected_needle_count <= 1, "at most one needle is selected at a time ($selected_needle_count selected)";
 
     # close the candidates menu again, return results
     $driver->find_element('#candidatesMenu')->click();
@@ -122,7 +122,7 @@ sub find_candidate_needles ($enabled_expected = 1) {
 }
 
 $driver->find_element_by_link_text('Login')->click();
-is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
+is $driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo';
 
 $driver->get('/tests/99937');
 disable_bootstrap_animations;
@@ -134,11 +134,11 @@ subtest 'error handling when loading test modules' => sub {
 };
 
 subtest 'tab navigation via history' => sub {
-    is(current_tab, 'Details', 'starting on Details tab for completed job');
+    is current_tab, 'Details', 'starting on Details tab for completed job';
     $driver->find_element_by_link_text('Settings')->click();
-    is(current_tab, 'Settings', 'switched to settings tab');
+    is current_tab, 'Settings', 'switched to settings tab';
     $driver->go_back();
-    is(current_tab, 'Details', 'back to details tab');
+    is current_tab, 'Details', 'back to details tab';
 };
 
 subtest 'show job modules execution time' => sub {
@@ -151,11 +151,10 @@ subtest 'show job modules execution time' => sub {
     );
     for my $td (@$tds) {
         my $module_name = $td->children('div')->[0]->get_text();
-        is(
-            $td->children('span')->[0]->get_text(),
-            $modules_execution_time{$module_name},
-            $module_name . ' execution time showed correctly'
-        ) if $modules_execution_time{$module_name};
+        is
+          $td->children('span')->[0]->get_text(),
+          $modules_execution_time{$module_name}, $module_name . ' execution time showed correctly'
+          if $modules_execution_time{$module_name};
     }
 };
 
@@ -170,7 +169,7 @@ subtest 'displaying audio result' => sub {
 subtest 'displaying image result with candidates' => sub {
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     my $needles = find_candidate_needles;
-    is_deeply($needles, {'inst-bootmenu' => []}, 'correct tags displayed') or always_explain $needles;
+    is_deeply $needles, {'inst-bootmenu' => []}, 'correct tags displayed' or always_explain $needles;
 };
 
 subtest 'filtering' => sub {
@@ -188,26 +187,26 @@ subtest 'filtering' => sub {
     };
 
     # check initial state (no filters enabled)
-    ok(!$driver->find_element('#details-name-filter')->is_displayed(), 'name filter initially not displayed');
-    ok(!$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed');
-    is($count_steps->('ok'), 6, 'number of passed steps without filter');
-    is($count_steps->('failed'), 2, 'number of failed steps without filter');
-    is($count_headings->(), 3, 'number of module headings without filter');
+    ok !$driver->find_element('#details-name-filter')->is_displayed(), 'name filter initially not displayed';
+    ok !$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed';
+    is $count_steps->('ok'), 6, 'number of passed steps without filter';
+    is $count_steps->('failed'), 2, 'number of failed steps without filter';
+    is $count_headings->(), 3, 'number of module headings without filter';
 
     # show filter form
     $driver->find_element('.details-filter-toggle a')->click();
 
     # enable name filter
     $driver->find_element('#details-name-filter')->send_keys('er');
-    is($count_steps->('ok'), 2, 'number of passed steps only with name filter');
-    is($count_steps->('failed'), 1, 'number of failed steps only with name filter');
-    is($count_headings->(), 0, 'no module headings shown when filter active');
+    is $count_steps->('ok'), 2, 'number of passed steps only with name filter';
+    is $count_steps->('failed'), 1, 'number of failed steps only with name filter';
+    is $count_headings->(), 0, 'no module headings shown when filter active';
 
     # enable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'), 0, 'number of passed steps with both filters');
-    is($count_steps->('failed'), 1, 'number of failed steps with both filters');
-    is($count_headings->(), 0, 'no module headings shown when filter active');
+    is $count_steps->('ok'), 0, 'number of passed steps with both filters';
+    is $count_steps->('failed'), 1, 'number of failed steps with both filters';
+    is $count_headings->(), 0, 'no module headings shown when filter active';
 
     # disable name filter
     $driver->find_element('#details-name-filter')->send_keys(
@@ -215,15 +214,15 @@ subtest 'filtering' => sub {
         Selenium::Remote::WDKeys->KEYS->{backspace},
         Selenium::Remote::WDKeys->KEYS->{backspace},
     );
-    is($count_steps->('ok'), 0, 'number of passed steps only with failed filter');
-    is($count_steps->('failed'), 2, 'number of failed steps only with failed filter');
-    is($count_headings->(), 0, 'no module headings shown when filter active');
+    is $count_steps->('ok'), 0, 'number of passed steps only with failed filter';
+    is $count_steps->('failed'), 2, 'number of failed steps only with failed filter';
+    is $count_headings->(), 0, 'no module headings shown when filter active';
 
     # disable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'), 6, 'same number of passed steps as initial');
-    is($count_steps->('failed'), 2, 'same number of failed steps as initial');
-    is($count_headings->(), 3, 'module headings shown again');
+    is $count_steps->('ok'), 6, 'same number of passed steps as initial';
+    is $count_steps->('failed'), 2, 'same number of failed steps as initial';
+    is $count_headings->(), 3, 'module headings shown again';
 };
 
 sub check_report_links ($failed_module, $failed_step, $container = undef) {
@@ -232,27 +231,23 @@ sub check_report_links ($failed_module, $failed_step, $container = undef) {
       ? $driver->find_child_elements($container, '.report')
       : $driver->find_elements('#preview_container_in .report');
     my @title = map { $_->get_attribute('title') } @report_links;
-    is($title[0], 'Report product bug', 'product bug report URL available');
-    is($title[1], 'Report kernel product bug', 'product bug report URL available');
-    is($title[2], 'Report test issue', 'test issue report URL available');
+    is $title[0], 'Report product bug', 'product bug report URL available';
+    is $title[1], 'Report kernel product bug', 'product bug report URL available';
+    is $title[2], 'Report test issue', 'test issue report URL available';
     my @url = map { $_->get_attribute('href') } @report_links;
-    like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937}, 'bugzilla link referencing current test');
-    like($url[0], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario');
-    like($url[1], qr{bugzilla.*enter_bug}, 'kernel product bug uses bugzilla enter_bug');
-    like($url[1], qr{(?:\?|&)product=openSUSE\+Distribution(?:&|$)}, 'kernel product bug sets product');
-    like(
-        $url[1],
-        qr{(?:\?|&)short_desc=%5BQE%5D%5BBuild\+0091%5D\+Kernel\+test\+fails\+in\+bootloader},
-        'kernel short_desc correct'
-    );
-    like($url[1], qr{(?:\?|&)comment=}, 'kernel product bug has comment template');
-    like($url[2], qr{progress.*new}, 'progress/redmine link for reporting test issues');
-    like($url[2], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'progress/redmine link contains scenario');
-    like(
-        $url[2],
-        qr{in.*$failed_module.*$failed_module%2Fsteps%2F$failed_step},
-        'progress/redmine link refers to right module/step'
-    );
+    like $url[0], qr{bugzilla.*enter_bug.*tests%2F99937}, 'bugzilla link referencing current test';
+    like $url[0], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario';
+    like $url[1], qr{bugzilla.*enter_bug}, 'kernel product bug uses bugzilla enter_bug';
+    like $url[1], qr{(?:\?|&)product=openSUSE\+Distribution(?:&|$)}, 'kernel product bug sets product';
+    like $url[1],
+      qr{(?:\?|&)short_desc=%5BQE%5D%5BBuild\+0091%5D\+Kernel\+test\+fails\+in\+bootloader},
+      'kernel short_desc correct';
+    like $url[1], qr{(?:\?|&)comment=}, 'kernel product bug has comment template';
+    like $url[2], qr{progress.*new}, 'progress/redmine link for reporting test issues';
+    like $url[2], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'progress/redmine link contains scenario';
+    like $url[2],
+      qr{in.*$failed_module.*$failed_module%2Fsteps%2F$failed_step},
+      'progress/redmine link refers to right module/step';
 }
 
 subtest 'bug reporting' => sub {
@@ -268,12 +263,11 @@ subtest 'scheduled product shown' => sub {
     # still on test 99937
     my $scheduled_product_link = $driver->find_element('#scheduled-product-info > a');
     my $expected_scheduled_product_id = $schema->resultset('Jobs')->find(99937)->scheduled_product_id;
-    is($scheduled_product_link->get_text(), 'distri-dvd-1234', 'scheduled product name');
-    like(
-        $scheduled_product_link->get_attribute('href'),
-        qr/\/admin\/productlog\?id=$expected_scheduled_product_id/,
-        'scheduled product href'
-    );
+    is $scheduled_product_link->get_text(), 'distri-dvd-1234', 'scheduled product name';
+    like
+      $scheduled_product_link->get_attribute('href'),
+      qr/\/admin\/productlog\?id=$expected_scheduled_product_id/,
+      'scheduled product href';
     my $reschedule_link = $driver->find_element('#restart-scheduled-product');
     my $expected_params = qr/scheduled_product_clone_id=$expected_scheduled_product_id&TEST=kde/;
     like $reschedule_link->get_attribute('data-url'), $expected_params, 'reschedule link shown';
@@ -283,28 +277,26 @@ subtest 'scheduled product shown' => sub {
     element_visible '#flash-messages .alert > span', qr/Scheduled product to clone settings from misses DISTRI/, undef,
       'error shown';
     $driver->get('/tests/99963');
-    like(
-        $driver->find_element_by_id('scheduled-product-info')->get_text(),
-        qr/job has not been created by posting an ISO.*but possibly the original job/,
-        'scheduled product not present, clone'
-    );
+    like
+      $driver->find_element_by_id('scheduled-product-info')->get_text(),
+      qr/job has not been created by posting an ISO.*but possibly the original job/,
+      'scheduled product not present, clone';
     $driver->get('/tests/99926');
-    like(
-        $driver->find_element_by_id('scheduled-product-info')->get_text(),
-        qr/job has not been created by posting an ISO/,
-        'scheduled product not present, no clone'
-    );
+    like
+      $driver->find_element_by_id('scheduled-product-info')->get_text(),
+      qr/job has not been created by posting an ISO/,
+      'scheduled product not present, no clone';
 };
 
 subtest 'reason and log details on incomplete jobs' => sub {
     # still on test 99926
-    is(current_tab, 'Details', 'starting on Details tab also for incomplete jobs');
-    like($driver->find_element('#info_box')->get_text(), qr/Reason: just a test/, 'reason shown');
+    is current_tab, 'Details', 'starting on Details tab also for incomplete jobs';
+    like $driver->find_element('#info_box')->get_text(), qr/Reason: just a test/, 'reason shown';
     wait_for_ajax(msg => 'test details tab for job 99926 loaded');
     my $log_element_path = '//*[@id="details"]//*[contains(@class, "embedded-logfile")][table]';
     my $log_element = $driver->find_element_by_xpath($log_element_path);
-    like($log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded');
-    like($log_element->get_text(), qr/Crashed\?/, 'log contents loaded');
+    like $log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded';
+    like $log_element->get_text(), qr/Crashed\?/, 'log contents loaded';
     $driver->find_element_by_link_text('Investigation')->click;
     $driver->find_element('table#investigation_status_entry')
       ->text_like(qr/cannot provide hints/, 'investigation status content shown as table');
@@ -330,7 +322,7 @@ subtest 'running job' => sub {
     $aplay_text_result->remove if -e $aplay_text_result;
 
     $driver->get('/tests/99963');
-    like(current_tab, qr/live/i, 'live tab active by default');
+    like current_tab, qr/live/i, 'live tab active by default';
 
     # avoid elements being replaced in the background, we later call updateStatus() manually to avoid wasting time
     # waiting for the periodic call anyways
@@ -371,25 +363,23 @@ subtest 'running job' => sub {
     };
 
     subtest 'info panel contents' => sub {
-        like(
-            $driver->find_element('#assigned-worker')->get_text,
-            qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/,
-            'worker displayed when job running'
-        );
-        like($driver->find_element('#assigned-worker a')->get_attribute('href'),
-            qr{.*/admin/workers/1$}, 'link to worker correct');
-        like(
-            $driver->find_element('#scenario-description')->get_text,
-            qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
-            'scenario description is displayed'
-        );
+        like
+          $driver->find_element('#assigned-worker')->get_text,
+          qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/,
+          'worker displayed when job running';
+        like $driver->find_element('#assigned-worker a')->get_attribute('href'),
+          qr{.*/admin/workers/1$}, 'link to worker correct';
+        like
+          $driver->find_element('#scenario-description')->get_text,
+          qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
+          'scenario description is displayed';
     };
     subtest 'details tab with empty test module table' => sub {
         $driver->find_element_by_link_text('Details')->click;
         wait_for_ajax(msg => 'details tab rendered');
         my $test_modules_table = $driver->find_element_by_id('results');
-        isnt($test_modules_table, undef, 'results table shown') or return undef;
-        is(scalar @{$driver->find_child_elements($test_modules_table, 'tbody tr')}, 0, 'no results shown so far');
+        isnt $test_modules_table, undef, 'results table shown' or return undef;
+        is scalar @{$driver->find_child_elements($test_modules_table, 'tbody tr')}, 0, 'no results shown so far';
     };
     subtest 'test module table is populated (without reload) when test modules become available' => sub {
         $job_modules->search({job_id => 99961})->update({job_id => 99963});
@@ -418,11 +408,10 @@ subtest 'render bugref links in thumbnail text windows' => sub {
     wait_for_ajax(msg => 'details tab for job 99946 loaded (2)');
     $driver->find_element('[title="Soft Failed"]')->click();
     wait_for_ajax(msg => 'preview container for softfailed step loaded');
-    is(
-        $driver->find_element_by_id('preview_container_in')->get_text(),
-        'Test bugref bsc#1234 https://fate.suse.com/321208',
-        'bugref text correct'
-    );
+    is
+      $driver->find_element_by_id('preview_container_in')->get_text(),
+      'Test bugref bsc#1234 https://fate.suse.com/321208',
+      'bugref text correct';
     my @a = $driver->find_elements('#preview_container_in pre a', 'css');
     is((shift @a)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref href correct');
     is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
@@ -438,31 +427,29 @@ subtest 'render text results' => sub {
 
     # select a text result
     $driver->find_element('[title="Some text result from external parser"]')->click();
-    like($driver->get_current_url(), qr/#step\/logpackages\/6/, 'url contains step');
-    is(
-        $driver->find_element('.current_preview .resborder')->get_text(),
-        'This is a dummy result to test rendering text results from external parsers.',
-        'text result rendered correctly'
-    );
+    like $driver->get_current_url(), qr/#step\/logpackages\/6/, 'url contains step';
+    is
+      $driver->find_element('.current_preview .resborder')->get_text(),
+      'This is a dummy result to test rendering text results from external parsers.',
+      'text result rendered correctly';
 
     # select another text result
     $driver->find_element('[title="Another text result from external parser"]')->click();
-    like($driver->get_current_url(), qr/#step\/logpackages\/7/, 'url contains step');
+    like $driver->get_current_url(), qr/#step\/logpackages\/7/, 'url contains step';
     my @lines = split(/\n/, $driver->find_element('.current_preview .resborder')->get_text());
-    is(scalar @lines, 11, 'correct number of lines');
+    is scalar @lines, 11, 'correct number of lines';
 
     # unselecting text result
     $driver->find_element('[title="Another text result from external parser"]')->click();
-    unlike($driver->get_current_url(), qr/#step/, 'step removed from url');
+    unlike $driver->get_current_url(), qr/#step/, 'step removed from url';
 
     # check whether other text results (not parser output) are unaffected
     $driver->find_element('[title="One more text result"]')->click();
     wait_for_ajax(msg => 'preview container for text result step loaded');
-    is(
-        $driver->find_element_by_id('preview_container_in')->get_text(),
-        "But this one doesn't come from parser so\nit should not be displayed in a special way.",
-        'text results not from parser shown in ordinary preview container'
-    );
+    is
+      $driver->find_element_by_id('preview_container_in')->get_text(),
+      "But this one doesn't come from parser so\nit should not be displayed in a special way.",
+      'text results not from parser shown in ordinary preview container';
     # note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail
     # text windows'
 
@@ -471,20 +458,20 @@ subtest 'render text results' => sub {
         $driver->find_element_by_link_text('External results')->click();
         wait_for_ajax(msg => 'external results tab for job 99946 loaded');
         my $external_table = $driver->find_element_by_id('external-table');
-        is($external_table->is_displayed(), 1, 'external table visible after clicking its tab header');
+        is $external_table->is_displayed(), 1, 'external table visible after clicking its tab header';
         my @rows = $driver->find_child_elements($external_table, 'tr');
-        is(scalar @rows, 3, 'external table has 3 rows (heading and 2 results)');
+        is scalar @rows, 3, 'external table has 3 rows (heading and 2 results)';
         my $res1
           = 'logpackages Some text result from external parser This is a dummy result to test rendering text results from external parsers.';
         my $res2
           = qr/logpackages Another text result from external parser Another dummy result to test rendering text results from external parsers\..*/;
-        is($rows[1]->get_text(), $res1, 'first result displayed');
-        like($rows[2]->get_text(), $res2, 'second result displayed');
+        is $rows[1]->get_text(), $res1, 'first result displayed';
+        like $rows[2]->get_text(), $res2, 'second result displayed';
 
         $driver->find_element_by_id('external-only-failed-filter')->click();
         @rows = $driver->find_child_elements($external_table, 'tr');
-        is(scalar @rows, 2, 'passed results filtered out');
-        is($rows[1]->get_text(), $res1, 'softfailure still displayed');
+        is scalar @rows, 2, 'passed results filtered out';
+        is $rows[1]->get_text(), $res1, 'softfailure still displayed';
     };
 };
 
@@ -493,40 +480,36 @@ subtest 'render video link if frametime is available' => sub {
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     wait_for_ajax(msg => 'first step of bootloader test module loaded');
     my @links = $driver->find_elements('.step_actions .fa-file-video-o');
-    is($#links, -1, 'no link without frametime');
+    is $#links, -1, 'no link without frametime';
 
     $driver->find_element('[href="#step/bootloader/2"]')->click();
     wait_for_ajax(msg => 'second step of bootloader test module loaded');
     my @video_link_elems = $driver->find_elements('.step_actions .fa-file-video-o');
-    is($video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists');
-    like(
-        $video_link_elems[0]->get_attribute('href'),
-        qr!/tests/99946/video\?filename=video\.ogv&t=0\.00,1\.00!,
-        'video href correct'
-    );
+    is $video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists';
+    like $video_link_elems[0]->get_attribute('href'),
+      qr!/tests/99946/video\?filename=video\.ogv&t=0\.00,1\.00!,
+      'video href correct';
     $video_link_elems[0]->click();
-    like(
-        $driver->find_element('video')->get_attribute('src'),
-        qr!/tests/99946/file/video\.ogv#t=0!,
-        'video src correct and starts on timestamp'
-    );
+    like
+      $driver->find_element('video')->get_attribute('src'),
+      qr!/tests/99946/file/video\.ogv#t=0!,
+      'video src correct and starts on timestamp';
 };
 
 subtest 'misc details: title, favicon, go back, go to source view, go to log view' => sub {
     $driver->go_back();    # to 99946
     $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
-    like($driver->find_element('link[rel=icon]')->get_attribute('href'),
-        qr/logo-passed/, 'favicon is based on job result');
+    like $driver->find_element('link[rel=icon]')->get_attribute('href'),
+      qr/logo-passed/, 'favicon is based on job result';
     wait_for_ajax(msg => 'test details tab for job 99946 loaded (1)');
-    if (ok(my $current_preview = $driver->find_element('.current_preview'), 'state preserved when going back')) {
+    if (ok my $current_preview = $driver->find_element('.current_preview'), 'state preserved when going back') {
         $current_preview->click;
     }
     $driver->find_element_by_link_text('installer_timezone')->click();
-    like(
-        $driver->get_current_url(),
-        qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
-        'on src page for installer_timezone test'
-    );
+    like
+      $driver->get_current_url(),
+      qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
+      'on src page for installer_timezone test';
     is @{$driver->find_elements('.ace_comment')}[0]->get_text, '#!/usr/bin/env perl', 'shebang rendered as comment';
 
     # load "Logs & Assets" tab contents directly because accessing the tab within the whole page in a straight forward
@@ -619,7 +602,7 @@ subtest 'GRU dependency shown in infopanel' => sub {
           'The infobox is properly formatted';
 
         my $links = $driver->find_elements('#info_box a[href*="/minion/jobs"]');
-        is(scalar(@{$links}), 0, 'Expect 0 link to minion jobs as guest');
+        is scalar(@{$links}), 0, 'Expect 0 link to minion jobs as guest';
     };
 };
 
@@ -645,32 +628,32 @@ subtest 'route to latest' => sub {
       ->status_is(200);
     my $dom = $t->tx->res->dom;
     my $header = $dom->at('#info_box .card-header a');
-    is($header->text, '99963', 'link shows correct test');
-    is($header->{href}, '/tests/99963', 'latest link shows tests/99963');
+    is $header->text, '99963', 'link shows correct test';
+    is $header->{href}, '/tests/99963', 'latest link shows tests/99963';
     my $details_url = $dom->at('#details')->{'data-src'};
-    is($details_url, '/tests/99963/details_ajax', 'URL for loading details via AJAX points to correct test');
+    is $details_url, '/tests/99963/details_ajax', 'URL for loading details via AJAX points to correct test';
     $t->get_ok($details_url)->status_is(200);
-    is($t->tx->res->json->{modules}->[0]->{name}, 'isosize', 'correct first module');
+    is $t->tx->res->json->{modules}->[0]->{name}, 'isosize', 'correct first module';
     $t->get_ok('/tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
-    is($header->{href}, '/tests/99963', '... as long as it is unique');
+    is $header->{href}, '/tests/99963', '... as long as it is unique';
     $t->get_ok('/tests/latest?version=13.1')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
-    is($header->{href}, '/tests/99982', 'returns highest job nr of ambiguous group');
+    is $header->{href}, '/tests/99982', 'returns highest job nr of ambiguous group';
     $t->get_ok('/tests/latest?test=kde&machine=32bit')->status_is(200);
     $dom = $t->tx->res->dom;
     $header = $dom->at('#info_box .card-header a');
-    is($header->{href}, '/tests/99937', 'also filter on machine');
+    is $header->{href}, '/tests/99937', 'also filter on machine';
     my $job_groups_links = $dom->find('.navbar .dropdown a + ul.dropdown-menu a');
     my ($job_group_text, $build_text) = $job_groups_links->map('text')->each;
     my ($job_group_href, $build_href) = $job_groups_links->map('attr', 'href')->each;
-    is($job_group_text, 'opensuse (current)', 'link to current job group overview');
-    is($build_text, ' Build 0091', 'link to test overview');
-    is($job_group_href, '/group_overview/1001', 'href to current job group overview');
-    like($build_href, qr/distri=opensuse/, 'href to test overview');
-    like($build_href, qr/groupid=1001/, 'href to test overview');
-    like($build_href, qr/version=13.1/, 'href to test overview');
-    like($build_href, qr/build=0091/, 'href to test overview');
+    is $job_group_text, 'opensuse (current)', 'link to current job group overview';
+    is $build_text, ' Build 0091', 'link to test overview';
+    is $job_group_href, '/group_overview/1001', 'href to current job group overview';
+    like $build_href, qr/distri=opensuse/, 'href to test overview';
+    like $build_href, qr/groupid=1001/, 'href to test overview';
+    like $build_href, qr/version=13.1/, 'href to test overview';
+    like $build_href, qr/build=0091/, 'href to test overview';
     $t->get_ok('/tests/latest?test=foobar')->status_is(404);
 };
 
@@ -780,11 +763,11 @@ subtest 'test candidate list' => sub {
             wait_for_element(selector => '#candidatesMenu', is_displayed => 1)->click;
             ++$clicks;
         })->click;
-    like(
-        $driver->find_element('.needle-info-table')->get_text(),
-        qr/Last match.*T.*Last seen.*T.*/s,
-        'last match and last seen shown',
-    );
+    like
+      $driver->find_element('.needle-info-table')->get_text(),
+      qr/Last match.*T.*Last seen.*T.*/s,
+      'last match and last seen shown',
+      ;
     $driver->find_element('#needlediff_selector .show-needle-info')->click();
     wait_until_element_gone('.needle-info-table');
     $driver->find_element('#candidatesMenu')->click();
@@ -802,13 +785,11 @@ always_explain $t->tx->res->body unless $t->success;
 
 $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 my @worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
-like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
+like $worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done';
 my @scenario_description = $t->tx->res->dom->find('#scenario-description')->map('all_text')->each;
-like(
-    $scenario_description[0],
-    qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
-    'scenario description is displayed'
-);
+like $scenario_description[0],
+  qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
+  'scenario description is displayed';
 
 # now test the details of a job with nearly no settings which should yield no
 # warnings
@@ -819,39 +800,35 @@ subtest 'test module flags are displayed correctly' => sub {
     $driver->get('/tests/99764');
     wait_for_ajax(msg => 'details tab for job 99764 loaded');
     my $flags = $driver->find_elements("//div[\@class='flags']/i[(starts-with(\@class, 'flag fa fa-'))]", 'xpath');
-    is(scalar(@{$flags}), 4, 'Expect 4 flags in the job 99764');
+    is scalar(@{$flags}), 4, 'Expect 4 flags in the job 99764';
 
     my $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-minus']", 'xpath');
-    ok($flag, 'Ignore failure flag is displayed for test modules which are not important, neither fatal');
-    is(
-        $flag->get_attribute('title'),
-        'Ignore failure: failure or soft failure of this test does not impact overall job result',
-        'Description of Ignore failure flag is correct'
-    );
+    ok $flag, 'Ignore failure flag is displayed for test modules which are not important, neither fatal';
+    is
+      $flag->get_attribute('title'),
+      'Ignore failure: failure or soft failure of this test does not impact overall job result',
+      'Description of Ignore failure flag is correct';
 
     $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-undo']", 'xpath');
-    ok($flag, 'Always rollback flag is displayed correctly');
-    is(
-        $flag->get_attribute('title'),
-        'Always rollback: revert to the last milestone snapshot even if test module is successful',
-        'Description of always_rollback flag is correct'
-    );
+    ok $flag, 'Always rollback flag is displayed correctly';
+    is
+      $flag->get_attribute('title'),
+      'Always rollback: revert to the last milestone snapshot even if test module is successful',
+      'Description of always_rollback flag is correct';
 
     $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-anchor']", 'xpath');
-    ok($flag, 'Milestone flag is displayed correctly');
-    is(
-        $flag->get_attribute('title'),
-        'Milestone: snapshot the state after this test for restoring',
-        'Description of milestone flag is correct'
-    );
+    ok $flag, 'Milestone flag is displayed correctly';
+    is
+      $flag->get_attribute('title'),
+      'Milestone: snapshot the state after this test for restoring',
+      'Description of milestone flag is correct';
 
     $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-plug']", 'xpath');
-    ok($flag, 'Fatal flag is displayed correctly');
-    is(
-        $flag->get_attribute('title'),
-        'Fatal: testsuite is aborted if this test fails',
-        'Description of fatal flag is correct'
-    );
+    ok $flag, 'Fatal flag is displayed correctly';
+    is
+      $flag->get_attribute('title'),
+      'Fatal: testsuite is aborted if this test fails',
+      'Description of fatal flag is correct';
 };
 
 subtest 'number of restarts displayed (zero times)' => sub {

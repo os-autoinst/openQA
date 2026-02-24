@@ -19,7 +19,7 @@ $t->app($app);
 
 sub start_gru {
     start sub {    # uncoverable because we do not track coverage of this sub process
-        note('starting gru');    # uncoverable statement
+        note 'starting gru';    # uncoverable statement
         $0 = 'openqa-gru';    # uncoverable statement
         $ENV{MOJO_MODE} = 'test';    # uncoverable statement
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');    # uncoverable statement
@@ -133,7 +133,7 @@ subtest 'test concurrenctly long running jobs' => sub {
 sleep_until_all_jobs_finished($t);
 
 # now we should have 5 finished jobs: 2 for MockProjectLongProcessing and MockProjectLongProcessing1 and one for Proj1
-is(_jobs_cnt('finished'), 5, 'Number of finished jobs');
+is _jobs_cnt('finished'), 5, 'Number of finished jobs';
 
 subtest 'test concurrenctly long running jobs again' => sub {
     test_async($t);
@@ -142,20 +142,20 @@ subtest 'test concurrenctly long running jobs again' => sub {
 sleep_until_all_jobs_finished($t);
 
 # the same check will double amount of finished jobs
-is(_jobs_cnt('finished'), 10, 'Number of finished jobs');
+is _jobs_cnt('finished'), 10, 'Number of finished jobs';
 
 $t->put_ok('/api/v1/obs_rsync/MockProjectError/runs')->status_is(201, 'Start another mock project');
 
 sleep_until_all_jobs_finished($t);
 
 # MockProjectError should not be raised because errors are ignored
-is(_jobs_cnt('finished'), 11, 'Number of finished jobs');
+is _jobs_cnt('finished'), 11, 'Number of finished jobs';
 my ($cnt, $jobs) = _jobs('failed');
-is($cnt, 0, 'Number of failed jobs');
+is $cnt, 0, 'Number of failed jobs';
 
 ($cnt, $jobs) = _jobs('finished');
-is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message');
-is($jobs->[0]->{result}->{code}, 256, 'Correct exit code') if $cnt;
+is $jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message';
+is $jobs->[0]->{result}->{code}, 256, 'Correct exit code' if $cnt;
 
 END {
     $gru->signal('TERM');

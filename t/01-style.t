@@ -27,5 +27,9 @@ is qx{git grep -I -l '^use \\(Try::Tiny\\|TryCatch\\)'}, '',
   'No Try::Tiny or TryCatch necessary, use Feature::Compat::Try and later native Perl';
 is qx{git grep -I -l 'sub [a-z_A-Z0-9]\\+()' ':!docs/'}, '',
   'Consistent space before function signatures (this is not ensured by perltidy)';
+is
+qx{git grep -Pr "(?<!->)(?<!sub )\\b(ok|is|isnt|like|unlike|cmp_ok|can_ok|isa_ok|subtest|diag|note|explain|pass|fail|new_ok|is_deeply)\\s*\\(" t/ | grep -vE "t/(lib|testresults)/" | grep -vE "(:\\s+\\b(is|like|is_deeply|ok)\\()|(->)|(::)|(\\b(shift|grep|stat|path|NestedResult|DateTime|Mojo::File|OpenQA::Files)\\b)|([0-9])"},
+  '',
+  'Consistent Test::More call format (no parentheses)';
 done_testing;
 

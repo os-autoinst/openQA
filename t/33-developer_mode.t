@@ -57,7 +57,7 @@ driver_missing unless check_driver_modules;
 my $tempdir = setup_fullstack_temp_dir('developer-mode');
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok(-d $resultdir, "resultdir \"$resultdir\" exists");
+ok -d $resultdir, "resultdir \"$resultdir\" exists";
 
 # setup database without fixtures and special admin users 'Demo' and 'otherdeveloper'
 my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
@@ -102,7 +102,7 @@ sub relogin_as ($user) {
 
 # login
 $driver->title_is('openQA', 'on main page');
-is($driver->find_element('#user-action a')->get_text(), 'Login', 'no one initially logged-in');
+is $driver->find_element('#user-action a')->get_text(), 'Login', 'no one initially logged-in';
 $driver->click_element_ok('Login', 'link_text');
 $driver->title_is('openQA', 'back on main page');
 
@@ -113,7 +113,7 @@ my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 my $job_page_url = $driver->get_current_url();
-like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
+like $driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled';
 javascript_console_has_no_warnings_or_errors;
 
 my $needle_dir = $sharedir . '/tests/tinycore/needles';
@@ -122,7 +122,7 @@ my $needle_dir = $sharedir . '/tests/tinycore/needles';
 mkdir($needle_dir . '/../disabled_needles');
 my $on_prompt_needle = $needle_dir . '/boot-on_prompt';
 my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
-note('renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}');
+note 'renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}';
 for my $ext (qw(.json .png)) {
     my ($new_location, $old_location) = ($on_prompt_needle_renamed . $ext, $on_prompt_needle . $ext);
     # ensure needle does not already exist under the new location (might be after unclean exit of previous run)
@@ -147,7 +147,7 @@ sub wait_for_session_info {
         $waited_s += 1;
     }
 
-    like($developer_session_info, $info_regex, $diag_info);
+    like $developer_session_info, $info_regex, $diag_info;
 }
 
 my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';

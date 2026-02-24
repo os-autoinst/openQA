@@ -25,11 +25,11 @@ subtest 'Result base class object' => sub {
     my $res = OpenQA::Parser::Result->new();
     $res->{foo} = 2;
     $res->{bar} = 4;
-    is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly') or die always_explain $res;
+    is_deeply $res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly' or die always_explain $res;
 
     my $j = $res->to_json;
     my $res2 = OpenQA::Parser::Result->new()->from_json($j);
-    is_deeply($res2->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly') or die always_explain $res2;
+    is_deeply $res2->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly' or die always_explain $res2;
 };
 
 subtest 'Results base class object' => sub {
@@ -369,7 +369,7 @@ sub test_junit_file {
     is $reported_size, $actually_written_size, 'reported size matches actually written size';
     $actually_written->each(
         sub {
-            fail('Output result was written correctly') unless ($_->slurp =~ /# system-out:|# running upstream test/);
+            fail 'Output result was written correctly' unless ($_->slurp =~ /# system-out:|# running upstream test/);
         });
 
     my $expected_test_result = {
@@ -461,7 +461,7 @@ sub test_xunit_file {
     is $resultsdir->list_tree->size, 24, '24 test outputs were written';
     $resultsdir->list_tree->each(
         sub {
-            fail('Output result was written correctly') unless ($_->slurp =~ /^# Test messages /);
+            fail 'Output result was written correctly' unless ($_->slurp =~ /^# Test messages /);
         });
 
     my $expected_test_result = {
@@ -856,11 +856,11 @@ subtest 'Unstructured data' => sub {
 
     my $init_params = $deserialized->results->get(1)->get('init-param');
 
-    isa_ok($init_params, 'OpenQA::Parser::Result::Node');
-    isa_ok($init_params->get('mailHost'), 'OpenQA::Parser::Result::Node');
-    isa_ok($init_params->get('mailHost')->get('override'), 'OpenQA::Parser::Result::Node');
-    is($init_params->get('mailHost')->get('override')->get('always')->val, 'yes') or die always_explain $init_params;
-    is($init_params->mailHost->override->always->val, 'yes') or die always_explain $init_params;
+    isa_ok $init_params, 'OpenQA::Parser::Result::Node';
+    isa_ok $init_params->get('mailHost'), 'OpenQA::Parser::Result::Node';
+    isa_ok $init_params->get('mailHost')->get('override'), 'OpenQA::Parser::Result::Node';
+    is $init_params->get('mailHost')->get('override')->get('always')->val, 'yes' or die always_explain $init_params;
+    is $init_params->mailHost->override->always->val, 'yes' or die always_explain $init_params;
 
     my $n = $deserialized->results->last->get('init-param');
     is $n->dataLogLocation()->val(), '/usr/local/tomcat/logs/dataLog.log', or die always_explain $n;
@@ -1000,7 +1000,7 @@ subtest 'ktap_parse_incorrect_file' => sub {
     is scalar @{$last->details}, 7, 'Last group has 7 subtests';
     is $last->details->[0]->{title}, 'test_zswap_usage', 'First subtest parsed correctly';
     is $last->details->[-1]->{title}, 'test_no_invasive_cgroup_shrink', 'Last subtest parsed';
-    is $last->result, 'fail', 'Group result marked as fail (due to subtest failure)';
+    is $last->result, 'fail', 'Group result marked as fail due to subtest failure';
 };
 
 subtest 'ktap_with_todo' => sub {

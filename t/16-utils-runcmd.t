@@ -42,8 +42,8 @@ my $fake_needle = {
 };
 
 subtest 'run (arbitrary) command' => sub {
-    ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
-    stdout_like { is(run_cmd_with_log([qw(false)]), '') } qr/[WARN].*[ERROR]/i;
+    ok run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command';
+    stdout_like { is run_cmd_with_log([qw(false)]), '' } qr/[WARN].*[ERROR]/i;
 
     my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
     is $res->{return_code}, 0, 'correct zero exit code returned ($? >> 8)';
@@ -52,7 +52,7 @@ subtest 'run (arbitrary) command' => sub {
 
     stdout_like { $res = run_cmd_with_log_return_error([qw(false)]) } qr/.*\[error\].*cmd returned [1-9][0-9]*/i;
     is $res->{return_code}, 1, 'correct non-zero exit code returned ($? >> 8)';
-    ok !$res->{status}, 'status not ok (non-zero status returned)';
+    ok !$res->{status}, 'status not ok non-zero status returned';
 
     stdout_unlike { $res = run_cmd_with_log_return_error([qw(falße)]) } qr/.*cmd returned [1-9][0-9]*/i;
     is $res->{return_code}, undef, 'no exit code returned if command cannot be executed';
@@ -125,16 +125,15 @@ subtest 'invoke Git commands for real testing error handling' => sub {
         my $test_file_3 = "$empty_tmp_dir/baz";
         my $ref = qx{git -C "$git_remote_dir" rev-parse HEAD};
         chomp $ref;
-        is($git->cache_ref($ref, "file://$git_remote_dir/.git", 'foo', $test_file_3),
-            undef, 'checkout file from remote origin with ref');
+        is $git->cache_ref($ref, "file://$git_remote_dir/.git", 'foo', $test_file_3),
+          undef, 'checkout file from remote origin with ref';
         ok -f $test_file_3, 'checkout succeeded';
 
         my $test_file_4 = "$empty_tmp_dir/barinus";
-        like(
-            $git->cache_ref($ref, "file://$git_remote_dir/.git", 'bar', $test_file_4),
-            qr"Unable to cache Git ref .* 'bar' exists on disk, but not in",
-            'checking out non existing file fails'
-        );
+        like
+          $git->cache_ref($ref, "file://$git_remote_dir/.git", 'bar', $test_file_4),
+          qr"Unable to cache Git ref .* 'bar' exists on disk, but not in",
+          'checking out non existing file fails';
         ok !-f $test_file_4, 'task failed successfuly';
     };
 };
@@ -157,52 +156,52 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     my $utils_mock = Test::MockModule->new('OpenQA::Git');
     $utils_mock->redefine(run_cmd_with_log_return_error => \&_run_cmd_mock);
     my $git = OpenQA::Git->new(app => $t->app, dir => 'foo/bar', user => $first_user);
-    is($git->app, $t->app, 'app is set');
-    is($git->dir, 'foo/bar', 'dir is set');
-    is($git->user, $first_user, 'user is set');
-    ok(!$git->autocommit_enabled, 'git autocommit is not enabled by default');
+    is $git->app, $t->app, 'app is set';
+    is $git->dir, 'foo/bar', 'dir is set';
+    is $git->user, $first_user, 'user is set';
+    ok !$git->autocommit_enabled, 'git autocommit is not enabled by default';
     my $git_config = $t->app->config->{'scm git'};
-    is($git->config, $git_config, 'global git config is mirrored');
-    is($git->config->{update_remote}, '', 'by default no remote configured');
-    is($git->config->{update_branch}, '', 'by default no branch configured');
+    is $git->config, $git_config, 'global git config is mirrored';
+    is $git->config->{update_remote}, '', 'by default no remote configured';
+    is $git->config->{update_branch}, '', 'by default no branch configured';
 
     # read-only getters
     $git->autocommit_enabled(1);
-    ok(!$git->autocommit_enabled, 'autocommit_enabled is read-only');
+    ok !$git->autocommit_enabled, 'autocommit_enabled is read-only';
     $git->config({});
-    is($git->config, $git_config, 'config is read-only');
+    is $git->config, $git_config, 'config is read-only';
 
     # enable git auto-commit a few different ways and check it
     $git->config->{git_auto_commit} = 'yes';
-    ok($git->autocommit_enabled, 'git_auto_commit = yes enables autocommit');
+    ok $git->autocommit_enabled, 'git_auto_commit = yes enables autocommit';
     $git->config->{git_auto_commit} = '';
-    ok(!$git->autocommit_enabled, 'git_auto_commit empty disables autocommit');
+    ok !$git->autocommit_enabled, 'git_auto_commit empty disables autocommit';
     $t->app->config->{global}->{scm} = 'git';
-    ok($git->autocommit_enabled, 'git_auto_commit empty and scm = git enables autocommit');
+    ok $git->autocommit_enabled, 'git_auto_commit empty and scm = git enables autocommit';
     $git->config->{git_auto_commit} = 'no';
-    ok(!$git->autocommit_enabled, 'git_auto_commit = no disables autocommit even with scm = git');
+    ok !$git->autocommit_enabled, 'git_auto_commit = no disables autocommit even with scm = git';
 
     # test set_to_latest_master effectively being a no-op because no update remote and branch have been configured
-    is($git->set_to_latest_master, undef, 'no error if no update remote and branch configured');
-    is_deeply(\@executed_commands, [], 'no commands executed if no update remote and branch configured')
+    is $git->set_to_latest_master, undef, 'no error if no update remote and branch configured';
+    is_deeply \@executed_commands, [], 'no commands executed if no update remote and branch configured'
       or always_explain \@executed_commands;
 
     # configure update branch and remote
     $git->config->{update_remote} = 'origin';
     $git->config->{update_branch} = 'origin/master';
     $git->config->{do_cleanup} = 'yes';
-    is($git_config->{update_remote}, $git->config->{update_remote}, 'global git config reflects all changes');
+    is $git_config->{update_remote}, $git->config->{update_remote}, 'global git config reflects all changes';
 
     # test set_to_latest_master (non-error case)
-    is($git->set_to_latest_master, undef, 'no error');
-    is_deeply(
-        \@executed_commands,
-        [
-            [qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar reset --hard HEAD)],
-            [qw(git -C foo/bar rebase origin/master)],
-        ],
-        'git remote update and rebase executed',
-    ) or always_explain \@executed_commands;
+    is $git->set_to_latest_master, undef, 'no error';
+    is_deeply
+      \@executed_commands,
+      [
+        [qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar reset --hard HEAD)],
+        [qw(git -C foo/bar rebase origin/master)],
+      ],
+      'git remote update and rebase executed',
+      or always_explain \@executed_commands;
 
     # test set_to_latest_master (error case)
     @executed_commands = ();
@@ -220,31 +219,29 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     # test commit
     @executed_commands = ();
     $mock_return_value{status} = 1;
-    is(
-        $git->dir('/repo/path')->commit(
-            {
-                message => 'add rm test',
-                add => [qw(foo.png foo.json)],
-                rm => [qw(bar.png bar.json)],
-            }
-        ),
-        undef,
-        'no error occured'
-    );
-    is_deeply(
-        \@executed_commands,
+    is $git->dir('/repo/path')->commit(
+        {
+            message => 'add rm test',
+            add => [qw(foo.png foo.json)],
+            rm => [qw(bar.png bar.json)],
+        }
+      ),
+      undef,
+      'no error occured';
+    is_deeply
+      \@executed_commands,
+      [
+        [qw(git -C /repo/path add foo.png foo.json)],
+        [qw(git -C /repo/path rm bar.png bar.json)],
         [
-            [qw(git -C /repo/path add foo.png foo.json)],
-            [qw(git -C /repo/path rm bar.png bar.json)],
-            [
-                qw(git -C /repo/path commit -q -m),
-                'add rm test',
-                '--author=openQA system user <noemail@open.qa>',
-                qw(foo.png foo.json bar.png bar.json)
-            ],
+            qw(git -C /repo/path commit -q -m),
+            'add rm test',
+            '--author=openQA system user <noemail@open.qa>',
+            qw(foo.png foo.json bar.png bar.json)
         ],
-        'changes staged and committed',
-    ) or always_explain \@executed_commands;
+      ],
+      'changes staged and committed',
+      or always_explain \@executed_commands;
 
     $git->config->{do_push} = 'yes';
 
@@ -279,8 +276,8 @@ subtest 'saving needle via Git' => sub {
         sub finish { }
 
         sub fail {
-            Test::Most::fail('Minion job should not have failed.');    # uncoverable statement
-            Test::Most::note(Data::Dumper::Dumper(\@_));    # uncoverable statement
+            Test::Most::fail 'Minion job should not have failed.';    # uncoverable statement
+            Test::Most::note Data::Dumper::Dumper(\@_);    # uncoverable statement
         }
     }    # uncoverable statement
 
@@ -290,23 +287,23 @@ subtest 'saving needle via Git' => sub {
     # trigger saving needles like Minion would do
     @executed_commands = ();
     OpenQA::Task::Needle::Save::_save_needle($t->app, bless({} => 'Test::FakeMinionJob'), $fake_needle);
-    is_deeply(
-        \@executed_commands,
+    is_deeply
+      \@executed_commands,
+      [
+        [qw(git -C), "$empty_tmp_dir", qw(remote update origin)],
+        [qw(git -C), "$empty_tmp_dir", qw(reset --hard HEAD)],
+        [qw(git -C), "$empty_tmp_dir", qw(rebase origin/master)],
+        [qw(git -C), "$empty_tmp_dir", qw(add), 'foo.json', 'foo.png'],
         [
-            [qw(git -C), "$empty_tmp_dir", qw(remote update origin)],
-            [qw(git -C), "$empty_tmp_dir", qw(reset --hard HEAD)],
-            [qw(git -C), "$empty_tmp_dir", qw(rebase origin/master)],
-            [qw(git -C), "$empty_tmp_dir", qw(add), 'foo.json', 'foo.png'],
-            [
-                qw(git -C), "$empty_tmp_dir",
-                qw(commit -q -m),
-                'foo for opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
-                '--author=Percival <percival@example.com>',
-                'foo.json', 'foo.png'
-            ],
+            qw(git -C), "$empty_tmp_dir",
+            qw(commit -q -m),
+            'foo for opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+            '--author=Percival <percival@example.com>',
+            'foo.json', 'foo.png'
         ],
-        'commands executed as expected'
-    ) or always_explain \@executed_commands;
+      ],
+      'commands executed as expected'
+      or always_explain \@executed_commands;
 
     # note: Saving needles is already tested in t/ui/12-needle-edit.t. However, Git is disabled in that UI test so
     #       it is tested here explicitly.

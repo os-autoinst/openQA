@@ -17,46 +17,46 @@ OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-p
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
 $t->get_ok('/api/v1/machines')->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'Machines' => [
-            {
-                'backend' => 'qemu',
-                'id' => 1001,
-                'name' => '32bit',
-                'settings' => [
-                    {
-                        'key' => 'QEMUCPU',
-                        'value' => 'qemu32'
-                    }]
-            },
-            {
-                'backend' => 'qemu',
-                'id' => 1002,
-                'name' => '64bit',
-                'settings' => [
-                    {
-                        'key' => 'QEMUCPU',
-                        'value' => 'qemu64'
-                    }]
-            },
-            {
-                'backend' => 'qemu',
-                'id' => 1008,
-                'name' => 'Laptop_64',
-                'settings' => [
-                    {
-                        'key' => 'LAPTOP',
-                        'value' => '1'
-                    },
-                    {
-                        'key' => 'QEMUCPU',
-                        'value' => 'qemu64'
-                    }]}]
-    },
-    'Initial machines'
-) || always_explain $t->tx->res->json;
+is_deeply
+  $t->tx->res->json,
+  {
+    'Machines' => [
+        {
+            'backend' => 'qemu',
+            'id' => 1001,
+            'name' => '32bit',
+            'settings' => [
+                {
+                    'key' => 'QEMUCPU',
+                    'value' => 'qemu32'
+                }]
+        },
+        {
+            'backend' => 'qemu',
+            'id' => 1002,
+            'name' => '64bit',
+            'settings' => [
+                {
+                    'key' => 'QEMUCPU',
+                    'value' => 'qemu64'
+                }]
+        },
+        {
+            'backend' => 'qemu',
+            'id' => 1008,
+            'name' => 'Laptop_64',
+            'settings' => [
+                {
+                    'key' => 'LAPTOP',
+                    'value' => '1'
+                },
+                {
+                    'key' => 'QEMUCPU',
+                    'value' => 'qemu64'
+                }]}]
+  },
+  'Initial machines'
+  || always_explain $t->tx->res->json;
 
 
 $t->post_ok('/api/v1/machines', json => {name => 'testmachine'})->status_is(400)
@@ -70,72 +70,71 @@ $t->post_ok('/api/v1/machines',
   ->status_is(200);
 my $machine_id = $t->tx->res->json->{id};
 my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
-is_deeply(
-    [sort keys %$event],
-    ['backend', 'description', 'id', 'name', 'settings', 'table'],
-    'machine event was logged correctly'
-);
+is_deeply
+  [sort keys %$event],
+  ['backend', 'description', 'id', 'name', 'settings', 'table'],
+  'machine event was logged correctly';
 
 $t->get_ok('/api/v1/machines', form => {name => 'testmachine'})->status_is(200);
-is($t->tx->res->json->{Machines}->[0]->{id}, $machine_id);
+is $t->tx->res->json->{Machines}->[0]->{id}, $machine_id;
 
 $t->post_ok('/api/v1/machines',
     json => {name => 'testmachineQ', backend => 'qemu', 'settings' => {'TEST' => "'v'al1", 'TEST2' => "va'l\'1"}})
   ->status_is(200);
 $t->get_ok('/api/v1/machines', form => {name => 'testmachineQ'})->status_is(200);
-is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
-is($t->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1");
+is $t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1";
+is $t->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1";
 
 $t->post_ok('/api/v1/machines', json => {name => 'testmachineZ', backend => 'qemu', 'settings' => {'TEST' => "'v'al1"}})
   ->status_is(200);
 $t->get_ok('/api/v1/machines', form => {name => 'testmachineQ'})->status_is(200);
-is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{key}, 'TEST');
-is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
+is $t->tx->res->json->{Machines}->[0]->{settings}->[0]->{key}, 'TEST';
+is $t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1";
 
 $t->post_ok('/api/v1/machines', json => {name => 'testmachine', backend => 'qemu'})->status_is(400);    #already exists
 
 $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'Machines' => [
-            {
-                'backend' => 'qemu',
-                'id' => $machine_id,
-                'name' => 'testmachine',
-                'settings' => [
-                    {
-                        'key' => 'TEST',
-                        'value' => 'val1'
-                    },
-                    {
-                        'key' => 'TEST2',
-                        'value' => 'val1'
-                    }]}]
-    },
-    'Add machine'
-) || always_explain $t->tx->res->json;
+is_deeply
+  $t->tx->res->json,
+  {
+    'Machines' => [
+        {
+            'backend' => 'qemu',
+            'id' => $machine_id,
+            'name' => 'testmachine',
+            'settings' => [
+                {
+                    'key' => 'TEST',
+                    'value' => 'val1'
+                },
+                {
+                    'key' => 'TEST2',
+                    'value' => 'val1'
+                }]}]
+  },
+  'Add machine'
+  || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/machines/$machine_id",
     json => {name => 'testmachine', backend => 'qemu', settings => {'TEST2' => 'val1'}})->status_is(200);
 
 $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'Machines' => [
-            {
-                'backend' => 'qemu',
-                'id' => $machine_id,
-                'name' => 'testmachine',
-                'settings' => [
-                    {
-                        'key' => 'TEST2',
-                        'value' => 'val1'
-                    }]}]
-    },
-    'Delete machine variable'
-) || always_explain $t->tx->res->json;
+is_deeply
+  $t->tx->res->json,
+  {
+    'Machines' => [
+        {
+            'backend' => 'qemu',
+            'id' => $machine_id,
+            'name' => 'testmachine',
+            'settings' => [
+                {
+                    'key' => 'TEST2',
+                    'value' => 'val1'
+                }]}]
+  },
+  'Delete machine variable'
+  || always_explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/machines/$machine_id", json => {name => 'testmachine', 'settings' => {'TEST2' => 'val0'}})
   ->status_is(400)->json_is('/error', 'Missing parameter: backend');
@@ -154,22 +153,22 @@ $t->put_ok("/api/v1/machines/$machine_id",
     json => {name => 'testmachine', backend => 'qemu', 'settings' => {'TEST2' => 'val2'}})->status_is(200);
 
 $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'Machines' => [
-            {
-                'backend' => 'qemu',
-                'id' => $machine_id,
-                'name' => 'testmachine',
-                'settings' => [
-                    {
-                        'key' => 'TEST2',
-                        'value' => 'val2'
-                    }]}]
-    },
-    'Update settings via JSON request'
-) || always_explain $t->tx->res->json;
+is_deeply
+  $t->tx->res->json,
+  {
+    'Machines' => [
+        {
+            'backend' => 'qemu',
+            'id' => $machine_id,
+            'name' => 'testmachine',
+            'settings' => [
+                {
+                    'key' => 'TEST2',
+                    'value' => 'val2'
+                }]}]
+  },
+  'Update settings via JSON request'
+  || always_explain $t->tx->res->json;
 
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not found

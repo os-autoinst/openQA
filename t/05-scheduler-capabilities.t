@@ -174,33 +174,32 @@ ok exists $sent->{job}->{$_}, "$_ exists"
   for (map { $_->id } $jobA, $jobB, $jobE, $jobF, $jobD, $jobC, $jobH, $jobJ, $jobI);
 
 my $job = $sent->{$w1_id}->{job}->to_hash;
-is($job->{id}, $jobA->id, "'client' worker should get 'client' job even though 'server' job has higher prio");
+is $job->{id}, $jobA->id, "'client' worker should get 'client' job even though 'server' job has higher prio";
 
 $job = $sent->{$w2_id}->{job}->to_hash;
-is($job->{id}, $jobB->id, "'server' job for 'server' worker");
+is $job->{id}, $jobB->id, "'server' job for 'server' worker";
 
 $job = $sent->{$w3_id}->{job}->to_hash;
-is($job->{id}, $jobE->id, '32bit worker gets 32bit job with highest prio');
+is $job->{id}, $jobE->id, '32bit worker gets 32bit job with highest prio';
 
 $job = $sent->{$w4_id}->{job}->to_hash;
-is($job->{id}, $jobF->id, 'next job by prio');
+is $job->{id}, $jobF->id, 'next job by prio';
 
 $job = $sent->{$w5_id}->{job}->to_hash;
-is($job->{id}, $jobD->id, "next job by prio, 'client' worker can do jobs without class");
+is $job->{id}, $jobD->id, "next job by prio, 'client' worker can do jobs without class";
 
 $job = $sent->{$w6_id}->{job}->to_hash;
-is($job->{id}, $jobC->id, 'next job by prio, 64bit worker can get 32bit job');
+is $job->{id}, $jobC->id, 'next job by prio, 64bit worker can get 32bit job';
 
 $job = $sent->{$w7_id}->{job}->to_hash;
-is($job->{id}, $jobH->id, 'next job by prio, parent - server');
+is $job->{id}, $jobH->id, 'next job by prio, parent - server';
 
 $job = $sent->{$w8_id}->{job}->to_hash;
-is($job->{id}, $jobJ->id,
-"I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead"
-);
+is $job->{id}, $jobJ->id,
+"I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead";
 
 $job = $sent->{$w9_id}->{job}->to_hash;
-is($job->{id}, $jobI->id, 'this worker can do jobI, child - client');
+is $job->{id}, $jobI->id, 'this worker can do jobI, child - client';
 
 # job G is not grabbed because there is no worker with class 'special'
 

@@ -36,36 +36,35 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     my $workers = $schema->resultset('Workers');
     my $jobs = $jobs;
     $workers->update_all({t_seen => $dtf->format_datetime($dt)});
-    is($jobs->stale_ones->count, 0, 'job not considered stale if recently seen');
+    is $jobs->stale_ones->count, 0, 'job not considered stale if recently seen';
     $dt->subtract(seconds => DEFAULT_WORKER_TIMEOUT + DB_TIMESTAMP_ACCURACY);
     $workers->update_all({t_seen => $dtf->format_datetime($dt)});
-    is($jobs->stale_ones->count, 3, 'jobs considered stale if t_seen exceeds the timeout');
+    is $jobs->stale_ones->count, 3, 'jobs considered stale if t_seen exceeds the timeout';
     $workers->update_all({t_seen => undef});
-    is($jobs->stale_ones->count, 3, 'jobs considered stale if t_seen is not set');
+    is $jobs->stale_ones->count, 3, 'jobs considered stale if t_seen is not set';
 
     stderr_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
     qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/, 'dead jobs logged';
 
     for my $job_id (99961, 99963) {
         my $job = $jobs->find(99963);
-        is($job->state, DONE, "running job $job_id is now done");
-        is($job->result, INCOMPLETE, "running job $job_id has been marked as incomplete");
-        isnt($job->clone_id, undef, "running job $job_id a clone");
-        like(
-            $job->reason,
-            qr/abandoned: associated worker (remote|local)host:1 has not sent any status updates for too long/,
-            "job $job_id set as incomplete"
-        );
+        is $job->state, DONE, "running job $job_id is now done";
+        is $job->result, INCOMPLETE, "running job $job_id has been marked as incomplete";
+        isnt $job->clone_id, undef, "running job $job_id a clone";
+        like
+          $job->reason,
+          qr/abandoned: associated worker (remote|local)host:1 has not sent any status updates for too long/,
+          "job $job_id set as incomplete";
     }
 
     my $assigned_job = $jobs->find(80000);
-    is($assigned_job->state, SCHEDULED, 'assigned job not done');
-    is($assigned_job->result, NONE, 'assigned job has been re-scheduled');
-    is($assigned_job->clone_id, undef, 'assigned job has not been cloned');
-    is($assigned_job->assigned_worker_id, undef, 'assigned job has no worker assigned');
+    is $assigned_job->state, SCHEDULED, 'assigned job not done';
+    is $assigned_job->result, NONE, 'assigned job has been re-scheduled';
+    is $assigned_job->clone_id, undef, 'assigned job has not been cloned';
+    is $assigned_job->assigned_worker_id, undef, 'assigned job has no worker assigned';
 
-    is($app->minion->jobs({tasks => ['finalize_job_results']})->total,
-        2, 'minion job to finalize incomplete jobs enqueued');
+    is $app->minion->jobs({tasks => ['finalize_job_results']})->total,
+      2, 'minion job to finalize incomplete jobs enqueued';
 };
 
 subtest 'exception during stale job detection handled and logged' => sub {
@@ -74,7 +73,7 @@ subtest 'exception during stale job detection handled and logged' => sub {
     $mock_schema->redefine(singleton => sub { $mock_singleton_called++; bless({}); });
     combined_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
     qr/Failed stale job detection/, 'failure logged';
-    ok($mock_singleton_called, 'mocked singleton method has been called');
+    ok $mock_singleton_called, 'mocked singleton method has been called';
 };
 
 done_testing();

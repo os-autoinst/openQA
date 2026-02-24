@@ -37,7 +37,7 @@ subtest 'MIME types' => sub {
 # regular job groups shown
 $t->get_ok('/dashboard_build_results')->status_is(200);
 my @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
-is_deeply(\@h2, ['opensuse', 'opensuse test'], 'two groups shown (from fixtures)');
+is_deeply \@h2, ['opensuse', 'opensuse test'], 'two groups shown (from fixtures)';
 
 # create (initially) empty parent group
 my $test_parent = $parent_groups->create({name => 'Test parent', sort_order => 2});
@@ -113,7 +113,7 @@ $t->get_ok('/api/v1/routes')->status_is(200)
 
 $t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
-is_deeply(\@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown');
+is_deeply \@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown';
 
 # move opensuse group to new parent group
 my $opensuse_group = $job_groups->find({name => 'opensuse'});
@@ -130,36 +130,34 @@ like $dom->find('#sorting-note')->map('all_text')->join, qr/Builds are sorted by
 $t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map(sub ($e) { $e->text . ($e->attr('title') // '') })->each;
 my $test_overview_tooltip = 'Shows the latest test results for all job groups within this parent job group';
-is_deeply(
-    \@h2,
-    ['opensuse test', 'Test parent', $test_overview_tooltip],
-    'parent group shown and opensuse is no more on top-level'
-);
+is_deeply
+  \@h2,
+  ['opensuse test', 'Test parent', $test_overview_tooltip],
+  'parent group shown and opensuse is no more on top-level';
 my $tests_overview_dashboard = $t->tx->res->dom->find('#test_result_overview_link_1')->first;
-is(
-    $tests_overview_dashboard->attr('href'),
-    '/tests/overview?groupid=1001',
-    'The "test result overview" anchor href points to /test/overview and includes all the groupids for group 1'
-);
+is
+  $tests_overview_dashboard->attr('href'),
+  '/tests/overview?groupid=1001',
+  'The "test result overview" anchor href points to /test/overview and includes all the groupids for group 1';
 
 my @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-is_deeply(\@h4, [qw(Build87.5011 Build0048@0815 Build0048)], 'builds on parent-level shown, sorted first by version');
+is_deeply \@h4, [qw(Build87.5011 Build0048@0815 Build0048)], 'builds on parent-level shown, sorted first by version';
 @h4 = $t->tx->res->dom->find('div.collapse .h4 a')->map('text')->each;
-is_deeply(\@h4, ['opensuse', 'opensuse', 'opensuse'], 'opensuse now shown as child group (for each build)');
+is_deeply \@h4, ['opensuse', 'opensuse', 'opensuse'], 'opensuse now shown as child group (for each build)';
 
 # check config file build limit
 my $ogfpb = $t->app->config->{global}->{frontpage_builds};
 $t->app->config->{global}->{frontpage_builds} = 1;
 $t->get_ok('/dashboard_build_results')->status_is(200);
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-is_deeply(\@h4, [qw(Build87.5011)], 'single build on parent-level shown (limit builds via config)');
+is_deeply \@h4, [qw(Build87.5011)], 'single build on parent-level shown (limit builds via config)';
 
 # check query param build limit works and overrides config file limit
 $t->get_ok('/dashboard_build_results?limit_builds=2')->status_is(200);
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-is_deeply(\@h4, [qw(Build87.5011 Build0048@0815)], 'builds on parent-level shown (limit builds)');
+is_deeply \@h4, [qw(Build87.5011 Build0048@0815)], 'builds on parent-level shown (limit builds)';
 @h4 = $t->tx->res->dom->find('div.collapse .h4 a')->map('text')->each;
-is_deeply(\@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (limit builds)');
+is_deeply \@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (limit builds)';
 
 $t->app->config->{global}->{frontpage_builds} = $ogfpb;
 
@@ -172,21 +170,19 @@ $opensuse_group->jobs->find({BUILD => '0048@0815'})->comments->create({text => '
 
 $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=1')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map(sub ($e) { $e->text . ($e->attr('title') // '') })->each;
-is_deeply(
-    \@h2,
-    ['Test parent', $test_overview_tooltip],
-    'only link to parent (and related overview) shown, no more top-level job groups'
-);
+is_deeply
+  \@h2,
+  ['Test parent', $test_overview_tooltip],
+  'only link to parent (and related overview) shown, no more top-level job groups';
 
 sub check_test_parent {
     my ($default_expanded) = @_;
 
     @h4 = $t->tx->res->dom->find("div.children-$default_expanded .h4 a")->map('text')->each;
-    is_deeply(
-        \@h4,
-        ['Build87.5011', 'Build0048@0815', 'Build0048', 'Build0092', 'Build0091'],
-        'builds on parent-level shown'
-    );
+    is_deeply
+      \@h4,
+      ['Build87.5011', 'Build0048@0815', 'Build0048', 'Build0092', 'Build0091'],
+      'builds on parent-level shown';
 
     $t->element_count_is('#review-' . $test_parent->id . '-Factory-0048_0815',
         1, 'review badge for build 0048@0815 shown');
@@ -197,39 +193,36 @@ sub check_test_parent {
         0, 'review badge for build 0048 also on child-level NOT shown yet');
 
     my @progress_bars = $t->tx->res->dom->find("div.children-$default_expanded .progress")->map('attr', 'title')->each;
-    is_deeply(
-        \@progress_bars,
-        [
-            "failed: 1\ntotal: 1",
-            "failed: 1\ntotal: 1",
-            "softfailed: 2\nfailed: 1\ntotal: 3",
-            "passed: 1\ntotal: 1",
-            "passed: 2\nunfinished: 3\nskipped: 1\ntotal: 6",
-        ],
-        'parent-level progress bars are accumulated'
-    );
+    is_deeply
+      \@progress_bars,
+      [
+        "failed: 1\ntotal: 1",
+        "failed: 1\ntotal: 1",
+        "softfailed: 2\nfailed: 1\ntotal: 3",
+        "passed: 1\ntotal: 1",
+        "passed: 2\nunfinished: 3\nskipped: 1\ntotal: 6",
+      ],
+      'parent-level progress bars are accumulated';
 
     @h4 = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .h4 a')->map('text')->each;
-    is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both child groups shown under common build');
+    is_deeply \@h4, ['opensuse', 'opensuse test'], 'both child groups shown under common build';
     @progress_bars
       = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .progress')->map('attr', 'title')
       ->each;
-    is_deeply(
-        \@progress_bars,
-        ["passed: 2\nunfinished: 2\nskipped: 1\ntotal: 5", "unfinished: 1\ntotal: 1"],
-        'progress bars for child groups shown correctly'
-    );
+    is_deeply
+      \@progress_bars,
+      ["passed: 2\nunfinished: 2\nskipped: 1\ntotal: 5", "unfinished: 1\ntotal: 1"],
+      'progress bars for child groups shown correctly';
 
     my @urls
       = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .h4 a')->map('attr', 'href')->each;
-    is_deeply(
-        \@urls,
-        [
-            '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001',
-            '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002'
-        ],
-        'link URLs'
-    );
+    is_deeply
+      \@urls,
+      [
+        '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001',
+        '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002'
+      ],
+      'link URLs';
 
     $t->element_count_is("div.children-$default_expanded .badge-all-passed", 1, 'badge shown on parent-level');
     $t->element_count_is("div.children-$default_expanded .h4 span i.tag", 0, 'no tags shown yet');
@@ -247,11 +240,10 @@ for my $url (@urls) {
 $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 check_test_parent('expanded');
 my $tests_overview = $t->tx->res->dom->find('#test_result_overview_link_1')->first;
-is(
-    $tests_overview->attr('href'),
-    '/tests/overview?groupid=1001&groupid=1002',
-    "The 'test result overview' anchor href points to /test/overview and includes all the groupids"
-);
+is
+  $tests_overview->attr('href'),
+  '/tests/overview?groupid=1001&groupid=1002',
+  "The 'test result overview' anchor href points to /test/overview and includes all the groupids";
 
 # add tags (99901 is user ID of arthur)
 my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:important:some_tag', user_id => 99901});
@@ -259,17 +251,17 @@ my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:
 sub check_tags {
     $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=1')->status_is(200);
     my @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
-    is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
+    is_deeply \@tags, ['some_tag'], 'tag is shown on parent-level';
 
     $t->get_ok('/parent_group_overview/' . $test_parent->id . '?limit_builds=20&show_tags=1')->status_is(200);
     @tags = $t->tx->res->dom->find('div.children-expanded span i.tag')->map('text')->each;
-    is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
+    is_deeply \@tags, ['some_tag'], 'tag is shown on parent-level';
 
     $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
     @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
-    is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)');
+    is_deeply \@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)';
     @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-    is_deeply(\@h4, ['Build0092'], 'only tagged builds on parent-level shown');
+    is_deeply \@h4, ['Build0092'], 'only tagged builds on parent-level shown';
 }
 check_tags();
 
@@ -281,9 +273,9 @@ check_tags();
 $tag_for_0092_comment->update({text => 'tag:5-0092:important:some_tag', user_id => 99901});
 $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
 my @tags = $t->tx->res->dom->find('div.children-collapsed .h4 span i.tag')->map('text')->each;
-is_deeply(\@tags, [], 'tag is not shown on parent-level because version does not match');
+is_deeply \@tags, [], 'tag is not shown on parent-level because version does not match';
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-is_deeply(\@h4, [], 'also no tagged builds on parent-level shown');
+is_deeply \@h4, [], 'also no tagged builds on parent-level shown';
 
 # now tag build 0091 to check build tagging when there are common builds
 $tag_for_0092_comment->delete();
@@ -292,9 +284,9 @@ my $tag_for_0091_comment
 
 $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
+is_deeply \@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)';
 @h4 = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .h4 a')->map('text')->each;
-is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
+is_deeply \@h4, ['opensuse', 'opensuse test'], 'both groups shown, though';
 
 # temporarily create failed job with build 0048@0815 in opensuse test to verify that review badge is only shown
 # if all combined builds are reviewed
@@ -438,17 +430,13 @@ $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
 
 $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=0')->status_is(200);
 @urls = $t->tx->res->dom->find('.h4 a')->each;
-is(scalar @urls, 12, 'now builds belong to different versions and are split');
-is(
-    $urls[1]->attr('href'),
-    '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001',
-    'most recent version/build'
-);
-is(
-    $urls[-1]->attr('href'),
-    '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002',
-    'oldest version/build still shown'
-);
+is scalar @urls, 12, 'now builds belong to different versions and are split';
+is $urls[1]->attr('href'),
+  '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001',
+  'most recent version/build';
+is $urls[-1]->attr('href'),
+  '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002',
+  'oldest version/build still shown';
 
 subtest 'build which has jobs with different DISTRIs links to overview with all DISTRIs' => sub {
     my $job_with_different_distri = $opensuse_group->jobs->create(
@@ -463,13 +451,12 @@ subtest 'build which has jobs with different DISTRIs links to overview with all 
         });
     $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=0')->status_is(200);
     my @urls = $t->tx->res->dom->find('.h4 a')->each;
-    is(scalar @urls, 12, 'still 12 builds shown');
+    is scalar @urls, 12, 'still 12 builds shown';
     my $first_url = $urls[1]->attr('href');
-    is(
-        $first_url,
-        '/tests/overview?distri=opensuse&distri=suse&version=14.2&build=87.5011&groupid=1001',
-        'both distris present in overview link'
-    );
+    is
+      $first_url,
+      '/tests/overview?distri=opensuse&distri=suse&version=14.2&build=87.5011&groupid=1001',
+      'both distris present in overview link';
     $job_with_different_distri->delete;
 };
 
@@ -480,7 +467,7 @@ sub check_builds {
     my $div_class = $parent ? 'children-expanded' : 'no-children';
     $t->get_ok("/$route/" . $group->id . '?limit_builds=100')->status_is(200);
     my @h4 = $t->tx->res->dom->find("div.$div_class .h4 a")->map('text')->each;
-    is_deeply(\@h4, $build_names, $msg) || always_explain @h4;
+    is_deeply \@h4, $build_names, $msg || always_explain @h4;
 }
 
 subtest 'proper build sorting for dotted build number' => sub {
@@ -562,11 +549,10 @@ subtest 'job parent groups with multiple version and builds' => sub {
 
     my @entire_build_url_list = $t->tx->res->dom->find('.h4 a:first-child')->each();
     my $first_entire_build_url = $entire_build_url_list[0]->attr('href');
-    is(
-        $first_entire_build_url,
-        '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001&groupid=1002',
-        'entire build url contains all the child group ids'
-    );
+    is
+      $first_entire_build_url,
+      '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001&groupid=1002',
+      'entire build url contains all the child group ids';
 
     $test_parent->update({build_version_sort => 0});
 

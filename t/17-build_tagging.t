@@ -78,17 +78,17 @@ subtest 'tag icon on group overview on important build' => sub {
     }
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 1, 'one build tagged');
-    is($tags[0], 'GM', 'tag description shown');
+    is scalar @tags, 1, 'one build tagged';
+    is $tags[0], 'GM', 'tag description shown';
 };
 
 subtest 'test whether tags with @ work, too' => sub {
     post_comment_1001 'tag:0048@0815:important:RC2';
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 2, 'two builds tagged');
+    is scalar @tags, 2, 'two builds tagged';
     # this build will sort *above* the first build, so item 0
-    is($tags[0], 'RC2', 'tag description shown');
+    is $tags[0], 'RC2', 'tag description shown';
 };
 
 =pod
@@ -100,14 +100,14 @@ subtest 'mark build as non-important build' => sub {
     post_comment_1001 'tag:0048@0815:-important';
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 1, 'only first build tagged');
+    is scalar @tags, 1, 'only first build tagged';
 };
 
 subtest 'tag on non-existent build does not show up' => sub {
     post_comment_1001 'tag:0066:important';
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 1, 'only first build tagged');
+    is scalar @tags, 1, 'only first build tagged';
 };
 
 my $tags_on_group = '#content a[href^=/tests/]';
@@ -118,31 +118,31 @@ subtest 'builds first tagged important, then unimportant disappear (poo#12028)' 
     post_comment_1001 'tag:0091:-important';
     $t->get_ok('/group_overview/1001?limit_builds=1')->status_is(200);
     my @tags = $t->tx->res->dom->find($tags_on_group)->map('text')->each;
-    is(scalar @tags, 2, 'only one build');
-    is($tags[0], 'Build87.5011', 'only newest build present');
+    is scalar @tags, 2, 'only one build';
+    is $tags[0], 'Build87.5011', 'only newest build present';
 };
 
 subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
     $t->get_ok('/group_overview/1001?only_tagged=1')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find($tags_on_group)}, 3, 'three tagged builds shown (on group overview)');
+    is scalar @{$t->tx->res->dom->find($tags_on_group)}, 3, 'three tagged builds shown (on group overview)';
     $t->get_ok('/group_overview/1001?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find($tags_on_group)}, 13, 'all builds shown again (on group overview)');
+    is scalar @{$t->tx->res->dom->find($tags_on_group)}, 13, 'all builds shown again (on group overview)';
 
     $t->get_ok('/dashboard_build_results?only_tagged=1')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find($tags_on_dashboard)}, 3, 'three tagged builds shown (on index page)');
-    is(scalar @{$t->tx->res->dom->find('h2')}, 1, 'only one group shown anymore');
+    is scalar @{$t->tx->res->dom->find($tags_on_dashboard)}, 3, 'three tagged builds shown (on index page)';
+    is scalar @{$t->tx->res->dom->find('h2')}, 1, 'only one group shown anymore';
     $t->get_ok('/dashboard_build_results?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find($tags_on_dashboard)}, 9, 'all builds shown again (on index page)');
-    is(scalar @{$t->tx->res->dom->find('h2')}, 2, 'two groups shown again');
+    is scalar @{$t->tx->res->dom->find($tags_on_dashboard)}, 9, 'all builds shown again (on index page)';
+    is scalar @{$t->tx->res->dom->find('h2')}, 2, 'two groups shown again';
 };
 
 subtest 'show_tags query parameter enables/disables tags on index page' => sub {
     for my $enabled (0, 1) {
         $t->get_ok('/dashboard_build_results?show_tags=' . $enabled)->status_is(200);
-        is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')},
-            9, "all builds shown on index page (show_tags=$enabled)");
-        is(scalar @{$t->tx->res->dom->find("i[title='important']")},
-            $enabled, "tag (not) shown on index page (show_tags=$enabled)");
+        is scalar @{$t->tx->res->dom->find('a[href^=/tests/]')},
+          9, "all builds shown on index page (show_tags=$enabled)";
+        is scalar @{$t->tx->res->dom->find("i[title='important']")},
+          $enabled, "tag (not) shown on index page (show_tags=$enabled)";
     }
 };
 
@@ -151,9 +151,9 @@ subtest 'test tags for Fedora compose-style BUILD values' => sub {
     post_comment_1001 'tag:Fedora-26-20170329.n.0:important:candidate';
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 2, 'two builds tagged');
+    is scalar @tags, 2, 'two builds tagged';
     # this build will sort *after* the remaining SUSE build, so item 1
-    is($tags[1], 'candidate', 'tag description shown');
+    is $tags[1], 'candidate', 'tag description shown';
 };
 
 subtest 'test tags for Fedora update-style BUILD values' => sub {
@@ -161,9 +161,9 @@ subtest 'test tags for Fedora update-style BUILD values' => sub {
     post_comment_1001 'tag:FEDORA-2017-3456ba4c93:important:critpath';
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 3, 'three builds tagged');
+    is scalar @tags, 3, 'three builds tagged';
     # this build will sort *before* the other Fedora build, so item 1
-    is($tags[1], 'critpath', 'tag description shown');
+    is $tags[1], 'critpath', 'tag description shown';
 };
 
 sub query_important_builds {
@@ -189,7 +189,7 @@ subtest 'tagging builds via parent group comments' => sub {
 
     # check whether the build is not considered important yet
     my $important_builds = query_important_builds;
-    is_deeply($important_builds, \%expected_important_builds, 'build initially not considered important')
+    is_deeply $important_builds, \%expected_important_builds, 'build initially not considered important'
       or always_explain $important_builds;
 
     # create a tag for the job via parent group comments to mark it as important
@@ -198,21 +198,21 @@ subtest 'tagging builds via parent group comments' => sub {
     # check whether the tag is visible on both - parent- and child-level
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4, 'four builds tagged');
-    is($tags[-1], 'fromparent', 'tag from parent visible on child-level');
+    is scalar @tags, 4, 'four builds tagged';
+    is $tags[-1], 'fromparent', 'tag from parent visible on child-level';
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4, 'four builds tagged');
-    is($tags[-1], 'fromparent', 'tag from parent visible on parent-level');
+    is scalar @tags, 4, 'four builds tagged';
+    is $tags[-1], 'fromparent', 'tag from parent visible on parent-level';
     @tags = $t->tx->res->dom->find('.tag-byGroup')->map('text')->each;
-    is(scalar @tags, 4, 'four builds tagged');
+    is scalar @tags, 4, 'four builds tagged';
 
     # check whether the build is considered important now
     $expected_important_builds{1001}
       = [[qw(Arch-2018-08 FEDORA-2017-3456ba4c93 Fedora-26-20170329.n.0)], [qw(0048 0066)]];
     $expected_important_builds{1002} = [[qw(Arch-2018-08)], []];
     $important_builds = query_important_builds;
-    is_deeply($important_builds, \%expected_important_builds, 'tag on parent level marks build as important')
+    is_deeply $important_builds, \%expected_important_builds, 'tag on parent level marks build as important'
       or always_explain $important_builds;
 
     $schema->txn_begin;
@@ -240,18 +240,18 @@ subtest 'tagging builds via parent group comments' => sub {
     # check whether the tag on child-level could override the previous tag on parent-level
     $t->get_ok('/group_overview/1001')->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4, 'still four builds tagged');
-    is($tags[-1], 'fromchild', 'overriding tag from parent on child-level visible on child-level');
+    is scalar @tags, 4, 'still four builds tagged';
+    is $tags[-1], 'fromchild', 'overriding tag from parent on child-level visible on child-level';
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4, 'still four builds tagged');
-    is($tags[-1], 'fromchild', 'overriding tag from parent on child-level visible on parent-level');
+    is scalar @tags, 4, 'still four builds tagged';
+    is $tags[-1], 'fromchild', 'overriding tag from parent on child-level visible on parent-level';
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag-byGroup')->map('text')->each;
-    is(scalar @tags, 4, 'still four builds tagged');
+    is scalar @tags, 4, 'still four builds tagged';
 
     $important_builds = query_important_builds;
-    is_deeply($important_builds, \%expected_important_builds, 'build is still considered important')
+    is_deeply $important_builds, \%expected_important_builds, 'build is still considered important'
       or always_explain $important_builds;
 };
 
@@ -275,26 +275,25 @@ subtest 'expired jobs' => sub {
                 "keep_important_${file_type}_in_days" => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
             });
 
-        is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
+        is_deeply $jg->$m, [], 'no jobs with expired ' . $file_type;
 
         $t->app->schema->resultset('Jobs')->find(99938)
           ->update({t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
-        is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
+        is_deeply $jg->$m, [], 'still no jobs with expired ' . $file_type;
         $jg->update({"keep_${file_type}_in_days" => 5});
         # now the unimportant jobs are expired
-        is_deeply(_map_expired($jg, $m), [qw(99937 99981)], '2 jobs with expired ' . $file_type);
+        is_deeply _map_expired($jg, $m), [qw(99937 99981)], '2 jobs with expired ' . $file_type;
 
         $jg->update({"keep_important_${file_type}_in_days" => 15});
-        is_deeply(_map_expired($jg, $m), [qw(99937 99981)], 'still 2 jobs with expired ' . $file_type);
+        is_deeply _map_expired($jg, $m), [qw(99937 99981)], 'still 2 jobs with expired ' . $file_type;
 
         $jg->update({"keep_important_${file_type}_in_days" => 10});
-        is_deeply(_map_expired($jg, $m),
-            [qw(99937 99938 99981)], 'now also important job 99938 with expired ' . $file_type);
+        is_deeply _map_expired($jg, $m),
+          [qw(99937 99938 99981)], 'now also important job 99938 with expired ' . $file_type;
     }
 
     $t->app->schema->resultset('Jobs')->find(99938)->update({logs_present => 0});
-    is_deeply(_map_expired($jg, $m),
-        [qw(99937 99981)], 'job with deleted logs not return among jobs with expired logs');
+    is_deeply _map_expired($jg, $m), [qw(99937 99981)], 'job with deleted logs not return among jobs with expired logs';
 };
 
 =pod
@@ -321,7 +320,7 @@ subtest 'no cleanup of important builds' => sub {
 
     $t->app->gru->enqueue('limit_results_and_logs');
     perform_minion_jobs($t->app->minion);
-    ok(-e $filename, 'file still exists');
+    ok -e $filename, 'file still exists';
 };
 
 subtest 'version tagging' => sub {
@@ -371,9 +370,9 @@ subtest 'tags with datetime' => sub {
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     my @title = $t->tx->res->dom->find('.tag')->map(attr => 'title')->each;
-    is(scalar @tags, 7, 'seven builds tagged');
-    is(scalar @title, 7, 'seven important titles');
-    is($tags[0], 'RC3', 'tag description shown');
+    is scalar @tags, 7, 'seven builds tagged';
+    is scalar @title, 7, 'seven important titles';
+    is $tags[0], 'RC3', 'tag description shown';
 };
 
 
@@ -382,8 +381,8 @@ subtest 'tags with quoted build works' => sub {
     post_comment_1001 'tag:"050foobar":important:released';
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 7, 'seven builds tagged');
-    is($tags[1], 'released', 'tag description shown');
+    is scalar @tags, 7, 'seven builds tagged';
+    is $tags[1], 'released', 'tag description shown';
 };
 
 

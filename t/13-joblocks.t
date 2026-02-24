@@ -40,9 +40,9 @@ $t->post_ok('/api/v1/mutex', form => {name => 'a/b'})->status_is(400);    # inva
 $t->post_ok('/api/v1/mutex', form => {name => 'test_lock'})->status_is(200);
 ## lock in DB
 my $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-ok($res, 'mutex is in database');
+ok $res, 'mutex is in database';
 ## mutex is not locked
-ok(!$res->locked_by, 'mutex is not locked');
+ok !$res->locked_by, 'mutex is not locked';
 
 $t->post_ok('/api/v1/mutex/test_lock')->status_is(400);    # missing action
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is(400);    # invalid action
@@ -51,7 +51,7 @@ $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 ## mutex is locked
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-is($res->locked_by, $jobA, 'mutex is locked');
+is $res->locked_by, $jobA, 'mutex is locked';
 # try double lock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 
@@ -69,7 +69,7 @@ $t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => 
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(200);
 ## mutex unlocked in DB
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-ok(!$res->locked_by, 'mutex is unlocked');
+ok !$res->locked_by, 'mutex is unlocked';
 
 # try to unlock & lock unlocked mutex as another job
 $t->ua->unsubscribe('start');
@@ -78,11 +78,11 @@ $t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => 
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(200);
 ## mutex remains unlocked in DB
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-ok(!$res->locked_by, 'mutex is unlocked');
+ok !$res->locked_by, 'mutex is unlocked';
 # lock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-is($res->locked_by, $jobB, 'mutex is locked');
+is $res->locked_by, $jobB, 'mutex is locked';
 
 
 #######################################
@@ -107,8 +107,8 @@ sub job_create_with_worker ($test, $parent = undef) {
     );
     $settings{_PARALLEL_JOBS} = $parent if $parent;
     my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
-    ok($job, "Job $test created with id " . $job->id);
-    is($job->parents->single->parent_job_id, $parent, 'Job has correct parent') if $parent;
+    ok $job, "Job $test created with id " . $job->id;
+    is $job->parents->single->parent_job_id, $parent, 'Job has correct parent' if $parent;
     my %worker = (
         cpu_modelname => 'Rainbow CPU',
         cpu_arch => 'x86_64',
@@ -122,7 +122,7 @@ sub job_create_with_worker ($test, $parent = undef) {
     use OpenQA::WebAPI::Controller::API::V1::Worker;
     my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
     my $w_id = $c->_register($schema, 'host', $last_worker_instance, \%worker);
-    ok($w_id, "Worker instance $last_worker_instance created");
+    ok $w_id, "Worker instance $last_worker_instance created";
     $last_worker_instance++;
 
     #assign worker to the job, create job token
@@ -155,11 +155,11 @@ set_token_header($t->ua, 'token' . $jS2);
 # Lock & check in DB
 $t->post_ok($m_prefix . '/sblock1', form => {action => 'lock', where => $jS1})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock1'});
-is($res->locked_by, $jS2, 'mutex is locked');
+is $res->locked_by, $jS2, 'mutex is locked';
 # Unlock & check in DB
 $t->post_ok($m_prefix . '/sblock1', form => {action => 'unlock', where => $jS1})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock1'});
-ok(!$res->locked_by, 'mutex is unlocked');
+ok !$res->locked_by, 'mutex is unlocked';
 
 # Unhappy path
 # Double unlock
@@ -169,10 +169,10 @@ $t->post_ok($m_prefix . '/nonexistent', form => {action => 'unlock', where => $j
 # Unlock first, then lock
 $t->post_ok($m_prefix . '/sblock2', form => {action => 'unlock', where => $jS1})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock2'});
-ok(!$res->locked_by, 'mutex is unlocked');
+ok !$res->locked_by, 'mutex is unlocked';
 $t->post_ok($m_prefix . '/sblock2', form => {action => 'lock', where => $jS1})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock2'});
-is($res->locked_by, $jS2, 'mutex is locked');
+is $res->locked_by, $jS2, 'mutex is locked';
 
 #######################################
 ### barriers
@@ -221,19 +221,19 @@ $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(200)
 
 # test deletes
 $res = $schema->resultset('JobLocks')->find({owner => $jid, name => 'barrier1'});
-ok($res, 'barrier1 is present');
+ok $res, 'barrier1 is present';
 $res = $schema->resultset('JobLocks')->find({owner => $jA, name => 'barrier2'});
-ok($res, 'barrier2 is present');
+ok $res, 'barrier2 is present';
 # can not delete without barrier name
 $t->delete_ok($b_prefix)->status_is(404);
 # delete barrier2 and check it was removed
 $t->delete_ok($b_prefix . '/barrier2')->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jA, name => 'barrier2'});
-ok(!$res, 'barrier2 removed');
+ok !$res, 'barrier2 removed';
 # can not delete others barrier - status is fine, but barrier is still there
 $t->delete_ok($b_prefix . '/barrier1')->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jid, name => 'barrier1'});
-ok($res, 'barrier1 is still there');
+ok $res, 'barrier1 is still there';
 # can not delete without jobtoken
 $t->ua->unsubscribe('start');
 $t->delete_ok($b_prefix . '/barrier1')->status_is(403);

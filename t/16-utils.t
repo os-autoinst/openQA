@@ -59,25 +59,25 @@ subtest 'set listen address' => sub {
 subtest 'random number generator' => sub {
     my $r = random_string;
     my $r2 = random_string;
-    is(length($r), 16, 'length 16');
-    like($r, qr/^\w+$/a, 'random_string only consists of word characters');
-    is(length($r), length($r2), 'same length');
-    isnt($r, $r2, 'random_string produces different results');
+    is length($r), 16, 'length 16';
+    like $r, qr/^\w+$/a, 'random_string only consists of word characters';
+    is length($r), length($r2), 'same length';
+    isnt $r, $r2, 'random_string produces different results';
 
     $r = random_string 32;
     $r2 = random_string 32;
-    is(length($r), 32, 'length 32');
-    like($r, qr/^\w+$/a, 'random_string only consists of word characters');
-    is(length($r), length($r2), 'same length');
-    isnt($r, $r2, 'random_string produces different results');
+    is length($r), 32, 'length 32';
+    like $r, qr/^\w+$/a, 'random_string only consists of word characters';
+    is length($r), length($r2), 'same length';
+    isnt $r, $r2, 'random_string produces different results';
 
-    is(length(random_hex), 16, 'default length 16');
+    is length(random_hex), 16, 'default length 16';
     $r = random_hex 97;
     $r2 = random_hex 97;
-    is(length($r), 97, 'length 97');
-    like($r, qr/^[0-9A-F]+$/a, 'random_hex only consists of hex characters');
-    is(length($r), length($r2), 'same length');
-    isnt($r, $r2, 'random_hex produces different results');
+    is length($r), 97, 'length 97';
+    like $r, qr/^[0-9A-F]+$/a, 'random_hex only consists of hex characters';
+    is length($r), length($r2), 'same length';
+    isnt $r, $r2, 'random_hex produces different results';
 };
 
 subtest 'download speed' => sub {
@@ -111,9 +111,9 @@ subtest 'labels' => sub {
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
 ok find_bugref('gh#os-autoinst/openQA#1234'), 'github bugref is recognized';
-is(find_bugref('bsc#1234 poo#4321'), 'bsc#1234', 'first bugres found');
-is_deeply(find_bugrefs('bsc#1234 poo#4321'), ['bsc#1234', 'poo#4321'], 'multiple bugrefs found');
-is_deeply(find_bugrefs('bc#1234 #4321'), [], 'no bugrefs found');
+is find_bugref('bsc#1234 poo#4321'), 'bsc#1234', 'first bugres found';
+is_deeply find_bugrefs('bsc#1234 poo#4321'), ['bsc#1234', 'poo#4321'], 'multiple bugrefs found';
+is_deeply find_bugrefs('bc#1234 #4321'), [], 'no bugrefs found';
 is bugurl('gh#os-autoinst/openQA#1234'), 'https://github.com/os-autoinst/openQA/issues/1234';
 is bugurl('gh#another_repo/openQA#1234'), 'https://github.com/another_repo/openQA/issues/1234';
 is bugurl('poo#1234'), 'https://progress.opensuse.org/issues/1234';
@@ -532,13 +532,13 @@ subtest 'signal blocker' => sub {
 };
 
 subtest 'human readable size' => sub {
-    is(human_readable_size(0), '0 Byte', 'zero');
-    is(human_readable_size(1), '1 Byte', 'one');
-    is(human_readable_size(13443399680), '13 GiB', 'two digits GB');
-    is(human_readable_size(8007188480), '7.5 GiB', 'smaller GB');
-    is(human_readable_size(-8007188480), '-7.5 GiB', 'negative smaller GB');
-    is(human_readable_size(717946880), '685 MiB', 'large MB');
-    is(human_readable_size(245760), '240 KiB', 'less than a MB');
+    is human_readable_size(0), '0 Byte', 'zero';
+    is human_readable_size(1), '1 Byte', 'one';
+    is human_readable_size(13443399680), '13 GiB', 'two digits GB';
+    is human_readable_size(8007188480), '7.5 GiB', 'smaller GB';
+    is human_readable_size(-8007188480), '-7.5 GiB', 'negative smaller GB';
+    is human_readable_size(717946880), '685 MiB', 'large MB';
+    is human_readable_size(245760), '240 KiB', 'less than a MB';
 };
 
 subtest 'create downloads list' => sub {

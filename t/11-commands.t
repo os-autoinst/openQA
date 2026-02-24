@@ -39,22 +39,22 @@ my $worker = OpenQA::Schema::Result::Workers->new({host => 'localhost', instance
 
 for my $cmd (@valid_commands) {
     $worker->send_command(command => $cmd, job_id => 0);
-    is($last_command, $cmd, "command $cmd received at WS server");
+    is $last_command, $cmd, "command $cmd received at WS server";
 }
-is($last_ws_params, undef, 'ws_send not called directly');
+is $last_ws_params, undef, 'ws_send not called directly';
 
 # issue invalid commands
 stderr_like { $worker->send_command(command => 'foo', job_id => 0) }
 qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
-isnt($last_command, 'foo', 'refuse invalid commands');
+isnt $last_command, 'foo', 'refuse invalid commands';
 ok $client_called, 'mocked send_msg method has been called';
 
 subtest 'ws server does not try to query itself' => sub {
     OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
     $last_command = undef;
     $worker->send_command(command => $valid_commands[0], job_id => 0);
-    is($last_command, undef, 'command not sent via client');
-    is_deeply($last_ws_params, [$worker->id, $valid_commands[0], 0, undef], 'ws_send called directly')
+    is $last_command, undef, 'command not sent via client';
+    is_deeply $last_ws_params, [$worker->id, $valid_commands[0], 0, undef], 'ws_send called directly'
       or always_explain $last_ws_params;
 };
 

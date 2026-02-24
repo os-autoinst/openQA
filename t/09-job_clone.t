@@ -49,40 +49,40 @@ my $minimalx = $rset->find(99926);
 my $clones = $minimalx->duplicate();
 my $clone = $rset->find($clones->{$minimalx->id}->{clone});
 
-isnt($clone->id, $minimalx->id, 'is not the same job');
-is($clone->TEST, 'minimalx', 'but is the same test');
-is($clone->priority, 56, 'with the same priority');
-is($minimalx->state, 'done', 'original test keeps its state');
-is($clone->state, 'scheduled', 'the new job is scheduled');
+isnt $clone->id, $minimalx->id, 'is not the same job';
+is $clone->TEST, 'minimalx', 'but is the same test';
+is $clone->priority, 56, 'with the same priority';
+is $minimalx->state, 'done', 'original test keeps its state';
+is $clone->state, 'scheduled', 'the new job is scheduled';
 
 # Second attempt
-ok($minimalx->can_be_duplicated, 'looks cloneable');
-is($minimalx->duplicate, 'Job 99926 already has clone 99982', 'cannot clone again');
+ok $minimalx->can_be_duplicated, 'looks cloneable';
+is $minimalx->duplicate, 'Job 99926 already has clone 99982', 'cannot clone again';
 
 # Reload minimalx from the database
 $minimalx->discard_changes;
-is($minimalx->clone_id, $clone->id, 'relationship is set');
-is($minimalx->clone->id, $clone->id, 'relationship works');
-is($clone->origin->id, $minimalx->id, 'reverse relationship works');
+is $minimalx->clone_id, $clone->id, 'relationship is set';
+is $minimalx->clone->id, $clone->id, 'relationship works';
+is $clone->origin->id, $minimalx->id, 'reverse relationship works';
 
 # After reloading minimalx, it doesn't look cloneable anymore
-ok(!$minimalx->can_be_duplicated, 'does not look cloneable after reloading');
-is($minimalx->duplicate, 'Specified job 99926 has already been cloned as 99982', 'cannot clone after reloading');
+ok !$minimalx->can_be_duplicated, 'does not look cloneable after reloading';
+is $minimalx->duplicate, 'Specified job 99926 has already been cloned as 99982', 'cannot clone after reloading';
 
 # But cloning the clone should be possible after job state change
 $clone->state(OpenQA::Jobs::Constants::CANCELLED);
 $clones = $clone->duplicate({prio => 35});
 my $second = $rset->find($clones->{$clone->id}->{clone});
-is($second->TEST, 'minimalx', 'same test again');
-is($second->priority, 35, 'with adjusted priority');
+is $second->TEST, 'minimalx', 'same test again';
+is $second->priority, 35, 'with adjusted priority';
 
 subtest 'job state affects clonability' => sub {
     my $pristine_job = $jobs->find(99927);
-    ok(!$pristine_job->can_be_duplicated, 'scheduled job not considered cloneable');
+    ok !$pristine_job->can_be_duplicated, 'scheduled job not considered cloneable';
     $pristine_job->state(ASSIGNED);
-    ok(!$pristine_job->can_be_duplicated, 'assigned job not considered cloneable');
+    ok !$pristine_job->can_be_duplicated, 'assigned job not considered cloneable';
     $pristine_job->state(SETUP);
-    ok($pristine_job->can_be_duplicated, 'setup job considered cloneable');
+    ok $pristine_job->can_be_duplicated, 'setup job considered cloneable';
 };
 
 subtest 'get job' => sub {

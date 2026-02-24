@@ -38,7 +38,7 @@ OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03
 # avoid polluting checkout
 my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 $ENV{OPENQA_BASEDIR} = $tempdir;
-note("OPENQA_BASEDIR: $tempdir");
+note "OPENQA_BASEDIR: $tempdir";
 path($tempdir, '/openqa/testresults')->make_path;
 my $share_dir = path($tempdir, 'openqa/share')->make_path;
 dircopy("$FindBin::Bin/../data/openqa/share/factory", "$share_dir/factory");
@@ -87,28 +87,28 @@ my @jobs = @{$t->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 
 subtest 'initial state of jobs listing' => sub {
-    is($jobs_count, 18);
+    is $jobs_count, 18;
     my %jobs = map { $_->{id} => $_ } @jobs;
-    is($jobs{99981}->{state}, 'cancelled');
-    is($jobs{99981}->{origin_id}, undef, 'no original job');
-    is($jobs{99981}->{assigned_worker_id}, undef, 'no worker assigned');
-    is($jobs{99963}->{state}, 'running');
-    is($jobs{99963}->{assigned_worker_id}, 1, 'worker 1 assigned');
-    is($jobs{99927}->{state}, 'scheduled');
-    is($jobs{99946}->{clone_id}, undef, 'no clone');
-    is($jobs{99946}->{origin_id}, 99945, 'original job');
-    is($jobs{99963}->{clone_id}, undef, 'no clone');
-    is($jobs{99926}->{result}, INCOMPLETE, 'job is incomplete');
-    is($jobs{99926}->{reason}, 'just a test', 'job has incomplete reason');
+    is $jobs{99981}->{state}, 'cancelled';
+    is $jobs{99981}->{origin_id}, undef, 'no original job';
+    is $jobs{99981}->{assigned_worker_id}, undef, 'no worker assigned';
+    is $jobs{99963}->{state}, 'running';
+    is $jobs{99963}->{assigned_worker_id}, 1, 'worker 1 assigned';
+    is $jobs{99927}->{state}, 'scheduled';
+    is $jobs{99946}->{clone_id}, undef, 'no clone';
+    is $jobs{99946}->{origin_id}, 99945, 'original job';
+    is $jobs{99963}->{clone_id}, undef, 'no clone';
+    is $jobs{99926}->{result}, INCOMPLETE, 'job is incomplete';
+    is $jobs{99926}->{reason}, 'just a test', 'job has incomplete reason';
 };
 
 subtest 'only 9 are current and only 10 are relevant' => sub {
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-    is(scalar(@{$t->tx->res->json->{jobs}}), 15);
+    is scalar(@{$t->tx->res->json->{jobs}}), 15;
     $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
-    is(scalar(@{$t->tx->res->json->{jobs}}), 16);
+    is scalar(@{$t->tx->res->json->{jobs}}), 16;
     $t->get_ok('/api/v1/jobs' => form => {latest => 1});
-    is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'Latest flag yields latest builds');
+    is scalar(@{$t->tx->res->json->{jobs}}), 15, 'Latest flag yields latest builds';
     for my $scope (qw(public private)) {
         $t->get_ok('/api/v1/jobs' => form => {scope => $scope})->status_is(400, "$scope is rejected")
           ->json_is('/error' => 'Erroneous parameters (scope invalid)', "$scope fails validation");
@@ -119,20 +119,20 @@ subtest 'check limit quantity' => sub {
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 'foo'})->status_is(400)
       ->json_is({error => 'Erroneous parameters (limit invalid)', error_status => 400});
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5})->status_is(200);
-    is(scalar(@{$t->tx->res->json->{jobs}}), 5);
+    is scalar(@{$t->tx->res->json->{jobs}}), 5;
 };
 
 subtest 'check job group' => sub {
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
-    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-    is($t->tx->res->json->{jobs}->[0]->{id}, 99961);
+    is scalar(@{$t->tx->res->json->{jobs}}), 1;
+    is $t->tx->res->json->{jobs}->[0]->{id}, 99961;
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
-    is(scalar(@{$t->tx->res->json->{jobs}}), 0);
+    is scalar(@{$t->tx->res->json->{jobs}}), 0;
 };
 
 subtest 'exclude groupless jobs' => sub {
     my %jobs = map { $_->{id} => $_ } @jobs;
-    is($jobs{99928}->{state}, 'scheduled', 'groupless job is listed');
+    is $jobs{99928}->{state}, 'scheduled', 'groupless job is listed';
     $t->get_ok('/api/v1/jobs?not_groupid=0')->status_is(200);
     @jobs = @{$t->tx->res->json->{jobs}};
     is scalar @jobs, 15, 'groupless jobs are excluded';
@@ -147,24 +147,24 @@ subtest 'exclude specific group' => sub {
 
 subtest 'restricted query' => sub {
     $t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 6, 'query for existing jobs by iso');
+    is scalar(@{$t->tx->res->json->{jobs}}), 6, 'query for existing jobs by iso';
     $t->get_ok('/api/v1/jobs?build=0091');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 11, 'query for existing jobs by build');
+    is scalar(@{$t->tx->res->json->{jobs}}), 11, 'query for existing jobs by build';
     $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 3, 'query for existing jobs by hdd_1');
+    is scalar(@{$t->tx->res->json->{jobs}}), 3, 'query for existing jobs by hdd_1';
 };
 
 subtest 'argument combinations' => sub {
     $t->get_ok('/api/v1/jobs?test=kde');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+    is scalar(@{$t->tx->res->json->{jobs}}), 6;
     $t->get_ok('/api/v1/jobs?test=kde&result=passed');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+    is scalar(@{$t->tx->res->json->{jobs}}), 1;
     $t->get_ok('/api/v1/jobs?test=kde&result=softfailed');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 2);
+    is scalar(@{$t->tx->res->json->{jobs}}), 2;
     $t->get_ok('/api/v1/jobs?test=kde&result=softfailed&machine=64bit');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+    is scalar(@{$t->tx->res->json->{jobs}}), 1;
     $t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 0);
+    is scalar(@{$t->tx->res->json->{jobs}}), 0;
 };
 
 subtest 'server-side limit with pagination' => sub {
@@ -231,9 +231,9 @@ subtest 'server-side limit with pagination' => sub {
 
 subtest 'multiple ids' => sub {
     $t->get_ok('/api/v1/jobs?ids=99981,99963,99926');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+    is scalar(@{$t->tx->res->json->{jobs}}), 3;
     $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+    is scalar(@{$t->tx->res->json->{jobs}}), 3;
 };
 
 subtest 'validation of IDs' => sub {
@@ -371,10 +371,10 @@ subtest 'prevent restarting parents' => sub {
     $t->json_is('/result' => [{99938 => 99985}, {99963 => 99986}], 'response')
       ->or(sub (@) { always_explain $t->tx->res->json });
     # check whether jobs have been restarted but not their parents
-    isnt($jobs->find(99963)->clone_id, undef, 'job with parallel parent has been cloned');
-    isnt($jobs->find(99938)->clone_id, undef, 'job with directly chained parent has been cloned');
-    is($jobs->find(99961)->clone_id, undef, 'parallel parent has not been cloned');
-    is($jobs->find(99937)->clone_id, undef, 'directly chained parent has not been cloned');
+    isnt $jobs->find(99963)->clone_id, undef, 'job with parallel parent has been cloned';
+    isnt $jobs->find(99938)->clone_id, undef, 'job with directly chained parent has been cloned';
+    is $jobs->find(99961)->clone_id, undef, 'parallel parent has not been cloned';
+    is $jobs->find(99937)->clone_id, undef, 'directly chained parent has not been cloned';
 };
 
 $schema->txn_rollback;
@@ -403,7 +403,7 @@ subtest 'restart jobs (forced)' => sub {
     }
 
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-    is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
+    is scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same';
 };
 
 $schema->txn_rollback;
@@ -433,7 +433,7 @@ subtest 'restart jobs with commenting' => sub {
 };
 
 subtest 'restart single job passing settings' => sub {
-    is($jobs->find(99926)->clone_id, undef, 'job has not been cloned yet');
+    is $jobs->find(99926)->clone_id, undef, 'job has not been cloned yet';
     my $url = '/api/v1/jobs/99926/restart?';
     my $params = 'set=_GROUP%3D0&set=TEST%2B%3D%3Ainvestigate&set=ARCH%3Di386&set=FOO%3Dbar&set=FLAVOR%3D';
     $t->post_ok($url . 'set=_GROUP')->status_is(400, 'parameter without value does not pass validation');
@@ -463,7 +463,7 @@ subtest 'restart single job passing settings' => sub {
 subtest 'duplicate route' => sub {
     $jobs->find(99939)->update({clone_id => undef});    # assume there's no clone yet
     $t->post_ok('/api/v1/jobs/99939/duplicate')->status_is(200);
-    isnt(my $clone_id = $jobs->find(99939)->clone_id, undef, 'job has been cloned');
+    isnt my $clone_id = $jobs->find(99939)->clone_id, undef, 'job has been cloned';
     $t->json_is('/id' => $clone_id, 'id of clone returned');
     $t->json_is('/result' => [{99939 => $clone_id}], 'mapping of original to clone job IDs returned');
     $t->json_like('/warnings/0' => qr/Job 99939 misses.*assets/, 'missing asset ignored by default with warning');
@@ -494,9 +494,9 @@ subtest 'upload video' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
       ->status_is(200);
 
-    ok(-e $rp, 'video exist after')
-      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'video size taken into account');
-    is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
+    ok -e $rp, 'video exist after'
+      and is $jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'video size taken into account';
+    is calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches';
 };
 
 subtest 'upload "ulog" file' => sub {
@@ -505,9 +505,9 @@ subtest 'upload "ulog" file' => sub {
         '/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})
       ->status_is(200);
     $t->content_is('OK');
-    ok(-e $rp, 'logs exist after')
-      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'log size taken into account');
-    is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
+    ok -e $rp, 'logs exist after'
+      and is $jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'log size taken into account';
+    is calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches';
 };
 
 subtest 'upload screenshot' => sub {
@@ -519,9 +519,9 @@ subtest 'upload screenshot' => sub {
                 filename => 'foo.png'
             }})->status_is(200);
     $t->content_is('OK');
-    ok(-e $rp, 'screenshot exists')
-      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'screenshot size taken into account');
-    is(calculate_file_md5($rp), '347da661d0c3faf37d49d33b6fc308f2', 'md5sum matches');
+    ok -e $rp, 'screenshot exists'
+      and is $jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'screenshot size taken into account';
+    is calculate_file_md5($rp), '347da661d0c3faf37d49d33b6fc308f2', 'md5sum matches';
 };
 
 subtest 'upload asset: fails without chunks' => sub {
@@ -544,13 +544,13 @@ subtest 'upload asset: successful chunk upload' => sub {
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
             $t->json_is({status => 'ok'});
-            ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
+            ok -d $chunkdir, 'Chunk directory exists' unless $_->is_last;
             $_->content(\undef);
         });
     my $job = $jobs->find(99963);
-    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
-    ok(-e $rp, 'Asset exists after upload')
-      and is($job->result_size, $expected_result_size, 'asset size not taken into account');
+    ok !-d $chunkdir, 'Chunk directory should not exist anymore';
+    ok -e $rp, 'Asset exists after upload'
+      and is $job->result_size, $expected_result_size, 'asset size not taken into account';
     $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200)->json_is('/name' => 'hdd_image.qcow2');
     isnt $_->asset->size, undef, $_->asset->name . ' has known size' for $job->jobs_assets->all;
 };
@@ -565,11 +565,11 @@ subtest 'Test failure - if chunks are broken' => sub {
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
             $t->json_like('/error' => qr/Can't verify written data from chunk/) unless $_->is_last();
-            ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
+            ok !-d $chunkdir, 'Chunk directory does not exists' if $_->is_last;
             ok((-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there') unless $_->is_last;
         });
 
-    ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
+    ok !-d $chunkdir, 'Chunk directory does not exists - upload failed';
     $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 };
@@ -587,10 +587,10 @@ subtest 'last chunk is broken' => sub {
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
             $t->json_is('/error' => undef) unless $_->is_last();
             $t->json_like('/error', qr/Checksum mismatch expected/) if $_->is_last;
-            ok(!-d $chunkdir, 'Chunk directory does not exist') if $_->is_last;
+            ok !-d $chunkdir, 'Chunk directory does not exist' if $_->is_last;
         });
 
-    ok(!-d $chunkdir, 'Chunk directory does not exist - upload failed');
+    ok !-d $chunkdir, 'Chunk directory does not exist - upload failed';
     $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 };
@@ -604,11 +604,11 @@ subtest 'Failed upload, public assets' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
           {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
     $t->json_is('/status' => 'ok');
-    ok(-d $chunkdir, 'Chunk directory exists');
+    ok -d $chunkdir, 'Chunk directory exists';
 
     $t->post_ok('/api/v1/jobs/99963/upload_state' => form =>
           {filename => 'hdd_image.qcow2', scope => 'public', state => 'fail'});
-    ok(!-d $chunkdir, 'Chunk directory was removed');
+    ok !-d $chunkdir, 'Chunk directory was removed';
     ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
 };
 
@@ -624,7 +624,7 @@ subtest 'Failed upload, private assets' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
           {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'});
     $t->json_is('/status' => 'ok');
-    ok(-d $chunkdir, 'Chunk directory exists');
+    ok -d $chunkdir, 'Chunk directory exists';
 
     $t->post_ok(
         '/api/v1/jobs/99963/upload_state' => form => {
@@ -633,7 +633,7 @@ subtest 'Failed upload, private assets' => sub {
             state => 'fail'
         });
 
-    ok(!-d $chunkdir, 'Chunk directory was removed');
+    ok !-d $chunkdir, 'Chunk directory was removed';
     ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
 
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
@@ -652,7 +652,7 @@ subtest 'Chunks uploaded correctly, private asset registered and associated with
     $parent_job->jobs_assets->search({created_by => 1})->delete;    # cleanup assets from previous subtests
 
     my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
-    ok(!-d $chunkdir, 'Chunk directory empty');
+    ok !-d $chunkdir, 'Chunk directory empty';
     my $sum = OpenQA::File->file_digest($filename);
     is $sum, $pieces->first->total_cksum, 'Computed cksum matches';
     $pieces->each(
@@ -662,7 +662,7 @@ subtest 'Chunks uploaded correctly, private asset registered and associated with
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'})->status_is(200);
             $t->json_is({status => 'ok'});
-            ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
+            ok -d $chunkdir, 'Chunk directory exists' unless $_->is_last;
         });
 
     ok !-d $chunkdir, 'chunk directory should not exist anymore';
@@ -691,7 +691,7 @@ subtest 'Tiny chunks, private assets' => sub {
           {file => {file => $chunk_asset, filename => 'new_ltp_result_array.json'}, asset => 'other'});
 
     $t->json_is('/status' => 'ok');
-    ok(!-d $chunkdir, 'Chunk directory does not exist');
+    ok !-d $chunkdir, 'Chunk directory does not exist';
     $t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is(200);
 };
 
@@ -703,7 +703,7 @@ subtest 'filter by state and result' => sub {
         $t->get_ok($query->path_query)->status_is(200);
         my $res = $t->tx->res->json;
         for my $job (@{$res->{jobs}}) {
-            is($job->{state}, $state, "Job state is $state");
+            is $job->{state}, $state, "Job state is $state";
         }
     }
 
@@ -712,7 +712,7 @@ subtest 'filter by state and result' => sub {
         $t->get_ok($query->path_query)->status_is(200);
         my $res = $t->tx->res->json;
         for my $job (@{$res->{jobs}}) {
-            is($job->{result}, $result, "Job result is $result");
+            is $job->{result}, $result, "Job result is $result";
         }
     }
 
@@ -722,19 +722,19 @@ subtest 'filter by state and result' => sub {
         my $res = $t->tx->res->json;
         my $cond = $result =~ s/,/|/r;
         for my $job (@{$res->{jobs}}) {
-            like($job->{result}, qr/$cond/, "Job result is $cond");
+            like $job->{result}, qr/$cond/, "Job result is $cond";
         }
     }
 
     $query->query(result => 'nonexistant_result');
     $t->get_ok($query->path_query)->status_is(200);
     my $res = $t->tx->res->json;
-    ok(!@{$res->{jobs}}, 'no result for non-existant result');
+    ok !@{$res->{jobs}}, 'no result for non-existant result';
 
     $query->query(state => 'nonexistant_state');
     $t->get_ok($query->path_query)->status_is(200);
     $res = $t->tx->res->json;
-    ok(!@{$res->{jobs}}, 'no result for non-existant state');
+    ok !@{$res->{jobs}}, 'no result for non-existant state';
 };
 
 subtest 'update job status' => sub {
@@ -746,7 +746,7 @@ subtest 'update job status' => sub {
         $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 1}})->status_is(200);
         my $response = $t->tx->res->json;
         my %expected_response = (job_result => 'failed', known_files => [], known_images => [], result => 1);
-        is_deeply($response, \%expected_response, 'response as expected') or always_explain $response;
+        is_deeply $response, \%expected_response, 'response as expected' or always_explain $response;
     };
 
     subtest 'update running job with results/details' => sub {
@@ -758,7 +758,7 @@ subtest 'update job status' => sub {
         my @known_images = qw(098f6bcd4621d373cade4e832627b4f6);
         my @known_files = qw(known-audio.wav known-text.txt);
         my $result_dir = $job->result_dir;
-        note("result dir: $result_dir");
+        note "result dir: $result_dir";
         for my $md5sum (@known_images) {
             my ($image_path, $thumbnail_path) = OpenQA::Utils::image_md5_filename($md5sum);
             my $file = path($image_path);
@@ -793,7 +793,7 @@ subtest 'update job status' => sub {
         my $response = $t->tx->res->json;
         my %expected_response
           = (job_result => 'failed', known_files => \@known_files, known_images => \@known_images, result => 1);
-        is_deeply($response, \%expected_response, 'response as expected; only the known images and files returned')
+        is_deeply $response, \%expected_response, 'response as expected; only the known images and files returned'
           or always_explain $response;
         # note: The arrays are supposed to be sorted so it is fine to assume a fix order here.
     };
@@ -885,7 +885,7 @@ subtest 'cancel job' => sub {
     my $form = {TEST => 'spam_eggs'};
     $t->post_ok('/api/v1/jobs', form => $form)->status_is(200);
     $t->post_ok('/api/v1/jobs/cancel', form => $form)->status_is(200);
-    is($t->tx->res->json->{result}, 1, 'number of affected jobs returned') or always_explain $t->tx->res->json;
+    is $t->tx->res->json->{result}, 1, 'number of affected jobs returned' or always_explain $t->tx->res->json;
     is_deeply find_most_recent_event($schema, 'job_cancel_by_settings'), $form, 'cancellation was logged with settings';
 };
 
@@ -909,67 +909,66 @@ subtest 'json representation of group overview (actually not part of the API)' =
     my $b48 = find_build($t->tx->res->json, 'Factory-0048');
     delete $b48->{date};
     delete $b48->{date_mode};
-    is_deeply(
-        $b48,
-        {
-            reviewed => 0,
-            commented => 0,
-            comments => 0,
-            softfailed => 1,
-            failed => 1,
-            labeled => 0,
-            all_passed => 0,
-            total => 3,
-            passed => 0,
-            skipped => 0,
-            distris => {'opensuse' => 1},
-            unfinished => 1,
-            version => 'Factory',
-            version_count => 1,
-            escaped_version => 'Factory',
-            build => '0048',
-            escaped_build => '0048',
-            escaped_id => 'Factory-0048',
-            key => 'Factory-0048',
-        },
-        'Build 0048 exported'
-    ) or always_explain $b48;
+    is_deeply
+      $b48,
+      {
+        reviewed => 0,
+        commented => 0,
+        comments => 0,
+        softfailed => 1,
+        failed => 1,
+        labeled => 0,
+        all_passed => 0,
+        total => 3,
+        passed => 0,
+        skipped => 0,
+        distris => {'opensuse' => 1},
+        unfinished => 1,
+        version => 'Factory',
+        version_count => 1,
+        escaped_version => 'Factory',
+        build => '0048',
+        escaped_build => '0048',
+        escaped_id => 'Factory-0048',
+        key => 'Factory-0048',
+      },
+      'Build 0048 exported'
+      or always_explain $b48;
 };
 
 $t->get_ok('/dashboard_build_results.json?limit_builds=10')->status_is(200);
 my $ret = $t->tx->res->json;
-is(@{$ret->{results}}, 2);
+is @{$ret->{results}}, 2;
 my $g1 = (shift @{$ret->{results}});
-is($g1->{group}->{name}, 'opensuse', 'First group is opensuse');
+is $g1->{group}->{name}, 'opensuse', 'First group is opensuse';
 my $b1 = find_build($g1, '13.1-0092');
 delete $b1->{date};
 delete $b1->{date_mode};
-is_deeply(
-    $b1,
-    {
-        passed => 1,
-        version => '13.1',
-        distris => {'opensuse' => 1},
-        labeled => 0,
-        total => 1,
-        failed => 0,
-        unfinished => 0,
-        skipped => 0,
-        reviewed => '1',
-        commented => '1',
-        comments => 0,
-        softfailed => 0,
-        all_passed => 1,
-        version => '13.1',
-        version_count => 1,
-        escaped_version => '13_1',
-        build => '0092',
-        escaped_build => '0092',
-        escaped_id => '13_1-0092',
-        key => '13.1-0092',
-    },
-    'Build 92 of opensuse'
-);
+is_deeply
+  $b1,
+  {
+    passed => 1,
+    version => '13.1',
+    distris => {'opensuse' => 1},
+    labeled => 0,
+    total => 1,
+    failed => 0,
+    unfinished => 0,
+    skipped => 0,
+    reviewed => '1',
+    commented => '1',
+    comments => 0,
+    softfailed => 0,
+    all_passed => 1,
+    version => '13.1',
+    version_count => 1,
+    escaped_version => '13_1',
+    build => '0092',
+    escaped_build => '0092',
+    escaped_id => '13_1-0092',
+    key => '13.1-0092',
+  },
+  'Build 92 of opensuse';
 
 my %jobs_post_params = (
     iso => 'openSUSE-%VERSION%-%FLAVOR%-x86_64-Current.iso',
@@ -1134,11 +1133,10 @@ subtest 'TEST is only mandatory parameter' => sub {
 subtest 'Job with JOB_TEMPLATE_NAME' => sub {
     $jobs_post_params{JOB_TEMPLATE_NAME} = 'foo';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200, 'posted job with job template name');
-    like(
-        $jobs->find($t->tx->res->json->{id})->settings_hash->{NAME},
-        qr/\d+-opensuse-Tumbleweed-DVD-aarch64-Build1234-foo@64bit/,
-        'job template name reflected in scenario name'
-    );
+    like
+      $jobs->find($t->tx->res->json->{id})->settings_hash->{NAME},
+      qr/\d+-opensuse-Tumbleweed-DVD-aarch64-Build1234-foo@64bit/,
+      'job template name reflected in scenario name';
     delete $jobs_post_params{JOB_TEMPLATE_NAME};
 };
 
@@ -1237,29 +1235,27 @@ subtest 'handle settings when posting job' => sub {
         $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(200);
         my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
         delete $result->{NAME};
-        is_deeply(
-            $result,
-            {
-                %new_jobs_post_params,
-                HDD_1 => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
-                ISO_MAXSIZE => '4700372992',
-                BUILD_SDK => '1234',
-                QEMUCPU => 'qemu64',
-                BACKEND => 'qemu',
-                WORKER_CLASS => 'qemu_x86_64'
-            },
-            'expand specified Machine, TestSuite, Product variables and handle + in settings correctly'
-        );
+        is_deeply
+          $result,
+          {
+            %new_jobs_post_params,
+            HDD_1 => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
+            ISO_MAXSIZE => '4700372992',
+            BUILD_SDK => '1234',
+            QEMUCPU => 'qemu64',
+            BACKEND => 'qemu',
+            WORKER_CLASS => 'qemu_x86_64'
+          },
+          'expand specified Machine, TestSuite, Product variables and handle + in settings correctly';
     };
 
     subtest 'circular reference settings' => sub {
         $new_jobs_post_params{BUILD} = '%BUILD_SDK%';
         $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(400);
-        like(
-            $t->tx->res->json->{error},
-            qr/The key (\w+) contains a circular reference, its value is %\w+%/,
-            'circular reference exit successfully'
-        );
+        like
+          $t->tx->res->json->{error},
+          qr/The key (\w+) contains a circular reference, its value is %\w+%/,
+          'circular reference exit successfully';
     };
 };
 
@@ -1272,7 +1268,7 @@ subtest 'do not re-generate settings when cloning job' => sub {
     my $new_job_settings = $jobs->find($t->tx->res->json->{id})->settings_hash;
     delete $job_settings->{is_clone_job};
     delete $new_job_settings->{NAME};
-    is_deeply($new_job_settings, $job_settings, 'did not re-generate settings');
+    is_deeply $new_job_settings, $job_settings, 'did not re-generate settings';
 };
 
 # use regular test results for fixtures in subsequent tests
@@ -1391,17 +1387,17 @@ subtest 'filter by worker_class' => sub {
     $query->query(worker_class => ':MiB:');
     $t->get_ok($query->path_query)->status_is(200);
     my $res = $t->tx->res->json;
-    ok(!@{$res->{jobs}}, 'Worker class does not exist');
+    ok !@{$res->{jobs}}, 'Worker class does not exist';
 
     $query->query(worker_class => '::');
     $t->get_ok($query->path_query)->status_is(200);
     $res = $t->tx->res->json;
-    ok(!@{$res->{jobs}}, 'Wrong worker class provides zero results');
+    ok !@{$res->{jobs}}, 'Wrong worker class provides zero results';
 
     $query->query(worker_class => ':UFP:');
     $t->get_ok($query->path_query)->status_is(200);
     $res = $t->tx->res->json;
-    ok(@{$res->{jobs}} eq 1, 'Known worker class group exists, and returns one job');
+    ok @{$res->{jobs}} eq 1, 'Known worker class group exists, and returns one job';
 
     $t->json_is('/jobs/0/settings/WORKER_CLASS' => ':UFP:NCC1701F', 'Correct worker class');
 };
@@ -1422,7 +1418,7 @@ sub junit_ok {
             elsif ($result->result eq 'fail' or $result->result eq 'brok') {
                 $jobresult = 'failed';
             }
-            ok(-e path($basedir, "details-$testname.json"), 'junit details written');
+            ok -e path($basedir, "details-$testname.json"), 'junit details written';
             my $got_details = {
                 results => {
                     details => $db_module->results->{details},
@@ -1443,10 +1439,10 @@ sub junit_ok {
             };
             for my $step (@{$got_details->{results}->{details}}) {
                 next unless $step->{text};
-                ok(delete $step->{text_data}, 'text data loaded');
+                ok delete $step->{text_data}, 'text data loaded';
             }
-            is_deeply($got_details, $expected_details, 'Module details match');
-            ok(-e path($basedir, $_->{text}), 'Path exists') for @{$db_module->results->{details}};
+            is_deeply $got_details, $expected_details, 'Module details match';
+            ok -e path($basedir, $_->{text}), 'Path exists' for @{$db_module->results->{details}};
         };
     }
 
@@ -1601,14 +1597,12 @@ subtest 'show job modules execution time' => sub {
     my @testresults = sort { $a->{name} cmp $b->{name} } @{$t->tx->res->json->{job}->{testresults}};
     my %execution_times = map { $_->{name} => $_->{execution_time} } @testresults;
     for my $module_name (keys %modules_execution_time) {
-        is(
-            $execution_times{$module_name},
-            $modules_execution_time{$module_name},
-            $module_name . ' execution time showed correctly'
-        );
+        is $execution_times{$module_name},
+          $modules_execution_time{$module_name},
+          $module_name . ' execution time showed correctly';
     }
-    is(scalar(@{$testresults[0]->{details}}), 2, 'the old format json file parsed correctly');
-    is($testresults[0]->{execution_time}, undef, 'the old format json file does not include execution_time');
+    is scalar(@{$testresults[0]->{details}}), 2, 'the old format json file parsed correctly';
+    is $testresults[0]->{execution_time}, undef, 'the old format json file does not include execution_time';
 };
 
 subtest 'marking job as done' => sub {
@@ -1618,11 +1612,10 @@ subtest 'marking job as done' => sub {
         $t->json_is('/result' => OBSOLETED, 'post yields incomplete result');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => OBSOLETED, 'get yields result');
-        is_deeply(
-            OpenQA::Test::Case::find_most_recent_event($schema, 'job_done'),
-            {id => 99961, result => OBSOLETED, reason => undef, newbuild => 1},
-            'Create was logged correctly'
-        );
+        is_deeply
+          OpenQA::Test::Case::find_most_recent_event($schema, 'job_done'),
+          {id => 99961, result => OBSOLETED, reason => undef, newbuild => 1},
+          'Create was logged correctly';
     };
 
     my $cache_failure_reason = 'cache failure: No active workers';
@@ -1727,8 +1720,8 @@ subtest 'handle FOO_URL' => sub {
 
     my $job_id = $t->tx->res->json->{id};
     my $result = $jobs->find($job_id)->settings_hash;
-    is($result->{ISO_1}, 'foo.iso', 'the ISO_1 was added in job setting');
-    is($result->{HDD_1}, 'hdd@64bit.qcow2', 'the HDD_1 was overwritten by the value in testsuite settings');
+    is $result->{ISO_1}, 'foo.iso', 'the ISO_1 was added in job setting';
+    is $result->{HDD_1}, 'hdd@64bit.qcow2', 'the HDD_1 was overwritten by the value in testsuite settings';
 
     my %gru_task_values;
     foreach my $gru_dep ($schema->resultset('GruDependencies')->search({job_id => $job_id})) {

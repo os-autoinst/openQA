@@ -22,6 +22,6 @@ $t->app($app);
 
 $t->get_ok('/admin/workers.json');
 my %workers = %{$t->tx->res->json->{workers}};
-is(2, scalar(keys(%workers)), '2 workers seen');
+is 2, scalar(keys(%workers)), '2 workers seen';
 
 done_testing();

@@ -60,16 +60,16 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
         $t->post_ok("/api/v1/jobs/$old_job/comments", $auth => form => {text => $comment})->status_is(200);
     }
     my @comments_previous = @{comments("/tests/$old_job")};
-    is(scalar @comments_previous, 3, 'all entered comments found');
-    like($comments_previous[0], qr/\Q$label/, 'comment present on previous test result');
-    is($comments_previous[2], $simple_comment, 'another comment present');
+    is scalar @comments_previous, 3, 'all entered comments found';
+    like $comments_previous[0], qr/\Q$label/, 'comment present on previous test result';
+    is $comments_previous[2], $simple_comment, 'another comment present';
 
     my $group = $t->app->schema->resultset('JobGroups')->find(1001);
 
     subtest 'carry over prevented via job group settings' => sub {
         $group->update({carry_over_bugrefs => 0});
         $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => 'failed'})->status_is(200);
-        is_deeply(comments("/tests/$job"), [], 'no bugrefs carried over');
+        is_deeply comments("/tests/$job"), [], 'no bugrefs carried over';
     };
 
     subtest 'carry over enabled in job group settings, note about hook script' => sub {
@@ -85,8 +85,8 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
         $t->app->log->level('error');
 
         my @comments_current = @{comments("/tests/$job")};
-        is(join('', @comments_current), $comment_must . $carry_over_note, 'only one bugref is carried over');
-        like($comments_current[0], qr/\Q$second_label/, 'last entered bugref found, it is expanded');
+        is join('', @comments_current), $comment_must . $carry_over_note, 'only one bugref is carried over';
+        like $comments_current[0], qr/\Q$second_label/, 'last entered bugref found, it is expanded';
         like $output, qr{\Q_carry_over_candidate($job): _failure_reason=amarok:none};
         like $output, qr{\Q_carry_over_candidate($job): checking take over from $old_job: _failure_reason=amarok:none};
         like $output, qr{\Q_carry_over_candidate($job): found a good candidate ($old_job)};
@@ -98,7 +98,7 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
 subtest 'failed->passed discards all labels' => sub {
     my $res = restart_with_result($job, 'passed');
     my @comments_new = @{comments($res->{test_url}[0]->{$job})};
-    is(scalar @comments_new, 0, 'no labels carried over to passed');
+    is scalar @comments_new, 0, 'no labels carried over to passed';
 };
 
 # Reset to a clean state
@@ -112,7 +112,7 @@ subtest 'passed->failed does not carry over old labels' => sub {
     $schema->resultset('JobModules')->search({job_id => $old_job})->update({result => PASSED});
     $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => 'failed'})->status_is(200);
     my @comments_new = @{comments("/tests/$job")};
-    is(scalar @comments_new, 0, 'no old labels on new failure');
+    is scalar @comments_new, 0, 'no old labels on new failure';
 };
 
 # Reset to a clean state
@@ -122,15 +122,15 @@ $schema->txn_begin;
 subtest 'failed->failed without labels does not fail' => sub {
     $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => 'failed'})->status_is(200);
     my @comments_new = @{comments("/tests/$job")};
-    is(scalar @comments_new, 0, 'nothing there, nothing appears');
+    is scalar @comments_new, 0, 'nothing there, nothing appears';
 };
 
 subtest 'failed->failed labels which are not bugrefs are *not* carried over' => sub {
     $t->post_ok("/api/v1/jobs/$old_job/comments", $auth => form => {text => 'label:any_label'})->status_is(200);
     $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => 'failed'})->status_is(200);
     my @comments_new = @{comments("/tests/$job")};
-    is(join('', @comments_new), '', 'no simple labels are carried over');
-    is(scalar @comments_new, 0, 'no simple label present in new result');
+    is join('', @comments_new), '', 'no simple labels are carried over';
+    is scalar @comments_new, 0, 'no simple label present in new result';
 };
 
 # Reset to a clean state
@@ -141,7 +141,7 @@ subtest 'failed->failed flag:carryover comments are carried over' => sub {
     $t->post_ok("/api/v1/jobs/$old_job/comments", $auth => form => {text => 'flag:carryover'})->status_is(200);
     $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => 'failed'})->status_is(200);
     my @comments_new = @{comments("/tests/$job")};
-    like(join('', @comments_new), qr(flag:carryover), 'Comment with flag:carryover present in new job');
+    like join('', @comments_new), qr(flag:carryover), 'Comment with flag:carryover present in new job';
 };
 
 # Reset to a clean state

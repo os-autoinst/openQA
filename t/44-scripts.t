@@ -32,12 +32,12 @@ for my $script (sort keys %types) {
         qx{$Bin/../script/$script --help 2>&1};
     };
     my $rc = $?;
-    is($rc, 0, "Calling '$script --help' returns exit code 0")
+    is $rc, 0, "Calling '$script --help' returns exit code 0"
       or diag "Output: $out";
     next if $script eq 'openqa-worker-cacheservice-minion';    # unfortunately ignores invalid arguments
     $out = qx{$Bin/../script/$script invalid-command --invalid-flag 2>&1};
     $rc = $?;
-    isnt($rc, 0, "Calling '$script invalid-command --invalid-flag' returns non-zero exit code")
+    isnt $rc, 0, "Calling '$script invalid-command --invalid-flag' returns non-zero exit code"
       or diag "Output: $out";
 }
 

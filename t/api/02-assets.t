@@ -78,7 +78,7 @@ $t->get_ok('/api/v1/assets/iso/' . $iso2)->status_is(404, 'iso does not exist');
 
 $t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso2})->status_is(200, 'second asset posted');
 $listing->[1]->{id} = $t->tx->res->json->{id};
-isnt($listing->[0]->{id}, $listing->[1]->{id}, 'new assets has a distinct ID');
+isnt $listing->[0]->{id}, $listing->[1]->{id}, 'new assets has a distinct ID';
 
 # check data
 $t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200);
@@ -214,16 +214,16 @@ $t->delete_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200, 'asset de
   ->json_is('/count' => 1, 'one asset deleted');
 
 $t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(404, 'asset was deleted');
-ok(!-e iso_path($iso1), 'iso file 1 has been removed');
+ok !-e iso_path($iso1), 'iso file 1 has been removed';
 $t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200, 'second asset remains');
-ok(-e iso_path($iso2), 'iso file 2 is still there');
+ok -e iso_path($iso2), 'iso file 2 is still there';
 
 touch_isos [$iso1];
 $t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'registering again works')
   ->json_is('/id' =>, $listing->[1]->{id} + 1, 'asset has next id');
 
 $t->delete_ok('/api/v1/assets/iso/' . $iso2)->status_is(200, 'delete asset by name');
-ok(!-e iso_path($iso2), 'iso file 2 has been removed');
+ok !-e iso_path($iso2), 'iso file 2 has been removed';
 $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200, 'third asset remains');
 
 la;
@@ -241,15 +241,15 @@ $t->delete_ok('/api/v1/assets/iso')->status_is(404, 'deleting without name is an
 my $gru = $t->app->gru;
 my $gru_tasks = $t->app->schema->resultset('GruTasks');
 $t->app->minion->reset;    # be sure no 'limit_assets' tasks have already been enqueued
-is($gru->count_jobs(limit_assets => ['inactive']), 0, 'is_task_active returns 0 if not tasks enqueued');
-is($gru_tasks->count, 0, 'no gru tasks present so far');
+is $gru->count_jobs(limit_assets => ['inactive']), 0, 'is_task_active returns 0 if not tasks enqueued';
+is $gru_tasks->count, 0, 'no gru tasks present so far';
 $t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok', 'status ok');
-is($gru_tasks->count, 1, 'gru task added')
-  and is($gru_tasks->first->taskname, 'limit_assets', 'right gru task added');
-is($gru->count_jobs(limit_assets => ['inactive']), 1, 'is_task_active returns 1 after task enqueued');
+is $gru_tasks->count, 1, 'gru task added'
+  and is $gru_tasks->first->taskname, 'limit_assets', 'right gru task added';
+is $gru->count_jobs(limit_assets => ['inactive']), 1, 'is_task_active returns 1 after task enqueued';
 $t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok', 'status ok')
   ->json_is('/gru_id' => undef);
-is($gru_tasks->count, 1, 'no further task if one was already enqueued');
+is $gru_tasks->count, 1, 'no further task if one was already enqueued';
 
 # switch to operator (default client) and try some modifications
 client($t);
@@ -258,7 +258,7 @@ client($t);
 $t->delete_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(403, 'asset deletion forbidden for operator');
 $t->delete_ok('/api/v1/assets/iso/' . $iso1)->status_is(403, 'asset deletion forbidden for operator');
 $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200, 'asset is still there');
-ok(-e iso_path($iso1), 'iso file 1 is still there');
-ok(unlink(iso_path($iso1)), 'remove iso file 1 manually');
+ok -e iso_path($iso1), 'iso file 1 is still there';
+ok unlink(iso_path($iso1)), 'remove iso file 1 manually';
 
 done_testing();

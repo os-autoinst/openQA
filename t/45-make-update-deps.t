@@ -15,7 +15,7 @@ die "Could not run $make: rc=$rc" if $rc;
 
 my @status = grep { not m/^\?/ } qx{git status --porcelain};
 
-ok(!@status, "No changed files after '$make'")
+ok !@status, "No changed files after '$make'"
   or diag @status;
 
 done_testing;

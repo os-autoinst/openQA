@@ -78,10 +78,10 @@ my $driver = call_driver({mojoport => service_port 'webui'});
 $livehandler = create_live_view_handler;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok(-d $resultdir, "resultdir \"$resultdir\" exists");
+ok -d $resultdir, "resultdir \"$resultdir\" exists";
 
 $driver->title_is('openQA', 'on main page');
-is($driver->find_element('#user-action a')->get_text(), 'Login', 'no one logged in');
+is $driver->find_element('#user-action a')->get_text(), 'Login', 'no one logged in';
 $driver->click_element_ok('Login', 'link_text', 'Login clicked');
 # we're back on the main page
 $driver->title_is('openQA', 'back on main page');
@@ -131,8 +131,8 @@ my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 my $job_page_url = $driver->get_current_url();
-like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
-ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings after test 1 was scheduled');
+like status_text, qr/State: scheduled/, 'test 1 is scheduled';
+ok javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings after test 1 was scheduled';
 
 sub assign_jobs ($worker_class = undef) {
     my ($to_be_scheduled, $elapsed) = check_scheduled_job_and_wait_for_free_worker $worker_class // 'qemu_i386';
@@ -274,7 +274,7 @@ $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like status_text, qr/State: scheduled/, 'test 4 is scheduled';
 
-ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings after test 4 was scheduled');
+ok javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings after test 4 was scheduled';
 start_worker_and_assign_jobs;
 
 subtest 'incomplete job because of setup failure' => sub {
@@ -431,7 +431,7 @@ subtest 'Cache tests' => sub {
         wait_for_ajax(msg => 'autoinst log embedded within "Details" tab');
         ok my $log = $driver->find_element('.embedded-logfile'), 'element for embedded logfile present';
         wait_for_ajax(msg => 'log contents loaded');
-        like($log->get_text(), qr/Result: setup failure/, 'log contents present');
+        like $log->get_text(), qr/Result: setup failure/, 'log contents present';
     };
 
     subtest 'results of test 8' => sub {

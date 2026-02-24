@@ -74,7 +74,7 @@ perform_minion_jobs($t->app->minion);
 my $helper = $t->app->obs_rsync;
 
 subtest 'latest_test' => sub {
-    is($helper->get_last_test_id('Proj1'), 99937);
+    is $helper->get_last_test_id('Proj1'), 99937;
     $t->get_ok('/api/v1/obs_rsync/Proj1/latest_test')->status_is(200, 'status')->content_like(qr/99937/, 'correct id')
       ->content_unlike(qr/passed/)->json_like('/id' => qr/^99937$/)->json_hasnt('/result');
     $t->get_ok('/api/v1/obs_rsync/Proj1/latest_test?full=1')->status_is(200, 'status')
@@ -83,8 +83,8 @@ subtest 'latest_test' => sub {
 };
 
 subtest 'test_result' => sub {
-    is($helper->get_version_test_id('Proj1', '468.2'), 99926);
-    is($helper->get_version_test_id('Proj1', '469.1'), 99937);
+    is $helper->get_version_test_id('Proj1', '468.2'), 99926;
+    is $helper->get_version_test_id('Proj1', '469.1'), 99937;
 
     $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=468.2')->status_is(200, 'status')
       ->content_like(qr/99926/, 'correct id')->content_unlike(qr/passed/)->content_unlike(qr/incomplete/)
@@ -108,7 +108,7 @@ sub lock_test {
     BAIL_OUT('Cannot lock') unless $helper->lock('Proj1');
     BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');
     BAIL_OUT('Cannot unlock') unless $helper->unlock('Proj1');
-    ok(1, 'lock/unlock behaves as expected');
+    ok 1, 'lock/unlock behaves as expected';
 }
 
 subtest 'test lock smoke' => sub {

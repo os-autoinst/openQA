@@ -171,7 +171,7 @@ sub compare {
     my $original = file_path($FindBin::Bin, 'data', $file);
     my $pieces = $original->split($chunk_size);
 
-    is(OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!');
+    is OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!';
 
     for (my $i = 1; $i <= $pieces->size; $i++) {
         my $piece = $original->get_piece($i => $chunk_size);
