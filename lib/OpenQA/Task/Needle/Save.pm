@@ -29,17 +29,15 @@ sub _json_validation {
         $e =~ s@at /usr/.*$@@;    # do not print perl module reference
         die "syntax error: $e";
     }
-    if (!exists $djson->{area} || !exists $djson->{area}[0]) {
-        die 'no area defined';
-    }
-    if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
-        die 'no tag defined';
-    }
+    die 'needle JSON is no object' unless ref $djson eq 'HASH';
+    die 'no area defined' unless ref $djson->{area} eq 'ARRAY' && exists $djson->{area}[0];
+    die 'no tag defined' unless ref $djson->{tags} eq 'ARRAY' && exists $djson->{tags}[0];
+
     my @not_ocr_area = grep { ($_->{type} // '') ne 'ocr' } @{$djson->{area}};
     die 'Cannot create a needle with only OCR areas' if scalar(@not_ocr_area) == 0;
 
-    my $areas = $djson->{area};
-    foreach my $area (@$areas) {
+    foreach my $area (@{$djson->{area}}) {
+        die 'area is no object' unless ref $area eq 'HASH';
         die 'area without xpos' unless exists $area->{xpos};
         die 'area without ypos' unless exists $area->{ypos};
         die 'area without type' unless exists $area->{type};

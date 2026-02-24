@@ -225,6 +225,10 @@ subtest 'error cases when saving needles' => sub {
     $save_needle_args{needle_json} = '{"area": [{}], "tags":["foo"]}';
     OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
     like + (($fake_job->call_args(4))[1])->{error}, qr/area without xpos/i, 'error about invalid area';
+
+    $save_needle_args{needle_json} = '[]';
+    OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
+    like + (($fake_job->call_args(5))[1])->{error}, qr/needle JSON is no object/i, 'error about wrong type';
 };
 
 subtest 'controller->_determine_needles_dir_for_job' => sub {
