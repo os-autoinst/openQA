@@ -625,16 +625,25 @@ sub _render_badge ($self, $badge_text, $badge_color, $status = 200) {
     $self->render('test/badge', format => 'svg', status => $status);
 }
 
-sub overview_badge ($self) {
+sub _gather_overview_results ($self) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $jobs_rs = $self->schema->resultset('Jobs');
     my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);
-    my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $search_args->{limit});
+    my $limit = $search_args->{limit};
+    my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $limit);
     my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids);
-    my $status = (grep { $aggregated->{$_} } qw(failed not_complete softfailed running scheduled passed aborted))[0]
-      // 'none';
-    my %badge_result_mapping = (not_complete => 'incomplete', aborted => 'cancelled', none => 'cancelled');
-    my $badge_color_key = $badge_result_mapping{$status} // $status;
+    return ($search_args, $groups, $latest_job_ids, $limit, $archs, $results, $aggregated, $job_ids);
+}
+
+sub overview_badge ($self) {
+    my ($search_args, undef, $latest_job_ids, undef, undef, undef, $aggregated) = $self->_gather_overview_results;
+
+    state $priority = [qw(failed not_complete softfailed running scheduled passed aborted)];
+    my $status = (grep { $aggregated->{$_} } @$priority)[0] // 'none';
+
+    state $mapping = {not_complete => 'incomplete', aborted => 'cancelled', none => 'cancelled'};
+    my $badge_color_key = $mapping->{$status} // $status;
+
     $self->_render_badge($status =~ tr/_/ /r, $BADGE_RESULT_COLORS{$badge_color_key});
 }
 
@@ -878,16 +887,12 @@ sub _add_distri_and_version_to_summary ($array_to_add_parts_to, $distri, $versio
 
 # A generic query page showing test results in a configurable matrix
 sub overview ($self) {
-    my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    my ($search_args, $groups, $latest_job_ids, $limit, $archs, $results, $aggregated, $job_ids)
+      = $self->_gather_overview_results;
     my $config = OpenQA::App->singleton->config;
     my $distri = $search_args->{distri};
     my $version = $search_args->{version};
-    my $jobs_rs = $self->schema->resultset('Jobs');
-    my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);
-    my $limit = $search_args->{limit};    # one more than actual limit so we can check whether the limit was exceeded
     my $exceeded_limit = @$latest_job_ids >= $limit ? $limit - 1 : 0;
-    my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $limit);
-    my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids);
 
     # determine distri/version from job results if not explicitly specified via search args
     my @distris = keys %$results;
