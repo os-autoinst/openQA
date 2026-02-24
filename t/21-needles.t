@@ -24,6 +24,7 @@ use Mojo::JSON qw(encode_json);
 use Time::Seconds;
 use Test::Output 'combined_like';
 use Test::Mojo;
+use Test::MockObject;
 use Test::MockModule;
 use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number needledir testcasedir
   run_cmd_with_log run_cmd_with_log_return_error);
@@ -183,23 +184,47 @@ subtest 'handling relative paths in update_needle' => sub {
     };
 };
 
+my %needle = (area => [{xpos => 0, ypos => 0, width => 1, height => 1, type => ''}], tags => [{}]);
+my $real_needledir = "$FindBin::Bin/testresults/00099/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde";
+my %save_needle_args = (
+    job_id => $schema->resultset('Jobs')->create({TEST => 'foo'})->id,
+    user_id => 1,
+    needledir => "$FindBin::Bin/testresults/00099/00099926-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx",
+    needle_json => encode_json(\%needle),
+    imagedir => "$FindBin::Bin/images/347/da6",
+    imagename => '61d0c3faf37d49d33b6fc308f2.png'
+);
+
 subtest 'handling symlinks when saving needles' => sub {
     my $git_mock = Test::MockModule->new('OpenQA::Git');
     my $used_needle_dir;
     $git_mock->redefine(new => sub ($class, $args) { $used_needle_dir = $args->{dir}; die 'do not actually save' });
-    my %needle = (area => [{xpos => 0, ypos => 0, width => 1, height => 1, type => ''}], tags => [{}]);
-    my $real_needledir = "$FindBin::Bin/testresults/00099/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde";
-    my %args = (
-        job_id => $schema->resultset('Jobs')->create({TEST => 'foo'})->id,
-        user_id => 1,
-        needledir => "$FindBin::Bin/testresults/00099/00099926-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx",
-        needle_json => encode_json(\%needle),
-        imagedir => "$FindBin::Bin/images/347/da6",
-        imagename => '61d0c3faf37d49d33b6fc308f2.png'
-    );
-    throws_ok { OpenQA::Task::Needle::Save::_save_needle($t->app, undef, \%args) } qr/do not actually save/,
+    throws_ok { OpenQA::Task::Needle::Save::_save_needle($t->app, undef, \%save_needle_args) } qr/do not actually save/,
       'save needle runs as far as needed';
     is $used_needle_dir, $real_needledir, 'the real path of the needles dir is used';
+};
+
+subtest 'error cases when saving needles' => sub {
+    my $fake_job = Test::MockObject->new();
+    $fake_job->set_true('finish');
+
+    $save_needle_args{needlename} = 'foo';
+    $save_needle_args{needle_json} = '}';
+    OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
+    like + (($fake_job->call_args(1))[1])->{error}, qr/failed to validate foo.*malformed json/i,
+      'error about malformed JSON returned';
+
+    $save_needle_args{needle_json} = '{}';
+    OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
+    like + (($fake_job->call_args(2))[1])->{error}, qr/no area defined/i, 'error about missing area';
+
+    $save_needle_args{needle_json} = '{"area": [{}]}';
+    OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
+    like + (($fake_job->call_args(3))[1])->{error}, qr/no tag defined/i, 'error about missing tag';
+
+    $save_needle_args{needle_json} = '{"area": [{}], "tags":["foo"]}';
+    OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
+    like + (($fake_job->call_args(4))[1])->{error}, qr/area without xpos/i, 'error about invalid area';
 };
 
 subtest 'controller->_determine_needles_dir_for_job' => sub {
