@@ -26,6 +26,7 @@ coverage:
           - lib/OpenQA/WebAPI/Controller/
           - lib/OpenQA/Shared/
           - lib/OpenQA/Task/Job/
+          - lib/OpenQA/Task/Asset/
       tests:
         target: 100.0
         threshold: 0
