@@ -1,5 +1,5 @@
 enabled: true
-baseUrl: openqa.host
+baseUrl: openqa.internal
 useHttps: false
 key: 1234567890ABCDEF
 secret: 1234567890ABCDEF
@@ -7,6 +7,12 @@ image:
   name: registry.opensuse.org/devel/openqa/containers16.0/openqa_webui
   pullPolicy: Always
   tag: "latest"
+service:
+  type: ClusterIP
+gateway:
+  enabled: true
+  className: "eg"
+  port: 80
 postgresql:
   enabled: true
   fullnameOverride: db

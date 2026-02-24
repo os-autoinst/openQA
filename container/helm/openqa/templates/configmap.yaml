@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "openqa.fullname" . }}-configmap
+  labels:
+    {{- include "openqa.labels" . | nindent 4 }}
+data:
+  client_conf: |
+    [localhost]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
+
+    [{{ .Chart.Name }}-scheduler]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
+
+    [{{ .Chart.Name }}-websockets]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
+
+    [{{ .Release.Name }}-openqa]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
+
+  database_ini: |
+    [production]
+    dsn = DBI:Pg:dbname={{ .Values.postgresql.auth.database }};host=db;user={{ .Values.postgresql.auth.username }};password={{ .Values.postgresql.auth.password }}
+
+    [development]
+    dsn = DBI:Pg:dbname={{ .Values.postgresql.auth.database }};host=db;user={{ .Values.postgresql.auth.username }};password={{ .Values.postgresql.auth.password }}
+
+  openqa_ini: |
+    [global]
+    # change to the URL the web UI will be available under so redirection for
+    # authentication works
+    base_url = {{ .Values.useHttps | ternary "https://" "http://" }}{{ .Values.baseUrl }}
+
+    [auth]
+    method = Fake
+
+    [logging]
+    level = info
+
+    [openid]
+    httpsonly = {{ .Values.useHttps | ternary 1 0 }}
+
+  nginx_conf: |
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        upstream webui {
+            server 127.0.0.1:9526;
+        }
+
+        upstream websockets {
+            server 127.0.0.1:9527;
+        }
+
+        upstream livehandler {
+            server 127.0.0.1:9528;
+        }
+
+        upstream scheduler {
+            server 127.0.0.1:9529;
+        }
+
+        map $http_upgrade $connection_upgrade {
+            default upgrade;
+            '' close;
+        }
+
+        server {
+            listen 80;
+            server_name _;
+
+            client_max_body_size 0;
+
+            # WebSocket endpoint
+            location /api/v1/ws {
+                proxy_pass http://websockets;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection $connection_upgrade;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_read_timeout 3600s;
+                proxy_send_timeout 3600s;
+            }
+
+            # LiveHandler endpoint
+            location /livehandler {
+                proxy_pass http://livehandler;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection $connection_upgrade;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_read_timeout 3600s;
+                proxy_send_timeout 3600s;
+            }
+
+            # All other requests go to webui
+            location / {
+                proxy_pass http://webui;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+    }

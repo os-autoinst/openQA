@@ -1,0 +1,4 @@
+{{- if .Values.gateway.enabled }}
+http://{{ .Values.baseUrl }}
+Make sure the Gateway API CRDs and a gateway controller are installed in your cluster.
+{{- end }}
