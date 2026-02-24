@@ -625,21 +625,30 @@ sub _render_badge ($self, $badge_text, $badge_color, $status = 200) {
     $self->render('test/badge', format => 'svg', status => $status);
 }
 
-sub _gather_overview_results ($self) {
+sub _gather_overview_results ($self, %args) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $jobs_rs = $self->schema->resultset('Jobs');
     my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);
     my $limit = $search_args->{limit};
     my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $limit);
-    my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids);
-    return ($search_args, $groups, $latest_job_ids, $limit, $archs, $results, $aggregated, $job_ids);
+    my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids, %args);
+    return {
+        search_args => $search_args,
+        groups => $groups,
+        latest_job_ids => $latest_job_ids,
+        limit => $limit,
+        archs => $archs,
+        results => $results,
+        aggregated => $aggregated,
+        job_ids => $job_ids,
+    };
 }
 
 sub overview_badge ($self) {
-    my ($search_args, undef, $latest_job_ids, undef, undef, undef, $aggregated) = $self->_gather_overview_results;
+    my $data = $self->_gather_overview_results(only_aggregated => 1);
+    my $aggregated = $data->{aggregated};
 
-    state $priority = [qw(failed not_complete softfailed running scheduled passed aborted)];
-    my $status = (grep { $aggregated->{$_} } @$priority)[0] // 'none';
+    my $status = (grep { $aggregated->{$_} } OVERVIEW_STATUS_PRIORITY)[0] // 'none';
 
     state $mapping = {not_complete => 'incomplete', aborted => 'cancelled', none => 'cancelled'};
     my $badge_color_key = $mapping->{$status} // $status;
@@ -738,7 +747,8 @@ sub _calculate_preferred_machines ($jobs) {
 }
 
 # Take an job objects arrayref and prepare data structures for 'overview'
-sub _prepare_job_results ($self, $jobs, $job_ids) {
+sub _prepare_job_results ($self, $jobs, $job_ids, %args) {
+    my $only_aggregated = $args{only_aggregated};
     my %archs;
     my %results;
     my @job_ids;
@@ -753,31 +763,42 @@ sub _prepare_job_results ($self, $jobs, $job_ids) {
         unknown => 0
     };
     my @jobs = $jobs->all;
-    my $preferred_machines = _calculate_preferred_machines(\@jobs);
 
     # prefetch the number of available labels for those jobs
     my $schema = $self->schema;
     my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
 
-    # prefetch test suite names from job settings
-    my $job_settings
-      = $schema->resultset('JobSettings')
-      ->search({job_id => {-in => $job_ids}, key => {-in => [qw(JOB_DESCRIPTION TEST_SUITE_NAME)]}});
     my %settings_by_job_id;
-    for my $js ($job_settings->all) {
-        $settings_by_job_id{$js->job_id}->{$js->key} = $js->value;
+    my %descriptions;
+    my $failed_modules_by_job = {};
+    my $children_by_job = {};
+    my $parents_by_job = {};
+    my $preferred_machines = {};
+    my %test_suite_names;
+
+    unless ($only_aggregated) {
+        $preferred_machines = _calculate_preferred_machines(\@jobs);
+
+        # prefetch test suite names from job settings
+        my $job_settings
+          = $schema->resultset('JobSettings')
+          ->search({job_id => {-in => $job_ids}, key => {-in => [qw(JOB_DESCRIPTION TEST_SUITE_NAME)]}});
+        for my $js ($job_settings->all) {
+            $settings_by_job_id{$js->job_id}->{$js->key} = $js->value;
+        }
+
+        %test_suite_names = map { $_->id => ($settings_by_job_id{$_->id}->{TEST_SUITE_NAME} // $_->TEST) } @jobs;
+
+        # prefetch descriptions from test suites
+        my %desc_args = (in => [values %test_suite_names]);
+        my @descriptions
+          = $schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
+        %descriptions = map { $_->name => $_->description } @descriptions;
+
+        $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs($job_ids);
+        ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs($job_ids);
     }
 
-    my %test_suite_names = map { $_->id => ($settings_by_job_id{$_->id}->{TEST_SUITE_NAME} // $_->TEST) } @jobs;
-
-    # prefetch descriptions from test suites
-    my %desc_args = (in => [values %test_suite_names]);
-    my @descriptions
-      = $schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
-    my %descriptions = map { $_->name => $_->description } @descriptions;
-
-    my $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs($job_ids);
-    my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs($job_ids);
     foreach my $job (@jobs) {
         my $id = $job->id;
         my $result = $job->overview_result(
@@ -785,6 +806,9 @@ sub _prepare_job_results ($self, $jobs, $job_ids) {
             $self->param_hash('failed_modules'),
             $failed_modules_by_job->{$id} || [],
             $self->param('todo')) or next;
+
+        next if $only_aggregated;
+
         my $test = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch = $job->ARCH || 'noarch';
@@ -887,8 +911,16 @@ sub _add_distri_and_version_to_summary ($array_to_add_parts_to, $distri, $versio
 
 # A generic query page showing test results in a configurable matrix
 sub overview ($self) {
-    my ($search_args, $groups, $latest_job_ids, $limit, $archs, $results, $aggregated, $job_ids)
-      = $self->_gather_overview_results;
+    my $data = $self->_gather_overview_results;
+    my $search_args = $data->{search_args};
+    my $groups = $data->{groups};
+    my $latest_job_ids = $data->{latest_job_ids};
+    my $limit = $data->{limit};
+    my $archs = $data->{archs};
+    my $results = $data->{results};
+    my $aggregated = $data->{aggregated};
+    my $job_ids = $data->{job_ids};
+
     my $config = OpenQA::App->singleton->config;
     my $distri = $search_args->{distri};
     my $version = $search_args->{version};

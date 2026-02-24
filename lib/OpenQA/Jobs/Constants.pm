@@ -113,6 +113,8 @@ use constant META_MAPPING => {
     },
 };
 
+use constant OVERVIEW_STATUS_PRIORITY => qw(failed not_complete softfailed running scheduled passed aborted);
+
 # results for particular job modules
 use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPED, SOFTFAILED);
 
@@ -178,6 +180,7 @@ our @EXPORT = qw(
   META_RESULTS
   META_STATES
   META_MAPPING
+  OVERVIEW_STATUS_PRIORITY
   COMMON_RESULT_FILES
   TIMEOUT_EXCEEDED
   DEFAULT_JOB_PRIORITY
