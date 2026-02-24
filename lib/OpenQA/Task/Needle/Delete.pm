@@ -71,12 +71,8 @@ sub _delete_needles ($app, $user, $to_remove, $removed_ids, $errors) {
         # prevent multiple git tasks to run in parallel
         my $guard;
         unless ($guard = $app->minion->guard("git_clone_${dir}_task", 2 * ONE_HOUR)) {
-            push @$errors,
-              {
-                id => $_,
-                message => "Another git task for $dir is ongoing. Try again later.",
-              }
-              for map { $_->id } @$needles;
+            my $msg = "Another git task for $dir is ongoing. Try again later.";
+            push @$errors, {id => $_->id, message => $msg} for @$needles;
             next;
         }
         for my $needle (@$needles) {
