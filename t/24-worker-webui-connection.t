@@ -601,7 +601,7 @@ qr/Ignoring WS message from http:\/\/127\.0\.0\.1:1 with type livelog_stop and j
 $client->worker_id(undef);
 
 subtest 'status timer interval' => sub {
-    ok((DEFAULT_WORKER_TIMEOUT - MAX_TIMER) >= 60, 'DEFAULT_WORKER_TIMEOUT is bigger than MAX_TIMER at least by 60 s');
+    ok +(DEFAULT_WORKER_TIMEOUT - MAX_TIMER) >= 60, 'DEFAULT_WORKER_TIMEOUT is bigger than MAX_TIMER at least by 60 s';
 
     subtest 'default interval' => sub {
         my $interval = $client->calculate_status_update_interval;

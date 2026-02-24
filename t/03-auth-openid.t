@@ -23,9 +23,9 @@ my %session;
 my $c = Test::MockObject->new->set_always(schema => $schema);
 ok OpenQA::WebAPI::Auth::OpenID::_create_user($c, $user, 'nobody\@example.com', $user, $user), 'can call _create_user';
 $c->set_always(session => \%session);
-ok OpenQA::WebAPI::Auth::OpenID::_handle_verified($c, $vident), 'can call _handle_verified';
+ok +OpenQA::WebAPI::Auth::OpenID::_handle_verified($c, $vident), 'can call _handle_verified';
 $users->called_ok('create_user', 'new user is created for initial login');
-is(($users->call_args(2))[1], 'mordred', 'new user created with details');
+is + ($users->call_args(2))[1], 'mordred', 'new user created with details';
 $c->set_always(
     req => Test::MockObject->new->set_always(
         params => Test::MockObject->new->set_always(pairs => ['openid.op_endpoint', 'https://www.opensuse.org/openid/'])
@@ -33,7 +33,7 @@ $c->set_always(
   ->set_always(
     app => Test::MockObject->new->set_always(config => {})->set_always(log => Test::MockObject->new->set_true('error')))
   ->set_true('flash');
-is OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can call auth_response';
+is +OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can call auth_response';
 $c->app->log->called_ok('error', 'an error was logged for call without proper config');
 
 my $mock_openid_consumer = Test::MockModule->new('Net::OpenID::Consumer');

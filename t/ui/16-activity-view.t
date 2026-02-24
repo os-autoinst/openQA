@@ -147,7 +147,7 @@ subtest 'Current jobs' => sub {
         my $exp_class = $exp->[3];
         my @i = $row->children('i');
         my @class = split ' ', $i[0]->get_attribute('class');
-        ok((grep { $_ eq $exp_class } @class), "classname contains $exp_class")
+        ok + (grep { $_ eq $exp_class } @class), "classname contains $exp_class"
           or diag Data::Dumper->Dump([\@class], ['class']);
     }
     if (keys %state_result) {

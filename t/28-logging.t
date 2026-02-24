@@ -509,7 +509,7 @@ subtest 'Fallback to stderr/stdout' => sub {
     # check whether _log_msg attempted to use all ways to log before falling back
     is $log_via_channel_tried, 4, 'tried to log all four messages via the default channel';
     is $log_via_mojo_app_tried, 4, 'tried to log all four messages via Mojolicious app';
-    is(Mojo::File->new($logging_test_file1)->slurp, '', 'nothing written to logfile');
+    is +Mojo::File->new($logging_test_file1)->slurp, '', 'nothing written to logfile';
 
     # check fallback on attempt to log to invalid channel
     $utils_mock->redefine(

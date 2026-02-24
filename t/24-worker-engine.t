@@ -560,8 +560,8 @@ subtest 'link asset' => sub {
     ok -e $linked_iso, 'the iso is linked to pool directory';
     ok -e $linked_hdd, 'the hdd is linked to pool directory';
     ok -l $linked_hdd2, 'the hdd 2 is symlinked to pool directory';
-    is((stat $linked_hdd)[1], (stat $orig_hdd)[1], 'hdd is hardlinked');
-    is((stat $linked_iso)[1], (stat $orig_iso)[1], 'iso is hardlinked');
+    is +(stat $linked_hdd)[1], (stat $orig_hdd)[1], 'hdd is hardlinked';
+    is +(stat $linked_iso)[1], (stat $orig_iso)[1], 'iso is hardlinked';
     is $vars_data->{ISO}, 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
       'the value of ISO is basename when doing link';
     is $vars_data->{HDD_1}, 'foo.qcow2', 'the value of HDD_1 is basename when doing link';

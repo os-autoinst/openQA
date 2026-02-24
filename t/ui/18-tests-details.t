@@ -413,8 +413,8 @@ subtest 'render bugref links in thumbnail text windows' => sub {
       'Test bugref bsc#1234 https://fate.suse.com/321208',
       'bugref text correct';
     my @a = $driver->find_elements('#preview_container_in pre a', 'css');
-    is((shift @a)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref href correct');
-    is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
+    is +(shift @a)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref href correct';
+    is +(shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct';
 };
 
 subtest 'number of restarts displayed (two times)' => sub {

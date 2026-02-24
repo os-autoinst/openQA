@@ -71,15 +71,15 @@ wait_for_data_table($needles_table, 2);
 my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
-is((shift @tds)->get_text(), 'fixtures', 'Path is fixtures');
-is((shift @tds)->get_text(), 'inst-timezone-text.json', 'Name is right');
-is((my $module_link = shift @tds)->get_text(), 'a day ago', 'last use is right');
-is((shift @tds)->get_text(), 'about 14 hours ago', 'last match is right');
+is +(shift @tds)->get_text(), 'fixtures', 'Path is fixtures';
+is +(shift @tds)->get_text(), 'inst-timezone-text.json', 'Name is right';
+is +(my $module_link = shift @tds)->get_text(), 'a day ago', 'last use is right';
+is +(shift @tds)->get_text(), 'about 14 hours ago', 'last match is right';
 @tds = $driver->find_child_elements($trs[2], 'td', 'css');
-is((shift @tds)->get_text(), 'fixtures', 'Path is fixtures');
-is((shift @tds)->get_text(), 'never-matched.json', 'Name is right');
-is((shift @tds)->get_text(), 'a day ago', 'last use is right');
-is((shift @tds)->get_text(), 'never', 'last match is right');
+is +(shift @tds)->get_text(), 'fixtures', 'Path is fixtures';
+is +(shift @tds)->get_text(), 'never-matched.json', 'Name is right';
+is +(shift @tds)->get_text(), 'a day ago', 'last use is right';
+is +(shift @tds)->get_text(), 'never', 'last match is right';
 $driver->find_child_element($module_link, 'a', 'css')->click();
 like
   $driver->execute_script('return window.location.href'),
@@ -138,8 +138,8 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
         },
         'still two needle outstanding for deletion'
     );
-    is((shift @outstanding_needles)->get_text(), 'inst-timezone-text.json', 'right needle names displayed');
-    is((shift @outstanding_needles)->get_text(), 'never-matched.json', 'right needle names displayed');
+    is +(shift @outstanding_needles)->get_text(), 'inst-timezone-text.json', 'right needle names displayed';
+    is +(shift @outstanding_needles)->get_text(), 'never-matched.json', 'right needle names displayed';
     is scalar @{$driver->find_elements('#failed-needles li', 'css')},
       0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog';
 
