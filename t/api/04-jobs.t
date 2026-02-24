@@ -17,7 +17,7 @@ use Test::MockModule;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::App;
-use OpenQA::Constants 'WORKER_COMMAND_CANCEL';
+use OpenQA::Constants qw(WORKER_COMMAND_CANCEL DEFAULT_MAX_JOB_TIME);
 use OpenQA::Events;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
@@ -1029,43 +1029,84 @@ subtest 'array settings correctly assigned when posting job' => sub {
 
 subtest 'priority correctly assigned when posting job' => sub {
     my $default_prio = 50;
-
     # post new job and check default priority
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
     $t->json_is('/job/group', 'opensuse', 'group assigned (1)');
     $t->json_is('/job/priority', $default_prio, 'global default priority assigned');
 
-    subtest 'priority malus due to high MAX_JOB_TIME' => sub {
-        my %new_job_args = (priority => $default_prio);
+    subtest 'priority scaling due to high MAX_JOB_TIME-1' => sub {
         my $max_time = 7300;
+        my $add = 51;
         local $jobs_post_params{MAX_JOB_TIME} = $max_time;
         $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-        $t->json_is('/job/priority', $default_prio + $max_time / 100, 'increased prio value');
+        $t->json_is('/job/priority', $default_prio + $add, 'post /api: increased prio value');
 
-        local $jobs_post_params{TIMEOUT_SCALE} = 2;
+        my %new_job_args = (priority => $default_prio);
+        $add = 0;
+        local $jobs_post_params{MAX_JOB_TIME} = DEFAULT_MAX_JOB_TIME;
+        $t->app->config->{misc_limits}->{prio_throttling_parameters} = 'MAX_JOB_TIME:1000';
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
         OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
-        is $new_job_args{priority}, $default_prio + $max_time * 2 / 100, 'increased prio value with TIMEOUT_SCALE';
+        is $new_job_args{priority}, $default_prio + $add, 'no change to prio for max_job_time = DEFAULT';
+
+        %new_job_args = (priority => $default_prio);
+        $add = 118;
+        local $jobs_post_params{MAX_JOB_TIME} = DEFAULT_MAX_JOB_TIME;
+        local $jobs_post_params{TIMEOUT_SCALE} = 3;
+        $t->app->config->{misc_limits}->{prio_throttling_parameters} = 'MAX_JOB_TIME:0.0055,YYY:0.01:100000';
+        $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $add, 'increased prio for value max_job_time * TIMEOUT_SCALE';
         delete $jobs_post_params{TIMEOUT_SCALE};
 
-        my $limits = OpenQA::App->singleton->config->{misc_limits};
         %new_job_args = (priority => $default_prio);
-        $limits->{max_job_time_prio_scale} = 10;
+        $add = 0;
+        local $jobs_post_params{MAX_JOB_TIME} = 1800;
+        $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'MAX_JOB_TIME:0.005';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
         OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
-        is $new_job_args{priority}, $default_prio + $max_time / 10, 'custom scale value: increased prio value';
+        is $new_job_args{priority}, $default_prio + $add, 'no change to prio for max_job_time < DEFAULT';
 
         %new_job_args = (priority => $default_prio);
-        $limits->{max_job_time_prio_scale} = 0;
+        $add = 0;
+        local $jobs_post_params{MAX_JOB_TIME} = 11000;
+        $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'FAKE_MAX_JOB_TIME:10:100000';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
         OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
-        is $new_job_args{priority}, $default_prio, 'feature disabled: prio value unchanged';
+        is $new_job_args{priority}, $default_prio + $add,
+          'prio value remained unchanged if MAX_JOB_TIME is not configured';
+
+        %new_job_args = (priority => $default_prio);
+        $add = 0;
+        local $jobs_post_params{MAX_JOB_TIME} = 11000;
+        $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'MAX_JOB_TIME::100000';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $add,
+          'prio value unchanged being scale factor missing in configuration';
+
+        %new_job_args = (priority => $default_prio);
+        $add = 51 + 20;
+        local $jobs_post_params{MAX_JOB_TIME} = DEFAULT_MAX_JOB_TIME + 100;
+        local $jobs_post_params{QEMURAM} = 4096;
+        $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_parameters} = 'QEMURAM:0.01:2048, MAX_JOB_TIME:0.007';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling(\%jobs_post_params, \%new_job_args);
+        is $new_job_args{priority}, $default_prio + $add, 'increased prio due to high MAX_JOB_TIME and QEMURAM';
     };
 
     subtest 'priority scaled up due to QEMURAM demand' => sub {
         my %new_job_args = (priority => $default_prio);
         my $add = 20;
         local $jobs_post_params{QEMURAM} = 4096;
-
         my $config = OpenQA::Setup::read_config($t->app);
         $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
         $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
@@ -1077,7 +1118,6 @@ subtest 'priority correctly assigned when posting job' => sub {
         my %new_job_args = (priority => $default_prio);
         my $add = -10;
         local $jobs_post_params{QEMURAM} = 1024;
-
         my $config = OpenQA::Setup::read_config($t->app);
         $config->{misc_limits}->{prio_throttling_parameters} = 'XXX :0.2, QEMURAM:0.01:2048';
         $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
