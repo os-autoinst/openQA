@@ -1,0 +1,3 @@
+[general]
+contrib=contrib-title-conventional-commits
+ignore=body-min-length,body-is-missing
