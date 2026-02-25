@@ -12,6 +12,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Cwd qw(abs_path);
 use OpenQA::Schema;
 require OpenQA::Test::Database;
+use OpenQA::Jobs::Constants;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Task::Needle::Save;
 use OpenQA::Task::Needle::Scan;
@@ -190,8 +191,9 @@ my $needle_json = encode_json(\%needle);
 my $needle_dir = "$FindBin::Bin/testresults/00099/00099926-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx";
 my $real_needledir = "$FindBin::Bin/testresults/00099/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde";
 my $image_dir = "$FindBin::Bin/images/347/da6";
+my $openqa_job = $schema->resultset('Jobs')->create({TEST => 'foo'});
 my %save_needle_args = (
-    job_id => $schema->resultset('Jobs')->create({TEST => 'foo'})->id,
+    job_id => $openqa_job->id,
     user_id => 1,
     needledir => $needle_dir,
     needle_json => $needle_json,
@@ -258,6 +260,15 @@ subtest 'error cases when saving needles' => sub {
     undef $copy_mock;
     OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
     like + (($fake_job->call_args(9))[1])->{error}, qr/unable to write.*foo\.json/i, 'error when writing JSON handled';
+};
+
+subtest 'handling developer session when saving needles' => sub {
+    my $fake_job = Test::MockObject->new();
+    $fake_job->set_true(qw(finish));
+    $openqa_job->update({state => RUNNING});
+    $schema->resultset('DeveloperSessions')->create({job_id => $openqa_job->id, user_id => 1});
+    OpenQA::Task::Needle::Save::_save_needle($t->app, $fake_job, \%save_needle_args);
+    is +(($fake_job->call_args(1))[1])->{developer_session_job_id}, $save_needle_args{job_id}, 'job ID assigned';
 };
 
 subtest 'controller->_determine_needles_dir_for_job' => sub {
