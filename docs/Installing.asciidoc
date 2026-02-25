@@ -273,6 +273,47 @@ zypper in openQA-bootstrap
 systemd-run -tM openqa1 /bin/bash # start a shell in the container
 -------------------------------------------------------------------------------
 
+=== openQA in a virtual machine 
+
+You can also set up a ready-to-use **openQA** instance as a virtual machine
+in your computer.
+
+The images are available directly from the https://openqa.opensuse.org[o3] site.
+Download the HDD image `opensuse-Tumbleweed-x86_64@uefi-4G-<...>.qcow2` (~3.2 GB)
+from the _Assets_ in the test scenario https://openqa.opensuse.org/tests/latest?arch=x86_64&distri=openqa&flavor=dev&machine=uefi-4G&test=openqa_install%2Bpublish&version=Tumbleweed#downloads[openqa_install+publish].
+
+==== The VM
+
+The downloaded image can be used to launch a local VM from, running the
+_openSUSE Tumbleweed_ system, a graphical user interface and a network access
+to your local machine's networks.
+
+Upon starting the VM, you can login as the root user. The login credentials
+are available on https://github.com/os-autoinst/os-autoinst-distri-opensuse/blob/master/lib/main_common.pm[os-autoinst-distri-opensuse] by searching for `$testapi::password`. 
+
+You can also access the VM via SSH from a console on your machine
+(`ssh root@<VM_IP_ADDRESS>`), after properly configuring `ssh` in the VM and
+your computer.
+
+==== The openQA instance
+
+The system features a pre-configured **openQA** instance, which includes the
+web UI at http://localhost/, a worker, and a PostgreSQL database. To check the
+services, run on a VM terminal: `systemctl status openqa-* openqa-worker@1
+postgresql`
+
+You can access the web UI via the Firefox browser within the VM's graphical
+environment and log in as the default openQA Demo user.
+Once you have the VM's IP address, you can also access the web UI from any
+browser on your machine by navigating to http://<VM_IP>/.
+
+The drop-down menu in the UI top-left corner allows you to open an _Example test_
+page, to run a simple test and verify the setup.
+
+Other tests can be cloned via the VM console or an SSH session from your machine,
+using `openqa-clone-job`, getting the job settings from o3 and instantiating
+the test execution on the local VM instance (`--from openqa.opensuse.org --host
+localhost`; refer to the `openqa-clone-job` documentation).
 
 == Custom installation - repositories and procedure
 [id="custom_installation"]
