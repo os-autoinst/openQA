@@ -137,9 +137,14 @@ sub register ($self, $app, $config) {
 
     $app->helper(
         favicon_url => sub ($c, $suffix) {
-            return $c->icon_url("logo$suffix") unless my $job = $c->stash('job');
-            my $status = $job->status;
-            return $c->icon_url("logo-$status$suffix");
+            if (my $job = $c->stash('job')) {
+                my $status = $job->status;
+                return $c->icon_url("logo-$status$suffix");
+            }
+            if (my $agg_status = $c->stash('aggregate_status')) {
+                return $c->icon_url("logo-aggregate-$agg_status$suffix") if $agg_status ne 'none';
+            }
+            return $c->icon_url("logo$suffix");
         });
 
     $app->helper(

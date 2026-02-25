@@ -16,7 +16,7 @@
 % }
 <div>
     <h2>Test result overview</h2>
-    <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{not_complete}) ? 'border-danger' : 'border-success' %>">
+    <div id="summary" class="card <%= ($aggregate_status =~ /^(?:failed|not_complete)$/) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
             Overall Summary of
             % if (@$summary_parts) {

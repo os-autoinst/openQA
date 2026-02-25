@@ -282,6 +282,22 @@ test-unit-and-integration: node_modules
 setup-database:
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 
+define RUN_SERVICE_TEST_DB
+	OPENQA_BASEDIR=t/data \
+	OPENQA_DATABASE=test \
+	OPENQA_WEBUI_MODE=test \
+	TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)" \
+	$(1)
+endef
+
+.PHONY: run-webui-test-db
+run-webui-test-db: setup-database
+	$(call RUN_SERVICE_TEST_DB,script/openqa-webui-daemon)
+
+.PHONY: run-gru-test-db
+run-gru-test-db: setup-database
+	$(call RUN_SERVICE_TEST_DB,script/openqa-gru)
+
 # prepares running the tests within a container (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables
 # note: This is supposed to run within the container unlike `launch-container-to-run-tests-within`
@@ -333,14 +349,14 @@ coverage-report-html:
 coverage-html: coverage
 	$(MAKE) coverage-report-html
 
-public/favicon.ico: assets/images/logo.svg
+public/favicon.ico: $(wildcard assets/images/*.svg)
 	for w in 16 32 64 128; do \
 		(cd assets/images/ && for i in *.svg; do \
-			inkscape -e $${i%.svg}-$$w.png -w $$w $$i; \
+			inkscape -o $${i%.svg}-$$w.png -w $$w $$i; \
 		done); \
 	done
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
-	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png
+	rm assets/images/*-32.png assets/images/*-64.png assets/images/*-128.png
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone

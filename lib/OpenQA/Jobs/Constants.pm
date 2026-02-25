@@ -125,8 +125,11 @@ use constant
   RESULT_CLEANUP_LOG_FILES => COMMON_RESULT_LOG_FILES,
   qw(serial0.txt serial_terminal.txt serial_terminal_user.txt video_time.vtt);
 
-# defaults for new jobs that are useful outside the schema
+# default for new jobs that are useful outside the schema
 use constant DEFAULT_JOB_PRIORITY => 50;
+
+# priority for status aggregation (worst result first)
+use constant STATUS_PRIORITY => (FAILED, NOT_COMPLETE, SOFTFAILED, ABORTED, RUNNING, SCHEDULED, NONE);
 
 # the "column" to query for a tag ID in accordance with parse_tags_from_comments() and _important_builds()
 use constant TAG_ID_COLUMN => "concat(VERSION, '-', BUILD)";
@@ -183,6 +186,7 @@ our @EXPORT = qw(
   DEFAULT_JOB_PRIORITY
   RESULT_CLEANUP_LOG_FILES
   TAG_ID_COLUMN
+  STATUS_PRIORITY
 );
 
 # mapping from any specific job state/result to a meta state/result

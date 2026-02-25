@@ -214,6 +214,27 @@
 ! logo-aborted-16.png
 < images/logo-cancelled-16.png
 
+! logo-aggregate-passed-16.png
+< images/logo-aggregate-passed-16.png
+
+! logo-aggregate-failed-16.png
+< images/logo-aggregate-failed-16.png
+
+! logo-aggregate-softfailed-16.png
+< images/logo-aggregate-softfailed-16.png
+
+! logo-aggregate-not_complete-16.png
+< images/logo-aggregate-not_complete-16.png
+
+! logo-aggregate-aborted-16.png
+< images/logo-aggregate-aborted-16.png
+
+! logo-aggregate-scheduled-16.png
+< images/logo-aggregate-scheduled-16.png
+
+! logo-aggregate-running-16.png
+< images/logo-aggregate-running-16.png
+
 ! logo.svg
 < images/logo.svg
 
@@ -246,6 +267,27 @@
 
 ! logo-aborted.svg
 < images/logo-cancelled.svg
+
+! logo-aggregate-passed.svg
+< images/logo-aggregate-passed.svg
+
+! logo-aggregate-failed.svg
+< images/logo-aggregate-failed.svg
+
+! logo-aggregate-softfailed.svg
+< images/logo-aggregate-softfailed.svg
+
+! logo-aggregate-not_complete.svg
+< images/logo-aggregate-not_complete.svg
+
+! logo-aggregate-aborted.svg
+< images/logo-aggregate-aborted.svg
+
+! logo-aggregate-scheduled.svg
+< images/logo-aggregate-scheduled.svg
+
+! logo-aggregate-running.svg
+< images/logo-aggregate-running.svg
 
 ! terminal.svg
 < images/terminal.svg
