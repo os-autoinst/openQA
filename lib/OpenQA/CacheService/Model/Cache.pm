@@ -70,8 +70,8 @@ sub init ($self) {
     unless (-e $db_file) {
         $log->info(qq{Creating cache directory tree for "$location"});
         $location->remove_tree({keep_root => 1});
-        $location->child('tmp')->make_path;
     }
+	$location->child('tmp')->make_path;
     $self->sqlite->migrations->migrate;
 
     # Take care of pending leftovers
