@@ -266,11 +266,6 @@ sub _search_modules ($self, $module_re) {
     return \@results;
 }
 
-sub _conds_for_job_setttings ($schema, $job_settings) {
-    my $query = $schema->resultset('JobSettings')->query_for_settings($job_settings)->get_column('job_id')->as_query;
-    return {'me.id' => {-in => $query}};
-}
-
 sub _prepare_complex_query_search_args ($self, $args) {
     my @conds;
     my @joins;
@@ -355,7 +350,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
         }
     }
 
-    push @conds, _conds_for_job_setttings($schema, $job_settings) if keys %$job_settings;
+    push @conds, $schema->resultset('JobSettings')->conds_for_settings($job_settings) if keys %$job_settings;
 
     if (defined(my $c = $args->{comment_text})) {
         push @conds, \['(select id from comments where job_id = me.id and text like ? limit 1) is not null', "%$c%"];
@@ -434,17 +429,13 @@ sub cancel_by_settings (
     my $schema = $rsource->schema;
     # preserve original settings by deep copy
     my %precond = %{$settings};
-    my %cond;
-
+    my %main_cond = (state => [OpenQA::Jobs::Constants::PENDING_STATES]);
+    my @all_conds = (\%main_cond);
     for my $key (OpenQA::Schema::Result::Jobs::MAIN_SETTINGS) {
-        $cond{$key} = delete $precond{$key} if defined $precond{$key};
+        $main_cond{$key} = delete $precond{$key} if defined $precond{$key};
     }
-    if (keys %precond) {
-        my $subquery = $schema->resultset('JobSettings')->query_for_settings(\%precond);
-        $cond{'me.id'} = {-in => $subquery->get_column('job_id')->as_query};
-    }
-    $cond{state} = [OpenQA::Jobs::Constants::PENDING_STATES];
-    my $jobs = $schema->resultset('Jobs')->search(\%cond);
+    push @all_conds, $schema->resultset('JobSettings')->conds_for_settings(\%precond) if keys %precond;
+    my $jobs = $schema->resultset('Jobs')->search({-and => \@all_conds});
     my $jobs_to_cancel;
     if ($newbuild) {
         # filter out all jobs that have any comment (they are considered 'important') ...

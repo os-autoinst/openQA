@@ -57,34 +57,18 @@ sub jobs_for_setting ($self, $options) {
     return \@jobs;
 }
 
-=head2 query_for_settings
+sub _cond_for_setting ($key, $value) {
+    {'me.key' => $key, 'me.value' => ($value =~ /^:\w+:/) ? {like => "$&%"} : $value};
+}
 
-=over
+sub query_for_setting ($self, $key, $value) {
+    $value
+      ? ({'me.id' => {-in => $self->search(_cond_for_setting($key, $value))->get_column('job_id')->as_query}})
+      : ();
+}
 
-=item Return value: ResultSet (to be used as subquery)
-
-=back
-
-Given a perl hash, will create a ResultSet of job_settings
-
-=cut
-
-sub query_for_settings ($self, $args) {
-    my @conds;
-    # Search into the following job_settings
-    for my $setting (keys %$args) {
-        next unless $args->{$setting};
-        # for dynamic self joins we need to be creative ;(
-        my $tname = 'me';
-        my $setting_value = ($args->{$setting} =~ /^:\w+:/) ? {'like', "$&%"} : $args->{$setting};
-        push(
-            @conds,
-            {
-                "$tname.key" => $setting,
-                "$tname.value" => $setting_value
-            });
-    }
-    return $self->search({-and => \@conds});
+sub conds_for_settings ($self, $settings) {
+    {-and => [map { $self->query_for_setting($_, $settings->{$_}) } keys %$settings]};
 }
 
 1;

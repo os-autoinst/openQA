@@ -504,19 +504,31 @@ subtest 'Inverted filters' => sub {
 subtest 'Filtering by job settings' => sub {
     $schema->txn_begin;
 
-    my @basic_settings = (TEST => 'test_job', VERSION => 'test_version', DISTRI => 'test_distri');
-    my @search_params = (distri => 'test_distri', version => 'test_version');
-    my @jobs = (create_job(@basic_settings), create_job(@basic_settings));
+    my @basic_settings = (VERSION => 'test_version', DISTRI => 'test_distri');
+    my @search_params = (distri => 'test_distri', version => 'test_version', job_setting => ());
+    my @jobs = (create_job(TEST => 'test_job_1', @basic_settings), create_job(TEST => 'test_job_2', @basic_settings));
     $jobs[0]->settings->create({key => 'MY_SETTING', value => 'my_value'});
+    $jobs[0]->settings->create({key => 'ANOTHER_SETTING', value => 'another_value'});
     $jobs[1]->settings->create({key => 'MY_SETTING', value => 'other_value'});
+    $jobs[1]->settings->create({key => 'ANOTHER_SETTING', value => 'another_value'});
+    $jobs[1]->settings->create({key => 'ANOTHER_SETTING', value => 'yet_another_value'});
 
-    $t->get_ok('/tests/overview', form => {@search_params, job_setting => 'MY_SETTING=my_value'})->status_is(200);
+    $t->get_ok('/tests/overview', form => {@search_params, 'MY_SETTING=my_value'})->status_is(200);
     $t->element_exists('#res-' . $jobs[0]->id, 'job with custom setting found');
     $t->element_exists_not('#res-' . $jobs[1]->id, 'job with different setting NOT found');
 
-    $t->get_ok('/tests/overview', form => {@search_params, job_setting => 'MY_SETTING=different_value'});
-    $t->status_is(200);
+    $t->get_ok('/tests/overview', form => {@search_params, 'MY_SETTING=different_value'})->status_is(200);
     $t->element_exists_not('#res-' . $_->id, 'all jobs filtered out') for @jobs;
+
+    $t->get_ok('/tests/overview', form => {@search_params, ['MY_SETTING=my_value', 'ANOTHER_SETTING=another_value']});
+    $t->status_is(200, 'can filter by more than one job setting');
+    $t->element_exists('#res-' . $jobs[0]->id, 'job with multiple custom setting found');
+    $t->element_exists_not('#res-' . $jobs[1]->id, 'job where only one setting applies NOT found');
+
+    $t->get_ok('/tests/overview', form => {@search_params, [map { "ANOTHER_SETTING=${_}another_value" } '', 'yet_']});
+    $t->status_is(200, 'can filter by the same job setting more than one time');
+    $t->element_exists_not('#res-' . $jobs[0]->id, 'job where only one setting value applies NOT found');
+    $t->element_exists('#res-' . $jobs[1]->id, 'job with multiple custom setting values found');
 
     $schema->txn_rollback;
 };

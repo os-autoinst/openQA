@@ -152,6 +152,8 @@ subtest 'restricted query' => sub {
     is scalar(@{$t->tx->res->json->{jobs}}), 11, 'query for existing jobs by build';
     $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
     is scalar(@{$t->tx->res->json->{jobs}}), 3, 'query for existing jobs by hdd_1';
+    $t->get_ok('/api/v1/jobs?iso=openSUSE-Factory-DVD-x86_64-Build0048-Media.iso&hdd_1=openSUSE-13.1-x86_64.hda');
+    is scalar(@{$t->tx->res->json->{jobs}}), 2, 'filters can be combined';
 };
 
 subtest 'argument combinations' => sub {
@@ -1397,7 +1399,7 @@ subtest 'filter by worker_class' => sub {
     $query->query(worker_class => ':UFP:');
     $t->get_ok($query->path_query)->status_is(200);
     $res = $t->tx->res->json;
-    ok @{$res->{jobs}} eq 1, 'Known worker class group exists, and returns one job';
+    is @{$res->{jobs}}, 1, 'Known worker class group exists, and returns one job';
 
     $t->json_is('/jobs/0/settings/WORKER_CLASS' => ':UFP:NCC1701F', 'Correct worker class');
 };
