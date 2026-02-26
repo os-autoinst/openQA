@@ -653,7 +653,15 @@ sub overview_badge ($self) {
     state $mapping = {not_complete => 'incomplete', aborted => 'cancelled', none => 'cancelled'};
     my $badge_color_key = $mapping->{$status} // $status;
 
-    $self->_render_badge($status =~ tr/_/ /r, $BADGE_RESULT_COLORS{$badge_color_key});
+    my $badge_text = $status =~ tr/_/ /r;
+    if ($self->param('show_build')) {
+        if (my $build = $data->{search_args}->{build}) {
+            my $build_str = ref $build eq 'ARRAY' ? (@$build == 1 ? $build->[0] : 'multi') : $build;
+            $badge_text = "$build_str: $badge_text";
+        }
+    }
+
+    $self->_render_badge($badge_text, $BADGE_RESULT_COLORS{$badge_color_key});
 }
 
 sub job_next_previous_ajax ($self) {

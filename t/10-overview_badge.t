@@ -22,6 +22,9 @@ $t->get_ok('/tests/overview/badge?build=87.5011')->status_is(200)->content_like(
 $t->get_ok('/tests/overview/badge?build=0048')->status_is(200)->content_like(qr/failed/);
 $t->get_ok('/tests/overview/badge?distri=nonexistent')->status_is(200)->content_like(qr/none/);
 $t->get_ok('/tests/overview/badge?groupid=1001&build=0091')->status_is(200)->content_like(qr/running/);
+$t->get_ok('/tests/overview/badge?build=0048&show_build=1')->status_is(200)->content_like(qr/0048: failed/);
+$t->get_ok('/tests/overview/badge?build=0048&build=87.5011&show_build=1')->status_is(200)
+  ->content_like(qr/multi: failed/);
 
 subtest 'svg badge' => sub {
     $t->get_ok('/tests/99927/badge')->status_is(200)->content_type_is('image/svg+xml')
