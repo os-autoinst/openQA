@@ -350,6 +350,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('modules', 'comma_separated');
     $v->optional('flavor', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(1, undef);
+    $v->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
     $v->optional('t')->datetime;
 
     # add simple query params to search args
@@ -442,8 +443,9 @@ sub _compose_job_overview_search_args ($c) {
     # allow filtering by comment text
     if (my $c = $v->param('comment')) { $search_args{comment_text} = $c }
 
-    # allow filtering by several job settings
+    # allow filtering by job settings
     $search_args{filters} = $c->compute_overview_filtering_params;
+    $search_args{job_settings} = {map { split('=', $_, 2) } @{$v->every_param('job_setting')}};
 
     return (\%search_args, \@groups);
 }

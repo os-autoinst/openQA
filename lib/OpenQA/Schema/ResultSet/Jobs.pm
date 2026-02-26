@@ -266,9 +266,15 @@ sub _search_modules ($self, $module_re) {
     return \@results;
 }
 
+sub _conds_for_job_setttings ($schema, $job_settings) {
+    my $query = $schema->resultset('JobSettings')->query_for_settings($job_settings)->get_column('job_id')->as_query;
+    return {'me.id' => {-in => $query}};
+}
+
 sub _prepare_complex_query_search_args ($self, $args) {
     my @conds;
     my @joins;
+    my $job_settings = $args->{job_settings} // {};
 
     if ($args->{module_re}) {
         my $modules = $self->_search_modules($args->{module_re});
@@ -336,17 +342,11 @@ sub _prepare_complex_query_search_args ($self, $args) {
         push(@conds, -or => \@likes);
     }
     else {
-        my %js_settings;
         # Check if the settings are between the arguments passed via query url
         # they come in lowercase, so make sure $key is lc'ed
         for my $key (qw(ISO HDD_1 WORKER_CLASS)) {
-            $js_settings{$key} = $args->{lc $key} if defined $args->{lc $key};
+            $job_settings->{$key} = $args->{lc $key} if defined $args->{lc $key};
         }
-        if (keys %js_settings) {
-            my $subquery = $schema->resultset('JobSettings')->query_for_settings(\%js_settings);
-            push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
-        }
-
         for my $key (qw(distri version flavor arch test machine)) {
             push(@conds, {'me.' . uc($key) => $args->{$key}}) if $args->{$key};
         }
@@ -354,6 +354,8 @@ sub _prepare_complex_query_search_args ($self, $args) {
             push @conds, {'me.BUILD' => ref $build eq 'ARRAY' ? {-in => $build} : $build};
         }
     }
+
+    push @conds, _conds_for_job_setttings($schema, $job_settings) if keys %$job_settings;
 
     if (defined(my $c = $args->{comment_text})) {
         push @conds, \['(select id from comments where job_id = me.id and text like ? limit 1) is not null', "%$c%"];

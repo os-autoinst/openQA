@@ -501,6 +501,26 @@ subtest 'Inverted filters' => sub {
     like $summary, qr/Scheduled: 2/i, 'Scheduled jobs remain';
 };
 
+subtest 'Filtering by job settings' => sub {
+    $schema->txn_begin;
+
+    my @basic_settings = (TEST => 'test_job', VERSION => 'test_version', DISTRI => 'test_distri');
+    my @search_params = (distri => 'test_distri', version => 'test_version');
+    my @jobs = (create_job(@basic_settings), create_job(@basic_settings));
+    $jobs[0]->settings->create({key => 'MY_SETTING', value => 'my_value'});
+    $jobs[1]->settings->create({key => 'MY_SETTING', value => 'other_value'});
+
+    $t->get_ok('/tests/overview', form => {@search_params, job_setting => 'MY_SETTING=my_value'})->status_is(200);
+    $t->element_exists('#res-' . $jobs[0]->id, 'job with custom setting found');
+    $t->element_exists_not('#res-' . $jobs[1]->id, 'job with different setting NOT found');
+
+    $t->get_ok('/tests/overview', form => {@search_params, job_setting => 'MY_SETTING=different_value'});
+    $t->status_is(200);
+    $t->element_exists_not('#res-' . $_->id, 'all jobs filtered out') for @jobs;
+
+    $schema->txn_rollback;
+};
+
 subtest 'Meta-filters' => sub {
     $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&result=complete')->status_is(200);
     my $summary = get_summary;
