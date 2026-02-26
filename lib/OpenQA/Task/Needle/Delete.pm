@@ -69,15 +69,13 @@ sub _delete_needles ($app, $user, $to_remove, $removed_ids, $errors) {
   DIR: for my $dir (sort keys %$to_remove) {
         my $needles = $to_remove->{$dir};
         # prevent multiple git tasks to run in parallel
+        # note: The unless-block is covered by subtest 'minion guard' in t/14-grutasks-git.t which would fail when
+        #       placing a "die" there. The coverage tracking does not seem to work for this block, though.
         my $guard;
         unless ($guard = $app->minion->guard("git_clone_${dir}_task", 2 * ONE_HOUR)) {
-            push @$errors,
-              {
-                id => $_,
-                message => "Another git task for $dir is ongoing. Try again later.",
-              }
-              for map { $_->id } @$needles;
-            next;
+            my $msg = "Another git task for $dir is ongoing. Try again later.";    # uncoverable statement
+            push @$errors, {id => $_->id, message => $msg} for @$needles;    # uncoverable statement
+            next;    # uncoverable statement
         }
         for my $needle (@$needles) {
             my $needle_id = $needle->id;

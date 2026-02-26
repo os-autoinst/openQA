@@ -13,7 +13,7 @@ use Test::Warnings;
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::Utils 'schedule_iso';
+use OpenQA::Test::Utils qw(schedule_iso run_gru_job);
 use OpenQA::Utils 'locate_asset';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
@@ -65,6 +65,11 @@ sub check_job_setting ($t, $rsp, $setting, $expected, $desc) {
 sub job_gru ($job_id) { $gru_dependencies->search({job_id => $job_id})->single->gru_task->id }
 
 my $expected_job_count = 10;
+
+# Assume the asset directory is not writeable
+my $job = run_gru_job($t->app, download_asset => ['http://foo', '/does/not/exist', 0]);
+is $job->{result}, 'Cannot write to asset directory "/does/not"', 'job fails if asset directory is not writeable'
+  or always_explain $job;
 
 # Schedule download of an existing ISO
 $rsp = schedule_iso($t, {%iso, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'});

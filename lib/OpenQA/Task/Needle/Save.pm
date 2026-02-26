@@ -11,6 +11,7 @@ use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Task::SignalGuard;
 use OpenQA::Utils;
+use Mojo::File 'path';
 use Mojo::JSON 'decode_json';
 use Feature::Compat::Try;
 use Time::Seconds 'ONE_HOUR';
@@ -29,17 +30,15 @@ sub _json_validation {
         $e =~ s@at /usr/.*$@@;    # do not print perl module reference
         die "syntax error: $e";
     }
-    if (!exists $djson->{area} || !exists $djson->{area}[0]) {
-        die 'no area defined';
-    }
-    if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
-        die 'no tag defined';
-    }
-    my @not_ocr_area = grep { $_->{type} ne 'ocr' } @{$djson->{area}};
+    die 'needle JSON is no object' unless ref $djson eq 'HASH';
+    die 'no area defined' unless ref $djson->{area} eq 'ARRAY' && exists $djson->{area}[0];
+    die 'no tag defined' unless ref $djson->{tags} eq 'ARRAY' && exists $djson->{tags}[0];
+
+    my @not_ocr_area = grep { ($_->{type} // '') ne 'ocr' } @{$djson->{area}};
     die 'Cannot create a needle with only OCR areas' if scalar(@not_ocr_area) == 0;
 
-    my $areas = $djson->{area};
-    foreach my $area (@$areas) {
+    foreach my $area (@{$djson->{area}}) {
+        die 'area is no object' unless ref $area eq 'HASH';
         die 'area without xpos' unless exists $area->{xpos};
         die 'area without ypos' unless exists $area->{ypos};
         die 'area without type' unless exists $area->{type};
@@ -123,22 +122,21 @@ sub _save_needle ($app, $minion_job, $args) {
     }
 
     # copy image
-    my $success = 1;
+    my $error;
     if (!($imagepath eq "$baseneedle.png") && !copy($imagepath, "$baseneedle.png")) {
         $app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
-        $success = 0;
+        $error = $!;
     }
-    if ($success) {
-        open(my $J, '>', "$baseneedle.json") or $success = 0;
-        if ($success) {
-            print($J $needle_json);
-            close($J);
+    if (!$error) {
+        try {
+            path("$baseneedle.json")->spew($needle_json);
         }
-        else {
-            $app->log->error("Writing needle $baseneedle.json failed: $!");
+        catch ($e) {
+            $app->log->error("Writing needle $baseneedle.json failed: $e");
+            $error = $e;
         }
     }
-    return $minion_job->fail({error => "<strong>Error creating/updating needle:</strong><br>$!."}) unless $success;
+    return $minion_job->fail({error => "<strong>Error creating/updating needle:</strong><br>$error."}) if $error;
 
     try {
         _commit_needle_in_git_repo($app, $git, $needlename, $openqa_job, $commit_message);
