@@ -49,7 +49,7 @@ requires 'JSON::Validator';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'LWP::Protocol::https';
 requires 'LWP::UserAgent';
-requires 'MCP';
+requires 'MCP', '>= 0.80.0';
 requires 'Minion', '>= 10.25';
 requires 'Minion::Backend::SQLite', '>= 5.0.7';
 requires 'Module::Load::Conditional';
