@@ -169,41 +169,50 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     return $job;
 }
 
+sub _priority_update ($value, $throt_config, $job_args) {
+    my $scale = $throt_config->{scale} // 0;
+    my $reference = $throt_config->{reference} // 0;
+    my $prio = int(($value - $reference) * $scale);
+    $job_args->{priority} += $prio;
+    return ": $prio, scale: $scale" . ($reference ? ", reference: $reference;" : ';');
+}
+
+sub _max_job_time_prio ($factor, $time, $throt_config, $job_args) {
+    my $info = '';
+    $factor = (looks_like_number $factor && $factor > 0) ? $factor : 1;
+    $time = (looks_like_number $time && $time > 0) ? $time : DEFAULT_MAX_JOB_TIME;
+    $time = (int($time * $factor));
+    if ($time > DEFAULT_MAX_JOB_TIME && defined $throt_config) {
+        $info = 'MAX_JOB_TIME' . _priority_update($time, $throt_config, $job_args);
+    }
+    return $info;
+}
+
 sub _apply_prio_throttling ($settings, $new_job_args) {
     my $debug_msg;
-    my $max_job_time = looks_like_number $settings->{MAX_JOB_TIME} ? $settings->{MAX_JOB_TIME} : 0;
-    my $timeout_scale = looks_like_number $settings->{TIMEOUT_SCALE} ? $settings->{TIMEOUT_SCALE} : 0;
-    $max_job_time *= $timeout_scale if $max_job_time and $timeout_scale > 1;
-    if ($max_job_time and $max_job_time > DEFAULT_MAX_JOB_TIME) {
-        if (my $scale = OpenQA::App->singleton->config->{misc_limits}->{max_job_time_prio_scale}) {
-            my $malus = int($max_job_time / $scale);
-            $debug_msg = sprintf 'Adding priority malus to newly created job (old: %d, malus: %s)',
-              $new_job_args->{priority}, $malus;
-            $new_job_args->{priority} += $malus;
-        }
-    }
-
+    my $base_prio = $new_job_args->{priority} // 0;
     if (my $throttling
         = OpenQA::App->singleton && OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_data})
     {
-        my $throttling_info;
+        my $throttling_info = _max_job_time_prio(
+            $settings->{TIMEOUT_SCALE},
+            $settings->{MAX_JOB_TIME},
+            $throttling->{MAX_JOB_TIME},
+            $new_job_args
+        );
         for my $resource (keys %$throttling) {
-            next unless defined $settings->{$resource};
-            my $scale = $throttling->{$resource}->{scale};
-            my $reference = $throttling->{$resource}->{reference};
-            my $prio = int(($settings->{$resource} - $reference) * $scale);
-            $throttling_info .= "$resource, scale: $scale" . ($reference ? ", reference: $reference;" : ';');
-            $new_job_args->{priority} += $prio;
+            next if (!defined $settings->{$resource} || $resource eq 'MAX_JOB_TIME');
+            $throttling_info
+              .= $resource . _priority_update($settings->{$resource}, $throttling->{$resource}, $new_job_args);
         }
         $debug_msg .= sprintf(
-            '. Adjusting job priority by %s based on resource requirement(s): %s',
-            $new_job_args->{priority},
+            '- Adjusting job priority from %d to %d based on resource requirement(s): %s',
+            $base_prio, $new_job_args->{priority},
             $throttling_info
         ) if $throttling_info;
     }
     return $debug_msg;
 }
-
 
 sub _handle_dependency_settings ($self, $settings, $new_job_args) {
     my $job_settings = $self->result_source->schema->resultset('JobSettings');
