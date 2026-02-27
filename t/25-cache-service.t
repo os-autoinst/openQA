@@ -16,7 +16,10 @@ BEGIN {
     $ENV{OPENQA_CACHE_ATTEMPTS} = 3;
     $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0;
     $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
+    $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
+    $ENV{OPENQA_BASE_PORT} = 20000 + int(rand(10000));
+    $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
 
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
@@ -79,7 +82,7 @@ sub start_servers () {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     perform_minion_jobs($t->app->minion);
-    wait_for_or_bail_out { $cache_client->info->available } 'cache service';
+    wait_for_or_bail_out { $cache_client->info->available } 'cache service', {interval => 0.5};
 }
 
 sub test_default_usage ($id, $asset) {
@@ -137,17 +140,19 @@ sub test_sync ($run) {
 }
 
 sub test_download ($id, $asset) {
-    unlink path($cachedir)->child($asset);
+    unlink path($cachedir, "localhost")->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     ok !$cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
 
     my $status = $cache_client->status($asset_request);
     perform_minion_jobs($t->app->minion);
-    $status = $cache_client->status($asset_request) until !$status->is_downloading;
+    wait_for_or_bail_out { !$cache_client->status($asset_request)->is_downloading } "asset";
+    $status = $cache_client->status($asset_request);
 
     # And then goes to PROCESSED state
-    ok $status->is_processed, 'only other state is processed';
+    ok !$status->has_error, 'no error in status' or die always_explain $status;
+    ok $status->is_processed, 'only other state is processed' or die always_explain $status;
     ok exists $status->data->{has_download_error}, 'whether a download error happened is added to status info';
     ok !$status->data->{has_download_error}, 'no download error occurred';
 
@@ -327,13 +332,15 @@ subtest 'Race for same asset' => sub {
 
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
     my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
+    my $worker = cache_minion_worker;
+    $worker->start;
+
     my $q = queue;
     $q->pool->maximum_processes($concurrent);
     $q->queue->maximum_processes($tot_proc);
 
     my $concurrent_test = sub {
         if (!$cache_client->enqueue($asset_request)) {
-            perform_minion_jobs($t->app->minion);
             wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
             my $ret = $cache_client->asset_exists('localhost', $asset);
             Devel::Cover::report() if Devel::Cover->can('report');
@@ -344,6 +351,7 @@ subtest 'Race for same asset' => sub {
     $q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(1)) for 1 .. $tot_proc;
 
     $q->consume();
+    $worker->stop;
     is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
     $q->done->each(
         sub {
@@ -359,7 +367,7 @@ subtest 'Default usage' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
     my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($asset);
+    unlink path($cachedir, 'localhost')->child($asset);
     ok !$cache_client->asset_exists('localhost', $asset), 'Asset absent'
       or die diag 'Asset already exists - abort test';
 
@@ -382,7 +390,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
     my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($asset);
+    unlink path($cachedir, 'localhost')->child($asset);
     ok !$cache_client->asset_exists('localhost', $asset), 'Asset absent'
       or die diag 'Asset already exists - abort test';
 
@@ -409,9 +417,14 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     my $worker_4 = cache_minion_worker;
 
     $_->start for ($worker_2, $worker_3, $worker_4);
+    wait_for_or_bail_out {
+        my $stats = $cache_client->info->data;
+        ($stats->{active_workers} // 0) + ($stats->{inactive_workers} // 0) >= 3
+    }
+    '3 minion workers';
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
-    unlink path($cachedir)->child($_) for @assets;
+    unlink path($cachedir, "localhost")->child($_) for @assets;
     my %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;
@@ -422,12 +435,13 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     'assets';
 
     for my $asset (@assets) {
-        ok wait_for(sub { $cache_client->asset_exists('localhost', $asset) }, "Asset $asset downloaded correctly"),
-          "Asset $asset downloaded correctly";
+        my $status = $cache_client->status($requests{$asset});
+        ok $status->is_success, "Asset $asset downloaded successfully" or die always_explain $status;
+        ok $cache_client->asset_exists('localhost', $asset), "Asset $asset exists on disk";
     }
 
     @assets = map { 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2' } 1 .. $tot_proc;
-    unlink path($cachedir)->child($_) for @assets;
+    unlink path($cachedir, "localhost")->child($_) for @assets;
     %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;
@@ -438,9 +452,10 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     'assets';
 
     for my $asset (@assets) {
-        ok wait_for(sub { $cache_client->asset_exists('localhost', 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2') },
-            "Asset $asset downloaded correctly"),
-          "Asset $asset downloaded correctly";
+        my $status = $cache_client->status($requests{$asset});
+        ok $status->is_success, "Asset $asset downloaded successfully" or die always_explain $status;
+        ok $cache_client->asset_exists('localhost', 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2'),
+          "Asset $asset exists on disk";
     }
 
     $_->stop for ($worker_2, $worker_3, $worker_4);
@@ -504,55 +519,40 @@ subtest 'Minion monitoring with InfluxDB' => sub {
         is $check_count->(), 0, 'count back at 0';
     };
 
-    my $url = $cache_client->url('/influxdb/minion');
+    my $cs_port = service_port "cache_service";
+    my $url = $cache_client->url("/influxdb/minion");
     my $ua = $cache_client->ua;
-    my $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'three workers still running';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=2i,registered=2i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
+
+    my $check_influx
+      = sub ($active_jobs, $inactive_jobs, $failed_jobs, $delayed_jobs, $active_workers, $inactive_workers,
+        $registered_workers, $msg)
+    {
+        my $res = $ua->get($url)->result;
+        is $res->body, <<"EOF", $msg;
+openqa_minion_jobs,url=http://127.0.0.1:${cs_port} active=${active_jobs}i,delayed=${delayed_jobs}i,failed=${failed_jobs}i,inactive=${inactive_jobs}i
+openqa_minion_workers,url=http://127.0.0.1:${cs_port} active=${active_workers}i,inactive=${inactive_workers}i,registered=${registered_workers}i
+openqa_download_count,url=http://127.0.0.1:${cs_port} count=${count}i
+openqa_download_rate,url=http://127.0.0.1:${cs_port} bytes=${rate}i
 EOF
+    };
+
+    $check_influx->(0, 0, 0, 0, 0, 2, 2, 'three workers still running');
 
     my $minion = $app->minion;
     my $worker = $minion->repair->worker->register;
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'four workers running now';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(0, 0, 0, 0, 0, 3, 3, 'four workers running now');
 
     $minion->add_task(test => sub { });
     my $job_id = $minion->enqueue('test');
     my $job_id2 = $minion->enqueue('test');
     my $job = $worker->dequeue(0);
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'two jobs';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=1i,delayed=0i,failed=0i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=1i,inactive=2i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(1, 1, 0, 0, 1, 2, 3, 'two jobs');
 
     $job->fail('test');
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'one job failed';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=1i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(0, 1, 1, 0, 0, 3, 3, 'one job failed');
 
     $job->retry({delay => ONE_HOUR});
-    $res = $ua->get($url)->result;
-    is $res->body, <<"EOF", 'job is being retried';
-openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
-openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
-openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
-EOF
+    $check_influx->(0, 2, 0, 1, 0, 3, 3, 'job is being retried');
 };
 
 subtest 'Concurrent downloads of the same file' => sub {

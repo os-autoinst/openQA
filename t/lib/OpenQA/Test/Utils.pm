@@ -214,8 +214,10 @@ my $SIGCHLD_HANDLER = sub {
     # produces a test failure in case any relevant sub process terminated with a non-zero exit code
     # note: This function is supposed to be called from the SIGCHLD handler. It seems to have no effect to
     #       call die or BAIL_OUT from that handler so fail and _exit is used instead.
-    while ((my $pid = waitpid(-1, WNOHANG)) > 0) {
-        next unless my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
+    for my $pid (keys %RELEVANT_CHILD_PIDS) {
+        my $wait_pid = waitpid($pid, WNOHANG);
+        next unless $wait_pid > 0;
+        my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
         my $exit_status = $?;
         my $exit_signal = $exit_status & 127;
         _fail_and_exit "sub process $child_name terminated by signal $exit_signal", $exit_signal if $exit_signal;
@@ -571,12 +573,13 @@ sub test_cmd {
 sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
     my ($function, $description, $args) = @_;
     my $timeout = $args->{timeout} // 60;
-    my $interval = $args->{interval} // .1;
+    my $interval = $args->{interval} // $ENV{OPENQA_TEST_WAIT_INTERVAL} // .1;
 
     note "Waiting for '$description' to become available (timeout: $timeout)";
-    while ($timeout > 0) {
+    my $end = Time::HiRes::time() + $timeout;
+    while (Time::HiRes::time() < $end) {
         return 1 if $function->();
-        $timeout -= sleep $interval;    # uncoverable statement (function might return early one line up)
+        sleep $interval;
     }
     return 0;    # uncoverable statement (only invoked if tests would fail)
 }

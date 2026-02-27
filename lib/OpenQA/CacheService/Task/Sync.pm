@@ -37,13 +37,12 @@ sub _cache_tests ($job, $from = undef, $to = undef) {
 
     my @cmd = (qw(rsync -avHP --timeout), RSYNC_TIMEOUT, "$from/", qw(--delete), "$to/tests/");
     my $cmd = join ' ', @cmd;
-    $ctx->info("Calling: $cmd");
     my $status;
     my $full_output = '';
     for my $retry (1 .. RSYNC_RETRIES) {
-        my $output = `@cmd`;
-        $status = $? >> 8;
-        $full_output .= "Try $retry:\n" . $output . "\n";
+        my $res = OpenQA::Utils::run_cmd_with_log_return_error(\@cmd);
+        $status = $res->{exit_status};
+        $full_output .= "Try $retry:\nSTDOUT:\n$res->{stdout}\nSTDERR:\n$res->{stderr}\n";
         last unless $status;
         sleep RSYNC_RETRY_PERIOD;
     }
