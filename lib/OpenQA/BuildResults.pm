@@ -11,8 +11,12 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use OpenQA::Log qw(log_error);
 use Date::Format;
+use DateTime::Format::Pg;
 use Sort::Versions;
 use Time::Seconds;
+use List::Util 'any';
+
+use constant DEFAULT_MAX_JOBS_PER_BUILD => 5000;
 
 sub init_job_figures ($job_result) {
 
@@ -30,41 +34,42 @@ sub init_job_figures ($job_result) {
     $job_result->{total} = 0;
 }
 
+sub _get_job_result_category ($state, $result) {
+    if ($state eq OpenQA::Jobs::Constants::DONE) {
+        my $meta = OpenQA::Jobs::Constants::meta_result($result);
+        return 'passed' if $meta eq OpenQA::Jobs::Constants::PASSED;
+        return 'softfailed' if $meta eq OpenQA::Jobs::Constants::SOFTFAILED;
+        return 'skipped' if $meta eq OpenQA::Jobs::Constants::ABORTED;
+        return 'failed' if $meta eq OpenQA::Jobs::Constants::FAILED || $meta eq OpenQA::Jobs::Constants::NOT_COMPLETE;
+    }
+    return 'skipped' if $state eq OpenQA::Jobs::Constants::CANCELLED;
+    return 'unfinished';
+}
+
+sub _count_job_aggregated ($stat, $jr, $count) {
+    $jr->{total} += $count;
+    my $category = _get_job_result_category($stat->state, $stat->result);
+    $jr->{$category} += $count;
+}
+
 sub count_job ($job, $jr, $labels) {
 
     $jr->{total}++;
-    if ($job->state eq OpenQA::Jobs::Constants::DONE) {
-        if ($job->result eq OpenQA::Jobs::Constants::PASSED) {
-            $jr->{passed}++;
-            return;
+    my ($state, $result) = ($job->state, $job->result);
+    my $category = _get_job_result_category($state, $result);
+    $jr->{$category}++;
+
+    if ($category eq 'failed') {
+        my $comment_data = $labels->{$job->id};
+        if ($comment_data) {
+            $jr->{labeled}++ if $comment_data->{reviewed};
+            $jr->{comments}++ if $comment_data->{comments} || $comment_data->{reviewed};
         }
-        if ($job->result eq OpenQA::Jobs::Constants::SOFTFAILED) {
-            $jr->{softfailed}++;
-            return;
-        }
-        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::ABORTED_RESULTS) {
-            $jr->{skipped}++;
-            return;
-        }
-        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
-            my $comment_data = $labels->{$job->id};
-            $jr->{failed}++;
-            if ($comment_data) {
-                $jr->{labeled}++ if $comment_data->{reviewed};
-                $jr->{comments}++ if $comment_data->{comments} || $comment_data->{reviewed};
-            }
-            return;
-        }
-        # note: Incompletes and timeouts are accounted to both categories - failed and skipped.
     }
-    if ($job->state eq OpenQA::Jobs::Constants::CANCELLED) {
-        $jr->{skipped}++;
-        return;
+    elsif ($category eq 'unfinished') {
+        log_error('Encountered not-implemented state:' . $state . ' result:' . $result)
+          unless any { $state eq $_ } (OpenQA::Jobs::Constants::PENDING_STATES);
     }
-    my $state = $job->state;
-    log_error('Encountered not-implemented state:' . $job->state . ' result:' . $job->result)
-      unless grep { /$state/ } (OpenQA::Jobs::Constants::PENDING_STATES);
-    $jr->{unfinished}++;
     return;
 }
 
@@ -111,12 +116,16 @@ sub find_child_groups ($group, $subgroup_filter) {
     return filter_subgroups($group, $subgroup_filter);
 }
 
-sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags) {
+sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags,
+    $max_jobs_per_build = undef)
+{
 
     # find relevant child groups taking filter into account
     my $child_groups = find_child_groups($group, $subgroup_filter);
     my $group_ids = $child_groups->{group_ids};
     my $children = $child_groups->{children};
+
+    $max_jobs_per_build //= DEFAULT_MAX_JOBS_PER_BUILD;
 
     my @sorted_results;
     my %result = (
@@ -133,8 +142,8 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     }
 
     # build sorting
-    my $buildver_sort_mode = BUILD_SORT_BY_NAME;
-    $buildver_sort_mode = $group->build_version_sort if $group->can('build_version_sort');
+    my $buildver_sort_mode
+      = $group->can('build_version_sort') ? ($group->build_version_sort // BUILD_SORT_BY_NAME) : BUILD_SORT_BY_NAME;
     my $sort_column = $buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB ? 'oldest_job' : 'newest_job';
 
     # 400 is the max. limit selectable in the group overview
@@ -185,14 +194,24 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         last if defined($limit) && (--$limit < 0);
 
         my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
-        my $jobs = $jobs_resultset->search(
+        my $jobs_search_filter = {
+            VERSION => $version,
+            BUILD => $buildnr,
+            group_id => {in => $group_ids},
+            clone_id => undef,
+        };
+        my $latest_job_ids_rs = $jobs_resultset->search($jobs_search_filter,
+            {select => [{max => 'id'}], as => [qw(id)], group_by => [qw(TEST ARCH FLAVOR MACHINE)]});
+        my @latest_ids = map { $_->get_column('id') // () } $latest_job_ids_rs->all;
+        next unless @latest_ids;
+
+        my $stats_rs = $jobs_resultset->search(
+            {id => {-in => \@latest_ids}},
             {
-                VERSION => $version,
-                BUILD => $buildnr,
-                group_id => {in => $group_ids},
-                clone_id => undef,
-            },
-            {order_by => 'me.id DESC'});
+                select => [qw(state result group_id DISTRI), {count => '*'}],
+                as => [qw(state result group_id DISTRI count)],
+                group_by => [qw(state result group_id DISTRI)],
+            });
         my %jr = (
             key => $build->{key},
             build => $buildnr,
@@ -201,34 +220,74 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         );
         init_job_figures(\%jr);
         for my $child (@$children) {
-            init_job_figures($jr{children}->{$child->id} = {});
+            init_job_figures($jr{children}->{$child->id} = {version => $version});
+        }
+        my $total_for_build = 0;
+        while (my $stat = $stats_rs->next) {
+            my $count = $stat->get_column('count');
+            $total_for_build += $count;
+            _count_job_aggregated($stat, \%jr, $count);
+            my $distri = $stat->get_column('DISTRI');
+            $jr{distris}->{$distri} = 1;
+            if ($jr{children}) {
+                my $child = $jr{children}->{$stat->group_id};
+                _count_job_aggregated($stat, $child, $count);
+                $child->{distris}->{$distri} = 1;
+            }
+        }
+        if (defined($max_jobs_per_build) && $total_for_build > $max_jobs_per_build) {
+            die 'Build '
+              . $buildnr . ' has '
+              . $total_for_build
+              . ' jobs, which exceeds the limit of '
+              . $max_jobs_per_build
+              . '. Please contact your openQA administrator.';
+        }
+        next unless $total_for_build;
+        my $extra_info_rs = $jobs_resultset->search(
+            {id => {-in => \@latest_ids}},
+            {
+                select => [{($newest ? 'max' : 'min') => 't_created'}],
+                as => [qw(t_created)],
+            });
+        while (my $info = $extra_info_rs->next) {
+            my $t_created = $info->get_column('t_created');
+            if ($t_created && !ref $t_created) {
+                $t_created = DateTime::Format::Pg->parse_datetime($t_created);
+            }
+            $jr{oldest_newest} = $newest ? ($jr{oldest_newest} // $t_created) : $t_created;
+        }
+        my $not_ok_rs = $jobs_resultset->search(
+            {
+                id => {-in => \@latest_ids},
+                state => OpenQA::Jobs::Constants::DONE,
+                result => {in => [OpenQA::Jobs::Constants::NOT_OK_RESULTS]},
+            },
+            {select => [qw(id group_id)]});
+        my @not_ok_jobs = $not_ok_rs->all;
+        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@not_ok_jobs);
+        for my $job (@not_ok_jobs) {
+            my $cd = $comment_data->{$job->id};
+            next unless $cd;
+            if ($cd->{reviewed}) {
+                $jr{labeled}++;
+                if ($jr{children} && (my $child = $jr{children}->{$job->group_id})) {
+                    $child->{labeled}++;
+                }
+            }
+            if ($cd->{comments} || $cd->{reviewed}) {
+                $jr{comments}++;
+                if ($jr{children} && (my $child = $jr{children}->{$job->group_id})) {
+                    $child->{comments}++;
+                }
+            }
+        }
+        if ($jr{children}) {
+            for my $child_id (keys %{$jr{children}}) {
+                add_review_badge($jr{children}->{$child_id});
+            }
         }
 
-        my %seen;
-        my @jobs = map {
-            my $key = $_->TEST . '-' . $_->ARCH . '-' . $_->FLAVOR . '-' . ($_->MACHINE // '');
-            $seen{$key}++ ? () : $_;
-        } $jobs->all;
-        next unless @jobs;
-        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
-        for my $job (@jobs) {
-            $jr{distris}->{$job->DISTRI} = 1;
-            if ($newest) {
-                $jr{oldest_newest} //= $job->t_created;
-            }
-            else {
-                $jr{oldest_newest} = $job->t_created;
-            }
-            count_job($job, \%jr, $comment_data);
-            if ($jr{children}) {
-                my $child = $jr{children}->{$job->group_id};
-                $child->{distris}->{$job->DISTRI} = 1;
-                $child->{version} //= $job->VERSION;
-                $child->{build} //= $job->BUILD;
-                count_job($job, $child, $comment_data);
-                add_review_badge($child);
-            }
-        }
         $jr{date} = delete $jr{oldest_newest};
         $jr{escaped_version} = $jr{version};
         $jr{escaped_version} =~ s/\W/_/g;
