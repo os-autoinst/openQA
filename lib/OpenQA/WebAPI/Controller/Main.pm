@@ -45,17 +45,18 @@ sub dashboard_build_results ($self) {
                 next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
             }
             my $tags = $show_tags || $only_tagged ? $group->tags : undef;
-            my $build_results
-              = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-                $only_tagged ? $tags : undef,
-                $group_params, $show_tags ? $tags : undef);
+            my $build_results = OpenQA::BuildResults::compute_build_results(
+                $group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef,
+                $group_params, $show_tags ? $tags : undef,
+                undef, $self->app
+            );
 
             my $build_results_for_group = $build_results->{build_results};
             push @results, $build_results if @{$build_results_for_group};
         }
     }
     catch ($e) {
-        die $e unless $e =~ qr/^invalid regex: /;
+        die $e unless (ref $e && $e->isa('OpenQA::Error::LimitExceeded')) || $e =~ qr/^invalid regex: /;
         return $self->render(json => {error => $e}, status => 400);
     }
 
@@ -138,15 +139,14 @@ sub _group_overview ($self, $resultset, $template) {
 
     my $tags = $group->tags;
     my $cbr;
-    my $max_jobs_per_build = $self->app->config->{misc_limits}->{job_group_overview_max_jobs};
     try {
         $cbr
           = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
             $time_limit_days, $only_tagged ? $tags : undef,
-            $group_params, $tags, $max_jobs_per_build);
+            $group_params, $tags, undef, $self->app);
     }
     catch ($e) {
-        die $e unless $e =~ qr/^(invalid regex: |Build .* has .* jobs, which exceeds the limit)/;
+        die $e unless $e =~ qr/^invalid regex: /;
         return $self->_respond_error_for_group_overview($e);
     }
     my $build_results = $cbr->{build_results};
