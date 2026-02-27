@@ -86,6 +86,10 @@ exit unless $t->success;
 my @jobs = @{$t->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 
+sub job_ids {
+    [sort map { $_->{id} } @{$t->tx->res->json->{jobs}}];
+}
+
 subtest 'initial state of jobs listing' => sub {
     is $jobs_count, 18;
     my %jobs = map { $_->{id} => $_ } @jobs;
@@ -145,13 +149,17 @@ subtest 'exclude specific group' => sub {
     is scalar @jobs, 4, 'jobs of specified groups are excluded';
 };
 
-subtest 'restricted query' => sub {
+subtest 'filtering jobs' => sub {
     $t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-    is scalar(@{$t->tx->res->json->{jobs}}), 6, 'query for existing jobs by iso';
+    is_deeply job_ids(), [99927, 99928, 99937, 99944, 99945, 99946], 'filtering by iso';
     $t->get_ok('/api/v1/jobs?build=0091');
-    is scalar(@{$t->tx->res->json->{jobs}}), 11, 'query for existing jobs by build';
+    is_deeply job_ids(), [99764, 99927, 99928, 99937, 99944 .. 99946, 99961 .. 99963, 99981], 'filtering by build';
     $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
-    is scalar(@{$t->tx->res->json->{jobs}}), 3, 'query for existing jobs by hdd_1';
+    is_deeply job_ids(), [99936, 99939, 99946], 'filtering by HDD_1';
+    $t->get_ok('/api/v1/jobs?iso=openSUSE-Factory-DVD-x86_64-Build0048-Media.iso&hdd_1=openSUSE-13.1-x86_64.hda');
+    is_deeply job_ids(), [99936, 99939], 'filters can be combined';
+    $t->get_ok('/api/v1/jobs?distri=opensuse&job_setting=DESKTOP=kde&job_setting=QEMUCPU=qemu64');
+    is_deeply job_ids(), [99936, 99938, 99939, 99940], 'filtering by arbitrary job settings';
 };
 
 subtest 'argument combinations' => sub {
@@ -1397,7 +1405,7 @@ subtest 'filter by worker_class' => sub {
     $query->query(worker_class => ':UFP:');
     $t->get_ok($query->path_query)->status_is(200);
     $res = $t->tx->res->json;
-    ok @{$res->{jobs}} eq 1, 'Known worker class group exists, and returns one job';
+    is @{$res->{jobs}}, 1, 'Known worker class group exists, and returns one job';
 
     $t->json_is('/jobs/0/settings/WORKER_CLASS' => ':UFP:NCC1701F', 'Correct worker class');
 };

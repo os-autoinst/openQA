@@ -360,7 +360,7 @@ $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is $t->tx->res->json->{job}->{state}, 'scheduled', "new job $newid is scheduled";
 
 # cancel the iso
-$t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
+$t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200)->json_is('/result', 16, 'iso was cancelled');
 
 $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is $t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled";
@@ -378,7 +378,7 @@ is $res->json->{count}, 5, '5 new jobs created (two twice for both machine types
 $t->delete_ok("/api/v1/isos/$iso")->status_is(403);
 # switch to admin and continue
 client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
-$t->delete_ok("/api/v1/isos/$iso")->status_is(200);
+$t->delete_ok("/api/v1/isos/$iso")->status_is(200)->json_is('/count', 23, 'jobs deleted');
 # now the jobs should be gone
 $t->get_ok("/api/v1/jobs/$newid")->status_is(404);
 
