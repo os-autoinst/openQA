@@ -12,6 +12,7 @@ use IPC::Run;
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME);
+use OpenQA::Jobs::Constants qw(PENDING_STATES EXECUTION_STATES);
 use OpenQA::Log qw(log_trace log_debug log_info);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
@@ -425,29 +426,24 @@ sub cancel_by_settings (
   )
 {
     $deprio_limit //= 100;
-    my $rsource = $self->result_source;
-    my $schema = $rsource->schema;
-    # preserve original settings by deep copy
-    my %precond = %{$settings};
-    my %main_cond = (state => [OpenQA::Jobs::Constants::PENDING_STATES]);
-    my @all_conds = (\%main_cond);
-    for my $key (OpenQA::Schema::Result::Jobs::MAIN_SETTINGS) {
-        $main_cond{$key} = delete $precond{$key} if defined $precond{$key};
-    }
-    push @all_conds, $schema->resultset('JobSettings')->conds_for_settings(\%precond) if keys %precond;
-    my $jobs = $schema->resultset('Jobs')->search({-and => \@all_conds});
-    my $jobs_to_cancel;
+    my $schema = $self->result_source->schema;
+    my %settings = %$settings;    # make copy to preserve original settings
+    my %main_conds = (
+        state => [PENDING_STATES],
+        map { defined $settings{$_} ? ($_, delete $settings{$_}) : () } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS,
+    );
+    my @setting_conds = keys %settings ? $schema->resultset('JobSettings')->conds_for_settings(\%settings) : ();
+    my $jobs = $schema->resultset('Jobs')->search({-and => [\%main_conds, @setting_conds]});
     if ($newbuild) {
         # filter out all jobs that have any comment (they are considered 'important') ...
-        $jobs_to_cancel = $jobs->search({'comments.job_id' => undef}, {join => 'comments'});
+        my $jobs_without_comments = $jobs->search({'comments.job_id' => undef}, {join => 'comments'});
         # ... or belong to a tagged build, i.e. is considered important
         # this might be even the tag 'not important' but not much is lost if
         # we still not cancel these builds
-        my $groups_query = $jobs->get_column('group_id')->as_query;
-        my @important_builds = grep defined,
-          map { ($_->tag)[0] } $schema->resultset('Comments')->search({'me.group_id' => {-in => $groups_query}});
+        my $comments_search = {'me.group_id' => {-in => $jobs->get_column('group_id')->as_query}};
+        my @important_builds = map { ($_->tag)[0] // () } $schema->resultset('Comments')->search($comments_search);
         my @unimportant_jobs;
-        while (my $j = $jobs_to_cancel->next) {
+        while (my $j = $jobs_without_comments->next) {
             # the value we get from that @important_builds search above
             # could be just BUILD or VERSION-BUILD
             next if grep ($j->BUILD eq $_, @important_builds);
@@ -456,10 +452,7 @@ sub cancel_by_settings (
         }
         # if there are only important jobs there is nothing left for us to do
         return 0 unless @unimportant_jobs;
-        $jobs_to_cancel = $jobs_to_cancel->search({'me.id' => {-in => \@unimportant_jobs}});
-    }
-    else {
-        $jobs_to_cancel = $jobs;
+        $jobs = $jobs->search({'me.id' => {-in => \@unimportant_jobs}});
     }
     my $cancelled_jobs = 0;
     my $priority_increment = 10;
@@ -479,11 +472,9 @@ sub cancel_by_settings (
         return $job->cancel($job_result, $reason) // 0;
     };
     # first scheduled to avoid worker grab
-    my $scheduled = $jobs_to_cancel->search({state => SCHEDULED});
-    $cancelled_jobs += $cancel_or_deprioritize->($_) for $scheduled->all;
+    $cancelled_jobs += $cancel_or_deprioritize->($_) for $jobs->search({state => SCHEDULED});
     # then the rest
-    my $executing = $jobs_to_cancel->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    $cancelled_jobs += $cancel_or_deprioritize->($_) for $executing->all;
+    $cancelled_jobs += $cancel_or_deprioritize->($_) for $jobs->search({state => [EXECUTION_STATES]});
     OpenQA::App->singleton->emit_event(openqa_job_cancel_by_settings => $settings) if $cancelled_jobs;
     return $cancelled_jobs;
 }
