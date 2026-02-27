@@ -1,0 +1,26 @@
+{
+  "action": "review_requested",
+  "pull_request": {
+    "id": 1234,
+    "url": "https://src.opensuse.org.de/api/v1/repos/owner/reponame/pulls/1234",
+    "html_url": "https://src.opensuse.org/owner/reponame/pulls/1234",
+    "state": "open",
+    "head": {
+      "label": "owner:testhook",
+      "ref": "testhook",
+      "sha": "04a3f669ea13a4aa7cbd4569f578a66f7403c43d",
+      "repo": {
+        "name": "reponame",
+        "full_name": "owner/reponame",
+        "clone_url": "https://src.opensuse.org/owner/reponame.git"
+      }
+    }
+  },
+  "repository": {
+    "url": "https://src.opensuse.org/api/v1/repos/owner/reponame",
+    "html_url": "https://src.opensuse.org/owner/reponame"
+  },
+  "requested_reviewer": {
+    "username": "qam-openqa"
+  }
+}
