@@ -1087,6 +1087,31 @@ examples. `list_value` does not support globbing, though.
 openQA configuration sets `job_settings_max_recent_jobs` which limits
 the results.
 
+==== Array-like job settings
+Settings where the key ends with `[]` are split on `,`. So e.g.
+`ISSUES[]=foo,bar,baz` will be stored as `ISSUES[]=foo`, `ISSUES[]=bar` and
+`ISSUES[]=baz`. This allows searching for jobs with a certain job setting value
+more efficiently, e.g.:
+
+[source,sh]
+----
+openqa-cli api job_settings/jobs key=ISSUES value=foo
+----
+
+Note that the suffix `[]` is still part of the setting key and always needs to
+be specified when referring to the setting. That also means that e.g. `ISSUES`
+and `ISSUES[]` are two completely different settings.
+
+==== Using other API routes
+It is also possible to use the `jobs` and `jobs/overview` routes which support
+the `job_setting` parameter. More than one `job_setting` parameter can be
+specified and it can also be combined with other filtering parameters, e.g.:
+
+[source,sh]
+----
+openqa-cli api jobs result=none job_setting=ISSUES[]={foo,bar} limit=50
+----
+
 === Triggering tests
 
 Tests can be triggered over multiple ways, using `openqa-clone-job`,
