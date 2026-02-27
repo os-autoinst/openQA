@@ -180,14 +180,11 @@ subtest 'Job limit enforcement' => sub {
     my @jobs_data;
     push @jobs_data, {%common, id => 400000 + $_, TEST => "test_$_"} for (1 .. $num_jobs);
     $schema->resultset('Jobs')->populate(\@jobs_data);
-    my $error = '';
-    try {
-        OpenQA::BuildResults::compute_build_results($group, 10, 0, undef, [], undef);
-    }
-    catch ($e) {
-        $error = $e;
-    }
-    like $error, qr/exceeds the limit of 5000/, 'Throws error when exceeding limit';
+    my $cbr = OpenQA::BuildResults::compute_build_results($group, 10, 0, undef, [], undef);
+    my $build_res = (grep { $_->{key} eq "$version-$build" } @{$cbr->{build_results}})[0];
+    ok $build_res->{oversized}, 'Build is marked as oversized';
+    is $build_res->{total}, 5001, 'Total count is still present';
+    is $build_res->{passed}, 0, 'Passed count is reset for oversized builds';
 };
 subtest 'Controller limit enforcement' => sub {
     my $group_id_ctrl = $schema->resultset('JobGroups')->create({name => 'ctrl_group'})->id;
@@ -214,7 +211,7 @@ subtest 'Controller limit enforcement' => sub {
     # Set a very low limit in the app config
     $t->app->config->{misc_limits}->{job_group_overview_max_jobs} = 5;
     $t->get_ok("/group_overview/$group_id_ctrl" => form => {distri => 'distri', version => $version, build => $build})
-      ->status_is(400)->content_like(qr/exceeds the limit of 5/);
+      ->status_is(200)->content_like(qr/total: 10/);
 };
 subtest 'API Controller limit enforcement' => sub {
     my $group_id_api = $schema->resultset('JobGroups')->create({name => 'api_group'})->id;
@@ -241,6 +238,6 @@ subtest 'API Controller limit enforcement' => sub {
     # Set a very low limit in the app config
     $t->app->config->{misc_limits}->{job_group_overview_max_jobs} = 5;
     $t->get_ok("/api/v1/job_groups/$group_id_api/build_results" => form => {limit_builds => 1, time_limit_days => 0})
-      ->status_is(400)->content_like(qr/exceeds the limit of 5/);
+      ->status_is(200)->json_is('/build_results/0/oversized' => 1);
 };
 done_testing;

@@ -10,6 +10,7 @@ use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use OpenQA::Log qw(log_error);
+use OpenQA::Error::LimitExceeded;
 use Date::Format;
 use DateTime::Format::Pg;
 use Sort::Versions;
@@ -116,8 +117,100 @@ sub find_child_groups ($group, $subgroup_filter) {
     return filter_subgroups($group, $subgroup_filter);
 }
 
-sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags,
-    $max_jobs_per_build = undef)
+sub _get_latest_job_ids ($jobs_resultset, $version, $buildnr, $group_ids) {
+    my $jobs_search_filter = {
+        VERSION => $version,
+        BUILD => $buildnr,
+        group_id => {in => $group_ids},
+        clone_id => undef,
+    };
+    my $latest_job_ids_rs = $jobs_resultset->search($jobs_search_filter,
+        {select => [{max => 'id'}], as => [qw(id)], group_by => [qw(TEST ARCH FLAVOR MACHINE)]});
+    return map { $_->get_column('id') // () } $latest_job_ids_rs->all;
+}
+
+sub _fetch_consolidated_stats ($jobs_resultset, $latest_ids, $jr, $children, $newest) {
+    # 1. Fetch stats and t_created in one go
+    my $stats_rs = $jobs_resultset->search(
+        {id => {-in => $latest_ids}},
+        {
+            select => [
+                qw(state result group_id DISTRI),
+                {count => '*'},
+                {($newest ? 'max' : 'min') => 't_created', -as => 't_created_agg'},
+            ],
+            as => [qw(state result group_id DISTRI count t_created_agg)],
+            group_by => [qw(state result group_id DISTRI)],
+        });
+
+    my $total_for_build = 0;
+    my $t_created_final;
+    while (my $stat = $stats_rs->next) {
+        my $count = $stat->get_column('count');
+        $total_for_build += $count;
+        _count_job_aggregated($stat, $jr, $count);
+        my $distri = $stat->get_column('DISTRI');
+        $jr->{distris}->{$distri} = 1;
+
+        # Track t_created (we need to find the max/min across all groups)
+        my $t_created_raw = $stat->get_column('t_created_agg');
+        if ($t_created_raw) {
+            if (!ref $t_created_raw) {
+                $t_created_raw = DateTime::Format::Pg->parse_datetime($t_created_raw);
+            }
+            if (!$t_created_final
+                || ($newest ? ($t_created_raw > $t_created_final) : ($t_created_raw < $t_created_final)))
+            {
+                $t_created_final = $t_created_raw;
+            }
+        }
+
+        if ($children) {
+            my $child = $children->{$stat->group_id};
+            _count_job_aggregated($stat, $child, $count);
+            $child->{distris}->{$distri} = 1;
+        }
+    }
+    $jr->{oldest_newest} = $t_created_final;
+    return $total_for_build;
+}
+
+sub _apply_comment_data ($jobs_resultset, $latest_ids, $jr, $children) {
+    my $not_ok_rs = $jobs_resultset->search(
+        {
+            id => {-in => $latest_ids},
+            state => OpenQA::Jobs::Constants::DONE,
+            result => {in => [OpenQA::Jobs::Constants::NOT_OK_RESULTS]},
+        },
+        {select => [qw(id group_id)]});
+    my @not_ok_jobs = $not_ok_rs->all;
+    return unless @not_ok_jobs;
+
+    my $comment_data
+      = $jobs_resultset->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@not_ok_jobs);
+    for my $job (@not_ok_jobs) {
+        my $cd = $comment_data->{$job->id};
+        next unless $cd;
+        if ($cd->{reviewed}) {
+            $jr->{labeled}++;
+            if ($children && (my $child = $children->{$job->group_id})) {
+                $child->{labeled}++;
+            }
+        }
+        if ($cd->{comments} || $cd->{reviewed}) {
+            $jr->{comments}++;
+            if ($children && (my $child = $children->{$job->group_id})) {
+                $child->{comments}++;
+            }
+        }
+    }
+}
+
+sub compute_build_results (
+    $group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags,
+    $max_jobs_per_build = undef,
+    $app = undef
+  )
 {
 
     # find relevant child groups taking filter into account
@@ -125,6 +218,9 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     my $group_ids = $child_groups->{group_ids};
     my $children = $child_groups->{children};
 
+    if (!$max_jobs_per_build && $app) {
+        $max_jobs_per_build = $app->config->{misc_limits}->{job_group_overview_max_jobs};
+    }
     $max_jobs_per_build //= DEFAULT_MAX_JOBS_PER_BUILD;
 
     my @sorted_results;
@@ -194,24 +290,9 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         last if defined($limit) && (--$limit < 0);
 
         my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
-        my $jobs_search_filter = {
-            VERSION => $version,
-            BUILD => $buildnr,
-            group_id => {in => $group_ids},
-            clone_id => undef,
-        };
-        my $latest_job_ids_rs = $jobs_resultset->search($jobs_search_filter,
-            {select => [{max => 'id'}], as => [qw(id)], group_by => [qw(TEST ARCH FLAVOR MACHINE)]});
-        my @latest_ids = map { $_->get_column('id') // () } $latest_job_ids_rs->all;
+        my @latest_ids = _get_latest_job_ids($jobs_resultset, $version, $buildnr, $group_ids);
         next unless @latest_ids;
 
-        my $stats_rs = $jobs_resultset->search(
-            {id => {-in => \@latest_ids}},
-            {
-                select => [qw(state result group_id DISTRI), {count => '*'}],
-                as => [qw(state result group_id DISTRI count)],
-                group_by => [qw(state result group_id DISTRI)],
-            });
         my %jr = (
             key => $build->{key},
             build => $buildnr,
@@ -222,66 +303,24 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         for my $child (@$children) {
             init_job_figures($jr{children}->{$child->id} = {version => $version});
         }
-        my $total_for_build = 0;
-        while (my $stat = $stats_rs->next) {
-            my $count = $stat->get_column('count');
-            $total_for_build += $count;
-            _count_job_aggregated($stat, \%jr, $count);
-            my $distri = $stat->get_column('DISTRI');
-            $jr{distris}->{$distri} = 1;
-            if ($jr{children}) {
-                my $child = $jr{children}->{$stat->group_id};
-                _count_job_aggregated($stat, $child, $count);
-                $child->{distris}->{$distri} = 1;
-            }
-        }
+
+        my $total_for_build = _fetch_consolidated_stats($jobs_resultset, \@latest_ids, \%jr, $jr{children}, $newest);
+
         if (defined($max_jobs_per_build) && $total_for_build > $max_jobs_per_build) {
-            die 'Build '
-              . $buildnr . ' has '
-              . $total_for_build
-              . ' jobs, which exceeds the limit of '
-              . $max_jobs_per_build
-              . '. Please contact your openQA administrator.';
-        }
-        next unless $total_for_build;
-        my $extra_info_rs = $jobs_resultset->search(
-            {id => {-in => \@latest_ids}},
-            {
-                select => [{($newest ? 'max' : 'min') => 't_created'}],
-                as => [qw(t_created)],
-            });
-        while (my $info = $extra_info_rs->next) {
-            my $t_created = $info->get_column('t_created');
-            if ($t_created && !ref $t_created) {
-                $t_created = DateTime::Format::Pg->parse_datetime($t_created);
-            }
-            $jr{oldest_newest} = $newest ? ($jr{oldest_newest} // $t_created) : $t_created;
-        }
-        my $not_ok_rs = $jobs_resultset->search(
-            {
-                id => {-in => \@latest_ids},
-                state => OpenQA::Jobs::Constants::DONE,
-                result => {in => [OpenQA::Jobs::Constants::NOT_OK_RESULTS]},
-            },
-            {select => [qw(id group_id)]});
-        my @not_ok_jobs = $not_ok_rs->all;
-        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@not_ok_jobs);
-        for my $job (@not_ok_jobs) {
-            my $cd = $comment_data->{$job->id};
-            next unless $cd;
-            if ($cd->{reviewed}) {
-                $jr{labeled}++;
-                if ($jr{children} && (my $child = $jr{children}->{$job->group_id})) {
-                    $child->{labeled}++;
-                }
-            }
-            if ($cd->{comments} || $cd->{reviewed}) {
-                $jr{comments}++;
-                if ($jr{children} && (my $child = $jr{children}->{$job->group_id})) {
-                    $child->{comments}++;
-                }
+            $jr{oversized} = 1;
+            $jr{total_count} = $total_for_build;
+            $jr{limit} = $max_jobs_per_build;
+            # Provide partial data or reset stats to avoid misleading figures
+            init_job_figures(\%jr);
+            $jr{total} = $total_for_build;    # Still show total count
+            for my $child_id (keys %{$jr{children}}) {
+                init_job_figures($jr{children}->{$child_id});
             }
         }
+        else {
+            _apply_comment_data($jobs_resultset, \@latest_ids, \%jr, $jr{children});
+        }
+
         if ($jr{children}) {
             for my $child_id (keys %{$jr{children}}) {
                 add_review_badge($jr{children}->{$child_id});
