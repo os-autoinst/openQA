@@ -105,6 +105,7 @@ main_requires:
   perl(BSD::Resource):
   perl(Carp):
   perl(CommonMark):
+  perl(CryptX):
   perl(Date::Format):
   perl(DateTime):
   perl(DateTime::Duration):
