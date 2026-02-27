@@ -154,6 +154,8 @@ subtest 'restricted query' => sub {
     is scalar(@{$t->tx->res->json->{jobs}}), 3, 'query for existing jobs by hdd_1';
     $t->get_ok('/api/v1/jobs?iso=openSUSE-Factory-DVD-x86_64-Build0048-Media.iso&hdd_1=openSUSE-13.1-x86_64.hda');
     is scalar(@{$t->tx->res->json->{jobs}}), 2, 'filters can be combined';
+    $t->get_ok('/api/v1/jobs?distri=opensuse&job_setting=DESKTOP=kde&job_setting=QEMUCPU=qemu64');
+    is scalar(@{$t->tx->res->json->{jobs}}), 4, 'filtering by arbitrary job settings';
 };
 
 subtest 'argument combinations' => sub {
