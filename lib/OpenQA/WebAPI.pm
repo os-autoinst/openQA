@@ -141,6 +141,7 @@ sub startup ($self) {
     my $require_auth_for_assets = $config->{auth}->{require_for_assets};
     my $assets_r = $require_auth_for_assets ? $auth_any_user : $r;
     $assets_r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
+    $assets_r->get('/archives/*archivepath')->name('download_archive')->to('file#download_archive');
 
     my $test_path = '/tests/<testid:num>';
     my $test_r = $r->any($test_path);
@@ -169,6 +170,7 @@ sub startup ($self) {
     $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
     $test_r->get('/settings/:dir/*link_path')->name('filesrc')->to('test#show_filesrc');
     $test_r->get('/video' => sub ($c) { $c->render_testfile('test/video') })->name('video');
+    $test_r->get('/archive')->name('test_archive')->to('file#archive');
     $test_r->get('/logfile' => sub ($c) { $c->render_testfile('test/logfile') })->name('logfile');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
     $test_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');
