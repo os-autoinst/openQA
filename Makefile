@@ -55,9 +55,9 @@ OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET =
 OS_AUTOINST_BASEDIR =
 
 .PHONY: help
-help:
+help: ## Display this help
 	@echo Call one of the available targets:
-	@sed -n 's/\(^[^.#[:space:]A-Z]*\):.*$$/\1/p' Makefile | uniq
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 	@echo See docs/Contributing.asciidoc for more details
 
 man_names = openqa-cli openqa-client openqa-load-templates openqa-dump-templates openqa-clone-job openqa-validate-yaml openqa-label-all
@@ -86,14 +86,14 @@ $(man_dir)/openqa-cli.1: lib/OpenQA/CLI.pm
 	$(run-pod2man)
 
 .PHONY: build-manpages
-build-manpages: $(man_dir) $(manpages)
+build-manpages: $(man_dir) $(manpages) ## Build manpages for the scripts
 
 .PHONY: clean
-clean:
+clean: ## Remove build artifacts
 	-rm -r build
 
 .PHONY: generate-assets
-generate-assets:
+generate-assets: ## Generate packed assets and copy to DESTDIR
 	./tools/generate-packed-assets
 	for i in lib public script templates assets; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
@@ -101,7 +101,7 @@ generate-assets:
 	done
 
 .PHONY: install-generic
-install-generic: generate-assets
+install-generic: generate-assets ## Install generic components
 	for f in $(shell perl -Ilib -mOpenQA::Assets -e OpenQA::Assets::list); do \
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
@@ -191,7 +191,7 @@ install-generic: generate-assets
 # Additional services which have a strong dependency on SUSE/openSUSE and do not
 # make sense for other distributions
 .PHONY: install-opensuse
-install-opensuse: install-generic
+install-opensuse: install-generic ## Install SUSE-specific components
 	for i in systemd/opensuse/*.{service,timer}; do \
 		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
 	done
@@ -200,9 +200,9 @@ install-opensuse: install-generic
 os := $(shell grep suse /etc/os-release)
 .PHONY: install
 ifeq ($(os),)
-install: install-generic
+install: install-generic ## Install the application (auto-detects OS)
 else
-install: install-opensuse
+install: install-opensuse ## Install the application (auto-detects OS)
 endif
 
 # Ensure npm packages are installed and up-to-date (unless local-npm-registry is installed; in this case we can
@@ -220,7 +220,7 @@ checkstyle_tests =
 else
 checkstyle_tests = test-checkstyle-standalone
 endif
-test: $(checkstyle_tests) test-with-database
+test: $(checkstyle_tests) test-with-database ## Run all tests (including checkstyle and database tests)
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
@@ -233,53 +233,53 @@ endif
 endif
 
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-tidy-compile
+test-checkstyle: test-checkstyle-standalone test-tidy-compile ## Run checkstyle and tidy-compile tests
 
 .PHONY: test-t
-test-t: node_modules
+test-t: node_modules ## Run standard Perl tests
 	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-heavy
-test-heavy: node_modules
+test-heavy: node_modules ## Run heavy tests
 	$(MAKE) test-with-database HEAVY=1 TIMEOUT_M=25 PROVE_ARGS="$$HARNESS $$(grep -l HEAVY=1 t/*.t | tr '\n' ' ')"
 
 .PHONY: test-ui
-test-ui: node_modules
+test-ui: node_modules ## Run UI tests
 	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-api
-test-api: node_modules
+test-api: node_modules ## Run API tests
 	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 # put unstable tests in tools/unstable_tests.txt and uncomment in circle CI config to handle unstables with retries
 .PHONY: test-unstable
-test-unstable: node_modules
+test-unstable: node_modules ## Run unstable tests with retries
 	for f in $$(cat tools/unstable_tests.txt); do $(MAKE) test-with-database COVERDB_SUFFIX=$$(echo $${COVERDB_SUFFIX}_$$f | tr '/' '_') TIMEOUT_M=10 PROVE_ARGS="$$HARNESS $$f" RETRY=5 || exit; done
 
 .PHONY: test-fullstack
-test-fullstack: node_modules
+test-fullstack: node_modules ## Run fullstack tests
 	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=30 PROVE_ARGS="$$HARNESS t/full-stack.t t/33-developer_mode.t"
 
 .PHONY: test-fullstack-unstable
-test-fullstack-unstable: node_modules
+test-fullstack-unstable: node_modules ## Run unstable fullstack tests with retries
 	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t" RETRY=5
 
 # we have apparently-redundant -I args in PERL5OPT here because Docker
 # only works with one and Fedora's build system only works with the other
 .PHONY: test-with-database
-test-with-database: node_modules setup-database
+test-with-database: node_modules setup-database ## Run tests that require a database
 	$(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-[ $(KEEP_DB) = 1 ] || pg_ctl -D $(TEST_PG_PATH) stop
 
 .PHONY: test-unit-and-integration
-test-unit-and-integration: node_modules
+test-unit-and-integration: node_modules ## Run unit and integration tests (low level)
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib $(CHECK_GIT_STATUS_OPT) -MOpenQA::Test::PatchDeparse";\
 	RETRY=${RETRY} HOOK=./tools/delete-coverdb-folder timeout --foreground -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry "${PROVE}" ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: setup-database
-setup-database:
+setup-database: ## Set up the test database
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 
 define RUN_SERVICE_TEST_DB
@@ -303,7 +303,7 @@ run-gru-test-db: setup-database
 # note: This is supposed to run within the container unlike `launch-container-to-run-tests-within`
 #       which launches the container.
 .PHONY: run-tests-within-container
-run-tests-within-container:
+run-tests-within-container: ## Run tests inside a container
 	tools/run-tests-within-container
 
 ifeq ($(COVERAGE),1)
@@ -326,27 +326,27 @@ CHECK_GIT_STATUS_OPT ?= -MTest::CheckGitStatus
 endif
 
 .PHONY: coverage
-coverage:
+coverage: ## Run tests and generate coverage report
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	COVERAGE=1 cover ${COVER_OPTS} -test
 
 COVER_REPORT_OPTS ?= -select_re '^(lib|script|t)/'
 
 .PHONY: coverage-report-codecov
-coverage-report-codecov:
+coverage-report-codecov: ## Generate codecov report
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	cover $(COVER_REPORT_OPTS) -report codecovbash
 
 .PHONY: coverage-codecov
-coverage-codecov: coverage
+coverage-codecov: coverage ## Run coverage and generate codecov report
 	$(MAKE) coverage-report-codecov
 
 .PHONY: coverage-report-html
-coverage-report-html:
+coverage-report-html: ## Generate HTML coverage report
 	cover $(COVER_REPORT_OPTS) -report html_minimal
 
 .PHONY: coverage-html
-coverage-html: coverage
+coverage-html: coverage ## Run coverage and generate HTML coverage report
 	$(MAKE) coverage-report-html
 
 public/favicon.ico: $(wildcard assets/images/*.svg)
@@ -360,32 +360,32 @@ public/favicon.ico: $(wildcard assets/images/*.svg)
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt test-gitlint
+test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt test-gitlint ## Run all style and static analysis checks
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
 
 .PHONY: test-critic
-test-critic:
+test-critic: ## Run Perl Critic
 	tools/perlcritic lib
 
 .PHONY: test-tidy-compile
-test-tidy-compile:
+test-tidy-compile: ## Run tidy and compile tests
 	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-shellcheck
-test-shellcheck:
+test-shellcheck: ## Run shellcheck on scripts
 	@which shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
 	shellcheck -x $(shellfiles)
 
 .PHONY: test-yaml
-test-yaml:
+test-yaml: ## Run yamllint on YAML files
 	@which yamllint >/dev/null 2>&1 || (echo "Command 'yamllint' not found, can not execute YAML syntax checks" && false)
 	@# Fall back to find if there is no git, e.g. in package builds
 	yamllint --strict $$((git ls-files "*.yml" "*.yaml" 2>/dev/null || find -name '*.y*ml') | grep -v ^dbicdh)
 
 .PHONY: test-shfmt
-test-shfmt:
+test-shfmt: ## Run shfmt on scripts
 	@which shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
@@ -399,43 +399,43 @@ test-gitlint:
 	fi
 
 .PHONY: test-check-containers
-test-check-containers:
+test-check-containers: ## Run static checks for containers
 	tools/static_check_containers
 
 .PHONY: tidy-js
-tidy-js:
+tidy-js: ## Format JavaScript code
 	tools/js-tidy
 
 .PHONY: tidy-perl
-tidy-perl:
+tidy-perl: ## Format Perl code
 	tools/tidyall -a
 
 .PHONY: tidy
-tidy: tidy-js tidy-perl
+tidy: tidy-js tidy-perl ## Format both JS and Perl code
 
 .PHONY: test-containers-compose
-test-containers-compose:
+test-containers-compose: ## Run docker-compose tests
 	tools/test_containers_compose
 
 .PHONY: test-helm-chart
-test-helm-chart: test-helm-lint test-helm-install
+test-helm-chart: test-helm-lint test-helm-install ## Run helm chart tests (lint and install)
 
 .PHONY: test-helm-lint
-test-helm-lint:
+test-helm-lint: ## Lint helm chart
 	tools/test_helm_chart lint
 
 .PHONY: test-helm-install
-test-helm-install:
+test-helm-install: ## Install helm chart for testing
 	tools/test_helm_chart install
 
 .PHONY: update-deps
-update-deps:
+update-deps: ## Update dependencies in cpanfile and specfile
 	tools/update-deps --cpanfile cpanfile --specfile dist/rpm/openQA.spec
 
 .PHONY: generate-docs
-generate-docs:
+generate-docs: ## Generate documentation from AsciiDoc
 	tools/generate-docs
 
 .PHONY: serve-docs
-serve-docs: generate-docs
+serve-docs: generate-docs ## Serve documentation locally
 	(cd docs/build/; python3 -m http.server)
