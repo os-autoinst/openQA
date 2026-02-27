@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    cat << EOF
+Usage: openqa-run [OPTIONS...] OPENQA_SERVICE
+Call an openQA service OPENQA_SERVICE with appropriate user account and the
+base-dir set to the local working copy.
+
+Example:
+    openqa-run openqa-webui-daemon
+
+Options:
+ -h, --help         display this help
+EOF
+    exit "$1"
+}
+
+OPENQA_BASEDIR="${OPENQA_BASEDIR:-"$(dirname "$0")/../t/data"}"
+export OPENQA_BASEDIR
+
+opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
+eval set -- "$opts"
+while true; do
+    case "$1" in
+        -h | --help) usage 0 ;;
+        --)
+            shift
+            break
+            ;;
+        *) break ;;
+    esac
+done
+
+main() {
+    "$@"
+}
+
+caller 0 > /dev/null || main "$@"
