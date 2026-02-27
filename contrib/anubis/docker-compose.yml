@@ -1,0 +1,26 @@
+services:
+  anubis:
+    network_mode: "host"
+    container_name: "anubis"
+    image: ghcr.io/techarohq/anubis:latest
+    restart: unless-stopped
+    environment:
+      BIND: ":8049"
+      DIFFICULTY: "4"
+      #METRICS_BIND: ":9090"
+      #SERVE_ROBOTS_TXT: "true"
+      TARGET: "http://localhost:8042"
+      POLICY_FNAME: "/data/cfg/botPolicy.yaml"
+      OG_PASSTHROUGH: "true"
+      OG_EXPIRY_TIME: "24h"
+      ED25519_PRIVATE_KEY_HEX: "${ANUBIS_PRIVATE_KEY}"
+    healthcheck:
+      test: ["CMD", "anubis", "--healthcheck"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 500ms
+    #ports:
+    #  - 8049:8049
+    volumes:
+      - "./data:/data"
