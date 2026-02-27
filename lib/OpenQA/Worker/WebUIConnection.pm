@@ -26,11 +26,12 @@ has 'service_port_delta';    # delta from web UI port on which to directly conne
 has 'websocket_connection';
 
 sub new ($class, $webui_host, $cli_options) {
+    $webui_host = $ENV{OPENQA_WORKER_WEBUI_HOST} // $webui_host;
     my $url = $webui_host !~ '/' ? Mojo::URL->new->scheme('http')->host_port($webui_host) : Mojo::URL->new($webui_host);
     my $ua = OpenQA::Client->new(
         api => $url->host,
-        apikey => $cli_options->{apikey},
-        apisecret => $cli_options->{apisecret},
+        apikey => $ENV{OPENQA_WORKER_APIKEY} // $cli_options->{apikey},
+        apisecret => $ENV{OPENQA_WORKER_APISECRET} // $cli_options->{apisecret},
     );
     $ua->base_url($url);
 
