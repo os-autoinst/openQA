@@ -63,6 +63,23 @@ subtest 'check for local worker' => sub {
     ok $settings->is_local_worker, 'considered local with localhost:9527 and remotehost being changed to ::1';
 };
 
+subtest 'worker tokens' => sub {
+    my $host = 'my_host';
+    my $key = '1234567890ABCDEF';
+    my $secret = '1234567890ABCDEF';
+    my $token = 'oqwt-bXlfaG9zdAASNFZ4kKvN7wASNFZ4kKvN7w';
+    is OpenQA::Worker::Settings::encode_token($host, $key, $secret), $token, 'worker can encode expected token';
+    is_deeply [OpenQA::Worker::Settings::decode_token($token)], [$host, $key, $secret], 'worker can decode token';
+    my $settings = OpenQA::Worker::Settings->new(1, {token => $token});
+    is_deeply(
+        $settings->webui_host_specific_settings->{my_host},
+        {apikey => $key, apisecret => $secret},
+        'credentials parsed correctly from optimized oqwt-token'
+    ) or always_explain $settings->webui_host_specific_settings;
+    is $settings->webui_host_specific_settings->{'https://remotehost'}{HOST_SPECIFIC}, 'specific setting (remotehost)',
+      'other settings preserved';
+};
+
 subtest 'apply settings to app' => sub {
     my ($setup_log_called, $setup_log_app);
     my $mock = Test::MockModule->new('OpenQA::Worker::Settings');

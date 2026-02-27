@@ -8,6 +8,8 @@ use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'trim';
 use Config::IniFiles;
+use Feature::Compat::Try;
+use MIME::Base64 qw(encode_base64url decode_base64url);
 use Time::Seconds;
 use OpenQA::Config;
 use OpenQA::Log qw(setup_log log_info);
@@ -45,6 +47,15 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     my @hosts = split(' ', $cli_options->{host} || $global_settings{HOST} || 'localhost');
     delete $global_settings{HOST};
     _read_section($cfg, $_, $webui_host_specific_settings{$_} = {}) for @hosts;
+    my %tokens = map {
+        my ($host, $key, $secret) = decode_token($_);
+        $host => {key => $key, secret => $secret}
+    } split /,/, $ENV{OPENQA_WORKER_TOKEN} // $cli_options->{token} // '';
+    for (keys %tokens) {
+        $webui_host_specific_settings{$_} ||= {};
+        $webui_host_specific_settings{$_}->{apikey} = $tokens{$_}{key};
+        $webui_host_specific_settings{$_}->{apisecret} = $tokens{$_}{secret};
+    }
 
     # Select sensible system CPU load15 threshold to prevent system overload
     # based on experiences with system stability so far
@@ -142,6 +153,25 @@ sub is_local_worker ($self) {
 sub has_class ($self, $worker_class) {
     my $c = $self->{_worker_classes} //= {map { $_ => 1 } split(',', $self->global_settings->{WORKER_CLASS} // '')};
     return exists $c->{$worker_class};
+}
+
+# Generate a length-optimized, URL escaped, base64 encoded worker token string
+# with a prefix abbreviated for "openQA worker token"
+sub encode_token ($host, $key, $secret) {
+    my ($key_bin, $secret_bin) = map { pack 'H*', $_ } ($key, $secret);
+    return 'oqwt-' . encode_base64url join "\x00", $host, $key_bin, $secret_bin;
+}
+
+sub decode_token ($token) {
+    return undef unless my $encoded_data = $token =~ s/^oqwt-//ir;
+    my $raw_data = decode_base64url($encoded_data);
+    return undef unless $raw_data;
+    my @parts = split /\x00/, $raw_data, 3;
+    return undef unless @parts == 3;
+    my $host = $parts[0];
+    my $key = uc unpack 'H*', $parts[1];
+    my $secret = uc unpack 'H*', $parts[2];
+    return ($host, $key, $secret);
 }
 
 1;
