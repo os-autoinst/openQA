@@ -86,7 +86,7 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
                 $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
             }
             catch ($e) {
-                croak 'Could not insert fixture ' . path($fixture)->to_rel($cwd) . ": $e";
+                croak 'Could not insert fixture ' . path($fixture)->to_rel($cwd) . ": $e";    # uncoverable statement
             }
         }
     }
@@ -99,12 +99,6 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
         my $max = $dbh->selectrow_arrayref("select max(id) from $table")->[0] + 1;
         $schema->storage->dbh->do("alter sequence $table\_id_seq restart with $max");
     }
-}
-
-sub disconnect ($schema) {
-    my $dbh = $schema->storage->dbh;
-    if (my $search_path = $schema->search_path_for_tests) { $dbh->do("drop schema $search_path") }
-    return $dbh->disconnect;
 }
 
 1;
@@ -133,9 +127,5 @@ Use fixtures_glob to select fixtures to load from files.
 =head2 insert_fixtures
 
 Insert fixtures into database
-
-=head2 disconnect ($schema)
-
-Disconnect from database handle
 
 =cut

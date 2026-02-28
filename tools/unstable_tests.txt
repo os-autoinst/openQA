@@ -1,2 +1,0 @@
-t/ui/26-jobs_restart.t
-t/ui/13-admin.t
