@@ -5622,9 +5622,10 @@ filtered, e.g. show only tagged (important) builds.</p>
 <div class="sect2">
 <h3 id="_test_result_badges_gh5022"><a class="anchor" href="#_test_result_badges_gh5022"></a><a class="link" href="#_test_result_badges_gh5022">29.16. Test result badges <a href="https://github.com/os-autoinst/openQA/pull/5022">gh#5022</a></a></h3>
 <div class="paragraph">
-<p>For each job result including the latest job result page, there is a corresponding
-route to get an SVG status badge that can eg. be used to build a status dashboard
-or for showing the status within a GitHub comment.</p>
+<p>For build results or individual job results including the latest job result
+page, there is a corresponding route to get an SVG status badge that can e.g.
+be used to build a status dashboard or for showing the status within a GitHub
+comment.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -5634,11 +5635,19 @@ or for showing the status within a GitHub comment.</p>
 <div class="literalblock">
 <div class="content">
 <pre>http://openqa/tests/123/badge
-http://openqa/tests/latest/badge</pre>
+http://openqa/tests/latest/badge
+http://openqa/tests/overview/badge?distri=opensuse&amp;groupid=1&amp;result=not_ok</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>There is an optional parameter 'show_build=1' that will
+<p>The first two routes refer to a specific job or the latest job of a scenario.
+The <code>/tests/overview/badge</code> route summarizes the status of multiple jobs based
+on overview query parameters, in this example reflecting the most severe
+status. It supports the same query parameters as the overview page for example
+to filter out states taken into consideration.</p>
+</div>
+<div class="paragraph">
+<p>There is an optional parameter 'show_build=1' for single job badges that will
 prefix the status with the build number.</p>
 </div>
 </div>
@@ -14810,7 +14819,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-02-26 04:44:49 UTC
+Last updated 2026-02-28 04:45:29 UTC
 </div>
 </div>
 </body>
