@@ -51,6 +51,7 @@
                 <li>Anonymize audit log entries (your username will be replaced)</li>
                 <li>Replace your username, email, and profile information with placeholder values</li>
             </ul>
+            <p>See our <a href="https://github.com/os-autoinst/openQA/blob/master/docs/PrivacyPolicy.asciidoc" target="_blank">Privacy Policy</a> for more information about how we handle your data.</p>
             <p class="text-warning"><strong>This action cannot be undone.</strong></p>
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
                 Delete My Account
