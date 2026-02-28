@@ -101,12 +101,6 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
     }
 }
 
-sub disconnect ($schema) {
-    my $dbh = $schema->storage->dbh;
-    if (my $search_path = $schema->search_path_for_tests) { $dbh->do("drop schema $search_path") }
-    return $dbh->disconnect;
-}
-
 1;
 
 =head1 NAME
@@ -133,9 +127,5 @@ Use fixtures_glob to select fixtures to load from files.
 =head2 insert_fixtures
 
 Insert fixtures into database
-
-=head2 disconnect ($schema)
-
-Disconnect from database handle
 
 =cut
