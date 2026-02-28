@@ -1,12 +1,14 @@
-theme = community + openqa
-severity = 4
-include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables ValuesAndExpressions::RequireNumberSeparators CodeLayout::ProhibitQuotedWordLists RegularExpressions::ProhibitSingleCharAlternation
+theme = community + openqa + core
+severity = 1
+include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
+exclude = Subroutines::ProhibitExplicitReturnUndef Subroutines::ProhibitSubroutinePrototypes Subroutines::RequireFinalReturn Subroutines::ProhibitBuiltinHomonyms ValuesAndExpressions::ProhibitConstantPragma ControlStructures::ProhibitPostfixControls RegularExpressions::RequireLineBoundaryMatching RegularExpressions::RequireExtendedFormatting RegularExpressions::RequireDotMatchAnything ValuesAndExpressions::RequireInterpolationOfMetachars References::ProhibitDoubleSigils Modules::RequireVersionVar ValuesAndExpressions::ProhibitLongChainsOfMethodCalls ValuesAndExpressions::ProhibitEmptyQuotes Documentation::RequirePodSections RegularExpressions::ProhibitUnusualDelimiters ControlStructures::ProhibitUnlessBlocks NamingConventions::Capitalization ValuesAndExpressions::ProhibitMagicNumbers RegularExpressions::ProhibitComplexRegexes RegularExpressions::ProhibitEscapedMetacharacters Community::DiscouragedModules Modules::RequireEndWithOne Modules::RequireExplicitPackage Variables::ProhibitReusedNames Subroutines::ProtectPrivateSubs ValuesAndExpressions::ProhibitImplicitNewlines InputOutput::ProhibitBacktickOperators Variables::ProhibitPunctuationVars InputOutput::RequireBracedFileHandleWithPrint Modules::RequireFilenameMatchesPackage InputOutput::RequireCheckedSyscalls InputOutput::RequireCheckedClose ValuesAndExpressions::ProhibitNoisyQuotes CodeLayout::RequireTrailingCommas RegularExpressions::ProhibitFixedStringMatches ErrorHandling::RequireCarping BuiltinFunctions::ProhibitVoidMap NamingConventions::ProhibitAmbiguousNames Variables::RequireLocalizedPunctuationVars Variables::ProhibitLocalVars InputOutput::RequireCheckedOpen Variables::RequireInitializationForLocalVars RegularExpressions::ProhibitEnumeratedClasses Modules::ProhibitMultiplePackages BuiltinFunctions::RequireBlockGrep Subroutines::RequireArgUnpacking ValuesAndExpressions::ProhibitLeadingZeros BuiltinFunctions::ProhibitBooleanGrep RegularExpressions::ProhibitUnusedCapture RegularExpressions::RequireBracesForMultiline RegularExpressions::ProhibitUselessTopic ValuesAndExpressions::ProhibitMixedBooleanOperators Documentation::PodSpelling BuiltinFunctions::ProhibitStringyEval ErrorHandling::RequireCheckingReturnValueOfEval Variables::ProtectPrivateVars ControlStructures::ProhibitCStyleForLoops ValuesAndExpressions::ProhibitMismatchedOperators ValuesAndExpressions::ProhibitEscapedCharacters Community::EmptyReturn RegularExpressions::ProhibitCaptureWithoutTest InputOutput::RequireBriefOpen
+
+
+verbose = ::warning file=%f,line=%l,col=%c,title=%m - severity %s::[%p] %e\n
 
 # ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
 # No operators like < =~ ! allowed in 'unless' or 'until', only simple
 # unless $x && @$y
-
-verbose = ::warning file=%f,line=%l,col=%c,title=%m - severity %s::[%p] %e\n
 
 # == Perlcritic Policies
 # -- Test::Most brings in strict & warnings
@@ -47,6 +49,12 @@ severity = 5
 [OpenQA::RedundantStrictWarning]
 equivalent_modules = Test::Most
 
+[ValuesAndExpressions::ProhibitMagicNumbers]
+allowed_values = 0.5 -10 -2 -1 0 1 2 3 4 5 6 7 8 9 10 100 127 128 255 1000 1024 80 443
+allowed_types = Hex Octal Float
+
 [ValuesAndExpressions::RequireNumberSeparators]
 min_value = 1000000
 
+[Community::DiscouragedModules]
+allowed_modules = FindBin
