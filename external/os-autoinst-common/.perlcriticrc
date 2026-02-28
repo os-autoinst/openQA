@@ -1,6 +1,7 @@
-theme = community + openqa
-severity = 4
+theme = community + openqa + core
+severity = 1
 include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals
+exclude = Subroutines::ProhibitExplicitReturnUndef Subroutines::ProhibitSubroutinePrototypes Subroutines::RequireFinalReturn Subroutines::ProhibitBuiltinHomonyms ValuesAndExpressions::ProhibitConstantPragma ControlStructures::ProhibitPostfixControls RegularExpressions::RequireLineBoundaryMatching RegularExpressions::RequireExtendedFormatting RegularExpressions::RequireDotMatchAnything ValuesAndExpressions::RequireInterpolationOfMetachars References::ProhibitDoubleSigils Modules::RequireVersionVar ValuesAndExpressions::ProhibitLongChainsOfMethodCalls ValuesAndExpressions::ProhibitEmptyQuotes Documentation::RequirePodSections RegularExpressions::ProhibitUnusualDelimiters ControlStructures::ProhibitUnlessBlocks NamingConventions::Capitalization
 
 verbose = ::warning file=%f,line=%l,col=%c,title=%m - severity %s::[%p] %e\n
 
@@ -47,3 +48,6 @@ severity = 5
 # -- Superfluous use strict/warning.
 [OpenQA::RedundantStrictWarning]
 equivalent_modules = Test::Most
+
+[ValuesAndExpressions::ProhibitMagicNumbers]
+allowed_values = 0 1 2 -1
