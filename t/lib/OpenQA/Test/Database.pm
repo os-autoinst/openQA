@@ -86,7 +86,7 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
                 $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
             }
             catch ($e) {
-                croak 'Could not insert fixture ' . path($fixture)->to_rel($cwd) . ": $e";
+                croak 'Could not insert fixture ' . path($fixture)->to_rel($cwd) . ": $e";    # uncoverable statement
             }
         }
     }
