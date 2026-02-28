@@ -13,7 +13,7 @@ use OpenQA::Test::TimeLimit '8';
 use OpenQA::Client;
 use OpenQA::Test::Case;
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
+OpenQA::Test::Case->new->init_data(fixtures_glob => '0{1-jobs,3-users}.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
@@ -78,6 +78,46 @@ subtest 'test delete_api_key' => sub {
     ok !((grep { $_->{key} eq $key1 } @{$res->{keys}})), "key $key1 no longer in list";
 
     $t->delete_ok("/api/v1/users/me/api_keys/NONEXISTENT")->status_is(404, 'delete nonexistent key');
+};
+
+subtest 'test delete_self' => sub {
+    my $user = $app->schema->resultset('Users')->find(99902);
+    ok $user, 'user exists before deletion';
+    ok $user->api_keys->create({t_expiration => DateTime->now->add(years => 1)});
+    ok $user->comments->create({text => 'test comment'}), 'comment created';
+    ok $user->developer_sessions->create({job_id => 80000}), 'developer session created';
+    $t->delete_ok('/api/v1/users/me')->status_is(200, 'user can delete own account');
+    $user->discard_changes;
+    ok $user->is_deleted, 'user is marked as deleted';
+    is $user->username, 'deleted-user-99902', 'username anonymized';
+    is $user->email, undef, 'email cleared';
+    is $user->fullname, undef, 'fullname cleared';
+    is $user->nickname, undef, 'nickname cleared';
+    my $keys_after = $app->schema->resultset('ApiKeys')->search({user_id => 99902})->count;
+    is $keys_after, 0, 'API keys deleted';
+    is $user->comments->count, 1, 'comment preserved';
+    is $user->developer_sessions->count, 1, 'developer session preserved';
+    my $event = OpenQA::Test::Case::find_most_recent_event($app->schema, 'user_deleted');
+    is $event->{username}, 'https://openid.camelot.uk/lancelot', 'delete event has original username';
+};
+
+subtest 'anonymize audit event data' => sub {
+    my $user = $app->schema->resultset('Users')->find(99903);
+    ok $user, 'user 99903 (percival) exists';
+    my $username = $user->username;
+    my $event_data = "User $username performed an action";
+    $user->audit_events->create(
+        {
+            event => 'job_created',
+            event_data => $event_data,
+        });
+    my $audit_event = $user->audit_events->find({event => 'job_created'});
+    is $audit_event->event_data, $event_data, 'audit event created with username in event_data';
+    $user->anonymize;
+    $user->discard_changes;
+    $audit_event->discard_changes;
+    is $audit_event->event_data, "User deleted-user performed an action", 'event_data anonymized';
+    is $audit_event->user_id, 99903, 'audit event association preserved';
 };
 
 done_testing();
