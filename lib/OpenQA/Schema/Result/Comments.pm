@@ -39,6 +39,7 @@ __PACKAGE__->add_columns(
     user_id => {
         data_type => 'bigint',
         is_foreign_key => 1,
+        is_nullable => 1,
     },
     flags => {
         data_type => 'integer',
