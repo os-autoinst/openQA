@@ -1,0 +1,114 @@
+= Privacy Policy
+:toc:
+
+== Introduction
+
+openQA is an automated testing framework. This privacy policy describes how we
+collect, use, and protect your personal information when you use an openQA
+instance.
+
+This policy applies to users of openQA. Individual openQA instance operators
+may have their own privacy practices.
+
+== Data We Collect
+
+=== Account Information
+
+When you create an account on an openQA instance, we collect:
+
+* Username
+* Email address (optional)
+* Full name (optional)
+* Nickname (optional)
+* Role (operator, admin)
+
+=== Authentication Data
+
+* API keys and secrets (stored in hashed form)
+* Session data (login time, user ID)
+
+=== Activity Data
+
+* Comments you post on jobs or test results
+* Job settings and configurations you create
+* Audit events recording your actions
+* Developer session data when using the interactive debugging feature
+
+== How We Use Your Data
+
+Your data is used for:
+
+* Providing the openQA testing service
+* Authenticating your account
+* Managing your account and permissions
+* Recording test activities and results
+* Maintaining security through audit logging
+* No marketing or advertising purposes
+
+== Data Protection
+
+We implement appropriate technical and organizational measures:
+
+* Passwords and API secrets are stored using secure hashing
+* Access controls limit who can view your data
+* Audit logs track changes to accounts and data
+* When you delete your account, your personal data is anonymized while preserving historical records (see User Rights)
+
+== Data Sharing
+
+We do not share your personal data with third parties except:
+
+* When required by law or legal process
+* When necessary to protect our rights or safety
+* Aggregated, anonymized data that cannot identify you
+
+We do not sell your personal data.
+
+== User Rights
+
+You have the following rights regarding your personal data:
+
+=== Access
+
+You can view your account information through the web interface or API.
+
+=== Correction
+
+You can update your account details (username, email, fullname, nickname) through your user settings.
+
+=== Deletion
+
+You can delete your account, which will:
+* Remove your personal information (email, fullname, nickname)
+* Anonymize your username (replaced with "deleted-user-[id]")
+* Delete your API keys
+* Clear your user reference from comments and audit events
+* Preserve historical test data without identifying you
+
+To exercise these rights, use the account deletion feature in your user settings or contact the instance administrator.
+
+=== Data Portability
+
+You can export your data through the openQA API.
+
+=== Contact
+
+For privacy inquiries, contact the administrator of your openQA instance.
+
+== Cookies and Tracking
+
+openQA uses session cookies for authentication. These cookies are necessary for the service to function and are not used for tracking or advertising.
+
+No third-party analytics or tracking services are used.
+
+== Policy Changes
+
+This policy may be updated from time to time. The effective date is noted below. Significant changes will be communicated through the openQA instance's announcement channels.
+
+== Effective Date
+
+This policy was last updated: February 2026
+
+== Contact Information
+
+For questions about this privacy policy or to exercise your data rights, contact the openQA instance administrator.

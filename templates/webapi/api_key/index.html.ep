@@ -39,4 +39,66 @@
             % }
         </tbody>
     </table>
+
+    <div class="card mt-4 border-danger">
+        <div class="card-header bg-danger text-white">Delete My Account</div>
+        <div class="card-body">
+            <p>Deleting your account will:</p>
+            <ul>
+                <li>Remove all your API keys</li>
+                <li>End any active developer sessions</li>
+                <li>Anonymize your comments (your username will be removed)</li>
+                <li>Anonymize audit log entries (your username will be replaced)</li>
+                <li>Replace your username, email, and profile information with placeholder values</li>
+            </ul>
+            <p>See our <a href="https://github.com/os-autoinst/openQA/blob/master/docs/PrivacyPolicy.asciidoc" target="_blank">Privacy Policy</a> for more information about how we handle your data.</p>
+            <p class="text-warning"><strong>This action cannot be undone.</strong></p>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                Delete My Account
+            </button>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteAccountModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Account Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete your account? This action cannot be undone.</p>
+                    <div class="mb-3">
+                        <label class="form-label" for="confirm-delete">Type your username to confirm:</label>
+                        % my $user = (ref($current_user) // '') eq 'OpenQA::Schema::Result::Users' ? $current_user : ($current_user->{user} // '');
+                        <input type="text" class="form-control" id="confirm-delete" data-expected="<%= $user && $user->can('name') ? $user->name : '' %>">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-btn" disabled>Delete My Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var input = document.getElementById('confirm-delete');
+            var btn = document.getElementById('confirm-delete-btn');
+            input.addEventListener('input', function() {
+                btn.disabled = input.value !== input.dataset.expected;
+            });
+            btn.addEventListener('click', function() {
+                fetchWithCSRF('<%= url_for("apiv1_delete_current_user") %>', {method: 'DELETE'})
+                    .then(function(response) {
+                        if (response.ok) {
+                            window.location.href = '<%= url_for("index") %>';
+                        } else {
+                            alert('Failed to delete account. Please try again.');
+                        }
+                    });
+            });
+        });
+    </script>
 </div>
