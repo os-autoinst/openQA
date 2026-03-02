@@ -252,11 +252,11 @@ function renderTestResult(data, type, row) {
 function renderTestLists() {
   // determine params for AJAX queries
   const pageQueryParams = parseQueryParams();
-  const ajaxQueryParams = {};
+  const ajaxQueryParams = new URLSearchParams();
   ['limit', 'groupid', 'match', 'group_glob', 'not_group_glob', 'comment', 'job_setting'].forEach(paramName => {
     const paramValues = pageQueryParams[paramName];
-    if (paramValues && paramValues.length > 0) {
-      ajaxQueryParams[paramName] = paramValues[0];
+    if (Array.isArray(paramValues)) {
+      paramValues.forEach(paramValue => ajaxQueryParams.append(paramName, paramValue));
     }
   });
   filters.forEach(filter => {
@@ -270,8 +270,7 @@ function renderTestLists() {
   var runningTable = $('#running').DataTable({
     order: [], // no initial resorting
     ajax: {
-      url: urlWithBase('/tests/list_running_ajax'),
-      data: ajaxQueryParams,
+      url: urlWithBase('/tests/list_running_ajax?') + ajaxQueryParams.toString(),
       dataSrc: function (json) {
         // update heading when JSON is available
         let text = json.data.length + ' jobs are running';
@@ -308,8 +307,7 @@ function renderTestLists() {
   var scheduledTable = $('#scheduled').DataTable({
     order: [], // no initial resorting
     ajax: {
-      url: urlWithBase('/tests/list_scheduled_ajax'),
-      data: ajaxQueryParams,
+      url: urlWithBase('/tests/list_scheduled_ajax?') + ajaxQueryParams.toString(),
       dataSrc: function (json) {
         // update heading when JSON is available
         var blockedCount = 0;
@@ -349,19 +347,19 @@ function renderTestLists() {
       }
     ]
   });
+  const makeAjaxUrlWithFiltering = () => {
+    filters.forEach(filter => {
+      ajaxQueryParams.set(filter, document.getElementById(filter + 'filter').checked ? 1 : 0);
+    });
+    return urlWithBase('/tests/list_ajax?') + ajaxQueryParams.toString();
+  };
   var table = $('#results').DataTable({
     lengthMenu: [
       [10, 25, 50],
       [10, 25, 50]
     ],
     ajax: {
-      url: urlWithBase('/tests/list_ajax'),
-      data: function () {
-        filters.forEach(filter => {
-          ajaxQueryParams[filter] = document.getElementById(filter + 'filter').checked ? 1 : 0;
-        });
-        return ajaxQueryParams;
-      },
+      url: makeAjaxUrlWithFiltering(),
       dataSrc: function (json) {
         // update heading when JSON is available
         $('#finished_jobs_heading').text('Last ' + json.data.length + ' finished jobs');
@@ -395,7 +393,10 @@ function renderTestLists() {
 
   // register event listener to the two range filtering inputs to redraw on input
   filters.forEach(filter => {
-    document.getElementById(filter + 'filter').onchange = () => table.ajax.reload();
+    document.getElementById(filter + 'filter').onchange = () => {
+      table.ajax.url(makeAjaxUrlWithFiltering());
+      table.ajax.reload();
+    };
   });
 
   // initialize filter for result (of finished jobs) as chosen
