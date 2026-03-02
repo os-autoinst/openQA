@@ -251,18 +251,14 @@ function renderTestResult(data, type, row) {
 
 function renderTestLists() {
   // determine params for AJAX queries
-  var pageQueryParams = parseQueryParams();
-  var ajaxQueryParams = {};
-  ajaxQueryParams.addFirstParam = function (paramName) {
-    var paramValues = pageQueryParams[paramName];
+  const pageQueryParams = parseQueryParams();
+  const ajaxQueryParams = {};
+  ['limit', 'groupid', 'match', 'group_glob', 'not_group_glob', 'comment'].forEach(paramName => {
+    const paramValues = pageQueryParams[paramName];
     if (paramValues && paramValues.length > 0) {
-      this[paramName] = paramValues[0];
+      ajaxQueryParams[paramName] = paramValues[0];
     }
-  };
-  jQuery.each(['limit', 'groupid', 'match', 'group_glob', 'not_group_glob', 'comment'], (index, paramName) => {
-    ajaxQueryParams.addFirstParam(paramName);
   });
-  delete ajaxQueryParams.addFirstParam;
   filters.forEach(filter => {
     const param = pageQueryParams[filter];
     if (Array.isArray(param)) {
