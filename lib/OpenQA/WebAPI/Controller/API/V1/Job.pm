@@ -86,6 +86,7 @@ sub list ($self) {
     $validation->optional('offset')->num;
     $validation->optional('groupid')->num;
     $validation->optional('not_groupid')->num;
+    $validation->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
@@ -99,6 +100,7 @@ sub list ($self) {
     my %args;
     $args{limit} = $limit + 1;
     $args{offset} = $offset;
+    $args{job_settings} = $self->every_key_value_param('job_setting');
     my @args = qw(build iso distri version flavor scope group groupid
       not_groupid before after arch hdd_1 test machine worker_class
       modules modules_result);

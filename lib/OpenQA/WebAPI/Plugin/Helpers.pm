@@ -285,6 +285,7 @@ sub register ($self, $app, $config) {
     $app->helper('reply.validation_error' => \&_validation_error);
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
     $app->helper(every_non_empty_param => \&_every_non_empty_param);
+    $app->helper(every_key_value_param => \&_every_key_value_param);
     $app->helper(compute_overview_filtering_params => \&_compute_overview_filtering_params);
     $app->helper(groups_for_globs => \&_groups_for_globs);
     $app->helper(param_hash => \&_param_hash);
@@ -350,6 +351,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('modules', 'comma_separated');
     $v->optional('flavor', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(1, undef);
+    $v->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
     $v->optional('t')->datetime;
 
     # add simple query params to search args
@@ -442,14 +444,19 @@ sub _compose_job_overview_search_args ($c) {
     # allow filtering by comment text
     if (my $c = $v->param('comment')) { $search_args{comment_text} = $c }
 
-    # allow filtering by several job settings
+    # allow filtering by job settings
     $search_args{filters} = $c->compute_overview_filtering_params;
+    $search_args{job_settings} = $c->every_key_value_param('job_setting');
 
     return (\%search_args, \@groups);
 }
 
 sub _every_non_empty_param ($c, $param_key) {
     [map { split ',', $_ } @{$c->every_param($param_key)}]
+}
+
+sub _every_key_value_param ($c, $param_key) {
+    return {map { split('=', $_, 2) } @{$c->validation->every_param($param_key)}};
 }
 
 sub _compute_overview_filtering_params ($c) {

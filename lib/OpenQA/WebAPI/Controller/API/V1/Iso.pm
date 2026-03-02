@@ -265,9 +265,8 @@ sub destroy {
     $self->emit_event('openqa_iso_delete', {iso => $iso});
 
     my $schema = $self->schema;
-    my $subquery = $schema->resultset('JobSettings')->query_for_settings({ISO => $iso});
-    my @jobs
-      = $schema->resultset('Jobs')->search({'me.id' => {-in => $subquery->get_column('job_id')->as_query}})->all;
+    my $settings_conds = $schema->resultset('JobSettings')->conds_for_settings({ISO => $iso});
+    my @jobs = $schema->resultset('Jobs')->search($settings_conds)->all;
 
     for my $job (@jobs) {
         $self->emit_event('openqa_job_delete', {id => $job->id});
