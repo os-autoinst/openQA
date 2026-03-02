@@ -400,10 +400,11 @@ sub build_results ($self) {
     my $show_tags = $validation->param('show_tags') // $only_tagged;
 
     my $tags = $show_tags ? $group->tags : undef;
+    my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
     my $cbr
       = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
         $time_limit_days, $only_tagged ? $tags : undef,
-        [], $tags);
+        [], $tags, $max_jobs_limit);
     $self->render(json => $cbr);
 }
 
