@@ -267,7 +267,7 @@ function renderTestLists() {
   });
 
   // initialize data tables for running, scheduled and finished jobs
-  var runningTable = $('#running').DataTable({
+  $('#running').DataTable({
     order: [], // no initial resorting
     ajax: {
       url: urlWithBase('/tests/list_running_ajax?') + ajaxQueryParams.toString(),
@@ -304,19 +304,19 @@ function renderTestLists() {
       }
     ]
   });
-  var scheduledTable = $('#scheduled').DataTable({
+  $('#scheduled').DataTable({
     order: [], // no initial resorting
     ajax: {
       url: urlWithBase('/tests/list_scheduled_ajax?') + ajaxQueryParams.toString(),
       dataSrc: function (json) {
         // update heading when JSON is available
-        var blockedCount = 0;
+        let blockedCount = 0;
         jQuery.each(json.data, function (index, row) {
           if (typeof row.blocked_by_id === 'number') {
             ++blockedCount;
           }
         });
-        var text = json.data.length + ' scheduled jobs';
+        let text = json.data.length + ' scheduled jobs';
         if (blockedCount > 0) {
           text += ' (' + blockedCount + ' blocked by other jobs)';
         }
@@ -353,7 +353,7 @@ function renderTestLists() {
     });
     return urlWithBase('/tests/list_ajax?') + ajaxQueryParams.toString();
   };
-  var table = $('#results').DataTable({
+  const table = $('#results').DataTable({
     lengthMenu: [
       [10, 25, 50],
       [10, 25, 50]
@@ -400,14 +400,14 @@ function renderTestLists() {
   });
 
   // initialize filter for result (of finished jobs) as chosen
-  var finishedJobsResultFilter = $('#finished-jobs-result-filter');
+  const finishedJobsResultFilter = $('#finished-jobs-result-filter');
   finishedJobsResultFilter.chosen();
   // ensure the table is re-drawn when a filter is added/removed
   finishedJobsResultFilter.change(function (event) {
     // update data table
     table.draw();
     // update query params
-    var params = parseQueryParams();
+    const params = parseQueryParams();
     params.resultfilter = finishedJobsResultFilter.val();
     updateQueryParams(params);
   });
@@ -441,7 +441,7 @@ function renderTestLists() {
   });
 
   // apply filter from query params
-  var filter = parseQueryParams().resultfilter;
+  const filter = parseQueryParams().resultfilter;
   if (filter) {
     finishedJobsResultFilter.val(filter).trigger('chosen:updated').trigger('change');
   }
