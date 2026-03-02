@@ -253,7 +253,7 @@ function renderTestLists() {
   // determine params for AJAX queries
   const pageQueryParams = parseQueryParams();
   const ajaxQueryParams = {};
-  ['limit', 'groupid', 'match', 'group_glob', 'not_group_glob', 'comment'].forEach(paramName => {
+  ['limit', 'groupid', 'match', 'group_glob', 'not_group_glob', 'comment', 'job_setting'].forEach(paramName => {
     const paramValues = pageQueryParams[paramName];
     if (paramValues && paramValues.length > 0) {
       ajaxQueryParams[paramName] = paramValues[0];
