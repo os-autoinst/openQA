@@ -426,7 +426,7 @@ test-helm-lint: ## Lint helm chart
 
 .PHONY: test-helm-install
 test-helm-install: ## Install helm chart for testing
-	tools/test_helm_chart install
+	RETRY=${RETRY} timeout --foreground -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry tools/test_helm_chart install
 
 .PHONY: update-deps
 update-deps: ## Update dependencies in cpanfile and specfile
