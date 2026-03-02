@@ -78,6 +78,7 @@ devel_no_selenium_requires:
   '%qemu':
   '%cover_requires':
   curl:
+  make:
   rsync:
   postgresql-devel:
   sudo:
