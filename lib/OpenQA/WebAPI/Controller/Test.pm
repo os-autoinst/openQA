@@ -209,6 +209,7 @@ sub list_ajax ($self) {
     my $scope = $self->param('relevant');
     $scope = $scope && $scope ne 'false' && $scope ne '0' ? 'relevant' : '';
     my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $self->validation->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
     my @jobs = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope => $scope,
@@ -220,6 +221,7 @@ sub list_ajax ($self) {
             $self->param('limit') // $limits->{all_tests_default_finished_jobs}
         ),
         order_by => \'COALESCE(me.t_finished, me.t_updated) DESC, me.id DESC',
+        job_settings => $self->every_key_value_param('job_setting'),
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state clone_id result group_id t_finished t_updated
@@ -288,12 +290,14 @@ sub _render_comment_data_for_ajax ($self, $job_id, $comment_data) {
 }
 
 sub list_running_ajax ($self) {
+    $self->validation->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
     my $running = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match => $self->get_match_param,
         comment_text => $self->param('comment'),
         groupid => $self->param('groupid'),
         order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}],
+        job_settings => $self->every_key_value_param('job_setting'),
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state result clone_id group_id t_started blocked_by_id priority
@@ -334,6 +338,7 @@ sub list_running_ajax ($self) {
 sub list_scheduled_ajax ($self) {
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
+    $self->validation->optional('job_setting', 'not_empty')->like(qr/.+=.*/);
 
     my $scheduled = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
@@ -341,6 +346,7 @@ sub list_scheduled_ajax ($self) {
         comment_text => $self->param('comment'),
         groupid => $self->param('groupid'),
         order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}],
+        job_settings => $self->every_key_value_param('job_setting'),
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state clone_id result group_id t_created
