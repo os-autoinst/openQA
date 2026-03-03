@@ -1,4 +1,4 @@
-<div class="card card-outline-secondary
+<div class="card border-secondary
      filter-panel-bottom"
      id="developer-panel"
      data-developer-url="<%= $ws_developer_url %>"
