@@ -29,4 +29,10 @@ combined_like {
 }
 qr/\[WARN\].*get_pod_from_controllers/, 'Warning when file does not exist';
 
+subtest 'parameter validation warnings' => sub {
+    combined_like { set_api_desc('foo', 'bar') } qr /expected HASH/i, 'invalid description';
+    combined_like { set_api_desc({}, 'bar') } qr /expected.*Route/i, 'invalid route';
+    combined_like { OpenQA::WebAPI::Description::_itemize('foo', 'bar') } qr /expected.*Node/i, 'invalid node';
+};
+
 done_testing;
