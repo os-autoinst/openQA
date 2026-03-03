@@ -346,9 +346,6 @@ sed -i '/Perl::Tidy/d' cpanfile
 cpanm -n --mirror http://no.where/ --installdeps --with-feature=test .
 %endif
 
-# we don't really need the tidy test
-rm -f t/00-tidy.t
-
 %if %{with tests}
 rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
