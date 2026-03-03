@@ -1,7 +1,7 @@
 upstream webui {
     zone upstream_webui 128k;
-    # max_conns should match -w (worker/prefork count) in scripts/openqa-webui-daemon
-    server [::1]:9526 max_conns=30;
+    # never mark upstream as broken, just pass what it gives us to the client and let it decide
+    server [::1]:9526 max_fails=0;
 }
 
 upstream websocket {
