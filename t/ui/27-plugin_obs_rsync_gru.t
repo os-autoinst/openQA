@@ -9,6 +9,8 @@ use Mojo::Base -signatures;
 use Test::Mojo;
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
+use OpenQA::WebAPI::Plugin::ObsRsync::Task;
+use Test::MockObject;
 
 my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
 my $app = $t->app;
@@ -18,6 +20,7 @@ package FakeMinionJob {
     use Mojo::Base -base, -signatures;
     has id => 0;
     has app => sub { $app };
+    has retries => 200;
     sub finish { $_[0]->{state} = 'finished'; $_[0]->{result} = $_[1] }
     sub info { {notes => {project_lock => 1}} }
 }    # uncoverable statement
@@ -46,6 +49,15 @@ subtest 'process minion jobs' => sub {
     }
     is $home->child('Proj1/files_iso.lst')->slurp, "openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso\n",
       'files_iso.lst has been created';
+};
+
+subtest 'retrying' => sub {
+    my $obs_rsync = Test::MockObject->new->set_always(home => 'home')->set_true('unlock');
+    $obs_rsync->mock(is_status_dirty => sub { die "is_status_dirty failed\n" });
+    my $job = FakeMinionJob->new(app => Test::MockObject->new->set_always(obs_rsync => $obs_rsync));
+    OpenQA::WebAPI::Plugin::ObsRsync::Task::run($job, {project => 'foo'});
+    is $job->{state}, 'finished', 'job finished after retires exceeded';
+    like $job->{result}->{message}, qr/exceeded retry count/i, 'result about retrying assigned';
 };
 
 done_testing();
