@@ -25,11 +25,14 @@ is qx{git grep -I -l 'like.*\$\@' t/**.t}, '', 'Use throws_ok instead of manual 
 is qx{git grep -I -l ' \\(if\\|unless\\) \$\@'}, '', 'Use try/catch instead of manual \$\@ checks';
 is qx{git grep -I -l '^use \\(Try::Tiny\\|TryCatch\\)'}, '',
   'No Try::Tiny or TryCatch necessary, use Feature::Compat::Try and later native Perl';
+is
+qx{git grep -l -e '^sub \\S\\+ [^(]\\+' --and --not -e 'sub [(\{]' --and --not -e 'sub \\S\\+(' --and --not -e 'sub \\S\\+;' --and --not -e '# no:style:signatures' 'lib/'},
+  '', 'All files use sub signatures everywhere (nameless and in-place definitions still allowed)';
 is qx{git grep -I -l 'sub [a-z_A-Z0-9]\\+()' ':!docs/'}, '',
   'Consistent space before function signatures (this is not ensured by perltidy)';
 is
 qx{git grep -Pr "(?<!->)(?<!sub )\\b(ok|is|isnt|like|unlike|cmp_ok|can_ok|isa_ok|subtest|diag|note|explain|pass|fail|new_ok|is_deeply)\\s*\\(" t/ | grep -vE "t/(lib|testresults)/"},
   '',
   'Consistent Test::More call format (no parentheses)';
-done_testing;
 
+done_testing;

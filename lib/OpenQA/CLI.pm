@@ -19,7 +19,7 @@ my $specfile = "$RealBin/../public/openqa-cli.yaml";
 $specfile = "$RealBin/../client/openqa-cli.yaml" unless -f $specfile;
 
 my $app_spec;
-sub _get_global_options { $app_spec->{options} }
+sub _get_global_options () { $app_spec->{options} }
 
 sub _get_options ($name) { $app_spec->{subcommands}->{$name}->{options}; }
 
