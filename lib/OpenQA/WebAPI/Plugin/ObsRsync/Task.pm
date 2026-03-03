@@ -53,7 +53,7 @@ sub run ($job, $args) {
     my $dirty = 0;
     try { $dirty = $helper->is_status_dirty($project, 1) }
     catch ($e) {
-        _retry_or_finish($job, $helper, $project, $retry_interval_on_exception, $retry_max_count_on_exception)
+        return _retry_or_finish($job, $helper, $project, $retry_interval_on_exception, $retry_max_count_on_exception);
     }
     return _retry_or_finish($job, $helper, $project) if $dirty;
 
