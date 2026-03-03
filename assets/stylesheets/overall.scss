@@ -252,6 +252,16 @@ h6,
 }
 
 [data-bs-theme='dark'] {
+  --bs-primary: #7fbbf7;
+  --bs-primary-rgb: 127, 187, 247;
+  --bs-link-color: #7fbbf7;
+  --bs-link-hover-color: #a5d0f9;
+
+  --bs-navbar-color: var(--bs-body-color);
+  --bs-navbar-hover-color: var(--bs-primary);
+  --bs-navbar-active-color: var(--bs-primary);
+  --bs-navbar-brand-color: var(--bs-emphasis-color);
+
   .table {
     color: $default-font-color-dark;
     background-color: $default-bg-color-dark;
