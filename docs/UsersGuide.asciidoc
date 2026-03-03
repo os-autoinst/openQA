@@ -588,12 +588,11 @@ http://openqa/tests/overview/badge?distri=opensuse&groupid=1&result=not_ok
 
 The first two routes refer to a specific job or the latest job of a scenario.
 The `/tests/overview/badge` route summarizes the status of multiple jobs based
-on overview query parameters, in this example reflecting the most severe
-status. It supports the same query parameters as the overview page for example
-to filter out states taken into consideration.
+on overview query parameters, reflecting the most critical status (e.g. `failed`).
+It supports the same query parameters as the overview page.
 
-There is an optional parameter 'show_build=1' for single job badges that will
-prefix the status with the build number.
+There is an optional parameter `show_build=1` that will prefix the status with
+the build number (or `multi` if multiple builds are targeted).
 
 === Build a continuous openQA monitoring dashboard
 
