@@ -11,9 +11,22 @@ use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'format_tx_error';
 use OpenQA::VcsProvider;
+use OpenQA::VcsHook;
 use Mojo::Util 'secure_compare';
+use Feature::Compat::Try;
 
-my %SUPPORTED_PR_ACTIONS = (opened => 'opened', synchronize => 'updated', closed => 'closed');
+my %SUPPORTED_PR_ACTIONS = (
+    github => {opened => 'opened', synchronize => 'updated', closed => 'closed'},
+    gitea => {review_requested => 'review_requested'},
+);
+my %LABEL = (
+    github => 'gh:pr',
+    gitea => 'gitea:pr',
+);
+my %UPDATE_OR_CLOSED = (
+    github => {opened => 0, synchronize => 'update', closed => 'close'},
+    gitea => {opened => 0, review_requested => 0},
+);
 
 =pod
 
@@ -85,75 +98,69 @@ sub product ($self) {
 
     # handle event header
     my $req = $self->req;
-    my $event = $req->headers->header('X-GitHub-Event') // '';
+    my $event = $req->headers->header('X-Gitea-Event') // $req->headers->header('X-GitHub-Event') // '';
+    my $type = $req->headers->header('X-Gitea-Event') ? 'gitea' : 'github';
     return $self->render(status => 200, text => 'pong') if $event eq 'ping';
     return $self->render(status => 404, text => 'specified event cannot be handled') unless $event eq 'pull_request';
-
     # validate parameters
     return undef unless $self->validate_create_parameters;
     my $json = $req->json;
     return $self->render(status => 400, text => 'JSON object payload missing') unless ref $json eq 'HASH';
     my $action = $json->{action} // '';
     return $self->render(status => 404, text => 'specified action cannot be handled')
-      unless my $action_str = $SUPPORTED_PR_ACTIONS{$action};
-    my $pr = $json->{pull_request} // {};
-    my $head = $pr->{head} // {};
-    my $repo = $head->{repo} // {};
-    my @missing;
-    push @missing, 'pull_request/id' unless my $pr_id = $pr->{id};
-    push @missing, 'pull_request/statuses_url' unless my $statuses_url = $pr->{statuses_url};
-    push @missing, 'pull_request/head/sha' unless my $sha = $head->{sha};
-    push @missing, 'pull_request/head/repo/full_name' unless my $repo_name = $repo->{full_name};
-    push @missing, 'pull_request/head/repo/clone_url' unless my $clone_url = $repo->{clone_url};
-    return $self->render(status => 400, text => 'missing fields: ' . join(', ', @missing)) if @missing;
+      unless my $action_str = $SUPPORTED_PR_ACTIONS{$type}->{$action};
+
+    my $hook = "OpenQA::VcsHook::\u$type"->new();
+    my $vars;
+    try {
+        $vars = $hook->process_payload($type, $json);
+    }
+    catch ($e) {
+        return $self->render(status => $e->{status}, text => $e->{text});
+    };
+
+    my $update_or_closed = $UPDATE_OR_CLOSED{$type}->{$action};
+    my $cancelled = $update_or_closed =~ m/update|close/;
+    my $closed = $update_or_closed eq 'close';
+    my $webhook_id = $LABEL{$type} . ":$vars->{pr_id}";
 
     # cancel previously scheduled jobs for this PR
-    my $webhook_id = "gh:pr:$pr_id";
     my $scheduled_products = $self->schema->resultset('ScheduledProducts');
-    my $cancellation
-      = $action ne 'opened' ? $scheduled_products->cancel_by_webhook_id($webhook_id, "PR $action_str") : undef;
-    return $self->render(json => $cancellation) if $action eq 'closed';
+    my $cancellation = $cancelled ? $scheduled_products->cancel_by_webhook_id($webhook_id, "PR $action") : undef;
+    return $self->render(json => $cancellation) if $closed;
 
-    # compute parameters
     my $params = $req->params->to_hash;
-    my %up_params = map { uc $_ => $params->{$_} } keys %$params;
-    my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
-    return undef unless $self->validate_download_parameters(\%params);
+    $params = $hook->process_query_params($req->params->to_hash);
 
-    # set some useful defaults
-    $params{BUILD} //= "$repo_name#$sha";
-    $params{CASEDIR} //= "$clone_url#$sha";
-    $params{_GROUP_ID} //= '0';
-    $params{PRIO} //= '100';
-    $params{NEEDLES_DIR} //= '%%CASEDIR%%/needles';
-
-    # set the URL for the scenario definitions YAML file so the Minion job will download it from GitHub
-    my $relative_file_path = $params{SCENARIO_DEFINITIONS_YAML_FILE} // 'scenario-definitions.yaml';
-    $params{SCENARIO_DEFINITIONS_YAML_FILE} = "https://raw.githubusercontent.com/$repo_name/$sha/$relative_file_path";
-
-    # add "target URL" for the "Details" button of the CI status
-    my $base_url = $config->{global}->{base_url} // $req->url->base;
-    $params{CI_TARGET_URL} = $base_url if $base_url;
-
-    # set GitHub parameters so the Minion job will be able to report the status back to GitHub
-    my $html_url = $pr->{html_url};
-    $params{GITHUB_REPO} = $repo_name;
-    $params{GITHUB_SHA} = $sha;
-    $params{GITHUB_STATUSES_URL} = $statuses_url;
-    $params{GITHUB_PR_URL} = $html_url if $html_url;
-
-    # create scheduled product and enqueue minion job with parameter
-    my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user, $webhook_id);
-    my $vcs = OpenQA::VcsProvider->new(app => $app);
+    try {
+        $self->validate_download_parameters($params, 0);
+    }
+    catch ($e) {
+        return $self->render(%$e);
+    };
+    my $base_url = $self->app->config->{global}->{base_url} // $self->req->url->base;
+    $hook->schedule_product_params($vars, $params, $base_url);
+    my $scheduled_product = $self->_schedule_product($vars, $params, $webhook_id);
     my $cb = sub ($ua, $tx, @) {
         if (my $err = $tx->error) {
             $scheduled_product->delete;
             return $self->render(status => 500, text => format_tx_error($err));
         }
-        return $self->render(json => $scheduled_product->enqueue_minion_job(\%params));
+        return $self->render(json => $scheduled_product->enqueue_minion_job($params));
     };
+    my $vcs = "OpenQA::VcsProvider::\u$type"->new(app => $self->app);
+    #    my $base_url = $self->app->config->{global}->{base_url} // $self->req->url->base;
+    my $tx
+      = $vcs->report_status_to_github($vars->{statuses_url}, {state => 'pending'}, $scheduled_product->id, $base_url,
+        $cb);
+}
+
+sub _schedule_product ($self, $vars, $params, $webhook_id) {
+    # create scheduled product and enqueue minion job with parameter
+    my $scheduled_products = $self->schema->resultset('ScheduledProducts');
+    my $scheduled_product = $scheduled_products->create_with_event($params, $self->current_user, $webhook_id);
     $scheduled_product->discard_changes;    # load value of columns that have a default value
-    my $tx = $vcs->report_status_to_github($statuses_url, {state => 'pending'}, $scheduled_product->id, $base_url, $cb);
+    return $scheduled_product;
 }
 
 1;
