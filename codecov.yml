@@ -23,10 +23,7 @@ coverage:
           - lib/OpenQA/Worker/
           - lib/OpenQA/Worker.pm
           - lib/OpenQA/Utils.pm
-          - lib/OpenQA/WebAPI/Auth/
-          - lib/OpenQA/WebAPI/Controller/
-          - lib/OpenQA/WebAPI/Plugin/
-          - lib/OpenQA/WebAPI/Description.pm
+          - lib/OpenQA/WebAPI/
           - lib/OpenQA/Shared/
           - lib/OpenQA/Task/
       tests:
