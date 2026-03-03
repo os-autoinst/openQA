@@ -188,7 +188,7 @@ perl-Perl-Critic-Community-1.0.4
 perl-Perl-Critic-Policy-Plicease-ProhibitArrayAssignAref-100.0.0
 perl-Perl-Critic-Policy-Variables-ProhibitLoopOnHash-0.008
 perl-PerlIO-utf8_strict-0.010
-perl-Perl-Tidy-20260109.0.0
+perl-Perl-Tidy-20260204.0.0
 perl-Pod-Parser-1.66
 perl-Pod-POM-2.01
 perl-Pod-Spell-1.26
