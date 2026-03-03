@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::AuditEvents;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('audit_events');
 __PACKAGE__->load_components(qw(Timestamps));

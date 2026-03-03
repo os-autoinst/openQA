@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::ScreenshotLinks;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('screenshot_links');
 

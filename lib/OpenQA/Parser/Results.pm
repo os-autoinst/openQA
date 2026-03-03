@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Results;
-use Mojo::Base 'Mojo::Collection';
+use Mojo::Base 'Mojo::Collection', -signatures;
 
 # Generic result class.
 
@@ -11,57 +11,50 @@ use OpenQA::Parser;
 use Mojo::JSON qw(encode_json decode_json);
 use Storable;
 
-sub add {
-    my ($self, @results) = @_;
+sub add ($self, @results) {
     push @$self, @results;
     return $self;
 }
 
-sub get { @{$_[0]}[$_[1]] }
-sub remove { delete @{$_[0]}[$_[1]] }
+sub get ($self, $index) { $self->[$index] }
+sub remove ($self, $index) { CORE::delete $self->[$index] }
 
-sub new {
-    my ($class, @args) = @_;
+sub new ($class, @args) {
     OpenQA::Parser::restore_tree_section(\@args);
     return $class->SUPER::new(map { OpenQA::Parser::restore_el($_); $_ } @args);
 }
 
 # Mojo will call TO_JSON
-sub to_json { encode_json shift }
-sub from_json { shift->new(@{decode_json shift}) }
+sub to_json ($self) { encode_json $self }
+sub from_json ($self, $json) { $self->new(@{decode_json $json}) }
 
-sub to_array {
-    my $self = shift;
+sub to_array ($self) {
     return [map { maybe_convert_to_hash_or_array($_) } @$self];
 }
 
-sub to_el {
-    my $self = shift;
+sub to_el ($self) {
     return [map { maybe_convert_to_el($_) } @$self];
 }
 
-sub serialize { Storable::nfreeze(shift) }
-sub deserialize { shift->new(@{Storable::thaw(shift)}) }
+sub serialize ($self) { Storable::nfreeze($self) }
+sub deserialize ($self, $data) { $self->new(@{Storable::thaw($data)}) }
 
-sub reset { @{$_[0]} = () }
+sub reset ($self) { @$self = () }
 
-sub TO_JSON { shift->to_array }
+sub TO_JSON ($self) { $self->to_array }
 
-sub maybe_convert_to_el {
-    my $value = shift;
+sub maybe_convert_to_el ($value) {
     return $value->gen_tree_el if blessed $value && $value->can('gen_tree_el');
     return $value;
 }
 
-sub maybe_convert_to_hash_or_array {
-    my $value = shift;
+sub maybe_convert_to_hash_or_array ($value) {
     return $value->to_hash if blessed $value && $value->can('to_hash');
     return $value->to_array if blessed $value && $value->can('to_array');
     return $value;
 }
 
-sub gen_tree_el {
-    my $self = shift;
+sub gen_tree_el ($self) {
     return {OpenQA::Parser::DATA_FIELD() => $self->to_el, OpenQA::Parser::TYPE_FIELD() => ref $self};
 }
 

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::ObsRsync::Controller::Gru;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 use POSIX 'strftime';
 use Data::Dump qw/dump/;
 
@@ -35,8 +35,7 @@ use constant {
     QUEUE_FULL => 507,
 };
 
-sub index {
-    my $self = shift;
+sub index ($self) {
     my $helper = $self->obs_rsync;
     my %jobs;
     my $results = $self->app->minion->backend->list_jobs(
@@ -52,9 +51,7 @@ sub index {
 }
 
 # this prepares fields for rendering
-sub _extend_job_info {
-    my ($job) = @_;
-
+sub _extend_job_info ($job) {
     my $created_at = $job->{created};
     $created_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime $created_at) if $created_at;
 
@@ -81,8 +78,7 @@ sub _extend_job_info {
     return $info;
 }
 
-sub run {
-    my $self = shift;
+sub run ($self) {
     my $project = $self->param('project');
     my $repo = $self->param('repository');
     my $helper = $self->obs_rsync;
@@ -135,8 +131,7 @@ sub run {
     return $self->render(json => {message => 'started'}, status => STARTED);
 }
 
-sub get_dirty_status {
-    my $self = shift;    # uncoverable statement
+sub get_dirty_status ($self) {
     my $project = $self->param('project');    # uncoverable statement
     my $helper = $self->obs_rsync;    # uncoverable statement
     return undef if $helper->check_and_render_error($project);    # uncoverable statement
@@ -145,8 +140,7 @@ sub get_dirty_status {
     return $self->render(json => {message => $helper->get_dirty_status($project)}, status => 200);
 }
 
-sub update_dirty_status {
-    my $self = shift;
+sub update_dirty_status ($self) {
     my $project = $self->param('project');
     return undef if $self->obs_rsync->check_and_render_error($project);
 
@@ -154,8 +148,7 @@ sub update_dirty_status {
     return $self->render(json => {message => 'started'}, status => 200);
 }
 
-sub get_obs_builds_text {
-    my $self = shift;
+sub get_obs_builds_text ($self) {
     my $alias = $self->param('alias');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($alias);
@@ -163,8 +156,7 @@ sub get_obs_builds_text {
     return $self->render(json => {message => $helper->get_obs_builds_text($alias)}, status => 200);
 }
 
-sub update_obs_builds_text {
-    my $self = shift;
+sub update_obs_builds_text ($self) {
     my $alias = $self->param('alias');
     return undef if $self->obs_rsync->check_and_render_error($alias);
 

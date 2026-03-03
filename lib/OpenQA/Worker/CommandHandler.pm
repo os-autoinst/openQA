@@ -15,15 +15,11 @@ has 'client';
 my %STOP_COMMANDS = map { ($_ => 1) } WORKER_STOP_COMMANDS;
 my %COMMANDS_SPECIFIC_TO_CURRENT_JOB = map { ($_ => 1) } WORKER_LIVE_COMMANDS;
 
-sub new {
-    my ($class, $client) = @_;
-
+sub new ($class, $client) {
     return $class->SUPER::new(client => $client);
 }
 
-sub handle_command {
-    my ($self, $tx, $json) = @_;
-
+sub handle_command ($self, $tx, $json) {
     my $client = $self->client;
     my $worker = $client->worker;
     my $current_job = $worker->current_job;
@@ -116,21 +112,15 @@ sub _handle_command_info ($json, $client, $worker, $webui_host, $current_job) {
     $client->send_status_delayed if $json->{seen};
 }
 
-sub _handle_command_livelog_start {
-    my ($json, $client, $worker, $webui_host, $current_job) = @_;
-
+sub _handle_command_livelog_start ($json, $client, $worker, $webui_host, $current_job) {
     $current_job->start_livelog();
 }
 
-sub _handle_command_livelog_stop {
-    my ($json, $client, $worker, $webui_host, $current_job) = @_;
-
+sub _handle_command_livelog_stop ($json, $client, $worker, $webui_host, $current_job) {
     $current_job->stop_livelog();
 }
 
-sub _handle_command_developer_session_start {
-    my ($json, $client, $worker, $webui_host, $current_job) = @_;
-
+sub _handle_command_developer_session_start ($json, $client, $worker, $webui_host, $current_job) {
     $current_job->developer_session_running(1);
 }
 
@@ -141,8 +131,7 @@ sub _reevaluate_and_return_current_error ($client, $worker) {
     return $worker->current_error;
 }
 
-sub _can_grab_job {
-    my ($client, $worker, $webui_host, $current_job, $job_ids_to_grab) = @_;
+sub _can_grab_job ($client, $worker, $webui_host, $current_job, $job_ids_to_grab) {
     my $reason_to_reject_job;
 
     # refuse new job(s) if the worker is in an error state or stopping
@@ -185,9 +174,7 @@ sub _can_grab_job {
     return 0;
 }
 
-sub _can_accept_job {
-    my ($client, $webui_host, $job_info, $job_ids_to_grab) = @_;
-
+sub _can_accept_job ($client, $webui_host, $job_info, $job_ids_to_grab = undef) {
     my $job_id_missing = ref($job_info) ne 'HASH' || !defined $job_info->{id};
     if ($job_id_missing || !$job_info->{settings}) {
         $client->reject_jobs($job_ids_to_grab // [$job_info->{id}], 'the provided job is invalid')
@@ -199,9 +186,7 @@ sub _can_accept_job {
     return $job_info->{id};
 }
 
-sub _can_accept_sequence {
-    my ($client, $webui_host, $job_sequence, $job_data, $job_ids_to_grab) = @_;
-
+sub _can_accept_sequence ($client, $webui_host, $job_sequence, $job_data, $job_ids_to_grab = undef) {
     for my $job_id_or_sub_sequence (@$job_sequence) {
         $job_id_or_sub_sequence //= '?';
         if (ref($job_id_or_sub_sequence) eq 'ARRAY') {
@@ -217,9 +202,7 @@ sub _can_accept_sequence {
     return 1;
 }
 
-sub _handle_command_grab_job {
-    my ($json, $client, $worker, $webui_host, $current_job) = @_;
-
+sub _handle_command_grab_job ($json, $client, $worker, $webui_host, $current_job) {
     my $job_info = $json->{job};
     my $job_id = _can_accept_job($client, $webui_host, $job_info);
     return undef unless defined $job_id;
@@ -228,9 +211,7 @@ sub _handle_command_grab_job {
     $worker->accept_job($client, $job_info);
 }
 
-sub _handle_command_grab_jobs {
-    my ($json, $client, $worker, $webui_host, $current_job) = @_;
-
+sub _handle_command_grab_jobs ($json, $client, $worker, $webui_host, $current_job) {
     # validate input (log error and ignore job on failure)
     my $job_info = $json->{job_info} // {};
     my $job_data = $job_info->{data};
@@ -258,9 +239,7 @@ sub _handle_command_grab_jobs {
     $worker->enqueue_jobs_and_accept_first($client, $job_info);
 }
 
-sub _handle_command_incompatible {
-    my ($json, $client, $worker, $webui_host, $current_job) = @_;
-
+sub _handle_command_incompatible ($json, $client, $worker, $webui_host, $current_job) {
     # FIXME: It would make more sense to disable only the particular web UI host which is incompatible instead of
     #        just stopping everything.
     log_error("The worker is running a version incompatible with web UI host $webui_host and therefore stopped");

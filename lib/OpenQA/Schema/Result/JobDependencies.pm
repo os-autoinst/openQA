@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::JobDependencies;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::JobDependencies::Constants;
 
@@ -26,14 +26,12 @@ __PACKAGE__->set_primary_key('child_job_id', 'parent_job_id', 'dependency');
 __PACKAGE__->belongs_to(child => 'OpenQA::Schema::Result::Jobs', 'child_job_id');
 __PACKAGE__->belongs_to(parent => 'OpenQA::Schema::Result::Jobs', 'parent_job_id');
 
-sub sqlt_deploy_hook {
-    my ($self, $sqlt_table) = @_;
+sub sqlt_deploy_hook ($self, $sqlt_table) {
 
     $sqlt_table->add_index(name => 'idx_job_dependencies_dependency', fields => ['dependency']);
 }
 
-sub to_string {
-    my ($self) = @_;
+sub to_string ($self) {
     return OpenQA::JobDependencies::Constants::display_name($self->dependency);
 }
 

@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::TestSuiteSettings;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('test_suite_settings');
 __PACKAGE__->load_components(qw(Timestamps));

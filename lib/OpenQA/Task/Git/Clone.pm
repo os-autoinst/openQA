@@ -13,7 +13,7 @@ use OpenQA::Git::ServerAvailability qw(report_server_unavailable report_server_a
 use OpenQA::Task::SignalGuard;
 use Time::Seconds qw(ONE_HOUR);
 
-sub register ($self, $app, @) {
+sub register ($self, $app, @args) {
     $app->minion->add_task(git_clone => \&_git_clone_all);
 }
 

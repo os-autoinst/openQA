@@ -156,9 +156,7 @@ created, their job ids and the information for jobs that could not be scheduled.
 
 =cut
 
-sub create {
-    my ($self) = @_;
-
+sub create ($self) {
     my $params = $self->req->params->to_hash;
     my $async = delete $params->{async};    # whether to run the operation as a Minion job
     my $scheduled_product_clone_id
@@ -259,8 +257,7 @@ JSON block containing the number of jobs deleted.
 
 =cut
 
-sub destroy {
-    my $self = shift;
+sub destroy ($self) {
     my $iso = $self->stash('name');
     $self->emit_event('openqa_iso_delete', {iso => $iso});
 
@@ -286,8 +283,7 @@ Return number of cancelled jobs within a JSON block.
 
 =cut
 
-sub cancel {
-    my $self = shift;
+sub cancel ($self) {
     my $iso = $self->stash('name');
     $self->emit_event('openqa_iso_cancel', {iso => $iso});
 

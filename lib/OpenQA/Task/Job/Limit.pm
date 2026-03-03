@@ -18,7 +18,7 @@ use Time::Seconds;
 use constant DEFAULT_SCREENSHOTS_PER_BATCH => 200000;
 use constant DEFAULT_BATCHES_PER_MINION_JOB => 450;
 
-sub register ($self, $app, @) {
+sub register ($self, $app, @args) {
     my $minion = $app->minion;
     $minion->add_task(limit_results_and_logs => \&_limit);
     $minion->add_task(limit_screenshots => \&_limit_screenshots);
@@ -97,8 +97,7 @@ sub _limit ($job, $args = undef) {
       if $config->{results_min_free_disk_space_percentage} or $config->{archive_min_free_disk_space_percentage};
 }
 
-sub _limit_screenshots {
-    my ($job, $args) = @_;
+sub _limit_screenshots ($job, $args) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_screenshots tasks to run in parallel
@@ -152,7 +151,9 @@ sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
 
 sub _is_valid_percentage ($value) { looks_like_number($value) && $value >= 0 && $value <= 100 }
 
-sub _format_percentage_error ($key, $value) { "Configured $key ($value) is not a number between 0 and 100" }
+sub _format_percentage_error ($key, $value) {
+    "Configured $key ($value) is not a number between 0 and 100";
+}
 
 sub _account_for_deletion ($margin_bytes, $margin_bytes_main_storage, $deleted_results, $deleted_screenshots = 0) {
     $$margin_bytes += $deleted_results;

@@ -11,12 +11,11 @@ use OpenQA::Task::SignalGuard;
 use Feature::Compat::Try;
 use Carp qw(croak);
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf = undef) {
     $app->minion->add_task(delete_needles => sub { _task_delete_needles($app, @_) });
 }
 
-sub restart_delay { $ENV{OPENQA_GRU_SERVER_RESTART_DELAY} // 5 }
+sub restart_delay (@args) { $ENV{OPENQA_GRU_SERVER_RESTART_DELAY} // 5 }
 
 sub _task_delete_needles ($app, $minion_job, $args) {
     # SignalGuard will prevent the delete task to interrupt with no recovery,

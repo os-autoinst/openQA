@@ -24,7 +24,7 @@ sub _build_url ($self, $uri) {
     return $base_url;
 }
 
-sub _build_post { $_[0]->client->build_tx(POST => shift->_build_url(+shift) => form => +shift) }
+sub _build_post ($self, $uri, $form) { $self->client->build_tx(POST => $self->_build_url($uri) => form => $form) }
 
 sub is_local ($self) { is_host_local($self->_build_url('/')->to_abs->host) }
 

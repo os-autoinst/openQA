@@ -7,7 +7,7 @@ use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
 use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 
-sub register ($self, $app, @) { $app->minion->add_task(limit_bugs => \&_limit) }
+sub register ($self, $app, @args) { $app->minion->add_task(limit_bugs => \&_limit) }
 
 sub _limit ($job) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);

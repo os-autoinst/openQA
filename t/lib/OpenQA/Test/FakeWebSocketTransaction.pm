@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Test::FakeWebSocketTransaction;
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use Mojo::IOLoop;
 use Mojo::Message::Response;
@@ -10,23 +10,19 @@ use Mojo::Message::Response;
 has finish_called => 0;
 has sent_messages => sub { return []; };
 
-sub clear_messages {
-    my ($self) = @_;
+sub clear_messages ($self) {
     $self->sent_messages([]);
 }
 
-sub is_finished {
-    my ($self) = @_;
+sub is_finished ($self) {
     return $self->finish_called;
 }
 
-sub is_websocket {
-    my ($self) = @_;
+sub is_websocket ($self) {
     return 1;
 }
 
-sub send {
-    my ($self, $message, $callback) = @_;
+sub send ($self, $message, $callback = undef) {
 
     if ($self->finish_called) {
         fail('attempt to send message via finished connection');    # uncoverable statement
@@ -41,20 +37,17 @@ sub send {
     return $res;
 }
 
-sub finish {
-    my ($self) = @_;
+sub finish ($self, $status_code = undef) {
     $self->finish_called(1);
     return 1;
 }
 
-sub emit_json {
-    my ($self, $json) = @_;
+sub emit_json ($self, $json) {
     return $self->emit(json => $json);
 }
 
-sub emit_finish {
-    my $self = shift;
-    return $self->emit(finish => @_);
+sub emit_finish ($self, @args) {
+    return $self->emit(finish => @args);
 }
 
 1;

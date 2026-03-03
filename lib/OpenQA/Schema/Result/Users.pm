@@ -67,9 +67,7 @@ __PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'user_id')
 __PACKAGE__->has_many(audit_events => 'OpenQA::Schema::Result::AuditEvents', 'user_id');
 __PACKAGE__->add_unique_constraint([qw(username provider)]);
 
-sub name {
-    my ($self) = @_;
-
+sub name ($self) {
     if (!$self->{_name}) {
         $self->{_name} = $self->nickname;
         if (!$self->{_name}) {
@@ -79,10 +77,7 @@ sub name {
     return $self->{_name};
 }
 
-sub gravatar {
-    my ($self, $size) = @_;
-    $size //= 40;
-
+sub gravatar ($self, $size = 40) {
     if (my $email = $self->email) {
         return '//www.gravatar.com/avatar/' . md5_hex(lc $email) . "?d=wavatar&s=$size";
     }

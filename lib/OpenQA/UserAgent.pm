@@ -12,9 +12,9 @@ use Carp;
 
 has [qw(apikey apisecret base_url)];
 
-sub new {
-    my $self = shift->SUPER::new(@_);
-    my %args = @_;
+sub new ($class, @args) {
+    my $self = $class->SUPER::new(@args);
+    my %args = @args;
     $args{apikey} //= $ENV{OPENQA_API_KEY};
     $args{apisecret} //= $ENV{OPENQA_API_SECRET};
     for my $i (qw(apikey apisecret)) {

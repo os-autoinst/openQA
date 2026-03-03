@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Command::gru::list;
-use Mojo::Base 'Minion::Command::minion::job';
+use Mojo::Base 'Minion::Command::minion::job', -signatures;
 
 has description => 'List Gru jobs and more';
-has usage => sub { shift->extract_usage };
+has usage => sub ($self) { $self->extract_usage };
 
 1;
 

@@ -1,5 +1,5 @@
 package OpenQA::WebAPI::Controller::API::V1::Feature;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 =pod
 
@@ -27,8 +27,7 @@ Post integer value to save feature version of current user in the database
 
 =cut
 
-sub informed {
-    my ($self) = @_;
+sub informed ($self) {
     my $validation = $self->validation;
     $validation->required('version')->num();
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;

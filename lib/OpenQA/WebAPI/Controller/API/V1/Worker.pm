@@ -83,9 +83,7 @@ B<NOTE>: currently this function is used in create (API entry point)
 
 =cut
 
-sub _register {
-    my ($self, $schema, $host, $instance, $caps, $jobs_worker_says_it_works_on) = @_;
-
+sub _register ($self, $schema, $host, $instance, $caps, $jobs_worker_says_it_works_on = []) {
     die 'Incompatible websocket API version'
       if WEBSOCKET_API_VERSION != ($caps->{websocket_api_version} // 0);
 
@@ -129,8 +127,7 @@ sub _register {
     return $worker_id;
 }
 
-sub _incomplete_previous_job {
-    my ($jobs_worker_says_it_works_on, $job) = @_;
+sub _incomplete_previous_job ($jobs_worker_says_it_works_on, $job) {
     return 0 unless defined $job;
 
     my $job_id = $job->id;
@@ -167,8 +164,7 @@ Initializes and registers a worker.
 
 =cut
 
-sub create {
-    my ($self) = @_;
+sub create ($self) {
     my $validation = $self->validation;
     my @validation_params
       = qw(cpu_arch cpu_modelname cpu_opmode cpu_flags mem_max isotovideo_interface_version websocket_api_version worker_class parallel_one_host_only);
@@ -219,8 +215,7 @@ preventing it from taking jobs.
 
 =cut
 
-sub show {
-    my ($self) = @_;
+sub show ($self) {
     my $worker = $self->schema->resultset('Workers')->find($self->param('workerid'));
     if ($worker) {
         $self->render(json => {worker => $worker->info});
@@ -241,8 +236,7 @@ An error is returned if the worker doesn't exist or has a different status.
 
 =cut
 
-sub delete {
-    my ($self) = @_;
+sub delete ($self) {
     my $message;
     my $worker_id = $self->param('worker_id');
     my $worker = $self->schema->resultset('Workers')->find($worker_id);

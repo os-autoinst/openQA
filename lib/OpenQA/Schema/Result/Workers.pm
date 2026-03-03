@@ -64,8 +64,7 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
-sub name {
-    my ($self) = @_;
+sub name ($self) {
     return $self->host . ':' . $self->instance;
 }
 
@@ -78,9 +77,7 @@ sub seen ($self, $options = {}) {
 # update the properties of the worker with the specified capabilities
 sub update_caps ($self, $workercaps) { $self->set_property(uc $_, $workercaps->{$_}) for keys %$workercaps }
 
-sub get_property {
-    my ($self, $key) = @_;
-
+sub get_property ($self, $key) {
     # Optimized because this is a performance hot spot for the websocket server
     my $sth = $self->result_source->schema->storage->dbh->prepare(
         'SELECT value FROM worker_properties WHERE key = ? AND worker_id = ? LIMIT 1');
@@ -92,15 +89,11 @@ sub get_property {
     return $r ? $r->[0] : undef;
 }
 
-sub delete_properties {
-    my ($self, $keys) = @_;
-
+sub delete_properties ($self, $keys) {
     return $self->properties->search({key => {-in => $keys}})->delete;
 }
 
-sub set_property {
-
-    my ($self, $key, $val) = @_;
+sub set_property ($self, $key, $val) {
     return $self->properties->search({key => $key})->delete unless defined $val;
 
     my $r = $self->properties->find_or_new(
@@ -117,9 +110,7 @@ sub set_property {
     }
 }
 
-sub dead {
-    my ($self) = @_;
-
+sub dead ($self) {
     return 1 unless my $t_seen = $self->t_seen;
     my $dt = DateTime->now(time_zone => 'UTC');
     $dt->subtract(seconds => OpenQA::App->singleton->config->{global}->{worker_timeout} - DB_TIMESTAMP_ACCURACY);
@@ -132,9 +123,7 @@ sub websocket_api_version ($self) {
     return undef;
 }
 
-sub check_class {
-    my ($self, $class) = @_;
-
+sub check_class ($self, $class) {
     unless ($self->{_worker_class_hash}) {
         for my $k (split /,/, ($self->get_property('WORKER_CLASS') || 'NONE')) {
             $self->{_worker_class_hash}->{$k} = 1;
@@ -143,26 +132,20 @@ sub check_class {
     return defined $self->{_worker_class_hash}->{$class};
 }
 
-sub currentstep {
-    my ($self) = @_;
-
+sub currentstep ($self) {
     return unless ($self->job);
     my $r = $self->job->modules->find({result => 'running'}, {order_by => {-desc => 't_updated'}, rows => 1});
     $r->name if $r;
 }
 
-sub status {
-    my ($self) = @_;
-
+sub status ($self) {
     return 'dead' if ($self->dead);
     return 'broken' if ($self->error);
     return 'running' if ($self->job);
     return 'idle';
 }
 
-sub unprepare_for_work {
-    my $self = shift;
-
+sub unprepare_for_work ($self) {
     $self->delete_properties([qw(JOBTOKEN WORKER_TMPDIR)]);
     $self->update({upload_progress => undef});
 
@@ -192,8 +175,7 @@ sub info ($self) {
     return $settings;    # The keys "connected" and "websocket" are only provided for compatibility.
 }
 
-sub send_command {
-    my ($self, %args) = @_;
+sub send_command ($self, %args) {
     return undef if (!defined $args{command});
 
     if (!grep { $args{command} eq $_ } WORKER_API_COMMANDS) {
@@ -223,19 +205,15 @@ sub send_command {
     return 1;
 }
 
-sub unfinished_jobs {
-    my ($self) = @_;
-
+sub unfinished_jobs ($self) {
     return $self->previous_jobs->search({state => {-in => [OpenQA::Jobs::Constants::PENDING_STATES]}});
 }
 
-sub set_current_job {
-    my ($self, $job) = @_;
+sub set_current_job ($self, $job) {
     $self->update({job_id => $job->id});
 }
 
-sub reschedule_assigned_jobs {
-    my ($self, $currently_assigned_jobs) = @_;
+sub reschedule_assigned_jobs ($self, $currently_assigned_jobs = undef) {
     $currently_assigned_jobs //= [$self->job, $self->unfinished_jobs];
 
     my %considered_jobs;

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::AuditLog;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::IOLoop;
 use Mojo::JSON 'to_json';
@@ -23,9 +23,7 @@ my @needle_events = qw(needle_modify needle_delete);
 # disabled events:
 # job_grab
 
-sub register {
-    my ($self, $app) = @_;
-
+sub register ($self, $app, $conf = undef) {
     # register for events
     my @events = (
         @table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events,
@@ -37,7 +35,7 @@ sub register {
         @events = grep { $_ ne $e } @events;
     }
     for my $e (@events) {
-        OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_event($app, @_) });
+        OpenQA::Events->singleton->on("openqa_$e" => sub ($events_obj, $args) { $self->on_event($app, $args) });
     }
 
     # log restart
@@ -48,8 +46,7 @@ sub register {
 }
 
 # table events
-sub on_event {
-    my ($self, $app, $args) = @_;
+sub on_event ($self, $app, $args) {
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     # no need to log openqa_ prefix in openqa log
     $event =~ s/^openqa_//;

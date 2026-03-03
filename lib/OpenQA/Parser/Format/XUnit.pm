@@ -2,19 +2,18 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Format::XUnit;
-use Mojo::Base 'OpenQA::Parser::Format::JUnit';
+use Mojo::Base 'OpenQA::Parser::Format::JUnit', -signatures;
 
 use Carp qw(croak confess);
 use Mojo::DOM;
 
-sub _add_single_result { shift->results->add(OpenQA::Parser::Result::XUnit->new(@_)) }
+sub _add_single_result ($self, @args) { $self->results->add(OpenQA::Parser::Result::XUnit->new(@args)) }
 
-sub addproperty { shift->{properties}->add(OpenQA::Parser::Result::XUnit::Property->new(shift)) }
+sub addproperty ($self, $prop) { $self->{properties}->add(OpenQA::Parser::Result::XUnit::Property->new($prop)) }
 
 my %TC_RESULT_BY_TAG = (softfailure => 'softfail', failure => 'fail', error => 'fail');
 
-sub parse {
-    my ($self, $xml) = @_;
+sub parse ($self, $xml) {
     confess 'No XML given/loaded' unless $xml;
     my $dom = Mojo::DOM->new->xml(1)->parse($xml);
 
@@ -65,12 +64,10 @@ sub parse {
         $result->{dents} = 0;
         $result->{properties} = OpenQA::Parser::Results->new;
         my $num = 1;
-        $ts->find('property')->each(sub { addproperty($result, {name => $_->{name}, value => $_->{value}}) });
+        $ts->find('property')->each(sub ($p, $j) { addproperty($result, {name => $p->{name}, value => $p->{value}}) });
 
         $ts->children('testcase')->each(
-            sub {
-                my $tc = shift;
-
+            sub ($tc, $j) {
                 my $text_fn = "$ts_category-$ts_name-$num";
                 $text_fn =~ s/[\/.]/_/g;
                 $text_fn .= '.txt';
@@ -104,14 +101,14 @@ sub parse {
 
 # Schema
 package OpenQA::Parser::Result::XUnit {
-    use Mojo::Base 'OpenQA::Parser::Result::OpenQA';
-    has properties => sub { OpenQA::Parser::Results->new };
+    use Mojo::Base 'OpenQA::Parser::Result::OpenQA', -signatures;
+    has properties => sub ($self) { OpenQA::Parser::Results->new };
 
     has [qw(errors tests softfailures failures time)];
 }
 
 package OpenQA::Parser::Result::XUnit::Property {
-    use Mojo::Base 'OpenQA::Parser::Result';
+    use Mojo::Base 'OpenQA::Parser::Result', -signatures;
 
     has [qw(name value)];
 }

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Format::LTP;
-use Mojo::Base 'OpenQA::Parser::Format::JUnit';
+use Mojo::Base 'OpenQA::Parser::Format::JUnit', -signatures;
 
 # Translates to JSON LTP format -> LTP internal representation
 # The parser results will be a collection of OpenQA::Parser::Result::LTP::Test
@@ -12,11 +12,10 @@ use Storable 'dclone';
 
 has include_results => 1;
 
-sub _add_single_result { shift->results->add(OpenQA::Parser::Result::LTP::Test->new(@_)) }
+sub _add_single_result ($self, @args) { $self->results->add(OpenQA::Parser::Result::LTP::Test->new(@args)) }
 
 # Parser
-sub parse {
-    my ($self, $json) = @_;
+sub parse ($self, $json) {
     confess 'No JSON given/loaded' unless $json;
     my $decoded_json = Mojo::JSON::from_json($json);
 
@@ -83,22 +82,22 @@ sub parse {
 
 # Schema
 package OpenQA::Parser::Result::LTP::Test {
-    use Mojo::Base 'OpenQA::Parser::Result::OpenQA';
+    use Mojo::Base 'OpenQA::Parser::Result::OpenQA', -signatures;
 
-    has environment => sub { OpenQA::Parser::Result::LTP::Environment->new() };
-    has test => sub { OpenQA::Parser::Result::LTP::SubTest->new() };
+    has environment => sub ($self) { OpenQA::Parser::Result::LTP::Environment->new() };
+    has test => sub ($self) { OpenQA::Parser::Result::LTP::SubTest->new() };
     has [qw(status test_fqn)];
 }
 
 # Additional data structure - they get mapped automatically
 package OpenQA::Parser::Result::LTP::SubTest {
-    use Mojo::Base 'OpenQA::Parser::Result::Test';
+    use Mojo::Base 'OpenQA::Parser::Result::Test', -signatures;
 
     has [qw(log duration result)];
 }
 
 package OpenQA::Parser::Result::LTP::Environment {
-    use Mojo::Base 'OpenQA::Parser::Result';
+    use Mojo::Base 'OpenQA::Parser::Result', -signatures;
 
     has [qw(gcc product revision kernel ltp_version harness libc arch)];
 }

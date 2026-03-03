@@ -75,8 +75,7 @@ Return a hashref of all bugs referenced by job comments.
 
 =cut
 
-sub referenced_bugs {
-    my ($self) = @_;
+sub referenced_bugs ($self) {
 
     my $comments = $self->search({-not => {job_id => undef}});
     my %bugrefs = map { $_ => 1 } map { @{find_bugrefs($_->text)} } $comments->all;

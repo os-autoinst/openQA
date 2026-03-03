@@ -62,10 +62,7 @@ __PACKAGE__->belongs_to(
     'last_use_job_id',
     {join_type => 'left', on_delete => 'SET NULL'});
 
-sub _getDirSize {
-    my ($dir, $size) = @_;
-    $size //= 0;
-
+sub _getDirSize ($dir, $size = 0) {
     opendir(my $dh, $dir) || return 0;
     for my $dirContent (grep { !/^\.\.?/ } readdir $dh) {
 
@@ -83,15 +80,13 @@ sub _getDirSize {
     return $size;
 }
 
-sub disk_file {
-    my ($self) = @_;
+sub disk_file ($self) {
     return $self->{_location} //= locate_asset($self->type, $self->name);
 }
 
 # actually checking the file - will be updated to fixed in DB by limit_assets
 # (and NOT when rendering the admin assets table)
-sub is_fixed {
-    my ($self) = @_;
+sub is_fixed ($self) {
     return (index($self->disk_file, catfile('fixed', $self->name)) > -1);
 }
 
@@ -110,22 +105,18 @@ sub remove_from_disk ($self) {
 }
 
 # override to automatically remove the corresponding file from disk when deleting the database entry
-sub delete {
-    my ($self) = @_;
-
+sub delete ($self) {
     $self->remove_from_disk;
     return $self->SUPER::delete;
 }
 
-sub ensure_size {
-    my ($self) = @_;
+sub ensure_size ($self) {
     my $size = $self->size;
     return $size if defined $size;
     return $self->refresh_size($size);
 }
 
-sub refresh_size {
-    my ($self, $current_size) = @_;
+sub refresh_size ($self, $current_size = undef) {
     $current_size //= $self->size;
 
     my $new_size = undef;
@@ -146,13 +137,11 @@ sub refresh_size {
 
 # returns whether the specified asset type is considered hidden so it will not be linked by the
 # web UI; configured via 'hide_asset_types' setting
-sub is_type_hidden {
-    my ($type) = @_;
+sub is_type_hidden ($type) {
     return grep { $_ eq $type } split / /, OpenQA::App->singleton->config->{global}->{hide_asset_types};
 }
 
-sub hidden {
-    my ($self) = @_;
+sub hidden ($self) {
     return is_type_hidden($self->type);
 }
 

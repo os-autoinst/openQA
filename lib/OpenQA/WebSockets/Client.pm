@@ -44,7 +44,7 @@ sub send_msg ($self, $worker_id, $msg, $job_id, $retry = undef, $cb = undef) {
     return $res->json->{result};
 }
 
-sub singleton { state $client ||= __PACKAGE__->new }
+sub singleton ($class = undef) { state $client ||= ($class // __PACKAGE__)->new }
 
 sub _api ($self, $method) {
     my ($host, $port) = ($self->host // '127.0.0.1', $self->port);
