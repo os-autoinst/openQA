@@ -25,16 +25,6 @@
 [data-bs-theme='dark'] .navbar {
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5);
 
-  .nav-link {
-    color: var(--bs-navbar-color);
-    &:hover,
-    &:focus,
-    &.show,
-    &.active {
-      color: var(--bs-navbar-active-color) !important;
-    }
-  }
-
   .navbar-nav {
     @include media-breakpoint-up(lg) {
       .nav-link:hover,
@@ -58,14 +48,14 @@
 
     &.active {
       font-weight: 500;
-      color: var(--bs-primary) !important;
+      color: var(--bs-primary);
     }
   }
 
   @include media-breakpoint-up(lg) {
     .nav-link {
-      padding-top: 22px;
-      padding-bottom: 23px;
+      padding-top: 1.375rem;
+      padding-bottom: 1.4375rem;
     }
   }
 }
