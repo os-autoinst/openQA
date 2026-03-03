@@ -154,9 +154,6 @@ if [[ -z $skip_suse_tests ]]; then
         export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
     fi
     "$OPENQA_DIR/script/fetchneedles"
-    if [[ ! -e /var/lib/openqa/tests/sle ]]; then
-        ln -s opensuse /var/lib/openqa/tests/sle
-    fi
 
     if ping -c1 gitlab.suse.de.; then
         sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
