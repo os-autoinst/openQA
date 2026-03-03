@@ -1,3 +1,4 @@
+// Grid breakpoints (kept original to avoid breaking tests relying on specific window sizes)
 $grid-breakpoints: (
   xs: 0,
   sm: 500px,
@@ -5,18 +6,49 @@ $grid-breakpoints: (
   lg: 700px,
   xl: 1000px
 );
+
+// Fonts
 $web-font-path: 'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700' !default;
-$default-font: 'Roboto', 'Helvetica Neue', helvetica, arial, sans-serif;
-$icon-font-path: '/fonts/';
-$default-font-color: #666;
-$default-bg-color: #fff;
+$font-family-sans-serif:
+  'Roboto',
+  system-ui,
+  -apple-system,
+  'Segoe UI',
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
 $font-size-base: 0.85rem;
+
+// Colors
+$primary: #446e9b;
+$secondary: #6c757d;
+$success: #28a745;
+$info: #17a2b8;
+$warning: #ffc107;
+$danger: #dc3545;
+$light: #f8f9fa;
+$dark: #343a40;
+
+$body-color: #444;
+$body-bg: #fff;
+
+// Legacy variables for backward compatibility
+$default-font: $font-family-sans-serif;
+$default-font-color: $body-color;
+$default-bg-color: $body-bg;
+$link-color: $primary;
+$link-hover-color: darken($link-color, 15%) !default;
+$table-border-color: #dee2e6;
+
+// Headings and font sizes
 $h2-font-size: 1.65rem;
 $h3-font-size: 1.25rem;
 $h4-font-size: 1.15rem;
 $progress-font-size: 0.78rem;
+
+// Buttons legacy
 $btn-border-radius-base: 0.25rem;
-$btn-default-color: #000;
+$btn-default-color: #000000;
 $btn-default-bg: #fefefe;
 $btn-primary-bg: #007bff;
 $btn-secondary-bg: #6c757d;
@@ -26,22 +58,21 @@ $btn-warning-bg: #ffc107;
 $btn-danger-bg: #dc3545;
 $btn-light-bg: #f8f9fa;
 $btn-dark-bg: #343a40;
-$table-border-color: #ddd;
-$link-color: #446e9b;
-$link-hover-color: darken($link-color, 15%) !default;
+
+// openQA specific colors
 $color-softfailed: #eeb560;
 $color-ok: #cdffb9;
-$color-warning: #ff9;
+$color-warning: #ffff99;
 $color-failed: #ff4e46;
 $color-result-failed: #ff9e9b;
 $color-incomplete: #af1e11;
 $color-result: #3c3c3c;
-$color-result-missing: #ddd;
-$color-result-testing: #9df;
+$color-result-missing: #dddddd;
+$color-result-testing: #99ddff;
 $color-module-softfailed: #ffd048;
 $color-module-passed: #59df24;
-$color-module-none: #aaa;
-$color-module-skipped: #aaa;
+$color-module-none: #aaaaaa;
+$color-module-skipped: #aaaaaa;
 $color-resborder-ok: $color-module-passed;
 $color-resborder-fail: $color-failed;
 $color-resborder-unk: $color-module-none;
@@ -54,14 +85,17 @@ $color-state-scheduled: #67a2b7;
 $color-state-blocked: #9167b7;
 $color-state-cancelled: $color-module-none;
 $color-state-running: #8bdfff;
-$color-step-actions: #666;
+$color-step-actions: #666666;
+
+// Dark mode legacy
 $default-font-color-dark: #ccc;
 $default-bg-color-dark: #000;
 $link-color-dark: #7fbbf7;
-$link-hover-color-dark: darken($link-color, 15%) !default;
 $color-result-dark: #c3c3c3;
 $table-border-color-dark: darken($color-result-dark, 50%);
-$btn-default-color-dark: #fff;
+
+// Buttons dark legacy
+$btn-default-color-dark: #ffffff;
 $btn-default-bg-dark: #010101;
 $btn-primary-bg-dark: #007bff;
 $btn-secondary-bg-dark: #6c757d;
