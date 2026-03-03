@@ -8,7 +8,7 @@ use Test::Warnings qw(:no_end_test :report_warnings);
 use Test::Compile;
 use File::Which;
 use FindBin;
-use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '400';
 
 
@@ -42,7 +42,7 @@ if (-d '.git' and which('git')) {
 else {
     @files = ($test->all_pm_files('lib'), $test->all_pl_files('script'));
     my %skip = map { $_ => undef } @$SKIP;
-    @files = grep { my $f = s{^\./}{}r; !exists $skip{$f} && $f !~ /^t\// } @files;
+    @files = grep { my $f = s{^\./}{}r; !exists $skip{$f} } @files;
 }
 
 # Only check perl files and skip test scripts (already executed)
