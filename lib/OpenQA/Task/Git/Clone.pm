@@ -53,16 +53,26 @@ sub _git_clone_all ($job, $clones) {
         die "Don't even think about putting '..' into '$path'." if $path =~ /\.\./;
 
         my $git = OpenQA::Git->new(app => $app, dir => $path);
-        my $origin_url = -d $path ? $git->get_origin_url : undef;
-        my $url = $origin_url // $clones->{$path};
-        my $server_host = _extract_server_host($url);
+        my $url_cfg = $clones->{$path};
+        my $origin_url;
+        my $server_host = 'other';
         my $error;
         try {
-            _git_clone($git, $ctx, $path, $clones->{$path}, $origin_url);
+            my $is_repo = (-d $path) && (-d "$path/.git");
+            $origin_url = $is_repo ? $git->get_origin_url : undef;
+            my $url = $origin_url // $url_cfg;
+            $server_host = defined $url ? _extract_server_host($url) : 'other';
+
+            unless (defined $url || $is_repo) {
+                $ctx->info("Skipping '$path': no URL configured and not a git repo.");
+                next;
+            }
+
+            _git_clone($git, $ctx, $path, $url_cfg, $origin_url);
             report_server_available($app, $server_host);
             next;
         }
-        catch ($e) { $error = $e }
+        catch ($e) { $error = "$e" }
         if ($error =~ /Internal API unreachable/) {
             my $outcome = report_server_unavailable($app, $server_host);
             if ($outcome eq 'SKIP') {
