@@ -28,4 +28,4 @@ $Test::Strict::TEST_SKIP = [
     't/data/openqa-trigger-from-obs/Proj2::appliances/.dirty_status',
     't/data/openqa-trigger-from-obs/Proj3::standard/empty.txt',
 ];
-all_perl_files_ok(qw(lib script t));
+all_perl_files_ok(qw(lib script t xt));
