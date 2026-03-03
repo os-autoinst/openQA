@@ -7,13 +7,13 @@
     setupIndexPage();
 % end
 
-<div class="jumbotron">
-  <div class='container'>
+<div class="jumbotron p-5 mb-4 bg-body-tertiary rounded-3">
+  <div class="container-fluid py-5">
     <div class="row">
       <div class="col-md-9">
         %= include_branding 'docbox'
       </div>
-      <div class="col-md-3 hidden-sm-down">
+      <div class="col-md-3 d-none d-md-block">
         %= include_branding 'sponsorbox'
       </div>
     </div>
@@ -28,7 +28,7 @@
 <div id="build-results" data-build-results-url="<%= url_for('dashboard_build_results') %>">
 </div>
 
-<div class="card card-outline-secondary filter-panel-bottom" id="filter-panel">
+<div class="card border-secondary filter-panel-bottom" id="filter-panel">
     <div class="card-header"><strong>Filter and settings</strong> <span>no filter present, click to toggle filter form</span></div>
     <div class="card-body">
         <form action="#" method="get" id="filter-form">
