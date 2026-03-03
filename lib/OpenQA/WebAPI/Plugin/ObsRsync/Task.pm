@@ -42,7 +42,6 @@ sub run ($job, $args) {
     my $project = $args->{project};
     my $helper = $app->obs_rsync;
     my $home = $helper->home;
-    my $queue_limit = $helper->queue_limit;
 
     my $retry_interval_on_exception = 120;
     my $retry_max_count_on_exception = 200;
