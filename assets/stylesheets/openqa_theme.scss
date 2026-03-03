@@ -21,6 +21,7 @@ $font-size-base: 0.85rem;
 
 // Colors
 $primary: #446e9b;
+$primary-dark: #7fbbf7 !default;
 $secondary: #6c757d;
 $success: #28a745;
 $info: #17a2b8;
@@ -41,6 +42,7 @@ $link-hover-color: darken($link-color, 15%) !default;
 $table-border-color: #dee2e6;
 
 // Headings and font sizes
+$headings-font-weight: 400 !default;
 $h2-font-size: 1.65rem;
 $h3-font-size: 1.25rem;
 $h4-font-size: 1.15rem;
@@ -90,7 +92,7 @@ $color-step-actions: #666666;
 // Dark mode legacy
 $default-font-color-dark: #ccc;
 $default-bg-color-dark: #000;
-$link-color-dark: #7fbbf7;
+$link-color-dark: $primary-dark;
 $color-result-dark: #c3c3c3;
 $table-border-color-dark: darken($color-result-dark, 50%);
 
