@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Testing Framework",
   "scripts": {
-    "lint": "eslint \"assets/javascripts/**/*.js\"",
-    "fix": "eslint --fix \"assets/javascripts/**/*.js\""
+    "lint": "eslint \"assets/javascripts/**/*.js\" && prettier --check \"assets/stylesheets/**/*.scss\"",
+    "fix": "eslint --fix \"assets/javascripts/**/*.js\" && prettier --write \"assets/stylesheets/**/*.scss\""
   },
   "license": "GPL-2.0",
   "bugs": {

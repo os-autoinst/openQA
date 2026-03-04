@@ -1,25 +1,26 @@
-
 // include themes: these set variables for common values
-@import "openqa_theme.scss";
+@import 'openqa_theme.scss';
 
 // include Roboto font
 @import url($web-font-path);
 
 // prevent bom from disturbing rest of the CSS
-dummy { font-size: 42px; }
+dummy {
+  font-size: 42px;
+}
 
 // include Bootstrap
-@import "../node_modules/bootstrap/scss/bootstrap.scss";
+@import '../node_modules/bootstrap/scss/bootstrap.scss';
 
 // include custom css for various aspects of the pages
-@import "overall.scss";
-@import "navigation.scss";
-@import "forms.scss";
-@import "tables.scss";
-@import "dashboard.scss";
-@import "test-details.scss";
-@import "result_preview.scss";
-@import "admin-pages.scss";
-@import "comments.scss";
-@import "overview.scss";
-@import "parent_group_overview.scss";
+@import 'overall.scss';
+@import 'navigation.scss';
+@import 'forms.scss';
+@import 'tables.scss';
+@import 'dashboard.scss';
+@import 'test-details.scss';
+@import 'result_preview.scss';
+@import 'admin-pages.scss';
+@import 'comments.scss';
+@import 'overview.scss';
+@import 'parent_group_overview.scss';

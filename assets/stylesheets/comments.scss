@@ -1,141 +1,147 @@
-.trigger-edit-button, .remove-edit-button {
-    float: right;
-    margin-top: -2px;
-    margin-left: 4px;
-    border-radius: 50rem;
-    width: 2.2rem;
-    height: 2.2rem;
-    opacity: 0.6;
+.trigger-edit-button,
+.remove-edit-button {
+  float: right;
+  margin-top: -2px;
+  margin-left: 4px;
+  border-radius: 50rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  opacity: 0.6;
 
-    &:hover {
-        opacity: 1;
-    }
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .comment-body {
-    .comment-editing-control {
-        display: none;
+  .comment-editing-control {
+    display: none;
+  }
+
+  textarea.comment-editing-control {
+    outline: none;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+  }
+
+  .comment-anchor {
+    color: #444;
+    cursor: pointer;
+
+    abbr {
+      cursor: pointer;
     }
 
-    textarea.comment-editing-control {
-        outline: none;
-        border: none;
-        padding: 0px;
-        margin: 0px;
+    &:hover {
+      text-decoration: none;
+
+      abbr {
+        border-bottom: 1px solid #444;
+      }
     }
+  }
 
-    .comment-anchor {
-        color: #444;
-        cursor: pointer;
+  .openqa-bugref,
+  .openqa-label,
+  .openqa-flag,
+  .openqa-testref {
+    position: relative;
+    padding: 0.3em;
+    padding-left: 0.25em;
+    border-radius: 0.25rem;
+    white-space: nowrap;
+    line-height: 2.05;
+  }
 
-        abbr {
-            cursor: pointer;
-        }
+  .openqa-bugref,
+  .openqa-testref {
+    background-color: #eee;
+    color: #666666;
+    border: 1px solid #ddd;
+  }
 
-        &:hover {
-            text-decoration: none;
+  .openqa-label {
+    background-color: #fdfd96;
+    color: #666666;
+    border: 1px solid #ecec85;
+  }
 
-            abbr {
-                border-bottom: 1px solid #444;
-            }
-        }
-    }
+  .openqa-flag {
+    background-color: #fdd596;
+    color: #666666;
+    border: 1px solid #ecd785;
+  }
 
-    .openqa-bugref, .openqa-label, .openqa-flag, .openqa-testref {
-        position: relative;
-        padding: .3em;
-        padding-left: .25em;
-        border-radius: .25rem;
-        white-space: nowrap;
-        line-height: 2.05;
-    }
+  .openqa-testref i {
+    padding-left: 0.2em;
+    padding-right: 0.23em;
+  }
 
-    .openqa-bugref, .openqa-testref {
-        background-color: #eee;
-        color: #666666;
-        border: 1px solid #ddd;
-    }
+  .openqa-label,
+  .openqa-flag {
+    padding-left: 1.25em;
+  }
 
-    .openqa-label {
-        background-color: #fdfd96;
-        color: #666666;
-        border: 1px solid #ecec85;
-    }
+  .openqa-label::before,
+  .openqa-flag::before {
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    font-family: 'ForkAwesome';
+    font-weight: 900;
+    font-size: 0.8em;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25em;
+    text-align: center;
+    padding-left: 0.25em;
+  }
 
-    .openqa-flag {
-        background-color: #fdd596;
-        color: #666666;
-        border: 1px solid #ecd785;
-    }
+  .openqa-label::before {
+    content: '\f02e';
+  }
 
-    .openqa-testref i {
-        padding-left: 0.2em;
-        padding-right: 0.23em;
-    }
+  .openqa-flag::before {
+    content: '\f024';
+  }
 
-    .openqa-label, .openqa-flag {
-        padding-left: 1.25em;
-    }
-
-    .openqa-label::before, .openqa-flag::before {
-        display: inline-block;
-        font-style: normal;
-        font-variant: normal;
-        text-rendering: auto;
-        font-family: "ForkAwesome";
-        font-weight: 900;
-        font-size: .8em;
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 1.25em;
-        text-align: center;
-        padding-left: .25em;
-    }
-
-    .openqa-label::before {
-        content: "\f02e";
-    }
-
-
-    .openqa-flag::before {
-        content: "\f024";
-    }
-
-    .well {
-        margin: 0px;
-    }
+  .well {
+    margin: 0px;
+  }
 }
-[data-bs-theme="dark"] .comment-body .comment-anchor {
-    color: rgb(152, 152, 152);
+[data-bs-theme='dark'] .comment-body .comment-anchor {
+  color: rgb(152, 152, 152);
 }
 
 .comment-row {
-    align-items: center;
-    margin-bottom: 1.25rem;
-    .col-sm-1 {
-        text-align: right;
-    }
+  align-items: center;
+  margin-bottom: 1.25rem;
+  .col-sm-1 {
+    text-align: right;
+  }
 }
 
 .pagination {
-    display: inline-block;
+  display: inline-block;
 
-    li {
-        color: $btn-default-color;
-        float: left;
-        text-decoration: none;
-        transition: background-color .3s;
-    }
+  li {
+    color: $btn-default-color;
+    float: left;
+    text-decoration: none;
+    transition: background-color 0.3s;
+  }
 
-    .active {
-        font-weight: bold;
-    }
+  .active {
+    font-weight: bold;
+  }
 }
 
 .comment-toolbar {
-    display: grid;
-    padding: 0.5rem;
-    align-items: center;
+  display: grid;
+  padding: 0.5rem;
+  align-items: center;
 }
