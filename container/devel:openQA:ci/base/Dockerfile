@@ -6,18 +6,15 @@
 #!NoSquash
 FROM opensuse/leap:16.0
 
-# only dependencies for CircleCI to be able to load/save the package cache
+# dependencies for CircleCI to be able to load/save the package cache
 # and fix permissions for the unprivileged user we use
-RUN zypper -n in tar gzip sudo
-
-# these are autoinst dependencies
-RUN zypper install -y gcc-c++ cmake ninja pkgconfig\(opencv4\) pkg-config perl\(Module::CPANfile\) pkgconfig\(fftw3\) pkgconfig\(libpng\) pkgconfig\(sndfile\) pkgconfig\(theoraenc\) tesseract-ocr
-
-# openQA dependencies
-RUN zypper install -y perl-CSS-Sass ruby-devel npm python3-base python3-requests git-core rsync curl 'postgresql-devel>=14' 'postgresql-server>=14' qemu qemu-tools tar xorg-x11-fonts sudo make
-
-# openQA chromedriver for Selenium tests
-RUN zypper install -y chromedriver
+# + autoinst dependencies
+# + openQA dependencies
+# + openQA chromedriver for Selenium tests
+RUN zypper -n in tar gzip sudo \
+    gcc-c++ cmake ninja pkgconfig\(opencv4\) pkg-config perl\(Module::CPANfile\) pkgconfig\(fftw3\) pkgconfig\(libpng\) pkgconfig\(sndfile\) pkgconfig\(theoraenc\) tesseract-ocr \
+    perl-CSS-Sass ruby-devel npm python3-base python3-requests git-core rsync curl 'postgresql-devel>=14' 'postgresql-server>=14' qemu qemu-tools tar xorg-x11-fonts sudo make \
+    chromedriver && zypper clean -a
 
 ENV LANG=en_US.UTF-8
 
