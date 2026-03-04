@@ -101,44 +101,22 @@ p {
 }
 
 // headings
-h1,
-.h1,
-h2,
-.h2 {
+// prettier-ignore
+h1, .h1, h2, .h2 {
   margin-top: 1.25rem;
   margin-bottom: 0.75rem;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.h1,
-.h2,
-.h3,
-.h4,
-.h5,
-.h6 {
+// prettier-ignore
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: inherit;
   font-weight: $headings-font-weight;
   line-height: 1.2;
   color: #444;
 }
 [data-bs-theme='dark'] {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  .h1,
-  .h2,
-  .h3,
-  .h4,
-  .h5,
-  .h6 {
+  // prettier-ignore
+  h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     color: #bbb;
   }
 }
@@ -231,13 +209,17 @@ h6,
 
 // tooltips
 .tooltip .tooltip-inner {
-  max-width: 25rem;
-  text-align: left;
+  max-width: 400px;
   p {
-    margin-bottom: 0.125rem;
+    margin-bottom: 2px;
   }
   ul {
-    padding-left: 1.25rem;
+    padding-left: 1.2rem;
+  }
+  p,
+  ul {
+    text-align: left;
+    word-break: break-word;
   }
 }
 
