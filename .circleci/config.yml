@@ -104,11 +104,11 @@ images:
       HELM_TEST: 0
 
   - &base
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    image: registry.opensuse.org/devel/openqa/ci/containers16.0/base:latest
     <<: *docker_config
 
   - &dependency_bot
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    image: registry.opensuse.org/devel/openqa/ci/containers16.0/base:latest
     environment:
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 

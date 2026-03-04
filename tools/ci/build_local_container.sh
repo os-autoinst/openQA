@@ -8,7 +8,7 @@ set -e
 thisdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
 cre="${cre:-"podman"}"
 $cre build -t localtest -f- "$thisdir" << EOF
-FROM registry.opensuse.org/devel/openqa/ci/containers/base:latest
+FROM registry.opensuse.org/devel/openqa/ci/containers16.0/base:latest
 
 RUN sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0 openQA
 RUN sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/16.0 devel

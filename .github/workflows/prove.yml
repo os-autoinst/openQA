@@ -15,7 +15,7 @@ jobs:
   fullstack:
     runs-on: ubuntu-latest
     container:
-      image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+      image: registry.opensuse.org/devel/openqa/ci/containers16.0/base:latest
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies

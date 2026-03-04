@@ -1081,7 +1081,7 @@ container and then use the same commands one would use to test locally.
 
 Pull the latest base image (otherwise it may be outdated):
 ```
-podman pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
+podman pull registry.opensuse.org/devel/openqa/ci/containers16.0/base:latest
 ```
 
 Create an image called `localtest` based on the contents of `ci-packages.txt`
