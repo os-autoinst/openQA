@@ -118,22 +118,21 @@ a {
 }
 
 // headings
-// prettier-ignore
-h1, .h1, h2, .h2 {
+$h1h2: 'h1, .h1, h2, .h2';
+#{$h1h2} {
   margin-top: 18px;
   margin-bottom: 9px;
 }
 
-// prettier-ignore
-h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+$all-headings: 'h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6';
+#{$all-headings} {
   font-family: inherit;
   font-weight: 400;
   line-height: 1.1;
   color: #444;
 }
 [data-bs-theme='dark'] {
-  // prettier-ignore
-  h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  #{$all-headings} {
     color: #bbb;
   }
 }
