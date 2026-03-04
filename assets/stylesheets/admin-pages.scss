@@ -28,11 +28,13 @@
     padding: 3px;
   }
 }
-#scheduled-product-modal table, #scheduled-products h3 + table {
+#scheduled-product-modal table,
+#scheduled-products h3 + table {
   border: none;
   width: 100%;
   font-family: monospace;
-  th, td {
+  th,
+  td {
     padding: 1px;
     border: none;
   }
@@ -57,7 +59,8 @@
   padding: 2px;
 }
 html:not([data-bs-theme='dark']) .tab-pane {
-  table#results, .comments {
+  table#results,
+  .comments {
     padding-top: 9px;
   }
 }
@@ -133,7 +136,8 @@ a.add-parent-group {
 #job_group_list {
   margin: 0 0 20px;
   padding: 0;
-  li, div {
+  li,
+  div {
     font-weight: 500;
     font-size: 120%;
     list-style-type: none;
@@ -177,7 +181,8 @@ a.add-parent-group {
     display: none;
   }
   span {
-    &.glyphicon, &.fa {
+    &.glyphicon,
+    &.fa {
       color: #aaa;
       margin: 0 5px;
     }
@@ -186,7 +191,8 @@ a.add-parent-group {
       margin: 3px;
     }
   }
-  a.fa-plus, a.fa-trash {
+  a.fa-plus,
+  a.fa-trash {
     float: right;
     display: inline-block;
     margin: 5px;
@@ -227,7 +233,8 @@ a.add-parent-group {
   #job_group_list ul li {
     background-color: $btn-default-bg-dark;
   }
-  .dragover::after, .parent-dragover::before {
+  .dragover::after,
+  .parent-dragover::before {
     border-color: $btn-default-color-dark !important;
   }
 }
@@ -307,13 +314,15 @@ h2 + * {
   clear: right;
 }
 .mediagroup {
-  th.arch, td.arch {
+  th.arch,
+  td.arch {
     text-align: center;
   }
   th.prio {
     width: 3em;
   }
-  th.prio, td.prio {
+  th.prio,
+  td.prio {
     text-align: center;
   }
 }
@@ -367,7 +376,8 @@ table#users {
       margin-top: 10px;
       margin-bottom: 0;
     }
-    ul, span {
+    ul,
+    span {
       font-weight: normal;
     }
   }
@@ -386,13 +396,16 @@ table#users {
 .custom_needle_range {
   display: table-row;
   margin-bottom: 5px;
-  select, input, button {
+  select,
+  input,
+  button {
     font-size: 90%;
     display: table-cell;
     margin-left: 2px;
     height: 2rem !important;
   }
-  select, input[type='datetime-local'] {
+  select,
+  input[type='datetime-local'] {
     width: initial;
   }
 }
