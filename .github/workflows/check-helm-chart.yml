@@ -47,4 +47,4 @@ jobs:
         uses: helm/kind-action@v1
 
       - name: Run chart-testing
-        run: make test-helm-install
+        run: make RETRY=3 test-helm-install
