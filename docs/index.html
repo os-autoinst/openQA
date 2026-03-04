@@ -5647,13 +5647,12 @@ http://openqa/tests/overview/badge?distri=opensuse&amp;groupid=1&amp;result=not_
 <div class="paragraph">
 <p>The first two routes refer to a specific job or the latest job of a scenario.
 The <code>/tests/overview/badge</code> route summarizes the status of multiple jobs based
-on overview query parameters, in this example reflecting the most severe
-status. It supports the same query parameters as the overview page for example
-to filter out states taken into consideration.</p>
+on overview query parameters, reflecting the most critical status (e.g. <code>failed</code>).
+It supports the same query parameters as the overview page.</p>
 </div>
 <div class="paragraph">
-<p>There is an optional parameter 'show_build=1' for single job badges that will
-prefix the status with the build number.</p>
+<p>There is an optional parameter <code>show_build=1</code> that will prefix the status with
+the build number (or <code>multi</code> if multiple builds are targeted).</p>
 </div>
 </div>
 <div class="sect2">
@@ -14856,7 +14855,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-03 04:44:52 UTC
+Last updated 2026-03-04 04:44:59 UTC
 </div>
 </div>
 </body>
