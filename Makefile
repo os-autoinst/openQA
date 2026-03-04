@@ -233,11 +233,11 @@ endif
 endif
 
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-tidy-compile ## Run checkstyle and tidy-compile tests
+test-checkstyle: test-checkstyle-standalone test-tidy-compile-style ## Run checkstyle and tidy-compile-style tests
 
 .PHONY: test-t
 test-t: node_modules ## Run standard Perl tests
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
 
 .PHONY: test-heavy
 test-heavy: node_modules ## Run heavy tests
@@ -245,11 +245,11 @@ test-heavy: node_modules ## Run heavy tests
 
 .PHONY: test-ui
 test-ui: node_modules ## Run UI tests
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
 
 .PHONY: test-api
 test-api: node_modules ## Run API tests
-	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
 
 # put unstable tests in tools/unstable_tests.txt and uncomment in circle CI config to handle unstables with retries
 .PHONY: test-unstable
@@ -369,9 +369,9 @@ endif
 test-critic: ## Run Perl Critic
 	tools/perlcritic lib
 
-.PHONY: test-tidy-compile
-test-tidy-compile: ## Run tidy and compile tests
-	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
+.PHONY: test-tidy-compile-style
+test-tidy-compile-style: ## Run tidy, compile and style tests
+	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/*{tidy,compile,style}*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-shellcheck
 test-shellcheck: ## Run shellcheck on scripts
