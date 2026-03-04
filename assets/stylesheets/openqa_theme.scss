@@ -15,7 +15,7 @@ $font-family-sans-serif:
   -apple-system,
   'Segoe UI',
   'Helvetica Neue',
-  Arial,
+  arial,
   sans-serif;
 $font-size-base: 0.85rem;
 
@@ -29,7 +29,6 @@ $warning: #ffc107;
 $danger: #dc3545;
 $light: #f8f9fa;
 $dark: #343a40;
-
 $body-color: #444;
 $body-bg: #fff;
 
@@ -50,7 +49,7 @@ $progress-font-size: 0.78rem;
 
 // Buttons legacy
 $btn-border-radius-base: 0.25rem;
-$btn-default-color: #000000;
+$btn-default-color: #000;
 $btn-default-bg: #fefefe;
 $btn-primary-bg: #007bff;
 $btn-secondary-bg: #6c757d;
@@ -64,17 +63,17 @@ $btn-dark-bg: #343a40;
 // openQA specific colors
 $color-softfailed: #eeb560;
 $color-ok: #cdffb9;
-$color-warning: #ffff99;
+$color-warning: #ff9;
 $color-failed: #ff4e46;
 $color-result-failed: #ff9e9b;
 $color-incomplete: #af1e11;
 $color-result: #3c3c3c;
-$color-result-missing: #dddddd;
-$color-result-testing: #99ddff;
+$color-result-missing: #ddd;
+$color-result-testing: #9df;
 $color-module-softfailed: #ffd048;
 $color-module-passed: #59df24;
-$color-module-none: #aaaaaa;
-$color-module-skipped: #aaaaaa;
+$color-module-none: #aaa;
+$color-module-skipped: #aaa;
 $color-resborder-ok: $color-module-passed;
 $color-resborder-fail: $color-failed;
 $color-resborder-unk: $color-module-none;
@@ -87,7 +86,7 @@ $color-state-scheduled: #67a2b7;
 $color-state-blocked: #9167b7;
 $color-state-cancelled: $color-module-none;
 $color-state-running: #8bdfff;
-$color-step-actions: #666666;
+$color-step-actions: #666;
 
 // Dark mode legacy
 $default-font-color-dark: #ccc;
@@ -97,7 +96,7 @@ $color-result-dark: #c3c3c3;
 $table-border-color-dark: darken($color-result-dark, 50%);
 
 // Buttons dark legacy
-$btn-default-color-dark: #ffffff;
+$btn-default-color-dark: #fff;
 $btn-default-bg-dark: #010101;
 $btn-primary-bg-dark: #007bff;
 $btn-secondary-bg-dark: #6c757d;

@@ -30,6 +30,7 @@ a:focus,
 a:hover {
   text-decoration: underline;
 }
+
 // don't underline links at all on certain places
 .nav-link,
 .dropdown-item,
@@ -40,7 +41,6 @@ a:hover {
     text-decoration: none;
   }
 }
-
 @include media-breakpoint-up(md) {
   #content {
     padding-left: 2.5rem;
@@ -72,11 +72,9 @@ a:hover {
   &.left {
     float: left;
   }
-
   &.right {
     float: right;
   }
-
   a {
     display: inline;
     margin-left: 15px;
@@ -101,22 +99,43 @@ p {
 }
 
 // headings
-// prettier-ignore
-h1, .h1, h2, .h2 {
+h1,
+.h1,
+h2,
+.h2 {
   margin-top: 1.25rem;
   margin-bottom: 0.75rem;
 }
-
-// prettier-ignore
-h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
   font-family: inherit;
   font-weight: $headings-font-weight;
   line-height: 1.2;
   color: #444;
 }
 [data-bs-theme='dark'] {
-  // prettier-ignore
-  h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .h1,
+  .h2,
+  .h3,
+  .h4,
+  .h5,
+  .h6 {
     color: #bbb;
   }
 }
@@ -124,13 +143,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 // cards (former panels)
 .card {
   margin-bottom: 1rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 7.5%);
 }
 [data-bs-theme='dark'] .card {
   background-color: $default-bg-color-dark;
   border: $table-border-color-dark solid 0.5px;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 50%);
 }
+
 // colorful card headers
 .card.border-danger .card-header {
   color: var(--bs-danger-text-emphasis);
@@ -157,7 +177,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border-radius: 0.5rem;
 }
 [data-bs-theme='dark'] .jumbotron {
-  background-color: #111111;
+  background-color: #111;
 }
 
 // tabs
@@ -168,12 +188,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border: none;
   border-bottom: 2px solid transparent;
   color: $default-font-color;
-
   &:hover,
   &:focus {
     border-bottom-color: var(--bs-secondary-border-subtle);
   }
-
   &.active {
     border-bottom-color: $link-color;
     color: $link-color;
@@ -183,7 +201,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 [data-bs-theme='dark'] {
   .nav-tabs .nav-link {
     color: $default-font-color-dark;
-
     &.active {
       border-bottom-color: $link-color-dark;
       color: $link-color-dark;
@@ -232,18 +249,15 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .copy-jobid {
   margin-right: 0.3rem;
 }
-
 [data-bs-theme='dark'] {
   --bs-primary: #{$primary-dark};
   --bs-primary-rgb: #{red($primary-dark)}, #{green($primary-dark)}, #{blue($primary-dark)};
   --bs-link-color: #{$primary-dark};
   --bs-link-hover-color: #{lighten($primary-dark, 10%)};
-
   --bs-navbar-color: var(--bs-body-color);
   --bs-navbar-hover-color: var(--bs-primary);
   --bs-navbar-active-color: var(--bs-primary);
   --bs-navbar-brand-color: var(--bs-emphasis-color);
-
   .table {
     color: $default-font-color-dark;
     background-color: $default-bg-color-dark;
@@ -252,7 +266,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   .page-item.disabled .page-link {
     background-color: $default-bg-color-dark;
     color: $default-font-color-dark;
-    border: rgba(255, 255, 255, 0.3) solid 0.5px;
+    border: rgba(255, 255, 255, 30%) solid 0.5px;
   }
   .chosen-container .chosen-drop,
   .chosen-container .chosen-results li,
@@ -262,7 +276,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     color: $default-font-color-dark;
   }
   .table td {
-    border-top-color: rgba(255, 255, 255, 0.03);
+    border-top-color: rgba(255, 255, 255, 3%);
   }
   .modal-content {
     background-color: $default-bg-color-dark;
