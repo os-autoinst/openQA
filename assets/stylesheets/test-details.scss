@@ -11,39 +11,31 @@
 }
 
 // test result
-// prettier-ignore
-.resultok { background-color: $color-ok !important; color: $color-result !important; }
-// prettier-ignore
-.resultpassed { background-color: $color-ok !important; color: $color-result !important; }
-// prettier-ignore
-.resultunknown { background-color: $color-result-missing !important; color: $color-result !important; }
-// prettier-ignore
-.resultrunning { background-color: $color-result-testing !important; color: $color-result !important; }
-// prettier-ignore
-.resultwarning { background-color: $color-warning !important; color: $color-result !important; }
-// prettier-ignore
-.resultsoftfailed { background-color: $color-softfailed !important; color: $color-result !important; }
-// prettier-ignore
-.resultfailed { background-color: $color-result-failed !important; color: $color-result !important; }
-// prettier-ignore
-.resultmissing { background-color: $color-result-missing !important; color: $color-result !important; }
+$result-colors: (
+  ok: $color-ok,
+  passed: $color-ok,
+  unknown: $color-result-missing,
+  running: $color-result-testing,
+  warning: $color-warning,
+  softfailed: $color-softfailed,
+  failed: $color-result-failed,
+  missing: $color-result-missing
+);
+
+@each $state, $bg in $result-colors {
+  .result#{$state} {
+    background-color: $bg !important;
+    color: $color-result !important;
+  }
+}
+
 [data-bs-theme='dark'] {
-  // prettier-ignore
-  .resultok { background-color: darken($color-ok, 75%) !important; color: $color-result-dark !important; }
-  // prettier-ignore
-  .resultpassed { background-color: darken($color-ok, 75%) !important; color: $color-result-dark !important; }
-  // prettier-ignore
-  .resultunknown { background-color: darken($color-result-missing, 75%) !important; color: $color-result-dark !important; }
-  // prettier-ignore
-  .resultrunning { background-color: darken($color-result-testing, 75%) !important; color: $color-result-dark !important; }
-  // prettier-ignore
-  .resultwarning { background-color: darken($color-warning, 75%) !important; color: $color-result-dark !important; }
-  // prettier-ignore
-  .resultsoftfailed { background-color: darken($color-softfailed, 75%) !important; color: $color-result-dark !important; }
-  // prettier-ignore
-  .resultfailed { background-color: darken($color-result-failed, 75%) !important; color: $color-result-dark !important; }
-  // prettier-ignore
-  .resultmissing { background-color: darken($color-result-missing, 75%) !important; color: $color-result-dark !important; }
+  @each $state, $bg in $result-colors {
+    .result#{$state} {
+      background-color: darken($bg, 75%) !important;
+      color: $color-result-dark !important;
+    }
+  }
 }
 
 // Live view
@@ -104,56 +96,84 @@ div.flags {
   color: #999;
   padding: 1px;
 }
-// prettier-ignore
-.state_scheduled.fa { color: $color-state-scheduled; }
-// prettier-ignore
-.state_blocked.fa { color: $color-state-blocked; }
-// prettier-ignore
-.state_obsolete.fa, .state_cancelled.fa { color: $color-state-cancelled; }
-// prettier-ignore
-.state_running.fa, .state_uploading.fa { color: $color-state-running; }
-// prettier-ignore
-.fa.module_failed { color: $color-failed; }
-// prettier-ignore
-.fa.module_none { color: $color-module-none; }
-// prettier-ignore
-.fa.module_passed { color: $color-module-passed !important; }
-// prettier-ignore
-.fa.module_softfailed { color: $color-softfailed; }
-// prettier-ignore
-.fa.module_skipped { color: $color-module-skipped; }
-// prettier-ignore
-.fa.result_failed, .fa.result_fail {color: $color-failed; }
-// prettier-ignore
-.fa.result_incomplete { color: $color-incomplete; }
-// prettier-ignore
-.fa.result_timeout_exceeded { color: $color-incomplete; }
-// prettier-ignore
-.fa.result_none { color: $color-module-none; }
-// prettier-ignore
-.fa.result_obsoleted { color: $color-module-none; }
-// prettier-ignore
-.fa.result_parallel_failed { color: $color-module-none; }
-// prettier-ignore
-.fa.result_parallel_restarted { color: $color-module-none; }
-// prettier-ignore
-.fa.result_passed, .fa.result_ok { color: $color-module-passed !important; }
-// prettier-ignore
-.fa.result_skipped { color: $color-module-none; }
-// prettier-ignore
-.fa.result_softfailed, .fa.result_softfail { color: $color-softfailed; }
-// prettier-ignore
-.fa.result_unknown { color:$color-warning; }
-// prettier-ignore
-.fa.result_user_cancelled { color: $color-module-none; }
-// prettier-ignore
-.fa.result_user_restarted { color: $color-module-none; }
-// prettier-ignore
-.fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
-// prettier-ignore
-.label_bug.fa-bolt { padding: 0 3px; color: $color-bolt; }
-// prettier-ignore
-.label_bug.bug_closed { color: $color-bug-closed; transform: rotate(180deg); }
+$state-colors: (
+  scheduled: $color-state-scheduled,
+  blocked: $color-state-blocked,
+  obsolete: $color-state-cancelled,
+  cancelled: $color-state-cancelled,
+  running: $color-state-running,
+  uploading: $color-state-running
+);
+
+@each $state, $color in $state-colors {
+  .state_#{$state}.fa {
+    color: $color;
+  }
+}
+
+$module-colors: (
+  failed: $color-failed,
+  none: $color-module-none,
+  softfailed: $color-softfailed,
+  skipped: $color-module-skipped
+);
+
+@each $mod, $color in $module-colors {
+  .fa.module_#{$mod} {
+    color: $color;
+  }
+}
+
+.fa.module_passed {
+  color: $color-module-passed !important;
+}
+
+$result-fa-colors: (
+  failed: $color-failed,
+  fail: $color-failed,
+  incomplete: $color-incomplete,
+  timeout_exceeded: $color-incomplete,
+  none: $color-module-none,
+  obsoleted: $color-module-none,
+  parallel_failed: $color-module-none,
+  parallel_restarted: $color-module-none,
+  skipped: $color-module-none,
+  softfailed: $color-softfailed,
+  softfail: $color-softfailed,
+  unknown: $color-warning,
+  user_cancelled: $color-module-none,
+  user_restarted: $color-module-none
+);
+
+@each $res, $color in $result-fa-colors {
+  .fa.result_#{$res} {
+    color: $color;
+  }
+}
+
+.fa.result_passed,
+.fa.result_ok {
+  color: $color-module-passed !important;
+}
+
+$label-icons: comment, bookmark, bug, certificate, tag;
+.fa {
+  @each $icon in $label-icons {
+    &.#{$icon} {
+      color: $color-labels;
+    }
+  }
+}
+
+.label_bug.fa-bolt {
+  padding: 0 3px;
+  color: $color-bolt;
+}
+
+.label_bug.bug_closed {
+  color: $color-bug-closed;
+  transform: rotate(180deg);
+}
 
 // developer mode
 #developer-form {
