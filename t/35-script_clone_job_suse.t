@@ -77,7 +77,7 @@ subtest 'similar but invalid settings' => sub {
 subtest 'repos with variables' => sub {
     my $settings = {INCIDENT_REPO => 'http://%MIRROR%/incident_repo/openqa,http://%MIRROR%/incident_repo_1/openqa'};
     my ($fake_ua, $url_handler) = create_mock;
-    throws_ok { detect_maintenance_update(1, $url_handler, $settings) } qr/unexpanded variable/,
+    throws_ok { detect_maintenance_update(1, $url_handler, $settings) } qr/variables are unexpanded: MIRROR/,
       'unexpanded repos throw an error';
     $settings->{MIRROR} = 'my.mirror';
     lives_ok { detect_maintenance_update(1, $url_handler, $settings) }, 'Specified variables are expanded';

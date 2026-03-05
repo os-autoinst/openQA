@@ -12,6 +12,8 @@ use OpenQA::Log 'log_debug';
 use OpenQA::Utils qw(asset_type_from_setting get_url_short);
 use Feature::Compat::Try;
 
+my $PLACEHOLDER_RE = qr/(%+)(\w+)(%+)/;
+
 sub generate_settings ($params) {
     my $settings = $params->{settings};
     my @worker_class;
@@ -54,18 +56,21 @@ sub generate_settings ($params) {
 
 # replace %NAME% with $settings{NAME} (but not %%NAME%%)
 sub expand_placeholders ($settings, $on_web_ui = 1) {
-    for my $value (values %$settings) {
-        next unless defined $value;
-        my %visited_placeholders;
-        try {
-            $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders, $on_web_ui)/eg;
+    my %unexpanded;
+    try {
+        for (grep { defined } values %$settings) {
+            my %visited;
+            s/$PLACEHOLDER_RE/_expand_placeholder($settings, $2, $1, $3, \%visited, $on_web_ui, \%unexpanded)/eg;
         }
-        catch ($e) { return "Error: $e" }
+        return wantarray ? (undef, [sort keys %unexpanded]) : undef;
     }
-    return undef;
+    catch ($e) {
+        my $err = "Error: $e";
+        return wantarray ? ($err, [sort keys %unexpanded]) : $err;
+    }
 }
 
-sub _expand_placeholder ($settings, $key, $start, $end, $visited_placeholders_in_parent_scope, $on_web_ui) {
+sub _expand_placeholder ($settings, $key, $start, $end, $visited, $on_web_ui, $unexpanded) {
     # handle %CASEDIR% only on web UI; on the worker it is handled by _engine_workit_step_2 separately
     return "$start$key$end" if !$on_web_ui && $key eq 'CASEDIR';
 
@@ -73,12 +78,17 @@ sub _expand_placeholder ($settings, $key, $start, $end, $visited_placeholders_in
     return (substr $start, 1) . ($key) . (substr $end, 0, -1) unless $start eq '%' && $end eq '%';
 
     # do not replace non-existing keys on web UI level to leave them to the worker
-    return $on_web_ui ? "$start$key$end" : '' unless defined(my $value = $settings->{$key});
+    my $value = $settings->{$key};
+    unless (defined $value) {
+        $unexpanded->{$key}++;
+        return $on_web_ui ? "$start$key$end" : '';
+    }
 
     # substitute the whole %…% expression with the value of the other setting
-    my %visited_placeholders = %$visited_placeholders_in_parent_scope;
-    die "The key $key contains a circular reference, its value is $value.\n" if $visited_placeholders{$key}++;
-    $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders, $on_web_ui)/eg;
+    my %visited_branch = %$visited;
+    die "The key $key contains a circular reference, its value is $value.\n" if $visited_branch{$key}++;
+    $value
+      =~ s/$PLACEHOLDER_RE/_expand_placeholder($settings, $2, $1, $3, \%visited_branch, $on_web_ui, $unexpanded)/eg;
     return $value;
 }
 
