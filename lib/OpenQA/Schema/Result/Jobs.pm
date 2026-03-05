@@ -10,7 +10,7 @@ use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
 use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error);
 use OpenQA::Utils (
     qw(create_git_clone_list parse_assets_from_settings locate_asset),
-    qw(resultdir assetdir read_test_modules find_bugref random_string),
+    qw(resultdir assetdir read_test_modules find_bugref random_string effective_distri),
     qw(run_cmd_with_log_return_error needledir testcasedir git_commit_url find_video_files)
 );
 use OpenQA::App;
@@ -1948,20 +1948,22 @@ sub investigate ($self, %args) {
         my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
         $inv{diff_to_last_good} = join "\n", grep { !/(^@@|$ignore)/ } split /\n/, $diff;
         my $prev_vars = decode_json($prev_file // '{}');
-        my $dir = testcasedir($self->DISTRI, $self->VERSION);
+        my $effective_distri = effective_distri($self_vars);
+        my $casedir = testcasedir($effective_distri, $self->VERSION);
         my $refspec_range = "$prev_vars->{TEST_GIT_HASH}..$self_vars->{TEST_GIT_HASH}";
         my $diff_limit = $args{git_limit} ? $args{git_limit} / 2 : undef;
-        $inv{test_log} = $self->git_log_diff($dir, $refspec_range, $args{git_limit});
+        $inv{test_log} = $self->git_log_diff($casedir, $refspec_range, $args{git_limit});
         $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
-        $inv{test_diff_stat} = $self->git_diff($dir, $refspec_range, $diff_limit) if $inv{test_log};
+        $inv{test_diff_stat} = $self->git_diff($casedir, $refspec_range, $diff_limit) if $inv{test_log};
         # no need for duplicating needles git log if the git repo is the same
         # as for tests
         if ($self_vars->{TEST_GIT_HASH} ne $self_vars->{NEEDLES_GIT_HASH}) {
-            $dir = needledir($self->DISTRI, $self->VERSION);
+            my $needles_dir = needledir($effective_distri, $self->VERSION);
             my $refspec_needles_range = "$prev_vars->{NEEDLES_GIT_HASH}..$self_vars->{NEEDLES_GIT_HASH}";
-            $inv{needles_log} = $self->git_log_diff($dir, $refspec_needles_range, $args{git_limit});
+            $inv{needles_log} = $self->git_log_diff($needles_dir, $refspec_needles_range, $args{git_limit});
             $inv{needles_log} ||= 'No needle changes recorded, test regression due to needles unlikely';
-            $inv{needles_diff_stat} = $self->git_diff($dir, $refspec_needles_range, $diff_limit) if $inv{needles_log};
+            $inv{needles_diff_stat} = $self->git_diff($needles_dir, $refspec_needles_range, $diff_limit)
+              if $inv{needles_log};
         }
         last;
     }
