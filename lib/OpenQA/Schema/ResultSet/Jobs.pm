@@ -454,8 +454,8 @@ sub cancel_by_settings (
         while (my $j = $jobs_without_comments->next) {
             # the value we get from that @important_builds search above
             # could be just BUILD or VERSION-BUILD
-            next if grep $j->BUILD eq $_, @important_builds;
-            next if grep join('-', $j->VERSION, $j->BUILD) eq $_, @important_builds;
+            next if grep { $j->BUILD eq $_ } @important_builds;
+            next if grep { join('-', $j->VERSION, $j->BUILD) eq $_ } @important_builds;
             push @unimportant_jobs, $j->id;
         }
         # if there are only important jobs there is nothing left for us to do

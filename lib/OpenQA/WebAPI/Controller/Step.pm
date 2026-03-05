@@ -355,7 +355,7 @@ sub _extended_needle_info (
         $needle_info->{title} = $needle_info->{avg_similarity} . '%: ' . $needle_name;
     }
     for my $tag (@{$needle_info->{tags}}) {
-        push @$overall_list_of_tags, $tag unless grep /^$tag$/, @$overall_list_of_tags;
+        push @$overall_list_of_tags, $tag unless grep { /^$tag$/ } @$overall_list_of_tags;
     }
     return $needle_info;
 }

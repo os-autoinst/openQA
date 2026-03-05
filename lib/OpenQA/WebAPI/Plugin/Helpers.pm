@@ -218,7 +218,7 @@ sub register ($self, $app, $config) {
     $app->helper(
         build_progress_bar_title => sub ($c, $res) {
             my @keys = qw(passed unfinished softfailed failed skipped total);
-            return join "\n", map "$_: $res->{$_}", grep $res->{$_}, @keys;
+            return join "\n", map "$_: $res->{$_}", grep { $res->{$_} } @keys;
         });
 
     $app->helper(
