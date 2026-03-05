@@ -111,8 +111,8 @@ sub _perform_cache_cleanup ($cache_dir) {
         });
     return unless is_cache_limit_exceeded($current_cache_size, $available, $total);
     log_info 'Archive cache exceeds limits (size: '
-          . human_readable_size($current_cache_size)
-          . '), cleaning up oldest archives';
+      . human_readable_size($current_cache_size)
+      . '), cleaning up oldest archives';
     @archives = sort { $a->{mtime} <=> $b->{mtime} } @archives;
     my $target_size = get_cache_limit() * (get_watermark_percentage() / 100);
     while ($current_cache_size > $target_size && @archives) {

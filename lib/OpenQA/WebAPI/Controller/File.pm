@@ -172,7 +172,9 @@ sub archive ($self) {
                 {tasks => ['create_zip_archive'], notes => {job_id => $job_id}, states => ['inactive', 'active']});
             unless (@{$jobs->{jobs}}) {
                 $self->app->log->info("Enqueuing create_zip_archive for job $job_id");
-                $minion->enqueue(create_zip_archive => [$job_id], {notes => {job_id => $job_id}});
+                $minion->enqueue(
+                    create_zip_archive => [$job_id],
+                    {notes => {job_id => $job_id}, priority => -10, expire => 3600});
             }
         }
         else {
