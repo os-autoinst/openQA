@@ -97,6 +97,7 @@ our @EXPORT = qw(
   needledir
   productdir
   testcasedir
+  effective_distri
   git_commit_url
   is_in_tests
   save_base64_png
@@ -212,6 +213,11 @@ sub testcasedir ($distri = undef, $version = undef, $rootfortests = undef) {
     my $dir = catdir($rootfortests, $distri);
     $dir .= "-$version" if $version && -e "$dir-$version";
     return $dir;
+}
+
+sub effective_distri ($job_settings) {
+    my $casedir = $job_settings->{CASEDIR};
+    return defined $casedir && !looks_like_url_with_scheme($casedir) ? $casedir : $job_settings->{DISTRI};
 }
 
 =head2 git_commit_url
@@ -545,11 +551,14 @@ sub create_downloads_list ($job_settings) {
 
 sub create_git_clone_list ($job_settings, $clones = {}) {
     return $clones unless my $distri = $job_settings->{DISTRI};
+    return $clones unless my $effective_distri = effective_distri($job_settings);
+    my $testcasedir = testcasedir($effective_distri);
+    my $needledir = needledir($effective_distri, undef, undef, $distri);
     my $config = OpenQA::App->singleton->config->{'scm git'};
     if ($config->{git_auto_update} eq 'yes') {
         # Potential existing git clones to update without having CASEDIR or NEEDLES_DIR
-        not $job_settings->{CASEDIR} and $clones->{testcasedir($distri)} = undef;
-        not $job_settings->{NEEDLES_DIR} and $clones->{needledir($distri)} = undef;
+        not $job_settings->{CASEDIR} and $clones->{$testcasedir} = undef;
+        not $job_settings->{NEEDLES_DIR} and $clones->{$needledir} = undef;
     }
     if ($config->{git_auto_clone} eq 'yes') {
         # Check CASEDIR and NEEDLES_DIR
@@ -557,11 +566,11 @@ sub create_git_clone_list ($job_settings, $clones = {}) {
         my $needles_url = Mojo::URL->new($job_settings->{NEEDLES_DIR} // '');
         if ($case_url->scheme) {
             $case_url->fragment($job_settings->{TEST_GIT_REFSPEC}) if ($job_settings->{TEST_GIT_REFSPEC});
-            $clones->{testcasedir($distri)} = $case_url;
+            $clones->{$testcasedir} = $case_url;
         }
         if ($needles_url->scheme) {
             $needles_url->fragment($job_settings->{NEEDLES_GIT_REFSPEC}) if ($job_settings->{NEEDLES_GIT_REFSPEC});
-            $clones->{needledir($distri)} = $needles_url;
+            $clones->{$needledir} = $needles_url;
         }
     }
     return $clones;

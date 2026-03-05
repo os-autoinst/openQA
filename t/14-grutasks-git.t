@@ -355,6 +355,14 @@ subtest 'create_git_clone_list' => sub {
     create_git_clone_list(\%job_settings, \%clones);
     my %expected_clones = map { ("t/data/openqa/share/tests/some-distri$_" => undef) } '', '/needles';
     is_deeply \%clones, \%expected_clones, 'clones added for distri' or always_explain \%clones;
+
+    subtest 'CASEDIR deviates from DISTRI' => sub {
+        %clones = ();
+        %job_settings = (CASEDIR => 'some-casedir', DISTRI => 'some-distri');
+        create_git_clone_list(\%job_settings, \%clones);
+        my %expected_clones = map { ("t/data/openqa/share/tests/some-casedir$_" => undef) } '/needles';
+        is_deeply \%clones, \%expected_clones, 'clones added for distri' or always_explain \%clones;
+    };
 };
 
 subtest 'enqueue_git_clones' => sub {
