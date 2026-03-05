@@ -41,7 +41,7 @@ sub locked_by_jobs {
     my $schema = $rsource->schema;
 
     return unless $self->locked_by;
-    my @locked_ids = split(/,/, $self->locked_by);
+    my @locked_ids = split /,/, $self->locked_by;
     return $schema->resultset('Jobs')->search({id => {-in => \@locked_ids}})->all;
 }
 

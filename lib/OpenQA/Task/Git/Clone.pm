@@ -29,7 +29,7 @@ sub _git_clone_all ($job, $clones) {
     my $app = $job->app;
     my $job_id = $job->id;
 
-    my $retry_delay = {delay => 30 + int(rand(10))};
+    my $retry_delay = {delay => 30 + int rand 10};
     # Prevent multiple git_clone tasks for the same path to run in parallel
     my @guards;
     my $is_path_only = 1;

@@ -105,13 +105,13 @@ sub commit ($self, $args = undef) {
     # stage changes
     for my $cmd (qw(add rm)) {
         next unless $args->{$cmd};
-        push(@files, @{$args->{$cmd}});
+        push @files, @{$args->{$cmd}};
         $self->_run_cmd([$cmd, @{$args->{$cmd}}], {croak => "Unable to $cmd via Git"});
     }
 
     # commit changes
     my $message = $args->{message};
-    my $author = sprintf('--author=%s <%s>', $self->user->fullname, $self->user->email);
+    my $author = sprintf '--author=%s <%s>', $self->user->fullname, $self->user->email;
     try {
         $self->_run_cmd(['commit', '-q', '-m', $message, $author, @files], {croak => 'Unable to commit via Git'});
     }

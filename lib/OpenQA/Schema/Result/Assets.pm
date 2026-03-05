@@ -67,7 +67,7 @@ sub _getDirSize {
     $size //= 0;
 
     opendir(my $dh, $dir) || return 0;
-    for my $dirContent (grep(!/^\.\.?/, readdir($dh))) {
+    for my $dirContent (grep !/^\.\.?/, readdir $dh) {
 
         $dirContent = "$dir/$dirContent";
 
@@ -79,7 +79,7 @@ sub _getDirSize {
             $size = _getDirSize($dirContent, $size);
         }
     }
-    closedir($dh);
+    closedir $dh;
     return $size;
 }
 
@@ -132,7 +132,7 @@ sub refresh_size {
     my @stat = stat(my $disk_file = $self->disk_file);
     if (@stat) {
         if ($self->type eq 'repo') {
-            return $current_size if defined($current_size);
+            return $current_size if defined $current_size;
             $new_size = _getDirSize($disk_file);
         }
         else {
@@ -148,7 +148,7 @@ sub refresh_size {
 # web UI; configured via 'hide_asset_types' setting
 sub is_type_hidden {
     my ($type) = @_;
-    return grep { $_ eq $type } split(/ /, OpenQA::App->singleton->config->{global}->{hide_asset_types});
+    return grep { $_ eq $type } split / /, OpenQA::App->singleton->config->{global}->{hide_asset_types};
 }
 
 sub hidden {

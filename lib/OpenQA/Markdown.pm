@@ -17,7 +17,7 @@ sub is_light_color {
     my $color = shift;
     return undef unless $color =~ m/^#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})$/;
     my ($red, $green, $blue) = ($1, $2, $3);
-    my $sum = hex($red) + hex($green) + hex($blue);
+    my $sum = (hex $red) + (hex $green) + (hex $blue);
     return $sum > 380;
 }
 

@@ -105,7 +105,7 @@ sub product ($self) {
     push @missing, 'pull_request/head/sha' unless my $sha = $head->{sha};
     push @missing, 'pull_request/head/repo/full_name' unless my $repo_name = $repo->{full_name};
     push @missing, 'pull_request/head/repo/clone_url' unless my $clone_url = $repo->{clone_url};
-    return $self->render(status => 400, text => 'missing fields: ' . join(', ', @missing)) if @missing;
+    return $self->render(status => 400, text => 'missing fields: ' . join ', ', @missing) if @missing;
 
     # cancel previously scheduled jobs for this PR
     my $webhook_id = "gh:pr:$pr_id";

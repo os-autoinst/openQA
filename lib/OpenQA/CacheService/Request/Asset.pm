@@ -10,7 +10,7 @@ has task => 'cache_asset';
 
 # Generate same lock for asset/host
 sub lock ($self) {
-    join('.', map { $self->$_ } qw(asset host));
+    join '.', map { $self->$_ } qw(asset host);
 }
 
 sub to_array ($self) { [$self->id, $self->type, $self->asset, $self->host] }

@@ -277,7 +277,7 @@ sub name ($self) {
     my %formats = (BUILD => 'Build%s',);
     my @name_keys = qw(DISTRI VERSION FLAVOR ARCH BUILD TEST);
     my @a = map { my $c = $self->get_column($_); $c ? sprintf(($formats{$_} || '%s'), $c) : () } @name_keys;
-    my $name = join('-', @a);
+    my $name = join '-', @a;
     my $machine = $self->MACHINE;
     $name .= ('@' . $machine) if $machine;
     $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
@@ -302,7 +302,7 @@ sub scenario_hash ($self) {
 }
 
 sub scenario_name ($self) {
-    my $scenario = join('-', map { $self->get_column($_) } SCENARIO_KEYS);
+    my $scenario = join '-', map { $self->get_column($_) } SCENARIO_KEYS;
     if (my $machine = $self->MACHINE) { $scenario .= "@" . $machine }
     return $scenario;
 }
@@ -383,7 +383,7 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
         my @networks = ('fixed');
         @networks = split /\s*,\s*/, $job_hashref->{settings}->{NETWORKS} if $job_hashref->{settings}->{NETWORKS};
         my @vlans = map { $self->allocate_network($_) } @networks;
-        $job_hashref->{settings}->{NICVLAN} = join(',', @vlans);
+        $job_hashref->{settings}->{NICVLAN} = join ',', @vlans;
     }
 
     unless ($worker_properties->{WORKER_TMPDIR}) {
@@ -525,7 +525,7 @@ sub is_pristine ($self) {
 }
 
 sub _compute_asset_names_considering_parent_jobs ($parent_job_ids, $asset_name) {
-    [$asset_name, map { sprintf('%08d-%s', $_, $asset_name) } @$parent_job_ids]
+    [$asset_name, map { sprintf '%08d-%s', $_, $asset_name } @$parent_job_ids]
 }
 
 sub _strip_parent_job_id ($parent_job_ids, $asset_name) {
@@ -765,7 +765,7 @@ sub cluster_jobs ($self, @args) {
         my $dep_type = $pd->dependency;
 
         if ($dep_type eq OpenQA::JobDependencies::Constants::CHAINED) {
-            push(@{$job->{chained_parents}}, $parent_id);
+            push @{$job->{chained_parents}}, $parent_id;
             # duplicate only up the chain if the parent job wasn't ok
             # notes: - We skip the children here to avoid considering "direct siblings".
             #        - Going up the chain is not required/wanted when cancelling.
@@ -777,7 +777,7 @@ sub cluster_jobs ($self, @args) {
             next;
         }
         elsif ($dep_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-            push(@{$job->{directly_chained_parents}}, $parent_id);
+            push @{$job->{directly_chained_parents}}, $parent_id;
             # duplicate always up the chain to ensure this job ran directly after its directly chained parent
             # notes: same as for CHAINED dependencies
             unless ($skip_parents || $cancelmode) {
@@ -793,7 +793,7 @@ sub cluster_jobs ($self, @args) {
             next;
         }
         elsif ($dep_type eq OpenQA::JobDependencies::Constants::PARALLEL) {
-            push(@{$job->{parallel_parents}}, $parent_id);
+            push @{$job->{parallel_parents}}, $parent_id;
             my $cancelwhole = 1;
             # check if the setting to disable cancelwhole is set: the var
             # must exist and be set to something false-y
@@ -853,7 +853,7 @@ sub _cluster_children ($self, $jobs, $cancelmode, $skip_parents = undef, $no_dir
         my $child_id = $c->id;
         my $child_job_info = $jobs->{$child_id};
         my $relation = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
-        push(@{$current_job_info->{$relation}}, $child_id);
+        push @{$current_job_info->{$relation}}, $child_id;
 
         # consider the current job itself not ok if any children were not ok
         # note: Let's assume we have a simple graph where only C failed: A -> B -> C
@@ -923,7 +923,7 @@ sub duplicate ($self, $args = {}) {
         return $e;
     }
 
-    log_debug('Duplicating jobs: ' . dump($jobs));
+    log_debug('Duplicating jobs: ' . (dump $jobs));
     my @args = (
         $jobs, $args->{comments} //= [],
         $args->{comment},
@@ -1063,10 +1063,10 @@ sub save_screenshot ($self, $screen) {
     return unless -d $tmpdir;    # we can't help
     my $current = readlink($tmpdir . '/last.png');
     my $newfile = OpenQA::Utils::save_base64_png($tmpdir, $screen->{name}, $screen->{png});
-    unlink($tmpdir . '/last.png');
-    symlink("$newfile.png", $tmpdir . '/last.png');
+    unlink $tmpdir . '/last.png';
+    symlink "$newfile.png", $tmpdir . '/last.png';
     # remove old file
-    unlink($tmpdir . "/$current") if $current;
+    unlink $tmpdir . "/$current" if $current;
 }
 
 sub append_log ($self, $log, $file_name) {
@@ -1075,9 +1075,9 @@ sub append_log ($self, $log, $file_name) {
     my $path = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $path;    # we can't help
     $path .= "/$file_name";
-    if (open(my $fd, '>>', $path)) {
+    if (open my $fd, '>>', $path) {
         print $fd $log->{data};
-        close($fd);
+        close $fd;
     }
     else {
         print STDERR "can't open $path: $!\n";
@@ -1245,7 +1245,7 @@ sub create_result_dir ($self) {
     my $dir = $self->result_dir;
     if (!$dir) {
         $dir = sprintf '%08d-%s', $self->id, $self->name;
-        $dir = substr($dir, 0, 255);
+        $dir = substr $dir, 0, 255;
         $self->update({result_dir => $dir});
         $dir = $self->result_dir;
     }
@@ -1361,7 +1361,7 @@ sub parse_extra_tests ($self, $asset, $type, $script = undef) {
 sub create_artefact ($self, $asset, $ulog) {
     my $storepath = $self->create_result_dir;
     $storepath .= '/ulogs' if $ulog;
-    my $target = join('/', $storepath, $asset->filename);
+    my $target = join '/', $storepath, $asset->filename;
     $asset->move_to($target);
     $self->account_result_size("artefact $target", $asset->size);
     log_trace("Created artefact: $target");
@@ -1383,7 +1383,7 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
     my $fpath = path($assetdir, $type);
     my $temp_path = path($assetdir, 'tmp', $scope);
 
-    my $temp_chunk_folder = path($temp_path, $job_id, join('.', $fname, 'CHUNKS'));
+    my $temp_chunk_folder = path($temp_path, $job_id, join '.', $fname, 'CHUNKS');
     my $temp_final_file = path($temp_chunk_folder, $fname);
     my $final_file = path($fpath, $fname);
 
@@ -1458,7 +1458,7 @@ sub failed_modules ($self) {
     my @failedmodules;
 
     while (my $module = $fails->next) {
-        push(@failedmodules, $module->name);
+        push @failedmodules, $module->name;
     }
     return \@failedmodules;
 }
@@ -1669,7 +1669,7 @@ sub _previous_scenario_jobs ($self, $rows = undef) {
     my $schema = $self->result_source->schema;
     my $conds = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     for my $key (SCENARIO_WITH_MACHINE_KEYS) {
-        push(@$conds, {"me.$key" => $self->get_column($key)});
+        push @$conds, {"me.$key" => $self->get_column($key)};
     }
     my %attrs = (
         order_by => ['me.id DESC'],
@@ -1733,7 +1733,7 @@ sub _carry_over_candidate ($self) {
     # search for previous jobs
     for my $job ($self->_previous_scenario_jobs($lookup_depth)) {
         my $job_fr = $job->_failure_reason;
-        log_debug(sprintf("$label: checking take over from %d: _failure_reason=%s", $job->id, $job_fr));
+        log_debug(sprintf "$label: checking take over from %d: _failure_reason=%s", $job->id, $job_fr);
         if ($job_fr eq $current_failure_reason) {
             log_debug(sprintf "$label: found a good candidate (%d)", $job->id);
             return $job;
@@ -1855,16 +1855,16 @@ sub test_resultfile_list ($self) {
     my @filelist = (COMMON_RESULT_FILES, qw(backend.json serial0.txt));
     my $filelist_existing = find_video_files($testresdir)->map('basename')->to_array;
     for my $f (@filelist) {
-        push(@$filelist_existing, $f) if -e "$testresdir/$f";
+        push @$filelist_existing, $f if -e "$testresdir/$f";
     }
     for my $f (qw(serial_terminal.txt serial_terminal_user.txt)) {
-        push(@$filelist_existing, $f) if -s "$testresdir/$f";
+        push @$filelist_existing, $f if -s "$testresdir/$f";
     }
 
     my $virtio_console_num = $self->settings_hash->{VIRTIO_CONSOLE_NUM} // 1;
     for (my $i = 1; $i < $virtio_console_num; ++$i) {
         my $f = "serial_terminal$i.txt";
-        push(@$filelist_existing, $f) if -s "$testresdir/$f";
+        push @$filelist_existing, $f if -s "$testresdir/$f";
     }
 
     return $filelist_existing;
@@ -1946,7 +1946,7 @@ sub investigate ($self, %args) {
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
         my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
-        $inv{diff_to_last_good} = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
+        $inv{diff_to_last_good} = join "\n", grep { !/(^@@|$ignore)/ } split /\n/, $diff;
         my $prev_vars = decode_json($prev_file // '{}');
         my $dir = testcasedir($self->DISTRI, $self->VERSION);
         my $refspec_range = "$prev_vars->{TEST_GIT_HASH}..$self_vars->{TEST_GIT_HASH}";
@@ -1978,7 +1978,7 @@ sub packages_diff ($self, $prev, $ignore, $filename, $fallback = 'Diff of packag
     return $fallback unless -e $prev_file;
     my @files_packages = map { $_->slurp } ($prev_file, $current_file);
     my $diff_packages = eval { diff(\$files_packages[0], \$files_packages[1], {CONTEXT => 0}) };
-    return join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff_packages));
+    return join "\n", grep { !/(^@@|$ignore)/ } split /\n/, $diff_packages;
 }
 
 sub ancestors ($self, $limit = -1) {
@@ -2130,7 +2130,7 @@ sub done ($self, %args) {
         $result = OBSOLETED;
     }
     elsif ($result = $args{result}) {
-        $result = lc($result);
+        $result = lc $result;
         die "Erroneous parameters (result invalid)\n" unless grep { $result eq $_ } RESULTS;
     }
     else {
@@ -2247,7 +2247,7 @@ sub dependencies ($self, $children_list = undef, $parents_list = undef) {
 
     $parents_list ||= [$self->parents->all];
     for my $s (@$parents_list) {
-        push(@{$parents{$s->to_string}}, $s->parent_job_id);
+        push @{$parents{$s->to_string}}, $s->parent_job_id;
         my $jobs = $self->result_source->schema->resultset('Jobs');
         next unless my $parent = $jobs->find($s->parent_job_id, {select => ['result']});
         $has_parents = 1;
@@ -2255,7 +2255,7 @@ sub dependencies ($self, $children_list = undef, $parents_list = undef) {
     }
     $children_list ||= [$self->children->all];
     for my $s (@$children_list) {
-        push(@{$children{$s->to_string}}, $s->child_job_id);
+        push @{$children{$s->to_string}}, $s->child_job_id;
     }
 
     return {

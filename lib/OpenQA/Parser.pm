@@ -29,7 +29,7 @@ has 'content';
 # parser( Format => 'file.json')
 # or parser( 'Format' )
 sub parser {
-    @_ > 1 && ref $_[0] ne 'HASH' ? _build_parser(shift(@_))->load(shift(@_)) : _build_parser(shift(@_));
+    @_ > 1 && ref $_[0] ne 'HASH' ? _build_parser(shift @_)->load(shift @_) : _build_parser(shift @_);
 }
 
 sub _build_parser {
@@ -115,7 +115,7 @@ sub _build_tree {
         if (blessed $self->{$collection} && $self->{$collection}->can('each')) {
             $self->$collection->each(
                 sub {
-                    push(@{$tree->{$collection}}, gen_tree_el($_));
+                    push @{$tree->{$collection}}, gen_tree_el($_);
                 });
         }
         else {

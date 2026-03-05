@@ -9,7 +9,7 @@ has [qw(from to)];
 has task => 'cache_tests';
 
 sub lock ($self) {
-    join('.', map { $self->$_ } qw(from to));
+    join '.', map { $self->$_ } qw(from to);
 }
 
 sub to_array ($self) { [$self->from, $self->to] }

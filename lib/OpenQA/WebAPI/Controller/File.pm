@@ -49,10 +49,10 @@ sub needle ($self) {
     # you can only find needles in subdirectories by passing the jsonfile parameter
     my ($dummy1, $path, $dummy2) = fileparse($jsonfile);
     # drop the trailing / from $path
-    $path = substr($path, 0, -1);
+    $path = substr $path, 0, -1;
     if (index($path, '/needles') != -1) {
         # we got something like /var/lib/openqa/share/tests/distri/needles/(subdir)/needle.json
-        my @elems = split('/needles', $path, 2);
+        my @elems = split '/needles', $path, 2;
         if (defined $elems[1]) {
             $needledir .= $elems[1];
         }
@@ -181,7 +181,7 @@ sub _serve_static ($self, $asset) {
     my $log = $self->log;
 
     $log->debug('looking for ' . pp($asset) . ' in ' . pp($static->paths));
-    $asset = $static->file($asset) if $asset && !ref($asset);
+    $asset = $static->file($asset) if $asset && !ref $asset;
     return $self->reply->not_found unless $asset;
     $log->debug('found ' . pp($asset));
 

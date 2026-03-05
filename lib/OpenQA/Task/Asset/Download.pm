@@ -18,7 +18,7 @@ sub _create_symlinks ($job, $ctx, $assetpath, $other_destinations) {
           "Cannot create symlink from $assetpath to $link_path: $!";
     }
     if (scalar(@error_message) > 0) {
-        $ctx->error(my $msg = join("\n", @error_message));
+        $ctx->error(my $msg = join "\n", @error_message);
         return $job->fail($msg);
     }
 }

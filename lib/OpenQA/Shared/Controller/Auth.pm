@@ -138,7 +138,7 @@ sub _token_auth ($self, $reason, $userinfo) {
             if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
                 my $user = $api_key->user;
                 my $name = $user->name;
-                $self->stash(webhook_validation_secret => join(':', $name, $key, $secret));
+                $self->stash(webhook_validation_secret => join ':', $name, $key, $secret);
                 if ($user && secure_compare($username, $name)) {
                     return ($user, undef) if secure_compare($secret, $api_key->secret);
                     $log->debug("$reject_msg, wrong secret");

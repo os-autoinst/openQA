@@ -50,7 +50,7 @@ sub latest_build ($self, %args) {
     my $schema = $rsource->schema;
 
     my $groupid = delete $args{groupid};
-    push(@conds, {'me.group_id' => $groupid}) if defined $groupid;
+    push @conds, {'me.group_id' => $groupid} if defined $groupid;
 
     $attrs{join} = 'settings';
     $attrs{rows} = 1;
@@ -95,7 +95,7 @@ sub latest_jobs ($self, $until = undef) {
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $key = join('-', map { $job->$_ // '' } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS);
+        my $key = join '-', map { $job->$_ // '' } OpenQA::Schema::Result::Jobs::MAIN_SETTINGS;
         push @latest, $job unless $seen{$key}++;
     }
 
@@ -157,7 +157,7 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my $now = now;
     for my $key (keys %settings) {
         my @values = $key =~ qr/(^WORKER_CLASS|\[\])$/ ? split(m/,/, $settings{$key}) : ($settings{$key});
-        push(@job_settings, {t_created => $now, t_updated => $now, key => $key, value => $_}) for @values;
+        push @job_settings, {t_created => $now, t_updated => $now, key => $key, value => $_} for @values;
     }
     $job->settings->populate(\@job_settings);
 
@@ -196,11 +196,10 @@ sub _apply_prio_throttling ($settings, $new_job_args) {
             $throttling_info .= "$resource, scale: $scale" . ($reference ? ", reference: $reference;" : ';');
             $new_job_args->{priority} += $prio;
         }
-        $debug_msg .= sprintf(
-            '. Adjusting job priority by %s based on resource requirement(s): %s',
-            $new_job_args->{priority},
-            $throttling_info
-        ) if $throttling_info;
+        $debug_msg .= sprintf
+          '. Adjusting job priority by %s based on resource requirement(s): %s',
+          $new_job_args->{priority}, $throttling_info
+          if $throttling_info;
     }
     return $debug_msg;
 }
@@ -234,7 +233,7 @@ sub _handle_dependency_settings ($self, $settings, $new_job_args) {
         my $dependency_type = $dependency_definition->{dependency_type};
         for my $id (@$ids) {
             if ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-                my $parent_worker_classes = join(',', @{$job_settings->all_values_sorted($id, 'WORKER_CLASS')});
+                my $parent_worker_classes = join ',', @{$job_settings->all_values_sorted($id, 'WORKER_CLASS')};
                 _handle_directly_chained_dep($parent_worker_classes, $id, $settings);
             }
             push @{$new_job_args->{parents}}, {parent_job_id => $id, dependency => $dependency_type};
@@ -248,7 +247,7 @@ sub _handle_directly_chained_dep ($parent_classes, $id, $settings) {
 
     # raise error if the directly chained child has a different set of worker classes assigned than its parent
     die "Specified WORKER_CLASS ($classes) does not match the one from directly chained parent $id ($parent_classes)"
-      unless $parent_classes eq join(',', sort split(m/,/, $classes));
+      unless $parent_classes eq join ',', sort split m/,/, $classes;
 }
 
 sub _search_modules ($self, $module_re) {
@@ -262,7 +261,7 @@ sub _search_modules ($self, $module_re) {
         my $stderr;
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
         next if $stderr;
-        push(@results, map { $_ =~ s/\..*$//; basename $_ } split(/\n/, $stdout));
+        push @results, map { $_ =~ s/\..*$//; basename $_ } split /\n/, $stdout;
     }
     return \@results;
 }
@@ -286,14 +285,14 @@ sub _prepare_complex_query_search_args ($self, $args) {
         push @conds, {'modules.result' => {-in => $args->{modules_result}}};
     }
 
-    push(@conds, {'me.state' => $args->{state}}) if $args->{state};
+    push @conds, {'me.state' => $args->{state}} if $args->{state};
     # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
-    push(@conds, {'me.result' => {-in => $args->{result}}}) if $args->{result};
-    push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}})
+    push @conds, {'me.result' => {-in => $args->{result}}} if $args->{result};
+    push @conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}}
       if $args->{ignore_incomplete};
     my $scope = $args->{scope} || '';
     if ($scope eq 'relevant') {
-        push(@joins, 'clone');
+        push @joins, 'clone';
         push @conds, {
             -or => [
                 'me.clone_id' => undef,
@@ -302,9 +301,9 @@ sub _prepare_complex_query_search_args ($self, $args) {
             'me.result' => {    # these results should be hidden by default
                 -not_in => [OpenQA::Jobs::Constants::OBSOLETED]}};
     }
-    push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
-    push(@conds, {'me.id' => {'<', $args->{before}}}) if $args->{before};
-    push(@conds, {'me.id' => {'>', $args->{after}}}) if $args->{after};
+    push @conds, {'me.clone_id' => undef} if $scope eq 'current';
+    push @conds, {'me.id' => {'<', $args->{before}}} if $args->{before};
+    push @conds, {'me.id' => {'>', $args->{after}}} if $args->{after};
     my $rsource = $self->result_source;
     my $schema = $rsource->schema;
 
@@ -334,8 +333,8 @@ sub _prepare_complex_query_search_args ($self, $args) {
     elsif ($args->{match}) {
         my @likes;
         # Text search across some settings
-        push(@likes, {"me.$_" => {'-like' => "%$args->{match}%"}}) for (qw(DISTRI FLAVOR BUILD TEST VERSION));
-        push(@conds, -or => \@likes);
+        push @likes, {"me.$_" => {'-like' => "%$args->{match}%"}} for (qw(DISTRI FLAVOR BUILD TEST VERSION));
+        push @conds, -or => \@likes;
     }
     else {
         # Check if the settings are between the arguments passed via query url
@@ -344,7 +343,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
             $job_settings->{$key} = $args->{lc $key} if defined $args->{lc $key};
         }
         for my $key (qw(distri version flavor arch test machine)) {
-            push(@conds, {'me.' . uc($key) => $args->{$key}}) if $args->{$key};
+            push @conds, {'me.' . uc($key) => $args->{$key}} if $args->{$key};
         }
         if (my $build = $args->{build}) {
             push @conds, {'me.BUILD' => ref $build eq 'ARRAY' ? {-in => $build} : $build};
@@ -357,7 +356,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
         push @conds, \['(select id from comments where job_id = me.id and text like ? limit 1) is not null', "%$c%"];
     }
 
-    push(@conds, @{$args->{additional_conds}}) if $args->{additional_conds};
+    push @conds, @{$args->{additional_conds}} if $args->{additional_conds};
     my %attrs;
     $attrs{columns} = $args->{columns} if $args->{columns};
     $attrs{prefetch} = $args->{prefetch} if $args->{prefetch};
@@ -446,8 +445,8 @@ sub cancel_by_settings (
         while (my $j = $jobs_without_comments->next) {
             # the value we get from that @important_builds search above
             # could be just BUILD or VERSION-BUILD
-            next if grep ($j->BUILD eq $_, @important_builds);
-            next if grep (join('-', $j->VERSION, $j->BUILD) eq $_, @important_builds);
+            next if grep $j->BUILD eq $_, @important_builds;
+            next if grep join('-', $j->VERSION, $j->BUILD) eq $_, @important_builds;
             push @unimportant_jobs, $j->id;
         }
         # if there are only important jobs there is nothing left for us to do

@@ -29,11 +29,11 @@ sub productlog_ajax {
     my @searchable_columns = qw(me.distri me.version me.flavor me.arch me.build me.iso);
     my @filter_conds;
     if (my $id = $self->param('id')) {
-        push(@filter_conds, {'me.id' => $id});
+        push @filter_conds, {'me.id' => $id};
     }
     if (my $search_value = $self->param('search[value]')) {
         my %condition = (like => "\%$search_value%");
-        push(@filter_conds, {-or => [map { $_ => \%condition } @searchable_columns]});
+        push @filter_conds, {-or => [map { $_ => \%condition } @searchable_columns]};
     }
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
@@ -49,7 +49,7 @@ sub productlog_ajax {
                 my $data = $scheduled_product->to_hash;
                 my $responsible_user = $scheduled_product->triggered_by;
                 $data->{user_name} = $responsible_user ? $responsible_user->name : 'system';
-                push(@scheduled_products, $data);
+                push @scheduled_products, $data;
             }
             return \@scheduled_products;
         },
@@ -60,7 +60,7 @@ sub _add_single_query {
     my ($query, $key, $search_terms) = @_;
 
     return unless @$search_terms;
-    my $search = join(' ', @$search_terms);
+    my $search = join ' ', @$search_terms;
     @$search_terms = ();
 
     my %key_mapping = (
@@ -71,10 +71,10 @@ sub _add_single_query {
         event => 'event',
     );
     if (my $actual_key = $key_mapping{$key}) {
-        push(@{$query->{$actual_key}}, ($actual_key => {-like => '%' . $search . '%'}));
+        push @{$query->{$actual_key}}, ($actual_key => {-like => '%' . $search . '%'});
     }
     elsif ($key eq 'id') {
-        push(@{$query->{$key}}, ('CAST(me.id AS text)' => {-like => '%' . $search . '%'}));
+        push @{$query->{$key}}, ('CAST(me.id AS text)' => {-like => '%' . $search . '%'});
     }
     elsif ($key eq 'older' || $key eq 'newer') {
         if ($search eq 'today') {
@@ -89,11 +89,10 @@ sub _add_single_query {
         }
         if (my $time = parsedate($search, PREFER_PAST => 1, DATE_REQUIRED => 1)) {
             my $time_conditions = ($query->{'me.t_created'} //= {-and => []});
-            push(
-                @{$time_conditions->{-and}},
-                {
-                    'me.t_created' => {
-                        ($key eq 'newer' ? '>=' : '<') => localtime($time)->ymd()}});
+            push @{$time_conditions->{-and}},
+              {
+                'me.t_created' => {
+                    ($key eq 'newer' ? '>=' : '<') => localtime($time)->ymd()}};
         }
     }
 }
@@ -102,22 +101,22 @@ sub _get_search_query ($self) {
 
     # construct query only from allowed columns
     my $query = {};
-    my @subsearch = split(/ /, $self->param('search[value]') // '');
+    my @subsearch = split / /, $self->param('search[value]') // '';
     my $current_key = 'data';
     my @current_search;
     for my $s (@subsearch) {
         if (CORE::index($s, ':') == -1) {
             # bareword - add to current_search
-            push(@current_search, $s);
+            push @current_search, $s;
         }
         else {
             # we are starting new search group, push the current to the query and reset it
             _add_single_query($query, $current_key, \@current_search);
 
-            my ($key, $search_term) = split(/:/, $s);
+            my ($key, $search_term) = split /:/, $s;
             # new search column found, assign key as current key
             $current_key = $key;
-            push(@current_search, $search_term);
+            push @current_search, $search_term;
         }
     }
     # add the last single query if anything is entered
@@ -126,7 +125,7 @@ sub _get_search_query ($self) {
     # add proper -and => -or structure to constructed query
     my @filter_conds;
     for my $k (keys %$query) {
-        push(@filter_conds, (-or => $query->{$k}));
+        push @filter_conds, (-or => $query->{$k});
     }
     return \@filter_conds;
 }
@@ -145,16 +144,15 @@ sub ajax ($self, $filter_conds = undef) {
             my ($results) = @_;
             my @events;
             while (my $event = $results->next) {
-                push(
-                    @events,
-                    {
-                        id => $event->id,
-                        user => $event->owner ? $event->owner->nickname : 'system',
-                        connection => $event->connection_id,
-                        event => $event->event,
-                        event_data => $event->event_data,
-                        event_time => $event->t_created,
-                    });
+                push @events,
+                  {
+                    id => $event->id,
+                    user => $event->owner ? $event->owner->nickname : 'system',
+                    connection => $event->connection_id,
+                    event => $event->event,
+                    event_data => $event->event_data,
+                    event_time => $event->t_created,
+                  };
             }
             return \@events;
         },

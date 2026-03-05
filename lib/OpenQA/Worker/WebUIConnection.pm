@@ -294,7 +294,7 @@ sub send ($self, $method, $path, %args) {
     log_debug(qq{REST-API call: $method "$ua_url"});
 
     my @args = ($method, $ua_url);
-    push(@args, 'json', $json_data) if $json_data;
+    push @args, 'json', $json_data if $json_data;
     my $tx = $ua->build_tx(@args);
     if ($callback eq 'no') {
         $ua->start($tx);
@@ -356,7 +356,7 @@ sub calculate_status_update_interval ($self) {
     my $global_settings = $self->worker->settings->global_settings;
     my $min = $ENV{OPENQA_WORKER_STATUS_MIN_INTERVAL} // $global_settings->{STATUS_MIN_INTERVAL} // MIN_TIMER;
     my $max = $ENV{OPENQA_WORKER_STATUS_MAX_INTERVAL} // $global_settings->{STATUS_MAX_INTERVAL} // MAX_TIMER;
-    return sprintf('%.2f', ($min + (rand($max - $min))));
+    return sprintf '%.2f', ($min + (rand($max - $min)));
 }
 
 # sends the overall worker status

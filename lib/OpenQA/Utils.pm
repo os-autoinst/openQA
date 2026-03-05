@@ -73,8 +73,8 @@ BEGIN {
         $BUGREFS{gfs} => 'gfs',
     );
 
-    $MARKER_REFS = join('|', keys %BUGREFS);
-    $MARKER_URLS = join('|', keys %BUGURLS);
+    $MARKER_REFS = join '|', keys %BUGREFS;
+    $MARKER_URLS = join '|', keys %BUGURLS;
 
     # <marker>[#<project/repo>]#<id>
     $BUGREF_REGEX = qr{(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[^#\s<>,]+)?\#(?<id>([A-Z]+-)?\d+))};
@@ -237,7 +237,7 @@ sub git_commit_url ($repo_url) {
     return '' unless defined $url_tokenized[1];
     $url_tokenized[1] =~ s{\.git$}{};
     $url_tokenized[1] .= '/commit/';
-    my @githost = split('@', $url_tokenized[0]);
+    my @githost = split '@', $url_tokenized[0];
     return '' unless defined $githost[1];
     return "https://$githost[1]/$url_tokenized[1]";
 }
@@ -254,7 +254,7 @@ sub needledir (@args) { productdir(@args) . '/needles' }
 
 # Adds a timestamp to a string (eg. needle name) or replace the already present timestamp
 sub ensure_timestamp_appended ($str) {
-    my $today = strftime('%Y%m%d', gmtime(time));
+    my $today = strftime '%Y%m%d', gmtime time;
     if ($str =~ /(.*)-\d{8}$/) {
         return "$1-$today";
     }
@@ -262,22 +262,22 @@ sub ensure_timestamp_appended ($str) {
 }
 
 sub save_base64_png ($dir, $newfile, $png) {
-    return unless $newfile && defined($png);
+    return unless $newfile && defined $png;
     # sanitize
     $newfile =~ s,\.png,,;
     $newfile =~ tr/a-zA-Z0-9-/_/cs;
-    open(my $fh, '>', $dir . "/$newfile.png") || die "can't open $dir/$newfile.png: $!";
+    open my $fh, '>', $dir . "/$newfile.png" or die "can't open $dir/$newfile.png: $!";
     use MIME::Base64 'decode_base64';
     $fh->print(decode_base64($png));
-    close($fh);
+    close $fh;
     return $newfile;
 }
 
 sub image_md5_filename ($md5, $onlysuffix = undef) {
-    my $prefix1 = substr($md5, 0, 3);
-    $md5 = substr($md5, 3);
-    my $prefix2 = substr($md5, 0, 3);
-    $md5 = substr($md5, 3);
+    my $prefix1 = substr $md5, 0, 3;
+    $md5 = substr $md5, 3;
+    my $prefix2 = substr $md5, 0, 3;
+    $md5 = substr $md5, 3;
 
     if ($onlysuffix) {
         # stored this way in the database
@@ -302,7 +302,7 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
     my $stdout_level = $args{stdout} // 'debug';
     my $stderr_level = $args{stderr} // 'debug';
     my $output_file = $args{output_file};
-    log_info('Running cmd: ' . join(' ', @$cmd));
+    log_info('Running cmd: ' . (join ' ', @$cmd));
     try {
         my ($stdin, $stdout, $stderr) = ('') x 3;
         my @out_args = defined $output_file ? ('>', $output_file, '2>', \$stderr) : (\$stdout, \$stderr);
@@ -466,7 +466,7 @@ sub check_download_url ($url, $passlist) {
     # task subroutine.
     my $host = Mojo::URL->new($url)->host;
     return (2, $host) unless defined $passlist;
-    my @okdomains = split(/ /, $passlist);
+    my @okdomains = split / /, $passlist;
     my $ok = 0;
     for my $okdomain (@okdomains) {
         my $quoted = qr/$okdomain/;
@@ -490,7 +490,7 @@ sub check_download_passlist ($params, $passlist) {
     # check failed, the third is the URL, and the fourth is the host.
     # On success, returns an empty array.
     my @okdomains;
-    @okdomains = split(/ /, $passlist) if defined $passlist;
+    @okdomains = split / /, $passlist if defined $passlist;
     for my $param (keys %$params) {
         next unless ($param =~ /^(?!__).*_URL$/);
         next unless asset_type_from_setting((get_url_short($param))[0]);
@@ -572,7 +572,7 @@ sub _round_a_bit ($size) { $size < 10 ? int($size * 10 + .5) / 10. : int($size +
 
 sub human_readable_size ($size) {
     my $p = ($size < 0) ? '-' : '';
-    $size = abs($size);
+    $size = abs $size;
     return "$p$size Byte" if $size < 3000;
     $size /= 1024.;
     return $p . _round_a_bit($size) . ' KiB' if $size < 1024;
@@ -612,24 +612,23 @@ sub read_test_modules ($job) {
 
             $step->{resborder} = 'resborder_' . (($step->{result} && !(ref $step->{result})) ? $step->{result} : 'unk');
 
-            push(@details, $step);
+            push @details, $step;
         }
 
         $has_parser_text_results = 1 if ($has_module_parser_text_result);
 
-        push(
-            @modlist,
-            {
-                name => $module->name,
-                result => $module->result,
-                details => \@details,
-                milestone => $module->milestone,
-                important => $module->important,
-                fatal => $module->fatal,
-                always_rollback => $module->always_rollback,
-                has_parser_text_result => $has_module_parser_text_result,
-                execution_time => change_sec_to_word($module_results->{execution_time}),
-            });
+        push @modlist,
+          {
+            name => $module->name,
+            result => $module->result,
+            details => \@details,
+            milestone => $module->milestone,
+            important => $module->important,
+            fatal => $module->fatal,
+            always_rollback => $module->always_rollback,
+            has_parser_text_result => $has_module_parser_text_result,
+            execution_time => change_sec_to_word($module_results->{execution_time}),
+          };
 
         if (!$category || $category ne $module->category) {
             $category = $module->category;
@@ -683,10 +682,10 @@ sub detect_current_version ($path) {
         # This method have its limits while checking out different branches
         # but emulates git-describe output without executing commands.
         if ($master_head && $packed_refs) {
-            my $latest_ref = (grep(/tags/, split(/\s/, $packed_refs)))[-1];
-            my $partial_hash = substr($master_head, 0, 8);
+            my $latest_ref = (grep /tags/, split /\s/, $packed_refs)[-1];
+            my $partial_hash = substr $master_head, 0, 8;
             if ($latest_ref && $partial_hash) {
-                my $tag = (split(/\//, $latest_ref))[-1];
+                my $tag = (split /\//, $latest_ref)[-1];
                 $current_version = $tag ? 'git-' . $tag . '-' . $partial_hash : undef;
             }
         }
@@ -696,7 +695,7 @@ sub detect_current_version ($path) {
 
 # Resolves a path to class
 # path is expected to be in the form of the keys of %INC. e.g. : foo/bar/baz.pm
-sub path_to_class { substr join('::', split(/\//, shift)), 0, -3 }
+sub path_to_class { substr join('::', split /\//, shift), 0, -3 }
 
 # Returns all modules that are loaded into memory
 sub loaded_modules {
@@ -706,7 +705,7 @@ sub loaded_modules {
 # Fallback to loaded_modules if no arguments are given.
 # Accepts namespaces as arguments. If supplied, it will filter by them
 sub loaded_plugins (@ns) {
-    my $ns = join('|', map { quotemeta } @ns);
+    my $ns = join '|', map { quotemeta } @ns;
     return @ns ? grep { /^$ns/ } loaded_modules() : loaded_modules();
 }
 
@@ -790,7 +789,7 @@ sub service_port ($service) {
 }
 
 sub random_string ($length = RANDOM_STRING_DEFAULT_LENGTH, $chars = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_']) {
-    return join('', map { $chars->[rand @$chars] } 1 .. $length);
+    return join '', map { $chars->[rand @$chars] } 1 .. $length;
 }
 
 sub random_hex ($length = RANDOM_STRING_DEFAULT_LENGTH) {
@@ -800,7 +799,7 @@ sub random_hex ($length = RANDOM_STRING_DEFAULT_LENGTH) {
     # uncoverable branch true
     read($fd, my $bytes, $toread) || croak "can't read random byte: $!";
     close $fd;
-    return uc substr(unpack('H*', $bytes), 0, $length);
+    return uc substr unpack('H*', $bytes), 0, $length;
 }
 
 sub any_array_item_contained_by_hash ($array, $hash) {
@@ -854,7 +853,7 @@ sub check_df ($dir) {
 sub download_rate ($start, $end, $bytes) {
     my $interval = tv_interval($start, $end);
     return undef if $interval == 0;
-    return sprintf('%.2f', $bytes / $interval);
+    return sprintf '%.2f', $bytes / $interval;
 }
 
 sub download_speed ($start, $end, $bytes) {

@@ -39,7 +39,7 @@ sub get_pod_from_controllers ($app, @args) {
             next unless ($rt->to->{controller});
             my $filename = ucfirst($rt->to->{controller});
             if ($filename =~ /_/) {
-                $filename = join('', map(ucfirst, split(/_/, $filename)));
+                $filename = join '', map ucfirst, split /_/, $filename;
             }
             $filename .= '.pm';
             $controllers{$rt->to->{controller}} = $filename;
@@ -68,12 +68,12 @@ sub get_pod_from_controllers ($app, @args) {
 
 sub set_api_desc ($api_description, $api_route) {
     if (ref($api_description) ne 'HASH') {
-        log_warning('set_api_desc: expected HASH ref for api_descriptions. Got: ' . ref($api_description));
+        log_warning('set_api_desc: expected HASH ref for api_descriptions. Got: ' . (ref $api_description));
         return;
     }
 
     if (ref($api_route) ne 'Mojolicious::Routes::Route') {
-        log_warning('set_api_desc: expected Mojolicious::Routes::Route for api_routes. Got: ' . ref($api_route));
+        log_warning('set_api_desc: expected Mojolicious::Routes::Route for api_routes. Got: ' . (ref $api_route));
         return;
     }
 
@@ -89,7 +89,7 @@ sub set_api_desc ($api_description, $api_route) {
 
 sub _itemize ($node, $controller) {
     if (ref($node) !~ /^Pod::POM::Node/) {
-        log_warning('_itemize() expected Pod::POM::Node::* arg. Got ' . ref($node));
+        log_warning('_itemize() expected Pod::POM::Node::* arg. Got ' . (ref $node));
         return 0;    # Stop walking the tree
     }
     my $methodname = '';

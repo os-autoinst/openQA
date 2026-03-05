@@ -33,8 +33,8 @@ sub create_or_update_job_template {
             version => $args->{product_spec}->{version},
         });
     return {
-        error => sprintf(
-            "Product '%s' not found in database (arch: '%s', distri: '%s', flavor: '%s', version: '%s')",
+        error => (
+            sprintf "Product '%s' not found in database (arch: '%s', distri: '%s', flavor: '%s', version: '%s')",
             $args->{product_name},
             $args->{arch},
             $args->{product_spec}->{distri} // '?',
@@ -96,7 +96,7 @@ sub create_or_update_job_template {
                         value => $args->{settings}->{$key},
                     });
             }
-            push(@setting_ids, $setting->id);
+            push @setting_ids, $setting->id;
         }
     }
     $job_template_settings->search(

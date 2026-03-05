@@ -294,7 +294,7 @@ sub read_config ($app) {
 
     my $config = _load_config($app, \%defaults, \%mode_defaults);
     my $global_config = $config->{global};
-    $global_config->{recognized_referers} = [split(/\s+/, $global_config->{recognized_referers})];
+    $global_config->{recognized_referers} = [split /\s+/, $global_config->{recognized_referers}];
     if (my $regex = $global_config->{auto_clone_regex}) {
         $app->log->warn(
             "Specified auto_clone_regex is invalid: $@Not restarting any jobs reported as incomplete by workers.")
@@ -307,14 +307,14 @@ sub read_config ($app) {
         $config->{audit}->{blocklist} = delete $config->{audit}->{blacklist};
     }
     my $minion_task_triggers = $config->{minion_task_triggers};
-    $minion_task_triggers->{$_} = [split(/\s+/, $minion_task_triggers->{$_})] for keys %{$minion_task_triggers};
+    $minion_task_triggers->{$_} = [split /\s+/, $minion_task_triggers->{$_}] for keys %{$minion_task_triggers};
     if (my $minion_fail_job_blocklist = $config->{influxdb}->{ignored_failed_minion_jobs}) {
-        $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
+        $config->{influxdb}->{ignored_failed_minion_jobs} = [split /\s+/, $minion_fail_job_blocklist];
     }
     $config->{misc_limits}->{prio_throttling_data} = _load_prio_throttling($app, $config);
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
-      = ' .status' . join('', map { ":not(.result_$_)" } split(/\s+/, $results));
+      = ' .status' . (join '', map { ":not(.result_$_)" } split /\s+/, $results);
     _validate_worker_timeout($app);
     _validate_security_policy($app, $global_config);
     _set_default_storage_durations($_) for $config->{default_group_limits}, $config->{no_group_limits};
@@ -440,7 +440,7 @@ sub load_plugins ($server, $monitoring_root_route = undef, %options) {
     # '[global]' can be a space-separated list of plugins to load, by
     # module name under OpenQA::WebAPI::Plugin::
     if (defined $server->config->{global}->{plugins} && !$options{no_arbitrary_plugins}) {
-        my @plugins = split(' ', $server->config->{global}->{plugins});
+        my @plugins = split ' ', $server->config->{global}->{plugins};
         for my $plugin (@plugins) {
             $server->log->info("Loading external plugin $plugin");
             $server->plugin($plugin);
@@ -469,7 +469,9 @@ sub set_secure_flag_on_cookies ($c) {
     $c->app->sessions->secure(1) if $c->req->is_secure;
     if (my $days = $c->app->config->{global}->{hsts}) {
         $c->res->headers->header(
-            'Strict-Transport-Security' => sprintf('max-age=%d; includeSubDomains', $days * 24 * 60 * 60));
+            'Strict-Transport-Security' => sprintf 'max-age=%d; includeSubDomains',
+            $days * 24 * 60 * 60
+        );
     }
 }
 

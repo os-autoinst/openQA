@@ -34,7 +34,7 @@ sub startup ($self) {
             OpenQA::Setup::load_plugins($self);
         }
         catch ($e) {
-            print("The help might be incomplete because an error occurred when loading plugins:\n$e\n");
+            print "The help might be incomplete because an error occurred when loading plugins:\n$e\n";
         }
         return;
     }

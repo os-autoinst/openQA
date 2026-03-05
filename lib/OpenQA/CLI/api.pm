@@ -10,7 +10,7 @@ use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
 
 has description => 'Issue an arbitrary request to the API';
 has usage => sub {
-    my $search_criteria = join(', ', JOBS_OVERVIEW_SEARCH_CRITERIA);
+    my $search_criteria = join ', ', JOBS_OVERVIEW_SEARCH_CRITERIA;
     OpenQA::CLI->_help('api') =~ s/\$search_criteria/$search_criteria/r;
 };
 

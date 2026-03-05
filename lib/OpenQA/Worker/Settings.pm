@@ -30,7 +30,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     my %global_settings;
     _read_section($cfg, 'global', \%global_settings);
     _read_section($cfg, $_, \%global_settings) for @{_relevant_sections($cfg, $instance_number)};
-    _read_section($cfg, "class:$_", \%global_settings, 1) for split(',', $global_settings{WORKER_CLASS} // '');
+    _read_section($cfg, "class:$_", \%global_settings, 1) for split ',', $global_settings{WORKER_CLASS} // '';
 
     # read global settings from environment variables
     for my $var (qw(LOG_DIR TERMINATE_AFTER_JOBS_DONE)) {
@@ -42,7 +42,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 
     # determine web UI host and settings specific to it
     my %webui_host_specific_settings;
-    my @hosts = split(' ', $cli_options->{host} || $global_settings{HOST} || 'localhost');
+    my @hosts = split ' ', ($cli_options->{host} || $global_settings{HOST} || 'localhost');
     delete $global_settings{HOST};
     _read_section($cfg, $_, $webui_host_specific_settings{$_} = {}) for @hosts;
 
@@ -66,7 +66,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
         webui_hosts => \@hosts,
         webui_host_specific_settings => \%webui_host_specific_settings,
     );
-    $self->{_file_path} = join(', ', @$config_paths);
+    $self->{_file_path} = join ', ', @$config_paths;
     $self->{_parse_errors} = \@parse_errors;
     return $self;
 }
@@ -88,7 +88,7 @@ sub _relevant_sections ($cfg, $instance_number) {
 
 sub _read_value ($cfg, $section, $out, $keep_default, $key) {
     my $value = trim $cfg->val($section, $key);
-    $key = trim substr($key, 0, -1) if my $append = substr($key, -1, 1) eq '+';    # append if "+=" is used
+    $key = trim substr $key, 0, -1 if my $append = (substr $key, -1, 1) eq '+';    # append if "+=" is used
     $key = uc $key;
     return if defined(my $existing_value = $out->{$key}) && $keep_default;
     $out->{$key} = $append && defined $existing_value ? "$existing_value,$value" : $value;
@@ -140,7 +140,7 @@ sub is_local_worker ($self) {
 }
 
 sub has_class ($self, $worker_class) {
-    my $c = $self->{_worker_classes} //= {map { $_ => 1 } split(',', $self->global_settings->{WORKER_CLASS} // '')};
+    my $c = $self->{_worker_classes} //= {map { $_ => 1 } split ',', $self->global_settings->{WORKER_CLASS} // ''};
     return exists $c->{$worker_class};
 }
 

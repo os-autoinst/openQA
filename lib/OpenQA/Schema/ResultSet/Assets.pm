@@ -64,12 +64,12 @@ sub scan_for_untracked_assets ($self) {
         my @paths;
         for my $subtype (qw(/ /fixed)) {
             my $path = "$assetdir/$type$subtype";
-            next unless opendir(my $dh, $path);
-            for my $file (readdir($dh)) {
+            next unless opendir my ($dh), $path;
+            for my $file (readdir $dh) {
                 next if $file eq 'fixed' || $file eq '.' || $file eq '..';
-                push(@paths, "$path/$file");
+                push @paths, "$path/$file";
             }
-            closedir($dh);
+            closedir $dh;
         }
 
         my %known = map { $_->name => 1 } $self->search({type => $type})->all;
@@ -214,7 +214,7 @@ sub status {
                     parents => {},
                 );
                 $asset_info{$id} = \%asset;
-                push(@assets, \%asset);
+                push @assets, \%asset;
             }
 
             # query list of job groups to show assets by job group
@@ -336,7 +336,7 @@ sub status {
                         parents => \%parent_group_info,
                         last_update => now() . 'Z',
                     }));
-            rename($new_cache_file_path, $cache_file_path) or die $!;
+            rename $new_cache_file_path, $cache_file_path or die $!;
         }
         catch ($e) {
             log_warning("Unable to create cache file $cache_file_path: $e");    # uncoverable statement

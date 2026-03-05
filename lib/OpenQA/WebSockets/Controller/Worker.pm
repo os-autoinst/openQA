@@ -57,7 +57,7 @@ sub _message ($self, $json) {
     my $worker_status = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$tx};
     unless ($worker_status) {
         $app->log->warn('A message received from unknown worker connection');
-        log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', dumper($json)));
+        log_debug(sprintf 'A message received from unknown worker connection (terminating ws): %s', dumper($json));
         $self->finish('1008', 'Connection terminated from WebSocket server - thought dead');
         return undef;
     }
@@ -68,7 +68,7 @@ sub _message ($self, $json) {
     my $worker_previously_idle = delete $worker_status->{idle_despite_job_assignment};
 
     unless (ref($json) eq 'HASH') {
-        log_error(sprintf('Received unexpected WS message "%s from worker %u', dumper($json), $worker_id));
+        log_error(sprintf 'Received unexpected WS message "%s from worker %u', dumper($json), $worker_id);
         $self->finish(1003 => 'Received unexpected data from worker, forcing close');
         return undef;
     }
@@ -92,7 +92,7 @@ sub _message ($self, $json) {
         my $reason = $json->{reason} // 'unknown reason';
         return undef unless ref($job_ids) eq 'ARRAY' && @$job_ids;
 
-        my $job_ids_str = join(', ', @$job_ids);
+        my $job_ids_str = join ', ', @$job_ids;
         log_debug("Worker $worker_id rejected job(s) $job_ids_str: $reason");
 
         # re-schedule rejected job if it is still assigned to that worker
@@ -213,7 +213,7 @@ sub _message ($self, $json) {
         $worker_status->{idle_despite_job_assignment} = !$worker_is_broken && !defined $job_id;
     }
     else {
-        log_error(sprintf('Received unknown message type "%s" from worker %u', $message_type, $worker_status->{id}));
+        log_error(sprintf 'Received unknown message type "%s" from worker %u', $message_type, $worker_status->{id});
     }
 }
 

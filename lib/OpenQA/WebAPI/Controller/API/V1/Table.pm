@@ -218,7 +218,7 @@ sub _verify_table_usage {
       scalar(keys %groups)
       ? 'Group'
       . (scalar(keys %groups) > 1 ? 's' : '') . ' '
-      . join(', ', sort keys(%groups))
+      . (join ', ', sort keys %groups)
       . ' must be updated through the YAML template'
       : undef;
 }
@@ -313,7 +313,7 @@ sub destroy {
         return $self->render(json => {error => $error}, status => 400);
     }
     $self->emit_event('openqa_table_delete', {table => $table, name => $entry_name});
-    $self->render(json => {result => int($ret)});
+    $self->render(json => {result => int $ret});
 }
 
 =over 4
@@ -358,7 +358,7 @@ sub _prepare_settings {
     }
 
     if ($validation->has_error) {
-        return 'Missing parameter: ' . join(', ', @{$validation->failed});
+        return 'Missing parameter: ' . join ', ', @{$validation->failed};
     }
 
     $entry->{description} = $self->param('description');
@@ -372,7 +372,7 @@ sub _prepare_settings {
             @invalid{$k =~ m/([^\]\[0-9a-zA-Z_\+])/g} = ();
             if (keys %invalid) {
                 my $eick = join ', ', map { '<b>' . xml_escape($_) . '</b>' } sort keys %invalid;
-                return sprintf('Invalid characters %s in settings key <b>%s</b>', $eick, xml_escape($k));
+                return sprintf 'Invalid characters %s in settings key <b>%s</b>', $eick, xml_escape($k);
             }
             push @settings, {key => $k, value => $value};
             push @keys, $k;

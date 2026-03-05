@@ -45,7 +45,7 @@ __PACKAGE__->has_many(
 
 sub name {
     my ($self) = @_;
-    join('-', map { $self->$_ } qw(distri version flavor arch));
+    join '-', map { $self->$_ } qw(distri version flavor arch);
 }
 
 # give all flavors of a "product" a common name

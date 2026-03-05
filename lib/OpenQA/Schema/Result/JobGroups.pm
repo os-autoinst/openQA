@@ -189,7 +189,7 @@ sub important_builds ($self) {
     my @comments = ($not_an_array);
     if (my $parent = $self->parent) {
         my $not_an_array = $parent->comments;
-        push(@comments, $not_an_array);
+        push @comments, $not_an_array;
     }
 
     # look for "important" tags in the comments

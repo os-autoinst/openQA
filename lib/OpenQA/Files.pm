@@ -25,7 +25,7 @@ sub deserialize {
     return $self->new(map { OpenQA::File->deserialize($_) } @_);
 }
 
-sub write { Mojo::File->new(pop())->spew(shift()->join()) }
+sub write { Mojo::File->new(pop)->spew(shift->join()) }
 
 sub generate_sum { sha1_base64(shift()->join()) }
 

@@ -70,7 +70,7 @@ sub send_message_to_java_script_clients {
         $self->status_java_script_transactions_by_job)
     {
         if (my $java_script_transactions_for_job = $java_script_transaction_container->{$job_id}) {
-            push(@all_java_script_transactions_for_job, @$java_script_transactions_for_job);
+            push @all_java_script_transactions_for_job, @$java_script_transactions_for_job;
         }
     }
 
@@ -507,7 +507,7 @@ sub ws_proxy {
     my $java_script_transaction_container
       = $status_only ? $self->status_java_script_transactions_by_job : $self->devel_java_script_transactions_by_job;
     my $java_script_transactions_for_current_job = ($java_script_transaction_container->{$job_id} //= []);
-    push(@$java_script_transactions_for_current_job, $java_script_tx);
+    push @$java_script_transactions_for_current_job, $java_script_tx;
 
     # determine url to os-autoinst command server
     my ($cmd_srv_raw_url, $vnc_arg) = $self->determine_connection_params_for_job($job);

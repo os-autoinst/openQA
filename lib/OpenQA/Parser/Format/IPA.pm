@@ -42,8 +42,8 @@ sub parse {
         }
 
         # If a test was triggered twice, we need to unique the name
-        if (exists($unique_names{$t_name})) {
-            $t_name .= sprintf('_%02d', ++$unique_names{$t_name});
+        if (exists $unique_names{$t_name}) {
+            $t_name .= sprintf '_%02d', ++$unique_names{$t_name};
         }
         else {
             $unique_names{$t_name} = 0;
@@ -60,7 +60,7 @@ sub parse {
 
         my $details = {result => $result->{result}};
         my $text_fn = "IPA-$t_name.txt";
-        my $content = join("\n", $t_name, $result->{result});
+        my $content = join "\n", $t_name, $result->{result};
 
         $details->{text} = $text_fn;
         $details->{title} = $t_name;

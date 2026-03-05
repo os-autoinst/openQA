@@ -63,7 +63,7 @@ sub auth_login ($c) {
     return (error => $csr->err);
 }
 
-sub _first_last_name ($ax) { join(' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '') }
+sub _first_last_name ($ax) { join ' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '' }
 
 sub _create_user ($c, $id, $email, $nickname, $fullname) {
     $c->schema->resultset('Users')->create_user($id, email => $email, nickname => $nickname, fullname => $fullname);
@@ -76,7 +76,7 @@ sub _handle_verified ($c, $vident) {
     my $email = $sreg->{email} || $ax->{'value.email'} || 'nobody@example.com';
     my $nickname = $sreg->{nickname} || $ax->{'value.nickname'} || $ax->{'value.firstname'};
     unless ($nickname) {
-        my @a = split(/\/([^\/]+)$/, $vident->{identity});
+        my @a = split /\/([^\/]+)$/, $vident->{identity};
         $nickname = $a[1];
     }
 
@@ -94,7 +94,7 @@ sub auth_response ($c) {
     %params = map { $_ => URI::Escape::uri_unescape($params{$_}) } keys %params;
 
     my $csr = Net::OpenID::Consumer->new(
-        debug => sub (@args) { $c->app->log->debug('Net::OpenID::Consumer: ' . join(' ', @args)) },
+        debug => sub (@args) { $c->app->log->debug('Net::OpenID::Consumer: ' . (join ' ', @args)) },
         ua => LWP::UserAgent->new,
         required_root => $url,
         consumer_secret => $c->app->config->{_openid_secret},

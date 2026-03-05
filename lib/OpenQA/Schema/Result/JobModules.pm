@@ -172,8 +172,8 @@ sub _save_details_screenshot ($self, $screenshot, $known_md5_sums) {
     my $result_dir = $self->job->result_dir;
     my $screenshot_name = $screenshot->{name};
     $known_md5_sums->{$screenshot->{md5}} = 1 if defined $known_md5_sums && -e $full;
-    symlink($full, "$result_dir/$screenshot_name");
-    symlink($thumb, "$result_dir/.thumbs/$screenshot_name");
+    symlink $full, "$result_dir/$screenshot_name";
+    symlink $thumb, "$result_dir/.thumbs/$screenshot_name";
     return $screenshot_name;
 }
 
@@ -185,7 +185,7 @@ sub save_results ($self, $results, $known_md5_sums = undef, $known_file_names = 
         # create symlinks for screenshots
         if (my $screenshot = $d->{screenshot}) {
             # save the database entry for the screenshot first
-            push(@dbpaths, OpenQA::Utils::image_md5_filename($screenshot->{md5}, 1));
+            push @dbpaths, OpenQA::Utils::image_md5_filename($screenshot->{md5}, 1);
             # create possibly stale symlinks
             $d->{screenshot} = $self->_save_details_screenshot($screenshot, $known_md5_sums);
             next;

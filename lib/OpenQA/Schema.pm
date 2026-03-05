@@ -67,8 +67,8 @@ sub deploy ($self, $force_overwrite = 0) {
     my $dblock;
 
     # LOCK_EX works most reliably if the file is open with write intent
-    open($dblock, '>>', $dblockfile) or die "Cannot open database lock file ${dblockfile}: $!";
-    flock($dblock, LOCK_EX) or die "Cannot lock database lock file ${dblockfile}: $!";
+    open $dblock, '>>', $dblockfile or die "Cannot open database lock file ${dblockfile}: $!";
+    flock $dblock, LOCK_EX or die "Cannot lock database lock file ${dblockfile}: $!";
     my $dir = $FindBin::Bin;
     while (abs_path($dir) ne '/') {
         last if (-d "$dir/dbicdh");
@@ -88,7 +88,7 @@ sub deploy ($self, $force_overwrite = 0) {
     my $ret = 0;
     $ret = 2 if _try_deploy_db($dh);
     $ret = 1 if (!$ret && _try_upgrade_db($dh));
-    close($dblock) or die "Can't close database lock file ${dblockfile}!";
+    close $dblock or die "Can't close database lock file ${dblockfile}!";
     return $ret;
 }
 

@@ -32,7 +32,7 @@ sub client ($self, $url) {
 
 sub data_from_stdin {
     vec(my $r = '', fileno(STDIN), 1) = 1;
-    return !-t STDIN && select($r, undef, undef, 0) ? join '', <STDIN> : '';
+    return !-t STDIN && (select $r, undef, undef, 0) ? join '', <STDIN> : '';
 }
 
 sub decode_args ($self, @args) {

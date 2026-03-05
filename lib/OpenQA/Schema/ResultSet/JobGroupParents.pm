@@ -23,11 +23,11 @@ sub job_groups_and_parents {
         my $pick_parent
           = $first_parent && (!$first_group || ($first_group->sort_order // 0) > ($first_parent->sort_order // 0));
         if ($pick_parent) {
-            push(@res, $first_parent);
+            push @res, $first_parent;
             $first_parent = shift @parents;
         }
         else {
-            push(@res, $first_group);
+            push @res, $first_group;
             $first_group = shift @groups_without_parent;
         }
     }

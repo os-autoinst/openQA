@@ -254,7 +254,7 @@ sub update ($self) {
     }
     catch ($e) {
         # Push the exception to the list of errors without the trailing new line
-        push @$user_errors, substr($e, 0, -1);
+        push @$user_errors, substr $e, 0, -1;
     }
     return $self->respond_to(json => {json => {error => $user_errors}, status => 400}) if @$user_errors;
 
@@ -265,7 +265,7 @@ sub update ($self) {
     }
     catch ($e) {
         # Push the exception to the list of errors without the trailing new line
-        my $error = substr($e, 0, -1);
+        my $error = substr $e, 0, -1;
         my $error_type = ($error =~ qr/unique constraint/) ? $user_errors : \@server_errors;
         push @$error_type, $error unless $error eq 'abort transaction';
     }
@@ -444,7 +444,7 @@ sub destroy ($self) {
         try { $rs = $job_template->delete }
         catch ($e) { $json->{error} = $e }    # uncoverable statement
         if ($rs) {
-            $json->{result} = int($rs);
+            $json->{result} = int $rs;
             $self->emit_event('openqa_jobtemplate_delete', {id => $self->param('job_template_id')});
             $status = 200;
         }

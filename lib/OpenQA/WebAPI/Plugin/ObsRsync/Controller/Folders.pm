@@ -16,11 +16,11 @@ sub list ($self) {
         next if $folder =~ /$non_project_folders/;
         my ($short, $repo) = $helper->split_repo($folder);
         if ($repo) {
-            push(@res, [$short, $repo]);
+            push @res, [$short, $repo];
             next;
         }
         $repo = $helper->get_api_repo($folder) // 'images';
-        push(@res, [$folder, $repo]);
+        push @res, [$folder, $repo];
     }
     return $self->render(json => \@res, status => 200);
 }
@@ -75,7 +75,7 @@ sub index ($self, $obs_project = undef, $folders = undef) {
             $folder_info_by_name{$project}->{state} = $job->{state};
             my $created_at = $job->{created};
             if ($created_at) {
-                $created_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime($created_at));
+                $created_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime $created_at);
                 $folder_info_by_name{$project}->{created} = $created_at;
             }
         }
@@ -178,7 +178,7 @@ sub forget_run_last ($self) {
     my $project_lock = Mojo::File->new($helper->home, $project, 'rsync.lock');
     -f $project_lock and return $self->render(json => {message => 'Project lock exists'}, status => 423);
 
-    unlink($dest) or return $self->render(json => {message => "error $!"}, status => 500);
+    unlink $dest or return $self->render(json => {message => "error $!"}, status => 500);
     return $self->render(json => {message => 'success'}, status => 200);
 }
 
