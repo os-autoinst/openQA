@@ -54,8 +54,8 @@ sub _git_clone_all ($job, $clones) {
 
         my $git = OpenQA::Git->new(app => $app, dir => $path);
         my $origin_url = -d $path ? $git->get_origin_url : undef;
-        my $url = $origin_url // $clones->{$path};
-        my $server_host = _extract_server_host($url);
+        my $server_host = _extract_server_host($origin_url // $clones->{$path});
+        return $job->fail("Unable to determine Git server host of repo '$path'.") unless defined $server_host;
         my $error;
         try {
             _git_clone($git, $ctx, $path, $clones->{$path}, $origin_url);
@@ -137,6 +137,7 @@ sub _git_clone ($git, $ctx, $path, $url, $origin_url) {
 }
 
 sub _extract_server_host ($url) {
+    return undef unless $url;
     if ($url =~ m{^[^@]+@([^:]+):}) {
         # e.g. "git@gitlab.suse.de:qa/foo", "user@host:repo"
         return $1;
