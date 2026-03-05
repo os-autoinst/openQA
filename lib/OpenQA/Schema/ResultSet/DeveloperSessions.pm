@@ -16,7 +16,7 @@ sub _find_or_create_session ($self, $job_id, $user_id) {
     return unless ($worker);
 
     my $session = $self->find({job_id => $job_id});
-    my $is_session_already_existing = defined($session);
+    my $is_session_already_existing = defined $session;
     # allow only one session per job
     return if $is_session_already_existing && $session->user_id ne $user_id;
     # create a new session if none existed before

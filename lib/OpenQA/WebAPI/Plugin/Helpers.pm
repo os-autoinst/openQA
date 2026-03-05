@@ -33,12 +33,12 @@ sub register ($self, $app, $config) {
         format_time_duration => sub ($c, $timedate = undef) {
             return unless $timedate;
             if ($timedate->days() > 0) {
-                return sprintf('%d days %02d:%02d hours', $timedate->days(), $timedate->hours(), $timedate->minutes());
+                return sprintf '%d days %02d:%02d hours', $timedate->days(), $timedate->hours(), $timedate->minutes();
             }
             elsif ($timedate->hours() > 0) {
-                return sprintf('%02d:%02d hours', $timedate->hours(), $timedate->minutes());
+                return sprintf '%02d:%02d hours', $timedate->hours(), $timedate->minutes();
             }
-            return sprintf('%02d:%02d minutes', $timedate->minutes(), $timedate->seconds());
+            return sprintf '%02d:%02d minutes', $timedate->minutes(), $timedate->seconds();
         });
 
     $app->helper(bugurl_for => sub ($c, $bugref = undef) { bugurl($bugref) });
@@ -70,7 +70,7 @@ sub register ($self, $app, $config) {
 
     $app->helper(
         stepvideolink_for => sub ($c, $testid, $file_name, $frametime) {
-            my $t = sprintf('&t=%s,%s', $frametime->[0], $frametime->[1]);
+            my $t = sprintf '&t=%s,%s', $frametime->[0], $frametime->[1];
             my $url = $c->url_for('video', testid => $testid)->query(filename => $file_name) . $t;
             my $class = 'step_action fa fa-file-video-o fa-lg';
             return $c->link_to($url => (title => 'Jump to video', class => $class) => sub { '' });
@@ -124,7 +124,7 @@ sub register ($self, $app, $config) {
         include_branding => sub ($c, $name, %args) {
             my $path = 'branding/' . $c->app->config->{global}->{branding} . "/$name";
             my $ret = $c->render_to_string($path, %args);
-            return $ret if defined($ret);
+            return $ret if defined $ret;
             return $c->render_to_string("branding/plain/$name", %args);
         });
 
@@ -218,7 +218,7 @@ sub register ($self, $app, $config) {
     $app->helper(
         build_progress_bar_title => sub ($c, $res) {
             my @keys = qw(passed unfinished softfailed failed skipped total);
-            return join("\n", map("$_: $res->{$_}", grep($res->{$_}, @keys)));
+            return join "\n", map "$_: $res->{$_}", grep $res->{$_}, @keys;
         });
 
     $app->helper(
@@ -493,8 +493,8 @@ sub _groups_for_globs ($c) {
     my $v = $c->validation;
     $v->optional($_, 'not_empty') for qw(group_glob not_group_glob);
 
-    my $group_glob = [split(/\s*,\s*/, $v->param('group_glob') // '')];
-    my $not_group_glob = [split(/\s*,\s*/, $v->param('not_group_glob') // '')];
+    my $group_glob = [split /\s*,\s*/, $v->param('group_glob') // ''];
+    my $not_group_glob = [split /\s*,\s*/, $v->param('not_group_glob') // ''];
 
     # use globs to filter job groups, first include all groups that match "group_glob" values, and then exclude those
     # that also match "not_group_glob" values

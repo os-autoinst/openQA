@@ -84,8 +84,8 @@ sub filter_subgroups ($group, $subgroup_filter) {
     for my $child ($group->children) {
         my $full_name = $child->full_name;
         if (grep { $_ eq '' || regex_match($_, $full_name) } @$subgroup_filter) {
-            push(@group_ids, $child->id);
-            push(@children, $child);
+            push @group_ids, $child->id;
+            push @children, $child;
         }
     }
     return {
@@ -159,8 +159,8 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         my @versions;
         for my $tag_id (keys %$tags) {
             my $tag = $tags->{$tag_id};
-            push(@builds, $tag->{build}) if $tag->{build};
-            push(@versions, $tag->{version}) if $tag->{version};
+            push @builds, $tag->{build} if $tag->{build};
+            push @versions, $tag->{version} if $tag->{version};
         }
         $search_filter{BUILD} = {-in => \@builds};
         $search_filter{VERSION} = {-in => \@versions} if @versions;
@@ -172,7 +172,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     my %versions_per_build;
     for my $build (@builds) {
         my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
-        $build->{key} = join('-', $version, $buildnr);
+        $build->{key} = join '-', $version, $buildnr;
         $versions_per_build{$buildnr}->{$version} = 1;
     }
     if ($buildver_sort_mode == BUILD_SORT_BY_NAME) {
@@ -234,9 +234,9 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         $jr{escaped_version} =~ s/\W/_/g;
         $jr{escaped_build} = $jr{build};
         $jr{escaped_build} =~ s/\W/_/g;
-        $jr{escaped_id} = join('-', $jr{escaped_version}, $jr{escaped_build});
+        $jr{escaped_id} = join '-', $jr{escaped_version}, $jr{escaped_build};
         add_review_badge(\%jr);
-        push(@sorted_results, \%jr);
+        push @sorted_results, \%jr;
         $max_jobs = $jr{total} if ($jr{total} > $max_jobs);
     }
     $result{max_jobs} = $max_jobs;

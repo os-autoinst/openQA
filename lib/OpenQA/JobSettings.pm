@@ -70,7 +70,7 @@ sub _expand_placeholder ($settings, $key, $start, $end, $visited_placeholders_in
     return "$start$key$end" if !$on_web_ui && $key eq 'CASEDIR';
 
     # return the key itself and strip one level of % if the key is surrounded by more than one % on any side
-    return substr($start, 1) . ($key) . substr($end, 0, -1) unless $start eq '%' && $end eq '%';
+    return (substr $start, 1) . ($key) . (substr $end, 0, -1) unless $start eq '%' && $end eq '%';
 
     # do not replace non-existing keys on web UI level to leave them to the worker
     return $on_web_ui ? "$start$key$end" : '' unless defined(my $value = $settings->{$key});
@@ -90,7 +90,7 @@ sub _expand_placeholder ($settings, $key, $start, $end, $visited_placeholders_in
 sub handle_plus_in_settings ($settings) {
     for (keys %$settings) {
         if (substr($_, 0, 1) eq '+') {
-            $settings->{substr($_, 1)} = delete $settings->{$_};
+            $settings->{substr $_, 1} = delete $settings->{$_};
         }
     }
 }

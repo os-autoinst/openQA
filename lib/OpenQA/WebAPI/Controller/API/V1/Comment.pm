@@ -295,9 +295,9 @@ sub delete_many ($self) {
     my $ids = $validation->every_param('id');
     my $comments = $self->schema->resultset('Comments');
     my $deleted_rows = $comments->search({id => {-in => $ids}, text => {-not_like => '%label:force_result:%'}})->delete;
-    my $ok = $deleted_rows && $deleted_rows == scalar(@$ids);
+    my $ok = $deleted_rows && $deleted_rows == scalar @$ids;
 
-    my %res = (ids => $ids, deleted => int($deleted_rows));
+    my %res = (ids => $ids, deleted => int $deleted_rows);
     $self->emit_event('openqa_comments_delete', \%res) if $deleted_rows;
     $res{error} = 'Not all comments could be deleted.' unless $ok;
     $self->render(json => \%res, status => ($ok ? 200 : 400));

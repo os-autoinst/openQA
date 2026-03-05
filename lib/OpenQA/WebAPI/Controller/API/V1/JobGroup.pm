@@ -138,7 +138,7 @@ sub list ($self) {
             next if $column_name =~ qr/^t_.*/;
             $data{$column_name} = $group->$column_name;
         }
-        push(@results, \%data);
+        push @results, \%data;
     }
     $self->render(json => \@results);
 }
@@ -223,7 +223,7 @@ sub _render_json ($self, $id = undef) {
         changed_fields => $self->{_changed_fields} // {},
     );
     $res{id} = $id if defined $id;
-    $res{error} = join(', ', @$errors) if @$errors;
+    $res{error} = join ', ', @$errors if @$errors;
     $self->render(json => \%res, status => $status);
 }
 

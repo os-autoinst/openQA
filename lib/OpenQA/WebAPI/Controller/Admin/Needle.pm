@@ -52,15 +52,15 @@ sub ajax ($self) {
     # conditions for search/filter
     my @filter_conds;
     my $search_value = $self->param('search[value]');
-    push(@filter_conds, {filename => {-like => '%' . $search_value . '%'}}) if $search_value;
+    push @filter_conds, {filename => {-like => '%' . $search_value . '%'}} if $search_value;
     my $seen_query = $self->param('last_seen');
     try {
         if ($seen_query && $seen_query ne 'none') {
-            push(@filter_conds, {last_seen_time => _translate_cond($seen_query)});
+            push @filter_conds, {last_seen_time => _translate_cond($seen_query)};
         }
         my $match_query = $self->param('last_match');
         if ($match_query && $match_query ne 'none') {
-            push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
+            push @filter_conds, {last_matched_time => _translate_cond($match_query)};
         }
     }
     catch ($e) { return $self->render(json => {error => ($e =~ s/ at .*//sr)}, status => 400) }  # uncoverable statement

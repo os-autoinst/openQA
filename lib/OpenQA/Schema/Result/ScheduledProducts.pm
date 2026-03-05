@@ -127,7 +127,7 @@ sub discard_changes ($self, @args) { undef $self->{_settings}; $self->SUPER::dis
 
 sub to_string {
     my ($self) = @_;
-    return join('-', grep { $_ ne '' } ($self->distri, $self->version, $self->flavor, $self->arch, $self->build));
+    return join '-', grep { $_ ne '' } ($self->distri, $self->version, $self->flavor, $self->arch, $self->build);
 }
 
 sub to_hash {
@@ -388,7 +388,7 @@ sub _schedule_iso ($self, $args, $guard) {
                 $schema->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit, $self);
             }
             catch ($e) {
-                push(@notes, "Failed to cancel old jobs: $e");
+                push @notes, "Failed to cancel old jobs: $e";
             }
         }
     }
@@ -412,12 +412,12 @@ sub _schedule_iso ($self, $args, $guard) {
     }
     catch ($e) {
         $gru->obsolete_minion_jobs(\@minion_ids);
-        push(@notes, "Transaction failed: $e");
-        push(@failed_job_info, map { {job_id => $_, error_messages => [$e]} } @successful_job_ids);
+        push @notes, "Transaction failed: $e";
+        push @failed_job_info, map { {job_id => $_, error_messages => [$e]} } @successful_job_ids;
         @successful_job_ids = ();
     }
 
-    $guard->retry(0) if defined($guard);
+    $guard->retry(0) if defined $guard;
     # emit events
     for my $succjob (@successful_job_ids) {
         OpenQA::Events->singleton->emit_event('openqa_job_create', data => {id => $succjob}, user_id => $user_id);
@@ -468,7 +468,7 @@ sub _parse_dep_variable ($value, $job_settings) {
         if ($_ =~ /^(.+)\@([^@]+)$/) { [$1, $2] }
         elsif ($_ =~ /^(.+):([^:]+)$/) { [$1, $2] }    # for backwards compatibility
         else { [$_, $job_settings->{MACHINE}] }
-    } split(/\s*,\s*/, $value);
+    } split /\s*,\s*/, $value;
 }
 
 sub _chained_parents ($job) {
@@ -501,7 +501,7 @@ sub _sort_dep ($list) {
             next if $done{$job};
             my $has_parents_to_go_before;
             for my $parent (@{_all_parents($job)}) {
-                if ($count{join('@', @$parent)}) {
+                if ($count{join '@', @$parent}) {
                     $has_parents_to_go_before = 1;
                     last;
                 }
@@ -547,7 +547,7 @@ sub _generate_jobs {
         });
 
     unless (@products) {
-        push(@$notes, qq|no products found for version "$args->{VERSION}", falling back to "*"|);
+        push @$notes, qq|no products found for version "$args->{VERSION}", falling back to "*"|;
         @products = $schema->resultset('Products')->search(
             {
                 distri => _distri_key($args),
@@ -558,8 +558,8 @@ sub _generate_jobs {
     }
 
     if (!@products) {
-        my $error = 'no products found for ' . join('-', map { $args->{$_} } qw(DISTRI FLAVOR ARCH));
-        push(@$notes, $error);
+        my $error = 'no products found for ' . join '-', map { $args->{$_} } qw(DISTRI FLAVOR ARCH);
+        push @$notes, $error;
         return {error_message => $error, error_code => 200};
     }
 
@@ -645,7 +645,7 @@ sub _create_dependencies_for_job ($self, $job, $job_ids_mapping, $created_jobs, 
             my $key = "$test\@$machine";
 
             for my $parent_job (keys %$job_ids_mapping) {
-                my @parents = split(/@/, $parent_job);
+                my @parents = split /@/, $parent_job;
                 $cluster_parents->{$parent_job} = $job_ids_mapping->{$parent_job}
                   if (!exists $cluster_parents->{$parent_job} && $test eq $parents[0]);
             }
@@ -704,8 +704,8 @@ sub _create_dependencies_for_parents ($self, $job, $created_jobs, $deptype, $par
             die 'There is a cycle in the dependencies of ' . $job->TEST;
         }
         if ($deptype eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-            $worker_classes //= join(',', @{$job_settings->all_values_sorted($job->id, 'WORKER_CLASS')});
-            my $parent_worker_classes = join(',', @{$job_settings->all_values_sorted($parent, 'WORKER_CLASS')});
+            $worker_classes //= join ',', @{$job_settings->all_values_sorted($job->id, 'WORKER_CLASS')};
+            my $parent_worker_classes = join ',', @{$job_settings->all_values_sorted($parent, 'WORKER_CLASS')};
             if ($worker_classes ne $parent_worker_classes) {
                 my $test_name = $job->TEST;
                 die "Worker class of $test_name ($worker_classes) does not match the worker class of its "
@@ -755,7 +755,7 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
 
     my $app = OpenQA::App->singleton;
     my $validation_errors = $app->validate_yaml($data, 'JobScenarios-01.yaml', $app->log->level eq 'debug');
-    return {error_message => "YAML validation failed:\n" . join("\n", @$validation_errors)} if @$validation_errors;
+    return {error_message => "YAML validation failed:\n" . join "\n", @$validation_errors} if @$validation_errors;
 
     my $products = $data->{products};
     my $machines = $data->{machines} // {};
@@ -849,7 +849,7 @@ sub _populate_wanted_jobs_for_test_arg ($args, $settings, $wanted) {
 
 sub _is_any_parent_wanted ($jobs, $parents, $wanted_list, $visited = {}) {
     for my $parent (@$parents) {
-        my $parent_job_ref = join('@', @$parent);
+        my $parent_job_ref = join '@', @$parent;
         next if $visited->{$parent_job_ref}++;    # prevent deep recursion if there are dependency cycles
         for my $job (@$jobs) {
             my $job_ref = _job_ref($job);
@@ -882,7 +882,7 @@ sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained
 
         # add parents to wanted list
         for my $parent (@$wanted_parents) {
-            my $parent_job_ref = join('@', @$parent);
+            my $parent_job_ref = join '@', @$parent;
             for my $job (@$jobs) {
                 my $job_ref = _job_ref($job);
                 $wanted->{$job_ref} = 1 if $job_ref eq $parent_job_ref;

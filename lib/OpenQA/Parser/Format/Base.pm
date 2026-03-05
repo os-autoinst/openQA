@@ -18,7 +18,7 @@ has generated_tests_results => sub {
 has generated_tests_output => sub { OpenQA::Parser::Result::OpenQA::Results->new };    #testcase results
 has generated_tests_extra => sub { OpenQA::Parser::Result::OpenQA::Results->new };    # tests extra data.
 
-sub parse { shift() }    # Do nothing here.
+sub parse { shift }    # Do nothing here.
 
 sub _write_all {
     my ($self, $res, $dir) = @_;

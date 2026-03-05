@@ -10,7 +10,7 @@ has usage => sub { OpenQA::CLI->_help('schedule') };
 has post_url => sub { shift->url_for('isos') };
 
 sub _error_from_json ($json) {
-    return $json->{error} // join("\n", map { $_->{error_message} } @{$json->{failed}});
+    return $json->{error} // join "\n", map { $_->{error_message} } @{$json->{failed}};
 }
 
 sub _populate_job_ids ($self, $results, $job_ids) {

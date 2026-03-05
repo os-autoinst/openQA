@@ -114,14 +114,14 @@ sub log_setup_info ($self) {
     $msg .= "\n - worker address (WORKER_HOSTNAME): " . ($global_settings->{WORKER_HOSTNAME} // 'undetermined');
     $msg .= "\n - isotovideo version:               " . $self->isotovideo_interface_version;
     $msg .= "\n - websocket API version:            " . WEBSOCKET_API_VERSION;
-    $msg .= "\n - web UI hosts:                     " . join(',', @{$settings->webui_hosts});
+    $msg .= "\n - web UI hosts:                     " . (join ',', @{$settings->webui_hosts});
     $msg .= "\n - class:                            " . ($global_settings->{WORKER_CLASS} // '?');
     $msg .= "\n - no cleanup:                       " . ($self->no_cleanup ? 'yes' : 'no');
     $msg .= "\n - pool directory:                   " . $self->pool_directory;
     log_info($msg);
 
     my $parse_errors = $settings->parse_errors;
-    log_error(join("\n - ", 'Errors occurred when reading config file:', @$parse_errors)) if (@$parse_errors);
+    log_error(join "\n - ", 'Errors occurred when reading config file:', @$parse_errors) if (@$parse_errors);
 
     return $msg;
 }
@@ -142,9 +142,9 @@ sub capabilities ($self) {
     my $current_job = $self->current_job;
     my $job_state = $current_job ? $current_job->status : undef;
     if ($job_state && $job_state ne 'new' && $job_state ne 'stopped') {
-        push(@job_ids, $current_job->id);
+        push @job_ids, $current_job->id;
     }
-    push(@job_ids, @{$self->pending_job_ids});
+    push @job_ids, @{$self->pending_job_ids};
     if (@job_ids) {
         $caps->{job_id} = @job_ids > 1 ? \@job_ids : $job_ids[0];
     }
@@ -161,7 +161,7 @@ sub capabilities ($self) {
         $caps->{cpu_arch} = $arch;
     }
     else {
-        open(my $LSCPU, '-|', 'LC_ALL=C lscpu');
+        open my $LSCPU, '-|', 'LC_ALL=C lscpu';
         for my $line (<$LSCPU>) {
             chomp $line;
             if ($line =~ m/Model name:\s+(.+)$/) {
@@ -177,7 +177,7 @@ sub capabilities ($self) {
                 $caps->{cpu_flags} = $1;
             }
         }
-        close($LSCPU);
+        close $LSCPU;
     }
 
     # determine memory limit
@@ -209,8 +209,8 @@ sub capabilities ($self) {
 
             aarch64 => ['aarch64'],
         );
-        $caps->{worker_class}
-          = join(',', map { 'qemu_' . $_ } @{$supported_archs_by_cpu_archs{$caps->{cpu_arch}} // [$caps->{cpu_arch}]});
+        $caps->{worker_class} = join ',',
+          map { 'qemu_' . $_ } @{$supported_archs_by_cpu_archs{$caps->{cpu_arch}} // [$caps->{cpu_arch}]};
         # TODO: check installed qemu and kvm?
     }
     $caps->{parallel_one_host_only} = $global_settings->{PARALLEL_ONE_HOST_ONLY};
@@ -447,12 +447,12 @@ sub _enqueue_job_sub_sequence ($self, $client, $job_queue, $sub_sequence, $job_d
 
     for my $job_id_or_sub_sequence (@$sub_sequence) {
         if (ref($job_id_or_sub_sequence) eq 'ARRAY') {
-            push(@$job_queue, $self->_enqueue_job_sub_sequence($client, [], $job_id_or_sub_sequence, $job_data));
+            push @$job_queue, $self->_enqueue_job_sub_sequence($client, [], $job_id_or_sub_sequence, $job_data);
         }
         else {
             log_debug("Enqueuing job $job_id_or_sub_sequence");
             $self->{_queue}->{pending_job_ids}->{$job_id_or_sub_sequence} = 1;
-            push(@$job_queue, OpenQA::Worker::Job->new($self, $client, $job_data->{$job_id_or_sub_sequence}));
+            push @$job_queue, OpenQA::Worker::Job->new($self, $client, $job_data->{$job_id_or_sub_sequence});
         }
     }
     return $job_queue;
@@ -624,10 +624,10 @@ sub is_qemu_running ($self) {
     catch ($e) { return undef }
     return undef unless $pid;
 
-    return $pid if is_qemu(readlink("/proc/$pid/exe"));
+    return $pid if is_qemu(readlink "/proc/$pid/exe");
 
     # delete the obsolete PID file (it might have been spared on cleanup if QEMU was still running)
-    unlink($pid_file) unless $self->no_cleanup;
+    unlink $pid_file unless $self->no_cleanup;
     return undef;
 }
 
@@ -796,7 +796,7 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
 sub _load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
     my @load;
     try {
-        @load = split(' ', path($path)->slurp);
+        @load = split ' ', path($path)->slurp;
         splice @load, 3;    # remove non-load numbers
         log_error "Unable to parse system load from file '$path'" and return []
           unless all { looks_like_number $_ } @load;
@@ -836,10 +836,10 @@ sub _lock_pool_directory ($self) {
     make_path($pool_directory) unless -e $pool_directory;
 
     chdir $pool_directory || die "cannot change directory to $pool_directory: $!\n";
-    open(my $lockfd, '>>', '.locked') or die "cannot open lock file in $pool_directory: $!\n";
-    die "$pool_directory already locked\n" unless fcntl $lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$);
+    open my $lockfd, '>>', '.locked' or die "cannot open lock file in $pool_directory: $!\n";
+    die "$pool_directory already locked\n" unless fcntl $lockfd, F_SETLK, pack 'ssqql', F_WRLCK, 0, 0, 0, $$;
     $lockfd->autoflush(1);
-    truncate($lockfd, 0);
+    truncate $lockfd, 0;
     print $lockfd "$$\n";
     return $lockfd;
 }
@@ -858,7 +858,7 @@ sub _clean_pool_directory ($self) {
             remove_tree($file);
         }
         else {
-            unlink($file);
+            unlink $file;
         }
     }
 }
@@ -893,9 +893,9 @@ sub find_current_or_pending_job ($self, $job_id) {
 sub current_job_ids ($self) {
     my @current_job_ids;
     if (my $current_job = $self->current_job) {
-        push(@current_job_ids, $current_job->id);
+        push @current_job_ids, $current_job->id;
     }
-    push(@current_job_ids, @{$self->pending_job_ids});
+    push @current_job_ids, @{$self->pending_job_ids};
     return \@current_job_ids;
 }
 

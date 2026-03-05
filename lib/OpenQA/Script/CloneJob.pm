@@ -84,7 +84,7 @@ sub clone_job_get_job ($jobid, $url_handler, $options) {
         die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
     if ($tx->res->code != 200) {
-        warn sprintf('unexpected return code: %s %s', $tx->res->code, $tx->res->message);
+        warn sprintf 'unexpected return code: %s %s', $tx->res->code, $tx->res->message;
         exit 1;
     }
     my $job = $tx->res->json->{job};
@@ -130,7 +130,7 @@ sub _check_for_missing_assets ($job, $parents, $options) {
           unless _is_asset_generated_by_cloned_jobs $job, $parents, $name, $options;
     }
     return undef unless @relevant_missing_assets;
-    my $relevant_missing_assets = join("\n - ", @relevant_missing_assets);
+    my $relevant_missing_assets = join "\n - ", @relevant_missing_assets;
     my $note = 'Use --ignore-missing-assets or --skip-download to proceed regardless.';
     die "The following assets are missing:\n - $relevant_missing_assets\n$note\n";
 }
@@ -266,7 +266,7 @@ sub handle_tx ($tx, $url_handler, $options, $jobs) {
 
 # append a formatted "-NN" to the TEST parameter for each job being posted
 sub append_idx_to_test_name ($n, $digits, $post_params) {
-    my $suffix = sprintf("-%0${digits}d", $n);
+    my $suffix = sprintf "-%0${digits}d", $n;
     foreach my $job_key (keys %$post_params) {
         my $job = $post_params->{$job_key};
         if ($n == 1) {
@@ -351,7 +351,7 @@ sub post_jobs ($post_params, $url_handler, $options) {
     if ($options->{'export-command'}) {
         $local_url->path(Mojo::Path->new);
         print "openqa-cli api --host '$local_url' -X POST jobs ";
-        say join(' ', map { "'$_=$composed_params{$_ }'" } sort keys %composed_params);
+        say join ' ', map { "'$_=$composed_params{$_ }'" } sort keys %composed_params;
         return undef;
     }
     print STDERR Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};

@@ -47,7 +47,7 @@ sub dashboard_build_results ($self) {
                 $group_params, $show_tags ? $tags : undef);
 
             my $build_results_for_group = $build_results->{build_results};
-            push(@results, $build_results) if @{$build_results_for_group};
+            push @results, $build_results if @{$build_results_for_group};
         }
     }
     catch ($e) {
@@ -179,8 +179,8 @@ sub _group_overview ($self, $resultset, $template) {
     );
     $self->respond_to(
         json => sub ($self) {
-            @comments = map($_->hash, @comments);
-            @pinned_comments = map($_->hash, @pinned_comments);
+            @comments = map $_->hash, @comments;
+            @pinned_comments = map $_->hash, @pinned_comments;
             $self->render(
                 json => {
                     group => $group_hash,

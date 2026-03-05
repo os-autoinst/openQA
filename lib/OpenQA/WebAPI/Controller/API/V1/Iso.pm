@@ -231,10 +231,10 @@ sub create {
 
     my $successful_job_ids = $scheduled_jobs->{successful_job_ids};
     my $failed_job_info = $scheduled_jobs->{failed_job_info};
-    my $created_job_count = scalar(@$successful_job_ids);
+    my $created_job_count = scalar @$successful_job_ids;
 
     my $debug_message = "Created $created_job_count jobs";
-    if (my $failed_job_count = scalar(@$failed_job_info)) {
+    if (my $failed_job_count = scalar @$failed_job_info) {
         $debug_message .= " but failed to create $failed_job_count jobs";
     }
     $log->debug($debug_message);
@@ -272,7 +272,7 @@ sub destroy {
         $self->emit_event('openqa_job_delete', {id => $job->id});
         $job->delete;
     }
-    $self->render(json => {count => scalar(@jobs)});
+    $self->render(json => {count => scalar @jobs});
 }
 
 =over 4

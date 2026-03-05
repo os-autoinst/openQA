@@ -222,7 +222,7 @@ sub redact_settings_in_file ($file) {
 
 sub format_settings ($vars) {
     $vars = redact_settings($vars);
-    return join("\n", map { "    $_=$vars->{$_}" } sort keys %$vars);
+    return join "\n", map { "    $_=$vars->{$_}" } sort keys %$vars;
 }
 
 1;

@@ -71,7 +71,7 @@ sub _search_perl_modules {
         for my $filename (
             $distri->list_tree()->head($cap)->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.p[my]$/)->each)
         {
-            push(@results, {occurrence => $filename});
+            push @results, {occurrence => $filename};
             $cap--;
         }
         last if $cap < 1;
@@ -85,10 +85,10 @@ sub _search_perl_modules {
 
         my $basename = $distri->basename;
         my $last_filename = '';
-        my @lines = split("\n", $stdout);
+        my @lines = split "\n", $stdout;
         foreach my $match (@lines) {
             next unless length $match;
-            my ($filename, $linenr, $contents) = split(':', $match, 3);
+            my ($filename, $linenr, $contents) = split ':', $match, 3;
             # Prefix each line with a 5 digit-padded number
             $contents = sprintf('%5d ', $linenr) . $contents;
             # Merge lines occurring in the same file
@@ -97,7 +97,7 @@ sub _search_perl_modules {
                 next;
             }
             $last_filename = $filename;
-            push(@results, {occurrence => "$basename/$filename", contents => $contents});
+            push @results, {occurrence => "$basename/$filename", contents => $contents};
             # For the purposes of the limit, all lines in the same file count as one
             $cap--;
             last if $cap < 1;
@@ -129,7 +129,7 @@ sub _search_job_modules {
             next;
         }
         $last_job = $job_module->job_id;
-        push(@results, {occurrence => $job_module->job->name, contents => $contents});
+        push @results, {occurrence => $job_module->job->name, contents => $contents};
     }
     return \@results;
 }
@@ -157,7 +157,7 @@ sub _search_job_templates {
             next;
         }
         $last_group = $template->group->id;
-        push(@results, {occurrence => $template->group->name, contents => $contents});
+        push @results, {occurrence => $template->group->name, contents => $contents};
     }
     return \@results;
 }

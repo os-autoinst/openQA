@@ -33,7 +33,7 @@ sub minion ($self) {
 
 sub _output_measure ($url, $key, $states) {
     my $line = "$key,url=$url ";
-    $line .= join(',', map { "$_=$states->{$_}i" } sort keys %$states);
+    $line .= join ',', map { "$_=$states->{$_}i" } sort keys %$states;
     return $line . "\n";
 }
 

@@ -25,8 +25,8 @@ sub _remove_if {
 
     if (!$reason) {
         my $asset_name = $asset->{name};
-        my $groups = join(', ', keys %{$asset->{groups}});
-        my $parents = join(', ', keys %{$asset->{parents}});
+        my $groups = join ', ', keys %{$asset->{groups}};
+        my $parents = join ', ', keys %{$asset->{parents}};
         $parents = " within parent job groups $parents" if $parents;
         $reason = "Removing asset $asset_name (belonging to job groups: ${groups}${parents})";
     }

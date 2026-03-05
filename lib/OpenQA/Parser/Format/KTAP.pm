@@ -112,7 +112,7 @@ sub _testgroup_finalize ($self, $result) {
             title => $steps->{name},
             result => 'ok',
           };
-        $self->_add_output({file => $filename, content => join("\n", @{$steps->{unparsed_lines}})});
+        $self->_add_output({file => $filename, content => (join "\n", @{$steps->{unparsed_lines}})});
     }
 
     $self->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new($steps));

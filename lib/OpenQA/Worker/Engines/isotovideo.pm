@@ -57,7 +57,7 @@ sub _save_vars ($pooldir, $vars) {
 
 sub detect_asset_keys ($vars) {
     my %res;
-    for my $key (keys(%$vars)) {
+    for my $key (keys %$vars) {
         my $value = $vars->{$key};
         next unless $value;
 
@@ -173,11 +173,11 @@ sub _link_asset ($asset, $pooldir) {
     # If the given asset is a symlink itself, do not hardlink a symlink
     my $linked = 0;
     unless (-l $asset) {
-        try { $linked = link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!} }
+        try { $linked = link $asset, $target or die qq{Cannot create link from "$asset" to "$target": $!} }
         catch ($e) { log_debug(qq{Symlinking asset because hardlink failed: $e}) }    # uncoverable statement
     }
     unless ($linked) {
-        symlink($asset, $target) or die qq{Cannot create symlink from "$asset" to "$target": $!};
+        symlink $asset, $target or die qq{Cannot create symlink from "$asset" to "$target": $!};
     }
     log_debug(qq{Linked asset "$asset" to "$target"});
 
@@ -190,7 +190,7 @@ sub _link_repo ($source_dir, $pooldir, $target_name, $ignore_missing = 0) {
     unlink $target;
     return {error => "The source directory $source_dir does not exist"} if !$ignore_missing && !-e $source_dir;
     return {error => qq{Cannot create symlink from "$source_dir" to "$target": $!}}
-      unless symlink($source_dir, $target);
+      unless symlink $source_dir, $target;
     log_debug(qq{Symlinked from "$source_dir" to "$target"});
     return undef;
 }
@@ -312,7 +312,7 @@ sub engine_workit ($job, $callback) {
     # start pre-job hook if any
     if ($job_settings->{SYNC_ASSETS_HOOK}) {
         log_debug 'Running SYNC_ASSETS_HOOK';
-        system($job_settings->{SYNC_ASSETS_HOOK});
+        system $job_settings->{SYNC_ASSETS_HOOK};
     }
 
     # cache/locate assets, set ASSETDIR
@@ -354,7 +354,7 @@ sub _configure_cgroupv2 ($job_info) {
         # determine cgroup slice of the current process
         try {
             my $pid = $$;
-            $cgroup_slice = (grep { /name=$cgroup_name:/ } split(/\n/, path('/proc', $pid, 'cgroup')->slurp))[0]
+            $cgroup_slice = (grep { /name=$cgroup_name:/ } split /\n/, path('/proc', $pid, 'cgroup')->slurp)[0]
               if defined $pid;
             $cgroup_slice =~ s/^.*name=$cgroup_name:/$cgroup_name/g if defined $cgroup_slice;
         }
@@ -400,7 +400,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     $casedir = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
     unless (_is_job_only_relying_on_git($vars)) {
         if ($casedir eq $target_name) {
-            $vars->{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
+            $vars->{PRODUCTDIR} //= substr $default_productdir, rindex $default_casedir, $target_name;
             if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $callback->($error) }
         }
         else {
@@ -452,7 +452,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
 
     # create tmpdir for QEMU
     my $tmpdir = "$pooldir/tmp";
-    mkdir($tmpdir) unless (-d $tmpdir);
+    mkdir $tmpdir unless (-d $tmpdir);
 
     # create and configure the process including how to stop it again
     my $child = process(
@@ -465,7 +465,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
         kill_sleeptime => 0,    # … and wait not any longer …
         blocking_stop => 1,    # … before sending SIGKILL
         code => sub {
-            setpgrp(0, 0);
+            setpgrp 0, 0;
             $ENV{TMPDIR} = $tmpdir;
             $ENV{MOJO_MAX_MESSAGE_SIZE} = undef;    # let os-autoinst handle limit for uploads
             log_info("$$: WORKING " . $job_info->{id});

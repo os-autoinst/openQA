@@ -27,8 +27,8 @@ sub new {
 }
 
 # Mojo will call TO_JSON
-sub to_json { encode_json shift() }
-sub from_json { shift->new(@{decode_json shift()}) }
+sub to_json { encode_json shift }
+sub from_json { shift->new(@{decode_json shift}) }
 
 sub to_array {
     my $self = shift;

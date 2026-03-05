@@ -14,7 +14,7 @@ sub collect_incident_repos ($url_handler, $settings) {
     }
     my @urls;
     if (my $addons = $settings->{SCC_ADDONS}) {
-        foreach my $SCC_ADDON (split(/,/, $addons)) {
+        foreach my $SCC_ADDON (split /,/, $addons) {
             if (my $repo = $settings->{uc($SCC_ADDON) . '_TEST_REPOS'}) {
                 my $incident_urls = verify_incident_repos($url_handler, $repo);
                 push @urls, @$incident_urls;
@@ -27,7 +27,7 @@ sub collect_incident_repos ($url_handler, $settings) {
 sub verify_incident_repos ($url_handler, $incident_repos) {
     my @incident_urls;
     my $ua = $url_handler->{ua};
-    foreach my $incident (split(/,/, $incident_repos)) {
+    foreach my $incident (split /,/, $incident_repos) {
         push @incident_urls, $incident unless $ua->get($incident)->is_success;
     }
     return \@incident_urls;

@@ -27,7 +27,7 @@ sub render_response (%args) {
     # determine filtered count
     my $filtered_count;
     if ($filter_conds) {
-        push(@$filter_conds, @$initial_conds);
+        push @$filter_conds, @$initial_conds;
         $filtered_count = $resultset->search({-and => $filter_conds}, $params)->count;
     }
     else {
@@ -42,7 +42,7 @@ sub render_response (%args) {
         my $column_index = $controller->param("order[$index][column]") // @$columns;
         my $column_order = $controller->param("order[$index][dir]");
         last unless $column_index < @$columns && grep { $column_order eq $_ } qw(asc desc);
-        push(@order_by_params, {'-' . $column_order => $columns->[$column_index]});
+        push @order_by_params, {'-' . $column_order => $columns->[$column_index]};
         ++$index;
     }
     push @order_by_params, 'me.id';

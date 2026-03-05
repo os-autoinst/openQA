@@ -77,7 +77,7 @@ sub tool_openqa_get_job_info ($tool, $args) {
 
     my $schema = _get_schema($tool);
     return $tool->text_result('Job does not exist', 1)
-      unless my $job = $schema->resultset('Jobs')->find(int($job_id));
+      unless my $job = $schema->resultset('Jobs')->find(int $job_id);
     my @comments = map { $_->extended_hash } $job->search_related(comments => {})->all;
 
     my $info = $job->to_hash(assets => 1, check_assets => 1, deps => 1, details => 1, parent_group => 1);
@@ -96,7 +96,7 @@ sub tool_openqa_get_log_file ($tool, $args) {
 
     my $schema = _get_schema($tool);
     return $tool->text_result('Job does not exist', 1)
-      unless my $job = $schema->resultset('Jobs')->find(int($job_id));
+      unless my $job = $schema->resultset('Jobs')->find(int $job_id);
 
     my $dir = $job->result_dir;
     my $file = path($dir, $file_name);

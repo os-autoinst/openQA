@@ -115,7 +115,7 @@ sub list ($self) {
     # clearer.
     for my $arg (qw(state ids result)) {
         next unless defined(my $value = $self->param($arg));
-        my $values = $args{$arg} = index($value, ',') != -1 ? [split(',', $value)] : $self->every_param($arg);
+        my $values = $args{$arg} = index($value, ',') != -1 ? [split ',', $value] : $self->every_param($arg);
         if ($arg eq 'ids') {
             for my $id (@$values) {
                 return $self->render(json => {error => 'ids must be integers'}, status => 400)
@@ -143,7 +143,7 @@ sub list ($self) {
     my $jas = $schema->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
-        push(@{$job->{_assets}}, $ja->asset);
+        push @{$job->{_assets}}, $ja->asset;
     }
 
     # prefetch groups
@@ -158,7 +158,7 @@ sub list ($self) {
     while (my $m = $modules->next) {
         my $job = $jobs{$m->job_id};
         $job->{_modules} ||= [];
-        push(@{$job->{_modules}}, $m);
+        push @{$job->{_modules}}, $m;
     }
 
     my @jobids = sort keys %jobs;
@@ -205,9 +205,9 @@ sub list ($self) {
                 result => $module->result,
                 flags => []};
             for my $flag (qw(important fatal milestone always_rollback)) {
-                push(@{$modulehash->{flags}}, $flag) if $module->get_column($flag);
+                push @{$modulehash->{flags}}, $flag if $module->get_column($flag);
             }
-            push(@{$jobhash->{modules}}, $modulehash);
+            push @{$jobhash->{modules}}, $modulehash;
         }
         push @results, $jobhash;
     }
@@ -258,7 +258,7 @@ returning "{jobA => {bar => 2}, jobB => {baz => 3}}".
 sub _eval_param_grouping ($params) {
     my %grouped_params;
     for my $param_key (keys %$params) {
-        my $job_suffix_start = rindex($param_key, ':');
+        my $job_suffix_start = rindex $param_key, ':';
         next unless $job_suffix_start >= 0;
         my $job_suffix = substr $param_key, $job_suffix_start + 1;
         my $setting_key = substr $param_key, 0, $job_suffix_start;
@@ -630,7 +630,7 @@ sub update ($self) {
     my $schema = $self->schema;
     my $group_id = $json->{group_id};
     return $self->render(json => {error => 'Group does not exist'}, status => 404)
-      if defined($group_id) && !$schema->resultset('JobGroups')->find(int($group_id));
+      if defined($group_id) && !$schema->resultset('JobGroups')->find(int $group_id);
 
     # some settings are stored directly in job table and hence must be updated there
     my @setting_cols = qw(TEST DISTRI VERSION FLAVOR ARCH BUILD MACHINE);
@@ -739,7 +739,7 @@ sub upload_state ($self) {
     my $scope = $validation->param('scope') // 'private';
     my $job_id = $self->stash('jobid');
 
-    $file = sprintf('%08d-%s', $job_id, $file) if $scope ne 'public';
+    $file = sprintf '%08d-%s', $job_id, $file if $scope ne 'public';
 
     if ($state eq 'fail') {
         $self->app->log->debug("FAIL chunk upload of $file");
@@ -834,7 +834,7 @@ sub _restart ($self, %args) {
 
     my $auto = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
     my $comment = $validation->param('comment');
-    my %settings = map { split('=', $_, 2) } @{$validation->every_param('set')};
+    my %settings = map { split '=', $_, 2 } @{$validation->every_param('set')};
     my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
     push @params, clone => !defined $validation->param('clone') || $validation->param('clone');
     push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');

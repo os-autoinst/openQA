@@ -40,7 +40,7 @@ sub new {
 
 sub open_config_file ($host) {
     return undef unless $host;
-    my $cfg = parse_config_files(lookup_config_files(path(glob('~/.config/openqa')), 'client.conf', 1));
+    my $cfg = parse_config_files(lookup_config_files(path(glob '~/.config/openqa'), 'client.conf', 1));
     return $cfg && $cfg->SectionExists($host) ? $cfg : undef;
 }
 

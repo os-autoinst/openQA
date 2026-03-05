@@ -125,11 +125,11 @@ sub update_needle ($filename, $module, $matched = undef, $needle_cache = undef) 
         }
         else {
             $dir_path = $real_dir_path;
-            $basename = substr $real_file_path, length($real_dir_path) + 1, length($real_file_path);
+            $basename = substr $real_file_path, length($real_dir_path) + 1, length $real_file_path;
         }
 
         # find/insert the needle dir and the needle itself
-        my $dir_name = sprintf('%s-%s', $job->DISTRI, $job->VERSION);
+        my $dir_name = sprintf '%s-%s', $job->DISTRI, $job->VERSION;
         $sth_needle_dir->execute($dir_path, $dir_name);
         my ($dir_id) = $sth_needle_dir->fetchrow_array
           // $schema->resultset('NeedleDirs')->find({path => $dir_path})->id;
@@ -188,10 +188,10 @@ sub remove ($self, $user) {
     }
     else {
         my @error_files;
-        unlink($fname) or push(@error_files, $fname);
-        unlink($screenshot) or push(@error_files, $screenshot);
+        unlink $fname or push @error_files, $fname;
+        unlink $screenshot or push @error_files, $screenshot;
         if (@error_files) {
-            my $error = 'Unable to delete ' . join(' and ', @error_files);
+            my $error = 'Unable to delete ' . join ' and ', @error_files;
             $app->log->debug($error);
             croak $error;
         }

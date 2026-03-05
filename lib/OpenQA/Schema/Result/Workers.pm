@@ -198,7 +198,7 @@ sub send_command {
 
     if (!grep { $args{command} eq $_ } WORKER_API_COMMANDS) {
         my $msg = 'Trying to issue unknown command "%s" for worker "%s:%n"';
-        log_error(sprintf($msg, $args{command}, $self->host, $self->instance));
+        log_error(sprintf $msg, $args{command}, $self->host, $self->instance);
         return undef;
     }
 
@@ -216,11 +216,8 @@ sub send_command {
     my $client = OpenQA::WebSockets::Client->singleton;
     try { $client->send_msg($self->id, $args{command}, $args{job_id}) }
     catch ($e) {
-        log_error(
-            sprintf(
-                'Failed dispatching message to websocket server over ipc for worker "%s:%n": %s',
-                $self->host, $self->instance, $e
-            ));
+        log_error(sprintf 'Failed dispatching message to websocket server over ipc for worker "%s:%n": %s',
+            $self->host, $self->instance, $e);
         return undef;
     }
     return 1;

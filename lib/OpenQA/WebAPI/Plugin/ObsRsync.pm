@@ -39,7 +39,7 @@ sub register ($self, $app, $config) {
     my $plugin_api_r = $app->routes->find('api_ensure_operator');
 
     # ssh-keygen is needed for the Build Service authentication.
-    die("ssh-keygen is not available. Aborting.\n") unless which('ssh-keygen');
+    die "ssh-keygen is not available. Aborting.\n" unless which('ssh-keygen');
 
     if (!$plugin_r) {
         # uncoverable statement
@@ -66,7 +66,7 @@ sub register ($self, $app, $config) {
                 my @res = $self->_is_obs_project_status_dirty($url, $project, $repo, $helper);
                 if ($trace && scalar @res > 1 && $res[1]) {
                     # ignore potential errors because we use this only for cosmetic rendering
-                    open(my $fh, '>', Mojo::File->new($c->obs_rsync->home, $project, $dirty_status_filename))
+                    open my $fh, '>', Mojo::File->new($c->obs_rsync->home, $project, $dirty_status_filename)
                       or return $res[0];
                     print $fh $res[1];
                     close $fh;
@@ -218,7 +218,7 @@ sub _parse_obs_response_dirty ($res, $repo = undef) {
 # if input doesn't have '::' character -
 # returned pair is ($project, '')
 sub _split_repo ($, $alias) {
-    my ($project, $repo) = split(/::/, $alias, 2);
+    my ($project, $repo) = split /::/, $alias, 2;
     $repo = '' unless $repo;
     return ($project, $repo);
 }
@@ -228,7 +228,7 @@ sub _split_repo ($, $alias) {
 # if input doesn't have '|' character -
 # returned pair is ($project, '')
 sub _split_alias ($, $alias) {
-    my ($project, $batch) = split(/\|/, $alias, 2);
+    my ($project, $batch) = split /\|/, $alias, 2;
     $batch = '' unless $batch;
     return ($project, $batch);
 }
@@ -304,7 +304,7 @@ sub _get_run_last_info ($c, $alias) {
     my $linkpath = Mojo::File->new($home, $project, $batch, '.run_last');
 
     my $folder;
-    unless ($folder = readlink($linkpath)) {
+    unless ($folder = readlink $linkpath) {
         log_error("Cannot read symbolic link ($linkpath): $!");
         return undef;
     }
@@ -319,21 +319,21 @@ sub _get_run_last_info ($c, $alias) {
 }
 
 sub _get_first_line ($file, $with_timestamp = undef) {
-    open(my $fh, '<', $file) or return '';
+    open my $fh, '<', $file or return '';
     my $res = readline $fh;
     return '' unless $res;
     chomp $res;
     if ($with_timestamp) {
-        my @stats = stat($fh);
+        my @stats = stat $fh;
         close $fh;
-        return ($res, strftime('%Y-%m-%d %H:%M:%S %z', localtime($stats[9])));
+        return ($res, strftime '%Y-%m-%d %H:%M:%S %z', localtime $stats[9]);
     }
     close $fh;
     return $res;
 }
 
 sub _write_to_file ($file, $str) {
-    if (open(my $fh, '>', $file)) {
+    if (open my $fh, '>', $file) {
         print $fh $str;
         close $fh;
     }
@@ -390,7 +390,7 @@ sub _get_api_dirty_status_url ($c, $project) {
 }
 
 sub _get_builds_in_file ($file, $seen) {
-    open(my $fh, '<', $file) or return undef;
+    open my $fh, '<', $file or return undef;
     while (my $row = <$fh>) {
         chomp $row;
         next unless $row;
@@ -522,7 +522,7 @@ sub _bs_ssh_auth ($challenge, $user, $key) {
     die "Unexpected OBS challenge: $challenge" unless $challenge =~ /realm="([^"]+)".*headers="\(created\)"/;
     my $realm = $1;
 
-    my $now = time();
+    my $now = time;
     my $signature = _bs_ssh_sign($key, $realm, "(created): $now");
     return qq{Signature keyId="$user",algorithm="ssh",signature="$signature",headers="(created)",created="$now"};
 }

@@ -67,7 +67,7 @@ sub edit ($self) {
     ) unless ($running_module);
 
     my $details = $running_module->results->{details};
-    my $stepid = scalar(@{$details});
+    my $stepid = scalar @{$details};
     return $self->render_specific_not_found(
         $page_name,
 'The results for the currently running module have not been uploaded yet so opening the needle editor is not possible. Likely the upload is still in progress so reloading the page might help.',
@@ -89,7 +89,7 @@ sub streamtext ($self, $file_name) {
     # if the open fails, continue, well check later
     my $log;
     my ($ino, $size);
-    if (open($log, '<', $logfile)) {
+    if (open $log, '<', $logfile) {
         # Send the last 10KB of data from the logfile, so that
         # the client sees some data immediately
         $ino = (stat $logfile)[1];
@@ -111,7 +111,7 @@ sub streamtext ($self, $file_name) {
         TEXT_STREAMING_INTERVAL() => sub (@) {
             if (!$ino) {
                 # log file was not yet opened
-                return unless open($log, '<', $logfile);
+                return unless open $log, '<', $logfile;
                 $ino = (stat $logfile)[1];
                 $size = -s $logfile;
             }

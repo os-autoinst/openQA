@@ -114,12 +114,12 @@ sub _seek_content ($self, $file_name) {
     croak 'No end point is defined' unless defined $self->end();
 
     CORE::open my $file, '<', $file_name or croak "Can't open file $file_name: $!";
-    binmode($file);    # old Perl versions might need this
+    binmode $file;    # old Perl versions might need this
     my $ret = my $content = '';
-    sysseek($file, $self->start(), SEEK_SET);
+    sysseek $file, $self->start(), SEEK_SET;
     $ret = $file->sysread($content, ($self->end() - $self->start()));
     croak "Can't read from file $file_name : $!" unless defined $ret;
-    close($file);
+    close $file;
     return $content;
 }
 
@@ -129,12 +129,12 @@ sub _write_content ($self, $file_name) {
 
     Mojo::File->new($file_name)->spew('') unless -e $file_name;
     CORE::open my $file, '+<', $file_name or croak "Can't open file $file_name: $!";
-    binmode($file);    # old Perl versions might need this
+    binmode $file;    # old Perl versions might need this
     my $ret;
-    sysseek($file, $self->start(), SEEK_SET);
+    sysseek $file, $self->start(), SEEK_SET;
     $ret = $file->syswrite($self->content, ($self->end() - $self->start()));
     croak "Can't write to file $file_name : $!" unless defined $ret;
-    close($file);
+    close $file;
 
     return $ret;
 }

@@ -79,13 +79,13 @@ sub _save_needle ($app, $minion_job, $args) {
     # determine imagepath
     my $imagepath;
     if ($imagedir) {
-        $imagepath = join('/', $imagedir, $imagename);
+        $imagepath = join '/', $imagedir, $imagename;
     }
     elsif ($imagedistri) {
-        $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);
+        $imagepath = join '/', needledir($imagedistri, $imageversion), $imagename;
     }
     else {
-        $imagepath = join('/', $openqa_job->result_dir(), $imagename);
+        $imagepath = join '/', $openqa_job->result_dir(), $imagename;
     }
     if (!-f $imagepath) {
         my $error = "Image $imagename could not be found!";
@@ -167,7 +167,7 @@ sub _commit_needle_in_git_repo ($app, $git, $needlename, $openqa_job, $commit_me
     $git->commit(
         {
             add => ["$needlename.json", "$needlename.png"],
-            message => ($commit_message || sprintf('%s for %s', $needlename, $openqa_job->name)),
+            message => ($commit_message || sprintf '%s for %s', $needlename, $openqa_job->name),
         }) if $git->autocommit_enabled;
 }
 

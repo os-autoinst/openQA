@@ -58,8 +58,7 @@ sub jobs ($self) {
     my $list_value = $validation->param('list_value');
     my $limit = $validation->param('limit');
     return $self->render(json => {error => 'either "value" or "list_value" needs to be specified'}, status => 400)
-      unless defined($value)
-      xor defined($list_value);
+      unless defined $value xor defined $list_value;
     my $job_settings = $self->schema->resultset('JobSettings');
     my $options = {key => $key, value => $value, list_value => $list_value, limit => $limit};
     $self->render(json => {jobs => $job_settings->jobs_for_setting($options)});

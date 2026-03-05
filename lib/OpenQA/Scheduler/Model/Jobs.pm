@@ -90,7 +90,7 @@ sub _allocate_jobs ($self, $free_workers) {
         }
         OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
         my @tobescheduled = grep { $_->{id} } @$tobescheduled;
-        my $parallel_count = scalar(@tobescheduled);
+        my $parallel_count = scalar @tobescheduled;
         log_debug "Need to schedule $parallel_count parallel jobs for job $job_id (with priority $j->{priority})";
         next unless @tobescheduled;
         my %taken;
@@ -164,8 +164,8 @@ sub schedule ($self) {
     my $free_worker_count = @$free_workers;
 
     my $scheduled_jobs = $self->determine_scheduled_jobs;
-    log_debug(
-        "Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: " . scalar(keys %$scheduled_jobs));
+    log_debug("Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: "
+          . (scalar keys %$scheduled_jobs));
 
     my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($free_workers);
 
@@ -223,7 +223,7 @@ sub schedule ($self) {
 
         # find jobs
         my @jobs;
-        my $job_ids_str = join(', ', @$job_ids);
+        my $job_ids_str = join ', ', @$job_ids;
         try {
             @jobs = $schema->resultset('Jobs')->search({id => {-in => $job_ids}});
         }
@@ -289,7 +289,7 @@ sub schedule ($self) {
             # note: That only means the websocket server could *start* sending the message but not that the message
             #       has been received and acknowledged by the worker.
             log_debug("Sent job(s) '$job_ids_str' to worker '$worker_id'");
-            push(@successfully_allocated, map { {job => $_, worker => $worker_id} } @$job_ids);
+            push @successfully_allocated, map { {job => $_, worker => $worker_id} } @$job_ids;
             next;
         }
 
@@ -315,7 +315,7 @@ sub schedule ($self) {
         }
     }
 
-    my $elapsed_rounded = sprintf('%.5f', (time - $start_time));
+    my $elapsed_rounded = sprintf '%.5f', (time - $start_time);
     log_debug "Scheduler took ${elapsed_rounded}s to perform operations and allocated "
       . scalar(@successfully_allocated) . ' jobs';
     log_debug 'Allocated: ' . pp($_) for @successfully_allocated;
@@ -331,7 +331,7 @@ sub _matching_workers ($jobinfo, $free_workers, $rejected = {}) {
     my @needed = sort @{$jobinfo->{worker_classes}};
     for my $worker (@$free_workers) {
         my $matched_all = all { $worker->check_class($_) } @needed;
-        push(@filtered, $worker) if $matched_all;
+        push @filtered, $worker if $matched_all;
     }
     $rejected->{join ',', @needed}++ unless @filtered;
     return \@filtered;
@@ -458,7 +458,7 @@ sub _update_scheduled_jobs ($self) {
         $info->{state} = $job->state;
         $info->{test} = $job->TEST;
         if (!$info->{worker_classes}) {
-            push(@missing_worker_class, $job->id);
+            push @missing_worker_class, $job->id;
             $info->{worker_classes} = [];
         }
 
@@ -475,7 +475,7 @@ sub _update_scheduled_jobs ($self) {
     my $settings
       = $schema->resultset('JobSettings')->search({key => 'WORKER_CLASS', job_id => {-in => \@missing_worker_class}});
     while (my $line = $settings->next) {
-        push(@{$scheduled_jobs->{$line->job_id}->{worker_classes}}, $line->value);
+        push @{$scheduled_jobs->{$line->job_id}->{worker_classes}}, $line->value;
     }
     # delete stale entries
     for my $id (keys %$scheduled_jobs) {
@@ -511,7 +511,7 @@ sub _serialize_directly_chained_job_sub_sequence ($output_array, $visited, $chil
           = _serialize_directly_chained_job_sub_sequence([$current_job_id], $visited,
             $current_job_info->{directly_chained_children},
             $cluster_info, $sort_function);
-        push(@$output_array, scalar @$sub_sequence > 1 ? $sub_sequence : $sub_sequence->[0]) if @$sub_sequence;
+        push @$output_array, scalar @$sub_sequence > 1 ? $sub_sequence : $sub_sequence->[0] if @$sub_sequence;
     }
     return $output_array;
 }
@@ -559,10 +559,10 @@ sub incomplete_and_duplicate_stale_jobs ($self) {
                     );
                     my $res = $job->auto_duplicate;
                     if (ref $res) {
-                        log_warning(sprintf('Dead job %d aborted and duplicated %d', $job->id, $res->id));
+                        log_warning(sprintf 'Dead job %d aborted and duplicated %d', $job->id, $res->id);
                     }
                     else {
-                        log_warning(sprintf('Dead job %d aborted as incomplete', $job->id));
+                        log_warning(sprintf 'Dead job %d aborted as incomplete', $job->id);
                     }
                 });
         }

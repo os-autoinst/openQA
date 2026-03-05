@@ -21,10 +21,10 @@ sub new {
     return $class->SUPER::new(@args);
 }
 
-sub get { OpenQA::Parser::Result::Node->new(val => shift->{shift()}) }
+sub get { OpenQA::Parser::Result::Node->new(val => shift->{+shift}) }
 
-sub to_json { encode_json shift() }
-sub from_json { shift->new(decode_json shift()) }
+sub to_json { encode_json shift }
+sub from_json { shift->new(decode_json shift) }
 
 sub to_hash {
     my $self = shift;

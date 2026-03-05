@@ -52,12 +52,11 @@ sub delete_expired_entries {
         my $event_type_pattern = $patterns_for_event_categories{$event_category}
           or log_warning("Ignoring unknown event type '$event_category'.")
           and next;
-        push(
-            @queries,
-            {
-                event => {-like => $event_type_pattern},
-                t_created => {'<' => $time_constraint},
-            });
+        push @queries,
+          {
+            event => {-like => $event_type_pattern},
+            t_created => {'<' => $time_constraint},
+          };
     }
 
     # make query for events *not* matching any of the specified event types
@@ -66,7 +65,7 @@ sub delete_expired_entries {
     my $delete_other_query
       = $other_time_constraint
       ? $self->result_source->schema->storage->dbh->prepare('DELETE FROM audit_events WHERE t_created < ? AND '
-          . join(' AND ', map { 'event NOT LIKE ?' } @category_patterns))
+          . (join ' AND ', map { 'event NOT LIKE ?' } @category_patterns))
       : undef;
 
     # perform queries

@@ -236,10 +236,10 @@ sub start ($self) {
 
     # ensure log files are empty/removed
     if (my $pooldir = $worker->pool_directory) {
-        open(my $fd, '>', "$pooldir/worker-log.txt") or log_error("Could not open worker log: $!");
+        open my $fd, '>', "$pooldir/worker-log.txt" or log_error("Could not open worker log: $!");
         foreach my $file (qw(serial0.txt autoinst-log.txt serial_terminal.txt)) {
             next unless -e "$pooldir/$file";
-            unlink("$pooldir/$file") or log_error("Could not unlink '$file': $!");
+            unlink "$pooldir/$file" or log_error("Could not unlink '$file': $!");
         }
     }
 
@@ -570,7 +570,7 @@ sub _format_reason ($self, $state, $result, $reason) {
         my @match_content
           = ('Failed to allocate KVM .* Cannot allocate memory', 'Could not find .*smbd.*please install it');
         if ($reason =~ /backend died: QEMU exited unexpectedly|backend died: QEMU terminated/) {
-            my $msg = $self->_parse_log_file(join('|', @match_content));
+            my $msg = $self->_parse_log_file(join '|', @match_content);
             $reason = "QEMU terminated$msg, see log output of details" if $msg;
         }
     }
@@ -994,14 +994,14 @@ sub _upload_asset ($self, $upload_parameter) {
             log_info("$filename: chunks of $chunk_size bytes each", channels => \@channels_worker_only, default => 1);
         });
     my $t_start;
-    $ua->upload->on('upload_chunk.start' => sub { $t_start = time() });
+    $ua->upload->on('upload_chunk.start' => sub { $t_start = time });
     $ua->upload->on(
         'upload_chunk.finish' => sub ($upload, $piece) {
             my $index = $piece->index;
             my $total = $piece->total;
             my $spent = (time() - $t_start) || 1;
             my $kbytes = ($piece->end - $piece->start) / 1024;
-            my $speed = sprintf('%.3f', $kbytes / $spent);
+            my $speed = sprintf '%.3f', $kbytes / $spent;
             my $show_in_autoinst_log = $index % 10 == 0 || $piece->is_last;
             log_info(
                 "$filename: Processing chunk $index/$total, avg. speed ~${speed} KiB/s",
@@ -1034,7 +1034,7 @@ sub _upload_asset ($self, $upload_parameter) {
 
     $ua->upload->once(
         'upload_chunk.error' => sub {
-            $error = pop();
+            $error = pop;
             log_error(
                 'Upload failed, and all retry attempts have been exhausted',
                 channels => \@channels_both,
@@ -1212,7 +1212,7 @@ sub _calculate_file_md5 ($self, $file) {
 
 sub _read_last_screen ($self) {
     my $pooldir = $self->worker->pool_directory;
-    my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
+    my $lastlink = readlink "$pooldir/qemuscreenshot/last.png";
     return if !$lastlink || $self->last_screenshot eq $lastlink;
     my $png = encode_base64(path($pooldir, "qemuscreenshot/$lastlink")->slurp);
     $self->{_last_screenshot} = $lastlink;
@@ -1223,16 +1223,16 @@ sub _log_snippet ($self, $file, $offset_name) {
     my $offset = $self->$offset_name;
     my $fd;
     my %ret;
-    return \%ret unless open($fd, '<:raw', $file);
-    sysseek($fd, $offset, Fcntl::SEEK_SET);    # FIXME: handle error?
-    if (defined sysread($fd, my $buf = '', 100000)) {
+    return \%ret unless open $fd, '<:raw', $file;
+    sysseek $fd, $offset, Fcntl::SEEK_SET;    # FIXME: handle error?
+    if (defined sysread $fd, my $buf = '', 100000) {
         $ret{offset} = $offset;
         $ret{data} = $buf;
     }
-    if (my $new_offset = sysseek($fd, 0, Fcntl::SEEK_CUR)) {
+    if (my $new_offset = sysseek $fd, 0, Fcntl::SEEK_CUR) {
         $self->{"_$offset_name"} = $new_offset;
     }
-    close($fd);
+    close $fd;
     return \%ret;
 }
 
@@ -1249,8 +1249,8 @@ sub _optimize_image ($image, $job_settings, $optipng_bin = 'optipng', $pngquant_
         sleep OPTIMIZE_RETRY_DELAY;
     }
     die "$OPTIMIZE_ERROR failed to execute $command[0]: $!\n" if $? == -1;
-    die sprintf("$OPTIMIZE_ERROR %s failed with signal %d\n", $command[0], $? & 127) if $? & 127;
-    die sprintf("$OPTIMIZE_ERROR %s exited with non-zero return code %d\n", $command[0], $? >> 8) if $?;
+    die sprintf "$OPTIMIZE_ERROR %s failed with signal %d\n", $command[0], $? & 127 if $? & 127;
+    die sprintf "$OPTIMIZE_ERROR %s exited with non-zero return code %d\n", $command[0], $? >> 8 if $?;
     return 1;
 }
 

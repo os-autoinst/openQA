@@ -169,7 +169,7 @@ sub _can_grab_job {
     else {
         for my $job_id_to_grab (@$job_ids_to_grab) {
             next if $worker->find_current_or_pending_job($job_id_to_grab);
-            $reason_to_reject_job = 'already busy with job(s) ' . join(', ', @{$worker->current_job_ids});
+            $reason_to_reject_job = 'already busy with job(s) ' . join ', ', @{$worker->current_job_ids};
             last;
         }
     }

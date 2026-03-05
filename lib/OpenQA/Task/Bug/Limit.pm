@@ -27,7 +27,7 @@ sub _limit ($job) {
         $bug->delete;
         $cleaned{$bug->id} = $bug->bugid;
     }
-    $app->emit_event('openqa_bugs_cleaned', {deleted => scalar(keys(%cleaned))});
+    $app->emit_event('openqa_bugs_cleaned', {deleted => scalar keys %cleaned});
     $job->note(bugs_cleaned => \%cleaned);
 }
 

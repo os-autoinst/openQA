@@ -158,7 +158,7 @@ sub edit ($self) {
             0, \@error_messages);
         if ($needle_info) {
             $needle_info->{matches} = $screenshot->{matches};
-            push(@needles, $needle_info);
+            push @needles, $needle_info;
         }
     }
     if (my $module_detail_needles = $module_detail->{needles}) {
@@ -182,12 +182,12 @@ sub edit ($self) {
                     height => int $match->{h},
                     type => 'match',
                 );
-                $area{margin} = int($match->{margin}) if defined $match->{margin};
-                $area{match} = int($match->{match}) if defined $match->{match};
+                $area{margin} = int $match->{margin} if defined $match->{margin};
+                $area{match} = int $match->{match} if defined $match->{match};
                 $area{click_point} = $match->{click_point} if defined $match->{click_point};
-                push(@$matches, \%area);
+                push @$matches, \%area;
             }
-            push(@needles, $needle_info);
+            push @needles, $needle_info;
         }
     }
 
@@ -204,19 +204,16 @@ sub edit ($self) {
             my $new_needle_tags = $new_needle->tags;
             my $joined_tags = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';
             # show warning for new needle with matching tags
-            push(
-                @error_messages,
-                sprintf(
-                    'A new needle with matching tags has been created since the job started: %s (tags: %s)',
-                    $new_needle->filename, $joined_tags
-                ));
+            push @error_messages,
+              sprintf 'A new needle with matching tags has been created since the job started: %s (tags: %s)',
+              $new_needle->filename, $joined_tags;
             # get needle info to show the needle also in selection
             my $needle_info
               = $self->_extended_needle_info($needle_dir, $new_needle->name, \%basic_needle_data, $new_needle->path,
                 undef, \@error_messages)
               || next;
             $needle_info->{title} = 'new: ' . $needle_info->{title};
-            push(@needles, $needle_info);
+            push @needles, $needle_info;
         }
     }
 
@@ -249,7 +246,7 @@ sub edit ($self) {
 
     # clear tags, area and matches of screenshot and prepend it to needles
     $screenshot->{tags} = $screenshot->{area} = $screenshot->{matches} = [];
-    unshift(@needles, $screenshot);
+    unshift @needles, $screenshot;
 
     $self->stash(
         {
@@ -335,7 +332,7 @@ sub _extended_needle_info (
     my ($needle_info, $err)
       = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir, $needle_ref, $needle_url);
     unless (defined $needle_info) {
-        push(@$error_messages, "Could not parse needle $needle_name for $distri $version: $err");
+        push @$error_messages, "Could not parse needle $needle_name for $distri $version: $err";
         return undef;
     }
 
@@ -358,7 +355,7 @@ sub _extended_needle_info (
         $needle_info->{title} = $needle_info->{avg_similarity} . '%: ' . $needle_name;
     }
     for my $tag (@{$needle_info->{tags}}) {
-        push(@$overall_list_of_tags, $tag) unless grep(/^$tag$/, @$overall_list_of_tags);
+        push @$overall_list_of_tags, $tag unless grep /^$tag$/, @$overall_list_of_tags;
     }
     return $needle_info;
 }
@@ -506,7 +503,7 @@ sub viewimg ($self) {
 
         # handle case when the needle has (for some reason) no tags
         if (!$tags) {
-            push(@{$needles_by_tag{'tags unknown'} //= []}, $needle_info);
+            push @{$needles_by_tag{'tags unknown'} //= []}, $needle_info;
             return undef;
         }
 
@@ -517,7 +514,7 @@ sub viewimg ($self) {
         for my $tag (@$tags) {
             # ... but only to tags the test was actually looking for
             if (my $needles = $needles_by_tag{$tag}) {
-                push(@$needles, $needle_info);
+                push @$needles, $needle_info;
             }
         }
     };
@@ -564,7 +561,7 @@ sub viewimg ($self) {
     }
 
     # sort needles by average similarity
-    my $has_selection = defined($primary_match);
+    my $has_selection = defined $primary_match;
     for my $tag (keys %needles_by_tag) {
         my @sorted_needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} }
           @{$needles_by_tag{$tag}};

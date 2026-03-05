@@ -89,8 +89,8 @@ sub _limit ($job, $args = undef) {
             screenshots_per_batch => $screenshots_per_batch,
         );
         my $ids = $gru->enqueue(limit_screenshots => \%args, \%options);
-        push(@screenshot_cleanup_info, \%args);
-        push(@parent_minion_job_ids, $ids->{minion_id});
+        push @screenshot_cleanup_info, \%args;
+        push @parent_minion_job_ids, $ids->{minion_id};
     }
     $job->note(screenshot_cleanup => \@screenshot_cleanup_info);
     $gru->enqueue(ensure_results_below_threshold => {}, {parents => \@parent_minion_job_ids})

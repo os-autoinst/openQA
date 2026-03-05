@@ -162,7 +162,7 @@ qq(You first need to clone the <a href="https://github.com/os-autoinst/os-autoin
     catch ($e) {
         return $self->stash(flash_error => "Unable to parse scenario definitions for the specified preset: $e")
     }
-    my $e = join("\n", @{$self->app->validate_yaml($defs, 'JobScenarios-01.yaml')});
+    my $e = join "\n", @{$self->app->validate_yaml($defs, 'JobScenarios-01.yaml')};
     return $self->stash(flash_error => "Unable to validate scenarios definitions of the specified preset:\n$e") if $e;
     $preset->{scenario_definitions} = $defs_yaml;
     return undef unless my @products = values %{$defs->{products}};
@@ -244,26 +244,25 @@ sub list_ajax ($self) {
         if (my $cd = $comment_data->{$job_id}) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
         }
-        push(
-            @list,
-            {
-                DT_RowId => 'job_' . $job_id,
-                id => $job_id,
-                result_stats => $job->result_stats,
-                deps => $job->dependencies,
-                clone => $job->clone_id,
-                test => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri => $job->DISTRI // '',
-                version => $job->VERSION // '',
-                flavor => $job->FLAVOR // '',
-                arch => $job->ARCH // '',
-                build => $job->BUILD // '',
-                testtime => ($job->t_finished // $job->t_updated // '') . 'Z',
-                result => $job->result,
-                group => $job->group_id,
-                comment_data => $rendered_data,
-                state => $job->state,
-            });
+        push @list,
+          {
+            DT_RowId => 'job_' . $job_id,
+            id => $job_id,
+            result_stats => $job->result_stats,
+            deps => $job->dependencies,
+            clone => $job->clone_id,
+            test => $job->TEST . '@' . ($job->MACHINE // ''),
+            distri => $job->DISTRI // '',
+            version => $job->VERSION // '',
+            flavor => $job->FLAVOR // '',
+            arch => $job->ARCH // '',
+            build => $job->BUILD // '',
+            testtime => ($job->t_finished // $job->t_updated // '') . 'Z',
+            result => $job->result,
+            group => $job->group_id,
+            comment_data => $rendered_data,
+            state => $job->state,
+          };
     }
     $self->render(json => {data => \@list});
 }
@@ -310,24 +309,23 @@ sub list_running_ajax ($self) {
     my @running;
     while (my $job = $running->next) {
         my $job_id = $job->id;
-        push(
-            @running,
-            {
-                DT_RowId => 'job_' . $job_id,
-                id => $job_id,
-                clone => $job->clone_id,
-                test => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri => $job->DISTRI // '',
-                version => $job->VERSION // '',
-                flavor => $job->FLAVOR // '',
-                arch => $job->ARCH // '',
-                build => $job->BUILD // '',
-                testtime => ($job->t_started // '') . 'Z',
-                result => $job->result,
-                group => $job->group_id,
-                state => $job->state,
-                progress => $job->progress_info,
-            });
+        push @running,
+          {
+            DT_RowId => 'job_' . $job_id,
+            id => $job_id,
+            clone => $job->clone_id,
+            test => $job->TEST . '@' . ($job->MACHINE // ''),
+            distri => $job->DISTRI // '',
+            version => $job->VERSION // '',
+            flavor => $job->FLAVOR // '',
+            arch => $job->ARCH // '',
+            build => $job->BUILD // '',
+            testtime => ($job->t_started // '') . 'Z',
+            result => $job->result,
+            group => $job->group_id,
+            state => $job->state,
+            progress => $job->progress_info,
+          };
     }
     my %response = (data => \@running);
     my $max_running = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs};
@@ -359,25 +357,24 @@ sub list_scheduled_ajax ($self) {
     my @scheduled;
     while (my $job = $scheduled->next) {
         my $job_id = $job->id;
-        push(
-            @scheduled,
-            {
-                DT_RowId => 'job_' . $job_id,
-                id => $job_id,
-                clone => $job->clone_id,
-                test => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri => $job->DISTRI // '',
-                version => $job->VERSION // '',
-                flavor => $job->FLAVOR // '',
-                arch => $job->ARCH // '',
-                build => $job->BUILD // '',
-                testtime => $job->t_created . 'Z',
-                result => $job->result,
-                group => $job->group_id,
-                state => $job->state,
-                blocked_by_id => $job->blocked_by_id,
-                prio => $job->priority,
-            });
+        push @scheduled,
+          {
+            DT_RowId => 'job_' . $job_id,
+            id => $job_id,
+            clone => $job->clone_id,
+            test => $job->TEST . '@' . ($job->MACHINE // ''),
+            distri => $job->DISTRI // '',
+            version => $job->VERSION // '',
+            flavor => $job->FLAVOR // '',
+            arch => $job->ARCH // '',
+            build => $job->BUILD // '',
+            testtime => $job->t_created . 'Z',
+            result => $job->result,
+            group => $job->group_id,
+            state => $job->state,
+            blocked_by_id => $job->blocked_by_id,
+            prio => $job->priority,
+          };
     }
     $self->render(json => {data => \@scheduled});
 }
@@ -417,7 +414,7 @@ sub details ($self) {
             flags => []};
 
         for my $flag (qw(important fatal milestone always_rollback)) {
-            push(@{$hash->{flags}}, $flag) if $module->{$flag};
+            push @{$hash->{flags}}, $flag if $module->{$flag};
         }
 
         push @ret, $hash;
@@ -621,7 +618,7 @@ sub _render_badge ($self, $badge_text, $badge_color, $status = 200) {
     my $charlen = 11;
     my $badge_prefix_width = 85;
     my $badge_suffix_padding = 2 * 5;
-    my $badge_width = $badge_prefix_width + $badge_suffix_padding + $charlen * length($badge_text);
+    my $badge_width = $badge_prefix_width + $badge_suffix_padding + $charlen * length $badge_text;
     for my $char (keys %BADGE_CHARLENS) {
         $badge_width -= $charlen * (() = $badge_text =~ /$char/g) * (1 - $BADGE_CHARLENS{$char});
     }
@@ -706,27 +703,26 @@ sub job_next_previous_ajax ($self) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
         }
         my $dependencies = $job->dependencies($children_by_job->{$job_id} || [], $parents_by_job->{$job_id} || []);
-        push(
-            @data,
-            {
-                DT_RowId => 'job_result_' . $job_id,
-                id => $job_id,
-                name => $job->name,
-                distri => $job->DISTRI,
-                version => $job->VERSION,
-                build => $job->BUILD,
-                deps => $dependencies,
-                result => $job->result,
-                result_stats => $job->result_stats,
-                state => $job->state,
-                clone => $job->clone_id,
-                failedmodules => $failed_modules_by_job->{$job_id},
-                iscurrent => $job_id == $main_jobid ? 1 : undef,
-                finished => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
-                duration => $job->t_started
-                  && $job->t_finished ? $self->format_time_duration($job->t_finished - $job->t_started) : 0,
-                comment_data => $rendered_data,
-            });
+        push @data,
+          {
+            DT_RowId => 'job_result_' . $job_id,
+            id => $job_id,
+            name => $job->name,
+            distri => $job->DISTRI,
+            version => $job->VERSION,
+            build => $job->BUILD,
+            deps => $dependencies,
+            result => $job->result,
+            result_stats => $job->result_stats,
+            state => $job->state,
+            clone => $job->clone_id,
+            failedmodules => $failed_modules_by_job->{$job_id},
+            iscurrent => $job_id == $main_jobid ? 1 : undef,
+            finished => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
+            duration => $job->t_started
+              && $job->t_finished ? $self->format_time_duration($job->t_finished - $job->t_started) : 0,
+            comment_data => $rendered_data,
+          };
     }
     $data[0]->{islatest} = 1 if @data;
     if (($source_count{p} // 0) > $p_limit) {  # the query requests `$p_limit + 1` so we know when the limit was reached
@@ -841,7 +837,7 @@ sub _prepare_job_results ($self, $jobs, $job_ids, %args) {
         my $distri = $job->DISTRI;
         my $version = $job->VERSION;
         $archs{$distri}{$version}{$flavor} //= [];
-        push(@{$archs{$distri}{$version}{$flavor}}, $arch)
+        push @{$archs{$distri}{$version}{$flavor}}, $arch
           unless (grep { $arch eq $_ } @{$archs{$distri}{$version}{$flavor}});
 
         # Populate %results by putting all distri, version, build, flavor into
@@ -908,17 +904,17 @@ sub _add_distri_and_version_to_summary ($array_to_add_parts_to, $distri, $versio
         next unless $part;
 
         # separate distri and version with a whitespace
-        push(@$array_to_add_parts_to, ' ') if (@$array_to_add_parts_to);
+        push @$array_to_add_parts_to, ' ' if (@$array_to_add_parts_to);
 
         if (ref $part eq 'ARRAY') {
             # separate multiple distris/versions using a slash
             if (@$part) {
-                push(@$array_to_add_parts_to, map { ($raw ? Mojo::ByteStream->new($_) : $_, '/') } @$part);
-                pop(@$array_to_add_parts_to);
+                push @$array_to_add_parts_to, map { ($raw ? Mojo::ByteStream->new($_) : $_, '/') } @$part;
+                pop @$array_to_add_parts_to;
             }
         }
         elsif (ref $part ne 'HASH') {
-            push(@$array_to_add_parts_to, $raw ? Mojo::ByteStream->new($part) : $part);
+            push @$array_to_add_parts_to, $raw ? Mojo::ByteStream->new($part) : $part;
         }
     }
 }
@@ -960,9 +956,9 @@ sub overview ($self) {
     my @summary_parts;
     if (@$groups) {
         # use groups if present
-        push(@summary_parts,
-            map { ($self->link_to($_->name => $self->url_for('group_overview', groupid => $_->id)), ', ') } @$groups);
-        pop(@summary_parts);
+        push @summary_parts,
+          map { ($self->link_to($_->name => $self->url_for('group_overview', groupid => $_->id)), ', ') } @$groups;
+        pop @summary_parts;
     }
     else {
         # add pre-formatted distri and version as Mojo::ByteStream
@@ -1051,7 +1047,7 @@ sub _add_dependency_to_graph ($dependency_data, $parent_job_id, $child_job_id, $
     if (   $dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
         || $dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
     {
-        push(@{$dependency_data->{edges}}, {from => $parent_job_id, to => $child_job_id});
+        push @{$dependency_data->{edges}}, {from => $parent_job_id, to => $child_job_id};
         return undef;
     }
 
@@ -1069,19 +1065,19 @@ sub _add_dependency_to_graph ($dependency_data, $parent_job_id, $child_job_id, $
         # both jobs are already part of a cluster: merge clusters unless they're already the same
         return undef if $job1_cluster_id eq $job2_cluster_id;
         my $jobs_to_move = delete $cluster->{$job2_cluster_id};
-        push(@{$cluster->{$job1_cluster_id}}, @$jobs_to_move);
+        push @{$cluster->{$job1_cluster_id}}, @$jobs_to_move;
         $cluster_by_job->{$_} = $job1_cluster_id for @$jobs_to_move;
     }
     elsif ($job1_cluster_id) {
         # only job1 is already in a cluster: move job2 into that cluster, too
         my $cluster = $cluster->{$job1_cluster_id};
-        push(@$cluster, $parent_job_id);
+        push @$cluster, $parent_job_id;
         $cluster_by_job->{$parent_job_id} = $job1_cluster_id;
     }
     elsif ($job2_cluster_id) {
         # only job2 is already in a cluster: move job1 into that cluster, too
         my $cluster = $cluster->{$job2_cluster_id};
-        push(@$cluster, $child_job_id);
+        push @$cluster, $child_job_id;
         $cluster_by_job->{$child_job_id} = $job2_cluster_id;
     }
     else {
@@ -1095,7 +1091,7 @@ sub _add_dependency_to_graph ($dependency_data, $parent_job_id, $child_job_id, $
 
 sub _add_dependency_to_node ($node, $parent, $dependency_type) {
     if (my $key = OpenQA::JobDependencies::Constants::name($dependency_type)) {
-        push(@{$node->{$key}}, $parent->TEST);
+        push @{$node->{$key}}, $parent->TEST;
     }
 }
 
@@ -1131,7 +1127,7 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
     );
     $node{$_} = [] for OpenQA::JobDependencies::Constants::names;
     $visited->{$job_id} = 1;
-    push(@{$dependency_data->{nodes}}, \%node);
+    push @{$dependency_data->{nodes}}, \%node;
 
     # add parents
     for my $parent ($job->parents->all) {
