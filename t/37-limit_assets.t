@@ -225,8 +225,7 @@ my @expected_assets_with_max_job = (
         picked_into_parent_id => 1,
         name => 'iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
         fixed => 0,
-        groups => {1001 => 99963, 1002 => 99961}
-        ,    # specific job groups still visible when a job group is within a parent group
+        groups => {1001 => 99963, 1002 => 99961},    # groups visible when within a parent group
         parents => {1 => 1},
         type => 'iso',
         pending => 1,
