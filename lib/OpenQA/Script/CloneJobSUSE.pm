@@ -10,8 +10,13 @@ use OpenQA::JobSettings;
 our @EXPORT = qw(detect_maintenance_update);
 
 sub collect_incident_repos ($url_handler, $settings) {
-    my $error = OpenQA::JobSettings::expand_placeholders($settings);
-    die "Expanding variables failed: $error" if $error;
+    my ($error, $unexpanded) = OpenQA::JobSettings::expand_placeholders($settings);
+    die "Expanding variables failed: $error\n" if $error;
+    if ($unexpanded && @$unexpanded) {
+        my $vars = join(', ', @$unexpanded);
+        die
+"The following variables are unexpanded: $vars. Specify the necessary variables at the command line for expansion. See https://open.qa/docs/#_variable_expansion for details\n";
+    }
     if (my $repo = $settings->{INCIDENT_REPO}) {
         return verify_incident_repos($url_handler, $repo);
     }
@@ -31,9 +36,6 @@ sub verify_incident_repos ($url_handler, $incident_repos) {
     my @incident_urls;
     my $ua = $url_handler->{ua};
     foreach my $incident (split /,/, $incident_repos) {
-        die
-"URL '$incident' contains an unexpanded variable. Specify the necessary variables at the command line for expansion. See https://open.qa/docs/#_variable_expansion for details\n"
-          if $incident =~ /%/;
         push @incident_urls, $incident unless $ua->get($incident)->is_success;
     }
     return \@incident_urls;
