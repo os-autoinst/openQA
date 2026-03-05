@@ -135,4 +135,11 @@ subtest 'two-pass variable expansion' => sub {
       '%CASEDIR% preserved during worker pass, handled instead by _engine_workit_step_2';
 };
 
+subtest 'unexpanded variables' => sub {
+    my %settings = (URL => 'http://%MIRROR%/repo/%VERSION%', VERSION => '15-SP1');
+    my ($error, $unexpanded) = OpenQA::JobSettings::expand_placeholders(\%settings);
+    is $error, undef, 'no error';
+    is_deeply $unexpanded, ['MIRROR'], 'MIRROR detected as unexpanded';
+};
+
 done_testing;
