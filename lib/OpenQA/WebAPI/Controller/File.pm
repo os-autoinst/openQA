@@ -52,7 +52,7 @@ sub needle ($self) {
     $path = substr $path, 0, -1;
     if (index($path, '/needles') != -1) {
         # we got something like /var/lib/openqa/share/tests/distri/needles/(subdir)/needle.json
-        my @elems = split '/needles', $path, 2;
+        my @elems = split qr{/needles}, $path, 2;
         if (defined $elems[1]) {
             $needledir .= $elems[1];
         }

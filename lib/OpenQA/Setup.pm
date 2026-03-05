@@ -72,7 +72,7 @@ sub _load_prio_throttling ($app, $config) {
         return;
     }
     my %hash = map { my ($k, $s, $r) = $_ =~ /$u/g; $k => {scale => $s, reference => $r // 0} }
-      split ',', $throttling;
+      split /,/, $throttling;
     return \%hash;
 }
 
@@ -394,7 +394,7 @@ sub update_config ($config, @namespaces) {
 }
 
 sub prepare_settings_ui_keys ($app) {
-    my @link_keys = split ',', $app->config->{job_settings_ui}->{keys_to_render_as_links};
+    my @link_keys = split /,/, $app->config->{job_settings_ui}->{keys_to_render_as_links};
     $app->config->{settings_ui_links} = {map { $_ => 1 } @link_keys};
 }
 

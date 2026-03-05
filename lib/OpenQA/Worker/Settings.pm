@@ -30,7 +30,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     my %global_settings;
     _read_section($cfg, 'global', \%global_settings);
     _read_section($cfg, $_, \%global_settings) for @{_relevant_sections($cfg, $instance_number)};
-    _read_section($cfg, "class:$_", \%global_settings, 1) for split ',', $global_settings{WORKER_CLASS} // '';
+    _read_section($cfg, "class:$_", \%global_settings, 1) for split /,/, $global_settings{WORKER_CLASS} // '';
 
     # read global settings from environment variables
     for my $var (qw(LOG_DIR TERMINATE_AFTER_JOBS_DONE)) {
@@ -140,7 +140,7 @@ sub is_local_worker ($self) {
 }
 
 sub has_class ($self, $worker_class) {
-    my $c = $self->{_worker_classes} //= {map { $_ => 1 } split ',', $self->global_settings->{WORKER_CLASS} // ''};
+    my $c = $self->{_worker_classes} //= {map { $_ => 1 } split /,/, $self->global_settings->{WORKER_CLASS} // ''};
     return exists $c->{$worker_class};
 }
 

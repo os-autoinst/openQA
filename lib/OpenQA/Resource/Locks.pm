@@ -106,7 +106,7 @@ sub barrier_wait ($name = undef, $jobid = undef, $where = undef, $check_dead_job
     return -1 unless my $barrier = $barriers->single;
 
     my $jobschema = OpenQA::Schema->singleton->resultset('Jobs');
-    my @jobs = split ',', $barrier->locked_by // '';
+    my @jobs = split /,/, $barrier->locked_by // '';
 
     if ($check_dead_job) {
         my @related_ids = map { scalar $_->id } $barrier->owner->parents->all, $barrier->owner->children->all;
