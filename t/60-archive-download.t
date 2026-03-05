@@ -67,6 +67,12 @@ subtest 'Archive download' => sub {
     $asset_path->dirname->make_path;
     $asset_path->spew('iso data');
 
+    $t->get_ok('/tests/' . $job->id . '/archive')->status_is(302)
+      ->header_is('Location' => '/login?return_page=%2Ftests%2F' . $job->id . '%2Farchive');
+
+    $t->get_ok('/');
+    ok $case->login($t, 'admin'), 'Logged in as admin';
+
     $t->get_ok('/tests/' . $job->id . '/archive')->status_is(302)->header_like('Location' => qr|/archives/job_|);
     my $archive_url = $t->tx->res->headers->location;
     $t->get_ok('/tests/' . $job->id . '/downloads_ajax')->status_is(200)
@@ -258,6 +264,9 @@ subtest 'Controller extra tests' => sub {
     $mock_minion->set_always(backend => $mock_backend);
     $mock_backend->set_always(list_jobs => {jobs => []});
     $mock_minion->set_true('enqueue');
+
+    $case->login($t, 'admin');
+
     $t->get_ok('/tests/' . $job->id . '/archive')->status_is(200)->content_like(qr/Preparing Archive for Job/);
     $mock_minion->called_ok('enqueue', 'Minion job enqueued');
     $mock_minion->clear;
