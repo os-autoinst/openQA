@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Test::Warnings ':report_warnings';
+use Test::Warnings qw(warning :report_warnings);
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -77,10 +77,23 @@ subtest 'similar but invalid settings' => sub {
 subtest 'repos with variables' => sub {
     my $settings = {INCIDENT_REPO => 'http://%MIRROR%/incident_repo/openqa,http://%MIRROR%/incident_repo_1/openqa'};
     my ($fake_ua, $url_handler) = create_mock;
-    throws_ok { detect_maintenance_update(1, $url_handler, $settings) } qr/unexpanded variable/,
-      'unexpanded repos throw an error';
+    $fake_ua->is_validrepo(1);
+    my $w = warning { detect_maintenance_update(1, $url_handler, $settings) };
+    is ref($w), 'ARRAY', 'got multiple warnings';
+    like $w->[0], qr/URL '.*incident_repo\/openqa' contains unexpanded variables: MIRROR/,
+      'first unexpanded repo skipped with warning';
+    like $w->[1], qr/URL '.*incident_repo_1\/openqa' contains unexpanded variables: MIRROR/,
+      'second unexpanded repo skipped with warning';
+
     $settings->{MIRROR} = 'my.mirror';
-    lives_ok { detect_maintenance_update(1, $url_handler, $settings) }, 'Specified variables are expanded';
+    lives_ok { detect_maintenance_update(1, $url_handler, $settings) } 'Specified variables are expanded';
+
+    my $settings_unrelated_unexpanded = {
+        INCIDENT_REPO => 'http://foo/incident_repo/openqa',
+        SOME_OTHER_VAR => '%UNEXP_VAR%',
+    };
+    lives_ok { detect_maintenance_update(1, $url_handler, $settings_unrelated_unexpanded) }
+    'Unrelated unexpanded variables are ignored';
 };
 
 done_testing();
