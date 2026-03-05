@@ -196,6 +196,7 @@ subtest 'Test configuration default modes' => sub {
             max_job_time_prio_scale => 100,
             scheduled_product_min_storage_duration => 34,
             prio_throttling_parameters => '',
+            job_group_overview_max_jobs => 5000,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
