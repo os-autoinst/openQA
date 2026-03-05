@@ -39,7 +39,7 @@ sub get_pod_from_controllers ($app, @args) {
             next unless ($rt->to->{controller});
             my $filename = ucfirst($rt->to->{controller});
             if ($filename =~ /_/) {
-                $filename = join '', map ucfirst, split /_/, $filename;
+                $filename = join '', map { ucfirst } split /_/, $filename;
             }
             $filename .= '.pm';
             $controllers{$rt->to->{controller}} = $filename;
