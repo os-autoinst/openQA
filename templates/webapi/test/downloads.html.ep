@@ -1,7 +1,7 @@
 % my $assets = $job->jobs_assets;
 % if (@$resultfiles || @$ulogs || $assets->count) {
 <div class="mb-3">
-    %= link_to url_for('test_archive', testid => $job->id) => (class => 'btn btn-primary', title => 'Download all test results and assets as a ZIP archive') => begin
+    %= link_to url_for('test_archive', testid => $job->id) => (class => 'btn btn-primary', title => 'Download all test results and assets as a ZIP archive', rel => 'nofollow') => begin
         <i class="fa fa-download"></i> Download All (ZIP)
     % end
 </div>
