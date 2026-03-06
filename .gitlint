@@ -1,3 +1,8 @@
 [general]
 contrib=contrib-title-conventional-commits
 ignore=body-min-length,body-is-missing
+regex-style-search=True
+
+[ignore-body-lines]
+# Accept lines stating only a long unwrappable URL
+regex=^https?:\/\/\S+$
