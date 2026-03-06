@@ -643,6 +643,16 @@ subtest 'route to latest' => sub {
     like $build_href, qr/groupid=1001/, 'href to test overview';
     like $build_href, qr/version=13.1/, 'href to test overview';
     like $build_href, qr/build=0091/, 'href to test overview';
+    $jobs->find(99963)->update({result => FAILED, state => DONE});
+    $jobs->find(99962)->update({result => PASSED, state => DONE});
+    $t->get_ok('/tests/latest?test=kde&machine=64bit')->status_is(200);
+    is $t->tx->res->dom->at('#info_box .card-header a')->{href}, '/tests/99963', 'returns latest job';
+    $t->get_ok('/tests/latest?test=kde&machine=64bit&result=failed')->status_is(200);
+    is $t->tx->res->dom->at('#info_box .card-header a')->{href}, '/tests/99963', 'returns latest failed job';
+    $t->get_ok('/tests/latest?test=kde&machine=64bit&result=passed')->status_is(200);
+    is $t->tx->res->dom->at('#info_box .card-header a')->{href}, '/tests/99962',
+      'returns latest passed job (skipping newer failed one)';
+    $t->get_ok('/tests/latest?test=kde&machine=64bit&result=parallel_failed')->status_is(404);
     $t->get_ok('/tests/latest?test=foobar')->status_is(404);
 };
 
