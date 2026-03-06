@@ -549,6 +549,10 @@ sub create_downloads_list ($job_settings) {
     return \%downloads;
 }
 
+sub _relates_to_default_checkout ($dir_job_variable) {
+    return !$dir_job_variable || !(looks_like_url_with_scheme($dir_job_variable) && path($dir_job_variable)->is_abs);
+}
+
 sub create_git_clone_list ($job_settings, $clones = {}) {
     return $clones unless my $distri = $job_settings->{DISTRI};
     return $clones unless my $effective_distri = effective_distri($job_settings);
@@ -556,9 +560,9 @@ sub create_git_clone_list ($job_settings, $clones = {}) {
     my $needledir = needledir($effective_distri, undef, undef, $distri);
     my $config = OpenQA::App->singleton->config->{'scm git'};
     if ($config->{git_auto_update} eq 'yes') {
-        # Potential existing git clones to update without having CASEDIR or NEEDLES_DIR
-        not $job_settings->{CASEDIR} and $clones->{$testcasedir} = undef;
-        not $job_settings->{NEEDLES_DIR} and $clones->{$needledir} = undef;
+        # Update potentially existing default Git checkouts unless CASEDIR/NEEDLES_DIR point to a custom location
+        _relates_to_default_checkout($job_settings->{CASEDIR}) and $clones->{$testcasedir} = undef;
+        _relates_to_default_checkout($job_settings->{NEEDLES_DIR}) and $clones->{$needledir} = undef;
     }
     if ($config->{git_auto_clone} eq 'yes') {
         # Check CASEDIR and NEEDLES_DIR
@@ -844,7 +848,7 @@ sub find_video_files { path(shift)->list_tree->grep(VIDEO_FILE_NAME_REGEX) }
 # workaround https://github.com/mojolicious/mojo/issues/1629
 sub fix_top_level_help { @ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/ }
 
-sub looks_like_url_with_scheme { return !!Mojo::URL->new(shift)->scheme }
+sub looks_like_url_with_scheme ($value) { !!Mojo::URL->new($value)->scheme }
 
 sub check_df ($dir) {
     my $df = Filesys::Df::df($dir, 1) // {};
