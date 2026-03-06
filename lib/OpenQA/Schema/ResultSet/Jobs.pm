@@ -16,7 +16,7 @@ use OpenQA::Jobs::Constants qw(PENDING_STATES EXECUTION_STATES);
 use OpenQA::Log qw(log_trace log_debug log_info);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
-use OpenQA::Utils 'testcasedir';
+use OpenQA::Utils qw(testcasedir href_to_bugref);
 use Mojo::File 'path';
 use Mojo::JSON 'encode_json';
 use Mojo::URL;
@@ -540,7 +540,9 @@ sub mark_job_linked ($self, $jobid, $referer_url) {
     my $comments = $job->comments;
     return undef if $comments->search({text => {like => 'label:linked%'}}, {rows => 1})->first;
     my $user = $self->result_source->schema->resultset('Users')->system({select => ['id']});
-    $comments->create_with_event({text => "label:linked Job mentioned in $referer_url", user_id => $user->id});
+    my $bugref = href_to_bugref($referer_url);
+    my $label = "label:linked:$bugref mentions this job";
+    $comments->create_with_event({text => $label, user_id => $user->id});
 }
 
 1;

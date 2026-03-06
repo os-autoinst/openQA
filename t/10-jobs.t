@@ -1155,4 +1155,11 @@ subtest 'error handling when reading job module results' => sub {
     is scalar @{$results->{details}}, 0, 'empty details returned if JSON file malformed' or always_explain $results;
 };
 
+subtest 'marking job as linked' => sub {
+    OpenQA::App->singleton->config->{global}->{recognized_referers} = ['progress.opensuse.org'];
+    $jobs->mark_job_linked(99937, 'https://progress.opensuse.org/issues/194990');
+    is_deeply [map { $_->text } $jobs->find(99937)->comments], ['label:linked:poo#194990 mentions this job'],
+      'bugref resolved (to be rendered as such in comment) and used in label (to be not treated like an actual bugref)';
+};
+
 done_testing();
