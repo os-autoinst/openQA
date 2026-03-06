@@ -35,9 +35,30 @@ Deletes an existing user.
 sub delete ($self) {
     my $user = $self->schema->resultset('Users')->find($self->param('id'));
     return $self->render(json => {error => 'Not found'}, status => 404) unless $user;
-    my $result = $user->delete();
-    $self->emit_event('openqa_user_deleted', {username => $user->username});
-    $self->render(json => {result => $result});
+    my $username = $user->username;
+    $user->anonymize;
+    $self->emit_event('openqa_user_deleted', {username => $username});
+    $self->render(json => {result => 1});
+}
+
+=over 4
+
+=item delete_self()
+
+Delete the current user's own account (anonymize all data).
+
+=back
+
+=cut
+
+sub delete_self ($self) {
+    my $user = $self->current_user;
+    return $self->render(json => {error => 'Not found'}, status => 404) unless $user;
+    return $self->render(json => {error => 'User already deleted'}, status => 400) if $user->is_deleted;
+    my $username = $user->username;
+    $user->anonymize;
+    $self->emit_event('openqa_user_deleted', {username => $username});
+    $self->render(json => {result => 1});
 }
 
 =over 4
