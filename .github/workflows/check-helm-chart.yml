@@ -26,6 +26,9 @@ jobs:
         run: make test-helm-lint
   install-chart:
     runs-on: ubuntu-latest
+    needs: lint-chart
+    env:
+      REGISTRY_PATH: registry.opensuse.org/devel/openqa/containers16.0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,5 +49,16 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
 
+      - name: Download images
+        run: |
+          RETRY=3 SLEEP=15 tools/retry docker pull $REGISTRY_PATH/openqa_webui:latest
+          RETRY=3 SLEEP=15 tools/retry docker pull $REGISTRY_PATH/openqa_worker:latest
+
+      - name: Load images into the Cluster
+        run: |
+          kind load docker-image --name chart-testing \
+          $REGISTRY_PATH/openqa_webui:latest \
+          $REGISTRY_PATH/openqa_worker:latest
+
       - name: Run chart-testing
-        run: make RETRY=3 test-helm-install
+        run: make test-helm-install
