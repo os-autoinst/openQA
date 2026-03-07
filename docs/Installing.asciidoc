@@ -675,6 +675,50 @@ secret = 1234567890ABCDEF
 If you switch authentication method from Fake to any other, review your API keys!
 You may be vulnerable for up to a day until Fake API key expires.
 
+
+[[priority-throttling]]
+=== Job Priority Throttling
+
+Priority throttling of openQA test jobs can be configured based on specific
+parameter values found in the job settings. This mechanism is primarily designed
+to encourage the use of efficient resources.
+
+The throttling system allows for the dynamic adjustment of job priorities based
+on parameter values in settings, such as hardware resources or runtime limits.
+
+Throttling parameters are defined in `openqa.ini`, with the following syntax:
+[source]
+prio_throttling_parameters = parameter_n:scale_n[:reference_n][,…]
+
+where:
+
+* `parameter_n`: the name of a parameter
+* `reference_n`: an optional threshold or reference, that can be zero, making
+the scale negative or positive for values lower or higher than it.
+* `scale_n`: the priority scale factor applied to the difference between the
+parameter and its reference. This number is based on experience and custom needs.
+When it is missing or zero, the throttling isn't applied for the parameter n.
+
+`MAX_JOB_TIME`, the max duration of the job in seconds, can also have a
+throttling scale configured to encourage shorter test runtimes. When this
+parameter is missing in the settings, a `DEFAULT_MAX_JOB_TIME` value is assumed
+(refer to openQA code). A positive `TIMEOUT_SCALE`, 1 by default, may also be
+defined to multiply the job time and the scale applies to the resulting product.
+Its scale only applies to jobs having that value exceeding `DEFAULT_MAX_JOB_TIME`.
+
+When defining a custom `prio_throttling_parameters` configuration,
+administrators must explicitly include the `MAX_JOB_TIME` rule, to retain
+runtime-based throttling.
+
+The final priority of a job is the sum of a base priority, defined in the job
+templates or scenario definitions, plus all adjustments calculated for the
+configured parameters that match the job settings.
+
+**Example:**
+[source]
+prio_throttling_parameters = MAX_JOB_TIME:0.007,QEMURAM:0.005:2048
+
+
 == Run the web UI
 
 To start openQA and enable it to run on each boot call
