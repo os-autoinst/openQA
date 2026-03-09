@@ -204,8 +204,8 @@ sub schedule ($self) {
             }
             ($job_id => ($sort_criteria || $job_id));
         } keys %$cluster_info;
-        my $sort_function = sub {
-            [sort { $sort_criteria{$a} cmp $sort_criteria{$b} } @{shift()}]
+        my $sort_function = sub ($job_ids) {
+            [sort { $sort_criteria{$a} cmp $sort_criteria{$b} } @$job_ids]
         };
         my ($directly_chained_job_sequence, $job_ids);
         try {
