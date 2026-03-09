@@ -125,7 +125,7 @@ sub _check_for_missing_assets ($job, $parents, $options) {
     return undef unless ref $missing_assets eq 'ARRAY';    # most likely an old version of the web UI
     my @relevant_missing_assets;
     for my $missing_asset (@$missing_assets) {
-        my ($type, $name) = split '/', $missing_asset, 2;
+        my ($type, $name) = split qr{/}, $missing_asset, 2;
         push @relevant_missing_assets, $missing_asset
           unless _is_asset_generated_by_cloned_jobs $job, $parents, $name, $options;
     }

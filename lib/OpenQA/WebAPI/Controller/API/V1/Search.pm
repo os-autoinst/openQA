@@ -85,10 +85,10 @@ sub _search_perl_modules {
 
         my $basename = $distri->basename;
         my $last_filename = '';
-        my @lines = split "\n", $stdout;
+        my @lines = split /\n/, $stdout;
         foreach my $match (@lines) {
             next unless length $match;
-            my ($filename, $linenr, $contents) = split ':', $match, 3;
+            my ($filename, $linenr, $contents) = split /:/, $match, 3;
             # Prefix each line with a 5 digit-padded number
             $contents = sprintf('%5d ', $linenr) . $contents;
             # Merge lines occurring in the same file

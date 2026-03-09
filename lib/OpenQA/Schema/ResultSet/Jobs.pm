@@ -379,7 +379,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
 sub _accept_comma_separated_arg_values ($args) {
     for my $arg (qw(state ids result modules modules_result)) {
         next unless my $value = $args->{$arg};
-        $args->{$arg} = [split ',', $value] unless ref $value eq 'ARRAY';
+        $args->{$arg} = [split /,/, $value] unless ref $value eq 'ARRAY';
     }
 }
 

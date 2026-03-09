@@ -516,7 +516,7 @@ sub startup ($self) {
 
     # allow configuring Cross-Origin Resource Sharing (CORS)
     if (my $access_control_allow_origin = $config->{global}->{access_control_allow_origin_header}) {
-        my %allowed_origins = map { trim($_) => 1 } split ',', $access_control_allow_origin;
+        my %allowed_origins = map { trim($_) => 1 } split /,/, $access_control_allow_origin;
         my $fallback_origin = delete $allowed_origins{'*'} ? '*' : undef;
         $app->hook(
             after_render => sub ($c, $output, $format) {

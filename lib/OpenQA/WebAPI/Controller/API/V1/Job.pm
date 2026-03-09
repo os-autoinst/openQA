@@ -115,7 +115,7 @@ sub list ($self) {
     # clearer.
     for my $arg (qw(state ids result)) {
         next unless defined(my $value = $self->param($arg));
-        my $values = $args{$arg} = index($value, ',') != -1 ? [split ',', $value] : $self->every_param($arg);
+        my $values = $args{$arg} = index($value, ',') != -1 ? [split /,/, $value] : $self->every_param($arg);
         if ($arg eq 'ids') {
             for my $id (@$values) {
                 return $self->render(json => {error => 'ids must be integers'}, status => 400)
@@ -834,7 +834,7 @@ sub _restart ($self, %args) {
 
     my $auto = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
     my $comment = $validation->param('comment');
-    my %settings = map { split '=', $_, 2 } @{$validation->every_param('set')};
+    my %settings = map { split /=/, $_, 2 } @{$validation->every_param('set')};
     my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
     push @params, clone => !defined $validation->param('clone') || $validation->param('clone');
     push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');

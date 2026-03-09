@@ -512,7 +512,7 @@ sub _bs_ssh_sign ($key, $realm, $value) {
     die "SSH key file not found at $key" unless -s $key;
     # This needs to be a bit portable for CI testing
     my $tmp = Mojo::File::tempfile('obs-rsync-ssh-keyfile-XXXXX', TMPDIR => 1)->spew($value);
-    my @lines = split "\n", qx/ssh-keygen -Y sign -f "$key" -q -n "$realm" < $tmp/;
+    my @lines = split /\n/, qx/ssh-keygen -Y sign -f "$key" -q -n "$realm" < $tmp/;
     shift @lines;
     pop @lines;
     return join '', @lines;
