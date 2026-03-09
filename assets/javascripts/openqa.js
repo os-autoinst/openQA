@@ -592,9 +592,16 @@ function renderComments(row) {
 
   const label = commentData.label;
   if (label) {
+    const labelUrl = commentData.label_url;
+    if (labelUrl) {
+      html += `<a href="${htmlEscape(labelUrl)}">`;
+    }
     html += `<span id="test-label-${row.id}">`;
     html += `<i class="test-label label_${htmlEscape(label)} fa fa-bookmark" title="Label: ${htmlEscape(label)}"></i>`;
     html += '</span>';
+    if (labelUrl) {
+      html += '</a>';
+    }
   } else if (commentData.comments) {
     html += `<span id="comment-${row.id}">${commentData.comment_icon}</span>`;
   }

@@ -272,6 +272,7 @@ sub _render_comment_data_for_ajax ($self, $job_id, $comment_data) {
     $data{comments} = $comment_data->{comments};
     $data{reviewed} = $comment_data->{reviewed};
     $data{label} = $comment_data->{label};
+    $data{label_url} = $comment_data->{label_url};
     $data{comment_icon} = $self->comment_icon($job_id, $data{comments});
     my $bugs = $comment_data->{bugs};
     $data{bugs} = [

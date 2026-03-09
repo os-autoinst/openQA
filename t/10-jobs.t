@@ -34,8 +34,7 @@ my $schema = OpenQA::Test::Case->new->init_data(
     schema_name => $schema_name
 );
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-my $jobs = $t->app->schema->resultset('Jobs');
-my $users = $t->app->schema->resultset('Users');
+my ($jobs, $users, $comments) = map { $t->app->schema->resultset($_) } qw(Jobs Users Comments);
 
 # for "investigation" tests
 my $fake_git_log = 'deadbeef Break test foo';
@@ -1157,9 +1156,18 @@ subtest 'error handling when reading job module results' => sub {
 
 subtest 'marking job as linked' => sub {
     OpenQA::App->singleton->config->{global}->{recognized_referers} = ['progress.opensuse.org'];
-    $jobs->mark_job_linked(99937, 'https://progress.opensuse.org/issues/194990');
-    is_deeply [map { $_->text } $jobs->find(99937)->comments], ['label:linked:poo#194990 mentions this job'],
+    my $job_id = 99937;
+    my $job = $jobs->find($job_id);
+    $jobs->mark_job_linked($job_id, 'https://progress.opensuse.org/issues/194990');
+    is_deeply [map { $_->text } $job->comments], ['label:linked:poo#194990 mentions this job'],
       'bugref resolved (to be rendered as such in comment) and used in label (to be not treated like an actual bugref)';
+
+    my $comment_data = $comments->comment_data_for_jobs([$job]);
+    subtest 'label recognized' => sub {
+        my $data = $comment_data->{$job_id};
+        is $data->{label}, 'linked:poo#194990', 'added label is recognized';
+        is $data->{label_url}, 'https://progress.opensuse.org/issues/194990', 'URL is extracted again from label';
+    } or always_explain $comment_data;
 };
 
 done_testing();
