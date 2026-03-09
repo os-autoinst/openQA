@@ -280,7 +280,7 @@ in your computer.
 
 The images are available directly from the https://openqa.opensuse.org[o3] site.
 Download the HDD image `opensuse-Tumbleweed-x86_64@uefi-4G-<...>.qcow2` (~3.2 GB)
-from the _Assets_ in the test scenario https://openqa.opensuse.org/tests/latest?arch=x86_64&distri=openqa&flavor=dev&machine=uefi-4G&test=openqa_install%2Bpublish&version=Tumbleweed#downloads[openqa_install+publish].
+from the _Assets_ in the test scenario https://openqa.opensuse.org/tests/latest?arch=x86_64&distri=openqa&flavor=dev&machine=uefi-4G&test=openqa_install%2Bpublish&version=Tumbleweed&result=passed#downloads[openqa_install+publish].
 
 ==== The VM
 
