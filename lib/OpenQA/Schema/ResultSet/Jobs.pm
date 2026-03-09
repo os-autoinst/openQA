@@ -541,8 +541,8 @@ sub mark_job_linked ($self, $jobid, $referer_url) {
     return undef if $comments->search({text => {like => 'label:linked%'}}, {rows => 1})->first;
     my $user = $self->result_source->schema->resultset('Users')->system({select => ['id']});
     my $bugref = href_to_bugref($referer_url);
-    my $label = "label:linked:$bugref mentions this job";
-    $comments->create_with_event({text => $label, user_id => $user->id});
+    my $label = $referer_url eq $bugref ? "label:linked $referer" : "label:linked:$bugref";
+    $comments->create_with_event({text => "$label mentions this job", user_id => $user->id});
 }
 
 1;

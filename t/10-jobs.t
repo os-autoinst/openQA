@@ -1172,6 +1172,11 @@ subtest 'marking job as linked' => sub {
 
     $jobs->mark_job_linked($job_id, 'https://foo.bar/some/path');
     is_deeply [map { $_->text } $job->comments], $expected, 'no 2nd label added';
+
+    $job->comments->delete;
+    $jobs->mark_job_linked($job_id, 'https://foo.bar/some/path');
+    $expected = ['label:linked https://foo.bar/some/path mentions this job'];
+    is_deeply [map { $_->text } $job->comments], $expected, 'linked label for non-bugref URL';
 };
 
 done_testing();
