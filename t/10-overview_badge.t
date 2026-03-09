@@ -14,6 +14,7 @@ use OpenQA::Jobs::Constants;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $jobs = $t->app->schema->resultset('Jobs');
 
 $t->get_ok('/tests/overview/badge')->status_is(200)->content_type_is('image/svg+xml')->content_like(qr/running/);
 $t->get_ok('/tests/overview/badge?result=passed')->status_is(200)->content_like(qr/passed/);
@@ -31,10 +32,14 @@ subtest 'svg badge' => sub {
       ->header_is('Cache-Control' => 'max-age=0, no-cache')->element_exists('svg', 'valid svg badge');
     $t->get_ok('/tests/9992711111/badge')->status_is(404)->content_type_is('image/svg+xml')->element_exists('svg')
       ->content_like(qr/404/, 'valid 404 svg badge');
-    $t->get_ok('/tests/latest/badge?test=kde&machine=32bit')->status_is(200)->content_type_is('image/svg+xml')
-      ->element_exists('svg', 'valid latest svg badge');
-    $t->app->schema->resultset('Jobs')->find(99928)
-      ->update({state => SCHEDULED, result => NONE, blocked_by_id => 99927});
+    $t->get_ok('/tests/latest/badge?test=kde&machine=64bit')->status_is(200)->content_type_is('image/svg+xml')
+      ->element_exists('svg', 'valid latest svg badge')->content_like(qr/running/);
+    $t->get_ok('/tests/latest/badge?test=kde&machine=64bit&result=passed')->status_is(404);
+    $jobs->find(99963)->update({result => FAILED, state => DONE});
+    $jobs->find(99962)->update({result => PASSED, state => DONE});
+    $t->get_ok('/tests/latest/badge?test=kde&machine=64bit&result=passed')->status_is(200)->content_like(qr/passed/);
+    $t->get_ok('/tests/latest/badge?test=kde&machine=64bit')->status_is(200)->content_like(qr/failed/);
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE, blocked_by_id => 99927});
     $t->get_ok('/tests/99928/badge')->status_is(200)->content_type_is('image/svg+xml')->element_exists('svg')
       ->content_like(qr/blocked/, 'valid blocked svg badge');
 };

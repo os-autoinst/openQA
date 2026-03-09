@@ -994,7 +994,7 @@ sub overview ($self) {
 
 sub _get_latest_job ($self) {
     my %search_args = (limit => 1);
-    for my $arg (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
+    for my $arg (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS, keys %{META_MAPPING()}) {
         my $key = lc $arg;
         next unless defined $self->param($key);
         $search_args{$key} = $self->param($key);
