@@ -163,6 +163,14 @@ subtest 'git clone' => sub {
         is $mocked_git_calls[$i], $test->[1], "$i: " . $test->[0];
     }
 
+    subtest 'git server host cannot be determined' => sub {
+        %$clone_dirs = ("$git_clones/nodefault" => undef);
+        stderr_like { $res = run_gru_job(@gru_args) }
+        qr(Unable to determine Git server host), 'error on stderr';
+        is $res->{state}, 'failed', 'minion job failed';
+        like $res->{result}, qr/Unable to determine Git server host/, 'error message';
+    };
+
     subtest 'no default remote branch' => sub {
         $ENV{OPENQA_GIT_CLONE_RETRIES} = 0;
         %$clone_dirs = ("$git_clones/nodefault" => 'http://localhost/nodefault.git');
@@ -347,6 +355,14 @@ subtest 'create_git_clone_list' => sub {
     create_git_clone_list(\%job_settings, \%clones);
     my %expected_clones = map { ("t/data/openqa/share/tests/some-distri$_" => undef) } '', '/needles';
     is_deeply \%clones, \%expected_clones, 'clones added for distri' or always_explain \%clones;
+
+    subtest 'CASEDIR deviates from DISTRI' => sub {
+        %clones = ();
+        %job_settings = (CASEDIR => 'some-casedir', DISTRI => 'some-distri');
+        create_git_clone_list(\%job_settings, \%clones);
+        my %expected_clones = map { ("t/data/openqa/share/tests/some-casedir$_" => undef) } '', '/needles';
+        is_deeply \%clones, \%expected_clones, 'clones added for distri' or always_explain \%clones;
+    };
 };
 
 subtest 'enqueue_git_clones' => sub {
