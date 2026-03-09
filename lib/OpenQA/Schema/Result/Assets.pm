@@ -67,7 +67,7 @@ sub _getDirSize {
     $size //= 0;
 
     opendir(my $dh, $dir) || return 0;
-    for my $dirContent (grep !/^\.\.?/, readdir $dh) {
+    for my $dirContent (grep { !/^\.\.?/ } readdir $dh) {
 
         $dirContent = "$dir/$dirContent";
 

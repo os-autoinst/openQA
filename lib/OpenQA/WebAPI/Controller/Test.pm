@@ -684,8 +684,8 @@ sub job_next_previous_ajax ($self) {
     );
     my @jobs = $jobs_rs->all;
 
-    my $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs([map $_->id, @jobs]);
-    my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs([map $_->id, @jobs]);
+    my $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs([map { $_->id } @jobs]);
+    my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs([map { $_->id } @jobs]);
 
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
     my (@data, @info);

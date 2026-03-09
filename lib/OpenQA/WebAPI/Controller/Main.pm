@@ -179,8 +179,8 @@ sub _group_overview ($self, $resultset, $template) {
     );
     $self->respond_to(
         json => sub ($self) {
-            @comments = map $_->hash, @comments;
-            @pinned_comments = map $_->hash, @pinned_comments;
+            @comments = map { $_->hash } @comments;
+            @pinned_comments = map { $_->hash } @pinned_comments;
             $self->render(
                 json => {
                     group => $group_hash,

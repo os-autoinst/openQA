@@ -682,7 +682,7 @@ sub detect_current_version ($path) {
         # This method have its limits while checking out different branches
         # but emulates git-describe output without executing commands.
         if ($master_head && $packed_refs) {
-            my $latest_ref = (grep /tags/, split /\s/, $packed_refs)[-1];
+            my $latest_ref = (grep { /tags/ } split /\s/, $packed_refs)[-1];
             my $partial_hash = substr $master_head, 0, 8;
             if ($latest_ref && $partial_hash) {
                 my $tag = (split /\//, $latest_ref)[-1];

@@ -623,7 +623,7 @@ sub update ($self) {
     my @allowed_cols = qw(group_id priority);
     for my $key (keys %$json) {
         return $self->render(json => {error => "Column $key can not be set"}, status => 400)
-          unless grep $_ eq $key, @allowed_cols;
+          unless grep { $_ eq $key } @allowed_cols;
     }
 
     # validate specified group
