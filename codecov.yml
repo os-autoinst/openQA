@@ -26,6 +26,7 @@ coverage:
           - lib/OpenQA/WebAPI/
           - lib/OpenQA/Shared/
           - lib/OpenQA/Task/
+          - lib/OpenQA/Script/
       tests:
         target: 100.0
         threshold: 0
