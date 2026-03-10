@@ -43,6 +43,11 @@ jobs:
         with:
           python-version: 3.13
 
+      - name: Install retry
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/okurz/retry/main/retry -o /usr/local/bin/retry
+          chmod +x /usr/local/bin/retry
+
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2
 
@@ -51,8 +56,8 @@ jobs:
 
       - name: Download images
         run: |
-          RETRY=3 SLEEP=15 tools/retry docker pull $REGISTRY_PATH/openqa_webui:latest
-          RETRY=3 SLEEP=15 tools/retry docker pull $REGISTRY_PATH/openqa_worker:latest
+          retry -r 3 -s 15 -e docker pull $REGISTRY_PATH/openqa_webui:latest
+          retry -r 3 -s 15 -e docker pull $REGISTRY_PATH/openqa_worker:latest
 
       - name: Load images into the Cluster
         run: |
