@@ -613,6 +613,7 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 <li><a href="#_fake">12.5.3. Fake</a></li>
 </ul>
 </li>
+<li><a href="#priority-throttling">12.6. Job Priority Throttling</a></li>
 </ul>
 </li>
 <li><a href="#_run_the_web_ui">13. Run the web UI</a>
@@ -1224,6 +1225,30 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 <li><a href="#_developing_tests_with_container_setup">84.5. Developing tests with container setup</a></li>
 </ul>
 </li>
+<li><a href="#_introduction_7">85. Introduction</a></li>
+<li><a href="#_data_we_collect">86. Data We Collect</a>
+<ul class="sectlevel2">
+<li><a href="#_account_information">86.1. Account Information</a></li>
+<li><a href="#_authentication_data">86.2. Authentication Data</a></li>
+<li><a href="#_activity_data">86.3. Activity Data</a></li>
+</ul>
+</li>
+<li><a href="#_how_we_use_your_data">87. How We Use Your Data</a></li>
+<li><a href="#_data_protection">88. Data Protection</a></li>
+<li><a href="#_data_sharing">89. Data Sharing</a></li>
+<li><a href="#_user_rights">90. User Rights</a>
+<ul class="sectlevel2">
+<li><a href="#_access">90.1. Access</a></li>
+<li><a href="#_correction">90.2. Correction</a></li>
+<li><a href="#_deletion">90.3. Deletion</a></li>
+<li><a href="#_data_portability">90.4. Data Portability</a></li>
+<li><a href="#_contact">90.5. Contact</a></li>
+</ul>
+</li>
+<li><a href="#_cookies_and_tracking">91. Cookies and Tracking</a></li>
+<li><a href="#_policy_changes">92. Policy Changes</a></li>
+<li><a href="#_effective_date">93. Effective Date</a></li>
+<li><a href="#_contact_information">94. Contact Information</a></li>
 </ul>
 </li>
 </ul>
@@ -2332,7 +2357,7 @@ in your computer.</p>
 <div class="paragraph">
 <p>The images are available directly from the <a href="https://openqa.opensuse.org">o3</a> site.
 Download the HDD image <code>opensuse-Tumbleweed-x86_64@uefi-4G-&lt;&#8230;&#8203;&gt;.qcow2</code> (~3.2 GB)
-from the <em>Assets</em> in the test scenario <a href="https://openqa.opensuse.org/tests/latest?arch=x86_64&amp;distri=openqa&amp;flavor=dev&amp;machine=uefi-4G&amp;test=openqa_install%2Bpublish&amp;version=Tumbleweed#downloads">openqa_install+publish</a>.</p>
+from the <em>Assets</em> in the test scenario <a href="https://openqa.opensuse.org/tests/latest?arch=x86_64&amp;distri=openqa&amp;flavor=dev&amp;machine=uefi-4G&amp;test=openqa_install%2Bpublish&amp;version=Tumbleweed&amp;result=passed#downloads">openqa_install+publish</a>.</p>
 </div>
 <div class="sect3">
 <h4 id="_the_vm"><a class="anchor" href="#_the_vm"></a><a class="link" href="#_the_vm">9.4.1. The VM</a></h4>
@@ -2825,6 +2850,71 @@ You can then use following as <code>/etc/openqa/client.conf</code>:</p>
 <div class="paragraph">
 <p>If you switch authentication method from Fake to any other, review your API keys!
 You may be vulnerable for up to a day until Fake API key expires.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="priority-throttling"><a class="anchor" href="#priority-throttling"></a><a class="link" href="#priority-throttling">12.6. Job Priority Throttling</a></h3>
+<div class="paragraph">
+<p>Priority throttling of openQA test jobs can be configured based on specific
+parameter values found in the job settings. This mechanism is primarily designed
+to encourage the use of efficient resources.</p>
+</div>
+<div class="paragraph">
+<p>The throttling system allows for the dynamic adjustment of job priorities based
+on parameter values in settings, such as hardware resources or runtime limits.</p>
+</div>
+<div class="paragraph">
+<p>Throttling parameters are defined in <code>openqa.ini</code>, with the following syntax:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>prio_throttling_parameters = parameter_n:scale_n[:reference_n][,…]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>parameter_n</code>: the name of a parameter</p>
+</li>
+<li>
+<p><code>reference_n</code>: an optional threshold or reference, that can be zero, making
+the scale negative or positive for values lower or higher than it.</p>
+</li>
+<li>
+<p><code>scale_n</code>: the priority scale factor applied to the difference between the
+parameter and its reference. This number is based on experience and custom needs.
+When it is missing or zero, the throttling isn&#8217;t applied for the parameter n.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>MAX_JOB_TIME</code>, the max duration of the job in seconds, can also have a
+throttling scale configured to encourage shorter test runtimes. When this
+parameter is missing in the settings, a <code>DEFAULT_MAX_JOB_TIME</code> value is assumed
+(refer to openQA code). A positive <code>TIMEOUT_SCALE</code>, 1 by default, may also be
+defined to multiply the job time and the scale applies to the resulting product.
+Its scale only applies to jobs having that value exceeding <code>DEFAULT_MAX_JOB_TIME</code>.</p>
+</div>
+<div class="paragraph">
+<p>When defining a custom <code>prio_throttling_parameters</code> configuration,
+administrators must explicitly include the <code>MAX_JOB_TIME</code> rule, to retain
+runtime-based throttling.</p>
+</div>
+<div class="paragraph">
+<p>The final priority of a job is the sum of a base priority, defined in the job
+templates or scenario definitions, plus all adjustments calculated for the
+configured parameters that match the job settings.</p>
+</div>
+<div class="paragraph">
+<p><strong>Example:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>prio_throttling_parameters = MAX_JOB_TIME:0.007,QEMURAM:0.005:2048</code></pre>
 </div>
 </div>
 </div>
@@ -14847,15 +14937,262 @@ An example entry in <code>/etc/fstab</code>:</p>
 <p>Mounts the <code>openqa_fedora</code> directory to the <code>&#8230;&#8203;/tests/fedora directory</code>. All
 files in the <code>tests/fedora</code> directory seem to have 777 permissions set, but
 new files are created (in the underlying <code>openqa_fedora</code> directory) with
-<code>jskladan:jskladan</code> user and group, and 664:a+X permissions.</p>
+<code>jskladan:jskladan</code> user and group, and 664:a+X permissions.
+= Privacy Policy
+:toc:</p>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction_7"><a class="anchor" href="#_introduction_7"></a><a class="link" href="#_introduction_7">85. Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>openQA is an automated testing framework. This privacy policy describes how we
+collect, use, and protect your personal information when you use an openQA
+instance.</p>
+</div>
+<div class="paragraph">
+<p>This policy applies to users of openQA. Individual openQA instance operators
+may have their own privacy practices.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_data_we_collect"><a class="anchor" href="#_data_we_collect"></a><a class="link" href="#_data_we_collect">86. Data We Collect</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_account_information"><a class="anchor" href="#_account_information"></a><a class="link" href="#_account_information">86.1. Account Information</a></h3>
+<div class="paragraph">
+<p>When you sign in to an openQA instance for the first time via an external
+authentication provider, an account is automatically created. We collect the
+following information provided by that provider:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Username</p>
+</li>
+<li>
+<p>Email address (optional)</p>
+</li>
+<li>
+<p>Full name (optional)</p>
+</li>
+<li>
+<p>Nickname (optional)</p>
+</li>
+<li>
+<p>Role (operator, admin)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication_data"><a class="anchor" href="#_authentication_data"></a><a class="link" href="#_authentication_data">86.2. Authentication Data</a></h3>
+<div class="ulist">
+<ul>
+<li>
+<p>API keys and secrets (stored in hashed form)</p>
+</li>
+<li>
+<p>Session data (login time, user ID)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_activity_data"><a class="anchor" href="#_activity_data"></a><a class="link" href="#_activity_data">86.3. Activity Data</a></h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Comments you post on jobs or test results</p>
+</li>
+<li>
+<p>Job settings and configurations you create</p>
+</li>
+<li>
+<p>Audit events recording your actions</p>
+</li>
+<li>
+<p>Developer session data when using the interactive debugging feature</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_we_use_your_data"><a class="anchor" href="#_how_we_use_your_data"></a><a class="link" href="#_how_we_use_your_data">87. How We Use Your Data</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Your data is used for:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Providing the openQA testing service</p>
+</li>
+<li>
+<p>Authenticating your session</p>
+</li>
+<li>
+<p>Managing your permissions and API access</p>
+</li>
+<li>
+<p>Recording test activities and results</p>
+</li>
+<li>
+<p>Maintaining security through audit logging</p>
+</li>
+<li>
+<p>No marketing or advertising purposes</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_data_protection"><a class="anchor" href="#_data_protection"></a><a class="link" href="#_data_protection">88. Data Protection</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We implement appropriate technical and organizational measures:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>API secrets are stored using secure hashing</p>
+</li>
+<li>
+<p>Access controls limit who can view your data</p>
+</li>
+<li>
+<p>Audit logs track changes to accounts and data</p>
+</li>
+<li>
+<p>When you delete your account, your personal data is anonymized while
+preserving historical records (see User Rights)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_data_sharing"><a class="anchor" href="#_data_sharing"></a><a class="link" href="#_data_sharing">89. Data Sharing</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We do not share your personal data with third parties except:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>When required by law or legal process</p>
+</li>
+<li>
+<p>When necessary to protect our rights or safety</p>
+</li>
+<li>
+<p>Aggregated, anonymized data that cannot identify you</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We do not sell your personal data.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_user_rights"><a class="anchor" href="#_user_rights"></a><a class="link" href="#_user_rights">90. User Rights</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You have the following rights regarding your personal data:</p>
+</div>
+<div class="sect2">
+<h3 id="_access"><a class="anchor" href="#_access"></a><a class="link" href="#_access">90.1. Access</a></h3>
+<div class="paragraph">
+<p>You can view your account information through the web interface or API.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_correction"><a class="anchor" href="#_correction"></a><a class="link" href="#_correction">90.2. Correction</a></h3>
+<div class="paragraph">
+<p>Account details (username, email, fullname, nickname) are retrieved from your
+external authentication provider. To update this information, please do so
+through that provider.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deletion"><a class="anchor" href="#_deletion"></a><a class="link" href="#_deletion">90.3. Deletion</a></h3>
+<div class="paragraph">
+<p>You can delete your account, which will:
+* Remove your personal information (email, fullname, nickname)
+* Anonymize your username (replaced with "deleted-user-[id]")
+* Delete your API keys
+* Clear your user reference from comments and audit events
+* Preserve historical test data without identifying you</p>
+</div>
+<div class="paragraph">
+<p>To exercise these rights, use the account deletion feature in your user
+settings or contact the instance administrator.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_data_portability"><a class="anchor" href="#_data_portability"></a><a class="link" href="#_data_portability">90.4. Data Portability</a></h3>
+<div class="paragraph">
+<p>You can export your data through the openQA API.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_contact"><a class="anchor" href="#_contact"></a><a class="link" href="#_contact">90.5. Contact</a></h3>
+<div class="paragraph">
+<p>For privacy inquiries, contact the administrator of your openQA instance.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cookies_and_tracking"><a class="anchor" href="#_cookies_and_tracking"></a><a class="link" href="#_cookies_and_tracking">91. Cookies and Tracking</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>openQA uses session cookies for authentication. These cookies are necessary
+for the service to function and are not used for tracking or advertising.</p>
+</div>
+<div class="paragraph">
+<p>No third-party analytics or tracking services are used.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_policy_changes"><a class="anchor" href="#_policy_changes"></a><a class="link" href="#_policy_changes">92. Policy Changes</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This policy may be updated from time to time. The effective date is noted
+below. Significant changes will be communicated through the openQA instance&#8217;s
+announcement channels.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_effective_date"><a class="anchor" href="#_effective_date"></a><a class="link" href="#_effective_date">93. Effective Date</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This policy was last updated: March 2026</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_contact_information"><a class="anchor" href="#_contact_information"></a><a class="link" href="#_contact_information">94. Contact Information</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For questions about this privacy policy or to exercise your data rights,
+contact the openQA instance administrator.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-04 04:44:59 UTC
+Last updated 2026-03-10 04:44:44 UTC
 </div>
 </div>
 </body>
