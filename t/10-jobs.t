@@ -34,8 +34,7 @@ my $schema = OpenQA::Test::Case->new->init_data(
     schema_name => $schema_name
 );
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-my $jobs = $t->app->schema->resultset('Jobs');
-my $users = $t->app->schema->resultset('Users');
+my ($jobs, $users, $comments) = map { $t->app->schema->resultset($_) } qw(Jobs Users Comments);
 
 # for "investigation" tests
 my $fake_git_log = 'deadbeef Break test foo';
@@ -1153,6 +1152,31 @@ subtest 'error handling when reading job module results' => sub {
     $results = $broken_module->results(errors => $errors);
     like $errors->[0], qr/Malformed.*JSON/i, 'error returned if JSON file malformed' or always_explain $results;
     is scalar @{$results->{details}}, 0, 'empty details returned if JSON file malformed' or always_explain $results;
+};
+
+subtest 'marking job as linked' => sub {
+    OpenQA::App->singleton->config->{global}->{recognized_referers} = ['progress.opensuse.org', 'foo.bar'];
+    my $job_id = 99937;
+    my $job = $jobs->find($job_id);
+    $jobs->mark_job_linked($job_id, 'https://progress.opensuse.org/issues/194990');
+    my $expected = ['label:linked:poo#194990 mentions this job'];
+    is_deeply [map { $_->text } $job->comments], $expected,
+      'bugref resolved (to be rendered as such in comment) and used in label (to be not treated like an actual bugref)';
+
+    my $comment_data = $comments->comment_data_for_jobs([$job]);
+    subtest 'label recognized' => sub {
+        my $data = $comment_data->{$job_id};
+        is $data->{label}, 'linked:poo#194990', 'added label is recognized';
+        is $data->{label_url}, 'https://progress.opensuse.org/issues/194990', 'URL is extracted again from label';
+    } or always_explain $comment_data;
+
+    $jobs->mark_job_linked($job_id, 'https://foo.bar/some/path');
+    is_deeply [map { $_->text } $job->comments], $expected, 'no 2nd label added';
+
+    $job->comments->delete;
+    $jobs->mark_job_linked($job_id, 'https://foo.bar/some/path');
+    $expected = ['label:linked https://foo.bar/some/path mentions this job'];
+    is_deeply [map { $_->text } $job->comments], $expected, 'linked label for non-bugref URL';
 };
 
 done_testing();

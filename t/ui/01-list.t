@@ -109,6 +109,9 @@ sub prepare_database {
     # ensure chained jobs 99937 is still displayed on page one together with its chained dependency 99938
     $jobs->search({id => 99937})->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 149 * ONE_HOUR, 'UTC')});
 
+    # create linked label with bugref; supposed to be rendered as clickable label (and *not* as bugref)
+    $jobs->find({id => 80000})->comments->create({text => 'label:linked:poo#123', user_id => 1});
+
     assume_all_assets_exist;
 }
 
@@ -132,6 +135,15 @@ is +(shift @tds)->get_text(), '28 1 1', 'result of 99946 (passed, softfailed, fa
 my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
 $time->text_like(qr/about 3 hours ago/, 'finish time of 99946');
+
+subtest 'label:linked with bugref' => sub {
+    my $link = $driver->find_element('#job_80000 a[href="https://progress.opensuse.org/issues/123"]');
+    my $label = $driver->find_element('#job_80000 .test-label');
+    ok $link, 'rendered as link';
+    ok $label, 'label present' or return;
+    is $label->get_attribute('title'), 'Label: linked:poo#123', 'title contains bugref';
+    element_not_present '#job_80000 .fa-bolt', 'no bugref icon displayed (only the label)';
+};
 
 subtest 'running jobs, progress bars' => sub {
     is $driver->find_element('#job_99961 .progress-bar-striped')->get_text(),

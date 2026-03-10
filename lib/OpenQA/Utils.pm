@@ -109,6 +109,7 @@ our @EXPORT = qw(
   find_bugref
   find_bugrefs
   bugurl
+  url_from_label
   bugref_to_href
   href_to_bugref
   url_to_href
@@ -435,9 +436,15 @@ sub bugurl ($bugref) {
     # same page as https://github.com/os-autoinst/openQA/pull/966 and vice
     # versa for both an issue as well as pull request
     # for pagure.io it has to be "issue", not "issues"
-    $bugref =~ BUGREF_REGEX;
+    $bugref =~ BUGREF_REGEX or return $bugref;
     my $issuetext = $+{marker} eq 'pio' ? 'issue' : 'issues';
     return $BUGREFS{$+{marker}} . ($+{repo} ? "$+{repo}/$issuetext/" : '') . $+{id};
+}
+
+sub url_from_label ($label) {
+    return undef unless $label =~ m/^linked:(?<ref>.*)/;
+    my $url = bugurl($+{ref});
+    return $url =~ m/^https?:.*/ ? $url : undef;
 }
 
 sub bugref_to_href ($text) {

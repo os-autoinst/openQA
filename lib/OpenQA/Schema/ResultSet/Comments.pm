@@ -6,7 +6,7 @@ package OpenQA::Schema::ResultSet::Comments;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use DBIx::Class::Timestamps;
 use OpenQA::App;
-use OpenQA::Utils qw(find_bugrefs href_to_bugref);
+use OpenQA::Utils qw(find_bugrefs href_to_bugref url_from_label);
 use Feature::Compat::Try;
 
 =over 4
@@ -118,6 +118,7 @@ sub comment_data_for_jobs ($self, $jobs, $args = {}) {
         }
         elsif (my $label = $comment->label) {
             $res->{label} = $label;
+            $res->{label_url} = url_from_label($label);
             $res->{reviewed} = 1;
         }
         else {
