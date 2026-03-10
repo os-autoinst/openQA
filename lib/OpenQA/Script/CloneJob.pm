@@ -26,6 +26,7 @@ our @EXPORT = qw(
   create_url_handler
   split_jobid
   post_jobs
+  openqa_baseurl
 );
 
 use constant GLOBAL_SETTINGS => (qw(WORKER_CLASS _GROUP _GROUP_ID));

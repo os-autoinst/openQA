@@ -473,4 +473,10 @@ subtest 'auth with lwp' => sub {
     $ua->get('http://foobar/some/path');
 };
 
+subtest 'determining base URL' => sub {
+    is openqa_baseurl(Mojo::URL->new('http://foo:80/bar')), 'http://foo', 'default http port removed';
+    is openqa_baseurl(Mojo::URL->new('https://foo:443/bar')), 'https://foo', 'default https port removed';
+    is openqa_baseurl(Mojo::URL->new('http://foo:9526/bar')), 'http://foo:9526', 'custom port preserved';
+};
+
 done_testing();
