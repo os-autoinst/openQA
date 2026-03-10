@@ -358,6 +358,10 @@ public/favicon.ico: $(wildcard assets/images/*.svg)
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
 	rm assets/images/*-32.png assets/images/*-64.png assets/images/*-128.png
 
+.PHONY: setup-hooks
+setup-hooks: ## Install pre-commit git hooks
+	pre-commit install --install-hooks -t commit-msg -t pre-commit
+
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
 test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt test-gitlint ## Run all style and static analysis checks
