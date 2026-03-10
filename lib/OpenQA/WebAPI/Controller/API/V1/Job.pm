@@ -20,6 +20,7 @@ use Feature::Compat::Try;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
+use HTTP::Status qw(:constants);
 
 =pod
 
@@ -91,7 +92,7 @@ sub list ($self) {
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
     my $offset = $validation->param('offset') // 0;
-    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400) unless $limit;
+    return $self->render(json => {error => 'Limit exceeds maximum'}, status => HTTP_BAD_REQUEST) unless $limit;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     # validate parameters
@@ -118,7 +119,7 @@ sub list ($self) {
         my $values = $args{$arg} = index($value, ',') != -1 ? [split /,/, $value] : $self->every_param($arg);
         if ($arg eq 'ids') {
             for my $id (@$values) {
-                return $self->render(json => {error => 'ids must be integers'}, status => 400)
+                return $self->render(json => {error => 'ids must be integers'}, status => HTTP_BAD_REQUEST)
                   unless looks_like_number $id;
             }
         }
@@ -426,7 +427,7 @@ sub create ($self) {
     }
 
     $self->emit_event(openqa_job_create => $_) for @$event_data;
-    $self->render(json => $json, status => ($json->{error} ? 400 : 200));
+    $self->render(json => $json, status => ($json->{error} ? HTTP_BAD_REQUEST : HTTP_OK));
 }
 
 =over 4
@@ -505,7 +506,7 @@ id must match the id of the worker assigned to the job identified by the job id.
 
 # this is the general worker update call
 sub update_status ($self) {
-    return $self->render(json => {error => 'No status information provided'}, status => 400)
+    return $self->render(json => {error => 'No status information provided'}, status => HTTP_BAD_REQUEST)
       unless my $json = $self->req->json;
 
     my $status = $json->{status};
@@ -514,14 +515,14 @@ sub update_status ($self) {
     if (!$job) {
         my $err = 'Got status update for non-existing job: ' . $job_id;
         log_info($err);
-        return $self->render(json => {error => $err}, status => 400);
+        return $self->render(json => {error => $err}, status => HTTP_BAD_REQUEST);
     }
 
     my $worker_id = $status->{worker_id};
     if (!defined $worker_id) {
         my $err = "Got status update for job $job_id but does not contain a worker id!";
         log_info($err);
-        return $self->render(json => {error => $err}, status => 400);
+        return $self->render(json => {error => $err}, status => HTTP_BAD_REQUEST);
     }
 
     # find worker
@@ -539,7 +540,7 @@ sub update_status ($self) {
             my $err = "Got status update for job $job_id and worker $worker_id but there is"
               . " not even a worker assigned to this job (job is $job_status)";
             log_info($err);
-            return $self->render(json => {error => $err}, status => 400);
+            return $self->render(json => {error => $err}, status => HTTP_BAD_REQUEST);
         }
     }
 
@@ -550,7 +551,7 @@ sub update_status ($self) {
           = "Got status update for job $job_id with unexpected worker ID $worker_id"
           . " (expected $expected_worker_id, job is $job_status)";
         log_info($err);
-        return $self->render(json => {error => $err}, status => 400);
+        return $self->render(json => {error => $err}, status => HTTP_BAD_REQUEST);
     }
 
     # update worker and job status
@@ -571,7 +572,7 @@ sub update_status ($self) {
     if (!$ret || $ret->{error} || $ret->{error_status}) {
         $ret = {} unless $ret;
         $ret->{error} //= 'Unable to update status';
-        $ret->{error_status} //= 400;
+        $ret->{error_status} //= HTTP_BAD_REQUEST;
         return $self->render(json => {error => $ret->{error}}, status => $ret->{error_status});
     }
     $self->render(json => $ret);
@@ -615,14 +616,16 @@ Columns group_id and priority cannot be set.
 sub update ($self) {
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $json = $self->req->json;
-    return $self->render(json => {error => 'No updates provided (must be provided as JSON)'}, status => 400)
-      unless $json;
+    return $self->render(
+        json => {error => 'No updates provided (must be provided as JSON)'},
+        status => HTTP_BAD_REQUEST
+    ) unless $json;
     my $settings = delete $json->{settings};
 
     # validate specified columns (print error if at least one specified column does not exist)
     my @allowed_cols = qw(group_id priority);
     for my $key (keys %$json) {
-        return $self->render(json => {error => "Column $key can not be set"}, status => 400)
+        return $self->render(json => {error => "Column $key can not be set"}, status => HTTP_BAD_REQUEST)
           unless grep { $_ eq $key } @allowed_cols;
     }
 
@@ -695,7 +698,7 @@ sub create_artefact ($self) {
         return $self->render(text => 'OK')
           if $job->parse_extra_tests($validation->param('file'), $validation->param('type'),
             $validation->param('script'));
-        return $self->render(json => {error => 'Unable to parse extra test'}, status => 400);
+        return $self->render(json => {error => 'Unable to parse extra test'}, status => HTTP_BAD_REQUEST);
     }
     elsif (my $scope = $self->param('asset')) {
         my ($error, $fname, $type, $last)
@@ -785,7 +788,7 @@ sub done ($self) {
               )
             : 'Refusing to set result because job has already been re-scheduled.'
         );
-        return $self->render(status => 400, json => {error => $msg}) if $msg;
+        return $self->render(status => HTTP_BAD_REQUEST, json => {error => $msg}) if $msg;
     }
 
     my $result = $validation->param('result');
@@ -796,7 +799,7 @@ sub done ($self) {
         $res = $job->done(result => $result, reason => $reason, newbuild => $newbuild);
     }
     catch ($e) {
-        $self->render(status => 400, json => {error => $e});
+        $self->render(status => HTTP_BAD_REQUEST, json => {error => $e});
     }
     return undef unless $res;
 

@@ -10,6 +10,7 @@ use Mojo::UserAgent;
 use POSIX 'strftime';
 use File::Which qw(which);
 use OpenQA::Log qw(log_error);
+use HTTP::Status qw(:constants);
 
 my $dirty_status_filename = '.dirty_status';
 my $api_repo_filename = '.api_repo';
@@ -180,7 +181,7 @@ sub _is_obs_project_status_dirty ($self, $url, $project, $repo, $helper) {
     my $tx = $ua->get($url);
     my $res = $tx->result;
     # Retry if authentication is required
-    if ($res->code == 401) {
+    if ($res->code == HTTP_UNAUTHORIZED) {
         my $username = $helper->username;
         my $ssh_key_file = $helper->ssh_key_file;
         my $auth_header = _bs_ssh_auth($res->headers->www_authenticate, $username, $ssh_key_file);
@@ -474,15 +475,15 @@ sub _check_and_render_error ($c, @args) {
 }
 
 sub _check_error ($home, $alias, $subfolder = undef, $filename = undef) {
-    return (405, 'Home directory is not set') unless $home;
-    return (405, 'Home directory not found') unless -d $home;
-    return (400, 'Project has invalid characters') if $alias && $alias =~ m!/!;
-    return (400, 'Subfolder has invalid characters') if $subfolder && $subfolder =~ m!/!;
-    return (400, 'Filename has invalid characters') if $filename && $filename =~ m!/!;
+    return (HTTP_METHOD_NOT_ALLOWED, 'Home directory is not set') unless $home;
+    return (HTTP_METHOD_NOT_ALLOWED, 'Home directory not found') unless -d $home;
+    return (HTTP_BAD_REQUEST, 'Project has invalid characters') if $alias && $alias =~ m!/!;
+    return (HTTP_BAD_REQUEST, 'Subfolder has invalid characters') if $subfolder && $subfolder =~ m!/!;
+    return (HTTP_BAD_REQUEST, 'Filename has invalid characters') if $filename && $filename =~ m!/!;
 
     my ($project, $batch) = _split_alias(undef, $alias);
-    return (404, "Invalid Project {$project}") if $project && !-d Mojo::File->new($home, $project);
-    return (404, "Invalid Batch {$project|$batch}")
+    return (HTTP_NOT_FOUND, "Invalid Project {$project}") if $project && !-d Mojo::File->new($home, $project);
+    return (HTTP_NOT_FOUND, "Invalid Batch {$project|$batch}")
       if $project && $batch && !-d Mojo::File->new($home, $project, $batch);
     return 0;
 }

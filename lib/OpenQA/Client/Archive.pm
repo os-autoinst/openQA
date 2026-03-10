@@ -8,6 +8,7 @@ use Mojo::File 'path';
 use Mojo::URL;
 use Carp 'croak';
 use Mojo::JSON 'encode_json';
+use HTTP::Status qw(:constants);
 
 sub run ($self, $options) {
     croak 'Options must be a HASH ref' unless ref $options eq 'HASH';
@@ -21,7 +22,7 @@ sub run ($self, $options) {
     $self->client->max_response_size($options->{'asset-size-limit'});
 
     my $code = $res->code;
-    die "There's an error openQA client returned $code" unless $code eq 200;
+    die "There's an error openQA client returned $code" unless $code eq HTTP_OK;
 
     my $job = $res->json->{job} || die 'No job could be retrieved';
 
@@ -88,7 +89,7 @@ sub _download_handler ($tx, $file) {
 
     my $message;
     if (my $err = $tx->error) {
-        $message //= {message => "file not found.\n"} if $tx->error->{code} && $tx->error->{code} eq 404;
+        $message //= {message => "file not found.\n"} if $tx->error->{code} && $tx->error->{code} eq HTTP_NOT_FOUND;
         $message //= {message => "Unexpected error while downloading: @{ [$tx->error->{message}]}\n"}
           if $tx->error->{message};
     }
@@ -183,7 +184,7 @@ sub _progress_monitior ($ua, $tx) {
         progress => sub {
             my $msg = shift;
 
-            $msg->finish if $msg->code == 304;
+            $msg->finish if $msg->code == HTTP_NOT_MODIFIED;
             return unless my $len = $msg->headers->content_length;
 
             local $| = 1;

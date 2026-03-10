@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Controller::API::V1::JobGroup;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Mojo::JSON;
 use Feature::Compat::Try;
+use HTTP::Status qw(:constants);
 
 use OpenQA::Schema::Result::JobGroups;
 
@@ -216,7 +217,7 @@ sub _check_keep_logs_and_results ($self, $properties, $group = undef) {
 
 sub _render_json ($self, $id = undef) {
     my $errors = $self->{_errors};
-    my $status = @$errors ? 400 : 200;
+    my $status = @$errors ? HTTP_BAD_REQUEST : HTTP_OK;
     my %res = (
         errors_by_field => $self->{_errors_by_field} // {},
         warnings_by_field => $self->{_warnings_by_field} // {},

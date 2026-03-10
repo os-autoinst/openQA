@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use Mojo::File 'path';
 use IPC::Run;
+use HTTP::Status qw(:constants);
 
 =pod
 
@@ -81,7 +82,7 @@ sub _search_perl_modules {
         my $stdout;
         my $stderr;
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
-        return $self->render(json => {error => "Grep failed: $stderr"}, status => 400) if $stderr;
+        return $self->render(json => {error => "Grep failed: $stderr"}, status => HTTP_BAD_REQUEST) if $stderr;
 
         my $basename = $distri->basename;
         my $last_filename = '';
@@ -172,7 +173,7 @@ sub query {
     # Allow n queries per minute, per user (if logged in)
     my $lockname = 'webui_query_rate_limit';
     if (my $user = $self->current_user) { $lockname .= $user->username }
-    return $self->render(json => {error => 'Rate limit exceeded'}, status => 400)
+    return $self->render(json => {error => 'Rate limit exceeded'}, status => HTTP_BAD_REQUEST)
       unless $self->app->minion->lock($lockname, 60, {limit => $self->app->config->{rate_limits}->{search}});
 
     my $cap = $self->app->config->{global}->{search_results_limit};

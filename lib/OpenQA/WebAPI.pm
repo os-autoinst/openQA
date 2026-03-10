@@ -15,6 +15,7 @@ use Mojo::File 'path';
 use Mojo::IOLoop;
 use Mojo::Util 'trim';
 use Feature::Compat::Try;
+use HTTP::Status qw(:constants);
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
@@ -507,7 +508,7 @@ sub startup ($self) {
     $app->hook(
         before_render => sub ($c, $args) {
             # return errors as JSON if accepted but HTML not
-            if (!$c->accepts('html') && $c->accepts('json') && $args->{status} && $args->{status} != 200) {
+            if (!$c->accepts('html') && $c->accepts('json') && $args->{status} && $args->{status} != HTTP_OK) {
                 # the JSON API might already provide JSON in some error cases which must be preserved
                 (($args->{json} //= {})->{error_status}) = $args->{status};
             }

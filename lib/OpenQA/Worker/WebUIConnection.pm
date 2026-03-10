@@ -10,6 +10,10 @@ use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_SR_API_FAILURE MIN_TIMER M
 use OpenQA::Worker::CommandHandler;
 
 use Mojo::IOLoop;
+use HTTP::Status qw(:constants);
+# In HTTP-Message < 6.26 HTTP::Status did not have HTTP_TOO_EARLY yet, so we
+# define it here for now until we can drop support for Leap 15.6
+use constant _HTTP_TOO_EARLY => 425;
 
 has 'webui_host';    # hostname:port of the web UI to connect to
 has 'url';    # URL of the web UI to connect to - initially deduced from webui_host (Mojo::URL instance)
@@ -222,7 +226,8 @@ sub finish_websocket_connection ($self) {
 
 # define list of HTTP error codes which indicate that the web UI is overloaded or down for maintenance
 # (in these cases the re-try delay should be increased)
-my %BUSY_ERROR_CODES = map { $_ => 1 } 408, 425, 502, 503, 504, 598;
+my %BUSY_ERROR_CODES = map { $_ => 1 } HTTP_REQUEST_TIMEOUT, _HTTP_TOO_EARLY, HTTP_BAD_GATEWAY,
+  HTTP_SERVICE_UNAVAILABLE, HTTP_GATEWAY_TIMEOUT, 598;
 
 sub _retry_delay ($self, $is_webui_busy) {
     my $key = $is_webui_busy ? 'RETRY_DELAY_IF_WEBUI_BUSY' : 'RETRY_DELAY';
@@ -239,7 +244,11 @@ sub evaluate_error ($self, $tx, $remaining_tries) {
     $msg = $error->{message} unless $msg;
     if (my $error_code = $error->{code}) {
         $msg = "$error_code response: $msg";
-        if ($error_code < 500 && $error_code != 408 && $error_code != 425 && $error_code != 490) {
+        if (   $error_code < HTTP_INTERNAL_SERVER_ERROR
+            && $error_code != HTTP_REQUEST_TIMEOUT
+            && $error_code != _HTTP_TOO_EARLY
+            && $error_code != 490)
+        {
             # don't retry on most 4xx errors (in this case we can't expect different results on further attempts)
             $$remaining_tries = 0;
         }

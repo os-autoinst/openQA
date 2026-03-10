@@ -43,6 +43,7 @@ common_requires:
   perl(Feature::Compat::Try):
   perl(Filesys::Df):
   perl(Getopt::Long):
+  perl(HTTP::Status):
   perl(Minion): '>= 10.25'
   perl(Mojolicious):
     perl: '>= 9.34'
