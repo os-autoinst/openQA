@@ -27,10 +27,19 @@ package Test::FakeLWPUserAgentMirrorResult {
     has status_line => 'some status';
 }    # uncoverable statement
 
+package Test::FakeLWPUserAgentMirrorTxn {
+    use Mojo::Base -base, -signatures;
+    has error => undef;
+    has res => sub { Test::FakeLWPUserAgentMirrorResult->new(is_success => 0, code => 404) };
+}    # uncoverable statement
+
 package Test::FakeLWPUserAgent {
     use Mojo::Base -base, -signatures;
     has mirrored => sub { {} };
     has missing => 0;
+    has max_redirects => undef;
+
+    sub get ($self, $url) { Test::FakeLWPUserAgentMirrorTxn->new }
 
     sub mirror ($self, $from, $dest) {
         my @res
@@ -61,6 +70,14 @@ my %parent_settings = (
     HDDSIZEGB => 20,
     WORKER_CLASS => 'qemu_x86_64',
 );
+
+subtest 'getting job' => sub {
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    $clone_mock->redefine(_handle_unexpected_return_code => sub ($tx) { die 'unexpected return code' });
+    my $url_handler = {remote => Test::FakeLWPUserAgent->new, remote_url => Mojo::URL->new('foo')};
+    throws_ok { clone_job_get_job(42, $url_handler, {'ignore-missing-assets' => 1}) } qr/unexpected return code/,
+      'unexpected return code handled';
+};
 
 subtest 'clone job apply settings tests' => sub {
     my %test_settings = %child_settings;
