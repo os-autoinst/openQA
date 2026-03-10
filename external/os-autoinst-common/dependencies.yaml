@@ -21,6 +21,7 @@ develop_requires:
   perl(Code::TidyAll):
   perl(Perl::Critic):
   perl(Perl::Critic::Community):
+  python3-gitlint:
 
 cover_requires:
   perl(Devel::Cover):
