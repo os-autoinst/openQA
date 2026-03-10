@@ -580,12 +580,12 @@ function renderActivityView(ajaxUrl) {
 
 function renderComments(row) {
   const commentData = row.comment_data;
-  let html = ' ';
+  let html = '';
   commentData.bugs.forEach(function (bug) {
     const css_class = bug.css_class;
     const title = bug.title;
     const url = bug.url;
-    html += `<span id="bug-${row.id}"><a href="${htmlEscape(url)}">`;
+    html += ` <span id="bug-${row.id}"><a href="${htmlEscape(url)}">`;
     html += `<i class="test-label ${htmlEscape(css_class)}" title="${htmlEscape(title)}"></i>`;
     html += '</a></span>';
   });
@@ -593,9 +593,7 @@ function renderComments(row) {
   const label = commentData.label;
   if (label) {
     const labelUrl = commentData.label_url;
-    if (labelUrl) {
-      html += `<a href="${htmlEscape(labelUrl)}">`;
-    }
+    html += labelUrl ? ` <a href="${htmlEscape(labelUrl)}">` : ' ';
     html += `<span id="test-label-${row.id}">`;
     html += `<i class="test-label label_${htmlEscape(label)} fa fa-bookmark" title="Label: ${htmlEscape(label)}"></i>`;
     html += '</span>';
@@ -603,7 +601,7 @@ function renderComments(row) {
       html += '</a>';
     }
   } else if (commentData.comments) {
-    html += `<span id="comment-${row.id}">${commentData.comment_icon}</span>`;
+    html += ` <span id="comment-${row.id}">${commentData.comment_icon}</span>`;
   }
   return html;
 }
