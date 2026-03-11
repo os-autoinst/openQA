@@ -591,5 +591,14 @@ subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => s
     }
 };
 
+subtest 'helper for removing test suite defaults' => sub {
+    my $helper = \&OpenQA::Schema::Result::JobGroups::_remove_test_suite_defaults;
+    my $group = {scenarios => {x86_64 => {product => [{foo => {machine => '64bit'}}]}}};
+    my $test_suites = {x86_64 => {foo => 1}};
+    my $scenarios = [];
+    $helper->(qw(product 64bit x86_64), $group, $test_suites, $scenarios);
+    is_deeply $scenarios, ['foo'], 'scenario is added';
+    is $group->{scenarios}->{x86_64}->{product}, $scenarios, 'scenarios are assigned to group';
+};
 
 done_testing();
