@@ -9,6 +9,7 @@ use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
 use List::Util qw(min);
+use HTTP::Status qw(:constants);
 
 =pod
 
@@ -205,7 +206,7 @@ sub create_many ($self) {
     $self->emit_event('openqa_comments_create', \%res);
 
     $res{error} = 'Not all comments could be created.' if @failed;
-    $self->render(json => \%res, status => (@failed ? 400 : 200));
+    $self->render(json => \%res, status => (@failed ? HTTP_BAD_REQUEST : HTTP_OK));
 }
 
 =over 4
@@ -300,7 +301,7 @@ sub delete_many ($self) {
     my %res = (ids => $ids, deleted => int $deleted_rows);
     $self->emit_event('openqa_comments_delete', \%res) if $deleted_rows;
     $res{error} = 'Not all comments could be deleted.' unless $ok;
-    $self->render(json => \%res, status => ($ok ? 200 : 400));
+    $self->render(json => \%res, status => ($ok ? HTTP_OK : HTTP_BAD_REQUEST));
 }
 
 1;

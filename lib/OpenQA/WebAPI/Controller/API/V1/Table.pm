@@ -10,6 +10,7 @@ use OpenQA::Log 'log_debug';
 use List::Util qw(min);
 use Feature::Compat::Try;
 use Mojo::JSON 'decode_json';
+use HTTP::Status qw(:constants);
 
 =pod
 
@@ -127,7 +128,7 @@ sub list ($self) {
                 offset => $offset
             });
     }
-    catch ($e) { return $self->render(json => {error => $e}, status => 404) }    # uncoverable statement
+    catch ($e) { return $self->render(json => {error => $e}, status => HTTP_NOT_FOUND) }    # uncoverable statement
 
     # Pagination
     pop @all if my $has_more = @all > $limit;
@@ -172,14 +173,14 @@ sub create {
     my %entry = %{$TABLES{$table}->{defaults}};
 
     my ($error_message, $settings, $keys) = $self->_prepare_settings($table, \%entry);
-    return $self->render(json => {error => $error_message}, status => 400) if defined $error_message;
+    return $self->render(json => {error => $error_message}, status => HTTP_BAD_REQUEST) if defined $error_message;
 
     $entry{settings} = $settings;
 
     my $id;
 
     try { $id = $self->schema->resultset($table)->create(\%entry)->id }
-    catch ($e) { return $self->render(json => {error => $e}, status => 400) }
+    catch ($e) { return $self->render(json => {error => $e}, status => HTTP_BAD_REQUEST) }
 
     $self->emit_event('openqa_table_create', {table => $table, id => $id, %entry});
     $self->render(json => {id => $id});
@@ -227,13 +228,13 @@ sub update ($self) {
     my $table = $self->param('table');
     my $entry = {};
     my ($error_message, $settings, $keys) = $self->_prepare_settings($table, $entry);
-    return $self->render(json => {error => $error_message}, status => 400) if defined $error_message;
+    return $self->render(json => {error => $error_message}, status => HTTP_BAD_REQUEST) if defined $error_message;
 
     my $error;
-    my $status = 400;
+    my $status = HTTP_BAD_REQUEST;
     my $schema = $self->schema;
     my $update = sub {
-        return $status = 404 unless my $rc = $schema->resultset($table)->find({id => $self->param('id')});
+        return $status = HTTP_NOT_FOUND unless my $rc = $schema->resultset($table)->find({id => $self->param('id')});
         # Tables used in a group configured in YAML must not be renamed
         if (
             (($table eq 'TestSuites' || $table eq 'Machines') && $rc->name ne $self->param('name'))
@@ -254,13 +255,13 @@ sub update ($self) {
 
     try {
         $schema->txn_do($update);
-        $status = 200;
+        $status = HTTP_OK;
     }
     catch ($e) {
         # The first line of the backtrace gives us the error message we want
         $error = (split /\n/, $e)[0];
     }
-    return $self->render(json => {error => $error // 'Not found'}, status => $status) unless $status == 200;
+    return $self->render(json => {error => $error // 'Not found'}, status => $status) unless $status == HTTP_OK;
 
     $self->emit_event('openqa_table_update', {table => $table, name => $entry->{name}, settings => $settings});
     $self->render(json => {result => 1});
@@ -307,10 +308,10 @@ sub destroy {
     }
 
     if ($ret && $ret == 0) {
-        return $self->render(json => {error => 'Not found'}, status => 404);
+        return $self->render(json => {error => 'Not found'}, status => HTTP_NOT_FOUND);
     }
     if (!$ret) {
-        return $self->render(json => {error => $error}, status => 400);
+        return $self->render(json => {error => $error}, status => HTTP_BAD_REQUEST);
     }
     $self->emit_event('openqa_table_delete', {table => $table, name => $entry_name});
     $self->render(json => {result => int $ret});

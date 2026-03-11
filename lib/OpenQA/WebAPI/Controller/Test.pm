@@ -19,6 +19,7 @@ use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
 use List::Util qw(first min);
+use HTTP::Status qw(:constants);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
 
@@ -189,15 +190,17 @@ sub create ($self) {
 
 sub clone ($self) {
     my $preset = $self->_load_test_preset($self->param('preset'));
-    return $self->render(status => 400, text => 'unable to find preset') unless defined $preset;
-    return $self->render(status => 400, text => 'preset has no distri') unless my $distri = $preset->{distri};
-    return $self->render(status => 400, text => 'preset has no casedir') unless my $casedir = $preset->{casedir};
+    return $self->render(status => HTTP_BAD_REQUEST, text => 'unable to find preset') unless defined $preset;
+    return $self->render(status => HTTP_BAD_REQUEST, text => 'preset has no distri')
+      unless my $distri = $preset->{distri};
+    return $self->render(status => HTTP_BAD_REQUEST, text => 'preset has no casedir')
+      unless my $casedir = $preset->{casedir};
     $self->gru->enqueue_and_keep_track(
         task_name => 'git_clone',
         task_description => 'cloning test distribution',
         task_args => {testcasedir($distri, $preset->{version}) => $casedir}    # uncoverable statement
       )->then(sub ($result) { $self->render(json => $result) })    # uncoverable statement
-      ->catch(sub ($error, @) { $self->reply->gru_result($error, 400) });
+      ->catch(sub ($error, @) { $self->reply->gru_result($error, HTTP_BAD_REQUEST) });
 }
 
 sub get_match_param ($self) {
@@ -601,20 +604,20 @@ sub badge ($self) { $self->_badge($self->_get_current_job(1)) }
 sub _badge ($self, $job) {
     my $badge_text = 'Error 404: Job not found!';
     my $badge_color = $BADGE_RESULT_COLORS{cancelled};
-    my $status = 404;
+    my $status = HTTP_NOT_FOUND;
 
     if ($job) {
         my $result = $job->concise_result;
         $badge_color = $BADGE_RESULT_COLORS{$result} // $BADGE_RESULT_COLORS{cancelled};
         $badge_text = $result =~ s/_/ /rg;
         $badge_text = $job->BUILD . ': ' . $badge_text if ($self->param('show_build'));
-        $status = 200;
+        $status = HTTP_OK;
     }
 
     $self->_render_badge($badge_text, $badge_color, $status);
 }
 
-sub _render_badge ($self, $badge_text, $badge_color, $status = 200) {
+sub _render_badge ($self, $badge_text, $badge_color, $status = HTTP_OK) {
     # determine the approximate required width of the badge
     my $charlen = 11;
     my $badge_prefix_width = 85;
@@ -1005,7 +1008,7 @@ sub _get_latest_job ($self) {
 
 sub latest ($self) {
     my $job = $self->_get_latest_job();
-    return $self->render(text => 'No matching job found', status => 404) unless $job;
+    return $self->render(text => 'No matching job found', status => HTTP_NOT_FOUND) unless $job;
     $self->stash(testid => $job->id);
     return $self->_show($job);
 }
@@ -1161,7 +1164,7 @@ sub dependencies ($self) {
 
 sub investigate ($self) {
     return $self->reply->not_found unless my $job = $self->_get_current_job;
-    my $git_limit = OpenQA::App->singleton->config->{global}->{job_investigate_git_log_limit} // 200;
+    my $git_limit = OpenQA::App->singleton->config->{global}->{job_investigate_git_log_limit} // HTTP_OK;
     my $investigation = $job->investigate(git_limit => $git_limit);
     $self->render(json => $investigation);
 }

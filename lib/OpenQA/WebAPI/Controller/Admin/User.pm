@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::User;
 use Mojo::Base 'Mojolicious::Controller';
+use HTTP::Status qw(:constants);
 
 sub index {
     my ($self) = @_;
@@ -32,7 +33,7 @@ sub update {
 
     my $user = $set->find($self->param('userid'));
     if (!$user) {
-        $err = 404;
+        $err = HTTP_NOT_FOUND;
         $msg = "Can't find that user";
     }
     else {
@@ -42,7 +43,7 @@ sub update {
     }
 
     if (($self->tx->req->headers->accept // '') eq 'application/json') {
-        return $self->render(json => {$err ? 'error' : 'status' => $msg}, status => ($err ? $err : '200'));
+        return $self->render(json => {$err ? 'error' : 'status' => $msg}, status => ($err ? $err : HTTP_OK));
     }
     else {
         $self->flash($err ? 'error' : 'info', $msg);

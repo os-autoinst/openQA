@@ -11,6 +11,7 @@ use OpenQA::UserAgent;
 use OpenQA::Utils 'human_readable_size';
 use Time::HiRes 'sleep';
 use Feature::Compat::Try;
+use HTTP::Status qw(:constants);
 
 has attempts => 5;
 has [qw(log tmpdir)];
@@ -85,7 +86,7 @@ sub _get ($self, $url, $target, $options) {
 
     my $code = $res->code;
     my $error = $res->error // {message => 'Unknown error'};
-    if (defined $code && $code == 304) {
+    if (defined $code && $code == HTTP_NOT_MODIFIED) {
         $options->{on_unchanged}->() if $options->{on_unchanged};
         return (undef, -e $target ? undef : $error->{message});
     }

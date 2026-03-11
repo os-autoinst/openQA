@@ -17,6 +17,7 @@ use Mojo::Promise;
 use Mojo::File qw(path);
 use Mojo::JSON qw(decode_json);
 use Feature::Compat::Try;
+use HTTP::Status qw(:constants);
 
 use constant TRACK_INTERVAL => $ENV{OPENQA_GRU_TASK_TRACK_INTERVAL} // 0.5;
 
@@ -318,11 +319,13 @@ sub enqueue_and_keep_track ($self, %args) {
         sub (@results) {
             # pass result hash with error message (used by save/delete needle tasks)
             my $result = ref $results[0] eq 'HASH' ? $results[0]->{result} : undef;
-            return Mojo::Promise->reject($result, 500) if ref $result eq 'HASH' && $result->{error};
+            return Mojo::Promise->reject($result, HTTP_INTERNAL_SERVER_ERROR)
+              if ref $result eq 'HASH' && $result->{error};
 
             # format error message (fallback for general case)
             my $msg = ref $result eq '' && $result ? $result : 'check out Minion dashboard for further details.';
-            return Mojo::Promise->reject({error => "Task for $task_description failed: $msg", result => $result}, 500);
+            return Mojo::Promise->reject({error => "Task for $task_description failed: $msg", result => $result},
+                HTTP_INTERNAL_SERVER_ERROR);
         });
 }
 

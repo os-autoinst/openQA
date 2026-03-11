@@ -7,6 +7,7 @@ use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::YAML qw(load_yaml dump_yaml);
 use List::Util qw(min);
+use HTTP::Status qw(:constants);
 
 sub _get_templates ($self) {
     my $schema = $self->schema;
@@ -65,7 +66,7 @@ and test suite (id and name).
 sub list ($self) {
     my @templates;
     try { @templates = $self->_get_templates }
-    catch ($e) { return $self->render(json => {error => $e}, status => 404) }    # uncoverable statement
+    catch ($e) { return $self->render(json => {error => $e}, status => HTTP_NOT_FOUND) }    # uncoverable statement
     $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
 
@@ -256,7 +257,7 @@ sub update ($self) {
         # Push the exception to the list of errors without the trailing new line
         push @$user_errors, substr $e, 0, -1;
     }
-    return $self->respond_to(json => {json => {error => $user_errors}, status => 400}) if @$user_errors;
+    return $self->respond_to(json => {json => {error => $user_errors}, status => HTTP_BAD_REQUEST}) if @$user_errors;
 
     my $json = {};
     my @server_errors;
@@ -276,7 +277,8 @@ sub update ($self) {
     }
     if (@$user_errors) {
         $json->{error} = $user_errors;
-        return $self->respond_to(json => {json => $json, status => (@server_errors ? 500 : 400)});
+        return $self->respond_to(
+            json => {json => $json, status => (@server_errors ? HTTP_INTERNAL_SERVER_ERROR : HTTP_BAD_REQUEST)});
     }
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $validation->param('preview');
@@ -410,7 +412,7 @@ sub create ($self) {
 
     if ($error) {
         $json->{error} = $error;
-        $status = 400;
+        $status = HTTP_BAD_REQUEST;
     }
     else {
         $self->emit_event(openqa_jobtemplate_create => $json);
@@ -431,7 +433,7 @@ a 400 code on other errors or a 303 code on success.
 
 sub destroy ($self) {
     my $job_template = $self->schema->resultset('JobTemplates')->find({id => $self->param('job_template_id')});
-    my $status = 400;
+    my $status = HTTP_BAD_REQUEST;
     my $json = {};
 
     if ($job_template && $job_template->group->template) {
@@ -446,11 +448,11 @@ sub destroy ($self) {
         if ($rs) {
             $json->{result} = int $rs;
             $self->emit_event('openqa_jobtemplate_delete', {id => $self->param('job_template_id')});
-            $status = 200;
+            $status = HTTP_OK;
         }
     }
     else {
-        $status = 404;
+        $status = HTTP_NOT_FOUND;
         $json->{error} = 'Not found';
     }
     $self->render(json => $json, status => $status);

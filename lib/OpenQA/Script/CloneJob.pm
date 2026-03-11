@@ -16,6 +16,7 @@ use Mojo::URL;
 use Mojo::JSON;    # booleans
 use OpenQA::Script::CloneJobSUSE;
 use List::Util 'any';
+use HTTP::Status qw(:constants);
 
 our @EXPORT = qw(
   clone_jobs
@@ -83,7 +84,7 @@ sub clone_job_get_job ($jobid, $url_handler, $options) {
         $err->{code} //= '';
         die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
-    if ($tx->res->code != 200) {
+    if ($tx->res->code != HTTP_OK) {
         warn sprintf 'unexpected return code: %s %s', $tx->res->code, $tx->res->message;
         exit 1;
     }
@@ -165,7 +166,7 @@ sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
 
             print STDERR "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
-            unless ($r->is_success || $r->code == 304) {
+            unless ($r->is_success || $r->code == HTTP_NOT_MODIFIED) {
                 print STDERR "$jobid failed: $file, ", $r->status_line, "\n";
                 die "Can't clone due to missing assets: ", $r->status_line, " \n"
                   unless $options->{'ignore-missing-assets'};

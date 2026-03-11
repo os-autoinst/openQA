@@ -42,6 +42,7 @@ requires 'Filesys::Df';
 requires 'FindBin';
 requires 'Getopt::Long';
 requires 'Getopt::Long::Descriptive';
+requires 'HTTP::Status';
 requires 'IO::Handle';
 requires 'IO::Socket::SSL', '>= 2.009';
 requires 'IPC::Run';

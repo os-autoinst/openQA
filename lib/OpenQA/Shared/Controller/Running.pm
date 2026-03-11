@@ -14,6 +14,7 @@ use OpenQA::Utils;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use HTTP::Status qw(:constants);
 
 use constant IMAGE_STREAMING_INTERVAL => $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} // 0.3;
 use constant TEXT_STREAMING_INTERVAL => $ENV{OPENQA_TEXT_STREAMING_INTERVAL} // 1.0;
@@ -82,7 +83,7 @@ sub streamtext ($self, $file_name) {
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     my $res = $self->res;
-    $res->code(200);
+    $res->code(HTTP_OK);
     $res->headers->content_type('text/event-stream');
 
     # Try to open the log file and keep the filehandle
