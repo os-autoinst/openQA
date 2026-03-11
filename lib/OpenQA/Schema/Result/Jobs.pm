@@ -450,7 +450,7 @@ sub _hashref ($obj, @fields) {
             $hashref{$field} = $obj->$field->datetime();
         }
         else {
-            die "unknown field type: $ref";
+            die "unknown field type: $ref";    # uncoverable statement
         }
     }
 
