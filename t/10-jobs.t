@@ -1193,4 +1193,12 @@ subtest 'error handling when duplicating jobs' => sub {
     is $res, 'An internal error occurred when cloning cluster of job 99937', 'internal error handled';
 };
 
+subtest 'setting and deleting properties' => sub {
+    my $job = $jobs->find(99937);
+    $job->set_property(foo => 42);
+    is $job->settings->find({key => 'foo'})->value, 42, 'property has been created';
+    $job->set_property(foo => undef);
+    is $job->settings->find({key => 'foo'}), undef, 'property has been deleted';
+};
+
 done_testing();
