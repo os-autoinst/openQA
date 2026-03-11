@@ -50,7 +50,7 @@ test code run by the 'job', along with variables specified as part of the job
 creation request. Certain variables also influence openQA's and/or
 os-autoinst's own behavior in terms of how it configures the environment for
 the job. Variables that influence os-autoinst's behavior are documented in the
-file `doc/backend_vars.asciidoc` in the os-autoinst repository.
+file `doc/backend_vars.md` in the os-autoinst repository.
 
 In openQA we can parameterize a test to describe for what product it will run
 and for what kind of machines it will be executed. For example, a test suite
