@@ -1075,13 +1075,9 @@ sub append_log ($self, $log, $file_name) {
     my $path = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $path;    # we can't help
     $path .= "/$file_name";
-    if (open my $fd, '>>', $path) {
-        print $fd $log->{data};
-        close $fd;
-    }
-    else {
-        print STDERR "can't open $path: $!\n";
-    }
+    return log_error "can't open $path: $!" unless open my $fd, '>>', $path;
+    print $fd $log->{data};
+    close $fd;
 }
 
 sub update_result ($self, $result, $state = undef) {
