@@ -1698,6 +1698,58 @@ for example for the asset cleanup:
 systemctl mask openqa-enqueue-asset-cleanup.timer
 ----
 
+[id="amqp_events"]
+== Consuming AMQP events from openQA
+The message topic follows the format `SCOPE.APPLICATION.OBJECT.ACTION`, for
+example `opensuse.openqa.job.done` or `opensuse.openqa.comment.create`.
+The `topic_prefix` setting controls the `SCOPE` part; if left empty the topic
+starts with `openqa.` directly.
+Consumers can use `#` to match any number of words or `*` to match exactly one
+word. `opensuse.openqa.#` subscribes to all openQA events, for instance.
+
+Here are the events triggered and published by openQA:
+
+1. `openqa.job.create` when a job is created
+2. `openqa.job.delete` when a job is deleted
+3. `openqa.job.cancel` when a job is cancelled
+4. `openqa.job.restart` when a job is restarted or duplicated
+5. `openqa.job.update_result` when a job result is updated
+6. `openqa.job.done` when a job finishes
+
+Job event bodies include the job settings (e.g. `BUILD`, `TEST`, `ARCH`,
+`MACHINE`, `FLAVOR`, asset fields like `ISO` or `HDD_1`) plus `id`, `group_id`,
+and `remaining` (number of pending jobs for the same build). Finished jobs
+additionally include `result`, `reason`, `newbuild`, `failedmodules`, `bugref`,
+and `bugurl` (only present when a bug reference exists).
+
+Example of a `*.openqa.job.done` message body (at the time of writing):
+
+[source,json]
+--------------------------------------------------------------------------------
+{"ARCH":"x86_64","BUILD":"N.487.1","FLAVOR":"Staging-DVD","ISO":"openSUSE-Staging:N-Tumbleweed-DVD-x86_64-Build487.1-Media.iso","MACHINE":"64bit","TEST":"autoyast_mini","bugref":null,"failedmodules":[],"group_id":2,"id":5735489,"newbuild":null,"reason":null,"remaining":13,"result":"passed"}
+--------------------------------------------------------------------------------
+
+Event for comments are also published:
+
+1. `openqa.comment.create`
+2. `openqa.comment.update`
+3. `openqa.comment.delete`
+
+Comment event bodies include: `id`, `job_id`, `group_id`, `parent_group_id`,
+`user`, `text`, `created`, `updated`.
+
+Example `*.openqa.comment.create` message body:
+
+[source,json]
+--------------------------------------------------------------------------------
+{"created":"2026-03-11T14:35:23Z","group_id":null,"id":865726,"job_id":5735489,"parent_group_id":null,"text":"amqp sent","updated":"2026-03-11T14:35:23Z","user":"demo"}
+--------------------------------------------------------------------------------
+
+A real-world example of an AMQP consumer built on top of openQA events is
+https://github.com/dirkmueller/slacky[slacky], a bot that monitors CI/build
+pipelines and posts failure notifications to Slack. It subscribes to openQA job
+events and tracks job results per build group.
+
 == CLI interface
 Beside the `daemon` argument to run the actual web service the openQA
 startup script `/usr/share/openqa/script/openqa` supports further arguments.
