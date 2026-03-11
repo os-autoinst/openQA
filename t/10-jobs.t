@@ -1201,4 +1201,13 @@ subtest 'setting and deleting properties' => sub {
     is $job->settings->find({key => 'foo'}), undef, 'property has been deleted';
 };
 
+subtest 'adding logs to result file list, including virtio console logs' => sub {
+    my $job = $jobs->find(99937);
+    $job->set_property(VIRTIO_CONSOLE_NUM => 2);
+    path($job->result_dir, 'serial_terminal1.txt')->spew('foo');
+    my $files = $job->test_resultfile_list;
+    my @expected = qw(video.ogv autoinst-log.txt serial0.txt serial_terminal1.txt);
+    is_deeply $files, \@expected, 'list of existing result files returned' or always_explain $files;
+};
+
 done_testing();
