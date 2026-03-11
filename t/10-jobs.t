@@ -1179,4 +1179,18 @@ subtest 'marking job as linked' => sub {
     is_deeply [map { $_->text } $job->comments], $expected, 'linked label for non-bugref URL';
 };
 
+subtest 'error handling when duplicating jobs' => sub {
+    my $job = $jobs->find(99937);
+    my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+    my $res;
+
+    $job_mock->redefine(_create_clones => sub ($self, @args) { die "Rollback failed: foo\n" });
+    combined_like { $res = $job->duplicate } qr/unable to roll back/i, 'failing rollback logged';
+    is $res, 'Rollback failed after failure to clone cluster of job 99937', 'failing rollback handled';
+
+    $job_mock->redefine(_create_clones => sub ($self, @args) { die "internal error\n" });
+    combined_like { $res = $job->duplicate } qr/rolled back after error.*internal error/, 'error logged';
+    is $res, 'An internal error occurred when cloning cluster of job 99937', 'internal error handled';
+};
+
 done_testing();
