@@ -1074,8 +1074,9 @@ to an AMQP message bus.
 The messages consist of a topic and a body.
 The body contains json encoded info about the event.
 See https://github.com/openSUSE/suse_msg/blob/master/amqp_infra.md[amqp_infra.md]
-for more info about the server and the message topic format.
-There you will find instructions how to configure the AMQP server as well.
+for more info about the server and the message topic format or take a look at 
+<<UsersGuide.asciidoc#amqp_events,Consuming AMQP events from openQA>> to find
+detailed instructions how to configure the AMQP server.
 
 To let openQA send messages to an AMQP message bus,
 first make sure that the `perl-Mojo-RabbitMQ-Client` RPM is installed.
