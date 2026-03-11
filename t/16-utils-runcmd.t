@@ -14,6 +14,7 @@ use OpenQA::Task::SignalGuard;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Utils;
+use OpenQA::Schema::Result::Jobs;
 use Mojo::File 'tempdir';
 use Test::MockModule;
 use Test::Mojo;
@@ -106,6 +107,11 @@ subtest 'invoke Git commands for real testing error handling' => sub {
         stdout_like { ok !$git->is_workdir_clean, 'return code 1 interpreted correctly' }
           qr/\[info\].*cmd returned 1\n/i,
           'no error (only info) logged if check returns false (despite Git returning 1)';
+    };
+
+    subtest 'log diff computation helper of job' => sub {
+        like OpenQA::Schema::Result::Jobs::git_log_diff(undef, $empty_tmp_dir, 'HEAD'), qr/test.*foo/s,
+          'commit and file mentioned';
     };
 
     subtest 'cache_ref' => sub {
