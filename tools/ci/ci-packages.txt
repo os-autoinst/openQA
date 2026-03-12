@@ -139,7 +139,7 @@ perl-Log-Any-1.717.0
 perl-Log-Contextual-0.009001
 perl-LWP-MediaTypes-6.04
 perl-LWP-Protocol-https-6.140.0
-perl-MCP-0.40.0
+perl-MCP-0.80.0
 perl-MIME-Base32-1.303.0
 perl-Minion-10.300.0
 perl-Minion-Backend-SQLite-5.0.7
