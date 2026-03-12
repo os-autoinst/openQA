@@ -25,6 +25,7 @@ package Test::FakeLWPUserAgentMirrorResult {
     has is_success => 1;
     has code => 304;
     has status_line => 'some status';
+    has json => undef;
 }    # uncoverable statement
 
 package Test::FakeLWPUserAgentMirrorTxn {
@@ -38,8 +39,9 @@ package Test::FakeLWPUserAgent {
     has mirrored => sub { {} };
     has missing => 0;
     has max_redirects => undef;
+    has fake_txn_args => sub { [] };
 
-    sub get ($self, $url) { Test::FakeLWPUserAgentMirrorTxn->new }
+    sub get ($self, $url) { Test::FakeLWPUserAgentMirrorTxn->new(@{$self->fake_txn_args}) }
 
     sub mirror ($self, $from, $dest) {
         my @res
@@ -75,8 +77,13 @@ subtest 'getting job' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     $clone_mock->redefine(_handle_unexpected_return_code => sub ($tx) { die 'unexpected return code' });
     my $url_handler = {remote => Test::FakeLWPUserAgent->new, remote_url => Mojo::URL->new('foo')};
-    throws_ok { clone_job_get_job(42, $url_handler, {'ignore-missing-assets' => 1}) } qr/unexpected return code/,
+    my $options = {'ignore-missing-assets' => 1, reproduce => 1};
+    throws_ok { clone_job_get_job(42, $url_handler, $options) } qr/unexpected return code/,
       'unexpected return code handled';
+    my $fake_res = Test::FakeLWPUserAgentMirrorResult->new(is_success => 1, code => 200, json => {FOO => 'bar'});
+    $url_handler->{remote}->fake_txn_args([res => $fake_res]);
+    my $job = clone_job_get_job(42, $url_handler, $options);
+    is_deeply $job, {vars => {FOO => 'bar'}}, 'vars assigned' or always_explain $job;
 };
 
 subtest 'clone job apply settings tests' => sub {
@@ -319,6 +326,35 @@ subtest 'cloning with repeat count' => sub {
         is $post_args[0]->[3]->{'TEST:42'}, 'myjob-001', 'first index has been appended to test name';
         is $post_args[41]->[3]->{'TEST:42'}, 'myjob-042', 'random index has been appended to test name';
         is $post_args[99]->[3]->{'TEST:42'}, 'myjob-100', 'last index has been appended to test name';
+    } or always_explain \@post_args;
+};
+
+subtest 'cloning with --reproduce flag' => sub {
+    my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    my @post_args;
+    $ua_mock->redefine(post => sub { push @post_args, [@_] });
+    $clone_mock->redefine(handle_tx => undef);
+    my %fake_vars;
+    my %fake_jobs = (42 => {id => 42, name => 'reproducer', settings => {TEST => 'reproducer'}, vars => \%fake_vars});
+    $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
+    my %options = (host => 'foo', from => 'bar', reproduce => 1, apikey => 'bar', apisecret => 'bar');
+    throws_ok { clone_jobs(42, \%options) } qr/unable to preserve CASEDIR.*lacks TEST_GIT_URL/,
+      'error if original job lacks variable';
+    %fake_vars = (
+        TEST_GIT_URL => 'https://…/os-autoinst-distri-opensuse.git',
+        TEST_GIT_HASH => '53df78e',
+        NEEDLES_GIT_URL => 'https://…/os-autoinst-needles-opensuse.git',
+        NEEDLES_GIT_HASH => 'c5a50cf',
+    );
+    clone_jobs(42, \%options);
+    subtest 'job posted with settings to use revision of original job' => sub {
+        is ref(my $settings = $post_args[0]->[3]), 'HASH', 'settings present' or return;
+        is $settings->{'TEST:42'}, 'reproducer', 'TEST';
+        is $settings->{'CASEDIR:42'}, 'https://…/os-autoinst-distri-opensuse.git', 'CASEDIR';
+        is $settings->{'TEST_GIT_REFSPEC:42'}, '53df78e', 'TEST_GIT_REFSPEC';
+        is $settings->{'NEEDLES_DIR:42'}, 'https://…/os-autoinst-needles-opensuse.git', 'NEEDLES_DIR';
+        is $settings->{'NEEDLES_GIT_REFSPEC:42'}, 'c5a50cf', 'NEEDLES_GIT_REFSPEC';
     } or always_explain \@post_args;
 };
 

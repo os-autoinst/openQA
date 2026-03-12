@@ -179,6 +179,11 @@ Prints an `openqa-cli` command to create the jobs instead of creating them
 directly. This is useful to customize the API call or to review it before
 submitting.
 
+=item B<--reproduce>
+
+Ensure the cloned jobs use the same version of the test code and needles as the
+original jobs.
+
 =item B<--apikey> <value>
 
 Specifies the public key needed for API authentication. Overrides config file
@@ -222,7 +227,7 @@ sub parse_options () {
         "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance",
         "help|h", "show-progress", "within-instance|w=s", "clone-children",
         "max-depth:i", "repeat|r:i", "ignore-missing-assets", "export-command",
-        "skip-checks", "check-repos",
+        "skip-checks", "check-repos", "reproduce",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
