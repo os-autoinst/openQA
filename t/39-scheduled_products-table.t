@@ -157,4 +157,15 @@ subtest 'cleanup' => sub {
     ok $scheduled_products->find(3), 'scheduled product with jobs still present';
 };
 
+subtest 'handling failed job cancellation' => sub {
+    my $jobs_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Jobs');
+    $jobs_mock->redefine(cancel_by_settings => sub { die "fake error" });
+    $schema->txn_begin;
+    my $jobs = {settings_result => [{DISTRI => 'foo', VERSION => 'bar', BUILD => '42'}]};
+    $scheduled_products_mock->redefine(_generate_jobs => $jobs);
+    my $res = $scheduled_product->_schedule_iso({_OBSOLETE => 1}, $signal_guard);
+    like +(join '', @{$res->{notes}}), qr/.*failed to cancel.*fake error.*/i, 'note added' or always_explain $res;
+    $schema->txn_rollback;
+};
+
 done_testing();
