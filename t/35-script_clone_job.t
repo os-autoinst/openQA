@@ -322,6 +322,35 @@ subtest 'cloning with repeat count' => sub {
     } or always_explain \@post_args;
 };
 
+subtest 'cloning with --reproduce flag' => sub {
+    my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    my @post_args;
+    $ua_mock->redefine(post => sub { push @post_args, [@_] });
+    $clone_mock->redefine(handle_tx => undef);
+    my %fake_vars;
+    my %fake_jobs = (42 => {id => 42, name => 'reproducer', settings => {TEST => 'reproducer'}, vars => \%fake_vars});
+    $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
+    my %options = (host => 'foo', from => 'bar', reproduce => 1, apikey => 'bar', apisecret => 'bar');
+    throws_ok { clone_jobs(42, \%options) } qr/unable to preserve CASEDIR.*lacks TEST_GIT_URL/,
+      'error if original job lacks variable';
+    %fake_vars = (
+        TEST_GIT_URL => 'https://…/os-autoinst-distri-opensuse.git',
+        TEST_GIT_HASH => '53df78e',
+        NEEDLES_GIT_URL => 'https://…/os-autoinst-needles-opensuse.git',
+        NEEDLES_GIT_HASH => 'c5a50cf',
+    );
+    clone_jobs(42, \%options);
+    subtest 'job posted with settings to use revision of original job' => sub {
+        is ref(my $settings = $post_args[0]->[3]), 'HASH', 'settings present' or return;
+        is $settings->{'TEST:42'}, 'reproducer', 'TEST';
+        is $settings->{'CASEDIR:42'}, 'https://…/os-autoinst-distri-opensuse.git', 'CASEDIR';
+        is $settings->{'TEST_GIT_REFSPEC:42'}, '53df78e', 'TEST_GIT_REFSPEC';
+        is $settings->{'NEEDLES_DIR:42'}, 'https://…/os-autoinst-needles-opensuse.git', 'NEEDLES_DIR';
+        is $settings->{'NEEDLES_GIT_REFSPEC:42'}, 'c5a50cf', 'NEEDLES_GIT_REFSPEC';
+    } or always_explain \@post_args;
+};
+
 subtest 'overall cloning with parallel and chained dependencies' => sub {
     # do not actually post any jobs, assume jobs can be cloned (clone ID = original ID + 100)
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');

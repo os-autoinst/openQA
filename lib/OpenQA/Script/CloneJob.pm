@@ -79,20 +79,29 @@ sub _handle_unexpected_return_code ($tx) {    # uncoverable statement
     exit 1;    # uncoverable statement
 }
 
+sub _handle_txn_error ($tx, $jobid, $ctx) {
+
+    if (my $err = $tx->error) {
+        $err->{code} //= 'connection error:';
+        die "failed to get $ctx '$jobid': $err->{code} $err->{message}";
+    }
+    _handle_unexpected_return_code($tx) unless $tx->res->code == HTTP_OK;
+}
+
+sub _get_vars ($jobid, $url_handler, $options) {
+    my $url = $url_handler->{remote_url}->clone->path("/tests/$jobid/file/vars.json");
+    _handle_txn_error(my $tx = $url_handler->{remote}->max_redirects(3)->get($url), $jobid, 'vars.json of job');
+    return $tx->res->json;
+}
+
 sub clone_job_get_job ($jobid, $url_handler, $options) {
     my $url = $url_handler->{remote_url}->clone;
     $url->path("jobs/$jobid");
     $url->query->merge(check_assets => 1) unless $options->{'ignore-missing-assets'};
-    my $tx = $url_handler->{remote}->max_redirects(3)->get($url);
-    if ($tx->error) {
-        my $err = $tx->error;
-        # there is no code for some error reasons, e.g. 'connection refused'
-        $err->{code} //= '';
-        die "failed to get job '$jobid': $err->{code} $err->{message}";
-    }
-    _handle_unexpected_return_code($tx) unless $tx->res->code == HTTP_OK;
+    _handle_txn_error(my $tx = $url_handler->{remote}->max_redirects(3)->get($url), $jobid, 'job');
     my $job = $tx->res->json->{job};
     print STDERR Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
+    $job->{vars} = _get_vars($jobid, $url_handler, $options) if $options->{reproduce};
     return $job;
 }
 
@@ -295,12 +304,24 @@ sub clone_jobs ($jobid, $options) {
     }
 }
 
+sub _add_setting ($settings, $vars, $var, $key, $for) {
+    $settings->{$key} = $vars->{$var} or die "unable to preserve $for ref, original job lacks $var\n";
+}
+
+sub _add_versioning_settings ($settings, $vars) {
+    _add_setting($settings, $vars, qw(TEST_GIT_URL CASEDIR CASEDIR));
+    _add_setting($settings, $vars, qw(TEST_GIT_HASH TEST_GIT_REFSPEC CASEDIR));
+    _add_setting($settings, $vars, qw(NEEDLES_GIT_URL NEEDLES_DIR NEEDLES_DIR));
+    _add_setting($settings, $vars, qw(NEEDLES_GIT_HASH NEEDLES_GIT_REFSPEC NEEDLES_DIR));
+}
+
 sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1, $relation = '') {
     return if defined $post_params->{$jobid};
 
     my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
 
     my $settings = $post_params->{$jobid} = {%{$job->{settings}}};
+    _add_versioning_settings($settings, $job->{vars}) if $options->{reproduce};
     my $clone_children = $options->{'clone-children'};
     my $max_depth = $options->{'max-depth'} // 1;
     for my $job_type (qw(parents children)) {
