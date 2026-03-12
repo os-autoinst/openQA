@@ -231,13 +231,12 @@ ifeq ($(TESTS),)
 test: test-helm-chart
 endif
 endif
-
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-tidy-compile-style ## Run checkstyle and tidy-compile-style tests
+test-checkstyle: test-checkstyle-standalone test-author ## Run checkstyle and author tests
 
 .PHONY: test-t
 test-t: node_modules ## Run standard Perl tests
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-heavy
 test-heavy: node_modules ## Run heavy tests
@@ -245,11 +244,12 @@ test-heavy: node_modules ## Run heavy tests
 
 .PHONY: test-ui
 test-ui: node_modules ## Run UI tests
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-api
 test-api: node_modules ## Run API tests
-	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="$(unstables)"
+
 
 # put unstable tests in tools/unstable_tests.txt and uncomment in circle CI config to handle unstables with retries
 .PHONY: test-unstable
@@ -369,9 +369,9 @@ endif
 test-critic: ## Run Perl Critic
 	tools/perlcritic lib
 
-.PHONY: test-tidy-compile-style
-test-tidy-compile-style: ## Run tidy, compile and style tests
-	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/*{tidy,compile,style}*.t" GLOBIGNORE="$(unstables)"
+.PHONY: test-author
+test-author: ## Run author tests (tidy, compile, style, pod, etc.)
+	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS xt/*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-shellcheck
 test-shellcheck: ## Run shellcheck on scripts
