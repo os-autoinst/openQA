@@ -213,7 +213,8 @@ function renderModuleRow(module, snippets) {
 }
 
 // Default batch size for chunked rendering to balance responsiveness and overhead
-const DEFAULT_BATCH_SIZE = 50;
+const renderBatchSizeMeta = document.querySelector('meta[name="render-batch-size"]');
+const DEFAULT_BATCH_SIZE = renderBatchSizeMeta ? parseInt(renderBatchSizeMeta.content, 10) : 50;
 
 /**
  * Process an array of items in batches using requestAnimationFrame for cooperative multitasking.
