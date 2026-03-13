@@ -490,7 +490,7 @@ function activateTabAccordingToHashChange() {
 function renderTabContent(tabConfig, response) {
   const customRenderer = tabConfig.renderContents;
   if (customRenderer) {
-    return customRenderer.call(tabConfig, response);
+    return Promise.resolve(customRenderer.call(tabConfig, response));
   }
   tabConfig.panelElement.innerHTML = response;
   return Promise.resolve();
@@ -583,10 +583,6 @@ function deactivateTab(tabName) {
     return false;
   }
   tabConfig.isActive = false;
-  if (!tabConfig.initialized && tabConfig._abortController) {
-    tabConfig._abortController.abort();
-    tabConfig._abortController = undefined;
-  }
   const hideHandler = tabConfig.onHide;
   if (hideHandler) {
     return hideHandler.call(tabConfig);
