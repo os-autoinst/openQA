@@ -479,6 +479,25 @@ subtest 'render text results' => sub {
     };
 };
 
+subtest 'render log links from steps' => sub {
+    $driver->find_element_by_link_text('Details')->click();
+    for my $test ([1, 'text'], [2, 'screenshot']) {
+        my ($step, $label) = @$test;
+        subtest "step $step - $label" => sub {
+            $driver->find_element(qq{[href="#step/bootloader/$step"]})->click();
+            wait_for_ajax(msg => "step $step of bootloader test module loaded");
+            my @log_link_elems
+              = $driver->find_elements(
+                q{//span[contains(@class, 'step_actions')]//i[contains(@class, 'fa-file-lines')]/../..}, 'xpath');
+            my $link = $log_link_elems[0];
+            is $link->get_attribute('title'), 'Jump to logfile', 'log link exists';
+            like $link->get_attribute('href'),
+              qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step},
+              'log href correct';
+        };
+    }
+};
+
 subtest 'render video link if frametime is available' => sub {
     $driver->find_element_by_link_text('Details')->click();
     $driver->find_element('[href="#step/bootloader/1"]')->click();
