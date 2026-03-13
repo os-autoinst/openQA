@@ -13,9 +13,8 @@ For administrators it is recommend to have read the
 <<Installing.asciidoc#installing,Installation Guide>> first to understand the structure
 of components as well as the configuration of an installed instance.
 
-
-== Using job templates to automate jobs creation
 [id="job_templates"]
+== Using job templates to automate jobs creation
 
 === The problem
 
