@@ -6,7 +6,7 @@ which ct > /dev/null || echo "Error: ct is not installed"
 
 cd container/helm
 
-gw_disabled=(--helm-extra-set-args "--set=gateway.enabled=false")
+ct_extra=(--helm-extra-set-args "--set=gateway.enabled=false --set=image.pullPolicy=IfNotPresent --set=worker.image.pullPolicy=IfNotPresent")
 ct_install_args=()
-[[ "${1:-lint}" != "lint" ]] && ct_install_args=("${gw_disabled[@]}")
+[[ "${1:-lint}" != "lint" ]] && ct_install_args=("${ct_extra[@]}")
 ct "${1:-lint}" --debug --all --config ct.yaml "${ct_install_args[@]}"
