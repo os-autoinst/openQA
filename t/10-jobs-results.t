@@ -196,6 +196,9 @@ subtest 'saving results' => sub {
     $arbitrary_job_module->save_results(\%some_test_results);
     my $details_file = path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json');
     is_deeply decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved';
+    $some_test_results{details} = [{needles => [{json => 'foo'}]}];
+    combined_like { $arbitrary_job_module->save_results(\%some_test_results) } qr/foo not found/,
+      'updated for needles in "details" attempted';
 };
 
 subtest 'loading results with missing file in details' => sub {

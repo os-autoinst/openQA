@@ -140,8 +140,10 @@ subtest 'filtering subgroups' => sub {
     isnt scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'";
 };
 
+my $test_parent = $parent_groups->find({name => 'Test parent'});
+
 subtest 'View grouped by group' => sub {
-    $driver->get('/parent_group_overview/' . $parent_groups->find({name => 'Test parent'})->id);
+    $driver->get('/parent_group_overview/' . $test_parent->id);
     $driver->find_element_by_id('grouped_by_group_tab')->click();
     is
       $driver->find_element_by_id('grouped_by_group_tab')->get_attribute('class'),
@@ -152,6 +154,12 @@ subtest 'View grouped by group' => sub {
       'active parent_group_overview_grouping_active',
       'grouped by group link remains active';
     $driver->find_element_by_id('grouped_by_group')->is_displayed();
+};
+
+subtest 'rendered description' => sub {
+    $test_parent->update({description => '**test description**'});
+    $driver->get('/parent_group_overview/' . $test_parent->id);
+    is $driver->find_element_by_id('group_description')->get_text, 'test description', 'description rendered';
 };
 
 kill_driver();

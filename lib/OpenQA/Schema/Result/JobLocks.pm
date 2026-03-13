@@ -1,4 +1,4 @@
-# Copyright 2015 SUSE LLC
+# Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Result::JobLocks;
@@ -32,17 +32,5 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key('name', 'owner');
 __PACKAGE__->belongs_to(owner => 'OpenQA::Schema::Result::Jobs', 'owner');
-
-
-# translate job ids stored in locked_by to jobs
-sub locked_by_jobs {
-    my ($self) = @_;
-    my $rsource = $self->result_source;
-    my $schema = $rsource->schema;
-
-    return unless $self->locked_by;
-    my @locked_ids = split /,/, $self->locked_by;
-    return $schema->resultset('Jobs')->search({id => {-in => \@locked_ids}})->all;
-}
 
 1;

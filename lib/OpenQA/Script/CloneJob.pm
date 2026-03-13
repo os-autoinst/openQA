@@ -26,6 +26,7 @@ our @EXPORT = qw(
   create_url_handler
   split_jobid
   post_jobs
+  openqa_baseurl
 );
 
 use constant GLOBAL_SETTINGS => (qw(WORKER_CLASS _GROUP _GROUP_ID));
@@ -73,6 +74,11 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
     }
 }
 
+sub _handle_unexpected_return_code ($tx) {    # uncoverable statement
+    warn sprintf 'unexpected return code: %s %s', $tx->res->code, $tx->res->message;    # uncoverable statement
+    exit 1;    # uncoverable statement
+}
+
 sub clone_job_get_job ($jobid, $url_handler, $options) {
     my $url = $url_handler->{remote_url}->clone;
     $url->path("jobs/$jobid");
@@ -84,10 +90,7 @@ sub clone_job_get_job ($jobid, $url_handler, $options) {
         $err->{code} //= '';
         die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
-    if ($tx->res->code != HTTP_OK) {
-        warn sprintf 'unexpected return code: %s %s', $tx->res->code, $tx->res->message;
-        exit 1;
-    }
+    _handle_unexpected_return_code($tx) unless $tx->res->code == HTTP_OK;
     my $job = $tx->res->json->{job};
     print STDERR Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
     return $job;

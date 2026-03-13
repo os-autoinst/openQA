@@ -1179,4 +1179,35 @@ subtest 'marking job as linked' => sub {
     is_deeply [map { $_->text } $job->comments], $expected, 'linked label for non-bugref URL';
 };
 
+subtest 'error handling when duplicating jobs' => sub {
+    my $job = $jobs->find(99937);
+    my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+    my $res;
+
+    $job_mock->redefine(_create_clones => sub ($self, @args) { die "Rollback failed: foo\n" });
+    combined_like { $res = $job->duplicate } qr/unable to roll back/i, 'failing rollback logged';
+    is $res, 'Rollback failed after failure to clone cluster of job 99937', 'failing rollback handled';
+
+    $job_mock->redefine(_create_clones => sub ($self, @args) { die "internal error\n" });
+    combined_like { $res = $job->duplicate } qr/rolled back after error.*internal error/, 'error logged';
+    is $res, 'An internal error occurred when cloning cluster of job 99937', 'internal error handled';
+};
+
+subtest 'setting and deleting properties' => sub {
+    my $job = $jobs->find(99937);
+    $job->set_property(foo => 42);
+    is $job->settings->find({key => 'foo'})->value, 42, 'property has been created';
+    $job->set_property(foo => undef);
+    is $job->settings->find({key => 'foo'}), undef, 'property has been deleted';
+};
+
+subtest 'adding logs to result file list, including virtio console logs' => sub {
+    my $job = $jobs->find(99937);
+    $job->set_property(VIRTIO_CONSOLE_NUM => 2);
+    path($job->result_dir, 'serial_terminal1.txt')->spew('foo');
+    my $files = $job->test_resultfile_list;
+    my @expected = qw(video.ogv autoinst-log.txt serial0.txt serial_terminal1.txt);
+    is_deeply $files, \@expected, 'list of existing result files returned' or always_explain $files;
+};
+
 done_testing();

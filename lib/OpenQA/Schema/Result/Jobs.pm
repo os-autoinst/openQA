@@ -450,7 +450,7 @@ sub _hashref ($obj, @fields) {
             $hashref{$field} = $obj->$field->datetime();
         }
         else {
-            die "unknown field type: $ref";
+            die "unknown field type: $ref";    # uncoverable statement
         }
     }
 
@@ -1075,13 +1075,9 @@ sub append_log ($self, $log, $file_name) {
     my $path = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $path;    # we can't help
     $path .= "/$file_name";
-    if (open my $fd, '>>', $path) {
-        print $fd $log->{data};
-        close $fd;
-    }
-    else {
-        print STDERR "can't open $path: $!\n";
-    }
+    return log_error "can't open $path: $!" unless open my $fd, '>>', $path;
+    print $fd $log->{data};
+    close $fd;
 }
 
 sub update_result ($self, $result, $state = undef) {
@@ -1417,23 +1413,17 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
         }
 
         if ($chunk->is_last) {
-            # XXX: Watch out also apparmor permissions
-            my $sum;
-            my $real_sum;
             $last++;
 
-            # Perform weak check on last bytes if files > 250MB
-            if ($chunk->end > 250000000) {
-                $sum = $chunk->end;
-                $real_sum = -s $temp_final_file->to_string;
-            }
-            else {
-                $sum = $chunk->total_cksum;
-                $real_sum = $chunk->file_digest($temp_final_file->to_string);
-            }
+            # Perform weak check on the number of bytes if the file size is > 250 MB
+            my $temp_final_str = $temp_final_file->to_string;
+            my ($sum, $real_sum)
+              = $chunk->end > 250000000
+              ? ($chunk->end, -s $temp_final_str)
+              : ($chunk->total_cksum, $chunk->file_digest($temp_final_str));
 
             $temp_chunk_folder->remove_tree
-              && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum ( weak check on last bytes )")
+              && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum (weak check on last bytes)")
               unless $sum eq $real_sum;
 
             $temp_final_file->move_to($final_file);
