@@ -13,9 +13,8 @@ For administrators it is recommend to have read the
 <<Installing.asciidoc#installing,Installation Guide>> first to understand the structure
 of components as well as the configuration of an installed instance.
 
-
-== Using job templates to automate jobs creation
 [id="job_templates"]
+== Using job templates to automate jobs creation
 
 === The problem
 
@@ -1748,7 +1747,7 @@ Example `*.openqa.comment.create` message body:
 A real-world example of an AMQP consumer built on top of openQA events is
 https://github.com/dirkmueller/slacky[slacky], a bot that monitors CI/build
 pipelines and posts failure notifications to Slack. It subscribes to openQA job
-events and tracks job results per build group.
+events and tracks job results per build and job group.
 
 == CLI interface
 Beside the `daemon` argument to run the actual web service the openQA
