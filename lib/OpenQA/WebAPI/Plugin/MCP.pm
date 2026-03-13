@@ -16,31 +16,64 @@ sub register ($self, $app, $config) {
 
     $mcp->tool(
         name => 'openqa_get_info',
+        title => 'Get openQA Server Info',
         description => 'Get information about the openQA server, connected workers and the current user',
+        input_schema => {type => 'object', properties => {}, additionalProperties => 0},
+        annotations => {
+            title => 'Get openQA Server Info',
+            readOnlyHint => 1,
+            destructiveHint => 0,
+            idempotentHint => 1,
+            openWorldHint => 0,
+        },
         code => \&tool_openqa_get_info
     );
 
     $mcp->tool(
         name => 'openqa_get_job_info',
-        description => 'Get information about a specific openQA job',
+        title => 'Get openQA Job Details',
+        description => 'Get any information about a specific openQA job, like logs, scheduling etc.',
         input_schema => {
             type => 'object',
-            properties => {job_id => {type => 'integer', minimum => 1}},
+            properties =>
+              {job_id => {type => 'integer', minimum => 1, description => 'The job ID of any openQA test suite.'}},
             required => ['job_id'],
+            additionalProperties => 0,
+        },
+        annotations => {
+            title => 'Get openQA Job Details',
+            readOnlyHint => 1,
+            destructiveHint => 0,
+            idempotentHint => 1,
+            openWorldHint => 0,
         },
         code => \&tool_openqa_get_job_info
     );
 
     $mcp->tool(
         name => 'openqa_get_log_file',
+        title => 'Get openQA Job Log File',
         description => 'Get the content of a specific log file for an openQA job',
         input_schema => {
             type => 'object',
             properties => {
-                job_id => {type => 'integer', minimum => 1},
-                file_name => {type => 'string', minLength => 1}
+                job_id => {type => 'integer', minimum => 1, description => 'The job ID of the openQA job'},
+                file_name => {
+                    type => 'string',
+                    minLength => 1,
+                    description =>
+                      'Name of the log file to lookup (e.g., autoinst-log.txt, serial0.txt). Only text logs for now'
+                }
             },
             required => ['job_id', 'file_name'],
+            additionalProperties => 0,
+        },
+        annotations => {
+            title => 'Get openQA Job Log File',
+            readOnlyHint => 1,
+            destructiveHint => 0,
+            idempotentHint => 1,
+            openWorldHint => 0,
         },
         code => \&tool_openqa_get_log_file
     );
