@@ -487,6 +487,15 @@ function activateTabAccordingToHashChange() {
   }
 }
 
+function renderTabContent(tabConfig, response) {
+  const customRenderer = tabConfig.renderContents;
+  if (customRenderer) {
+    return customRenderer.call(tabConfig, response);
+  }
+  tabConfig.panelElement.innerHTML = response;
+  return Promise.resolve();
+}
+
 function loadTabPanelElement(tabName, tabConfig) {
   const tabPanelElement = document.getElementById(tabName);
   if (!tabPanelElement) {
@@ -497,21 +506,27 @@ function loadTabPanelElement(tabName, tabConfig) {
     return false;
   }
   tabConfig.panelElement = tabPanelElement; // for easier access in custom renderers
-  fetch(ajaxUrl, {method: 'GET'})
+  if (tabConfig._abortController) {
+    tabConfig._abortController.abort();
+  }
+  tabConfig._abortController = new AbortController();
+  fetch(ajaxUrl, {method: 'GET', signal: tabConfig._abortController.signal})
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       if (response.headers.get('Content-Type').includes('application/json')) return response.json();
       return response.text();
     })
     .then(response => {
-      const customRenderer = tabConfig.renderContents;
-      if (customRenderer) {
-        return customRenderer.call(tabConfig, response);
+      if (!tabConfig.isActive) {
+        tabConfig._deferredResponse = response;
+        return;
       }
-      tabPanelElement.innerHTML = response;
+      tabConfig._deferredResponse = undefined;
+      return renderTabContent(tabConfig, response);
     })
     .catch(error => {
-      console.error(error);
+      if (error.name === 'AbortError') return;
+      console.error(`Error loading tab '${tabName}':`, error);
       const customRenderer = tabConfig.renderError;
       if (customRenderer) {
         return customRenderer.call(tabConfig, error);
@@ -542,6 +557,17 @@ function activateTab(tabName) {
   if (!tabConfig.initialized) {
     return (tabConfig.initialized = loadTabPanelElement(tabName, tabConfig));
   }
+  if (tabConfig._deferredResponse) {
+    const response = tabConfig._deferredResponse;
+    renderTabContent(tabConfig, response)
+      .then(() => {
+        tabConfig._deferredResponse = undefined;
+      })
+      .catch(error => {
+        console.error(`Error rendering deferred content for tab '${tabName}':`, error);
+        tabConfig._deferredResponse = undefined;
+      });
+  }
   const showHandler = tabConfig.onShow;
   if (showHandler) {
     return showHandler.call(tabConfig);
@@ -557,6 +583,10 @@ function deactivateTab(tabName) {
     return false;
   }
   tabConfig.isActive = false;
+  if (!tabConfig.initialized && tabConfig._abortController) {
+    tabConfig._abortController.abort();
+    tabConfig._abortController = undefined;
+  }
   const hideHandler = tabConfig.onHide;
   if (hideHandler) {
     return hideHandler.call(tabConfig);
@@ -767,76 +797,27 @@ function githashToLink(value, repo) {
   return commits;
 }
 
-function renderTestModules(response) {
-  this.hasContents = true;
-  renderModuleTable(this.panelElement, response);
+function setupTestDetailsFilter(tabConfig) {
+  if (tabConfig._hasFilterHandlers) return;
 
-  // load the embedded logfiles (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
-  if (this.panelElement.getElementsByClassName('embedded-logfile').length > 0) {
-    loadEmbeddedLogFiles();
-    return;
-  }
-
-  setupLazyLoadingFailedSteps();
-
-  // enable the external tab if there are text results
-  // note: It would be more efficient to query "regular details" and external results in one go because both
-  //       are just a different representation of the same data.
-  if (document.getElementsByClassName('external-result-container').length) {
-    showTabNavElement('external');
-  }
-
-  // display the preview for the current step according to the hash
-  const hash = window.location.hash;
-  if (hash.search('#step/') === 0) {
-    setCurrentPreviewFromStepLinkIfPossible($("[href='" + hash + "'], [data-href='" + hash + "']"));
-  }
-
-  // setup event handlers for the window
-  if (!this.hasWindowEventHandlers) {
-    // setup keyboard navigation through test details
-    $(window).keydown(handleKeyDownOnTestDetails);
-
-    // ensure the size of the preview container is adjusted when the window size changes
-    $(window).resize(function () {
-      const currentPreview = $('.current_preview');
-      if (currentPreview.length) {
-        setCurrentPreview($('.current_preview'), true);
-      }
-    });
-    this.hasWindowEventHandlers = true;
-  }
-
-  // setup result filter, define function to apply filter changes
   const detailsFilter = $('#details-filter');
   const detailsNameFilter = $('#details-name-filter');
   const detailsFailedOnlyFilter = $('#details-only-failed-filter');
   const resultsTable = $('#results');
-  let anyFilterEnabled = false;
-  let nameFilter = '';
-  let nameFilterEnabled = false;
-  let failedOnlyFilterEnabled = false;
-  const applyFilterChanges = function (event) {
-    // determine enabled filter
-    anyFilterEnabled = !detailsFilter.hasClass('hidden');
-    if (anyFilterEnabled) {
-      nameFilter = detailsNameFilter.val();
-      nameFilterEnabled = nameFilter.length !== 0;
-      failedOnlyFilterEnabled = detailsFailedOnlyFilter.prop('checked');
-      anyFilterEnabled = nameFilterEnabled || failedOnlyFilterEnabled;
-    }
 
-    // show everything if no filter present
-    if (!anyFilterEnabled) {
+  const applyFilterChanges = () => {
+    const anyFilterEnabled = !detailsFilter.hasClass('hidden');
+    const nameFilter = detailsNameFilter.val();
+    const nameFilterEnabled = anyFilterEnabled && nameFilter.length !== 0;
+    const failedOnlyFilterEnabled = anyFilterEnabled && detailsFailedOnlyFilter.prop('checked');
+
+    if (!nameFilterEnabled && !failedOnlyFilterEnabled) {
       resultsTable.find('tbody tr').show();
       return;
     }
 
-    // hide all categories
     resultsTable.find('tbody tr td[colspan="3"]').parent('tr').hide();
-
-    // show/hide table rows considering filter
-    $.each(resultsTable.find('tbody .result'), function (index, td) {
+    $.each(resultsTable.find('tbody .result'), (index, td) => {
       const tdElement = $(td);
       const trElement = tdElement.parent('tr');
       const stepMaches =
@@ -846,15 +827,60 @@ function renderTestModules(response) {
     });
   };
 
-  detailsNameFilter.keyup(applyFilterChanges);
-  detailsFailedOnlyFilter.change(applyFilterChanges);
-
-  // setup filter toggle
-  $('.details-filter-toggle').on('click', function (event) {
+  detailsNameFilter.on('keyup', applyFilterChanges);
+  detailsFailedOnlyFilter.on('change', applyFilterChanges);
+  $('.details-filter-toggle').on('click', event => {
     event.preventDefault();
     detailsFilter.toggleClass('hidden');
     applyFilterChanges();
   });
+
+  tabConfig._hasFilterHandlers = true;
+}
+
+function setupTestDetailsWindowEventHandlers(tabConfig) {
+  if (tabConfig._hasWindowEventHandlers) return;
+  $(window).keydown(handleKeyDownOnTestDetails);
+  $(window).resize(() => {
+    if ($('.current_preview').length) {
+      setCurrentPreview($('.current_preview'), true);
+    }
+  });
+  tabConfig._hasWindowEventHandlers = true;
+}
+
+function renderTestModules(response) {
+  this.hasContents = true;
+  const tabConfig = this;
+
+  return renderModuleTable(this.panelElement, response, () => tabConfig.isActive)
+    .then(completed => {
+      if (!completed) return;
+
+      if (tabConfig.panelElement.getElementsByClassName('embedded-logfile').length > 0) {
+        loadEmbeddedLogFiles();
+        return;
+      }
+
+      setupLazyLoadingFailedSteps();
+
+      if (document.getElementsByClassName('external-result-container').length) {
+        showTabNavElement('external');
+      }
+
+      const hash = window.location.hash;
+      if (hash.search('#step/') === 0) {
+        setCurrentPreviewFromStepLinkIfPossible($("[href='" + hash + "'], [data-href='" + hash + "']"));
+      }
+
+      setupTestDetailsWindowEventHandlers(tabConfig);
+      setupTestDetailsFilter(tabConfig);
+    })
+    .catch(error => {
+      console.error('Error rendering test modules:', error);
+      tabConfig.panelElement.innerHTML = '';
+      tabConfig.panelElement.appendChild(document.createTextNode(`Unable to render test modules: ${error}`));
+    });
 }
 
 function renderExternalTab(response) {
