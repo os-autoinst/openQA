@@ -1,413 +1,428 @@
 #auditlog {
-    padding: 0;
-    margin: 0;
-    border: none;
-    background: none;
-    width: 100%;
-    height: 60em;
-    overflow-x: scroll;
-    overflow-y: scroll;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  width: 100%;
+  height: 60em;
+  overflow-x: scroll;
+  overflow-y: scroll;
 }
 #audit_log_table .audit_event_data {
-    white-space: pre;
-    font-family: monospace;
+  white-space: pre;
+  font-family: monospace;
 }
 
 .search-popover {
-    position: relative;
-    left: -15px;
-    z-index: 10;
-    float: right;
-    margin-top: 5px;
-    margin-left: 5px;
+  position: relative;
+  left: -15px;
+  z-index: 10;
+  float: right;
+  margin-top: 5px;
+  margin-left: 5px;
 
-    .popover {
-        min-width: 30em;
-    }
+  .popover {
+    min-width: 30em;
+  }
 }
 
 #product_log_table {
-    margin-bottom: 16px !important;
-    .scheduled-product-actions a {
-        padding: 3px;
-    }
+  margin-bottom: 16px !important;
+  .scheduled-product-actions a {
+    padding: 3px;
+  }
 }
-#scheduled-product-modal table, #scheduled-products h3 + table {
+#scheduled-product-modal table,
+#scheduled-products h3 + table {
+  border: none;
+  width: 100%;
+  font-family: monospace;
+  th,
+  td {
+    padding: 1px;
     border: none;
-    width: 100%;
-    font-family: monospace;
-    th, td {
-        padding: 1px;
-        border: none;
-    }
-    td:first-child {
-        text-align: right;
-        padding-right: 10px;
-    }
+  }
+  td:first-child {
+    text-align: right;
+    padding-right: 10px;
+  }
 }
 
 // user info header
 #user-info {
-    text-align: right;
+  text-align: right;
 }
 
 // form on top of the lists
 .list-form {
-    text-align: right;
+  text-align: right;
 }
 
 // job setting table
 #job_settings td {
-    padding: 2px;
+  padding: 2px;
 }
 
-html:not([data-bs-theme="dark"]) .tab-pane {
-        table#results, .comments {
-        padding-top: 9px;
-    }
+html:not([data-bs-theme='dark']) .tab-pane {
+  table#results,
+  .comments {
+    padding-top: 9px;
+  }
 }
 
 // assets
 table#assets {
-    a.picked-group {
-        text-decoration: underline !important;
-    }
-    a.to-be-removed {
-        text-decoration: line-through !important;
-    }
-    td {
-        overflow:hidden; white-space: nowrap; text-overflow: ellipsis;
-    }
+  a.picked-group {
+    text-decoration: underline !important;
+  }
+  a.to-be-removed {
+    text-decoration: line-through !important;
+  }
+  td {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 }
 #assets-by-group {
-    span {
-        float: right;
+  span {
+    float: right;
+  }
+  & > li {
+    margin-top: 5px;
+    input[type='checkbox'] {
+      display: none;
     }
-    & > li {
-        margin-top: 5px;
-        input[type="checkbox"] {
-            display: none;
-        }
-        label {
-            cursor: pointer;
-            font-weight: normal;
-        }
-        .fa {
-            padding-left: 3px;
-            opacity: 0.3;
-        }
-        & > span {
-            font-weight: bold;
-        }
-        input[type="checkbox"] ~ ul {
-            display: none;
-        }
-        input[type="checkbox"]:checked ~ ul {
-            display: block;
-        }
+    label {
+      cursor: pointer;
+      font-weight: normal;
     }
+    .fa {
+      padding-left: 3px;
+      opacity: 0.3;
+    }
+    & > span {
+      font-weight: bold;
+    }
+    input[type='checkbox'] ~ ul {
+      display: none;
+    }
+    input[type='checkbox']:checked ~ ul {
+      display: block;
+    }
+  }
 }
 
 // needle manager (the table where you can delete, not the editor)
-#confirm_delete  table td {
-    vertical-align: top;
+#confirm_delete table td {
+  vertical-align: top;
 }
 
 // job group manager (the Drag & Drop thing)
 #new_group_form button {
-    margin-top: 15px;
+  margin-top: 15px;
 }
 a.add-parent-group {
-    float: right;
-    margin-left: 10px;
-    padding: 5px;
-    text-decoration: none !important;
-    position: relative;
+  float: right;
+  margin-left: 10px;
+  padding: 5px;
+  text-decoration: none !important;
+  position: relative;
 
-    i {
-        font-size: 215%;
-        top: -10px;
+  i {
+    font-size: 215%;
+    top: -10px;
 
-        & + i {
-            color: white;
-            margin-top: 2px;
-            font-size: 140%;
-        }
+    & + i {
+      color: white;
+      margin-top: 2px;
+      font-size: 140%;
     }
+  }
 }
 #job_group_list {
-    margin: 0px 0px 20px 0px;
-    padding: 0px;
+  margin: 0px 0px 20px 0px;
+  padding: 0px;
 
-    li, div {
-        font-weight: 500;
-        font-size: 120%;
-        list-style-type: none;
+  li,
+  div {
+    font-weight: 500;
+    font-size: 120%;
+    list-style-type: none;
+  }
+
+  li {
+    border: 1px solid #eee;
+    margin: 5px 0px;
+    padding: 5px;
+    font-weight: normal;
+    font-size: 115%;
+    clear: both;
+
+    &.dragover {
+      padding-bottom: 0px !important;
+      &:after {
+        top: 6px;
+      }
     }
+  }
+
+  & > li {
+    padding-bottom: 4px !important;
+  }
+
+  ul {
+    margin: 0px;
+    padding: 0px;
+    margin-top: 1px;
 
     li {
-        border: 1px solid #eee;
-        margin: 5px 0px;
-        padding: 5px;
-        font-weight: normal;
-        font-size: 115%;
-        clear: both;
+      background-color: #fdfdfd;
+      font-size: 90%;
 
-        &.dragover {
-            padding-bottom: 0px !important;
-            &:after {
-                top: 6px;
-            }
+      &.dragover {
+        padding-bottom: 1px !important;
+        &:after {
+          top: 7px;
         }
+      }
     }
-
-    & > li {
-        padding-bottom: 4px !important;
+  }
+  [draggable='true'] {
+    cursor: move;
+  }
+  [draggable='false'] span.glyphicon {
+    display: none;
+  }
+  span {
+    &.glyphicon,
+    &.fa {
+      color: #aaa;
+      margin: 0px 5px;
     }
-
-    ul {
-        margin: 0px;
-        padding: 0px;
-        margin-top: 1px;
-
-        li {
-            background-color: #fdfdfd;
-            font-size: 90%;
-
-            &.dragover {
-                padding-bottom: 1px !important;
-                &:after {
-                    top: 7px;
-                }
-            }
-        }
+    &.glyphicon-menu-hamburger {
+      font-size: 80%;
+      margin: 3px;
     }
-    [draggable='true'] {
-        cursor: move;
+  }
+  a.fa-plus,
+  a.fa-trash {
+    float: right;
+    display: inline-block;
+    margin: 5px;
+    color: $gray-600;
+    &:hover {
+      color: $blue-600;
     }
-    [draggable='false'] span.glyphicon {
-        display: none;
-    }
-    span {
-        &.glyphicon, &.fa {
-            color: #aaa;
-            margin: 0px 5px;
-        }
-        &.glyphicon-menu-hamburger {
-            font-size: 80%;
-            margin: 3px;
-        }
-    }
-    a.fa-plus, a.fa-trash {
-        float: right;
-        display: inline-block;
-        margin: 5px;
-        color: $gray-600;
-        &:hover {
-            color: $blue-600;
-        }
-    }
-    div.dragover {
-        margin-bottom: -3px;
-    }
-    .dragover:after {
-        border-bottom: 2px dashed #446E9B;
-        content: " ";
-        position: relative;
-        display: block;
-        margin: 1px 0px;
-    }
-    .parent-dragover {
-        margin-top: -4px;
-    }
-    .parent-dragover:before {
-        border-top: 2px dashed #446E9B;
-        content: " ";
-        position: relative;
-        display: block;
-        top: -6px;
-        margin: 1px 0px;
-    }
-    .enforce-parent-drop {
-        position: relative;
-        top: -15px;
-        height: 25px;
-        margin-bottom: -25px;
-    }
+  }
+  div.dragover {
+    margin-bottom: -3px;
+  }
+  .dragover:after {
+    border-bottom: 2px dashed #446e9b;
+    content: ' ';
+    position: relative;
+    display: block;
+    margin: 1px 0px;
+  }
+  .parent-dragover {
+    margin-top: -4px;
+  }
+  .parent-dragover:before {
+    border-top: 2px dashed #446e9b;
+    content: ' ';
+    position: relative;
+    display: block;
+    top: -6px;
+    margin: 1px 0px;
+  }
+  .enforce-parent-drop {
+    position: relative;
+    top: -15px;
+    height: 25px;
+    margin-bottom: -25px;
+  }
 }
-[data-bs-theme="dark"] {
-    #job_group_list ul li {
-        background-color: $btn-default-bg-dark;
-    }
-    .dragover:after, .parent-dragover:before {
-        border-color: $btn-default-color-dark !important;
-    }
+[data-bs-theme='dark'] {
+  #job_group_list ul li {
+    background-color: $btn-default-bg-dark;
+  }
+  .dragover:after,
+  .parent-dragover:before {
+    border-color: $btn-default-color-dark !important;
+  }
 }
 
 // job templates
 .prio input {
-    width: 35pt;
-    border: 1px solid #aaa; // setting the border prevents Firefox to misalign arrows for increment/decrement
+  width: 35pt;
+  border: 1px solid #aaa; // setting the border prevents Firefox to misalign arrows for increment/decrement
 
-    &::-webkit-input-placeholder {
-        color: #000;
-        font-style: italic;
-    }
-    &::-moz-placeholder {
-        color: #000;
-        font-style: italic;
-    }
-    &::placeholder {
-        color: #000;
-        font-style: italic;
-    }
+  &::-webkit-input-placeholder {
+    color: #000;
+    font-style: italic;
+  }
+  &::-moz-placeholder {
+    color: #000;
+    font-style: italic;
+  }
+  &::placeholder {
+    color: #000;
+    font-style: italic;
+  }
 }
 
 // needle editor
 a.restart-link {
-    color: blue;
+  color: blue;
 }
 .table-nonfluid {
-    width: auto;
+  width: auto;
 }
 .badge-all-passed {
-    color: $color-module-passed;
+  color: $color-module-passed;
 }
 .badge-commented {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 #needleeditor_tags label {
-    font-weight: normal;
+  font-weight: normal;
 }
 
 // job templates
 #properties {
-    input[type='number'] {
-        width: 250pt;
-        display: inline;
+  input[type='number'] {
+    width: 250pt;
+    display: inline;
+  }
+  label[title] {
+    cursor: help;
+  }
+  .properties-progress-indication {
+    display: none;
+  }
+  #editor-description {
+    min-height: 5em;
+    min-width: 100%;
+    max-width: 100%;
+    height: 10em;
+  }
+  .container {
+    max-width: none !important;
+    .row > div {
+      padding-left: 0px;
+      padding-right: 0px;
     }
-    label[title] {
-        cursor: help;
-    }
-    .properties-progress-indication {
-        display: none;
-    }
-    #editor-description {
-        min-height: 5em;
-        min-width: 100%;
-        max-width: 100%;
-        height: 10em;
-    }
-    .container {
-        max-width: none !important;
-        .row > div {
-            padding-left: 0px;
-            padding-right: 0px;
-        }
-    }
+  }
 }
 .jobtemplate-header {
-    font-size: 180%;
-    text-align: left;
-    margin-top: 10px;
-    padding-bottom: 5px;
+  font-size: 180%;
+  text-align: left;
+  margin-top: 10px;
+  padding-bottom: 5px;
 }
 #editor-info {
-    line-height: 240%;
+  line-height: 240%;
 }
 h2 + * {
-    // ensure corner button doesn't influence elements after heading
-    clear: right;
+  // ensure corner button doesn't influence elements after heading
+  clear: right;
 }
 .mediagroup {
-    th.arch, td.arch {
-        text-align: center;
-    }
-    th.prio {
-        width: 3em;
-    }
-    th.prio, td.prio {
-        text-align: center;
-    }
+  th.arch,
+  td.arch {
+    text-align: center;
+  }
+  th.prio {
+    width: 3em;
+  }
+  th.prio,
+  td.prio {
+    text-align: center;
+  }
 }
 #editor-form code {
-    display: inline-block;
-    font-weight: normal;
-    text-align: left !important;
-    white-space: pre;
+  display: inline-block;
+  font-weight: normal;
+  text-align: left !important;
+  white-space: pre;
 }
 #editor-template {
-    font-family: monospace, monospace; 
+  font-family: monospace, monospace;
 }
 
 // users
 table#users {
-    td.role {
-        white-space: nowrap;
-    }
-    // hidding the radiobuttons & checkboxes
-    input[type="radio"] {
-        display: none;
-        &:checked {
-            + {
-                // styling the "check" status
-                label {
-                    .fa-circle {
-                        display: block;
-                        color: $btn-primary-bg;
-                    }
-                    .fa.fa-circle-o {
-                        display: none;
-                    }
-                }
-            }
+  td.role {
+    white-space: nowrap;
+  }
+  // hidding the radiobuttons & checkboxes
+  input[type='radio'] {
+    display: none;
+    &:checked {
+      + {
+        // styling the "check" status
+        label {
+          .fa-circle {
+            display: block;
+            color: $btn-primary-bg;
+          }
+          .fa.fa-circle-o {
+            display: none;
+          }
         }
+      }
     }
-    label {
-        // styling radiobuttons
-        .fa-circle {
-            color: $btn-default-bg;
-        }
+  }
+  label {
+    // styling radiobuttons
+    .fa-circle {
+      color: $btn-default-bg;
     }
+  }
 }
 
 // changelog
 .changelog {
-    ul {
-        font-weight: bold;
+  ul {
+    font-weight: bold;
 
-        p {
-            margin-top: 10px;
-            margin-bottom: 0px;
-        }
-
-        ul, span {
-            font-weight: normal;
-        }
+    p {
+      margin-top: 10px;
+      margin-bottom: 0px;
     }
+
+    ul,
+    span {
+      font-weight: normal;
+    }
+  }
 }
 
 // status info (used on worker details)
 .status-info div span {
-    min-width: 20%;
-    display: inline-block;
-    text-align: right;
-    padding-right: 1rem;
-    font-weight: 500;
+  min-width: 20%;
+  display: inline-block;
+  text-align: right;
+  padding-right: 1rem;
+  font-weight: 500;
 }
 
 // custom select (used on needles page)
 .custom_needle_range {
-    display: table-row;
-    margin-bottom: 5px;
+  display: table-row;
+  margin-bottom: 5px;
 
-    select, input, button {
-        font-size: 90%;
-        display: table-cell;
-        margin-left: 2px;
-        height: 2rem !important;
-    }
-    select, input[type="datetime-local"] {
-        width: initial;
-    }
+  select,
+  input,
+  button {
+    font-size: 90%;
+    display: table-cell;
+    margin-left: 2px;
+    height: 2rem !important;
+  }
+  select,
+  input[type='datetime-local'] {
+    width: initial;
+  }
 }

@@ -1,177 +1,189 @@
 // progress bars for dashboard
 div.progress {
-    // add margin to progress bars for consistent vertical alignment with the
-    // build name left to the bar
-    margin-top: 9px;
-    margin-bottom: 9px;
-    height: 18px;
+  // add margin to progress bars for consistent vertical alignment with the
+  // build name left to the bar
+  margin-top: 9px;
+  margin-bottom: 9px;
+  height: 18px;
 }
 #build-results .progress {
-    min-width: 24.5em;
+  min-width: 24.5em;
 }
 @include media-breakpoint-down(lg) {
-    div.progress {
-        margin-top: 0px !important;
-    }
+  div.progress {
+    margin-top: 0px !important;
+  }
 }
 td div.progress {
-    // however, progress bars inside table cells, eg. under /tests should not have margin
-    margin-top: 0;
-    margin-bottom: 0;
+  // however, progress bars inside table cells, eg. under /tests should not have margin
+  margin-top: 0;
+  margin-bottom: 0;
 }
 .build-dashboard {
-    .progress-bar {
-        // don' use flex box because it leads to undesired overflow behavior
-        display: inline;
-        overflow: hidden;
-        a {
-            display: block;
-            width: 100%;
-            text-decoration: none;
-        }
+  .progress-bar {
+    // don' use flex box because it leads to undesired overflow behavior
+    display: inline;
+    overflow: hidden;
+    a {
+      display: block;
+      width: 100%;
+      text-decoration: none;
     }
-    .progress-bar-passed, .progress-bar-softfailed, .progress-bar-unfinished {
-        a { color: $color-result; }
+  }
+  .progress-bar-passed,
+  .progress-bar-softfailed,
+  .progress-bar-unfinished {
+    a {
+      color: $color-result;
     }
-    .progress-bar-failed, .progress-bar-skipped {
-        a { color: black; }
+  }
+  .progress-bar-failed,
+  .progress-bar-skipped {
+    a {
+      color: black;
     }
-    .progress-bar-passed {
-        background-color: $color-module-passed;
-    }
-    .progress-bar-softfailed {
-        background-color: $color-softfailed;
-    }
-    .progress-bar-unfinished {
-        background-color: $color-state-running;
-    }
-    .progress-bar-failed {
-        background-color: $color-failed;
-    }
-    .progress-bar-skipped {
-        background-color: lighten($color-state-cancelled, 12.5%);
-    }
+  }
+  .progress-bar-passed {
+    background-color: $color-module-passed;
+  }
+  .progress-bar-softfailed {
+    background-color: $color-softfailed;
+  }
+  .progress-bar-unfinished {
+    background-color: $color-state-running;
+  }
+  .progress-bar-failed {
+    background-color: $color-failed;
+  }
+  .progress-bar-skipped {
+    background-color: lighten($color-state-cancelled, 12.5%);
+  }
 }
 
 // expandable items on dashboard (mainly the BuildXXXX headings)
 .build-row .h4 {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    display: block;
-    margin-top: 7px;
-    margin-bottom: 10px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: block;
+  margin-top: 7px;
+  margin-bottom: 10px;
 }
 .build_group_children {
-    & > div {
-        margin-left: 17px;
-    }
+  & > div {
+    margin-left: 17px;
+  }
 
-    .h4 {
-        margin-top: 0px;
-    }
-    .progress {
-        margin-top: 2px;
-    }
+  .h4 {
+    margin-top: 0px;
+  }
+  .progress {
+    margin-top: 2px;
+  }
 }
 @include media-breakpoint-up(xl) {
-    .build-label {
-        max-width: 50%;
-    }
+  .build-label {
+    max-width: 50%;
+  }
 }
 .col-lg-4.text-nowrap {
-    display: flex;
-    align-items: baseline;
+  display: flex;
+  align-items: baseline;
 }
 .col-lg-4.text-nowrap span {
-    font-size: $h4-font-size;
-    margin-left: 2px;
-    margin-right: 2px;
+  font-size: $h4-font-size;
+  margin-left: 2px;
+  margin-right: 2px;
 }
-.build_group_children, .build-row {
-    .h4:before {
-        display: inline-box;
-        min-width: 10px;
-        content: '\25CF';
-    }
+.build_group_children,
+.build-row {
+  .h4:before {
+    display: inline-box;
+    min-width: 10px;
+    content: '\25CF';
+  }
 }
 .children-collapsed .h4:before {
-    content: "\25B8";
-    position: relative;
-    top: -2px;
+  content: '\25B8';
+  position: relative;
+  top: -2px;
 }
 .children-expanded .h4:before {
-    content: "\25BE";
-    position: relative;
-    top: -2px;
+  content: '\25BE';
+  position: relative;
+  top: -2px;
 }
 h2 .fa {
-    color: $color-labels;
-    margin-right: 5px;
-    font-size: 90%;
+  color: $color-labels;
+  margin-right: 5px;
+  font-size: 90%;
 }
 
 // highlighting on running table under 'All tests'
 .highlight_parent td {
-    background-color: $color-highlight-parent !important;
+  background-color: $color-highlight-parent !important;
 }
 .highlight_child td {
-    background-color: $color-highlight-child !important;
+  background-color: $color-highlight-child !important;
 }
 
 // styles for the checkboxes in the results list
 #results td.id {
-    text-align: right;
+  text-align: right;
 }
 
 // center comments pagination
 .comments-pagination {
-    display: block;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 // sponsorbox
 #sponsorbox {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
 
-    img { max-width: 100% }
-    div { margin-top: .5rem }
+  img {
+    max-width: 100%;
+  }
+  div {
+    margin-top: 0.5rem;
+  }
 }
 @include media-breakpoint-down(md) {
-    #sponsorbox {
-        display: none;
-    }
+  #sponsorbox {
+    display: none;
+  }
 }
 
 // filter form
 .filter-panel-bottom {
-    margin-top: 50px;
+  margin-top: 50px;
 }
 
 // misc
 #finished_jobs_result_filter_chosen {
-    margin-left: 3px;
+  margin-left: 3px;
 
-    .chosen-results {
-        text-align: left;
-        float: none;
-    }
+  .chosen-results {
+    text-align: left;
+    float: none;
+  }
 }
 #results {
-    clear: both;
+  clear: both;
 }
 #results_filter label {
-    vertical-align: top;
+  vertical-align: top;
 }
 .corner-buttons {
-    display: inline-block;
-    float: right;
-    margin-top: 15px;
-    margin-bottom: 10px;
-    margin-left: 5px;
+  display: inline-block;
+  float: right;
+  margin-top: 15px;
+  margin-bottom: 10px;
+  margin-left: 5px;
 }

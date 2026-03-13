@@ -1,25 +1,59 @@
 // formatting of ANSI escape codes in-line with the overall theming
 
-@import "openqa_theme.scss";
+@import 'openqa_theme.scss';
 
-.ansi-bold          { font-weight: bold; }
-.ansi-italic        { font-style: italic; }
-.ansi-underline     { text-decoration: underline; }
-.ansi-strikethrough { text-decoration: line-through; }
+.ansi-bold {
+  font-weight: bold;
+}
+.ansi-italic {
+  font-style: italic;
+}
+.ansi-underline {
+  text-decoration: underline;
+}
+.ansi-strikethrough {
+  text-decoration: line-through;
+}
 
-.ansi-white-fg   { color: $default-font-color; }
-.ansi-black-fg   { color: $default-font-color; }
-.ansi-red-fg     { color: darkred; }
-.ansi-yellow-fg  { color: brown; }
-.ansi-green-fg   { color: darkgreen; }
-.ansi-blue-fg    { color: blue; }
-.ansi-magenta-fg { color: pink; }
-.ansi-cyan-fg    { color: cyan; }
+.ansi-white-fg {
+  color: $default-font-color;
+}
+.ansi-black-fg {
+  color: $default-font-color;
+}
+.ansi-red-fg {
+  color: darkred;
+}
+.ansi-yellow-fg {
+  color: brown;
+}
+.ansi-green-fg {
+  color: darkgreen;
+}
+.ansi-blue-fg {
+  color: blue;
+}
+.ansi-magenta-fg {
+  color: pink;
+}
+.ansi-cyan-fg {
+  color: cyan;
+}
 
-[data-bs-theme="dark"] {
-    .ansi-white-fg   { color: $default-font-color-dark; }
-    .ansi-black-fg   { color: $default-font-color-dark; }
-    .ansi-red-fg     { color: red; }
-    .ansi-yellow-fg  { color: yellow; }
-    .ansi-green-fg   { color: green; }
+[data-bs-theme='dark'] {
+  .ansi-white-fg {
+    color: $default-font-color-dark;
+  }
+  .ansi-black-fg {
+    color: $default-font-color-dark;
+  }
+  .ansi-red-fg {
+    color: red;
+  }
+  .ansi-yellow-fg {
+    color: yellow;
+  }
+  .ansi-green-fg {
+    color: green;
+  }
 }
