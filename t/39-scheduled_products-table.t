@@ -164,7 +164,7 @@ subtest 'handling failed job cancellation' => sub {
     my $jobs = {settings_result => [{DISTRI => 'foo', VERSION => 'bar', BUILD => '42'}]};
     $scheduled_products_mock->redefine(_generate_jobs => $jobs);
     my $res = $scheduled_product->_schedule_iso({_OBSOLETE => 1}, $signal_guard);
-    like +(join '', @{$res->{notes}}), qr/.*failed to cancel.*fake error.*/i, 'note added' or always_explain $res;
+    like "@{$res->{notes}}", qr/.*failed to cancel.*fake error.*/i, 'note added' or always_explain $res;
     $schema->txn_rollback;
 };
 
