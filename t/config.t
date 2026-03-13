@@ -20,8 +20,9 @@ use OpenQA::Test::TimeLimit '4';
 use OpenQA::Setup;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
-use Mojo::File 'tempdir';
+use Mojo::File qw(path tempdir);
 use Time::Seconds;
+use Storable 'dclone';
 
 my $quiet_log = Mojo::Log->new(level => 'warn');
 
@@ -44,174 +45,29 @@ subtest 'Test configuration default modes' => sub {
     $app->mode('test');
     my $config = read_config($app, 'reading config from default with mode test');
     is length($config->{_openid_secret}), 16, 'config has openid_secret';
-    my $test_config = {
-        global => {
-            appname => 'openQA',
-            branding => 'openSUSE',
-            hsts => 365,
-            audit_enabled => 1,
-            max_rss_limit => 0,
-            profiling_enabled => 0,
-            monitoring_enabled => 0,
-            mcp_enabled => 'no',
-            hide_asset_types => 'repo',
-            file_security_policy => 'download-prompt',
-            recognized_referers => [],
-            changelog_file => '/usr/share/openqa/public/Changelog',
-            job_investigate_ignore => '"(JOBTOKEN|NAME)"',
-            job_investigate_git_timeout => 20,
-            job_investigate_git_log_limit => 200,
-            search_results_limit => 50000,
-            worker_timeout => DEFAULT_WORKER_TIMEOUT,
-            force_result_regex => '',
-            parallel_children_collapsable_results_sel => ' .status:not(.result_passed):not(.result_softfailed)',
-            auto_clone_limit => 20,
-            api_hmac_time_tolerance => 300,
-            frontpage_builds => 3,
-            scenario_definitions_allowed_hosts => 'github.com raw.githubusercontent.com',
-        },
-        rate_limits => {
-            search => 5,
-        },
-        auth => {
-            method => 'Fake',
-            require_for_assets => 0,
-        },
-        'scm git' => {
-            update_remote => '',
-            update_branch => '',
-            do_push => 'no',
-            do_cleanup => 'no',
-            git_auto_clone => 'yes',
-            git_auto_commit => '',
-            git_auto_update => 'no',
-            git_auto_update_method => 'best-effort',
-            checkout_needles_sha => 'no',
-            allow_arbitrary_url_fetch => 'no',
-            temp_needle_refs_retention => 2 * ONE_MINUTE,
-        },
-        'scheduler' => {
-            max_job_scheduled_time => 7,
-            max_running_jobs => -1,
-        },
-        openid => {
-            provider => 'https://www.opensuse.org/openid/user/',
-            httpsonly => 1,
-        },
-        oauth2 => {
-            provider => '',
-            key => '',
-            secret => '',
-            authorize_url => '',
-            token_url => '',
-            user_url => '',
-            token_scope => '',
-            token_label => '',
-            id_from => 'id',
-            nickname_from => '',
-            unique_name => '',
-        },
-        hypnotoad => {
-            listen => ['http://localhost:9526/'],
-            proxy => 1,
-        },
-        audit => {
-            blacklist => '',
-            blocklist => '',
-        },
-        plugin_links => {
-            operator => {},
-            admin => {}
-        },
-        amqp => {
-            reconnect_timeout => 5,
-            publish_attempts => 10,
-            publish_retry_delay => 1,
-            publish_retry_delay_factor => 1.75,
-            url => 'amqp://guest:guest@localhost:5672/',
-            exchange => 'pubsub',
-            topic_prefix => 'suse',
-            cacertfile => '',
-            certfile => '',
-            keyfile => ''
-        },
-        obs_rsync => {
-            home => '',
-            retry_interval => 60,
-            retry_max_count => 1400,
-            queue_limit => 200,
-            concurrency => 2,
-            project_status_url => '',
-            username => '',
-            ssh_key_file => '',
-        },
-        cleanup => {
-            concurrent => 0,
-        },
-        default_group_limits => {
-            asset_size_limit => OpenQA::JobGroupDefaults::SIZE_LIMIT_GB,
-            log_storage_duration => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
-            important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
-            result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
-            important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
-            job_storage_duration => OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS,
-            important_job_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS,
-        },
-        no_group_limits => {
-            log_storage_duration => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
-            important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
-            result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
-            important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
-            job_storage_duration => OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS,
-            important_job_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS,
-        },
-        minion_task_triggers => {
-            on_job_done => [],
-        },
-        misc_limits => {
-            untracked_assets_storage_duration => 14,
-            result_cleanup_max_free_percentage => 100,
-            asset_cleanup_max_free_percentage => 100,
-            screenshot_cleanup_batch_size => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
-            screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
-            minion_job_max_age => ONE_WEEK,
-            generic_default_limit => 10000,
-            generic_max_limit => 100000,
-            tests_overview_max_jobs => 2000,
-            all_tests_default_finished_jobs => 500,
-            all_tests_max_finished_jobs => 5000,
-            list_templates_default_limit => 5000,
-            list_templates_max_limit => 20000,
-            next_jobs_default_limit => 500,
-            next_jobs_max_limit => 10000,
-            previous_jobs_default_limit => 500,
-            previous_jobs_max_limit => 10000,
-            job_settings_max_recent_jobs => 20000,
-            assets_default_limit => 100000,
-            assets_max_limit => 200000,
-            max_online_workers => 1000,
-            wait_for_grutask_retries => 6,
-            worker_limit_retry_delay => ONE_HOUR / 4,
-            mcp_max_result_size => 500000,
-            scheduled_product_min_storage_duration => 34,
-            prio_throttling_parameters => 'MAX_JOB_TIME:0.007',
-        },
-        archiving => {
-            archive_preserved_important_jobs => 0,
-        },
-        job_settings_ui => {
-            keys_to_render_as_links => '',
-            default_data_dir => 'data',
-        },
-        influxdb => {
-            ignored_failed_minion_jobs => '',
-        },
-        carry_over => {
-            lookup_depth => 10,
-            state_changes_limit => 3,
-        },
-        secrets => {github_token => ''},
-    };
+
+    my $test_config = dclone(OpenQA::Setup::default_config());
+    # apply transformations done in read_config
+    $test_config->{global}->{recognized_referers} = [];
+    $test_config->{global}->{parallel_children_collapsable_results_sel}
+      = ' .status:not(.result_passed):not(.result_softfailed)';
+    $test_config->{auth}->{method} = 'Fake';
+    $test_config->{minion_task_triggers}->{on_job_done} = [];
+    for my $l ($test_config->{default_group_limits}, $test_config->{no_group_limits}) {
+        $l->{result_storage_duration} = OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS;
+        $l->{important_result_storage_duration} = OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS;
+        $l->{job_storage_duration} = OpenQA::JobGroupDefaults::KEEP_JOBS_IN_DAYS;
+        $l->{important_job_storage_duration} = OpenQA::JobGroupDefaults::KEEP_IMPORTANT_JOBS_IN_DAYS;
+    }
+    delete $test_config->{'test_preset example'};
+    delete $test_config->{global}->{auto_clone_regex};
+    delete $test_config->{global}->{parallel_children_collapsable_results};
+    for my $k (keys %$test_config) {
+        my $section = $test_config->{$k};
+        next unless ref $section eq 'HASH';
+        delete $section->{$_} for grep { !defined $section->{$_} } keys %$section;
+        delete $test_config->{$k} unless %$section;
+    }
 
     # Test configuration generation with "test" mode
     $test_config->{_openid_secret} = $config->{_openid_secret};
@@ -287,6 +143,43 @@ subtest 'Test configuration override from file' => sub {
       'default job_storage_duration extended to result_storage_duration';
     is $app->config->{no_group_limits}->{job_storage_duration}, 731,
       'default job_storage_duration extended to result_storage_duration (no group)';
+};
+
+subtest 'openqa.ini documentation check' => sub {
+    my $defaults = OpenQA::Setup::default_config();
+    my $ini_path = path($FindBin::Bin)->child('..', 'etc', 'openqa', 'openqa.ini');
+    ok -r $ini_path, "can read $ini_path";
+    my $content = $ini_path->slurp;
+
+    my %documented;
+    my $current_section;
+    for (split /\n/, $content) {
+        if (/^#?\[([^\]]+)\]/) {
+            $current_section = $1;
+        }
+        elsif ($current_section && /^#?\s*([a-z0-9_]+)\s*=/) {
+            $documented{$current_section}->{$1} = 1;
+        }
+    }
+
+    for my $section (sort keys %$defaults) {
+        # skip internal/dynamic sections
+        next if $section =~ /^(plugin_links|hooks|test_preset example|assets\/storage_duration|carry_over)$/;
+        for my $key (sort keys %{$defaults->{$section}}) {
+            # skip deprecated/internal/currently undocumented keys
+            next
+              if $section eq 'global'
+              && $key
+              =~ /^(scm|parallel_children_collapsable_results_sel|file_domain|prio_throttling_data|access_control_allow_origin_header|changelog_file|file_subdomain|search_results_limit)$/;
+            next if $section eq 'hypnotoad';
+            next if $section eq 'job_settings_ui' && $key eq 'default_data_dir';
+            next if $section eq 'misc_limits' && $key =~ /^(prio_throttling_data|mcp_max_result_size)$/;
+            next if $section eq 'rate_limits' && $key eq 'search';
+            next if $section eq 'secrets';
+            next if $section eq 'audit' && $key eq 'blacklist';
+            ok $documented{$section}->{$key}, "key '$key' in section '[$section]' is documented in openqa.ini";
+        }
+    }
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {

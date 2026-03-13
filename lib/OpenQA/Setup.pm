@@ -76,8 +76,8 @@ sub _load_prio_throttling ($app, $config) {
     return \%hash;
 }
 
-sub read_config ($app) {
-    my %defaults = (
+sub default_config () {
+    return {
         global => {
             appname => 'openQA',
             base_url => undef,
@@ -159,6 +159,9 @@ sub read_config ($app) {
             nickname_from => '',
             unique_name => '',
             id_from => 'id',
+        },
+        webui => {
+            render_batch_size => 50,
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
@@ -277,7 +280,7 @@ sub read_config ($app) {
         influxdb => {
             ignored_failed_minion_jobs => '',
         },
-        carry_over => \%CARRY_OVER_DEFAULTS,
+        carry_over => {%CARRY_OVER_DEFAULTS},
         'test_preset example' => {
             title => 'Create example test',
             info => 'Parameters to create an example test have been pre-filled in the following form. '
@@ -285,13 +288,17 @@ sub read_config ($app) {
             casedir => 'https://github.com/os-autoinst/os-autoinst-distri-example.git',
             distri => 'example',
             build => 'openqa',
-        });
+        }};
+}
+
+sub read_config ($app) {
+    my $defaults = default_config();
 
     # in development and test mode we use fake auth and log to stderr
     my %devel_and_test_defaults = (auth => {method => 'Fake'}, logging => {file => undef, level => 'debug'});
     my %mode_defaults = (development => \%devel_and_test_defaults, test => \%devel_and_test_defaults);
 
-    my $config = _load_config($app, \%defaults, \%mode_defaults);
+    my $config = _load_config($app, $defaults, \%mode_defaults);
     my $global_config = $config->{global};
     $global_config->{recognized_referers} = [split /\s+/, $global_config->{recognized_referers}];
     if (my $regex = $global_config->{auto_clone_regex}) {
