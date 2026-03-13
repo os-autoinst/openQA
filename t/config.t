@@ -210,6 +210,9 @@ subtest 'Test configuration default modes' => sub {
             lookup_depth => 10,
             state_changes_limit => 3,
         },
+        webui => {
+            render_batch_size => 50,
+        },
         secrets => {github_token => ''},
     };
 
