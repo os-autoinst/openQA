@@ -69,6 +69,14 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(
+        steploglink_for => sub ($c, $title, $url, $icon, $class = '') {
+            my $icons
+              = $c->t(i => (class => "step_action fa-solid $icon fa-lg fa-stack-1x", style => 'color: #0077ff'));
+            my $content = $c->t(span => (class => 'fa-stack') => sub { $icons });
+            return $c->link_to($url => (title => $title, class => $class) => sub { $content });
+        });
+
+    $app->helper(
         stepvideolink_for => sub ($c, $testid, $file_name, $frametime) {
             my $t = sprintf '&t=%s,%s', $frametime->[0], $frametime->[1];
             my $url = $c->url_for('video', testid => $testid)->query(filename => $file_name) . $t;

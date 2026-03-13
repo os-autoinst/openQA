@@ -184,9 +184,21 @@ function renderModuleRow(module, snippets) {
       box.push(E('span', [content], {class: 'resborder ' + resborder}));
     }
     if (step.text && title !== 'Soft Failed') {
+      const params = new URLSearchParams({
+        filename: 'autoinst-log.txt',
+        filter: `[step:${module.category},${module.name},${step.num}]`
+      });
+      const logHref = `${window.location.pathname}/logfile?${params.toString()}`;
+      const linkText = E('i', [''], {
+        class: 'fa-solid fa-file-lines fa-xl',
+        title: 'View Logfile',
+        style: 'color: #0077ff'
+      });
+      const sourceLink = E('a', [linkText], {href: logHref});
       const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
       const textresult = E('pre', [textData]);
+      stepActions.prepend(sourceLink);
       let html = stepActions.outerHTML;
       html += textresult.outerHTML;
       const txt = escape(html);
