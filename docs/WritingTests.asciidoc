@@ -660,6 +660,12 @@ hash for tests and/or needles (see
 <<WritingTests.asciidoc#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request,Triggering … based on Git refspec …>>
 for details) and a concrete worker host (see
 <<WritingTests.asciidoc#_assigning_jobs_to_workers,Assigning jobs to workers>>).
+
+The `--reproduce` parameter of `openqa-clone-job` makes this easier by setting
+`CASEDIR=…` and `NEEDLES_DIR=…` automatically to use the version of tests and
+needles the original test ran with. This requires `vars.json` and the Git ref to
+be still present.
+
 The script
 https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#openqa-investigate---automatic-investigation-jobs-with-failure-analysis-in-openqa[`openqa-investigate`] helps automating retries like this. It will also
 automatically create
