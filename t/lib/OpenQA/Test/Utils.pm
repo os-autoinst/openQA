@@ -26,6 +26,7 @@ use Mojo::URL;
 use Cwd qw(abs_path getcwd);
 use IPC::Run qw(start);
 use Mojo::Util qw(b64_decode gzip);
+use Scalar::Util ();
 use Test::Output 'combined_like';
 use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -566,7 +567,7 @@ sub test_cmd (
     return $ret;
 }
 
-sub wait_for : prototype(&*;*) ($function, $description, $args = {}) {
+sub wait_for ($function, $description, $args = {}) {
     # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
     my $timeout = $args->{timeout} // 60;
     my $interval = $args->{interval} // $ENV{OPENQA_TEST_WAIT_INTERVAL} // .1;
@@ -579,11 +580,13 @@ sub wait_for : prototype(&*;*) ($function, $description, $args = {}) {
     }
     return 0;    # uncoverable statement (only invoked if tests would fail)
 }
+BEGIN { Scalar::Util::set_prototype(\&wait_for, '&*;*') }
 
-sub wait_for_or_bail_out : prototype(&*;*) ($function, $description, $args = {}) {
+sub wait_for_or_bail_out ($function, $description, $args = {}) {
     # `&*;*` allows calling it like `wait_for_or_bail_out { 1 } 'foo'`
     wait_for \&$function, $description, $args or BAIL_OUT "'$description' not available";
 }
+BEGIN { Scalar::Util::set_prototype(\&wait_for_or_bail_out, '&*;*') }
 
 sub prepare_clean_needles_dir ($dir = 't/data/openqa/share/tests/opensuse/needles') {
     return path($dir)->remove_tree->make_path;
