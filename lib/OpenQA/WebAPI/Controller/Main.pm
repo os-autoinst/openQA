@@ -34,20 +34,36 @@ sub dashboard_build_results ($self) {
 
     my $groups = $self->stash('job_groups_and_parents');
 
+    my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
+    my $total_jobs_seen = 0;
+    my $limit_exceeded = 0;
     my @results;
     try {
         for my $group (@$groups) {
             if (@$group_params) {
                 next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
             }
+            if (defined $max_jobs_limit && $total_jobs_seen >= $max_jobs_limit) {
+                $limit_exceeded = $max_jobs_limit;
+                last;
+            }
             my $tags = $show_tags || $only_tagged ? $group->tags : undef;
-            my $build_results
-              = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-                $only_tagged ? $tags : undef,
-                $group_params, $show_tags ? $tags : undef);
+            my $build_results = OpenQA::BuildResults::compute_build_results(
+                $group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef,
+                $group_params,
+                $show_tags ? $tags : undef,
+                $max_jobs_limit - $total_jobs_seen
+            );
 
             my $build_results_for_group = $build_results->{build_results};
-            push @results, $build_results if @{$build_results_for_group};
+            if (@{$build_results_for_group}) {
+                push @results, $build_results;
+                $total_jobs_seen += $build_results->{total_jobs};
+            }
+            if ($build_results->{limit_exceeded}) {
+                $limit_exceeded = $max_jobs_limit;
+                last;
+            }
         }
     }
     catch ($e) {
@@ -58,6 +74,7 @@ sub dashboard_build_results ($self) {
     $self->stash(
         default_expanded => $default_expanded,
         results => \@results,
+        limit_exceeded => $limit_exceeded,
     );
 
     $self->respond_to(
@@ -133,12 +150,13 @@ sub _group_overview ($self, $resultset, $template) {
     my @pinned_comments = grep { $_->user->is_operator } $comments->search({text => $pinned_cond})->all;
 
     my $tags = $group->tags;
+    my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
     my $cbr;
     try {
         $cbr
           = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
             $time_limit_days, $only_tagged ? $tags : undef,
-            $group_params, $tags);
+            $group_params, $tags, $max_jobs_limit);
     }
     catch ($e) {
         die $e unless $e =~ qr/^invalid regex: /;
@@ -146,9 +164,10 @@ sub _group_overview ($self, $resultset, $template) {
     }
     my $build_results = $cbr->{build_results};
     my $max_jobs = $cbr->{max_jobs};
+    my $limit_exceeded = $cbr->{limit_exceeded};
 
     $self->stash(children => $cbr->{children});
-    $self->stash(build_results => $build_results, max_jobs => $max_jobs);
+    $self->stash(build_results => $build_results, max_jobs => $max_jobs, limit_exceeded => $limit_exceeded);
 
     my $is_parent_group = $group->can('children');
     my $comment_context = $is_parent_group ? 'parent_group' : 'group';
