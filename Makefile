@@ -227,7 +227,7 @@ checkstyle_tests =
 else
 checkstyle_tests = test-checkstyle-standalone
 endif
-test: $(checkstyle_tests) test-with-database ## Run all tests (including checkstyle and database tests)
+test: $(checkstyle_tests) test-compile test-with-database ## Run all tests (including checkstyle, compile test and database tests)
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
@@ -239,7 +239,7 @@ test: test-helm-chart
 endif
 endif
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-author test-compile ## Run checkstyle, author, and compile tests
+test-checkstyle: test-checkstyle-standalone test-author ## Run checkstyle and author tests
 
 .PHONY: test-t
 test-t: node_modules ## Run standard Perl tests
