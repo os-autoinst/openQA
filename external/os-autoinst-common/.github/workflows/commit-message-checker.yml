@@ -10,6 +10,4 @@ on:
 
 jobs:
   check-commit-message:
-    secrets:
-      accessToken: "${{ secrets.GITHUB_TOKEN }}"
     uses: ./.github/workflows/base-commit-message-checker.yml
