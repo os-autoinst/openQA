@@ -13,8 +13,8 @@ use OpenQA::Files;
 has file => sub { Mojo::File->new };
 has [qw(start end index cksum total content total_cksum)];
 
-sub new {
-    my $self = shift->SUPER::new(@_);
+sub new ($class, @args) {
+    my $self = $class->SUPER::new(@args);
     croak 'You must specify a file!' unless defined $self->file();
     $self->file(Mojo::File->new($self->file)) unless ref $self->file eq 'Mojo::File';
     $self->index(1) unless defined $self->index;
@@ -24,25 +24,22 @@ sub new {
     return $self;
 }
 
-sub size { -s shift->file }
+sub size ($self) { -s $self->file }
 
-sub _chunk_size { int($_[0] / $_[1]) + (($_[0] % $_[1]) ? 1 : 0) }
+sub _chunk_size ($total, $chunks) { int($total / $chunks) + (($total % $chunks) ? 1 : 0) }
 
-sub is_last { !!($_[0]->total == $_[0]->index()) }
+sub is_last ($self) { !!($self->total == $self->index()) }
 
-sub write_content {
-    my $self = shift;
-    $self->_write_content(pop);
+sub write_content ($self, $file_name = undef) {
+    $self->_write_content($file_name // $self->file->to_string);
     return $self;
 }
 
-sub verify_content {
-    my $self = shift;
-    return !!($self->cksum eq $self->_sum($self->_seek_content(pop)));
+sub verify_content ($self, $file_name = undef) {
+    return !!($self->cksum eq $self->_sum($self->_seek_content($file_name // $self->file->to_string)));
 }
 
-sub prepare {
-    my $self = shift;
+sub prepare ($self) {
     $self->generate_sum;
     $self->encode_content;
 }
@@ -101,8 +98,7 @@ sub file_digest ($class, $file) {
     return $digest->b64digest;
 }
 
-sub read {
-    my $self = shift;
+sub read ($self) {
     if (my $content = $self->content) { return $content }
     my $content = $self->_seek_content($self->file->to_string);
     $self->content($content);
@@ -139,17 +135,16 @@ sub _write_content ($self, $file_name) {
     return $ret;
 }
 
-sub generate_sum {
-    my $self = shift;
+sub generate_sum ($self) {
     $self->read() unless $self->content;
     my $sum = $self->_sum($self->content);
     $self->cksum($sum);
     return $sum;
 }
 
-sub encode_content { $_[0]->content(unpack 'H*', $_[0]->content()) }
-sub decode_content { $_[0]->content(pack 'H*', $_[0]->content()) }
+sub encode_content ($self) { $self->content(unpack 'H*', $self->content()) }
+sub decode_content ($self) { $self->content(pack 'H*', $self->content()) }
 
-sub _sum { sha1_base64(pop) }    # Weaker for chunks
+sub _sum ($self, $data) { sha1_base64($data) }    # Weaker for chunks
 
 1;

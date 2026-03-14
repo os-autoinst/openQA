@@ -2,24 +2,22 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Result::OpenQA::Results;
-use Mojo::Base 'OpenQA::Parser::Results';
+use Mojo::Base 'OpenQA::Parser::Results', -signatures;
 
 use Scalar::Util 'blessed';
 
 # Returns a new flattened OpenQA::Parser::Results which is a cumulative result of
 # the other collections inside it
-sub search_in_details {
-    my ($self, $field, $re) = @_;
+sub search_in_details ($self, $field, $re) {
     return $self->new(
         map { $_->search_in_details($field, $re) }
         grep { blessed($_) && $_->isa('OpenQA::Parser::Result') } @$self
     )->flatten;
 }
 
-sub search {
-    my ($self, $field, $re) = @_;
+sub search ($self, $field, $re) {
     my $results = $self->new;
-    $self->each(sub { $results->add($_) if $_->{$field} =~ $re });
+    $self->each(sub ($item, $i) { $results->add($item) if $item->{$field} =~ $re });
     return $results;
 }
 

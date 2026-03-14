@@ -2,23 +2,19 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::YAML;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::YAML 'validate_data';
 
 use Feature::Compat::Try;
 
-sub register {
-    my ($self, $app) = @_;
-
+sub register ($self, $app, $conf = undef) {
     $app->renderer->add_handler(
-        yaml => sub {
-            my ($renderer, $c, $output, $options) = @_;
+        yaml => sub ($renderer, $c, $output, $options) {
             delete $options->{encoding};
             $$output = $c->stash->{yaml};
         });
     $app->hook(
-        before_render => sub {
-            my ($c, $args) = @_;
+        before_render => sub ($c, $args) {
             if (exists $args->{yaml} || exists $c->stash->{yaml}) {
                 $args->{format} = 'yaml';
                 $args->{handler} = 'yaml';
@@ -29,9 +25,7 @@ sub register {
         # Validates the given YAML job group template using JSON schema. The parameter validate_schema enables
         # validation of the schema itself which can be useful for development and testing.
         # Returns an array of errors found during validation or otherwise an empty array.
-        validate_yaml => sub {
-            my ($self, $yaml, $schema_filename, $validate_schema) = @_;
-
+        validate_yaml => sub ($self, $yaml, $schema_filename, $validate_schema = undef) {
             my @errors;
             try {
                 my $schema_abspath = $self->app->home->child('public', 'schema', $schema_filename)->to_string;

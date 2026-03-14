@@ -10,11 +10,11 @@ use Time::Seconds;
 has 'task_name';
 has 'table';
 
-sub register ($self, $app, @) {
-    $app->minion->add_task($self->task_name => sub { $self->_limit($app, @_) });
+sub register ($self, $app, @args) {
+    $app->minion->add_task($self->task_name => sub ($job, @args) { $self->_limit($app, $job, @args) });
 }
 
-sub _limit ($self, $app, $job, @) {
+sub _limit ($self, $app, $job, @args) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit tasks to run in parallel

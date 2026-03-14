@@ -46,20 +46,17 @@ __PACKAGE__->filter_column(
         filter_from_storage => 'decode_json_from_db',
     });
 
-sub sqlt_deploy_hook {
-    my ($self, $sqlt_table) = @_;
-
+sub sqlt_deploy_hook ($self, $sqlt_table) {
     $sqlt_table->add_index(name => 'gru_tasks_run_at_reversed', fields => 'run_at DESC');
 }
 
-sub decode_json_from_db {
-    my $ret = decode_json($_[1]);
+sub decode_json_from_db ($self, $value) {
+    my $ret = decode_json($value);
     return $ret->{_} if ref($ret) eq 'HASH' && defined $ret->{_};
     return $ret;
 }
 
-sub encode_json_to_db {
-    my $args = $_[1];
+sub encode_json_to_db ($self, $args) {
     encode_json($args);
 }
 

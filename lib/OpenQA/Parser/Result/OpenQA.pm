@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Result::OpenQA;
-use Mojo::Base 'OpenQA::Parser::Result';
+use Mojo::Base 'OpenQA::Parser::Result', -signatures;
 
 # Basic class that holds the tests details and results as seen by openQA
 # Used while parsing from format X to OpenQA test modules.
@@ -10,28 +10,25 @@ use OpenQA::Parser::Results;
 use OpenQA::Parser::Result::OpenQA::Results;
 use Mojo::File 'path';
 
-has details => sub { [] };
+has details => sub ($self) { [] };
 has dents => 0;
 has [qw(result name test)];
 
-sub new { shift->SUPER::new(@_)->parsed_details }
+sub new ($class, @args) { $class->SUPER::new(@args)->parsed_details }
 
 # Adds _source => 'parser' to all the details of the result
-sub parsed_details {
-    my $self = shift;
+sub parsed_details ($self) {
     return $self->details([map { $_->{_source} = 'parser'; $_ } @{$self->details}]);
 }
 
-sub search_in_details {
-    my ($self, $field, $re) = @_;
+sub search_in_details ($self, $field, $re) {
     my $results = OpenQA::Parser::Result::OpenQA::Results->new();
     $results->add($_) for grep { ($_->{$field} // '') =~ $re } @{$self->details};
     return $results;
 }
 
 # For internal use
-sub to_openqa {
-    my $self = shift;
+sub to_openqa ($self) {
     return {
         result => $self->result,
         dents => $self->dents,
@@ -40,9 +37,7 @@ sub to_openqa {
 }
 
 # For generating files that can be read by openQA
-sub TO_JSON {
-    my ($self, $test) = @_;
-
+sub TO_JSON ($self, $test = undef) {
     my @test = $test ? (test => $self->test ? $self->test->TO_JSON : undef) : ();
     return {
         result => $self->result,
@@ -53,8 +48,7 @@ sub TO_JSON {
 }
 
 # Override to get automatically the file name
-sub write {
-    my ($self, $name) = @_;
+sub write ($self, $name) {
     my $path = path($name, 'result-' . $self->name . '.json');
     return $self->SUPER::write($path);
 }

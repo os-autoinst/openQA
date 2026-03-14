@@ -30,7 +30,7 @@ sub client ($self, $url) {
     return $client;
 }
 
-sub data_from_stdin {
+sub data_from_stdin ($self = undef) {
     vec(my $r = '', fileno(STDIN), 1) = 1;
     return !-t STDIN && (select $r, undef, undef, 0) ? join '', <STDIN> : '';
 }

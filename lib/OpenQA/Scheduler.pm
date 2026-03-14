@@ -60,12 +60,12 @@ sub startup ($self) {
     OpenQA::Setup::setup_plain_exception_handler($self);
 }
 
-sub run {
+sub run ($class = undef) {
     local $RUNNING = 1;
-    __PACKAGE__->new->start;
+    (__PACKAGE__ // $class)->new->start;
 }
 
-sub wakeup { _reschedule(0) }
+sub wakeup ($self = undef) { _reschedule(0) }
 
 sub _reschedule ($time = undef) {
     # Allow manual scheduling
@@ -104,9 +104,11 @@ sub setup ($self) {
         });
 }
 
-sub schema { OpenQA::Schema->singleton }
+sub schema ($self = undef) { OpenQA::Schema->singleton }
 
 # uncoverable statement
-sub _check_stale { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
+sub _check_stale ($self = undef) {
+    OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs;
+}
 
 1;

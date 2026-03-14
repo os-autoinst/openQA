@@ -18,13 +18,11 @@ sub index ($self) {
     $self->render('admin/audit_log/index');
 }
 
-sub productlog {
-    my ($self) = @_;
+sub productlog ($self) {
     $self->render('admin/audit_log/productlog');
 }
 
-sub productlog_ajax {
-    my ($self) = @_;
+sub productlog_ajax ($self) {
 
     my @searchable_columns = qw(me.distri me.version me.flavor me.arch me.build me.iso);
     my @filter_conds;
@@ -56,8 +54,7 @@ sub productlog_ajax {
     );
 }
 
-sub _add_single_query {
-    my ($query, $key, $search_terms) = @_;
+sub _add_single_query ($query, $key, $search_terms) {
 
     return unless @$search_terms;
     my $search = join ' ', @$search_terms;

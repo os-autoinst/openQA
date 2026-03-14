@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Task::Asset::Limit;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Log qw(log_info log_debug);
 use OpenQA::Utils qw(:DEFAULT assetdir);
@@ -14,13 +14,11 @@ use Data::Dump 'pp';
 use Time::Seconds;
 use Feature::Compat::Try;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf = undef) {
     $app->minion->add_task(limit_assets => sub { _limit($app, @_) });
 }
 
-sub _remove_if {
-    my ($db, $asset, $reason) = @_;
+sub _remove_if ($db, $asset, $reason = undef) {
     return if $asset->{fixed} || $asset->{pending};
 
     if (!$reason) {
@@ -35,17 +33,14 @@ sub _remove_if {
     $db->resultset('Assets')->single({id => $asset->{id}})->delete;
 }
 
-sub _update_exclusively_kept_asset_size {
-    my ($dbh, $table_name, $parent_or_job_group_info) = @_;
-
+sub _update_exclusively_kept_asset_size ($dbh, $table_name, $parent_or_job_group_info) {
     my $update_sth = $dbh->prepare("UPDATE $table_name SET exclusively_kept_asset_size = ? WHERE id = ?");
     for my $group (values %$parent_or_job_group_info) {
         $update_sth->execute($group->{picked}, $group->{id});
     }
 }
 
-sub _limit {
-    my ($app, $job) = @_;
+sub _limit ($app, $job) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_assets tasks to run in parallel

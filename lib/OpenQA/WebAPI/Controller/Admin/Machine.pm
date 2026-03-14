@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::Machine;
-use Mojo::Base 'OpenQA::WebAPI::Controller::Admin::Table';
+use Mojo::Base 'OpenQA::WebAPI::Controller::Admin::Table', -signatures;
 
-sub index {
-    shift->SUPER::admintable('machine');
+sub index ($self) {
+    $self->SUPER::admintable('machine');
 }
 
 1;

@@ -8,6 +8,6 @@ my $SINGLETON;
 
 sub set_singleton ($class, $app) { $SINGLETON = $app; }
 
-sub singleton { $SINGLETON }
+sub singleton ($class = undef) { $SINGLETON }
 
 1;

@@ -13,8 +13,7 @@ use CommonMark;
 
 our @EXPORT_OK = qw(bugref_to_html is_light_color markdown_to_html);
 
-sub is_light_color {
-    my $color = shift;
+sub is_light_color ($color) {
     return undef unless $color =~ m/^#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})$/;
     my ($red, $green, $blue) = ($1, $2, $3);
     my $sum = (hex $red) + (hex $green) + (hex $blue);
@@ -68,6 +67,7 @@ sub markdown_to_html ($text) {
 }
 
 sub _custom ($full, $rules, $text) {
+
     if ($rules =~ /^color:(#[a-fA-F0-9]{6})$/) {
         my $color = $1;
         my $bg = is_light_color($color) ? 'black' : 'white';

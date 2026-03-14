@@ -4,20 +4,18 @@
 package OpenQA::Schema::ResultSet::Needles;
 
 
-use Mojo::Base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use OpenQA::Schema::Result::Needles;
 use OpenQA::Schema::Result::NeedleDirs;
 use DateTime::Format::Pg;
 
-sub find_needle {
-    my ($self, $needledir, $needlename) = @_;
+sub find_needle ($self, $needledir, $needlename) {
     return $self->find({filename => $needlename, 'directory.path' => $needledir}, {join => 'directory'});
 }
 
 # updates needle information with data from needle editor
-sub update_needle_from_editor {
-    my ($self, $needledir, $needlename, $needlejson, $job) = @_;
+sub update_needle_from_editor ($self, $needledir, $needlename, $needlejson, $job = undef) {
 
     # create containing dir if not present yet
     my $dir = $self->result_source->schema->resultset('NeedleDirs')->find_or_new(
@@ -46,8 +44,7 @@ sub update_needle_from_editor {
     return $needle;
 }
 
-sub new_needles_since {
-    my ($self, $since, $tags, $row_limit) = @_;
+sub new_needles_since ($self, $since, $tags, $row_limit) {
 
     my %new_needle_conds = (
         last_updated => {'>=' => DateTime::Format::Pg->format_datetime($since)},

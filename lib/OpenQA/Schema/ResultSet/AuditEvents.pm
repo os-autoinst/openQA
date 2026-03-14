@@ -3,7 +3,7 @@
 
 package OpenQA::Schema::ResultSet::AuditEvents;
 
-use Mojo::Base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use Time::Piece;
 use Time::Seconds;
@@ -24,9 +24,7 @@ my %patterns_for_event_categories = (
     needle => 'needle_%',
 );
 
-sub delete_expired_entries {
-    my ($self, %options) = @_;
-
+sub delete_expired_entries ($self, %options) {
     my @event_type_globs;
     my @queries;
     my $other_time_constraint;

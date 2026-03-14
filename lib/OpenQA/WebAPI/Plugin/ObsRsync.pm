@@ -264,8 +264,8 @@ sub _get_last_test_id ($c, $alias) {
     return _read_test_id(Mojo::File->new($home, $alias, '.run_last'));
 }
 
-sub _read_test_id {
-    my $cmdlog = shift->child('openqa.cmd.log');
+sub _read_test_id ($dir) {
+    my $cmdlog = $dir->child('openqa.cmd.log');
     return '' unless -f $cmdlog;
     my $fh = $cmdlog->open('<');
     my $res = '';
@@ -407,6 +407,7 @@ sub _get_builds_in_file ($file, $seen) {
 # and from Media*.lst, for repositories
 # these files are updated from ObsRsync Gru tasks
 sub _get_builds_in_folder ($folder) {
+
     my %seen;
     _get_builds_in_file(Mojo::File->new($folder, $files_iso_filename), \%seen);
     Mojo::File->new($folder)->list()->grep($files_media_filemask)->each(

@@ -14,8 +14,8 @@ use constant SCENARIO_DEFS_YAML_MAX_SIZE => $ENV{OPENQA_SCENARIO_DEFINITIONS_YAM
 use constant SCENARIO_DEFS_YAML_UA_ARGS =>
   (max_redirects => SCENARIO_DEFS_YAML_MAX_REDIRECTS, max_response_size => SCENARIO_DEFS_YAML_MAX_SIZE);
 
-sub register ($self, $app, @) {
-    $app->minion->add_task(schedule_iso => sub { _schedule_iso($app, @_) });
+sub register ($self, $app, @args) {
+    $app->minion->add_task(schedule_iso => sub ($minion_job, @args) { _schedule_iso($app, $minion_job, @args) });
 }
 
 sub _download_scenario_definitions ($app, $minion_job, $scheduled_product, $scheduling_params) {
@@ -38,7 +38,7 @@ sub _download_scenario_definitions ($app, $minion_job, $scheduled_product, $sche
     return 1;
 }
 
-sub _schedule_iso ($app, $minion_job, $args, @) {
+sub _schedule_iso ($app, $minion_job, $args, @args) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
     my $scheduled_product_id = $args->{scheduled_product_id};
     my $scheduling_params = $args->{scheduling_params};

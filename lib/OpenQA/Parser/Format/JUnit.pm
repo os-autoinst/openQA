@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Format::JUnit;
-use Mojo::Base 'OpenQA::Parser::Format::Base';
+use Mojo::Base 'OpenQA::Parser::Format::Base', -signatures;
 
 # Translates to JUnit -> openQA internal
 use Carp qw(croak confess);
@@ -12,28 +12,28 @@ use Mojo::DOM;
 has include_results => 0;
 
 # Override to use specific OpenQA Result class.
-sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
+sub _add_single_result ($self, @args) {
+    $self->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new(@args));
+}
 
-sub _add_result {
-    my $self = shift;
-    my %opts = ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
-    return $self->_add_single_result(@_) unless $self->include_results && $opts{name};
+sub _add_result ($self, @args) {
+    my %opts = ref $args[0] eq 'HASH' ? %{$args[0]} : @args;
+    return $self->_add_single_result(@args) unless $self->include_results && $opts{name};
 
     my $name = $opts{name};
     my $tests = $self->generated_tests->search('name', qr/$name/);
 
     if ($tests->size == 1) {
-        $self->_add_single_result(@_, test => $tests->first);
+        $self->_add_single_result(@args, test => $tests->first);
     }
     else {
-        $self->_add_single_result(@_);
+        $self->_add_single_result(@args);
     }
 
     return $self->generated_tests_results;
 }
 
-sub parse {
-    my ($self, $xml) = @_;
+sub parse ($self, $xml) {
     confess 'No XML given/loaded' unless $xml;
     my $dom = Mojo::DOM->new($xml);
     confess 'Failed parsing XML' unless @{$dom->tree} > 2;

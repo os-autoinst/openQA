@@ -36,9 +36,7 @@ Register an asset given its name and type. Returns a code of 200 on success and 
 
 =cut
 
-sub register {
-    my ($self) = @_;
-
+sub register ($self) {
     my $type = $self->param('type');
     my $name = $self->param('name');
 
@@ -84,9 +82,7 @@ sub list ($self) {
     $self->render(json => {assets => \@all});
 }
 
-sub trigger_cleanup {
-    my ($self) = @_;
-
+sub trigger_cleanup ($self) {
     my $res = $self->gru->enqueue_limit_assets();
     $self->render(json => {status => 'ok', gru_id => $res->{gru_id}});
 }
@@ -103,8 +99,7 @@ on success and of 404 on error.
 
 =cut
 
-sub get {
-    my $self = shift;
+sub get ($self) {
     my $schema = $self->schema;
 
     my %args;
@@ -134,9 +129,7 @@ number of assets removed.
 
 =cut
 
-sub delete {
-    my ($self) = @_;
-
+sub delete ($self) {
     my %args;
     for my $arg (qw(id type name)) {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);

@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::Secrets;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::Utils 'random_hex';
 
@@ -23,9 +23,8 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(secret)]);
 
-sub new {
-    my ($class, $attrs) = @_;
-
+sub new ($class, $attrs = undef) {
+    $attrs //= {};
     $attrs->{secret} = random_hex(32) unless $attrs->{secret};
 
     my $new = $class->next::method($attrs);

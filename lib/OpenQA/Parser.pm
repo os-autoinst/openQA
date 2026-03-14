@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Carp qw(croak confess);
 use Mojo::File 'path';
@@ -28,14 +28,13 @@ has 'content';
 
 # parser( Format => 'file.json')
 # or parser( 'Format' )
-sub parser {
-    @_ > 1 && ref $_[0] ne 'HASH' ? _build_parser(shift @_)->load(shift @_) : _build_parser(shift @_);
+sub parser (@args) {
+    @args > 1 && ref $args[0] ne 'HASH' ? _build_parser(shift @args)->load(shift @args) : _build_parser(shift @args);
 }
 
-sub _build_parser {
-    my $wanted_parser = shift // 'Base';
+sub _build_parser ($wanted_parser = undef, @args) {
+    $wanted_parser //= 'Base';
     my $parser_name = "OpenQA::Parser::Format::${wanted_parser}";
-    my @args = @_;
     my $p_instance;
     {
         if (my $e = load_class $parser_name) {
@@ -47,8 +46,7 @@ sub _build_parser {
     $p_instance;
 }
 
-sub load {
-    my ($self, $file) = @_;
+sub load ($self, $file = undef) {
     croak 'You need to specify a file' if !$file;
     my $file_content = $self->_read_file($file);
     confess "Failed reading file $file" if !$file_content;
@@ -57,13 +55,11 @@ sub load {
     $self;
 }
 
-sub parse { croak 'parse() not implemented by base class' }
+sub parse ($self, $content = undef) { croak 'parse() not implemented by base class' }
 
-sub _read_file { path($_[1])->slurp() }
+sub _read_file ($self, $path) { path($path)->slurp() }
 
-sub reset {
-    my $self = shift;
-
+sub reset ($self) {
     do {
         do { $self->{$_}->reset(); next } if blessed $self->{$_} && $self->{$_}->can('reset');
         $self->{$_} = undef;
@@ -72,8 +68,7 @@ sub reset {
 }
 
 # Serialization - tree building functions
-sub gen_tree_el {
-    my $el = shift;
+sub gen_tree_el ($el) {
     return {DATA_FIELD() => $el} unless blessed $el;
 
     my $el_ref;
@@ -105,17 +100,15 @@ sub gen_tree_el {
     return {DATA_FIELD() => $el_ref, TYPE_FIELD() => ref $el};
 }
 
-sub _build_tree {
-    my $self = shift;
-
+sub _build_tree ($self) {
     my $tree;
     my @coll = sort keys %{$self};
 
     foreach my $collection (@coll) {
         if (blessed $self->{$collection} && $self->{$collection}->can('each')) {
             $self->$collection->each(
-                sub {
-                    push @{$tree->{$collection}}, gen_tree_el($_);
+                sub ($item, $i) {
+                    push @{$tree->{$collection}}, gen_tree_el($item);
                 });
         }
         else {
@@ -125,8 +118,7 @@ sub _build_tree {
     return $tree;
 }
 
-sub restore_el {
-    my $obj = shift;
+sub restore_el ($obj) {
     return $obj if blessed $obj;
     return $obj if ref $obj eq 'ARRAY';
     return $obj unless ref $obj eq 'HASH' && exists $obj->{OpenQA::Parser::DATA_FIELD()};
@@ -140,11 +132,9 @@ sub restore_el {
     };
 }
 
-sub restore_tree_section {
-    my $ref = shift;
+sub restore_tree_section ($ref) {
     try {
-        walker $ref => sub {
-            my ($key, $value, $keys) = @_;
+        walker $ref => sub ($key, $value, $keys, $parent) {
             my $hash = $ref;
             for (my $i = 0; $i < scalar @$keys - 1; $i++) {
                 my ($type, $kk) = @{$keys->[$i]};
@@ -160,10 +150,7 @@ sub restore_tree_section {
     catch ($e) { confess $e }    # uncoverable statement
 }
 
-sub _load_tree {
-    my $self = shift;
-
-    my $tree = shift;
+sub _load_tree ($self, $tree) {
     my @coll = sort keys %{$tree};
 
     try {
@@ -180,16 +167,16 @@ sub _load_tree {
     return $self;
 }
 
-sub serialize { Storable::nfreeze(shift->_build_tree) }
-sub deserialize { shift->_load_tree(Storable::thaw(shift)) }
+sub serialize ($self) { Storable::nfreeze($self->_build_tree) }
+sub deserialize ($self, $data) { $self->_load_tree(Storable::thaw($data)) }
 
-sub to_json { encode_json shift->_build_tree }
-sub from_json { shift->_load_tree(decode_json shift) }
+sub to_json ($self) { encode_json $self->_build_tree }
+sub from_json ($self, $json) { $self->_load_tree(decode_json $json) }
 
-sub save { my $s = shift; path(@_)->spew($s->serialize); $s }
-sub save_to_json { my $s = shift; path(@_)->spew($s->to_json); $s }
-sub from_file { shift->new()->deserialize(path(pop)->slurp()) }
-sub from_json_file { shift->new()->from_json(path(pop)->slurp()) }
+sub save ($self, @args) { path(@args)->spew($self->serialize); $self }
+sub save_to_json ($self, @args) { path(@args)->spew($self->to_json); $self }
+sub from_file ($self, @args) { $self->new()->deserialize(path(pop @args)->slurp()) }
+sub from_json_file ($self, @args) { $self->new()->from_json(path(pop @args)->slurp()) }
 
 *p = \&parser;
 

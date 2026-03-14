@@ -167,8 +167,7 @@ OpenQA::WebAPI::Controller::API::V1::Table package documentation.
 
 =cut
 
-sub create {
-    my ($self) = @_;
+sub create ($self) {
     my $table = $self->param('table');
     my %entry = %{$TABLES{$table}->{defaults}};
 
@@ -202,9 +201,7 @@ of tables updated by the method on success.
 
 =cut
 
-sub _verify_table_usage {
-    my ($self, $table, $id) = @_;
-
+sub _verify_table_usage ($self, $table, $id) {
     my $parameter = {
         Products => 'product_id',
         Machines => 'machine_id',
@@ -279,9 +276,7 @@ with the number of deleted tables on success.
 
 =cut
 
-sub destroy {
-    my ($self) = @_;
-
+sub destroy ($self) {
     my $table = $self->param('table');
     my $schema = $self->schema;
     my $machines = $schema->resultset('Machines');
@@ -328,8 +323,7 @@ Use by both B<create()> and B<update()> method.
 
 =cut
 
-sub _prepare_settings {
-    my ($self, $table, $entry) = @_;
+sub _prepare_settings ($self, $table, $entry) {
     my $validation = $self->validation;
     my $hp;
     # accept modern application/json encoded hashes

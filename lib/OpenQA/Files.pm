@@ -9,31 +9,27 @@ use Mojo::File 'path';
 use OpenQA::File;
 use Mojo::Exception;
 
-sub join {
-    my $self = shift;
-    return join '', map { $_->read } $self->each;
+sub join ($self) {
+    return CORE::join '', map { $_->read } $self->each;
 }
 
-sub serialize {
-    my $self = shift;
+sub serialize ($self) {
     $self->join();    # Be sure content was read
     return map { $_->serialize } $self->each;
 }
 
-sub deserialize {
-    my $self = shift;
-    return $self->new(map { OpenQA::File->deserialize($_) } @_);
+sub deserialize ($self, @args) {
+    return $self->new(map { OpenQA::File->deserialize($_) } @args);
 }
 
-sub write { Mojo::File->new(pop)->spew(shift->join()) }
+sub write ($self, $path) { path($path)->spew($self->join()) }
 
-sub generate_sum { sha1_base64(shift()->join()) }
+sub generate_sum ($self) { sha1_base64($self->join()) }
 
-sub is_sum { shift->generate_sum eq shift }
+sub is_sum ($self, $sum) { $self->generate_sum eq $sum }
 
-sub prepare {
-    my $self = shift;
-    return $self->each(sub { $_->prepare });
+sub prepare ($self) {
+    return $self->each(sub ($file, $i) { $file->prepare });
 }
 
 sub write_chunks ($class, $chunk_path, $file) {
