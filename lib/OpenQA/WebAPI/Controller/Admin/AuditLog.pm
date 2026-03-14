@@ -101,7 +101,10 @@ sub _get_search_query ($self) {
 
     # construct query only from allowed columns
     my $query = {};
-    my @subsearch = split / /, $self->param('search[value]') // '';
+    my $search_value = $self->param('search[value]');
+    return [] unless defined $search_value && $search_value =~ /\S/;
+
+    my @subsearch = split ' ', $search_value;
     my $current_key = 'data';
     my @current_search;
     for my $s (@subsearch) {
@@ -134,7 +137,7 @@ sub ajax ($self, $filter_conds = undef) {
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
         resultset => 'AuditEvents',
-        columns => [qw(me.t_created connection_id owner.nickname event_data event)],
+        columns => [qw(me.id me.t_created owner.nickname me.connection_id me.event me.event_data)],
         filter_conds => ($filter_conds // $self->_get_search_query),
         additional_params => {
             prefetch => 'owner',
