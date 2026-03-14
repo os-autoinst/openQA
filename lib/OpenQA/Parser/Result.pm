@@ -44,8 +44,6 @@ sub write {
     return length $json_data;
 }
 
-sub write_json { shift->write(@_) }
-
 sub serialize { Storable::nfreeze(shift->to_el) }
 sub deserialize { shift()->new(OpenQA::Parser::restore_el(Storable::thaw(shift))) }
 
