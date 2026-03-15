@@ -664,10 +664,7 @@ subtest 'Concurrent rsync' => sub {
 };
 
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
-    my $worker_2 = cache_minion_worker;
-    $worker_2->start;
     test_sync $_ for (1 .. 4);
-    $worker_2->stop;
 };
 
 done_testing;
