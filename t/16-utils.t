@@ -51,9 +51,9 @@ subtest 'service ports' => sub {
 subtest 'set listen address' => sub {
     local $ENV{MOJO_LISTEN} = undef;
     set_listen_address(9526);
-    like $ENV{MOJO_LISTEN}, qr/127\.0\.0\.1:9526/, 'address set';
+    like $ENV{MOJO_LISTEN}, qr/localhost:9526.*127\.0\.0\.1:9526/, 'address set';
     set_listen_address(9527);
-    unlike $ENV{MOJO_LISTEN}, qr/127\.0\.0\.1:9527/, 'not changed';
+    unlike $ENV{MOJO_LISTEN}, qr/localhost:9527.*127\.0\.0\.1:9527/, 'not changed';
 };
 
 subtest 'random number generator' => sub {
