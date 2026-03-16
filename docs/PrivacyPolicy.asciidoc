@@ -84,6 +84,7 @@ through that provider.
 === Deletion
 
 You can delete your account, which will:
+
 * Remove your personal information (email, fullname, nickname)
 * Anonymize your username (replaced with "deleted-user-[id]")
 * Delete your API keys
