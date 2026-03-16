@@ -1,77 +1,73 @@
 $grid-breakpoints: (
-    xs: 0,
-    sm: 500px,
-    md: 600px,
-    lg: 700px,
-    xl: 1000px
+  xs: 0,
+  sm: 500px,
+  md: 600px,
+  lg: 700px,
+  xl: 1000px
 );
-
-$web-font-path:               "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" !default;
-$default-font:                "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
-$icon-font-path:              '/fonts/';
-$default-font-color:          #666666;
-$default-bg-color:            #ffffff;
-$font-size-base:              0.85rem;
-$h2-font-size:                1.65rem;
-$h3-font-size:                1.25rem;
-$h4-font-size:                1.15rem;
-$progress-font-size:          0.78rem;
-$btn-border-radius-base:      .25rem;
-$btn-default-color:           #000000;
-$btn-default-bg:              #fefefe;
-$btn-primary-bg:              #007bff;
-$btn-secondary-bg:            #6c757d;
-$btn-success-bg:              #28a745;
-$btn-info-bg:                 #17a2b8;
-$btn-warning-bg:              #ffc107;
-$btn-danger-bg:               #dc3545;
-$btn-light-bg:                #f8f9fa;
-$btn-dark-bg:                 #343a40;
-$table-border-color:          #dddddd;
-$link-color:                  #446E9B;
-$link-hover-color:            darken($link-color, 15%) !default;
-
-$color-softfailed:            #EEB560;
-$color-ok:                    #CDFFB9;
-$color-warning:               #ffff99;
-$color-failed:                #FF4E46;
-$color-result-failed:         #FF9E9B;
-$color-incomplete:            #AF1E11;
-$color-result:                #3c3c3c;
-$color-result-missing:        #dddddd;
-$color-result-testing:        #99ddff;
-$color-module-softfailed:     #FFD048;
-$color-module-passed:         #59DF24;
-$color-module-none:           #aaaaaa;
-$color-module-skipped:        #aaaaaa;
-$color-resborder-ok:          $color-module-passed;
-$color-resborder-fail:        $color-failed;
-$color-resborder-unk:         $color-module-none;
-$color-highlight-parent:      #ffe0e0;
-$color-highlight-child:       #d0f0ff;
-$color-labels:                gray;
-$color-bolt:                  #f2b500;
-$color-bug-closed:            $color-failed;
-$color-state-scheduled:       #67A2B7;
-$color-state-blocked:         #9167b7;
-$color-state-cancelled:       $color-module-none;
-$color-state-running:         #8BDFFF;
-$color-step-actions:          #666666;
-
-$default-font-color-dark:     #ccc;
-$default-bg-color-dark:       #000;
-$link-color-dark:             #7fbbf7;
-$link-hover-color-dark:       darken($link-color, 15%) !default;
-$color-result-dark:           #c3c3c3;
-$table-border-color-dark:     darken($color-result-dark, 50%);
-
-$btn-default-color-dark:      #ffffff;
-$btn-default-bg-dark:         #010101;
-$btn-primary-bg-dark:         #007bff;
-$btn-secondary-bg-dark:       #6c757d;
-$btn-success-bg-dark:         #28a745;
-$btn-info-bg-dark:            #17a2b8;
-$btn-warning-bg-dark:         #ffc107;
-$btn-danger-bg-dark:          #dc3545;
-$btn-light-bg-dark:           #070605;
-$btn-dark-bg-dark:            #343a40;
+$web-font-path: 'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700' !default;
+$default-font: 'Roboto', 'Helvetica Neue', helvetica, arial, sans-serif;
+$icon-font-path: '/fonts/';
+$default-font-color: #666;
+$default-bg-color: #fff;
+$font-size-base: 0.85rem;
+$h2-font-size: 1.65rem;
+$h3-font-size: 1.25rem;
+$h4-font-size: 1.15rem;
+$progress-font-size: 0.78rem;
+$btn-border-radius-base: 0.25rem;
+$btn-default-color: #000;
+$btn-default-bg: #fefefe;
+$btn-primary-bg: #007bff;
+$btn-secondary-bg: #6c757d;
+$btn-success-bg: #28a745;
+$btn-info-bg: #17a2b8;
+$btn-warning-bg: #ffc107;
+$btn-danger-bg: #dc3545;
+$btn-light-bg: #f8f9fa;
+$btn-dark-bg: #343a40;
+$table-border-color: #ddd;
+$link-color: #446e9b;
+$link-hover-color: darken($link-color, 15%) !default;
+$color-softfailed: #eeb560;
+$color-ok: #cdffb9;
+$color-warning: #ff9;
+$color-failed: #ff4e46;
+$color-result-failed: #ff9e9b;
+$color-incomplete: #af1e11;
+$color-result: #3c3c3c;
+$color-result-missing: #ddd;
+$color-result-testing: #9df;
+$color-module-softfailed: #ffd048;
+$color-module-passed: #59df24;
+$color-module-none: #aaa;
+$color-module-skipped: #aaa;
+$color-resborder-ok: $color-module-passed;
+$color-resborder-fail: $color-failed;
+$color-resborder-unk: $color-module-none;
+$color-highlight-parent: #ffe0e0;
+$color-highlight-child: #d0f0ff;
+$color-labels: gray;
+$color-bolt: #f2b500;
+$color-bug-closed: $color-failed;
+$color-state-scheduled: #67a2b7;
+$color-state-blocked: #9167b7;
+$color-state-cancelled: $color-module-none;
+$color-state-running: #8bdfff;
+$color-step-actions: #666;
+$default-font-color-dark: #ccc;
+$default-bg-color-dark: #000;
+$link-color-dark: #7fbbf7;
+$link-hover-color-dark: darken($link-color, 15%) !default;
+$color-result-dark: #c3c3c3;
+$table-border-color-dark: darken($color-result-dark, 50%);
+$btn-default-color-dark: #fff;
+$btn-default-bg-dark: #010101;
+$btn-primary-bg-dark: #007bff;
+$btn-secondary-bg-dark: #6c757d;
+$btn-success-bg-dark: #28a745;
+$btn-info-bg-dark: #17a2b8;
+$btn-warning-bg-dark: #ffc107;
+$btn-danger-bg-dark: #dc3545;
+$btn-light-bg-dark: #070605;
+$btn-dark-bg-dark: #343a40;

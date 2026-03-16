@@ -1,15 +1,13 @@
 .parent_group_overview_grouping_active {
-    font-weight: bold;
-    color: $default-font-color;
+  font-weight: bold;
+  color: $default-font-color;
 }
-[data-bs-theme="dark"] .parent_group_overview_grouping_active {
-    color: $default-font-color-dark;
+[data-bs-theme='dark'] .parent_group_overview_grouping_active {
+  color: $default-font-color-dark;
 }
-
 .parent_group_overview_grouping_by_default {
-    cursor: pointer;
+  cursor: pointer;
 }
-
 .parent_group_overview_grouping_by_default:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }

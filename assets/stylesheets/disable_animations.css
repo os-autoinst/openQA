@@ -2,10 +2,8 @@
 :root {
     scroll-behavior: auto !important;
 }
-
 /* avoid all kinds of animations, e.g. the transition used in Bootstrap popovers */
 * {
     animation: none !important;
     transition: none !important;
-    transition-property: none !important;
 }
