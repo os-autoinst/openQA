@@ -180,7 +180,7 @@ subtest 'filtering' => sub {
     # define test helper
     my $count_steps = sub {
         my ($result) = @_;
-        return $driver->execute_script("return \$('#results .result${result}:visible').length;");
+        return $driver->execute_script("return \$('#results .result[data-result=\"${result}\"]:visible').length;");
     };
     my $count_headings = sub {
         return $driver->execute_script("return \$('#results td[colspan=\"3\"]:visible').length;");

@@ -71,3 +71,27 @@ $btn-warning-bg-dark: #ffc107;
 $btn-danger-bg-dark: #dc3545;
 $btn-light-bg-dark: #070605;
 $btn-dark-bg-dark: #343a40;
+:root {
+  --color-ok-bg: #{$color-ok};
+  --color-ok-fg: #{$color-module-passed};
+  --color-failed-bg: #{$color-result-failed};
+  --color-failed-fg: #{$color-failed};
+  --color-unknown-bg: #{$color-result-missing};
+  --color-unknown-fg: #{$color-module-none};
+  --color-running-bg: #{$color-result-testing};
+  --color-running-fg: #{$color-state-running};
+  --color-warning-bg: #{$color-warning};
+  --color-warning-fg: #{$color-warning};
+  --color-softfailed-bg: #{$color-softfailed};
+  --color-softfailed-fg: #{$color-softfailed};
+  --color-result-text: #{$color-result};
+}
+[data-bs-theme='dark'] {
+  --color-ok-bg: color-mix(in srgb, #{$color-ok}, black 75%);
+  --color-failed-bg: color-mix(in srgb, #{$color-result-failed}, black 75%);
+  --color-unknown-bg: color-mix(in srgb, #{$color-result-missing}, black 75%);
+  --color-running-bg: color-mix(in srgb, #{$color-result-testing}, black 75%);
+  --color-warning-bg: color-mix(in srgb, #{$color-warning}, black 75%);
+  --color-softfailed-bg: color-mix(in srgb, #{$color-softfailed}, black 75%);
+  --color-result-text: #{$color-result-dark};
+}
