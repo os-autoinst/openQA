@@ -26,7 +26,7 @@
     "dagre-d3": "^0.6.4",
     "datatables.net-bs5": "^2.3.4",
     "fork-awesome": "^1.2.0",
-    "jquery": "^3.7.1",
+    "jquery": "^4.0.0",
     "jquery-ujs": "^1.2.3",
     "timeago": "^1.6.7"
   },
