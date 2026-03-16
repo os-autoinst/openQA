@@ -1,0 +1,33 @@
+{
+  "extends": ["stylelint-config-standard-scss"],
+  "plugins": ["@stylistic/stylelint-plugin"],
+  "rules": {
+    "rule-empty-line-before": "never",
+    "declaration-empty-line-before": "never",
+    "at-rule-empty-line-before": "never",
+    "comment-empty-line-before": "never",
+    "@stylistic/selector-list-comma-newline-after": null,
+    "@stylistic/selector-list-comma-space-after": "always",
+    "no-descending-specificity": null,
+    "selector-class-pattern": null,
+    "selector-id-pattern": null,
+    "declaration-block-single-line-max-declarations": null,
+    "scss/no-global-function-names": null,
+    "no-invalid-position-at-import-rule": null,
+    "selector-pseudo-element-no-unknown": null,
+    "font-family-no-duplicate-names": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "declaration-property-value-keyword-no-deprecated": null,
+    "number-max-precision": null,
+    "selector-type-no-unknown": null,
+    "scss/at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["include", "mixin", "each", "if", "else", "media-breakpoint-up", "media-breakpoint-down"]
+      }
+    ],
+    "color-function-notation": null,
+    "color-function-alias-notation": null,
+    "import-notation": null
+  }
+}

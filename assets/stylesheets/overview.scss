@@ -1,104 +1,98 @@
 .table.overview {
-    table-layout: fixed;
-    tr.parallel-child td.name {
-        padding-left: 1em;
-        &:first-child:before {
-            content: "•";
-        }
+  table-layout: fixed;
+  tr.parallel-child td.name {
+    padding-left: 1em;
+    &:first-child::before {
+      content: '•';
     }
-    a.fa, span > a {
-        text-decoration: none;
-    }
-    .toggle-parallel-children {
-        border-radius: 5rem;
-        padding: 6px;
-    }
+  }
+  a.fa, span > a {
+    text-decoration: none;
+  }
+  .toggle-parallel-children {
+    border-radius: 5rem;
+    padding: 6px;
+  }
 }
 .collapse-all-button, .expand-all-button {
-    float: right;
-    text-decoration: none !important;
-    border-radius: 5rem;
-    margin-left: 0.5rem;
+  float: right;
+  text-decoration: none !important;
+  border-radius: 5rem;
+  margin-left: 0.5rem;
 }
-
 #summary .badge-btn.btn-outline-light {
-    color: black;
+  color: black;
 }
 #summary .badge {
-    top: 0px;
+  top: 0;
 }
 #summary .time-params {
-    font-weight: lighter;
+  font-weight: lighter;
 }
 @include media-breakpoint-up(xl) {
-    #summary .time-params {
-        float: right;
-    }
+  #summary .time-params {
+    float: right;
+  }
 }
-
 /* dotted underline looks strange with default font size */
 .h4 {
-    .smaller-font { font-size: 90%; }
+  .smaller-font {
+    font-size: 90%;
+  }
 }
-
 #filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
-    #developer-status span, .card-header-appendix span {
-        color: #555;
-        float: right;
-        font-weight: 500;
+  #developer-status span, .card-header-appendix span {
+    color: #555;
+    float: right;
+    font-weight: 500;
+  }
+  .card-header-appendix span {
+    text-align: right;
+    width: 100%;
+    display: inline-block;
+    font-weight: normal;
+  }
+  .card-header {
+    cursor: pointer;
+  }
+  .card-body, .developer-mode-element {
+    display: none;
+  }
+  #filter-form {
+    strong {
+      display: block;
     }
-    .card-header-appendix span {
-        text-align: right;
-        width: 100%;
-        display: inline-block;
-        font-weight: normal;
+    .mb-3 label {
+      margin-right: 3px;
+      font-weight: normal;
     }
-    .card-header {
-        cursor: pointer;
+  }
+}
+[data-bs-theme='dark'] {
+  #filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
+    .card-header span {
+      color: rgb(214, 214, 214);
     }
     .card-body, .developer-mode-element {
-        display: none;
+      color: $default-font-color-dark;
+      background-color: $default-bg-color-dark;
     }
-    #filter-form {
-        strong {
-            display: block;
-        }
-        .mb-3 label {
-            margin-right: 3px;
-            font-weight: normal;
-        }
-    }
+  }
 }
-[data-bs-theme="dark"] {
-    #filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
-        .card-header span {
-            color: rgb(214, 214, 214);
-        }
-        .card-body, .developer-mode-element {
-            color: $default-font-color-dark;
-            background-color: $default-bg-color-dark;
-        }
-    }
-}
-
 /* workaround to avoid issue with Chosen select when placeholder is not shown by default */
 .chosen-search-input.default {
-    width: 100% !important;
+  width: 100% !important;
 }
-
 #filter-modules label {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
-
 #add-comments-progress-indication {
-    display: none;
-    width: 100%;
+  display: none;
+  width: 100%;
 }
-
 .group-comment-icon-stack {
   font-size: 0.9em;
 }
-
 .group-comment-icon-stack .fa-undo {
   color: #0c4374;
 }
