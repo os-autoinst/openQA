@@ -254,17 +254,19 @@ subtest 'Invalid requests' => sub {
     is_deeply $json, {error => 'No lock defined'}, 'invalid lock' or always_explain $json;
 };
 
-subtest 'Cache model and InfluxDB edge cases' => sub {
+subtest 'InfluxDB edge cases' => sub {
     my $app = $t->app;
     my $cache = $app->cache;
-    my $cs_port = service_port 'cache_service';
-    my $url = $cache_client->url('/influxdb/minion');
-    my $ua = $cache_client->ua;
 
     # InfluxDB: test when download_rate is missing
     $cache->sqlite->db->delete('metrics', {name => 'download_rate'});
     $t->get_ok('/influxdb/minion')->status_is(200)
       ->content_unlike(qr/openqa_download_rate/, 'download_rate is missing from InfluxDB output');
+};
+
+subtest 'Cache model internal edge cases' => sub {
+    my $app = $t->app;
+    my $cache = $app->cache;
 
     # Cache model: purge_asset when file does not exist
     $cache->sqlite->db->insert('assets', {filename => 'nonexistent', last_use => time, size => 0, pending => 0});
@@ -296,7 +298,7 @@ subtest 'Cache model and InfluxDB edge cases' => sub {
         local $cache->{min_free_percentage} = 60;
         is $cache->_exceeds_limit(0), 1, '_exceeds_limit returns 1 when below min free percentage';
         local $cache->{min_free_percentage} = 40;
-        is $cache->_exceeds_limit(0), 0, '_exceeds_limit returns 0 when above min free percentage';
+        is $cache->_exceeds_limit(0), 0, '_exceeds_limit returns 0 on df success';
     }
 
     # Cache model: _check_limits when limit exceeded
