@@ -5,6 +5,9 @@ var audit_url;
 var ajax_url;
 
 function getURLForType(type, event_data) {
+  if (!event_data) {
+    return;
+  }
   switch (type) {
     case 'comment_create':
     case 'comment_update':
@@ -145,7 +148,10 @@ function loadAuditLogTable() {
         targets: 5,
         width: '70%',
         render: function (data, type, row) {
-          if (type === 'display' && data) {
+          if (type === 'display') {
+            if (!data || data === 'null') {
+              return '';
+            }
             let parsedData;
             let typeSpecificElement = '';
             try {
