@@ -87,7 +87,8 @@ sub new ($class, $cli_options) {
     my $self = $class->SUPER::new(
         instance_number => $instance_number,
         no_cleanup => $cli_options->{'no-cleanup'},
-        pool_directory => prjdir() . "/pool/$instance_number",
+        pool_directory => $ENV{OPENQA_WORKER_POOL_DIR} // $cli_options->{'pool-dir'}
+          // (prjdir() . "/pool/$instance_number"),
         app => $app,
         settings => $settings,
         clients_by_webui_host => undef,
