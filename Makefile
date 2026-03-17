@@ -390,10 +390,11 @@ test-shfmt: ## Run shfmt on scripts
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
 .PHONY: test-gitlint
-test-gitlint:
+test-gitlint: ## Run commit message checks using gitlint
 	@which gitlint >/dev/null 2>&1 || (echo "Command 'gitlint' not found, can not execute commit message checks. Install with 'python3-gitlint' (openSUSE) or 'pip install gitlint-core'" && false)
-	@if git rev-parse --verify master >/dev/null 2>&1 && [ "$$(git rev-parse HEAD)" != "$$(git rev-parse master)" ]; then \
-		gitlint --commits master..HEAD; \
+	@BASE=$$(git merge-base origin/master HEAD 2>/dev/null || git merge-base master HEAD 2>/dev/null); \
+	if [ -n "$$BASE" ] && [ "$$BASE" != "$$(git rev-parse HEAD)" ]; then \
+		gitlint --commits "$$BASE..HEAD"; \
 	else \
 		gitlint; \
 	fi
