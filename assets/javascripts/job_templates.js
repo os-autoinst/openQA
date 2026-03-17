@@ -568,7 +568,10 @@ function submitProperties(form) {
   var editorForm = $(form);
   editorForm.find('.buttons').hide();
   editorForm.find('.progress-indication').show();
-  fetchWithCSRF(editorForm.data('put-url'), {method: 'PUT', body: new FormData(form)})
+  fetchWithCSRF(editorForm.data('put-url'), {
+    method: 'PUT',
+    body: new FormData(form)
+  })
     .then(response => {
       return response
         .json()
@@ -584,7 +587,13 @@ function submitProperties(form) {
     .then(({response, json}) => {
       showAdvancedFieldsIfJsonRefersToThem(json);
       const overallError = updateValidation(form, json);
-      if (overallError) throw overallError;
+      if (overallError) {
+        showSubmitResults(
+          editorForm,
+          `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${overallError}</strong>`
+        );
+        return;
+      }
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       const warnings = json?.warnings_by_field;
       const remark =
@@ -608,6 +617,10 @@ function submitProperties(form) {
         editorForm,
         `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${error}</strong>`
       );
+    })
+    .finally(() => {
+      editorForm.find('.buttons').show();
+      editorForm.find('.progress-indication').hide();
     });
 
   return false;

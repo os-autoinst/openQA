@@ -17,7 +17,7 @@ function setup_admin_user() {
     }
 
     var form = $(this).parent('form');
-    if (!confirm('Are you sure to put ' + username + ' into role: ' + $.trim(role) + '?')) {
+    if (!confirm('Are you sure to put ' + username + ' into role: ' + role.trim() + '?')) {
       rollback(form);
       return;
     }

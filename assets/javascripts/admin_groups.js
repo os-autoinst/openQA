@@ -58,31 +58,25 @@ function fetchHtmlEntry(url, targetElement) {
 
 function countEmptyInputs(form) {
   return Array.from(form.querySelectorAll('input')).reduce(
-    (count, e) => count + (e.type !== 'number' && !jQuery.trim(e.value).length),
+    (count, e) => count + (e.type !== 'number' && !e.value.trim().length),
     0
   );
 }
 
 function validateJobGroupForm(form) {
-  const button = form.querySelector('button[type=submit]');
-  let emptyInputs = countEmptyInputs(form);
-  button.disabled = emptyInputs > 0;
-  if (form.dataset.eventHandlersInitialized) {
-    return;
-  }
-  $('input', form).on('keyup change', function () {
+  const $form = $(form);
+  const $button = $form.find('button[type=submit]');
+  const disableSubmit = function () {
+    $button.prop('disabled', countEmptyInputs(form) > 0);
+  };
+  $form.off('.val').on('keyup.val change.val input.val', 'input', function () {
     if (this.type === 'number') {
       return;
     }
-    if (!jQuery.trim(this.value).length) {
-      this.classList.add('is-invalid');
-      button.disabled = ++emptyInputs;
-    } else {
-      this.classList.remove('is-invalid');
-      button.disabled = --emptyInputs > 0;
-    }
+    $(this).toggleClass('is-invalid', !this.value.trim().length);
+    disableSubmit();
   });
-  form.dataset.eventHandlersInitialized = true;
+  disableSubmit();
 }
 
 function createGroup(form) {
