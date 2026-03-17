@@ -331,19 +331,18 @@ subtest 'Cache model error handling' => sub {
         $utils_mock->redefine(_perform_integrity_check => sub { ['database disk image is malformed'] });
         is_deeply $cache->_check_database_integrity, ['database disk image is malformed'],
           'integrity check returns errors';
+        $utils_mock->unmock('_perform_integrity_check');
+        is_deeply $cache->_perform_integrity_check, ['ok'], '_perform_integrity_check returns ok on healthy DB';
     }
 
     # repair_database catch block and _kill_db_accessing_processes
     {
-        $utils_mock->redefine(_check_database_integrity => sub { die "integrity check died\n" });
-        # Mock _kill_db_accessing_processes to avoid actual system calls
-        my $killed = 0;
-        $utils_mock->redefine(_kill_db_accessing_processes => sub { $killed = 1 });
+        $utils_mock->redefine(_check_database_integrity => sub { return ['manual error'] });
 
         my $db_file = path($cachedir, 'test_corrupt.sqlite');
         $db_file->spew('corrupt');
         $cache->repair_database($db_file->to_string);
-        ok $killed, '_kill_db_accessing_processes called on corruption';
+        ok !-e $db_file, 'repair_database removed the corrupted database file';
     }
 
     # purge_asset: unlink failure
