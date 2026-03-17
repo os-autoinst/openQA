@@ -160,6 +160,9 @@ sub read_config ($app) {
             unique_name => '',
             id_from => 'id',
         },
+        webui => {
+            render_batch_size => 50,
+        },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
             proxy => 1,
