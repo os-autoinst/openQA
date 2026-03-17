@@ -320,22 +320,16 @@ subtest 'Cache model and InfluxDB edge cases' => sub {
 };
 
 subtest 'Failing download' => sub {
-    my $asset = 'sle-12-SP3-x86_64-0368-404@64bit.qcow2';
-    my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
-    $cache_client->enqueue($req);
-    perform_minion_jobs($t->app->minion);
-    my $status = $cache_client->status($req);
-    ok $status->is_processed, 'status is processed';
-    ok $status->data->{has_download_error}, 'download error recorded in status';
-
-    # connection closed
-    my $asset2 = 'sle-12-SP3-x86_64-0368-200_close@64bit.qcow2';
-    my $req2 = $cache_client->asset_request(id => 922757, asset => $asset2, type => 'hdd', host => $host);
-    $cache_client->enqueue($req2);
-    perform_minion_jobs($t->app->minion);
-    my $status2 = $cache_client->status($req2);
-    ok $status2->is_processed, 'status is processed';
-    ok $status2->data->{has_download_error}, 'download error recorded in status';
+    for my $case ([922756, 'sle-12-SP3-x86_64-0368-404@64bit.qcow2', '404 error'],
+        [922757, 'sle-12-SP3-x86_64-0368-200_close@64bit.qcow2', 'connection closed']) {
+        my ($id, $asset, $msg) = @$case;
+        my $req = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
+        $cache_client->enqueue($req);
+        perform_minion_jobs($t->app->minion);
+        my $status = $cache_client->status($req);
+        ok $status->is_processed, "status is processed for $msg";
+        ok $status->data->{has_download_error}, "download error recorded in status for $msg";
+    }
 };
 
 subtest 'Asset exists' => sub {
