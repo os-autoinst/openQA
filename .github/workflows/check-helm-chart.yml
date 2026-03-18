@@ -56,8 +56,9 @@ jobs:
 
       - name: Download images
         run: |
-          retry -r 3 -s 15 -e docker pull $REGISTRY_PATH/openqa_webui:latest
-          retry -r 3 -s 15 -e docker pull $REGISTRY_PATH/openqa_worker:latest
+          for i in webui worker; do
+            retry -r 7 -s 15 -e docker pull $REGISTRY_PATH/openqa_$i:latest
+          done
 
       - name: Load images into the Cluster
         run: |
