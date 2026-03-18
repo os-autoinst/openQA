@@ -9,6 +9,7 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Task::SignalGuard;
 use OpenQA::Utils;
 use Mojo::URL;
+use Time::Seconds;
 
 sub register ($self, $app, $job) {
     $app->minion->add_task(scan_needles => sub ($job) { _needles($app, $job) });
@@ -19,7 +20,7 @@ sub _needles ($app, $job) {
 
     # prevent multiple scan_needles tasks to run in parallel
     return $job->finish('Previous scan_needles job is still active')
-      unless my $guard = $app->minion->guard('limit_scan_needles_task', 7200);
+      unless my $guard = $app->minion->guard('limit_scan_needles_task', 2 * ONE_HOUR);
     for my $dir ($app->schema->resultset('NeedleDirs')->all) {
         if ($dir->is_symlink) {
             # discard needle dirs (and contained needles) under symlinked locations

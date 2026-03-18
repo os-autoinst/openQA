@@ -11,6 +11,7 @@ use POSIX 'strftime';
 use File::Which qw(which);
 use OpenQA::Log qw(log_error);
 use HTTP::Status qw(:constants);
+use Time::Seconds;
 
 my $dirty_status_filename = '.dirty_status';
 my $api_repo_filename = '.api_repo';
@@ -18,7 +19,7 @@ my $api_package_filename = '.api_package';
 my $files_iso_filename = 'files_iso.lst';
 my $files_media_filemask = qr/Media.*\.lst$/;
 
-my $lock_timeout = 360000;
+use constant LOCK_TIMEOUT => 100 * ONE_HOUR;
 
 # register_common_routes adds the same routes for:
 # non-privileged routes - will be accessible with curl without authentication
@@ -438,15 +439,15 @@ sub _get_obs_builds_text ($c, $alias, $last = undef) {
 
 sub _concurrency_guard ($c) {
     my $app = $c->app;
-    return $app->minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $app->obs_rsync->concurrency});
+    return $app->minion->guard('obs_rsync_run_guard', LOCK_TIMEOUT, {limit => $app->obs_rsync->concurrency});
 }
 
 sub _guard ($c, $project) {
-    return $c->app->minion->guard('obs_rsync_project_' . $project . '_lock', $lock_timeout);
+    return $c->app->minion->guard('obs_rsync_project_' . $project . '_lock', LOCK_TIMEOUT);
 }
 
 sub _lock ($c, $project) {
-    return $c->app->minion->lock('obs_rsync_project_' . $project . '_lock', $lock_timeout);
+    return $c->app->minion->lock('obs_rsync_project_' . $project . '_lock', LOCK_TIMEOUT);
 }
 
 sub _unlock ($c, $project) {

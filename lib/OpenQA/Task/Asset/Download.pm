@@ -7,6 +7,7 @@ use OpenQA::Task::SignalGuard;
 use OpenQA::Utils qw(check_download_url);
 use OpenQA::Downloader;
 use Mojo::File 'path';
+use Time::Seconds;
 
 sub register ($self, $app, @) { $app->minion->add_task(download_asset => \&_download); }
 
@@ -41,7 +42,7 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
 
     # Prevent multiple asset download tasks for the same asset to run in parallel
     return $job->retry({delay => 30})
-      unless my $guard = $app->minion->guard("limit_asset_download_${assetpath}_task", 7200);
+      unless my $guard = $app->minion->guard("limit_asset_download_${assetpath}_task", 2 * ONE_HOUR);
 
     my $log = $app->log;
     my $ctx = $log->context("[#$job_id]");

@@ -8,6 +8,7 @@ use OpenQA::Utils;
 use Mojo::File 'path';
 use IPC::Run;
 use HTTP::Status qw(:constants);
+use Time::Seconds;
 
 =pod
 
@@ -174,7 +175,7 @@ sub query {
     my $lockname = 'webui_query_rate_limit';
     if (my $user = $self->current_user) { $lockname .= $user->username }
     return $self->render(json => {error => 'Rate limit exceeded'}, status => HTTP_BAD_REQUEST)
-      unless $self->app->minion->lock($lockname, 60, {limit => $self->app->config->{rate_limits}->{search}});
+      unless $self->app->minion->lock($lockname, ONE_MINUTE, {limit => $self->app->config->{rate_limits}->{search}});
 
     my $cap = $self->app->config->{global}->{search_results_limit};
     my %results;
