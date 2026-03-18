@@ -679,8 +679,10 @@ sub job_next_previous_ajax ($self) {
     );
     my @jobs = $jobs_rs->all;
 
-    my $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs([map { $_->id } @jobs]);
-    my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs([map { $_->id } @jobs]);
+    my $job_ids = [map { $_->id } @jobs];
+    my $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs($job_ids);
+    my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs($job_ids);
+    my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
 
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
     my (@data, @info);
@@ -700,17 +702,11 @@ sub job_next_previous_ajax ($self) {
         my $dependencies = $job->dependencies($children_by_job->{$job_id} || [], $parents_by_job->{$job_id} || []);
         push @data,
           {
+            $self->_format_ajax_job($job, $ancestors_by_job->{$job_id} || 0),
             DT_RowId => 'job_result_' . $job_id,
-            id => $job_id,
             name => $job->name,
-            distri => $job->DISTRI,
-            version => $job->VERSION,
-            build => $job->BUILD,
             deps => $dependencies,
-            result => $job->result,
             result_stats => $job->result_stats,
-            state => $job->state,
-            clone => $job->clone_id,
             failedmodules => $failed_modules_by_job->{$job_id},
             iscurrent => $job_id == $main_jobid ? 1 : undef,
             finished => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
