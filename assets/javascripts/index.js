@@ -90,7 +90,7 @@ function loadBuildResults(queryParams) {
   const showBuildResults = function (buildResults) {
     loadingElement.hide();
     buildResultsElement.html(buildResults);
-    $('.timeago').timeago();
+    updateTimeago();
     alignBuildLabels();
     filterFormApplyButton.prop('disabled', false);
     window.updatingBuildResults = false;

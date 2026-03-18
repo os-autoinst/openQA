@@ -32,7 +32,7 @@
     "fork-awesome": "^1.2.0",
     "jquery": "^4.0.0",
     "jquery-ujs": "^1.2.3",
-    "timeago": "^1.6.7"
+    "timeago.js": "^4.0.2"
   },
   "overrides": {
     "dagre-d3": {
