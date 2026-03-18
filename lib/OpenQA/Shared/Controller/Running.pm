@@ -8,6 +8,7 @@ use Mojo::Util 'b64_encode';
 use Mojo::File 'path';
 use Mojo::JSON qw(encode_json decode_json);
 use Feature::Compat::Try;
+use File::stat;
 use OpenQA::Constants qw(WORKER_COMMAND_LIVELOG_STOP WORKER_COMMAND_LIVELOG_START);
 use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Utils;
@@ -93,7 +94,7 @@ sub streamtext ($self, $file_name) {
     if (open $log, '<', $logfile) {
         # Send the last 10KB of data from the logfile, so that
         # the client sees some data immediately
-        $ino = (stat $logfile)[1];
+        $ino = (stat $logfile)->ino;
 
         $size = -s $logfile;
         if ($size > 10 * 1024 && seek $log, -10 * 1024, 2) {
@@ -113,19 +114,19 @@ sub streamtext ($self, $file_name) {
             if (!$ino) {
                 # log file was not yet opened
                 return unless open $log, '<', $logfile;
-                $ino = (stat $logfile)[1];
+                $ino = (stat $logfile)->ino;
                 $size = -s $logfile;
             }
 
             # Zero tolerance for any shenanigans with the logfile, such as
             # truncation, rotation, etc.
-            my @st = stat $logfile;
-            return $self->finish unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
+            my $st = stat $logfile;
+            return $self->finish unless $st && $st->ino == $ino && $st->nlink > 0 && $st->size >= $size;
 
             # If there's new data, read it all and send it out. Then
             # seek to the current position to reset EOF.
-            if ($size < $st[7]) {
-                $size = $st[7];
+            if ($size < $st->size) {
+                $size = $st->size;
                 my $lines = '';
                 while (defined(my $l = <$log>)) {
                     $lines .= $l;

@@ -15,6 +15,7 @@ use Date::Format;
 use File::Basename;
 use File::Spec::Functions qw(catfile splitpath);
 use File::Path 'remove_tree';
+use File::stat;
 use Mojo::UserAgent;
 use Mojo::URL;
 
@@ -129,14 +130,14 @@ sub refresh_size {
     $current_size //= $self->size;
 
     my $new_size = undef;
-    my @stat = stat(my $disk_file = $self->disk_file);
-    if (@stat) {
+    my $stat = stat(my $disk_file = $self->disk_file);
+    if ($stat) {
         if ($self->type eq 'repo') {
             return $current_size if defined $current_size;
             $new_size = _getDirSize($disk_file);
         }
         else {
-            $new_size = $stat[7];
+            $new_size = $stat->size;
         }
     }
     $self->update({size => $new_size})
