@@ -58,7 +58,7 @@ subtest 'offline status' => sub {
     $driver->get("/admin/workers/$offline_worker_id");
     like
       $driver->find_element_by_class('status-info')->get_text,
-      qr/Seen: .*ago.*Status: Offline$/s,
+      qr/Seen: (?:.*ago|just now).*Status: Offline$/s,
       'worker just shown as offline';
 
     $workers->find($offline_worker_id)->update({error => 'graceful disconnect at foo', t_seen => $online_timestamp});
@@ -74,6 +74,17 @@ subtest 'offline status' => sub {
       $driver->find_element_by_class('status-info')->get_text,
       qr/Seen: never.*Status: Offline$/s,
       'worker with t_seen not set yet shown as "never"';
+};
+
+subtest 'timeago shows correct relative time for old timestamps' => sub {
+    my $old_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - 86400 * 7, 'UTC');
+    my $old_worker_id = 10;
+    $workers->create({id => $old_worker_id, host => 'old_test', instance => 1, t_seen => $old_timestamp});
+    $driver->get("/admin/workers/$old_worker_id");
+    my $seen_text = $driver->find_element_by_class('status-info')->get_text;
+    like $seen_text, qr/Seen: .*ago.*Status: Offline$/s, 'old worker shows relative time (not just now)';
+    unlike $seen_text, qr/just now/, 'old worker does NOT show "just now"';
+    $workers->find($old_worker_id)->delete;
 };
 
 # without loggin we hide properties of worker
@@ -162,7 +173,7 @@ is_deeply
   [
     'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
     '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
-    '0', 'about an hour ago',
+    '0', '1 hour ago',
   ],
   'correct entries shown';
 
@@ -177,7 +188,7 @@ is_deeply
   [
     'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
     '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
-    '0', 'about an hour ago',
+    '0', '1 hour ago',
   ],
   'the first job has been restarted';
 
