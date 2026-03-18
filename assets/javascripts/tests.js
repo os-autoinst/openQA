@@ -111,6 +111,10 @@ function renderTestName(data, type, row) {
   if (row.comment_data) {
     html += renderComments(row);
   }
+  if (row.restarts > 0) {
+    const s = row.restarts > 1 ? 's' : '';
+    html += ` <span class="restarts" title="Restarted ${row.restarts} time${s}"><i class="fa fa-undo"></i> ${row.restarts}</span>`;
+  }
   if (row.clone) {
     html += ' <a href="' + urlWithBase('/tests/' + row.clone) + '">(restarted)</a>';
   }

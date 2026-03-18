@@ -2334,18 +2334,21 @@ sub should_skip_review ($self, $overall, $reviewed) {
         && !$self->has_failed_modules);
 }
 
-sub _overview_result_done ($self, $jobid, $job_labels, $aggregated, $failed_modules, $actually_failed_modules,
-    $todo = undef)
-{
+sub _overview_result_done ($self, $jobid, %args) {
+    my $failed_modules = $args{failed_modules};
+    my $actually_failed_modules = $args{actually_failed_modules};
+    my $job_labels = $args{job_labels};
+    my $aggregated = $args{aggregated};
+    my $todo = $args{todo};
+    my $restarts = $args{restarts} // 0;
     return undef
       if $failed_modules && !OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
-
-    my $result_stats = $self->result_stats;
     my $overall = $self->result;
-    my $comment_data = $job_labels->{$jobid};
+    my $comment_data = $job_labels->{$jobid} // {};
     return undef if $todo && $self->should_skip_review($overall, $comment_data->{reviewed});
 
     $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
+    my $result_stats = $self->result_stats;
     return {
         passed => $result_stats->{passed},
         unknown => $result_stats->{none},
@@ -2358,19 +2361,22 @@ sub _overview_result_done ($self, $jobid, $job_labels, $aggregated, $failed_modu
         bugdetails => $comment_data->{bugdetails},
         label => $comment_data->{label},
         comments => $comment_data->{comments},
+        restarts => $restarts,
     };
 }
 
-sub overview_result ($self, $job_labels, $aggregated, $failed_modules, $actually_failed_modules, $todo = undef) {
+sub overview_result ($self, %args) {
     my $jobid = $self->id;
+    my $todo = $args{todo};
+    my $aggregated = $args{aggregated};
     if ($self->state eq OpenQA::Jobs::Constants::DONE) {
-        return $self->_overview_result_done($jobid, $job_labels, $aggregated, $failed_modules,
-            $actually_failed_modules, $todo);
+        return $self->_overview_result_done($jobid, %args);
     }
     return undef if $todo;
     my $result = {
         state => $self->state,
         jobid => $jobid,
+        restarts => $args{restarts} // 0,
     };
     if ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
         $aggregated->{running}++;

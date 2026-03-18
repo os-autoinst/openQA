@@ -237,37 +237,48 @@ sub list_ajax ($self) {
     )->all;
 
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
-    my @list;
+    my $job_ids = [map { $_->id } @jobs];
+    my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
     my $todo = $self->param('todo');
-    for my $job (@jobs) {
-        next if $todo && !$job->overview_result($comment_data, {}, undef, [], $todo);
-
-        my $job_id = $job->id;
-        my $rendered_data = 0;
-        if (my $cd = $comment_data->{$job_id}) {
-            $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
-        }
-        push @list,
-          {
-            DT_RowId => 'job_' . $job_id,
-            id => $job_id,
-            result_stats => $job->result_stats,
-            deps => $job->dependencies,
-            clone => $job->clone_id,
-            test => $job->TEST . '@' . ($job->MACHINE // ''),
-            distri => $job->DISTRI // '',
-            version => $job->VERSION // '',
-            flavor => $job->FLAVOR // '',
-            arch => $job->ARCH // '',
-            build => $job->BUILD // '',
-            testtime => ($job->t_finished // $job->t_updated // '') . 'Z',
-            result => $job->result,
-            group => $job->group_id,
-            comment_data => $rendered_data,
-            state => $job->state,
-          };
-    }
+    my @list = map {
+        my $job_id = $_->id;
+        $todo && !$_->overview_result(
+            job_labels => $comment_data,
+            aggregated => {},
+            actually_failed_modules => [],
+            todo => $todo,
+            restarts => $ancestors_by_job->{$job_id} || 0
+        ) ? ()
+          : {
+            $self->_format_ajax_job($_, $ancestors_by_job->{$job_id} || 0),
+            result_stats => $_->result_stats,
+            deps => $_->dependencies,
+            comment_data => $comment_data->{$job_id}
+            ? $self->_render_comment_data_for_ajax($job_id, $comment_data->{$job_id})
+            : 0,
+          }
+    } @jobs;
     $self->render(json => {data => \@list});
+}
+
+sub _format_ajax_job ($self, $job, $restarts) {
+    return (
+        DT_RowId => 'job_' . $job->id,
+        id => $job->id,
+        clone => $job->clone_id,
+        restarts => $restarts // 0,
+        test => $job->TEST . '@' . ($job->MACHINE // ''),
+        distri => $job->DISTRI // '',
+        version => $job->VERSION // '',
+        flavor => $job->FLAVOR // '',
+        arch => $job->ARCH // '',
+        machine => $job->MACHINE // '',
+        build => $job->BUILD // '',
+        testtime => ($job->t_finished // $job->t_started // $job->t_created // $job->t_updated // '') . 'Z',
+        result => $job->result,
+        group => $job->group_id,
+        state => $job->state,
+    );
 }
 
 sub _render_comment_data_for_ajax ($self, $job_id, $comment_data) {
@@ -309,28 +320,18 @@ sub list_running_ajax ($self) {
             )
         ],
     );
+    my @jobs = $running->all;
+    my $job_ids = [map { $_->id } @jobs];
+    my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
 
-    my @running;
-    while (my $job = $running->next) {
-        my $job_id = $job->id;
-        push @running,
-          {
-            DT_RowId => 'job_' . $job_id,
-            id => $job_id,
-            clone => $job->clone_id,
-            test => $job->TEST . '@' . ($job->MACHINE // ''),
-            distri => $job->DISTRI // '',
-            version => $job->VERSION // '',
-            flavor => $job->FLAVOR // '',
-            arch => $job->ARCH // '',
-            build => $job->BUILD // '',
-            testtime => ($job->t_started // '') . 'Z',
-            result => $job->result,
-            group => $job->group_id,
-            state => $job->state,
-            progress => $job->progress_info,
-          };
-    }
+    my @running = map {
+        my $job_id = $_->id;
+        {
+            $self->_format_ajax_job($_, $ancestors_by_job->{$job_id} || 0),
+              progress => $_->progress_info,
+        }
+    } @jobs;
+
     my %response = (data => \@running);
     my $max_running = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs};
     $response{max_running_jobs} = $max_running if $max_running >= 0 && @running >= $max_running;
@@ -357,29 +358,19 @@ sub list_scheduled_ajax ($self) {
         ],
         limit => $limit,
     );
+    my @jobs = $scheduled->all;
+    my $job_ids = [map { $_->id } @jobs];
+    my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
 
-    my @scheduled;
-    while (my $job = $scheduled->next) {
-        my $job_id = $job->id;
-        push @scheduled,
-          {
-            DT_RowId => 'job_' . $job_id,
-            id => $job_id,
-            clone => $job->clone_id,
-            test => $job->TEST . '@' . ($job->MACHINE // ''),
-            distri => $job->DISTRI // '',
-            version => $job->VERSION // '',
-            flavor => $job->FLAVOR // '',
-            arch => $job->ARCH // '',
-            build => $job->BUILD // '',
-            testtime => $job->t_created . 'Z',
-            result => $job->result,
-            group => $job->group_id,
-            state => $job->state,
-            blocked_by_id => $job->blocked_by_id,
-            prio => $job->priority,
-          };
-    }
+    my @scheduled = map {
+        my $job_id = $_->id;
+        {
+            $self->_format_ajax_job($_, $ancestors_by_job->{$job_id} || 0),
+              blocked_by_id => $_->blocked_by_id,
+              prio => $_->priority,
+        }
+    } @jobs;
+
     $self->render(json => {data => \@scheduled});
 }
 
@@ -785,6 +776,7 @@ sub _prepare_job_results ($self, $jobs, $job_ids, %args) {
     my %settings_by_job_id;
     my %descriptions;
     my $failed_modules_by_job = {};
+    my $ancestors_by_job = {};
     my $children_by_job = {};
     my $parents_by_job = {};
     my $preferred_machines = {};
@@ -810,16 +802,20 @@ sub _prepare_job_results ($self, $jobs, $job_ids, %args) {
         %descriptions = map { $_->name => $_->description } @descriptions;
 
         $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs($job_ids);
+        $ancestors_by_job = $schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
         ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs($job_ids);
     }
 
     foreach my $job (@jobs) {
         my $id = $job->id;
         my $result = $job->overview_result(
-            $comment_data, $aggregated,
-            $self->param_hash('failed_modules'),
-            $failed_modules_by_job->{$id} || [],
-            $self->param('todo')) or next;
+            job_labels => $comment_data,
+            aggregated => $aggregated,
+            failed_modules => $self->param_hash('failed_modules'),
+            actually_failed_modules => $failed_modules_by_job->{$id} || [],
+            todo => $self->param('todo'),
+            restarts => $ancestors_by_job->{$id} || 0
+        ) or next;
 
         next if $only_aggregated;
 

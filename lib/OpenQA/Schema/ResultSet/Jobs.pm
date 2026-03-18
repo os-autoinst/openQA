@@ -545,4 +545,26 @@ sub mark_job_linked ($self, $jobid, $referer_url) {
     $comments->create_with_event({text => "$label mentions this job", user_id => $user->id});
 }
 
+sub ancestors_count_for_jobs ($self, $job_ids) {
+    return {} unless $job_ids && @$job_ids;
+    my $dbh = $self->result_source->schema->storage->dbh;
+    my $sth = $dbh->prepare(<<~'SQL');
+        with recursive orig_id as (
+            select id as initial_id, id as orig_id, 0 as level from jobs where id = ANY(?)
+            union all
+            select initial_id, jobs.id as orig_id, orig_id.level + 1 as level
+            from jobs
+            join orig_id on orig_id.orig_id = jobs.clone_id
+            where orig_id.level < 100
+        )
+        select initial_id, max(level) from orig_id group by initial_id;
+    SQL
+    $sth->execute($job_ids);
+    my %result;
+    while (my ($id, $level) = $sth->fetchrow_array) {
+        $result{$id} = $level;
+    }
+    return \%result;
+}
+
 1;
