@@ -791,12 +791,9 @@ sub walker ($hash, $callback, $keys = []) {
 
 sub set_listen_address ($port) {
     return if $ENV{MOJO_LISTEN};
-    my @listen_addresses = ("http://127.0.0.1:$port?reuse=1");
-
-    # Check for IPv6
-    push @listen_addresses, "http://[::1]:$port?reuse=1" if IO::Socket::IP->new(Listen => 5, LocalAddr => '::1');
-
-    $ENV{MOJO_LISTEN} = join ',', @listen_addresses;
+    # Show IPv6 compatible "localhost" instead of IPv4 loopback 127.0.0.1
+    # Also explicitly bind to 127.0.0.1 to ensure both IPv4 and IPv6 are supported
+    $ENV{MOJO_LISTEN} = "http://localhost:$port?reuse=1,http://127.0.0.1:$port?reuse=1";
 }
 
 sub service_port ($service) {
