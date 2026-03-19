@@ -8,6 +8,7 @@ use Mojo::File;
 use Mojo::URL;
 use Mojo::UserAgent;
 use POSIX 'strftime';
+use File::stat;
 use File::Which qw(which);
 use OpenQA::Log qw(log_error);
 use HTTP::Status qw(:constants);
@@ -326,9 +327,9 @@ sub _get_first_line ($file, $with_timestamp = undef) {
     return '' unless $res;
     chomp $res;
     if ($with_timestamp) {
-        my @stats = stat $fh;
+        my $stats = stat $fh;
         close $fh;
-        return ($res, strftime '%Y-%m-%d %H:%M:%S %z', localtime $stats[9]);
+        return ($res, strftime '%Y-%m-%d %H:%M:%S %z', localtime $stats->mtime);
     }
     close $fh;
     return $res;

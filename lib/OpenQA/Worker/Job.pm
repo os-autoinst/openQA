@@ -17,6 +17,7 @@ use Digest::MD5;
 use Fcntl;
 use POSIX 'strftime';
 use File::Basename 'basename';
+use File::stat;
 use File::Which 'which';
 use MIME::Base64;
 use Mojo::JSON 'decode_json';
@@ -735,8 +736,8 @@ sub _upload_results_step_0_prepare ($self, $callback) {
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
     if ($test_state eq 'running' || $finished) {
-        my @file_info = stat $self->_result_file_path('test_order.json');
-        my ($current_mtime, $current_fsize) = (($file_info[9] // 0), ($file_info[7] // 0));
+        my $file_info = stat $self->_result_file_path('test_order.json');
+        my ($current_mtime, $current_fsize) = $file_info ? ($file_info->mtime // 0, $file_info->size // 0) : (0, 0);
         my ($last_mtime, $last_fsize) = (($self->{_test_order_mtime} // 0), ($self->{_test_order_fsize} // 0));
         my $test_order;
         my $changed_schedule = $last_mtime && ($current_mtime != $last_mtime || $current_fsize != $last_fsize);

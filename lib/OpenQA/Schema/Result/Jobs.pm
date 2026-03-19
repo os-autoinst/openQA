@@ -22,6 +22,7 @@ use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
 use File::Copy::Recursive qw();
 use File::Spec::Functions 'catfile';
+use File::stat;
 use Feature::Compat::Try;
 use DBI qw(:sql_types);
 use File::Path ();
@@ -1153,12 +1154,12 @@ sub modules_with_job_prefetched ($self) {
 }
 
 sub _delete_returning_size ($file_path, $dry) {
-    return 0 unless my @lstat = lstat $file_path;    # file does not exist
+    return 0 unless my $lstat = lstat $file_path;    # file does not exist
     return 0
       unless $dry
       ? log_info("would delete $file_path")
       : unlink $file_path;    # don't return size when unable to delete file
-    return $lstat[7];
+    return $lstat->size;
 }
 
 sub _delete_returning_size_from_array ($array_of_collections, $dry) {
