@@ -29,24 +29,24 @@ function renderTemplate(template, args = {}) {
   return template;
 }
 
-function moduleResultState(result) {
+function moduleResultCSS(result) {
   const resmap = {
     na: '',
-    incomplete: 'incomplete',
-    softfailed: 'softfailed',
-    passed: 'ok',
-    running: 'running'
+    incomplete: '',
+    softfailed: 'resultsoftfailed',
+    passed: 'resultok',
+    running: 'resultrunning'
   };
 
   if (!result) {
-    return 'unknown';
+    return 'resultunknown';
   } else if (result.substr(0, 4) === 'fail') {
-    return 'failed';
+    return 'resultfailed';
   } else if (resmap[result] !== undefined) {
     return resmap[result];
   }
 
-  return 'unknown';
+  return 'resultunknown';
 }
 
 function renderModuleRow(module, snippets) {
@@ -95,8 +95,7 @@ function renderModuleRow(module, snippets) {
   const srcElement = srcUrl ? E('a', [module.name], {href: srcUrl}) : E('span', [module.name]);
   const component = E('td', [E('div', [srcElement]), E('div', flags, {class: 'flags'})], {class: 'component'});
 
-  const resultState = moduleResultState(module.result);
-  const result = E('td', [module.result], {class: 'result', 'data-result': resultState});
+  const result = E('td', [module.result], {class: 'result ' + moduleResultCSS(module.result)});
   const showPreviewForLink = function () {
     setCurrentPreview($(this).parent()); // show the preview when clicking on step links
     return false;
