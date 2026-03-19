@@ -26,7 +26,7 @@ is qx{git grep -I -l ' \\(if\\|unless\\) \$\@'}, '', 'Use try/catch instead of m
 is qx{git grep -I -l '^use \\(Try::Tiny\\|TryCatch\\)'}, '',
   'No Try::Tiny or TryCatch necessary, use Feature::Compat::Try and later native Perl';
 is
-qx{git grep -l -e '^sub \\S\\+ [^(]\\+' --and --not -e 'sub [(\{]' --and --not -e 'sub \\S\\+(' --and --not -e 'sub \\S\\+;' --and --not -e '# no:style:signatures' 'lib/'},
+qx{git grep -l -e '^sub \\S\\+ [^(]\\+' --and --not -e 'sub [(\{]' --and --not -e 'sub \\S\\+(' --and --not -e 'sub \\S\\+;' --and --not -e '# no:style:signatures' ':!contrib/' ':!external/' ':!docs/'},
   '', 'All files use sub signatures everywhere (nameless and in-place definitions still allowed)';
 is qx{git grep -I -l 'sub [a-z_A-Z0-9]\\+()' ':!docs/'}, '',
   'Consistent space before function signatures (this is not ensured by perltidy)';
