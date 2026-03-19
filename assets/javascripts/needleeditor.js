@@ -3,7 +3,7 @@ function NeedleEditor(needle) {
   this.tags = document.getElementById('needleeditor_tags');
   this.canvas = document.getElementById('needleeditor_canvas');
   if (!this.canvas) {
-    alert('missing canvas element ' + canvasid);
+    alert('missing canvas element');
     return;
   }
   this.bgImage = null;
@@ -27,7 +27,7 @@ NeedleEditor.prototype.init = function () {
 
   if (this.tags) {
     // If tags is empty, we must populate it with a checkbox for every tag
-    if (this.tags.getElementsByTagName('input').length == 0) {
+    if (this.tags.querySelectorAll('input').length == 0) {
       this.needle.tags.forEach(
         function (tag) {
           this.AddTag(tag, true);
@@ -35,7 +35,7 @@ NeedleEditor.prototype.init = function () {
       );
       // If the checkboxes are already there, we simply check them all
     } else {
-      var inputs = this.tags.getElementsByTagName('input');
+      var inputs = this.tags.querySelectorAll('input');
       for (var i = 0; i < inputs.length; i++) {
         if (this.needle.tags.indexOf(inputs[i].value) >= 0) {
           inputs[i].checked = true;
@@ -70,14 +70,16 @@ NeedleEditor.prototype.init = function () {
     'keyup',
     function (e) {
       //console.warn("key %d", e.keyCode);
-      if (e.keyCode == KeyEvent.DOM_VK_DELETE) {
+      if (e.keyCode == 46) {
+        // DELETE
         var idx = cv.get_selection_idx();
         if (idx != -1) {
           editor.needle.area.splice(idx, 1);
           cv.delete_shape_idx(idx);
           editor.UpdateTextArea();
         }
-      } else if (e.keyCode == KeyEvent.DOM_VK_INSERT) {
+      } else if (e.keyCode == 45) {
+        // INSERT
         var a = {xpos: 0, ypos: 0, width: MINSIZE, height: MINSIZE, type: 'match'};
         cv.addShape(NeedleEditor.ShapeFromArea(a));
         editor.needle.area.push(a);
@@ -112,13 +114,20 @@ NeedleEditor.prototype.init = function () {
     editor.UpdateTextArea();
     return shape;
   };
-  var areaSpecificButtons = $('#change-match, #change-margin, #toggle-click-coordinates');
-  $(cv).on('shape.selected', function () {
-    areaSpecificButtons.removeClass('disabled').removeAttr('disabled');
+
+  const areaSpecificButtons = document.querySelectorAll('#change-match, #change-margin, #toggle-click-coordinates');
+  cv.canvas.addEventListener('shape.selected', function () {
+    areaSpecificButtons.forEach(el => {
+      el.classList.remove('disabled');
+      el.removeAttribute('disabled');
+    });
     updateToggleClickCoordinatesButton(editor.currentClickCoordinates());
   });
-  $(cv).on('shape.unselected', function () {
-    areaSpecificButtons.addClass('disabled').attr('disabled', 1);
+  cv.canvas.addEventListener('shape.unselected', function () {
+    areaSpecificButtons.forEach(el => {
+      el.classList.add('disabled');
+      el.setAttribute('disabled', '1');
+    });
   });
 
   document.getElementById('needleeditor_name').onchange = function () {
@@ -178,7 +187,7 @@ NeedleEditor.prototype.DrawAreas = function () {
   // not yet there
   if (!editor.cv) return false;
 
-  jQuery.each(editor.needle.area, function (index, area) {
+  editor.needle.area.forEach(function (area, index) {
     editor.cv.addShape(NeedleEditor.ShapeFromArea(area));
   });
   return true;
@@ -206,26 +215,21 @@ NeedleEditor.prototype.LoadProperty = function (property) {
 
 NeedleEditor.prototype.LoadNeedle = function (url) {
   var editor = this;
-  var cv = this.cv;
-  var x = new XMLHttpRequest();
-  x.onreadystatechange = function () {
-    if (this.readyState != 4) {
-      return;
-    }
-    if (this.status == 200) {
-      editor.needle = JSON.parse(this.responseText);
+  fetch(url)
+    .then(response => {
+      if (response.status === 200) return response.json();
+      if (response.status === 404) return JSON.parse('{ "area": [], "tags": [] , "properties": [] }');
+      throw response;
+    })
+    .then(data => {
+      editor.needle = data;
       editor.init();
-    } else if (this.status == 404) {
-      editor.needle = JSON.parse('{ "area": [], "tags": [] , "properties": [] }');
-      editor.init();
-    } else {
+    })
+    .catch(error => {
       var ctx = editor.canvas.getContext('2d');
       ctx.font = '20pt Verdana';
-      ctx.fillText('Failed to load Needle, Code ' + this.status, 10, 50);
-    }
-  };
-  x.open('GET', url, true);
-  x.send();
+      ctx.fillText('Failed to load Needle, Code ' + (error.status || error), 10, 50);
+    });
 };
 
 NeedleEditor.prototype.LoadAreas = function (areas) {
@@ -376,45 +380,61 @@ NeedleEditor.prototype.toggleClickCoordinates = function () {
 };
 
 function loadBackground() {
-  var needle = window.needles[$('#image_select option:selected').val()];
+  const imageSelect = document.getElementById('image_select');
+  if (!imageSelect) return;
+  var needle = window.needles[imageSelect.value];
   nEditor.LoadBackground(needle.imageurl);
-  $('#needleeditor_image').val(needle.imagename);
-  $('#needleeditor_imagedistri').val(needle.imagedistri);
-  $('#needleeditor_imageversion').val(needle.imageversion);
-  $('#needleeditor_imagedir').val(needle.imagedir);
+  const editorImage = document.getElementById('needleeditor_image');
+  if (editorImage) editorImage.value = needle.imagename;
+  const editorDistri = document.getElementById('needleeditor_imagedistri');
+  if (editorDistri) editorDistri.value = needle.imagedistri;
+  const editorVersion = document.getElementById('needleeditor_imageversion');
+  if (editorVersion) editorVersion.value = needle.imageversion;
+  const editorDir = document.getElementById('needleeditor_imagedir');
+  if (editorDir) editorDir.value = needle.imagedir;
 }
 
 function loadTagsAndName() {
-  var needle = window.needles[$('#tags_select option:selected').val()];
+  const tagsSelect = document.getElementById('tags_select');
+  if (!tagsSelect) return;
+  var needle = window.needles[tagsSelect.value];
   var tags = needle.tags;
-  $('#needleeditor_tags')
-    .find('input')
-    .each(function () {
-      $(this).prop('checked', tags.indexOf($(this).val()) !== -1);
-    });
+  document.querySelectorAll('#needleeditor_tags input').forEach(function (input) {
+    input.checked = tags.indexOf(input.value) !== -1;
+  });
 
   var workaroundFlag = 0;
   for (var i = 0; i < needle.properties.length; i++) {
     if (needle.properties[i].name === 'workaround') {
-      $('#property_workaround').prop('checked', true);
-      if (needle.properties[i].value === undefined) {
-        $('#input_workaround_desc').val('');
-      } else {
-        $('#input_workaround_desc').val(needle.properties[i].value);
+      const propWorkaround = document.getElementById('property_workaround');
+      if (propWorkaround) propWorkaround.checked = true;
+      const inputWorkaroundDesc = document.getElementById('input_workaround_desc');
+      if (inputWorkaroundDesc) {
+        if (needle.properties[i].value === undefined) {
+          inputWorkaroundDesc.value = '';
+        } else {
+          inputWorkaroundDesc.value = needle.properties[i].value;
+        }
       }
-      $('#workaround_reason').show();
+      const workaroundReason = document.getElementById('workaround_reason');
+      if (workaroundReason) workaroundReason.style.display = 'block';
       workaroundFlag = 1;
       break;
     }
   }
   if (workaroundFlag === 0) {
-    $('#property_workaround').prop('checked', false);
-    $('#input_workaround_desc').val('');
-    $('#workaround_reason').hide();
+    const propWorkaround = document.getElementById('property_workaround');
+    if (propWorkaround) propWorkaround.checked = false;
+    const inputWorkaroundDesc = document.getElementById('input_workaround_desc');
+    if (inputWorkaroundDesc) inputWorkaroundDesc.value = '';
+    const workaroundReason = document.getElementById('workaround_reason');
+    if (workaroundReason) workaroundReason.style.display = 'none';
   }
 
-  $('#needleeditor_name').val(needle.suggested_name);
-  $('#area_select').val(needle.name);
+  const editorName = document.getElementById('needleeditor_name');
+  if (editorName) editorName.value = needle.suggested_name;
+  const areaSelect = document.getElementById('area_select');
+  if (areaSelect) areaSelect.value = needle.name;
   loadAreas();
   nEditor.LoadTags(tags);
   nEditor.LoadProperty(needle.properties);
@@ -422,12 +442,15 @@ function loadTagsAndName() {
 }
 
 function loadAreas() {
-  var needle = window.needles[$('#area_select option:selected').val()];
-  if ($('#take_matches').prop('checked')) {
+  const areaSelect = document.getElementById('area_select');
+  if (!areaSelect) return;
+  var needle = window.needles[areaSelect.value];
+  const takeMatches = document.getElementById('take_matches');
+  if (takeMatches && takeMatches.checked) {
     // merge exclude areas into matches if not done yet
     var matches = needle.matches;
     if (!matches.hasIncludes) {
-      $.each(needle.area, function (index, area) {
+      needle.area.forEach(function (area, index) {
         if (area.type === 'exclude') {
           matches.push(area);
         }
@@ -441,20 +464,23 @@ function loadAreas() {
 }
 
 function addTag() {
-  var input = $('#newtag');
-  var checkbox = nEditor.AddTag(input.val(), false);
-  input.val('');
-  input.keyup();
+  const input = document.getElementById('newtag');
+  if (!input) return false;
+  var checkbox = nEditor.AddTag(input.value, false);
+  input.value = '';
+  input.dispatchEvent(new Event('keyup'));
   checkbox.click();
   return false;
 }
 
 function setMargin() {
-  nEditor.setMargin($('#margin').val());
+  const marginInput = document.getElementById('margin');
+  if (marginInput) nEditor.setMargin(marginInput.value);
 }
 
 function setMatch() {
-  nEditor.setMatch($('#match').val());
+  const matchInput = document.getElementById('match');
+  if (matchInput) nEditor.setMatch(matchInput.value);
 }
 
 function toggleClickCoordinates() {
@@ -462,23 +488,28 @@ function toggleClickCoordinates() {
 }
 
 function updateToggleClickCoordinatesButton(hasClickCoorinates) {
-  if (hasClickCoorinates) {
-    $('#toggle-click-coordinates-verb').text('Remove');
-  } else {
-    $('#toggle-click-coordinates-verb').text('Add');
+  const verb = document.getElementById('toggle-click-coordinates-verb');
+  if (verb) {
+    verb.textContent = hasClickCoorinates ? 'Remove' : 'Add';
   }
 }
 
 function saveNeedle(overwrite) {
   var form = document.getElementById('save_needle_form');
   var errors = [];
-  var tagSelection = window.needles[$('#tags_select').val()];
-  if (!tagSelection.tags.length) {
+  const tagsSelect = document.getElementById('tags_select');
+  var tagSelection = window.needles[tagsSelect ? tagsSelect.value : null];
+  if (tagSelection && !tagSelection.tags.length) {
     errors.push('No tags specified.');
   }
-  var areaSelection = window.needles[$('#area_select').val()];
-  var takeMatches = $('#take_matches').prop('checked');
-  if ((!takeMatches && !areaSelection.area.length) || (takeMatches && !areaSelection.matches.length)) {
+  const areaSelect = document.getElementById('area_select');
+  var areaSelection = window.needles[areaSelect ? areaSelect.value : null];
+  const takeMatches = document.getElementById('take_matches');
+  var takeMatchesChecked = takeMatches && takeMatches.checked;
+  if (
+    areaSelection &&
+    ((!takeMatchesChecked && !areaSelection.area.length) || (takeMatchesChecked && !areaSelection.matches.length))
+  ) {
     errors.push('No areas defined.');
   }
   if (errors.length) {
@@ -486,7 +517,9 @@ function saveNeedle(overwrite) {
     return false;
   }
 
-  if (!overwrite && $('#property_workaround').prop('checked') && !$('#input_workaround_desc').val()) {
+  const propWorkaround = document.getElementById('property_workaround');
+  const inputWorkaroundDesc = document.getElementById('input_workaround_desc');
+  if (!overwrite && propWorkaround && propWorkaround.checked && inputWorkaroundDesc && !inputWorkaroundDesc.value) {
     var confirmMessage =
       'You set the workaround property for this needle without a description. Are you sure you want to save without a description?';
     if (!confirm(confirmMessage)) {
@@ -494,8 +527,10 @@ function saveNeedle(overwrite) {
     }
   }
 
-  $('#needle_editor_save_buttons').hide();
-  $('#needle_editor_loading_indication').show();
+  const saveButtons = document.getElementById('needle_editor_save_buttons');
+  if (saveButtons) saveButtons.style.display = 'none';
+  const loading = document.getElementById('needle_editor_loading_indication');
+  if (loading) loading.style.display = 'block';
 
   document.getElementById('save').disabled = true;
   document.getElementById('needleeditor_overwrite').value = overwrite ? '1' : '0';
@@ -551,8 +586,10 @@ function saveNeedle(overwrite) {
       addFlash('danger', error);
     })
     .finally(() => {
-      $('#needle_editor_loading_indication').hide();
-      $('#needle_editor_save_buttons').show();
+      const loading = document.getElementById('needle_editor_loading_indication');
+      if (loading) loading.style.display = 'none';
+      const saveButtons = document.getElementById('needle_editor_save_buttons');
+      if (saveButtons) saveButtons.style.display = 'block';
       document.getElementById('save').disabled = false;
     });
   if (window.overwriteModal) {
@@ -565,90 +602,130 @@ var nEditor;
 
 function submitMargin() {
   setMargin();
-  $('#change-margin-form').modal('hide');
+  const modalEl = document.getElementById('change-margin-form');
+  const modal = bootstrap.Modal.getInstance(modalEl);
+  if (modal) modal.hide();
   return false;
 }
 
 function submitMatch() {
   setMatch();
-  $('#change-match-form').modal('hide');
+  const modalEl = document.getElementById('change-match-form');
+  const modal = bootstrap.Modal.getInstance(modalEl);
+  if (modal) modal.hide();
   return false;
 }
 
 function setup_needle_editor(imageurl, default_needle) {
   nEditor = new NeedleEditor(imageurl, default_needle);
 
-  $('.tag_checkbox').click(function () {
-    nEditor.changeTag(this.value, this.checked);
+  document.querySelectorAll('.tag_checkbox').forEach(el => {
+    el.addEventListener('click', function () {
+      nEditor.changeTag(this.value, this.checked);
+    });
   });
 
-  $('#tag_add_button').click(addTag);
-  $('#newtag').keypress(function (event) {
-    if (event.keyCode == 13) return addTag();
-    return true;
-  });
+  const tagAddButton = document.getElementById('tag_add_button');
+  if (tagAddButton) tagAddButton.addEventListener('click', addTag);
+  const newTagInput = document.getElementById('newtag');
+  if (newTagInput) {
+    newTagInput.addEventListener('keypress', function (event) {
+      if (event.keyCode == 13) return addTag();
+      return true;
+    });
+  }
 
-  $('#property_workaround').click(function () {
-    nEditor.changeProperty(this.name, this.checked);
-    $('#workaround_reason').toggle(this.checked);
-  });
+  const propertyWorkaround = document.getElementById('property_workaround');
+  if (propertyWorkaround) {
+    propertyWorkaround.addEventListener('click', function () {
+      nEditor.changeProperty(this.name, this.checked);
+      const workaroundReason = document.getElementById('workaround_reason');
+      if (workaroundReason) workaroundReason.style.display = this.checked ? 'block' : 'none';
+    });
+  }
 
-  $('#input_workaround_desc').blur(function () {
-    nEditor.changeWorkaroundDesc(this.value);
-  });
+  const workaroundDesc = document.getElementById('input_workaround_desc');
+  if (workaroundDesc) {
+    workaroundDesc.addEventListener('blur', function () {
+      nEditor.changeWorkaroundDesc(this.value);
+    });
+  }
 
-  $('#image_select').change(loadBackground);
+  const imageSelect = document.getElementById('image_select');
+  if (imageSelect) imageSelect.addEventListener('change', loadBackground);
   // load default
   loadBackground();
-  $('#tags_select').change(loadTagsAndName);
+  const tagsSelect = document.getElementById('tags_select');
+  if (tagsSelect) tagsSelect.addEventListener('change', loadTagsAndName);
   loadTagsAndName();
-  $('#area_select').change(loadAreas);
-  $('#take_matches').change(loadAreas);
-  $('#match_form').submit(submitMatch);
-  $('#margin_form').submit(submitMargin);
+  const areaSelect = document.getElementById('area_select');
+  if (areaSelect) areaSelect.addEventListener('change', loadAreas);
+  const takeMatches = document.getElementById('take_matches');
+  if (takeMatches) takeMatches.addEventListener('change', loadAreas);
+  const matchForm = document.getElementById('match_form');
+  if (matchForm) matchForm.addEventListener('submit', submitMatch);
+  const marginForm = document.getElementById('margin_form');
+  if (marginForm) marginForm.addEventListener('submit', submitMargin);
 
-  $('#change-margin-form').on('show.bs.modal', function () {
-    var idx = nEditor.cv.get_selection_idx();
-    if (idx === -1) {
-      if (!this.needle.area.length) {
-        return;
+  const changeMarginForm = document.getElementById('change-margin-form');
+  if (changeMarginForm) {
+    changeMarginForm.addEventListener('show.bs.modal', function () {
+      var idx = nEditor.cv.get_selection_idx();
+      if (idx === -1) {
+        if (!nEditor.needle.area.length) {
+          return;
+        }
+        idx = 0;
       }
-      idx = 0;
-    }
-    $('#margin').val(nEditor.needle.area[idx].margin || 50);
-  });
-  $('#change-match-form').on('show.bs.modal', function () {
-    var idx = nEditor.cv.get_selection_idx();
-    if (idx == -1) {
-      if (!this.needle.area.length) {
-        return;
+      const marginInput = document.getElementById('margin');
+      if (marginInput) marginInput.value = nEditor.needle.area[idx].margin || 50;
+    });
+  }
+  const changeMatchForm = document.getElementById('change-match-form');
+  if (changeMatchForm) {
+    changeMatchForm.addEventListener('show.bs.modal', function () {
+      var idx = nEditor.cv.get_selection_idx();
+      if (idx == -1) {
+        if (!nEditor.needle.area.length) {
+          return;
+        }
+        idx = 0;
       }
-      idx = 0;
-    }
-    $('#match').val(nEditor.needle.area[idx].match || 96);
-  });
+      const matchInput = document.getElementById('match');
+      if (matchInput) matchInput.value = nEditor.needle.area[idx].match || 96;
+    });
+  }
 
-  $('#review_json').popover({
-    trigger: 'focus',
-    content: function () {
-      return $('#needleeditor_textarea').val();
-    },
-    template:
-      '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><pre class="popover-body"></pre></div>'
-  });
+  const reviewJson = document.getElementById('review_json');
+  if (reviewJson) {
+    new bootstrap.Popover(reviewJson, {
+      trigger: 'focus',
+      content: function () {
+        return document.getElementById('needleeditor_textarea').value;
+      },
+      template:
+        '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><pre class="popover-body"></pre></div>'
+    });
+  }
 
   // invoke "saveNeedle()" when the "Save" button or the "Overrite" button is clicked
-  document.getElementById('save_needle_form').onsubmit = saveNeedle.bind(undefined, false);
-  document.getElementById('modal-overwrite-confirm').onclick = saveNeedle.bind(undefined, true);
+  const saveNeedleForm = document.getElementById('save_needle_form');
+  if (saveNeedleForm) saveNeedleForm.onsubmit = saveNeedle.bind(undefined, false);
+  const overwriteConfirm = document.getElementById('modal-overwrite-confirm');
+  if (overwriteConfirm) overwriteConfirm.onclick = saveNeedle.bind(undefined, true);
 
-  $('#newtag').bind('propertychange change click keyup input paste', function () {
-    var invalid = !this.value.length || !this.validity.valid;
-    $('#tag_add_button').prop('disabled', invalid);
-  });
-  $(document).on('click', '.restart-link', function (event) {
-    restartJob(event.target.dataset.url, window.jobId);
-    event.preventDefault();
+  if (newTagInput) {
+    ['propertychange', 'change', 'click', 'keyup', 'input', 'paste'].forEach(evt => {
+      newTagInput.addEventListener(evt, function () {
+        var invalid = !this.value.length || !this.validity.valid;
+        if (tagAddButton) tagAddButton.disabled = invalid;
+      });
+    });
+  }
+  document.addEventListener('click', function (event) {
+    if (event.target.classList.contains('restart-link')) {
+      restartJob(event.target.dataset.url, window.jobId);
+      event.preventDefault();
+    }
   });
 }
-
-// Now go make something amazing!

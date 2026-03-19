@@ -196,7 +196,7 @@ function CanvasState(canvas) {
         myState.dragoffx = mx - shape.x;
         myState.dragoffy = my - shape.y;
         myState.selection = shape;
-        $(myState).trigger('shape.selected');
+        myState.canvas.dispatchEvent(new CustomEvent('shape.selected'));
         myState.dirty = true;
         myState.resizing = shape.is_resize(mx, my, myState.selectionWidth);
         if (myState.resizing == 0) {
@@ -214,7 +214,7 @@ function CanvasState(canvas) {
       // If there was an object selected, we deselect it
       if (myState.selection) {
         myState.selection = null;
-        $(myState).trigger('shape.unselected');
+        myState.canvas.dispatchEvent(new CustomEvent('shape.unselected'));
         myState.dirty = true; // Need to clear the old selection border
       }
       myState.mousedown = true;
@@ -474,7 +474,7 @@ CanvasState.prototype.get_shape = function (idx) {
 
 CanvasState.prototype.delete_shape_idx = function (idx) {
   if (this.shapes[idx] == this.selection) {
-    $(this).trigger('shape.unselected');
+    this.canvas.dispatchEvent(new CustomEvent('shape.unselected'));
     this.selection = null;
   }
   this.shapes.splice(idx, 1);
@@ -487,7 +487,7 @@ CanvasState.prototype.delete_shapes = function () {
   for (var i = l - 1; i >= 0; i--) {
     this.shapes.splice(i, 1);
   }
-  $(this).trigger('shape.unselected');
+  this.canvas.dispatchEvent(new CustomEvent('shape.unselected'));
   this.selection = null;
   this.dirty = true;
 };

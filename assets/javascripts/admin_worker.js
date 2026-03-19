@@ -1,6 +1,8 @@
 function setupWorkerNeedles() {
-  var table = $('#previous_jobs').DataTable({
-    ajax: $('#previous_jobs').data('ajax-url'),
+  const previousJobsEl = document.getElementById('previous_jobs');
+  if (!previousJobsEl) return;
+  var table = new DataTable('#previous_jobs', {
+    ajax: previousJobsEl.dataset.ajaxUrl,
     deferRender: true,
     columns: [{data: 'name'}, {data: 'result_stats'}, {data: 'finished'}],
     processing: true,
@@ -17,58 +19,68 @@ function setupWorkerNeedles() {
     ]
   });
   table.on('draw.dt', setupTestButtons);
-  $('#previous_jobs_filter').hide();
+  const filter = document.getElementById('previous_jobs_filter');
+  if (filter) filter.style.display = 'none';
 }
 
 function loadWorkerTable() {
-  $('#workers').DataTable({
+  new DataTable('#workers', {
     initComplete: function () {
       this.api()
         .columns()
         .every(function () {
           var column = this;
           var colheader = this.header();
-          var title = $(colheader).text().trim();
+          var title = colheader.textContent.trim();
           if (title !== 'Status') {
             return false;
           }
 
-          var select = $('<select id="workers_online"><option value="">All</option></select>')
-            .appendTo($(column.header()).empty())
-            .on('change', function () {
-              var val = $.fn.dataTable.util.escapeRegex($(this).val());
-              column
-                // .search( val ? '^'+val+'$' : '', true, false )
-                .search(val ? val : '', true, false)
-                .draw();
-            });
+          colheader.innerHTML = '';
+          var select = document.createElement('select');
+          select.id = 'workers_online';
+          const allOption = document.createElement('option');
+          allOption.value = '';
+          allOption.textContent = 'All';
+          select.appendChild(allOption);
+          colheader.appendChild(select);
 
-          select.append('<option value="Idle">Idle</option>');
-          select.append('<option value="Offline">Offline</option>');
-          select.append('<option value="Working">Working</option>');
-          select.append('<option value="Unavailable">Unavailable</option>');
-          select.val('Idle');
+          select.addEventListener('change', function () {
+            var val = DataTable.util.escapeRegex(this.value);
+            column.search(val ? val : '', true, false).draw();
+          });
+
+          ['Idle', 'Offline', 'Working', 'Unavailable'].forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            select.appendChild(opt);
+          });
+          select.value = 'Idle';
         });
       this.api().column(4).search('Idle').draw();
     }
   });
 
   // prevent sorting when worker status selection clicked
-  $('#workers_online').on('click', function (event) {
-    event.stopPropagation();
+  document.addEventListener('click', function (event) {
+    if (event.target.id === 'workers_online') {
+      event.stopPropagation();
+    }
   });
 }
 
 function deleteWorker(deleteBtn) {
-  var post_url = $(deleteBtn).attr('post_delete_url');
+  var post_url = deleteBtn.getAttribute('post_delete_url');
   fetchWithCSRF(post_url, {method: 'DELETE'})
     .then(response => {
       return response.json();
     })
     .then(response => {
       if (response.error) throw response.error;
-      var table = $('#workers').DataTable();
-      table.row($(deleteBtn).parents('tr')).remove().draw();
+      var table = new DataTable('#workers');
+      const tr = deleteBtn.closest('tr');
+      if (tr) table.row(tr).remove().draw();
       addFlash('info', response.message);
     })
     .catch(error => {
