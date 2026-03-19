@@ -11,9 +11,9 @@ sub register ($self, $app, @args) {
     $app->minion->add_task(restart_job => \&_restart_job);
 }
 
-sub restart_attempts { $ENV{OPENQA_JOB_RESTART_ATTEMPTS} // 5 }
+sub restart_attempts () { $ENV{OPENQA_JOB_RESTART_ATTEMPTS} // 5 }
 
-sub restart_delay { $ENV{OPENQA_JOB_RESTART_DELAY} // 5 }
+sub restart_delay () { $ENV{OPENQA_JOB_RESTART_DELAY} // 5 }
 
 sub restart_openqa_job ($minion_job, $openqa_job) {
     my $cloned_job_or_error = $openqa_job->auto_duplicate;

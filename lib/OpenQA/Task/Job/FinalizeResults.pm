@@ -8,7 +8,7 @@ use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 use Feature::Compat::Try;
 
-sub register ($self, $app, @) {
+sub register ($self, $app, @args) {
     $app->minion->add_task(finalize_job_results => \&_finalize_results);
 }
 
