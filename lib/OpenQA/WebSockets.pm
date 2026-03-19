@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebSockets;
-use Mojo::Base 'Mojolicious';
+use Mojo::Base 'Mojolicious', -signatures;
 
 use Mojo::Server::Daemon;
 use Mojo::IOLoop;
@@ -15,9 +15,7 @@ use constant MAX_CONNECTIONS_HEADROOM => 10;
 
 our $RUNNING;
 
-sub startup {
-    my $self = shift;
-
+sub startup ($self) {
     OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
 
     $self->_setup if $RUNNING;
@@ -56,19 +54,16 @@ sub startup {
     OpenQA::Setup::setup_plain_exception_handler($self);
 }
 
-sub run {
+sub run (@args) {
     local $RUNNING = 1;
     __PACKAGE__->new->start;
 }
 
-sub ws_send {
-    my ($workerid, $msg, $jobid, $retry) = @_;
-
+sub ws_send ($workerid, $msg, $jobid = undef, $retry = 0) {
     return undef unless $workerid && $msg;
     return undef unless my $worker = OpenQA::WebSockets::Model::Status->singleton->workers->{$workerid};
 
     $jobid ||= '';
-    $retry ||= 0;
 
     my $tx = $worker->{tx};
     if (!$tx || $tx->is_finished) {
@@ -84,8 +79,7 @@ sub ws_send {
     return 1;
 }
 
-sub ws_send_job {
-    my ($job_info, $message) = @_;
+sub ws_send_job ($job_info, $message) {
     my $result = {state => {msg_sent => 0}};
     my $state = $result->{state};
 
@@ -111,15 +105,13 @@ sub ws_send_job {
 
     my $job_ids = ref($job_info->{ids}) eq 'ARRAY' ? $job_info->{ids} : [$job_info->{id} // ()];
     $tx->send({json => $message});
-    my $id_string = join(', ', @$job_ids) || '?';
+    my $id_string = CORE::join(', ', @$job_ids) || '?';
     log_debug("Started to send message to $worker_id for job(s) $id_string");
     $state->{msg_sent} = 1;
     return $result;
 }
 
-sub _setup {
-    my $self = shift;
-
+sub _setup ($self) {
     OpenQA::Setup::read_config($self);
     setup_log($self);
 }
