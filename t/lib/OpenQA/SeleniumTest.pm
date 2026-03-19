@@ -140,7 +140,7 @@ sub call_driver ($args = undef) {
 
 sub wait_for_ajax (%args) {
     my $check_interval = $args{interval} || 0.25;
-    my $timeout = 60 * 5;
+    my $timeout = $args{timeout} // 30;
     my $slept = 0;
     my $msg = $args{msg} ? (': ' . $args{msg}) : '';
 
