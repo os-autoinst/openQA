@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Result;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 # Base class that holds the test result
 # Used while parsing from format X to Whatever
@@ -15,42 +15,36 @@ use Carp 'croak';
 use Mojo::File 'path';
 use Scalar::Util 'blessed';
 
-sub new {
-    my ($class, @args) = @_;
+sub new ($class, @args) {
     OpenQA::Parser::restore_tree_section($args[0]) if @args && ref $args[0] eq 'HASH';
     return $class->SUPER::new(@args);
 }
 
-sub get { OpenQA::Parser::Result::Node->new(val => shift->{+shift}) }
+sub get ($self, $key) { OpenQA::Parser::Result::Node->new(val => $self->{$key}) }
 
-sub to_json { encode_json shift }
-sub from_json { shift->new(decode_json shift) }
+sub to_json ($self) { encode_json $self }
+sub from_json ($self, $json) { $self->new(decode_json $json) }
 
-sub to_hash {
-    my $self = shift;
+sub to_hash ($self) {
     return {map { $_ => OpenQA::Parser::Results::maybe_convert_to_hash_or_array($self->{$_}) } sort keys %$self};
 }
 
-sub to_el {
-    my $self = shift;
+sub to_el ($self) {
     return {map { $_ => OpenQA::Parser::Results::maybe_convert_to_el($self->{$_}) } sort keys %$self};
 }
 
-sub write {
-    my ($self, $path) = @_;
+sub write ($self, $path) {
     croak __PACKAGE__ . ' write() requires a path' unless $path;
     my $json_data = $self->to_json;
     path($path)->spew($json_data);
     return length $json_data;
 }
 
-sub serialize { Storable::nfreeze(shift->to_el) }
-sub deserialize { shift()->new(OpenQA::Parser::restore_el(Storable::thaw(shift))) }
+sub serialize ($self) { Storable::nfreeze($self->to_el) }
+sub deserialize ($self, $data) { $self->new(OpenQA::Parser::restore_el(Storable::thaw($data))) }
+sub TO_JSON ($self) { $self->to_hash }
 
-sub TO_JSON { shift->to_hash }
-
-sub gen_tree_el {
-    my $self = shift;
+sub gen_tree_el ($self) {
     return {OpenQA::Parser::DATA_FIELD() => $self->to_el, OpenQA::Parser::TYPE_FIELD() => ref $self};
 }
 

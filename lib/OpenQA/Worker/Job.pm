@@ -32,7 +32,7 @@ use Feature::Compat::Try;
 has 'worker';
 has 'client';
 has isotovideo_client => sub { OpenQA::Worker::Isotovideo::Client->new(job => shift) };
-has 'developer_session_running';
+has developer_session_running => 0;
 has 'upload_results_interval';
 
 use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
@@ -51,9 +51,6 @@ sub name ($self) { $self->{_name} }
 sub settings ($self) { $self->{_settings} }
 sub info ($self) { $self->{_info} }
 
-sub developer_session_running ($self, $val = undef) {
-    defined $val ? $self->{_developer_session_running} = $val : $self->{_developer_session_running};
-}
 sub livelog_viewers ($self) { $self->{_livelog_viewers} }
 sub autoinst_log_offset ($self) { $self->{_autoinst_log_offset} }
 sub serial_log_offset ($self) { $self->{_serial_log_offset} }
@@ -74,7 +71,6 @@ sub new ($class, $worker, $client, $job_info) {
         worker => $worker,
         client => $client,
         upload_results_interval => undef,
-        developer_session_running => 0,
     );
     $self->{_accept_attempts} = $worker->is_executing_single_job ? 1 : ACCEPT_ATTEMPTS;
     $self->{_status} = 'new';
