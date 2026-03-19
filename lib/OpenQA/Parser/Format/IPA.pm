@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Format::IPA;
-use Mojo::Base 'OpenQA::Parser::Format::Base';
+use Mojo::Base 'OpenQA::Parser::Format::Base', -signatures;
 
 # Translates to JSON IPA format -> OpenQA internal representation
 # The parser results will be a collection of OpenQA::Parser::Result::IPA::Test
@@ -10,11 +10,10 @@ use Carp qw(croak confess);
 use Mojo::JSON;
 use OpenQA::Parser::Result::Test;
 
-sub _add_single_result { shift->results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
+sub _add_single_result ($self, @args) { $self->results->add(OpenQA::Parser::Result::OpenQA->new(@args)) }
 
 # Parser
-sub parse {
-    my ($self, $json) = @_;
+sub parse ($self, $json) {
     confess 'No JSON given/loaded' unless $json;
     my $decoded_json = Mojo::JSON::from_json($json);
     my %unique_names;
@@ -60,7 +59,7 @@ sub parse {
 
         my $details = {result => $result->{result}};
         my $text_fn = "IPA-$t_name.txt";
-        my $content = join "\n", $t_name, $result->{result};
+        my $content = CORE::join "\n", $t_name, $result->{result};
 
         $details->{text} = $text_fn;
         $details->{title} = $t_name;
@@ -77,6 +76,8 @@ sub parse {
             flags => {},
             category => 'IPA',
             name => $t_name,
+            log => $res->{test}->{log},
+            duration => $res->{test}->{duration},
             script => undef,
             result => $result->{result});
         $self->tests->add($t);
@@ -88,7 +89,7 @@ sub parse {
 }
 
 package OpenQA::Parser::Result::IPA::Info {
-    use Mojo::Base 'OpenQA::Parser::Result';
+    use Mojo::Base 'OpenQA::Parser::Result', -signatures;
 
     has [qw(distro platform image instance region results_file log_file timestamp)];
 }
