@@ -2,21 +2,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::Asset;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Mojolicious::Static;
 use Mojo::File;
 use OpenQA::Log 'log_debug';
 
-sub index {
-    my ($self) = @_;
-
+sub index ($self) {
     $self->render('admin/asset/index');
 }
 
-sub _serve_status_json_from_cache {
-    my ($self) = @_;
-
+sub _serve_status_json_from_cache ($self) {
     my $cache_file = OpenQA::Schema::ResultSet::Assets::status_cache_file();
     return unless (-f $cache_file);
 
@@ -27,9 +23,7 @@ sub _serve_status_json_from_cache {
     return 1;
 }
 
-sub status_json {
-    my ($self) = @_;
-
+sub status_json ($self) {
     # serve previously cached, static JSON file unless $force_refresh has been specified
     my $force_refresh = $self->param('force_refresh');
     return !!$self->rendered if !$force_refresh && $self->_serve_status_json_from_cache;

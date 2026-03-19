@@ -2,12 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::JobGroup;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Feature::Compat::Try;
 
-sub index {
-    my ($self) = @_;
-
+sub index ($self) {
     my $schema = $self->schema;
     my $parent_groups
       = $schema->resultset('JobGroupParents')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
@@ -21,9 +19,7 @@ sub index {
     $self->render('admin/group/index');
 }
 
-sub group_page {
-    my ($self, $resultset, $template) = @_;
-
+sub group_page ($self, $resultset, $template) {
     my $group_id = $self->param('groupid');
     return $self->reply->not_found unless $group_id;
 
@@ -36,18 +32,15 @@ sub group_page {
     $self->render($template);
 }
 
-sub parent_group_row {
-    my ($self) = @_;
+sub parent_group_row ($self) {
     $self->group_page('JobGroupParents', 'admin/group/parent_group_row');
 }
 
-sub job_group_row {
-    my ($self) = @_;
+sub job_group_row ($self) {
     $self->group_page('JobGroups', 'admin/group/job_group_row');
 }
 
-sub edit_parent_group {
-    my ($self) = @_;
+sub edit_parent_group ($self) {
     $self->group_page('JobGroupParents', 'admin/group/parent_group_property_editor');
 }
 

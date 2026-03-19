@@ -2,16 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Command::gru::run;
-use Mojo::Base 'Minion::Command::minion::worker';
+use Mojo::Base 'Minion::Command::minion::worker', -signatures;
 
 use Mojo::Util 'getopt';
 
 has description => 'Start Gru worker';
-has usage => sub { shift->extract_usage };
+has usage => sub ($self) { $self->extract_usage };
 
-sub run {
-    my ($self, @args) = @_;
-
+sub run ($self, @args) {
     getopt \@args, ['pass_through'], 'o|oneshot' => \my $oneshot, 'reset-locks' => \my $reset_locks;
 
     my $minion = $self->app->minion;

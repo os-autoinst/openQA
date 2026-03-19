@@ -2,19 +2,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::User;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 use HTTP::Status qw(:constants);
 
-sub index {
-    my ($self) = @_;
+sub index ($self) {
     my @users = $self->schema->resultset('Users')->search(undef)->all;
 
     $self->stash('users', \@users);
     $self->render('admin/user/index');
 }
 
-sub update {
-    my ($self) = @_;
+sub update ($self) {
     my $set = $self->schema->resultset('Users');
     my $is_admin = 0;
     my $is_operator = 0;

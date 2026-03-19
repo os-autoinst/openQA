@@ -540,6 +540,6 @@ sub _handle_exception ($reactor, $err) {
 
 sub schema ($self) { OpenQA::Schema->singleton }
 
-sub run () { __PACKAGE__->new->start }
+sub run ($class = undef) { (__PACKAGE__ // $class)->new->start }
 
 1;

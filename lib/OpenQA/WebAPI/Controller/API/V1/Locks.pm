@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Locks;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Resource::Locks;
 
@@ -33,9 +33,7 @@ code of 200 on success, 410 on error and 409 on mutex unavailable.
 
 =cut
 
-sub mutex_action {
-    my ($self) = @_;
-
+sub mutex_action ($self) {
     my $name = $self->stash('name');
     my $jobid = $self->stash('job_id');
 
@@ -66,9 +64,7 @@ of 200 on success and 409 on error.
 
 =cut
 
-sub mutex_create {
-    my ($self) = @_;
-
+sub mutex_create ($self) {
     my $jobid = $self->stash('job_id');
 
     my $validation = $self->validation;
@@ -94,9 +90,7 @@ on error and 410 when the referenced barrier does not exist.
 
 =cut
 
-sub barrier_wait {
-    my ($self) = @_;
-
+sub barrier_wait ($self) {
     my $jobid = $self->stash('job_id');
     my $name = $self->stash('name');
 
@@ -126,9 +120,7 @@ Returns 200 on success and 409 on error.
 
 =cut
 
-sub barrier_create {
-    my ($self) = @_;
-
+sub barrier_create ($self) {
     my $jobid = $self->stash('job_id');
 
     my $validation = $self->validation;
@@ -154,9 +146,7 @@ Removes a barrier given its name.
 
 =cut
 
-sub barrier_destroy {
-    my ($self) = @_;
-
+sub barrier_destroy ($self) {
     my $jobid = $self->stash('job_id');
     my $name = $self->stash('name');
 
