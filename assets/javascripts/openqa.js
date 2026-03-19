@@ -518,7 +518,7 @@ function renderActivityView(ajaxUrl) {
   const request = new XMLHttpRequest();
   const query = new URLSearchParams();
   query.append('search[value]', 'event:job_');
-  query.append('order[0][column]', '0'); // t_created
+  query.append('order[0][column]', '1'); // t_created
   query.append('order[0][dir]', 'desc');
   request.open('GET', ajaxUrl + '?' + query.toString());
   request.setRequestHeader('Accept', 'application/json');
@@ -546,8 +546,13 @@ function renderActivityView(ajaxUrl) {
         return;
       }
       // We want only the latest result of each job
-      const id = JSON.parse(value.event_data).id;
-      if (uniqueJobs.has(id)) {
+      let id;
+      try {
+        id = JSON.parse(value.event_data || 'null')?.id;
+      } catch (e) {
+        return;
+      }
+      if (!id || uniqueJobs.has(id)) {
         return;
       }
       uniqueJobs.add(id);

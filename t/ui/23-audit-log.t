@@ -23,6 +23,11 @@ my $events = $schema->resultset('AuditEvents');
 my %comments_create_event = (event => 'comments_create', event_data => '{"created":[{"id": 20},{"id": 67}]}');
 $events->create(\%comments_create_event);
 
+sub get_auth_headers ($t, $url) {
+    state $token = $t->ua->get($url . '/tests')->res->dom->at('meta[name=csrf-token]')->attr('content');
+    return {'X-CSRF-Token' => $token};
+}
+
 sub check_data_table_entries ($expected_entry_count, $test_name) {
     my $table = $driver->find_element_by_id('audit_log_table') or BAIL_OUT 'unable to find DataTable';
     my $entries = wait_for_data_table $table, $expected_entry_count;
@@ -94,11 +99,50 @@ subtest 'audit log entries' => sub {
 
     $search->send_keys('user:system event:startup date:today');
     check_data_table_entries 2, 'two rows when filtered by combination';
+    $search->clear;
+
+    subtest 'NULL event data and sorting' => sub {
+        # Create an event with NULL event_data to verify it's visible
+        $schema->resultset('AuditEvents')->create(
+            {
+                event => 'null_event',
+                event_data => undef,
+                user_id => $schema->resultset('Users')->find({username => 'Demo'})->id,
+                connection_id => 'test_conn'
+            });
+        $driver->refresh;
+        wait_for_ajax msg => 'DataTable ready';
+        my $entries = check_data_table_entries 6, 'NULL event data entry is visible';
+
+        # Verify sorting
+        my $time_header = $driver->find_element("//th[contains(., 'Time')]", 'xpath');
+        $time_header->click;
+        wait_for_ajax msg => 'Sorted ascending';
+        $entries = check_data_table_entries 6, 'rows displayed after sort ascending';
+        my $first_text_asc = $entries->[0]->get_text();
+        $time_header->click;
+        wait_for_ajax msg => 'Sorted descending';
+        $entries = check_data_table_entries 6, 'rows displayed after sort descending';
+        my $first_text_desc = $entries->[0]->get_text();
+        isnt $first_text_asc, $first_text_desc, 'sorting changes order of entries';
+    };
+
+    subtest 'jobgroup_delete shows up' => sub {
+        my $group = $schema->resultset('JobGroups')->create({name => 'Audit Test Group'});
+        my $auth = get_auth_headers $t, $url;
+        $t->delete_ok($url . '/api/v1/job_groups/' . $group->id, $auth)->status_is(200);
+        $driver->refresh;
+        wait_for_ajax msg => 'DataTable ready';
+        my $search = $driver->find_element('.dt-search input');
+        $search->send_keys('event:jobgroup_delete');
+        check_data_table_entries 1, 'jobgroup_delete event is visible in the audit log';
+        $search->clear;
+    };
 };
 
 subtest 'clickable events' => sub {
     # Populate database via the API to add events without hard-coding the format here
-    my $auth = {'X-CSRF-Token' => $t->ua->get($url . '/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
+    my $auth = get_auth_headers $t, $url;
     $t->post_ok($url . '/api/v1/machines', $auth, json => {name => 'foo', backend => 'qemu'})->status_is(200);
     $t->post_ok($url . '/api/v1/test_suites', $auth, json => {name => 'testsuite'})->status_is(200);
     $t->post_ok(
@@ -113,7 +157,7 @@ subtest 'clickable events' => sub {
 
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
-    check_data_table_entries 8, 'all rows displayed without filter and before posting job/comment';
+    check_data_table_entries 10, 'all rows displayed without filter and before posting job/comment';
 
     subtest 'undo button' => sub {
         ok my ($undo_button) = $driver->find_elements('button.undo-event'), 'undo button present' or return;
@@ -139,7 +183,7 @@ subtest 'clickable events' => sub {
 
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
-    check_data_table_entries 10, 'all rows displayed without filter after posting job/comment';
+    check_data_table_entries 12, 'all rows displayed without filter after posting job/comment';
     $search = $driver->find_element('.dt-search input');
     $search->send_keys('event:comment_create');
     $entries = check_data_table_entries 1, 'most rows filtered out when searching for comment create events';
