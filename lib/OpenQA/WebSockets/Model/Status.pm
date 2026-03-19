@@ -13,7 +13,7 @@ use OpenQA::Log qw(log_debug);
 
 has [qw(workers worker_by_transaction)] => sub { {} };
 
-sub singleton { state $status ||= __PACKAGE__->new }
+sub singleton ($class = undef) { state $status ||= ($class // __PACKAGE__)->new }
 
 sub _is_limit_exceeded ($self, $worker_db, $worker_is_new, $controller) {
     my $misc_limits = $controller->app->config->{misc_limits};
@@ -65,8 +65,7 @@ sub add_worker_connection ($self, $worker_id, $controller) {
     return $worker;
 }
 
-sub remove_worker_connection {
-    my ($self, $transaction) = @_;
+sub remove_worker_connection ($self, $transaction) {
     return delete $self->worker_by_transaction->{$transaction};
 }
 

@@ -2,18 +2,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebSockets::Plugin::Helpers;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Schema;
 use OpenQA::WebSockets::Model::Status;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf = undef) {
+    $app->helper(log_name => sub ($c) { 'websockets' });
 
-    $app->helper(log_name => sub { 'websockets' });
-
-    $app->helper(schema => sub { OpenQA::Schema->singleton });
-    $app->helper(status => sub { OpenQA::WebSockets::Model::Status->singleton });
+    $app->helper(schema => sub ($c) { OpenQA::Schema->singleton });
+    $app->helper(status => sub ($c) { OpenQA::WebSockets::Model::Status->singleton });
 }
 
 1;

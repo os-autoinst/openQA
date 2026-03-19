@@ -2,35 +2,29 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebSockets::Controller::API;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Constants qw(WORKER_COMMAND_GRAB_JOB WORKER_COMMAND_GRAB_JOBS);
 use OpenQA::WebSockets;
 
-sub send_msg {
-    my ($self) = @_;
-
+sub send_msg ($self) {
     my $data = $self->req->json;
     my $worker_id = $data->{worker_id};
     my $msg = $data->{msg};
     my $job_id = $data->{job_id};
-    my $retry = $data->{retry};
+    my $retry = $data->{retry} // 0;
 
     my $result = OpenQA::WebSockets::ws_send($worker_id, $msg, $job_id, $retry);
     $self->render(json => {result => $result});
 }
 
-sub send_job {
-    my ($self) = @_;
-
+sub send_job ($self) {
     my $job = $self->req->json;
     my $result = OpenQA::WebSockets::ws_send_job($job, {type => WORKER_COMMAND_GRAB_JOB, job => $job});
     $self->render(json => {result => $result});
 }
 
-sub send_jobs {
-    my ($self) = @_;
-
+sub send_jobs ($self) {
     my $job_info = $self->req->json;
     my $result = OpenQA::WebSockets::ws_send_job($job_info, {type => WORKER_COMMAND_GRAB_JOBS, job_info => $job_info});
     $self->render(json => {result => $result});
