@@ -16,6 +16,7 @@ sub _queue_sub_stats ($query, $state, $result) {
     }
     my $archs = $query->search({}, {select => ['ARCH', {count => 'id'}], as => [qw(ARCH count)], group_by => 'ARCH'});
     while (my $c = $archs->next) {
+        next unless $c->get_column('ARCH');
         $result->{openqa_jobs_by_arch}->{'arch=' . $c->get_column('ARCH')}->{$state} = $c->get_column('count');
     }
 }
