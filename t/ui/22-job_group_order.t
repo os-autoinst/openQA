@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -14,8 +15,7 @@ OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-sub verify_navbar {
-    my ($expected) = @_;
+sub verify_navbar ($expected) {
     $t->get_ok('/')->status_is(200);
     my $groups = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('.navbar-nav li.dropdown')->all_text);
     # in fixtures both are sort_order 0, so they are sorted by name

@@ -54,7 +54,7 @@ $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is('openQA', 'back on main page');
 
-sub goto_admin_needle_table {
+sub goto_admin_needle_table () {
     my $login_link = $driver->find_element('#user-action > a');
     is $login_link->get_text(), 'Logged in as Demo', 'logged in as demo';
     # the following should work, but apparently doesn't - at least when executing tests in CI:

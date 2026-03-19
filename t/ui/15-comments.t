@@ -92,15 +92,12 @@ sub write_comment ($text, $desc) {
 
 # switches to comments tab (required when editing comments in test results)
 # expects the current number of comments as argument (currently the easiest way to find the tab button)
-sub switch_to_comments_tab {
-    my $current_comment_count = shift;
+sub switch_to_comments_tab ($current_comment_count) {
     $driver->find_element_by_link_text("Comments ($current_comment_count)")->click();
 }
 
 # checks comment heading and text for recently added comment
-sub check_comment {
-    my ($supposed_text, $edited) = @_;
-
+sub check_comment ($supposed_text, $edited) {
     ok javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings';
 
     # check number of elements
@@ -130,9 +127,7 @@ sub check_comment {
 }
 
 # tests adding, editing and removing comments
-sub test_comment_editing {
-    my ($in_test_results) = @_;
-
+sub test_comment_editing ($in_test_results) {
     my $context = $in_test_results ? 'job' : 'group';
     my @comments = $driver->find_elements('div.media-comment', 'css');
     is scalar @comments, 0, 'no comments present so far';
