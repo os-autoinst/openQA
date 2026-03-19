@@ -63,7 +63,7 @@ sub startup ($self) {
     OpenQA::Setup::setup_plain_exception_handler($self);
 }
 
-sub run () { __PACKAGE__->new->start }
+sub run ($class = undef) { (__PACKAGE__ // $class)->new->start }
 
 sub schema ($self) { OpenQA::Schema->singleton }
 

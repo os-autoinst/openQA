@@ -62,9 +62,12 @@ has(
 # broadcasts a message to all JavaScript clients for the specified job ID
 # note: we don't broadcast to connections served by other prefork processes here, hence
 #       prefork mustn't be used (for now)
-sub send_message_to_java_script_clients {
-    my ($self, $job_id, $type, $what, $data, $status_code_to_quit_on_finished) = @_;
-
+sub send_message_to_java_script_clients (
+    $self, $job_id, $type, $what,
+    $data = undef,
+    $status_code_to_quit_on_finished = undef
+  )
+{
     my @all_java_script_transactions_for_job;
     for my $java_script_transaction_container ($self->devel_java_script_transactions_by_job,
         $self->status_java_script_transactions_by_job)
@@ -83,7 +86,7 @@ sub send_message_to_java_script_clients {
                 data => $data,
             }
         },
-        sub {
+        sub ($tx) {
             return unless ($status_code_to_quit_on_finished);
             return if ($outstanding_transmissions -= 1);
             $self->finish_all_connections($job_id, $status_code_to_quit_on_finished);
@@ -95,9 +98,7 @@ sub send_message_to_java_script_clients {
 # note: used to report fatal errors within ws_proxy which happen *after* the development session has been established
 #       and require the development session to be quit
 #       (eg. connection to os-autoinst lost)
-sub send_message_to_java_script_clients_and_finish {
-    my ($self, $job_id, $type, $what, $data, $status_code) = @_;
-
+sub send_message_to_java_script_clients_and_finish ($self, $job_id, $type, $what, $data = undef, $status_code = undef) {
     # set status code (errors or normal quit)
     $status_code = ($type eq 'error' ? 1011 : 1000) unless ($status_code);
 
@@ -107,9 +108,12 @@ sub send_message_to_java_script_clients_and_finish {
 # sends a message to a particular JavaScript client using the specified transaction and finishes the transaction if done
 # note: used to report fatal errors within ws_proxy which happen *before* the development session has been established
 #       (eg. invalid job/user or development session is locked by another user)
-sub send_message_to_java_script_client_and_finish {
-    my ($self, $java_script_tx, $type, $what, $data, $status_code) = @_;
-
+sub send_message_to_java_script_client_and_finish (
+    $self, $java_script_tx, $type, $what,
+    $data = undef,
+    $status_code = undef
+  )
+{
     # set status code (errors or normal quit)
     $status_code = ($type eq 'error' ? 1011 : 1000) unless ($status_code);
 
@@ -121,7 +125,7 @@ sub send_message_to_java_script_client_and_finish {
                 data => $data,
             }
         },
-        sub {
+        sub ($tx) {
             $java_script_tx->finish($status_code);
         });
 
@@ -129,9 +133,7 @@ sub send_message_to_java_script_client_and_finish {
     return $self->on(finish => sub { });
 }
 
-sub finish_all_connections {
-    my ($self, $job_id, $status_code) = @_;
-
+sub finish_all_connections ($self, $job_id, $status_code) {
     for my $java_script_transaction_container ($self->devel_java_script_transactions_by_job,
         $self->status_java_script_transactions_by_job)
     {
@@ -143,9 +145,7 @@ sub finish_all_connections {
 # quits the developments session for the specified job ID
 # note: we can not disconnect connections served by other prefork processes here, hence
 #       prefork mustn't be used (for now)
-sub quit_development_session {
-    my ($self, $job_id, $reason, $status_code) = @_;
-
+sub quit_development_session ($self, $job_id, $reason = undef, $status_code = undef) {
     # set default status code to "normal closure"
     $status_code //= 1000;
 
@@ -174,9 +174,7 @@ sub quit_development_session {
 }
 
 # checks whether the os-autoinst developer mode version reported by the specified status info it compatible
-sub check_os_autoinst_devel_mode_version {
-    my ($self, $status_info) = @_;
-
+sub check_os_autoinst_devel_mode_version ($self, $status_info) {
     my $major_version = $status_info->{devel_mode_major_version} //= 0;
     my $minor_version = $status_info->{devel_mode_minor_version} //= 0;
     return 0 if ($major_version ne OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION);
@@ -189,9 +187,7 @@ sub check_os_autoinst_devel_mode_version {
 #      {"cmd":"set_pause_at_test","name":"installation-welcome"}
 #  * a selected set of commands is passed to os-autoinst backend
 #  * some commands are handled internally
-sub handle_message_from_java_script {
-    my ($self, $job_id, $msg) = @_;
-
+sub handle_message_from_java_script ($self, $job_id, $msg) {
     # decode JSON
     my $json;
     try {
@@ -240,9 +236,7 @@ sub handle_message_from_java_script {
 }
 
 # attaches new needles to the resume command before passing it to the command server (called in handle_message_from_java_script)
-sub _handle_command_resume_test_execution {
-    my ($self, $job_id, $json) = @_;
-
+sub _handle_command_resume_test_execution ($self, $job_id, $json) {
     # find job and needles
     my $schema = $self->app->schema;
     my $jobs = $schema->resultset('Jobs');
@@ -265,9 +259,7 @@ sub _handle_command_resume_test_execution {
 }
 
 # handles a disconnect of the web socket connection (not status-only)
-sub handle_disconnect_from_java_script_client {
-    my ($self, $job_id, $java_script_tx, $user_name) = @_;
-
+sub handle_disconnect_from_java_script_client ($self, $job_id, $java_script_tx, $user_name) {
     $self->app->log->debug('client disconnected: ' . $user_name);
 
     $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job, $java_script_tx);
@@ -279,17 +271,14 @@ sub handle_disconnect_from_java_script_client {
     $self->send_session_info($job_id);
 }
 
-sub find_upload_progress {
-    my ($self, $job_id) = @_;
-
+sub find_upload_progress ($self, $job_id) {
     my $workers = $self->app->schema->resultset('Workers');
     my $worker = $workers->find({job_id => $job_id}) or return undef;
     return $worker->upload_progress;
 }
 
 # extends the status info hash from os-autoinst with the session info and worker info
-sub add_further_info_to_hash {
-    my ($self, $job_id, $hash) = @_;
+sub add_further_info_to_hash ($self, $job_id, $hash) {
     if (my $session = $self->developer_sessions->find($job_id)) {
         my $user = $session->user;
         $hash->{developer_id} = $user->id;
@@ -310,9 +299,7 @@ sub add_further_info_to_hash {
 }
 
 # broadcasts a message from os-autoinst to js clients; checks the version and adds the session info if the message is the status hash
-sub handle_message_from_os_autoinst {
-    my ($self, $job_id, $json) = @_;
-
+sub handle_message_from_os_autoinst ($self, $job_id, $json) {
     my $is_status_message = defined($json->{running});
     if ($is_status_message) {
         if (!$self->check_os_autoinst_devel_mode_version($json)) {
@@ -330,9 +317,7 @@ sub handle_message_from_os_autoinst {
 }
 
 # disconnects all js clients and resets the os-autoinst connection
-sub handle_disconnect_from_os_autoinst {
-    my ($self, $job_id, $code, $reason) = @_;
-
+sub handle_disconnect_from_os_autoinst ($self, $job_id, $code, $reason) {
     # prevent finishing the transaction twice
     $self->cmd_srv_transactions_by_job->{$job_id} = undef;
     # inform the JavaScript client
@@ -368,9 +353,7 @@ sub connect_to_cmd_srv ($self, $job_id, $cmd_srv_raw_url, $data) {
     # start a new connection to os-autoinst cmd srv
     my $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url);
     return $self->app->ua->websocket(
-        $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
-            my ($ua, $tx) = @_;
-
+        $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub ($ua, $tx) {
             # upgrade to ws connection if not already a websocket connection
             return $self->send_message_to_java_script_clients_and_finish($job_id,
                 error => 'unable to upgrade ws to command server')
@@ -385,15 +368,13 @@ sub connect_to_cmd_srv ($self, $job_id, $cmd_srv_raw_url, $data) {
             # handle messages from os-autoinst command server
             $self->send_message_to_java_script_clients($job_id, info => 'connected to os-autoinst command server');
             $tx->on(
-                json => sub {
-                    my ($tx, $json) = @_;
+                json => sub ($tx, $json) {
                     $self->handle_message_from_os_autoinst($job_id, $json);
                 });
 
             # handle connection to os-autoinst command server being quit
             $tx->on(
-                finish => sub {
-                    my ($tx, $code, $reason) = @_;
+                finish => sub ($tx, $code, $reason) {
                     $self->handle_disconnect_from_os_autoinst($job_id, $code, $reason);
                 });
         });
@@ -401,9 +382,7 @@ sub connect_to_cmd_srv ($self, $job_id, $cmd_srv_raw_url, $data) {
 
 # sends a message to the os-autoinst command server for the specified job ID
 # note: the connection must have been opened before using connect_to_cmd_srv()
-sub send_message_to_os_autoinst {
-    my ($self, $job_id, $msg) = @_;
-
+sub send_message_to_os_autoinst ($self, $job_id, $msg) {
     my $cmd_srv_tx = $self->cmd_srv_transactions_by_job->{$job_id};
     if (!$cmd_srv_tx) {
         $self->send_message_to_java_script_clients($job_id,
@@ -417,9 +396,7 @@ sub send_message_to_os_autoinst {
 # os-autoinst
 # note: This connection is actually not supposed to be cancelled from the liveviewhandler's side. The only exception
 #       is when a bad configuration (such as an incompatible version) is detected.
-sub disconnect_from_os_autoinst {
-    my ($self, $job_id, $reason, $status_code) = @_;
-
+sub disconnect_from_os_autoinst ($self, $job_id, $reason, $status_code = undef) {
     # find relevant transaction and skip if there nothing to do if already disconnected
     my $cmd_srv_tx = $self->cmd_srv_transactions_by_job->{$job_id};
     return unless ($cmd_srv_tx);
@@ -443,18 +420,14 @@ sub disconnect_from_os_autoinst {
 }
 
 # sends information about the developer session to all JavaScript clients
-sub send_session_info {
-    my ($self, $job_id) = @_;
-
+sub send_session_info ($self, $job_id) {
     my %status_info;
     $self->add_further_info_to_hash($job_id, \%status_info);
     $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', \%status_info);
 }
 
 # queries the status from os-autoinst
-sub query_os_autoinst_status {
-    my ($self, $job_id) = @_;
-
+sub query_os_autoinst_status ($self, $job_id) {
     $self->send_message_to_os_autoinst(
         $job_id,
         {
@@ -463,9 +436,7 @@ sub query_os_autoinst_status {
 }
 
 # removes the specified JavaScript transaction from the specified container/job
-sub remove_java_script_transaction {
-    my ($self, $job_id, $container, $transaction) = @_;
-
+sub remove_java_script_transaction ($self, $job_id, $container, $transaction) {
     my $transactions = $container->{$job_id} or return;
     @$transactions = map { $_ == $transaction ? () : $_ } @$transactions;
 }
@@ -473,9 +444,7 @@ sub remove_java_script_transaction {
 # note: functions above are just helper, the methods which are actually registered routes start here
 
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly
-sub ws_proxy {
-    my ($self, $status_only) = @_;
-
+sub ws_proxy ($self, $status_only = undef) {
     # determine basic variables
     my $java_script_tx = $self->tx;
     return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'job not found')
@@ -540,26 +509,22 @@ sub ws_proxy {
 
     # handle messages/disconnect from the JavaScript client (not status-only)
     $self->on(
-        message => sub {
-            my ($tx, $msg) = @_;
+        message => sub ($tx, $msg) {
             $self->handle_message_from_java_script($job_id, $msg);
         });
     $self->on(
-        finish => sub {
+        finish => sub ($tx, $code, $reason) {
             $self->handle_disconnect_from_java_script_client($job_id, $java_script_tx, $user->name);
         });
 }
 
 # provides a status-only version of ws_proxy defined above
-sub proxy_status {
-    my ($self) = @_;
+sub proxy_status ($self) {
     return $self->ws_proxy('status');
 }
 
 # handles the request by the worker to post the upload progress
-sub post_upload_progress {
-    my ($self) = @_;
-
+sub post_upload_progress ($self) {
     # handle errors
     return $self->render(json => {error => 'No progress information provided'}, status => 400)
       unless my $progress_info = $self->req->json;
