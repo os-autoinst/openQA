@@ -324,7 +324,7 @@ sub schedule ($self) {
     return (\@successfully_allocated);
 }
 
-sub singleton { state $jobs ||= __PACKAGE__->new }
+sub singleton ($class = undef) { state $jobs ||= ($class // __PACKAGE__)->new }
 
 sub _matching_workers ($jobinfo, $free_workers, $rejected = {}) {
     my @filtered;
