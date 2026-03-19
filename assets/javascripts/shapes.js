@@ -9,7 +9,7 @@
 // So long as you are nice to people, etc
 
 // http://stackoverflow.com/questions/217957/how-to-print-debug-messages-in-the-google-chrome-javascript-console
-if (!window.console) console = {};
+if (!window.console) console = {}; // eslint-disable-line no-global-assign
 console.log = console.log || function () {};
 console.warn = console.warn || function () {};
 console.error = console.error || function () {};
