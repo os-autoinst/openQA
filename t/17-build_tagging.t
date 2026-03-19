@@ -165,7 +165,7 @@ subtest 'test tags for Fedora update-style BUILD values' => sub {
     is $tags[1], 'critpath', 'tag description shown';
 };
 
-sub query_important_builds {
+sub query_important_builds () {
     my %important_builds_by_group = (0 => $job_groups->new({})->important_builds);
     $important_builds_by_group{$_->id} = $_->important_builds for $job_groups->all;
     return \%important_builds_by_group;

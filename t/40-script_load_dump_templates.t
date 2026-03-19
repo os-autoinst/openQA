@@ -32,7 +32,7 @@ sub dump_templates (@args) {
     test_cmd(path(curfile->dirname, '../script/openqa-dump-templates')->realpath, @args);
 }
 
-sub decode { Cpanel::JSON::XS->new->relaxed->decode(path(shift)->slurp); }
+sub decode ($path) { Cpanel::JSON::XS->new->relaxed->decode(path($path)->slurp); }
 
 sub check_property ($schema, $table, $property, $values) {
     my @gotprops = sort map { $_->$property } $schema->resultset($table)->all;

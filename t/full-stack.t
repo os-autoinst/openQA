@@ -65,13 +65,13 @@ my $worker;
 my $ws;
 my $livehandler;
 
-sub turn_down_stack {
+sub turn_down_stack () {
     for my $service (grep { defined } $worker, $ws, $livehandler) {
         stop_service($service);
         $service->finish;
     }
 }
-sub stop_worker { stop_service $worker }
+sub stop_worker () { stop_service $worker }
 
 driver_missing unless check_driver_modules;
 
@@ -98,7 +98,7 @@ $driver->title_is('openQA', 'back on main page');
 
 schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_setup(PAUSE_AT => 'shutdown'));
 
-sub status_text { find_status_text($driver) }
+sub status_text () { find_status_text($driver) }
 
 # add a function to verify the test setup before trying to run a job
 my $setup_timeout = 0;    # actually initialized further down after subtest 'testhelper'

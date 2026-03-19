@@ -15,7 +15,7 @@
 
 use Mojo::Base -strict;
 
-sub run {
+sub run () {
     my @regexp = qw(test-kate-3 tes-module_re);
 }
 

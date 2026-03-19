@@ -86,7 +86,7 @@ sub create_worker ($apikey, $apisecret, $host, $instance, $log = undef) {
     return $log ? start \@cmd, \undef, '>&', $log : start \@cmd;
 }
 
-sub stop_workers { stop_service($_, 1) for @workers }
+sub stop_workers () { stop_service($_, 1) for @workers }
 
 sub mark_all_workers_as_dead ($schema) {
     $workers->update({t_seen => DateTime->from_epoch(epoch => time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY)});

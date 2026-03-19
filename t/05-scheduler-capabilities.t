@@ -27,7 +27,7 @@ my $sent = {};
 
 OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);
 
-sub schedule {
+sub schedule () {
     my $id = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     do {
         my $j = $schema->resultset('Jobs')->find($_->{job});
@@ -47,8 +47,7 @@ monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
     return {state => {msg_sent => 1}};
 };
 
-sub list_jobs {
-    my %args = @_;
+sub list_jobs (%args) {
     [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
 }
 

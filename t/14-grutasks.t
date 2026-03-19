@@ -60,10 +60,9 @@ dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data testresu
 my $tempdir = tempdir('assets-XXXX', TMPDIR => 1);
 my $deleted = $tempdir->child('deleted');
 my $removed = $tempdir->child('removed');
-sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
-sub mock_removed { -e $removed ? retrieve($removed) : [] }
-# uncoverable statement count:2
-sub reset_mocked_asset_deletions { unlink $tempdir->child($_) for qw(removed deleted) }
+sub mock_deleted () { -e $deleted ? retrieve($deleted) : [] }
+sub mock_removed () { -e $removed ? retrieve($removed) : [] }
+sub reset_mocked_asset_deletions () { unlink $tempdir->child($_) for qw(removed deleted) }
 my $assets_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 $assets_result_mock->redefine(
     delete => sub ($self) {
@@ -216,7 +215,7 @@ my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id
 note 'initially existing assets:';
 note dumper($initial_aessets);
 
-sub find_kept_assets_with_last_jobs {
+sub find_kept_assets_with_last_jobs () {
     my $last_used_jobs = $assets->search(
         {
             -not => {

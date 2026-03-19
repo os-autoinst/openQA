@@ -45,9 +45,7 @@ my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 chdir $workdir;
 my $guard = scope_guard sub { chdir $FindBin::Bin };
 
-sub wait_for_job {
-    my ($job, $check_message, $relevant_event, $check_function, $timeout) = @_;
-    $timeout //= 15;
+sub wait_for_job ($job, $check_message, $relevant_event, $check_function = undef, $timeout = 15) {
 
     # Do not wait forever in case of problems
     my $error;
@@ -84,9 +82,7 @@ sub wait_until_job_status_ok ($job, $status) {
         });
 }
 
-sub wait_until_uploading_logs_and_assets_concluded {
-    my ($job) = @_;
-
+sub wait_until_uploading_logs_and_assets_concluded ($job) {
     wait_for_job($job, 'job concluded uploading logs an assets', 'uploading_logs_and_assets_concluded');
 }
 
@@ -166,8 +162,7 @@ my $engine_url = '127.0.0.1:' . Mojo::IOLoop::Server->generate_port;
 my $io_loop_mock = mock_io_loop(subprocess => 1);
 
 # Define a function to get the usually expected status updates
-sub usual_status_updates {
-    my (%args) = @_;
+sub usual_status_updates (%args) {
     my $job_id = $args{job_id};
 
     my @expected_api_calls;

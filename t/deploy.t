@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -27,8 +28,8 @@ my $oldest_still_supported_schema_version
   = min(@{path($FindBin::Bin, '../dbicdh/PostgreSQL/deploy')->list({dir => 1})->map('basename')});
 ok $oldest_still_supported_schema_version, 'found oldest still supported schema version';
 
-sub ensure_schema_is_created_and_empty {
-    my $dbh = shift->storage->dbh;
+sub ensure_schema_is_created_and_empty ($schema) {
+    my $dbh = $schema->storage->dbh;
     $dbh->do('SET client_min_messages TO WARNING;');
     $dbh->do('drop schema if exists deploy cascade');
     $dbh->do('create schema deploy');

@@ -26,8 +26,7 @@ use Storable 'dclone';
 
 my $quiet_log = Mojo::Log->new(level => 'warn');
 
-sub read_config {
-    my ($app, $msg) = @_;
+sub read_config ($app, $msg) {
     $msg //= 'reading config from default';
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     combined_like sub { OpenQA::Setup::read_config($app) }, qr/fallback to default/, $msg;

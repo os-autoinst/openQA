@@ -51,7 +51,7 @@ my $ws;
 my $livehandler;
 my $scheduler;
 
-sub turn_down_stack {
+sub turn_down_stack () {
     stop_service($_) for ($worker, $ws, $livehandler, $scheduler);
 }
 
@@ -139,8 +139,7 @@ for my $ext (qw(.json .png)) {
 $worker = start_worker(get_connect_args());
 ok wait_for_job_running($driver), 'test 1 is running';
 
-sub wait_for_session_info {
-    my ($info_regex, $diag_info) = @_;
+sub wait_for_session_info ($info_regex, $diag_info) {
 
     # give the session info 10 seconds to appear
     my $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
@@ -258,7 +257,7 @@ subtest 'pause at certain test' => sub {
         qr/\"(reason|test_execution_paused)\":\"reached module shutdown\"/, 'paused');
 };
 
-sub assert_initial_ui_state {
+sub assert_initial_ui_state () {
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
 
