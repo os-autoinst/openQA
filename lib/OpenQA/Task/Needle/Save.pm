@@ -16,14 +16,11 @@ use Mojo::JSON 'decode_json';
 use Feature::Compat::Try;
 use Time::Seconds 'ONE_HOUR';
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf = undef) {
     $app->minion->add_task(save_needle => sub { _save_needle($app, @_) });
 }
 
-sub _json_validation {
-    my ($json) = @_;
-
+sub _json_validation ($json) {
     my $djson;
     try { $djson = decode_json($json) }
     catch ($e) {
@@ -48,8 +45,7 @@ sub _json_validation {
     return $djson;
 }
 
-sub _format_git_error {
-    my ($name, $error) = @_;
+sub _format_git_error ($name, $error) {
     return "<strong>Failed to save $name.</strong><br><pre>$error</pre>";
 }
 

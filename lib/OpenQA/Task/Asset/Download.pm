@@ -9,7 +9,7 @@ use OpenQA::Downloader;
 use Mojo::File 'path';
 use Time::Seconds;
 
-sub register ($self, $app, @) { $app->minion->add_task(download_asset => \&_download); }
+sub register ($self, $app, @args) { $app->minion->add_task(download_asset => \&_download); }
 
 sub _create_symlinks ($job, $ctx, $assetpath, $other_destinations) {
     my @error_message;
