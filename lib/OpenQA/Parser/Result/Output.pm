@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Result::Output;
-use Mojo::Base 'OpenQA::Parser::Result';
+use Mojo::Base 'OpenQA::Parser::Result', -signatures;
 
 # OpenQA test result class - this is how openQA internally draws the output results
 # Used while parsing from format X to OpenQA test modules.
@@ -11,8 +11,7 @@ use Mojo::File 'path';
 has 'file';
 has 'content';
 
-sub write {
-    my ($self, $dir) = @_;
+sub write ($self, $dir) {
     my $content = $self->content;
     path($dir, $self->file)->spew($content);
     return length $content;

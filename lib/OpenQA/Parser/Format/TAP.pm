@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Format::TAP;
-use Mojo::Base 'OpenQA::Parser::Format::Base';
+use Mojo::Base 'OpenQA::Parser::Format::Base', -signatures;
 
 # Translates to TAP -> openQA internal
 use Carp qw(croak confess);
@@ -11,8 +11,7 @@ use TAP::Parser;
 
 has [qw(test steps)];
 
-sub parse {
-    my ($self, $TAP) = @_;
+sub parse ($self, $TAP) {
     confess 'No TAP given/loaded' unless $TAP;
     my $tap = TAP::Parser->new({tap => $TAP});
     confess 'Failed ' . $tap->parse_errors if $tap->parse_errors;

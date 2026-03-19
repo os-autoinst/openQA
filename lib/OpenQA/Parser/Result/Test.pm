@@ -2,16 +2,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Parser::Result::Test;
-use Mojo::Base 'OpenQA::Parser::Result';
+use Mojo::Base 'OpenQA::Parser::Result', -signatures;
 
 # OpenQA test result class - this is how test modules are represented in openQA
 # Used while parsing from format X to OpenQA test modules.
 
-has flags => sub { {} };
+has flags => sub ($self) { {} };
 has [qw(category name script)];
 
-sub to_openqa {
-    my $self = shift;
+sub to_openqa ($self) {
     return {
         category => $self->category(),
         name => $self->name(),
@@ -21,8 +20,7 @@ sub to_openqa {
 }
 
 # Fix JSON encoding only to those fields
-sub TO_JSON {
-    my $self = shift;
+sub TO_JSON ($self) {
     return {
         category => $self->category(),
         name => $self->name(),
