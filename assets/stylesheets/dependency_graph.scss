@@ -51,13 +51,13 @@
         text-align: center;
       }
       &.passed {
-        background-color: var(--color-ok-bg);
+        background-color: $color-ok;
       }
       &.failed, &.parallel_failed {
-        background-color: var(--color-failed-bg);
+        background-color: $color-result-failed;
       }
       &.softfailed {
-        background-color: var(--color-softfailed-bg);
+        background-color: $color-softfailed;
       }
       &.incomplete, &.timeout_exceeded {
         color: white;

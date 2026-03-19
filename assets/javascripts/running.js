@@ -149,12 +149,12 @@ function updateTestStatus(newStatus) {
           return;
         }
         // re-render only test modules when the result is so far unknown (but the result is now known) or running
-        const state = resultCell.dataset.result;
-        if (state === 'unknown') {
+        const resultClassList = resultCell.classList;
+        if (resultClassList.contains('resultunknown')) {
           if (!module.result || module.result === 'none') {
             return;
           }
-        } else if (state !== 'running' && !resultCell.classList.contains('textdatamissing')) {
+        } else if (!resultClassList.contains('resultrunning') && !resultClassList.contains('textdatamissing')) {
           return;
         }
         // detach the preview container if it is contained by the row to be relaced
