@@ -6,9 +6,9 @@ function toggleFullscreenMode(fullscreen) {
   $('.navbar, .footer, .jumbotron, #group_description')[fullscreen ? 'hide' : 'show']();
 
   // toggle navbar visibility
-  var navbar = $('.navbar');
-  var navbarHeight = navbar.outerHeight();
-  var handler = document.showNavbarIfItWouldContainMouse;
+  const navbar = $('.navbar');
+  const navbarHeight = navbar.outerHeight();
+  let handler = document.showNavbarIfItWouldContainMouse;
   if (!fullscreen) {
     if (handler === undefined) {
       return;
@@ -17,7 +17,7 @@ function toggleFullscreenMode(fullscreen) {
     return;
   }
   handler = document.showNavbarIfItWouldContainMouse = function (e) {
-    var mouseY = e.clientY || e.pageY;
+    const mouseY = e.clientY || e.pageY;
     if (mouseY <= navbarHeight || navbar.find("[aria-expanded='true']").length !== 0) {
       navbar.show();
     } else if (mouseY > navbarHeight && !$('li').hasClass('dropdown open')) {

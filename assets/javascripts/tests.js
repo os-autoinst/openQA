@@ -1,9 +1,9 @@
 /* jshint esversion: 6 */
 
 const filters = ['todo', 'relevant'];
-var is_operator;
-var restart_url;
-var cancel_url;
+let is_operator;
+let restart_url;
+let cancel_url;
 
 function addClassToArray(data, theclass) {
   for (i = 0; i < data.length; ++i) $('#job_' + data[i]).addClass(theclass);
@@ -33,7 +33,7 @@ function highlightJobsHtml(children, parents) {
 }
 
 function renderMediumName(data, type, row) {
-  var link = urlWithBase(
+  let link = urlWithBase(
     '/tests/overview?build=' +
       encodeURIComponent(row.build) +
       '&distri=' +
@@ -45,7 +45,7 @@ function renderMediumName(data, type, row) {
     link += '&groupid=' + encodeURIComponent(row.group);
   }
 
-  var name = "<a href='" + htmlEscape(link) + "'>" + 'Build' + htmlEscape(row.build) + '</a>';
+  let name = "<a href='" + htmlEscape(link) + "'>" + 'Build' + htmlEscape(row.build) + '</a>';
   name += ' of ';
   return name + htmlEscape(row.distri + '-' + row.version + '-' + row.flavor + '.' + row.arch);
 }
@@ -55,7 +55,7 @@ function renderTestName(data, type, row) {
     return data;
   }
 
-  var html = '';
+  let html = '';
   if (is_operator) {
     html += '<a class="copy-jobid" href="#" data-jobid="' + row.id + '">';
     html += '<i class="action fa fa-fw fa-copy" title="Copy job id"></i></a>';
@@ -92,10 +92,10 @@ function renderTestName(data, type, row) {
   html += '</a> ';
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '" class="name">' + htmlEscape(data) + '</a>';
 
-  var deps = row.deps;
+  const deps = row.deps;
   if (deps) {
-    var dependencyResult = showJobDependency(deps);
-    var dependencyHtml = '';
+    const dependencyResult = showJobDependency(deps);
+    let dependencyHtml = '';
     if (dependencyResult.title !== undefined) {
       dependencyHtml =
         ' <a href="' +
@@ -119,7 +119,7 @@ function renderTestName(data, type, row) {
 }
 
 function renderTimeAgo(data, type, row, position, notAvailableMessage) {
-  var haveData = data && data !== 'Z';
+  const haveData = data && data !== 'Z';
   if (type === 'display') {
     return haveData
       ? '<span title="' + data + '">' + jQuery.timeago(data) + '</span>'
@@ -135,14 +135,14 @@ function renderTimeAgoForFinished(data, type, row, position) {
 }
 
 function renderProgress(data, type, row) {
-  var progress = data.modcount > 0 ? Math.round((data.moddone / data.modcount) * 100) : undefined;
+  const progress = data.modcount > 0 ? Math.round((data.moddone / data.modcount) * 100) : undefined;
   if (type !== 'display') {
     return progress ? progress : 0;
   }
-  var progressText = progress === undefined ? row.state : progress + ' %';
-  var progressClass = progress === undefined ? 'progress-bar progress-bar-striped active' : 'progress-bar';
-  var progressWidth = progress === undefined ? 100 : progress;
-  var progressBar =
+  const progressText = progress === undefined ? row.state : progress + ' %';
+  const progressClass = progress === undefined ? 'progress-bar progress-bar-striped active' : 'progress-bar';
+  const progressWidth = progress === undefined ? 100 : progress;
+  const progressBar =
     '<div class="' +
     progressClass +
     '" role="progressbar" style="width: ' +
@@ -159,16 +159,16 @@ function renderPriority(data, type, row) {
   if (type !== 'display' || !is_operator) {
     return data;
   }
-  var jobId = row.id;
-  var decreasePrioLink =
+  const jobId = row.id;
+  const decreasePrioLink =
     '<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(' +
     jobId +
     ', this); return false;"><i class="fa fa-minus-square-o"></i></a>';
-  var increasePrioLink =
+  const increasePrioLink =
     '<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' +
     jobId +
     ', this); return false;"><i class="fa fa-plus-square-o"></i></a>';
-  var text = ' <span class="prio-value">' + data + '</span> ';
+  const text = ' <span class="prio-value">' + data + '</span> ';
   return decreasePrioLink + text + increasePrioLink;
 }
 
@@ -183,14 +183,14 @@ function decreaseJobPrio(jobId, linkElement) {
 }
 
 function changeJobPrio(jobId, delta, linkElement) {
-  var prioValueElement = $(linkElement).parent().find('.prio-value');
-  var currentPrio = parseInt(prioValueElement.text());
+  const prioValueElement = $(linkElement).parent().find('.prio-value');
+  const currentPrio = parseInt(prioValueElement.text());
   if (Number.isNaN(currentPrio)) {
     addFlash('danger', 'Unable to set prio.');
     return;
   }
 
-  var newPrio = currentPrio + delta;
+  const newPrio = currentPrio + delta;
 
   const body = new FormData();
   body.append('prio', newPrio);
@@ -218,7 +218,7 @@ function changeJobPrio(jobId, delta, linkElement) {
 }
 
 function renderTestSummary(data) {
-  var html = (data.passed || 0) + "<i class='fa module_passed fa-star' title='modules passed'></i>";
+  let html = (data.passed || 0) + "<i class='fa module_passed fa-star' title='modules passed'></i>";
   if (data.softfailed)
     html += ' ' + data.softfailed + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
   if (data.failed) html += ' ' + data.failed + "<i class='fa module_failed fa-star' title='modules failed'></i>";
@@ -234,13 +234,13 @@ function renderTestResult(data, type, row) {
     return parseInt(data.passed) * 10000 + parseInt(data.softfailed) * 100 + parseInt(data.failed);
   }
 
-  var html = '';
+  let html = '';
   if (row.state === 'done') {
     html += renderTestSummary(data);
   } else if (row.state === 'cancelled') {
     html += "<i class='fa fa-times' title='canceled'></i>";
   }
-  var dependencyResultHtml = '';
+  let dependencyResultHtml = '';
   if (row.deps.has_parents) {
     dependencyResultHtml = row.deps.parents_ok
       ? " <i class='fa fa-link' title='dependency passed'></i>"
@@ -418,7 +418,7 @@ function renderTestLists() {
       return true; // Do not filter other tables
     }
 
-    var selectedResults = finishedJobsResultFilter.find('option:selected');
+    const selectedResults = finishedJobsResultFilter.find('option:selected');
     // don't apply filter if no result is selected
     if (!selectedResults.length) {
       return true;
@@ -428,11 +428,11 @@ function renderTestLists() {
     if (!data) {
       return false;
     }
-    var result = data.result;
+    const result = data.result;
     if (!result) {
       return false;
     }
-    for (var i = 0; i != selectedResults.length; ++i) {
+    for (let i = 0; i != selectedResults.length; ++i) {
       if (selectedResults[i].value.toLowerCase() === result) {
         return true;
       }
@@ -457,10 +457,10 @@ function renderTestLists() {
 function setupTestButtons() {
   $(document).on('click', '.restart', function (event) {
     event.preventDefault();
-    var restartLink = this;
+    const restartLink = this;
     $.post(restartLink.href).done(function (data, res, xhr) {
-      var responseJSON = xhr.responseJSON;
-      var flashTarget = $('#flash-messages-finished-jobs');
+      const responseJSON = xhr.responseJSON;
+      const flashTarget = $('#flash-messages-finished-jobs');
       if (typeof responseJSON !== 'object' || !Array.isArray(responseJSON.test_url)) {
         addFlash('danger', '<strong>Unable to restart job.</strong>', flashTarget);
         return;
@@ -471,17 +471,17 @@ function setupTestButtons() {
         forceJobRestartViaRestartLink.bind(undefined, restartLink),
         flashTarget
       );
-      var urls = responseJSON.test_url[0];
+      const urls = responseJSON.test_url[0];
       $.each(urls, function (key, value) {
         // Skip to mark the job that is not shown in current page
         if (!$('#job_' + key).length) {
           return true;
         }
-        var td = $('#job_' + key)
+        const td = $('#job_' + key)
           .closest('tr')
           .children('td.test');
-        var restart_link = td.children('a.restart');
-        var i = restart_link.find('i').removeClass('fa-undo');
+        const restart_link = td.children('a.restart');
+        const i = restart_link.find('i').removeClass('fa-undo');
         td.append(' <a href="' + value + '" title="new test">(restarted)</a>');
         restart_link.replaceWith(i);
       });
@@ -490,12 +490,12 @@ function setupTestButtons() {
 
   $(document).on('click', '.cancel', function (event) {
     event.preventDefault();
-    var cancel_link = $(this);
-    var test = $(this).parent('td');
+    const cancel_link = $(this);
+    const test = $(this).parent('td');
     $.post(cancel_link.attr('href')).done(function (data) {
       $(test).append(' (cancelled)');
     });
-    var i = $(this).find('i').removeClass('fa-times-circle');
+    const i = $(this).find('i').removeClass('fa-times-circle');
     $(this).replaceWith(i);
   });
 }
@@ -549,10 +549,10 @@ function setupLazyLoadingFailedSteps() {
 }
 
 function showJobDependency(deps) {
-  var parents = deps.parents;
-  var children = deps.children;
-  var depsTooltip = [];
-  var result = {};
+  const parents = deps.parents;
+  const children = deps.children;
+  const depsTooltip = [];
+  const result = {};
   depsTooltip.quantify = function (quantity, singular, plural) {
     if (quantity) {
       this.push([quantity, quantity === 1 ? singular : plural].join(' '));
@@ -565,8 +565,8 @@ function showJobDependency(deps) {
   depsTooltip.quantify(children['Directly chained'].length, 'directly chained child', 'directly chained children');
   depsTooltip.quantify(children.Parallel.length, 'parallel child', 'parallel children');
   if (depsTooltip.length) {
-    var childrenToHighlight = children.Parallel.concat(children.Chained, children['Directly chained']);
-    var parentsToHighlight = parents.Parallel.concat(parents.Chained, parents['Directly chained']);
+    const childrenToHighlight = children.Parallel.concat(children.Chained, children['Directly chained']);
+    const parentsToHighlight = parents.Parallel.concat(parents.Chained, parents['Directly chained']);
     result.title = depsTooltip.join(', ');
     result['data-children'] = childrenToHighlight;
     result['data-parents'] = parentsToHighlight;

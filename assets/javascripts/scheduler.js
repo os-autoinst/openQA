@@ -1,5 +1,5 @@
 document.observe('dom:loaded', function () {
-  var target;
+  let target;
 
   $$('#results td.cancel a').each(function (element) {
     element.on('ajax:success', 'tr', function (event, row) {
@@ -9,7 +9,7 @@ document.observe('dom:loaded', function () {
 
   $$('#results td.clone a').each(function (element) {
     element.on('ajax:success', 'td', function (event, cell) {
-      var jobid = event.memo.responseJSON.result[0];
+      const jobid = event.memo.responseJSON.result[0];
       cell.update('<a href="' + urlWithBase('/tests/' + jobid) + '">#' + jobid + '</a>');
       new Effect.Highlight(cell);
     });
@@ -70,14 +70,14 @@ document.observe('dom:loaded', function () {
 
   if ((target = $('restart_running'))) {
     target.on('ajax:success', function (event) {
-      var jobid = event.memo.responseJSON.result[0];
-      var c = confirm(
+      const jobid = event.memo.responseJSON.result[0];
+      const c = confirm(
         'Job cloned into #' +
           jobid +
           '. Confirm to visit that job. Cancel to be redirected to the results of the interrupted one.'
       );
       if (c) {
-        var url = document.URL.substring(0, document.URL.lastIndexOf('/') + 1) + jobid;
+        const url = document.URL.substring(0, document.URL.lastIndexOf('/') + 1) + jobid;
         window.location = url;
       } else {
         // We need to wait a little bit before accessing the results
@@ -88,12 +88,12 @@ document.observe('dom:loaded', function () {
 
   if ((target = $('restart-result'))) {
     target.on('ajax:success', 'a', function (event, element) {
-      var jobid = event.memo.responseJSON.result[0];
+      const jobid = event.memo.responseJSON.result[0];
       event.stop(); // Don't follow the link
       // If the API call returns a id, a new job have been created.
       // If not, nothing happened (or the old job is being reused).
       if (jobid) {
-        var cell = $('clone');
+        const cell = $('clone');
         if (cell) {
           cell.update('<a href="' + urlWithBase('/tests/' + jobid) + '">' + jobid + '</a>');
           new Effect.Highlight(cell);
@@ -106,7 +106,7 @@ document.observe('dom:loaded', function () {
 
 // Update the counter of selected items in the jobs list
 function updateListCounter() {
-  var counter = $('list-counter');
+  const counter = $('list-counter');
   if (counter) {
     counter.update($$('input[name=jobs]:checked').length);
   }

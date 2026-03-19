@@ -3,7 +3,7 @@
 // FIXME: key events may be different in other browsers:
 // http://www.javascripter.net/faq/keyeventconstantsfirefox.htm
 if (typeof KeyEvent === 'undefined') {
-  var KeyEvent = {
+  const KeyEvent = {
     DOM_VK_CANCEL: 3,
     DOM_VK_HELP: 6,
     DOM_VK_BACK_SPACE: 8,

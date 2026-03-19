@@ -1,8 +1,8 @@
 function setupAdminNeedles() {
   function ajaxUrl() {
-    var url = $('#needles').data('ajax-url');
-    var lastMatch = $('#last_match_filter').val();
-    var lastSeen = $('#last_seen_filter').val();
+    const url = $('#needles').data('ajax-url');
+    let lastMatch = $('#last_match_filter').val();
+    let lastSeen = $('#last_seen_filter').val();
     if (lastMatch === 'custom') {
       lastMatch = $('#sel_custom_last_match').val() + $('#last_date_match').val();
     }
@@ -12,7 +12,7 @@ function setupAdminNeedles() {
     return url + '?last_match=' + encodeURIComponent(lastMatch) + '&last_seen=' + encodeURIComponent(lastSeen);
   }
 
-  var table = $('#needles').DataTable({
+  const table = $('#needles').DataTable({
     ajax: ajaxUrl(),
     deferRender: true,
     columns: [{data: 'directory'}, {data: 'filename'}, {data: 'last_seen'}, {data: 'last_match'}],
@@ -28,7 +28,7 @@ function setupAdminNeedles() {
         className: 'time',
         render: function (data, type, row) {
           if (type === 'display' && data != 'never') {
-            var ri = 'last_seen_link';
+            let ri = 'last_seen_link';
             if (data == row['last_match']) ri = 'last_match_link';
             return "<a href='" + row[ri] + "' title='" + data + "Z'>" + jQuery.timeago(new Date(data)) + '</a>';
           } else {
@@ -76,10 +76,10 @@ function setupAdminNeedles() {
     $('#x_delete').show();
     $('#abort_delete').hide();
 
-    var ids = [];
+    const ids = [];
     $('input:checked').each(function (index) {
-      var li = $('<li/>');
-      var label = $(this).parent('td').find('label');
+      const li = $('<li/>');
+      const label = $(this).parent('td').find('label');
       li.html(label.html());
       li.attr('id', 'deletion-item-' + label.data('id'));
       ids.push(label.data('id'));
@@ -100,10 +100,10 @@ function setupAdminNeedles() {
   });
 
   function startDeletion(ids) {
-    var outstandingList = $('#outstanding-needles');
-    var failedList = $('#failed-needles');
-    var deletionProgressElement = $('#deletion-progress');
-    var url = $('#confirm_delete').data('delete-url');
+    const outstandingList = $('#outstanding-needles');
+    const failedList = $('#failed-needles');
+    const deletionProgressElement = $('#deletion-progress');
+    const url = $('#confirm_delete').data('delete-url');
 
     // hide/show elements
     $('#deletion-question').hide();
@@ -122,8 +122,8 @@ function setupAdminNeedles() {
 
     // define function to delete a bunch of needles at once
     // note: Deleting all needles at once could lead to timeouts and the progress could not be tracked at all.
-    var needlesToDeleteAtOnce = 5;
-    var deleteBunchOfNeedles = function () {
+    const needlesToDeleteAtOnce = 5;
+    const deleteBunchOfNeedles = function () {
       // handle all needles being deleted (or at least attempted to be deleted)
       if (outstandingList.data('aborted') || ids.length <= 0) {
         reloadNeedlesTable();
@@ -143,12 +143,12 @@ function setupAdminNeedles() {
       deletionProgressElement.text(ids.length);
 
       // determine the next needle IDs to delete
-      var nextIDs = ids.splice(0, needlesToDeleteAtOnce);
+      const nextIDs = ids.splice(0, needlesToDeleteAtOnce);
 
       // define function to handle single error affecting all deletions (e.g. GRU task TTL exceeded)
-      var handleSingleError = function (singleError) {
+      const handleSingleError = function (singleError) {
         $.each(nextIDs, function (index, id) {
-          var errorElement = $('<li></li>');
+          const errorElement = $('<li></li>');
           errorElement.append($('#deletion-item-' + id).text());
           errorElement.append($('<br>'));
           errorElement.append(singleError);
@@ -182,7 +182,7 @@ function setupAdminNeedles() {
         })
         .then(response => {
           // add error affecting all deletions
-          var singleError = response.error;
+          const singleError = response.error;
           if (singleError) {
             return handleSingleError(singleError);
           }
@@ -190,8 +190,8 @@ function setupAdminNeedles() {
           // add individual error messages
           if (response.errors) {
             $.each(response.errors, function (index, error) {
-              var errorElement = $('<li></li>');
-              var errorContext = error.display_name;
+              const errorElement = $('<li></li>');
+              let errorContext = error.display_name;
               if (!errorContext) {
                 errorContext = $('#deletion-item-' + error.id).text();
               }
