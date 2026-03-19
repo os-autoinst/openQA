@@ -41,9 +41,7 @@ sub _open_sqlite_database ($self, $db_file) {
     return $sqlite;
 }
 
-sub startup {
-    my $self = shift;
-
+sub startup ($self) {
     $self->defaults(appname => 'openQA Cache Service');
     # Provide help to users early to prevent failing later on
     # misconfigurations
@@ -52,8 +50,7 @@ sub startup {
     # Stop the service after a critical database error
     my $code = $self->renderer->get_helper('reply.exception');
     $self->helper(
-        'reply.exception' => sub {
-            my ($c, $error) = @_;
+        'reply.exception' => sub ($c, $error) {
             $error = $c->$code($error)->stash('exception');
             return unless $error =~ qr/(database|no such (table|column))/;
 
@@ -79,8 +76,7 @@ sub startup {
 
     # Allow for very quiet tests
     $self->hook(
-        before_server_start => sub {
-            my ($server, $app) = @_;
+        before_server_start => sub ($server, $app) {
             $server->silent(1) if $app->mode eq 'test';
         });
     my $log = $self->log;
@@ -93,9 +89,9 @@ sub startup {
     my @cache_params = (sqlite => $sqlite, log => $self->log, location => $location);
     push @cache_params, limit => int($limit) * (1024**3) if defined $limit;
     push @cache_params, min_free_percentage => $min_free_percentage if defined $min_free_percentage;
-    $self->helper(cache => sub { state $cache = OpenQA::CacheService::Model::Cache->new(@cache_params) });
+    $self->helper(cache => sub ($c) { state $cache = OpenQA::CacheService::Model::Cache->new(@cache_params) });
     my $cache = $self->cache;
-    $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(cache => $cache) });
+    $self->helper(downloads => sub ($c) { state $dl = OpenQA::CacheService::Model::Downloads->new(cache => $cache) });
     $cache->init;
 
     $self->plugin(Minion => {SQLite => $sqlite});
@@ -105,7 +101,7 @@ sub startup {
     $self->plugin('OpenQA::CacheService::Plugin::Helpers');
 
     my $r = $self->routes;
-    $r->get('/' => sub { shift->redirect_to('/minion') });
+    $r->get('/' => sub ($c) { $c->redirect_to('/minion') });
     $r->get('/info')->to('API#info');
     $r->get('/status/<id:num>')->to('API#status');
     $r->post('/enqueue')->to('API#enqueue');
@@ -113,9 +109,8 @@ sub startup {
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
-sub setup_workers {
-    return @_ unless grep { $_ eq 'run' } @_;
-    my @args = @_;
+sub setup_workers (@args) {
+    return @args unless grep { $_ eq 'run' } @args;
 
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
     my $cache_workers
@@ -125,8 +120,8 @@ sub setup_workers {
     return @args;
 }
 
-sub run {
-    my @args = setup_workers(@_);
+sub run (@args) {
+    @args = setup_workers(@args);
 
     local $ENV{MOJO_LOG_SHORT} = 1;
     my $app = __PACKAGE__->new;
