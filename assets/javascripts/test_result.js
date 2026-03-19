@@ -818,7 +818,9 @@ function setupTestDetailsFilter(tabConfig) {
       const trElement = tdElement.parent('tr');
       const stepMaches =
         (!nameFilterEnabled || trElement.find('td.component').text().indexOf(nameFilter) >= 0) &&
-        (!failedOnlyFilterEnabled || tdElement.hasClass('resultfailed') || tdElement.hasClass('resultsoftfailed'));
+        (!failedOnlyFilterEnabled ||
+          tdElement.attr('data-result') === 'failed' ||
+          tdElement.attr('data-result') === 'softfailed');
       trElement[stepMaches ? 'show' : 'hide']();
     });
   };
