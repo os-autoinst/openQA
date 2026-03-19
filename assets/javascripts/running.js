@@ -3,11 +3,11 @@
 
 // holds elements relevant for live stream, live log and serial output
 // (populated in initLivelogAndTerminal() and initLivestream())
-var liveViewElements = [];
+const liveViewElements = [];
 
 // holds elements relevant for live log and serial output
 // (initialized in initLivelogAndTerminal())
-var logElements;
+let logElements;
 
 // Reload broken thumbnails (that didn't exist yet when being requested) every 7th time
 function reloadBrokenThumbnails(force) {
@@ -224,7 +224,7 @@ function updateStatus() {
 /********* LIVE LOG *********/
 
 // global vars for livelog
-var scrolldown;
+let scrolldown;
 
 // scrolls to bottom of live log (if enabled)
 function scrollToBottomOfLiveLog() {
@@ -253,19 +253,19 @@ function addDataListener(elem, callback) {
       // define max size of the live log
       // note: If not preventing the livelog from becoming too long the page would become unresponsive at a
       //       certain length.
-      var maxLiveLogLength = 50 * 1024;
+      const maxLiveLogLength = 50 * 1024;
 
-      var firstElement = elem[0];
-      var currentData = firstElement.innerHTML;
-      var newData = ansiToHtml(JSON.parse(event.data)[0]);
-      var newLength = currentData.length + newData.length;
+      const firstElement = elem[0];
+      const currentData = firstElement.innerHTML;
+      const newData = ansiToHtml(JSON.parse(event.data)[0]);
+      const newLength = currentData.length + newData.length;
 
       // append if not exceeding the limit; otherwise cut the front
       if (newLength < maxLiveLogLength) {
         firstElement.innerHTML += newData;
       } else {
-        var catData = currentData + newData;
-        var newStartIndex = newLength - maxLiveLogLength;
+        const catData = currentData + newData;
+        let newStartIndex = newLength - maxLiveLogLength;
 
         // discard one (probably) partial line (in accordance with OpenQA::Shared::Controller::Running::streamtext)
         for (; newStartIndex < catData.length && catData[newStartIndex] !== '\n'; ++newStartIndex);
@@ -311,7 +311,7 @@ function initLivelogAndTerminal() {
     value.panel.bodyVisible = false;
     value.panel.find('.card-header').on('click', function () {
       // toggle visibility
-      var body = value.panel.find('.card-body');
+      const body = value.panel.find('.card-body');
       body.toggle(200);
       value.panel.bodyVisible = !value.panel.bodyVisible;
 
@@ -331,14 +331,14 @@ function initLivelogAndTerminal() {
 }
 
 // global vars for livestream
-var last_event;
+let last_event;
 
 // loads a data-url img into a canvas
 function loadCanvas(canvas, dataURL) {
-  var context = canvas.getContext('2d');
+  const context = canvas.getContext('2d');
 
   // load image from data URL
-  var scrn = new Image();
+  const scrn = new Image();
   scrn.onload = function () {
     canvas.width = this.width;
     canvas.height = this.height;
@@ -476,7 +476,7 @@ function pauseLiveView() {
 //
 
 // define state for developer mode
-var developerMode = {
+const developerMode = {
   // state of the page elements and the web socket connection to web UI
   develWsUrl: undefined, // URL for developer session web socket connection
   statusOnlyWsUrl: undefined, // URL for status-only web socket connection
@@ -570,8 +570,8 @@ function setupDeveloperPanel() {
   }
   window.developerPanelInitialized = true;
 
-  var panel = $('#developer-panel');
-  var flashMessages = document.getElementById('developer-flash-messages');
+  const panel = $('#developer-panel');
+  const flashMessages = document.getElementById('developer-flash-messages');
 
   // set overall status variables
   developerMode.ownUserId = panel.data('own-user-id');
@@ -583,7 +583,7 @@ function setupDeveloperPanel() {
   developerMode.servicePortDelta = panel.data('service-port-delta');
 
   // setup toggle for body
-  var panelHeader = panel.find('.card-header');
+  const panelHeader = panel.find('.card-header');
   if (developerMode.isAccessible) {
     panelHeader.on('click', function (event) {
       // skip if flash message clicked
@@ -592,7 +592,7 @@ function setupDeveloperPanel() {
       }
 
       // toggle visibility of body
-      var panelBody = panel.find('.card-body');
+      const panelBody = panel.find('.card-body');
       developerMode.panelExpanded = !developerMode.panelExpanded;
       developerMode.panelActuallyExpanded = developerMode.panelExpanded;
       if (!developerMode.panelExpanded) {
@@ -622,9 +622,9 @@ function setupDeveloperPanel() {
 
 // hides the specified options up to the specified index
 function updateModuleSelection(moduleToPauseAtOptions, moduleIndex) {
-  for (var i = 0; i <= moduleIndex; ++i) {
-    var optionElement = moduleToPauseAtOptions[i];
-    var optgroupElement = optionElement.parentNode;
+  for (let i = 0; i <= moduleIndex; ++i) {
+    const optionElement = moduleToPauseAtOptions[i];
+    const optgroupElement = optionElement.parentNode;
     if (!optgroupElement || optgroupElement.nodeName !== 'OPTGROUP') {
       continue;
     }
@@ -638,12 +638,12 @@ function updateModuleSelection(moduleToPauseAtOptions, moduleIndex) {
 // updates the developer panel, must be called after modifying developerMode
 function updateDeveloperPanel() {
   // hide/show elements according to data-hidden and data-visible attributes
-  var developerModeElements = $('.developer-mode-element');
+  const developerModeElements = $('.developer-mode-element');
   developerModeElements.each(function (index) {
-    var element = $(this);
-    var visibleOn = element.data('visible-on');
-    var hiddenOn = element.data('hidden-on');
-    var hide = (hiddenOn && developerMode.allTrue(hiddenOn)) || (visibleOn && !developerMode.allTrue(visibleOn));
+    const element = $(this);
+    const visibleOn = element.data('visible-on');
+    const hiddenOn = element.data('hidden-on');
+    const hide = (hiddenOn && developerMode.allTrue(hiddenOn)) || (visibleOn && !developerMode.allTrue(visibleOn));
     if (hide) {
       element.hide();
       element.tooltip('hide');
@@ -655,7 +655,7 @@ function updateDeveloperPanel() {
   });
 
   // set panel visibility
-  var panel = $('#developer-panel');
+  const panel = $('#developer-panel');
   if (!testStatus.running) {
     // hide entire panel if test is not running anymore
     panel.hide();
@@ -669,23 +669,23 @@ function updateDeveloperPanel() {
   }
 
   // toggle panel body if its current state doesn't match developerMode.panelExpanded
-  var panelBody = panel.find('.card-body');
+  const panelBody = panel.find('.card-body');
   if (developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
     developerMode.panelActuallyExpanded = developerMode.panelExpanded;
     panelBody.toggle(200);
   }
 
   // find modules and determine the index of the current module
-  var moduleToPauseAtSelect = $('#developer-pause-at-module');
-  var moduleToPauseAtOptions = moduleToPauseAtSelect.find('option');
-  var modules = moduleToPauseAtOptions
+  const moduleToPauseAtSelect = $('#developer-pause-at-module');
+  const moduleToPauseAtOptions = moduleToPauseAtSelect.find('option');
+  const modules = moduleToPauseAtOptions
     .map(function () {
-      var option = $(this);
-      var category = option.parent('optgroup').attr('label');
+      const option = $(this);
+      const category = option.parent('optgroup').attr('label');
       return category ? category + '-' + option.val() : option.val();
     })
     .get();
-  var currentModuleIndex = modules.indexOf(developerMode.currentModule);
+  const currentModuleIndex = modules.indexOf(developerMode.currentModule);
 
   // hide modules which have already been executed when the current module index has changed
   if (developerMode.currentModuleIndex !== currentModuleIndex) {
@@ -693,15 +693,15 @@ function updateDeveloperPanel() {
   }
 
   // determine whether the module to pause at is still ahead
-  var toPauseAtIndex = modules.indexOf(developerMode.moduleToPauseAt);
+  let toPauseAtIndex = modules.indexOf(developerMode.moduleToPauseAt);
   if (toPauseAtIndex < 0) {
     toPauseAtIndex = 0;
   }
-  var moduleToPauseAtStillAhead = developerMode.moduleToPauseAt && toPauseAtIndex > currentModuleIndex;
+  const moduleToPauseAtStillAhead = developerMode.moduleToPauseAt && toPauseAtIndex > currentModuleIndex;
 
   // update status info
-  var statusInfo = 'running';
-  var statusAppendix = '';
+  let statusInfo = 'running';
+  let statusAppendix = '';
   if (developerMode.stoppingTestExecution) {
     statusInfo = 'stopping';
   } else if (developerMode.badConfiguration) {
@@ -742,13 +742,13 @@ function updateDeveloperPanel() {
   $('#developer-status-appendix').text(statusAppendix);
 
   // update session info
-  var sessionInfoElement = $('#developer-session-info');
-  var sessionInfo;
+  const sessionInfoElement = $('#developer-session-info');
+  let sessionInfo;
   if (developerMode.develSessionDeveloper) {
     sessionInfo = 'owned by ' + developerMode.develSessionDeveloper + ' (';
     sessionInfoElement.text(sessionInfo);
 
-    var timeagoElement = $(
+    const timeagoElement = $(
       '<abbr class="timeago" title="' +
         developerMode.develSessionStartedAt +
         ' Z">' +
@@ -758,14 +758,14 @@ function updateDeveloperPanel() {
     sessionInfoElement.append(timeagoElement);
     timeagoElement.timeago();
 
-    var tabsOpenInfo =
+    const tabsOpenInfo =
       ', developer has ' +
       developerMode.develSessionTabCount +
       (developerMode.develSessionTabCount == 1 ? ' tab' : ' tabs') +
       ' open)';
     sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
 
-    var globalSessionInfoElement = $('#developer-global-session-info:hidden');
+    const globalSessionInfoElement = $('#developer-global-session-info:hidden');
     if (globalSessionInfoElement.length) {
       globalSessionInfoElement.text('Developer session has been opened by ' + developerMode.develSessionDeveloper);
       globalSessionInfoElement.show();
@@ -786,7 +786,7 @@ function updateDeveloperPanel() {
   // -> update module to pause at
   if (moduleToPauseAtSelect.length) {
     // update module to pause at and ensure handler is registered (element might be replaced in updateTestStatus())
-    var selectElement = moduleToPauseAtSelect[0];
+    const selectElement = moduleToPauseAtSelect[0];
     selectElement.selectedIndex = toPauseAtIndex;
     if (!selectElement.handlerRegistered) {
       selectElement.onchange = handleModuleToPauseAtSelected;
@@ -794,7 +794,7 @@ function updateDeveloperPanel() {
     }
   }
   // -> update whether the test will pause on assert screen timeout
-  var pauseOnMismatchSelect = document.getElementById('developer-pause-on-mismatch');
+  const pauseOnMismatchSelect = document.getElementById('developer-pause-on-mismatch');
   if (developerMode.pauseOnScreenMismatch === 'assert_screen') {
     pauseOnMismatchSelect.selectedIndex = 1; // "assert_screen timeout" option
   } else if (developerMode.pauseOnScreenMismatch === 'check_screen') {
@@ -820,9 +820,9 @@ function handleModuleToPauseAtSelected() {
   }
 
   // determine the selected module including the category, eg. "installation-welcome"
-  var selectedModuleOption = $('#developer-pause-at-module').find('option:selected');
-  var category = selectedModuleOption.parent('optgroup').attr('label');
-  var selectedModuleName = null;
+  const selectedModuleOption = $('#developer-pause-at-module').find('option:selected');
+  const category = selectedModuleOption.parent('optgroup').attr('label');
+  let selectedModuleName = null;
   if (category) {
     selectedModuleName = category + '-' + selectedModuleOption.text();
   }
@@ -840,8 +840,8 @@ function handlePauseOnMismatchSelected() {
     return;
   }
 
-  var selectedValue = $('#developer-pause-on-mismatch').val();
-  var pauseOn;
+  const selectedValue = $('#developer-pause-on-mismatch').val();
+  let pauseOn;
   switch (selectedValue) {
     case 'fail':
       pauseOn = null;
@@ -898,7 +898,7 @@ function clearLivehandlerFlashMessages() {
     return;
   }
 
-  for (var id in window.uniqueFlashMessages) {
+  for (const id in window.uniqueFlashMessages) {
     if (id === 'unable_to_pare_livehandler_reply' || id.indexOf('ws_proxy_error-') === 0) {
       window.uniqueFlashMessages[id].remove();
       delete window.uniqueFlashMessages[id];
@@ -974,7 +974,7 @@ function handleMessageFromWebsocketConnection(wsConnection, msg) {
     return;
   }
   console.log('Received message via ws proxy: ' + msg.data);
-  var dataObj;
+  let dataObj;
   try {
     dataObj = JSON.parse(msg.data);
   } catch (ex) {
@@ -999,7 +999,7 @@ function setupWebsocketConnection() {
     return;
   }
 
-  var url;
+  let url;
   // determine ws URL
   if (developerMode.isAccessible && developerMode.useDeveloperWsRoute) {
     // use route for developer (establishing a developer session)
@@ -1015,7 +1015,7 @@ function setupWebsocketConnection() {
   // establish ws connection
   console.log('Establishing ws connection to ' + url);
   developerMode.reconnectAttempts += 1;
-  var wsConnection = new WebSocket(url);
+  const wsConnection = new WebSocket(url);
   wsConnection.onopen = function () {
     handleWebsocketConnectionOpened(wsConnection);
   };
@@ -1045,7 +1045,7 @@ function handlePausedMessage(value, wholeMessage) {
 }
 
 // define mapping of backend messages to status variables
-var messageToStatusVariable = [
+const messageToStatusVariable = [
   {
     msg: 'test_execution_paused',
     action: handlePausedMessage
@@ -1148,10 +1148,10 @@ var messageToStatusVariable = [
 
 // handles messages received via web socket connection
 function processWsCommand(obj) {
-  var somethingChanged = false;
-  var what = obj.what;
-  var data = obj.data;
-  var category;
+  let somethingChanged = false;
+  const what = obj.what;
+  const data = obj.data;
+  let category;
   if (data) {
     category = data.category;
   }
@@ -1185,16 +1185,16 @@ function processWsCommand(obj) {
 
           // handle messages from os-autoinst command server
           $.each(messageToStatusVariable, function (index, msgToStatusValue) {
-            var msg = msgToStatusValue.msg;
+            const msg = msgToStatusValue.msg;
             if (!(msg in data)) {
               return;
             }
-            var statusVar = msgToStatusValue.statusVar;
-            var value = data[msg];
+            const statusVar = msgToStatusValue.statusVar;
+            const value = data[msg];
             if (statusVar) {
               developerMode[statusVar] = value;
             }
-            var action = msgToStatusValue.action;
+            const action = msgToStatusValue.action;
             if (action) {
               action(value, data);
             }
@@ -1221,16 +1221,16 @@ function processWsCommand(obj) {
       }
 
       // handle update of the VNC argument
-      var vncArg = data?.vnc_arg;
-      if (typeof vncArg === 'string' && vncArg !== developerMode.vncArg) {
-        developerMode.vncArg = vncArg;
-        somethingChanged = true;
-        Array.from(document.getElementsByClassName('vnc-arg')).forEach(e => {
-          e.textContent = vncArg;
-        });
+      {
+        const vncArg = data?.vnc_arg;
+        if (typeof vncArg === 'string' && vncArg !== developerMode.vncArg) {
+          developerMode.vncArg = vncArg;
+          somethingChanged = true;
+          Array.from(document.getElementsByClassName('vnc-arg')).forEach(e => {
+            e.textContent = vncArg;
+          });
+        }
       }
-
-      break;
   }
 
   if (somethingChanged) {
@@ -1254,7 +1254,7 @@ function sendWsCommand(obj) {
     );
     return;
   }
-  var objAsString = JSON.stringify(obj);
+  const objAsString = JSON.stringify(obj);
   console.log('Sending message via ws proxy: ' + objAsString);
   developerMode.wsConnection.send(objAsString);
 }

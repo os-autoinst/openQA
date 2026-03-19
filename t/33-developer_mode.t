@@ -219,7 +219,7 @@ subtest 'pause at assert_screen timeout' => sub {
     my $content = $driver->find_element_by_id('content')->get_text();
     unlike $content, qr/upload.*still in progress/, 'needle editor not available but should be according to progress';
     # check whether screenshot is present
-    my $screenshot_url = $driver->execute_script('return window.nEditor.bgImage.src;');
+    my $screenshot_url = $driver->execute_script('return nEditor.bgImage.src;');
     like $screenshot_url, qr/.*\/boot-[0-9]+\.png/, 'screenshot present';
     $driver->get($screenshot_url);
     is $driver->execute_script('return document.contentType;'), 'image/png', 'URL actually refers to an image';

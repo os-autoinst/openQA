@@ -1,8 +1,8 @@
 // jshint multistr: true
 // jshint esversion: 6
 
-var audit_url;
-var ajax_url;
+let audit_url;
+let ajax_url;
 
 function getURLForType(type, event_data) {
   if (!event_data) {
@@ -59,7 +59,7 @@ function undoComments(undoButton) {
     return;
   }
   undoButton.style.display = 'none';
-  var data = new FormData();
+  const data = new FormData();
   for (const id of ids) {
     data.append('id', id);
   }
@@ -133,7 +133,7 @@ function loadAuditLogTable() {
           if (type === 'display') {
             // Look for an id, and if we have one match it with an event type
             try {
-              var url = urlWithBase(getURLForType(row.event, JSON.parse(row.event_data)));
+              const url = urlWithBase(getURLForType(row.event, JSON.parse(row.event_data)));
               if (url) {
                 return '<a class="audit_event_details" href="' + url + '">' + htmlEscape(data) + '</a>';
               }
@@ -172,7 +172,7 @@ function loadAuditLogTable() {
   });
 }
 
-var scheduledProductsTable;
+let scheduledProductsTable;
 
 function dataForLink(link) {
   const rowData = scheduledProductsTable.row(link.parentElement?.parentElement).data();

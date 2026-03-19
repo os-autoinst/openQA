@@ -6,16 +6,16 @@ function setupIndexPage() {
   setupFilterForm({preventLoadingIndication: true});
 
   // set default values of filter form
-  var filterForm = $('#filter-form');
-  var filterFullScreenCheckBox = $('#filter-fullscreen');
-  var showTagsCheckBox = $('#filter-show-tags');
-  var onlyTaggedCheckBox = $('#filter-only-tagged');
-  var defaultExpanedCheckBox = $('#filter-default-expanded');
+  const filterForm = $('#filter-form');
+  const filterFullScreenCheckBox = $('#filter-fullscreen');
+  const showTagsCheckBox = $('#filter-show-tags');
+  const onlyTaggedCheckBox = $('#filter-only-tagged');
+  const defaultExpanedCheckBox = $('#filter-default-expanded');
   filterFullScreenCheckBox.prop('checked', false);
   showTagsCheckBox.prop('checked', false);
   onlyTaggedCheckBox.prop('checked', false);
   onlyTaggedCheckBox.on('change', function () {
-    var checked = onlyTaggedCheckBox.prop('checked');
+    const checked = onlyTaggedCheckBox.prop('checked');
     if (checked) {
       showTagsCheckBox.prop('checked', true);
     }
@@ -24,7 +24,7 @@ function setupIndexPage() {
   defaultExpanedCheckBox.prop('checked', false);
 
   // apply query parameters to filter form
-  var handleFilterParams = function (key, val) {
+  const handleFilterParams = function (key, val) {
     if (key === 'show_tags') {
       showTagsCheckBox.prop('checked', val !== '0');
       return 'show tags';
@@ -60,7 +60,7 @@ function setupIndexPage() {
   // prevent page reload when submitting filter form (when we load build results via AJAX anyways)
   filterForm.submit(function (event) {
     if (!window.updatingBuildResults) {
-      var queryParams = filterForm.serialize();
+      const queryParams = filterForm.serialize();
       loadBuildResults(queryParams);
       history.replaceState({}, document.title, window.location.pathname + '?' + queryParams);
       parseFilterArguments(handleFilterParams);
@@ -75,10 +75,10 @@ function setupIndexPage() {
 }
 
 function loadBuildResults(queryParams) {
-  var buildResultsElement = $('#build-results');
-  var loadingElement = $('#build-results-loading');
-  var filterForm = $('#filter-form');
-  var filterFormApplyButton = $('#filter-apply-button');
+  const buildResultsElement = $('#build-results');
+  const loadingElement = $('#build-results-loading');
+  const filterForm = $('#filter-form');
+  const filterFormApplyButton = $('#filter-apply-button');
 
   if (!window.autoreload) {
     loadingElement.show();
@@ -87,7 +87,7 @@ function loadBuildResults(queryParams) {
   filterFormApplyButton.prop('disabled', true);
   window.updatingBuildResults = true;
 
-  var showBuildResults = function (buildResults) {
+  const showBuildResults = function (buildResults) {
     loadingElement.hide();
     buildResultsElement.html(buildResults);
     $('.timeago').timeago();
@@ -97,7 +97,7 @@ function loadBuildResults(queryParams) {
   };
 
   // query build results via AJAX using parameters from filter form
-  var url = new URL(buildResultsElement.data('build-results-url'), window.location.href);
+  const url = new URL(buildResultsElement.data('build-results-url'), window.location.href);
   url.search = queryParams ? queryParams : window.location.search.substr(1);
   fetch(url)
     .then(response => {
