@@ -1017,6 +1017,8 @@ function renderInvestigationTab(response) {
 
     const valueElement = document.createElement('td');
 
+    let textLinesRest;
+
     if (type === 'link') {
       const html = document.createElement('a');
       if (key === 'first_bad') {
@@ -1072,7 +1074,6 @@ function renderInvestigationTab(response) {
         }
       } else {
         let textLines = typeof value === 'string' ? value.split('\n') : [value];
-        let textLinesRest;
 
         if (textLines.length > DISPLAY_LINE_LIMIT) {
           textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
