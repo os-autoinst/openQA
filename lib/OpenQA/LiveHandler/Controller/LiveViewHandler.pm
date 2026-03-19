@@ -240,27 +240,17 @@ sub handle_message_from_java_script {
 }
 
 # attaches new needles to the resume command before passing it to the command server (called in handle_message_from_java_script)
-sub _handle_command_resume_test_execution {
-    my ($self, $job_id, $json) = @_;
-
+sub _handle_command_resume_test_execution ($self, $job_id, $json) {
     # find job and needles
     my $schema = $self->app->schema;
     my $jobs = $schema->resultset('Jobs');
     my $needles = $schema->resultset('Needles');
-    my $job = $jobs->find($job_id);
-    if (!$job) {
-        $self->app->log->warning('trying to resume job which does not exist: ' . $job_id);
-        return;
-    }
-    my $job_t_started = $job->t_started;
-    if (!$job_t_started) {
-        $self->app->log->warning('trying to resume job which has not been started yet: ' . $job_id);
-        return;
-    }
-
+    my $log = $self->app->log;
+    return $log->warning('trying to resume job which does not exist: ' . $job_id) unless my $job = $jobs->find($job_id);
+    return $log->warning('trying to resume job which has not been started yet: ' . $job_id)
+      unless my $t_started = $job->t_started;
     # add new needles since the job has been started
-    $json->{new_needles} = [map { $_->to_json } $needles->new_needles_since($job_t_started, undef, 100)->all];
-
+    $json->{new_needles} = [map { $_->to_json } $needles->new_needles_since($t_started, undef, 100)->all];
     return 1;
 }
 
