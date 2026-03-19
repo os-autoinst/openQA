@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Search;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Utils;
 use Mojo::File 'path';
@@ -60,9 +60,7 @@ The B<data> and B<error> fields are mutually exclusive.
 
 =cut
 
-sub _search_perl_modules {
-    my ($self, $keywords, $cap) = @_;
-
+sub _search_perl_modules ($self, $keywords, $cap) {
     my @results;
     my $distris = path(OpenQA::Utils::testcasedir);
     for my $distri ($distris->list({dir => 1})->map('realpath')->uniq()->each) {
@@ -108,9 +106,7 @@ sub _search_perl_modules {
     return \@results;
 }
 
-sub _search_job_modules {
-    my ($self, $keywords, $limit) = @_;
-
+sub _search_job_modules ($self, $keywords, $limit) {
     my @results;
     my $last_job = -1;
     my $like = {like => "%${keywords}%"};
@@ -136,9 +132,7 @@ sub _search_job_modules {
     return \@results;
 }
 
-sub _search_job_templates {
-    my ($self, $keywords, $limit) = @_;
-
+sub _search_job_templates ($self, $keywords, $limit) {
     my @results;
     my $last_group = -1;
     my $like = {like => "%${keywords}%"};
@@ -164,9 +158,7 @@ sub _search_job_templates {
     return \@results;
 }
 
-sub query {
-    my ($self) = @_;
-
+sub query ($self) {
     my $validation = $self->validation;
     $validation->required('q');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
