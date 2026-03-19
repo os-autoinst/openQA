@@ -9,7 +9,7 @@ use OpenQA::Schema;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
-sub register ($self, $app, @) {
+sub register ($self, $app, @args) {
     $app->helper(schema => sub { OpenQA::Schema->singleton });
     $app->helper(find_current_job => \&_find_current_job);
 
