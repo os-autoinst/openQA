@@ -719,7 +719,7 @@ sub detect_current_version ($path) {
 
 # Resolves a path to class
 # path is expected to be in the form of the keys of %INC. e.g. : foo/bar/baz.pm
-sub path_to_class ($path) { substr CORE::join('::', split /\//, $path), 0, -3 }
+sub path_to_class ($path) { substr join('::', split /\//, $path), 0, -3 }
 
 # Returns all modules that are loaded into memory
 sub loaded_modules () {
