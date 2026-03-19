@@ -482,22 +482,19 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
             die "exec failed: $!\n";    # uncoverable statement
         });
     $child->on(
-        collected => sub {
-            my $self = shift;
-            eval { log_info('Isotovideo exit status: ' . $self->exit_status, channels => 'autoinst'); };
-            $job->stop($self->exit_status == 0 ? WORKER_SR_DONE : WORKER_SR_DIED);
+        collected => sub ($proc) {
+            eval { log_info('Isotovideo exit status: ' . $proc->exit_status, channels => 'autoinst'); };
+            $job->stop($proc->exit_status == 0 ? WORKER_SR_DONE : WORKER_SR_DIED);
         });
 
     session->on(
-        register => sub {
-            shift;
-            eval { log_debug('Registered process:' . shift->pid, channels => 'worker'); };
+        register => sub ($sess, $proc) {
+            eval { log_debug('Registered process:' . $proc->pid, channels => 'worker'); };
         });
 
     my $container
       = container(clean_cgroup => 1, pre_migrate => 1, cgroups => $cgroup, process => $child, subreaper => 0);
-    $container->on(
-        container_error => sub { shift; my $e = shift; log_error("Container error: @{$e}", channels => 'worker') });
+    $container->on(container_error => sub ($cont, $e) { log_error("Container error: @{$e}", channels => 'worker') });
 
     log_info('Starting isotovideo container');
     $container->start();
