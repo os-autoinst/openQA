@@ -43,28 +43,31 @@ use constant OPTIMIZE_ATTEMPTS => $ENV{OPENQA_WORKER_OPTIMIZE_ATTEMPTS} // 5;
 use constant OPTIMIZE_RETRY_DELAY => $ENV{OPENQA_WORKER_OPTIMIZE_RETRY_DELAY} // 1;
 
 # define accessors for public read-only properties
-sub status { shift->{_status} }
-sub setup_error { shift->{_setup_error} }
-sub setup_error_category { shift->{_setup_error_category} }
-sub id { shift->{_id} }
-sub name { shift->{_name} }
-sub settings { shift->{_settings} }
-sub info { shift->{_info} }
-sub developer_session_running { shift->{_developer_session_running} }
-sub livelog_viewers { shift->{_livelog_viewers} }
-sub autoinst_log_offset { shift->{_autoinst_log_offset} }
-sub serial_log_offset { shift->{_serial_log_offset} }
-sub serial_terminal_offset { shift->{_serial_terminal_offset} }
-sub serial_terminal_user_offset { shift->{_serial_terminal_user_offset} }
-sub images_to_send { shift->{_images_to_send} }
-sub files_to_send { shift->{_files_to_send} }
-sub known_images { shift->{_known_images} }
-sub known_files { shift->{_known_files} }
-sub last_screenshot { shift->{_last_screenshot} }
-sub test_order { shift->{_test_order} }
-sub current_test_module { shift->{_current_test_module} }
-sub progress_info { shift->{_progress_info} }
-sub engine { shift->{_engine} }
+sub status ($self) { $self->{_status} }
+sub setup_error ($self) { $self->{_setup_error} }
+sub setup_error_category ($self) { $self->{_setup_error_category} }
+sub id ($self) { $self->{_id} }
+sub name ($self) { $self->{_name} }
+sub settings ($self) { $self->{_settings} }
+sub info ($self) { $self->{_info} }
+
+sub developer_session_running ($self, $val = undef) {
+    defined $val ? $self->{_developer_session_running} = $val : $self->{_developer_session_running};
+}
+sub livelog_viewers ($self) { $self->{_livelog_viewers} }
+sub autoinst_log_offset ($self) { $self->{_autoinst_log_offset} }
+sub serial_log_offset ($self) { $self->{_serial_log_offset} }
+sub serial_terminal_offset ($self) { $self->{_serial_terminal_offset} }
+sub serial_terminal_user_offset ($self) { $self->{_serial_terminal_user_offset} }
+sub images_to_send ($self) { $self->{_images_to_send} }
+sub files_to_send ($self) { $self->{_files_to_send} }
+sub known_images ($self) { $self->{_known_images} }
+sub known_files ($self) { $self->{_known_files} }
+sub last_screenshot ($self) { $self->{_last_screenshot} }
+sub test_order ($self) { $self->{_test_order} }
+sub current_test_module ($self) { $self->{_current_test_module} }
+sub progress_info ($self) { $self->{_progress_info} }
+sub engine ($self) { $self->{_engine} }
 
 sub new ($class, $worker, $client, $job_info) {
     my $self = $class->SUPER::new(

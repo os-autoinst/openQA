@@ -2,17 +2,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Worker::Isotovideo::Client;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Mojo::UserAgent;
 use OpenQA::Log qw(log_debug);
 
 has job => undef, weak => 1;
-has ua => sub { Mojo::UserAgent->new };
+has ua => sub ($self) { Mojo::UserAgent->new };
 
-sub stop_gracefully {
-    my ($self, $reason, $callback) = @_;
-
+sub stop_gracefully ($self, $reason, $callback) {
     return Mojo::IOLoop->next_tick($callback) unless my $url = $self->url;
     $url .= '/broadcast';
 
@@ -21,9 +19,7 @@ sub stop_gracefully {
     my $old_timeout = $ua->request_timeout;
     $ua->request_timeout(10);
     $ua->post(
-        $url => json => {stopping_test_execution => $reason} => sub {
-            my ($ua, $tx) = @_;
-
+        $url => json => {stopping_test_execution => $reason} => sub ($ua, $tx) {
             my $res = $tx->res;
             if (!$res->is_success) {
                 log_debug('Unable to announce job termination (NOT the reason for the job termination):');
@@ -34,8 +30,7 @@ sub stop_gracefully {
     $ua->request_timeout($old_timeout);
 }
 
-sub url {
-    my $self = shift;
+sub url ($self) {
     return undef unless my $info = $self->job->info;
     return $info->{URL};
 }
