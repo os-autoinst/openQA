@@ -26,6 +26,7 @@ use Mojo::URL;
 use Cwd qw(abs_path getcwd);
 use IPC::Run qw(start);
 use Mojo::Util qw(b64_decode gzip);
+use Scalar::Util ();
 use Test::Output 'combined_like';
 use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -474,8 +475,7 @@ sub c_worker ($apikey, $apisecret, $host, $instance, $bogus, %options) {
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');    # uncoverable statement
         if ($bogus) {    # uncoverable statement
             $command_handler_mock->redefine(
-                handle_command => sub {    # uncoverable statement
-                    my ($self, $tx, $json) = @_;    # uncoverable statement
+                handle_command => sub ($self, $tx, $json) {    # uncoverable statement
                     log_debug('Received ws message: ' . Dumper($json));    # uncoverable statement
 
                     # if we've got a single job ID and a rejection reason simulate a worker
@@ -500,15 +500,13 @@ sub c_worker ($apikey, $apisecret, $host, $instance, $bogus, %options) {
     };
 }
 
-sub shared_hash {
-    my $hash = shift;
+sub shared_hash ($hash = undef) {
     state $file = do { my $f = tempfile; lock_store {}, $f->to_string; $f };
     return lock_retrieve $file->to_string unless $hash;
     lock_store $hash, $file->to_string;
 }
 
-sub embed_server_for_testing {
-    my (%args) = @_;
+sub embed_server_for_testing (%args) {
     my $server_name = $args{server_name};
     my $client = $args{client};
 
@@ -529,9 +527,8 @@ sub embed_server_for_testing {
     return $server;
 }
 
-sub run_gru_job {
-    my $app = shift;
-    my $id = $app->gru->enqueue(@_)->{minion_id};
+sub run_gru_job ($app, @args) {
+    my $id = $app->gru->enqueue(@args)->{minion_id};
     my $worker = $app->minion->worker->register;
     my $job = $worker->dequeue(0, {id => $id});
     my $err;
@@ -545,32 +542,32 @@ sub perform_minion_jobs ($minion, @args) {
     else { $minion->perform_jobs_in_foreground(@args) }
 }
 
-sub run_cmd {
-    my ($cmd, $args, $prefix) = @_;
-    $args //= '';
+sub run_cmd ($cmd, $args = undef, $prefix = undef) {
     $prefix = $prefix ? $prefix . ' ' : '';
-    my $complete_cmd = "$prefix $cmd $args";
+    my $complete_cmd = "$prefix $cmd " . ($args // '');
     note("Calling '$complete_cmd'");
     system("$complete_cmd") >> 8;
 }
 
-sub test_cmd {
-    my ($cmd, $args, $expected, $test_msg, $exit_code, $exit_code_msg) = @_;
+sub test_cmd (
+    $cmd, $args,
+    $expected = qr//,
+    $test_msg = 'command line is correct',
+    $exit_code = 0,
+    $exit_code_msg = 'command exits successfully'
+  )
+{
 
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    $expected //= qr//;
-    $test_msg //= 'command line is correct';
-    $exit_code //= 0;
-    $exit_code_msg //= 'command exits successfully';
     my $ret;
     combined_like { $ret = run_cmd($cmd, $args) } $expected, $test_msg;
     $exit_code eq 'non-zero' ? (isnt $ret, 0, $exit_code_msg) : (is $ret, $exit_code, $exit_code_msg);
     return $ret;
 }
 
-sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
-    my ($function, $description, $args) = @_;
+sub wait_for ($function, $description, $args = {}) {
+    # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
     my $timeout = $args->{timeout} // 60;
     my $interval = $args->{interval} // $ENV{OPENQA_TEST_WAIT_INTERVAL} // .1;
 
@@ -582,11 +579,13 @@ sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 
     }
     return 0;    # uncoverable statement (only invoked if tests would fail)
 }
+BEGIN { Scalar::Util::set_prototype(\&wait_for, '&*;*') }
 
-sub wait_for_or_bail_out : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for_or_bail_out { 1 } 'foo'`
-    my ($function, $description, $args) = @_;
+sub wait_for_or_bail_out ($function, $description, $args = {}) {
+    # `&*;*` allows calling it like `wait_for_or_bail_out { 1 } 'foo'`
     wait_for \&$function, $description, $args or BAIL_OUT "'$description' not available";
 }
+BEGIN { Scalar::Util::set_prototype(\&wait_for_or_bail_out, '&*;*') }
 
 sub prepare_clean_needles_dir ($dir = 't/data/openqa/share/tests/opensuse/needles') {
     return path($dir)->remove_tree->make_path;
