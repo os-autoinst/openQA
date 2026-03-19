@@ -16,6 +16,7 @@ use Mojo::IOLoop;
 use Mojo::Util 'trim';
 use Feature::Compat::Try;
 use HTTP::Status qw(:constants);
+use Time::Seconds;
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
@@ -81,7 +82,7 @@ sub startup ($self) {
 
     # set cookie timeout to 48 hours (will be updated on each request)
     my $app = $self->app;
-    $app->sessions->default_expiration(48 * 60 * 60);
+    $app->sessions->default_expiration(2 * ONE_DAY);
 
     # commands
     push @{$self->commands->namespaces}, 'OpenQA::WebAPI::Command';
