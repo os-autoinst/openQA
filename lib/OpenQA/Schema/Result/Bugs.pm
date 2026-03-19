@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::Bugs;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use Mojo::UserAgent;
 use OpenQA::Utils;

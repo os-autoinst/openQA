@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::Screenshots;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('screenshots');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime));

@@ -125,13 +125,11 @@ sub update_setting ($self, $key, $value) {
 
 sub discard_changes ($self, @args) { undef $self->{_settings}; $self->SUPER::discard_changes(@args) }
 
-sub to_string {
-    my ($self) = @_;
+sub to_string ($self) {
     return join '-', grep { $_ ne '' } ($self->distri, $self->version, $self->flavor, $self->arch, $self->build);
 }
 
-sub to_hash {
-    my ($self, %args) = @_;
+sub to_hash ($self, %args) {
     my %result;
 
     # add all columns
@@ -533,9 +531,7 @@ method used in the B<schedule_iso()> method.
 
 =cut
 
-sub _generate_jobs {
-    my ($self, $args, $notes, $skip_chained_deps, $include_children) = @_;
-
+sub _generate_jobs ($self, $args, $notes, $skip_chained_deps, $include_children) {
     my $ret = [];
     my $schema = $self->result_source->schema;
     my @products = $schema->resultset('Products')->search(
@@ -726,8 +722,7 @@ Internal method used by the B<_schedule_iso()> method
 
 =cut
 
-sub _create_download_lists {
-    my ($self, $tmp_downloads, $download_list, $job_id) = @_;
+sub _create_download_lists ($self, $tmp_downloads, $download_list, $job_id) {
     foreach my $url (keys %$download_list) {
         my $download_parameters = $download_list->{$url};
         my $destination_path = $download_parameters->[0];

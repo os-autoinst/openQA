@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::JobSettings;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('job_settings');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -40,8 +40,7 @@ __PACKAGE__->has_many(
     siblings => 'OpenQA::Schema::Result::JobSettings',
     {'foreign.job_id' => 'self.job_id'});
 
-sub sqlt_deploy_hook {
-    my ($self, $sqlt_table) = @_;
+sub sqlt_deploy_hook ($self, $sqlt_table) {
     $sqlt_table->add_index(name => 'idx_value_settings', fields => ['key', 'value']);
     $sqlt_table->add_index(name => 'idx_job_id_value_settings', fields => ['job_id', 'key', 'value']);
 }

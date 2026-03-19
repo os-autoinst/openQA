@@ -100,7 +100,7 @@ sub search_path_for_tests ($class, @args) {
 }
 
 # Class method everyone should use to access the schema
-sub singleton ($) { $SINGLETON || connect_db() }
+sub singleton ($class = undef) { $SINGLETON || connect_db() }
 
 sub _try_deploy_db ($dh) {
     my $schema = $dh->schema;

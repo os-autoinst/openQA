@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::JobsAssets;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('jobs_assets');
 __PACKAGE__->load_components(qw(Timestamps));

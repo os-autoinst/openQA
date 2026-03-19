@@ -136,28 +136,22 @@ sub matches_nested ($self, $regex) {
     return 0;
 }
 
-sub child_group_ids {
-    my ($self) = @_;
+sub child_group_ids ($self) {
     return [map { $_->id } $self->children];
 }
 
-sub jobs {
-    my ($self) = @_;
-
+sub jobs ($self) {
     return $self->result_source->schema->resultset('Jobs')->search(
         {
             group_id => {in => $self->child_group_ids}});
 }
 
-sub rendered_description {
-    my $self = shift;
+sub rendered_description ($self) {
     return undef unless my $desc = $self->description;
     return Mojo::ByteStream->new(markdown_to_html($desc));
 }
 
-sub tags {
-    my ($self) = @_;
-
+sub tags ($self) {
     my %res;
     parse_tags_from_comments($self, \%res);
     for my $child ($self->children) {

@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::JobTemplates;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('job_templates');
 __PACKAGE__->load_components(qw(Timestamps));
@@ -60,9 +60,7 @@ Returns a hash with the assigned settings.
 
 =cut
 
-sub settings_hash {
-    my ($self) = @_;
-
+sub settings_hash ($self) {
     my $settings = $self->settings;
     my %settings_hash;
     while (my $setting = $settings->next) {
@@ -83,9 +81,7 @@ This is used by the REST API so this function should stay compatible.
 
 =cut
 
-sub to_hash {
-    my ($self) = @_;
-
+sub to_hash ($self) {
     my $product = $self->product;
     my $machine = $self->machine;
     my $test_suite = $self->test_suite;

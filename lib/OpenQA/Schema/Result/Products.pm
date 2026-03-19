@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::Products;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('products');
 __PACKAGE__->load_components(qw(Timestamps));
@@ -43,15 +43,13 @@ __PACKAGE__->has_many(
     settings => 'OpenQA::Schema::Result::ProductSettings',
     'product_id', {order_by => {-asc => 'key'}});
 
-sub name {
-    my ($self) = @_;
-    join '-', map { $self->$_ } qw(distri version flavor arch);
+sub name ($self) {
+    CORE::join '-', map { $self->$_ } qw(distri version flavor arch);
 }
 
 # give all flavors of a "product" a common name
 # used in the job groups display
-sub mediagroup {
-    my ($self) = @_;
+sub mediagroup ($self) {
     my $mediagroup = $self->distri . '-';
     if ($self->version ne '*') {
         $mediagroup .= $self->version . '-';

@@ -9,7 +9,7 @@
 package OpenQA::Schema::Result::GruDependencies;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('gru_dependencies');
 __PACKAGE__->add_columns(

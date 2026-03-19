@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::ProductSettings;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('product_settings');
 __PACKAGE__->load_components(qw(Timestamps));

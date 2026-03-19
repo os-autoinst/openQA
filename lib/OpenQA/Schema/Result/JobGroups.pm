@@ -161,15 +161,12 @@ around carry_over_bugrefs => sub ($orig, $self) {
       // ($self->parent ? $self->parent->carry_over_bugrefs : OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS);
 };
 
-sub rendered_description {
-    my $self = shift;
+sub rendered_description ($self) {
     return undef unless my $desc = $self->description;
     return Mojo::ByteStream->new(markdown_to_html($desc));
 }
 
-sub full_name {
-    my ($self) = @_;
-
+sub full_name ($self) {
     if (my $parent = $self->parent) {
         return $parent->name . ' / ' . $self->name;
     }
@@ -293,9 +290,7 @@ sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef) {
     $_->delete_logs for @$jobs_with_expired_logs;
 }
 
-sub tags {
-    my ($self) = @_;
-
+sub tags ($self) {
     my %res;
     if (my $parent = $self->parent) {
         parse_tags_from_comments($parent, \%res);
@@ -304,8 +299,7 @@ sub tags {
     return \%res;
 }
 
-sub to_template {
-    my ($self) = @_;
+sub to_template ($self) {
     # already has yaml template
     return undef if $self->template;
 
@@ -380,8 +374,7 @@ sub _remove_test_suite_defaults ($product, $default_machine, $arch, $group, $tes
     $group->{scenarios}{$arch}{$product} = $scenarios;
 }
 
-sub to_yaml {
-    my ($self) = @_;
+sub to_yaml ($self) {
     if ($self->template) {
         return $self->template;
     }
@@ -390,8 +383,7 @@ sub to_yaml {
     return dump_yaml($hash);
 }
 
-sub template_data_from_yaml {
-    my ($self, $yaml) = @_;
+sub template_data_from_yaml ($self, $yaml) {
     my %job_template_names;
 
     # Add/update job templates from YAML data
@@ -489,8 +481,7 @@ sub _parse_job_template_machines (
     return undef;
 }
 
-sub expand_yaml {
-    my ($self, $job_template_names) = @_;
+sub expand_yaml ($self, $job_template_names) {
     my $result = {};
     foreach my $job_template_key (sort keys %$job_template_names) {
         my $spec = $job_template_names->{$job_template_key};
@@ -507,8 +498,7 @@ sub expand_yaml {
     return dump_yaml($result);
 }
 
-sub text_diff {
-    my ($self, $new) = @_;
+sub text_diff ($self, $new) {
     my $changes;
     if ($self->template && $self->template ne $new) {
         $changes = "\n" . diff \$self->template, \$new;
