@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::DeveloperSessions;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;

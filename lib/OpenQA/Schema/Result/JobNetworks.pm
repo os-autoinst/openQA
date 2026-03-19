@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::JobNetworks;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->table('job_networks');
 __PACKAGE__->add_columns(

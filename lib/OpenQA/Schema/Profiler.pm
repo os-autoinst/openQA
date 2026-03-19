@@ -2,16 +2,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Profiler;
-use Mojo::Base 'DBIx::Class::Storage::Statistics';
+use Mojo::Base 'DBIx::Class::Storage::Statistics', -signatures;
 
 use OpenQA::Log 'log_debug';
 use Time::HiRes qw(gettimeofday tv_interval);
 
-sub query_start { shift->{start} = [gettimeofday()] }
+sub query_start ($self, $sql, @params) { $self->{start} = [gettimeofday()] }
 
-sub query_end {
-    my ($self, $sql, @params) = @_;
-    $sql = "$sql: " . (join ', ', @params) if @params;
+sub query_end ($self, $sql, @params) {
+    $sql = "$sql: " . CORE::join(', ', @params) if @params;
     my $elapsed = tv_interval($self->{start}, [gettimeofday()]);
     log_debug(sprintf '[DBIC] Took %.8f seconds: %s', $elapsed, $sql);
 }
@@ -21,16 +20,13 @@ sub query_end {
 # $sorage->debugfh, while log_debug() writes to the specified log filehandle.
 # To make sure all messages land in the same logfile, we call log_debug() here
 # like in query_end()
-sub print {
-    my ($self, $msg) = @_;
+sub print ($self, $msg) {
     chomp $msg;
 
     log_debug(sprintf '[DBIC] %s', $msg);
 }
 
-sub enable_sql_debugging {
-    my $class = shift;
-
+sub enable_sql_debugging ($class) {
     # Defer loading to prevent the worker from triggering a migration
     require OpenQA::Schema;
     my $storage = OpenQA::Schema->singleton->storage;

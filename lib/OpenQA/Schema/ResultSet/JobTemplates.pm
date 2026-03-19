@@ -4,15 +4,13 @@
 package OpenQA::Schema::ResultSet::JobTemplates;
 
 
-use Mojo::Base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use constant EMPTY_TESTSUITE_NAME => '-';
 use constant EMPTY_TESTSUITE_DESCRIPTION =>
   'The base test suite is used for job templates defined in YAML documents. It has no settings of its own.';
 
-sub create_or_update_job_template {
-    my ($job_templates, $group_id, $args) = @_;
-
+sub create_or_update_job_template ($job_templates, $group_id, $args) {
     my $schema = $job_templates->result_source->schema;
     my $machines = $schema->resultset('Machines');
     my $test_suites = $schema->resultset('TestSuites');

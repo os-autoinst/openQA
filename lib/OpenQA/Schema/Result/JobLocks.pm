@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::JobLocks;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 __PACKAGE__->load_components(qw(OptimisticLocking Core));
 __PACKAGE__->load_components(qw(Core));

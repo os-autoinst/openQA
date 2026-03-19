@@ -16,7 +16,7 @@ use Feature::Compat::Try;
 use constant {STATUS_CACHE_FILE => '/webui/cache/asset-status.json'};
 use constant TYPES => (qw(iso repo hdd other));
 
-sub status_cache_file {
+sub status_cache_file ($class = undef) {
     return prjdir() . STATUS_CACHE_FILE;
 }
 
@@ -96,9 +96,7 @@ sub scan_for_untracked_assets ($self) {
 }
 
 # refreshes 'fixed' and 'size' of all assets
-sub refresh_assets {
-    my ($self) = @_;
-
+sub refresh_assets ($self) {
     while (my $asset = $self->next) {
         my $is_fixed = $asset->is_fixed ? 1 : 0;
         $asset->update({fixed => $is_fixed}) if $is_fixed != $asset->fixed;
@@ -107,8 +105,7 @@ sub refresh_assets {
     }
 }
 
-sub status {
-    my ($self, %options) = @_;
+sub status ($self, %options) {
     my $rsource = $self->result_source;
     my $schema = $rsource->schema;
     my $dbh = $schema->storage->dbh;
