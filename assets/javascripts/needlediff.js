@@ -7,7 +7,7 @@ function NeedleDiff(id, width, height) {
   var container = $('#' + id);
   var divide = 0.5;
 
-  canvas.css('position", "absolute');
+  canvas.css('position', 'absolute');
   this.ctx = canvas[0].getContext('2d');
   this.screenshotImg = null;
   this.needleImg = null;
@@ -39,9 +39,13 @@ function NeedleDiff(id, width, height) {
   // Draw canvas into its container
   canvas.attr('width', width);
   canvas.attr('height', height);
-  container.css(
-    'border: 1px solid black; margin: 0px; position: relative; width: ' + width + 'px; height: ' + height + 'px;'
-  );
+  container.css({
+    border: '1px solid black',
+    margin: '0px',
+    position: 'relative',
+    width: width + 'px',
+    height: height + 'px'
+  });
   container.append(canvas);
 
   Object.defineProperty(this, 'container', {

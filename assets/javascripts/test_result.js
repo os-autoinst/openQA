@@ -94,7 +94,7 @@ function checkPreviewVisible(stepPreviewContainer, preview) {
   var endOfRow = rrow.height() + rrow.offset().top;
   if (endOfPreview > endOfRow) {
     // only enlarge the margin - otherwise the page scrolls back
-    rrow.css('margin-bottom', endOfPreview - endOfRow + extraMargin);
+    rrow.css('margin-bottom', endOfPreview - endOfRow + extraMargin + 'px');
   }
 }
 
@@ -123,7 +123,7 @@ function previewSuccess(stepPreviewContainer, data, force) {
     }
     setDiffScreenshot(imageSource);
   }
-  pin.css('left', -($('.result').width() + $('.component').width() + 2 * 16));
+  pin.css('left', -($('.result').width() + $('.component').width() + 2 * 16) + 'px');
   var tdWidth = $('.current_preview').parents('td').width();
   pout
     .width(tdWidth)
