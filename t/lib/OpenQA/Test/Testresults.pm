@@ -2,18 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Test::Testresults;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use File::Copy::Recursive 'dircopy';
 use File::Path 'remove_tree';
 use OpenQA::Utils qw(:DEFAULT resultdir);
 
-sub create {
-    my $self = shift;
-    my %options = (
-        directory => undef,
-        @_
-    );
+sub create ($self, %options) {
 
     if ($options{directory}) {
         # Remove previous
