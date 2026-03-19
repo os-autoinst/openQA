@@ -18,7 +18,7 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-sub start_gru {
+sub start_gru () {
     start sub {    # uncoverable because we do not track coverage of this sub process
         note 'starting gru';    # uncoverable statement
         $0 = 'openqa-gru';    # uncoverable statement
@@ -40,8 +40,7 @@ sub _jobs_cnt (@args) {
     return $cnt;
 }
 
-sub sleep_until_job_start {
-    my ($t, $project) = @_;
+sub sleep_until_job_start ($t, $project) {
     my $status = 'active';
     my $retries = 500;
 
@@ -59,8 +58,7 @@ sub sleep_until_job_start {
     die 'Timeout reached';    # uncoverable statement
 }
 
-sub sleep_until_all_jobs_finished {
-    my ($t, $project) = @_;
+sub sleep_until_all_jobs_finished ($t) {
     my $retries = 500;
 
     while ($retries > 0) {
@@ -90,8 +88,7 @@ sub unlink_signal_rsync_ready (@args) {
     }
 }
 
-sub test_async {
-    my $t = shift;
+sub test_async ($t) {
     unlink_signal_rsync_ready('MockProjectLongProcessing', 'MockProjectLongProcessing1');
 
     # MockProjectLongProcessing causes job to sleep some sec, so we can reach job limit

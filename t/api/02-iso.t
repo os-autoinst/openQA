@@ -29,7 +29,7 @@ my $scheduled_products = $schema->resultset('ScheduledProducts');
 my $gru_tasks = $schema->resultset('GruTasks');
 assume_all_assets_exist;
 
-sub lj {
+sub lj () {
     return unless $ENV{HARNESS_IS_VERBOSE};
     $t->get_ok('/api/v1/jobs')->status_is(200);    # uncoverable statement
     my $jobs = $t->tx->res->json->{jobs};    # uncoverable statement
@@ -542,8 +542,7 @@ subtest 'build obsoletion/depriorization' => sub {
     ok @jobs_0097, 'new jobs for 0097 were created';
 };
 
-sub add_opensuse_test {
-    my ($name, %settings) = @_;
+sub add_opensuse_test ($name, %settings) {
     $settings{MACHINE} //= ['64bit'];
     my $job_template_name = delete $settings{JOB_TEMPLATE_NAME};
     my $not_add_test_suite = delete $settings{NOT_ADD_TESTSUITE};

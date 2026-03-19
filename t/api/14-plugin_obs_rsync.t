@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -39,8 +40,7 @@ subtest 'appliances' => sub {
 
 perform_minion_jobs($t->app->minion);
 
-sub test_queue {
-    my $t = shift;
+sub test_queue ($t) {
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=wrong')
       ->status_is(204, 'Proj2 with different repository ignored');
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')
@@ -100,7 +100,7 @@ subtest 'test_result' => sub {
       ->json_like('/id' => qr/^99937$/)->json_has('/result')->json_like('/result' => qr/^passed$/);
 };
 
-sub lock_test {
+sub lock_test () {
     # use BAIL_OUT because only first failure is important
     my $guard1 = $helper->guard('Proj1');
     BAIL_OUT('Cannot lock via guard') unless $guard1;
