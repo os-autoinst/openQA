@@ -4,7 +4,9 @@
 package OpenQA::Parser::Format::Base;
 use Mojo::Base 'OpenQA::Parser', -signatures;
 
+use Mojo::File 'path';
 use Carp 'croak';
+
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result;
 use OpenQA::Parser::Result::Output;
