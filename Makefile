@@ -360,14 +360,10 @@ public/favicon.ico: $(wildcard assets/images/*.svg)
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt test-gitlint ## Run all style and static analysis checks
+test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint ## Run all style and static analysis checks
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
-
-.PHONY: test-critic
-test-critic: ## Run Perl Critic
-	tools/perlcritic lib
 
 .PHONY: test-author
 test-author: ## Run author tests (tidy, style, pod, etc.)
