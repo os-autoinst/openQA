@@ -10,7 +10,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;

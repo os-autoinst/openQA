@@ -6,7 +6,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use File::Temp qw(tempfile);
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Mojo::File qw(path curfile);
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils;
