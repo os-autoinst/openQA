@@ -22,23 +22,23 @@ if ($@ || !$adoc) {
     die $@;
 }
 
-my $data_dir = "./src/";
-opendir(DIR, $data_dir) or die("Cannot read directories: $data_dir");
-my @files = grep { /\.pm$/ } readdir DIR;
+my $data_dir = './src/';
+opendir my $dfh, $data_dir or die "Cannot read directories: $data_dir";
+my @files = grep { /\.pm$/ } readdir $dfh;
 
 foreach my $current_file (@files) {
 
-    open(my $ifh, '<', $data_dir . $current_file) or die("Cannot open $current_file");
+    open my $ifh, '<', $data_dir . $current_file or die "Cannot open $current_file";
     $current_file =~ s/^(.*)\.pm$/$1.asciidoc/;
-    open(my $ofh, ">", $current_file) or die("Cannot open $current_file");
+    open my $ofh, '>', $current_file or die "Cannot open $current_file";
 
     print "Transforming $current_file\n";
-    $adoc->append("include::header.asciidoc[]");
+    $adoc->append('include::header.asciidoc[]');
     $adoc->append("\n");
     $adoc->parse_from_filehandle($ifh);
 
     print $ofh $adoc->adoc();
-    close($ofh);
-    close($ifh);
+    close $ofh;
+    close $ifh;
 
 }
