@@ -124,7 +124,7 @@ function previewSuccess(stepPreviewContainer, data, force) {
     setDiffScreenshot(imageSource);
   }
   pin.css('left', -($('.result').width() + $('.component').width() + 2 * 16) + 'px');
-  var tdWidth = $('.current_preview').parents('td').width();
+  const tdWidth = $('.current_preview').parents('td').width();
   pout
     .width(tdWidth)
     .hide()
