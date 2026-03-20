@@ -7,7 +7,6 @@ function NeedleDiff(id, width, height) {
   var container = $('#' + id);
   var divide = 0.5;
 
-  canvas.css('position', 'absolute');
   this.ctx = canvas[0].getContext('2d');
   this.screenshotImg = null;
   this.needleImg = null;
