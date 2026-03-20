@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -164,7 +164,7 @@ my $job_ref = {
     # to be removed
     test => 'rainbow'
 };
-my $iso = sprintf('%s/iso/%s', assetdir(), $settings{ISO});
+my $iso = sprintf '%s/iso/%s', assetdir(), $settings{ISO};
 my $job = $jobs->create_from_settings(\%settings);
 is $job->id, 1, 'job_create';
 

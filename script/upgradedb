@@ -24,12 +24,12 @@ my $default_script_directory = "$FindBin::RealBin/../dbicdh";
 my $script_directory = $default_script_directory;
 
 my $result = GetOptions(
-    "help" => \$help,
-    "prepare_upgrades" => \$prepare_upgrades,
-    "upgrade_database" => \$upgrade_database,
-    "user=s" => \$user,
-    "dir=s" => \$script_directory,
-    "force" => \$force
+    'help' => \$help,
+    'prepare_upgrades' => \$prepare_upgrades,
+    'upgrade_database' => \$upgrade_database,
+    'user=s' => \$user,
+    'dir=s' => \$script_directory,
+    'force' => \$force
 );
 
 sub usage {
@@ -52,11 +52,11 @@ usage 1 unless $result or $prepare_upgrades or $upgrade_database;
 
 if ($user) {
     my $uid = getpwnam($user) || die "No such login $user";
-    my $gid = getgrnam($user);
+    my $gid = getgrnam $user;
     if ($gid) {
-        setgid($gid) || die "can't sgid to $user group";
+        setgid $gid || die "can't sgid to $user group";
     }
-    setuid($uid) || die "can't suid to $user";
+    setuid $uid || die "can't suid to $user";
 }
 
 my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
@@ -85,7 +85,7 @@ if ($prepare_upgrades) {
 
         if (exists $upgrade_dir{$upgrade_directory} and not $force) {
             print "The upgrade directory already contains files to upgrade to the current version ($version)\n";
-            print "Use the --force option if you want to overwrite the contents of the ";
+            print 'Use the --force option if you want to overwrite the contents of the ';
             print "$script_directory/$db/upgrade/$upgrade_directory directory\n";
             exit 1;
         }

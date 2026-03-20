@@ -7,7 +7,7 @@ use Test::Most;
 use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use File::Temp;
 use File::Copy::Recursive qw(dircopy);
 use Test::Mojo;
@@ -493,9 +493,9 @@ subtest 'parameter validation on artefact upload' => sub {
 my $expected_result_size = 0;
 my $rp;
 my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
-seek($fh, 20 * 1024 * 1024, 0);    # create 200 MiB quick
-syswrite($fh, 'X');
-close($fh);
+seek $fh, 20 * 1024 * 1024, 0;    # create 200 MiB quick
+syswrite $fh, 'X';
+close $fh;
 
 subtest 'upload video' => sub {
     $rp = "$tempdir/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
@@ -568,7 +568,7 @@ subtest 'Test failure - if chunks are broken' => sub {
     $pieces->each(
         sub {
             $_->prepare;
-            $_->content(int(rand(99999)));
+            $_->content int rand 99999;
             my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
@@ -588,7 +588,7 @@ subtest 'last chunk is broken' => sub {
     # That will fail during total cksum calculation
     $pieces->each(
         sub {
-            $_->content(int(rand(99999))) if $_->is_last;
+            $_->content int rand 99999 if $_->is_last;
             $_->prepare;
             my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
@@ -1716,7 +1716,7 @@ subtest 'marking job as done' => sub {
         $t->json_is('/job/result' => INCOMPLETE, 'result unchanged');
         $t->json_like('/job/reason' => qr{\Q$cache_failure_reason}, 'reason unchanged');
     };
-    my $reason_cutted = join('', map { 'ä' } (1 .. 300));
+    my $reason_cutted = join '', map { 'ä' } (1 .. 300);
     my $reason = $reason_cutted . ' additional characters';
     $reason_cutted .= '…';
     subtest 'job is already done without reason, add reason but do not override result' => sub {

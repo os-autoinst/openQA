@@ -63,6 +63,11 @@ You can find more information here:
   subtree](https://github.com/ingydotnet/git-subrepo/blob/master/Intro.pod)
 
 
+## Development
+
+One especially useful make target for developers is `make setup-hooks` which
+installs git pre-commit hooks to check commit styles.
+
 ## License
 
 This project is licensed under the MIT license, see LICENSE file for details.

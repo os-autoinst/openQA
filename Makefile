@@ -210,7 +210,7 @@ endif
 # note: Excluding dev dependencies like `eslint` via `--omit=dev` to pull in only dependencies needed at runtime (and for
 #       regular tests). Development tests/tooling like `js-tidy` will invoke `npm clean-install …` to install missing
 #       dependencies on its own anyway.
-node_modules: package-lock.json
+node_modules: package-lock.json ## Build web-related dependencies (NPM, JS, CSS)
 	@which local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
 	@touch node_modules
 
@@ -220,7 +220,7 @@ checkstyle_tests =
 else
 checkstyle_tests = test-checkstyle-standalone
 endif
-test: $(checkstyle_tests) test-with-database ## Run all tests (including checkstyle and database tests)
+test: $(checkstyle_tests) test-compile test-with-database ## Run all tests (including checkstyle, compile test and database tests)
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
@@ -231,13 +231,12 @@ ifeq ($(TESTS),)
 test: test-helm-chart
 endif
 endif
-
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-tidy-compile-style ## Run checkstyle and tidy-compile-style tests
+test-checkstyle: test-checkstyle-standalone test-author ## Run checkstyle and author tests
 
 .PHONY: test-t
 test-t: node_modules ## Run standard Perl tests
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-heavy
 test-heavy: node_modules ## Run heavy tests
@@ -245,11 +244,12 @@ test-heavy: node_modules ## Run heavy tests
 
 .PHONY: test-ui
 test-ui: node_modules ## Run UI tests
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-api
 test-api: node_modules ## Run API tests
-	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:t/*style*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="$(unstables)"
+
 
 # put unstable tests in tools/unstable_tests.txt and uncomment in circle CI config to handle unstables with retries
 .PHONY: test-unstable
@@ -291,11 +291,11 @@ define RUN_SERVICE_TEST_DB
 endef
 
 .PHONY: run-webui-test-db
-run-webui-test-db: setup-database
+run-webui-test-db: setup-database ## Run a local web UI instance using a test database
 	$(call RUN_SERVICE_TEST_DB,script/openqa-webui-daemon)
 
 .PHONY: run-gru-test-db
-run-gru-test-db: setup-database
+run-gru-test-db: setup-database ## Run a local GRU instance using a test database
 	$(call RUN_SERVICE_TEST_DB,script/openqa-gru)
 
 # prepares running the tests within a container (eg. pulls os-autoinst) and then runs the tests considering
@@ -360,18 +360,18 @@ public/favicon.ico: $(wildcard assets/images/*.svg)
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-shfmt test-gitlint ## Run all style and static analysis checks
+test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint ## Run all style and static analysis checks
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
 
-.PHONY: test-critic
-test-critic: ## Run Perl Critic
-	tools/perlcritic lib
+.PHONY: test-author
+test-author: ## Run author tests (tidy, style, pod, etc.)
+	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS xt/*.t" GLOBIGNORE="$(unstables)" COVEROPT=""
 
-.PHONY: test-tidy-compile-style
-test-tidy-compile-style: ## Run tidy, compile and style tests
-	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/*{tidy,compile,style}*.t" GLOBIGNORE="$(unstables)"
+.PHONY: test-compile
+test-compile: ## Run compile tests
+	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/compile/*.t" GLOBIGNORE="$(unstables)" COVEROPT=""
 
 .PHONY: test-shellcheck
 test-shellcheck: ## Run shellcheck on scripts

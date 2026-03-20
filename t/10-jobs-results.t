@@ -11,7 +11,7 @@ use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use autodie ':all';
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
@@ -116,7 +116,7 @@ subtest 'create result dir, delete results' => sub {
         $job->discard_changes;
         ok -d ($result_dir = path($job->create_result_dir)), 'result directory created';
         path($result_dir, $_)->spew($file_content) for @fake_results;
-        symlink(path($result_dir, 'video.webm'), my $symlink = path($result_dir, 'video.mkv'))
+        symlink path($result_dir, 'video.webm'), my $symlink = path($result_dir, 'video.mkv')
           or die "Unable to create symlink: $!";
         my $symlink_size = $symlink->lstat->size;
         $job->delete_videos;

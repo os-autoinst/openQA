@@ -80,7 +80,7 @@ sub pp_leave {    # fix https://rt.cpan.org/Ticket/Display.html?id=134812
     my ($op) = @_;
 
     my $enter = $op->first;
-    no strict 'subs';
+    no strict 'subs'; ## no critic (ProhibitNoStrict,ProhibitProlongedStrictureOverride)
     no warnings;
     return $self->$orig_pp_leave(@_) if $enter->type != OP_ENTER;
 

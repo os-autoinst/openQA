@@ -7,7 +7,7 @@ use Test::Warnings qw(:report_warnings warning);
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '6';
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::Output qw(combined_like combined_unlike output_from);
 use Test::MockObject;
 use Test::MockModule;
@@ -21,7 +21,7 @@ use Scalar::Util qw(looks_like_number);
 
 # define fake client
 package Test::FakeLWPUserAgentMirrorResult {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has is_success => 1;
     has code => 304;
     has status_line => 'some status';
@@ -29,13 +29,13 @@ package Test::FakeLWPUserAgentMirrorResult {
 }    # uncoverable statement
 
 package Test::FakeLWPUserAgentMirrorTxn {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has error => undef;
     has res => sub { Test::FakeLWPUserAgentMirrorResult->new(is_success => 0, code => 404) };
 }    # uncoverable statement
 
 package Test::FakeLWPUserAgent {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has mirrored => sub { {} };
     has missing => 0;
     has max_redirects => undef;

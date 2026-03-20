@@ -1,0 +1,1 @@
+../external/os-autoinst-common/xt/02-perlcritic.t

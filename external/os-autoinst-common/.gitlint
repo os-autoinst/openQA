@@ -1,0 +1,14 @@
+[general]
+contrib=contrib-title-conventional-commits
+ignore=body-min-length,body-is-missing
+regex-style-search=True
+
+[ignore-body-lines]
+# Accept lines stating only a long unwrappable URL
+regex=^https?:\/\/\S+$
+
+[ignore-by-title]
+# "git subrepo" creates automatic, non-conventional commits we need to accept
+# https://progress.opensuse.org/issues/198254
+regex=^git subrepo pull
+ignore=all

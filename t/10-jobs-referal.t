@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use OpenQA::Events;
 use OpenQA::Jobs::Constants;
 use Test::Mojo;

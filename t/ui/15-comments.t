@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -base, -signatures;
+use experimental 'signatures';
 use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -474,7 +474,7 @@ subtest 'editing when logged in as regular user' => sub {
         is scalar @{$driver->find_elements('.pinned-comment-row')}, 1, 'there shouldn\'t appear more pinned comments';
 
         # verify the number of comments we have added so far for easier debugging in case subsequent tests fail
-        my $group_id = (split('/', $group_url))[-1];
+        my $group_id = (split m{/}, $group_url)[-1];
         my %cond = (-or => [{group_id => $group_id}, {parent_group_id => $group_id}]);
         is $comments->search(\%cond)->count, 5, 'expected number of comments present in database at this point';
 

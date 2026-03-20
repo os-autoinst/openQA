@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -36,7 +36,7 @@ OpenQA::Test::Database->new->create;
 
 sub test_auth_method_startup ($auth, @options) {
     my @conf = ("[auth]\n", "method = \t  $auth \t\n");
-    $tempdir->child('openqa.ini')->spew(join('', @conf, @options, "[openid]\n", "httpsonly = 0\n"));
+    $tempdir->child('openqa.ini')->spew(join '', @conf, @options, "[openid]\n", "httpsonly = 0\n");
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->app->helper(icon_url => sub { '/favicon.ico' });
     is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
