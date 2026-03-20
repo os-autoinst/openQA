@@ -46,4 +46,13 @@ subtest 'gravatar URL' => sub {
     like $users->find(1)->gravatar, qr|//www.gravatar.com/avatar/[a-f0-9]{32}\?d=wavatar&s=40|, 'with e-mail';
 };
 
+subtest 'auth provider mismatch' => sub {
+    $users->create_user('collision_user', provider => '');
+    ok $users->find({username => 'collision_user', provider => ''}), 'initial user created';
+    throws_ok { $users->create_user('collision_user', provider => 'oauth2@github') }
+    qr/Auth provider mismatch: Account 'collision_user' is registered via 'default'/,
+      'throws error on provider mismatch';
+    lives_ok { $users->create_user('collision_user', provider => '') } 'works if provider matches existing one';
+};
+
 done_testing();

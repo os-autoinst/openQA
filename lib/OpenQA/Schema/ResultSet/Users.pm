@@ -11,6 +11,13 @@ sub create_user ($self, $id, %attrs) {
     $attrs{username} = $id;
     $attrs{provider} //= '';
 
+    my $existing_user = $self->find({username => $id});
+    if ($existing_user && $existing_user->provider ne $attrs{provider}) {
+        die "Auth provider mismatch: Account '$id' is registered via '"
+          . ($existing_user->provider || 'default')
+          . "', but login attempted via '$attrs{provider}'. Admin migration required.\n";
+    }
+
     my $user = $self->update_or_new(\%attrs);
     return $user if $user->in_storage;
     if (!$self->find({is_admin => 1}, {rows => 1})) {
