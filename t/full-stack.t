@@ -22,7 +22,7 @@ BEGIN {
 }
 
 use Test::Warnings ':report_warnings';
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use List::Util ();
 use Test::Mojo;
 use Test::MockModule;

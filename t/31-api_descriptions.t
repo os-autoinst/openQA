@@ -10,7 +10,7 @@ use Test::Output qw(combined_like);
 use File::Temp qw(tempdir);
 use Mojo::File qw(path);
 
-use Mojo::Base 'Mojolicious', -signatures;
+use experimental 'signatures';
 
 use_ok('OpenQA::WebAPI::Description', qw(get_pod_from_controllers set_api_desc));
 my $app = Mojolicious->new;

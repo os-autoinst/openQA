@@ -3,13 +3,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-
+use experimental 'signatures';
 BEGIN {
     $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} = 0.0;
     $ENV{OPENQA_TEXT_STREAMING_INTERVAL} = 0.0;
 }
-
-use Mojo::Base -base, -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -308,7 +306,7 @@ sub error { $fake_error }
 sub finish ($self) { $self->emit(finish => $self) }
 
 package FakeSchema;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 sub new {
     my ($class) = @_;
@@ -320,5 +318,5 @@ sub new {
 sub resultset ($self, $name) { FakeSchema::Find->new($name) }
 
 package FakeSchema::Find;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 sub new ($class, $name = '') { bless {name => $name}, $class }

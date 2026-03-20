@@ -12,7 +12,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use autodie ':all';
 use File::Copy;
 use OpenQA::Jobs::Constants;

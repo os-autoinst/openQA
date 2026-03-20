@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Time::Seconds;
 $ENV{MOJO_LOG_LEVEL} = 'info';
 

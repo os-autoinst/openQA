@@ -4,7 +4,7 @@
 use Test::Most;
 use Date::Format qw(time2str);
 use Time::Seconds;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";

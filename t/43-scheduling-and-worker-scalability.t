@@ -4,7 +4,7 @@
 
 use Test::Most;
 
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Time::HiRes 'sleep';

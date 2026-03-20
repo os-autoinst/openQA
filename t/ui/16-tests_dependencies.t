@@ -7,7 +7,7 @@ BEGIN { $ENV{OPENQA_DEPENDENCY_DEBUG_INFO} = 1 }
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '20';
