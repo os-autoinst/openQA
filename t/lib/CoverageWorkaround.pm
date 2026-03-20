@@ -48,15 +48,15 @@ BEGIN { $INC{$_}++ for qw( DB/Skip.pm UDAG/VendorBox/Log/Auto.pm ) }
 #	(?: inlined\ sub\ for )
 #@x;
 
-sub B::Deparse::pp_await {    # fix await parsing
+sub B::Deparse::pp_await {    # no:style:signatures   # fix await parsing
     my ($self, $op, $cx) = @_;
     return $self->maybe_parens_unop('await', $op->first, $cx);
 }
 
 # dumb way to handle these, simply silences them instead of deparsing them
 # optimally the code below would be implemented
-sub B::Deparse::pp_leaveasync { 'XXX;' }
-sub B::Deparse::pp_pushmark { 'XXX;' }
+sub B::Deparse::pp_leaveasync { 'XXX;' }    # no:style:signatures
+sub B::Deparse::pp_pushmark { 'XXX;' }    # no:style:signatures
 
 package Syntax::Keyword::Try::DeparseUDFix;
 use strict;
@@ -76,7 +76,7 @@ my $patched_pp_leave;    # apply 134812 fix below
 }
 
 # fix https://rt.cpan.org/Ticket/Display.html?id=134812
-sub pp_leave {    ## no critic (Subroutines::RequireArgUnpacking)
+sub pp_leave {    ## no critic (Subroutines::RequireArgUnpacking)    # no:style:signatures
     my $self = shift;
     my ($op) = @_;
 
