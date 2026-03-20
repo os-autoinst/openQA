@@ -1,57 +1,19 @@
 ---
 name: 'Commit message check'
-
 on:
-  workflow_call:
-    secrets:
-      accessToken:
-        required: true
+  pull_request:
+  push:
+    branches:
+      - '!master'
 
 jobs:
-  base-check-commit-message:
-    name: Check commit message
+  check-commit-message:
     runs-on: ubuntu-latest
     steps:
-      - name: Check subject beginning
-        uses: gsactions/commit-message-checker@v2
+      - uses: actions/checkout@v4
         with:
-          pattern: '^([A-Z]|\S+:|git subrepo (clone|pull))'
-          flags: 'g'
-          error: 'The subject does not start with a capital or tag.'
-          excludeDescription: 'true'
-          excludeTitle: 'true'
-          checkAllCommitMessages: 'true'
-          accessToken: ${{ secrets.accessToken }}
-
-      - name: Check subject line length
-        uses: gsactions/commit-message-checker@v2
-        with:
-          pattern: '^(Revert "?)?.{1,72}(\n|$)'
-          flags: 'g'
-          error: 'The maximum subject line length of 72 characters is exceeded.'
-          excludeDescription: 'true'
-          excludeTitle: 'true'
-          checkAllCommitMessages: 'true'
-          accessToken: ${{ secrets.accessToken }}
-
-      - name: Check subject ending
-        uses: gsactions/commit-message-checker@v2
-        with:
-          pattern: '^.+(?<!\.)(\n|$)'
-          flags: 'g'
-          error: 'The subject cannot not end with a dot.'
-          excludeDescription: 'true'
-          excludeTitle: 'true'
-          checkAllCommitMessages: 'true'
-          accessToken: ${{ secrets.accessToken }}
-
-      - name: Check empty line
-        uses: gsactions/commit-message-checker@v2
-        with:
-          pattern: '^.*(\n\n|$)'
-          flags: 'g'
-          error: 'No newline between title and description.'
-          excludeDescription: 'true'
-          excludeTitle: 'true'
-          checkAllCommitMessages: 'true'
-          accessToken: ${{ secrets.accessToken }}
+          fetch-depth: 0
+      - name: Install gitlint
+        run: pip install gitlint-core
+      - name: Check commit messages
+        run: gitlint --commits origin/${{ github.base_ref }}..HEAD
