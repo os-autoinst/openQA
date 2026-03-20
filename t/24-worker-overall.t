@@ -598,7 +598,6 @@ subtest 'check is_ovs_dbus_service_running of D-Bus service' => sub {
     is $worker->is_ovs_dbus_service_running, 0, 'OvS D-Bus service failed on failing get_service';
 };
 
-
 subtest 'handle client status changes' => sub {
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
     my $fake_client_2
