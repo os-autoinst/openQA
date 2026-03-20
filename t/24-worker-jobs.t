@@ -15,7 +15,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use Capture::Tiny qw(capture);
 use Test::Output qw(combined_like combined_unlike stderr_like);

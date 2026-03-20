@@ -7,7 +7,7 @@ use Test::Warnings qw(:report_warnings warning);
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Utils qw(simulate_load);
 use Data::Dumper;
@@ -37,13 +37,13 @@ my $guard = scope_guard sub { chdir $FindBin::Bin };
 
 # define fake isotovideo
 package Test::FakeProcess {    # uncoverable statement count:1
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has is_running => 1;
     sub stop ($self) { $self->is_running(0) }
 }    # uncoverable statement
 
 package Test::FakeClient {    # uncoverable statement count:2
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has webui_host => 'fake';
     has worker_id => 42;
     has service_port_delta => 2;
@@ -55,7 +55,7 @@ package Test::FakeClient {    # uncoverable statement count:2
 }    # uncoverable statement
 
 package Test::FakeJob {    # uncoverable statement count:2
-    use Mojo::Base 'Mojo::EventEmitter', -signatures;
+    use experimental 'signatures';
     has id => 42;
     has status => 'running';
     has is_skipped => 0;
@@ -85,12 +85,12 @@ package Test::FakeCacheServiceClientInfo {
 }    # uncoverable statement
 
 package Test::FakeDBusObject {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     sub disconnect_from_signal ($self, $signal, $id) { }
 }    # uncoverable statement
 
 package Test::FakeDBus {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has mock_service_value => 1;
     sub get_service ($self, $service_name) { $self->mock_service_value }
     sub get_bus_object ($self) { Test::FakeDBusObject->new }

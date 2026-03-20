@@ -7,7 +7,7 @@ use Test::Warnings qw(:report_warnings warning);
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '6';
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::Output qw(combined_like combined_unlike output_from);
 use Test::MockObject;
 use Test::MockModule;
