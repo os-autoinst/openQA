@@ -11,7 +11,7 @@ use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use autodie ':all';
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
