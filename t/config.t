@@ -296,7 +296,7 @@ subtest 'check throttling configuration validation and application' => sub {
         stderr_like {
             $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
         }
-        qr/Wrong format/, "warn expected";
+        qr/Wrong format/, 'warn expected';
         is_deeply $config->{misc_limits}->{prio_throttling_data}, undef,
           'prio_throttling_data is empty hash for invalid';
     };

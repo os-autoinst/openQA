@@ -1001,7 +1001,7 @@ subtest 'Create and modify groups with YAML' => sub {
         $job_templates_mock->redefine(create_or_update_job_template => sub { die 'pretend something is wrong' });
         $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
         $t->status_is(500);
-        my $error = join('', @{$t->tx->res->json->{error} // []});
+        my $error = join '', @{$t->tx->res->json->{error} // []};
         like $error, qr/internal server error/is, 'only generic server error logged';
         unlike $error, qr/pretend something is wrong/, 'concrete error not logged';
         like shift @logged_errors, qr/pretend something is wrong at/, 'concrete error logged';

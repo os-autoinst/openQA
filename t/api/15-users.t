@@ -77,7 +77,7 @@ subtest 'test delete_api_key' => sub {
     is scalar @{$res->{keys}}, $count_before - 1, 'one key less';
     ok !((grep { $_->{key} eq $key1 } @{$res->{keys}})), "key $key1 no longer in list";
 
-    $t->delete_ok("/api/v1/users/me/api_keys/NONEXISTENT")->status_is(404, 'delete nonexistent key');
+    $t->delete_ok('/api/v1/users/me/api_keys/NONEXISTENT')->status_is(404, 'delete nonexistent key');
 };
 
 subtest 'test delete_self' => sub {
@@ -116,7 +116,7 @@ subtest 'anonymize audit event data' => sub {
     $user->anonymize;
     $user->discard_changes;
     $audit_event->discard_changes;
-    is $audit_event->event_data, "User deleted-user performed an action", 'event_data anonymized';
+    is $audit_event->event_data, 'User deleted-user performed an action', 'event_data anonymized';
     is $audit_event->user_id, 99903, 'audit event association preserved';
 };
 
