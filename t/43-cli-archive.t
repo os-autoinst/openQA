@@ -3,7 +3,6 @@
 
 use Test::Most;
 use Test::Warnings qw(:report_warnings warning);
-use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";

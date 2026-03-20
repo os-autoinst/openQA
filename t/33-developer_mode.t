@@ -119,7 +119,7 @@ javascript_console_has_no_warnings_or_errors;
 my $needle_dir = $sharedir . '/tests/tinycore/needles';
 
 # rename one of the required needle so a certain assert_screen will timeout later
-mkdir($needle_dir . '/../disabled_needles');
+mkdir $needle_dir . '/../disabled_needles';
 my $on_prompt_needle = $needle_dir . '/boot-on_prompt';
 my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
 note 'renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}';

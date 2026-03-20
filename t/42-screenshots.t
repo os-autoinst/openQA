@@ -90,8 +90,8 @@ sub get_enqueued_minion_jobs {
     my $enqueued_jobs = $minion->jobs($job_query_args);
     my (@enqueued_job_ids, @enqueued_job_args);
     while (my $info = $enqueued_jobs->next) {
-        push(@enqueued_job_ids, $info->{id});
-        push(@enqueued_job_args, $info->{args});
+        push @enqueued_job_ids, $info->{id};
+        push @enqueued_job_args, $info->{args};
     }
     @enqueued_job_args = sort { $a->[0]->{min_screenshot_id} <=> $b->[0]->{min_screenshot_id} } @enqueued_job_args;
     return {
@@ -243,7 +243,7 @@ subtest 'unable to delete screenshot' => sub {
 
 subtest 'no errors in database log' => sub {
     my $prep = $schema->storage->dbh->prepare('select pg_current_logfile()');
-    return plan skip_all => "TEST_PG not set" unless $ENV{TEST_PG};
+    return plan skip_all => 'TEST_PG not set' unless $ENV{TEST_PG};
     $prep->execute;
     my $db_log_file = path($ENV{TEST_PG} =~ s/^.*host=//r, $prep->fetchrow_arrayref->[0]);
     my $log = Mojo::File->new($db_log_file)->slurp;

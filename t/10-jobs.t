@@ -26,7 +26,7 @@ use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Utils qw(perform_minion_jobs mock_io_loop);
 use OpenQA::Test::TimeLimit '30';
 
-binmode(STDOUT, ':encoding(UTF-8)');
+binmode STDOUT, ':encoding(UTF-8)';
 
 my $schema_name = OpenQA::Test::Database::generate_schema_name;
 my $schema = OpenQA::Test::Case->new->init_data(
@@ -486,7 +486,7 @@ subtest 'carry over, including soft-fails' => sub {
         subtest 'investigation can display test_log with git stats when one commit' => sub {
             $fake_git_log = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1";
             ok $inv = $job->investigate, 'job investigation ok with test changes';
-            my $actual_lines = split(/\n/, $inv->{test_log});
+            my $actual_lines = split /\n/, $inv->{test_log};
             my $expected_lines = 5;
             is $actual_lines, $expected_lines, 'test_log have correct number of lines';
             like $inv->{test_log}, qr/^.*file changed/m, 'git log with test changes';
@@ -496,7 +496,7 @@ subtest 'carry over, including soft-fails' => sub {
             $fake_git_log
               = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1 test1\n mylogfile1 | 1 +\n 1 file changed, 1 insertion(+)\n";
             ok $inv = $job->investigate(git_limit => 23), 'job investigation ok with test changes';
-            my $actual_lines = split(/\n/, $inv->{test_log});
+            my $actual_lines = split /\n/, $inv->{test_log};
             my $expected_lines = 7;
             is $actual_lines, $expected_lines, 'test_log has the correct number of lines';
             like $inv->{test_log}, qr/^.*file changed/m, 'git log with test changes';
@@ -830,7 +830,7 @@ subtest 'job with skipped modules' => sub {
         my %module_count = (ok => 0, softfail => 0, fail => 0, undef => 0, skip => 0);
         $module_count{$tm_str[0]} = $module_count{$tm_str[0]} + 1;
         $module_count{$tm_str[1]} = $module_count{$tm_str[1]} + 1;
-        $_settings{TEST} = 'SKIP_TEST_' . join('_', @tm_str);
+        $_settings{TEST} = 'SKIP_TEST_' . join '_', @tm_str;
         my $job = _job_create(\%_settings);
         $job->insert_module({name => 'a', category => 'a', script => 'a'});
         $job->update_module('a', {result => $tm->[0], details => []});
@@ -838,7 +838,7 @@ subtest 'job with skipped modules' => sub {
         $job->update_module('b', {result => $tm->[1], details => []});
         $job->done;
         $job->discard_changes;
-        is $job->result, $tm->[2], sprintf('job result: %s + %s => %s', @tm_str);
+        is $job->result, $tm->[2], sprintf 'job result: %s + %s => %s', @tm_str;
         is $job->passed_module_count, $module_count{ok}, 'check number of passed modules';
         is $job->softfailed_module_count, $module_count{softfail}, 'check number of softfailed modules';
         is $job->failed_module_count, $module_count{fail}, 'check number of failed modules';

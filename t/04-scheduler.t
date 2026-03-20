@@ -164,7 +164,7 @@ my $job_ref = {
     # to be removed
     test => 'rainbow'
 };
-my $iso = sprintf('%s/iso/%s', assetdir(), $settings{ISO});
+my $iso = sprintf '%s/iso/%s', assetdir(), $settings{ISO};
 my $job = $jobs->create_from_settings(\%settings);
 is $job->id, 1, 'job_create';
 
