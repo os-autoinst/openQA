@@ -25,7 +25,7 @@ my $schema
 
 # ensure needle dir can be listed (might not be the case because previous test run failed)
 my $needle_dir = 't/data/openqa/share/tests/opensuse/needles/';
-chmod(0755, $needle_dir);
+chmod 0755, $needle_dir;
 
 $schema->resultset('Needles')->create(
     {
@@ -111,7 +111,7 @@ subtest 'delete needle' => sub {
       'inst-timezone-text.json', 'right needle name displayed';
 
     subtest 'error case' => sub {
-        chmod(0444, $needle_dir);
+        chmod 0444, $needle_dir;
         $driver->find_element_by_id('really_delete')->click();
         wait_for_ajax(with_minion => $minion);
         is scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles';
@@ -144,7 +144,7 @@ qr{inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/
       0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog';
 
     subtest 'successful deletion' => sub {
-        chmod(0755, $needle_dir);
+        chmod 0755, $needle_dir;
         $driver->find_element_by_id('really_delete')->click();
         wait_for_ajax(with_minion => $minion);
         is scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles';

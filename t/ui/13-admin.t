@@ -628,9 +628,9 @@ sub get_cell_contents {
 subtest 'asset list' => sub {
     # add the file for asset 4 actually in the file system to check deletion
     my $asset_path = catfile(assetdir(), 'iso', 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso');
-    open(my $fh, '>', $asset_path);
+    open my $fh, '>', $asset_path;
     print $fh "ISO\n";
-    close($fh);
+    close $fh;
     ok -e $asset_path, 'dummy asset present at ' . $asset_path;
 
     my $asset_table_url = '/admin/assets?force_refresh=1';
@@ -654,7 +654,7 @@ subtest 'asset list' => sub {
     my @assets_by_group = map { $_->get_text() } $driver->find_elements('#assets-by-group > li');
     if (scalar(@assets_by_group) > 0 && $assets_by_group[0] =~ qr/Untracked.*/) {
         note 'ignoring untracked assets in your checkout (likely created by previous tests)';
-        splice(@assets_by_group, 0, 1);
+        splice @assets_by_group, 0, 1;
     }
     is_deeply
       \@assets_by_group,
@@ -693,7 +693,7 @@ subtest 'asset list' => sub {
     #               visible
 
     ok !-e $asset_path, 'dummy asset should have been removed';
-    unlink($asset_path);
+    unlink $asset_path;
 };
 
 sub api_keys_tbody { $driver->find_element_by_id('api-keys-tbody') }

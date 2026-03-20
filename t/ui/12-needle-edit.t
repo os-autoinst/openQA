@@ -297,7 +297,7 @@ subtest 'Needle editor layout' => sub {
     ok element_prop('take_matches', 'checked'), '"take matches" selected by default';
 
     # check needle suggested name
-    my $today = strftime('%Y%m%d', gmtime(time));
+    my $today = strftime('%Y%m%d', gmtime time);
     is element_prop('needleeditor_name'), "inst-timezone-text-$today", 'has correct needle name';
 
     # ENV-VIDEOMODE-text and inst-timezone tag are selected
@@ -567,10 +567,10 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
         wait_for_ajax(with_minion => $minion);
         # add expected warnings and needle names for needle
         if ($i >= 2) {
-            unshift(@expected_needle_warnings,
-                    "A new needle with matching tags has been created since the job started: $new_needle_name.json"
-                  . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)');
-            splice(@expected_needle_names, 2, 0, 'new: ' . $new_needle_name);
+            unshift @expected_needle_warnings,
+              "A new needle with matching tags has been created since the job started: $new_needle_name.json"
+              . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)';
+            splice @expected_needle_names, 2, 0, 'new: ' . $new_needle_name;
         }
     }
 
@@ -702,11 +702,11 @@ subtest '(created) needles can be accessed over API' => sub {
     my $tmp_dir = 't/tmp_needles';
     File::Path::rmtree($tmp_dir);
     File::Copy::move($dir, $tmp_dir) || die 'failed to move';
-    symlink(abs_path($tmp_dir), $dir);
+    symlink abs_path($tmp_dir), $dir;
     $t->get_ok(
         '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
       ->status_is(200, 'needle also accessible when containing directory is a symlink')->content_type_is('image/png');
-    unlink($dir);
+    unlink $dir;
     File::Copy::move($tmp_dir, $dir);
 };
 

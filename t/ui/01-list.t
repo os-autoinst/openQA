@@ -489,7 +489,7 @@ subtest 'check test results of job99940' => sub {
     wait_for_ajax;
     my $results = $driver->find_elements('#job_99940 > td')->[2];
     $results = $driver->find_child_element($results, 'a');
-    my @count = split(/\s+/, $results->get_text());
+    my @count = split /\s+/, $results->get_text();
     my @types = $driver->find_child_elements($results, 'i');
     is @count, @types, 'each number has a type';
     for my $class (qw(module_passed module_failed module_softfailed module_none module_skipped)) {
