@@ -721,16 +721,16 @@ if (typeof window !== 'undefined' && window.jQuery) {
 
   $(document).ready(function () {
     setTimeout(function () {
-      var $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
+      const $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
       if ($dropdownToggle.length) {
         $dropdownToggle.off('click');
         $dropdownToggle.on('click', function (e) {
-          var $el = $(this);
-          var $parent = $(this).offsetParent('.dropdown-menu');
+          const $el = $(this);
+          const $parent = $(this).offsetParent('.dropdown-menu');
           if (!$(this).next().hasClass('show')) {
             $(this).parents('.dropdown-menu').first().find('.show').removeClass('show');
           }
-          var $subMenu = $(this).next('.dropdown-menu');
+          const $subMenu = $(this).next('.dropdown-menu');
           $subMenu.toggleClass('show');
           $(this).parent('li').toggleClass('show');
 
@@ -742,7 +742,7 @@ if (typeof window !== 'undefined' && window.jQuery) {
         });
       }
 
-      var $dropdown = $('.nav-item.dropdown');
+      const $dropdown = $('.nav-item.dropdown');
       $dropdown.off('hidden.bs.dropdown');
       $dropdown.on('hidden.bs.dropdown', function (e) {
         $(this).find('.dropdown-menu .show').removeClass('show');

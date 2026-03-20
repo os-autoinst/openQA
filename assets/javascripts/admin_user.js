@@ -16,7 +16,7 @@ function setup_admin_user() {
       findDefault(form).prop('checked', 'checked');
     }
 
-    var form = $(this).parent('form');
+    const form = $(this).parent('form');
     if (!confirm('Are you sure to put ' + username + ' into role: ' + role.trim() + '?')) {
       rollback(form);
       return;
