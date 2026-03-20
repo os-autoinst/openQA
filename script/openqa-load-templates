@@ -219,7 +219,10 @@ if ($options{clean}) {
     for my $table (@cleantables) {
         my $table_url = $url->clone->path($options{apibase} . '/' . decamelize($table));
         my $res = $client->get($table_url)->res;
-        print_error $res and next unless $res->is_success;
+        unless ($res->is_success) {
+            print_error $res;
+            next;
+        }
 
         my $result = $res->json;
         # we can't clean job groups as they're not deletable
@@ -228,7 +231,7 @@ if ($options{clean}) {
         if ($table eq 'JobGroups') {
             # unlike all other tables, is not a hash
             for my $jg (@$result) {
-                next unless ($jg->{template});
+                next unless $jg->{template};
                 $res = post_yaml_templates($jg->{name}, "scenarios: {}\nproducts: {}\n");
                 last unless $res->is_success;
             }
@@ -239,6 +242,8 @@ if ($options{clean}) {
                 my $table_url_id = $url->clone->path($options{apibase} . '/' . decamelize($table) . "/$id");
                 $res = $client->delete($table_url_id)->res;
                 last unless $res->is_success;
+            }
+        }
             }
         }
     }
