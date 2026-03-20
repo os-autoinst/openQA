@@ -568,7 +568,7 @@ subtest 'Test failure - if chunks are broken' => sub {
     $pieces->each(
         sub {
             $_->prepare;
-            $_->content(int rand 99999);
+            $_->content int rand 99999;
             my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
@@ -588,7 +588,7 @@ subtest 'last chunk is broken' => sub {
     # That will fail during total cksum calculation
     $pieces->each(
         sub {
-            $_->content(int rand 99999) if $_->is_last;
+            $_->content int rand 99999 if $_->is_last;
             $_->prepare;
             my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
