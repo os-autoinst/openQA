@@ -75,6 +75,8 @@ L<OpenQA::Client>
 
 =cut
 
+use Mojo::Base -strict, -signatures;
+
 BEGIN {
     $ENV{MOJO_MAX_MESSAGE_SIZE} = 0;    # no limit for uploads
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
@@ -86,12 +88,11 @@ BEGIN {
     #$ENV{MOJO_IOLOOP_DEBUG} = 1;
 }
 
-use Mojo::Base -strict, -signatures;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 use Carp::Always;
 use Getopt::Long;
-Getopt::Long::Configure("no_ignore_case");
+Getopt::Long::Configure('no_ignore_case');
 
 use OpenQA::Worker;
 use OpenQA::Log 'log_info';
@@ -101,8 +102,8 @@ my %options;
 sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 GetOptions(
-    \%options, "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s",
-    "apisecret:s", "verbose|v|debug|d", "help|h",
+    \%options, 'no-cleanup', 'instance=i', 'isotovideo=s', 'host=s', 'apikey:s',
+    'apisecret:s', 'verbose|v|debug|d', 'help|h',
 ) or usage(1);
 
 usage(0) if ($options{help});
