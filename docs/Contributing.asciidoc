@@ -67,8 +67,9 @@ tests in your development environment to verify everything works as
 expected, see <<Contributing.asciidoc#testing,Conducting tests>>)
 
 * For git commit messages use the rules stated on
-http://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message] as
-a reference
+  http://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message]
+  as a reference. One especially useful make target for developers is `make
+  setup-hooks` which installs git pre-commit hooks to check commit styles.
 
 * Every pull request is reviewed in a peer review to give feedback on possible
 implications and how we can help each other to improve

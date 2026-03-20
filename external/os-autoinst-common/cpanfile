@@ -18,6 +18,7 @@ on 'develop' => sub {
     requires 'Perl::Critic';
     requires 'Perl::Critic::Community';
     requires 'Perl::Tidy', '== 20260204';
+    requires 'Test::Perl::Critic';
 
 };
 
