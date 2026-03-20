@@ -7,7 +7,7 @@ has 'configuration_fields' => sub {
         }};
 };
 
-sub register {
+sub register () {
     1;
 }
 1;
