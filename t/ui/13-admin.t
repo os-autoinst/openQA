@@ -389,8 +389,7 @@ subtest 'job property editor' => sub() {
     subtest 'update group name with empty or blank' => sub {
         my $groupname = $driver->find_element_by_id('editor-name');
         # update group name with empty
-        $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
-        $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{backspace});
+        $groupname->clear();
         is $driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
           'true', 'group properties save button is disabled if name is left empty';
         is
@@ -402,7 +401,7 @@ subtest 'job property editor' => sub() {
 
         # update group name with blank
         $groupname = $driver->find_element_by_id('editor-name');
-        $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $groupname->clear();
         $groupname->send_keys('   ');
         is $driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
           'true', 'group properties save button is disabled if name is blank';
@@ -418,13 +417,13 @@ subtest 'job property editor' => sub() {
         # those keys will be appended
         $driver->find_element_by_id('editor-name')->send_keys(' has been edited!');
         my $ele = $driver->find_element_by_id('editor-size-limit');
-        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $ele->clear();
         $ele->send_keys('1000');
         $ele = $driver->find_element_by_id('editor-keep-important-results-in-days');
-        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $ele->clear();
         $ele->send_keys('500');
         $ele = $driver->find_element_by_id('editor-keep-results-in-days');
-        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $ele->clear();
         $ele->send_keys('501');
         is $driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
           undef, 'group properties save button is enabled';
@@ -468,7 +467,7 @@ subtest 'job property editor' => sub() {
         $driver->find_element('#parent_group_1 span a')->click();
         $driver->find_element_by_id('editor-name')->send_keys('Cool Parent Group');
         my $ele = $driver->find_element_by_id('editor-keep-logs-in-days');
-        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $ele->clear();
         $ele->send_keys('123');
         $driver->find_element('#properties p.buttons button.btn-primary')->click();
         wait_for_ajax(msg => 'ensure there is no race condition, even though the page is reloaded');
