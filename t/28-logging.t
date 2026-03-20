@@ -192,7 +192,7 @@ subtest 'Checking log level' => sub {
 
         %matches = map { $_ => ($matches{$_} // 0) + 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
         my @vals = grep { $_ != 2 } values %matches;
-        is keys(%matches), $counterFile--, "Worker no existent channel log level $level entry";
+        is keys %matches, $counterFile--, "Worker no existent channel log level $level entry";
         is @vals, 0, 'Worker no existent channel log level $level entry ';
 
         truncate $output_logfile, 0;

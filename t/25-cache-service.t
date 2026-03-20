@@ -330,6 +330,7 @@ subtest 'Race for same asset' => sub {
     ok !$cache_client->asset_exists('localhost', $asset), 'Asset absent'
       or die diag 'Asset already exists - abort test';
 
+
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
     my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
     my $worker = cache_minion_worker;
