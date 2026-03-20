@@ -17,7 +17,7 @@ sub add ($self, @results) {
 }
 
 sub get ($self, $index) { $self->[$index] }
-sub remove ($self, $index) { CORE::delete $self->[$index] }
+sub remove ($self, $index) { delete $self->[$index] }
 
 sub new ($class, @args) {
     OpenQA::Parser::restore_tree_section(\@args);

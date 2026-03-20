@@ -10,7 +10,7 @@ use OpenQA::File;
 use Mojo::Exception;
 
 sub join ($self) {
-    return CORE::join '', map { $_->read } $self->each;
+    return join '', map { $_->read } $self->each;
 }
 
 sub serialize ($self) {
