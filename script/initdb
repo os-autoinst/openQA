@@ -56,9 +56,9 @@ if ($user) {
     my $uid = getpwnam $user or die "No such login $user";
     my $gid = getgrnam $user;
     if ($gid) {
-        setgid($gid) || die "can't sgid to $user group";
+        setgid $gid || die "can't sgid to $user group";
     }
-    setuid($uid) || die "can't suid to $user";
+    setuid $uid || die "can't suid to $user";
 }
 
 my @databases = qw( PostgreSQL );
