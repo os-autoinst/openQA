@@ -17,6 +17,9 @@ use Mojo::JSON;    # booleans
 use OpenQA::Script::CloneJobSUSE;
 use List::Util 'any';
 use HTTP::Status qw(:constants);
+use HTTP::Request;
+use HTTP::Date qw(time2str str2time);
+use File::stat;
 
 our @EXPORT = qw(
   clone_jobs
@@ -148,6 +151,63 @@ sub _check_for_missing_assets ($job, $parents, $options) {
     die "The following assets are missing:\n - $relevant_missing_assets\n$note\n";
 }
 
+sub _miror_with_resume ($ua, $url, $file) {
+    my $req = HTTP::Request->new(GET => $url);
+
+    # Use File::stat for explicit, readable file properties
+    my $current_size = -s $file || 0;
+    my $st = stat($file);
+    my $mtime = $st ? $st->mtime : undef;
+
+    if ($current_size > 0 && defined $mtime) {
+        print STDERR "trying to resume $file at offset $current_size\n";
+        $req->header('Range' => "bytes=$current_size-");
+        $req->header('If-Range' => time2str($mtime));
+    }
+    elsif (defined $mtime) {
+        $req->header('If-Modified-Since' => time2str($mtime));
+    }
+
+    my $fh;
+    my $res = $ua->request(
+        $req,
+        sub ($data, $response, @) {
+            # 416: "Range Not Satisfiable" (we already have the whole file)
+            # 304: "Not Modified" (from standard mirror check)
+            return if $response->code == 416 || $response->code == 304;
+
+            if (!$fh) {
+                print STDERR "resuming download of $file\n" if my $can_resume = $response->code == 206;
+                # Using die inside an LWP callback safely aborts the HTTP request.
+                # LWP catches the exception and returns a 500 response containing the error.
+                open $fh, ($can_resume ? '>>' : '>'), $file or die "Cannot open $file: $!";
+                binmode $fh or die "Cannot set binmode on $file: $!";
+            }
+            print $fh $data or die "Failed to write data to $file: $!";
+        });
+    if ($fh and not close $fh) {
+        $res->code(500);
+        $res->message("Internal Error: Failed to close $file: $!");
+    }
+
+    # Standardize the 416 behavior to mimic native LWP mirror
+    if ($res->code == 416) {
+        $res->code(304);
+        $res->message("Not Modified (Already fully downloaded)");
+    }
+
+    # Update the local timestamp
+    if (($res->is_success || $res->code == 304) && $res->header('Last-Modified')) {
+        my $server_mtime = str2time($res->header('Last-Modified'));
+        if (defined $server_mtime) {
+            utime($server_mtime, $server_mtime, $file)
+              or warn "Could not update modified time for $file: $!\n";
+        }
+    }
+
+    return $res;
+}
+
 sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
     my $parents = _get_chained_parents($job, $url_handler, $options);
     _check_for_missing_assets($job, $parents, $options);
@@ -177,7 +237,7 @@ sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
             die "Cannot write $dst_dir\n" unless -w $dst_dir;
 
             print STDERR "downloading\n$from\nto\n$dst\n";
-            my $r = $ua->mirror($from, $dst);
+            my $r = _miror_with_resume($ua, $from, $dst);
             unless ($r->is_success || $r->code == HTTP_NOT_MODIFIED) {
                 print STDERR "$jobid failed: $file, ", $r->status_line, "\n";
                 die "Can't clone due to missing assets: ", $r->status_line, " \n"
