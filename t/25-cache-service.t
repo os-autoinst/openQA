@@ -519,20 +519,18 @@ subtest 'Minion monitoring with InfluxDB' => sub {
         is $check_count->(), 0, 'count back at 0';
     };
 
-    my $cs_port = service_port "cache_service";
-    my $url = $cache_client->url("/influxdb/minion");
-    my $ua = $cache_client->ua;
-
     my $check_influx
       = sub ($active_jobs, $inactive_jobs, $failed_jobs, $delayed_jobs, $active_workers, $inactive_workers,
         $registered_workers, $msg)
     {
-        my $res = $ua->get($url)->result;
+        my $tx = $t->get_ok('/influxdb/minion', "$msg - request")->status_is(200, "$msg - status")->tx;
+        my $url = $tx->req->url->clone->path(Mojo::Path->new)->to_string;
+        my $res = $tx->result;
         is $res->body, <<"EOF", $msg;
-openqa_minion_jobs,url=http://127.0.0.1:${cs_port} active=${active_jobs}i,delayed=${delayed_jobs}i,failed=${failed_jobs}i,inactive=${inactive_jobs}i
-openqa_minion_workers,url=http://127.0.0.1:${cs_port} active=${active_workers}i,inactive=${inactive_workers}i,registered=${registered_workers}i
-openqa_download_count,url=http://127.0.0.1:${cs_port} count=${count}i
-openqa_download_rate,url=http://127.0.0.1:${cs_port} bytes=${rate}i
+openqa_minion_jobs,url=$url active=${active_jobs}i,delayed=${delayed_jobs}i,failed=${failed_jobs}i,inactive=${inactive_jobs}i
+openqa_minion_workers,url=$url active=${active_workers}i,inactive=${inactive_workers}i,registered=${registered_workers}i
+openqa_download_count,url=$url count=${count}i
+openqa_download_rate,url=$url bytes=${rate}i
 EOF
     };
 
