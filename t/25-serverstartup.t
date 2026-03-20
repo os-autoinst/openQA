@@ -1,7 +1,7 @@
 # Copyright 2017-2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-use Test::Most;
+use Test::Most;    ## no critic (RedundantStrictWarning)
 use Test::Warnings ':report_warnings';
 
 BEGIN {
@@ -188,7 +188,7 @@ subtest 'listing assets (for installation/Makefile)' => sub {
 done_testing();
 
 package OpenQA::FakePlugin::Fuzzer;
-use Mojo::Base -base;
+use Mojo::Base -base;    ## no critic (RedundantStrictWarning)
 
 sub configuration_fields {
     {

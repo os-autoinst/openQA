@@ -6,7 +6,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 BEGIN {
     $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} = 0;

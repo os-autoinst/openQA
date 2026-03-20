@@ -7,19 +7,19 @@ use Test::Warnings ':report_warnings';
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '6';
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::MockModule;
 use OpenQA::Script::CloneJobSUSE;
 use Mojo::URL;
 
 # define fake client
 package Test::FakeLWPUserAgentMirrorResult {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has is_success => 1;
 }    # uncoverable statement
 
 package Test::FakeLWPUserAgent {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has is_validrepo => 1;
     sub get ($self, $url) { Test::FakeLWPUserAgentMirrorResult->new(is_success => $self->is_validrepo) }
 }    # uncoverable statement

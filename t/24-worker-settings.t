@@ -7,7 +7,7 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::App;
