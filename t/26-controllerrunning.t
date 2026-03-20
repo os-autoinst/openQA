@@ -272,7 +272,7 @@ package Job;
 
 sub new {
     my ($class) = @_;
-    my $self = bless({}, $class);
+    my $self = bless {}, $class;
     $self->{worker} = Worker->new;
     return $self;
 }
@@ -289,7 +289,7 @@ use Mojo::File 'tempdir';
 
 sub new {
     my ($class) = @_;
-    my $self = bless({}, $class);
+    my $self = bless {}, $class;
     $self->{WORKER_TMPDIR} = tempdir;
     return $self;
 }
@@ -311,7 +311,7 @@ use Mojo::Base -signatures;
 
 sub new {
     my ($class) = @_;
-    my $self = bless({}, $class);
+    my $self = bless {}, $class;
     $self->{resultset} = Worker->new;
     return $self;
 }
@@ -320,4 +320,4 @@ sub resultset ($self, $name) { FakeSchema::Find->new($name) }
 
 package FakeSchema::Find;
 use Mojo::Base -signatures;
-sub new ($class, $name = '') { bless({name => $name}, $class) }
+sub new ($class, $name = '') { bless {name => $name}, $class }

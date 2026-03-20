@@ -378,7 +378,7 @@ subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
     };
 
     subtest 'error case: permission denied' => sub {
-        chmod(0444, $pool_directory);
+        chmod 0444, $pool_directory;
         my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => {DISTRI => 'opensuse'}});
         my $result = _run_engine($job);
         my $casedir = testcasedir('opensuse', undef, undef);
@@ -387,7 +387,7 @@ subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
           'symlink failed because permission denied';
 
     };
-    chmod(0755, $pool_directory);
+    chmod 0755, $pool_directory;
 
     subtest 'error case: NEEDLES_DIR missing' => sub {
         my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => {NEEDLES_DIR => 'needles'}});

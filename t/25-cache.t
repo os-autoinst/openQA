@@ -326,7 +326,7 @@ subtest 'cache directory is symlink' => sub {
     $cache_log = '';
 
     my $symlink = $cached->child('symlink')->to_string;
-    unlink($symlink);
+    unlink $symlink;
     ok symlink($cachedir, $symlink), "symlinking cache dir to $symlink";
     $cache->location($symlink);
 
