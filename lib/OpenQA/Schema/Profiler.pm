@@ -10,7 +10,7 @@ use Time::HiRes qw(gettimeofday tv_interval);
 sub query_start ($self, $sql, @params) { $self->{start} = [gettimeofday()] }
 
 sub query_end ($self, $sql, @params) {
-    $sql = "$sql: " . CORE::join(', ', @params) if @params;
+    $sql = "$sql: " . (join ', ', @params) if @params;
     my $elapsed = tv_interval($self->{start}, [gettimeofday()]);
     log_debug(sprintf '[DBIC] Took %.8f seconds: %s', $elapsed, $sql);
 }

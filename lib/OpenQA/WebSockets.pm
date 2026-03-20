@@ -105,7 +105,7 @@ sub ws_send_job ($job_info, $message) {
 
     my $job_ids = ref($job_info->{ids}) eq 'ARRAY' ? $job_info->{ids} : [$job_info->{id} // ()];
     $tx->send({json => $message});
-    my $id_string = CORE::join(', ', @$job_ids) || '?';
+    my $id_string = join(', ', @$job_ids) || '?';
     log_debug("Started to send message to $worker_id for job(s) $id_string");
     $state->{msg_sent} = 1;
     return $result;
