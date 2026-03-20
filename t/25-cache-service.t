@@ -254,6 +254,155 @@ subtest 'Invalid requests' => sub {
     is_deeply $json, {error => 'No lock defined'}, 'invalid lock' or always_explain $json;
 };
 
+subtest 'InfluxDB edge cases' => sub {
+    my $app = $t->app;
+    my $cache = $app->cache;
+
+    # InfluxDB: test when download_rate is missing
+    $cache->sqlite->db->delete('metrics', {name => 'download_rate'});
+    $t->get_ok('/influxdb/minion')->status_is(200)
+      ->content_unlike(qr/openqa_download_rate/, 'download_rate is missing from InfluxDB output');
+};
+
+subtest 'Cache model internal edge cases' => sub {
+    my $app = $t->app;
+    my $cache = $app->cache;
+
+    # Cache model: purge_asset when file does not exist
+    $cache->sqlite->db->insert('assets', {filename => 'nonexistent', last_use => time, size => 0, pending => 0});
+    ok $cache->purge_asset('nonexistent'), 'purge_asset returns true for nonexistent file';
+
+    # Cache model: _decrease with size > cache_real_size
+    $cache->{cache_real_size} = 10;
+    $cache->_decrease(20);
+    is $cache->{cache_real_size}, 0, '_decrease caps at 0';
+    $cache->{cache_real_size} = 10;
+    $cache->_decrease(5);
+    is $cache->{cache_real_size}, 5, '_decrease subtracts correctly';
+
+    # Cache model: asset_lookup for unregistered file (triggers purging)
+    my $unregistered = path($cachedir, 'unregistered.img');
+    $unregistered->spew('junk');
+    ok -e $unregistered, 'unregistered file exists';
+    ok !$cache->asset_lookup($unregistered->to_string), 'asset_lookup returns undef for unregistered';
+    ok !-e $unregistered, 'unregistered file was purged';
+
+    # Cache model: _exceeds_limit catch block
+    {
+        my $utils_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
+        $utils_mock->redefine(check_df => sub { die "df failed\n" });
+        local $cache->{min_free_percentage} = 10;
+        is $cache->_exceeds_limit(100), 0, '_exceeds_limit returns 0 on df failure';
+
+        $utils_mock->redefine(check_df => sub { (50, 100) });
+        local $cache->{min_free_percentage} = 60;
+        is $cache->_exceeds_limit(0), 1, '_exceeds_limit returns 1 when below min free percentage';
+        local $cache->{min_free_percentage} = 40;
+        is $cache->_exceeds_limit(0), 0, '_exceeds_limit returns 0 on df success';
+    }
+
+    # Cache model: _check_limits when limit exceeded
+    {
+        local $cache->{limit} = 100;
+        $cache->{cache_real_size} = 200;
+        $cache->sqlite->db->insert('assets', {filename => 'asset1', size => 150, last_use => 1, pending => 0});
+        path($cachedir, 'asset1')->spew('a' x 150);
+        $cache->_check_limits(50);
+        ok !$cache->sqlite->db->select('assets', '*', {filename => 'asset1'})->hashes->size,
+          'asset1 purged when limit exceeded';
+    }
+
+    # Cache model: _delete_pending_assets
+    {
+        $cache->sqlite->db->insert('assets', {filename => 'pending_asset', last_use => time, size => 0, pending => 1});
+        $cache->_delete_pending_assets;
+        ok !$cache->sqlite->db->select('assets', '*', {filename => 'pending_asset'})->hashes->size,
+          'pending asset purged';
+    }
+};
+
+subtest 'Cache model error handling' => sub {
+    my $app = $t->app;
+    my $cache = $app->cache;
+    my $utils_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
+
+    # Database integrity check failure
+    {
+        $utils_mock->redefine(_perform_integrity_check => sub { ['database disk image is malformed'] });
+        is_deeply $cache->_check_database_integrity, ['database disk image is malformed'],
+          'integrity check returns errors';
+        $utils_mock->unmock('_perform_integrity_check');
+        is_deeply $cache->_perform_integrity_check, ['ok'], '_perform_integrity_check returns ok on healthy DB';
+    }
+
+    # repair_database catch block and _kill_db_accessing_processes
+    {
+        $utils_mock->redefine(_check_database_integrity => sub { return ['manual error'] });
+
+        my $db_file = path($cachedir, 'test_corrupt.sqlite');
+        $db_file->spew('corrupt');
+        $cache->repair_database($db_file->to_string);
+        ok !-e $db_file, 'repair_database removed the corrupted database file';
+    }
+
+    # purge_asset: unlink failure
+    {
+        my $asset = path($cachedir, 'failed_unlink.img');
+        $asset->spew('junk');
+
+        my $logged_error;
+        $utils_mock->redefine(_unlink => sub { $! = POSIX::EACCES; return 0 });
+        my $log_mock = Test::MockModule->new(ref $cache->log);
+        $log_mock->redefine(error => sub ($self, $msg) { $logged_error = $msg });
+
+        ok $cache->purge_asset($asset->to_string), 'purge_asset returns true even on unlink failure';
+        like $logged_error, qr/Unlinking ".*" failed: Permission denied/, 'logged unlink failure';
+
+        $utils_mock->unmock('_unlink');
+        $log_mock->unmock('error');
+    }
+
+    # _cache_sync: log_error when problems exist
+    {
+        $utils_mock->redefine(capture_merged => sub { $_[0]->(); return "some problem\n" });
+
+        my $logged_error;
+        $utils_mock->redefine(log_error => sub { $logged_error = $_[0] });
+
+        $cache->_cache_sync;
+        like $logged_error, qr/Unable to fully sync cache directory:/, 'logged sync error';
+    }
+
+    # catch blocks for database operations
+    {
+        # Mocking db->select or similar to throw
+        my $db_mock = Test::MockModule->new('Mojo::SQLite::Database');
+        $db_mock->redefine(select => sub { die "db error\n" });
+        $db_mock->redefine(query => sub { die "db error\n" });
+
+        # These just need to not crash and cover the catch block
+        $cache->track_asset('foo');
+        $cache->_check_limits(50);
+        $cache->_delete_pending_assets;
+        ok 1, 'handled db errors in catch blocks';
+    }
+};
+
+subtest 'Failing download' => sub {
+    for my $case (
+        [922756, 'sle-12-SP3-x86_64-0368-404@64bit.qcow2', '404 error'],
+        [922757, 'sle-12-SP3-x86_64-0368-200_close@64bit.qcow2', 'connection closed'])
+    {
+        my ($id, $asset, $msg) = @$case;
+        my $req = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
+        $cache_client->enqueue($req);
+        perform_minion_jobs($t->app->minion);
+        my $status = $cache_client->status($req);
+        ok $status->is_processed, "status is processed for $msg";
+        ok $status->data->{has_download_error}, "download error recorded in status for $msg";
+    }
+};
+
 subtest 'Asset exists' => sub {
     ok !$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent';
     path($cachedir, 'localhost')->make_path->child('foobar')->spew('test');

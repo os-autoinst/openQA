@@ -22,7 +22,9 @@ has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite min_free_percentage)];
 has limit => 50 * (1024**3);
 
-sub _perform_integrity_check ($self) { $self->sqlite->db->query(q{pragma integrity_check})->arrays->flatten->to_array }
+sub _perform_integrity_check ($self) {
+    $self->sqlite->db->query(q{pragma integrity_check})->arrays->flatten->to_array;
+}
 
 sub _check_database_integrity ($self) {
     my $integrity_errors = $self->_perform_integrity_check;
@@ -37,8 +39,8 @@ sub _check_database_integrity ($self) {
 }
 
 sub _kill_db_accessing_processes ($self, @db_files) {
-    qx{fuser -k @db_files; rm -f @db_files};    # uncoverable statement
-    die 'Killing DB accessing processes failed when trying to cleanup' unless $? == 0;    # uncoverable statement
+    qx{fuser -k @db_files; rm -f @db_files};
+    die 'Killing DB accessing processes failed when trying to cleanup' unless $? == 0;
 }
 
 sub repair_database ($self, $db_file = $self->_locate_db_file) {
@@ -167,7 +169,7 @@ sub track_asset ($self, $asset) {
         $db->query($sql, $asset);
         $tx->commit;
     }
-    catch ($e) { $self->log->error("Tracking asset failed: $e") }    # uncoverable statement
+    catch ($e) { $self->log->error("Tracking asset failed: $e") }
 }
 
 sub metrics ($self) {
@@ -226,11 +228,13 @@ sub purge_asset ($self, $asset) {
     my $tx = $db->begin('exclusive');
     $db->delete('assets', {filename => $asset});
     $tx->commit;
-    if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
+    if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless $self->_unlink($asset) }
     else { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
 
     return 1;
 }
+
+sub _unlink ($self, $asset) { unlink $asset }
 
 sub _cache_sync ($self) {
     $self->{cache_real_size} = 0;
@@ -304,7 +308,7 @@ sub _check_limits ($self, $needed, $to_preserve = undef) {
                 last if !$self->_exceeds_limit($needed);
             }
         }
-        catch ($e) { $log->error("Checking cache limit failed: $e") }    # uncoverable statement
+        catch ($e) { $log->error("Checking cache limit failed: $e") }
     }
 }
 
@@ -318,7 +322,7 @@ sub _delete_pending_assets ($self) {
             $self->purge_asset($filename);
         }
     }
-    catch ($e) { $log->error("Checking for pending leftovers failed: $e") }    # uncoverable statement
+    catch ($e) { $log->error("Checking for pending leftovers failed: $e") }
 }
 
 1;
