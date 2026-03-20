@@ -210,7 +210,7 @@ endif
 # note: Excluding dev dependencies like `eslint` via `--omit=dev` to pull in only dependencies needed at runtime (and for
 #       regular tests). Development tests/tooling like `js-tidy` will invoke `npm clean-install …` to install missing
 #       dependencies on its own anyway.
-node_modules: package-lock.json
+node_modules: package-lock.json ## Build web-related dependencies (NPM, JS, CSS)
 	@which local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
 	@touch node_modules
 
@@ -291,11 +291,11 @@ define RUN_SERVICE_TEST_DB
 endef
 
 .PHONY: run-webui-test-db
-run-webui-test-db: setup-database
+run-webui-test-db: setup-database ## Run a local web UI instance using a test database
 	$(call RUN_SERVICE_TEST_DB,script/openqa-webui-daemon)
 
 .PHONY: run-gru-test-db
-run-gru-test-db: setup-database
+run-gru-test-db: setup-database ## Run a local GRU instance using a test database
 	$(call RUN_SERVICE_TEST_DB,script/openqa-gru)
 
 # prepares running the tests within a container (eg. pulls os-autoinst) and then runs the tests considering
