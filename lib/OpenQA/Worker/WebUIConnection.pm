@@ -31,11 +31,7 @@ has 'websocket_connection';
 
 sub new ($class, $webui_host, $cli_options) {
     my $url = $webui_host !~ '/' ? Mojo::URL->new->scheme('http')->host_port($webui_host) : Mojo::URL->new($webui_host);
-    my $ua = OpenQA::Client->new(
-        api => $url->host,
-        apikey => $cli_options->{apikey},
-        apisecret => $cli_options->{apisecret},
-    );
+    my $ua = OpenQA::Client->new(api => $url->host, apikey => $cli_options->{apikey}, apisecret => $cli_options->{apisecret});
     $ua->base_url($url);
 
     # append relative paths to the existing ones
