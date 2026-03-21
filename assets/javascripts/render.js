@@ -179,7 +179,7 @@ function renderModuleRow(module, snippets) {
       const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
       const textresult = E('pre', [textData]);
-      var html = stepActions.outerHTML;
+      let html = stepActions.outerHTML;
       html += textresult.outerHTML;
       const txt = escape(html);
       const link = E('a', box, {

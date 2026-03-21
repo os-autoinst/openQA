@@ -1,14 +1,14 @@
 function setupParentGroupOverviewAssets(group_id) {
-  var cookieProductName = '_product_' + group_id + '_grouped_by';
-  var cookieAllProductsName = 'product_all_grouped_by';
+  const cookieProductName = '_product_' + group_id + '_grouped_by';
+  const cookieAllProductsName = 'product_all_grouped_by';
 
   function setCookie(name, value) {
     document.cookie = name + '=' + value;
   }
 
   function getCookie(name) {
-    var value = '; ' + document.cookie;
-    var parts = value.split('; ' + name + '=');
+    const value = '; ' + document.cookie;
+    const parts = value.split('; ' + name + '=');
     if (parts.length == 2) return parts.pop().split(';').shift();
   }
 
@@ -45,8 +45,8 @@ function setupParentGroupOverviewAssets(group_id) {
   }
 
   $(document).ready(function () {
-    var defaultHash = '#grouped_by_build';
-    var hash = window.location.hash;
+    const defaultHash = '#grouped_by_build';
+    let hash = window.location.hash;
 
     if (hash === undefined || hash === '') hash = getCookie(cookieProductName);
 
@@ -61,7 +61,7 @@ function setupParentGroupOverviewAssets(group_id) {
     updateView();
 
     $('.nav-tabs a').click(function (event) {
-      var hash = $(this).attr('href');
+      const hash = $(this).attr('href');
       window.location.hash = hash;
       updateGroupedByDefaultLinks();
       updateGroupedByClasses();

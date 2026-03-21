@@ -1,5 +1,5 @@
 function setupWorkerNeedles() {
-  var table = $('#previous_jobs').DataTable({
+  const table = $('#previous_jobs').DataTable({
     ajax: $('#previous_jobs').data('ajax-url'),
     deferRender: true,
     columns: [{data: 'name'}, {data: 'result_stats'}, {data: 'finished'}],
@@ -26,17 +26,17 @@ function loadWorkerTable() {
       this.api()
         .columns()
         .every(function () {
-          var column = this;
-          var colheader = this.header();
-          var title = $(colheader).text().trim();
+          const column = this;
+          const colheader = this.header();
+          const title = $(colheader).text().trim();
           if (title !== 'Status') {
             return false;
           }
 
-          var select = $('<select id="workers_online"><option value="">All</option></select>')
+          const select = $('<select id="workers_online"><option value="">All</option></select>')
             .appendTo($(column.header()).empty())
             .on('change', function () {
-              var val = $.fn.dataTable.util.escapeRegex($(this).val());
+              const val = $.fn.dataTable.util.escapeRegex($(this).val());
               column
                 // .search( val ? '^'+val+'$' : '', true, false )
                 .search(val ? val : '', true, false)
@@ -60,14 +60,14 @@ function loadWorkerTable() {
 }
 
 function deleteWorker(deleteBtn) {
-  var post_url = $(deleteBtn).attr('post_delete_url');
+  const post_url = $(deleteBtn).attr('post_delete_url');
   fetchWithCSRF(post_url, {method: 'DELETE'})
     .then(response => {
       return response.json();
     })
     .then(response => {
       if (response.error) throw response.error;
-      var table = $('#workers').DataTable();
+      const table = $('#workers').DataTable();
       table.row($(deleteBtn).parents('tr')).remove().draw();
       addFlash('info', response.message);
     })

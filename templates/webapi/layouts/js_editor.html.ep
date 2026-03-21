@@ -1,13 +1,15 @@
 <script type="text/javascript">
-let mode;
-let path = document.getElementById('script').dataset.path;
-if (path && path.endsWith('.pm') || path.endsWith('.pl')) {
-  mode = 'ace/mode/perl';
-}
-var editor = ace.edit("script", {
-    mode: mode,
-    maxLines: Infinity,
-    readOnly: true,
-});
-editor.session.setUseWrapMode(true);
+(() => {
+  let mode;
+  let path = document.getElementById('script').dataset.path;
+  if (path && (path.endsWith('.pm') || path.endsWith('.pl'))) {
+    mode = 'ace/mode/perl';
+  }
+  const editor = ace.edit("script", {
+      mode: mode,
+      maxLines: Infinity,
+      readOnly: true,
+  });
+  editor.session.setUseWrapMode(true);
+})();
 </script>

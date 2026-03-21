@@ -83,7 +83,7 @@ function createGroup(form) {
   $('#new_group_error').hide();
   $('#new_group_creating').show();
 
-  let data = new FormData(form);
+  const data = new FormData(form);
   let postUrl, rowUrl, targetElement;
   if (form.dataset.createParent !== 'false') {
     postUrl = form.dataset.postParentGroupUrl;

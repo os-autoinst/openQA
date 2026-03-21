@@ -4,8 +4,8 @@ function setup_admin_user() {
   });
 
   $('#users').on('change', 'input[name="role"]:radio', function () {
-    var username = $(this).parents('tr').find('.name').text();
-    var role = $(this).attr('id');
+    const username = $(this).parents('tr').find('.name').text();
+    let role = $(this).attr('id');
     role = $('label[for="' + role + '"]').text();
 
     function findDefault(form) {
@@ -16,14 +16,14 @@ function setup_admin_user() {
       findDefault(form).prop('checked', 'checked');
     }
 
-    var form = $(this).parent('form');
+    const form = $(this).parent('form');
     if (!confirm('Are you sure to put ' + username + ' into role: ' + role.trim() + '?')) {
       rollback(form);
       return;
     }
 
-    var data = new FormData(form[0]);
-    var newRole = data.get('role');
+    const data = new FormData(form[0]);
+    const newRole = data.get('role');
 
     fetch(form.attr('action'), {method: 'POST', body: data, headers: {Accept: 'application/json'}, redirect: 'error'})
       .then(response => {

@@ -7,17 +7,17 @@ function extendAdminTableSearch(searchTerm) {
   window.adminTable.search('((' + window.adminTable.search() + ')|(' + searchTerm + '))');
 }
 
-var newRowId = 'new row';
+const newRowId = 'new row';
 
 function showAdminTableRow(row) {
-  var adminTable = window.adminTable;
+  const adminTable = window.adminTable;
 
   // set pagination to the page containing the new row
-  var pageInfo = adminTable.page.info();
-  var rowPosition = adminTable.rows({search: 'applied'})[0].indexOf(row.index());
+  const pageInfo = adminTable.page.info();
+  let rowPosition = adminTable.rows({search: 'applied'})[0].indexOf(row.index());
   if (rowPosition < 0) {
     // extend the search if the row to be shown would otherwise be filtered out
-    var rowData = row.data();
+    const rowData = row.data();
     extendAdminTableSearch(!rowData.id ? newRowId : rowData.id);
     rowPosition = adminTable.rows({search: 'applied'})[0].indexOf(row.index());
   }
@@ -35,11 +35,11 @@ function showAdminTableRow(row) {
 }
 
 function addAdminTableRow() {
-  var adminTable = window.adminTable;
+  const adminTable = window.adminTable;
 
   // add new row
-  var newRow = adminTable.row.add(adminTable.emptyRow);
-  var newRowIndex = newRow.index();
+  const newRow = adminTable.row.add(adminTable.emptyRow);
+  const newRowIndex = newRow.index();
   adminTable.rowData[newRowIndex] = jQuery.extend({isEditing: true}, adminTable.emptyRow);
   newRow.invalidate().draw();
 
@@ -47,25 +47,25 @@ function addAdminTableRow() {
 }
 
 function isEditingAdminTableRow(meta) {
-  var rowData = window.adminTable.rowData;
-  var rowIndex = meta.row;
+  const rowData = window.adminTable.rowData;
+  const rowIndex = meta.row;
   return rowIndex < rowData.length && rowData[rowIndex].isEditing;
 }
 
 function setEditingAdminTableRow(tdElement, editing, submitted) {
   // get the data table row for the tdElement
-  var adminTable = window.adminTable;
-  var rowData = adminTable.rowData;
-  var row = adminTable.row(tdElement.parentElement);
+  const adminTable = window.adminTable;
+  const rowData = adminTable.rowData;
+  const row = adminTable.row(tdElement.parentElement);
   if (!row) {
     addFlash('danger', 'Internal error: invalid table row/cell specified');
     return;
   }
 
   // get the buffered row data updated from editor elements before submitting and set the 'isEditing' flag there
-  var rowIndex = row.index();
+  const rowIndex = row.index();
   if (rowIndex < rowData.length) {
-    var data = rowData[rowIndex];
+    const data = rowData[rowIndex];
     data.isEditing = editing;
 
     // pass the buffered row data from editor elements to the data table
@@ -98,7 +98,7 @@ function handleAdminTableSubmit(tdElement, response, id) {
     })
     .then(response => {
       if (response.error) throw response.error;
-      var rowData = response[Object.keys(response)[0]];
+      let rowData = response[Object.keys(response)[0]];
       if (rowData) {
         rowData = rowData[0];
       }
@@ -107,9 +107,9 @@ function handleAdminTableSubmit(tdElement, response, id) {
         return;
       }
 
-      var adminTable = window.adminTable;
-      var row = adminTable.row(tdElement.parentElement);
-      var rowIndex = row.index();
+      const adminTable = window.adminTable;
+      const row = adminTable.row(tdElement.parentElement);
+      const rowIndex = row.index();
       if (rowIndex >= adminTable.rowData.length) {
         return;
       }
@@ -122,11 +122,11 @@ function handleAdminTableSubmit(tdElement, response, id) {
 }
 
 function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
-  var tableHeadings = trElement.closest('table').find('th');
+  const tableHeadings = trElement.closest('table').find('th');
   trElement.find('td').each(function () {
-    var th = tableHeadings.eq(this.cellIndex);
-    var name = th.text().trim().toLowerCase();
-    var value;
+    const th = tableHeadings.eq(this.cellIndex);
+    const name = th.text().trim().toLowerCase();
+    let value;
     if (th.hasClass('col_value')) {
       value = $(this).find('input').val();
       if (name === 'distri') {
@@ -139,8 +139,8 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
         internalRowData[name] = value;
       }
     } else if (th.hasClass('col_settings_list')) {
-      var settingsToSubmit = {};
-      var internalRowSettings = [];
+      const settingsToSubmit = {};
+      const internalRowSettings = [];
       $(this)
         .find('.key-value-pairs')
         .each(function () {
@@ -150,7 +150,7 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
               return;
             }
             // determine key and value
-            var equationSignIndex = this.indexOf('=');
+            let equationSignIndex = this.indexOf('=');
             if (equationSignIndex < 1) {
               if (dataToSubmit) {
                 // fail if settings should be submitted
@@ -164,8 +164,8 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
                 equationSignIndex = this.length;
               }
             }
-            var key = this.substr(0, equationSignIndex);
-            var val = this.substr(equationSignIndex + 1);
+            const key = this.substr(0, equationSignIndex);
+            const val = this.substr(equationSignIndex + 1);
             settingsToSubmit[key] = val;
             internalRowSettings.push({key: key, value: val});
           });
@@ -192,19 +192,19 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
 }
 
 function submitAdminTableRow(tdElement, id) {
-  var adminTable = window.adminTable;
-  var rowIndex = adminTable.row(tdElement.parentElement).index();
+  const adminTable = window.adminTable;
+  const rowIndex = adminTable.row(tdElement.parentElement).index();
   if (rowIndex === undefined) {
     addFlash('danger', 'Internal error: invalid table cell specified');
     return;
   }
-  var rowData = adminTable.rowData[rowIndex];
+  const rowData = adminTable.rowData[rowIndex];
   if (!rowData) {
     addFlash('danger', 'Internal error: row data is missing');
     return;
   }
 
-  var dataToSubmit = {};
+  const dataToSubmit = {};
   try {
     getAdminTableRowData($(tdElement).parent('tr'), dataToSubmit, rowData);
   } catch (e) {
@@ -254,9 +254,9 @@ function submitAdminTableRow(tdElement, id) {
 }
 
 function removeAdminTableRow(tdElement) {
-  var adminTable = window.adminTable;
-  var row = adminTable.row(tdElement.parentElement);
-  var rowIndex = row.index();
+  const adminTable = window.adminTable;
+  const row = adminTable.row(tdElement.parentElement);
+  const rowIndex = row.index();
   if (rowIndex !== undefined && rowIndex < adminTable.rowData.length) {
     adminTable.rowData.splice(rowIndex, 1);
   }
@@ -298,16 +298,16 @@ function renderAdminTableValue(data, type, row, meta) {
 }
 
 function renderAdminTableSettingsList(data, type, row, meta) {
-  var plainText = type !== 'display';
-  var edit = isEditingAdminTableRow(meta);
-  var result = '';
+  const plainText = type !== 'display';
+  const edit = isEditingAdminTableRow(meta);
+  let result = '';
   if (edit) {
     result += '<textarea class="key-value-pairs" oninput="updateTextArea(this);">';
   }
-  for (var j = 0; j < data.length; j++) {
-    var keyValuePair = data[j];
-    var key = htmlEscape(keyValuePair.key);
-    var value = htmlEscape(keyValuePair.value);
+  for (let j = 0; j < data.length; j++) {
+    const keyValuePair = data[j];
+    const key = htmlEscape(keyValuePair.key);
+    const value = htmlEscape(keyValuePair.value);
     if (edit || plainText) {
       result += key + '=' + value + '\n';
     } else {
@@ -394,14 +394,14 @@ function setupAdminTable(isAdmin) {
   });
 
   // read columns from empty HTML table rendered by the server
-  var emptyRow = {};
-  var columns = [];
-  var columnDefs = [];
-  var thElements = $('.admintable thead th').each(function () {
-    var th = $(this);
+  const emptyRow = {};
+  const columns = [];
+  const columnDefs = [];
+  const thElements = $('.admintable thead th').each(function () {
+    const th = $(this);
 
     // add column
-    var columnName;
+    let columnName;
     if (th.hasClass('col_action')) {
       columnName = 'id';
     } else {
@@ -410,7 +410,7 @@ function setupAdminTable(isAdmin) {
     columns.push({data: columnName});
 
     // add column definition to customize rendering and sorting and add template for empty row
-    var columnDef = {
+    const columnDef = {
       targets: columns.length - 1,
       type: 'empty-string-last'
     };
@@ -437,15 +437,15 @@ function setupAdminTable(isAdmin) {
   });
 
   // setup admin table
-  var url = adminTableApiUrl();
-  var table = $('.admintable');
-  var dataTable = table.DataTable({
+  const url = adminTableApiUrl();
+  const table = $('.admintable');
+  const dataTable = table.DataTable({
     order: [[0, 'asc']],
     ajax: {
       url: url,
       dataSrc: function (json) {
         // assume the first "key" contains the data
-        var rowData = json[Object.keys(json)[0]];
+        const rowData = json[Object.keys(json)[0]];
         if (!rowData) {
           addFlash('danger', 'Internal error: server response misses table data');
           return (dataTable.rowData = []);
@@ -471,14 +471,14 @@ function setupAdminTable(isAdmin) {
 
   // save the current editor values before redraw so they survive using filtering/sorting/pagination
   dataTable.on('preDraw', function () {
-    var rowData = dataTable.rowData;
+    const rowData = dataTable.rowData;
     table.find('tr').each(function () {
-      var row = adminTable.row(this);
-      var rowIndex = row.index();
+      const row = adminTable.row(this);
+      const rowIndex = row.index();
       if (rowIndex === undefined || rowIndex >= rowData.length) {
         return;
       }
-      var data = jQuery.extend({}, rowData[rowIndex]);
+      const data = jQuery.extend({}, rowData[rowIndex]);
       if (!data.isEditing) {
         return;
       }

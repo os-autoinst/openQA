@@ -1,15 +1,15 @@
 function setCookie(cname, cvalue, exdays) {
-  var d = new Date();
+  const d = new Date();
   d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
-  var expires = 'expires=' + d.toGMTString();
+  const expires = 'expires=' + d.toGMTString();
   document.cookie = cname + '=' + cvalue + '; ' + expires;
 }
 
 function getCookie(cname) {
-  var name = cname + '=';
-  var ca = document.cookie.split(';');
-  for (var i = 0; i < ca.length; i++) {
-    var c = ca[i].trim();
+  const name = cname + '=';
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    const c = ca[i].trim();
     if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
   }
   return false;
@@ -44,7 +44,7 @@ function addFlash(status, text, container, method = 'append') {
     container = $('#flash-messages');
   }
 
-  var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
+  const div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
   div.append(makeFlashElement(text));
   div.append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
   div.addClass('alert-' + status);
@@ -72,14 +72,14 @@ function addUniqueFlash(status, id, text, container, method = 'append') {
 }
 
 function toggleChildGroups(link) {
-  var buildRow = $(link).parents('.build-row');
+  const buildRow = $(link).parents('.build-row');
   buildRow.toggleClass('children-collapsed');
   buildRow.toggleClass('children-expanded');
   return false;
 }
 
 function parseQueryParams() {
-  var params = {};
+  const params = {};
   for (const [key, value] of new URLSearchParams(document.location.search.substring(1))) {
     if (Array.isArray(params[key])) {
       params[key].push(value);
@@ -109,8 +109,8 @@ function updateQueryParams(params) {
 }
 
 function renderDataSize(sizeInByte) {
-  var unitFactor = 1073741824; // one GiB
-  var sizeWithUnit = 0;
+  let unitFactor = 1073741824; // one GiB
+  let sizeWithUnit = 0;
   $.each([' GiB', ' MiB', ' KiB', ' byte'], function (index, unit) {
     if (!unitFactor || sizeInByte >= unitFactor) {
       sizeWithUnit = Math.round((sizeInByte / unitFactor) * 100) / 100 + unit;
@@ -171,9 +171,9 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
 }
 
 function renderList(items) {
-  var ul = document.createElement('ul');
+  const ul = document.createElement('ul');
   items.forEach(function (item) {
-    var li = document.createElement('li');
+    const li = document.createElement('li');
     li.innerHTML = item;
     li.style.whiteSpace = 'pre-wrap';
     ul.appendChild(li);
@@ -182,17 +182,17 @@ function renderList(items) {
 }
 
 function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetElement) {
-  var hasResponse = typeof responseJSON === 'object';
-  var errors = hasResponse ? responseJSON.errors : ['Server returned invalid response'];
-  var warnings = hasResponse ? responseJSON.warnings : undefined;
-  var hasErrors = Array.isArray(errors) && errors.length > 0;
-  var hasWarnings = Array.isArray(warnings) && warnings.length > 0;
+  const hasResponse = typeof responseJSON === 'object';
+  const errors = hasResponse ? responseJSON.errors : ['Server returned invalid response'];
+  const warnings = hasResponse ? responseJSON.warnings : undefined;
+  const hasErrors = Array.isArray(errors) && errors.length > 0;
+  const hasWarnings = Array.isArray(warnings) && warnings.length > 0;
   if (!hasErrors && !hasWarnings) {
     return false;
   }
-  var container = document.createElement('div');
+  const container = document.createElement('div');
   if (hasResponse && responseJSON.enforceable && retryFunction) {
-    var button = document.createElement('button');
+    const button = document.createElement('button');
     button.onclick = retryFunction;
     button.className = 'btn btn-danger force-restart';
     button.style.float = 'right';
@@ -208,7 +208,7 @@ function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetEle
     container.appendChild(renderList(errors));
   }
   if (newJobUrl !== undefined) {
-    var link = document.createElement('a');
+    const link = document.createElement('a');
     link.href = newJobUrl;
     link.appendChild(document.createTextNode('new job'));
     container.appendChild(document.createTextNode('Go to '));
@@ -244,8 +244,8 @@ function restartJob(ajaxUrl, jobIds, comment) {
     singleJobId = jobIds;
     jobIds = [jobIds];
   }
-  var showError = function (reason) {
-    var errorMessage = '<strong>Unable to restart job';
+  const showError = function (reason) {
+    let errorMessage = '<strong>Unable to restart job';
     if (reason) {
       errorMessage += ':</strong> ' + reason;
     } else {
@@ -273,7 +273,7 @@ function restartJob(ajaxUrl, jobIds, comment) {
     .then(({response, json}) => {
       if (!response.ok || json.error)
         throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
-      var newJobUrl;
+      let newJobUrl;
       try {
         if (singleJobId) {
           newJobUrl = json.test_url[0][singleJobId];
@@ -326,15 +326,15 @@ function htmlEscape(str) {
 }
 
 function renderSearchResults(query, url) {
-  var spinner = document.getElementById('progress-indication');
+  const spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
-  var request = new XMLHttpRequest();
+  const request = new XMLHttpRequest();
   request.open('GET', urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)));
   request.setRequestHeader('Accept', 'application/json');
   request.onload = function () {
     // Make sure we have valid JSON here
     // And check that we have valid data, errors are not valid data
-    var json;
+    let json;
     try {
       json = JSON.parse(this.responseText);
       if (!json.data) {
@@ -345,15 +345,15 @@ function renderSearchResults(query, url) {
       return;
     }
     spinner.style.display = 'none';
-    var heading = document.getElementById('results-heading');
+    const heading = document.getElementById('results-heading');
     heading.appendChild(document.createTextNode(': ' + json.data.total_count + ' matches found'));
-    var results = document.createElement('div');
+    const results = document.createElement('div');
     results.id = 'results';
     results.className = 'list-group';
     const types = {code: 'Test modules', modules: 'Job modules', templates: 'Job Templates'};
 
     Object.keys(types).forEach(function (searchtype) {
-      var searchresults = json.data.results[searchtype];
+      const searchresults = json.data.results[searchtype];
       if (searchresults.length > 0) {
         const item = document.createElement('div');
         item.className = 'list-group-item';
@@ -407,8 +407,8 @@ function renderSearchResults(query, url) {
 }
 
 function testStateHTML(job) {
-  var className = 'status fa fa-circle';
-  var title;
+  let className = 'status fa fa-circle';
+  let title;
   if (job.state === 'running' || job.state === 'scheduled') {
     if (job.state === 'scheduled' && job.blocked_by_id) {
       className += ' state_blocked';
@@ -496,9 +496,9 @@ function renderJobStatus(item, id) {
     updateTestState(json.job, name, timeago, reason);
   };
   request.onerror = function () {
-    var msg = this.statusText;
+    let msg = this.statusText;
     try {
-      var json = JSON.parse(this.responseText);
+      const json = JSON.parse(this.responseText);
       if (json && json.error) {
         msg = json.error.split(/\n/)[0];
       } else if (json && json.error_status) {
@@ -557,19 +557,19 @@ function renderActivityView(ajaxUrl) {
       }
       uniqueJobs.add(id);
 
-      var item = document.createElement('div');
+      const item = document.createElement('div');
       item.className = 'list-group-item';
       renderJobStatus(item, id);
       results.append(item);
     });
-    var oldResults = document.getElementById('results');
+    const oldResults = document.getElementById('results');
     oldResults.parentElement.replaceChild(results, oldResults);
   };
   request.onerror = function () {
     spinner.style.display = 'none';
-    var msg = this.statusText;
+    let msg = this.statusText;
     try {
-      var json = JSON.parse(this.responseText);
+      const json = JSON.parse(this.responseText);
       if (json && json.error) {
         msg = json.error.split(/\n/)[0];
       } else if (json && json.error_status) {
@@ -721,16 +721,16 @@ if (typeof window !== 'undefined' && window.jQuery) {
 
   $(document).ready(function () {
     setTimeout(function () {
-      var $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
+      const $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
       if ($dropdownToggle.length) {
         $dropdownToggle.off('click');
         $dropdownToggle.on('click', function (e) {
-          var $el = $(this);
-          var $parent = $(this).offsetParent('.dropdown-menu');
+          const $el = $(this);
+          const $parent = $(this).offsetParent('.dropdown-menu');
           if (!$(this).next().hasClass('show')) {
             $(this).parents('.dropdown-menu').first().find('.show').removeClass('show');
           }
-          var $subMenu = $(this).next('.dropdown-menu');
+          const $subMenu = $(this).next('.dropdown-menu');
           $subMenu.toggleClass('show');
           $(this).parent('li').toggleClass('show');
 
@@ -742,7 +742,7 @@ if (typeof window !== 'undefined' && window.jQuery) {
         });
       }
 
-      var $dropdown = $('.nav-item.dropdown');
+      const $dropdown = $('.nav-item.dropdown');
       $dropdown.off('hidden.bs.dropdown');
       $dropdown.on('hidden.bs.dropdown', function (e) {
         $(this).find('.dropdown-menu .show').removeClass('show');

@@ -125,7 +125,7 @@ function setupOverview(options) {
   $('.timeago').timeago();
   $('.cancel').bind('ajax:success', function (event, xhr, status) {
     $(this).text(''); // hide the icon
-    var icon = $(this).parents('td').find('.status');
+    const icon = $(this).parents('td').find('.status');
     icon.removeClass('state_scheduled').removeClass('state_running');
     icon.addClass('state_cancelled');
     icon.attr('title', 'Cancelled');
@@ -137,15 +137,15 @@ function setupOverview(options) {
       return;
     }
     showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));
-    var newId = xhr.result[0];
-    var oldId = 0;
+    const newId = xhr.result[0];
+    const oldId = 0;
     $.each(newId, function (key, value) {
       if (!$('.restart[data-jobid="' + key + '"]').length) {
         return true;
       }
-      var restarted = $('.restart[data-jobid="' + key + '"]');
+      const restarted = $('.restart[data-jobid="' + key + '"]');
       restarted.text(''); // hide the icon
-      var icon = restarted.parents('td').find('.status');
+      const icon = restarted.parents('td').find('.status');
       icon.removeClass('state_done').removeClass('state_cancelled');
       icon.addClass('state_scheduled');
       icon.attr('title', 'Scheduled');
@@ -157,9 +157,9 @@ function setupOverview(options) {
       // If the API call returns a new id, a new job have been created to replace
       // the old one. In other case, the old job is being reused
       if (value) {
-        var link = icon.parents('a');
-        var oldId = restarted.data('jobid');
-        var newUrl = link.attr('href').replace(oldId, value);
+        const link = icon.parents('a');
+        const oldId = restarted.data('jobid');
+        const newUrl = link.attr('href').replace(oldId, value);
         link.attr('href', newUrl);
         link.addClass('restarted');
       }
@@ -167,29 +167,29 @@ function setupOverview(options) {
       icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
     });
   });
-  var dependencies = document.getElementsByClassName('dependency');
+  const dependencies = document.getElementsByClassName('dependency');
   for (let i = 0; i < dependencies.length; i++) {
     const depElement = dependencies[i];
-    var depInfo = depElement.dataset;
-    var deps = JSON.parse(depInfo.deps);
-    var dependencyResult = showJobDependency(deps);
+    const depInfo = depElement.dataset;
+    const deps = JSON.parse(depInfo.deps);
+    const dependencyResult = showJobDependency(deps);
     if (dependencyResult.title === undefined) {
       continue;
     }
-    var elementIClass = 'fa fa-code-fork';
-    var elementATitle = dependencyResult.title;
+    let elementIClass = 'fa fa-code-fork';
+    let elementATitle = dependencyResult.title;
     if (deps.has_parents) {
-      var str = parseInt(deps.parents_ok) ? 'passed' : 'failed';
+      const str = parseInt(deps.parents_ok) ? 'passed' : 'failed';
       elementIClass += ' result_' + str;
       elementATitle += '\ndependency ' + str;
     }
-    var elementA = document.createElement('a');
+    const elementA = document.createElement('a');
     elementA.href = urlWithBase('/tests/' + depInfo.jobid + '#dependencies');
     elementA.title = elementATitle;
     elementA.className = 'parents_children';
     elementA.dataset.childrenDeps = '[' + dependencyResult['data-children'].toString() + ']';
     elementA.dataset.parentsDeps = '[' + dependencyResult['data-parents'].toString() + ']';
-    var elementI = document.createElement('i');
+    const elementI = document.createElement('i');
     elementI.setAttribute('class', elementIClass);
     elementA.appendChild(elementI);
     depElement.appendChild(elementA);
@@ -207,7 +207,7 @@ function setupOverview(options) {
   modulesResultFilter.chosen({width: '100%'});
   modulesResultFilter.change(function (event) {
     // update query params
-    var params = parseQueryParams();
+    const params = parseQueryParams();
     params.modules_results = modulesResultFilter.val();
   });
 
@@ -268,21 +268,21 @@ function setCheckboxStatesForFlags(containerId, flags) {
 }
 
 function highlightDeps() {
-  var parentData = JSON.parse(this.dataset.parentsDeps);
-  var childData = JSON.parse(this.dataset.childrenDeps);
+  const parentData = JSON.parse(this.dataset.parentsDeps);
+  const childData = JSON.parse(this.dataset.childrenDeps);
   changeClassOfDependencyJob(parentData, 'highlight_parent', true);
   changeClassOfDependencyJob(childData, 'highlight_child', true);
 }
 
 function unhighlightDeps() {
-  var parentData = JSON.parse(this.dataset.parentsDeps);
-  var childData = JSON.parse(this.dataset.childrenDeps);
+  const parentData = JSON.parse(this.dataset.parentsDeps);
+  const childData = JSON.parse(this.dataset.childrenDeps);
   changeClassOfDependencyJob(parentData, 'highlight_parent', false);
   changeClassOfDependencyJob(childData, 'highlight_child', false);
 }
 
 function changeClassOfDependencyJob(array, className, add) {
-  for (var i = 0; i < array.length; i++) {
+  for (let i = 0; i < array.length; i++) {
     const ele = document.getElementsByName('jobid_td_' + array[i])[0];
     if (ele === undefined) {
       continue;
