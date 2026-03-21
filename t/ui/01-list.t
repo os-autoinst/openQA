@@ -49,20 +49,16 @@ my @job_params = (
     VERSION => '13.1'
 );
 
-# Customize the database based on fixtures.
-# We do not need job 99981 right now so delete it here just to have a helpful
-# example for customizing the test database
 sub prepare_database {
     my $bugs = $schema->resultset('Bugs');
     my %bug_args = (refreshed => 1, existing => 1);
-    my $bug1 = $bugs->create({bugid => 'poo#1', title => 'open poo bug', open => 1, %bug_args});
-    my $bug2 = $bugs->create({bugid => 'poo#2', title => 'closed poo bug', open => 0, %bug_args});
-    my $bug4 = $bugs->create({bugid => 'bsc#4', title => 'closed bugzilla bug', open => 0, %bug_args});
+    $bugs->create({bugid => 'poo#1', title => 'open poo bug', open => 1, %bug_args});
+    $bugs->create({bugid => 'poo#2', title => 'closed poo bug', open => 0, %bug_args});
+    $bugs->create({bugid => 'bsc#4', title => 'closed bugzilla bug', open => 0, %bug_args});
 
     my $jobs = $schema->resultset('Jobs');
     $jobs->find(99981)->delete;
 
-    # add a few comments
     my $job99946_comments = $jobs->find(99946)->comments;
     $job99946_comments->create({text => 'test1', user_id => 99901});
     $job99946_comments->create({text => 'test2', user_id => 99901});
@@ -74,11 +70,9 @@ sub prepare_database {
     my $job99936_comments = $jobs->find(99936)->comments;
     $job99936_comments->create({text => 'poo#1', user_id => 99901});
     $job99936_comments->create({text => 'poo#2', user_id => 99901});
-    # This bugref doesn't have a corresponding bug entry
     $job99936_comments->create({text => 'bsc#3', user_id => 99901});
     $job99936_comments->create({text => 'bsc#4', user_id => 99901});
 
-    # add another running job which is "half done"
     my $running_job = $jobs->create({id => 99970, state => RUNNING, TEST => 'kde', @job_params});
     my @modules = (
         {name => 'start_install', category => 'installation', script => 'start_install.pm', result => 'passed'},
@@ -106,10 +100,8 @@ sub prepare_database {
             settings =>
               [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
 
-    # ensure chained jobs 99937 is still displayed on page one together with its chained dependency 99938
     $jobs->search({id => 99937})->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 149 * ONE_HOUR, 'UTC')});
 
-    # create linked label with bugref; supposed to be rendered as clickable label (and *not* as bugref)
     $jobs->find({id => 80000})->comments->create({text => 'label:linked:poo#123', user_id => 1});
 
     assume_all_assets_exist;
@@ -125,7 +117,6 @@ like $driver->get_current_url(), qr{.*/tests}, 'legacy redirection from /results
 
 wait_for_ajax(msg => 'DataTables on "All tests" page');
 
-# Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946');
 my @tds = $driver->find_child_elements($job99946, 'td');
 is scalar @tds, 4, '4 columns displayed';
@@ -150,11 +141,6 @@ subtest 'running jobs, progress bars' => sub {
       'running', 'striped progress bar if not modules present yet';
     is $driver->find_element('#job_99970 .progress-bar')->get_text(),
       '67 %', 'progress is 67 % if 2 modules finished, 1 is running and 1 is queued';
-    # note: For simplicity the running module is ignored. That means 2 of only 3 modules
-    #       have been finished and hence we get 67 %. I suppose that's not worse than counting
-    #       the currently running module always as zero progress.
-
-    # job which is still running but all modules are completed or skipped after failure
     isnt $driver->find_element('#running #job_99963'), undef, '99963 still running';
     like $driver->find_element('#job_99963 td.test a')->get_attribute('href'), qr{.*/tests/99963}, 'right link';
     is $driver->find_element('#job_99963 .progress-bar')->get_text(),
@@ -162,6 +148,32 @@ subtest 'running jobs, progress bars' => sub {
     $time = $driver->find_element('#job_99963 td.time span');
     $time->attribute_like('title', qr/.*Z/, 'right time title for running');
     $time->text_like(qr/1[01] minutes ago/, 'right time for running');
+};
+
+subtest 'comments and bugrefs displayed for finished jobs' => sub {
+    is $driver->find_element('#job_99946 .fa-comment')->get_attribute('title'),
+      '2 comments available', 'available comments shown for finished jobs';
+    is @{$driver->find_elements('#job_99962 .fa-comment')},
+      0, 'available comments only shown if at least one comment available';
+    is $driver->find_element('#job_99936 .fa-bolt')->get_attribute('title'),
+      "Bug referenced: poo#1\nopen poo bug", 'available bugref (poo#1) shown for finished jobs';
+    is $driver->find_element('#job_99936 .fa-bug')->get_attribute('title'),
+      'Bug referenced: bsc#3', 'available bugref (bsc#3) shown for finished jobs';
+    my @closed = $driver->find_elements('#job_99936 .bug_closed');
+    is $closed[1]->get_attribute('title'),
+      "Bug referenced: poo#2\nclosed poo bug", 'available bugref (poo#2) shown for finished jobs';
+    is $closed[0]->get_attribute('title'),
+      "Bug referenced: bsc#4\nclosed bugzilla bug", 'available bugref (bsc#4) shown for finished jobs';
+    is_deeply [$driver->find_elements('#job_99963 .fa-comment')],
+      [], 'available comments not shown for running jobs (for performance reasons)';
+    is_deeply [$driver->find_elements('#job_99928 .fa-comment')],
+      [], 'available comments not shown for scheduled jobs (for performance reasons)';
+};
+
+subtest 'priority displayed when not logged in' => sub {
+    is $driver->find_element('#job_99928 td + td + td')->get_text(), '46', 'priority displayed';
+    my @prio_links = $driver->find_elements('#job_99928 td + td + td a');
+    is_deeply \@prio_links, [], 'no links to increase/decrease prio';
 };
 
 my @header = $driver->find_elements('h2');
@@ -233,37 +245,6 @@ subtest 'scheduled jobs server-side limit has precedence over user-specified lim
     $schema->txn_rollback;
 };
 
-subtest 'available comments shown' => sub {
-    $driver->get('/tests');
-    wait_for_ajax(msg => 'DataTables on "All tests" page for comments');
-
-    is
-      $driver->find_element('#job_99946 .fa-comment')->get_attribute('title'),
-      '2 comments available',
-      'available comments shown for finished jobs';
-    is @{$driver->find_elements('#job_99962 .fa-comment')},
-      0, 'available comments only shown if at least one comment available';
-    is
-      $driver->find_element('#job_99936 .fa-bolt')->get_attribute('title'),
-      "Bug referenced: poo#1\nopen poo bug",
-      'available bugref (poo#1) shown for finished jobs';
-    is
-      $driver->find_element('#job_99936 .fa-bug')->get_attribute('title'),
-      'Bug referenced: bsc#3',
-      'available bugref (bsc#3) shown for finished jobs';
-    my @closed = $driver->find_elements('#job_99936 .bug_closed');
-    is $closed[1]->get_attribute('title'),
-      "Bug referenced: poo#2\nclosed poo bug",
-      'available bugref (poo#2) shown for finished jobs';
-    is $closed[0]->get_attribute('title'),
-      "Bug referenced: bsc#4\nclosed bugzilla bug",
-      'available bugref (bsc#4) shown for finished jobs';
-    is_deeply [$driver->find_elements('#job_99963 .fa-comment')],
-      [], 'available comments not shown for running jobs (for performance reasons)';
-    is_deeply [$driver->find_elements('#job_99928 .fa-comment')],
-      [], 'available comments not shown for scheduled jobs (for performance reasons)';
-};
-
 $driver->find_element_by_link_text('Build0091')->click();
 like
   $driver->find_element_by_id('summary')->get_text(),
@@ -305,15 +286,8 @@ is @links, 3, 'only three links (icon, name and comments but no restart)';
 # Test 99926 is displayed
 is $driver->find_element('#results #job_99926 .test .status.result_incomplete')->get_text(), '', '99926 incomplete';
 
-subtest 'priority of scheduled jobs' => sub {
-    # displayed when not logged in
-    is $driver->find_element('#job_99928 td + td + td')->get_text(), '46', 'priority displayed';
-    my @prio_links = $driver->find_elements('#job_99928 td + td + td a');
-    is_deeply \@prio_links, [], 'no links to increase/decrease prio';
-
-    # displayed and adjustable when logged in as admin
+subtest 'priority adjustment when logged in' => sub {
     $driver->find_element_by_link_text('Login')->click();
-    $driver->get('/tests');
     wait_for_ajax;
     is $driver->find_element('#job_99928 .prio-value')->get_text(), '46', 'priority displayed';
     $driver->find_element('#job_99928 .prio-down')->click();
@@ -444,16 +418,14 @@ subtest 'result filter does not affect scheduled and running jobs' => sub {
     is scalar @finished_jobs, 3, 'Finished jobs table is correctly filtered';
 };
 
-subtest 'match parameter' => sub {
+subtest 'query parameters: match and comment filters' => sub {
     $driver->get('/tests?match=staging_e');
     wait_for_ajax msg => '"All tests" with match parameter';
-    @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')};
-    ok !$jobs[0], 'no running job matching';
-    ok !$jobs[1], 'no scheduled job matching';
-    is $jobs[2], 'job_99926', 'exactly one finished job matching';
-};
+    my @match_jobs = map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')};
+    ok !$match_jobs[0], 'no running job matching';
+    ok !$match_jobs[1], 'no scheduled job matching';
+    is $match_jobs[2], 'job_99926', 'exactly one finished job matching';
 
-subtest 'comment parameter' => sub {
     $driver->get('/tests?comment=test1');
     wait_for_ajax msg => '"All tests" with comment parameter';
     is_deeply [map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')}],
@@ -466,11 +438,8 @@ wait_for_ajax();
 my @cancel_links = $driver->find_elements('#job_99928 a.cancel');
 is scalar @cancel_links, 0, 'no cancel link when not logged in';
 
-# now login to test restart links
 $driver->find_element_by_link_text('Login')->click();
-is $driver->get('/tests'), 1, 'back on /tests';
 wait_for_ajax();
-
 @cancel_links = $driver->find_elements('#job_99928 a.cancel');
 is scalar @cancel_links, 1, 'cancel link displayed when logged in';
 
@@ -484,7 +453,7 @@ $driver->title_is('openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#job_99946 td.test');
 is $td->get_text(), 'textmode@32bit (restarted)', 'restart removes link';
 
-subtest 'check test results of job99940' => sub {
+subtest 'job 99940 module results and job 99991 description' => sub {
     $driver->get('/tests');
     wait_for_ajax;
     my $results = $driver->find_elements('#job_99940 > td')->[2];
@@ -495,18 +464,13 @@ subtest 'check test results of job99940' => sub {
     for my $class (qw(module_passed module_failed module_softfailed module_none module_skipped)) {
         is scalar(@{$driver->find_child_elements($results, 'i.' . $class)}), 1, "$class displayed";
     }
-};
 
-subtest 'test name and description still show up correctly using JOB_TEMPLATE_NAME' => sub {
-    $driver->get('/tests');
-    wait_for_ajax(msg => 'wait for all tests displayed before looking for 99991');
     is $driver->find_element('#job_99991 td.test')->get_text(),
       'kde_variant@64bit', 'job 99991 displays TEST correctly';
 
     $driver->get('/tests/99991#settings');
     wait_for_ajax;
-    is
-      $driver->find_element('#scenario-description')->get_text(),
+    is $driver->find_element('#scenario-description')->get_text(),
       'Simple kde test, before advanced_kde',
       'job 99991 description displays correctly';
 };
