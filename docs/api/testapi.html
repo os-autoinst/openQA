@@ -950,8 +950,10 @@ the <code>$default</code> if specified, otherwise <code>undef</code>.</p>
 <p>Set test variable <code>$variable</code> to value <code>$value</code>.</p>
 </div>
 <div class="paragraph">
-<p>Variables starting with <code><em>SECRET</em></code> or including <code>_PASSWORD</code> will not appear
-in the <code>vars.json</code> file.</p>
+<p>Variables starting with <code><em>SECRET</em></code>, including <code>_PASSWORD</code>, or whose <strong>NAME</strong> (key)
+matches a custom regular expression in the test variable
+<code>_HIDE_SECRETS_REGEX</code> will not appear in the <code>vars.json</code> file. For example,
+to hide all variables starting with 'SCC_REGCODE', use '^SCC_REGCODE'.</p>
 </div>
 <div class="paragraph">
 <p>Specify a true value for the <code>reload_needles</code> flag to trigger a reloading
@@ -2160,7 +2162,7 @@ set_serialdev($new);</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-17 05:03:31 UTC
+Last updated 2026-03-21 04:48:03 UTC
 </div>
 </div>
 </body>
