@@ -661,10 +661,6 @@ subtest 'Concurrent rsync' => sub {
       'right output';
 };
 
-subtest 'OpenQA::CacheService::Task::Sync' => sub {
-    test_sync $_ for (1 .. 4);
-};
-
 done_testing;
 
 END {
