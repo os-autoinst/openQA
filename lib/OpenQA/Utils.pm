@@ -863,11 +863,11 @@ sub check_df ($dir) {
     my $available_bytes = $df->{bavail};
     my $total_bytes = $df->{blocks};
     die "Unable to determine disk usage of '$dir'"
-      unless looks_like_number($available_bytes)
-      && looks_like_number($total_bytes)
-      && $total_bytes > 0
-      && $available_bytes >= 0
-      && $available_bytes <= $total_bytes;
+      if !(looks_like_number($available_bytes)
+        && looks_like_number($total_bytes)
+        && $total_bytes > 0
+        && $available_bytes >= 0
+        && $available_bytes <= $total_bytes);
     return ($available_bytes, $total_bytes);
 }
 

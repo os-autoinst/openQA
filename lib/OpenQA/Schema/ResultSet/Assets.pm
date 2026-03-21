@@ -287,7 +287,7 @@ sub status ($self, %options) {
             if (defined $parent_group_size) {
                 log_debug("Checking whether asset $asset_name ($asset_size) fits into"
                       . " parent $parent_group_id ($parent_group_size)");
-                next unless $largest_size < $parent_group_size && $parent_group_size >= $asset_size;
+                next if $largest_size >= $parent_group_size || $parent_group_size < $asset_size;
 
                 log_debug("Asset $asset_name ($asset_size) picked into parent $parent_group_id");
                 $largest_size = $parent_group_size;
@@ -296,7 +296,7 @@ sub status ($self, %options) {
             }
             else {
                 log_debug("Checking whether asset $asset_name ($asset_size) fits into group $group_id ($group_size)");
-                next unless $largest_size < $group_size && $group_size >= $asset_size;
+                next if $largest_size >= $group_size || $group_size < $asset_size;
 
                 log_debug("Asset $asset_name ($asset_size) picked into group $group_id");
                 $largest_size = $group_size;

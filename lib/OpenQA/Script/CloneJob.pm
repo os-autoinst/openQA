@@ -361,7 +361,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
 }
 
 sub _assign_existing_dependencies ($name, $deps, $settings, $jobs) {
-    return unless my @filtered = grep { !!$jobs->{$_} } @$deps;
+    return unless my @filtered = grep { $jobs->{$_} } @$deps;
     $settings->{$name} = join ',', @filtered;
 }
 

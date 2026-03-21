@@ -41,7 +41,7 @@ sub render_response (%args) {
     while (1) {
         my $column_index = $controller->param("order[$index][column]") // @$columns;
         my $column_order = $controller->param("order[$index][dir]");
-        last unless $column_index < @$columns && grep { $column_order eq $_ } qw(asc desc);
+        last if $column_index >= @$columns || !grep { $column_order eq $_ } qw(asc desc);
         push @order_by_params, {'-' . $column_order => $columns->[$column_index]};
         ++$index;
     }

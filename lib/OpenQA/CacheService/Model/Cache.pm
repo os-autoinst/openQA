@@ -134,7 +134,7 @@ sub get_asset ($self, $host, $job, $type, $asset) {
             my $att = 0;
             my $ok;
             ++$att and sleep 1 and $log->info("Updating cache failed (attempt $att)")
-              until ($ok = $self->_update_asset($asset, $etag, $size)) || $att > 5;
+              while (!($ok = $self->_update_asset($asset, $etag, $size)) && $att <= 5);
             die qq{Updating the cache for "$asset" failed, this should never happen} unless $ok;
             my $cache_size = human_readable_size($self->{cache_real_size});
             my $speed = download_speed($start, $end, $size);
