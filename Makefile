@@ -312,13 +312,7 @@ COVERDB_SUFFIX ?=
 # warning when using Devel::Cover and Cpanel::JSON::XS
 # https://progress.opensuse.org/issues/90371
 #
-# CoverageWorkaround: We use a workaround with Syntax::Keyword::Try::Deparse
-# because we would get warnings:
-#     unexpected OP_CUSTOM (catch) at .../B/Deparse.pm line 1667.
-# because Feature::Compat::Try uses OP_CUSTOM for perl < 5.40
-# https://metacpan.org/pod/Feature::Compat::Try#COMPATIBILITY-NOTES
-# https://rt.cpan.org/Transaction/Display.html?id=1992941
-COVEROPT ?= -mJSON::PP -It/lib -MCoverageWorkaround -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy|t/lib/CoverageWorkaround,-coverage,statement,-db,cover_db$(COVERDB_SUFFIX),
+COVEROPT ?= -mJSON::PP -It/lib -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement,-db,cover_db$(COVERDB_SUFFIX),
 endif
 
 ifeq ($(CHECK_GIT_STATUS),1)
