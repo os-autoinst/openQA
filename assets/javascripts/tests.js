@@ -122,7 +122,7 @@ function renderTimeAgo(data, type, row, position, notAvailableMessage) {
   var haveData = data && data !== 'Z';
   if (type === 'display') {
     return haveData
-      ? '<span title="' + data + '">' + jQuery.timeago(data) + '</span>'
+      ? '<span title="' + data + '">' + timeago.format(data) + '</span>'
       : notAvailableMessage
         ? notAvailableMessage
         : 'not yet';
@@ -414,7 +414,7 @@ function renderTestLists() {
 
   // add a handler for the actual filtering
   $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-    if (settings.nTable.getAttribute('id') !== 'results') {
+    if ($(settings.nTable).attr('id') !== 'results') {
       return true; // Do not filter other tables
     }
 

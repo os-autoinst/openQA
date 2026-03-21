@@ -1129,7 +1129,8 @@ function toggleSign(elem) {
 
 function getInvestigationDataAttr(key) {
   var attrs = {test_log: 'data-testgiturl', needles_log: 'data-needlegiturl'};
-  return document.getElementById('investigation').getAttribute(attrs[key]);
+  const investigation = document.getElementById('investigation');
+  return investigation ? investigation.getAttribute(attrs[key]) : null;
 }
 
 function renderSettingsTab(response) {

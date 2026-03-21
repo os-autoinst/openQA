@@ -251,7 +251,7 @@ qr/You might be able to connect to the SUT at remotehost:5991 via VNC with share
     element_visible('#developer-global-session-info', qr/Developer session has been opened by some developer/,);
     element_visible(
         '#developer-panel .card-header',
-        qr/owned by some developer \(.* ago, developer has 42 tabs open\)/,
+        qr/owned by some developer \((?:.* ago|just now), developer has 42 tabs open\)/,
         qr/regular test execution - click to expand/,
     );
 };
