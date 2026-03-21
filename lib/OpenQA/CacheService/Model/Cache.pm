@@ -36,7 +36,7 @@ sub _check_database_integrity ($self) {
     return $integrity_errors;
 }
 
-sub _kill_db_accessing_processes ($self, @db_files) {
+sub _kill_db_accessing_processes ($self, @db_files) {    # uncoverable statement
     qx{fuser -k @db_files; rm -f @db_files};    # uncoverable statement
     die 'Killing DB accessing processes failed when trying to cleanup' unless $? == 0;    # uncoverable statement
 }
