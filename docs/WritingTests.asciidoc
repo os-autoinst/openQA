@@ -135,6 +135,8 @@ Each flag is defined with a hash key, the possible hash keys are:
 
 * *fatal*: When set to `1` the whole test suite is aborted if the test module
    fails. The overall state is set to `failed`.
+* *always_run*: When set to `1` the test module is executed even if a previous
+   test module failed with `fatal`.
 * *ignore_failure*: When set to `1` and the test module fails, it will not
    affect the overall result at all.
 * *milestone*: After this test succeeds, update the 'lastgood' snapshot of the
@@ -539,7 +541,8 @@ Soft and hard failures can be triggered on demand by regular expressions when
 they match the serial output which is done after the test is executed. In case
 it does not make sense to continue the test run even if the current test module
 does not have the fatal flag, use `fatal` as serial failure type, so all
-subsequent test modules will not be executed if such failure was detected.
+subsequent test modules (unless marked with `always_run`) will not be
+executed if such failure was detected.
 
 To use this functionality the test developer needs to define the patterns to
 look for in the serial output either in the main.pm or in the test itself. Any
@@ -2111,7 +2114,7 @@ Depending on the use case, there are two options to help:
 In both modes there is no need to modify tests (i.e. adding `milestone` test
 flag as the behaviour is implied). In the latter mode every test module is also
 considered `fatal`. This means the job is aborted after the first failed test
-module.
+module (unless subsequent modules are marked with `always_run`).
 
 [id="snapshots-for-each-module"]
 ==== Enable snapshots for each module
