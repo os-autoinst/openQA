@@ -9,6 +9,8 @@
     setupParentGroupOverviewAssets('<%= $group->{id} %>');
 % end
 
+%= include 'layouts/limit_warning'
+
 % if (is_admin) {
     <form action="<%= url_for('admin_edit_parent_group', groupid => $group->{id}) %>" class="corner-buttons">
         <button type="submit" class="btn btn-light" title="Edit description, and other properties">

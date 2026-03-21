@@ -17,6 +17,8 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Constants qw(BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Utils qw(regex_match);
 use Mojo::File qw(tempfile);
+use Date::Format;
+use Time::Seconds qw(ONE_HOUR);
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -634,6 +636,53 @@ subtest 'job skipped count' => sub {
 
     is $jr->{skipped}, 1, 'Job with aborted result correctly increments skipped count';
     is $jr->{total}, 1, 'Total jobs incremented';
+};
+
+subtest 'Group overview limit' => sub {
+    $t->get_ok('/group_overview/1001')->status_is(200)->element_exists_not('#max-jobs-limit');
+    $t->app->config->{misc_limits}->{job_groups_overview_max_jobs} = 1;
+    $t->get_ok('/group_overview/1001')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 1 results included/);
+};
+
+subtest 'Parent group overview limit' => sub {
+    $t->get_ok('/parent_group_overview/1')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 1 results included/);
+};
+
+subtest 'Dashboard limit' => sub {
+    $t->get_ok('/dashboard_build_results')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 1 results included/);
+};
+
+subtest 'API V1 JobGroup limit' => sub {
+    $t->get_ok('/api/v1/job_groups/1001/build_results')->status_is(200)->json_is('/limit_exceeded' => 1);
+};
+
+subtest 'Dashboard limit reached between groups' => sub {
+    # 'opensuse' (1001) has 5 non-clone jobs in the newest 3 builds shown on the dashboard,
+    # 'opensuse test' (1002) has 1.
+    $job_groups->create({name => 'ZZZ', sort_order => 100});
+    $t->app->config->{misc_limits}->{job_groups_overview_max_jobs} = 2;
+    $t->get_ok('/dashboard_build_results')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 2 results included/);
+};
+
+subtest 'Group overview JSON' => sub {
+    $t->get_ok('/group_overview/1001.json')->status_is(200)->json_has('/group')->json_has('/build_results');
+};
+
+subtest 'Parent group overview JSON' => sub {
+    $t->get_ok('/parent_group_overview/1.json')->status_is(200)->json_has('/group')->json_has('/build_results');
+};
+
+subtest 'dashboard_build_results coverage' => sub {
+    $t->get_ok('/dashboard_build_results.json?group=opensuse')->status_is(200);
+    $t->get_ok('/dashboard_build_results.json?show_tags=1')->status_is(200);
+    $t->get_ok('/dashboard_build_results.json?only_tagged=1')->status_is(200);
+    $t->get_ok('/dashboard_build_results.json')->status_is(200);
+    my $res = $t->tx->res->json;
+    ok scalar @{$res->{results}} > 0, 'results are returned';
 };
 
 done_testing;
