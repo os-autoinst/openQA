@@ -585,6 +585,12 @@ subtest 'edit job templates' => sub() {
     # Make changes in a separate tab
     my $second_tab = open_new_tab($driver->get_current_url());
     $driver->switch_to_window($second_tab);
+    wait_until(
+        sub {
+            return $driver->execute_script('return typeof editor !== "undefined" && editor.getValue().length > 0;');
+        },
+        'editor loaded initial data'
+    );
     $form = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
     $yaml .= ' # additional comment';
