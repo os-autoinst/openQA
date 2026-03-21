@@ -292,8 +292,8 @@ subtest 'jobs in archive considered via archive_min_free_disk_space_percentage' 
     $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 31;
 
     my @expected_messages = (
-        'Unable to cleanup enough results from results dir',
         'Done with archive after deleting results from important jobs',
+        'Unable to cleanup enough results from results dir',
     );
 
     my $job = job_log_like qr/
@@ -312,7 +312,7 @@ subtest 'archive cleanup skipped if archive not full; result dir cleanup still a
     # setup: as in the previous subtest but this time the archive is not full
     $app->config->{misc_limits}->{archive_min_free_disk_space_percentage} = 30;
 
-    my @expected_messages = ('Unable to cleanup enough results from results dir', 'Nothing to do for archive');
+    my @expected_messages = ('Nothing to do for archive', 'Unable to cleanup enough results from results dir');
     my $job = job_log_like qr/
         Deleting\svideo\sof\sjob\s$unimportant_job_id.*
         Deleting\sresults\sof\sjob\s$unimportant_job_id.*
@@ -331,7 +331,7 @@ subtest 'deleted screenshots always accounted to main storage' => sub {
     %gained_disk_space_by_deleting_screenshots_of_job = ($important_job_id => 1);
     $dry_run_expected = 0;
 
-    my @expected_messages = ('Nothing to do for results dir', 'Unable to cleanup enough results from archive');
+    my @expected_messages = ('Unable to cleanup enough results from archive', 'Nothing to do for results dir',);
     my $job = job_log_like qr/
         Deleting\svideo\sof\simportant\sjob\s$important_job_id.*
         Deleting\sresults\sof\simportant\sjob\s$important_job_id.*
