@@ -11,7 +11,7 @@ use Mojo::IOLoop;
 sub register ($self, $app, $conf) {
     my $max = $app->config->{global}{max_rss_limit};
     my $interval = $ENV{OPENQA_RSS_CHECK_INTERVAL} // 5;
-    return unless $max && $max > 0;
+    return if !$max || $max <= 0;
 
     my $parent = $$;
     Mojo::IOLoop->next_tick(
@@ -20,7 +20,7 @@ sub register ($self, $app, $conf) {
                 $interval => sub {
                     my $rss = (getrusage())[2];
                     # RSS is in KB under Linux
-                    return unless $rss > $max;
+                    return if $rss <= $max;
                     $app->log->debug(qq{Worker exceeded RSS limit "$rss > $max", restarting});
                     Mojo::IOLoop->stop_gracefully;
                 }) if $parent ne $$;

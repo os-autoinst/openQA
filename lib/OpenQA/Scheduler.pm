@@ -40,7 +40,7 @@ sub startup ($self) {
 
     my $offset = OpenQA::Scheduler::Model::Jobs::STARVATION_PROTECTION_PRIORITY_OFFSET;
     die "OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET must be an integer >= 0\n"
-      unless looks_like_number $offset && $offset >= 0;
+      if !looks_like_number $offset || $offset < 0;
 
     # The reactor interval might be set to 1 ms in case the scheduler has been woken up by the
     # web UI (In this case it is important to set it back to OpenQA::Scheduler::SCHEDULE_TICK_MS)

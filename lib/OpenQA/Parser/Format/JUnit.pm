@@ -36,7 +36,7 @@ sub _add_result ($self, @args) {
 sub parse ($self, $xml) {
     confess 'No XML given/loaded' unless $xml;
     my $dom = Mojo::DOM->new($xml);
-    confess 'Failed parsing XML' unless @{$dom->tree} > 2;
+    confess 'Failed parsing XML' if @{$dom->tree} <= 2;
 
     my @tests;
     for my $ts ($dom->find('testsuite')->each) {
