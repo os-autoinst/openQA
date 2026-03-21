@@ -38,13 +38,6 @@ function NeedleDiff(id, width, height) {
   // Draw canvas into its container
   canvas.attr('width', width);
   canvas.attr('height', height);
-  container.css({
-    border: '1px solid black',
-    margin: '0px',
-    position: 'relative',
-    width: width + 'px',
-    height: height + 'px'
-  });
   container.append(canvas);
 
   Object.defineProperty(this, 'container', {
