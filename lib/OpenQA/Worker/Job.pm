@@ -592,7 +592,7 @@ sub _format_reason ($self, $state, $result, $reason) {
     return "api failure: $result_upload_error" if $result_upload_error && $reason eq WORKER_SR_DONE;
 
     # discard the reason if it is just WORKER_SR_DONE or the same as the result; otherwise return it
-    return undef unless $reason ne WORKER_SR_DONE && (!defined $result || $result ne $reason);
+    return undef if $reason eq WORKER_SR_DONE || (defined $result && $result eq $reason);
     return $reason;
 }
 

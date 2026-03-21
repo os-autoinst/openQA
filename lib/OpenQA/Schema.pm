@@ -124,7 +124,7 @@ sub _try_deploy_db ($dh) {
 
 sub _try_upgrade_db ($dh) {
     my $schema = $dh->schema;
-    return 0 unless $dh->schema_version > $dh->version_storage->database_version;
+    return 0 if $dh->schema_version <= $dh->version_storage->database_version;
     $dh->upgrade;
     return 1;
 }
