@@ -54,6 +54,11 @@ $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'
 is $res->locked_by, $jobA, 'mutex is locked';
 # try double lock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock', where => $jobB});
+$t->status_is(409, 'cannot get lock for another job specified via "where" parameter');
+$schema->resultset('Jobs')->search({id => $jobB})->update({state => DONE});
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock', where => $jobB});
+$t->status_is(410, 'deadlock prevented if job that is supposed to create the lock has already finished');
 
 $t->ua->unsubscribe('start');
 $t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => $tokenB) });
