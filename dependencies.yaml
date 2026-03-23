@@ -211,6 +211,7 @@ test_requires:
 
 style_check_requires:
   python3-yamllint:
+  perl(Test::Perl::Critic):
   perl(Perl::Critic):
   perl(Perl::Critic::Community):
   perl(Code::TidyAll):
