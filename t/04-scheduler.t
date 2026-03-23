@@ -34,8 +34,10 @@ setup_mojo_app_with_default_worker_timeout;
 
 # Mangle worker websocket send, and record what was sent
 my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+my $ws_client_mock = Test::MockModule->new('OpenQA::WebSockets::Client');
 my $sent = {};
 my $ws_send_error;
+$ws_client_mock->redefine(send_jobs => sub ($self, $job_info) { $sent = $job_info });
 $mock_result->redefine(
     ws_send => sub {
         my ($self, $worker) = @_;
@@ -342,6 +344,19 @@ subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {
     is scalar @$assigned, 0, 'No jobs assigned';
     is scalar @$scheduled, 10, '10 jobs still scheduled';
     $jobs->find($_->id)->delete for @jobs;
+};
+
+subtest 'assignment of multiple jobs' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    my @jobs = ($job, $job2);
+    my @job_ids = sort map { $_->id } @jobs;
+    my $worker = $workers->find(1);
+    my @params = ($schema, $worker, $worker->id, \@jobs, undef, \@job_ids);
+    my $res = OpenQA::Scheduler::Model::Jobs->singleton->_assign_multiple_jobs(@params);
+    is_deeply [sort @{$sent->{ids}}], \@job_ids, 'job IDs present' or always_explain $sent;
+    is_deeply [sort keys %{$sent->{data}}], \@job_ids, 'job data present' or always_explain $sent;
+    is $sent->{assigned_worker_id}, $worker->id, 'worker ID present' or always_explain $sent;
 };
 
 subtest 'scheduler limits' => sub {
