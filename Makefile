@@ -371,7 +371,7 @@ endif
 
 .PHONY: test-critic
 test-critic: ## Run Perl Critic
-	tools/perlcritic lib
+	prove xt/02-perlcritic.t
 
 .PHONY: test-tidy-compile-style
 test-tidy-compile-style: ## Run tidy, compile and style tests
