@@ -222,15 +222,9 @@ sub schedule ($self) {
         next unless $job_ids;
 
         # find jobs
-        my @jobs;
-        my $job_ids_str = join ', ', @$job_ids;
-        try {
-            @jobs = $schema->resultset('Jobs')->search({id => {-in => $job_ids}});
-        }
-        catch ($e) {
-            log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: $e");
-        }
+        my @jobs = $schema->resultset('Jobs')->search({id => {-in => $job_ids}});
         my $actual_job_count = scalar @jobs;
+        my $job_ids_str = join ', ', @$job_ids;
         if ($actual_job_count != scalar @$job_ids) {
             log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: only got $actual_job_count jobs");
             next;
