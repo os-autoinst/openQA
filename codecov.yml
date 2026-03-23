@@ -27,6 +27,7 @@ coverage:
           - lib/OpenQA/WebAPI/
           - lib/OpenQA/LiveHandler/
           - lib/OpenQA/Shared/
+          - lib/OpenQA/Resource/
           - lib/OpenQA/Task/
           - lib/OpenQA/Script/
           - lib/OpenQA/Schema/
