@@ -99,6 +99,12 @@ subtest 'restart job which has already been cloned' => sub {
     is_deeply $res->{warnings}, [], 'no warnings' or always_explain $res->{warnings};
 };
 
+subtest 'restarting jobs with no job IDs specified' => sub {
+    my $res = OpenQA::Resource::Jobs::job_restart([]);
+    is_deeply $res->{errors}, ['No job IDs specified'], 'error returned' or always_explain $res->{errors};
+    is_deeply $res->{warnings}, [], 'no warnings' or always_explain $res->{warnings};
+};
+
 $jobs = list_jobs();
 is_deeply $jobs, $current_jobs, 'jobs unchanged after restarting scheduled job';
 
