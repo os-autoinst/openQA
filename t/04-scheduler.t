@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use DateTime;
 use DateTime::Duration;
+use OpenQA::JobDependencies::Constants;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Scheduler::WorkerSlotPicker;
 use OpenQA::Resource::Locks;
@@ -22,6 +23,7 @@ use Test::Mojo;
 use Test::MockModule;
 use Test::Output qw(combined_like);
 use Test::Warnings ':report_warnings';
+use Mojo::Util qw(scope_guard);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::App;
 use OpenQA::WebAPI;
@@ -32,8 +34,10 @@ setup_mojo_app_with_default_worker_timeout;
 
 # Mangle worker websocket send, and record what was sent
 my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+my $ws_client_mock = Test::MockModule->new('OpenQA::WebSockets::Client');
 my $sent = {};
 my $ws_send_error;
+$ws_client_mock->redefine(send_jobs => sub ($self, $job_info) { $sent = $job_info });
 $mock_result->redefine(
     ws_send => sub {
         my ($self, $worker) = @_;
@@ -46,6 +50,7 @@ $mock_result->redefine(
 
 my $schema = OpenQA::Test::Database->new->create;
 my $jobs = $schema->resultset('Jobs');
+my $job_dependencies = $schema->resultset('JobDependencies');
 my $workers = $schema->resultset('Workers');
 my $t = Test::Mojo->new('OpenQA::Scheduler');
 my $app = OpenQA::WebAPI->new;
@@ -292,7 +297,20 @@ $last_seen->subtract(seconds => DB_TIMESTAMP_ACCURACY);
 $worker_db_obj->make_column_dirty('t_seen');
 $worker_db_obj->update({t_seen => $last_seen});
 
+subtest 'getting sort criteria for job from cluster that is not scheduled' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    my $scheduler_mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
+    my $fake_allocated = {worker => 1, job => 1};
+    $scheduler_mock->redefine(_allocate_jobs => sub ($self, $free_workers) { ({}, {1 => $fake_allocated}) });
+    my $running = $jobs->create({TEST => 'running', state => RUNNING});
+    $job_dependencies->create({child_job_id => 1, parent_job_id => $running->id, dependency => PARALLEL});
+    my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    is_deeply $allocated, [$fake_allocated], 'jobs allocated' or always_explain 'allocated:', $allocated;
+};
+
 subtest 'job grab (WORKER_CLASS mismatch)' => sub {
+    $sent = {};
     my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $worker_db_obj->discard_changes;
     is undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS';
@@ -326,6 +344,20 @@ subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {
     is scalar @$assigned, 0, 'No jobs assigned';
     is scalar @$scheduled, 10, '10 jobs still scheduled';
     $jobs->find($_->id)->delete for @jobs;
+};
+
+subtest 'assignment of multiple jobs and handling missing response from ws server' => sub {
+    $schema->txn_begin;
+    my $rollback = scope_guard sub { $schema->txn_rollback };
+    my @jobs = ($job, $job2);
+    my @job_ids = sort map { $_->id } @jobs;
+    my $worker = $workers->find(1);
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
+    my @params = ($schema, $worker, $worker->id, \@jobs, undef, \@job_ids);
+    throws_ok { $scheduler->_assign_jobs(@params) } qr/failed.*websocket/i, 'missing response from ws server handled';
+    is_deeply [sort @{$sent->{ids}}], \@job_ids, 'job IDs present' or always_explain $sent;
+    is_deeply [sort keys %{$sent->{data}}], \@job_ids, 'job data present' or always_explain $sent;
+    is $sent->{assigned_worker_id}, $worker->id, 'worker ID present' or always_explain $sent;
 };
 
 subtest 'scheduler limits' => sub {

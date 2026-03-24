@@ -156,6 +156,36 @@ sub _allocate_worker_with_priority ($self, $prio, $job_info, $j, $allocated_work
     }
 }
 
+sub _assign_single_job ($self, $schema, $worker, $job) {
+    $schema->txn_do(
+        sub {
+            $job->set_assigned_worker($worker);
+            $worker->set_current_job($job);
+        });
+    $job->ws_send($worker);
+}
+
+sub _assign_multiple_jobs ($self, $schema, $worker, $worker_id, $jobs, $directly_chained_job_sequence, $job_ids) {
+    # note: The $worker->update(...) is also done when the worker sends a status update. That is
+    #       required to track the worker's current job when assigning multiple jobs to it. We still
+    #       need to set it here immediately to be sure the scheduler does not consider the worker
+    #       free anymore.
+    return $self->_assign_single_job($schema, $worker, $jobs->[0]) if @$jobs == 1;
+    my %worker_assignment = (state => ASSIGNED, t_started => undef, assigned_worker_id => $worker_id);
+    $schema->txn_do(
+        sub {
+            $_->update(\%worker_assignment) for @$jobs;
+            $worker->set_current_job($jobs->[0]);
+        });
+    $self->_assign_multiple_jobs_to_worker($jobs, $worker, $directly_chained_job_sequence, $job_ids);
+}
+
+sub _assign_jobs ($self, @args) {
+    my $res = $self->_assign_multiple_jobs(@args);
+    ref $res eq 'HASH' && exists $res->{state} and return $res;
+    die 'Failed contacting websocket server over HTTP';
+}
+
 sub schedule ($self) {
     my $start_time = time;
     my $schema = OpenQA::Schema->singleton;
@@ -222,15 +252,9 @@ sub schedule ($self) {
         next unless $job_ids;
 
         # find jobs
-        my @jobs;
-        my $job_ids_str = join ', ', @$job_ids;
-        try {
-            @jobs = $schema->resultset('Jobs')->search({id => {-in => $job_ids}});
-        }
-        catch ($e) {
-            log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: $e");
-        }
+        my @jobs = $schema->resultset('Jobs')->search({id => {-in => $job_ids}});
         my $actual_job_count = scalar @jobs;
+        my $job_ids_str = join ', ', @$job_ids;
         if ($actual_job_count != scalar @$job_ids) {
             log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: only got $actual_job_count jobs");
             next;
@@ -250,35 +274,9 @@ sub schedule ($self) {
         }
 
         # assign the jobs to the worker and then send the jobs to the worker
-        # note: The $worker->update(...) is also done when the worker sends a status update. That is
-        #       required to track the worker's current job when assigning multiple jobs to it. We still
-        #       need to set it here immediately to be sure the scheduler does not consider the worker
-        #       free anymore.
         my $res;
         try {
-            if ($actual_job_count > 1) {
-                my %worker_assignment = (
-                    state => ASSIGNED,
-                    t_started => undef,
-                    assigned_worker_id => $worker_id,
-                );
-                $schema->txn_do(
-                    sub {
-                        $_->update(\%worker_assignment) for @jobs;
-                        $worker->set_current_job($jobs[0]);
-                    });
-                $res
-                  = $self->_assign_multiple_jobs_to_worker(\@jobs, $worker, $directly_chained_job_sequence, $job_ids);
-            }
-            else {
-                $schema->txn_do(
-                    sub {
-                        $jobs[0]->set_assigned_worker($worker);
-                        $worker->set_current_job($jobs[0]);
-                    });
-                $res = $jobs[0]->ws_send($worker);
-            }
-            die 'Failed contacting websocket server over HTTP' unless ref($res) eq 'HASH' && exists $res->{state};
+            $res = $self->_assign_jobs($schema, $worker, $worker_id, \@jobs, $directly_chained_job_sequence, $job_ids);
         }
         catch ($e) {
             log_warning "Failed to send data to websocket server, reason: $e";

@@ -69,8 +69,7 @@ sub unlock ($name, $jobid, $where) {
     return 1 unless $lock->locked_by;
     # return if not locked by us
     return 0 unless ($lock->locked_by == $jobid);
-    return 1 if ($locks->update({locked_by => undef}) > 0);
-    return 0;
+    return $locks->update({locked_by => undef}) > 0;
 }
 
 sub create ($name, $jobid) {

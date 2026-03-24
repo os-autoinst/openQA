@@ -26,7 +26,9 @@ coverage:
           - lib/OpenQA/Utils.pm
           - lib/OpenQA/WebAPI/
           - lib/OpenQA/LiveHandler/
+          - lib/OpenQA/Scheduler/
           - lib/OpenQA/Shared/
+          - lib/OpenQA/Resource/
           - lib/OpenQA/Task/
           - lib/OpenQA/Script/
           - lib/OpenQA/Schema/
