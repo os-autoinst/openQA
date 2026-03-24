@@ -29,7 +29,7 @@ sub finish_job_if_disk_usage_below_percentage (%args) {
     my $job = $args{job};
     my $percentage = $job->app->config->{misc_limits}->{$args{setting}};
 
-    unless (looks_like_number($percentage) && $percentage >= 0 && $percentage <= 100) {
+    if (!looks_like_number($percentage) || $percentage < 0 || $percentage > 100) {
         log_warning "Specified value for $args{setting} is not a percentage and will be ignored.";
         return undef;
     }

@@ -120,7 +120,7 @@ sub barrier_wait ($name = undef, $jobid = undef, $where = undef, $check_dead_job
     return @jobs == $barrier->count if grep { $_ eq $jobid } @jobs;
 
     push @jobs, $jobid;
-    return -1 unless $barriers->update({locked_by => (join ',', @jobs)}) > 0;
+    return -1 if $barriers->update({locked_by => (join ',', @jobs)}) <= 0;
     return @jobs == $barrier->count;
 }
 

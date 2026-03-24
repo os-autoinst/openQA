@@ -1,6 +1,10 @@
 theme = community + openqa
 severity = 4
-include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit
+include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
+
+# ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
+# No operators like < =~ ! allowed in 'unless' or 'until', only simple
+# unless $x && @$y
 
 verbose = ::warning file=%f,line=%l,col=%c,title=%m - severity %s::[%p] %e\n
 

@@ -20,7 +20,7 @@ BEGIN {
         log_debug("Running patched getaddrinfo() for $node");
         my ($family, $socktype, $protocol, $flags) = @$hints{qw(family socktype protocol flags)};
         return Scalar::Util::dualvar(Socket::EAI_FAMILY(), 'ai_family not supported')
-          unless !$family || $family == Socket::AF_INET();
+          if $family && $family != Socket::AF_INET();
         return (
             Scalar::Util::dualvar(0, ''),
             {
@@ -810,7 +810,7 @@ sub _check_system_utilization (
     $threshold = $self->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD},
     $load = _load_avg())
 {
-    return undef unless $threshold && @$load >= 3;
+    return undef if !$threshold || @$load < 3;
     # look at the load evolution over time to react quick enough if the load
     # rises but accept a falling edge
     return

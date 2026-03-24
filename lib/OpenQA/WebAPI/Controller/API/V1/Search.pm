@@ -179,13 +179,13 @@ sub query ($self) {
     $json{total_count} += @{$perl_module_results};
     $cap -= @{$perl_module_results};
     $results{code} = $perl_module_results;
-    return $self->render(json => {data => \%json}) unless $cap > 0;
+    return $self->render(json => {data => \%json}) if $cap <= 0;
 
     my $job_module_results = $self->_search_job_modules($keywords, $cap);
     $json{total_count} += @{$job_module_results};
     $cap -= @{$job_module_results};
     $results{modules} = $job_module_results;
-    return $self->render(json => {data => \%json}) unless $cap > 0;
+    return $self->render(json => {data => \%json}) if $cap <= 0;
 
     my $job_template_results = $self->_search_job_templates($keywords, $cap);
     $json{total_count} += @{$job_template_results};
