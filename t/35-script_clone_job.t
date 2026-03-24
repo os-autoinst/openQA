@@ -19,38 +19,12 @@ use Mojo::File 'tempdir';
 use Mojo::Transaction;
 use Scalar::Util qw(looks_like_number);
 
-# define fake client
-package Test::FakeLWPUserAgentMirrorResult {
+package Test::FakeResult {
     use Mojo::Base -base, -signatures;
     has is_success => 1;
     has code => 304;
     has status_line => 'some status';
     has json => undef;
-}    # uncoverable statement
-
-package Test::FakeLWPUserAgentMirrorTxn {
-    use Mojo::Base -base, -signatures;
-    has error => undef;
-    has res => sub { Test::FakeLWPUserAgentMirrorResult->new(is_success => 0, code => 404) };
-}    # uncoverable statement
-
-package Test::FakeLWPUserAgent {
-    use Mojo::Base -base, -signatures;
-    has mirrored => sub { {} };
-    has missing => 0;
-    has max_redirects => undef;
-    has fake_txn_args => sub { [] };
-
-    sub get ($self, $url) { Test::FakeLWPUserAgentMirrorTxn->new(@{$self->fake_txn_args}) }
-
-    sub mirror ($self, $from, $dest) {
-        my @res
-          = ($self->missing || $from !~ qr{http://foo/tests/1/asset/iso/(foo|bar)\.iso})
-          ? (is_success => 0, code => 404)
-          : ();
-        $self->mirrored->{$from} = $dest;
-        Test::FakeLWPUserAgentMirrorResult->new(@res);
-    }
 }    # uncoverable statement
 
 my @argv = (
@@ -73,15 +47,28 @@ my %parent_settings = (
     WORKER_CLASS => 'qemu_x86_64',
 );
 
+subtest 'running command' => sub {
+    my $run = \&OpenQA::Script::CloneJob::_run_cmd;
+    combined_like {
+        like $run->('does-not-exist'), qr/Failed.*does-not-exist.*No such/i, 'error if command does not exist'
+    }
+    qr/can't exec/i, 'exec error logged';
+    like $run->('false'), qr/false.*exited.*1/i, 'error if command fails';
+    is $run->('true'), '', 'no error if command succeeds';
+};
+
 subtest 'getting job' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     $clone_mock->redefine(_handle_unexpected_return_code => sub ($tx) { die 'unexpected return code' });
-    my $url_handler = {remote => Test::FakeLWPUserAgent->new, remote_url => Mojo::URL->new('foo')};
+    my $fake_res = Test::FakeResult->new(is_success => 0, code => 400, json => {FOO => 'bar'});
+    my $fake_txn = Test::MockObject->new->set_always(res => $fake_res)->set_always(error => undef);
+    my $fake_ua = Test::MockObject->new->set_always(get => $fake_txn);
+    $fake_ua->set_always(max_redirects => $fake_ua);
+    my $url_handler = {remote => $fake_ua, remote_url => Mojo::URL->new('foo')};
     my $options = {'ignore-missing-assets' => 1, reproduce => 1};
     throws_ok { clone_job_get_job(42, $url_handler, $options) } qr/unexpected return code/,
       'unexpected return code handled';
-    my $fake_res = Test::FakeLWPUserAgentMirrorResult->new(is_success => 1, code => 200, json => {FOO => 'bar'});
-    $url_handler->{remote}->fake_txn_args([res => $fake_res]);
+    $fake_res->is_success(1)->code(200);
     my $job = clone_job_get_job(42, $url_handler, $options);
     is_deeply $job, {vars => {FOO => 'bar'}}, 'vars assigned' or always_explain $job;
 };
@@ -133,8 +120,10 @@ subtest 'delete empty setting' => sub {
 
 subtest 'asset download' => sub {
     my $temp_assetdir = tempdir;
-    my $fake_ua = Test::FakeLWPUserAgent->new;
-    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), curl_args => []);
+    my %mirrored;
+    my $fake_download_error = 'fake-failure';
     my %options = (dir => $temp_assetdir);
     my $job_id = 1;
     my @missing_assets;
@@ -150,7 +139,7 @@ subtest 'asset download' => sub {
         missing_assets => \@missing_assets
     );
     $temp_assetdir->child($_)->make_path->chmod(0555) for qw(iso hdd);    # test with unwritable asset folders
-    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    $clone_mock->redefine(mirror => sub ($url_handler, $from, $dst) { $mirrored{$from} = $dst; $fake_download_error });
     $clone_mock->redefine(
         clone_job_get_job => sub ($job_id, $url_handler, $options) {
             return {id => 2, settings => {}, parents => {Chained => [3, 4]}} if $job_id eq 2;
@@ -170,12 +159,11 @@ subtest 'asset download' => sub {
 
     # assume an asset download fails
     $temp_assetdir->child($_)->remove_tree for qw(iso hdd);    # test with missing asset folders (will be created)
-    $fake_ua->missing(1);
     throws_ok {
         combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) }
-        qr/downloading.*foo.*to.*failed.*some status/s, 'download error logged';
+        qr/downloading foobar/s, 'download logged';
     }
-    qr/Can't clone due to missing assets: some status/, 'error if asset does not exist';
+    qr|Cloning aborted during asset download:.*fake-failure|, 'error if asset does not exist';
 
     # assume openQA reports that an asset is missing
     @missing_assets = ('iso/foo.iso', 'hdd/some.qcow2');
@@ -197,35 +185,35 @@ subtest 'asset download' => sub {
     $options{'skip-deps'} = 0;
     $options{'ignore-missing-assets'} = 1;
     combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) }
-    qr/downloading.*foo.*to.*failed.*some status.*downloading.*bar.*failed/s, 'download error logged but ignored';
+    qr/Cloning aborted during asset download:.*fake-failure/s, 'download error logged but ignored';
 
-    $fake_ua->mirrored({})->missing(0);
+    %mirrored = ();
     combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) }
     qr{downloading.*http://.*foo.iso.*to.*foo.iso.*downloading.*http://.*bar.iso.*to.*bar.iso}s, 'download logged';
-    is_deeply $fake_ua->mirrored, \%expected_downloads,
+    is_deeply \%mirrored, \%expected_downloads,
       'assets downloadeded except HDDs which are generated by parent job anyways'
-      or always_explain $fake_ua->mirrored;
+      or always_explain \%mirrored;
     ok -f "$temp_assetdir/iso/foo.iso", 'foo touched';
     ok -f "$temp_assetdir/iso/bar.iso", 'foo touched';
 
-    $fake_ua->mirrored({});
+    %mirrored = ();
     $options{'skip-deps'} = 1;
     $expected_downloads{"http://foo/tests/$job_id/asset/hdd/some.qcow2"} = "$temp_assetdir/hdd/some.qcow2";
     $expected_downloads{"http://foo/tests/$job_id/asset/hdd/uefi-vars.qcow2"} = "$temp_assetdir/hdd/uefi-vars.qcow2";
     combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) } qr/downloading/,
       'downloading logged (1)';
-    is_deeply $fake_ua->mirrored, \%expected_downloads,
+    is_deeply \%mirrored, \%expected_downloads,
       'assets downloadeded including HDDs because we skip cloning the parent job'
-      or always_explain $fake_ua->mirrored;
+      or always_explain \%mirrored;
 
-    $fake_ua->mirrored({});
+    %mirrored = ();
     $job{parents} = {Chained => [3, 5]};
     delete $expected_downloads{"http://foo/tests/$job_id/asset/hdd/uefi-vars.qcow2"};
     combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) } qr/downloading/,
       'downloading logged (2)';
-    is_deeply $fake_ua->mirrored, \%expected_downloads,
+    is_deeply \%mirrored, \%expected_downloads,
       'assets downloadeded except uefi-vars because no parent produces it anyways'
-      or always_explain $fake_ua->mirrored;
+      or always_explain \%mirrored;
 };
 
 subtest 'get 2 nodes HA cluster with get_deps' => sub {
@@ -496,17 +484,30 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
     };
 };
 
-subtest 'auth with lwp' => sub {
-    note 'config path: ' . ($ENV{OPENQA_CONFIG} = "$FindBin::Bin/data");
-    my $ua = OpenQA::Script::CloneJob::create_lwp_user_agent('testapi', {});
-    $ua->add_handler(
-        request_send => sub ($request, $ua, $handler) {
-            ok looks_like_number($request->header('X-API-Microtime')), 'microtime set';
-            is $request->header('X-API-Key'), 'PERCIVALKEY02', 'api key set';
-            is length($request->header('X-API-Hash')), 40, 'hash set';
-            return HTTP::Response->new(200);    # terminate the processing
+subtest 'invoking curl passing auth headers' => sub {
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    my @invoked_cmds;
+    $clone_mock->redefine(
+        _run_cmd => sub (@args) {
+            push @invoked_cmds, map { m/(.*hash:|.*time:)/i ? "$1 ?" : "$_" } @args;
+            '';
         });
-    $ua->get('http://foobar/some/path');
+    note 'config path: ' . ($ENV{OPENQA_CONFIG} = "$FindBin::Bin/data");
+
+    my $args = OpenQA::Script::CloneJob::make_curl_arguments({});
+    is_deeply $args, [qw(--follow --no-progress-meter)], 'default arguments correct';
+    my $secrets = OpenQA::Script::CloneJob::read_secrets('testapi');
+    is_deeply $secrets, [qw(PERCIVALKEY02 PERCIVALSECRET02)], 'key and secret as expected for host "testapi"';
+
+    my %url_handler = (curl_args => $args, secrets => $secrets);
+    my $error = OpenQA::Script::CloneJob::mirror(\%url_handler, Mojo::URL->new('url'), 'path');
+    my @expected_cmds = (
+        qw(curl --follow --no-progress-meter),
+        (map { -H => $_ } ('X-API-Hash: ?', 'X-API-Key: PERCIVALKEY02', 'X-API-Microtime: ?')),
+        qw(--continue-at - --output path url),
+    );
+    is $error, '', 'no error returned';
+    is_deeply \@invoked_cmds, \@expected_cmds, 'invoked expected commands' or always_explain \@invoked_cmds;
 };
 
 subtest 'determining base URL' => sub {

@@ -8,7 +8,6 @@ use Mojo::Base -strict, -signatures;
 use Cpanel::JSON::XS;
 use Data::Dump 'pp';
 use Exporter 'import';
-use LWP::UserAgent;
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use Mojo::File 'path';
@@ -35,6 +34,8 @@ use constant JOB_SETTING_OVERRIDES => {
     _GROUP => '_GROUP_ID',
     _GROUP_ID => '_GROUP',
 };
+
+use constant CURL => $ENV{OPENQA_CLI_CURL_PATH} // 'curl';
 
 my $TEST_NAME = TEST_NAME_ALLOWED_CHARS;
 my $TEST_NAME_PLUS_MINUS = TEST_NAME_ALLOWED_CHARS_PLUS_MINUS;
@@ -148,10 +149,29 @@ sub _check_for_missing_assets ($job, $parents, $options) {
     die "The following assets are missing:\n - $relevant_missing_assets\n$note\n";
 }
 
+sub _format_cmd_error ($command) {
+    return "Failed to execute '$command': $!" if $? == -1;
+    return ($? & 127)
+      ? sprintf "'$command' received signal %d", $? & 127
+      : sprintf "'$command' exited with non-zero exit status %d", $? >> 8;
+}
+
+sub _run_cmd ($command, @args) { system $command, @args; return $? == 0 ? '' : _format_cmd_error($command) }
+
+sub mirror ($url_handler, $from, $dst) {
+    my @curl_args = @{$url_handler->{curl_args}};
+    my $secrets = $url_handler->{secrets};
+    my $headers = Mojo::Headers->new;
+    OpenQA::UserAgent::add_auth_headers($headers, $from, @$secrets) if $secrets;
+    for my $name (@{$headers->names}) {
+        push @curl_args, '-H', "$name: " . $_ for @{$headers->every_header($name)};
+    }
+    _run_cmd CURL, @curl_args, qw(--continue-at - --output), $dst, $from;
+}
+
 sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
     my $parents = _get_chained_parents($job, $url_handler, $options);
     _check_for_missing_assets($job, $parents, $options);
-    my $ua = $url_handler->{ua};
     my $remote_url = $url_handler->{remote_url};
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo';    # we can't download repos
@@ -170,18 +190,13 @@ sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
             $dst =~ s,.*/,,;
             my $dst_dir = path($options->{dir}, $type)->make_path;
             $dst = $dst_dir->child($dst)->to_string;
+            die "Cannot write $dst_dir\n" unless -w $dst_dir;
             my $from = $remote_url->clone;
             $from->path(sprintf '/tests/%d/asset/%s/%s', $jobid, $type, $file);
-            $from = $from->to_string;
-
-            die "Cannot write $dst_dir\n" unless -w $dst_dir;
-
             print STDERR "downloading\n$from\nto\n$dst\n";
-            my $r = $ua->mirror($from, $dst);
-            unless ($r->is_success || $r->code == HTTP_NOT_MODIFIED) {
-                print STDERR "$jobid failed: $file, ", $r->status_line, "\n";
-                die "Can't clone due to missing assets: ", $r->status_line, " \n"
-                  unless $options->{'ignore-missing-assets'};
+            if (my $error = mirror($url_handler, $from, $dst)) {
+                my $msg = "\nCloning aborted during asset download: $error\n";
+                $options->{'ignore-missing-assets'} ? print STDERR $msg : die $msg;
             }
 
             # ensure the asset cleanup preserves the asset the configured amount of days starting from the time
@@ -203,21 +218,18 @@ sub split_jobid ($url_string) {
     return ($host_url, $jobid);
 }
 
-sub create_lwp_user_agent ($host, $options) {
-    my $ua = LWP::UserAgent->new;
-    $ua->timeout(10);
-    $ua->env_proxy;
-    $ua->show_progress(1) if $options->{'show-progress'};
-    return $ua unless my $cfg = OpenQA::UserAgent::open_config_file($host);
+sub make_curl_arguments ($options) {
+    my @args = ('--follow');
+    push @args, '--no-progress-meter' unless $options->{'show-progress'};
+    push @args, '--verbose' if $options->{verbose};
+    return \@args;
+}
 
+sub read_secrets ($host) {
+    return undef unless my $cfg = OpenQA::UserAgent::open_config_file($host);
     my $apikey = ($cfg->val($host, 'key'))[-1];
     my $apisecret = ($cfg->val($host, 'secret'))[-1];
-    $ua->add_handler(
-        request_prepare => sub ($request, $ua, $handler) {
-            OpenQA::UserAgent::add_auth_headers($request, Mojo::URL->new($request->uri), $apikey, $apisecret);
-        }) if $apikey && $apisecret;
-
-    return $ua;
+    return $apikey && $apisecret ? [$apikey, $apisecret] : undef;
 }
 
 sub create_url_handler ($options) {
@@ -234,9 +246,14 @@ sub create_url_handler ($options) {
     # configure user agents for the source host (usually a remote host)
     my $remote_url = OpenQA::Client::url_from_host($options->{from});
     $remote_url->path('/api/v1/jobs');
-    my $remote = OpenQA::Client->new(api => $remote_url->host);
-    my $ua = create_lwp_user_agent($remote_url->host, $options);
-    return {ua => $ua, local => $local, local_url => $local_url, remote => $remote, remote_url => $remote_url};
+    return {
+        curl_args => make_curl_arguments($options),
+        secrets => read_secrets($remote_url->host),
+        local => $local,
+        local_url => $local_url,
+        remote => OpenQA::Client->new(api => $remote_url->host),
+        remote_url => $remote_url
+    };
 }
 
 sub openqa_baseurl ($local_url) {
