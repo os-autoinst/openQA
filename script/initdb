@@ -24,12 +24,12 @@ my $default_script_directory = "$FindBin::RealBin/../dbicdh";
 my $script_directory = $default_script_directory;
 
 my $result = GetOptions(
-    "help" => \$help,
-    "prepare_init" => \$prepare_init,
-    "init_database" => \$init_database,
-    "force" => \$force,
-    "user=s" => \$user,
-    "dir=s" => \$script_directory,
+    'help' => \$help,
+    'prepare_init' => \$prepare_init,
+    'init_database' => \$init_database,
+    'force' => \$force,
+    'user=s' => \$user,
+    'dir=s' => \$script_directory,
 );
 
 sub usage {
@@ -53,8 +53,8 @@ usage 0 if $help;
 usage 1 unless $result or $prepare_init or $init_database;
 
 if ($user) {
-    my $uid = getpwnam($user) || die "No such login $user";
-    my $gid = getgrnam($user);
+    my $uid = getpwnam $user or die "No such login $user";
+    my $gid = getgrnam $user;
     if ($gid) {
         setgid($gid) || die "can't sgid to $user group";
     }
@@ -82,7 +82,7 @@ if ($prepare_init) {
 
         if (exists $deploy_dir{$version} and not $force) {
             print "The deploy directory already contains the schema for the current version.\n";
-            print "Use the --force option if you want to overwrite the contents of the ";
+            print 'Use the --force option if you want to overwrite the contents of the ';
             print "$script_directory/$db/deploy/$version directory\n";
             exit 1;
         }

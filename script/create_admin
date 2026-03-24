@@ -18,8 +18,8 @@ use Getopt::Long;
 my $email = 'admin@example.com';
 my $nickname = 'admin';
 my $fullname = 'Administrator';
-my $key = "";
-my $secret = "";
+my $key = '';
+my $secret = '';
 my $user = $ARGV[0];
 my $help;
 
@@ -39,16 +39,16 @@ sub usage {
 my $numargs = scalar @ARGV;
 
 my $result = GetOptions(
-    "email=s" => \$email,
-    "nickname=s" => \$nickname,
-    "fullname=s" => \$fullname,
-    "key=s" => \$key,
-    "secret=s" => \$secret,
-    "help" => \$help,
+    'email=s' => \$email,
+    'nickname=s' => \$nickname,
+    'fullname=s' => \$fullname,
+    'key=s' => \$key,
+    'secret=s' => \$secret,
+    'help' => \$help,
 );
 
 usage 0 if $help;
-usage 1 unless $result && $user && $numargs > 1;
+usage 1 if !($result && $user && $numargs > 1);
 
 if (($key || $secret)
     && !($key =~ /^[[:xdigit:]]{16}$/ && $secret =~ /^[[:xdigit:]]{16}$/))
@@ -77,5 +77,5 @@ my $account = $schema->resultset('Users')->create_user(
     is_admin => 1
 );
 
-$schema->resultset("ApiKeys")->create({user_id => $account->id, key => $key, secret => $secret});
+$schema->resultset('ApiKeys')->create({user_id => $account->id, key => $key, secret => $secret});
 
