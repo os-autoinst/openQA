@@ -14,7 +14,7 @@ ok system(qq{git grep -I -l '[#/ ]*SPDX-License-Identifier ' ':!COPYING' ':!exte
   'SPDX-License-Identifier correctly terminated';
 is qx{git grep -I -L '^use Test::Most' t/**.t}, '', 'All tests use Test::Most';
 is qx{git grep --all-match -e '^use Mojo::Base' -e 'use base'}, '', 'No redundant Mojo::Base+base';
-is qx{git grep -I --all-match -e '^use Mojo::Base' -e 'use \\(strict\\|warnings\\);' ':!docs'}, '',
+is qx{git grep -I --all-match -e '^use Mojo::Base' -e 'use \\(strict\\|warnings\\);' ':!docs' ':!external'}, '',
   'Only combined Mojo::Base+strict+warnings';
 is qx{git grep -I -L '^use Test::Warnings' t/**.t ':!t/01-style.t'}, '', 'All tests use Test::Warnings';
 is qx{git grep -I -l '^use Test::\\(Exception\\|Fatal\\)' t/**.t}, '',
