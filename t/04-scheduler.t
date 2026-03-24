@@ -346,14 +346,15 @@ subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {
     $jobs->find($_->id)->delete for @jobs;
 };
 
-subtest 'assignment of multiple jobs' => sub {
+subtest 'assignment of multiple jobs and handling missing response from ws server' => sub {
     $schema->txn_begin;
     my $rollback = scope_guard sub { $schema->txn_rollback };
     my @jobs = ($job, $job2);
     my @job_ids = sort map { $_->id } @jobs;
     my $worker = $workers->find(1);
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
     my @params = ($schema, $worker, $worker->id, \@jobs, undef, \@job_ids);
-    my $res = OpenQA::Scheduler::Model::Jobs->singleton->_assign_multiple_jobs(@params);
+    throws_ok { $scheduler->_assign_jobs(@params) } qr/failed.*websocket/i, 'missing response from ws server handled';
     is_deeply [sort @{$sent->{ids}}], \@job_ids, 'job IDs present' or always_explain $sent;
     is_deeply [sort keys %{$sent->{data}}], \@job_ids, 'job data present' or always_explain $sent;
     is $sent->{assigned_worker_id}, $worker->id, 'worker ID present' or always_explain $sent;
