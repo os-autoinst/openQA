@@ -39,13 +39,50 @@ sub violates ($self, $, $doc) {
     # Bail if there's none.
     return unless $use_stmts;
 
-    # Bail out if there's only one. TestingAndDebugging::RequireUseStrict will report
-    # that there's no use strict/warnings.
-    return if scalar @{$use_stmts} == 1;
+    my ($use_strict, $use_warnings, $mojo_strict, $mojo, @other);
+    for my $stmt (@$use_stmts) {
+        my $module = $stmt->module;
+        if ($module eq 'strict') { $use_strict = $stmt }
+        elsif ($module eq 'warnings') { $use_warnings = $stmt }
+        elsif ($module eq 'Mojo::Base') {
+            # "use Mojo::Base 'somebaseclass'" or "use Mojo::Base -signatures" is
+            # not a superfluous strict usage. Only "use Mojo::Base -strict".
+            $mojo_strict = $stmt if _analyze_mojo_base($stmt);
+            $mojo = 1;
+        }
+        else {
+            push @other, $stmt;
+        }
+    }
+    my @violating;
+    if (@other) {
+        push @violating, grep { $_ } ($use_strict, $use_warnings, $mojo_strict);
+    }
+    elsif ($mojo) {
+        push @violating, grep { $_ } ($use_strict, $use_warnings);
+    }
+    return map { $self->_make_violation($_) } @violating;
+}
 
-    # If the 'use strict' or 'use warnings' statement is present as well as a
-    # module already providing that behavior, -> it violates.
-    return map { $self->_make_violation($_) } grep { !$_->pragma() } @{$use_stmts};
+sub _analyze_mojo_base ($stmt) {
+    my @args;
+    for my $token ($stmt->arguments) {
+        next if $token->isa('PPI::Token::Operator');
+        if ($token->isa('PPI::Token::Quote')) {
+            push @args, $token->string;
+        }
+        elsif ($token->isa('PPI::Token::QuoteLike::Words')) {
+            push @args, $token->literal;
+        }
+        elsif ($token->isa('PPI::Token::Word')) {
+            # unquoted word
+            push @args, $token->content;
+        }
+    }
+    if (grep { m/^-strict$/ } @args) {
+        return $stmt;
+    }
+    return 0;
 }
 
 sub _make_violation ($self, $statement) {

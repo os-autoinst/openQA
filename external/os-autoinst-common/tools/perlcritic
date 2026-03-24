@@ -16,7 +16,7 @@ sub extra_include_paths (@extra_paths) {
     return grep { -e $_ } @paths;
 }
 
-$ENV{PERL5LIB} = join(':', (extra_include_paths('lib/perlcritic'), $ENV{PERL5LIB} // ''));
+$ENV{PERL5LIB} = join ':', extra_include_paths('lib/perlcritic'), $ENV{PERL5LIB} // '';
 unless (@ARGV) {
     say "Usage: $0 files-or-directories";
     exit;
