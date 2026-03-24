@@ -48,11 +48,7 @@ sub parse ($self, $xml) {
         $ts_category =~ s/\..*$//;
         $ts_name =~ s/^[^.]*\.//;
         $ts_name =~ s/\./_/;
-        if (($ts->{id} // '') =~ /^[0-9]+$/) {
-            # make sure that the name is unique
-            # prepend numeric $ts->{id}, start counting from 1
-            $ts_name = ($ts->{id} + 1) . '_' . $ts_name;
-        }
+        $ts_name = $self->make_ts_name_unique($ts, $ts_name);
         $self->_add_test(
             {
                 flags => {},

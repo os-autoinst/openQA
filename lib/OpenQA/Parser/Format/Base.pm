@@ -39,6 +39,11 @@ sub write_test_result ($self, $dir = undef) {
     $self->_write_all(generated_tests_results => $dir);
 }
 
+sub make_ts_name_unique ($self, $ts, $ts_name) {
+    # prepend numeric $ts->{id}, start counting from 1
+    return (($ts->{id} // '') =~ /^[0-9]+$/) ? (($ts->{id} + 1) . "_$ts_name") : $ts_name;
+}
+
 sub _add_test ($self, @args) { $self->generated_tests->add(OpenQA::Parser::Result::Test->new(@args)) }
 sub _add_result ($self, @args) { $self->generated_tests_results->add(OpenQA::Parser::Result->new(@args)) }
 sub _add_output ($self, @args) { $self->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@args)) }
