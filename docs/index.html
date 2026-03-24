@@ -7670,6 +7670,10 @@ finished depending on the result.</p>
 fails. The overall state is set to <code>failed</code>.</p>
 </li>
 <li>
+<p><strong>always_run</strong>: When set to <code>1</code> the test module is executed even if a previous
+test module failed with <code>fatal</code>.</p>
+</li>
+<li>
 <p><strong>ignore_failure</strong>: When set to <code>1</code> and the test module fails, it will not
 affect the overall result at all.</p>
 </li>
@@ -8137,7 +8141,8 @@ video setting.</p>
 they match the serial output which is done after the test is executed. In case
 it does not make sense to continue the test run even if the current test module
 does not have the fatal flag, use <code>fatal</code> as serial failure type, so all
-subsequent test modules will not be executed if such failure was detected.</p>
+subsequent test modules (unless marked with <code>always_run</code>) will not be
+executed if such failure was detected.</p>
 </div>
 <div class="paragraph">
 <p>To use this functionality the test developer needs to define the patterns to
@@ -10130,7 +10135,7 @@ chains internally</p>
 <p>In both modes there is no need to modify tests (i.e. adding <code>milestone</code> test
 flag as the behaviour is implied). In the latter mode every test module is also
 considered <code>fatal</code>. This means the job is aborted after the first failed test
-module.</p>
+module (unless subsequent modules are marked with <code>always_run</code>).</p>
 </div>
 </div>
 <div class="sect3">
@@ -15215,7 +15220,7 @@ contact the openQA instance administrator.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-21 04:47:14 UTC
+Last updated 2026-03-24 04:44:39 UTC
 </div>
 </div>
 </body>
