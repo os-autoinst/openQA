@@ -125,6 +125,17 @@ For an architecture overview the AI generated openQA deepwiki can provide a good
 about the complete project but without a guarantee for correctness:
 https://deepwiki.com/os-autoinst/openQA
 
+=== AI Coding Assistants
+[id="ai-coding-assistants"]
+
+The repository includes instruction templates for AI coding assistants to help
+them follow project conventions for agents that use `AGENTS.md`:
+
+[source,bash]
+----
+cp templates/AGENTS.md.template AGENTS.md
+----
+
 == Technologies
 [id="technologies"]
 
