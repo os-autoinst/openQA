@@ -423,7 +423,7 @@ subtest 'clone and schedule parallel cluster' => sub {
     $job = _job_deps($jobE2);
     is $job->{state}, SCHEDULED, 'no change';
     is $job->{clone_id}, undef, 'no clones';
-    is_deeply [sort @{$job->{parents}->{Parallel}}], [sort ($jobC2, $jobD2)], 'cloned deps';
+    is_deeply [sort @{$job->{parents}->{Parallel}}], [sort $jobC2, $jobD2], 'cloned deps';
 
     $job = _job_deps($jobF2);
     is $job->{state}, SCHEDULED, 'cloned jobs are scheduled';
@@ -630,12 +630,12 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
 
     # check dependencies of job Q
     my $jobQ_deps = _job_deps($jobQ->id);
-    my @sorted_got = sort(@{$jobQ_deps->{children}->{Chained}});
-    my @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
+    my @sorted_got = sort @{$jobQ_deps->{children}->{Chained}};
+    my @sorted_exp = sort $jobW->id, $jobU->id, $jobR->id, $jobT->id;
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA'
       or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobQ_deps->{children}->{'Directly chained'}});
-    @sorted_exp = sort(($jobTA->id));
+    @sorted_got = sort @{$jobQ_deps->{children}->{'Directly chained'}};
+    @sorted_exp = sort $jobTA->id;
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA' or always_explain \@sorted_got;
     is $jobT->blocked_by_id, $jobQ->id, 'JobT is blocked by job supposed to run before';
     is $jobTA->blocked_by_id, $jobQ->id, 'JobT2 is blocked by job supposed to run *directly* before';
@@ -693,48 +693,48 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     # note 4: As stated in note 2, jobQ2 has only been cloded due to its dependency with jobTA. However,
     #         the other jobs are still supposed to be associated with the clone jobQ2 instead of the original
     #         job so all cloned jobs are consistently part of the new dependency tree.
-    @sorted_got = sort(@{$jobQ->{children}->{Chained}});
-    @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
+    @sorted_got = sort @{$jobQ->{children}->{Chained}};
+    @sorted_exp = sort $jobW->id, $jobU->id, $jobR->id, $jobT->id;
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ is still chained parent to all original jobs'
       or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobQ2->{children}->{Chained}});
-    @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}));
+    @sorted_got = sort @{$jobQ2->{children}->{Chained}};
+    @sorted_exp = sort $jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id};
     is_deeply \@sorted_got, \@sorted_exp,
       'jobQ2 is chained parent to all cloned jobs (except jobTA2 which is directly chained)'
       or always_explain \@sorted_got;
 
     # check directly chained children
-    @sorted_got = sort(@{$jobQ->{children}->{'Directly chained'}});
-    @sorted_exp = sort(($jobTA->{id}));
+    @sorted_got = sort @{$jobQ->{children}->{'Directly chained'}};
+    @sorted_exp = sort $jobTA->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ is still the only directly chained parent to jobTA'
       or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobQ2->{children}->{'Directly chained'}});
-    @sorted_exp = sort(($jobTA2->{id}));
+    @sorted_got = sort @{$jobQ2->{children}->{'Directly chained'}};
+    @sorted_exp = sort $jobTA2->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ2 is directly chained parent to clone jobTA2'
       or always_explain \@sorted_got;
 
     # check chained parents
-    @sorted_got = sort(@{$jobTA2->{parents}->{Chained}});
-    @sorted_exp = sort(());
+    @sorted_got = sort @{$jobTA2->{parents}->{Chained}};
+    @sorted_exp = sort;
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA2 not regularly chained after jobQ' or always_explain \@sorted_got;
 
     # check directly chained parents
-    @sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
-    @sorted_exp = sort(($jobQ2->{id}));
+    @sorted_got = sort @{$jobTA2->{parents}->{'Directly chained'}};
+    @sorted_exp = sort $jobQ2->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ' or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobTA->{parents}->{'Directly chained'}});
-    @sorted_exp = sort(($jobQ->{id}));
+    @sorted_got = sort @{$jobTA->{parents}->{'Directly chained'}};
+    @sorted_exp = sort $jobQ->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA is still directly chained after jobQ' or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
-    @sorted_exp = sort(($jobQ2->{id}));
+    @sorted_got = sort @{$jobTA2->{parents}->{'Directly chained'}};
+    @sorted_exp = sort $jobQ2->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA2 directly chained after clone jobQ2' or always_explain \@sorted_got;
 
     # check parallel parents
-    @sorted_got = sort(@{$jobT2->{parents}->{Parallel}});
-    @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}));
+    @sorted_got = sort @{$jobT2->{parents}->{Parallel}};
+    @sorted_exp = sort $jobW2->{id}, $jobU2->id, $jobR2->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ'
       or always_explain \@sorted_got;
-    @sorted_got = sort(@{$jobTA2->{parents}->{Parallel}});
+    @sorted_got = sort @{$jobTA2->{parents}->{Parallel}};
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA is parallel child of all jobs except jobQ'
       or always_explain \@sorted_got;
 

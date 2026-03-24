@@ -2,9 +2,9 @@
 # Copyright 2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-BEGIN { $ENV{TZ} = 'UTC' }
-
 use Test::Most;
+
+BEGIN { $ENV{TZ} = 'UTC' }
 
 use Test::Mojo;
 use Test::Warnings ':report_warnings';

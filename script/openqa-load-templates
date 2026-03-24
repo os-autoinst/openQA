@@ -65,19 +65,19 @@ use Cpanel::JSON::XS ();
 
 use Getopt::Long;
 
-Getopt::Long::Configure("no_ignore_case");
+Getopt::Long::Configure('no_ignore_case');
 
 my %options;
 
 sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
-GetOptions(\%options, "apibase=s", "apikey=s", "apisecret=s", "clean", "host=s", "update", "help|h",) or usage(1);
+GetOptions(\%options, 'apibase=s', 'apikey=s', 'apisecret=s', 'clean', 'host=s', 'update', 'help|h',) or usage(1);
 
 usage(0) if $options{help};
 usage(1) if $#ARGV;
 
-# Slurp file specified as an argument or STDIN in case of "-"
-my $datafile = join("", <>);
+# Slurp file specified as an argument or STDIN in case of '-'
+my $datafile = join '', <>;
 die "Data file not found\n" unless length $datafile;
 
 my $info;
@@ -91,10 +91,10 @@ catch ($e) {
     if (my $error = $@) { die "Error in data file: $error\n" }
 }
 
-$options{'host'} ||= 'localhost';
+$options{host} ||= 'localhost';
 $options{apibase} ||= '/api/v1';
 my $url = OpenQA::Client::url_from_host($options{host});
-my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
+my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 my @tables = (qw(Machines TestSuites Products JobTemplates JobGroups));
 # clean JobGroups first so we don't hit
 # "must be updated through the YAML template" in the other tables
@@ -104,7 +104,7 @@ sub print_error ($res) {
     if (my $err = $res->error) {
         if (my $json = $res->json) {
             if (my $json_err = $json->{error}) {
-                die "$err->{message}: " . join("\n", @{$json_err})
+                die "$err->{message}: " . join "\n", @{$json_err}
                   if ref $json_err eq 'ARRAY';
                 die "$err->{message}: $json_err";
             }
@@ -155,7 +155,7 @@ sub handle_job_templates ($entry) {
         # we have to create a group_name from the Product
         my $gn = $entry->{product}{distri};
         if ($entry->{product}{version} ne '*') {
-            $gn .= "-" . $entry->{product}{version};
+            $gn .= '-' . $entry->{product}{version};
         }
         $entry->{group_name} = $gn;
     }
@@ -174,13 +174,13 @@ sub post_entry ($table, $entry) {
         elsif ($key eq 'test_suite' && $entry->{test_suite}{name}) {
             $param{test_suite_name} = $entry->{test_suite}{name};
         }
-        elsif ($key eq 'product' && ref($entry->{product}) eq "HASH") {
+        elsif ($key eq 'product' && ref($entry->{product}) eq 'HASH') {
             $param{arch} = $entry->{product}{arch};
             $param{distri} = $entry->{product}{distri};
             $param{flavor} = $entry->{product}{flavor};
             $param{version} = $entry->{product}{version};
         }
-        elsif ($key eq 'settings' && ref($entry->{settings}) eq "ARRAY") {
+        elsif ($key eq 'settings' && ref($entry->{settings}) eq 'ARRAY') {
             $param{settings} = {};
             for my $var (@{$entry->{settings}}) {
                 $param{settings}{$var->{key}} = $var->{value};
@@ -215,30 +215,32 @@ sub post_entry ($table, $entry) {
     return 1;
 }
 
-if ($options{'clean'}) {
+if ($options{clean}) {
     for my $table (@cleantables) {
         my $table_url = $url->clone->path($options{apibase} . '/' . decamelize($table));
         my $res = $client->get($table_url)->res;
-        if ($res->is_success) {
-            my $result = $res->json;
-            # we can't clean job groups as they're not deletable
-            # unless empty, but we *can* replace existing YAML
-            # template strings with 'empty' ones
-            if ($table eq "JobGroups") {
-                # unlike all other tables, is not a hash
-                for my $jg (@$result) {
-                    next unless ($jg->{template});
-                    $res = post_yaml_templates($jg->{name}, "scenarios: {}\nproducts: {}\n");
-                    last unless $res->is_success;
-                }
+        unless ($res->is_success) {
+            print_error $res;
+            next;
+        }
+        my $result = $res->json;
+        # we can't clean job groups as they're not deletable
+        # unless empty, but we *can* replace existing YAML
+        # template strings with 'empty' ones
+        if ($table eq 'JobGroups') {
+            # unlike all other tables, is not a hash
+            for my $jg (@$result) {
+                next unless $jg->{template};
+                $res = post_yaml_templates($jg->{name}, "scenarios: {}\nproducts: {}\n");
+                last unless $res->is_success;
             }
-            else {
-                for my $i (0 .. $#{$result->{$table}}) {
-                    my $id = $result->{$table}->[$i]->{id};
-                    my $table_url_id = $url->clone->path($options{apibase} . '/' . decamelize($table) . "/$id");
-                    $res = $client->delete($table_url_id)->res;
-                    last unless $res->is_success;
-                }
+        }
+        else {
+            for my $i (0 .. $#{$result->{$table}}) {
+                my $id = $result->{$table}->[$i]->{id};
+                my $table_url_id = $url->clone->path($options{apibase} . '/' . decamelize($table) . "/$id");
+                $res = $client->delete($table_url_id)->res;
+                last unless $res->is_success;
             }
         }
         print_error $res unless $res->is_success;

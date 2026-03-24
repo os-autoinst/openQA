@@ -114,16 +114,16 @@ use Mojo::URL;
 use OpenQA::Client;
 use OpenQA::YAML 'load_yaml';
 
-Getopt::Long::Configure("no_ignore_case");
+Getopt::Long::Configure('no_ignore_case');
 
 my %options;
 
 sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 GetOptions(
-    \%options, "json", "host=s", "apibase=s", "apikey:s", "apisecret:s",
-    "group=s@", "name=s@", "test=s@", "product=s@", "machine=s@", "full",
-    "convert", "help|h",
+    \%options, 'json', 'host=s', 'apibase=s', 'apikey:s', 'apisecret:s',
+    "group=s@", "name=s@", "test=s@", "product=s@", "machine=s@", 'full',
+    'convert', 'help|h',
 ) or usage(1);
 
 usage(0) if $options{help};
@@ -173,7 +173,7 @@ sub handle_error ($target, $url, $res) {
     my $message = $res->message // 'no error message';
     printf STDERR "ERROR requesting %s via %s: %s - %s\n", $target, $url, $code, $message;
     dd($res->json || $res->body) if $res->body;
-    exit(1);
+    exit 1;
 }
 
 sub delete_all_settings ($settings) {
@@ -181,10 +181,10 @@ sub delete_all_settings ($settings) {
 }
 
 sub product_key ($r) {
-    join('-', map { $r->{$_} } qw(distri version flavor arch));
+    join '-', map { $r->{$_} } qw(distri version flavor arch);
 }
 
-if ($tables{'JobGroups'}) {
+if ($tables{JobGroups}) {
     my $group = defined $options{group} ? (keys %{$options{group}})[0] // '' : '';
     if ($options{convert}) {
         # use job_templates_scheduling, which converts if no YAML
@@ -219,7 +219,7 @@ if ($tables{'JobGroups'}) {
 
 for my $table (qw(Machines TestSuites Products JobTemplates)) {
     next unless $tables{$table};
-    next if ($table eq "JobTemplates" && $options{convert});
+    next if ($table eq 'JobTemplates' && $options{convert});
     $url->path($options{apibase} . '/' . decamelize($table));
     my $res = $client->get($url)->res;
     handle_error($table, $url, $res) unless $res->code && $res->code == 200;
@@ -251,11 +251,11 @@ sub handle_row ($table, $r) {
         # see https://github.com/os-autoinst/openQA/pull/2071#issuecomment-2867855025
         if ($r->{settings} || $r->{description}) {
             print STDERR
-              "Settings and/or description unexpectedly present in job template from legacy (non-YAML) job group "
+              'Settings and/or description unexpectedly present in job template from legacy (non-YAML) job group '
               . $r->{group_name} . "!\n";
             print STDERR "Loading the dumped data would lose the settings.\n";
             print STDERR "Dump with --convert to convert to YAML format and preserve settings.\n";
-            exit(1);
+            exit 1;
         }
     }
     return undef if $table eq 'TestSuites' && $options{test} && $r->{name} && !$options{test}->{$r->{name}};
@@ -272,11 +272,11 @@ sub handle_row ($table, $r) {
 
 sub jt_key ($jt) {
     my $prod = $jt->{product};
-    return join('',
-        $jt->{group_name},
-        $jt->{test_suite}->{name},
-        $jt->{machine}->{name},
-        $prod->{arch}, $prod->{distri}, $prod->{flavor}, $prod->{version});
+    return join '',
+      $jt->{group_name},
+      $jt->{test_suite}->{name},
+      $jt->{machine}->{name},
+      $prod->{arch}, $prod->{distri}, $prod->{flavor}, $prod->{version};
 }
 
 sub handle_table ($table) {

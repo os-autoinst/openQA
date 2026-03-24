@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -140,7 +140,7 @@ my $cloneA = $schema->resultset('Jobs')->find($duplicate_id);
 is $assets[0], $theasset, 'clone has the same asset assigned' or always_explain \@assets;
 
 my $jabasename = 'jobasset.raw';
-my $janame = sprintf('%08d-%s', $cloneA->id, $jabasename);
+my $janame = sprintf '%08d-%s', $cloneA->id, $jabasename;
 my $japath = path(assetdir, 'hdd', $janame);
 $japath->remove if -e $japath;    # make sure it's gone before creating the job
 
@@ -233,8 +233,8 @@ ok !-e $fixedpath, 'fixed asset should have been removed';
 ok !-e $repopath, 'repo asset should have been removed';
 
 # for safety
-unlink($japath);
-unlink($fixedpath);
+unlink $japath;
+unlink $fixedpath;
 remove_tree($repopath);
 
 ok $mock_send_called, 'mocked ws_send method has been called';
@@ -253,7 +253,7 @@ subtest 'asset status' => sub {
         });
 
     # ensure cache file does not exist from a previous test run
-    unlink($asset_cache_file);
+    unlink $asset_cache_file;
 
     $t->get_ok('/admin/assets/status?force_refresh=1')
       ->status_is(400, 'viewing assets page without cache file not possible during cleanup')

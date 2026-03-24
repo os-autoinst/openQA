@@ -166,7 +166,7 @@ sub prepare_asset_status {
         ok delete $asset->{id}, "asset $name has ID";
         $assets_without_max_job{delete $asset->{name}} = $asset;
     }
-    splice(@$assets_with_max_job, $assets_with_max_job_count);
+    splice @$assets_with_max_job, $assets_with_max_job_count;
 
     return ($assets_with_max_job, \%assets_without_max_job);
 }
@@ -369,12 +369,12 @@ subtest 'tracked assets' => sub {
     for my $name (qw(iso/whatever.sha256 other/misc.xml repo/otherrepo-CURRENT)) {
         ok -e assetdir() . '/' . $name, "$name exists in the test folder";
         ok grep(/$name$/, @tracked_assets), "$name picked up for cleanup"
-          || always_explain join(' ', sort @tracked_assets);
+          || always_explain join ' ', sort @tracked_assets;
     }
     # Ignored assets include repo links, file links
     for my $name (qw(repo/somethingrepo other/misc2.xml)) {
         ok -e assetdir() . '/' . $name, "$name exists in the test folder";
-        ok !grep(/$name$/, @tracked_assets), "$name ignored" || always_explain join(' ', sort @tracked_assets);
+        ok !grep(/$name$/, @tracked_assets), "$name ignored" || always_explain join ' ', sort @tracked_assets;
     }
 };
 

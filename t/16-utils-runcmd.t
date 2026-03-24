@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -318,7 +318,7 @@ subtest 'saving needle via Git' => sub {
 subtest 'signal guard aborts when git is disabled and do_cleanup is "no"' => sub {
 
     package My::FakeSignalGuard {
-        use Mojo::Base -base, -signatures;
+        use experimental 'signatures';
         has 'abort' => sub { 0 };
     }    # uncoverable statement
     my $signal_guard;
@@ -406,7 +406,7 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
         my @log_errors;
         my $log_mock = Test::MockModule->new(ref $t->app->log);
         $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });
-        my $job = bless({} => 'Test::FailingMinionJob');
+        my $job = bless {} => 'Test::FailingMinionJob';
         OpenQA::Task::Needle::Save::_save_needle($t->app, $job, $fake_needle);
 
         like $log_errors[0], $log_error // qr/Unable to fetch.*mocked/, 'error logged on fail';

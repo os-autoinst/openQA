@@ -156,7 +156,7 @@ subtest 'time parameter' => sub {
 
     my $link_to_fixed = $t->tx->res->dom->at('#summary .time-params a');
     if (isnt $link_to_fixed, undef, 'link to "fixed" present') {
-        my $params = Mojo::Parameters->new(substr($link_to_fixed->attr('href') // '', 1));
+        my $params = Mojo::Parameters->new(substr $link_to_fixed->attr('href') // '', 1);
         my $validation = $t->app->validator->validation->input($params->to_hash);
         ok $validation->required('t')->datetime->is_valid, 'link to "fixed" has valid time param';
     }

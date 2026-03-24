@@ -6,7 +6,7 @@ use Test::Most;
 # test for each of the modules, but with the same test number
 use Test::Warnings qw(:no_end_test :report_warnings);
 use FindBin;
-use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '400';
 
 use Test::Strict;
@@ -28,4 +28,4 @@ $Test::Strict::TEST_SKIP = [
     't/data/openqa-trigger-from-obs/Proj2::appliances/.dirty_status',
     't/data/openqa-trigger-from-obs/Proj3::standard/empty.txt',
 ];
-all_perl_files_ok(qw(lib script t));
+all_perl_files_ok(qw(lib script t xt));

@@ -21,7 +21,7 @@ my $mocked_time = 0;
 BEGIN {
     *CORE::GLOBAL::time = sub {
         return $mocked_time if $mocked_time;
-        return time();
+        return time;
     };
 }
 
@@ -225,7 +225,7 @@ subtest 'build service ssh authentication' => sub {
 
 subtest 'build service authentication: signature generation' => sub {
     $mocked_time = 1664187470;
-    note 'time right now: ' . time();
+    note 'time right now: ' . time;
     is time(), $mocked_time, 'Time is not frozen!';
     is $helper->is_status_dirty('ProjTestingSignature'), 1, 'signature matches fixture';
     $mocked_time = undef;

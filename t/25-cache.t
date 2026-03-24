@@ -30,7 +30,7 @@ use utf8;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use Carp 'croak';
 use Test::Warnings ':report_warnings';
@@ -326,7 +326,7 @@ subtest 'cache directory is symlink' => sub {
     $cache_log = '';
 
     my $symlink = $cached->child('symlink')->to_string;
-    unlink($symlink);
+    unlink $symlink;
     ok symlink($cachedir, $symlink), "symlinking cache dir to $symlink";
     $cache->location($symlink);
 

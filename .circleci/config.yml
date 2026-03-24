@@ -222,6 +222,9 @@ jobs:
       - store_artifacts:
           path: test-results/fullstack
           destination: artifacts
+  compile:
+    <<: *test-template
+
   t:
     <<: *test-template
 
@@ -292,6 +295,8 @@ workflows:
           requires:
             - cache
             - cache-npm
+      - compile:
+          <<: *requires
       - t:
           <<: *requires
       - heavy:

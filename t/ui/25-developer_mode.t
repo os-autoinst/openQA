@@ -8,7 +8,7 @@
 
 use Test::Most;
 
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Module::Load::Conditional qw(can_load);
 use Mojo::File qw(path tempdir);
 use FindBin;
