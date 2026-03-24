@@ -42,11 +42,7 @@ sub parse ($self, $xml) {
         $ts_name =~ s/[^A-Za-z0-9._-]/_/g;
         $ts_name =~ s/^[^.]*\.//;
         $ts_name =~ s/\./_/;
-        if (exists $ts->{id} && $ts->{id} =~ /^[0-9]+$/) {
-            # make sure that the name is unique
-            # prepend numeric $ts->{id}, start counting from 1
-            $ts_name = ($ts->{id} + 1) . '_' . $ts_name;
-        }
+        $ts_name = $self->make_ts_name_unique($ts, $ts_name);
         $ts_name .= "_${i}" if $t_names{$ts_name};
         $t_names{$ts_name}++;
         $self->_add_test(

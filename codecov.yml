@@ -19,19 +19,7 @@ coverage:
         target: 100.0
         threshold: 0
         paths:
-          - lib/OpenQA/CacheService/
-          - lib/OpenQA/Client/
-          - lib/OpenQA/Worker/
-          - lib/OpenQA/Worker.pm
-          - lib/OpenQA/Utils.pm
-          - lib/OpenQA/WebAPI/
-          - lib/OpenQA/LiveHandler/
-          - lib/OpenQA/Scheduler/
-          - lib/OpenQA/Shared/
-          - lib/OpenQA/Resource/
-          - lib/OpenQA/Task/
-          - lib/OpenQA/Script/
-          - lib/OpenQA/Schema/
+          - lib/OpenQA/
       tests:
         target: 100.0
         threshold: 0
