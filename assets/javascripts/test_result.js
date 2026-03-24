@@ -88,10 +88,10 @@ function checkPreviewVisible(stepPreviewContainer, preview) {
     );
   }
 
-  var rrow = $('#result-row');
-  var extraMargin = 40;
-  var endOfPreview = stepPreviewContainer.offset().top + preview.height() + extraMargin;
-  var endOfRow = rrow.height() + rrow.offset().top;
+  const rrow = $('#result-row');
+  const extraMargin = 40;
+  const endOfPreview = stepPreviewContainer.offset().top + preview.height() + extraMargin;
+  const endOfRow = rrow.height() + rrow.offset().top;
   if (endOfPreview > endOfRow) {
     // only enlarge the margin - otherwise the page scrolls back
     rrow.css('margin-bottom', endOfPreview - endOfRow + extraMargin + 'px');
@@ -105,8 +105,8 @@ function previewSuccess(stepPreviewContainer, data, force) {
   }
 
   // find the outher and inner preview container
-  var pin = $('#preview_container_in');
-  var pout = $('#preview_container_out');
+  const pin = $('#preview_container_in');
+  const pout = $('#preview_container_out');
   if (!pin.length || !pout.length) {
     console.error('showing preview/needle diff: Preview container not found');
     return;
@@ -116,7 +116,7 @@ function previewSuccess(stepPreviewContainer, data, force) {
   pin.html(data);
   pout.insertAfter(stepPreviewContainer);
   if (!(pin.find('pre').length || pin.find('audio').length)) {
-    var imageSource = pin.find('#step_view').data('image');
+    const imageSource = pin.find('#step_view').data('image');
     if (!imageSource) {
       console.error('showing preview/needle diff: No image source found');
       return;
@@ -124,7 +124,7 @@ function previewSuccess(stepPreviewContainer, data, force) {
     setDiffScreenshot(imageSource);
   }
   pin.css('left', -($('.result').width() + $('.component').width() + 2 * 16) + 'px');
-  var tdWidth = $('.current_preview').parents('td').width();
+  const tdWidth = $('.current_preview').parents('td').width();
   pout
     .width(tdWidth)
     .hide()
@@ -146,7 +146,7 @@ function previewSuccess(stepPreviewContainer, data, force) {
   });
   // handle click on the diff selection
   $('.trigger-diff').on('click', function (event) {
-    var trigger = $(this);
+    const trigger = $(this);
     setNeedle(trigger.parents('tr'), trigger.data('diff'));
     event.stopPropagation();
   });
@@ -161,10 +161,10 @@ function previewSuccess(stepPreviewContainer, data, force) {
 }
 
 function toggleTextPreview(textResultDomElement) {
-  var textResultElement = $(textResultDomElement).parent();
+  const textResultElement = $(textResultDomElement).parent();
   if (textResultElement.hasClass('current_preview')) {
     // skip if current selection has selected text
-    var selection = window.getSelection();
+    const selection = window.getSelection();
     if (!selection.isCollapsed && $.contains(textResultDomElement, selection.anchorNode)) {
       return;
     }
@@ -177,7 +177,7 @@ function toggleTextPreview(textResultDomElement) {
 }
 
 function hidePreviewContainer() {
-  var previewContainer = $('#preview_container_out');
+  const previewContainer = $('#preview_container_out');
   if (previewContainer.is(':visible')) {
     previewContainer.fadeOut(150);
   }
@@ -199,14 +199,14 @@ function setCurrentPreview(stepPreviewContainer, force) {
   $('.current_preview').removeClass('current_preview');
 
   // show preview for results with text data
-  var textResultElement = stepPreviewContainer.find('span.text-result');
+  const textResultElement = stepPreviewContainer.find('span.text-result');
   if (textResultElement.length) {
     stepPreviewContainer.addClass('current_preview');
     hidePreviewContainer();
     setPageHashAccordingToCurrentTab(textResultElement.data('href'), true);
 
     // ensure element is in viewport
-    var aOffset = stepPreviewContainer.offset().top;
+    const aOffset = stepPreviewContainer.offset().top;
     if (aOffset < window.scrollY || aOffset + stepPreviewContainer.height() > window.scrollY + window.innerHeight) {
       $('html').animate(
         {
@@ -219,7 +219,7 @@ function setCurrentPreview(stepPreviewContainer, force) {
   }
 
   // show preview for other/regular results
-  var link = stepPreviewContainer.find('a');
+  const link = stepPreviewContainer.find('a');
   if (!link) {
     return;
   }
@@ -247,8 +247,8 @@ function setCurrentPreview(stepPreviewContainer, force) {
 }
 
 function selectPreview(which) {
-  var currentPreview = $('.current_preview');
-  var linkContainer = currentPreview[which]();
+  const currentPreview = $('.current_preview');
+  let linkContainer = currentPreview[which]();
   // skip possibly existing elements between the preview links (eg. the preview container might be between)
   while (linkContainer.length && !linkContainer.hasClass('links_a')) {
     linkContainer = linkContainer[which]();
@@ -259,8 +259,8 @@ function selectPreview(which) {
     return;
   }
   // select first/last detail in next/prev module
-  var linkSelector = '.links_a:' + (which === 'next' ? 'first' : 'last');
-  var row = currentPreview.parents('tr');
+  const linkSelector = '.links_a:' + (which === 'next' ? 'first' : 'last');
+  let row = currentPreview.parents('tr');
   for (;;) {
     row = row[which]();
     if (!row.length) {
@@ -284,8 +284,8 @@ function prevPreview() {
 
 function prevNeedle() {
   // select previous in current tag
-  var currentSelection = $('#needlediff_selector tbody tr.selected');
-  var newSelection = currentSelection.prev();
+  const currentSelection = $('#needlediff_selector tbody tr.selected');
+  let newSelection = currentSelection.prev();
   if (!newSelection.length) {
     // select last in previous tag
     newSelection = currentSelection.parents('li').prevAll().find('tbody tr').last();
@@ -294,8 +294,8 @@ function prevNeedle() {
 }
 
 function nextNeedle() {
-  var currentSelection = $('#needlediff_selector tbody tr.selected');
-  var newSelection;
+  const currentSelection = $('#needlediff_selector tbody tr.selected');
+  let newSelection;
   if (!currentSelection.length) {
     // select first needle in first tag
     newSelection = $('#needlediff_selector tbody tr:first-child').first();
@@ -313,7 +313,7 @@ function nextNeedle() {
 }
 
 function handleKeyDownOnTestDetails(e) {
-  var ftn = $(':focus').prop('tagName');
+  const ftn = $(':focus').prop('tagName');
   if (ftn === 'INPUT' || ftn === 'TEXTAREA') {
     return;
   }
@@ -461,7 +461,7 @@ function activateTabAccordingToHashChange() {
   // check for tabs, steps or comments matching the hash
   let link = $(`[href='${hash}'], [data-href='${hash}']`);
   let tabName = hash.substr(1);
-  let isStep = hash.startsWith('#step/');
+  const isStep = hash.startsWith('#step/');
   if (hash.startsWith('#line-') || isStep) {
     if (isStep) {
       setCurrentPreviewFromStepLinkIfPossible(link);
@@ -882,7 +882,7 @@ function renderTestModules(response) {
 function renderExternalTab(response) {
   this.panelElement.innerHTML = response;
 
-  var externalTable = $('#external-table');
+  let externalTable = $('#external-table');
   // skip if table is not present (meaning no external results available) or if the table has
   // already been initialized
   if (!externalTable.length || externalTable.data('initialized')) {
@@ -900,7 +900,7 @@ function renderExternalTab(response) {
   });
 
   // setup filtering
-  var onlyFailedCheckbox = $('#external-only-failed-filter');
+  const onlyFailedCheckbox = $('#external-only-failed-filter');
   onlyFailedCheckbox.change(function (event) {
     externalTable.draw();
   });
@@ -910,11 +910,11 @@ function renderExternalTab(response) {
       return true;
     }
     // filter out everything but failures and softfailures
-    var rowData = externalTable.row(dataIndex).data();
+    const rowData = externalTable.row(dataIndex).data();
     if (!rowData) {
       return false;
     }
-    var result = rowData[2];
+    const result = rowData[2];
     return result && (result.indexOf('result_fail') > 0 || result.indexOf('result_softfail') > 0);
   });
 }
@@ -988,19 +988,19 @@ function renderInvestigationTab(response) {
   document.getElementById('investigation').setAttribute('data-testgiturl', testgiturl);
   document.getElementById('investigation').setAttribute('data-needlegiturl', needlegiturl);
 
-  var theadElement = document.createElement('thead');
-  var headTrElement = document.createElement('tr');
-  var headThElement = document.createElement('th');
+  const theadElement = document.createElement('thead');
+  const headTrElement = document.createElement('tr');
+  const headThElement = document.createElement('th');
   headThElement.appendChild(document.createTextNode('Investigation'));
   headThElement.colSpan = 2;
   headTrElement.appendChild(headThElement);
   theadElement.appendChild(headTrElement);
 
-  var tbodyElement = document.createElement('tbody');
-  var alertbox;
+  const tbodyElement = document.createElement('tbody');
+  let alertbox;
   Object.keys(response).forEach(key => {
-    var value = response[key];
-    var type = 'pre';
+    const value = response[key];
+    let type = 'pre';
 
     // The value can be an object with attribute "type" to determine the
     // behavior. The accepted types are:
@@ -1011,14 +1011,16 @@ function renderInvestigationTab(response) {
 
     if (typeof value === 'object' && value.type) type = value.type;
 
-    var keyElement = document.createElement('td');
+    const keyElement = document.createElement('td');
     keyElement.style.verticalAlign = 'top';
     keyElement.appendChild(document.createTextNode(key));
 
-    var valueElement = document.createElement('td');
+    const valueElement = document.createElement('td');
+
+    let textLinesRest;
 
     if (type === 'link') {
-      var html = document.createElement('a');
+      const html = document.createElement('a');
       if (key === 'first_bad') {
         alertbox = document.createElement('div');
         alertbox.appendChild(document.createTextNode('Investigate the first bad test directly: '));
@@ -1034,19 +1036,19 @@ function renderInvestigationTab(response) {
         valueElement.appendChild(html);
       }
     } else {
-      var preElement = document.createElement('pre');
-      var preElementMore = document.createElement('pre');
-      var enable_more = false;
-      var repoUrl = getInvestigationDataAttr(key);
+      const preElement = document.createElement('pre');
+      let preElementMore = document.createElement('pre');
+      let enable_more = false;
+      const repoUrl = getInvestigationDataAttr(key);
       if (repoUrl) {
-        var gitstats = githashToLink(value, repoUrl);
+        const gitstats = githashToLink(value, repoUrl);
         // assume string 'No test changes..'
         if (gitstats === null) {
           preElement.appendChild(document.createTextNode(value));
         } else {
           for (let i = 0; i < gitstats.length; i++) {
-            var statItem = document.createElement('div');
-            var collapseSign = document.createElement('a');
+            const statItem = document.createElement('div');
+            const collapseSign = document.createElement('a');
             collapseSign.className = 'collapsed';
             collapseSign.setAttribute('href', '#collapse' + key + i);
             collapseSign.setAttribute('data-bs-toggle', 'collapse');
@@ -1054,8 +1056,8 @@ function renderInvestigationTab(response) {
             collapseSign.setAttribute('aria-controls', 'collapseEntry');
             collapseSign.innerHTML = '+ ';
             collapseSign.setAttribute('onclick', 'toggleSign(this)');
-            var spanElem = document.createElement('span');
-            var logDetailsDiv = document.createElement('div');
+            const spanElem = document.createElement('span');
+            const logDetailsDiv = document.createElement('div');
             logDetailsDiv.id = 'collapse' + key + i;
             logDetailsDiv.className = 'collapse';
             spanElem.innerHTML = gitstats[i].link + ' ' + gitstats[i].msg;
@@ -1071,8 +1073,7 @@ function renderInvestigationTab(response) {
           }
         }
       } else {
-        var textLines = typeof value === 'string' ? value.split('\n') : [value];
-        var textLinesRest;
+        let textLines = typeof value === 'string' ? value.split('\n') : [value];
 
         if (textLines.length > DISPLAY_LINE_LIMIT) {
           textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
@@ -1091,7 +1092,7 @@ function renderInvestigationTab(response) {
       if (enable_more) {
         preElementMore.style = 'display: none';
 
-        var moreLink = document.createElement('a');
+        const moreLink = document.createElement('a');
         moreLink.style = 'cursor:pointer';
         moreLink.innerHTML = 'Show more';
         moreLink.onclick = function () {
@@ -1104,13 +1105,13 @@ function renderInvestigationTab(response) {
       }
     }
 
-    var trElement = document.createElement('tr');
+    const trElement = document.createElement('tr');
     trElement.appendChild(keyElement);
     trElement.appendChild(valueElement);
     tbodyElement.appendChild(trElement);
   });
 
-  var tableElement = document.createElement('table');
+  const tableElement = document.createElement('table');
   tableElement.id = 'investigation_status_entry';
   tableElement.className = 'infotbl table table-striped';
   tableElement.appendChild(theadElement);
@@ -1128,7 +1129,7 @@ function toggleSign(elem) {
 }
 
 function getInvestigationDataAttr(key) {
-  var attrs = {test_log: 'data-testgiturl', needles_log: 'data-needlegiturl'};
+  const attrs = {test_log: 'data-testgiturl', needles_log: 'data-needlegiturl'};
   return document.getElementById('investigation').getAttribute(attrs[key]);
 }
 
@@ -1179,7 +1180,7 @@ function renderDependencyTab(response) {
 
 function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
   // create a new directed graph
-  var g = new dagreD3.graphlib.Graph({compound: true}).setGraph({});
+  const g = new dagreD3.graphlib.Graph({compound: true}).setGraph({});
 
   // set left-to-right layout and spacing
   g.setGraph({
@@ -1193,7 +1194,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
   // insert nodes
   const nodeIDs = {};
   nodes.forEach(node => {
-    var testResultId;
+    let testResultId;
     if (node.result !== 'none') {
       testResultId = node.result;
     } else {
@@ -1202,25 +1203,25 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
         testResultId = 'blocked';
       }
     }
-    var testResultName = testResultId.replace(/_/g, ' ');
+    const testResultName = testResultId.replace(/_/g, ' ');
 
     g.setNode(node.id, {
       label: function () {
-        var table = document.createElement('table');
+        const table = document.createElement('table');
         table.id = 'nodeTable' + node.id;
-        var tr = d3.select(table).append('tr');
+        const tr = d3.select(table).append('tr');
 
-        var testNameTd = tr.append('td');
+        const testNameTd = tr.append('td');
         if (node.id == currentNode) {
           testNameTd.text(node.label);
           tr.node().className = 'current';
         } else {
-          var testNameLink = testNameTd.append('a');
+          const testNameLink = testNameTd.append('a');
           testNameLink.attr('href', urlWithBase('/tests/' + node.id) + '#dependencies');
           testNameLink.text(node.label);
         }
 
-        var testResultTd = tr.append('td');
+        const testResultTd = tr.append('td');
         testResultTd.text(testResultName);
         testResultTd.node().className = testResultId;
 
@@ -1257,10 +1258,10 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
   });
 
   // create the renderer
-  var render = new dagreD3.render();
+  const render = new dagreD3.render();
 
   // set up an SVG group so that we can translate the final graph.
-  var svg = d3.select('svg'),
+  const svg = d3.select('svg'),
     svgGroup = svg.append('g');
 
   // run the renderer (this is what draws the final graph)
@@ -1270,11 +1271,11 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
   svgGroup
     .selectAll('g.node')
     .attr('title', function (v) {
-      var node = g.node(v);
-      var tooltipText = '<p>' + node.name + '</p>';
-      var startAfter = node.startAfter;
-      var startDirectlyAfter = node.startDirectlyAfter;
-      var parallelWith = node.parallelWith;
+      const node = g.node(v);
+      let tooltipText = '<p>' + node.name + '</p>';
+      const startAfter = node.startAfter;
+      const startDirectlyAfter = node.startDirectlyAfter;
+      const parallelWith = node.parallelWith;
       if (startAfter.length || startDirectlyAfter.length || parallelWith.length) {
         tooltipText += '<div style="border-top: 1px solid rgba(100, 100, 100, 30); margin: 5px 0px;"></div>';
         if (startAfter.length) {

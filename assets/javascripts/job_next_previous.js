@@ -3,22 +3,22 @@ function setupJobNextPrevious() {
     return; // skip if already initialized
   }
 
-  var params = parseQueryParams();
+  const params = parseQueryParams();
 
-  var setPage = function (json) {
+  const setPage = function (json) {
     // Seems an issue in case of displayStart is not an integer multiple of the pageLength
     // Calculate and start the page with current job
-    var current_index = json.data
+    const current_index = json.data
       .map(function (n) {
         return n.iscurrent;
       })
       .indexOf(1);
-    var page = Math.min(Math.max(0, Math.floor(current_index / table.page.len())), table.page.info().pages);
+    const page = Math.min(Math.max(0, Math.floor(current_index / table.page.len())), table.page.info().pages);
     table.page(page).draw('page');
   };
 
-  var tableElement = document.getElementById('job_next_previous_table');
-  var table = $(tableElement).DataTable({
+  const tableElement = document.getElementById('job_next_previous_table');
+  const table = $(tableElement).DataTable({
     ajax: {
       url: tableElement.dataset.ajaxUrl,
       data: function (d) {
@@ -77,7 +77,7 @@ function renderMarks(data, type, row) {
   if (row.note) {
     return '';
   }
-  var html = '<span class="badge text-bg-primary float-right" title="';
+  let html = '<span class="badge text-bg-primary float-right" title="';
   if (row.iscurrent == 1 && row.islatest == 1) {
     html += 'Current & Latest job">C&amp;L</span>';
   } else if (row.iscurrent == 1) {
@@ -92,7 +92,7 @@ function renderJobResults(data, type, row) {
   if (row.note) {
     return row.note;
   }
-  var html = '';
+  let html = '';
   // job status
   html += '<span id="res-' + row.id + '">';
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '">';
@@ -103,21 +103,21 @@ function renderJobResults(data, type, row) {
   }
   html += '</a>\n</span>';
   // job failed modules
-  var limit = 25;
-  var count = 0;
-  for (var i in row.failedmodules) {
+  let limit = 25;
+  let count = 0;
+  for (const i in row.failedmodules) {
     if (count++) {
-      var more = row.failedmodules.length - count + 1;
+      const more = row.failedmodules.length - count + 1;
       if (more > 0 && limit < 12) {
         html += '<span title="';
-        for (var j = i; j < row.failedmodules.length; j++) {
+        for (let j = i; j < row.failedmodules.length; j++) {
           html += '- ' + htmlEscape(row.failedmodules[j]) + '\n';
         }
         html += '">+' + more + '</span>';
         break;
       }
     }
-    var async_url = urlWithBase('/tests/' + row.id + '/modules/' + htmlEscape(row.failedmodules[i]) + '/fails');
+    const async_url = urlWithBase('/tests/' + row.id + '/modules/' + htmlEscape(row.failedmodules[i]) + '/fails');
     html += '<a data-bs-toggle="tooltip" data-placement="top" ';
     html += 'data-container="#res_' + row.id + '" ';
     html += 'data-async="' + async_url + '" ';
@@ -146,7 +146,7 @@ function renderBuild(data, type, row) {
 }
 
 function renderFinishTime(data, type, row) {
-  var html = '';
+  let html = '';
   if (data != null) {
     html += '<abbr class="timeago" title="' + data + '">' + jQuery.timeago(data) + ' </abbr>';
     html += '( ' + row.duration + ' )';

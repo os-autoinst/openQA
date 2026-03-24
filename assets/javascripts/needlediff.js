@@ -3,9 +3,9 @@ function NeedleDiff(id, width, height) {
     return new NeedleDiff(id, width, height);
   }
 
-  var canvas = $('<canvas/>');
-  var container = $('#' + id);
-  var divide = 0.5;
+  const canvas = $('<canvas/>');
+  const container = $('#' + id);
+  let divide = 0.5;
 
   this.ctx = canvas[0].getContext('2d');
   this.screenshotImg = null;
@@ -18,7 +18,7 @@ function NeedleDiff(id, width, height) {
   canvas.on('mousedown', handler);
   canvas.on('mouseup', handler);
 
-  var self = this;
+  const self = this;
 
   function handler(ev) {
     if (ev.offsetX == undefined) {
@@ -29,7 +29,7 @@ function NeedleDiff(id, width, height) {
       ev._y = ev.offsetY;
     }
 
-    var eventHandler = self[ev.type];
+    const eventHandler = self[ev.type];
     if (typeof eventHandler == 'function') {
       eventHandler.call(self, ev);
     }
@@ -91,7 +91,7 @@ NeedleDiff.prototype.draw = function () {
   }
 
   // Calculate the pixel in which the division will be done
-  var split = this.divide * this.width;
+  let split = this.divide * this.width;
   if (split < 1) {
     split = 1;
   }
@@ -105,14 +105,14 @@ NeedleDiff.prototype.draw = function () {
   this.matches.forEach(
     function (a, idx) {
       // If some part of the match is at the left of the handle...
-      var width = a['width'];
-      var x = a['xpos'];
+      const width = a['width'];
+      const x = a['xpos'];
 
-      var orig;
-      var lineWidth = 1;
+      let orig;
+      const lineWidth = 1;
 
-      var y_start = a['ypos'] - lineWidth;
-      var y_end = a['ypos'] + a['height'] + lineWidth;
+      let y_start = a['ypos'] - lineWidth;
+      let y_end = a['ypos'] + a['height'] + lineWidth;
       if (y_start < 0) {
         y_start = 0;
       }
@@ -125,7 +125,7 @@ NeedleDiff.prototype.draw = function () {
       this.ctx.lineWidth = lineWidth;
       if (split > x && !this.fullNeedleImg) {
         // fill left part with original needle's area
-        var usedWith = width;
+        let usedWith = width;
         if (split - x < usedWith) {
           usedWith = split - x;
         } else {
@@ -151,10 +151,10 @@ NeedleDiff.prototype.draw = function () {
         // draw frame of original area
         this.ctx.strokeStyle = NeedleDiff.strokecolor('originalArea');
         this.ctx.beginPath();
-        var origX = orig.xpos;
-        var origY = orig.ypos - lineWidth;
-        var origYEnd = orig.ypos + orig.height + lineWidth;
-        var origWidth = split - origX < a.width ? split - origX : a.width + 1;
+        const origX = orig.xpos;
+        const origY = orig.ypos - lineWidth;
+        const origYEnd = orig.ypos + orig.height + lineWidth;
+        const origWidth = split - origX < a.width ? split - origX : a.width + 1;
         this.ctx.moveTo(origX + origWidth, origY);
         this.ctx.lineTo(origX, origY);
         this.ctx.lineTo(origX, origYEnd);
@@ -167,11 +167,11 @@ NeedleDiff.prototype.draw = function () {
         // fill the right part with the new screenshot (not gray)
         this.ctx.strokeStyle = NeedleDiff.shapecolor(a.type);
 
-        var start = split;
+        let start = split;
         if (split < a['xpos']) start = a['xpos'];
 
         orig = this.areas[idx];
-        var rwidth = a['xpos'] + a['width'] - start;
+        const rwidth = a['xpos'] + a['width'] - start;
         this.ctx.drawImage(
           this.screenshotImg,
           start,
@@ -217,10 +217,10 @@ NeedleDiff.prototype.draw = function () {
         this.ctx.strokeStyle = 'rgb(0, 0, 0)';
         this.ctx.lineWidth = 3;
         this.ctx.font = 'bold 14px Arial';
-        var text = a['similarity'] + '%';
-        var textSize = this.ctx.measureText(text);
-        var tx;
-        var ty = a['ypos'] + a['height'] + 19;
+        let text = a['similarity'] + '%';
+        let textSize = this.ctx.measureText(text);
+        let tx;
+        let ty = a['ypos'] + a['height'] + 19;
         if (ty > this.height) {
           // Place text above match box
           ty = a['ypos'] - 10;
@@ -257,7 +257,7 @@ NeedleDiff.prototype.draw = function () {
 NeedleDiff.prototype.mousedown = function (event) {
   event._x *= this.width / event.currentTarget.clientWidth;
   event._y *= this.height / event.currentTarget.clientHeight;
-  var divide = event._x / this.width;
+  const divide = event._x / this.width;
   // To prevent the cursor change in chrome/chromium
   event.preventDefault();
   if (Math.abs(this.divide - divide) < 0.01) {
@@ -268,8 +268,8 @@ NeedleDiff.prototype.mousedown = function (event) {
 NeedleDiff.prototype.mousemove = function (event) {
   event._x *= this.width / event.currentTarget.clientWidth;
   event._y *= this.height / event.currentTarget.clientHeight;
-  var divide = event._x / this.width;
-  var redraw = false;
+  const divide = event._x / this.width;
+  const redraw = false;
 
   // Drag
   if (this.dragstart === true) {
@@ -320,7 +320,7 @@ NeedleDiff.shapecolor = function (type) {
 
 function setDiffScreenshot(screenshotSrc) {
   $('<img src="' + screenshotSrc + '">').on('load', function () {
-    var image = $(this).get(0);
+    const image = $(this).get(0);
 
     // set screenshot resolution
     window.differ = new NeedleDiff('needle_diff', image.width, image.height);
@@ -328,18 +328,18 @@ function setDiffScreenshot(screenshotSrc) {
     setNeedle();
 
     // create gray version of it in off screen canvas
-    var gray_canvas = document.createElement('canvas');
+    const gray_canvas = document.createElement('canvas');
     gray_canvas.width = image.width;
     gray_canvas.height = image.height;
 
-    var gray_context = gray_canvas.getContext('2d');
+    const gray_context = gray_canvas.getContext('2d');
 
     gray_context.drawImage(image, 0, 0);
-    var imageData = gray_context.getImageData(0, 0, image.width, image.height);
-    var data = imageData.data;
+    const imageData = gray_context.getImageData(0, 0, image.width, image.height);
+    const data = imageData.data;
 
-    for (var i = 0; i < data.length; i += 4) {
-      var brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+    for (let i = 0; i < data.length; i += 4) {
+      let brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
       brightness *= 0.6;
       // red
       data[i] = brightness;
@@ -363,7 +363,7 @@ function setNeedle(sel, kind) {
     kind = window.differ.fullNeedleImg ? 'full-diff' : 'area-only-diff';
   }
   // set parameter according to the selected kind of diff
-  var assignFullNeedleImg;
+  let assignFullNeedleImg;
   if (kind === 'area-only-diff') {
     assignFullNeedleImg = false;
   } else if (kind === 'full-diff') {
@@ -373,13 +373,13 @@ function setNeedle(sel, kind) {
     return;
   }
 
-  var currentSelection = $('#needlediff_selector tbody tr.selected');
+  const currentSelection = $('#needlediff_selector tbody tr.selected');
   if (sel) {
     // set needle for newly selected item
     currentSelection.removeClass('selected');
     sel.addClass('selected');
     // update label/button text
-    var label = sel.data('label');
+    let label = sel.data('label');
     if (!label) {
       label = 'Screenshot';
     }
@@ -401,10 +401,10 @@ function setNeedle(sel, kind) {
   }
 
   // set image
-  var src = sel.data('image');
+  const src = sel.data('image');
   if (src) {
     $('<img src="' + src + '">').on('load', function () {
-      var image = $(this).get(0);
+      const image = $(this).get(0);
       window.differ.needleImg = image;
       window.differ.fullNeedleImg = assignFullNeedleImg ? image : null;
       window.differ.draw();
@@ -416,9 +416,9 @@ function setNeedle(sel, kind) {
   }
 
   // close menu again, except user is selecting text to copy
-  var needleDiffSelector = document.getElementById('needlediff_selector');
-  var selection = window.getSelection();
-  var userSelectedText = !selection.isCollapsed && $.contains(needleDiffSelector, selection.anchorNode);
+  const needleDiffSelector = document.getElementById('needlediff_selector');
+  const selection = window.getSelection();
+  const userSelectedText = !selection.isCollapsed && $.contains(needleDiffSelector, selection.anchorNode);
   if (!userSelectedText && $(needleDiffSelector).is(':visible')) {
     new bootstrap.Dropdown('#candidatesMenu').toggle();
   }

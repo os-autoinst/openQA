@@ -22,20 +22,20 @@ function logStatus(msg) {
 }
 
 function replayStashedCommands(ws) {
-  var stashedCommands = window.stashedCommands;
+  const stashedCommands = window.stashedCommands;
   if (stashedCommands.length < 1) {
     return;
   }
 
   logStatus('replaying commands stashed while offline');
-  for (var i = 0, count = stashedCommands.length; i != count; ++i) {
+  for (let i = 0, count = stashedCommands.length; i != count; ++i) {
     sendAndLogCommand(ws, stashedCommands[i]);
   }
   window.stashedCommands = [];
 }
 
 function establishWebSocketConnection() {
-  var ws = new WebSocket(window.wsUrl);
+  const ws = new WebSocket(window.wsUrl);
   logStatus('Connecting to ' + window.wsUrl);
   logStatus('Using proxy: ' + (window.wsUsingProxy ? 'yes' : 'no'));
   ws.onopen = function () {
@@ -61,10 +61,10 @@ function establishWebSocketConnection() {
     }, 500);
   };
   ws.onmessage = function (msg) {
-    var proxyConnectionConcluded = false;
+    let proxyConnectionConcluded = false;
     try {
-      var msgObj = JSON.parse(msg.data);
-      var what = msgObj.what;
+      const msgObj = JSON.parse(msg.data);
+      const what = msgObj.what;
       proxyConnectionConcluded =
         typeof what === 'string' &&
         (what.indexOf('connected to os-autoinst command server') >= 0 ||
@@ -87,8 +87,8 @@ function submitWebSocketCommand(event) {
   if (event) {
     event.preventDefault();
   }
-  var msg = document.getElementById('msg');
-  var command = msg.value;
+  const msg = document.getElementById('msg');
+  const command = msg.value;
   if (!window.ws || (window.wsUsingProxy && !window.wsProxyConnectionConcluded)) {
     logStatus("Can't send command, no ws connection opened! Will try to send when connection has been restored.");
     window.stashedCommands.push(command);
@@ -100,8 +100,8 @@ function submitWebSocketCommand(event) {
 
 function setupWebSocketConsole() {
   // determine ws URL
-  var form = $('#ws_console_form');
-  var url = form.data('url');
+  const form = $('#ws_console_form');
+  let url = form.data('url');
   if (!url.length) {
     return;
   }

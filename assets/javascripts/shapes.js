@@ -9,14 +9,14 @@
 // So long as you are nice to people, etc
 
 // http://stackoverflow.com/questions/217957/how-to-print-debug-messages-in-the-google-chrome-javascript-console
-if (!window.console) console = {};
+if (!window.console) console = {}; // eslint-disable-line no-global-assign
 console.log = console.log || function () {};
 console.warn = console.warn || function () {};
 console.error = console.error || function () {};
 console.info = console.info || function () {};
 
-var MINSIZE = 10;
-var CLICK_POINT_CIRCLE_RADIUS = 10;
+const MINSIZE = 10;
+const CLICK_POINT_CIRCLE_RADIUS = 10;
 
 // Constructor for Shape objects to hold data for all drawn objects.
 // For now they will just be defined as rectangles.
@@ -47,10 +47,10 @@ Shape.prototype.assign_click_point = function (click_point) {
 Shape.prototype.draw = function (ctx) {
   ctx.fillStyle = this.fill;
   ctx.fillRect(this.x, this.y, this.w, this.h);
-  var click_point = this.click_point;
+  const click_point = this.click_point;
   if (click_point) {
-    var x = this.x + click_point.x;
-    var y = this.y + click_point.y;
+    const x = this.x + click_point.x;
+    const y = this.y + click_point.y;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.beginPath();
     ctx.arc(x, y, CLICK_POINT_CIRCLE_RADIUS, 0, 2 * Math.PI);
@@ -67,12 +67,12 @@ Shape.prototype.contains = function (mx, my) {
 };
 
 Shape.prototype.click_point_contains = function (mx, my) {
-  var click_point = this.click_point;
+  const click_point = this.click_point;
   if (!click_point) {
     return false;
   }
-  var delta_x = this.x + click_point.x - mx;
-  var delta_y = this.y + click_point.y - my;
+  const delta_x = this.x + click_point.x - mx;
+  const delta_y = this.y + click_point.y - my;
   return Math.sqrt(delta_x * delta_x + delta_y * delta_y) < CLICK_POINT_CIRCLE_RADIUS + 3;
 };
 
@@ -81,7 +81,7 @@ Shape.prototype.click_point_contains = function (mx, my) {
 // 4   6
 // 7 8 9
 Shape.prototype.is_resize = function (mx, my, margin) {
-  var r = 0;
+  let r = 0;
   if (!this.contains(mx, my)) {
     console.error('is_resize called outside');
   } else if (mx - this.x <= margin) {
@@ -136,7 +136,7 @@ function CanvasState(canvas) {
   this.ctx = canvas.getContext('2d');
   // This complicates things a little but but fixes mouse coordinate problems
   // when there's a border or padding. See getMouse for more detail
-  var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
+  let stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
   if (document.defaultView && document.defaultView.getComputedStyle) {
     this.stylePaddingLeft = parseInt(document.defaultView.getComputedStyle(canvas, null).paddingLeft, 10) || 0;
     this.stylePaddingTop = parseInt(document.defaultView.getComputedStyle(canvas, null).paddingTop, 10) || 0;
@@ -145,7 +145,7 @@ function CanvasState(canvas) {
   }
   // Some pages have fixed-position bars (like the stumbleupon bar) at the top or left of the page
   // They will mess up mouse coordinates and this fixes that
-  var html = document.body.parentNode;
+  const html = document.body.parentNode;
   this.htmlTop = html.offsetTop;
   this.htmlLeft = html.offsetLeft;
 
@@ -168,7 +168,7 @@ function CanvasState(canvas) {
   // and when the events are fired on the canvas the variable "this" is going to mean the canvas!
   // Since we still want to use this particular CanvasState in the events we have to save a reference to it.
   // This is our reference!
-  var myState = this;
+  const myState = this;
 
   //fixes a problem where double clicking causes text to get selected on the canvas
   canvas.addEventListener(
@@ -186,10 +186,10 @@ function CanvasState(canvas) {
       if (e.button != 0) {
         return;
       }
-      var mouse = myState.getMouse(e);
-      var mx = mouse.x;
-      var my = mouse.y;
-      var shape = myState.shape_at_cursor(mx, my);
+      const mouse = myState.getMouse(e);
+      const mx = mouse.x;
+      const my = mouse.y;
+      const shape = myState.shape_at_cursor(mx, my);
       if (shape) {
         // Keep track of where in the object we clicked
         // so we can move it smoothly (see mousemove)
@@ -202,7 +202,7 @@ function CanvasState(canvas) {
         if (myState.resizing == 0) {
           myState.dragging = true;
           if (shape.click_point_contains(mx, my)) {
-            var click_point = shape.click_point;
+            const click_point = shape.click_point;
             myState.dragoffx -= shape.click_point.x;
             myState.dragoffy -= shape.click_point.y;
             myState.draggingClickPoint = true;
@@ -224,13 +224,13 @@ function CanvasState(canvas) {
   canvas.addEventListener(
     'mousemove',
     function (e) {
-      var mouse = myState.getMouse(e);
-      var mx = mouse.x;
-      var my = mouse.y;
+      const mouse = myState.getMouse(e);
+      let mx = mouse.x;
+      let my = mouse.y;
 
       if (myState.dragging) {
-        var selection = myState.selection;
-        var objectToDrag;
+        const selection = myState.selection;
+        let objectToDrag;
         if (myState.draggingClickPoint || selection.click_point_contains(mouse.x, mouse.y)) {
           objectToDrag = selection.click_point;
           myState.draggingClickPoint = true;
@@ -278,8 +278,8 @@ function CanvasState(canvas) {
           myState.shape_changed_cb(selection);
         }
       } else if (myState.resizing != 0) {
-        var r = myState.resizing;
-        var sel = myState.selection;
+        let r = myState.resizing;
+        const sel = myState.selection;
 
         // special case, auto determine
         if (r == 5) {
@@ -339,16 +339,16 @@ function CanvasState(canvas) {
         myState.dirty = true;
       } else if (myState.mousedown) {
         if (myState.new_shape_cb) {
-          var newShape = myState.new_shape_cb(mx, my);
+          const newShape = myState.new_shape_cb(mx, my);
           myState.dragoffx = mx - newShape.x;
           myState.dragoffy = my - newShape.y;
           myState.selection = newShape;
           myState.resizing = 5;
         }
       } else {
-        var shape = myState.shape_at_cursor(mouse.x, mouse.y);
+        const shape = myState.shape_at_cursor(mouse.x, mouse.y);
         if (shape) {
-          var resize = shape.is_resize(mouse.x, mouse.y, myState.selectionWidth);
+          const resize = shape.is_resize(mouse.x, mouse.y, myState.selectionWidth);
           if (resize != 0) {
             canvas.style.cursor = Shape.resize_cursor_styles[resize];
           } else {
@@ -390,9 +390,9 @@ function CanvasState(canvas) {
 }
 
 CanvasState.prototype.shape_at_cursor = function (mx, my) {
-  var shapes = this.shapes;
-  var l = shapes.length;
-  for (var i = l - 1; i >= 0; i--) {
+  const shapes = this.shapes;
+  const l = shapes.length;
+  for (let i = l - 1; i >= 0; i--) {
     if (shapes[i].contains(mx, my)) {
       return shapes[i];
     }
@@ -415,8 +415,8 @@ CanvasState.prototype.clear = function () {
 CanvasState.prototype.draw = function () {
   // if our state is invalid, redraw and validate!
   if (this.dirty) {
-    var ctx = this.ctx;
-    var shapes = this.shapes;
+    const ctx = this.ctx;
+    const shapes = this.shapes;
     this.clear();
 
     if (this.bgImage) {
@@ -426,9 +426,9 @@ CanvasState.prototype.draw = function () {
     // ** Add stuff you want drawn in the background all the time here **
 
     // draw all shapes
-    var l = shapes.length;
-    for (var i = 0; i < l; i++) {
-      var shape = shapes[i];
+    const l = shapes.length;
+    for (let i = 0; i < l; i++) {
+      const shape = shapes[i];
       // We can skip the drawing of elements that have moved off the screen:
       if (shape.x > this.width || shape.y > this.height || shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
       shapes[i].draw(ctx);
@@ -437,12 +437,12 @@ CanvasState.prototype.draw = function () {
     // draw selection
     // right now this is just a stroke along the edge of the selected Shape
     if (this.selection != null) {
-      var lineWidth = 1;
+      const lineWidth = 1;
       ctx.strokeStyle = 'white';
       ctx.lineWidth = lineWidth;
       // plainly ignore in Selenium
       if (typeof ctx.setLineDash === 'function') ctx.setLineDash([10, 15]);
-      var mySel = this.selection;
+      const mySel = this.selection;
       ctx.strokeRect(mySel.x - lineWidth, mySel.y - lineWidth, mySel.w + lineWidth * 2, mySel.h + lineWidth * 2);
     }
 
@@ -463,7 +463,7 @@ CanvasState.prototype.get_selection_idx = function () {
 
 CanvasState.prototype.get_selection = function () {
   if (!this.selection) return null;
-  for (var i = 0; i < this.shapes.length; i++) {
+  for (let i = 0; i < this.shapes.length; i++) {
     if (this.shapes[i] == this.selection) return this.selection;
   }
 };
@@ -482,9 +482,9 @@ CanvasState.prototype.delete_shape_idx = function (idx) {
 };
 
 CanvasState.prototype.delete_shapes = function () {
-  var l = this.shapes.length;
+  const l = this.shapes.length;
 
-  for (var i = l - 1; i >= 0; i--) {
+  for (let i = l - 1; i >= 0; i--) {
     this.shapes.splice(i, 1);
   }
   $(this).trigger('shape.unselected');
@@ -495,11 +495,9 @@ CanvasState.prototype.delete_shapes = function () {
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
 CanvasState.prototype.getMouse = function (e) {
-  var element = this.canvas,
+  let element = this.canvas,
     offsetX = 0,
-    offsetY = 0,
-    mx,
-    my;
+    offsetY = 0;
 
   // Compute the total offset
   if (element.offsetParent !== undefined) {
@@ -514,8 +512,8 @@ CanvasState.prototype.getMouse = function (e) {
   offsetX += this.stylePaddingLeft + this.styleBorderLeft + this.htmlLeft;
   offsetY += this.stylePaddingTop + this.styleBorderTop + this.htmlTop;
 
-  mx = e.pageX - offsetX;
-  my = e.pageY - offsetY;
+  const mx = e.pageX - offsetX;
+  const my = e.pageY - offsetY;
 
   // We return a simple javascript object (a hash) with x and y defined
   return {x: mx, y: my};

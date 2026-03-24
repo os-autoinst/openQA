@@ -12,7 +12,7 @@ function setupAdminAssets() {
   const addAssetGroupLinks = function (container, groupIds, pickedId, path) {
     Object.values(groupIds).forEach(function (groupIdString) {
       const groupId = parseInt(groupIdString);
-      var className = 'not-picked';
+      let className = 'not-picked';
       if (pickedId === groupId) {
         className = 'picked-group';
       } else if (pickedId === 0) {
@@ -81,7 +81,7 @@ function setupAdminAssets() {
           if (data === '') {
             return 'unknown';
           }
-          var dataWithUnit = renderDataSize(data);
+          const dataWithUnit = renderDataSize(data);
           if (dataWithUnit) {
             return dataWithUnit;
           }
@@ -91,12 +91,12 @@ function setupAdminAssets() {
       {
         targets: 3,
         render: function (data, type, row) {
-          var groupIds = Object.keys(data).sort();
-          var parentGroupIds = Object.keys(row.parents).sort();
+          const groupIds = Object.keys(data).sort();
+          const parentGroupIds = Object.keys(row.parents).sort();
           if (type !== 'display') {
             return groupIds.concat(parentGroupIds).join(',');
           }
-          var links = [];
+          const links = [];
           addAssetGroupLinks(links, groupIds, row.picked_into, '/group_overview/');
           addAssetGroupLinks(links, parentGroupIds, row.picked_into_parent_id, '/parent_group_overview/');
           return links.length ? links.join(' ') : 'none';
@@ -179,7 +179,7 @@ function showLastAssetStatusUpdate(assetStatus) {
 }
 
 function makeQualifiedGroupIdForAsset(assetInfo) {
-  var parentGroupOfAsset = assetInfo.picked_into_parent_id;
+  const parentGroupOfAsset = assetInfo.picked_into_parent_id;
   if (parentGroupOfAsset !== undefined) {
     return 'parent-group-' + parentGroupOfAsset;
   }
@@ -187,17 +187,17 @@ function makeQualifiedGroupIdForAsset(assetInfo) {
 }
 
 function makeAssetsByGroup(assetStatus) {
-  var assetsByGroupHeading = $('#assets-by-group-heading');
-  var assetsByGroupList = $('#assets-by-group');
-  var totalSize = 0;
-  var jobGroups = assetStatus.groups;
-  var parentGroups = assetStatus.parents;
-  var assets = assetStatus.data;
+  const assetsByGroupHeading = $('#assets-by-group-heading');
+  const assetsByGroupList = $('#assets-by-group');
+  let totalSize = 0;
+  const jobGroups = assetStatus.groups;
+  const parentGroups = assetStatus.parents;
+  const assets = assetStatus.data;
 
   $('#assets-by-group-loading').hide();
 
   // make the asset list for the particular groups
-  var assetsByGroup = {};
+  const assetsByGroup = {};
   assets
     .sort(function (b, a) {
       return a.name.localeCompare(b.name);
@@ -208,8 +208,8 @@ function makeAssetsByGroup(assetStatus) {
       }
 
       // make the ul element but don't populate the li elements already
-      var qualifiedGroupId = makeQualifiedGroupIdForAsset(asset);
-      var assetUl = assetsByGroup[qualifiedGroupId];
+      const qualifiedGroupId = makeQualifiedGroupIdForAsset(asset);
+      let assetUl = assetsByGroup[qualifiedGroupId];
       if (!assetUl) {
         assetsByGroup[qualifiedGroupId] = assetUl = $('<ul></ul>');
         assetUl.assets = [];
@@ -217,7 +217,7 @@ function makeAssetsByGroup(assetStatus) {
         // add method lazy-initialize the ul element
         assetUl.populate = function () {
           this.assets.forEach(function (asset) {
-            var assetLi = $('<li></li>');
+            const assetLi = $('<li></li>');
             assetLi.text(asset.name);
             assetLi.append('<span>' + renderDataSize(asset.size) + '</span>');
             assetUl.append(assetLi);
@@ -243,36 +243,36 @@ function makeAssetsByGroup(assetStatus) {
         return;
       }
 
-      var groupId = groupInfo.id !== null ? groupInfo.id : 0;
-      var parents = groupInfo.parents;
-      var isParent = groupInfo.parent_id === undefined; // parentless job groups have parent_id set to null
-      var groupLi = $('<li></li>');
-      var qualifiedGroupId = isParent ? 'parent-group-' + groupId : 'group-' + groupId;
-      var checkboxId = qualifiedGroupId + '-checkbox';
+      const groupId = groupInfo.id !== null ? groupInfo.id : 0;
+      const parents = groupInfo.parents;
+      const isParent = groupInfo.parent_id === undefined; // parentless job groups have parent_id set to null
+      const groupLi = $('<li></li>');
+      const qualifiedGroupId = isParent ? 'parent-group-' + groupId : 'group-' + groupId;
+      const checkboxId = qualifiedGroupId + '-checkbox';
 
       // add input for expanding/collapsing
-      var groupCheckbox = $('<input id="' + checkboxId + '" type="checkbox"></input>');
+      const groupCheckbox = $('<input id="' + checkboxId + '" type="checkbox"></input>');
       groupLi.append(groupCheckbox);
-      var label = $('<label for="' + checkboxId + '">' + groupInfo.group + '</label>');
+      const label = $('<label for="' + checkboxId + '">' + groupInfo.group + '</label>');
       groupLi.append(label);
 
       // add configure button
       if (window.isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== 'Untracked') {
-        var path = isParent ? '/admin/edit_parent_group/' + groupId : '/admin/job_templates/' + groupId;
+        const path = isParent ? '/admin/edit_parent_group/' + groupId : '/admin/job_templates/' + groupId;
         groupLi.append('<a href="' + path + '"><i class="fa fa-wrench" title="Configure"></i></a>');
       }
 
       // add size
-      var size = groupInfo.picked;
+      const size = groupInfo.picked;
       totalSize += size;
-      var sizeString = renderDataSize(size);
+      let sizeString = renderDataSize(size);
       if (groupInfo.size_limit_gb) {
         sizeString += ' / ' + groupInfo.size_limit_gb + ' GiB';
       }
       groupLi.append('<span>' + sizeString + '</span>');
 
       // setup lazy-loading for list of assets
-      var assetUl = assetsByGroup[qualifiedGroupId];
+      const assetUl = assetsByGroup[qualifiedGroupId];
       if (assetUl) {
         groupCheckbox.change(function () {
           if (assetUl.initialized) {
