@@ -495,14 +495,15 @@ subtest 'invoking curl passing auth headers' => sub {
     note 'config path: ' . ($ENV{OPENQA_CONFIG} = "$FindBin::Bin/data");
 
     my $args = OpenQA::Script::CloneJob::make_curl_arguments({});
-    is_deeply $args, [qw(--follow --no-progress-meter)], 'default arguments correct';
+    my @expected_default_args = qw(--follow --retry 5 --retry-connrefused --no-progress-meter);
+    is_deeply $args, \@expected_default_args, 'default arguments correct';
     my $secrets = OpenQA::Script::CloneJob::read_secrets('testapi');
     is_deeply $secrets, [qw(PERCIVALKEY02 PERCIVALSECRET02)], 'key and secret as expected for host "testapi"';
 
     my %url_handler = (curl_args => $args, secrets => $secrets);
     my $error = OpenQA::Script::CloneJob::mirror(\%url_handler, Mojo::URL->new('url'), 'path');
     my @expected_cmds = (
-        qw(curl --follow --no-progress-meter),
+        curl => @expected_default_args,
         (map { -H => $_ } ('X-API-Hash: ?', 'X-API-Key: PERCIVALKEY02', 'X-API-Microtime: ?')),
         qw(--continue-at - --output path url),
     );
