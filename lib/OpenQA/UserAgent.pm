@@ -103,15 +103,13 @@ OpenQA::UserAgent - special version of Mojo::UserAgent that handles authenticati
 
 =head1 DESCRIPTION
 
-L<OpenQA::UserAgent> inherits from L<Mojo::UserAgent>. It
-automatically sets the correct authentication headers if API key and
-secret are available.
+L<OpenQA::UserAgent> inherits from L<Mojo::UserAgent>. It automatically sets
+the correct authentication headers if API credentials are available.
 
-API key and secret can either be set manually in the constructor, via
-attributes or read from a config file. L<OpenQA::UserAgent>
-tries to find a config file in $OPENQA_CONFIG,
-~/.config/openqa/client.conf or /etc/openqa/client.conf and reads
-whatever comes first.
+API credentials can either be set manually in the constructor, via attributes
+or read from a config file. L<OpenQA::UserAgent> tries to find a config file
+in $OPENQA_CONFIG, ~/.config/openqa/client.conf or /etc/openqa/client.conf and
+reads whatever comes first.
 
 See L<Mojo::UserAgent> for more.
 
