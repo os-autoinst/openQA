@@ -39,11 +39,11 @@ use Getopt::Long;
 sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 my %options;
-GetOptions(\%options, "add-tags=s", "help|h",) or usage(1);
+GetOptions(\%options, 'add-tags=s', 'help|h',) or usage(1);
 
 usage(0) if $options{help};
 
-my @add_tags = split(q{,}, $options{'add-tags'});
+my @add_tags = split /,/, $options{'add-tags'};
 
 for my $needle (@ARGV) {
     my $info = Cpanel::JSON::XS->new->relaxed->decode(path($needle)->slurp);

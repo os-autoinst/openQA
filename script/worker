@@ -91,7 +91,7 @@ use FindBin;
 use lib "$FindBin::RealBin/../lib";
 use Carp::Always;
 use Getopt::Long;
-Getopt::Long::Configure("no_ignore_case");
+Getopt::Long::Configure('no_ignore_case');
 
 use OpenQA::Worker;
 use OpenQA::Log 'log_info';
@@ -101,8 +101,8 @@ my %options;
 sub usage ($r) { require Pod::Usage; Pod::Usage::pod2usage($r) }
 
 GetOptions(
-    \%options, "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s",
-    "apisecret:s", "verbose|v|debug|d", "help|h",
+    \%options, 'no-cleanup', 'instance=i', 'isotovideo=s', 'host=s', 'apikey:s',
+    'apisecret:s', 'verbose|v|debug|d', 'help|h',
 ) or usage(1);
 
 usage(0) if ($options{help});
