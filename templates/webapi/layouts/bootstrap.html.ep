@@ -52,7 +52,7 @@
       <div class="container-fluid" id="content">
           %= content
           <button id="back-to-top" class="btn btn-primary btn-lg back-to-top">
-            <i class="fa fa-angle-up"></i>
+            <i class="fa-solid fa-angle-up"></i>
           </button>
       </div>
 

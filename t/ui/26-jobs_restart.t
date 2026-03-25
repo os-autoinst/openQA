@@ -312,7 +312,8 @@ subtest 'check cluster jobs restart in test overview page' => sub {
 
     subtest 'all related cluster jobs marked as restarted' => sub {
         my @cluster_jobs = qw(create_hdd support_server master_node slave_node);
-        is $driver->find_element("#res_DVD_i586_$_ .fa-circle")->get_attribute('title'), 'Scheduled', "$_ is restarted"
+        is $driver->find_element("#res_DVD_i586_$_ .fa-solid.fa-circle")->get_attribute('title'), 'Scheduled',
+          "$_ is restarted"
           for @cluster_jobs;
         my $i = 0;
         like

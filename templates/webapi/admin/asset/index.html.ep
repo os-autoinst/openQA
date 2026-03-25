@@ -10,7 +10,7 @@
         % if (is_admin) {
             <form action="<%= url_for('apiv1_trigger_asset_cleanup') %>" method="post" onsubmit="triggerAssetCleanup(this); return false;" class="corner-buttons">
                 <button type="submit" class="btn btn-secondary" title="Enqueues a new asset cleanup task if none is outstanding anyways">
-                    <i class="fa fa-sync"></i> Trigger asset cleanup
+                    <i class="fa-solid fa-sync"></i> Trigger asset cleanup
                 </button>
             </form>
         % }
@@ -35,7 +35,7 @@
         </table>
 
         <h3 id="assets-by-group-heading">Assets by group</h3>
-        <p id="assets-by-group-loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+        <p id="assets-by-group-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</p>
         <ul id="assets-by-group"></ul>
     </div>
 </div>

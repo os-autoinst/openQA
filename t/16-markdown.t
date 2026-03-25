@@ -41,28 +41,28 @@ subtest 'standard markdown' => sub {
 
 subtest 'bugrefs' => sub {
     is markdown_to_html('boo#123'),
-qq{<p><span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span></p>\n},
+qq{<p><span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#123</a></span></p>\n},
       'bugref expanded';
     is markdown_to_html('testing boo#123 123'),
-qq{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span> 123</p>\n},
+qq{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#123</a></span> 123</p>\n},
       'bugref expanded';
     is markdown_to_html('testing boo#123 123 boo#321'),
-q{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span> 123}
-      . qq{ <span title="Bug referenced: boo#321" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=321"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#321</a></span></p>\n},
+q{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#123</a></span> 123}
+      . qq{ <span title="Bug referenced: boo#321" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=321"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#321</a></span></p>\n},
       'bugref expanded';
     is markdown_to_html("testing boo#123\n123\n boo#321"),
-qq{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span>\n123\n}
-      . qq{<span title="Bug referenced: boo#321" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=321"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#321</a></span></p>\n},
+qq{<p>testing <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#123</a></span>\n123\n}
+      . qq{<span title="Bug referenced: boo#321" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=321"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#321</a></span></p>\n},
       'bugref expanded';
     is markdown_to_html("boo\ntesting boo#123 123\n123"),
-qq{<p>boo\ntesting <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span> 123\n123</p>\n},
+qq{<p>boo\ntesting <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#123</a></span> 123\n123</p>\n},
       'bugref expanded';
     is markdown_to_html('related issues: boo#123,bsc#1234'),
-q{<p>related issues: <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#123</a></span>,}
-      . qq{<span title="Bug referenced: bsc#1234" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span></p>\n},
+q{<p>related issues: <span title="Bug referenced: boo#123" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#123</a></span>,}
+      . qq{<span title="Bug referenced: bsc#1234" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;bsc#1234</a></span></p>\n},
       'bugref expanded';
     is markdown_to_html('related issue: bsc#1234, yada yada'),
-qq{<p>related issue: <span title="Bug referenced: bsc#1234" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#1234</a></span>, yada yada</p>\n},
+qq{<p>related issue: <span title="Bug referenced: bsc#1234" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=1234"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;bsc#1234</a></span>, yada yada</p>\n},
       'bugref expanded';
     is markdown_to_html('label:force_result:passed:bsc#1234'),
       q{<p><span class="openqa-label">label:force_result:passed:}
@@ -139,7 +139,7 @@ subtest 'bugrefs to markdown' => sub {
       '<a href="https://bugzilla.suse.com/show_bug.cgi?id=9876" title="Bug referenced: bnc#9876">bnc#9876</a>',
       'right markdown for bnc';
     is bugref_to_html('bsc#9876', 1),
-'<span title="Bug referenced: bsc#9876" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=9876"><i class="test-label label_bug fa fa-bug"></i>&nbsp;bsc#9876</a></span>',
+'<span title="Bug referenced: bsc#9876" class="openqa-bugref"><a href="https://bugzilla.suse.com/show_bug.cgi?id=9876"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;bsc#9876</a></span>',
       'right markdown for bsc';
     is bugref_to_html('boo#9876'),
       '<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=9876" title="Bug referenced: boo#9876">boo#9876</a>',
@@ -181,8 +181,8 @@ subtest 'bugrefs to markdown' => sub {
 '<a href="https://gitlab.com/fedora/sigs/flatpak/fedora-flatpaks/issues/26" title="Bug referenced: gfs#flatpak/fedora-flatpaks#26">gfs#flatpak/fedora-flatpaks#26</a>',
       'right markdown for gfs';
     is markdown_to_html("boo#9876\n\ntest boo#211\n"),
-qq{<p><span title="Bug referenced: boo#9876" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=9876"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#9876</a></span></p>\n}
-      . qq{<p>test <span title="Bug referenced: boo#211" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=211"><i class="test-label label_bug fa fa-bug"></i>&nbsp;boo#211</a></span></p>\n},
+qq{<p><span title="Bug referenced: boo#9876" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=9876"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#9876</a></span></p>\n}
+      . qq{<p>test <span title="Bug referenced: boo#211" class="openqa-bugref"><a href="https://bugzilla.opensuse.org/show_bug.cgi?id=211"><i class="test-label label_bug fa-solid fa-bug"></i>&nbsp;boo#211</a></span></p>\n},
       'right markdown for 2x boo';
     is markdown_to_html('label:force_result:passed:bsc#1234'),
 qq{<p><span class="openqa-label">label:force_result:passed:<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234" title="Bug referenced: bsc#1234">bsc#1234</a></span></p>\n},

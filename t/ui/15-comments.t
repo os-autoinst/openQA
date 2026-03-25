@@ -289,14 +289,14 @@ subtest 'commenting in test results including labels' => sub {
     subtest 'help popover' => sub {
         wait_for_ajax(msg => 'comments tab loaded');
         disable_bootstrap_animations;
-        my $help_icon = $driver->find_element('#commentForm .help_popover.fa-question-circle');
+        my $help_icon = $driver->find_element('#commentForm .help_popover.fa-solid.fa-circle-question');
         $help_icon->click;
         is wait_for_element(selector => '.popover-header')->get_text, 'Help for comments', 'popover shown on click';
         $help_icon->click;
     };
 
     subtest 'add label' => sub {
-        $driver->find_element('#commentForm .help_popover.fa-ticket')->click;
+        $driver->find_element('#commentForm .help_popover.fa-solid.fa-ticket')->click;
         my $textarea = $driver->find_element_by_id('text');
         like $textarea->get_value, qr/label:force_result:new_result/, 'label template added';
         $driver->find_element_by_id('submitComment')->click;
@@ -336,7 +336,7 @@ EOM
 
         $driver->title_is('openQA: Test summary', 'back on test group overview');
         is
-          $driver->find_element('#res_DVD_x86_64_doc .fa-comment')->get_attribute('title'),
+          $driver->find_element('#res_DVD_x86_64_doc .fa-solid.fa-comment')->get_attribute('title'),
           '3 comments available',
           'test results show available comment(s)';
     };
@@ -347,7 +347,7 @@ EOM
         $driver->find_element_by_link_text('Job Groups')->click();
         $driver->find_element('#current-build-overview a')->click();
         is
-          $driver->find_element('#res_DVD_x86_64_doc .fa-bookmark')->get_attribute('title'),
+          $driver->find_element('#res_DVD_x86_64_doc .fa-solid.fa-bookmark')->get_attribute('title'),
           'Label: true_positive',
           'label icon shown';
         $driver->get('/tests/99939#comments');
@@ -355,7 +355,7 @@ EOM
         $driver->find_element_by_link_text('Job Groups')->click();
         $driver->find_element('#current-build-overview a')->click();
         is
-          $driver->find_element('#res_DVD_x86_64_kde .fa-bookmark')->get_attribute('title'),
+          $driver->find_element('#res_DVD_x86_64_kde .fa-solid.fa-bookmark')->get_attribute('title'),
           'Label: force_result:passed:forceresult_for_testing_purposes',
           'force_result label icon shown';
         $driver->get('/tests/99938#comments');
@@ -363,17 +363,17 @@ EOM
         $driver->find_element_by_link_text('Job Groups')->click();
         $driver->find_element('#current-build-overview a')->click();
         is
-          $driver->find_element('#res_DVD_x86_64_doc .fa-bug')->get_attribute('title'),
+          $driver->find_element('#res_DVD_x86_64_doc .fa-solid.fa-bug')->get_attribute('title'),
           "Bug referenced: bsc#1234\nsome title with \"quotes\" and <html>elements</html>",
           'bug icon shown for bsc#1234, title rendered with new-line, HTML code is rendered as text';
         is
-          $driver->find_element('#res_DVD_x86_64_doc .fa-bolt')->get_attribute('title'),
+          $driver->find_element('#res_DVD_x86_64_doc .fa-solid.fa-bolt')->get_attribute('title'),
           'Bug referenced: poo#4321',
           'bug icon shown for poo#4321';
         my @labels = $driver->find_elements('#res_DVD_x86_64_doc .test-label', 'css');
         is scalar @labels, 3, '3 bugrefs shown';
         $t->get_ok($driver->get_current_url())->status_is(200);
-        is $t->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href},
+        is $t->tx->res->dom->at('#res_DVD_x86_64_doc .fa-solid.fa-bug')->parent->{href},
           'https://bugzilla.suse.com/show_bug.cgi?id=1234';
         $driver->find_element_by_link_text('opensuse')->click();
         is $driver->find_element('.badge-all-passed')->get_attribute('title'),
@@ -389,7 +389,7 @@ EOM
               'on the right build';
             $driver->find_element('#current-build-overview a')->click();
             is
-              $driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt')->get_attribute('title'),
+              $driver->find_element('#res_staging_e_x86_64_minimalx .fa-solid.fa-bolt')->get_attribute('title'),
               'Bug referenced: poo#9876',
               'bolt icon shown for progress issues';
         };
@@ -403,13 +403,13 @@ EOM
               qr/\QBuild 87.5011\E/,
               'on the right build';
             $driver->find_element('#current-build-overview a')->click();
-            my @bugrefs = $driver->find_elements('#res_staging_e_x86_64_minimalx .fa-bolt', 'css');
+            my @bugrefs = $driver->find_elements('#res_staging_e_x86_64_minimalx .fa-solid.fa-bolt', 'css');
             is $bugrefs[0]->get_attribute('title'), 'Bug referenced: poo#9876', 'first bugref shown';
             is $bugrefs[1]->get_attribute('title'), 'Bug referenced: poo#9875', 'second bugref shown';
             is $bugrefs[2]->get_attribute('title'), 'Bug referenced: poo#9874', 'third bugref shown';
             is $bugrefs[3], undef, 'correct number of bugrefs shown';
             $t->get_ok($driver->get_current_url())->status_is(200);
-            is $t->tx->res->dom->at('#res_staging_e_x86_64_minimalx .fa-bolt')->parent->{href},
+            is $t->tx->res->dom->at('#res_staging_e_x86_64_minimalx .fa-solid.fa-bolt')->parent->{href},
               'https://progress.opensuse.org/issues/9876';
         };
 

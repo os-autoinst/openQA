@@ -97,9 +97,9 @@ function renderJobResults(data, type, row) {
   html += '<span id="res-' + row.id + '">';
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '">';
   if (row.result == 'none' && (row.state == 'running' || row.state == 'scheduled')) {
-    html += '<i class="status fa fa-circle state_' + row.state + '" title="' + row.state + '"></i>';
+    html += '<i class="status fa-solid fa-circle state_' + row.state + '" title="' + row.state + '"></i>';
   } else {
-    html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
+    html += '<i class="status fa-solid fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
   }
   html += '</a>\n</span>';
   // job failed modules
@@ -121,7 +121,7 @@ function renderJobResults(data, type, row) {
     html += '<a data-bs-toggle="tooltip" data-placement="top" ';
     html += 'data-container="#res_' + row.id + '" ';
     html += 'data-async="' + async_url + '" ';
-    html += "title=\"<i class='fa fa-sync fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>\"";
+    html += "title=\"<i class='fa-solid fa-sync fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>\"";
     html += 'class="failedmodule" ';
     html += 'href="' + urlWithBase('/tests/' + row.id + '#step/' + htmlEscape(row.failedmodules[i]) + '/1') + '">';
     html += '<span title="' + htmlEscape(row.failedmodules[i]) + '">' + htmlEscape(row.failedmodules[i]) + '</span>';

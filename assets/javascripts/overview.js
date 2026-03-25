@@ -72,7 +72,7 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
     return true;
   }
   const toggleLink = document.createElement('a');
-  toggleLink.className = 'toggle-parallel-children btn btn-outline-primary fa fa-clone';
+  toggleLink.className = 'toggle-parallel-children btn btn-outline-primary fa-solid fa-clone';
   relatedRow.classList.add('parallel-parent');
   relatedRow.dataset.parallelParents = jobID;
   toggleLink.title = 'Show/hide parallel children';
@@ -90,12 +90,12 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
     return true;
   }
   const collapseAllButton = document.createElement('a');
-  collapseAllButton.className = 'collapse-all-button btn btn-outline-primary btn-sm fa fa-compress';
+  collapseAllButton.className = 'collapse-all-button btn btn-outline-primary btn-sm fa-solid fa-compress';
   collapseAllButton.title = 'Collapse all parallel children';
   collapseAllButton.onclick = toggleAllParallelChildren.bind(this, false, relatedTable);
   heading.insertAdjacentElement('beforebegin', collapseAllButton);
   const expandAllButton = document.createElement('a');
-  expandAllButton.className = 'expand-all-button btn btn-outline-primary btn-sm fa fa-expand';
+  expandAllButton.className = 'expand-all-button btn btn-outline-primary btn-sm fa-solid fa-expand';
   expandAllButton.title = 'Expand all parallel children';
   expandAllButton.onclick = toggleAllParallelChildren.bind(this, true, relatedTable);
   heading.insertAdjacentElement('beforebegin', expandAllButton);
@@ -176,7 +176,7 @@ function setupOverview(options) {
     if (dependencyResult.title === undefined) {
       continue;
     }
-    let elementIClass = 'fa fa-code-fork';
+    let elementIClass = 'fa-solid fa-code-fork';
     let elementATitle = dependencyResult.title;
     if (deps.has_parents) {
       const str = parseInt(deps.parents_ok) ? 'passed' : 'failed';

@@ -479,12 +479,12 @@ subtest 'render video link if frametime is available' => sub {
     $driver->find_element_by_link_text('Details')->click();
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     wait_for_ajax(msg => 'first step of bootloader test module loaded');
-    my @links = $driver->find_elements('.step_actions .fa-file-video-o');
+    my @links = $driver->find_elements('.step_actions .fa-regular.fa-file-video');
     is $#links, -1, 'no link without frametime';
 
     $driver->find_element('[href="#step/bootloader/2"]')->click();
     wait_for_ajax(msg => 'second step of bootloader test module loaded');
-    my @video_link_elems = $driver->find_elements('.step_actions .fa-file-video-o');
+    my @video_link_elems = $driver->find_elements('.step_actions .fa-regular.fa-file-video');
     is $video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists';
     like $video_link_elems[0]->get_attribute('href'),
       qr!/tests/99946/video\?filename=video\.ogv&t=0\.00,1\.00!,
@@ -798,31 +798,32 @@ subtest 'test module flags are displayed correctly' => sub {
     # for this job we have exactly each flag set once, so check that not to rely on the order of the test modules
     $driver->get('/tests/99764');
     wait_for_ajax(msg => 'details tab for job 99764 loaded');
-    my $flags = $driver->find_elements("//div[\@class='flags']/i[(starts-with(\@class, 'flag fa fa-'))]", 'xpath');
+    my $flags
+      = $driver->find_elements("//div[\@class='flags']/i[(starts-with(\@class, 'flag fa-solid fa-'))]", 'xpath');
     is scalar(@{$flags}), 4, 'Expect 4 flags in the job 99764';
 
-    my $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-minus']", 'xpath');
+    my $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-minus']", 'xpath');
     ok $flag, 'Ignore failure flag is displayed for test modules which are not important, neither fatal';
     is
       $flag->get_attribute('title'),
       'Ignore failure: failure or soft failure of this test does not impact overall job result',
       'Description of Ignore failure flag is correct';
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-undo']", 'xpath');
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-rotate-left']", 'xpath');
     ok $flag, 'Always rollback flag is displayed correctly';
     is
       $flag->get_attribute('title'),
       'Always rollback: revert to the last milestone snapshot even if test module is successful',
       'Description of always_rollback flag is correct';
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-anchor']", 'xpath');
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-anchor']", 'xpath');
     ok $flag, 'Milestone flag is displayed correctly';
     is
       $flag->get_attribute('title'),
       'Milestone: snapshot the state after this test for restoring',
       'Description of milestone flag is correct';
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-plug']", 'xpath');
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa-solid fa-plug']", 'xpath');
     ok $flag, 'Fatal flag is displayed correctly';
     is
       $flag->get_attribute('title'),

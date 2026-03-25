@@ -6,7 +6,7 @@
       content: '•';
     }
   }
-  a.fa, span > a {
+  a[class*="fa-"], span > a {
     text-decoration: none;
   }
   .toggle-parallel-children {
@@ -93,6 +93,6 @@
 .group-comment-icon-stack {
   font-size: 0.9em;
 }
-.group-comment-icon-stack .fa-undo {
+.group-comment-icon-stack [class*="fa-"]-rotate-left {
   color: #0c4374;
 }

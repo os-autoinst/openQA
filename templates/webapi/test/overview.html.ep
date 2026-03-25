@@ -11,7 +11,7 @@
 
 % if ($limit_exceeded) {
   <div class="alert alert-warning" id="max-jobs-limit" role="alert">
-    <i class="fa fa-exclamation-circle"></i> Only <%= $limit_exceeded %> results included, please narrow down your search parameters.
+    <i class="fa-solid fa-exclamation-circle"></i> Only <%= $limit_exceeded %> results included, please narrow down your search parameters.
   </div>
 % }
 <div>
@@ -44,8 +44,8 @@
             % if ($allow_commenting) {
             <button type="button" class="btn btn-secondary btn-circle btn-sm trigger-edit-button" onclick="showAddCommentsDialog()" title="Restart or comment jobs">
                 <span class="fa-stack group-comment-icon-stack">
-                    <i class="fa fa-comment fa-stack-2x text-danger-info" aria-hidden="true"></i>
-                    <i class="fa fa-undo fa-stack-1x" aria-hidden="true"></i>
+                    <i class="fa-solid fa-comment fa-stack-2x text-danger-info" aria-hidden="true"></i>
+                    <i class="fa-solid fa-undo fa-stack-1x" aria-hidden="true"></i>
                 </span>
             </button>
             % }
@@ -222,20 +222,20 @@
         </div>
         <div class="modal-footer">
           <div id="add-comments-progress-indication">
-            <div class="flex-fill"><i class="fa fa-cog fa-spin fa-fw"></i> Saving…</div>
+            <div class="flex-fill"><i class="fa-solid fa-cog fa-spin fa-fw"></i> Saving…</div>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           </div>
           <div id="add-comments-controls">
             <button type="button" class="btn btn-warning" id="commentJobsBtn"
                     data-url="<%= url_for('apiv1_post_comments')->query(job_id=>$job_ids) %>"
                     onclick="addComments(this);">
-              <i class="fa fa-comment"></i> Comment on all <%= scalar @$job_ids %> jobs
+              <i class="fa-solid fa-comment"></i> Comment on all <%= scalar @$job_ids %> jobs
             </button>
             <button type="button" class="btn btn-danger" id="restartAndCommentJobsBtn"
                     data-jobs="<%= join(',', @$job_ids) %>"
                     data-url="<%= url_for('apiv1_restart_jobs')->query(jobs=>$job_ids) %>"
                     onclick="restartJobsWithComment(this);">
-              <i class="fa fa-play-circle-o"></i> Restart and comment on <%= scalar @$job_ids %> jobs
+              <i class="fa-solid fa-play-circle-o"></i> Restart and comment on <%= scalar @$job_ids %> jobs
             </button>
             <button type="button" class="btn btn-secondary"
                     data-bs-dismiss="modal">Discard</button>

@@ -75,7 +75,7 @@ function setupFilterForm(options) {
         if (cardBody) {
           const progress = document.createElement('span');
           progress.id = 'filter-progress';
-          progress.innerHTML = '<i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span>';
+          progress.innerHTML = '<i class="fa-solid fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span>';
           cardBody.appendChild(progress);
         }
         window.location.search = newQuery;

@@ -107,7 +107,7 @@ td div.progress {
   position: relative;
   top: -2px;
 }
-h2 .fa {
+h2 [class*="fa-"] {
   color: $color-labels;
   margin-right: 5px;
   font-size: 90%;

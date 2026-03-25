@@ -45,7 +45,7 @@ sub register ($self, $app, $config) {
 
     $app->helper(
         bugicon_for => sub ($c, $text, $bug = undef) {
-            my $css_class = ($text =~ /(poo|gh)#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
+            my $css_class = ($text =~ /(poo|gh)#/) ? 'label_bug fa-solid fa-bolt' : 'label_bug fa-solid fa-bug';
             $css_class .= ' bug_closed' if $bug && !$bug->open;
             return $css_class;
         });
@@ -63,7 +63,7 @@ sub register ($self, $app, $config) {
     $app->helper(
         stepaction_for => sub ($c, $title, $url, $icon, $class = '') {
             my $icons = $c->t(i => (class => "step_action fa $icon fa-lg fa-stack-1x"))
-              . $c->t(i => (class => 'new fa fa-plus fa-stack-1x'));
+              . $c->t(i => (class => 'new fa-solid fa-plus fa-stack-1x'));
             my $content = $c->t(span => (class => 'fa-stack') => sub { $icons });
             return $c->link_to($url => (title => $title, class => $class) => sub { $content });
         });
@@ -72,7 +72,7 @@ sub register ($self, $app, $config) {
         stepvideolink_for => sub ($c, $testid, $file_name, $frametime) {
             my $t = sprintf '&t=%s,%s', $frametime->[0], $frametime->[1];
             my $url = $c->url_for('video', testid => $testid)->query(filename => $file_name) . $t;
-            my $class = 'step_action fa fa-file-video-o fa-lg';
+            my $class = 'step_action fa-solid fa-file-video-o fa-lg';
             return $c->link_to($url => (title => 'Jump to video', class => $class) => sub { '' });
         });
 
@@ -105,7 +105,7 @@ sub register ($self, $app, $config) {
 
             $crumbs .= "\n<li id='current-build-overview'>";
             $crumbs .= $c->link_to($overview_url => (class => 'dropdown-item') =>
-                  sub { '<i class="fa fa-arrow-right"></i> ' . $overview_text });
+                  sub { '<i class="fa-solid fa-arrow-right"></i> ' . $overview_text });
             $crumbs .= '</li>';
             $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
             return Mojo::ByteStream->new($crumbs);
@@ -154,7 +154,7 @@ sub register ($self, $app, $config) {
         #   help_popover 'Help for button' => 'Do not press this button!', 'http://nuke.me' => 'Nuke'
         help_popover =>
           sub ($c, $title, $content, $details_url = undef, $details_text = undef, $placement = undef, @args) {
-            my $class = 'help_popover fa fa-question-circle';
+            my $class = 'help_popover fa-solid fa-question-circle';
             if ($details_url) {
                 $content
                   .= '<p>See '
@@ -237,7 +237,7 @@ sub register ($self, $app, $config) {
                 $c->url_for('test', testid => $jobid) . '#' . comments => sub {
                     $c->tag(
                         'i',
-                        class => 'test-label label_comment fa fa-comment',
+                        class => 'test-label label_comment fa-solid fa-comment',
                         title => $comment_count . ($comment_count != 1 ? ' comments available' : ' comment available'));
                 });
         });

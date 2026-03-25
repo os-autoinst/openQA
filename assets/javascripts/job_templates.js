@@ -211,7 +211,7 @@ function buildMediumGroup(group, media) {
   const prioHeading = $('<th class="prio">Prio</th>');
   prioHeading.css('white-space', 'nowrap');
   const prioHelpPopover = $(
-    '<a href="#" class="help_popover fa fa-question-circle"" data-content="' +
+    '<a href="#" class="help_popover fa-solid fa-question-circle"" data-content="' +
       'The priority can be set for each row specifically. However, the priority might be left empty as well. ' +
       'In this case default priority for the whole job group is used (displayed in italic font)." data-bs-toggle="popover" ' +
       'data-trigger="focus" role="button"></a>'
@@ -590,7 +590,7 @@ function submitProperties(form) {
       if (overallError) {
         showSubmitResults(
           editorForm,
-          `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${overallError}</strong>`
+          `<i class="fa-solid fa-exclamation-circle"></i> Unable to apply changes: <strong>${overallError}</strong>`
         );
         return;
       }
@@ -600,7 +600,7 @@ function submitProperties(form) {
         typeof warnings === 'object' && Object.keys(warnings).length > 0
           ? ', but <strong>there are warnings</strong> (see highlighted fields)'
           : '';
-      showSubmitResults(editorForm, `<i class="fa fa-save"></i> Changes applied${remark}`);
+      showSubmitResults(editorForm, `<i class="fa-solid fa-floppy-disk"></i> Changes applied${remark}`);
 
       // show new name
       const newJobName = $('#editor-name').val();
@@ -615,7 +615,7 @@ function submitProperties(form) {
     .catch(error => {
       showSubmitResults(
         editorForm,
-        `<i class="fa fa-exclamation-circle"></i> Unable to apply changes: <strong>${error}</strong>`
+        `<i class="fa-solid fa-exclamation-circle"></i> Unable to apply changes: <strong>${error}</strong>`
       );
     })
     .finally(() => {

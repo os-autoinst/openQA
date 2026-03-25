@@ -18,9 +18,9 @@
                 ondragstart="dragParentGroup(event, this.parentElement);"
             >
             </div>
-            <a href="#" onclick="return deleteGroup(this, false);" class="fa fa-trash" title="Delete job group <%= $group->name %>"></a>
+            <a href="#" onclick="return deleteGroup(this, false);" class="fa-solid fa-trash" title="Delete job group <%= $group->name %>"></a>
         % }
-        <i class="fa fa-bars"></i>
+        <i class="fa-solid fa-bars"></i>
         <span>
             %= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
         </span>

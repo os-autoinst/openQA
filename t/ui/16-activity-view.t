@@ -48,7 +48,7 @@ subtest 'Access activity view via the menu' => sub {
 #                state     result        blocked css class
 # from fixtures
 my %state_result = (
-    99981 => [qw(cancelled skipped            0 fa-times)],
+    99981 => [qw(cancelled skipped            0 fa-xmark)],
     99926 => [qw(done      incomplete         0 result_incomplete)],
     80000 => [qw(done      passed             0 result_passed)],
     99937 => [qw(done      passed             0 result_passed)],
@@ -60,9 +60,9 @@ my %state_result = (
 );
 # created during test
 my %state_result_create = (
-    80001 => [qw(cancelled obsoleted          0 fa-times)],
-    80002 => [qw(cancelled parallel_restarted 0 fa-times)],
-    80003 => [qw(cancelled skipped            0 fa-times)],
+    80001 => [qw(cancelled obsoleted          0 fa-xmark)],
+    80002 => [qw(cancelled parallel_restarted 0 fa-xmark)],
+    80003 => [qw(cancelled skipped            0 fa-xmark)],
     80004 => [qw(done      obsoleted          0 result_obsoleted)],
     80005 => [qw(done      parallel_failed    0 result_parallel_failed)],
     80006 => [qw(done      parallel_restarted 0 result_parallel_restarted)],

@@ -13,7 +13,7 @@
             </div>
             <div class="col-sm-5">
                 <span class="developer-mode-element" data-visible-on="isConnecting">
-                retrieving status <i class="fa fa-spinner fa-spin fa-lg"></i>
+                retrieving status <i class="fa-solid fa-spinner fa-spin fa-lg"></i>
                 </span>
                 <span class="developer-mode-element" id="developer-status-info" data-hidden-on="isConnecting">
                     unknown status
@@ -142,35 +142,35 @@
             <div>
                 <a href="#" onclick="startDeveloperSession(); return false;"
                     class="btn btn-warning developer-mode-element" data-hidden-on="ownSession">
-                    <i class="fa fa-lock"></i> Confirm to control this test
+                    <i class="fa-solid fa-lock"></i> Confirm to control this test
                 </a>
                 <a href="#" onclick="resumeTestExecution(); return false;"
                     class="btn btn-secondary developer-mode-element" data-visible-on="isPaused"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
-                    <i class="fa fa-play-circle-o"></i> Resume test execution
+                    <i class="fa-solid fa-play-circle-o"></i> Resume test execution
                 </a>
                 <a href="#" onclick="resumeTestExecution(true); return false;"
                     class="btn btn-secondary developer-mode-element" data-visible-on="onFailure"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ignores the failure and resumes the test execution">
-                    <i class="fa fa-play-circle-o"></i> Ignore failure and resume
+                    <i class="fa-solid fa-play-circle-o"></i> Ignore failure and resume
                 </a>
                 <a href="#" onclick="skipTimeout(); return false;"
                     class="btn btn-warning developer-mode-element" data-visible-on="canSkipTimeout"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Causes the current assert_screen/check_screen to fail immediately (supposed to be combined with pause on assert_screen)">
-                    <i class="fa fa-play-circle-o"></i> Skip timeout
+                    <i class="fa-solid fa-play-circle-o"></i> Skip timeout
                 </a>
                 <a href="<%= url_for('edit_test', testid => $testid) %>"
                     class="btn btn-secondary developer-mode-element"
                     data-visible-on="needleEditorReady"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Allows creating/updating a needle from the latest screenshot/match (going back to the details to select a particular screenshot is of course possible as well)">
-                    <i class="fa fa-thumb-tack"></i>
+                    <i class="fa-solid fa-thumb-tack"></i>
                     Open needle editor
                 </a>
                 % if (app->mode eq 'development') {
                     <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"
                        class="btn btn-secondary developer-mode-element" data-visible-on="ownSession"
                        data-bs-toggle="tooltip" data-bs-placement="bottom" title="Opens a console intended for developing the developer mode itself">
-                        <i class="fa fa-terminal"></i> Open console
+                        <i class="fa-solid fa-terminal"></i> Open console
                     </a>
                 % }
             </div>
@@ -179,7 +179,7 @@
             Another user has already locked this job.
         </div>
         <div class="developer-mode-element" data-visible-on="isConnecting">
-            <i class="fa fa-spinner fa-spin fa-lg"></i> <span id="developer-loading-info">establishing connection to backend ...</span>
+            <i class="fa-solid fa-spinner fa-spin fa-lg"></i> <span id="developer-loading-info">establishing connection to backend ...</span>
             <p>
                 See <a href="http://open.qa/docs/#debugdevelmode" target="blank">steps to debug developer mode setup</a> if the connection can
                 not be established in a reasonable time.
@@ -195,7 +195,7 @@
 <div id="canholder">
   <div id="liveview-loading">
     <div class="d-flex justify-content-center">
-      <i class="fa fa-circle-o-notch fa-spin fa-4x" role="status">
+      <i class="fa-solid fa-circle-o-notch fa-spin fa-4x" role="status">
         <span class="sr-only">Loading…</span>
       </i>
     </div>

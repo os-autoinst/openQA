@@ -142,7 +142,7 @@ subtest 'label:linked with bugref' => sub {
     ok $link, 'rendered as link';
     ok $label, 'label present' or return;
     is $label->get_attribute('title'), 'Label: linked:poo#123', 'title contains bugref';
-    element_not_present '#job_80000 .fa-bolt', 'no bugref icon displayed (only the label)';
+    element_not_present '#job_80000 .fa-solid.fa-bolt', 'no bugref icon displayed (only the label)';
 };
 
 subtest 'running jobs, progress bars' => sub {
@@ -238,17 +238,17 @@ subtest 'available comments shown' => sub {
     wait_for_ajax(msg => 'DataTables on "All tests" page for comments');
 
     is
-      $driver->find_element('#job_99946 .fa-comment')->get_attribute('title'),
+      $driver->find_element('#job_99946 .fa-solid.fa-comment')->get_attribute('title'),
       '2 comments available',
       'available comments shown for finished jobs';
-    is @{$driver->find_elements('#job_99962 .fa-comment')},
+    is @{$driver->find_elements('#job_99962 .fa-solid.fa-comment')},
       0, 'available comments only shown if at least one comment available';
     is
-      $driver->find_element('#job_99936 .fa-bolt')->get_attribute('title'),
+      $driver->find_element('#job_99936 .fa-solid.fa-bolt')->get_attribute('title'),
       "Bug referenced: poo#1\nopen poo bug",
       'available bugref (poo#1) shown for finished jobs';
     is
-      $driver->find_element('#job_99936 .fa-bug')->get_attribute('title'),
+      $driver->find_element('#job_99936 .fa-solid.fa-bug')->get_attribute('title'),
       'Bug referenced: bsc#3',
       'available bugref (bsc#3) shown for finished jobs';
     my @closed = $driver->find_elements('#job_99936 .bug_closed');
@@ -258,9 +258,9 @@ subtest 'available comments shown' => sub {
     is $closed[0]->get_attribute('title'),
       "Bug referenced: bsc#4\nclosed bugzilla bug",
       'available bugref (bsc#4) shown for finished jobs';
-    is_deeply [$driver->find_elements('#job_99963 .fa-comment')],
+    is_deeply [$driver->find_elements('#job_99963 .fa-solid.fa-comment')],
       [], 'available comments not shown for running jobs (for performance reasons)';
-    is_deeply [$driver->find_elements('#job_99928 .fa-comment')],
+    is_deeply [$driver->find_elements('#job_99928 .fa-solid.fa-comment')],
       [], 'available comments not shown for scheduled jobs (for performance reasons)';
 };
 
