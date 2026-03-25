@@ -7,7 +7,7 @@
 $(document).ready(function () {
   $('.dropdown-menu a.dropdown-toggle').on('click', function (e) {
     var $el = $(this);
-    var $parent = $(this).offsetParent();
+    var $parent = $(this).offsetParent('.dropdown-menu');
     if (!$(this).next().hasClass('show')) {
       $(this).parents('.dropdown-menu').first().find('.show').removeClass('show');
     }
@@ -23,7 +23,7 @@ $(document).ready(function () {
       });
 
     if (!$parent.parent().hasClass('navbar-nav')) {
-      $el.next().css({top: $el[0].offsetTop + 'px', left: $parent.outerWidth() - 4 + 'px'});
+      $el.next().css({top: $el[0].offsetTop, left: $parent.outerWidth() - 4});
     }
 
     return false;

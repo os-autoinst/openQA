@@ -122,7 +122,7 @@ function stackParallelChildren(depElement, dependencyInfo) {
 
 function setupOverview(options) {
   setupLazyLoadingFailedSteps();
-  updateTimeago();
+  $('.timeago').timeago();
   $('.cancel').bind('ajax:success', function (event, xhr, status) {
     $(this).text(''); // hide the icon
     const icon = $(this).parents('td').find('.status');

@@ -122,10 +122,10 @@
 
 ! bootstrap.js
 < ../node_modules/jquery/dist/jquery.min.js
-< ../node_modules/timeago.js/dist/timeago.min.js
 < javascripts/openqa.js
 < ../node_modules/datatables.net/js/dataTables.min.js
 < ../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js
+< ../node_modules/timeago/jquery.timeago.js
 < javascripts/index.js
 < javascripts/render.js
 < javascripts/admintable.js

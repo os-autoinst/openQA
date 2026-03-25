@@ -73,12 +73,12 @@ my @trs = $driver->find_elements('#needles tr', 'css');
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
 is +(shift @tds)->get_text(), 'fixtures', 'Path is fixtures';
 is +(shift @tds)->get_text(), 'inst-timezone-text.json', 'Name is right';
-is +(my $module_link = shift @tds)->get_text(), '1 day ago', 'last use is right';
-like + (shift @tds)->get_text(), qr/1[34] hours ago/, 'last match is right';
+is +(my $module_link = shift @tds)->get_text(), 'a day ago', 'last use is right';
+is +(shift @tds)->get_text(), 'about 14 hours ago', 'last match is right';
 @tds = $driver->find_child_elements($trs[2], 'td', 'css');
 is +(shift @tds)->get_text(), 'fixtures', 'Path is fixtures';
 is +(shift @tds)->get_text(), 'never-matched.json', 'Name is right';
-is +(shift @tds)->get_text(), '1 day ago', 'last use is right';
+is +(shift @tds)->get_text(), 'a day ago', 'last use is right';
 is +(shift @tds)->get_text(), 'never', 'last match is right';
 $driver->find_child_element($module_link, 'a', 'css')->click();
 like
@@ -88,8 +88,7 @@ like
 
 $needles_table = goto_admin_needle_table;
 wait_for_data_table($needles_table, 2);
-my $last_match_text = $driver->find_element('#needles tr:nth-child(1) td:nth-child(4)')->get_text();
-$driver->find_element_by_link_text($last_match_text)->click();
+$driver->find_element_by_link_text('about 14 hours ago')->click();
 like
   $driver->execute_script('return window.location.href'),
   qr(\Q/tests/99937#step/partitioning/1\E),

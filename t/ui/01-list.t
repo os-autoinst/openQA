@@ -134,7 +134,7 @@ is +(shift @tds)->get_text(), 'textmode@32bit', 'test of 99946';
 is +(shift @tds)->get_text(), '28 1 1', 'result of 99946 (passed, softfailed, failed)';
 my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
-$time->text_like(qr/3 hours ago/, 'finish time of 99946');
+$time->text_like(qr/about 3 hours ago/, 'finish time of 99946');
 
 subtest 'label:linked with bugref' => sub {
     my $link = $driver->find_element('#job_80000 a[href="https://progress.opensuse.org/issues/123"]');
@@ -161,7 +161,7 @@ subtest 'running jobs, progress bars' => sub {
       '40 %', 'progress is 40 % if job fatally failed at this point (but status not updated to uploading/done)';
     $time = $driver->find_element('#job_99963 td.time span');
     $time->attribute_like('title', qr/.*Z/, 'right time title for running');
-    $time->text_like(qr/\d+ minutes ago/, 'right time for running');
+    $time->text_like(qr/1[01] minutes ago/, 'right time for running');
 };
 
 my @header = $driver->find_elements('h2');
