@@ -199,8 +199,8 @@ subtest 'stacking of parallel children' => sub {
     element_visible '#res-99963', undef, undef, 'parallel child expanded again';
     element_visible '#res-99937', undef, undef, 'job from other architecture expanded again as well';
     my $collapse_all_button = wait_for_element(selector => '.collapse-all-button', is_displayed => 1);
-    ok $toggle_button, 'collapse all button present' or return;
-    $toggle_button->click;
+    ok $collapse_all_button, 'collapse all button present' or return;
+    $collapse_all_button->click;
     element_hidden '#res-99963', 'parallel child collapsed after clicking "Collapse all" button';
     $jobs->find(99963)->update({state => DONE, result => SOFTFAILED});
     $driver->refresh;
@@ -317,7 +317,11 @@ subtest 'filtering by flavor' => sub {
 
 sub check_textmode_test ($test_row) {
     wait_for_element selector => '#flavor_DVD_arch_i586', like => qr/i586/;
-    my @job_rows = map { $_->get_text } @{$driver->find_elements('#content tbody tr')};
+    my @job_rows = map {
+        my $text = $_->get_text;
+        $text =~ s/\s+\d+\b//g;    # strip restart counter
+        $text;
+    } @{$driver->find_elements('#content tbody tr')};
     is_deeply \@job_rows, [$test_row], 'only the textmode job is present' or always_explain \@job_rows;
 }
 
