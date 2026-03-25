@@ -13,11 +13,14 @@ function hideCommentEditor(form) {
 }
 
 function renderDate(date) {
-  const abbr = $('<abbr></abbr>');
-  abbr.text($.timeago(date));
-  abbr.prop('title', date);
-  abbr.timeago();
-  return abbr[0];
+  const abbr = document.createElement('abbr');
+  abbr.textContent = window.timeago ? window.timeago.format(date) : date;
+  abbr.title = date;
+  abbr.className = 'timeago';
+  if (window.timeago) {
+    window.timeago.render([abbr]);
+  }
+  return abbr;
 }
 
 function renderCommentHeading(comment, commentId) {
@@ -63,7 +66,7 @@ function deleteComment(deleteButton) {
     .then(({response, json}) => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}\n${json.error || ''}`;
       if (json.error) throw json.error;
-      $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
+      deleteButton.closest('.comment-row, .pinned-comment-row').remove();
       updateNumerOfComments();
     })
     .catch(error => {
@@ -156,7 +159,9 @@ function addComment(form, insertAtBottom) {
         })
         .then(comment => {
           const templateElement = document.getElementById('comment-row-template');
-          const commentRow = $(templateElement.innerHTML.replace(/@comment_id@/g, commentId))[0];
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = templateElement.innerHTML.replace(/@comment_id@/g, commentId);
+          const commentRow = tempDiv.firstElementChild;
           commentRow.querySelector('[name="text"]').value = comment.text;
           commentRow.querySelector('h4').replaceWith(renderCommentHeading(comment, commentId));
           commentRow.querySelector('.markdown').innerHTML = comment.renderedMarkdown;
@@ -168,7 +173,7 @@ function addComment(form, insertAtBottom) {
             nextElement = templateElement;
           }
           nextElement.parentNode.insertBefore(commentRow, nextElement);
-          $('html, body').animate({scrollTop: commentRow.offsetTop}, 1000);
+          commentRow.scrollIntoView({behavior: 'smooth'});
           textElement.value = '';
           updateNumerOfComments();
         })

@@ -18,7 +18,7 @@ function setupJobNextPrevious() {
   };
 
   const tableElement = document.getElementById('job_next_previous_table');
-  const table = $(tableElement).DataTable({
+  const table = new DataTable(tableElement, {
     ajax: {
       url: tableElement.dataset.ajaxUrl,
       data: function (d) {
@@ -56,7 +56,7 @@ function setupJobNextPrevious() {
       {
         targets: 1,
         createdCell: function (td, cellData, rowData, row, col) {
-          $(td).attr('id', 'res_' + rowData.id);
+          td.id = 'res_' + rowData.id;
         },
         render: renderJobResults
       },
@@ -148,7 +148,7 @@ function renderBuild(data, type, row) {
 function renderFinishTime(data, type, row) {
   let html = '';
   if (data != null) {
-    html += '<abbr class="timeago" title="' + data + '">' + jQuery.timeago(data) + ' </abbr>';
+    html += '<abbr class="timeago" title="' + data + '">' + window.timeago.format(data) + ' </abbr>';
     html += '( ' + row.duration + ' )';
   } else {
     if (row.state == 'running' || row.state == 'scheduled') {
