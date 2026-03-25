@@ -1,16 +1,63 @@
-## name Passing
+## name Passing 1
 ## failures 0
 ## cut
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base -strict;
+use CGI;
 
-## name Passing
+## name Passing 2
 ## failures 0
-## TODO It can be neessary to use two modules that both enable strict
 ## cut
-
-use Mojo::Base 'DBIx::Class::Core';
-
+use Mojo::Base -base;
 use Moose;
-extends 'OpenQA::Schema::Result::Jobs';
+
+## name Passing 3
+## failures 0
+## cut
+use Moose;
+use Mojo::Base -signatures;
+
+
+
+## name Failing 1
+## failures 1
+## cut
+use Mojo::Base -strict;
+use Moose;
+
+## name Failing 2
+## failures 1
+## cut
+use Moose;
+use Mojo::Base -strict;
+
+## name Failing 3
+## failures 1
+## cut
+use Moose;
+use strict;
+
+## name Failing 4
+## failures 1
+## cut
+use Moose;
+use warnings;
+
+## name Failing 5
+## failures 1
+## cut
+use Mojo::Base 'CGI';
+use strict;
+
+## name Failing 6
+## failures 1
+## cut
+use Mojo::Base 'CGI';
+use warnings;
+
+## name Failing 7
+## failures 1
+## cut
+use Mojo::Base -strict;
+use warnings;
 

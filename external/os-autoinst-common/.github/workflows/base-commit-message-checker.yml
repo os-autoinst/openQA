@@ -1,13 +1,11 @@
 ---
 name: 'Commit message check'
 on:
-  pull_request:
-  push:
-    branches:
-      - '!master'
+  workflow_call:
 
 jobs:
-  check-commit-message:
+  base-check-commit-message:
+    name: Check commit message
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

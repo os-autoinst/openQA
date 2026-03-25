@@ -31,7 +31,7 @@ sub violates ($self, $elem, $document) {
 
     # skip anything that has a special symbol in the content
     return () if looks_like_number $k;
-    return () if $k =~ m/^[0-9_]+$/;
+    return () if $k =~ m/^[0-9_]/;
     return () unless $k =~ m/^\w+$/;
 
     # report violation

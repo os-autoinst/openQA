@@ -11,6 +11,7 @@ $h{bare2 } = 5;
 $h{"0123"} = 6;
 $h{"Inf"} = 7;
 $h{"3_14"} = 7;
+$h{'0ff'} = 8;
 
 ## name Failing
 ## failures 4
