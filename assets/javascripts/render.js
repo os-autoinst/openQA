@@ -62,14 +62,14 @@ function renderModuleRow(module, snippets) {
   if (module.flags.indexOf('fatal') >= 0) {
     flags.push(
       E('i', [], {
-        class: 'flag fa fa-plug',
+        class: 'flag fa-solid fa-plug',
         title: 'Fatal: testsuite is aborted if this test fails'
       })
     );
   } else if (module.flags.indexOf('important') < 0) {
     flags.push(
       E('i', [], {
-        class: 'flag fa fa-minus',
+        class: 'flag fa-solid fa-minus',
         title: 'Ignore failure: failure or soft failure of this test does not impact overall job result'
       })
     );
@@ -77,7 +77,7 @@ function renderModuleRow(module, snippets) {
   if (module.flags.indexOf('milestone') >= 0) {
     flags.push(
       E('i', [], {
-        class: 'flag fa fa-anchor',
+        class: 'flag fa-solid fa-anchor',
         title: 'Milestone: snapshot the state after this test for restoring'
       })
     );
@@ -85,7 +85,7 @@ function renderModuleRow(module, snippets) {
   if (module.flags.indexOf('always_rollback') >= 0) {
     flags.push(
       E('i', [], {
-        class: 'flag fa fa-undo',
+        class: 'flag fa-solid fa-rotate-left',
         title: 'Always rollback: revert to the last milestone snapshot even if test module is successful'
       })
     );
@@ -180,7 +180,7 @@ function renderModuleRow(module, snippets) {
         box.push(E('span', [step.title ? step.title : 'Text'], {class: 'resborder ' + resborder}));
       }
     } else {
-      const content = step.title || E('i', [], {class: 'fa fa fa-question'});
+      const content = step.title || E('i', [], {class: 'fa-solid fa-circle-question'});
       box.push(E('span', [content], {class: 'resborder ' + resborder}));
     }
     if (step.text && title !== 'Soft Failed') {
@@ -197,7 +197,7 @@ function renderModuleRow(module, snippets) {
         href: href
       });
       link.onclick = showPreviewForLink;
-      stepnodes.push(E('div', [E('div', [], {class: 'fa fa-caret-up'}), link], {class: 'links_a'}));
+      stepnodes.push(E('div', [E('div', [], {class: 'fa-solid fa-caret-up'}), link], {class: 'links_a'}));
     } else {
       const link = E('a', box, {
         class: 'no_hover',
@@ -206,7 +206,7 @@ function renderModuleRow(module, snippets) {
         href: href
       });
       link.onclick = showPreviewForLink;
-      stepnodes.push(E('div', [E('div', [], {class: 'fa fa-caret-up'}), link], {class: 'links_a'}));
+      stepnodes.push(E('div', [E('div', [], {class: 'fa-solid fa-caret-up'}), link], {class: 'links_a'}));
     }
     stepnodes.push(' ');
     if (typeof textData === 'string' && textData.startsWith('Unable to read ')) {
@@ -296,7 +296,7 @@ async function renderModuleTable(container, response, shouldContinue = () => tru
     module => {
       if (module.category) {
         tbody.appendChild(
-          E('tr', [E('td', [E('i', [], {class: 'fa fa-folder-open'}), '\u00a0' + module.category], {colspan: 3})])
+          E('tr', [E('td', [E('i', [], {class: 'fa-regular fa-folderpen'}), '\u00a0' + module.category], {colspan: 3})])
         );
       }
       tbody.appendChild(renderModuleRow(module, response.snippets));

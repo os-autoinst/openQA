@@ -415,14 +415,14 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
           if (!id) {
             html +=
               '<a href="#" onclick="showScheduledProductSettings(this); return true;">\
-                                 <i class="action fa fa-search-plus" title="Show settings"></i></a>\
+                                 <i class="action fa-solid fa-search-plus" title="Show settings"></i></a>\
                                  <a href="#" onclick="showScheduledProductResults(this); return true;">\
-                                 <i class="action fa fa-file" title="Show results"></i></a>';
+                                 <i class="action fa-solid fa-file" title="Show results"></i></a>';
           }
           if (showActions) {
             html +=
               '<a href="#" onclick="rescheduleProductForActionLink(this); return true;">\
-                                 <i class="action fa fa-undo" title="Reschedule product tests"></i></a>';
+                                 <i class="action fa-solid fa-rotate-left" title="Reschedule product tests"></i></a>';
           }
           return html;
         }

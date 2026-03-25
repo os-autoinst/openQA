@@ -26,7 +26,7 @@
                         </div>
                     </div>
                     <p id="new_group_creating" style="display: none;">
-                        <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
+                        <i class="fa-solid fa-gear fa-spin fa-3x fa-fw"></i>
                         Creating group
                     </p>
                     <p id="new_group_error" style="display: none;">
@@ -49,16 +49,16 @@
         %= include 'layouts/info'
         % if (is_admin) {
             <a href="#" onclick="return showAddParentGroup(this);" class="add-parent-group fa-stack" title="Add new folder">
-                <i class="fa fa-folder fa-stack-1x"></i>
-                <i class="fa fa-plus fa-stack-1x"></i>
+                <i class="fa-solid fa-folder fa-stack-1x"></i>
+                <i class="fa-solid fa-plus fa-stack-1x"></i>
             </a>
             <a href="#" onclick="return showAddJobGroup();" class="add-parent-group fa-stack" title="Add new job group on top-level">
-                <i class="fa fa-plus fa-stack-1x"></i>
+                <i class="fa-solid fa-plus fa-stack-1x"></i>
             </a>
             <p>Drag & Drop job groups to order. Click on a group to edit group properties and jobs.</p>
             <div id="reorganize_groups_panel" style="display: none;">
                 <p id="reorganize_groups_progress" style="display: none;">
-                    <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
+                    <i class="fa-solid fa-gear fa-spin fa-3x fa-fw"></i>
                     Committing changes
                 </p>
                 <div id="reorganize_groups_error" class="card" style="display: none;">

@@ -35,7 +35,7 @@
                     <td class="expiration"><%= format_time($key->t_expiration) || 'never' %></td>
                     <td class="action">
                         <a class="btn btn-light" href="<%= url_for('api_key', apikeyid => $key->id) %>" data-method="delete" title="Delete">
-                            <i class="fa fa-trash-o"></i>
+                            <i class="fa-regular fa-trash-can"></i>
                         </a>
                     </td>
                 </tr>

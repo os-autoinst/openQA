@@ -3,7 +3,7 @@
         <input type="checkbox" class="filter-bulk-master form-check-input me-2" title="Select all / None">
         <strong class="me-2"><%= $label %></strong>
         <span class="small">
-            <a href="#" class="filter-bulk-invert text-decoration-none" title="Invert selection"><i class="fa fa-refresh"></i></a>
+            <a href="#" class="filter-bulk-invert text-decoration-none" title="Invert selection"><i class="fa-solid fa-rotate"></i></a>
         </span>
     </div>
     % for my $item (@$items) {

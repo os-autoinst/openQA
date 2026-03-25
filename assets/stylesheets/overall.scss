@@ -58,7 +58,7 @@ a:focus, a:hover {
 }
 
 // buttons
-.btn i.fa + span {
+.btn i[class*="fa-"] + span {
   padding-left: 8px;
 }
 .btn-group-sm .btn.help_popover, .btn-sm.help_popover {

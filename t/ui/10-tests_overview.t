@@ -657,7 +657,8 @@ subtest 'add comments' => sub {
         $driver->get('/tests/overview?build=0048&distri=opensuse&version=Factory&groupid=1001');
         ok wait_for_element(selector => '[name=jobid_td_99938] .label_comment'),
           'the one job that matched the TODO filter has a comment';
-        is @{$driver->find_elements('.status.fa.fa-circle')}, 3, 'more than one job displayed without TODO filter';
+        is @{$driver->find_elements('.status[class*="fa-"].fa-solid.fa-circle')}, 3,
+          'more than one job displayed without TODO filter';
         is @{$driver->find_elements('.label_comment')}, 1,
           'only the one job that matched with the TODO filter has a comment';
     };

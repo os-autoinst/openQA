@@ -58,36 +58,36 @@ function renderTestName(data, type, row) {
   let html = '';
   if (is_operator) {
     html += '<a class="copy-jobid" href="#" data-jobid="' + row.id + '">';
-    html += '<i class="action fa fa-fw fa-copy" title="Copy job id"></i></a>';
+    html += '<i class="action fa-solid fa-fw fa-copy" title="Copy job id"></i></a>';
     if (row.result !== 'none') {
       // allow to restart finished jobs
       if (!row.clone) {
         const url = restart_url.replace('REPLACEIT', row.id);
         html += ' <a class="restart" href="' + htmlEscape(url) + '">';
-        html += '<i class="action fa fa-fw fa-undo" title="Restart job"></i></a>';
+        html += '<i class="action fa-solid fa-fw fa-rotate-left" title="Restart job"></i></a>';
       } else {
-        html += '<i class="fa fa-fw"></i>';
+        html += '<i class="fa-solid fa-fw"></i>';
       }
     } else {
       // allow to cancel scheduled and running jobs
       const url = cancel_url.replace('REPLACEIT', row.id);
       html += ' <a class="cancel" href="' + url + '">';
-      html += '<i class="action fa fa-fw fa-times-circle-o" title="Cancel job"></i></a>';
+      html += '<i class="action fa-solid fa-fw fa-circle-xmark-o" title="Cancel job"></i></a>';
     }
   }
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '">';
   if (row.result !== 'none') {
-    html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
+    html += '<i class="status fa-solid fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
   } else if (row.state === 'scheduled') {
     if (typeof row.blocked_by_id === 'number') {
-      html += '<i class="status fa fa-circle state_blocked" title="Blocked"></i>';
+      html += '<i class="status fa-solid fa-circle state_blocked" title="Blocked"></i>';
     } else {
-      html += '<i class="status fa fa-circle state_scheduled" title="Scheduled"></i>';
+      html += '<i class="status fa-solid fa-circle state_scheduled" title="Scheduled"></i>';
     }
   } else if (row.state === 'assigned') {
-    html += '<i class="status fa fa-circle state_running" title="Assigned"></i>';
+    html += '<i class="status fa-solid fa-circle state_running" title="Assigned"></i>';
   } else {
-    html += '<i class="status fa fa-circle state_running" title="Running"></i>';
+    html += '<i class="status fa-solid fa-circle state_running" title="Running"></i>';
   }
   html += '</a> ';
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '" class="name">' + htmlEscape(data) + '</a>';
@@ -104,7 +104,7 @@ function renderTestName(data, type, row) {
         dependencyResult.title +
         '"' +
         highlightJobsHtml(dependencyResult['data-children'], dependencyResult['data-parents']) +
-        '><i class="fa fa-code-fork"></i></a>';
+        '><i class="fa-solid fa-code-fork"></i></a>';
     }
     html += dependencyHtml;
   }
@@ -163,11 +163,11 @@ function renderPriority(data, type, row) {
   const decreasePrioLink =
     '<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(' +
     jobId +
-    ', this); return false;"><i class="fa fa-minus-square-o"></i></a>';
+    ', this); return false;"><i class="fa-regular fa-square-minus"></i></a>';
   const increasePrioLink =
     '<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' +
     jobId +
-    ', this); return false;"><i class="fa fa-plus-square-o"></i></a>';
+    ', this); return false;"><i class="fa-regular fa-square-plus"></i></a>';
   const text = ' <span class="prio-value">' + data + '</span> ';
   return decreasePrioLink + text + increasePrioLink;
 }
@@ -238,13 +238,13 @@ function renderTestResult(data, type, row) {
   if (row.state === 'done') {
     html += renderTestSummary(data);
   } else if (row.state === 'cancelled') {
-    html += "<i class='fa fa-times' title='canceled'></i>";
+    html += "<i class='fa-solid fa-xmark' title='canceled'></i>";
   }
   let dependencyResultHtml = '';
   if (row.deps.has_parents) {
     dependencyResultHtml = row.deps.parents_ok
-      ? " <i class='fa fa-link' title='dependency passed'></i>"
-      : " <i class='fa fa-unlink' title='dependency failed'></i>";
+      ? " <i class='fa-solid fa-link' title='dependency passed'></i>"
+      : " <i class='fa-solid fa-link-slash' title='dependency failed'></i>";
   }
   return '<a href="' + urlWithBase('/tests/' + row.id) + '">' + html + dependencyResultHtml + '</a>';
 }
@@ -482,7 +482,7 @@ function setupTestButtons() {
           .closest('tr')
           .children('td.test');
         const restart_link = td.children('a.restart');
-        const i = restart_link.find('i').removeClass('fa-undo');
+        const i = restart_link.find('i').removeClass('fa-rotate-left');
         td.append(' <a href="' + value + '" title="new test">(restarted)</a>');
         restart_link.replaceWith(i);
       });
@@ -496,7 +496,7 @@ function setupTestButtons() {
     $.post(cancel_link.attr('href')).done(function (data) {
       $(test).append(' (cancelled)');
     });
-    const i = $(this).find('i').removeClass('fa-times-circle');
+    const i = $(this).find('i').removeClass('fa-circle-xmark');
     $(this).replaceWith(i);
   });
 }
