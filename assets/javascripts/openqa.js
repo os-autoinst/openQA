@@ -16,15 +16,8 @@ function getCookie(cname) {
 }
 
 function setupForAll() {
-  updateTimeago();
-  if (typeof bootstrap !== 'undefined') {
-    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => {
-      if (e instanceof HTMLElement) new bootstrap.Popover(e, {html: true});
-    });
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => {
-      if (e instanceof HTMLElement) new bootstrap.Tooltip(e, {html: true});
-    });
-  }
+  document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => new bootstrap.Popover(e, {html: true}));
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e, {html: true}));
   $.ajaxSetup({
     headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
   });
@@ -453,10 +446,10 @@ function renderTestState(item, job) {
   }
 }
 
-function updateTestState(job, name, timeElem, reason) {
+function updateTestState(job, name, timeago, reason) {
   renderTestState(name, job);
   if (job.t_finished) {
-    timeElem.textContent = timeago.format(job.t_finished);
+    timeago.textContent = jQuery.timeago(job.t_finished);
   }
   if (job.reason) {
     reason.textContent = job.reason;
@@ -491,16 +484,16 @@ function renderJobStatus(item, id) {
     const name = document.createElement('a');
     header.appendChild(name);
     header.appendChild(title);
-    const timeElem = document.createElement('abbr');
-    timeElem.className = 'timeago';
-    header.appendChild(timeElem);
+    const timeago = document.createElement('abbr');
+    timeago.className = 'timeago';
+    header.appendChild(timeago);
     item.appendChild(header);
     const details = document.createElement('pre');
     details.className = 'details mb-1';
     const reason = document.createTextNode('');
     details.appendChild(reason);
     item.appendChild(details);
-    updateTestState(json.job, name, timeElem, reason);
+    updateTestState(json.job, name, timeago, reason);
   };
   request.onerror = function () {
     let msg = this.statusText;
@@ -658,52 +651,43 @@ function getXhrError(jqXHR, textStatus, errorThrown) {
   return jqXHR.responseJSON?.error || jqXHR.responseText || errorThrown || textStatus;
 }
 
-function updateTimeago() {
-  if (typeof timeago !== 'undefined') {
-    document.querySelectorAll('.timeago').forEach(e => {
-      const val = e.getAttribute('datetime') || e.getAttribute('title') || e.textContent;
-      if (!val || val === 'never' || val === 'not yet') return;
-      const date = new Date(val);
-      if (isNaN(date.getTime()) && !/^\d+$/.test(val)) return;
-      timeago.render(e);
-    });
-  }
-}
-
 if (typeof window !== 'undefined' && window.jQuery) {
   (function ($) {
     // jQuery 4.0.0 removed several deprecated APIs. These shims maintain compatibility
-    // with 3rd-party plugins (chosen) that still rely on these methods.
+    // with 3rd-party plugins (timeago, chosen) that still rely on these methods.
     // See: https://github.com/jquery/jquery/issues/4884
     //
-    // NOTE: timeago has been replaced with timeago.js (vanilla JS, no jQuery dependency).
+    // NOTE: timeago declares "jquery": ">=1.5.0 <4.0" in its package.json, meaning it is
+    // officially incompatible with jQuery 4. The shims above ($.trim, $.isFunction) cover
+    // the current usage. If timeago is upgraded or other removed APIs are hit, this may break.
+    // Consider replacing timeago with a jQuery 4-compatible alternative (e.g. vanilla JS
+    // relative time formatting) to remove this dependency.
 
     // $.active: Removed in jQuery 4. Required by Selenium wait_for_ajax in t/lib/OpenQA/SeleniumTest.pm.
     // Note: Only tracks jQuery $.ajax calls, not fetch(). SeleniumTest.pm checks runningFetchRequests separately.
     if ($.active === undefined) {
       $.active = 0;
-      const originalAjax = $.ajax;
-      $.ajax = function (url, options) {
-        $.active++;
-        const jqXHR = originalAjax.apply(this, arguments);
-        jqXHR.always(() => {
-          $.active = Math.max(0, $.active - 1);
+      if (typeof document !== 'undefined') {
+        $(document).on('ajaxSend', function () {
+          $.active = ($.active || 0) + 1;
         });
-        return jqXHR;
-      };
+        $(document).on('ajaxComplete', function () {
+          $.active = Math.max(0, ($.active || 1) - 1);
+        });
+      }
     }
 
-    // $.trim: Removed in jQuery 4. Used by chosen-js/chosen.jquery.js
+    // $.trim: Removed in jQuery 4. Used by timeago/jquery.timeago.js and chosen-js/chosen.jquery.js
     if ($.trim === undefined) {
       $.trim = function (str) {
         return String(str).trim();
       };
     }
 
-    // $.isFunction: Removed in jQuery 4. Required by some 3rd-party plugins.
+    // $.isFunction: Removed in jQuery 4. Used by timeago/jquery.timeago.js
     if ($.isFunction === undefined) {
-      $.isFunction = function (obj) {
-        return typeof obj === 'function';
+      $.isFunction = function (fn) {
+        return typeof fn === 'function';
       };
     }
 
@@ -733,44 +717,9 @@ if (typeof window !== 'undefined' && window.jQuery) {
         return arr ? Array.prototype.indexOf.call(arr, elem, i) : -1;
       };
     }
-
-    // $.fn.timeago: Maintain compatibility with templates using the old jQuery plugin API.
-    if ($.fn.timeago === undefined) {
-      $.fn.timeago = function () {
-        if (typeof timeago !== 'undefined') {
-          this.each(function () {
-            const val = this.getAttribute('datetime') || this.getAttribute('title') || this.textContent;
-            if (!val || val === 'never' || val === 'not yet') return;
-            const date = new Date(val);
-            if (isNaN(date.getTime()) && !/^\d+$/.test(val)) return;
-            timeago.render(this);
-          });
-        }
-        return this;
-      };
-    }
-
-    // Bootstrap 5 jQuery integration might fail with jQuery 4. Add shims if needed.
-    if (typeof bootstrap !== 'undefined') {
-      if ($.fn.popover === undefined && bootstrap.Popover) {
-        $.fn.popover = function (options) {
-          return this.each(function () {
-            new bootstrap.Popover(this, options);
-          });
-        };
-      }
-      if ($.fn.tooltip === undefined && bootstrap.Tooltip) {
-        $.fn.tooltip = function (options) {
-          return this.each(function () {
-            new bootstrap.Tooltip(this, options);
-          });
-        };
-      }
-    }
   })(window.jQuery);
 
   $(document).ready(function () {
-    updateTimeago();
     setTimeout(function () {
       const $dropdownToggle = $('.dropdown-menu a.dropdown-toggle');
       if ($dropdownToggle.length) {

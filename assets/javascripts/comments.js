@@ -14,9 +14,9 @@ function hideCommentEditor(form) {
 
 function renderDate(date) {
   const abbr = $('<abbr></abbr>');
-  abbr.text(timeago.format(date));
+  abbr.text($.timeago(date));
   abbr.prop('title', date);
-  timeago.render(abbr.get());
+  abbr.timeago();
   return abbr[0];
 }
 

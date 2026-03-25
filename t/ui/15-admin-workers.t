@@ -58,7 +58,7 @@ subtest 'offline status' => sub {
     $driver->get("/admin/workers/$offline_worker_id");
     like
       $driver->find_element_by_class('status-info')->get_text,
-      qr/Seen: (?:.*ago|just now).*Status: Offline$/s,
+      qr/Seen: .*ago.*Status: Offline$/s,
       'worker just shown as offline';
 
     $workers->find($offline_worker_id)->update({error => 'graceful disconnect at foo', t_seen => $online_timestamp});
@@ -162,7 +162,7 @@ is_deeply
   [
     'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
     '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
-    '0', '1 hour ago',
+    '0', 'about an hour ago',
   ],
   'correct entries shown';
 
@@ -177,7 +177,7 @@ is_deeply
   [
     'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
     '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
-    '0', '1 hour ago',
+    '0', 'about an hour ago',
   ],
   'the first job has been restarted';
 

@@ -4,7 +4,7 @@
 %= include 'layouts/info'
 
 % content_for 'ready_function' => begin
-    updateTimeago();
+    $('.timeago').timeago();
     alignBuildLabels();
     setupParentGroupOverviewAssets('<%= $group->{id} %>');
 % end

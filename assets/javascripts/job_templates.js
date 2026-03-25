@@ -552,7 +552,7 @@ function updateValidation(form, response) {
 
 function showAdvancedFieldsIfJsonRefersToThem(response) {
   const collapse = document.getElementById('show-advanced-cleanup-settings-button');
-  if (collapse.getAttribute?.('aria-expanded') === 'true' || $(collapse).attr('aria-expanded') === 'true') {
+  if (collapse.getAttribute('aria-expanded') === 'true') {
     return;
   }
   const advancedFields = Array.from(document.querySelectorAll('.advanced-cleanup-settings input')).map(e => e.name);
