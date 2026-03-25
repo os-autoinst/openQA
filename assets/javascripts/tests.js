@@ -111,9 +111,7 @@ function renderTestName(data, type, row) {
   if (row.comment_data) {
     html += renderComments(row);
   }
-  if (row.clone) {
-    html += ' <a href="' + urlWithBase('/tests/' + row.clone) + '">(restarted)</a>';
-  }
+  html += renderRestarts(row);
 
   return html;
 }
@@ -135,11 +133,12 @@ function renderTimeAgoForFinished(data, type, row, position) {
 }
 
 function renderProgress(data, type, row) {
-  const progress = data.modcount > 0 ? Math.round((data.moddone / data.modcount) * 100) : undefined;
+  const progress = data && data.modcount > 0 ? Math.round((data.moddone / data.modcount) * 100) : undefined;
   if (type !== 'display') {
     return progress ? progress : 0;
   }
-  const progressText = progress === undefined ? row.state : progress + ' %';
+  const state = row ? row.state : '';
+  const progressText = progress === undefined ? state : progress + ' %';
   const progressClass = progress === undefined ? 'progress-bar progress-bar-striped active' : 'progress-bar';
   const progressWidth = progress === undefined ? 100 : progress;
   const progressBar =
@@ -281,7 +280,7 @@ function renderTestLists() {
         return json.data;
       }
     },
-    columns: [{data: 'name'}, {data: 'test'}, {data: 'progress'}, {data: 'testtime'}],
+    columns: [{data: 'id'}, {data: 'test'}, {data: 'progress'}, {data: 'testtime'}],
     columnDefs: [
       {
         targets: 0,
@@ -312,7 +311,7 @@ function renderTestLists() {
         // update heading when JSON is available
         let blockedCount = 0;
         jQuery.each(json.data, function (index, row) {
-          if (typeof row.blocked_by_id === 'number') {
+          if (row && typeof row.blocked_by_id === 'number') {
             ++blockedCount;
           }
         });
@@ -325,7 +324,7 @@ function renderTestLists() {
         return json.data;
       }
     },
-    columns: [{data: 'name'}, {data: 'test'}, {data: 'prio'}, {data: 'testtime'}],
+    columns: [{data: 'id'}, {data: 'test'}, {data: 'prio'}, {data: 'testtime'}],
     columnDefs: [
       {
         targets: 0,
@@ -368,7 +367,7 @@ function renderTestLists() {
       }
     },
     order: [], // no initial resorting
-    columns: [{data: 'name'}, {data: 'test'}, {data: 'result_stats'}, {data: 'testtime'}],
+    columns: [{data: 'id'}, {data: 'test'}, {data: 'result_stats'}, {data: 'testtime'}],
     columnDefs: [
       {
         targets: 0,

@@ -124,13 +124,14 @@ is $driver->get('/results'), 1, '/results gets';
 like $driver->get_current_url(), qr{.*/tests}, 'legacy redirection from /results to /tests';
 
 wait_for_ajax(msg => 'DataTables on "All tests" page');
+ok javascript_console_has_no_warnings_or_errors, 'no JavaScript problems';
 
 # Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946');
 my @tds = $driver->find_child_elements($job99946, 'td');
 is scalar @tds, 4, '4 columns displayed';
 is +(shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', 'medium of 99946';
-is +(shift @tds)->get_text(), 'textmode@32bit', 'test of 99946';
+is +(shift @tds)->get_text() =~ s/\s+\d+$//r, 'textmode@32bit', 'test of 99946';
 is +(shift @tds)->get_text(), '28 1 1', 'result of 99946 (passed, softfailed, failed)';
 my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
@@ -461,14 +462,14 @@ wait_for_ajax();
 is scalar @cancel_links, 1, 'cancel link displayed when logged in';
 
 my $td = $driver->find_element('#job_99946 td.test');
-is $td->get_text(), 'textmode@32bit', 'correct test name';
+is $td->get_text() =~ s/\s+\d+$//r, 'textmode@32bit', 'correct test name';
 
 $driver->find_child_element($td, '.restart', 'css')->click();
 wait_for_ajax();
 
 $driver->title_is('openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#job_99946 td.test');
-is $td->get_text(), 'textmode@32bit (restarted)', 'restart removes link';
+is $td->get_text() =~ s/\s+\d+(\s+.*)?$/$1/r, 'textmode@32bit (restarted)', 'restart removes link';
 
 subtest 'job 99940 module results and job 99991 description' => sub {
     $driver->get('/tests');
@@ -482,7 +483,7 @@ subtest 'job 99940 module results and job 99991 description' => sub {
         is scalar(@{$driver->find_child_elements($results, 'i.' . $class)}), 1, "$class displayed";
     }
 
-    is $driver->find_element('#job_99991 td.test')->get_text(),
+    is $driver->find_element('#job_99991 td.test')->get_text() =~ s/\s+\d+$//r,
       'kde_variant@64bit', 'job 99991 displays TEST correctly';
 
     $driver->get('/tests/99991#settings');
