@@ -317,13 +317,11 @@ function renderTestLists() {
           }
         });
         let text = json.data.length + ' scheduled jobs';
-        if (json.job_skipped_by_disk_limits) {
-          text += ' (disk space exceeds free space limits)';
-        }
         if (blockedCount > 0) {
           text += ' (' + blockedCount + ' blocked by other jobs)';
         }
         $('#scheduled_jobs_heading').text(text);
+        $('#scheduled_jobs_warning').toggleClass('d-none', !json.job_skipped_by_disk_limits);
         return json.data;
       }
     },
