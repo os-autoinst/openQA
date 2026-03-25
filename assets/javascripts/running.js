@@ -400,7 +400,7 @@ function refreshInfoPanel() {
       document.getElementById('favicon-svg').href = infoBoxContent.dataset.faviconUrlSvg;
       setInfoPanelClassName(testStatus.state, testStatus.result);
       const infoBoxJQuery = $(infoBoxContent);
-      infoBoxJQuery.find('.timeago').timeago();
+      timeago.render(infoBoxJQuery.find('.timeago').get());
       infoBoxJQuery.find('[data-bs-toggle="popover"]').popover({html: true});
       setupResultButtons();
     })
@@ -756,7 +756,7 @@ function updateDeveloperPanel() {
         '</abbr>'
     );
     sessionInfoElement.append(timeagoElement);
-    timeagoElement.timeago();
+    timeago.render(timeagoElement.get());
 
     const tabsOpenInfo =
       ', developer has ' +

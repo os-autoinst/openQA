@@ -120,7 +120,7 @@ function loadAuditLogTable() {
               '" title=' +
               data +
               '>' +
-              jQuery.timeago(data + ' UTC') +
+              timeago.format(data + ' UTC') +
               '</a>'
             );
           else return data;
@@ -363,7 +363,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
       {
         targets: 1,
         render: function (data, type, row) {
-          return type === 'display' ? jQuery.timeago(data + 'Z') : data;
+          return type === 'display' ? timeago.format(data + 'Z') : data;
         }
       },
       {targets: 2, orderable: false},
