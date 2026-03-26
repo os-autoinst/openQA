@@ -166,9 +166,8 @@ Will create 50 clones of the same job.
 
 =item B<--retry> N
 
-Retries up to N times with exponential backoff on transient errors when
-downloading assets. The default number of retries is 5. Can be set to 0 to
-disable retrying.
+Retries up to N times with exponential backoff on transient download errors. The
+default number of retries is 5. Can be set to 0 to disable retrying.
 
 =item B<--show-progress>
 

@@ -39,7 +39,7 @@ subtest 'usage' => sub {
 };
 
 subtest errors => sub {
-    local @ARGV = (@apiargs, 'http://openqa.local.foo/t1');
+    local @ARGV = (@apiargs, qw(--retry 0 http://openqa.local.foo/t1));
     throws_ok { main::main() } qr/failed to get job '1'/, 'fails with non existing host';
 };
 
