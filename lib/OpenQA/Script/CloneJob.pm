@@ -8,7 +8,7 @@ use Mojo::Base -strict, -signatures;
 use Cpanel::JSON::XS;
 use Data::Dump 'pp';
 use Exporter 'import';
-use OpenQA::Client;
+use OpenQA::Command;
 use OpenQA::Jobs::Constants;
 use Mojo::File 'path';
 use Mojo::URL;
@@ -16,6 +16,11 @@ use Mojo::JSON;    # booleans
 use OpenQA::Script::CloneJobSUSE;
 use List::Util 'any';
 use HTTP::Status qw(:constants);
+
+package OpenQA::Script::CloneJob::Command {
+    use Mojo::Base 'OpenQA::Command', -signatures;
+    sub handle_result ($self, $tx, $orig_tx = undef) { $tx }
+}
 
 our @EXPORT = qw(
   clone_jobs
@@ -89,18 +94,23 @@ sub _handle_txn_error ($tx, $jobid, $ctx) {
     _handle_unexpected_return_code($tx) unless $tx->res->code == HTTP_OK;
 }
 
+sub _get_with_retry ($url_handler, $url, $jobid, $ctx, $options) {
+    my $remote = $url_handler->{remote};
+    my $tx = $url_handler->{command}->retry_tx($remote, $remote->get($url), $options->{retry});
+    _handle_txn_error($tx, $jobid, $ctx);
+    return $tx->res->json;
+}
+
 sub _get_vars ($jobid, $url_handler, $options) {
     my $url = $url_handler->{remote_url}->clone->path("/tests/$jobid/file/vars.json");
-    _handle_txn_error(my $tx = $url_handler->{remote}->max_redirects(3)->get($url), $jobid, 'vars.json of job');
-    return $tx->res->json;
+    return _get_with_retry($url_handler, $url, $jobid, 'vars.json of job', $options);
 }
 
 sub clone_job_get_job ($jobid, $url_handler, $options) {
     my $url = $url_handler->{remote_url}->clone;
     $url->path("jobs/$jobid");
     $url->query->merge(check_assets => 1) unless $options->{'ignore-missing-assets'};
-    _handle_txn_error(my $tx = $url_handler->{remote}->max_redirects(3)->get($url), $jobid, 'job');
-    my $job = $tx->res->json->{job};
+    my $job = _get_with_retry($url_handler, $url, $jobid, 'job', $options)->{job};
     print STDERR Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
     $job->{vars} = _get_vars($jobid, $url_handler, $options) if $options->{reproduce};
     return $job;
@@ -219,7 +229,7 @@ sub split_jobid ($url_string) {
 }
 
 sub make_curl_arguments ($options) {
-    my @args = ('--follow', '--retry', ($options->{retry} // 5), '--retry-connrefused');
+    my @args = ('--follow', '--retry', $options->{retry}, '--retry-connrefused');
     push @args, '--no-progress-meter' unless $options->{'show-progress'};
     push @args, '--verbose' if $options->{verbose};
     return \@args;
@@ -236,12 +246,19 @@ sub create_url_handler ($options) {
     # configure user agent for destination host (usually localhost)
     my $local_url = OpenQA::Client::url_from_host($options->{host});
     $local_url->path('/api/v1/jobs');
-    my $local = OpenQA::Client->new(
-        api => $local_url->host,
+    my $command = OpenQA::Script::CloneJob::Command->new(
+        name => 'openqa-clone-job',
         apikey => $options->{apikey},
-        apisecret => $options->{apisecret});
+        apisecret => $options->{apisecret},
+        options => $options
+    );
+    my $local = $command->client($local_url)->max_redirects(3);
     die "API key/secret for '$options->{host}' missing. Check out '$0 --help' for the config file syntax/lookup.\n"
       if !$options->{'export-command'} && !($local->apikey && $local->apisecret);
+
+    # configure the default for the number of retries and use exponential backoff by default
+    $options->{retry} //= 5;
+    $ENV{OPENQA_CLI_RETRY_FACTOR} //= 2;
 
     # configure user agents for the source host (usually a remote host)
     my $remote_url = OpenQA::Client::url_from_host($options->{from});
@@ -249,9 +266,10 @@ sub create_url_handler ($options) {
     return {
         curl_args => make_curl_arguments($options),
         secrets => read_secrets($remote_url->host),
+        command => $command,
         local => $local,
         local_url => $local_url,
-        remote => OpenQA::Client->new(api => $remote_url->host),
+        remote => $command->client($remote_url)->apikey(undef)->apisecret(undef)->max_redirects(3),
         remote_url => $remote_url
     };
 }
@@ -316,8 +334,10 @@ sub clone_jobs ($jobid, $options) {
     clone_job($jobid, $url_handler, $options, my $post_params = {}, my $jobs = {});
     for my $counter (1 .. $repeat) {
         append_idx_to_test_name($counter, $digits, $post_params) if $repeat > 1;
-        my $tx = post_jobs($post_params, $url_handler, $options);
-        handle_tx($tx, $url_handler, $options, $jobs) if $tx;
+        if (my $tx = post_jobs($post_params, $url_handler, $options)) {
+            $tx = $url_handler->{command}->retry_tx($url_handler->{local}, $tx, $options->{retry});
+            handle_tx($tx, $url_handler, $options, $jobs);
+        }
     }
 }
 
@@ -397,7 +417,7 @@ sub post_jobs ($post_params, $url_handler, $options) {
         return undef;
     }
     print STDERR Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};
-    return $local->max_redirects(3)->post($local_url, form => \%composed_params);
+    return $local->post($local_url, form => \%composed_params);
 }
 
 1;

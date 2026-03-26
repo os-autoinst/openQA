@@ -27,6 +27,9 @@ package Test::FakeResult {
     has json => undef;
 }    # uncoverable statement
 
+my $command_mock = Test::MockModule->new('OpenQA::Command');
+$command_mock->redefine(retry_tx => sub ($self, $client, $tx, $retries) { $tx });
+
 my @argv = (
     qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 FOO=value:with:colon),
     'WORKER_CLASS:cre:ate+hpc#foo@bar+=-parent'
@@ -64,7 +67,10 @@ subtest 'getting job' => sub {
     my $fake_txn = Test::MockObject->new->set_always(res => $fake_res)->set_always(error => undef);
     my $fake_ua = Test::MockObject->new->set_always(get => $fake_txn);
     $fake_ua->set_always(max_redirects => $fake_ua);
-    my $url_handler = {remote => $fake_ua, remote_url => Mojo::URL->new('foo')};
+    my %fake_params = (host => 'host', from => 'from', apikey => 'key', apisecret => 'secret');
+    my $url_handler = OpenQA::Script::CloneJob::create_url_handler(\%fake_params);
+    $url_handler->{remote} = $fake_ua;
+    $url_handler->{remote_url} = Mojo::URL->new('foo');
     my $options = {'ignore-missing-assets' => 1, reproduce => 1};
     throws_ok { clone_job_get_job(42, $url_handler, $options) } qr/unexpected return code/,
       'unexpected return code handled';
@@ -494,7 +500,7 @@ subtest 'invoking curl passing auth headers' => sub {
         });
     note 'config path: ' . ($ENV{OPENQA_CONFIG} = "$FindBin::Bin/data");
 
-    my $args = OpenQA::Script::CloneJob::make_curl_arguments({});
+    my $args = OpenQA::Script::CloneJob::make_curl_arguments({retry => 5});
     my @expected_default_args = qw(--follow --retry 5 --retry-connrefused --no-progress-meter);
     is_deeply $args, \@expected_default_args, 'default arguments correct';
     my $secrets = OpenQA::Script::CloneJob::read_secrets('testapi');
