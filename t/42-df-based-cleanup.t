@@ -46,7 +46,7 @@ subtest 'abort early in case of misconfiguration' => sub {
     $app->config->{misc_limits}->{results_min_free_disk_space_percentage} = 'foo';
     my $job = job_log_like qr|results_.*_percentage.*foo.*not.*number|, 'error logged';
     is $job->{state}, 'failed', 'result cleanup still considered successful';
-    like $job->{result}, qr|.*results_min_free_disk_space_percentage.*foo.*not.*|, 'result cleanup aborted early';
+    like $job->{result}, qr|.*results_min_free_disk_space_percentage.*foo.*not.*|, 'result cleanup skipped early';
 };
 
 # provide fake data for df

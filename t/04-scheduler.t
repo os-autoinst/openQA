@@ -18,7 +18,7 @@ use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
-use OpenQA::Utils 'assetdir';
+use OpenQA::Utils qw(assetdir results_storage_above_threshold);
 use Test::Mojo;
 use Test::MockModule;
 use Test::Output qw(combined_like);
@@ -326,6 +326,35 @@ subtest 'job grab (failed to send job to worker)' => sub {
       'error logged';
     $worker_db_obj->discard_changes;
     is_deeply $allocated, [], 'no workers/jobs allocated';
+};
+
+subtest 'skip jobs because of results_min_free_disk_space_percentage limits)' => sub {
+    $job->update({state => DONE});
+    $job2->update({state => DONE});
+    undef $ws_send_error;
+    $worker_db_obj->discard_changes;
+    my $mock_utils = Test::MockModule->new('OpenQA::Utils');
+    local OpenQA::App->singleton->config->{misc_limits}->{results_min_free_disk_space_percentage} = 50;
+    $mock_utils->redefine(check_df => sub { (10, 100) });
+    my @jobs;
+    push @jobs, $jobs->create_from_settings(\%settings2) for 1 .. 10;
+    combined_like { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
+    qr/Skipping job scheduling/, 'scheduling skipped when disk below threshold';
+    is scalar @{list_jobs(state => SCHEDULED)}, 10, '10 jobs still scheduled';
+    is scalar @{list_jobs(state => ASSIGNED)}, 0, 'no jobs assigned';
+
+    subtest 'check_df fails' => sub {
+        $mock_utils->redefine(check_df => sub { die 'df error' });
+        combined_like { results_storage_above_threshold() }
+        qr/check_df failed.*df error/, 'warning logged when check_df dies';
+        ok results_storage_above_threshold(), 'returns true (blocks) when check_df fails';
+    };
+
+    subtest 'disk below threshold let job run' => sub {
+        $mock_utils->redefine(check_df => sub { (60, 100) });
+        ok !results_storage_above_threshold(), 'returns false when disk is sufficient';
+    };
+    $jobs->find($_->id)->delete for @jobs;
 };
 
 subtest 'job grab (no jobs because max_running_jobs is 0)' => sub {

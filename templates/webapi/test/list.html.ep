@@ -30,6 +30,10 @@
 
 <div>
     <h2 id="scheduled_jobs_heading">Scheduled jobs</h2>
+    <div id="scheduled_jobs_warning" class="alert alert-primary alert-dismissible d-none" role="alert">
+        Jobs will not be assigned because storage space exceeds the configured limit.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     <table id="scheduled" class="display table table-striped" style="width: 100%">
         <thead>
             <tr>

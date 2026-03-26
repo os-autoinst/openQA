@@ -380,7 +380,9 @@ sub list_scheduled_ajax ($self) {
             prio => $job->priority,
           };
     }
-    $self->render(json => {data => \@scheduled});
+    my %response = (data => \@scheduled);
+    $response{job_skipped_by_disk_limits} = 1 if results_storage_above_threshold();
+    $self->render(json => \%response);
 }
 
 sub _stash_job ($self, $args = undef) {

@@ -321,6 +321,7 @@ function renderTestLists() {
           text += ' (' + blockedCount + ' blocked by other jobs)';
         }
         $('#scheduled_jobs_heading').text(text);
+        $('#scheduled_jobs_warning').toggleClass('d-none', !json.job_skipped_by_disk_limits);
         return json.data;
       }
     },

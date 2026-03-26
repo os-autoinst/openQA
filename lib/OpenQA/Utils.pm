@@ -144,6 +144,7 @@ our @EXPORT = qw(
   is_host_local
   format_tx_error
   regex_match
+  results_storage_above_threshold
   config_autocommit_enabled
 );
 
@@ -916,6 +917,21 @@ sub usleep_backoff ($iteration, $min_seconds, $max_seconds, $padding = int(rand(
 sub config_autocommit_enabled ($config) {
     return 0 if $config->{'scm git'}{git_auto_commit} eq 'no';
     return ($config->{global}->{scm} || '') eq 'git' || $config->{'scm git'}{git_auto_commit} eq 'yes';
+}
+
+sub results_storage_above_threshold () {
+    my $percentage = OpenQA::App->singleton->config->{misc_limits}->{results_min_free_disk_space_percentage};
+    return 0 unless defined $percentage;
+    return 1 if $percentage == 100;
+
+    my ($available_bytes, $total_bytes);
+    try { ($available_bytes, $total_bytes) = check_df(resultdir()) }
+    catch ($e) {
+        log_warning "check_df failed: $e ";
+        return 1;
+    }
+    my $free_percentage = $available_bytes / $total_bytes * 100;
+    return $free_percentage <= $percentage;
 }
 
 1;
