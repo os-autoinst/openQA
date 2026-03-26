@@ -56,11 +56,11 @@
                 <strong style="display: block;">Limit builds</strong>
                 <p class="d-flex flex-row align-items-center p-1">
                     <label class="form-label">Maximum number of builds per group</label>
-                    <input type="number" class="form-control" name="limit_builds" value="3" id="filter-limit-builds">
+                    <input type="number" class="form-control" name="limit_builds" value="<%= app->config->{global}->{frontpage_builds} %>" id="filter-limit-builds">
                 </p>
                 <p class="d-flex flex-row align-items-center p-1">
                     <label class="form-label">Maximum age in days</label>
-                    <input type="number" class="form-control" name="time_limit_days" value="14" id="filter-time-limit-days">
+                    <input type="number" class="form-control" name="time_limit_days" value="<%= app->config->{global}->{frontpage_time_limit_days} %>" id="filter-time-limit-days">
                 </p>
             </div>
             <div class="mb-3">
