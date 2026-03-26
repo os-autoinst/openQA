@@ -30,8 +30,12 @@ TEST_PG_PATH ?= /dev/shm/tpg
 TIMEOUT_M ?= 60
 ifeq ($(CI),)
 SCALE_FACTOR ?= 1
+HEAVY ?= 1
+FULLSTACK ?= 1
 else
 SCALE_FACTOR ?= 2
+HEAVY ?= 0
+FULLSTACK ?= 0
 endif
 TIMEOUT_RETRIES ?= $$((${TIMEOUT_M} * ${SCALE_FACTOR} * (${RETRY} + 1) ))m
 CRE ?= podman
@@ -276,7 +280,7 @@ test-unit-and-integration: node_modules ## Run unit and integration tests (low l
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib $(CHECK_GIT_STATUS_OPT) -MOpenQA::Test::PatchDeparse";\
-	RETRY=${RETRY} HOOK=./tools/delete-coverdb-folder timeout --foreground -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry "${PROVE}" ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+	RETRY=${RETRY} HEAVY=${HEAVY} FULLSTACK=${FULLSTACK} HOOK=./tools/delete-coverdb-folder timeout --foreground -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry "${PROVE}" ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: setup-database
 setup-database: ## Set up the test database
