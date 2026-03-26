@@ -14,7 +14,6 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::BuildResults;
 use OpenQA::Utils;
 
-use constant DEFAULT_TIME_LIMIT_DAYS => 14;
 use constant OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT => $ENV{OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT} // 90;
 
 sub dashboard_build_results ($self) {
@@ -27,8 +26,9 @@ sub dashboard_build_results ($self) {
     $validation->optional('group');
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
 
-    my $limit_builds = $validation->param('limit_builds') // $self->app->config->{global}->{frontpage_builds};
-    my $time_limit_days = $validation->param('time_limit_days') // DEFAULT_TIME_LIMIT_DAYS;
+    my $config = $self->app->config->{global};
+    my $limit_builds = $validation->param('limit_builds') // $config->{frontpage_builds};
+    my $time_limit_days = $validation->param('time_limit_days') // $config->{frontpage_time_limit_days};
     my $only_tagged = $validation->param('only_tagged') // 0;
     my $default_expanded = $validation->param('default_expanded') // 0;
     my $show_tags = $validation->param('show_tags') // $only_tagged;
