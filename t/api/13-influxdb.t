@@ -18,20 +18,31 @@ use OpenQA::WebSockets;
 
 my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl');
 $schema->resultset('Jobs')->search({id => 99963})->update({assigned_worker_id => 1});
-
+$schema->resultset('Jobs')->create(
+    {
+        state => 'scheduled',
+        priority => 50,
+        TEST => 'no_arch_test',
+        ARCH => '',
+        DISTRI => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR => 'DVD',
+        MACHINE => '64bit',
+    });
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{global}->{base_url} = 'http://example.com';
 
+
 $t->get_ok('/admin/influxdb/jobs')->status_is(200)->content_is(
-    'openqa_jobs,url=http://example.com blocked=0i,running=2i,scheduled=2i
-openqa_jobs_by_group,url=http://example.com,group=No\\ Group scheduled=1i
+    'openqa_jobs,url=http://example.com blocked=0i,running=2i,scheduled=3i
+openqa_jobs_by_group,url=http://example.com,group=No\\ Group scheduled=2i
 openqa_jobs_by_group,url=http://example.com,group=opensuse running=1i,scheduled=1i
 openqa_jobs_by_group,url=http://example.com,group=opensuse\\ test running=1i
 openqa_jobs_by_worker,url=http://example.com,worker=localhost running=1i
 openqa_jobs_by_arch,url=http://example.com,arch=i586 scheduled=2i
 openqa_jobs_by_arch,url=http://example.com,arch=x86_64 running=2i
 '
-);
+)->content_unlike(qr/,arch= /);
 
 $t->get_ok('/admin/influxdb/minion')->status_is(200)
   ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=0i,failed=0i,inactive=0i!)
