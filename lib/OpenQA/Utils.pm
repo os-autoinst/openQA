@@ -651,6 +651,7 @@ sub read_test_modules ($job) {
             important => $module->important,
             fatal => $module->fatal,
             always_rollback => $module->always_rollback,
+            always_run => $module->always_run,
             has_parser_text_result => $has_module_parser_text_result,
             execution_time => change_sec_to_word($module_results->{execution_time}),
           };

@@ -205,7 +205,7 @@ sub list ($self) {
                 category => $module->category,
                 result => $module->result,
                 flags => []};
-            for my $flag (qw(important fatal milestone always_rollback)) {
+            for my $flag (qw(important fatal milestone always_rollback always_run)) {
                 push @{$modulehash->{flags}}, $flag if $module->get_column($flag);
             }
             push @{$jobhash->{modules}}, $modulehash;
