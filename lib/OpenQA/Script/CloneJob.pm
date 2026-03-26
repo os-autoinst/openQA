@@ -219,7 +219,7 @@ sub split_jobid ($url_string) {
 }
 
 sub make_curl_arguments ($options) {
-    my @args = ('--follow');
+    my @args = ('--follow', '--retry', ($options->{retry} // 5), '--retry-connrefused');
     push @args, '--no-progress-meter' unless $options->{'show-progress'};
     push @args, '--verbose' if $options->{verbose};
     return \@args;
