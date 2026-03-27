@@ -1,0 +1,5 @@
+% if (my $limit_exceeded = stash('limit_exceeded')) {
+  <div class="alert alert-warning" id="max-jobs-limit" role="alert">
+    <i class="fa-solid fa-circle-exclamation"></i> Only <%= $limit_exceeded %> results included, please narrow down your search parameters.
+  </div>
+% }
