@@ -4,6 +4,8 @@ name: javascript
 on: [push, pull_request]
 jobs:
   test:
+    permissions:
+      contents: read
     name: Lint JavaScript code (using Node version ${{ matrix.node-version }})
     runs-on: ${{ matrix.os }}
     strategy:
