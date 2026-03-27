@@ -227,6 +227,7 @@ perl-Syntax-Keyword-Try-0.300.0
 perl-TAP-Harness-JUnit-0.42
 perl-Task-Weaken-1.06
 perl-Test-CheckGitStatus-0.1.2
+perl-Test-Compile
 perl-Test-Deep-1.205.0
 perl-Test-Differences-0.710.0
 perl-Test-Exception-0.430000
@@ -238,7 +239,6 @@ perl-Test-Most-0.38
 perl-Test-Output-1.034
 perl-Test-Perl-Critic-1.40.0
 perl-Test-Pod-1.52
-perl-Test-Strict-0.52
 perl-Test-Warn-0.37
 perl-Test-Warnings-0.38.0
 perl-Text-Brew-0.02
