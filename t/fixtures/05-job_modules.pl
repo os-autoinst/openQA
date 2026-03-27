@@ -11,6 +11,7 @@ use warnings;
         category => 'installation',
         name => 'isosize',
         result => 'passed',
+        always_run => 1,
     },
     JobModules => {
         script => 'tests/installation/bootloader.pm',
@@ -1640,6 +1641,7 @@ use warnings;
         category => 'console',
         name => 'yast2_lan',
         always_rollback => 1,
+        always_run => 1,
         important => 1,
         result => 'passed',
     },

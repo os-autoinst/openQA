@@ -1098,9 +1098,9 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
     $insert_sth = $self->{_insert_job_module_sth} = $self->result_source->schema->storage->dbh->prepare(
         <<~'END_SQL'
         INSERT INTO job_modules (
-            job_id, name, category, script, milestone, important, fatal, always_rollback, t_created, t_updated
+            job_id, name, category, script, milestone, important, fatal, always_rollback, always_run, t_created, t_updated
         ) VALUES(
-            ?,      ?,    ?,        ?,      ?,         ?,         ?,     ?,               now(),      now()
+            ?,      ?,    ?,        ?,      ?,         ?,         ?,     ?,               ?,          now(),      now()
         ) ON CONFLICT DO NOTHING
         END_SQL
     ) unless defined $insert_sth;
@@ -1114,6 +1114,7 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
         $flags->{ignore_failure} ? 0 : 1,
         $flags->{fatal} ? 1 : 0,
         $flags->{always_rollback} ? 1 : 0,
+        $flags->{always_run} ? 1 : 0,
     );
     return 0 unless $insert_sth->rows;
 

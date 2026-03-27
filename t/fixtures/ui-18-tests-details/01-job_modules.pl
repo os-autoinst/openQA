@@ -130,6 +130,7 @@ use warnings;
         category => 'console',
         name => 'yast2_lan',
         always_rollback => 1,
+        always_run => 1,
         important => 1,
         result => 'passed',
     },

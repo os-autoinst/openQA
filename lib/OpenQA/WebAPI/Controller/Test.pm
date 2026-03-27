@@ -419,7 +419,7 @@ sub details ($self) {
             details => $module->{details},
             flags => []};
 
-        for my $flag (qw(important fatal milestone always_rollback)) {
+        for my $flag (qw(important fatal milestone always_rollback always_run)) {
             push @{$hash->{flags}}, $flag if $module->{$flag};
         }
 

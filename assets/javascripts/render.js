@@ -90,6 +90,14 @@ function renderModuleRow(module, snippets) {
       })
     );
   }
+  if (module.flags.indexOf('always_run') >= 0) {
+    flags.push(
+      E('i', [], {
+        class: 'flag fa fa-play',
+        title: 'Always run: test module is executed even if a previous test module failed with fatal'
+      })
+    );
+  }
 
   const srcUrl = renderTemplate(snippets.src_url, {MODULE: encodeURIComponent(module.name)});
   const srcElement = srcUrl ? E('a', [module.name], {href: srcUrl}) : E('span', [module.name]);

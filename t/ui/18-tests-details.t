@@ -799,7 +799,7 @@ subtest 'test module flags are displayed correctly' => sub {
     $driver->get('/tests/99764');
     wait_for_ajax(msg => 'details tab for job 99764 loaded');
     my $flags = $driver->find_elements("//div[\@class='flags']/i[(starts-with(\@class, 'flag fa fa-'))]", 'xpath');
-    is scalar(@{$flags}), 4, 'Expect 4 flags in the job 99764';
+    is scalar(@{$flags}), 5, 'Expect 5 flags in the job 99764';
 
     my $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-minus']", 'xpath');
     ok $flag, 'Ignore failure flag is displayed for test modules which are not important, neither fatal';
@@ -828,6 +828,13 @@ subtest 'test module flags are displayed correctly' => sub {
       $flag->get_attribute('title'),
       'Fatal: testsuite is aborted if this test fails',
       'Description of fatal flag is correct';
+
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-play']", 'xpath');
+    ok $flag, 'Always run flag is displayed correctly';
+    is
+      $flag->get_attribute('title'),
+      'Always run: test module is executed even if a previous test module failed with fatal',
+      'Description of always_run flag is correct';
 };
 
 subtest 'number of restarts displayed (zero times)' => sub {
