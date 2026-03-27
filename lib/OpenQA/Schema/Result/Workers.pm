@@ -176,27 +176,26 @@ sub info ($self) {
 }
 
 sub send_command ($self, %args) {
-    return undef if (!defined $args{command});
+    return undef unless defined(my $command = $args{command});
 
-    if (!grep { $args{command} eq $_ } WORKER_API_COMMANDS) {
+    if (!grep { $command eq $_ } WORKER_API_COMMANDS) {
         my $msg = 'Trying to issue unknown command "%s" for worker "%s:%n"';
-        log_error(sprintf $msg, $args{command}, $self->host, $self->instance);
+        log_error(sprintf $msg, $command, $self->host, $self->instance);
         return undef;
     }
 
     try {
-        OpenQA::App->singleton->emit_event(
-            openqa_command_enqueue => {workerid => $self->id, command => $args{command}});
+        OpenQA::App->singleton->emit_event(openqa_command_enqueue => {workerid => $self->id, command => $command});
     }
     catch ($e) { }
 
     # prevent ws server querying itself (which would cause it to hang until the connection times out)
     if (OpenQA::WebSockets::Client::is_current_process_the_websocket_server) {
-        return OpenQA::WebSockets::ws_send($self->id, $args{command}, $args{job_id}, undef);
+        return OpenQA::WebSockets::ws_send($self->id, $command, $args{job_id}, undef);
     }
 
     my $client = OpenQA::WebSockets::Client->singleton;
-    try { $client->send_msg($self->id, $args{command}, $args{job_id}) }
+    try { $client->send_msg($self->id, $command, $args{job_id}) }
     catch ($e) {
         log_error(sprintf 'Failed dispatching message to websocket server over ipc for worker "%s:%n": %s',
             $self->host, $self->instance, $e);
