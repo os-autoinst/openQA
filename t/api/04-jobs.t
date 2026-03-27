@@ -884,7 +884,7 @@ subtest 'cancel job' => sub {
     is_deeply find_most_recent_event($schema, 'job_cancel'), {id => 99963, reason => undef}, 'cancellation was logged';
 
     $jobs->search({id => 99963})->update({assigned_worker_id => 1, result => NONE});
-    combined_like { $t->post_ok('/api/v1/jobs/99963/cancel?reason=Undecided') } qr/Failed dispatching message/s,
+    combined_like { $t->post_ok('/api/v1/jobs/99963/cancel?reason=Undecided') } qr/Failed to send command "cancel"/s,
       'tried to send cancellation to worker';
     $t->status_is(200, 'cancellation considered successful even if sending command to worker failed');
     is_deeply find_most_recent_event($schema, 'job_cancel'), {id => 99963, reason => 'Undecided'},

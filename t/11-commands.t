@@ -3,24 +3,28 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -strict, -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings qw(:all :report_warnings);
 use Test::Output 'stderr_like';
+use Test::Mock::Time;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Schema::Result::Workers;
 use OpenQA::WebSockets::Client;
+use OpenQA::Constants qw(WORKER_COMMAND_QUIT);
 use Test::MockModule;
 use Mojolicious;
 use Mojo::Message;
 
 
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
-my ($client_called, $last_command);
+my ($client_called, $last_command, $fake_error);
 $mock_client->redefine(
-    send_msg => sub {
-        my ($self, $workerid, $command, $jobid) = @_;
+    send_msg => sub ($self, $workerid, $command, $jobid) {
+        die $fake_error if $fake_error;
         $client_called++;
         $last_command = $command;
     });
@@ -48,6 +52,18 @@ stderr_like { $worker->send_command(command => 'foo', job_id => 0) }
 qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
 isnt $last_command, 'foo', 'refuse invalid commands';
 ok $client_called, 'mocked send_msg method has been called';
+
+subtest 'dispatch fails' => sub {
+    my $grace_period = OpenQA::Schema::Result::Workers::WS_SERVER_GRACE_PERIOD;
+    my $expected_msg = qr/Failed.*command.*quit.*to websocket.*regarding.*localhost.*foo/;
+    my $send_cmd = sub () { $worker->send_command(command => WORKER_COMMAND_QUIT) };
+    $fake_error = 'foo';
+    stderr_like { $send_cmd->() } qr/\[WARN\] $expected_msg/, 'just a warning';
+    sleep $grace_period;
+    stderr_like { $send_cmd->() } qr/\[WARN\] $expected_msg/, 'still a warning within grace period';
+    sleep 1;
+    stderr_like { $send_cmd->() } qr/\[ERROR\] $expected_msg/, 'error after grace period exceeded';
+};
 
 subtest 'ws server does not try to query itself' => sub {
     OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
