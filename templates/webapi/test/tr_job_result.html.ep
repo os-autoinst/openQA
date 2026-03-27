@@ -2,15 +2,15 @@
      % if ($res) {
          % if (is_operator) {
          <a class="copy-jobid" href="#" data-jobid="<%= $jobid %>">
-         <i class="action fa fa-fw fa-copy" title="Copy job id"></i></a>
+         <i class="action fa-solid fa-fw fa-copy" title="Copy job id"></i></a>
              % if ($state eq DONE || $state eq CANCELLED) {
                  %= link_post url_for('apiv1_restart', jobid => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
-                 <i class="action fa fa-undo" title="Restart the job"></i>
+                 <i class="action fa-solid fa-rotate-left" title="Restart the job"></i>
                  % end
              % }
              % elsif (any { $_ eq $state } PENDING_STATES) {
                  %= link_post url_for('apiv1_cancel', jobid => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
-                     <i class="action fa fa-times-circle-o" title="Cancel the job"></i>
+                     <i class="action fa-regular fa-circle-xmark" title="Cancel the job"></i>
                  % end
              % }
          % }
@@ -18,18 +18,18 @@
              <span id="res-<%= $jobid %>">
          % if ($state eq DONE) {
                  <a href="<%= url_for('test', 'testid' => $jobid) %>">
-                     <i class="status fa fa-circle result_<%= $res->{overall} %>" title="Done: <%= $res->{overall} %>"></i>
+                     <i class="status fa-solid fa-circle result_<%= $res->{overall} %>" title="Done: <%= $res->{overall} %>"></i>
                  </a>
          % }
          % elsif ($state eq SCHEDULED) {
              % my $substate = $res->{blocked} ? 'blocked' : 'scheduled';
              <a href="<%= url_for('test', 'testid' => $jobid) %>">
-                 <i class="status state_<%= $substate %> fa fa-circle" title="<%= $substate %>@<%= $res->{priority} %>"></i>
+                 <i class="status state_<%= $substate %> fa-solid fa-circle" title="<%= $substate %>@<%= $res->{priority} %>"></i>
              </a>
          % }
          % else {
              <a href="<%= url_for('test', 'testid' => $jobid) %>">
-                 <i class="status state_<%= $state %> fa fa-circle" title="<%= $state %>"></i>
+                 <i class="status state_<%= $state %> fa-solid fa-circle" title="<%= $state %>"></i>
              </a>
          % }
              </span>

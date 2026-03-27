@@ -31,7 +31,7 @@
 
                 % if (my $tag = $build_res->{tag}) {
                     <span id="tag-byGroup-<%= $group_build_id %>">
-                        <i class="tag-byGroup fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
+                        <i class="tag-byGroup fa-solid fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
                     </span>
                 % }
             </div>

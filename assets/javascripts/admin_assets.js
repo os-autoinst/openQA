@@ -56,7 +56,7 @@ function setupAdminAssets() {
             data +
             '<a href="#" onclick="deleteAsset(' +
             row.id +
-            ');"><i class="action fa fa-fw fa-times-circle-o" title="Delete asset from disk"></i></a>'
+            ');"><i class="action fa-solid fa-fw fa-circle-xmark-o" title="Delete asset from disk"></i></a>'
           );
         }
       },
@@ -259,7 +259,7 @@ function makeAssetsByGroup(assetStatus) {
       // add configure button
       if (window.isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== 'Untracked') {
         const path = isParent ? '/admin/edit_parent_group/' + groupId : '/admin/job_templates/' + groupId;
-        groupLi.append('<a href="' + path + '"><i class="fa fa-wrench" title="Configure"></i></a>');
+        groupLi.append('<a href="' + path + '"><i class="fa-solid fa-wrench" title="Configure"></i></a>');
       }
 
       // add size

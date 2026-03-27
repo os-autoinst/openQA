@@ -10,7 +10,7 @@
 % if ($res->{label}) {
     % my $label = $res->{label};
     <span id="test-label-<%= $jobid %>">
-        <i class="test-label label_<%= $label %> fa fa-bookmark" title="Label: <%= $label %>"></i>
+        <i class="test-label label_<%= $label %> fa-solid fa-bookmark" title="Label: <%= $label %>"></i>
     </span>
 % }
 % elsif ($res->{comments}) {

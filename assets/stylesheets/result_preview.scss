@@ -50,7 +50,7 @@
   display: inline-block;
   margin-top: 3px;
 }
-.links .fa-caret-up {
+.links [class*='fa-caret-up'] {
   display: none;
   position: absolute;
   color: #a9a9a9;
@@ -60,7 +60,7 @@
 }
 .current_preview {
   position: relative;
-  .fa-caret-up {
+  [class*='fa-caret-up'] {
     display: inline-block;
   }
 }
@@ -141,7 +141,7 @@
             border-radius: unset !important;
             background-image: linear-gradient(to bottom, #fff 0%, #eee 100%) !important;
           }
-          .fa {
+          [class*='fa-'] {
             padding-left: 3pt;
             padding-right: 3pt;
           }

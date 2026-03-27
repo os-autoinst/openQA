@@ -408,7 +408,7 @@ function renderSearchResults(query, url) {
 }
 
 function testStateHTML(job) {
-  let className = 'status fa fa-circle';
+  let className = 'status fa-solid fa-circle';
   let title;
   if (job.state === 'running' || job.state === 'scheduled') {
     if (job.state === 'scheduled' && job.blocked_by_id) {
@@ -422,7 +422,7 @@ function testStateHTML(job) {
     className += ' result_' + job.result;
     title = 'Done: ' + job.result;
   } else if (job.state === 'cancelled') {
-    className = 'status fa fa-times';
+    className = 'status fa-solid fa-xmark';
     title = 'cancelled (' + job.result + ')';
   }
   return [className, title];
@@ -441,7 +441,7 @@ function renderTestState(item, job) {
   item.appendChild(document.createTextNode(' ' + job.name + ' '));
   if (job.has_parents) {
     const icon = document.createElement('i');
-    icon.className = job.parents_ok ? 'fa fa-link' : 'fa fa-unlink';
+    icon.className = job.parents_ok ? 'fa-solid fa-link' : 'fa-solid fa-link-slash';
     icon.title = job.parents_ok ? 'dependency passed' : 'dependency failed';
     item.appendChild(icon);
   }
@@ -597,7 +597,7 @@ function renderComments(row) {
     const labelUrl = commentData.label_url;
     html += labelUrl ? ` <a href="${htmlEscape(labelUrl)}">` : ' ';
     html += `<span id="test-label-${row.id}">`;
-    html += `<i class="test-label label_${htmlEscape(label)} fa fa-bookmark" title="Label: ${htmlEscape(label)}"></i>`;
+    html += `<i class="test-label label_${htmlEscape(label)} fa-solid fa-bookmark" title="Label: ${htmlEscape(label)}"></i>`;
     html += labelUrl ? '</span></a>' : '</span>';
   } else if (commentData.comments) {
     html += ` <span id="comment-${row.id}">${commentData.comment_icon}</span>`;

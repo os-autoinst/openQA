@@ -89,7 +89,7 @@ table#assets {
       cursor: pointer;
       font-weight: normal;
     }
-    .fa {
+    [class*='fa-'] {
       padding-left: 3px;
       opacity: 0.3;
     }
@@ -177,7 +177,7 @@ a.add-parent-group {
     display: none;
   }
   span {
-    &.glyphicon, &.fa {
+    &.glyphicon, &[class*='fa-'] {
       color: #aaa;
       margin: 0 5px;
     }
@@ -186,7 +186,7 @@ a.add-parent-group {
       margin: 3px;
     }
   }
-  a.fa-plus, a.fa-trash {
+  a[class*='fa-plus'], a[class*='fa-trash'] {
     float: right;
     display: inline-block;
     margin: 5px;
@@ -340,11 +340,11 @@ table#users {
       + {
         // styling the "check" status
         label {
-          .fa-circle {
+          .fa-solid.fa-circle {
             display: block;
             color: $btn-primary-bg;
           }
-          .fa.fa-circle-o {
+          .fa-regular.fa-circle {
             display: none;
           }
         }
@@ -353,7 +353,7 @@ table#users {
   }
   label {
     // styling radiobuttons
-    .fa-circle {
+    .fa-solid.fa-circle {
       color: $btn-default-bg;
     }
   }

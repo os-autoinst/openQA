@@ -159,7 +159,7 @@
                             <button type="submit" class="btn btn-primary" id="save">Save</button>
                         </div>
                         <div id="needle_editor_loading_indication" class="properties-progress-indication" style="display: none;">
-                            <i class="fa fa-cog fa-spin fa-1x fa-fw"></i> Saving needle, this might take a few seconds.
+                            <i class="fa-solid fa-gear fa-spin fa-1x fa-fw"></i> Saving needle, this might take a few seconds.
                         </div>
                     % end
                 </div>
@@ -243,19 +243,19 @@
                     Selected area:
                     %= tag div => begin
                         %= tag button => (id => 'change-match') => (class => 'btn btn-light btn-block disabled') => (data => { 'bs-toggle' => 'modal', 'bs-target' => '#change-match-form' }) => (disabled => undef) => begin
-                            %= tag i => (class => 'fa fa-bar-chart')
+                            %= tag i => (class => 'fa-solid fa-bar-chart')
                             Change match level
                         % end
                     % end
                     %= tag div => begin
                         %= tag button => (id => 'change-margin') => (class => 'btn btn-light btn-block disabled') => (data => { 'bs-toggle' => 'modal', 'bs-target' => '#change-margin-form' }) => (disabled => undef) => begin
-                            %= tag i => (class => 'fa fa-area-chart')
+                            %= tag i => (class => 'fa-solid fa-area-chart')
                             Change margin
                         % end
                     % end
                     %= tag div => begin
                         %= tag button => (id => 'toggle-click-coordinates') => (class => 'btn btn-light btn-block disabled') => (disabled => undef) => (onclick => 'toggleClickCoordinates()') => begin
-                            %= tag i => (class => 'fa fa-mouse-pointer')
+                            %= tag i => (class => 'fa-solid fa-mouse-pointer')
                             <span id="toggle-click-coordinates-verb">Add</span> click coordinates for<br> <code>assert_and_click</code>
                         % end
                     % end

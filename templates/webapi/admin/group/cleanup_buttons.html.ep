@@ -4,12 +4,12 @@
         <button id="show-advanced-cleanup-settings-button" type="button"
                 class="btn btn-outline-info btn-sm"
                 data-bs-toggle="collapse" data-bs-target=".advanced-cleanup-settings">
-            <i class="fa fa-cogs"></i> Show advanced cleanup settings
+            <i class="fa-solid fa-gears"></i> Show advanced cleanup settings
         </button>
         <a href="http://open.qa/docs/#cleanup"
            class="btn btn-outline-info btn-sm"
            target="blank">
-            <i class="fa fa-book"></i> Cleanup documentation
+            <i class="fa-solid fa-book"></i> Cleanup documentation
         </a>
     </div>
 </div>

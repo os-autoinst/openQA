@@ -52,7 +52,7 @@ my $table = $driver->find_element_by_id('product_log_table');
 ok $table, 'products tables present when not logged in';
 my @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is scalar @rows, 1, 'one row present';
-my @restart_buttons = $driver->find_elements('#product_log_table .fa-undo', 'css');
+my @restart_buttons = $driver->find_elements('#product_log_table .fa-rotate-left', 'css');
 is scalar @restart_buttons, 0, 'no restart buttons present when not logged in';
 
 # log in as Demo
