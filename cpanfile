@@ -103,6 +103,7 @@ on 'test' => sub {
     requires 'Selenium::Remote::WDKeys';
     requires 'Test::Exception';
     requires 'Test::Fatal';
+    requires 'Test::Mock::Time';
     requires 'Test::MockModule';
     requires 'Test::MockObject';
     requires 'Test::Mojo';

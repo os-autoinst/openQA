@@ -205,6 +205,7 @@ test_requires:
   perl(Test::Fatal):
   perl(Test::MockModule):
   perl(Test::MockObject):
+  perl(Test::Mock::Time):
   perl(Test::Output):
   perl(Test::Pod):
   perl(Test::Warnings): '>= 0.029'
