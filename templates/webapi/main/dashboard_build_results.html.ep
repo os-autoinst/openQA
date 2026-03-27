@@ -1,3 +1,5 @@
+%= include 'layouts/limit_warning'
+
 % for my $groupresults (@$results) {
     % my $group         = $groupresults->{group};
     % my $build_results = $groupresults->{build_results};
