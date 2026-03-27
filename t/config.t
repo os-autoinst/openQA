@@ -26,6 +26,8 @@ use Storable 'dclone';
 
 my $quiet_log = Mojo::Log->new(level => 'warn');
 
+die "HERE";
+
 sub read_config {
     my ($app, $msg) = @_;
     $msg //= 'reading config from default';
