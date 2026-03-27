@@ -17,6 +17,8 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Constants qw(BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Utils qw(regex_match);
 use Mojo::File qw(tempfile);
+use Date::Format;
+use Time::Seconds qw(ONE_HOUR);
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -634,6 +636,90 @@ subtest 'job skipped count' => sub {
 
     is $jr->{skipped}, 1, 'Job with aborted result correctly increments skipped count';
     is $jr->{total}, 1, 'Total jobs incremented';
+};
+
+subtest 'Group overview limit' => sub {
+    $t->get_ok('/group_overview/1001')->status_is(200)->element_exists_not('#max-jobs-limit');
+    $t->app->config->{misc_limits}->{job_groups_overview_max_jobs} = 1;
+    $t->get_ok('/group_overview/1001')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 1 results included/);
+};
+
+subtest 'Parent group overview limit' => sub {
+    $t->get_ok('/parent_group_overview/1')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 1 results included/);
+};
+
+subtest 'Dashboard limit' => sub {
+    $t->get_ok('/dashboard_build_results')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 1 results included/);
+};
+
+subtest 'API V1 JobGroup limit' => sub {
+    $t->get_ok('/api/v1/job_groups/1001/build_results')->status_is(200)->json_is('/limit_exceeded' => 1);
+};
+
+subtest 'Dashboard limit reached between groups' => sub {
+    # 'opensuse' (1001) has 2 jobs in the first 2 builds (87.5011 and 0048@0815)
+    # when clones are not included.
+    $t->app->config->{misc_limits}->{job_groups_overview_max_jobs} = 2;
+    $t->get_ok('/dashboard_build_results.json?limit_builds=2')->status_is(200)->json_is('/limit_exceeded' => 2);
+    $t->get_ok('/dashboard_build_results?limit_builds=2')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 2 results included/);
+
+    # Coverage for check between groups
+    my $group_aaa = $job_groups->create({name => 'AAA', sort_order => -1});
+    $jobs->create(
+        {
+            group_id => $group_aaa->id,
+            priority => 50,
+            result => 'passed',
+            TEST => 'test',
+            state => 'done',
+            BUILD => '1',
+            VERSION => '1',
+            ARCH => 'x86_64',
+            FLAVOR => 'flavor',
+            MACHINE => 'machine',
+        });
+    $t->app->config->{misc_limits}->{job_groups_overview_max_jobs} = 1;
+    $t->get_ok('/dashboard_build_results.json')->status_is(200)->json_is('/limit_exceeded' => 1);
+    # AAA should be present, others not
+    my $res = $t->tx->res->json;
+    is scalar @{$res->{results}}, 1, 'Only one group returned';
+    is $res->{results}->[0]->{group}->{name}, 'AAA', 'The correct group is returned';
+};
+
+subtest 'Group overview JSON and comments coverage' => sub {
+    $opensuse_group->comments->create({text => 'some comment', user_id => 99901});
+    $opensuse_group->comments->create({text => 'pinned-description: some info', user_id => 99901});
+    $t->app->config->{misc_limits}->{job_groups_overview_max_jobs} = 2;
+    $t->get_ok('/group_overview/1001.json')->status_is(200)->json_has('/group')->json_has('/build_results')
+      ->json_is('/limit_exceeded' => 2);
+    my $res = $t->tx->res->json;
+    ok scalar @{$res->{comments}} > 0, 'comments are returned';
+    ok scalar @{$res->{pinned_comments}} > 0, 'pinned comments are returned';
+};
+
+subtest 'Parent group overview JSON' => sub {
+    $t->get_ok('/parent_group_overview/1.json')->status_is(200)->json_has('/group')->json_has('/build_results')
+      ->json_is('/limit_exceeded' => 2);
+};
+
+subtest 'dashboard_build_results coverage' => sub {
+    my $build_results_mock = Test::MockModule->new('OpenQA::BuildResults');
+    $build_results_mock->redefine(
+        compute_build_results => sub { die 'invalid regex: fake regex error after validation' });
+    $t->get_ok('/group_overview/1001')->status_is(400)
+      ->content_like(qr/invalid regex: fake regex error after validation/i);
+    $build_results_mock->unmock('compute_build_results');
+
+    $t->get_ok('/dashboard_build_results.json?group=opensuse')->status_is(200);
+    $t->get_ok('/dashboard_build_results.json?show_tags=1')->status_is(200);
+    $t->get_ok('/dashboard_build_results.json?only_tagged=1')->status_is(200);
+    $t->get_ok('/dashboard_build_results.json')->status_is(200);
+    my $res = $t->tx->res->json;
+    ok scalar @{$res->{results}} > 0, 'results are returned';
 };
 
 done_testing;

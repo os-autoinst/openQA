@@ -9,11 +9,7 @@
   setupOverview({metaMapping: <%== Mojo::JSON::to_json($meta_mapping) %>});
 % end
 
-% if ($limit_exceeded) {
-  <div class="alert alert-warning" id="max-jobs-limit" role="alert">
-    <i class="fa fa-exclamation-circle"></i> Only <%= $limit_exceeded %> results included, please narrow down your search parameters.
-  </div>
-% }
+%= include 'layouts/limit_warning'
 <div>
     <h2>Test result overview</h2>
     <div id="summary" class="card <%= ($aggregate_status =~ /^(?:failed|not_complete)$/) ? 'border-danger' : 'border-success' %>">
