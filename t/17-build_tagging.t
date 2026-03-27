@@ -141,7 +141,7 @@ subtest 'show_tags query parameter enables/disables tags on index page' => sub {
         $t->get_ok('/dashboard_build_results?show_tags=' . $enabled)->status_is(200);
         is scalar @{$t->tx->res->dom->find('a[href^=/tests/]')},
           9, "all builds shown on index page (show_tags=$enabled)";
-        is scalar @{$t->tx->res->dom->find("i[title='important']")},
+        is scalar @{$t->tx->res->dom->find("span[title='important']")},
           $enabled, "tag (not) shown on index page (show_tags=$enabled)";
     }
 };
@@ -336,22 +336,22 @@ subtest 'version tagging' => sub {
 
     post_comment_1001('tag:5000:important:fallback');
     $t->get_ok('/group_overview/1001')->status_is(200);
-    $t->text_is('#tag-1001-1_2_2-5000 i', 'fallback', 'version 1.2-2 has fallback tag');
-    $t->text_is('#tag-1001-1_2_1-5000 i', 'fallback', 'version 1.2-1 has fallback tag');
+    $t->text_is('#tag-1001-1_2_2-5000 span.tag', 'fallback', 'version 1.2-2 has fallback tag');
+    $t->text_is('#tag-1001-1_2_1-5000 span.tag', 'fallback', 'version 1.2-1 has fallback tag');
 
     post_comment_1001('tag:1.2-2-5000:important:second');
     $t->get_ok('/group_overview/1001')->status_is(200);
-    $t->text_is('#tag-1001-1_2_2-5000 i', 'second', 'version 1.2-2 has version-specific tag');
-    $t->text_is('#tag-1001-1_2_1-5000 i', 'fallback', 'version 1.2-1 has still fallback tag');
+    $t->text_is('#tag-1001-1_2_2-5000 span.tag', 'second', 'version 1.2-2 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_1-5000 span.tag', 'fallback', 'version 1.2-1 has still fallback tag');
 
     post_comment_1001('tag:1.2-1-5000:important:first');
     $t->get_ok('/group_overview/1001')->status_is(200);
-    $t->text_is('#tag-1001-1_2_2-5000 i', 'second', 'version 1.2-2 has version-specific tag');
-    $t->text_is('#tag-1001-1_2_1-5000 i', 'first', 'version 1.2-1 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_2-5000 span.tag', 'second', 'version 1.2-2 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_1-5000 span.tag', 'first', 'version 1.2-1 has version-specific tag');
 
     post_comment_1001('tag:1.2-1-5000:important:label-with.specialchars');
     $t->get_ok('/group_overview/1001')->status_is(200);
-    $t->text_is('#tag-1001-1_2_1-5000 i', 'label-with.specialchars', 'version 1.2-1 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_1-5000 span.tag', 'label-with.specialchars', 'version 1.2-1 has version-specific tag');
 };
 
 subtest 'content negotiation' => sub {

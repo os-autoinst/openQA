@@ -29,7 +29,7 @@
                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''
                 % if (my $tag = $build_res->{tag}) {
                     <span id="tag-<%= $group_build_id %>">
-                        <i class="tag fa-solid fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
+                        <span class="tag" title="<%= $tag->{type}; %>"><i class="fa-solid fa-tag"></i><%= $tag->{description} %></span>
                     </span>
                 % }
             </span>
