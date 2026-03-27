@@ -13,6 +13,7 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
+use List::Util qw(any);
 use DBI qw(:sql_types);
 
 __PACKAGE__->table('workers');
@@ -178,7 +179,7 @@ sub info ($self) {
 sub send_command ($self, %args) {
     return undef unless defined(my $command = $args{command});
 
-    if (!grep { $command eq $_ } WORKER_API_COMMANDS) {
+    if (!any { $command eq $_ } WORKER_API_COMMANDS) {
         my $msg = 'Trying to issue unknown command "%s" for worker "%s:%n"';
         log_error(sprintf $msg, $command, $self->host, $self->instance);
         return undef;
