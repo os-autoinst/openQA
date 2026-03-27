@@ -703,9 +703,9 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 <li><a href="#usersguide">openQA users guide</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_3">27. Introduction</a></li>
-<li><a href="#_using_job_templates_to_automate_jobs_creation">28. Using job templates to automate jobs creation</a>
+<li><a href="#job_templates">28. Using job templates to automate jobs creation</a>
 <ul class="sectlevel2">
-<li><a href="#job_templates">28.1. The problem</a></li>
+<li><a href="#_the_problem">28.1. The problem</a></li>
 <li><a href="#_machines">28.2. Machines</a></li>
 <li><a href="#_medium_types_products">28.3. Medium Types (products)</a></li>
 <li><a href="#_test_suites">28.4. Test Suites</a></li>
@@ -834,62 +834,63 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 <li><a href="#_disabling_cleanup">33.7. Disabling cleanup</a></li>
 </ul>
 </li>
-<li><a href="#_cli_interface">34. CLI interface</a></li>
-<li><a href="#_suggested_workflow_for_test_review">35. Suggested workflow for test review</a></li>
-<li><a href="#_where_to_now_2">36. Where to now?</a></li>
+<li><a href="#amqp_events">34. Consuming AMQP events from openQA</a></li>
+<li><a href="#_cli_interface">35. CLI interface</a></li>
+<li><a href="#_suggested_workflow_for_test_review">36. Suggested workflow for test review</a></li>
+<li><a href="#_where_to_now_2">37. Where to now?</a></li>
 </ul>
 </li>
 <li><a href="#writingtests">openQA test developer guide</a>
 <ul class="sectlevel1">
-<li><a href="#_introduction_4">37. Introduction</a></li>
-<li><a href="#_basic">38. Basic</a></li>
-<li><a href="#_test_api">39. Test API</a></li>
-<li><a href="#_how_to_write_tests">40. How to write tests</a>
+<li><a href="#_introduction_4">38. Introduction</a></li>
+<li><a href="#_basic">39. Basic</a></li>
+<li><a href="#_test_api">40. Test API</a></li>
+<li><a href="#_how_to_write_tests">41. How to write tests</a>
 <ul class="sectlevel2">
-<li><a href="#_test_module_interface">40.1. Test module interface</a>
+<li><a href="#_test_module_interface">41.1. Test module interface</a>
 <ul class="sectlevel3">
-<li><a href="#_run">40.1.1. <code>run</code></a></li>
-<li><a href="#_test_flags">40.1.2. <code>test_flags</code></a></li>
-<li><a href="#_pre_run_hook">40.1.3. <code>pre_run_hook</code></a></li>
-<li><a href="#_post_fail_hook">40.1.4. <code>post_fail_hook</code></a></li>
-<li><a href="#_post_run_hook">40.1.5. <code>post_run_hook</code></a></li>
+<li><a href="#_run">41.1.1. <code>run</code></a></li>
+<li><a href="#_test_flags">41.1.2. <code>test_flags</code></a></li>
+<li><a href="#_pre_run_hook">41.1.3. <code>pre_run_hook</code></a></li>
+<li><a href="#_post_fail_hook">41.1.4. <code>post_fail_hook</code></a></li>
+<li><a href="#_post_run_hook">41.1.5. <code>post_run_hook</code></a></li>
 </ul>
 </li>
-<li><a href="#_notes_on_the_python_api">40.2. Notes on the Python API</a></li>
-<li><a href="#_notes_on_the_lua_api">40.3. Notes on the Lua API</a></li>
-<li><a href="#_example_perl_test_modules">40.4. Example Perl test modules</a>
+<li><a href="#_notes_on_the_python_api">41.2. Notes on the Python API</a></li>
+<li><a href="#_notes_on_the_lua_api">41.3. Notes on the Lua API</a></li>
+<li><a href="#_example_perl_test_modules">41.4. Example Perl test modules</a>
 <ul class="sectlevel3">
-<li><a href="#_boot_to_desktop">40.4.1. Boot to desktop</a></li>
-<li><a href="#_install_software_via_zypper">40.4.2. Install software via <code>zypper</code></a></li>
-<li><a href="#_sample_x11_test">40.4.3. Sample X11 Test</a></li>
+<li><a href="#_boot_to_desktop">41.4.1. Boot to desktop</a></li>
+<li><a href="#_install_software_via_zypper">41.4.2. Install software via <code>zypper</code></a></li>
+<li><a href="#_sample_x11_test">41.4.3. Sample X11 Test</a></li>
 </ul>
 </li>
-<li><a href="#_example_python_test_modules">40.5. Example Python test modules</a>
+<li><a href="#_example_python_test_modules">41.5. Example Python test modules</a>
 <ul class="sectlevel3">
-<li><a href="#_openqa_web_ui_sample_test">40.5.1. openQA web UI sample test</a></li>
+<li><a href="#_openqa_web_ui_sample_test">41.5.1. openQA web UI sample test</a></li>
 </ul>
 </li>
-<li><a href="#_example_lua_test_module">40.6. Example Lua test module</a></li>
+<li><a href="#_example_lua_test_module">41.6. Example Lua test module</a></li>
 </ul>
 </li>
-<li><a href="#_variables">41. Variables</a></li>
-<li><a href="#_advanced_test_features">42. Advanced test features</a>
+<li><a href="#_variables">42. Variables</a></li>
+<li><a href="#_advanced_test_features">43. Advanced test features</a>
 <ul class="sectlevel2">
-<li><a href="#_changing_timeouts">42.1. Changing timeouts</a></li>
-<li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">42.2. Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
-<li><a href="#_traceability_and_reproducibility_of_tests">42.3. Traceability and reproducibility of tests</a>
+<li><a href="#_changing_timeouts">43.1. Changing timeouts</a></li>
+<li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">43.2. Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
+<li><a href="#_traceability_and_reproducibility_of_tests">43.3. Traceability and reproducibility of tests</a>
 <ul class="sectlevel3">
-<li><a href="#_general_remarks_on_tracing">42.3.1. General remarks on tracing</a></li>
-<li><a href="#_logging_package_versions_used_for_test">42.3.2. Logging package versions used for test</a></li>
-<li><a href="#_general_remarks_on_reproducibility">42.3.3. General remarks on reproducibility</a></li>
+<li><a href="#_general_remarks_on_tracing">43.3.1. General remarks on tracing</a></li>
+<li><a href="#_logging_package_versions_used_for_test">43.3.2. Logging package versions used for test</a></li>
+<li><a href="#_general_remarks_on_reproducibility">43.3.3. General remarks on reproducibility</a></li>
 </ul>
 </li>
-<li><a href="#_assigning_jobs_to_workers">42.4. Assigning jobs to workers</a></li>
-<li><a href="#_running_a_custom_worker_engine">42.5. Running a custom worker engine</a></li>
-<li><a href="#_automatic_retries_of_jobs">42.6. Automatic retries of jobs</a></li>
-<li><a href="#_job_dependencies">42.7. Job dependencies</a>
+<li><a href="#_assigning_jobs_to_workers">43.4. Assigning jobs to workers</a></li>
+<li><a href="#_running_a_custom_worker_engine">43.5. Running a custom worker engine</a></li>
+<li><a href="#_automatic_retries_of_jobs">43.6. Automatic retries of jobs</a></li>
+<li><a href="#_job_dependencies">43.7. Job dependencies</a>
 <ul class="sectlevel3">
-<li><a href="#_declaring_dependencies">42.7.1. Declaring dependencies</a>
+<li><a href="#_declaring_dependencies">43.7.1. Declaring dependencies</a>
 <ul class="sectlevel4">
 <li><a href="#_chained_dependencies">Chained dependencies</a></li>
 <li><a href="#_parallel_dependencies">Parallel dependencies</a>
@@ -899,14 +900,14 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
-<li><a href="#_inter_machine_dependencies">42.7.2. Inter-machine dependencies</a></li>
-<li><a href="#_handling_of_related_jobs_on_failure_cancellation_restart">42.7.3. Handling of related jobs on failure / cancellation / restart</a>
+<li><a href="#_inter_machine_dependencies">43.7.2. Inter-machine dependencies</a></li>
+<li><a href="#_handling_of_related_jobs_on_failure_cancellation_restart">43.7.3. Handling of related jobs on failure / cancellation / restart</a>
 <ul class="sectlevel4">
 <li><a href="#_further_notes_2">Further notes</a></li>
 </ul>
 </li>
-<li><a href="#_handling_of_dependencies_when_cloning_jobs">42.7.4. Handling of dependencies when cloning jobs</a></li>
-<li><a href="#_examples">42.7.5. Examples</a>
+<li><a href="#_handling_of_dependencies_when_cloning_jobs">43.7.4. Handling of dependencies when cloning jobs</a></li>
+<li><a href="#_examples">43.7.5. Examples</a>
 <ul class="sectlevel4">
 <li><a href="#_specify_machine_explicitly">Specify machine explicitly</a></li>
 <li><a href="#_implicitly_inherit_machines_from_parent">Implicitly inherit machines from parent</a></li>
@@ -914,33 +915,33 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 <li><a href="#_implicitly_creating_a_dependency_on_same_machine">Implicitly creating a dependency on same machine</a></li>
 </ul>
 </li>
-<li><a href="#_notes_regarding_directly_chained_dependencies">42.7.6. Notes regarding directly chained dependencies</a></li>
-<li><a href="#_worker_requirements">42.7.7. Worker requirements</a>
+<li><a href="#_notes_regarding_directly_chained_dependencies">43.7.6. Notes regarding directly chained dependencies</a></li>
+<li><a href="#_worker_requirements">43.7.7. Worker requirements</a>
 <ul class="sectlevel4">
 <li><a href="#_examples_2">Examples</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#mm-tests">42.8. Writing multi-machine tests</a></li>
-<li><a href="#_test_synchronization_and_locking_api">42.9. Test synchronization and locking API</a></li>
-<li><a href="#_support_server_based_tests">42.10. Support Server based tests</a>
+<li><a href="#mm-tests">43.8. Writing multi-machine tests</a></li>
+<li><a href="#_test_synchronization_and_locking_api">43.9. Test synchronization and locking API</a></li>
+<li><a href="#_support_server_based_tests">43.10. Support Server based tests</a>
 <ul class="sectlevel3">
-<li><a href="#_preparing_the_supportserver">42.10.1. Preparing the supportserver</a></li>
-<li><a href="#_using_the_supportserver">42.10.2. Using the supportserver</a></li>
+<li><a href="#_preparing_the_supportserver">43.10.1. Preparing the supportserver</a></li>
+<li><a href="#_using_the_supportserver">43.10.2. Using the supportserver</a></li>
 </ul>
 </li>
-<li><a href="#_using_text_consoles_and_the_serial_terminal">42.11. Using text consoles and the serial terminal</a>
+<li><a href="#_using_text_consoles_and_the_serial_terminal">43.11. Using text consoles and the serial terminal</a>
 <ul class="sectlevel3">
-<li><a href="#_using_a_serial_terminal">42.11.1. Using a serial terminal</a></li>
-<li><a href="#_sending_new_lines_and_continuation_characters">42.11.2. Sending new lines and continuation characters</a></li>
-<li><a href="#_sending_signals_ctrl_c_and_ctrl_d">42.11.3. Sending signals - ctrl-c and ctrl-d</a></li>
-<li><a href="#_the_virtio_serial_terminal_implementation">42.11.4. The virtio serial terminal implementation</a></li>
+<li><a href="#_using_a_serial_terminal">43.11.1. Using a serial terminal</a></li>
+<li><a href="#_sending_new_lines_and_continuation_characters">43.11.2. Sending new lines and continuation characters</a></li>
+<li><a href="#_sending_signals_ctrl_c_and_ctrl_d">43.11.3. Sending signals - ctrl-c and ctrl-d</a></li>
+<li><a href="#_the_virtio_serial_terminal_implementation">43.11.4. The virtio serial terminal implementation</a></li>
 </ul>
 </li>
-<li><a href="#_mcp_support">42.12. MCP Support</a>
+<li><a href="#_mcp_support">43.12. MCP Support</a>
 <ul class="sectlevel3">
-<li><a href="#_3rd_party_mcp_clients">42.12.1. 3rd Party MCP Clients</a>
+<li><a href="#_3rd_party_mcp_clients">43.12.1. 3rd Party MCP Clients</a>
 <ul class="sectlevel4">
 <li><a href="#_gemini_cli">gemini-cli</a></li>
 </ul>
@@ -949,110 +950,110 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
-<li><a href="#_test_development_tricks">43. Test Development tricks</a>
+<li><a href="#_test_development_tricks">44. Test Development tricks</a>
 <ul class="sectlevel2">
-<li><a href="#_trigger_new_tests_by_modifying_settings_from_existing_test_runs">43.1. Trigger new tests by modifying settings from existing test runs</a></li>
-<li><a href="#_backend_variables_for_faster_test_execution">43.2. Backend variables for faster test execution</a></li>
-<li><a href="#_using_snapshots_to_speed_up_development_of_tests">43.3. Using snapshots to speed up development of tests</a>
+<li><a href="#_trigger_new_tests_by_modifying_settings_from_existing_test_runs">44.1. Trigger new tests by modifying settings from existing test runs</a></li>
+<li><a href="#_backend_variables_for_faster_test_execution">44.2. Backend variables for faster test execution</a></li>
+<li><a href="#_using_snapshots_to_speed_up_development_of_tests">44.3. Using snapshots to speed up development of tests</a>
 <ul class="sectlevel3">
-<li><a href="#_how_snapshots_work_internally">43.3.1. How snapshots work internally</a></li>
-<li><a href="#_snapshot_modes">43.3.2. Snapshot modes</a></li>
-<li><a href="#snapshots-for-each-module">43.3.3. Enable snapshots for each module</a></li>
-<li><a href="#_storing_only_the_last_successful_snapshot">43.3.4. Storing only the last successful snapshot</a></li>
+<li><a href="#_how_snapshots_work_internally">44.3.1. How snapshots work internally</a></li>
+<li><a href="#_snapshot_modes">44.3.2. Snapshot modes</a></li>
+<li><a href="#snapshots-for-each-module">44.3.3. Enable snapshots for each module</a></li>
+<li><a href="#_storing_only_the_last_successful_snapshot">44.3.4. Storing only the last successful snapshot</a></li>
 </ul>
 </li>
-<li><a href="#_defining_a_custom_test_schedule_or_custom_test_modules">43.4. Defining a custom test schedule or custom test modules</a>
+<li><a href="#_defining_a_custom_test_schedule_or_custom_test_modules">44.4. Defining a custom test schedule or custom test modules</a>
 <ul class="sectlevel3">
-<li><a href="#_exclude_modules">43.4.1. EXCLUDE_MODULES</a></li>
-<li><a href="#_include_modules">43.4.2. INCLUDE_MODULES</a></li>
-<li><a href="#_schedule">43.4.3. SCHEDULE</a></li>
-<li><a href="#_schedule_asset_nr_url">43.4.4. SCHEDULE + ASSET_&lt;NR&gt;_URL</a></li>
+<li><a href="#_exclude_modules">44.4.1. EXCLUDE_MODULES</a></li>
+<li><a href="#_include_modules">44.4.2. INCLUDE_MODULES</a></li>
+<li><a href="#_schedule">44.4.3. SCHEDULE</a></li>
+<li><a href="#_schedule_asset_nr_url">44.4.4. SCHEDULE + ASSET_&lt;NR&gt;_URL</a></li>
 </ul>
 </li>
-<li><a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">43.5. Triggering tests based on an any remote Git refspec or open GitHub pull request</a></li>
+<li><a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">44.5. Triggering tests based on an any remote Git refspec or open GitHub pull request</a></li>
 </ul>
 </li>
-<li><a href="#_running_openqa_jobs_as_ci_checks">44. Running openQA jobs as CI checks</a>
+<li><a href="#_running_openqa_jobs_as_ci_checks">45. Running openQA jobs as CI checks</a>
 <ul class="sectlevel2">
-<li><a href="#_create_and_monitor_openqa_jobs_from_within_the_ci_runner">44.1. Create and monitor openQA jobs from within the CI runner</a></li>
-<li><a href="#_use_webhooks_and_status_reporting_apis_of_github">44.2. Use webhooks and status reporting APIs of GitHub</a></li>
-<li><a href="#_run_isotovideo_directly_in_the_ci_runner">44.3. Run isotovideo directly in the CI runner</a>
+<li><a href="#_create_and_monitor_openqa_jobs_from_within_the_ci_runner">45.1. Create and monitor openQA jobs from within the CI runner</a></li>
+<li><a href="#_use_webhooks_and_status_reporting_apis_of_github">45.2. Use webhooks and status reporting APIs of GitHub</a></li>
+<li><a href="#_run_isotovideo_directly_in_the_ci_runner">45.3. Run isotovideo directly in the CI runner</a>
 <ul class="sectlevel3">
-<li><a href="#_setup_a_github_access_token_for_openqa">44.3.1. Setup a GitHub access token for openQA</a></li>
-<li><a href="#_setup_webhook_on_github">44.3.2. Setup webhook on GitHub</a></li>
+<li><a href="#_setup_a_github_access_token_for_openqa">45.3.1. Setup a GitHub access token for openQA</a></li>
+<li><a href="#_setup_webhook_on_github">45.3.2. Setup webhook on GitHub</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#_integrating_test_results_from_external_systems">45. Integrating test results from external systems</a></li>
+<li><a href="#_integrating_test_results_from_external_systems">46. Integrating test results from external systems</a></li>
 </ul>
 </li>
 <li><a href="#installing_harness">openQA test harness result processing</a>
 <ul class="sectlevel1">
-<li><a href="#_introduction_5">46. Introduction</a></li>
-<li><a href="#_usage">47. Usage</a>
+<li><a href="#_introduction_5">47. Introduction</a></li>
+<li><a href="#_usage">48. Usage</a>
 <ul class="sectlevel2">
-<li><a href="#_openqa_test_distribution">47.1. openQA test distribution</a></li>
+<li><a href="#_openqa_test_distribution">48.1. openQA test distribution</a></li>
 </ul>
 </li>
-<li><a href="#parser-formats">48. Available parser formats</a></li>
-<li><a href="#_extending_the_parser">49. Extending the parser</a>
+<li><a href="#parser-formats">49. Available parser formats</a></li>
+<li><a href="#_extending_the_parser">50. Extending the parser</a>
 <ul class="sectlevel2">
-<li><a href="#_oop_interface">49.1. OOP Interface</a></li>
-<li><a href="#_structured_data">49.2. Structured data</a></li>
-<li><a href="#_openqa_internal_test_result_storage">49.3. openQA internal test result storage</a></li>
+<li><a href="#_oop_interface">50.1. OOP Interface</a></li>
+<li><a href="#_structured_data">50.2. Structured data</a></li>
+<li><a href="#_openqa_internal_test_result_storage">50.3. openQA internal test result storage</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li><a href="#client">openQA client</a>
 <ul class="sectlevel1">
-<li><a href="#_help">50. Help</a></li>
-<li><a href="#_authentication_2">51. Authentication</a>
+<li><a href="#_help">51. Help</a></li>
+<li><a href="#_authentication_2">52. Authentication</a>
 <ul class="sectlevel2">
-<li><a href="#_personal_access_token">51.1. Personal access token</a></li>
+<li><a href="#_personal_access_token">52.1. Personal access token</a></li>
 </ul>
 </li>
-<li><a href="#_features">52. Features</a>
+<li><a href="#_features">53. Features</a>
 <ul class="sectlevel2">
-<li><a href="#_http_methods">52.1. HTTP Methods</a></li>
-<li><a href="#_http_headers">52.2. HTTP Headers</a></li>
-<li><a href="#_http_body">52.3. HTTP Body</a></li>
-<li><a href="#_forms">52.4. Forms</a></li>
-<li><a href="#_json">52.5. JSON</a></li>
-<li><a href="#_unicode">52.6. Unicode</a></li>
-<li><a href="#_host_shortcuts">52.7. Host shortcuts</a></li>
-<li><a href="#_debugging">52.8. Debugging</a></li>
+<li><a href="#_http_methods">53.1. HTTP Methods</a></li>
+<li><a href="#_http_headers">53.2. HTTP Headers</a></li>
+<li><a href="#_http_body">53.3. HTTP Body</a></li>
+<li><a href="#_forms">53.4. Forms</a></li>
+<li><a href="#_json">53.5. JSON</a></li>
+<li><a href="#_unicode">53.6. Unicode</a></li>
+<li><a href="#_host_shortcuts">53.7. Host shortcuts</a></li>
+<li><a href="#_debugging">53.8. Debugging</a></li>
 </ul>
 </li>
-<li><a href="#_archiving_individual_job_results">53. Archiving individual job results</a></li>
+<li><a href="#_archiving_individual_job_results">54. Archiving individual job results</a></li>
 </ul>
 </li>
 <li><a href="#pitfalls">openQA pitfalls</a>
 <ul class="sectlevel1">
-<li><a href="#_needle_editing">54. Needle editing</a></li>
-<li><a href="#_403_messages_when_using_scripts">55. 403 messages when using scripts</a></li>
-<li><a href="#_mixed_production_and_development_environment">56. Mixed production and development environment</a></li>
-<li><a href="#_performance_impact">57. Performance impact</a></li>
-<li><a href="#db-migration">58. DB migration from SQlite to postgreSQL</a></li>
-<li><a href="#debugdevelmode">59. Steps to debug developer mode setup</a></li>
+<li><a href="#_needle_editing">55. Needle editing</a></li>
+<li><a href="#_403_messages_when_using_scripts">56. 403 messages when using scripts</a></li>
+<li><a href="#_mixed_production_and_development_environment">57. Mixed production and development environment</a></li>
+<li><a href="#_performance_impact">58. Performance impact</a></li>
+<li><a href="#db-migration">59. DB migration from SQlite to postgreSQL</a></li>
+<li><a href="#debugdevelmode">60. Steps to debug developer mode setup</a></li>
 </ul>
 </li>
 <li><a href="#networking">Networking in openQA</a>
 <ul class="sectlevel1">
-<li><a href="#_qemu_user_networking">60. QEMU User Networking</a></li>
-<li><a href="#_tap_based_network">61. TAP Based Network</a>
+<li><a href="#_qemu_user_networking">61. QEMU User Networking</a></li>
+<li><a href="#_tap_based_network">62. TAP Based Network</a>
 <ul class="sectlevel2">
-<li><a href="#_multi_machine_test_setup">61.1. Multi-machine test setup</a>
+<li><a href="#_multi_machine_test_setup">62.1. Multi-machine test setup</a>
 <ul class="sectlevel3">
-<li><a href="#_what_os_autoinst_setup_multi_machine_does">61.1.1. What os-autoinst-setup-multi-machine does</a>
+<li><a href="#_what_os_autoinst_setup_multi_machine_does">62.1.1. What os-autoinst-setup-multi-machine does</a>
 <ul class="sectlevel4">
 <li><a href="#_set_up_open_vswitch">Set up Open vSwitch</a></li>
 <li><a href="#_configure_virtual_interfaces">Configure virtual interfaces</a></li>
 <li><a href="#_configure_nat_with_firewalld">Configure NAT with firewalld</a></li>
 </ul>
 </li>
-<li><a href="#_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine">61.1.2. What is left to do after running os-autoinst-setup-multi-machine</a>
+<li><a href="#_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine">62.1.2. What is left to do after running os-autoinst-setup-multi-machine</a>
 <ul class="sectlevel4">
 <li><a href="#_gre_tunnels">GRE tunnels</a></li>
 <li><a href="#_configure_openqa_workers">Configure openQA workers</a></li>
@@ -1060,195 +1061,195 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
-<li><a href="#_verify_the_setup">61.2. Verify the setup</a>
+<li><a href="#_verify_the_setup">62.2. Verify the setup</a>
 <ul class="sectlevel3">
-<li><a href="#_start_test_vms_manually">61.2.1. Start test VMs manually</a></li>
+<li><a href="#_start_test_vms_manually">62.2.1. Start test VMs manually</a></li>
 </ul>
 </li>
-<li><a href="#_debugging_open_vswitch_configuration">61.3. Debugging Open vSwitch Configuration</a></li>
-<li><a href="#_debugging_gre_tunnels_and_mtu_sizes">61.4. Debugging GRE tunnels and MTU sizes</a>
+<li><a href="#_debugging_open_vswitch_configuration">62.3. Debugging Open vSwitch Configuration</a></li>
+<li><a href="#_debugging_gre_tunnels_and_mtu_sizes">62.4. Debugging GRE tunnels and MTU sizes</a>
 <ul class="sectlevel3">
-<li><a href="#_initial_setup_for_all_experiments">61.4.1. Initial setup for all experiments</a></li>
-<li><a href="#_simple_scenario">61.4.2. Simple scenario</a></li>
-<li><a href="#_scenario_with_openvswitch">61.4.3. Scenario with openvswitch</a></li>
-<li><a href="#_gre_tunnel_made_in_openvswitch">61.4.4. GRE tunnel made in openvswitch</a></li>
+<li><a href="#_initial_setup_for_all_experiments">62.4.1. Initial setup for all experiments</a></li>
+<li><a href="#_simple_scenario">62.4.2. Simple scenario</a></li>
+<li><a href="#_scenario_with_openvswitch">62.4.3. Scenario with openvswitch</a></li>
+<li><a href="#_gre_tunnel_made_in_openvswitch">62.4.4. GRE tunnel made in openvswitch</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#_vde_based_network">62. VDE Based Network</a>
+<li><a href="#_vde_based_network">63. VDE Based Network</a>
 <ul class="sectlevel2">
-<li><a href="#_basic_single_machine_tests">62.1. Basic, Single Machine Tests</a></li>
+<li><a href="#_basic_single_machine_tests">63.1. Basic, Single Machine Tests</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li><a href="#contributing">openQA developer guide</a>
 <ul class="sectlevel1">
-<li><a href="#_introduction_6">63. Introduction</a></li>
-<li><a href="#_development_guidelines">64. Development guidelines</a>
+<li><a href="#_introduction_6">64. Introduction</a></li>
+<li><a href="#_development_guidelines">65. Development guidelines</a>
 <ul class="sectlevel2">
-<li><a href="#repo-urls">64.1. Repository URLs</a></li>
-<li><a href="#_rules_for_commits">64.2. Rules for commits</a></li>
-<li><a href="#_code_style_suggestions">64.3. Code style suggestions</a></li>
+<li><a href="#repo-urls">65.1. Repository URLs</a></li>
+<li><a href="#_rules_for_commits">65.2. Rules for commits</a></li>
+<li><a href="#_code_style_suggestions">65.3. Code style suggestions</a></li>
 </ul>
 </li>
-<li><a href="#_getting_involved_into_development">65. Getting involved into development</a></li>
-<li><a href="#_technologies">66. Technologies</a></li>
-<li><a href="#_folder_structure">67. Folder structure</a></li>
-<li><a href="#dependencies">68. Dependencies</a>
+<li><a href="#_getting_involved_into_development">66. Getting involved into development</a></li>
+<li><a href="#_technologies">67. Technologies</a></li>
+<li><a href="#_folder_structure">68. Folder structure</a></li>
+<li><a href="#dependencies">69. Dependencies</a>
 <ul class="sectlevel2">
-<li><a href="#runtime-dependencies">68.1. Runtime Dependencies</a></li>
-<li><a href="#development-dependencies">68.2. Development Dependencies</a></li>
+<li><a href="#runtime-dependencies">69.1. Runtime Dependencies</a></li>
+<li><a href="#development-dependencies">69.2. Development Dependencies</a></li>
 </ul>
 </li>
-<li><a href="#development-setup">69. Development setup</a>
+<li><a href="#development-setup">70. Development setup</a>
 <ul class="sectlevel2">
-<li><a href="#testing">69.1. Conducting tests</a></li>
-<li><a href="#customize_base_directory">69.2. Customize base directory</a></li>
-<li><a href="#_customize_configuration_directory">69.3. Customize configuration directory</a></li>
-<li><a href="#setup-postgresql">69.4. Setting up the PostgreSQL database</a>
+<li><a href="#testing">70.1. Conducting tests</a></li>
+<li><a href="#customize_base_directory">70.2. Customize base directory</a></li>
+<li><a href="#_customize_configuration_directory">70.3. Customize configuration directory</a></li>
+<li><a href="#setup-postgresql">70.4. Setting up the PostgreSQL database</a>
 <ul class="sectlevel3">
-<li><a href="#_importing_production_data">69.4.1. Importing production data</a></li>
+<li><a href="#_importing_production_data">70.4.1. Importing production data</a></li>
 </ul>
 </li>
-<li><a href="#_manual_daemon_setup">69.5. Manual daemon setup</a>
+<li><a href="#_manual_daemon_setup">70.5. Manual daemon setup</a>
 <ul class="sectlevel3">
-<li><a href="#_further_tips">69.5.1. Further tips</a></li>
+<li><a href="#_further_tips">70.5.1. Further tips</a></li>
 </ul>
 </li>
-<li><a href="#quick-container-setup">69.6. Quick container development setup</a>
+<li><a href="#quick-container-setup">70.6. Quick container development setup</a>
 <ul class="sectlevel3">
-<li><a href="#_requirements">69.6.1. Requirements</a></li>
-<li><a href="#_intro">69.6.2. Intro</a></li>
-<li><a href="#_environment_variables">69.6.3. Environment Variables</a></li>
-<li><a href="#_postgres_container">69.6.4. Postgres Container</a></li>
-<li><a href="#_distrobox">69.6.5. Distrobox</a></li>
-<li><a href="#_git">69.6.6. Git</a></li>
-<li><a href="#_config_files">69.6.7. Config Files</a></li>
-<li><a href="#_build_openqa">69.6.8. Build openQA</a></li>
-<li><a href="#_run_openqa">69.6.9. Run openQA</a></li>
+<li><a href="#_requirements">70.6.1. Requirements</a></li>
+<li><a href="#_intro">70.6.2. Intro</a></li>
+<li><a href="#_environment_variables">70.6.3. Environment Variables</a></li>
+<li><a href="#_postgres_container">70.6.4. Postgres Container</a></li>
+<li><a href="#_distrobox">70.6.5. Distrobox</a></li>
+<li><a href="#_git">70.6.6. Git</a></li>
+<li><a href="#_config_files">70.6.7. Config Files</a></li>
+<li><a href="#_build_openqa">70.6.8. Build openQA</a></li>
+<li><a href="#_run_openqa">70.6.9. Run openQA</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#dependency-handling">70. Handling of dependencies</a>
+<li><a href="#dependency-handling">71. Handling of dependencies</a>
 <ul class="sectlevel2">
-<li><a href="#_javascript_and_css">70.1. JavaScript and CSS</a></li>
-<li><a href="#_perl_and_other_packages">70.2. Perl and other packages</a></li>
-<li><a href="#_remarks_regarding_ci">70.3. Remarks regarding CI</a></li>
+<li><a href="#_javascript_and_css">71.1. JavaScript and CSS</a></li>
+<li><a href="#_perl_and_other_packages">71.2. Perl and other packages</a></li>
+<li><a href="#_remarks_regarding_ci">71.3. Remarks regarding CI</a></li>
 </ul>
 </li>
-<li><a href="#_managing_the_database">71. Managing the database</a>
+<li><a href="#_managing_the_database">72. Managing the database</a>
 <ul class="sectlevel2">
-<li><a href="#_when_is_it_required_to_update_the_database_schema">71.1. When is it required to update the database schema?</a></li>
-<li><a href="#_how_to_update_the_database_schema">71.2. How to update the database schema</a></li>
-<li><a href="#_how_to_add_fixtures_to_the_database">71.3. How to add fixtures to the database</a></li>
+<li><a href="#_when_is_it_required_to_update_the_database_schema">72.1. When is it required to update the database schema?</a></li>
+<li><a href="#_how_to_update_the_database_schema">72.2. How to update the database schema</a></li>
+<li><a href="#_how_to_add_fixtures_to_the_database">72.3. How to add fixtures to the database</a></li>
 </ul>
 </li>
-<li><a href="#_adding_new_authentication_module">72. Adding new authentication module</a></li>
-<li><a href="#_running_tests_of_openqa_itself">73. Running tests of openQA itself</a>
+<li><a href="#_adding_new_authentication_module">73. Adding new authentication module</a></li>
+<li><a href="#_running_tests_of_openqa_itself">74. Running tests of openQA itself</a>
 <ul class="sectlevel2">
-<li><a href="#_run_tests_without_container">73.1. Run tests without container</a></li>
-<li><a href="#run-tests-in-container">73.2. Run tests within a container</a>
+<li><a href="#_run_tests_without_container">74.1. Run tests without container</a></li>
+<li><a href="#run-tests-in-container">74.2. Run tests within a container</a>
 <ul class="sectlevel3">
-<li><a href="#_tips">73.2.1. Tips</a></li>
+<li><a href="#_tips">74.2.1. Tips</a></li>
 </ul>
 </li>
-<li><a href="#_logging_behavior">73.3. Logging behavior</a></li>
-<li><a href="#_test_runtime_limits">73.4. Test runtime limits</a></li>
+<li><a href="#_logging_behavior">74.3. Logging behavior</a></li>
+<li><a href="#_test_runtime_limits">74.4. Test runtime limits</a></li>
 </ul>
 </li>
-<li><a href="#circleci-workflow">74. CircleCI workflow</a>
+<li><a href="#circleci-workflow">75. CircleCI workflow</a>
 <ul class="sectlevel2">
-<li><a href="#_dependency_artefacts">74.1. Dependency artefacts</a></li>
-<li><a href="#_managing_and_troubleshooting_dependencies">74.2. Managing and troubleshooting dependencies</a></li>
-<li><a href="#circleci-local-container">74.3. Run tests locally using a container</a></li>
-<li><a href="#_run_tests_using_the_circleci_tool">74.4. Run tests using the circleci tool</a></li>
-<li><a href="#_changing_config_cnf">74.5. Changing config.cnf</a></li>
+<li><a href="#_dependency_artefacts">75.1. Dependency artefacts</a></li>
+<li><a href="#_managing_and_troubleshooting_dependencies">75.2. Managing and troubleshooting dependencies</a></li>
+<li><a href="#circleci-local-container">75.3. Run tests locally using a container</a></li>
+<li><a href="#_run_tests_using_the_circleci_tool">75.4. Run tests using the circleci tool</a></li>
+<li><a href="#_changing_config_cnf">75.5. Changing config.cnf</a></li>
 </ul>
 </li>
-<li><a href="#_building_plugins">75. Building plugins</a></li>
-<li><a href="#_checking_for_javascript_problems">76. Checking for JavaScript problems</a></li>
-<li><a href="#_profiling_the_web_ui">77. Profiling the web UI</a>
+<li><a href="#_building_plugins">76. Building plugins</a></li>
+<li><a href="#_checking_for_javascript_problems">77. Checking for JavaScript problems</a></li>
+<li><a href="#_profiling_the_web_ui">78. Profiling the web UI</a>
 <ul class="sectlevel2">
-<li><a href="#_note">77.1. Note</a></li>
+<li><a href="#_note">78.1. Note</a></li>
 </ul>
 </li>
-<li><a href="#_making_documentation_changes">78. Making documentation changes</a></li>
+<li><a href="#_making_documentation_changes">79. Making documentation changes</a></li>
 </ul>
 </li>
 <li><a href="#branding">openQA branding</a>
 <ul class="sectlevel1">
-<li><a href="#_web_ui_template">79. Web UI template</a></li>
+<li><a href="#_web_ui_template">80. Web UI template</a></li>
 </ul>
 </li>
 <li><a href="#containerizedsetup">Containerized setup</a>
 <ul class="sectlevel1">
-<li><a href="#_get_container_images">80. Get container images</a>
+<li><a href="#_get_container_images">81. Get container images</a>
 <ul class="sectlevel2">
-<li><a href="#_download_fedora_based_images_from_the_docker_hub">80.1. Download Fedora-based images from the Docker Hub</a></li>
-<li><a href="#_build_opensuse_based_images_locally">80.2. Build openSUSE-based images locally</a></li>
+<li><a href="#_download_fedora_based_images_from_the_docker_hub">81.1. Download Fedora-based images from the Docker Hub</a></li>
+<li><a href="#_build_opensuse_based_images_locally">81.2. Build openSUSE-based images locally</a></li>
 </ul>
 </li>
-<li><a href="#_setup_with_fedora_based_images">81. Setup with Fedora-based images</a>
+<li><a href="#_setup_with_fedora_based_images">82. Setup with Fedora-based images</a>
 <ul class="sectlevel2">
-<li><a href="#_data_storage_and_directory_structure">81.1. Data storage and directory structure</a></li>
-<li><a href="#_update_firewall_rules">81.2. Update firewall rules</a></li>
-<li><a href="#_run_the_data_and_web_ui_containers">81.3. Run the data and web UI containers</a>
+<li><a href="#_data_storage_and_directory_structure">82.1. Data storage and directory structure</a></li>
+<li><a href="#_update_firewall_rules">82.2. Update firewall rules</a></li>
+<li><a href="#_run_the_data_and_web_ui_containers">82.3. Run the data and web UI containers</a>
 <ul class="sectlevel3">
-<li><a href="#_generate_and_configure_api_credentials">81.3.1. Generate and configure API credentials</a></li>
+<li><a href="#_generate_and_configure_api_credentials">82.3.1. Generate and configure API credentials</a></li>
 </ul>
 </li>
-<li><a href="#_run_the_worker_container">81.4. Run the worker container</a></li>
-<li><a href="#_enable_services">81.5. Enable services</a></li>
-<li><a href="#_get_tests_isos_and_create_disks">81.6. Get tests, ISOs and create disks</a></li>
+<li><a href="#_run_the_worker_container">82.4. Run the worker container</a></li>
+<li><a href="#_enable_services">82.5. Enable services</a></li>
+<li><a href="#_get_tests_isos_and_create_disks">82.6. Get tests, ISOs and create disks</a></li>
 </ul>
 </li>
-<li><a href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">82. Setup openQA with openSUSE-based images and docker-compose</a>
+<li><a href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">83. Setup openQA with openSUSE-based images and docker-compose</a>
 <ul class="sectlevel2">
-<li><a href="#_configuration_2">82.1. Configuration</a></li>
-<li><a href="#_build_images">82.2. Build images</a></li>
-<li><a href="#_run_the_web_ui_containers_in_ha_mode">82.3. Run the web UI containers in HA mode</a></li>
-<li><a href="#_generate_and_configure_api_credentials_2">82.4. Generate and configure API credentials</a></li>
-<li><a href="#_run_the_worker_container_2">82.5. Run the worker container</a></li>
-<li><a href="#_get_tests_isos_and_create_disks_2">82.6. Get tests, ISOs and create disks</a></li>
+<li><a href="#_configuration_2">83.1. Configuration</a></li>
+<li><a href="#_build_images">83.2. Build images</a></li>
+<li><a href="#_run_the_web_ui_containers_in_ha_mode">83.3. Run the web UI containers in HA mode</a></li>
+<li><a href="#_generate_and_configure_api_credentials_2">83.4. Generate and configure API credentials</a></li>
+<li><a href="#_run_the_worker_container_2">83.5. Run the worker container</a></li>
+<li><a href="#_get_tests_isos_and_create_disks_2">83.6. Get tests, ISOs and create disks</a></li>
 </ul>
 </li>
-<li><a href="#_running_jobs">83. Running jobs</a></li>
-<li><a href="#_further_configuration_options">84. Further configuration options</a>
+<li><a href="#_running_jobs">84. Running jobs</a></li>
+<li><a href="#_further_configuration_options">85. Further configuration options</a>
 <ul class="sectlevel2">
-<li><a href="#_change_the_openid_provider">84.1. Change the OpenID provider</a></li>
-<li><a href="#_adding_workers_on_other_hosts">84.2. Adding workers on other hosts</a></li>
-<li><a href="#_keeping_all_data_in_the_data_volume_container">84.3. Keeping all data in the Data Volume container</a></li>
-<li><a href="#_keeping_all_data_on_the_host_system">84.4. Keeping all data on the host system</a></li>
-<li><a href="#_developing_tests_with_container_setup">84.5. Developing tests with container setup</a></li>
+<li><a href="#_change_the_openid_provider">85.1. Change the OpenID provider</a></li>
+<li><a href="#_adding_workers_on_other_hosts">85.2. Adding workers on other hosts</a></li>
+<li><a href="#_keeping_all_data_in_the_data_volume_container">85.3. Keeping all data in the Data Volume container</a></li>
+<li><a href="#_keeping_all_data_on_the_host_system">85.4. Keeping all data on the host system</a></li>
+<li><a href="#_developing_tests_with_container_setup">85.5. Developing tests with container setup</a></li>
 </ul>
 </li>
-<li><a href="#_introduction_7">85. Introduction</a></li>
-<li><a href="#_data_we_collect">86. Data We Collect</a>
+<li><a href="#_introduction_7">86. Introduction</a></li>
+<li><a href="#_data_we_collect">87. Data We Collect</a>
 <ul class="sectlevel2">
-<li><a href="#_account_information">86.1. Account Information</a></li>
-<li><a href="#_authentication_data">86.2. Authentication Data</a></li>
-<li><a href="#_activity_data">86.3. Activity Data</a></li>
+<li><a href="#_account_information">87.1. Account Information</a></li>
+<li><a href="#_authentication_data">87.2. Authentication Data</a></li>
+<li><a href="#_activity_data">87.3. Activity Data</a></li>
 </ul>
 </li>
-<li><a href="#_how_we_use_your_data">87. How We Use Your Data</a></li>
-<li><a href="#_data_protection">88. Data Protection</a></li>
-<li><a href="#_data_sharing">89. Data Sharing</a></li>
-<li><a href="#_user_rights">90. User Rights</a>
+<li><a href="#_how_we_use_your_data">88. How We Use Your Data</a></li>
+<li><a href="#_data_protection">89. Data Protection</a></li>
+<li><a href="#_data_sharing">90. Data Sharing</a></li>
+<li><a href="#_user_rights">91. User Rights</a>
 <ul class="sectlevel2">
-<li><a href="#_access">90.1. Access</a></li>
-<li><a href="#_correction">90.2. Correction</a></li>
-<li><a href="#_deletion">90.3. Deletion</a></li>
-<li><a href="#_data_portability">90.4. Data Portability</a></li>
-<li><a href="#_contact">90.5. Contact</a></li>
+<li><a href="#_access">91.1. Access</a></li>
+<li><a href="#_correction">91.2. Correction</a></li>
+<li><a href="#_deletion">91.3. Deletion</a></li>
+<li><a href="#_data_portability">91.4. Data Portability</a></li>
+<li><a href="#_contact">91.5. Contact</a></li>
 </ul>
 </li>
-<li><a href="#_cookies_and_tracking">91. Cookies and Tracking</a></li>
-<li><a href="#_policy_changes">92. Policy Changes</a></li>
-<li><a href="#_effective_date">93. Effective Date</a></li>
-<li><a href="#_contact_information">94. Contact Information</a></li>
+<li><a href="#_cookies_and_tracking">92. Cookies and Tracking</a></li>
+<li><a href="#_policy_changes">93. Policy Changes</a></li>
+<li><a href="#_effective_date">94. Effective Date</a></li>
+<li><a href="#_contact_information">95. Contact Information</a></li>
 </ul>
 </li>
 </ul>
@@ -3395,8 +3396,9 @@ to an AMQP message bus.
 The messages consist of a topic and a body.
 The body contains json encoded info about the event.
 See <a href="https://github.com/openSUSE/suse_msg/blob/master/amqp_infra.md">amqp_infra.md</a>
-for more info about the server and the message topic format.
-There you will find instructions how to configure the AMQP server as well.</p>
+for more info about the server and the message topic format or take a look at
+<a href="#amqp_events">Consuming AMQP events from openQA</a> to find
+detailed instructions how to configure the AMQP server.</p>
 </div>
 <div class="paragraph">
 <p>To let openQA send messages to an AMQP message bus,
@@ -4816,10 +4818,10 @@ of components as well as the configuration of an installed instance.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_using_job_templates_to_automate_jobs_creation"><a class="anchor" href="#_using_job_templates_to_automate_jobs_creation"></a><a class="link" href="#_using_job_templates_to_automate_jobs_creation">28. Using job templates to automate jobs creation</a></h2>
+<h2 id="job_templates"><a class="anchor" href="#job_templates"></a><a class="link" href="#job_templates">28. Using job templates to automate jobs creation</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="job_templates"><a class="anchor" href="#job_templates"></a><a class="link" href="#job_templates">28.1. The problem</a></h3>
+<h3 id="_the_problem"><a class="anchor" href="#_the_problem"></a><a class="link" href="#_the_problem">28.1. The problem</a></h3>
 <div class="paragraph">
 <p>When testing an operating system, especially when doing continuous testing,
 there is always a certain combination of jobs, each one with its own
@@ -7404,7 +7406,94 @@ for example for the asset cleanup:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_cli_interface"><a class="anchor" href="#_cli_interface"></a><a class="link" href="#_cli_interface">34. CLI interface</a></h2>
+<h2 id="amqp_events"><a class="anchor" href="#amqp_events"></a><a class="link" href="#amqp_events">34. Consuming AMQP events from openQA</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The message topic follows the format <code>SCOPE.APPLICATION.OBJECT.ACTION</code>, for
+example <code>opensuse.openqa.job.done</code> or <code>opensuse.openqa.comment.create</code>.
+The <code>topic_prefix</code> setting controls the <code>SCOPE</code> part; if left empty the topic
+starts with <code>openqa.</code> directly.
+Consumers can use <code><mark></code> to match any number of words or <code>*</code> to match exactly one
+word. <code>opensuse.openqa.</mark></code> subscribes to all openQA events, for instance.</p>
+</div>
+<div class="paragraph">
+<p>Here are the events triggered and published by openQA:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>openqa.job.create</code> when a job is created</p>
+</li>
+<li>
+<p><code>openqa.job.delete</code> when a job is deleted</p>
+</li>
+<li>
+<p><code>openqa.job.cancel</code> when a job is cancelled</p>
+</li>
+<li>
+<p><code>openqa.job.restart</code> when a job is restarted or duplicated</p>
+</li>
+<li>
+<p><code>openqa.job.update_result</code> when a job result is updated</p>
+</li>
+<li>
+<p><code>openqa.job.done</code> when a job finishes</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Job event bodies include the job settings (e.g. <code>BUILD</code>, <code>TEST</code>, <code>ARCH</code>,
+<code>MACHINE</code>, <code>FLAVOR</code>, asset fields like <code>ISO</code> or <code>HDD_1</code>) plus <code>id</code>, <code>group_id</code>,
+and <code>remaining</code> (number of pending jobs for the same build). Finished jobs
+additionally include <code>result</code>, <code>reason</code>, <code>newbuild</code>, <code>failedmodules</code>, <code>bugref</code>,
+and <code>bugurl</code> (only present when a bug reference exists).</p>
+</div>
+<div class="paragraph">
+<p>Example of a <code>*.openqa.job.done</code> message body (at the time of writing):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span><span class="tok-nt">&quot;ARCH&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;x86_64&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;BUILD&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;N.487.1&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;FLAVOR&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;Staging-DVD&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;ISO&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;openSUSE-Staging:N-Tumbleweed-DVD-x86_64-Build487.1-Media.iso&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;MACHINE&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;64bit&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;TEST&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;autoyast_mini&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;bugref&quot;</span><span class="tok-p">:</span><span class="tok-kc">null</span><span class="tok-p">,</span><span class="tok-nt">&quot;failedmodules&quot;</span><span class="tok-p">:[],</span><span class="tok-nt">&quot;group_id&quot;</span><span class="tok-p">:</span><span class="tok-mi">2</span><span class="tok-p">,</span><span class="tok-nt">&quot;id&quot;</span><span class="tok-p">:</span><span class="tok-mi">5735489</span><span class="tok-p">,</span><span class="tok-nt">&quot;newbuild&quot;</span><span class="tok-p">:</span><span class="tok-kc">null</span><span class="tok-p">,</span><span class="tok-nt">&quot;reason&quot;</span><span class="tok-p">:</span><span class="tok-kc">null</span><span class="tok-p">,</span><span class="tok-nt">&quot;remaining&quot;</span><span class="tok-p">:</span><span class="tok-mi">13</span><span class="tok-p">,</span><span class="tok-nt">&quot;result&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;passed&quot;</span><span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Event for comments are also published:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>openqa.comment.create</code></p>
+</li>
+<li>
+<p><code>openqa.comment.update</code></p>
+</li>
+<li>
+<p><code>openqa.comment.delete</code></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Comment event bodies include: <code>id</code>, <code>job_id</code>, <code>group_id</code>, <code>parent_group_id</code>,
+<code>user</code>, <code>text</code>, <code>created</code>, <code>updated</code>.</p>
+</div>
+<div class="paragraph">
+<p>Example <code>*.openqa.comment.create</code> message body:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span><span class="tok-nt">&quot;created&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;2026-03-11T14:35:23Z&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;group_id&quot;</span><span class="tok-p">:</span><span class="tok-kc">null</span><span class="tok-p">,</span><span class="tok-nt">&quot;id&quot;</span><span class="tok-p">:</span><span class="tok-mi">865726</span><span class="tok-p">,</span><span class="tok-nt">&quot;job_id&quot;</span><span class="tok-p">:</span><span class="tok-mi">5735489</span><span class="tok-p">,</span><span class="tok-nt">&quot;parent_group_id&quot;</span><span class="tok-p">:</span><span class="tok-kc">null</span><span class="tok-p">,</span><span class="tok-nt">&quot;text&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;amqp sent&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;updated&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;2026-03-11T14:35:23Z&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;user&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;demo&quot;</span><span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A real-world example of an AMQP consumer built on top of openQA events is
+<a href="https://github.com/dirkmueller/slacky">slacky</a>, a bot that monitors CI/build
+pipelines and posts failure notifications to Slack. It subscribes to openQA job
+events and tracks job results per build and job group.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cli_interface"><a class="anchor" href="#_cli_interface"></a><a class="link" href="#_cli_interface">35. CLI interface</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Beside the <code>daemon</code> argument to run the actual web service the openQA
@@ -7422,7 +7511,7 @@ other services like the live view handler.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_suggested_workflow_for_test_review"><a class="anchor" href="#_suggested_workflow_for_test_review"></a><a class="link" href="#_suggested_workflow_for_test_review">35. Suggested workflow for test review</a></h2>
+<h2 id="_suggested_workflow_for_test_review"><a class="anchor" href="#_suggested_workflow_for_test_review"></a><a class="link" href="#_suggested_workflow_for_test_review">36. Suggested workflow for test review</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>If an openQA instance is only used by one or few individuals often no strict
@@ -7493,7 +7582,7 @@ edit window.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_where_to_now_2"><a class="anchor" href="#_where_to_now_2"></a><a class="link" href="#_where_to_now_2">36. Where to now?</a></h2>
+<h2 id="_where_to_now_2"><a class="anchor" href="#_where_to_now_2"></a><a class="link" href="#_where_to_now_2">37. Where to now?</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For test developers it is recommended to continue with the
@@ -7503,7 +7592,7 @@ edit window.</p>
 </div>
 <h1 id="writingtests" class="sect0"><a class="anchor" href="#writingtests"></a><a class="link" href="#writingtests">openQA test developer guide</a></h1>
 <div class="sect1">
-<h2 id="_introduction_4"><a class="anchor" href="#_introduction_4"></a><a class="link" href="#_introduction_4">37. Introduction</a></h2>
+<h2 id="_introduction_4"><a class="anchor" href="#_introduction_4"></a><a class="link" href="#_introduction_4">38. Introduction</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA is an automated test tool that makes it possible to test the whole
@@ -7521,7 +7610,7 @@ familiar with openQA and has already read the Starter Guide, available at the
 </div>
 </div>
 <div class="sect1">
-<h2 id="_basic"><a class="anchor" href="#_basic"></a><a class="link" href="#_basic">38. Basic</a></h2>
+<h2 id="_basic"><a class="anchor" href="#_basic"></a><a class="link" href="#_basic">39. Basic</a></h2>
 <div class="sectionbody">
 <div id="basic" class="paragraph">
 <p>This section explains the basic layout of an openQA test and the API available.
@@ -7537,7 +7626,7 @@ document assumes that the reader is already familiar with Perl, Python or Lua.</
 </div>
 </div>
 <div class="sect1">
-<h2 id="_test_api"><a class="anchor" href="#_test_api"></a><a class="link" href="#_test_api">39. Test API</a></h2>
+<h2 id="_test_api"><a class="anchor" href="#_test_api"></a><a class="link" href="#_test_api">40. Test API</a></h2>
 <div class="sectionbody">
 <div id="api" class="paragraph">
 <p><a href="https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm">os-autoinst</a> provides the API for the test using the os-autoinst backend. Take a
@@ -7548,10 +7637,10 @@ DSL, because in some contexts it can look like a domain specific language.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_how_to_write_tests"><a class="anchor" href="#_how_to_write_tests"></a><a class="link" href="#_how_to_write_tests">40. How to write tests</a></h2>
+<h2 id="_how_to_write_tests"><a class="anchor" href="#_how_to_write_tests"></a><a class="link" href="#_how_to_write_tests">41. How to write tests</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_test_module_interface"><a class="anchor" href="#_test_module_interface"></a><a class="link" href="#_test_module_interface">40.1. Test module interface</a></h3>
+<h3 id="_test_module_interface"><a class="anchor" href="#_test_module_interface"></a><a class="link" href="#_test_module_interface">41.1. Test module interface</a></h3>
 <div class="paragraph">
 <p>An openQA test needs to implement at least the <code>run</code> subroutine containing the
 actual test code and the test needs to be loaded in the distribution&#8217;s
@@ -7627,7 +7716,7 @@ that the subroutine marked with <code>*1</code> are optional.</em></p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_run"><a class="anchor" href="#_run"></a><a class="link" href="#_run">40.1.1. <code>run</code></a></h4>
+<h4 id="_run"><a class="anchor" href="#_run"></a><a class="link" href="#_run">41.1.1. <code>run</code></a></h4>
 <div class="paragraph">
 <p>Defines the actual steps to be performed during the module execution.</p>
 </div>
@@ -7655,7 +7744,7 @@ that the subroutine marked with <code>*1</code> are optional.</em></p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_test_flags"><a class="anchor" href="#_test_flags"></a><a class="link" href="#_test_flags">40.1.2. <code>test_flags</code></a></h4>
+<h4 id="_test_flags"><a class="anchor" href="#_test_flags"></a><a class="link" href="#_test_flags">41.1.2. <code>test_flags</code></a></h4>
 <div class="paragraph">
 <p>Specifies what should happen when test execution of the current test module is
 finished depending on the result.</p>
@@ -7716,7 +7805,7 @@ behavior for all backends even though it is not possible to roll back.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_pre_run_hook"><a class="anchor" href="#_pre_run_hook"></a><a class="link" href="#_pre_run_hook">40.1.3. <code>pre_run_hook</code></a></h4>
+<h4 id="_pre_run_hook"><a class="anchor" href="#_pre_run_hook"></a><a class="link" href="#_pre_run_hook">41.1.3. <code>pre_run_hook</code></a></h4>
 <div class="paragraph">
 <p>It is called before the <code>run</code> function - mainly useful for a whole group of tests.
 It is useful to setup the start point of the test.</p>
@@ -7734,7 +7823,7 @@ It is useful to setup the start point of the test.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_post_fail_hook"><a class="anchor" href="#_post_fail_hook"></a><a class="link" href="#_post_fail_hook">40.1.4. <code>post_fail_hook</code></a></h4>
+<h4 id="_post_fail_hook"><a class="anchor" href="#_post_fail_hook"></a><a class="link" href="#_post_fail_hook">41.1.4. <code>post_fail_hook</code></a></h4>
 <div class="paragraph">
 <p>It is called after <code>run</code> failed. It is useful to upload log files or to
 determine the state of the machine.</p>
@@ -7752,7 +7841,7 @@ determine the state of the machine.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_post_run_hook"><a class="anchor" href="#_post_run_hook"></a><a class="link" href="#_post_run_hook">40.1.5. <code>post_run_hook</code></a></h4>
+<h4 id="_post_run_hook"><a class="anchor" href="#_post_run_hook"></a><a class="link" href="#_post_run_hook">41.1.5. <code>post_run_hook</code></a></h4>
 <div class="paragraph">
 <p>It is called after <code>run</code> completes, regardless of its return value,
 but only if the <code>run</code> subroutine completes without any exceptions.</p>
@@ -7772,7 +7861,7 @@ but only if the <code>run</code> subroutine completes without any exceptions.</p
 </div>
 </div>
 <div class="sect2">
-<h3 id="_notes_on_the_python_api"><a class="anchor" href="#_notes_on_the_python_api"></a><a class="link" href="#_notes_on_the_python_api">40.2. Notes on the Python API</a></h3>
+<h3 id="_notes_on_the_python_api"><a class="anchor" href="#_notes_on_the_python_api"></a><a class="link" href="#_notes_on_the_python_api">41.2. Notes on the Python API</a></h3>
 <div id="notes-python-api" class="paragraph">
 <p>The Python integration that openQA offers through <code>Inline::Python</code> also allows
 the test modules to import other Perl modules with the usage of the <code>perl</code>
@@ -7833,7 +7922,7 @@ references to complex Perl objects to Python.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_notes_on_the_lua_api"><a class="anchor" href="#_notes_on_the_lua_api"></a><a class="link" href="#_notes_on_the_lua_api">40.3. Notes on the Lua API</a></h3>
+<h3 id="_notes_on_the_lua_api"><a class="anchor" href="#_notes_on_the_lua_api"></a><a class="link" href="#_notes_on_the_lua_api">41.3. Notes on the Lua API</a></h3>
 <div id="notes-lua-api" class="paragraph">
 <p>The Lua integration that openQA offers through <code>Inline::Lua</code> also allows
 the test modules to import other Perl modules via the <code>use()</code> function
@@ -7925,13 +8014,13 @@ passed as positional arguments of alternating key and value entries.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example_perl_test_modules"><a class="anchor" href="#_example_perl_test_modules"></a><a class="link" href="#_example_perl_test_modules">40.4. Example Perl test modules</a></h3>
+<h3 id="_example_perl_test_modules"><a class="anchor" href="#_example_perl_test_modules"></a><a class="link" href="#_example_perl_test_modules">41.4. Example Perl test modules</a></h3>
 <div id="testmodule_perl_examples" class="paragraph">
 <p>The following examples are short complete test modules written in Perl
 implementing the interface described above.</p>
 </div>
 <div class="sect3">
-<h4 id="_boot_to_desktop"><a class="anchor" href="#_boot_to_desktop"></a><a class="link" href="#_boot_to_desktop">40.4.1. Boot to desktop</a></h4>
+<h4 id="_boot_to_desktop"><a class="anchor" href="#_boot_to_desktop"></a><a class="link" href="#_boot_to_desktop">41.4.1. Boot to desktop</a></h4>
 <div id="testmodule_perl_boot" class="paragraph">
 <div class="title">Boots into desktop when pressing enter at the boot loader screen.</div>
 <p>The following example is a basic test that assumes some live image that boots
@@ -7962,7 +8051,7 @@ into the desktop when pressing enter at the boot loader:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_install_software_via_zypper"><a class="anchor" href="#_install_software_via_zypper"></a><a class="link" href="#_install_software_via_zypper">40.4.2. Install software via <code>zypper</code></a></h4>
+<h4 id="_install_software_via_zypper"><a class="anchor" href="#_install_software_via_zypper"></a><a class="link" href="#_install_software_via_zypper">41.4.2. Install software via <code>zypper</code></a></h4>
 <div id="testmodule_perl_zypper" class="listingblock">
 <div class="title">Example: Console test that installs software from remote repository via zypper command</div>
 <div class="content">
@@ -7989,7 +8078,7 @@ into the desktop when pressing enter at the boot loader:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_sample_x11_test"><a class="anchor" href="#_sample_x11_test"></a><a class="link" href="#_sample_x11_test">40.4.3. Sample X11 Test</a></h4>
+<h4 id="_sample_x11_test"><a class="anchor" href="#_sample_x11_test"></a><a class="link" href="#_sample_x11_test">41.4.3. Sample X11 Test</a></h4>
 <div class="listingblock">
 <div class="title">Example: Typical X11 test testing kate</div>
 <div class="content">
@@ -8025,13 +8114,13 @@ into the desktop when pressing enter at the boot loader:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example_python_test_modules"><a class="anchor" href="#_example_python_test_modules"></a><a class="link" href="#_example_python_test_modules">40.5. Example Python test modules</a></h3>
+<h3 id="_example_python_test_modules"><a class="anchor" href="#_example_python_test_modules"></a><a class="link" href="#_example_python_test_modules">41.5. Example Python test modules</a></h3>
 <div id="testmodule_python_examples" class="paragraph">
 <p>The following examples are short complete test modules written in Python
 implementing the interface described above.</p>
 </div>
 <div class="sect3">
-<h4 id="_openqa_web_ui_sample_test"><a class="anchor" href="#_openqa_web_ui_sample_test"></a><a class="link" href="#_openqa_web_ui_sample_test">40.5.1. openQA web UI sample test</a></h4>
+<h4 id="_openqa_web_ui_sample_test"><a class="anchor" href="#_openqa_web_ui_sample_test"></a><a class="link" href="#_openqa_web_ui_sample_test">41.5.1. openQA web UI sample test</a></h4>
 <div id="testmodule_python_webui" class="listingblock">
 <div class="title">Example: Test for the openQA web UI written in Python</div>
 <div class="content">
@@ -8067,7 +8156,7 @@ implementing the interface described above.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example_lua_test_module"><a class="anchor" href="#_example_lua_test_module"></a><a class="link" href="#_example_lua_test_module">40.6. Example Lua test module</a></h3>
+<h3 id="_example_lua_test_module"><a class="anchor" href="#_example_lua_test_module"></a><a class="link" href="#_example_lua_test_module">41.6. Example Lua test module</a></h3>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="lua"><span></span><span class="tok-nf">use</span><span class="tok-p">(</span><span class="tok-s2">&quot;testapi&quot;</span><span class="tok-p">)</span>
@@ -8094,7 +8183,7 @@ implementing the interface described above.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_variables"><a class="anchor" href="#_variables"></a><a class="link" href="#_variables">41. Variables</a></h2>
+<h2 id="_variables"><a class="anchor" href="#_variables"></a><a class="link" href="#_variables">42. Variables</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Test case behavior can be controlled via variables. Some basic variables like
@@ -8109,10 +8198,10 @@ on GitHub</a> for examples.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_advanced_test_features"><a class="anchor" href="#_advanced_test_features"></a><a class="link" href="#_advanced_test_features">42. Advanced test features</a></h2>
+<h2 id="_advanced_test_features"><a class="anchor" href="#_advanced_test_features"></a><a class="link" href="#_advanced_test_features">43. Advanced test features</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_changing_timeouts"><a class="anchor" href="#_changing_timeouts"></a><a class="link" href="#_changing_timeouts">42.1. Changing timeouts</a></h3>
+<h3 id="_changing_timeouts"><a class="anchor" href="#_changing_timeouts"></a><a class="link" href="#_changing_timeouts">43.1. Changing timeouts</a></h3>
 <div class="paragraph">
 <p>By default, tests are aborted after two hours by the worker. To change this
 limit, set the test variable <code>MAX_JOB_TIME</code> to the desired number of seconds.</p>
@@ -8135,7 +8224,7 @@ video setting.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console"><a class="anchor" href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console"></a><a class="link" href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">42.2. Capturing kernel exceptions and/or any other exceptions from the serial console</a></h3>
+<h3 id="_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console"><a class="anchor" href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console"></a><a class="link" href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">43.2. Capturing kernel exceptions and/or any other exceptions from the serial console</a></h3>
 <div class="paragraph">
 <p>Soft and hard failures can be triggered on demand by regular expressions when
 they match the serial output which is done after the test is executed. In case
@@ -8194,13 +8283,13 @@ even if test suites have failed due to different test modules.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_traceability_and_reproducibility_of_tests"><a class="anchor" href="#_traceability_and_reproducibility_of_tests"></a><a class="link" href="#_traceability_and_reproducibility_of_tests">42.3. Traceability and reproducibility of tests</a></h3>
+<h3 id="_traceability_and_reproducibility_of_tests"><a class="anchor" href="#_traceability_and_reproducibility_of_tests"></a><a class="link" href="#_traceability_and_reproducibility_of_tests">43.3. Traceability and reproducibility of tests</a></h3>
 <div class="paragraph">
 <p>openQA allows keeping track of the test environment, the version of the test
 code and needles, the test configuration and what specific system was tested.</p>
 </div>
 <div class="sect3">
-<h4 id="_general_remarks_on_tracing"><a class="anchor" href="#_general_remarks_on_tracing"></a><a class="link" href="#_general_remarks_on_tracing">42.3.1. General remarks on tracing</a></h4>
+<h4 id="_general_remarks_on_tracing"><a class="anchor" href="#_general_remarks_on_tracing"></a><a class="link" href="#_general_remarks_on_tracing">43.3.1. General remarks on tracing</a></h4>
 <div class="paragraph">
 <p>The test configuration of a specific test run can be viewed in form of job
 settings on the test details page. Those settings contain the specific test
@@ -8235,7 +8324,7 @@ since the last good test run.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_logging_package_versions_used_for_test"><a class="anchor" href="#_logging_package_versions_used_for_test"></a><a class="link" href="#_logging_package_versions_used_for_test">42.3.2. Logging package versions used for test</a></h4>
+<h4 id="_logging_package_versions_used_for_test"><a class="anchor" href="#_logging_package_versions_used_for_test"></a><a class="link" href="#_logging_package_versions_used_for_test">43.3.2. Logging package versions used for test</a></h4>
 <div class="paragraph">
 <p>There are two sets of packages that can be included in test logs:</p>
 </div>
@@ -8278,7 +8367,7 @@ the resulting file needs to be copied/moved.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_general_remarks_on_reproducibility"><a class="anchor" href="#_general_remarks_on_reproducibility"></a><a class="link" href="#_general_remarks_on_reproducibility">42.3.3. General remarks on reproducibility</a></h4>
+<h4 id="_general_remarks_on_reproducibility"><a class="anchor" href="#_general_remarks_on_reproducibility"></a><a class="link" href="#_general_remarks_on_reproducibility">43.3.3. General remarks on reproducibility</a></h4>
 <div class="paragraph">
 <p>Clicking the restart button on a concrete test run will create a new test job
 with the same configuration. The new test will however use the latest version of
@@ -8323,7 +8412,7 @@ might be helpful in this case.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_assigning_jobs_to_workers"><a class="anchor" href="#_assigning_jobs_to_workers"></a><a class="link" href="#_assigning_jobs_to_workers">42.4. Assigning jobs to workers</a></h3>
+<h3 id="_assigning_jobs_to_workers"><a class="anchor" href="#_assigning_jobs_to_workers"></a><a class="link" href="#_assigning_jobs_to_workers">43.4. Assigning jobs to workers</a></h3>
 <div class="paragraph">
 <p>By default, any worker can get any job with the matching architecture.</p>
 </div>
@@ -8406,7 +8495,7 @@ based on company conventions:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_running_a_custom_worker_engine"><a class="anchor" href="#_running_a_custom_worker_engine"></a><a class="link" href="#_running_a_custom_worker_engine">42.5. Running a custom worker engine</a></h3>
+<h3 id="_running_a_custom_worker_engine"><a class="anchor" href="#_running_a_custom_worker_engine"></a><a class="link" href="#_running_a_custom_worker_engine">43.5. Running a custom worker engine</a></h3>
 <div class="paragraph">
 <p>By default the openQA workers run the "isotovideo" application from PATH on the
 worker host, that is in most cases
@@ -8418,7 +8507,7 @@ test variable setting
 </div>
 </div>
 <div class="sect2">
-<h3 id="_automatic_retries_of_jobs"><a class="anchor" href="#_automatic_retries_of_jobs"></a><a class="link" href="#_automatic_retries_of_jobs">42.6. Automatic retries of jobs</a></h3>
+<h3 id="_automatic_retries_of_jobs"><a class="anchor" href="#_automatic_retries_of_jobs"></a><a class="link" href="#_automatic_retries_of_jobs">43.6. Automatic retries of jobs</a></h3>
 <div class="paragraph">
 <p>You might encounter flaky openQA tests that fail sporadically. The best way to
 address flaky test code is of course to fix the test code itself. For example,
@@ -8450,7 +8539,7 @@ can be used to apply more elaborate issue detection and retriggering of tests.</
 </div>
 </div>
 <div class="sect2">
-<h3 id="_job_dependencies"><a class="anchor" href="#_job_dependencies"></a><a class="link" href="#_job_dependencies">42.7. Job dependencies</a></h3>
+<h3 id="_job_dependencies"><a class="anchor" href="#_job_dependencies"></a><a class="link" href="#_job_dependencies">43.7. Job dependencies</a></h3>
 <div class="paragraph">
 <p>There are different dependency <strong>types</strong>, most importantly <em>chained</em> and
 <em>parallel</em> dependencies.</p>
@@ -8471,7 +8560,7 @@ can be of an arbitrary type.</p>
 section).</p>
 </div>
 <div class="sect3">
-<h4 id="_declaring_dependencies"><a class="anchor" href="#_declaring_dependencies"></a><a class="link" href="#_declaring_dependencies">42.7.1. Declaring dependencies</a></h4>
+<h4 id="_declaring_dependencies"><a class="anchor" href="#_declaring_dependencies"></a><a class="link" href="#_declaring_dependencies">43.7.1. Declaring dependencies</a></h4>
 <div class="paragraph">
 <p>Dependencies are declared by adding a job setting on the child job specifying
 its parents. There is one variable for each dependency type.</p>
@@ -8602,7 +8691,7 @@ we explore ways to make it more flexible.
 </div>
 </div>
 <div class="sect3">
-<h4 id="_inter_machine_dependencies"><a class="anchor" href="#_inter_machine_dependencies"></a><a class="link" href="#_inter_machine_dependencies">42.7.2. Inter-machine dependencies</a></h4>
+<h4 id="_inter_machine_dependencies"><a class="anchor" href="#_inter_machine_dependencies"></a><a class="link" href="#_inter_machine_dependencies">43.7.2. Inter-machine dependencies</a></h4>
 <div class="paragraph">
 <p>Those dependencies make it possible to create job dependencies between tests
 which are supposed to run on different machines.</p>
@@ -8636,7 +8725,7 @@ sections to get a better understanding.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_handling_of_related_jobs_on_failure_cancellation_restart"><a class="anchor" href="#_handling_of_related_jobs_on_failure_cancellation_restart"></a><a class="link" href="#_handling_of_related_jobs_on_failure_cancellation_restart">42.7.3. Handling of related jobs on failure / cancellation / restart</a></h4>
+<h4 id="_handling_of_related_jobs_on_failure_cancellation_restart"><a class="anchor" href="#_handling_of_related_jobs_on_failure_cancellation_restart"></a><a class="link" href="#_handling_of_related_jobs_on_failure_cancellation_restart">43.7.3. Handling of related jobs on failure / cancellation / restart</a></h4>
 <div class="paragraph">
 <p>openQA tries to handle things sensibly when jobs with dependencies either fail,
 or are manually cancelled or restarted:</p>
@@ -8703,7 +8792,7 @@ needs to restart the parent job instead. Use the mentioned
 </div>
 </div>
 <div class="sect3">
-<h4 id="_handling_of_dependencies_when_cloning_jobs"><a class="anchor" href="#_handling_of_dependencies_when_cloning_jobs"></a><a class="link" href="#_handling_of_dependencies_when_cloning_jobs">42.7.4. Handling of dependencies when cloning jobs</a></h4>
+<h4 id="_handling_of_dependencies_when_cloning_jobs"><a class="anchor" href="#_handling_of_dependencies_when_cloning_jobs"></a><a class="link" href="#_handling_of_dependencies_when_cloning_jobs">43.7.4. Handling of dependencies when cloning jobs</a></h4>
 <div class="paragraph">
 <p>Be sure to have ready the <a href="#_job_dependencies">job
 dependencies</a> section to have an understanding of different dependency types
@@ -8742,7 +8831,7 @@ will be cloned but not the siblings (e.g. the other "client" tests).</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_examples"><a class="anchor" href="#_examples"></a><a class="link" href="#_examples">42.7.5. Examples</a></h4>
+<h4 id="_examples"><a class="anchor" href="#_examples"></a><a class="link" href="#_examples">43.7.5. Examples</a></h4>
 <div class="sect4">
 <h5 id="_specify_machine_explicitly"><a class="anchor" href="#_specify_machine_explicitly"></a><a class="link" href="#_specify_machine_explicitly">Specify machine explicitly</a></h5>
 <div class="paragraph">
@@ -8824,7 +8913,7 @@ machine if all test suites are placed on the same machine.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_notes_regarding_directly_chained_dependencies"><a class="anchor" href="#_notes_regarding_directly_chained_dependencies"></a><a class="link" href="#_notes_regarding_directly_chained_dependencies">42.7.6. Notes regarding directly chained dependencies</a></h4>
+<h4 id="_notes_regarding_directly_chained_dependencies"><a class="anchor" href="#_notes_regarding_directly_chained_dependencies"></a><a class="link" href="#_notes_regarding_directly_chained_dependencies">43.7.6. Notes regarding directly chained dependencies</a></h4>
 <div class="paragraph">
 <p>Having multiple jobs with <code>START_DIRECTLY_AFTER_TEST</code> pointing to the same
 parent job is possible, e.g.:</p>
@@ -8862,7 +8951,7 @@ workers and depending on the tree even be executed in parallel.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_worker_requirements"><a class="anchor" href="#_worker_requirements"></a><a class="link" href="#_worker_requirements">42.7.7. Worker requirements</a></h4>
+<h4 id="_worker_requirements"><a class="anchor" href="#_worker_requirements"></a><a class="link" href="#_worker_requirements">43.7.7. Worker requirements</a></h4>
 <div class="paragraph">
 <p><code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> dependencies require only one worker.
 <code>PARALLEL</code> dependencies on the other hand require as many free workers as jobs
@@ -8929,7 +9018,7 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 </div>
 </div>
 <div class="sect2">
-<h3 id="mm-tests"><a class="anchor" href="#mm-tests"></a><a class="link" href="#mm-tests">42.8. Writing multi-machine tests</a></h3>
+<h3 id="mm-tests"><a class="anchor" href="#mm-tests"></a><a class="link" href="#mm-tests">43.8. Writing multi-machine tests</a></h3>
 <div class="paragraph">
 <p>Scenarios requiring more than one system under test (SUT), like High
 Availability testing, are covered as multi-machine tests (MM tests) in this
@@ -8982,7 +9071,7 @@ is the responsibility of the test writer (beware deadlocks).</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_test_synchronization_and_locking_api"><a class="anchor" href="#_test_synchronization_and_locking_api"></a><a class="link" href="#_test_synchronization_and_locking_api">42.9. Test synchronization and locking API</a></h3>
+<h3 id="_test_synchronization_and_locking_api"><a class="anchor" href="#_test_synchronization_and_locking_api"></a><a class="link" href="#_test_synchronization_and_locking_api">43.9. Test synchronization and locking API</a></h3>
 <div class="paragraph">
 <p>openQA provides a locking API. To use it in your test files import the <code>lockapi</code>
 package (<em>use lockapi;</em>). It provides the following functions: <code>mutex_create</code>,
@@ -9216,7 +9305,7 @@ dies.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_support_server_based_tests"><a class="anchor" href="#_support_server_based_tests"></a><a class="link" href="#_support_server_based_tests">42.10. Support Server based tests</a></h3>
+<h3 id="_support_server_based_tests"><a class="anchor" href="#_support_server_based_tests"></a><a class="link" href="#_support_server_based_tests">43.10. Support Server based tests</a></h3>
 <div class="paragraph">
 <p>The idea is to have a dedicated "helper server" to allow advanced network based
 testing.</p>
@@ -9228,7 +9317,7 @@ needing it being the child test 'B'. This ensures that the test 'B' always have
 the support server available.</p>
 </div>
 <div class="sect3">
-<h4 id="_preparing_the_supportserver"><a class="anchor" href="#_preparing_the_supportserver"></a><a class="link" href="#_preparing_the_supportserver">42.10.1. Preparing the supportserver</a></h4>
+<h4 id="_preparing_the_supportserver"><a class="anchor" href="#_preparing_the_supportserver"></a><a class="link" href="#_preparing_the_supportserver">43.10.1. Preparing the supportserver</a></h4>
 <div class="paragraph">
 <p>The support server image is created by calling a special test, based on the
 autoyast test:</p>
@@ -9253,7 +9342,7 @@ server is run in the actual test scenario.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_using_the_supportserver"><a class="anchor" href="#_using_the_supportserver"></a><a class="link" href="#_using_the_supportserver">42.10.2. Using the supportserver</a></h4>
+<h4 id="_using_the_supportserver"><a class="anchor" href="#_using_the_supportserver"></a><a class="link" href="#_using_the_supportserver">43.10.2. Using the supportserver</a></h4>
 <div class="paragraph">
 <p>In the Test suites, the supportserver is defined by setting:</p>
 </div>
@@ -9404,7 +9493,7 @@ diff<span class="tok-w"> </span>-u<span class="tok-w"> </span>test.txt<span clas
 </div>
 </div>
 <div class="sect2">
-<h3 id="_using_text_consoles_and_the_serial_terminal"><a class="anchor" href="#_using_text_consoles_and_the_serial_terminal"></a><a class="link" href="#_using_text_consoles_and_the_serial_terminal">42.11. Using text consoles and the serial terminal</a></h3>
+<h3 id="_using_text_consoles_and_the_serial_terminal"><a class="anchor" href="#_using_text_consoles_and_the_serial_terminal"></a><a class="link" href="#_using_text_consoles_and_the_serial_terminal">43.11. Using text consoles and the serial terminal</a></h3>
 <div class="paragraph">
 <p>Typically the OS you are testing will boot into a graphical shell e.g. The
 Gnome desktop environment. This is fine if you wish to test a program with a
@@ -9501,7 +9590,7 @@ matches it against a regex. <code>type_string</code> sends a string to the SUT l
 typed in by the user over VNC.</p>
 </div>
 <div class="sect3">
-<h4 id="_using_a_serial_terminal"><a class="anchor" href="#_using_a_serial_terminal"></a><a class="link" href="#_using_a_serial_terminal">42.11.1. Using a serial terminal</a></h4>
+<h4 id="_using_a_serial_terminal"><a class="anchor" href="#_using_a_serial_terminal"></a><a class="link" href="#_using_a_serial_terminal">43.11.1. Using a serial terminal</a></h4>
 <div class="admonitionblock important">
 <table>
 <tr>
@@ -9745,7 +9834,7 @@ the test script to perform some other work while the SUT is busy.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_sending_new_lines_and_continuation_characters"><a class="anchor" href="#_sending_new_lines_and_continuation_characters"></a><a class="link" href="#_sending_new_lines_and_continuation_characters">42.11.2. Sending new lines and continuation characters</a></h4>
+<h4 id="_sending_new_lines_and_continuation_characters"><a class="anchor" href="#_sending_new_lines_and_continuation_characters"></a><a class="link" href="#_sending_new_lines_and_continuation_characters">43.11.2. Sending new lines and continuation characters</a></h4>
 <div class="paragraph">
 <p>The following command will timeout: <code>script_run("echo \"1\n2\"")</code>. The reason
 being <code>script_run</code> will call <code>wait_serial("echo \"1\n2\"")</code> to check that the
@@ -9773,7 +9862,7 @@ by comparing the input string with what <code>wait_serial</code> actually finds.
 </div>
 </div>
 <div class="sect3">
-<h4 id="_sending_signals_ctrl_c_and_ctrl_d"><a class="anchor" href="#_sending_signals_ctrl_c_and_ctrl_d"></a><a class="link" href="#_sending_signals_ctrl_c_and_ctrl_d">42.11.3. Sending signals - ctrl-c and ctrl-d</a></h4>
+<h4 id="_sending_signals_ctrl_c_and_ctrl_d"><a class="anchor" href="#_sending_signals_ctrl_c_and_ctrl_d"></a><a class="link" href="#_sending_signals_ctrl_c_and_ctrl_d">43.11.3. Sending signals - ctrl-c and ctrl-d</a></h4>
 <div class="paragraph">
 <p>On a VNC based console you simply use <code>send_key</code> like follows.</p>
 </div>
@@ -9819,7 +9908,7 @@ effect of pressing the magic SysRq key if you are lucky.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_the_virtio_serial_terminal_implementation"><a class="anchor" href="#_the_virtio_serial_terminal_implementation"></a><a class="link" href="#_the_virtio_serial_terminal_implementation">42.11.4. The virtio serial terminal implementation</a></h4>
+<h4 id="_the_virtio_serial_terminal_implementation"><a class="anchor" href="#_the_virtio_serial_terminal_implementation"></a><a class="link" href="#_the_virtio_serial_terminal_implementation">43.11.4. The virtio serial terminal implementation</a></h4>
 <div class="paragraph">
 <p>The os-autoinst package supports several types of 'consoles' of which the virtio
 serial terminal is one. The majority of code for this console is located in
@@ -9879,7 +9968,7 @@ outputting non-printable characters.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_mcp_support"><a class="anchor" href="#_mcp_support"></a><a class="link" href="#_mcp_support">42.12. MCP Support</a></h3>
+<h3 id="_mcp_support"><a class="anchor" href="#_mcp_support"></a><a class="link" href="#_mcp_support">43.12. MCP Support</a></h3>
 <div class="paragraph">
 <p>The <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> (MCP) is a standard
 that allows Large Language Models (LLMs) to interact with web services. MCP is
@@ -9925,7 +10014,7 @@ setting the <code>Authorization</code> HTTP header:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_3rd_party_mcp_clients"><a class="anchor" href="#_3rd_party_mcp_clients"></a><a class="link" href="#_3rd_party_mcp_clients">42.12.1. 3rd Party MCP Clients</a></h4>
+<h4 id="_3rd_party_mcp_clients"><a class="anchor" href="#_3rd_party_mcp_clients"></a><a class="link" href="#_3rd_party_mcp_clients">43.12.1. 3rd Party MCP Clients</a></h4>
 <div class="sect4">
 <h5 id="_gemini_cli"><a class="anchor" href="#_gemini_cli"></a><a class="link" href="#_gemini_cli">gemini-cli</a></h5>
 <div class="paragraph">
@@ -9966,10 +10055,10 @@ tools and make use of them on its own:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_test_development_tricks"><a class="anchor" href="#_test_development_tricks"></a><a class="link" href="#_test_development_tricks">43. Test Development tricks</a></h2>
+<h2 id="_test_development_tricks"><a class="anchor" href="#_test_development_tricks"></a><a class="link" href="#_test_development_tricks">44. Test Development tricks</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_trigger_new_tests_by_modifying_settings_from_existing_test_runs"><a class="anchor" href="#_trigger_new_tests_by_modifying_settings_from_existing_test_runs"></a><a class="link" href="#_trigger_new_tests_by_modifying_settings_from_existing_test_runs">43.1. Trigger new tests by modifying settings from existing test runs</a></h3>
+<h3 id="_trigger_new_tests_by_modifying_settings_from_existing_test_runs"><a class="anchor" href="#_trigger_new_tests_by_modifying_settings_from_existing_test_runs"></a><a class="link" href="#_trigger_new_tests_by_modifying_settings_from_existing_test_runs">44.1. Trigger new tests by modifying settings from existing test runs</a></h3>
 <div class="paragraph">
 <p>To trigger new tests with custom settings the command line client <code>openqa-cli</code>
 can be used. To trigger new tests relying on all settings from existing tests
@@ -10023,7 +10112,7 @@ and the job will not appear as a job in any job group, e.g.:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_backend_variables_for_faster_test_execution"><a class="anchor" href="#_backend_variables_for_faster_test_execution"></a><a class="link" href="#_backend_variables_for_faster_test_execution">43.2. Backend variables for faster test execution</a></h3>
+<h3 id="_backend_variables_for_faster_test_execution"><a class="anchor" href="#_backend_variables_for_faster_test_execution"></a><a class="link" href="#_backend_variables_for_faster_test_execution">44.2. Backend variables for faster test execution</a></h3>
 <div class="paragraph">
 <p>The <code>os-autoinst</code> backend offers multiple test variables which are helpful for
 test development. For example:</p>
@@ -10043,14 +10132,14 @@ needles anyway</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_using_snapshots_to_speed_up_development_of_tests"><a class="anchor" href="#_using_snapshots_to_speed_up_development_of_tests"></a><a class="link" href="#_using_snapshots_to_speed_up_development_of_tests">43.3. Using snapshots to speed up development of tests</a></h3>
+<h3 id="_using_snapshots_to_speed_up_development_of_tests"><a class="anchor" href="#_using_snapshots_to_speed_up_development_of_tests"></a><a class="link" href="#_using_snapshots_to_speed_up_development_of_tests">44.3. Using snapshots to speed up development of tests</a></h3>
 <div id="snapshots" class="paragraph">
 <p>For lower turn-around times during test development based on virtual machines
 the QEMU backend provides a feature that allows a job to start from a snapshot
 which can help in this situation.</p>
 </div>
 <div class="sect3">
-<h4 id="_how_snapshots_work_internally"><a class="anchor" href="#_how_snapshots_work_internally"></a><a class="link" href="#_how_snapshots_work_internally">43.3.1. How snapshots work internally</a></h4>
+<h4 id="_how_snapshots_work_internally"><a class="anchor" href="#_how_snapshots_work_internally"></a><a class="link" href="#_how_snapshots_work_internally">44.3.1. How snapshots work internally</a></h4>
 <div class="paragraph">
 <p>Snapshots use QEMU&#8217;s block device overlay mechanism. Each snapshot creates an
 incremental overlay forming a chain:</p>
@@ -10083,7 +10172,7 @@ the snapshot overlay is recreated, and execution continues from that state</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_snapshot_modes"><a class="anchor" href="#_snapshot_modes"></a><a class="link" href="#_snapshot_modes">43.3.2. Snapshot modes</a></h4>
+<h4 id="_snapshot_modes"><a class="anchor" href="#_snapshot_modes"></a><a class="link" href="#_snapshot_modes">44.3.2. Snapshot modes</a></h4>
 <div class="paragraph">
 <p>Depending on the use case, there are two options to help:</p>
 </div>
@@ -10139,7 +10228,7 @@ module (unless subsequent modules are marked with <code>always_run</code>).</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="snapshots-for-each-module"><a class="anchor" href="#snapshots-for-each-module"></a><a class="link" href="#snapshots-for-each-module">43.3.3. Enable snapshots for each module</a></h4>
+<h4 id="snapshots-for-each-module"><a class="anchor" href="#snapshots-for-each-module"></a><a class="link" href="#snapshots-for-each-module">44.3.3. Enable snapshots for each module</a></h4>
 <div class="ulist">
 <ul>
 <li>
@@ -10184,7 +10273,7 @@ image. Snapshots are named <code>"test module category"-"test module name"</code
 </div>
 </div>
 <div class="sect3">
-<h4 id="_storing_only_the_last_successful_snapshot"><a class="anchor" href="#_storing_only_the_last_successful_snapshot"></a><a class="link" href="#_storing_only_the_last_successful_snapshot">43.3.4. Storing only the last successful snapshot</a></h4>
+<h4 id="_storing_only_the_last_successful_snapshot"><a class="anchor" href="#_storing_only_the_last_successful_snapshot"></a><a class="link" href="#_storing_only_the_last_successful_snapshot">44.3.4. Storing only the last successful snapshot</a></h4>
 <div class="ulist">
 <ul>
 <li>
@@ -10221,7 +10310,7 @@ the clone source job or by specifying the variable explicitly:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_defining_a_custom_test_schedule_or_custom_test_modules"><a class="anchor" href="#_defining_a_custom_test_schedule_or_custom_test_modules"></a><a class="link" href="#_defining_a_custom_test_schedule_or_custom_test_modules">43.4. Defining a custom test schedule or custom test modules</a></h3>
+<h3 id="_defining_a_custom_test_schedule_or_custom_test_modules"><a class="anchor" href="#_defining_a_custom_test_schedule_or_custom_test_modules"></a><a class="link" href="#_defining_a_custom_test_schedule_or_custom_test_modules">44.4. Defining a custom test schedule or custom test modules</a></h3>
 <div class="paragraph">
 <p>Normally the test schedule, that is which test modules should be executed and
 which order, is prescribed by the <code>main.pm</code> file within the test distribution.
@@ -10241,7 +10330,7 @@ describes in detail the mentioned test parameters and more. Please consult
 this full reference as well.</p>
 </div>
 <div class="sect3">
-<h4 id="_exclude_modules"><a class="anchor" href="#_exclude_modules"></a><a class="link" href="#_exclude_modules">43.4.1. EXCLUDE_MODULES</a></h4>
+<h4 id="_exclude_modules"><a class="anchor" href="#_exclude_modules"></a><a class="link" href="#_exclude_modules">44.4.1. EXCLUDE_MODULES</a></h4>
 <div class="paragraph">
 <p>If a job has the following schedule:</p>
 </div>
@@ -10293,7 +10382,7 @@ Excluding modules that are not scheduled does not raise an error.
 </div>
 </div>
 <div class="sect3">
-<h4 id="_include_modules"><a class="anchor" href="#_include_modules"></a><a class="link" href="#_include_modules">43.4.2. INCLUDE_MODULES</a></h4>
+<h4 id="_include_modules"><a class="anchor" href="#_include_modules"></a><a class="link" href="#_include_modules">44.4.2. INCLUDE_MODULES</a></h4>
 <div class="paragraph">
 <p>If a job has the following schedule:</p>
 </div>
@@ -10346,7 +10435,7 @@ are not scheduled.
 </div>
 </div>
 <div class="sect3">
-<h4 id="_schedule"><a class="anchor" href="#_schedule"></a><a class="link" href="#_schedule">43.4.3. SCHEDULE</a></h4>
+<h4 id="_schedule"><a class="anchor" href="#_schedule"></a><a class="link" href="#_schedule">44.4.3. SCHEDULE</a></h4>
 <div class="paragraph">
 <p>Additionally it is possible to define a custom schedule using the test variable
 <code>SCHEDULE</code>.</p>
@@ -10370,7 +10459,7 @@ Any existing test module within <strong>CASEDIR</strong> can be scheduled.
 </div>
 </div>
 <div class="sect3">
-<h4 id="_schedule_asset_nr_url"><a class="anchor" href="#_schedule_asset_nr_url"></a><a class="link" href="#_schedule_asset_nr_url">43.4.4. SCHEDULE + ASSET_&lt;NR&gt;_URL</a></h4>
+<h4 id="_schedule_asset_nr_url"><a class="anchor" href="#_schedule_asset_nr_url"></a><a class="link" href="#_schedule_asset_nr_url">44.4.4. SCHEDULE + ASSET_&lt;NR&gt;_URL</a></h4>
 <div class="paragraph">
 <p>Test modules can be defined and overridden on-the-fly using a downloadable asset
 (combining <strong>ASSET_&lt;NR&gt;_URL</strong> and <strong>SCHEDULE</strong>).</p>
@@ -10429,7 +10518,7 @@ supplied as new, unambiguous download target file names.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"><a class="anchor" href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"></a><a class="link" href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">43.5. Triggering tests based on an any remote Git refspec or open GitHub pull request</a></h3>
+<h3 id="_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"><a class="anchor" href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"></a><a class="link" href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">44.5. Triggering tests based on an any remote Git refspec or open GitHub pull request</a></h3>
 <div class="paragraph">
 <p>openQA also supports to trigger tests using test code from a pull request or
 any branch or Git refspec. That means that code changes that are not yet
@@ -10523,7 +10612,7 @@ manually specify the schedule via the <code>SCHEDULE</code> variable).</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_running_openqa_jobs_as_ci_checks"><a class="anchor" href="#_running_openqa_jobs_as_ci_checks"></a><a class="link" href="#_running_openqa_jobs_as_ci_checks">44. Running openQA jobs as CI checks</a></h2>
+<h2 id="_running_openqa_jobs_as_ci_checks"><a class="anchor" href="#_running_openqa_jobs_as_ci_checks"></a><a class="link" href="#_running_openqa_jobs_as_ci_checks">45. Running openQA jobs as CI checks</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>It is possible to run openQA jobs as CI checks of a repository, e.g. a test
@@ -10531,7 +10620,7 @@ distribution or an arbitrary repository containing software with openQA tests
 as part of the test suite.</p>
 </div>
 <div class="sect2">
-<h3 id="_create_and_monitor_openqa_jobs_from_within_the_ci_runner"><a class="anchor" href="#_create_and_monitor_openqa_jobs_from_within_the_ci_runner"></a><a class="link" href="#_create_and_monitor_openqa_jobs_from_within_the_ci_runner">44.1. Create and monitor openQA jobs from within the CI runner</a></h3>
+<h3 id="_create_and_monitor_openqa_jobs_from_within_the_ci_runner"><a class="anchor" href="#_create_and_monitor_openqa_jobs_from_within_the_ci_runner"></a><a class="link" href="#_create_and_monitor_openqa_jobs_from_within_the_ci_runner">45.1. Create and monitor openQA jobs from within the CI runner</a></h3>
 <div class="paragraph">
 <p>The easiest approach is to create and monitor openQA jobs from within the CI
 runner. To make this easier, <code>openqa-cli</code> provides the <code>schedule</code> sub-command
@@ -10606,7 +10695,7 @@ instead of <code>- uses: actions/checkout@v3</code> and
 </div>
 </div>
 <div class="sect2">
-<h3 id="_use_webhooks_and_status_reporting_apis_of_github"><a class="anchor" href="#_use_webhooks_and_status_reporting_apis_of_github"></a><a class="link" href="#_use_webhooks_and_status_reporting_apis_of_github">44.2. Use webhooks and status reporting APIs of GitHub</a></h3>
+<h3 id="_use_webhooks_and_status_reporting_apis_of_github"><a class="anchor" href="#_use_webhooks_and_status_reporting_apis_of_github"></a><a class="link" href="#_use_webhooks_and_status_reporting_apis_of_github">45.2. Use webhooks and status reporting APIs of GitHub</a></h3>
 <div class="paragraph">
 <p>This approach is so far specific to GitHub and is a bit more effort to setup
 than the approach mentioned in the previous section. For this to work, GitHub
@@ -10626,7 +10715,7 @@ to change the lookup path of this file.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_isotovideo_directly_in_the_ci_runner"><a class="anchor" href="#_run_isotovideo_directly_in_the_ci_runner"></a><a class="link" href="#_run_isotovideo_directly_in_the_ci_runner">44.3. Run isotovideo directly in the CI runner</a></h3>
+<h3 id="_run_isotovideo_directly_in_the_ci_runner"><a class="anchor" href="#_run_isotovideo_directly_in_the_ci_runner"></a><a class="link" href="#_run_isotovideo_directly_in_the_ci_runner">45.3. Run isotovideo directly in the CI runner</a></h3>
 <div class="paragraph">
 <p>It is also possible to avoid using openQA at all and run the backend
 <code>isotovideo</code> directly within the CI runner. This simplifies the setup as no
@@ -10636,7 +10725,7 @@ a web interface as usual. Check out the
 for more information.</p>
 </div>
 <div class="sect3">
-<h4 id="_setup_a_github_access_token_for_openqa"><a class="anchor" href="#_setup_a_github_access_token_for_openqa"></a><a class="link" href="#_setup_a_github_access_token_for_openqa">44.3.1. Setup a GitHub access token for openQA</a></h4>
+<h4 id="_setup_a_github_access_token_for_openqa"><a class="anchor" href="#_setup_a_github_access_token_for_openqa"></a><a class="link" href="#_setup_a_github_access_token_for_openqa">45.3.1. Setup a GitHub access token for openQA</a></h4>
 <div class="paragraph">
 <p>This setup is required for openQA to be able to report the status back to
 GitHub.</p>
@@ -10680,7 +10769,7 @@ the CI check status.
 </div>
 </div>
 <div class="sect3">
-<h4 id="_setup_webhook_on_github"><a class="anchor" href="#_setup_webhook_on_github"></a><a class="link" href="#_setup_webhook_on_github">44.3.2. Setup webhook on GitHub</a></h4>
+<h4 id="_setup_webhook_on_github"><a class="anchor" href="#_setup_webhook_on_github"></a><a class="link" href="#_setup_webhook_on_github">45.3.2. Setup webhook on GitHub</a></h4>
 <div class="paragraph">
 <p>This setup is required for GitHub to be able to inform openQA that a PR has been
 created or updated.</p>
@@ -10730,7 +10819,7 @@ investigate what is wrong.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_integrating_test_results_from_external_systems"><a class="anchor" href="#_integrating_test_results_from_external_systems"></a><a class="link" href="#_integrating_test_results_from_external_systems">45. Integrating test results from external systems</a></h2>
+<h2 id="_integrating_test_results_from_external_systems"><a class="anchor" href="#_integrating_test_results_from_external_systems"></a><a class="link" href="#_integrating_test_results_from_external_systems">46. Integrating test results from external systems</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The openQA web UI is suitable as a test management and reporting platform.
@@ -10770,7 +10859,7 @@ pointing to other resources in the settings or uploaded test reports and logs.</
 </div>
 <h1 id="installing_harness" class="sect0"><a class="anchor" href="#installing_harness"></a><a class="link" href="#installing_harness">openQA test harness result processing</a></h1>
 <div class="sect1">
-<h2 id="_introduction_5"><a class="anchor" href="#_introduction_5"></a><a class="link" href="#_introduction_5">46. Introduction</a></h2>
+<h2 id="_introduction_5"><a class="anchor" href="#_introduction_5"></a><a class="link" href="#_introduction_5">47. Introduction</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>From time to time, a test developer might want to use openQA to execute a test
@@ -10807,7 +10896,7 @@ but still will allow the original file to be downloaded.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_usage"><a class="anchor" href="#_usage"></a><a class="link" href="#_usage">47. Usage</a></h2>
+<h2 id="_usage"><a class="anchor" href="#_usage"></a><a class="link" href="#_usage">48. Usage</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>If a test developer wishes to use the functional interface, after finishing the
@@ -10815,7 +10904,7 @@ execution of the the testing too, calling <code>testapi::parse_extra_log</code> 
 location to a the file generated.</p>
 </div>
 <div class="sect2">
-<h3 id="_openqa_test_distribution"><a class="anchor" href="#_openqa_test_distribution"></a><a class="link" href="#_openqa_test_distribution">47.1. openQA test distribution</a></h3>
+<h3 id="_openqa_test_distribution"><a class="anchor" href="#_openqa_test_distribution"></a><a class="link" href="#_openqa_test_distribution">48.1. openQA test distribution</a></h3>
 <div class="paragraph">
 <p>From within a common openQA test distribution, a developer can use <code>parse_extra_log</code>
 to upload a text file that contains a supported test output:</p>
@@ -10830,7 +10919,7 @@ to upload a text file that contains a supported test output:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="parser-formats"><a class="anchor" href="#parser-formats"></a><a class="link" href="#parser-formats">48. Available parser formats</a></h2>
+<h2 id="parser-formats"><a class="anchor" href="#parser-formats"></a><a class="link" href="#parser-formats">49. Available parser formats</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Current parser formats:</p>
@@ -10854,10 +10943,10 @@ to upload a text file that contains a supported test output:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_extending_the_parser"><a class="anchor" href="#_extending_the_parser"></a><a class="link" href="#_extending_the_parser">49. Extending the parser</a></h2>
+<h2 id="_extending_the_parser"><a class="anchor" href="#_extending_the_parser"></a><a class="link" href="#_extending_the_parser">50. Extending the parser</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_oop_interface"><a class="anchor" href="#_oop_interface"></a><a class="link" href="#_oop_interface">49.1. OOP Interface</a></h3>
+<h3 id="_oop_interface"><a class="anchor" href="#_oop_interface"></a><a class="link" href="#_oop_interface">50.1. OOP Interface</a></h3>
 <div class="paragraph">
 <p>The parser is a base class that acts as a serializer/deserializer for the elements
 inside of it, it allows to be extended so new formats can be easily added.</p>
@@ -10870,7 +10959,7 @@ test results, test definition and test output.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_structured_data"><a class="anchor" href="#_structured_data"></a><a class="link" href="#_structured_data">49.2. Structured data</a></h3>
+<h3 id="_structured_data"><a class="anchor" href="#_structured_data"></a><a class="link" href="#_structured_data">50.2. Structured data</a></h3>
 <div class="paragraph">
 <p>In structured data mode, elements of the collections are objects. They can be
 of any type, even though subclassing or objects of type of <code>OpenQA::Parser::Result</code>
@@ -10928,7 +11017,7 @@ or <code>OpenQA::Parser::Results</code> respectively.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_openqa_internal_test_result_storage"><a class="anchor" href="#_openqa_internal_test_result_storage"></a><a class="link" href="#_openqa_internal_test_result_storage">49.3. openQA internal test result storage</a></h3>
+<h3 id="_openqa_internal_test_result_storage"><a class="anchor" href="#_openqa_internal_test_result_storage"></a><a class="link" href="#_openqa_internal_test_result_storage">50.3. openQA internal test result storage</a></h3>
 <div class="paragraph">
 <p>It is important to know that openQA&#8217;s internal mapping for test results works operating almost
 entirely on the filesystem, leaving only the test modules to be registered into the database, this
@@ -10991,7 +11080,7 @@ and query parameters can be passed along as <code>key=value</code> pairs.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_help"><a class="anchor" href="#_help"></a><a class="link" href="#_help">50. Help</a></h2>
+<h2 id="_help"><a class="anchor" href="#_help"></a><a class="link" href="#_help">51. Help</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The <code>api</code> subcommand is not the only one available and more will be added over
@@ -11015,7 +11104,7 @@ well as many common usage examples.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_authentication_2"><a class="anchor" href="#_authentication_2"></a><a class="link" href="#_authentication_2">51. Authentication</a></h2>
+<h2 id="_authentication_2"><a class="anchor" href="#_authentication_2"></a><a class="link" href="#_authentication_2">52. Authentication</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Not all REST endpoints are public, many will return a <code>403 Forbidden</code> error if
@@ -11051,7 +11140,7 @@ files may contain.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_personal_access_token"><a class="anchor" href="#_personal_access_token"></a><a class="link" href="#_personal_access_token">51.1. Personal access token</a></h3>
+<h3 id="_personal_access_token"><a class="anchor" href="#_personal_access_token"></a><a class="link" href="#_personal_access_token">52.1. Personal access token</a></h3>
 <div class="paragraph">
 <p>The authentication mechanism used by <code>openqa-cli</code> was specifically designed to
 allow secure access to the REST API even via unencrypted HTTP connections. But
@@ -11102,7 +11191,7 @@ access credentials without being explicitly asked.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_features"><a class="anchor" href="#_features"></a><a class="link" href="#_features">52. Features</a></h2>
+<h2 id="_features"><a class="anchor" href="#_features"></a><a class="link" href="#_features">53. Features</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Many of the <code>openqa-cli api</code> features are designed to be similar to other
@@ -11111,7 +11200,7 @@ the <a href="https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol">HTTP pro
 <a href="https://en.wikipedia.org/wiki/JSON">JSON</a>. Both will be referenced extensively.</p>
 </div>
 <div class="sect2">
-<h3 id="_http_methods"><a class="anchor" href="#_http_methods"></a><a class="link" href="#_http_methods">52.1. HTTP Methods</a></h3>
+<h3 id="_http_methods"><a class="anchor" href="#_http_methods"></a><a class="link" href="#_http_methods">53.1. HTTP Methods</a></h3>
 <div class="paragraph">
 <p>The <code>--method</code> option (or <code>-X</code> for short) allows you to change the HTTP request
 method from <code>GET</code> to something else. In the openQA API you will most commonly
@@ -11127,7 +11216,7 @@ image you would use <code>POST</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_http_headers"><a class="anchor" href="#_http_headers"></a><a class="link" href="#_http_headers">52.2. HTTP Headers</a></h3>
+<h3 id="_http_headers"><a class="anchor" href="#_http_headers"></a><a class="link" href="#_http_headers">53.2. HTTP Headers</a></h3>
 <div class="paragraph">
 <p>With the <code>--header</code> option (or <code>-a</code> for short) you can add one or more custom
 HTTP headers to your request. This feature is currently not used much, but can
@@ -11142,7 +11231,7 @@ negotiation.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_http_body"><a class="anchor" href="#_http_body"></a><a class="link" href="#_http_body">52.3. HTTP Body</a></h3>
+<h3 id="_http_body"><a class="anchor" href="#_http_body"></a><a class="link" href="#_http_body">53.3. HTTP Body</a></h3>
 <div class="paragraph">
 <p>To change the HTTP request body there are multiple options available. The
 simplest being <code>--data</code> (or <code>-d</code> for short), which allows you to use a plain
@@ -11176,7 +11265,7 @@ instead.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_forms"><a class="anchor" href="#_forms"></a><a class="link" href="#_forms">52.4. Forms</a></h3>
+<h3 id="_forms"><a class="anchor" href="#_forms"></a><a class="link" href="#_forms">53.4. Forms</a></h3>
 <div class="paragraph">
 <p>Most data you pass to the openQA API will be key/value form parameters. Either
 in the query string, or encoded as <code>application/x-www-form-urlencoded</code> HTTP
@@ -11225,7 +11314,7 @@ turned into form parameters.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_json"><a class="anchor" href="#_json"></a><a class="link" href="#_json">52.5. JSON</a></h3>
+<h3 id="_json"><a class="anchor" href="#_json"></a><a class="link" href="#_json">53.5. JSON</a></h3>
 <div class="paragraph">
 <p>The primary data exchange format in the openQA API is JSON. And you will even
 see error messages in JSON format most of the time.</p>
@@ -11270,7 +11359,7 @@ JSON document.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_unicode"><a class="anchor" href="#_unicode"></a><a class="link" href="#_unicode">52.6. Unicode</a></h3>
+<h3 id="_unicode"><a class="anchor" href="#_unicode"></a><a class="link" href="#_unicode">53.6. Unicode</a></h3>
 <div class="paragraph">
 <p>Just use a UTF-8 locale for your terminal and Unicode will pretty much just
 work.</p>
@@ -11293,7 +11382,7 @@ work.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_host_shortcuts"><a class="anchor" href="#_host_shortcuts"></a><a class="link" href="#_host_shortcuts">52.7. Host shortcuts</a></h3>
+<h3 id="_host_shortcuts"><a class="anchor" href="#_host_shortcuts"></a><a class="link" href="#_host_shortcuts">53.7. Host shortcuts</a></h3>
 <div class="paragraph">
 <p>Aside from the <code>--host</code> option, there are also a few shortcuts available. If you
 leave out the <code>--host</code> option completely, the default value will be
@@ -11316,7 +11405,7 @@ also get their very own personalised shortcuts. Currently we have <code>--osd</c
 </div>
 </div>
 <div class="sect2">
-<h3 id="_debugging"><a class="anchor" href="#_debugging"></a><a class="link" href="#_debugging">52.8. Debugging</a></h3>
+<h3 id="_debugging"><a class="anchor" href="#_debugging"></a><a class="link" href="#_debugging">53.8. Debugging</a></h3>
 <div class="paragraph">
 <p>Often times just seeing the HTTP response body might not be enough to debug a
 problem. With the <code>--verbose</code> option (or <code>-v</code> for short) you can also get
@@ -11382,7 +11471,7 @@ time.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_archiving_individual_job_results"><a class="anchor" href="#_archiving_individual_job_results"></a><a class="link" href="#_archiving_individual_job_results">53. Archiving individual job results</a></h2>
+<h2 id="_archiving_individual_job_results"><a class="anchor" href="#_archiving_individual_job_results"></a><a class="link" href="#_archiving_individual_job_results">54. Archiving individual job results</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>With the <code>archive</code> subcommand of <code>openqa-cli</code> you can download all the assets
@@ -11411,7 +11500,7 @@ of old jobs.</p>
 </div>
 <h1 id="pitfalls" class="sect0"><a class="anchor" href="#pitfalls"></a><a class="link" href="#pitfalls">openQA pitfalls</a></h1>
 <div class="sect1">
-<h2 id="_needle_editing"><a class="anchor" href="#_needle_editing"></a><a class="link" href="#_needle_editing">54. Needle editing</a></h2>
+<h2 id="_needle_editing"><a class="anchor" href="#_needle_editing"></a><a class="link" href="#_needle_editing">55. Needle editing</a></h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -11435,7 +11524,7 @@ them in the web UI.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_403_messages_when_using_scripts"><a class="anchor" href="#_403_messages_when_using_scripts"></a><a class="link" href="#_403_messages_when_using_scripts">55. 403 messages when using scripts</a></h2>
+<h2 id="_403_messages_when_using_scripts"><a class="anchor" href="#_403_messages_when_using_scripts"></a><a class="link" href="#_403_messages_when_using_scripts">56. 403 messages when using scripts</a></h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -11456,7 +11545,7 @@ updated</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_mixed_production_and_development_environment"><a class="anchor" href="#_mixed_production_and_development_environment"></a><a class="link" href="#_mixed_production_and_development_environment">56. Mixed production and development environment</a></h2>
+<h2 id="_mixed_production_and_development_environment"><a class="anchor" href="#_mixed_production_and_development_environment"></a><a class="link" href="#_mixed_production_and_development_environment">57. Mixed production and development environment</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>There are few things to take into account when running a development version and
@@ -11476,7 +11565,7 @@ and <code>chgrp -R openqa /var/lib/openqa</code> can not fix.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_performance_impact"><a class="anchor" href="#_performance_impact"></a><a class="link" href="#_performance_impact">57. Performance impact</a></h2>
+<h2 id="_performance_impact"><a class="anchor" href="#_performance_impact"></a><a class="link" href="#_performance_impact">58. Performance impact</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA workers can cause high I/O load, especially when creating VM snapshots.
@@ -11505,7 +11594,7 @@ setting <code>OPTIMIZE_IMAGES=0</code>.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="db-migration"><a class="anchor" href="#db-migration"></a><a class="link" href="#db-migration">58. DB migration from SQlite to postgreSQL</a></h2>
+<h2 id="db-migration"><a class="anchor" href="#db-migration"></a><a class="link" href="#db-migration">59. DB migration from SQlite to postgreSQL</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>As a first step to start using postgreSQL, please, configure postgreSQL database
@@ -11550,7 +11639,7 @@ openqa-load-templates scripts accordingly.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="debugdevelmode"><a class="anchor" href="#debugdevelmode"></a><a class="link" href="#debugdevelmode">59. Steps to debug developer mode setup</a></h2>
+<h2 id="debugdevelmode"><a class="anchor" href="#debugdevelmode"></a><a class="link" href="#debugdevelmode">60. Steps to debug developer mode setup</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This is basically a checklist to go through in case the developer mode is broken in your setup
@@ -11645,7 +11734,7 @@ each other.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_qemu_user_networking"><a class="anchor" href="#_qemu_user_networking"></a><a class="link" href="#_qemu_user_networking">60. QEMU User Networking</a></h2>
+<h2 id="_qemu_user_networking"><a class="anchor" href="#_qemu_user_networking"></a><a class="link" href="#_qemu_user_networking">61. QEMU User Networking</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>With QEMU <a href="http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29">user networking</a> each jobs gets its own isolated network with
@@ -11656,7 +11745,7 @@ the machine can be controlled with the <code>NICMAC</code> variable. If not set,
 </div>
 </div>
 <div class="sect1">
-<h2 id="_tap_based_network"><a class="anchor" href="#_tap_based_network"></a><a class="link" href="#_tap_based_network">61. TAP Based Network</a></h2>
+<h2 id="_tap_based_network"><a class="anchor" href="#_tap_based_network"></a><a class="link" href="#_tap_based_network">62. TAP Based Network</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>os-autoinst can connect QEMU to TAP devices of the host system to
@@ -11688,7 +11777,7 @@ automatically computed from <code>$worker_id</code> if not set.</p>
 required internet access, etc. on the host as described in the next section.</p>
 </div>
 <div class="sect2">
-<h3 id="_multi_machine_test_setup"><a class="anchor" href="#_multi_machine_test_setup"></a><a class="link" href="#_multi_machine_test_setup">61.1. Multi-machine test setup</a></h3>
+<h3 id="_multi_machine_test_setup"><a class="anchor" href="#_multi_machine_test_setup"></a><a class="link" href="#_multi_machine_test_setup">62.1. Multi-machine test setup</a></h3>
 <div class="paragraph">
 <p>The complete multi-machine test setup can be provided from the script
 <code>os-autoinst-setup-multi-machine</code> provided by "os-autoinst". The script can be
@@ -11742,7 +11831,7 @@ section).
 </div>
 </div>
 <div class="sect3">
-<h4 id="_what_os_autoinst_setup_multi_machine_does"><a class="anchor" href="#_what_os_autoinst_setup_multi_machine_does"></a><a class="link" href="#_what_os_autoinst_setup_multi_machine_does">61.1.1. What os-autoinst-setup-multi-machine does</a></h4>
+<h4 id="_what_os_autoinst_setup_multi_machine_does"><a class="anchor" href="#_what_os_autoinst_setup_multi_machine_does"></a><a class="link" href="#_what_os_autoinst_setup_multi_machine_does">62.1.1. What os-autoinst-setup-multi-machine does</a></h4>
 <div class="sect4">
 <h5 id="_set_up_open_vswitch"><a class="anchor" href="#_set_up_open_vswitch"></a><a class="link" href="#_set_up_open_vswitch">Set up Open vSwitch</a></h5>
 <div class="paragraph">
@@ -11834,7 +11923,7 @@ firewall-cmd<span class="tok-w"> </span>--list-all-zones</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine"><a class="anchor" href="#_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine"></a><a class="link" href="#_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine">61.1.2. What is left to do after running os-autoinst-setup-multi-machine</a></h4>
+<h4 id="_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine"><a class="anchor" href="#_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine"></a><a class="link" href="#_what_is_left_to_do_after_running_os_autoinst_setup_multi_machine">62.1.2. What is left to do after running os-autoinst-setup-multi-machine</a></h4>
 <div class="sect4">
 <h5 id="_gre_tunnels"><a class="anchor" href="#_gre_tunnels"></a><a class="link" href="#_gre_tunnels">GRE tunnels</a></h5>
 <div class="paragraph">
@@ -11931,7 +12020,7 @@ number of tap devices should be configured.
 </div>
 </div>
 <div class="sect2">
-<h3 id="_verify_the_setup"><a class="anchor" href="#_verify_the_setup"></a><a class="link" href="#_verify_the_setup">61.2. Verify the setup</a></h3>
+<h3 id="_verify_the_setup"><a class="anchor" href="#_verify_the_setup"></a><a class="link" href="#_verify_the_setup">62.2. Verify the setup</a></h3>
 <div class="paragraph">
 <p>Simply run a MM test scenario. For openSUSE, you can find many relevant tests on
 <a href="https://openqa.opensuse.org">o3</a>, e.g. look for networking-related tests like
@@ -11959,7 +12048,7 @@ different jobs are executed on different workers. So you could call
 persistent.</p>
 </div>
 <div class="sect3">
-<h4 id="_start_test_vms_manually"><a class="anchor" href="#_start_test_vms_manually"></a><a class="link" href="#_start_test_vms_manually">61.2.1. Start test VMs manually</a></h4>
+<h4 id="_start_test_vms_manually"><a class="anchor" href="#_start_test_vms_manually"></a><a class="link" href="#_start_test_vms_manually">62.2.1. Start test VMs manually</a></h4>
 <div class="paragraph">
 <p>You may also start VMs manually to verify the setup.</p>
 </div>
@@ -12047,7 +12136,7 @@ network to bisect problematic hosts/connections (via <code>ovs-vsctl add-port â€
 </div>
 </div>
 <div class="sect2">
-<h3 id="_debugging_open_vswitch_configuration"><a class="anchor" href="#_debugging_open_vswitch_configuration"></a><a class="link" href="#_debugging_open_vswitch_configuration">61.3. Debugging Open vSwitch Configuration</a></h3>
+<h3 id="_debugging_open_vswitch_configuration"><a class="anchor" href="#_debugging_open_vswitch_configuration"></a><a class="link" href="#_debugging_open_vswitch_configuration">62.3. Debugging Open vSwitch Configuration</a></h3>
 <div class="paragraph">
 <p>Boot sequence with wicked (version 0.6.23 and newer):</p>
 </div>
@@ -12200,9 +12289,9 @@ be <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_lin
 </div>
 </div>
 <div class="sect2">
-<h3 id="_debugging_gre_tunnels_and_mtu_sizes"><a class="anchor" href="#_debugging_gre_tunnels_and_mtu_sizes"></a><a class="link" href="#_debugging_gre_tunnels_and_mtu_sizes">61.4. Debugging GRE tunnels and MTU sizes</a></h3>
+<h3 id="_debugging_gre_tunnels_and_mtu_sizes"><a class="anchor" href="#_debugging_gre_tunnels_and_mtu_sizes"></a><a class="link" href="#_debugging_gre_tunnels_and_mtu_sizes">62.4. Debugging GRE tunnels and MTU sizes</a></h3>
 <div class="sect3">
-<h4 id="_initial_setup_for_all_experiments"><a class="anchor" href="#_initial_setup_for_all_experiments"></a><a class="link" href="#_initial_setup_for_all_experiments">61.4.1. Initial setup for all experiments</a></h4>
+<h4 id="_initial_setup_for_all_experiments"><a class="anchor" href="#_initial_setup_for_all_experiments"></a><a class="link" href="#_initial_setup_for_all_experiments">62.4.1. Initial setup for all experiments</a></h4>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Enable ip forwarding</span>
@@ -12257,7 +12346,7 @@ instead of having two /24 networks, it is also possible to assign addresses from
 </div>
 </div>
 <div class="sect3">
-<h4 id="_simple_scenario"><a class="anchor" href="#_simple_scenario"></a><a class="link" href="#_simple_scenario">61.4.2. Simple scenario</a></h4>
+<h4 id="_simple_scenario"><a class="anchor" href="#_simple_scenario"></a><a class="link" href="#_simple_scenario">62.4.2. Simple scenario</a></h4>
 <div class="paragraph">
 <p>Two servers with a single bridge on each side connected with GRE tunnel.</p>
 </div>
@@ -12277,7 +12366,7 @@ ping<span class="tok-w"> </span>-c<span class="tok-w"> </span><span class="tok-m
 </div>
 </div>
 <div class="sect3">
-<h4 id="_scenario_with_openvswitch"><a class="anchor" href="#_scenario_with_openvswitch"></a><a class="link" href="#_scenario_with_openvswitch">61.4.3. Scenario with openvswitch</a></h4>
+<h4 id="_scenario_with_openvswitch"><a class="anchor" href="#_scenario_with_openvswitch"></a><a class="link" href="#_scenario_with_openvswitch">62.4.3. Scenario with openvswitch</a></h4>
 <div class="paragraph">
 <p>Two servers with a one virtual bridge connected with GRE tunnel.</p>
 </div>
@@ -12313,7 +12402,7 @@ de1f31e9-1b51-4cc3-954a-4e037191ac07
 </div>
 </div>
 <div class="sect3">
-<h4 id="_gre_tunnel_made_in_openvswitch"><a class="anchor" href="#_gre_tunnel_made_in_openvswitch"></a><a class="link" href="#_gre_tunnel_made_in_openvswitch">61.4.4. GRE tunnel made in openvswitch</a></h4>
+<h4 id="_gre_tunnel_made_in_openvswitch"><a class="anchor" href="#_gre_tunnel_made_in_openvswitch"></a><a class="link" href="#_gre_tunnel_made_in_openvswitch">62.4.4. GRE tunnel made in openvswitch</a></h4>
 <div class="paragraph">
 <p>openvswitch uses flow-based GRE tunneling, i.e. one interface <code>gre_sys</code> for all tunnels, the tunnel can be created by <code>ovs-vsctl</code>. After that, everything works as expected.</p>
 </div>
@@ -12352,7 +12441,7 @@ de1f31e9-1b51-4cc3-954a-4e037191ac07
 </div>
 </div>
 <div class="sect1">
-<h2 id="_vde_based_network"><a class="anchor" href="#_vde_based_network"></a><a class="link" href="#_vde_based_network">62. VDE Based Network</a></h2>
+<h2 id="_vde_based_network"><a class="anchor" href="#_vde_based_network"></a><a class="link" href="#_vde_based_network">63. VDE Based Network</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Virtual Distributed Ethernet provides a software switch that runs in
@@ -12364,7 +12453,7 @@ affecting the system&#8217;s network configuration.</p>
 reconfigure the switch as needed by the job.</p>
 </div>
 <div class="sect2">
-<h3 id="_basic_single_machine_tests"><a class="anchor" href="#_basic_single_machine_tests"></a><a class="link" href="#_basic_single_machine_tests">62.1. Basic, Single Machine Tests</a></h3>
+<h3 id="_basic_single_machine_tests"><a class="anchor" href="#_basic_single_machine_tests"></a><a class="link" href="#_basic_single_machine_tests">63.1. Basic, Single Machine Tests</a></h3>
 <div class="paragraph">
 <p>To start with a basic configuration like QEMU user mode networking,
 create a machine with the following settings:</p>
@@ -12400,7 +12489,7 @@ share the same SLIRP instance.</p>
 </div>
 <h1 id="contributing" class="sect0"><a class="anchor" href="#contributing"></a><a class="link" href="#contributing">openQA developer guide</a></h1>
 <div class="sect1">
-<h2 id="_introduction_6"><a class="anchor" href="#_introduction_6"></a><a class="link" href="#_introduction_6">63. Introduction</a></h2>
+<h2 id="_introduction_6"><a class="anchor" href="#_introduction_6"></a><a class="link" href="#_introduction_6">64. Introduction</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA is an automated test tool that makes it possible to test the whole
@@ -12421,7 +12510,7 @@ are available at the
 </div>
 </div>
 <div class="sect1">
-<h2 id="_development_guidelines"><a class="anchor" href="#_development_guidelines"></a><a class="link" href="#_development_guidelines">64. Development guidelines</a></h2>
+<h2 id="_development_guidelines"><a class="anchor" href="#_development_guidelines"></a><a class="link" href="#_development_guidelines">65. Development guidelines</a></h2>
 <div class="sectionbody">
 <div id="guidelines" class="paragraph">
 <p>As mentioned, the central point of development is the
@@ -12429,7 +12518,7 @@ are available at the
 repositories can be found.</p>
 </div>
 <div class="sect2">
-<h3 id="repo-urls"><a class="anchor" href="#repo-urls"></a><a class="link" href="#repo-urls">64.1. Repository URLs</a></h3>
+<h3 id="repo-urls"><a class="anchor" href="#repo-urls"></a><a class="link" href="#repo-urls">65.1. Repository URLs</a></h3>
 <div class="ulist">
 <ul>
 <li>
@@ -12499,7 +12588,7 @@ are the right way to contribute improvements and fixes.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_rules_for_commits"><a class="anchor" href="#_rules_for_commits"></a><a class="link" href="#_rules_for_commits">64.2. Rules for commits</a></h3>
+<h3 id="_rules_for_commits"><a class="anchor" href="#_rules_for_commits"></a><a class="link" href="#_rules_for_commits">65.2. Rules for commits</a></h3>
 <div id="rules_for_commits" class="ulist">
 <ul>
 <li>
@@ -12543,7 +12632,7 @@ requests for consideration or create an issue with a code change proposal.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_code_style_suggestions"><a class="anchor" href="#_code_style_suggestions"></a><a class="link" href="#_code_style_suggestions">64.3. Code style suggestions</a></h3>
+<h3 id="_code_style_suggestions"><a class="anchor" href="#_code_style_suggestions"></a><a class="link" href="#_code_style_suggestions">65.3. Code style suggestions</a></h3>
 <div id="code_style_suggestions" class="ulist">
 <ul>
 <li>
@@ -12609,7 +12698,7 @@ requests for consideration or create an issue with a code change proposal.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_getting_involved_into_development"><a class="anchor" href="#_getting_involved_into_development"></a><a class="link" href="#_getting_involved_into_development">65. Getting involved into development</a></h2>
+<h2 id="_getting_involved_into_development"><a class="anchor" href="#_getting_involved_into_development"></a><a class="link" href="#_getting_involved_into_development">66. Getting involved into development</a></h2>
 <div class="sectionbody">
 <div id="getting_involved" class="paragraph">
 <p>Developers willing to get really involved into the development of openQA or
@@ -12642,7 +12731,7 @@ about the complete project but without a guarantee for correctness:
 </div>
 </div>
 <div class="sect1">
-<h2 id="_technologies"><a class="anchor" href="#_technologies"></a><a class="link" href="#_technologies">66. Technologies</a></h2>
+<h2 id="_technologies"><a class="anchor" href="#_technologies"></a><a class="link" href="#_technologies">67. Technologies</a></h2>
 <div class="sectionbody">
 <div id="technologies" class="paragraph">
 <p>Most in openQA, from <code>os-autoinst</code> to the web frontend and from the tests to
@@ -12686,7 +12775,7 @@ tests. As usual, tests are located under the <code>t/</code> directory.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_folder_structure"><a class="anchor" href="#_folder_structure"></a><a class="link" href="#_folder_structure">67. Folder structure</a></h2>
+<h2 id="_folder_structure"><a class="anchor" href="#_folder_structure"></a><a class="link" href="#_folder_structure">68. Folder structure</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Meaning and purpose of the most important folders within openQA are:</p>
@@ -12754,7 +12843,7 @@ tests. As usual, tests are located under the <code>t/</code> directory.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="dependencies"><a class="anchor" href="#dependencies"></a><a class="link" href="#dependencies">68. Dependencies</a></h2>
+<h2 id="dependencies"><a class="anchor" href="#dependencies"></a><a class="link" href="#dependencies">69. Dependencies</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Here we differentiate between these types of dependencies:</p>
@@ -12797,7 +12886,7 @@ repository. We generate the <code>.spec</code> files for <code>rpm</code> as wel
 for quicker installation of all Perl modules.</p>
 </div>
 <div class="sect2">
-<h3 id="runtime-dependencies"><a class="anchor" href="#runtime-dependencies"></a><a class="link" href="#runtime-dependencies">68.1. Runtime Dependencies</a></h3>
+<h3 id="runtime-dependencies"><a class="anchor" href="#runtime-dependencies"></a><a class="link" href="#runtime-dependencies">69.1. Runtime Dependencies</a></h3>
 <div class="paragraph">
 <p>For openSUSE you need the packages <code>openQA</code> and <code>os-autoinst</code>.
 That should be everything necessary to run an openQA instance. For more
@@ -12819,7 +12908,7 @@ a minimal runtime environment.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="development-dependencies"><a class="anchor" href="#development-dependencies"></a><a class="link" href="#development-dependencies">68.2. Development Dependencies</a></h3>
+<h3 id="development-dependencies"><a class="anchor" href="#development-dependencies"></a><a class="link" href="#development-dependencies">69.2. Development Dependencies</a></h3>
 <div class="paragraph">
 <p>For openSUSE:</p>
 </div>
@@ -12850,7 +12939,7 @@ for a container with all dependencies.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="development-setup"><a class="anchor" href="#development-setup"></a><a class="link" href="#development-setup">69. Development setup</a></h2>
+<h2 id="development-setup"><a class="anchor" href="#development-setup"></a><a class="link" href="#development-setup">70. Development setup</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The following explains in detail what is necessary to develop openQA code.</p>
@@ -12875,7 +12964,7 @@ existing tests or start the daemons manually.</p>
 first.</p>
 </div>
 <div class="sect2">
-<h3 id="testing"><a class="anchor" href="#testing"></a><a class="link" href="#testing">69.1. Conducting tests</a></h3>
+<h3 id="testing"><a class="anchor" href="#testing"></a><a class="link" href="#testing">70.1. Conducting tests</a></h3>
 <div class="paragraph">
 <p>To execute all existing checks and tests simply call:</p>
 </div>
@@ -12998,7 +13087,7 @@ from individual test job runs within the full stack test.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="customize_base_directory"><a class="anchor" href="#customize_base_directory"></a><a class="link" href="#customize_base_directory">69.2. Customize base directory</a></h3>
+<h3 id="customize_base_directory"><a class="anchor" href="#customize_base_directory"></a><a class="link" href="#customize_base_directory">70.2. Customize base directory</a></h3>
 <div class="paragraph">
 <p>It is possible to customize the openQA base directory (which is for instance
 used to store test results) by setting the environment variable
@@ -13021,7 +13110,7 @@ Be sure to <strong>clear</strong> that variable when running unit tests locally.
 </div>
 </div>
 <div class="sect2">
-<h3 id="_customize_configuration_directory"><a class="anchor" href="#_customize_configuration_directory"></a><a class="link" href="#_customize_configuration_directory">69.3. Customize configuration directory</a></h3>
+<h3 id="_customize_configuration_directory"><a class="anchor" href="#_customize_configuration_directory"></a><a class="link" href="#_customize_configuration_directory">70.3. Customize configuration directory</a></h3>
 <div class="paragraph">
 <p>When running openQA from a Git checkout it will find configuration files from
 that checkout under <code>etc/openqa</code> and not use any system provided config files
@@ -13058,7 +13147,7 @@ directory and set the environment variable <code>OPENQA_CONFIG</code>:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="setup-postgresql"><a class="anchor" href="#setup-postgresql"></a><a class="link" href="#setup-postgresql">69.4. Setting up the PostgreSQL database</a></h3>
+<h3 id="setup-postgresql"><a class="anchor" href="#setup-postgresql"></a><a class="link" href="#setup-postgresql">70.4. Setting up the PostgreSQL database</a></h3>
 <div class="paragraph">
 <p>Setting up a PostgreSQL database for openQA takes the following steps:</p>
 </div>
@@ -13118,7 +13207,7 @@ your regular user.
 </table>
 </div>
 <div class="sect3">
-<h4 id="_importing_production_data"><a class="anchor" href="#_importing_production_data"></a><a class="link" href="#_importing_production_data">69.4.1. Importing production data</a></h4>
+<h4 id="_importing_production_data"><a class="anchor" href="#_importing_production_data"></a><a class="link" href="#_importing_production_data">70.4.1. Importing production data</a></h4>
 <div class="paragraph">
 <p>Assuming you have already followed steps 1. to 4. above:</p>
 </div>
@@ -13146,7 +13235,7 @@ Everything will be owned by <code>your_username</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_manual_daemon_setup"><a class="anchor" href="#_manual_daemon_setup"></a><a class="link" href="#_manual_daemon_setup">69.5. Manual daemon setup</a></h3>
+<h3 id="_manual_daemon_setup"><a class="anchor" href="#_manual_daemon_setup"></a><a class="link" href="#_manual_daemon_setup">70.5. Manual daemon setup</a></h3>
 <div class="paragraph">
 <p>This section should give you a general idea how to start daemons manually for
 development after you setup a PostgreSQL database as mentioned in the previous
@@ -13200,7 +13289,7 @@ aware that this may cause unwanted changes in the <code>t/data</code> directory.
 <a href="#_run_tests_without_container">Run tests without Container</a>.</p>
 </div>
 <div class="sect3">
-<h4 id="_further_tips"><a class="anchor" href="#_further_tips"></a><a class="link" href="#_further_tips">69.5.1. Further tips</a></h4>
+<h4 id="_further_tips"><a class="anchor" href="#_further_tips"></a><a class="link" href="#_further_tips">70.5.1. Further tips</a></h4>
 <div class="ulist">
 <ul>
 <li>
@@ -13230,9 +13319,9 @@ look at the
 </div>
 </div>
 <div class="sect2">
-<h3 id="quick-container-setup"><a class="anchor" href="#quick-container-setup"></a><a class="link" href="#quick-container-setup">69.6. Quick container development setup</a></h3>
+<h3 id="quick-container-setup"><a class="anchor" href="#quick-container-setup"></a><a class="link" href="#quick-container-setup">70.6. Quick container development setup</a></h3>
 <div class="sect3">
-<h4 id="_requirements"><a class="anchor" href="#_requirements"></a><a class="link" href="#_requirements">69.6.1. Requirements</a></h4>
+<h4 id="_requirements"><a class="anchor" href="#_requirements"></a><a class="link" href="#_requirements">70.6.1. Requirements</a></h4>
 <div class="paragraph">
 <p>In these examples we use the following tools which are all in openSUSE Leap:</p>
 </div>
@@ -13251,7 +13340,7 @@ look at the
 </div>
 </div>
 <div class="sect3">
-<h4 id="_intro"><a class="anchor" href="#_intro"></a><a class="link" href="#_intro">69.6.2. Intro</a></h4>
+<h4 id="_intro"><a class="anchor" href="#_intro"></a><a class="link" href="#_intro">70.6.2. Intro</a></h4>
 <div class="paragraph">
 <p>These instructions are ready to use without any changes. You only might want to
 change the <code>OPENQA_BASEDIR</code> location.</p>
@@ -13297,7 +13386,7 @@ permissions, and graphical environment.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_environment_variables"><a class="anchor" href="#_environment_variables"></a><a class="link" href="#_environment_variables">69.6.3. Environment Variables</a></h4>
+<h4 id="_environment_variables"><a class="anchor" href="#_environment_variables"></a><a class="link" href="#_environment_variables">70.6.3. Environment Variables</a></h4>
 <div class="paragraph">
 <p>Create a file that you can <code>source</code> whenever you want to work in this
 environment:</p>
@@ -13337,7 +13426,7 @@ environment:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_postgres_container"><a class="anchor" href="#_postgres_container"></a><a class="link" href="#_postgres_container">69.6.4. Postgres Container</a></h4>
+<h4 id="_postgres_container"><a class="anchor" href="#_postgres_container"></a><a class="link" href="#_postgres_container">70.6.4. Postgres Container</a></h4>
 <div class="paragraph">
 <p>To be able to reuse the database later when stopping the container, we create a
 named volume.
@@ -13375,7 +13464,7 @@ createdb<span class="tok-w"> </span>-O<span class="tok-w"> </span>geekotest<span
 </div>
 </div>
 <div class="sect3">
-<h4 id="_distrobox"><a class="anchor" href="#_distrobox"></a><a class="link" href="#_distrobox">69.6.5. Distrobox</a></h4>
+<h4 id="_distrobox"><a class="anchor" href="#_distrobox"></a><a class="link" href="#_distrobox">70.6.5. Distrobox</a></h4>
 <div class="paragraph">
 <p>You can use a Leap container and install the requirements, but you can also
 build your own container with the requirements already installed.</p>
@@ -13412,7 +13501,7 @@ values in ini files.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_git"><a class="anchor" href="#_git"></a><a class="link" href="#_git">69.6.6. Git</a></h4>
+<h4 id="_git"><a class="anchor" href="#_git"></a><a class="link" href="#_git">70.6.6. Git</a></h4>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
@@ -13429,7 +13518,7 @@ git<span class="tok-w"> </span>clone<span class="tok-w"> </span>git@github.com:o
 </div>
 </div>
 <div class="sect3">
-<h4 id="_config_files"><a class="anchor" href="#_config_files"></a><a class="link" href="#_config_files">69.6.7. Config Files</a></h4>
+<h4 id="_config_files"><a class="anchor" href="#_config_files"></a><a class="link" href="#_config_files">70.6.7. Config Files</a></h4>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
@@ -13456,7 +13545,7 @@ crudini<span class="tok-w"> </span>--set<span class="tok-w"> </span><span class=
 </div>
 </div>
 <div class="sect3">
-<h4 id="_build_openqa"><a class="anchor" href="#_build_openqa"></a><a class="link" href="#_build_openqa">69.6.8. Build openQA</a></h4>
+<h4 id="_build_openqa"><a class="anchor" href="#_build_openqa"></a><a class="link" href="#_build_openqa">70.6.8. Build openQA</a></h4>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1">### distrobox container ###</span>
@@ -13476,7 +13565,7 @@ make<span class="tok-w"> </span>node_modules
 </div>
 </div>
 <div class="sect3">
-<h4 id="_run_openqa"><a class="anchor" href="#_run_openqa"></a><a class="link" href="#_run_openqa">69.6.9. Run openQA</a></h4>
+<h4 id="_run_openqa"><a class="anchor" href="#_run_openqa"></a><a class="link" href="#_run_openqa">70.6.9. Run openQA</a></h4>
 <div class="paragraph">
 <p>Ready!</p>
 </div>
@@ -13514,10 +13603,10 @@ worker<span class="tok-w"> </span>--isotovideo<span class="tok-w"> </span><span 
 </div>
 </div>
 <div class="sect1">
-<h2 id="dependency-handling"><a class="anchor" href="#dependency-handling"></a><a class="link" href="#dependency-handling">70. Handling of dependencies</a></h2>
+<h2 id="dependency-handling"><a class="anchor" href="#dependency-handling"></a><a class="link" href="#dependency-handling">71. Handling of dependencies</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_javascript_and_css"><a class="anchor" href="#_javascript_and_css"></a><a class="link" href="#_javascript_and_css">70.1. JavaScript and CSS</a></h3>
+<h3 id="_javascript_and_css"><a class="anchor" href="#_javascript_and_css"></a><a class="link" href="#_javascript_and_css">71.1. JavaScript and CSS</a></h3>
 <div class="paragraph">
 <p>Install third-party JavaScript and CSS files via their corresponding npm
 packages and add the paths of those files to <code>assets/assetpack.def</code>.</p>
@@ -13531,7 +13620,7 @@ files instead.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_perl_and_other_packages"><a class="anchor" href="#_perl_and_other_packages"></a><a class="link" href="#_perl_and_other_packages">70.2. Perl and other packages</a></h3>
+<h3 id="_perl_and_other_packages"><a class="anchor" href="#_perl_and_other_packages"></a><a class="link" href="#_perl_and_other_packages">71.2. Perl and other packages</a></h3>
 <div class="paragraph">
 <p>In openQA, there is a <code>dependencies.yaml</code> file including a list of
 dependencies, separated in groups. For example the openQA client does not need
@@ -13552,7 +13641,7 @@ as part of openSUSE Tumbleweed.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_remarks_regarding_ci"><a class="anchor" href="#_remarks_regarding_ci"></a><a class="link" href="#_remarks_regarding_ci">70.3. Remarks regarding CI</a></h3>
+<h3 id="_remarks_regarding_ci"><a class="anchor" href="#_remarks_regarding_ci"></a><a class="link" href="#_remarks_regarding_ci">71.3. Remarks regarding CI</a></h3>
 <div class="ulist">
 <ul>
 <li>
@@ -13571,7 +13660,7 @@ against openSUSE Tumbleweed and openSUSE Leap.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_managing_the_database"><a class="anchor" href="#_managing_the_database"></a><a class="link" href="#_managing_the_database">71. Managing the database</a></h2>
+<h2 id="_managing_the_database"><a class="anchor" href="#_managing_the_database"></a><a class="link" href="#_managing_the_database">72. Managing the database</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>During the development process there are cases in which the database schema
@@ -13580,7 +13669,7 @@ there are some steps that have to be followed so that new database instances
 and upgrades include those changes.</p>
 </div>
 <div class="sect2">
-<h3 id="_when_is_it_required_to_update_the_database_schema"><a class="anchor" href="#_when_is_it_required_to_update_the_database_schema"></a><a class="link" href="#_when_is_it_required_to_update_the_database_schema">71.1. When is it required to update the database schema?</a></h3>
+<h3 id="_when_is_it_required_to_update_the_database_schema"><a class="anchor" href="#_when_is_it_required_to_update_the_database_schema"></a><a class="link" href="#_when_is_it_required_to_update_the_database_schema">72.1. When is it required to update the database schema?</a></h3>
 <div class="paragraph">
 <p>After modifying files in <code>lib/OpenQA/Schema/Result</code>. However, not all changes
 require to update the schema. Adding just another method or altering/adding
@@ -13592,7 +13681,7 @@ any statements) you can just drop the migration again.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_how_to_update_the_database_schema"><a class="anchor" href="#_how_to_update_the_database_schema"></a><a class="link" href="#_how_to_update_the_database_schema">71.2. How to update the database schema</a></h3>
+<h3 id="_how_to_update_the_database_schema"><a class="anchor" href="#_how_to_update_the_database_schema"></a><a class="link" href="#_how_to_update_the_database_schema">72.2. How to update the database schema</a></h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -13659,7 +13748,7 @@ section for how to tackle this problem.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_how_to_add_fixtures_to_the_database"><a class="anchor" href="#_how_to_add_fixtures_to_the_database"></a><a class="link" href="#_how_to_add_fixtures_to_the_database">71.3. How to add fixtures to the database</a></h3>
+<h3 id="_how_to_add_fixtures_to_the_database"><a class="anchor" href="#_how_to_add_fixtures_to_the_database"></a><a class="link" href="#_how_to_add_fixtures_to_the_database">72.3. How to add fixtures to the database</a></h3>
 <div class="paragraph">
 <p>Note: This section is not about the fixtures for the testsuite. Those are located
 under t/fixtures.</p>
@@ -13691,7 +13780,7 @@ variable.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_adding_new_authentication_module"><a class="anchor" href="#_adding_new_authentication_module"></a><a class="link" href="#_adding_new_authentication_module">72. Adding new authentication module</a></h2>
+<h2 id="_adding_new_authentication_module"><a class="anchor" href="#_adding_new_authentication_module"></a><a class="link" href="#_adding_new_authentication_module">73. Adding new authentication module</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA comes with two authentication modules providing authentication methods:
@@ -13734,7 +13823,7 @@ after user validation. See included modules for inspiration.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_running_tests_of_openqa_itself"><a class="anchor" href="#_running_tests_of_openqa_itself"></a><a class="link" href="#_running_tests_of_openqa_itself">73. Running tests of openQA itself</a></h2>
+<h2 id="_running_tests_of_openqa_itself"><a class="anchor" href="#_running_tests_of_openqa_itself"></a><a class="link" href="#_running_tests_of_openqa_itself">74. Running tests of openQA itself</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Beside simply running the testsuite, it is also possible to use containers. Using containers,
@@ -13742,7 +13831,7 @@ tests are executed in the same environment as on CircleCI. This allows to reprod
 specific to that environment.</p>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_without_container"><a class="anchor" href="#_run_tests_without_container"></a><a class="link" href="#_run_tests_without_container">73.1. Run tests without container</a></h3>
+<h3 id="_run_tests_without_container"><a class="anchor" href="#_run_tests_without_container"></a><a class="link" href="#_run_tests_without_container">74.1. Run tests without container</a></h3>
 <div id="run_tests_without_container" class="paragraph">
 <p>Be sure to install all required dependencies. The package <code>openQA-devel</code> will
 provide them.</p>
@@ -13770,7 +13859,7 @@ and running <code>prove</code>).</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="run-tests-in-container"><a class="anchor" href="#run-tests-in-container"></a><a class="link" href="#run-tests-in-container">73.2. Run tests within a container</a></h3>
+<h3 id="run-tests-in-container"><a class="anchor" href="#run-tests-in-container"></a><a class="link" href="#run-tests-in-container">74.2. Run tests within a container</a></h3>
 <div class="paragraph">
 <p>The container used in this section of the documentation is not identical with the container used
 within the CI. To run tests within the CI environment locally, check out the
@@ -13861,7 +13950,7 @@ container and considers a few environment variables defining our test matrix:</p
 <p>Of course it is also possible to run (specific) tests directly via <code>prove</code> instead of using the Makefile targets.</p>
 </div>
 <div class="sect3">
-<h4 id="_tips"><a class="anchor" href="#_tips"></a><a class="link" href="#_tips">73.2.1. Tips</a></h4>
+<h4 id="_tips"><a class="anchor" href="#_tips"></a><a class="link" href="#_tips">74.2.1. Tips</a></h4>
 <div class="paragraph">
 <p>Running UI tests in non-headless mode is also possible, eg.:</p>
 </div>
@@ -13892,7 +13981,7 @@ executed.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_logging_behavior"><a class="anchor" href="#_logging_behavior"></a><a class="link" href="#_logging_behavior">73.3. Logging behavior</a></h3>
+<h3 id="_logging_behavior"><a class="anchor" href="#_logging_behavior"></a><a class="link" href="#_logging_behavior">74.3. Logging behavior</a></h3>
 <div class="paragraph">
 <p>Logs are redirected to a logfile when running tests within the CI. The output
 can therefore not be asserted using <code>Test::Output</code>. This can be worked around
@@ -13909,7 +13998,7 @@ quite irritating.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_test_runtime_limits"><a class="anchor" href="#_test_runtime_limits"></a><a class="link" href="#_test_runtime_limits">73.4. Test runtime limits</a></h3>
+<h3 id="_test_runtime_limits"><a class="anchor" href="#_test_runtime_limits"></a><a class="link" href="#_test_runtime_limits">74.4. Test runtime limits</a></h3>
 <div class="paragraph">
 <p>The test modules use <code>OpenQA::Test::TimeLimit</code> to introduce a test module
 specific timeout. The timeout is automatically scaled up based on environment
@@ -13966,14 +14055,14 @@ be set to a higher value. See
 </div>
 </div>
 <div class="sect1">
-<h2 id="circleci-workflow"><a class="anchor" href="#circleci-workflow"></a><a class="link" href="#circleci-workflow">74. CircleCI workflow</a></h2>
+<h2 id="circleci-workflow"><a class="anchor" href="#circleci-workflow"></a><a class="link" href="#circleci-workflow">75. CircleCI workflow</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The goal of the following workflow is to provide a way to run tests with a
 pre-approved list of dependencies both in the CI and locally.</p>
 </div>
 <div class="sect2">
-<h3 id="_dependency_artefacts"><a class="anchor" href="#_dependency_artefacts"></a><a class="link" href="#_dependency_artefacts">74.1. Dependency artefacts</a></h3>
+<h3 id="_dependency_artefacts"><a class="anchor" href="#_dependency_artefacts"></a><a class="link" href="#_dependency_artefacts">75.1. Dependency artefacts</a></h3>
 <div class="ulist">
 <ul>
 <li>
@@ -13987,7 +14076,7 @@ The testing will run against the latest master if empty.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_managing_and_troubleshooting_dependencies"><a class="anchor" href="#_managing_and_troubleshooting_dependencies"></a><a class="link" href="#_managing_and_troubleshooting_dependencies">74.2. Managing and troubleshooting dependencies</a></h3>
+<h3 id="_managing_and_troubleshooting_dependencies"><a class="anchor" href="#_managing_and_troubleshooting_dependencies"></a><a class="link" href="#_managing_and_troubleshooting_dependencies">75.2. Managing and troubleshooting dependencies</a></h3>
 <div class="paragraph">
 <p><code>ci-packages.txt</code> and <code>autoinst.sha</code> are aimed to represent those dependencies
 which change often. In normal workflow these files are generated automatically
@@ -14016,7 +14105,7 @@ project, etc.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="circleci-local-container"><a class="anchor" href="#circleci-local-container"></a><a class="link" href="#circleci-local-container">74.3. Run tests locally using a container</a></h3>
+<h3 id="circleci-local-container"><a class="anchor" href="#circleci-local-container"></a><a class="link" href="#circleci-local-container">75.3. Run tests locally using a container</a></h3>
 <div class="paragraph">
 <p>One way is to build an image using the <code>build_local_container.sh</code> script, start a
 container and then use the same commands one would use to test locally.</p>
@@ -14059,7 +14148,7 @@ podman stop -t 0 t1</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_using_the_circleci_tool"><a class="anchor" href="#_run_tests_using_the_circleci_tool"></a><a class="link" href="#_run_tests_using_the_circleci_tool">74.4. Run tests using the circleci tool</a></h3>
+<h3 id="_run_tests_using_the_circleci_tool"><a class="anchor" href="#_run_tests_using_the_circleci_tool"></a><a class="link" href="#_run_tests_using_the_circleci_tool">75.4. Run tests using the circleci tool</a></h3>
 <div class="paragraph">
 <p>After installing the <code>circleci</code> tool the following commands will be available.
 They will build the container and use committed changes from current local branch.</p>
@@ -14074,7 +14163,7 @@ circleci local execute --job testdeveloperfullstack</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_changing_config_cnf"><a class="anchor" href="#_changing_config_cnf"></a><a class="link" href="#_changing_config_cnf">74.5. Changing config.cnf</a></h3>
+<h3 id="_changing_config_cnf"><a class="anchor" href="#_changing_config_cnf"></a><a class="link" href="#_changing_config_cnf">75.5. Changing config.cnf</a></h3>
 <div class="paragraph">
 <p>Command to verify the YAML with the <code>circleci</code> tool:</p>
 </div>
@@ -14087,7 +14176,7 @@ circleci local execute --job testdeveloperfullstack</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_building_plugins"><a class="anchor" href="#_building_plugins"></a><a class="link" href="#_building_plugins">75. Building plugins</a></h2>
+<h2 id="_building_plugins"><a class="anchor" href="#_building_plugins"></a><a class="link" href="#_building_plugins">76. Building plugins</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Not all code needs to be included in openQA itself. openQA also supports the use
@@ -14221,7 +14310,7 @@ $<span class="tok-w"> </span>make<span class="tok-w"> </span><span class="tok-nb
 </div>
 </div>
 <div class="sect1">
-<h2 id="_checking_for_javascript_problems"><a class="anchor" href="#_checking_for_javascript_problems"></a><a class="link" href="#_checking_for_javascript_problems">76. Checking for JavaScript problems</a></h2>
+<h2 id="_checking_for_javascript_problems"><a class="anchor" href="#_checking_for_javascript_problems"></a><a class="link" href="#_checking_for_javascript_problems">77. Checking for JavaScript problems</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>One can use the tool <code>jshint</code> to check for problems within JavaScript code. It can be installed
@@ -14236,7 +14325,7 @@ node_modules/jshint/bin/jshint<span class="tok-w"> </span>path/to/javascript.js<
 </div>
 </div>
 <div class="sect1">
-<h2 id="_profiling_the_web_ui"><a class="anchor" href="#_profiling_the_web_ui"></a><a class="link" href="#_profiling_the_web_ui">77. Profiling the web UI</a></h2>
+<h2 id="_profiling_the_web_ui"><a class="anchor" href="#_profiling_the_web_ui"></a><a class="link" href="#_profiling_the_web_ui">78. Profiling the web UI</a></h2>
 <div class="sectionbody">
 <div class="olist arabic">
 <ol class="arabic">
@@ -14258,7 +14347,7 @@ node_modules/jshint/bin/jshint<span class="tok-w"> </span>path/to/javascript.js<
 </ol>
 </div>
 <div class="sect2">
-<h3 id="_note"><a class="anchor" href="#_note"></a><a class="link" href="#_note">77.1. Note</a></h3>
+<h3 id="_note"><a class="anchor" href="#_note"></a><a class="link" href="#_note">78.1. Note</a></h3>
 <div class="paragraph">
 <p>Profiling data is extensive. Remove it if you do not need it anymore and disable the <code>profiling_enabled</code>
 configuration again if not needed anymore.</p>
@@ -14267,7 +14356,7 @@ configuration again if not needed anymore.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_making_documentation_changes"><a class="anchor" href="#_making_documentation_changes"></a><a class="link" href="#_making_documentation_changes">78. Making documentation changes</a></h2>
+<h2 id="_making_documentation_changes"><a class="anchor" href="#_making_documentation_changes"></a><a class="link" href="#_making_documentation_changes">79. Making documentation changes</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>After changing documentation, consider generating documentation locally to
@@ -14319,7 +14408,7 @@ use as starting points, and adjust as necessary.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_web_ui_template"><a class="anchor" href="#_web_ui_template"></a><a class="link" href="#_web_ui_template">79. Web UI template</a></h2>
+<h2 id="_web_ui_template"><a class="anchor" href="#_web_ui_template"></a><a class="link" href="#_web_ui_template">80. Web UI template</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA uses the <a href="https://mojolicious.org/">Mojolicious</a> framework&#8217;s templating
@@ -14355,7 +14444,7 @@ supported by upstream.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_get_container_images"><a class="anchor" href="#_get_container_images"></a><a class="link" href="#_get_container_images">80. Get container images</a></h2>
+<h2 id="_get_container_images"><a class="anchor" href="#_get_container_images"></a><a class="link" href="#_get_container_images">81. Get container images</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>You can either build the images locally or use Fedora images from Docker Hub.</p>
@@ -14366,7 +14455,7 @@ However, it is done via <code>docker-compose</code> and explained later so this 
 can be skipped.</p>
 </div>
 <div class="sect2">
-<h3 id="_download_fedora_based_images_from_the_docker_hub"><a class="anchor" href="#_download_fedora_based_images_from_the_docker_hub"></a><a class="link" href="#_download_fedora_based_images_from_the_docker_hub">80.1. Download Fedora-based images from the Docker Hub</a></h3>
+<h3 id="_download_fedora_based_images_from_the_docker_hub"><a class="anchor" href="#_download_fedora_based_images_from_the_docker_hub"></a><a class="link" href="#_download_fedora_based_images_from_the_docker_hub">81.1. Download Fedora-based images from the Docker Hub</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman pull fedoraqa/openqa_data
@@ -14376,7 +14465,7 @@ podman pull fedoraqa/openqa_worker</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_build_opensuse_based_images_locally"><a class="anchor" href="#_build_opensuse_based_images_locally"></a><a class="link" href="#_build_opensuse_based_images_locally">80.2. Build openSUSE-based images locally</a></h3>
+<h3 id="_build_opensuse_based_images_locally"><a class="anchor" href="#_build_opensuse_based_images_locally"></a><a class="link" href="#_build_opensuse_based_images_locally">81.2. Build openSUSE-based images locally</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman build -t openqa_data ./openqa_data
@@ -14388,10 +14477,10 @@ podman build -t openqa_worker ./worker</pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_setup_with_fedora_based_images"><a class="anchor" href="#_setup_with_fedora_based_images"></a><a class="link" href="#_setup_with_fedora_based_images">81. Setup with Fedora-based images</a></h2>
+<h2 id="_setup_with_fedora_based_images"><a class="anchor" href="#_setup_with_fedora_based_images"></a><a class="link" href="#_setup_with_fedora_based_images">82. Setup with Fedora-based images</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_data_storage_and_directory_structure"><a class="anchor" href="#_data_storage_and_directory_structure"></a><a class="link" href="#_data_storage_and_directory_structure">81.1. Data storage and directory structure</a></h3>
+<h3 id="_data_storage_and_directory_structure"><a class="anchor" href="#_data_storage_and_directory_structure"></a><a class="link" href="#_data_storage_and_directory_structure">82.1. Data storage and directory structure</a></h3>
 <div class="paragraph">
 <p>Our intent was to create universal <code>webui</code> and <code>worker</code> containers and move
 all data storage and configurations to a third container, called <code>openqa_data</code>.
@@ -14439,7 +14528,7 @@ setup SELinux properly. If you are having problems with it, run this command:</p
 </div>
 </div>
 <div class="sect2">
-<h3 id="_update_firewall_rules"><a class="anchor" href="#_update_firewall_rules"></a><a class="link" href="#_update_firewall_rules">81.2. Update firewall rules</a></h3>
+<h3 id="_update_firewall_rules"><a class="anchor" href="#_update_firewall_rules"></a><a class="link" href="#_update_firewall_rules">82.2. Update firewall rules</a></h3>
 <div class="paragraph">
 <p>There is a <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1244124">bug in Fedora</a>
 with <code>docker-1.7.0-6</code> package that prevents containers to communicate with
@@ -14457,7 +14546,7 @@ sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_data_and_web_ui_containers"><a class="anchor" href="#_run_the_data_and_web_ui_containers"></a><a class="link" href="#_run_the_data_and_web_ui_containers">81.3. Run the data and web UI containers</a></h3>
+<h3 id="_run_the_data_and_web_ui_containers"><a class="anchor" href="#_run_the_data_and_web_ui_containers"></a><a class="link" href="#_run_the_data_and_web_ui_containers">82.3. Run the data and web UI containers</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
@@ -14477,7 +14566,7 @@ keys in the openQA&#8217;s web interface, and store the configuration in the Dat
 Container.</p>
 </div>
 <div class="sect3">
-<h4 id="_generate_and_configure_api_credentials"><a class="anchor" href="#_generate_and_configure_api_credentials"></a><a class="link" href="#_generate_and_configure_api_credentials">81.3.1. Generate and configure API credentials</a></h4>
+<h4 id="_generate_and_configure_api_credentials"><a class="anchor" href="#_generate_and_configure_api_credentials"></a><a class="link" href="#_generate_and_configure_api_credentials">82.3.1. Generate and configure API credentials</a></h4>
 <div class="paragraph">
 <p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a>, generate key and secret. Then run the following
 command substituting <code>KEY</code> and <code>SECRET</code> with the generated values:</p>
@@ -14490,7 +14579,7 @@ command substituting <code>KEY</code> and <code>SECRET</code> with the generated
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_worker_container"><a class="anchor" href="#_run_the_worker_container"></a><a class="link" href="#_run_the_worker_container">81.4. Run the worker container</a></h3>
+<h3 id="_run_the_worker_container"><a class="anchor" href="#_run_the_worker_container"></a><a class="link" href="#_run_the_worker_container">82.4. Run the worker container</a></h3>
 <div class="literalblock">
 <div class="content">
 <pre>podman run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
@@ -14510,7 +14599,7 @@ container name, so to add worker 2 use:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_enable_services"><a class="anchor" href="#_enable_services"></a><a class="link" href="#_enable_services">81.5. Enable services</a></h3>
+<h3 id="_enable_services"><a class="anchor" href="#_enable_services"></a><a class="link" href="#_enable_services">82.5. Enable services</a></h3>
 <div class="paragraph">
 <p>Some systemd services are provided to start up the containers, so you do not
 have to keep doing it manually. To install and enable them:</p>
@@ -14530,7 +14619,7 @@ openqa-worker@2.service</code>, and so on.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_get_tests_isos_and_create_disks"><a class="anchor" href="#_get_tests_isos_and_create_disks"></a><a class="link" href="#_get_tests_isos_and_create_disks">81.6. Get tests, ISOs and create disks</a></h3>
+<h3 id="_get_tests_isos_and_create_disks"><a class="anchor" href="#_get_tests_isos_and_create_disks"></a><a class="link" href="#_get_tests_isos_and_create_disks">82.6. Get tests, ISOs and create disks</a></h3>
 <div class="paragraph">
 <p>You have to put your tests under <code>data/tests</code> directory and ISOs under
 <code>data/factory/iso</code> directory. For testing Fedora, run:</p>
@@ -14587,14 +14676,14 @@ repository in <code>/tools</code> directory. Note that you have to have
 </div>
 </div>
 <div class="sect1">
-<h2 id="_setup_openqa_with_opensuse_based_images_and_docker_compose"><a class="anchor" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose"></a><a class="link" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">82. Setup openQA with openSUSE-based images and docker-compose</a></h2>
+<h2 id="_setup_openqa_with_opensuse_based_images_and_docker_compose"><a class="anchor" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose"></a><a class="link" href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">83. Setup openQA with openSUSE-based images and docker-compose</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>All relative paths in this section are relative to a checkout of openQA&#8217;s Git
 repository.</p>
 </div>
 <div class="sect2">
-<h3 id="_configuration_2"><a class="anchor" href="#_configuration_2"></a><a class="link" href="#_configuration_2">82.1. Configuration</a></h3>
+<h3 id="_configuration_2"><a class="anchor" href="#_configuration_2"></a><a class="link" href="#_configuration_2">83.1. Configuration</a></h3>
 <div class="paragraph">
 <p>The web UI will be available under <a href="http://localhost" class="bare">http://localhost</a> and <a href="https://localhost" class="bare">https://localhost</a>. So it
 is using default HTTP(S) ports. Make sure those ports are not used by
@@ -14632,7 +14721,7 @@ be stored under <code>container/webui/workdir/db</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_build_images"><a class="anchor" href="#_build_images"></a><a class="link" href="#_build_images">82.2. Build images</a></h3>
+<h3 id="_build_images"><a class="anchor" href="#_build_images"></a><a class="link" href="#_build_images">83.2. Build images</a></h3>
 <div class="paragraph">
 <p><code>docker-compose</code> will build images automatically. However, it is also possible
 to build images explicitly:</p>
@@ -14648,7 +14737,7 @@ docker-compose build       # build worker images</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_web_ui_containers_in_ha_mode"><a class="anchor" href="#_run_the_web_ui_containers_in_ha_mode"></a><a class="link" href="#_run_the_web_ui_containers_in_ha_mode">82.3. Run the web UI containers in HA mode</a></h3>
+<h3 id="_run_the_web_ui_containers_in_ha_mode"><a class="anchor" href="#_run_the_web_ui_containers_in_ha_mode"></a><a class="link" href="#_run_the_web_ui_containers_in_ha_mode">83.3. Run the web UI containers in HA mode</a></h3>
 <div class="paragraph">
 <p>To start the containers, just run:</p>
 </div>
@@ -14682,7 +14771,7 @@ docker-compose exec db psql openqa openqa  # open psql shell</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_generate_and_configure_api_credentials_2"><a class="anchor" href="#_generate_and_configure_api_credentials_2"></a><a class="link" href="#_generate_and_configure_api_credentials_2">82.4. Generate and configure API credentials</a></h3>
+<h3 id="_generate_and_configure_api_credentials_2"><a class="anchor" href="#_generate_and_configure_api_credentials_2"></a><a class="link" href="#_generate_and_configure_api_credentials_2">83.4. Generate and configure API credentials</a></h3>
 <div class="paragraph">
 <p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a> and generate a key/secret and configure it in
 <code>container/webui/conf/client.conf</code> <strong>and</strong> <code>container/worker/conf/client.conf</code> in
@@ -14700,7 +14789,7 @@ docker-compose restart</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_worker_container_2"><a class="anchor" href="#_run_the_worker_container_2"></a><a class="link" href="#_run_the_worker_container_2">82.5. Run the worker container</a></h3>
+<h3 id="_run_the_worker_container_2"><a class="anchor" href="#_run_the_worker_container_2"></a><a class="link" href="#_run_the_worker_container_2">83.5. Run the worker container</a></h3>
 <div class="paragraph">
 <p>Configure the number of workers to start via the environment variable
 <code>OPENQA_WORKER_REPLICAS</code>. By default, one worker is started.</p>
@@ -14735,7 +14824,7 @@ consecutive numbers for the <code>--instance</code> parameter:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_get_tests_isos_and_create_disks_2"><a class="anchor" href="#_get_tests_isos_and_create_disks_2"></a><a class="link" href="#_get_tests_isos_and_create_disks_2">82.6. Get tests, ISOs and create disks</a></h3>
+<h3 id="_get_tests_isos_and_create_disks_2"><a class="anchor" href="#_get_tests_isos_and_create_disks_2"></a><a class="link" href="#_get_tests_isos_and_create_disks_2">83.6. Get tests, ISOs and create disks</a></h3>
 <div class="paragraph">
 <p>You have to put your tests under <code>data/tests</code> directory and ISOs under
 <code>data/factory/iso</code> directory. For testing openSUSE, follow
@@ -14752,7 +14841,7 @@ dependencies, e.g. via a <code>zypper</code> call.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_running_jobs"><a class="anchor" href="#_running_jobs"></a><a class="link" href="#_running_jobs">83. Running jobs</a></h2>
+<h2 id="_running_jobs"><a class="anchor" href="#_running_jobs"></a><a class="link" href="#_running_jobs">84. Running jobs</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>After performing the "setup" tasks above - do not forget about tests and ISOs.</p>
@@ -14772,13 +14861,13 @@ docker-compose exec webui openqa-clone-job \
 </div>
 </div>
 <div class="sect1">
-<h2 id="_further_configuration_options"><a class="anchor" href="#_further_configuration_options"></a><a class="link" href="#_further_configuration_options">84. Further configuration options</a></h2>
+<h2 id="_further_configuration_options"><a class="anchor" href="#_further_configuration_options"></a><a class="link" href="#_further_configuration_options">85. Further configuration options</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Most of these options do <strong>not</strong> apply to the docker-compose setup.</p>
 </div>
 <div class="sect2">
-<h3 id="_change_the_openid_provider"><a class="anchor" href="#_change_the_openid_provider"></a><a class="link" href="#_change_the_openid_provider">84.1. Change the OpenID provider</a></h3>
+<h3 id="_change_the_openid_provider"><a class="anchor" href="#_change_the_openid_provider"></a><a class="link" href="#_change_the_openid_provider">85.1. Change the OpenID provider</a></h3>
 <div class="paragraph">
 <p><a href="https://www.opensuse.org/openid/user/" class="bare">https://www.opensuse.org/openid/user/</a> is set as a default OpenID provider. To
 change it, run:</p>
@@ -14793,7 +14882,7 @@ change it, run:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_adding_workers_on_other_hosts"><a class="anchor" href="#_adding_workers_on_other_hosts"></a><a class="link" href="#_adding_workers_on_other_hosts">84.2. Adding workers on other hosts</a></h3>
+<h3 id="_adding_workers_on_other_hosts"><a class="anchor" href="#_adding_workers_on_other_hosts"></a><a class="link" href="#_adding_workers_on_other_hosts">85.2. Adding workers on other hosts</a></h3>
 <div class="paragraph">
 <p>You may want to add workers on other hosts, so you do not need one powerful
 host to run the UI and all the workers.</p>
@@ -14857,7 +14946,7 @@ adjust these files if you use non-standard ports (see above).</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_keeping_all_data_in_the_data_volume_container"><a class="anchor" href="#_keeping_all_data_in_the_data_volume_container"></a><a class="link" href="#_keeping_all_data_in_the_data_volume_container">84.3. Keeping all data in the Data Volume container</a></h3>
+<h3 id="_keeping_all_data_in_the_data_volume_container"><a class="anchor" href="#_keeping_all_data_in_the_data_volume_container"></a><a class="link" href="#_keeping_all_data_in_the_data_volume_container">85.3. Keeping all data in the Data Volume container</a></h3>
 <div class="paragraph">
 <p>If you decided to keep all the data in the Volume container (<code>openqa_data</code>), run the following commands:</p>
 </div>
@@ -14892,7 +14981,7 @@ podman exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_
 </div>
 </div>
 <div class="sect2">
-<h3 id="_keeping_all_data_on_the_host_system"><a class="anchor" href="#_keeping_all_data_on_the_host_system"></a><a class="link" href="#_keeping_all_data_on_the_host_system">84.4. Keeping all data on the host system</a></h3>
+<h3 id="_keeping_all_data_on_the_host_system"><a class="anchor" href="#_keeping_all_data_on_the_host_system"></a><a class="link" href="#_keeping_all_data_on_the_host_system">85.4. Keeping all data on the host system</a></h3>
 <div class="paragraph">
 <p>If you want to keep all the data in the host system and you prefer not to use
 a Volume Container, run the following commands:</p>
@@ -14934,7 +15023,7 @@ run the worker as:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_developing_tests_with_container_setup"><a class="anchor" href="#_developing_tests_with_container_setup"></a><a class="link" href="#_developing_tests_with_container_setup">84.5. Developing tests with container setup</a></h3>
+<h3 id="_developing_tests_with_container_setup"><a class="anchor" href="#_developing_tests_with_container_setup"></a><a class="link" href="#_developing_tests_with_container_setup">85.5. Developing tests with container setup</a></h3>
 <div class="paragraph">
 <p>With this setup, the needles created from the web UI will almost certainly have
 a different owner and group than your user account. As we have the tests in
@@ -14959,7 +15048,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 </div>
 <div class="sect1">
-<h2 id="_introduction_7"><a class="anchor" href="#_introduction_7"></a><a class="link" href="#_introduction_7">85. Introduction</a></h2>
+<h2 id="_introduction_7"><a class="anchor" href="#_introduction_7"></a><a class="link" href="#_introduction_7">86. Introduction</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA is an automated testing framework. This privacy policy describes how we
@@ -14973,10 +15062,10 @@ may have their own privacy practices.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_data_we_collect"><a class="anchor" href="#_data_we_collect"></a><a class="link" href="#_data_we_collect">86. Data We Collect</a></h2>
+<h2 id="_data_we_collect"><a class="anchor" href="#_data_we_collect"></a><a class="link" href="#_data_we_collect">87. Data We Collect</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_account_information"><a class="anchor" href="#_account_information"></a><a class="link" href="#_account_information">86.1. Account Information</a></h3>
+<h3 id="_account_information"><a class="anchor" href="#_account_information"></a><a class="link" href="#_account_information">87.1. Account Information</a></h3>
 <div class="paragraph">
 <p>When you sign in to an openQA instance for the first time via an external
 authentication provider, an account is automatically created. We collect the
@@ -15003,7 +15092,7 @@ following information provided by that provider:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_authentication_data"><a class="anchor" href="#_authentication_data"></a><a class="link" href="#_authentication_data">86.2. Authentication Data</a></h3>
+<h3 id="_authentication_data"><a class="anchor" href="#_authentication_data"></a><a class="link" href="#_authentication_data">87.2. Authentication Data</a></h3>
 <div class="ulist">
 <ul>
 <li>
@@ -15016,7 +15105,7 @@ following information provided by that provider:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_activity_data"><a class="anchor" href="#_activity_data"></a><a class="link" href="#_activity_data">86.3. Activity Data</a></h3>
+<h3 id="_activity_data"><a class="anchor" href="#_activity_data"></a><a class="link" href="#_activity_data">87.3. Activity Data</a></h3>
 <div class="ulist">
 <ul>
 <li>
@@ -15037,7 +15126,7 @@ following information provided by that provider:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_how_we_use_your_data"><a class="anchor" href="#_how_we_use_your_data"></a><a class="link" href="#_how_we_use_your_data">87. How We Use Your Data</a></h2>
+<h2 id="_how_we_use_your_data"><a class="anchor" href="#_how_we_use_your_data"></a><a class="link" href="#_how_we_use_your_data">88. How We Use Your Data</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Your data is used for:</p>
@@ -15067,7 +15156,7 @@ following information provided by that provider:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_data_protection"><a class="anchor" href="#_data_protection"></a><a class="link" href="#_data_protection">88. Data Protection</a></h2>
+<h2 id="_data_protection"><a class="anchor" href="#_data_protection"></a><a class="link" href="#_data_protection">89. Data Protection</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>We implement appropriate technical and organizational measures:</p>
@@ -15092,7 +15181,7 @@ preserving historical records (see User Rights)</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_data_sharing"><a class="anchor" href="#_data_sharing"></a><a class="link" href="#_data_sharing">89. Data Sharing</a></h2>
+<h2 id="_data_sharing"><a class="anchor" href="#_data_sharing"></a><a class="link" href="#_data_sharing">90. Data Sharing</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>We do not share your personal data with third parties except:</p>
@@ -15116,19 +15205,19 @@ preserving historical records (see User Rights)</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_user_rights"><a class="anchor" href="#_user_rights"></a><a class="link" href="#_user_rights">90. User Rights</a></h2>
+<h2 id="_user_rights"><a class="anchor" href="#_user_rights"></a><a class="link" href="#_user_rights">91. User Rights</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>You have the following rights regarding your personal data:</p>
 </div>
 <div class="sect2">
-<h3 id="_access"><a class="anchor" href="#_access"></a><a class="link" href="#_access">90.1. Access</a></h3>
+<h3 id="_access"><a class="anchor" href="#_access"></a><a class="link" href="#_access">91.1. Access</a></h3>
 <div class="paragraph">
 <p>You can view your account information through the web interface or API.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_correction"><a class="anchor" href="#_correction"></a><a class="link" href="#_correction">90.2. Correction</a></h3>
+<h3 id="_correction"><a class="anchor" href="#_correction"></a><a class="link" href="#_correction">91.2. Correction</a></h3>
 <div class="paragraph">
 <p>Account details (username, email, fullname, nickname) are retrieved from your
 external authentication provider. To update this information, please do so
@@ -15136,7 +15225,7 @@ through that provider.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_deletion"><a class="anchor" href="#_deletion"></a><a class="link" href="#_deletion">90.3. Deletion</a></h3>
+<h3 id="_deletion"><a class="anchor" href="#_deletion"></a><a class="link" href="#_deletion">91.3. Deletion</a></h3>
 <div class="paragraph">
 <p>You can delete your account, which will:</p>
 </div>
@@ -15165,13 +15254,13 @@ settings or contact the instance administrator.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_data_portability"><a class="anchor" href="#_data_portability"></a><a class="link" href="#_data_portability">90.4. Data Portability</a></h3>
+<h3 id="_data_portability"><a class="anchor" href="#_data_portability"></a><a class="link" href="#_data_portability">91.4. Data Portability</a></h3>
 <div class="paragraph">
 <p>You can export your data through the openQA API.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_contact"><a class="anchor" href="#_contact"></a><a class="link" href="#_contact">90.5. Contact</a></h3>
+<h3 id="_contact"><a class="anchor" href="#_contact"></a><a class="link" href="#_contact">91.5. Contact</a></h3>
 <div class="paragraph">
 <p>For privacy inquiries, contact the administrator of your openQA instance.</p>
 </div>
@@ -15179,7 +15268,7 @@ settings or contact the instance administrator.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_cookies_and_tracking"><a class="anchor" href="#_cookies_and_tracking"></a><a class="link" href="#_cookies_and_tracking">91. Cookies and Tracking</a></h2>
+<h2 id="_cookies_and_tracking"><a class="anchor" href="#_cookies_and_tracking"></a><a class="link" href="#_cookies_and_tracking">92. Cookies and Tracking</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA uses session cookies for authentication. These cookies are necessary
@@ -15191,7 +15280,7 @@ for the service to function and are not used for tracking or advertising.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_policy_changes"><a class="anchor" href="#_policy_changes"></a><a class="link" href="#_policy_changes">92. Policy Changes</a></h2>
+<h2 id="_policy_changes"><a class="anchor" href="#_policy_changes"></a><a class="link" href="#_policy_changes">93. Policy Changes</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This policy may be updated from time to time. The effective date is noted
@@ -15201,7 +15290,7 @@ announcement channels.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_effective_date"><a class="anchor" href="#_effective_date"></a><a class="link" href="#_effective_date">93. Effective Date</a></h2>
+<h2 id="_effective_date"><a class="anchor" href="#_effective_date"></a><a class="link" href="#_effective_date">94. Effective Date</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This policy was last updated: March 2026</p>
@@ -15209,7 +15298,7 @@ announcement channels.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_contact_information"><a class="anchor" href="#_contact_information"></a><a class="link" href="#_contact_information">94. Contact Information</a></h2>
+<h2 id="_contact_information"><a class="anchor" href="#_contact_information"></a><a class="link" href="#_contact_information">95. Contact Information</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For questions about this privacy policy or to exercise your data rights,
@@ -15220,7 +15309,7 @@ contact the openQA instance administrator.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-24 04:44:39 UTC
+Last updated 2026-03-27 04:44:57 UTC
 </div>
 </div>
 </body>
