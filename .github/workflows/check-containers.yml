@@ -4,6 +4,8 @@ name: check-containers
 on: [push, pull_request]
 jobs:
   static-check-containers:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

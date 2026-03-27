@@ -9,4 +9,6 @@ on:
 
 jobs:
   check-commit-message:
+    permissions:
+      contents: read
     uses: os-autoinst/os-autoinst-common/.github/workflows/base-commit-message-checker.yml@master

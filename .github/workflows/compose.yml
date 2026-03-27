@@ -4,6 +4,8 @@ name: compose
 on: [push, pull_request]
 jobs:
   webui-docker-compose:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
