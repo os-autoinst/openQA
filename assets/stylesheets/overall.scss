@@ -24,45 +24,37 @@ body {
 // don't underline links except on focus/hover
 a {
   text-decoration: none;
+  transition: color 0.2s ease-in-out;
 }
-a:focus, a:hover {
+a:focus,
+a:hover {
   text-decoration: underline;
 }
 
 // don't underline links at all on certain places
-.nav-link {
-  &:focus, &:hover {
-    text-decoration: none;
-  }
-}
-.dropdown-item {
-  &:focus, &:hover {
-    text-decoration: none;
-  }
-}
-.page-link {
-  &:focus, &:hover {
-    text-decoration: none;
-  }
-}
+.nav-link,
+.dropdown-item,
+.page-link,
 .btn {
-  &:focus, &:hover {
+  &:focus,
+  &:hover {
     text-decoration: none;
   }
 }
 @include media-breakpoint-up(md) {
   #content {
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
   }
 }
 
 // buttons
 .btn i.fa + span {
-  padding-left: 8px;
+  padding-left: 0.5rem;
 }
-.btn-group-sm .btn.help_popover, .btn-sm.help_popover {
-  padding-top: 6px;
+.btn-group-sm .btn.help_popover,
+.btn-sm.help_popover {
+  padding-top: 0.375rem;
 }
 
 // footer
@@ -70,8 +62,8 @@ a:focus, a:hover {
   position: absolute;
   bottom: 0;
   width: 100%;
-  padding-bottom: 10px;
-  background-color: #f5f5f5;
+  padding: 0.5rem 0;
+  background-color: var(--bs-tertiary-bg);
 }
 [data-bs-theme='dark'] .footer {
   background-color: $default-bg-color-dark;
@@ -91,15 +83,12 @@ a:focus, a:hover {
 }
 body {
   // add some space between last elements and footer
-  margin-bottom: 45px;
+  margin-bottom: 5rem;
 }
 
 // paragraphs, links, misc
 p {
-  margin: 0 0 1em;
-}
-a {
-  @include transition(all 0.2s);
+  margin-bottom: 1rem;
 }
 [data-bs-theme='dark'] a:not(.btn) {
   color: $link-color-dark;
@@ -110,130 +99,120 @@ a {
 }
 
 // headings
-h1, .h1, h2, .h2 {
-  margin-top: 18px;
-  margin-bottom: 9px;
+h1,
+.h1,
+h2,
+.h2 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
 }
-h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
   font-family: inherit;
-  font-weight: 400;
-  line-height: 1.1;
+  font-weight: $headings-font-weight;
+  line-height: 1.2;
   color: #444;
 }
 [data-bs-theme='dark'] {
-  h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .h1,
+  .h2,
+  .h3,
+  .h4,
+  .h5,
+  .h6 {
     color: #bbb;
   }
 }
 
 // cards (former panels)
 .card {
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 7.5%);
 }
 [data-bs-theme='dark'] .card {
   background-color: $default-bg-color-dark;
   border: $table-border-color-dark solid 0.5px;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 50%);
 }
 
-// colorful card headers (Bootstrap 4 only has colorful borders or fully colored cards)
-.card.border-danger {
-  border-color: #eed3d7;
-  .card-header {
-    color: #b94a48;
-    background-color: #f2dede;
-  }
+// colorful card headers
+.card.border-danger .card-header {
+  color: var(--bs-danger-text-emphasis);
+  background-color: var(--bs-danger-bg-subtle);
 }
-[data-bs-theme='dark'] {
-  .card.border-danger .card-header {
-    color: #cf4644;
-    background-color: #450202;
-  }
+.card.border-success .card-header {
+  color: var(--bs-success-text-emphasis);
+  background-color: var(--bs-success-bg-subtle);
 }
-.card.border-success {
-  border-color: #d6e9c6;
-  .card-header {
-    color: #468847;
-    background-color: #dff0d8;
-  }
+.card.border-warning .card-header {
+  color: var(--bs-warning-text-emphasis);
+  background-color: var(--bs-warning-bg-subtle);
 }
-[data-bs-theme='dark'] {
-  .card.border-success .card-header {
-    color: #74f476;
-    background-color: #144500;
-  }
-}
-.card.border-warning {
-  border-color: #fbeed5;
-  .card-header {
-    color: #c09853;
-    background-color: #fcf8e3;
-  }
-}
-[data-bs-theme='dark'] {
-  .card.border-warning .card-header {
-    color: #fdca71;
-    background-color: #1d1800;
-  }
-}
-.card.border-info {
-  border-color: #bce8f1;
-  .card-header {
-    color: #3a87ad;
-    background-color: #d9edf7;
-  }
-}
-[data-bs-theme='dark'] {
-  .card.border-info .card-header {
-    color: #64cafd;
-    background-color: #000;
-  }
+.card.border-info .card-header {
+  color: var(--bs-info-text-emphasis);
+  background-color: var(--bs-info-bg-subtle);
 }
 
 // big welcome box ("jumbtron")
 .jumbotron {
-  padding-top: 30px;
-  padding-bottom: 30px;
-  margin-bottom: 30px;
-  color: inherit;
-  background-color: #f9f9f9;
+  padding: 1.5rem 1rem;
+  margin-bottom: 2rem;
+  background-color: var(--bs-tertiary-bg);
+  border-radius: 0.5rem;
 }
 [data-bs-theme='dark'] .jumbotron {
   background-color: #111;
 }
-.jumbotron p {
-  margin-bottom: 15px;
-  font-size: 20px;
-  font-weight: 200;
-}
 
 // tabs
 .tab-content {
-  padding-top: 15px;
+  padding-top: 1rem;
 }
 .nav-tabs .nav-link {
   border: none;
+  border-bottom: 2px solid transparent;
   color: $default-font-color;
-  &:hover, &:focus, &.active {
-    border: none;
-    box-shadow: inset 0 -2px 0 #446e9b;
-    color: #446e9b;
+  &:hover,
+  &:focus {
+    border-bottom-color: var(--bs-secondary-border-subtle);
+  }
+  &.active {
+    border-bottom-color: $link-color;
+    color: $link-color;
+    background: transparent;
   }
 }
 [data-bs-theme='dark'] {
   .nav-tabs .nav-link {
     color: $default-font-color-dark;
-    &:hover, &:focus, &.active {
-      box-shadow: inset 0 -2px 0 #6caef5;
-      color: #6caef5;
-      background-color: $default-bg-color-dark;
+    &.active {
+      border-bottom-color: $link-color-dark;
+      color: $link-color-dark;
     }
   }
 }
 
 // popover
 .help_popover {
-  margin: 0 5px;
-  &:focus, &:hover {
+  margin: 0 0.3rem;
+  &:focus,
+  &:hover {
     outline: none;
     text-decoration: none;
   }
@@ -254,7 +233,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   ul {
     padding-left: 1.2rem;
   }
-  p, ul {
+  p,
+  ul {
     text-align: left;
     word-break: break-word;
   }
@@ -267,51 +247,42 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 // Icon for copying job ID
 .copy-jobid {
-  margin-right: 5px;
+  margin-right: 0.3rem;
 }
 [data-bs-theme='dark'] {
+  --bs-primary: #{$primary-dark};
+  --bs-primary-rgb: #{red($primary-dark)}, #{green($primary-dark)}, #{blue($primary-dark)};
+  --bs-link-color: #{$primary-dark};
+  --bs-link-hover-color: #{lighten($primary-dark, 10%)};
+  --bs-navbar-color: var(--bs-body-color);
+  --bs-navbar-hover-color: var(--bs-primary);
+  --bs-navbar-active-color: var(--bs-primary);
+  --bs-navbar-brand-color: var(--bs-emphasis-color);
   .table {
     color: $default-font-color-dark;
     background-color: $default-bg-color-dark;
   }
-
-  // All tests pagination
-  .page-link, .page-item.disabled .page-link {
+  .page-link,
+  .page-item.disabled .page-link {
     background-color: $default-bg-color-dark;
     color: $default-font-color-dark;
-    border: rgba(255, 255, 255, 30 / 100) solid 0.5px;
+    border: rgba(255, 255, 255, 30%) solid 0.5px;
   }
-
-  // All tests search field
-  .chosen-container .chosen-drop, .chosen-container .chosen-results li, .chosen-container ul.chosen-choices {
+  .chosen-container .chosen-drop,
+  .chosen-container .chosen-results li,
+  .chosen-container ul.chosen-choices {
     background-color: $default-bg-color-dark;
     background-image: none;
     color: $default-font-color-dark;
   }
-
-  // All tests table rows
   .table td {
-    border-top-color: rgba(255, 255, 255, 3 / 100);
-  }
-  .modal.show {
-    background-color: lighten($default-bg-color-dark, 25%);
+    border-top-color: rgba(255, 255, 255, 3%);
   }
   .modal-content {
     background-color: $default-bg-color-dark;
   }
-  .modal-header, .modal-footer {
-    border-top: none;
-    border-bottom: none;
-  }
-  .container-fluid .btn-light:hover, .container-fluid .btn-light:active:hover {
-    background-color: #101010;
-    color: #cbc5bf;
-  }
-  .container-fluid .btn-light:active {
-    background-color: #101010;
-    background-image: radial-gradient(circle, lighten(#101010, 25%) 10%, #363636 11%);
-  }
-  input, textarea {
+  input,
+  textarea {
     background-color: $default-bg-color-dark;
     color: $default-font-color-dark;
     border: $table-border-color-dark solid 0.5px;
