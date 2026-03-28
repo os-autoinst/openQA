@@ -10,6 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use DateTime;
 use DateTime::Duration;
 use OpenQA::JobDependencies::Constants;
+use OpenQA::Scheduler::DynamicLimit;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Scheduler::WorkerSlotPicker;
 use OpenQA::Resource::Locks;
@@ -17,7 +18,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 require OpenQA::Test::Database;
-use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
+use OpenQA::Test::Utils qw(setup_mojo_app_with_default_worker_timeout simulate_load);
 use OpenQA::Utils qw(assetdir results_storage_above_threshold);
 use Test::Mojo;
 use Test::MockModule;
@@ -414,7 +415,7 @@ subtest 'scheduler limits' => sub {
         my $res = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
         is @$res, 2, 'schedule() returns 2 items';
         like $log,
-          qr/limit reached, scheduling no additional jobs .max_running_jobs=2, free workers=5, running=0, allocated=2./,
+          qr/limit reached, scheduling no additional jobs .job_limit=2, free workers=5, running=0, allocated=2./,
           'Log message about exceeded limit';
 
         my $scheduled = list_jobs(state => SCHEDULED);
@@ -449,6 +450,66 @@ subtest 'scheduler limits' => sub {
 
     $jobs->find($_->id)->delete for @jobs;
     $_->delete for @workers;
+};
+
+subtest 'dynamic job limit' => sub {
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
+
+    subtest 'dynamic limit disabled: returns static max_running_jobs' => sub {
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_enabled} = 0;
+        local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 42;
+        is $scheduler->effective_job_limit, 42, 'static limit returned when dynamic limit disabled';
+    };
+
+    subtest 'dynamic limit disabled: -1 (no limit) returned unchanged' => sub {
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_enabled} = 0;
+        local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = -1;
+        is $scheduler->effective_job_limit, -1, 'no-limit (-1) returned unchanged when dynamic disabled';
+    };
+
+    subtest 'dynamic limit enabled with low load: returns current dynamic limit' => sub {
+        my $load_file = simulate_load('0.5 0.5 0.5 1/1 1', '04-scheduler-dynlimit');
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_enabled} = 1;
+        local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 100;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_min} = 30;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_load_threshold} = 8;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_load_critical} = 16;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_step} = 5;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_interval} = 0;
+        $scheduler->dynamic_limit(OpenQA::Scheduler::DynamicLimit->new);
+        # load 0.5 < 8*0.7=5.6 => scale up from min=30 by step=5 => 35
+        is $scheduler->effective_job_limit, 35, 'dynamic limit: min+step returned on low load';
+    };
+
+    subtest 'dynamic limit enforced in scheduling: fewer jobs than max_running_jobs allocated' => sub {
+        my @dyn_workers;
+        for my $wid (6 .. 9) {
+            my $id = register_worker(host => $wid);
+            my $w = $workers->find($id);
+            $w->set_property(WORKER_CLASS => 'qemu_x86_64');
+            push @dyn_workers, $w;
+        }
+        my @dyn_jobs;
+        push @dyn_jobs, $jobs->create_from_settings(\%settings2) for 1 .. 5;
+        my @dyn_job_ids = map { $_->id } @dyn_jobs;
+
+        my $load_file = simulate_load('0.5 0.5 0.5 1/1 1', '04-scheduler-dynlimit2');
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_enabled} = 1;
+        local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 100;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_min} = 2;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_load_threshold} = 8;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_load_critical} = 16;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_step} = 1;
+        local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_interval} = 0;
+        $scheduler->dynamic_limit(OpenQA::Scheduler::DynamicLimit->new);
+        my $res = $scheduler->schedule();
+        # effective_limit = min=2 + step=1 = 3; only 3 jobs allocated despite 5 scheduled and 5 workers
+        is scalar @$res, 3, 'dynamic limit of 3 (min+step) respected in scheduling';
+
+        # Clean up only the jobs and workers created in this subtest
+        $jobs->search({id => \@dyn_job_ids})->delete;
+        $_->delete for @dyn_workers;
+    };
 };
 
 subtest 'job grab (successful assignment)' => sub {

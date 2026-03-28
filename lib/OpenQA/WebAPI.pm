@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious', -signatures;
 
 use OpenQA::Assets;
 use OpenQA::Schema;
+use OpenQA::Scheduler::DynamicLimit;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::Log qw(setup_log log_debug log_error);
 use OpenQA::Utils qw(detect_current_version service_port);
@@ -19,6 +20,7 @@ use HTTP::Status qw(:constants);
 use Time::Seconds;
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
+has dynamic_limit => sub { OpenQA::Scheduler::DynamicLimit->new };
 
 # This method will run once at server start
 sub startup ($self) {
