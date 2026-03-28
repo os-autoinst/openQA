@@ -16,6 +16,7 @@ use Term::ANSIColor qw(colored);
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
   ->stringify_infnan->escape_slash->allow_dupkeys->pretty;
 my $PARAM_RE = qr/^([[:alnum:]_\[\]\.\:]+)=(.*)$/s;
+my $RESERVED_API_KEYS_RE = qr/^(async|scheduled_product_clone_id)$/;
 
 has apibase => '/api/v1';
 has [qw(apikey apisecret host)];
@@ -79,16 +80,20 @@ sub parse_headers ($self, @headers) {
     return {map { /^\s*([^:]+)\s*:\s*(.*+)$/ ? ($1, $2) : () } @headers};
 }
 
-sub parse_params ($self, $args, $param_file) {
+sub parse_params ($self, $args, $param_file, $uc_keys = 0) {
     my %params;
+    my $format_key = sub ($k) {
+        $uc_keys && $k !~ $RESERVED_API_KEYS_RE ? uc $k : $k;
+    };
+
     for my $arg (@{$args}) {
         next unless $arg =~ $PARAM_RE;
-        push @{$params{$1}}, $2;
+        push @{$params{$format_key->($1)}}, $2;
     }
 
     for my $arg (@{$param_file}) {
         next unless $arg =~ $PARAM_RE;
-        push @{$params{$1}}, path($2)->slurp;
+        push @{$params{$format_key->($1)}}, path($2)->slurp;
     }
 
     return \%params;
