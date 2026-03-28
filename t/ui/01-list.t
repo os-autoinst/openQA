@@ -29,7 +29,8 @@ use OpenQA::SeleniumTest;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 $ENV{OPENQA_CONFIG} = my $config_dir = tempdir("$FindBin::Script-XXXX");
-my $cfg = "[scheduler]\nmax_running_jobs = 3\n[scm git]\ngit_auto_update = no";
+my $cfg
+  = "[scheduler]\nmax_running_jobs = 10\ndynamic_job_limit_enabled = 1\ndynamic_job_limit_min = 3\ndynamic_job_limit_load_threshold = 0.001\ndynamic_job_limit_step = 10\ndynamic_job_limit_interval = 0\n[scm git]\ngit_auto_update = no";
 $config_dir->child('openqa.ini')->spew($cfg);
 
 my @job_params = (
@@ -192,18 +193,28 @@ subtest 'priority displayed when not logged in' => sub {
 
 my @header = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected = ('3 jobs are running (limited by server config)', '3 scheduled jobs', 'Last 11 finished jobs');
+my @expected = ('3 jobs are running (dynamic limit: 3 of 10)', '3 scheduled jobs', 'Last 11 finished jobs');
 is_deeply \@header_texts, \@expected, 'all headings correctly displayed';
 
 $driver->get('/tests?limit=1');
 wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
 @header = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected = ('3 jobs are running (limited by server config)', '1 scheduled jobs', 'Last 1 finished jobs');
+@expected = ('3 jobs are running (dynamic limit: 3 of 10)', '1 scheduled jobs', 'Last 1 finished jobs');
 is_deeply \@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter';
 
 $t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, 'Running jobs are marked');
+
+$t->get_ok('/tests/list_running_ajax')->status_is(200);
+
+subtest 'running jobs list with static limit' => sub {
+    local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_enabled} = 0;
+    local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 2;
+    $t->get_ok('/tests/list_running_ajax')->status_is(200);
+    my $json = $t->tx->res->json;
+    is $json->{max_running_jobs}, 2, 'max_running_jobs included in response when static limit reached';
+};
 
 subtest 'all tests server-side limit has precedence over user-specified limit' => sub {
     my $limits = OpenQA::App->singleton->config->{misc_limits};

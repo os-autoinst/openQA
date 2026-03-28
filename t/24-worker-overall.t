@@ -18,6 +18,7 @@ use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
 use Test::MockObject;
 use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_FINISH_OFF);
+use OpenQA::Utils qw(load_avg);
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::WebUIConnection;
@@ -126,11 +127,11 @@ qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors
   'setup info with parse errors';
 
 subtest 'worker load' => sub {
-    my $load = OpenQA::Worker::_load_avg();
+    my $load = OpenQA::Utils::load_avg();
     is scalar @$load, 3, 'expected number of load values';
     is $load->[0], 10.93, 'expected load';
     is_deeply $load, [10.93, 10.91, 10.25], 'expected computed system load, rising flank';
-    is_deeply OpenQA::Worker::_load_avg(path($ENV{OPENQA_CONFIG}, 'invalid_loadavg')), [], 'error on invalid load';
+    is_deeply OpenQA::Utils::load_avg(path($ENV{OPENQA_CONFIG}, 'invalid_loadavg')), [], 'error on invalid load';
     ok !$worker->_check_system_utilization, 'default threshold not exceeded';
     ok $worker->_check_system_utilization(10), 'stricter threshold exceeded by load';
     ok !$worker->_check_system_utilization(10, [3, 9, 11]), 'load ok on falling flank';

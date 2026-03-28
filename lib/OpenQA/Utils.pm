@@ -31,7 +31,7 @@ use Fcntl;
 use Feature::Compat::Try;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
-use List::Util qw(min);
+use List::Util qw(all min);
 
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
@@ -146,6 +146,7 @@ our @EXPORT = qw(
   regex_match
   results_storage_above_threshold
   config_autocommit_enabled
+  load_avg
 );
 
 our @EXPORT_OK = qw(
@@ -918,6 +919,18 @@ sub usleep_backoff ($iteration, $min_seconds, $max_seconds, $padding = int(rand(
 sub config_autocommit_enabled ($config) {
     return 0 if $config->{'scm git'}{git_auto_commit} eq 'no';
     return ($config->{global}->{scm} || '') eq 'git' || $config->{'scm git'}{git_auto_commit} eq 'yes';
+}
+
+sub load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
+    my @load;
+    try {
+        @load = split ' ', path($path)->slurp;
+        splice @load, 3;    # discard non-load fields
+        log_error "Unable to parse system load from file '$path'" and return []
+          unless @load == 3 && all { looks_like_number $_ } @load;
+    }
+    catch ($e) { log_warning "Unable to determine average load: $e" }
+    return \@load;
 }
 
 sub results_storage_above_threshold () {
