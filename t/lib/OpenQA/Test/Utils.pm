@@ -217,7 +217,7 @@ my $SIGCHLD_HANDLER = sub {
     #       call die or BAIL_OUT from that handler so fail and _exit is used instead.
     for my $pid (keys %RELEVANT_CHILD_PIDS) {
         my $wait_pid = waitpid $pid, WNOHANG;
-        next unless $wait_pid > 0;
+        next if $wait_pid <= 0;
         my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
         my $exit_status = $?;
         my $exit_signal = $exit_status & 127;

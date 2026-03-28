@@ -409,7 +409,7 @@ sub test_junit_file {
             my $res = decode_json $_->slurp;
             is ref $res, 'HASH', 'json result: can be decoded' or always_explain $_->slurp;
             fail 'json result: exists $res->{result}' unless exists $res->{result};
-            fail 'json result: !exists $res->{name}' unless !exists $res->{name};
+            fail 'json result: !exists $res->{name}' if exists $res->{name};
         });
 
     $testdir->remove_tree;
@@ -493,8 +493,8 @@ sub test_xunit_file {
             is ref $res, 'HASH', 'json result: can be decoded' or always_explain $_->slurp;
             fail 'json result: exists $res->{result}' unless exists $res->{result};
             fail 'json result: result can be ok or fail but is ' . $res->{result} unless $res->{result} =~ qr/ok|fail/;
-            fail 'json result: !exists $res->{name}' unless !exists $res->{name};
-            fail 'json result: !exists $res->{properties}' unless !exists $res->{properties};
+            fail 'json result: !exists $res->{name}' if exists $res->{name};
+            fail 'json result: !exists $res->{properties}' if exists $res->{properties};
         });
 
     $testdir->remove_tree;

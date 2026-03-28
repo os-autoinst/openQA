@@ -50,7 +50,7 @@ my $load_avg_file = simulate_load('0.93 0.95 3.25 2/2207 1212', '43-scheduling-a
 my $worker_count = $ENV{SCALABILITY_TEST_WORKER_COUNT};
 my $job_count = $ENV{SCALABILITY_TEST_JOB_COUNT} // $worker_count;
 BAIL_OUT 'invalid SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT'
-  unless looks_like_number($worker_count) && looks_like_number($job_count) && $worker_count > 0 && $job_count > 0;
+  if !(looks_like_number($worker_count) && looks_like_number($job_count) && $worker_count > 0 && $job_count > 0);
 note "Running scalability test with $worker_count worker(s) and $job_count job(s).";
 note 'Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust this.';
 
