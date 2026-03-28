@@ -83,10 +83,10 @@ sub start_driver ($mojoport) {
         );
 
         # chromedriver is unfortunately hidden on openSUSE
-        $ENV{PATH} = join(':', $ENV{PATH}, qw(/usr/lib64/chromium));
+        $ENV{PATH} = join ':', $ENV{PATH}, qw(/usr/lib64/chromium);
         $opts{custom_args} = '--log-path=t/log_chromedriver';
         unless ($ENV{NOT_HEADLESS}) {
-            push(@{$opts{extra_capabilities}{$_}{args}}, qw(--headless --disable-gpu --no-sandbox))
+            push @{$opts{extra_capabilities}{$_}{args}}, qw(--headless --disable-gpu --no-sandbox)
               for @chrome_option_keys;
         }
         my $startup_timeout = $ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10;
@@ -222,7 +222,7 @@ sub javascript_console_has_no_warnings_or_errors ($test_name_suffix = '') {
         # ignore when server replied with 4xx response; this may be provoked when testing error cases and if it is
         # not expected tests would fail anyways
         next if ($msg =~ qr/server responded with a status of 4\d\d/);    # uncoverable statement
-        push(@errors, $log_entry);    # uncoverable statement
+        push @errors, $log_entry;    # uncoverable statement
     }
 
     diag "Unexpected Javascript console errors$test_name_suffix: " . pp(\@errors) if @errors;
@@ -234,7 +234,7 @@ sub mock_js_functions (%functions_to_mock) {
     my $java_script = '';
     $java_script .= "window.$_ = function(arg1, arg2) { $functions_to_mock{$_} };" for (keys %functions_to_mock);
 
-    print("injecting JavaScript: $java_script\n");
+    print "injecting JavaScript: $java_script\n";
     $_driver->execute_script($java_script);
 }
 

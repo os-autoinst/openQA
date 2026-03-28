@@ -90,8 +90,8 @@ sub get_enqueued_minion_jobs {
     my $enqueued_jobs = $minion->jobs($job_query_args);
     my (@enqueued_job_ids, @enqueued_job_args);
     while (my $info = $enqueued_jobs->next) {
-        push(@enqueued_job_ids, $info->{id});
-        push(@enqueued_job_args, $info->{args});
+        push @enqueued_job_ids, $info->{id};
+        push @enqueued_job_args, $info->{args};
     }
     @enqueued_job_args = sort { $a->[0]->{min_screenshot_id} <=> $b->[0]->{min_screenshot_id} } @enqueued_job_args;
     return {

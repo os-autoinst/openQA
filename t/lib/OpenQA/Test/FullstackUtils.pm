@@ -136,7 +136,7 @@ sub wait_for_developer_console_like ($driver, $message_regex, $diag_info, $timeo
         return fail("Wait for $message_regex timed out") if $timeout <= 0;
 
         $timeout -= $check_interval;
-        sleep($check_interval);
+        sleep $check_interval;
 
         # print updated log so we see what's going on
         note("waiting for $diag_info, developer console contains:\n$log") if $log ne $previous_log;

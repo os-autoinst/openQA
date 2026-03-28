@@ -406,7 +406,7 @@ subtest 'save_needle returns and logs error when set_to_latest_master fails' => 
         my @log_errors;
         my $log_mock = Test::MockModule->new(ref $t->app->log);
         $log_mock->redefine(error => sub ($self, $message) { push @log_errors, $message; });
-        my $job = bless({} => 'Test::FailingMinionJob');
+        my $job = bless {} => 'Test::FailingMinionJob';
         OpenQA::Task::Needle::Save::_save_needle($t->app, $job, $fake_needle);
 
         like $log_errors[0], $log_error // qr/Unable to fetch.*mocked/, 'error logged on fail';

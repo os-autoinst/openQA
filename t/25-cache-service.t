@@ -18,7 +18,7 @@ BEGIN {
     $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
     $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
-    $ENV{OPENQA_BASE_PORT} = 20000 + int(rand(10000));
+    $ENV{OPENQA_BASE_PORT} = 20000 + int rand 10000;
     $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
 
     $tempdir = tempdir;
@@ -101,8 +101,8 @@ sub test_sync ($run) {
     my $dir2 = tempdir;
     my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
 
-    my $t_dir = int(rand(13432432));
-    my $data = int(rand(348394280934820842093));
+    my $t_dir = int rand 13432432;
+    my $data = int rand 348394280934820842093;
     $dir->child($t_dir)->spew($data);
     my $expected = $dir2->child('tests')->child($t_dir);
 

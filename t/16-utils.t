@@ -275,7 +275,7 @@ EOT
     like detect_current_version($git_dir), qr/(git\-\d+\.\d+\-$sha_regex)/, 'Git version scheme matches';
 
     # If refs file can't be found or there is no tag present, version should be undef
-    unlink($refs_file);
+    unlink $refs_file;
     is detect_current_version($git_dir), undef, 'Git ref file missing, version is undef';
     $refs_file->spew('ac6dd8d4475f8b7e0d683e64ff49d6d96151fb76');
     is detect_current_version($git_dir), undef, 'Git ref file shows no tag, version is undef';

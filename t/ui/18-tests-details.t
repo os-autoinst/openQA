@@ -103,9 +103,9 @@ sub find_candidate_needles ($enabled_expected = 1) {
             next unless @needle_parts;
 
             is scalar @needle_parts, 3, 'exactly three parts per needle present (percentage, name, diff buttons)';
-            push(@needles,
-                    OpenQA::Test::Case::trim_whitespace($needle_parts[0]->get_text()) . '%: '
-                  . OpenQA::Test::Case::trim_whitespace($needle_parts[1]->get_text()));
+            push @needles,
+              OpenQA::Test::Case::trim_whitespace($needle_parts[0]->get_text()) . '%: '
+              . OpenQA::Test::Case::trim_whitespace($needle_parts[1]->get_text());
         }
 
         OpenQA::Test::Case::trim_whitespace($tag_elements[0]->get_text()) => \@needles;
@@ -436,7 +436,7 @@ subtest 'render text results' => sub {
     # select another text result
     $driver->find_element('[title="Another text result from external parser"]')->click();
     like $driver->get_current_url(), qr/#step\/logpackages\/7/, 'url contains step';
-    my @lines = split(/\n/, $driver->find_element('.current_preview .resborder')->get_text());
+    my @lines = split /\n/, $driver->find_element('.current_preview .resborder')->get_text();
     is scalar @lines, 11, 'correct number of lines';
 
     # unselecting text result
@@ -690,7 +690,7 @@ sub test_with_error ($needle_to_modify, $error, $tags, $expect, $test_name, $inv
     }
 
     # check whether candidates are displayed as expected
-    my $random_number = int(rand(100000));
+    my $random_number = int rand 100000;
     my $step = $invalid ? 5 : 1;
     $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/$step");
     wait_for_ajax(msg => 'step of yast2_lan test module loaded');

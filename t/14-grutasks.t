@@ -780,7 +780,7 @@ subtest 'download assets with correct permissions' => sub {
     my $assetpath = 't/data/openqa/share/factory/iso/Core-7.2.iso';
 
     # be sure the asset does not exist from a previous test run
-    unlink($assetpath);
+    unlink $assetpath;
 
     my $info;
     my $expected_error = qr/Host "$local_domain" .* is not on the passlist \(which is empty\)/;
@@ -823,7 +823,7 @@ subtest 'download assets with correct permissions' => sub {
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Download of "$assetpath" successful/, 'download logged';
     ok -f $assetpath, 'asset downloaded';
-    is S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions';
+    is S_IMODE((stat $assetpath)[2]), 0644, 'asset downloaded with correct permissions';
     is $info->{state}, 'finished', 'job considered finished (successful download)';
     is $info->{user_error}, undef, 'no error passed to user (successful download)';
 

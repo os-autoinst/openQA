@@ -49,7 +49,7 @@ package Test::FakeClient {    # uncoverable statement count:2
     has api_calls => sub { [] };
 
     sub send ($self, $method, $path, %args) {
-        push(@{$self->api_calls}, $method, $path, $args{params});
+        push @{$self->api_calls}, $method, $path, $args{params};
     }
 }    # uncoverable statement
 
@@ -120,7 +120,7 @@ is_deeply \@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client
 combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s, 'setup info';
 
-push(@{$worker->settings->parse_errors}, 'foo', 'bar');
+push @{$worker->settings->parse_errors}, 'foo', 'bar';
 combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors occurred.*foo.*bar.*/s,
   'setup info with parse errors';

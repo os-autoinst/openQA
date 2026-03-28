@@ -84,7 +84,7 @@ package Dummy2to {    # uncoverable statement count:2
         @{$self} = qw(a b c);
         return $self;
     }
-    sub to_array { [@{shift()}] }
+    sub to_array { [@{+shift}] }
 }    # uncoverable statement
 
 package Dummy3to {    # uncoverable statement count:2
@@ -96,7 +96,7 @@ package Dummy3to {    # uncoverable statement count:2
         $self->{foobar} = 'barbaz';
         return $self;
     }
-    sub to_hash { return {%{shift()}} }
+    sub to_hash { return {%{+shift}} }
 }    # uncoverable statement
 
 package Dummy3 {    # uncoverable statement count:2
@@ -832,7 +832,7 @@ subtest 'Unstructured data' => sub {
     # However it will require a specific parser implementation to handle the data.
     # Then we can map results as general OpenQA::Parser::Result objects.
     my $parser = OpenQA::Parser::UnstructuredDummy->new();
-    $parser->parse(join('', <DATA>));
+    $parser->parse(join '', <DATA>);
     ok $parser->results->size == 5, 'There are some results';
 
     $parser->results->each(

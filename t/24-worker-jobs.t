@@ -117,7 +117,7 @@ package Test::FakeClient {
             next unless $params->{$relevant_params};
             $relevant_message_data{$relevant_params} = $params->{$relevant_params};
         }
-        push(@{shift->sent_messages}, \%relevant_message_data);
+        push @{shift->sent_messages}, \%relevant_message_data;
         if ($self->fail_job_duplication && $path =~ qr/.*\/duplicate/) {
             $self->last_error('fake API error');
             return Mojo::IOLoop->next_tick(sub { $args{callback}->(0) });
@@ -127,7 +127,7 @@ package Test::FakeClient {
         Mojo::IOLoop->next_tick(sub { $args{callback}->(\%cb_args) }) if $args{callback} && $args{callback} ne 'no';
     }
     sub reset_last_error { shift->last_error(undef) }
-    sub send_status { push(@{shift->sent_messages}, @_) }
+    sub send_status { push @{shift->sent_messages}, @_ }
     sub register { shift->register_called(1) }
 
     sub add_context_to_last_error {
@@ -171,28 +171,27 @@ sub usual_status_updates {
     my $job_id = $args{job_id};
 
     my @expected_api_calls;
-    push(
-        @expected_api_calls,
-        {
-            path => "jobs/$job_id/status",
-            json => {status => {uploading => 1, worker_id => 1}},
-        });
-    push(@expected_api_calls, {path => "jobs/$job_id/duplicate", json => undef}) if $args{duplicate};
-    push(
-        @expected_api_calls,
-        {
-            path => "jobs/$job_id/status",
-            json => {
-                status => {
-                    cmd_srv_url => $engine_url,
-                    result => {},
-                    test_execution_paused => 0,
-                    test_order => [],
-                    worker_hostname => undef,
-                    worker_id => 1
-                }
-            },
-        }) unless $args{no_overall_status};
+    push @expected_api_calls,
+      {
+        path => "jobs/$job_id/status",
+        json => {status => {uploading => 1, worker_id => 1}},
+      };
+    push @expected_api_calls, {path => "jobs/$job_id/duplicate", json => undef} if $args{duplicate};
+    push @expected_api_calls,
+      {
+        path => "jobs/$job_id/status",
+        json => {
+            status => {
+                cmd_srv_url => $engine_url,
+                result => {},
+                test_execution_paused => 0,
+                test_order => [],
+                worker_hostname => undef,
+                worker_id => 1
+            }
+        },
+      }
+      unless $args{no_overall_status};
     return @expected_api_calls;
 }
 
@@ -774,7 +773,7 @@ subtest 'Livelog' => sub {
                     serial_terminal => {},
                     serial_terminal_user => {
                         'data' => '',
-                        'offset' => length($user_console_text)
+                        'offset' => (length $user_console_text)
                     },
                     test_execution_paused => 0,
                     worker_hostname => undef,
@@ -1291,8 +1290,8 @@ subtest 'computing max job time and max setup time' => sub {
     is $max_job_time, DEFAULT_MAX_JOB_TIME, 'default scenario: default max job time)';
     is $max_setup_time, DEFAULT_MAX_SETUP_TIME, 'default scenario: default max setup time)';
 
-    $settings{MAX_JOB_TIME} = sprintf('%d', DEFAULT_MAX_JOB_TIME / 2);
-    $settings{MAX_SETUP_TIME} = sprintf('%d', DEFAULT_MAX_SETUP_TIME / 3);
+    $settings{MAX_JOB_TIME} = sprintf '%d', DEFAULT_MAX_JOB_TIME / 2;
+    $settings{MAX_SETUP_TIME} = sprintf '%d', DEFAULT_MAX_SETUP_TIME / 3;
     ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
     is $max_job_time, DEFAULT_MAX_JOB_TIME / 2, 'short scenario: max job time taken from settings';
     is $max_setup_time, DEFAULT_MAX_SETUP_TIME / 3, 'short scenario: max setup time taken from settings';

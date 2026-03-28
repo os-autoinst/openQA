@@ -216,7 +216,7 @@ my $SIGCHLD_HANDLER = sub {
     # note: This function is supposed to be called from the SIGCHLD handler. It seems to have no effect to
     #       call die or BAIL_OUT from that handler so fail and _exit is used instead.
     for my $pid (keys %RELEVANT_CHILD_PIDS) {
-        my $wait_pid = waitpid($pid, WNOHANG);
+        my $wait_pid = waitpid $pid, WNOHANG;
         next unless $wait_pid > 0;
         my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
         my $exit_status = $?;
@@ -409,7 +409,7 @@ sub setup_worker {    # uncoverable statement
 
     $worker->settings->webui_hosts([]);    # uncoverable statement
     $worker->settings->webui_host_specific_settings({});    # uncoverable statement
-    push(@{$worker->settings->webui_hosts}, $host);    # uncoverable statement
+    push @{$worker->settings->webui_hosts}, $host;    # uncoverable statement
     $worker->settings->webui_host_specific_settings->{$host} = {};    # uncoverable statement
     $worker->log_setup_info;    # uncoverable statement
 }
