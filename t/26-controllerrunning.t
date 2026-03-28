@@ -2,12 +2,13 @@
 # Copyright 2017-2021 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+use Test::Most;
+
 BEGIN {
     $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} = 0.0;
     $ENV{OPENQA_TEXT_STREAMING_INTERVAL} = 0.0;
 }
 
-use Test::Most;
 use Mojo::Base -base, -signatures;
 
 use FindBin;
