@@ -274,7 +274,13 @@ function renderTestLists() {
       dataSrc: function (json) {
         // update heading when JSON is available
         let text = json.data.length + ' jobs are running';
-        if (json.max_running_jobs !== undefined && json.max_running_jobs >= 0) {
+        if (json.dynamic_job_limit !== undefined && json.dynamic_job_limit >= 0) {
+          text += ' (dynamic limit: ' + json.dynamic_job_limit;
+          if (json.max_running_jobs !== undefined && json.max_running_jobs >= 0) {
+            text += ' of ' + json.max_running_jobs;
+          }
+          text += ')';
+        } else if (json.max_running_jobs !== undefined && json.max_running_jobs >= 0) {
           text += ' (limited by server config)';
         }
         $('#running_jobs_heading').text(text);

@@ -138,6 +138,12 @@ sub default_config () {
         scheduler => {
             max_job_scheduled_time => 7,
             max_running_jobs => -1,
+            dynamic_job_limit_enabled => 0,
+            dynamic_job_limit_min => 50,
+            dynamic_job_limit_load_threshold => 0,
+            dynamic_job_limit_load_critical => 0,
+            dynamic_job_limit_step => 10,
+            dynamic_job_limit_interval => 60,
         },
         logging => {
             level => undef,

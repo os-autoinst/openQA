@@ -36,7 +36,7 @@ use Fcntl;
 use Feature::Compat::Try;
 use File::Path qw(make_path remove_tree);
 use File::Spec::Functions 'catdir';
-use List::Util qw(all max min);
+use List::Util qw(max min);
 use Mojo::IOLoop;
 use Mojo::File 'path';
 use POSIX;
@@ -45,7 +45,7 @@ use OpenQA::Constants
   qw(WEBSOCKET_API_VERSION WORKER_COMMAND_QUIT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_SR_FINISH_OFF);
 use OpenQA::Client;
 use OpenQA::Log qw(log_error log_warning log_info log_debug add_log_channel remove_log_channel);
-use OpenQA::Utils qw(prjdir);
+use OpenQA::Utils qw(prjdir load_avg);
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Job;
@@ -795,22 +795,10 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
     }
 }
 
-sub _load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
-    my @load;
-    try {
-        @load = split ' ', path($path)->slurp;
-        splice @load, 3;    # remove non-load numbers
-        log_error "Unable to parse system load from file '$path'" and return []
-          unless all { looks_like_number $_ } @load;
-    }
-    catch ($e) { log_warning "Unable to determine average load: $e" }
-    return \@load;
-}
-
 sub _check_system_utilization (
     $self,
     $threshold = $self->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD},
-    $load = _load_avg())
+    $load = load_avg())
 {
     return undef if !$threshold || @$load < 3;
     # look at the load evolution over time to react quick enough if the load
