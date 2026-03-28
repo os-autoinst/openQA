@@ -375,7 +375,7 @@ subtest 'enqueue_git_clones' => sub {
     my $job_id = $minion_job->id;
     my $task = $schema->resultset('GruTasks')->find($result->{gru_id});
     my @deps = $task->jobs;
-    is_deeply [map $_->job_id, @deps], $jobs, 'expected GruDependencies created';
+    is_deeply [map { $_->job_id } @deps], $jobs, 'expected GruDependencies created';
 
     subtest 'add to existing GruTask' => sub {
         my $enq = 0;
