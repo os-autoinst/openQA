@@ -714,6 +714,21 @@ The final priority of a job is the sum of a base priority, defined in the job
 templates or scenario definitions, plus all adjustments calculated for the
 configured parameters that match the job settings.
 
+Another mechanism for priority adjustment is based on job group properties,
+such as name or description. This is configured via `prio_group_parameters`
+in `openqa.ini`:
+
+[source]
+prio_group_parameters = property:regex:priority_increment[,…]
+
+where:
+
+* `property`: the name of a job group property (e.g. `name`, `description`)
+* `regex`: a regular expression to match against the property value
+* `priority_increment`: an integer value to add to the job priority if matched
+
+By default, job groups with "Development" in the name add +50 to the priority.
+
 **Example:**
 [source]
 prio_throttling_parameters = MAX_JOB_TIME:0.007,QEMURAM:0.005:2048

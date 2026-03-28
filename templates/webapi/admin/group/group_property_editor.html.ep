@@ -92,6 +92,9 @@
                                 It is possible to override this priority on job template level (the rows in the table above).
                                 In this case the default set here has no effect.
                             </li>
+                            <li>
+                                The actual priority may be adjusted dynamically based on job group properties (e.g. name or description) as configured in <code>openqa.ini</code>.
+                            </li>
                         </ul>';
                     %>
                 </div>

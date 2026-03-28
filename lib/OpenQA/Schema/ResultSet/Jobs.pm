@@ -147,7 +147,8 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     # assign scheduled product
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
-    my $debug_msg = _apply_prio_throttling(\%settings, \%new_job_args);
+    my $debug_msg = _apply_prio_throttling(\%settings, \%new_job_args, $group);
+    $settings{_PRIORITY_EXPLANATION} = $debug_msg if $debug_msg;
 
     my $job = $self->create(\%new_job_args);
     log_debug(sprintf "(Job %d) $debug_msg", $job->id) if $debug_msg;
@@ -175,7 +176,8 @@ sub _update_priority ($value, $throt_config, $job_args) {
     my $reference = $throt_config->{reference} // 0;
     my $prio = int(($value - $reference) * $scale);
     $job_args->{priority} += $prio;
-    return ": $prio, scale: $scale" . ($reference ? ", reference: $reference;" : ';');
+    my $sign = $prio >= 0 ? '+' : '';
+    return " [$sign$prio: value $value, scale $scale" . ($reference ? ", reference $reference]" : ']');
 }
 
 sub _apply_max_job_time_prio ($factor, $time, $throt_config, $job_args) {
@@ -189,27 +191,44 @@ sub _apply_max_job_time_prio ($factor, $time, $throt_config, $job_args) {
     return $info;
 }
 
-sub _apply_prio_throttling ($settings, $new_job_args) {
+sub _apply_prio_throttling ($settings, $new_job_args, $group = undef) {
     my $debug_msg;
     my $base_prio = $new_job_args->{priority} // 0;
-    if (my $throttling
-        = OpenQA::App->singleton && OpenQA::App->singleton->config->{misc_limits}->{prio_throttling_data})
-    {
-        my $throttling_info = _apply_max_job_time_prio(
-            $settings->{TIMEOUT_SCALE},
-            $settings->{MAX_JOB_TIME},
-            $throttling->{MAX_JOB_TIME},
-            $new_job_args
-        );
+    my @throttling_info;
+    my $config = OpenQA::App->singleton && OpenQA::App->singleton->config;
+    if ($config && (my $throttling = $config->{misc_limits}->{prio_throttling_data})) {
+        if (
+            my $mjt_info = _apply_max_job_time_prio(
+                $settings->{TIMEOUT_SCALE},
+                $settings->{MAX_JOB_TIME},
+                $throttling->{MAX_JOB_TIME},
+                $new_job_args
+            ))
+        {
+            push @throttling_info, $mjt_info;
+        }
         for my $resource (keys %$throttling) {
             next if (!defined $settings->{$resource} || $resource eq 'MAX_JOB_TIME');
-            $throttling_info
-              .= $resource . _update_priority($settings->{$resource}, $throttling->{$resource}, $new_job_args);
+            push @throttling_info,
+              $resource . _update_priority($settings->{$resource}, $throttling->{$resource}, $new_job_args);
         }
+    }
+    if ($config && $group && (my $group_throttling = $config->{misc_limits}->{prio_group_data})) {
+        for my $rule (@$group_throttling) {
+            my $prop = $rule->{property};
+            my $val = $group->$prop;
+            if (defined $val && $val =~ $rule->{regex}) {
+                $new_job_args->{priority} += $rule->{increment};
+                my $sign = $rule->{increment} >= 0 ? '+' : '';
+                push @throttling_info, "$sign$rule->{increment} because job group $prop matches $rule->{regex}";
+            }
+        }
+    }
+    if (@throttling_info) {
+        my $info_str = join '; ', @throttling_info;
         $debug_msg .= sprintf
           '- Adjusting job priority from %d to %d based on resource requirement(s): %s',
-          $base_prio, $new_job_args->{priority}, $throttling_info
-          if $throttling_info;
+          $base_prio, $new_job_args->{priority}, $info_str;
     }
     return $debug_msg;
 }

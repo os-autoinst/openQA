@@ -13,11 +13,12 @@ use Test::Mojo;
 use Mojo::File qw(tempdir);
 use Test::Warnings ':report_warnings';
 use Time::Seconds;
+use POSIX qw(strftime);
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(assume_all_assets_exist);
-use OpenQA::Jobs::Constants qw(NONE RUNNING);
+use OpenQA::Jobs::Constants qw(NONE RUNNING SCHEDULED);
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database::generate_schema_name;
@@ -470,7 +471,52 @@ $driver->title_is('openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#job_99946 td.test');
 is $td->get_text(), 'textmode@32bit (restarted)', 'restart removes link';
 
+subtest 'priority explanation tooltip' => sub {
+
+    # Create a job with priority explanation
+    my $group = $schema->resultset('JobGroups')->find({name => 'opensuse'});
+    my $now = strftime('%Y-%m-%d %H:%M:%S', gmtime);
+    my $job = $schema->resultset('Jobs')->create(
+        {
+            id => 88888,
+            state => SCHEDULED,
+            priority => 62,
+            TEST => 'prio_test',
+            DISTRI => 'opensuse',
+            VERSION => '15.5',
+            FLAVOR => 'DVD',
+            ARCH => 'x86_64',
+            BUILD => '1234',
+            group_id => $group->id,
+            t_created => $now,
+            t_updated => $now,
+        });
+    $job->settings->create({key => '_PRIORITY_EXPLANATION', value => '+50 because job group name matches Development'});
+
+    # we are already on /tests from previous actions and logged in
+    $driver->get('/tests');
+    wait_for_ajax;
+    my $prio_cell
+      = wait_for_element(selector => '#job_88888 .prio-value', description => 'priority cell for job 88888');
+
+    is $prio_cell->get_text(), '62', 'priority value is correct';
+    is $prio_cell->get_attribute('data-bs-toggle'), 'tooltip', 'tooltip is enabled';
+    like $prio_cell->get_attribute('title'), qr/\+50 because job group name matches/, 'tooltip title is correct';
+
+    # Also check the details page (infopanel)
+    $driver->get('/tests/88888');
+    wait_for_ajax;
+    $prio_cell = wait_for_element(selector => '#info_box .prio-value', description => 'priority cell on details page');
+    is $prio_cell->get_text(), '62', 'priority value on details page is correct';
+    my $title
+      = $prio_cell->get_attribute('title')
+      || $prio_cell->get_attribute('data-bs-title')
+      || $prio_cell->get_attribute('data-bs-original-title');
+    like $title, qr/\+50 because job group name matches/, 'tooltip title on details page is correct';
+};
+
 subtest 'job 99940 module results and job 99991 description' => sub {
+
     $driver->get('/tests');
     wait_for_ajax;
     my $results = $driver->find_elements('#job_99940 > td')->[2];
