@@ -474,7 +474,7 @@ subtest 'editing when logged in as regular user' => sub {
         is scalar @{$driver->find_elements('.pinned-comment-row')}, 1, 'there shouldn\'t appear more pinned comments';
 
         # verify the number of comments we have added so far for easier debugging in case subsequent tests fail
-        my $group_id = (split '/', $group_url)[-1];
+        my $group_id = (split m{/}, $group_url)[-1];
         my %cond = (-or => [{group_id => $group_id}, {parent_group_id => $group_id}]);
         is $comments->search(\%cond)->count, 5, 'expected number of comments present in database at this point';
 
