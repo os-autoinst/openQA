@@ -1118,7 +1118,7 @@ subtest 'priority correctly assigned when posting job' => sub {
         $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
         $t->json_is('/job/priority', $default_prio + 12, 'priority adjusted via API based on group name');
         ok $t->tx->res->json->{job}->{settings}->{_PRIORITY_EXPLANATION}, 'priority explanation stored in settings';
-        like $t->tx->res->json->{job}->{settings}->{_PRIORITY_EXPLANATION}, qr/GROUP name ~ .*: 12/,
+        like $t->tx->res->json->{job}->{settings}->{_PRIORITY_EXPLANATION}, qr/\+12 because job group name matches/,
           'explanation content is correct';
 
         # Test with multiple rules
