@@ -18,6 +18,9 @@ TESTS ?=
 EXTRA_PROVE_ARGS ?=
 # PROVE: Test application for Perl tests
 PROVE ?= prove
+# Number of parallel jobs for prove
+PROVE_JOBS ?= $(shell nproc 2>/dev/null || echo 1)
+PROVE_JOBS_ARGS ?= -j$(PROVE_JOBS)
 ifeq ($(TESTS),)
 PROVE_ARGS ?= --trap -r ${EXTRA_PROVE_ARGS} t
 else
@@ -280,7 +283,7 @@ test-unit-and-integration: node_modules ## Run unit and integration tests (low l
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -I$(PWD)/external/os-autoinst-common/lib $(CHECK_GIT_STATUS_OPT) -MOpenQA::Test::PatchDeparse";\
-	RETRY=${RETRY} HEAVY=${HEAVY} FULLSTACK=${FULLSTACK} HOOK=./tools/delete-coverdb-folder timeout --foreground -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry "${PROVE}" ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+	RETRY=${RETRY} HEAVY=${HEAVY} FULLSTACK=${FULLSTACK} HOOK=./tools/delete-coverdb-folder timeout --foreground -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry "${PROVE}" ${PROVE_LIB_ARGS} $(PROVE_JOBS_ARGS) ${PROVE_ARGS}
 
 .PHONY: setup-database
 setup-database: ## Set up the test database
