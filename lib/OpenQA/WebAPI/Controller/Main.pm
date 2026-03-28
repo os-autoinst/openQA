@@ -41,17 +41,18 @@ sub dashboard_build_results ($self) {
                 next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
             }
             my $tags = $show_tags || $only_tagged ? $group->tags : undef;
-            my $build_results
-              = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-                $only_tagged ? $tags : undef,
-                $group_params, $show_tags ? $tags : undef);
+            my $build_results = OpenQA::BuildResults::compute_build_results(
+                $group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef,
+                $group_params, $show_tags ? $tags : undef,
+                undef, $self->app
+            );
 
             my $build_results_for_group = $build_results->{build_results};
             push @results, $build_results if @{$build_results_for_group};
         }
     }
     catch ($e) {
-        die $e unless $e =~ qr/^invalid regex: /;
+        die $e unless (ref $e && $e->isa('OpenQA::Error::LimitExceeded')) || $e =~ qr/^invalid regex: /;
         return $self->render(json => {error => $e}, status => 400);
     }
 
@@ -138,7 +139,7 @@ sub _group_overview ($self, $resultset, $template) {
         $cbr
           = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
             $time_limit_days, $only_tagged ? $tags : undef,
-            $group_params, $tags);
+            $group_params, $tags, undef, $self->app);
     }
     catch ($e) {
         die $e unless $e =~ qr/^invalid regex: /;
