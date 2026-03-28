@@ -1103,6 +1103,37 @@ subtest 'priority correctly assigned when posting job' => sub {
         is $new_job_args{priority}, $default_prio + $add, 'increased prio due to high MAX_JOB_TIME and QEMURAM';
     };
 
+    subtest 'priority adjustment based on job group name' => sub {
+        my $group = $schema->resultset('JobGroups')->find({name => 'opensuse'});
+        my %new_job_args = (priority => $default_prio);
+        $t->app->config->{misc_limits}->{prio_group_parameters} = 'name:opensuse:12';
+        $t->app->config->{misc_limits}->{prio_group_data}
+          = OpenQA::Setup::_load_prio_group_throttling($t->app, $t->app->config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling({}, \%new_job_args, $group);
+        is $new_job_args{priority}, $default_prio + 12, 'priority increased based on group name';
+
+        # Verify that it also works via the API
+        local $jobs_post_params{_GROUP} = 'opensuse';
+        $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+        $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
+        $t->json_is('/job/priority', $default_prio + 12, 'priority adjusted via API based on group name');
+        ok $t->tx->res->json->{job}->{settings}->{_PRIORITY_EXPLANATION}, 'priority explanation stored in settings';
+        like $t->tx->res->json->{job}->{settings}->{_PRIORITY_EXPLANATION}, qr/GROUP name ~ .*: 12/,
+          'explanation content is correct';
+
+        # Test with multiple rules
+        %new_job_args = (priority => $default_prio);
+        $t->app->config->{misc_limits}->{prio_group_parameters} = 'name:open:10,name:suse:5';
+        $t->app->config->{misc_limits}->{prio_group_data}
+          = OpenQA::Setup::_load_prio_group_throttling($t->app, $t->app->config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling({}, \%new_job_args, $group);
+        is $new_job_args{priority}, $default_prio + 15, 'priority increased by multiple matching rules';
+
+        # reset for following tests
+        $t->app->config->{misc_limits}->{prio_group_parameters} = '';
+        $t->app->config->{misc_limits}->{prio_group_data} = undef;
+    };
+
     subtest 'priority scaled up due to QEMURAM demand' => sub {
         my %new_job_args = (priority => $default_prio);
         my $add = 20;
