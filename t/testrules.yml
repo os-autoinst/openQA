@@ -1,42 +1,72 @@
 ---
-# we list here all jobs that are good to run in parallel with code checks. Every other
-# test not listed here is run afterwards
+# Rules for parallel vs sequential test execution.
+# Tests listed in the 'par' block can run in parallel with each other.
+# Everything else runs sequentially at the end.
 seq:
   - par:
-      - ./t/compile/01-compile-check-all.t
+      - ./t/01-test-utilities.t
+      - ./t/03-auth-openid.t
+      - ./t/03-auth.t
       - ./t/04-scheduler.t
-      - ./t/05-scheduler-cancel.t
       - ./t/05-scheduler-capabilities.t
       - ./t/05-scheduler-dependencies.t
       - ./t/05-scheduler-restart-and-duplicate.t
+      - ./t/05-scheduler-serialize-directly-chained-dependencies.t
       - ./t/06-users.t
-      - ./t/07-api_jobtokens.t
       - ./t/07-api_keys.t
       - ./t/09-job_clone.t
-      - ./t/10-tests_overview.t
+      - ./t/11-commands.t
       - ./t/13-joblocks.t
+      - ./t/14-grutasks-git.t
       - ./t/15-assets.t
+      - ./t/15-shared-plugin-gru.t
+      - ./t/16-utils-job-templates.t
       - ./t/16-utils-runcmd.t
+      - ./t/16-utils-vcs-provider.t
       - ./t/16-utils.t
-      - ./t/17-build_tagging.t
-      - ./t/19-tests-export.t
-      - ./t/20-workers-ws.t
+      - ./t/20-stale-job-detection.t
       - ./t/21-needles.t
-      - ./t/22-dashboard.t
       - ./t/23-amqp.t
-      - ./t/24-worker-engine.t
-      - ./t/24-worker-job.t
-      - ./t/24-worker-overall.t
-      - ./t/24-worker-settings.t
-      - ./t/24-worker-webui-connection.t
-      - ./t/27-errorpages.t
+      - ./t/25-bugs.t
+      - ./t/25-cache-client.t
+      - ./t/25-cache-service.t
+      - ./t/25-cache.t
+      - ./t/25-downloader.t
+      - ./t/25-serverstartup.t
+      - ./t/26-controllerrunning.t
+      - ./t/27-websockets.t
+      - ./t/28-logging.t
       - ./t/30-test_parser.t
       - ./t/31-api_descriptions.t
+      - ./t/31-client.t
+      - ./t/31-client_file.t
+      - ./t/35-script_clone_job.t
+      - ./t/35-script_clone_job_suse.t
+      - ./t/40-job_settings.t
       - ./t/40-openqa-clone-job.t
-      - ./t/40-script_openqa-label-all.t
+      - ./t/40-script_load_dump_templates.t
       - ./t/40-script_openqa-clone-custom-git-refspec.t
+      - ./t/40-script_openqa-label-all.t
+      - ./t/42-df-based-cleanup.t
+      - ./t/42-screenshots.t
+      - ./t/43-cli.t
+      - ./t/44-scripts-modify_needle.t
+      - ./t/44-scripts.t
+      - ./t/46-munin.t
+      - ./t/api/14-plugin_memory_limit.t
+      - ./t/api/14-plugin_obs_rsync.t
+      - ./t/api/14-plugin_obs_rsync_async.t
+      - ./t/api/18-jobtokens.t
       - ./t/basic.t
+      - ./t/config.t
       - ./t/deploy.t
-      - ./t/full-stack.t
+      - ./t/compile/01-compile-check-all.t
       - ./xt/00-tidy.t
+      - ./xt/01-style.t
       - ./xt/02-pod.t
+      - ./t/ui/25-developer_mode.t
+      - ./t/ui/27-plugin_obs_rsync.t
+      - ./t/ui/27-plugin_obs_rsync_gru.t
+      - ./t/ui/27-plugin_obs_rsync_obs_status.t
+      - ./t/ui/27-plugin_obs_rsync_status_details.t
+      - ./t/ui/30-issue-reporter-plugin.t
