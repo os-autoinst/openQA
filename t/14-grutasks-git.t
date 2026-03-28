@@ -508,7 +508,7 @@ subtest 'delete_needles' => sub {
         $mock_needle->redefine(
             remove => sub ($self, $user) {
                 return if $self->id == 23;
-                die OpenQA::Error->new(signal => 'INT', msg => "Not running git command (...) because of signal INT");
+                die OpenQA::Error->new(signal => 'INT', msg => 'Not running git command (...) because of signal INT');
             });
         my %to_remove = ('/foo' => \@needles);
         my @removed_ids;
@@ -525,14 +525,14 @@ subtest 'delete_needles' => sub {
         $mock_needle->redefine(
             _delete_needles => sub ($, $, $, $removed_ids, $) {
                 push @$removed_ids, 23;
-                die OpenQA::Error->new(signal => 'INT', msg => "Not running git command (...) because of signal INT");
+                die OpenQA::Error->new(signal => 'INT', msg => 'Not running git command (...) because of signal INT');
             });
         my $res = run_gru_job(@gru_args);
         is $res->{state}, 'inactive', 'job inactive';
         is $res->{notes}->{removed_ids}->[0], 23, 'removed ids are recorded';
 
         subtest 'Unexpected error' => sub {
-            $mock_needle->redefine(_delete_needles => sub (@) { die "Something else" });
+            $mock_needle->redefine(_delete_needles => sub (@) { die 'Something else' });
             combined_like {
                 $res = run_gru_job(@gru_args);
             }

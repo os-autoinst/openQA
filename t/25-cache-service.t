@@ -140,14 +140,14 @@ sub test_sync ($run) {
 }
 
 sub test_download ($id, $asset) {
-    unlink path($cachedir, "localhost")->child($asset);
+    unlink path($cachedir, 'localhost')->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     ok !$cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
 
     my $status = $cache_client->status($asset_request);
     perform_minion_jobs($t->app->minion);
-    wait_for_or_bail_out { !$cache_client->status($asset_request)->is_downloading } "asset";
+    wait_for_or_bail_out { !$cache_client->status($asset_request)->is_downloading } 'asset';
     $status = $cache_client->status($asset_request);
 
     # And then goes to PROCESSED state
@@ -424,7 +424,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     '3 minion workers';
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
-    unlink path($cachedir, "localhost")->child($_) for @assets;
+    unlink path($cachedir, 'localhost')->child($_) for @assets;
     my %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;
@@ -441,7 +441,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     }
 
     @assets = map { 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2' } 1 .. $tot_proc;
-    unlink path($cachedir, "localhost")->child($_) for @assets;
+    unlink path($cachedir, 'localhost')->child($_) for @assets;
     %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;

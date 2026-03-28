@@ -962,7 +962,7 @@ subtest nested_parsers => sub {
 
 subtest ktap_parse => sub {
 
-    my $ktap_file = path($FindBin::Bin, "data")->child("ktap_correct.tap");
+    my $ktap_file = path($FindBin::Bin, 'data')->child('ktap_correct.tap');
 
     my $parser = OpenQA::Parser::Format::KTAP->new;
     $parser->load($ktap_file);
@@ -988,7 +988,7 @@ subtest ktap_parse => sub {
 };
 
 subtest 'ktap_parse_incorrect_file' => sub {
-    my $ktap_file = path($FindBin::Bin, "data")->child("ktap_incorrect.tap");
+    my $ktap_file = path($FindBin::Bin, 'data')->child('ktap_incorrect.tap');
 
     my $parser = OpenQA::Parser::Format::KTAP->new;
     $parser->load($ktap_file);
