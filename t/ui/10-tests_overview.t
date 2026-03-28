@@ -317,7 +317,11 @@ subtest 'filtering by flavor' => sub {
 
 sub check_textmode_test ($test_row) {
     wait_for_element selector => '#flavor_DVD_arch_i586', like => qr/i586/;
-    my @job_rows = map { $_->get_text } @{$driver->find_elements('#content tbody tr')};
+    my @job_rows = map {
+        my $text = $_->get_text;
+        $text =~ s/\s+\d+\b//g;    # strip restart counter
+        $text;
+    } @{$driver->find_elements('#content tbody tr')};
     is_deeply \@job_rows, [$test_row], 'only the textmode job is present' or always_explain \@job_rows;
 }
 

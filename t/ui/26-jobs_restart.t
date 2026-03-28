@@ -168,14 +168,14 @@ subtest 'check single job restart in /tests page' => sub {
     wait_for_ajax();
     subtest 'unable to restart' => sub {
         my $td = $driver->find_element('#job_99936 td.test');
-        is $td->get_text(), 'kde@64bit-uefi', '99936 is kde@64bit-uefi';
+        is $td->get_text() =~ s/\s+\d+$//r, 'kde@64bit-uefi', '99936 is kde@64bit-uefi';
         $driver->find_child_element($td, '.restart', 'css')->click();
         wait_for_ajax(msg => 'failed job restart');
         like
           $driver->find_element('#flash-messages-finished-jobs')->get_text(),
           qr/Job 99936 misses.*\.iso.*Ensure to provide mandatory assets/s,
           'restarting job with missing asset results in an error';
-        is $td->get_text(), 'kde@64bit-uefi', 'job not marked as restarted';
+        is $td->get_text() =~ s/\s+\d+$//r, 'kde@64bit-uefi', 'job not marked as restarted';
         $driver->find_element('#flash-messages-finished-jobs button.force-restart')->click();
         wait_until(sub { $td->get_text() =~ qr/kde\@64bit-uefi \(restarted\)/ }, 'job is marked as restarted');
         $_->click for $driver->find_elements('#flash-messages-finished-jobs button.close');
@@ -184,7 +184,7 @@ subtest 'check single job restart in /tests page' => sub {
     subtest 'successful restart' => sub {
         update_last_job_id;
         my $td = $driver->find_element('#job_99926 td.test');
-        is $td->get_text(), 'minimalx@32bit', '99926 is minimalx@32bit';
+        is $td->get_text() =~ s/\s+\d+$//r, 'minimalx@32bit', '99926 is minimalx@32bit';
         $driver->find_child_element($td, '.restart', 'css')->click();
         wait_until(sub { $td->get_text() =~ qr/minimalx\@32bit \(restarted\)/ }, 'job is marked as restarted');
         like $driver->find_child_element($td, "./a[\@title='new test']", 'xpath')->get_attribute('href'),
@@ -205,8 +205,8 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     # Check chain jobs restart
     my $chained_parent = $driver->find_element('#job_99937 td.test');
     my $chained_child = $driver->find_element('#job_99938 td.test');
-    is $chained_parent->get_text(), 'kde@32bit', 'chained parent is kde@32bit';
-    is $chained_child->get_text(), 'doc@64bit', 'chained child is doc@64bit';
+    is $chained_parent->get_text() =~ s/\s+\d+$//r, 'kde@32bit', 'chained parent is kde@32bit';
+    is $chained_child->get_text() =~ s/\s+\d+$//r, 'doc@64bit', 'chained child is doc@64bit';
 
     # Restart chained parent job
     update_last_job_id;
@@ -247,9 +247,9 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     my $master_node = $driver->find_element('#job_99902 td.test');
     my $slave_node = $driver->find_element('#job_99903 td.test');
     my $support_server = $driver->find_element('#job_99901 td.test');
-    is $master_node->get_text(), 'master_node@32bit', 'a parallel child is master_node@32bit';
-    is $slave_node->get_text(), 'slave_node@32bit', 'a parallel child is slave_node@32bit';
-    is $support_server->get_text(), 'support_server@32bit', 'a parallel parent is support_server@32bit';
+    is $master_node->get_text() =~ s/\s+\d+$//r, 'master_node@32bit', 'a parallel child is master_node@32bit';
+    is $slave_node->get_text() =~ s/\s+\d+$//r, 'slave_node@32bit', 'a parallel child is slave_node@32bit';
+    is $support_server->get_text() =~ s/\s+\d+$//r, 'support_server@32bit', 'a parallel parent is support_server@32bit';
 
     # Restart a parallel job
     update_last_job_id;
