@@ -155,8 +155,16 @@ function renderProgress(data, type, row) {
 }
 
 function renderPriority(data, type, row) {
-  if (type !== 'display' || !is_operator) {
+  if (type !== 'display') {
     return data;
+  }
+  let text = ' <span class="prio-value">' + data + '</span> ';
+  if (row.prio_explanation) {
+    text =
+      ' <span class="prio-value" data-bs-toggle="tooltip" title="' + row.prio_explanation + '">' + data + '</span> ';
+  }
+  if (!is_operator) {
+    return text;
   }
   const jobId = row.id;
   const decreasePrioLink =
@@ -167,11 +175,6 @@ function renderPriority(data, type, row) {
     '<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' +
     jobId +
     ', this); return false;"><i class="fa-regular fa-square-plus"></i></a>';
-  let text = ' <span class="prio-value">' + data + '</span> ';
-  if (row.prio_explanation) {
-    text =
-      ' <span class="prio-value" data-bs-toggle="tooltip" title="' + row.prio_explanation + '">' + data + '</span> ';
-  }
   return decreasePrioLink + text + increasePrioLink;
 }
 
