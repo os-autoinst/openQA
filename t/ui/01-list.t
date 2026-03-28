@@ -503,7 +503,7 @@ subtest 'priority explanation tooltip' => sub {
             t_created => $now,
             t_updated => $now,
         });
-    $job->settings->create({key => '_PRIORITY_EXPLANATION', value => 'GROUP name ~ Development: 50'});
+    $job->settings->create({key => '_PRIORITY_EXPLANATION', value => '+50 because job group name matches Development'});
 
     # we are already on /tests from previous actions and logged in
     $driver->get('/tests');
@@ -513,7 +513,8 @@ subtest 'priority explanation tooltip' => sub {
 
     is $prio_cell->get_text(), '62', 'priority value is correct';
     is $prio_cell->get_attribute('data-bs-toggle'), 'tooltip', 'tooltip is enabled';
-    is $prio_cell->get_attribute('title'), 'GROUP name ~ Development: 50', 'tooltip title is correct';
+    like $prio_cell->get_attribute('title'), qr/\+50 because job group name matches/, 'tooltip title is correct';
+
 };
 
 subtest 'job 99940 module results and job 99991 description' => sub {
