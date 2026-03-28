@@ -382,6 +382,7 @@ sub list_scheduled_ajax ($self) {
         my $job_data = $self->_format_ajax_job($_, $ancestors_by_job->{$job_id} || 0);
         $job_data->{blocked_by_id} = $_->blocked_by_id;
         $job_data->{prio} = $_->priority;
+        $job_data->{prio_explanation} = $_->settings_hash->{_PRIORITY_EXPLANATION};
         $job_data;
     } @jobs;
     my %response = (data => \@scheduled);

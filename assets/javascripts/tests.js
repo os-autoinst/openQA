@@ -167,7 +167,11 @@ function renderPriority(data, type, row) {
     '<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' +
     jobId +
     ', this); return false;"><i class="fa-regular fa-square-plus"></i></a>';
-  const text = ' <span class="prio-value">' + data + '</span> ';
+  let text = ' <span class="prio-value">' + data + '</span> ';
+  if (row.prio_explanation) {
+    text =
+      ' <span class="prio-value" data-bs-toggle="tooltip" title="' + row.prio_explanation + '">' + data + '</span> ';
+  }
   return decreasePrioLink + text + increasePrioLink;
 }
 
