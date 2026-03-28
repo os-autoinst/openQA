@@ -42,6 +42,10 @@ subtest 'svg badge' => sub {
     $jobs->find(99928)->update({state => SCHEDULED, result => NONE, blocked_by_id => 99927});
     $t->get_ok('/tests/99928/badge')->status_is(200)->content_type_is('image/svg+xml')->element_exists('svg')
       ->content_like(qr/blocked/, 'valid blocked svg badge');
+
+    $t->get_ok('/tests/99928/badge?label=CustomLabel')->status_is(200)->content_like(qr/CustomLabel/);
+    $t->get_ok('/tests/99928/badge?label=CustomLabel')->status_is(200)->content_unlike(qr/path2/);
+    $t->get_ok('/tests/99928/badge')->status_is(200)->content_like(qr/path2/);
 };
 
 done_testing;
