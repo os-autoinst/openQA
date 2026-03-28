@@ -503,6 +503,16 @@ subtest 'priority explanation tooltip' => sub {
     is $prio_cell->get_attribute('data-bs-toggle'), 'tooltip', 'tooltip is enabled';
     like $prio_cell->get_attribute('title'), qr/\+50 because job group name matches/, 'tooltip title is correct';
 
+    # Also check the details page (infopanel)
+    $driver->get('/tests/88888');
+    wait_for_ajax;
+    $prio_cell = wait_for_element(selector => '#info_box .prio-value', description => 'priority cell on details page');
+    is $prio_cell->get_text(), '62', 'priority value on details page is correct';
+    my $title
+      = $prio_cell->get_attribute('title')
+      || $prio_cell->get_attribute('data-bs-title')
+      || $prio_cell->get_attribute('data-bs-original-title');
+    like $title, qr/\+50 because job group name matches/, 'tooltip title on details page is correct';
 };
 
 subtest 'job 99940 module results and job 99991 description' => sub {
