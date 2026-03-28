@@ -94,6 +94,7 @@ perl-Digest-SHA1-2.13
 perl-Dist-CheckConflicts-0.11
 perl-Eval-Closure-0.14
 perl-Exception-Class-1.45
+perl-Export-Attrs-0.1.0
 perl-Exporter-Tiny-1.006002
 perl-Feature-Compat-Try-0.05
 perl-File-chdir-0.1011
@@ -177,6 +178,7 @@ perl-Package-DeprecationManager-0.18
 perl-Package-Stash-0.40
 perl-Package-Stash-XS-0.30
 perl-Package-Variant-1.003002
+perl-PadWalker-2.5
 perl-Params-Util-1.102
 perl-Params-Validate-1.31
 perl-Params-ValidationCompiler-0.31
@@ -234,6 +236,7 @@ perl-Test-Fatal-0.017
 perl-Test-LongString-0.17
 perl-Test-MockModule-0.178.0
 perl-Test-MockObject-1.20200122
+perl-Test-Mock-Time-0.2.1
 perl-Test-Most-0.38
 perl-Test-Output-1.034
 perl-Test-Perl-Critic-1.40.0
