@@ -68,7 +68,7 @@
 # The following line is generated from dependencies.yaml
 %define worker_requires bsdtar openQA-client optipng os-autoinst perl(Capture::Tiny) perl(File::Map) perl(Minion::Backend::SQLite) >= 5.0.7 perl(Mojo::IOLoop::ReadWriteProcess) >= 0.26 perl(Mojo::SQLite) psmisc sqlite3 >= 3.24.0
 # The following line is generated from dependencies.yaml
-%define mcp_requires perl(MCP)
+%define mcp_requires perl(MCP) >= 0.80.0
 %if 0%{?suse_version} < 1570
 # SLE <= 15 has older Perl not providing a sufficiently recent
 # ExtUtils::ParseXS needed by ExtUtils::CppGuess
