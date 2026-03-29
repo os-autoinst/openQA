@@ -51,6 +51,8 @@ use OpenQA::Worker::Settings;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::App;
 
+use constant DEFAULT_IPMI_AUTOSHUTDOWN_INTERVAL => 300;
+
 has 'instance_number';
 has 'pool_directory';
 has 'no_cleanup';
@@ -349,7 +351,7 @@ sub init ($self) {
             });
     }
 
-    my $interval = $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} // 300;
+    my $interval = $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} // DEFAULT_IPMI_AUTOSHUTDOWN_INTERVAL;
     if (   $global_settings->{IPMI_HOSTNAME}
         && $global_settings->{IPMI_USER}
         && $global_settings->{IPMI_PASSWORD}

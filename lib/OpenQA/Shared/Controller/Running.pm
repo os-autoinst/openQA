@@ -9,16 +9,18 @@ use Mojo::File 'path';
 use Mojo::JSON qw(encode_json decode_json);
 use Feature::Compat::Try;
 use File::stat;
+use HTTP::Status qw(:constants);
+use Time::Seconds;
 use OpenQA::Constants qw(WORKER_COMMAND_LIVELOG_STOP WORKER_COMMAND_LIVELOG_START);
 use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Utils;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use HTTP::Status qw(:constants);
 
 use constant IMAGE_STREAMING_INTERVAL => $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} // 0.3;
 use constant TEXT_STREAMING_INTERVAL => $ENV{OPENQA_TEXT_STREAMING_INTERVAL} // 1.0;
+use constant STREAMING_TIMEOUT => ONE_MINUTE * 15;
 
 sub init ($self, $page_name = undef) {
     my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
@@ -82,7 +84,7 @@ sub streamtext ($self, $file_name) {
     my $worker = $job->worker;
     my $logfile = $worker->get_property('WORKER_TMPDIR') . "/$file_name";
     $self->render_later;
-    Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
+    Mojo::IOLoop->stream($self->tx->connection)->timeout(STREAMING_TIMEOUT);
     my $res = $self->res;
     $res->code(HTTP_OK);
     $res->headers->content_type('text/event-stream');
@@ -178,10 +180,10 @@ sub streaming ($self) {
 
     # send images via server-sent events
     $self->render_later;
-    Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
+    Mojo::IOLoop->stream($self->tx->connection)->timeout(STREAMING_TIMEOUT);
     my $res = $self->res;
     my $headers = $res->headers;
-    $res->code(200);
+    $res->code(HTTP_OK);
     $headers->content_type('text/event-stream');
 
     # set CORS headers required when not using a reverse proxy (so the port differs)

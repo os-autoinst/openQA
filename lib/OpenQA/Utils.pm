@@ -87,6 +87,7 @@ use constant FLAG_REGEX => qr/\bflag:(?<match>([\w:#]+))\b/;
 
 use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 use constant RANDOM_STRING_DEFAULT_LENGTH => 16;
+use constant DEFAULT_OPENQA_BASE_PORT => 9526;
 
 our $VERSION = sprintf '%d.%03d', q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
@@ -799,7 +800,7 @@ sub set_listen_address ($port) {
 }
 
 sub service_port ($service) {
-    my $base = $ENV{OPENQA_BASE_PORT} ||= 9526;
+    my $base = $ENV{OPENQA_BASE_PORT} ||= DEFAULT_OPENQA_BASE_PORT;
     my $offsets = {
         webui => 0,
         websocket => 1,

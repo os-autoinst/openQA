@@ -476,7 +476,7 @@ sub set_secure_flag_on_cookies ($c) {
     if (my $days = $c->app->config->{global}->{hsts}) {
         $c->res->headers->header(
             'Strict-Transport-Security' => sprintf 'max-age=%d; includeSubDomains',
-            $days * 24 * 60 * 60
+            $days * ONE_DAY
         );
     }
 }

@@ -10,6 +10,8 @@ use Digest::SHA 'sha1_base64';
 use Fcntl 'SEEK_SET';
 use OpenQA::Files;
 
+use constant FILE_CHUNK_SIZE => 10_000_000;
+
 has file => sub { Mojo::File->new };
 has [qw(start end index cksum total content total_cksum)];
 
@@ -74,7 +76,7 @@ sub get_piece ($self, $index, $chunk_size) {
 }
 
 sub split ($self, $chunk_size = undef) {
-    $chunk_size //= 10000000;
+    $chunk_size //= FILE_CHUNK_SIZE;
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 

@@ -19,6 +19,8 @@ use DBI qw(:sql_types);
 
 use constant WS_SERVER_GRACE_PERIOD => $ENV{OPENQA_WEB_SOCKETS_GRACE_PERIOD} // (ONE_MINUTE * 5);
 
+use constant VNC_PORT_OFFSET => 5990;
+
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
@@ -252,7 +254,7 @@ sub reschedule_assigned_jobs ($self, $currently_assigned_jobs = undef) {
 
 sub vnc_argument ($self) {
     my $hostname = $self->get_property('WORKER_HOSTNAME') || $self->host;
-    my $instance = $self->instance + 5990;
+    my $instance = $self->instance + VNC_PORT_OFFSET;
     return "$hostname:$instance";
 }
 

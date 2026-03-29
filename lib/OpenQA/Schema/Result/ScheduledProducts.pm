@@ -10,6 +10,7 @@ use DBIx::Class::Timestamps 'now';
 use Exporter 'import';
 use File::Basename;
 use Feature::Compat::Try;
+use HTTP::Status qw(:constants);
 use OpenQA::App;
 use OpenQA::Log qw(log_debug log_warning log_error);
 use OpenQA::Utils;
@@ -359,7 +360,7 @@ sub _schedule_iso ($self, $args, $guard) {
     else {
         $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps, $include_children);
     }
-    return {error => $result->{error_message}, error_code => $result->{error_code} // 400}
+    return {error => $result->{error_message}, error_code => $result->{error_code} // HTTP_BAD_REQUEST}
       if defined $result->{error_message};
     my $jobs = $result->{settings_result};
     # take some attributes from the first job to guess what old jobs to cancel

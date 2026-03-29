@@ -16,6 +16,7 @@ use Feature::Compat::Try;
 use Mojo::Util 'dumper';
 
 use constant LOG_WORKER_STATUS_MESSAGES => $ENV{OPENQA_LOG_WORKER_STATUS_MESSAGES} // 0;
+use constant MAX_WEBSOCKET_SIZE => 1024 * 1024 * 10;
 
 sub ws ($self) {
     my $status = $self->status;
@@ -29,7 +30,7 @@ sub ws ($self) {
     $self->on(json => \&_message);
     $self->on(finish => \&_finish);
     $self->inactivity_timeout(0);    # Do not force connection close due to inactivity
-    $self->tx->max_websocket_size(10485760);
+    $self->tx->max_websocket_size(MAX_WEBSOCKET_SIZE);
 }
 
 sub _finish ($self, $code, $reason) {

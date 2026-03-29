@@ -10,6 +10,8 @@ use Carp 'croak';
 use Mojo::JSON 'encode_json';
 use HTTP::Status qw(:constants);
 
+use constant DEFAULT_MAX_ASSET_SIZE => 1024 * 1024 * 200;
+
 sub run ($self, $options) {
     croak 'Options must be a HASH ref' unless ref $options eq 'HASH';
     croak 'Need a URL to download job information' unless $options->{url};
@@ -17,8 +19,7 @@ sub run ($self, $options) {
     my $url = Mojo::URL->new($options->{url});
     my $req = $self->client->get($url);
     my $res = $req->res;
-    my $default_max_asset_size = 1024 * 1024 * 200;
-    $options->{'asset-size-limit'} //= $default_max_asset_size;
+    $options->{'asset-size-limit'} //= DEFAULT_MAX_ASSET_SIZE;
     $self->client->max_response_size($options->{'asset-size-limit'});
 
     my $code = $res->code;

@@ -8,6 +8,9 @@ use IPC::Run;
 use OpenQA::Task::SignalGuard;
 use Feature::Compat::Try;
 
+use constant RETRY_INTERVAL_ON_EXCEPTION => 120;
+use constant RETRY_MAX_COUNT_ON_EXCEPTION => 200;
+
 sub register ($self, $app, $conf) {
     $app->minion->add_task(obs_rsync_run => \&run);
     $app->minion->add_task(obs_rsync_update_dirty_status => \&update_dirty_status);
@@ -43,9 +46,6 @@ sub run ($job, $args) {
     my $helper = $app->obs_rsync;
     my $home = $helper->home;
 
-    my $retry_interval_on_exception = 120;
-    my $retry_max_count_on_exception = 200;
-
     if ($job->info && !$job->info->{notes}{project_lock}) {
         return _retry_or_finish($job, $helper) unless $helper->lock($project);
         $job->note(project_lock => 1);
@@ -53,7 +53,7 @@ sub run ($job, $args) {
     my $dirty = 0;
     try { $dirty = $helper->is_status_dirty($project, 1) }
     catch ($e) {
-        return _retry_or_finish($job, $helper, $project, $retry_interval_on_exception, $retry_max_count_on_exception);
+        return _retry_or_finish($job, $helper, $project, RETRY_INTERVAL_ON_EXCEPTION, RETRY_MAX_COUNT_ON_EXCEPTION);
     }
     return _retry_or_finish($job, $helper, $project) if $dirty;
 

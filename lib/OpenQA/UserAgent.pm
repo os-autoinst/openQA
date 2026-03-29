@@ -8,6 +8,7 @@ use OpenQA::Config;
 use Mojo::File 'path';
 use Mojo::Util 'hmac_sha1_sum';
 use Scalar::Util ();
+use Time::Seconds;
 use Carp;
 
 has [qw(apikey apisecret base_url)];
@@ -25,7 +26,7 @@ sub new ($class, @args) {
 
     # Scheduling a couple of hundred jobs takes quite some time - so we better wait a couple of minutes
     # (default is 20 seconds)
-    $self->inactivity_timeout(600);
+    $self->inactivity_timeout(ONE_MINUTE * 10);
 
     # Some urls might redirect to https and then there are internal redirects for assets
     $self->max_redirects(3);

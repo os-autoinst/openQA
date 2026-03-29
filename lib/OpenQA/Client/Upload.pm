@@ -10,6 +10,8 @@ use Mojo::Asset::Memory;
 use Mojo::File qw(path);
 use Feature::Compat::Try;
 
+use constant DEFAULT_CHUNK_SIZE => 1_000_000;
+
 sub _upload_asset_fail ($self, $uri, $form) {
     $form->{state} = 'fail';
     return $self->client->start($self->_build_post("$uri/upload_state" => $form));
@@ -38,7 +40,7 @@ sub asset ($self, $job_id, $opts) {
         return undef;
     }
 
-    my $chunk_size = $opts->{chunk_size} // 1000000;
+    my $chunk_size = $opts->{chunk_size} // DEFAULT_CHUNK_SIZE;
     my $parts = OpenQA::File->new(file => Mojo::File->new($opts->{file}))->split($chunk_size);
     $self->emit('upload_chunk.prepare', $parts);
 

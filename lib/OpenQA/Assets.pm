@@ -13,12 +13,14 @@ use Mojolicious::Plugin::AssetPack;
 use YAML::PP qw(LoadFile);
 use Feature::Compat::Try;
 
+use constant ASSET_PACK_VERSION_NO_RETRY => 2.13;
+
 sub setup ($server) {
     # setup asset pack, note that the config file is shared with tools/generate-packed-assets
     $server->plugin(AssetPack => LoadFile($server->home->child('assets', 'assetpack.yml')));
 
     # The feature was added in the 2.14 release, the version check can be removed once openQA depends on a newer version
-    $server->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > 2.13;
+    $server->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > ASSET_PACK_VERSION_NO_RETRY;
 
     # -> read assets/assetpack.def
     local $SIG{CHLD};

@@ -6,12 +6,16 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Feature::Compat::Try;
 
 use Date::Format;
+use Mojo::File qw(path);
+use Time::Seconds;
 use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::BuildResults;
 use OpenQA::Utils;
-use Mojo::File qw(path);
+
+use constant DEFAULT_TIME_LIMIT_DAYS => 14;
+use constant OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT => $ENV{OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT} // 90;
 
 sub dashboard_build_results ($self) {
     my $validation = $self->validation;
@@ -24,7 +28,7 @@ sub dashboard_build_results ($self) {
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
 
     my $limit_builds = $validation->param('limit_builds') // $self->app->config->{global}->{frontpage_builds};
-    my $time_limit_days = $validation->param('time_limit_days') // 14;
+    my $time_limit_days = $validation->param('time_limit_days') // DEFAULT_TIME_LIMIT_DAYS;
     my $only_tagged = $validation->param('only_tagged') // 0;
     my $default_expanded = $validation->param('default_expanded') // 0;
     my $show_tags = $validation->param('show_tags') // $only_tagged;
@@ -109,13 +113,13 @@ sub _group_overview ($self, $resultset, $template) {
     return $self->reply->not_found unless my $group = $self->schema->resultset($resultset)->find($group_id);
 
     my $fullscreen = $validation->param('fullscreen') // 0;
-    my $interval = $validation->param('interval') // 60;
+    my $interval = $validation->param('interval') // ONE_MINUTE;
     $self->stash(fullscreen => $fullscreen, interval => $interval);
 
     my $page = $validation->param('comments_page') // 1;
     my $page_limit = $validation->param('comments_limit') // 5;
 
-    $self->inactivity_timeout($ENV{OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT} // 90);
+    $self->inactivity_timeout(OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT);
     # find comments
     my $comments = $group->comments;
     my $ordered_comments = $comments->search(
