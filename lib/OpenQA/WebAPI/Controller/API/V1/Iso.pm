@@ -159,6 +159,7 @@ created, their job ids and the information for jobs that could not be scheduled.
 sub create ($self) {
     my $params = $self->req->params->to_hash;
     my $async = delete $params->{async};    # whether to run the operation as a Minion job
+    my $webhook_id = delete $params->{webhook_id};
     my $scheduled_product_clone_id
       = delete $params->{scheduled_product_clone_id};    # ID of a previous product to clone settings from
     my $log = $self->app->log;
@@ -207,7 +208,7 @@ sub create ($self) {
     return undef unless $self->validate_download_parameters(\%params);
 
     # add entry to ScheduledProducts table and log event
-    my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user);
+    my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user, $webhook_id);
     my $scheduled_product_id = $scheduled_product->id;
 
     # only spawn Minion job and return IDs if async flag has been passed

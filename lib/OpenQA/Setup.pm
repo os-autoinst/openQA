@@ -274,7 +274,7 @@ sub default_config () {
         'assets/storage_duration' => {
             # intentionally left blank for overview
         },
-        secrets => {github_token => ''},
+        secrets => {github_token => '', gitea_token => ''},
         # allow dynamic config keys based on job results
         hooks => {},
         influxdb => {
