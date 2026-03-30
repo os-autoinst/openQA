@@ -58,6 +58,19 @@ subtest 'running command' => sub {
     qr/can't exec/i, 'exec error logged';
     like $run->('false'), qr/false.*exited.*1/i, 'error if command fails';
     is $run->('true'), '', 'no error if command succeeds';
+
+    subtest 'get URL from command' => sub {
+        my $url_from_cmd = \&OpenQA::Script::CloneJob::_url_from_cmd;
+        my $res = $url_from_cmd->(echo => qw(-n http://foo/bar));
+        is $res, 'http://foo/bar', 'got URL';
+        is ref $res, 'Mojo::URL', 'URL returned as Mojo::URL ref';
+        combined_like { $res = $url_from_cmd->('does-not-exist') } qr/can't exec/i, 'exec error logged';
+        like $res, qr/Failed.*does-not-exist.*No such/i, 'got error via _url_from_cmd';
+        is ref $res, '', 'error returned as scalar';
+        $res = $url_from_cmd->('false');
+        like $res, qr/false.*exited.*status 1/i, 'got error via _url_from_cmd for non-zero return exit status';
+        is ref $res, '', 'error for non-zero exit status returned as scalar';
+    };
 };
 
 subtest 'getting job' => sub {
@@ -493,25 +506,25 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
 subtest 'invoking curl passing auth headers' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     my @invoked_cmds;
-    $clone_mock->redefine(
-        _run_cmd => sub (@args) {
-            push @invoked_cmds, map { m/(.*hash:|.*time:)/i ? "$1 ?" : "$_" } @args;
-            '';
-        });
+    my $record_cmd = sub (@args) {
+        push @invoked_cmds, [map { m/(.*hash:|.*time:)/i ? "$1 ?" : "$_" } @args];
+    };
+    $clone_mock->redefine(_run_cmd => sub (@args) { $record_cmd->(@args); '' });
+    $clone_mock->redefine(_url_from_cmd => sub (@args) { $record_cmd->(@args); Mojo::URL->new('redirected-url') });
     note 'config path: ' . ($ENV{OPENQA_CONFIG} = "$FindBin::Bin/data");
 
     my $args = OpenQA::Script::CloneJob::make_curl_arguments({retry => 5});
-    my @expected_default_args = qw(--follow --retry 5 --retry-connrefused --no-progress-meter);
+    my @expected_default_args = qw(--retry 5 --retry-connrefused --no-progress-meter);
     is_deeply $args, \@expected_default_args, 'default arguments correct';
     my $secrets = OpenQA::Script::CloneJob::read_secrets('testapi');
     is_deeply $secrets, [qw(PERCIVALKEY02 PERCIVALSECRET02)], 'key and secret as expected for host "testapi"';
 
     my %url_handler = (curl_args => $args, secrets => $secrets);
     my $error = OpenQA::Script::CloneJob::mirror(\%url_handler, Mojo::URL->new('url'), 'path');
+    push @expected_default_args, map { -H => $_ } ('X-API-Hash: ?', 'X-API-Key: PERCIVALKEY02', 'X-API-Microtime: ?');
     my @expected_cmds = (
-        curl => @expected_default_args,
-        (map { -H => $_ } ('X-API-Hash: ?', 'X-API-Key: PERCIVALKEY02', 'X-API-Microtime: ?')),
-        qw(--continue-at - --output path url),
+        [curl => @expected_default_args, qw(--silent --follow --head --output /dev/null -w %{url_effective} url)],
+        [curl => @expected_default_args, qw(--continue-at - --output path redirected-url)],
     );
     is $error, '', 'no error returned';
     is_deeply \@invoked_cmds, \@expected_cmds, 'invoked expected commands' or always_explain \@invoked_cmds;
