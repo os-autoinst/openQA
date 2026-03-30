@@ -4,6 +4,7 @@
 package OpenQA::CacheService::Task::Sync;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Task::SignalGuard;
+use Mojo::File 'path';
 
 use Mojo::URL;
 use Time::Seconds;
@@ -35,6 +36,7 @@ sub _cache_tests ($job, $from = undef, $to = undef) {
     my $ctx = $app->log->context("[#$job_id]");
     $ctx->info(qq{Sync: "$from" to "$to"});
 
+    path($to)->make_path;
     my @cmd = (qw(rsync -avHP --timeout), RSYNC_TIMEOUT, "$from/", qw(--delete), "$to/tests/");
     my $cmd = join ' ', @cmd;
     my $status;
