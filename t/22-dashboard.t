@@ -225,7 +225,7 @@ sub check_test_parent {
       'link URLs';
 
     $t->element_count_is("div.children-$default_expanded .badge-all-passed", 1, 'badge shown on parent-level');
-    $t->element_count_is("div.children-$default_expanded .h4 span i.tag", 0, 'no tags shown yet');
+    $t->element_count_is("div.children-$default_expanded .h4 span span.tag", 0, 'no tags shown yet');
 }
 check_test_parent('collapsed');
 
@@ -250,15 +250,15 @@ my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:
 
 sub check_tags {
     $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=1')->status_is(200);
-    my @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
+    my @tags = $t->tx->res->dom->find('div.children-collapsed span span.tag')->map('text')->each;
     is_deeply \@tags, ['some_tag'], 'tag is shown on parent-level';
 
     $t->get_ok('/parent_group_overview/' . $test_parent->id . '?limit_builds=20&show_tags=1')->status_is(200);
-    @tags = $t->tx->res->dom->find('div.children-expanded span i.tag')->map('text')->each;
+    @tags = $t->tx->res->dom->find('div.children-expanded span span.tag')->map('text')->each;
     is_deeply \@tags, ['some_tag'], 'tag is shown on parent-level';
 
     $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
-    @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
+    @tags = $t->tx->res->dom->find('div.children-collapsed span span.tag')->map('text')->each;
     is_deeply \@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)';
     @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
     is_deeply \@h4, ['Build0092'], 'only tagged builds on parent-level shown';
@@ -272,7 +272,7 @@ check_tags();
 # use version-build format where version doesn't matches
 $tag_for_0092_comment->update({text => 'tag:5-0092:important:some_tag', user_id => 99901});
 $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
-my @tags = $t->tx->res->dom->find('div.children-collapsed .h4 span i.tag')->map('text')->each;
+my @tags = $t->tx->res->dom->find('div.children-collapsed .h4 span span.tag')->map('text')->each;
 is_deeply \@tags, [], 'tag is not shown on parent-level because version does not match';
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
 is_deeply \@h4, [], 'also no tagged builds on parent-level shown';
