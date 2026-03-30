@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -strict, -signatures;
+use Mojo::Base -signatures;
 use Time::Seconds;
 $ENV{MOJO_LOG_LEVEL} = 'info';
 
@@ -18,7 +18,7 @@ BEGIN {
     $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
     $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
-    $ENV{OPENQA_BASE_PORT} = 20000 + int(rand(10000));
+    $ENV{OPENQA_BASE_PORT} = 20000 + int rand 10000;
     $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
 
     $tempdir = tempdir;
@@ -101,8 +101,8 @@ sub test_sync ($run) {
     my $dir2 = tempdir;
     my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
 
-    my $t_dir = int(rand(13432432));
-    my $data = int(rand(348394280934820842093));
+    my $t_dir = int rand 13432432;
+    my $data = int rand 348394280934820842093;
     $dir->child($t_dir)->spew($data);
     my $expected = $dir2->child('tests')->child($t_dir);
 
@@ -140,14 +140,14 @@ sub test_sync ($run) {
 }
 
 sub test_download ($id, $asset) {
-    unlink path($cachedir, "localhost")->child($asset);
+    unlink path($cachedir, 'localhost')->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     ok !$cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
 
     my $status = $cache_client->status($asset_request);
     perform_minion_jobs($t->app->minion);
-    wait_for_or_bail_out { !$cache_client->status($asset_request)->is_downloading } "asset";
+    wait_for_or_bail_out { !$cache_client->status($asset_request)->is_downloading } 'asset';
     $status = $cache_client->status($asset_request);
 
     # And then goes to PROCESSED state
@@ -424,7 +424,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     '3 minion workers';
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
-    unlink path($cachedir, "localhost")->child($_) for @assets;
+    unlink path($cachedir, 'localhost')->child($_) for @assets;
     my %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;
@@ -441,7 +441,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     }
 
     @assets = map { 'sle-12-SP3-x86_64-0368-200_88888@64bit.qcow2' } 1 .. $tot_proc;
-    unlink path($cachedir, "localhost")->child($_) for @assets;
+    unlink path($cachedir, 'localhost')->child($_) for @assets;
     %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok !$cache_client->enqueue($requests{$_}), "Download enqueued for $_" for @assets;

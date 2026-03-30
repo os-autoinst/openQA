@@ -375,7 +375,7 @@ subtest 'enqueue_git_clones' => sub {
     my $job_id = $minion_job->id;
     my $task = $schema->resultset('GruTasks')->find($result->{gru_id});
     my @deps = $task->jobs;
-    is_deeply [map $_->job_id, @deps], $jobs, 'expected GruDependencies created';
+    is_deeply [map { $_->job_id } @deps], $jobs, 'expected GruDependencies created';
 
     subtest 'add to existing GruTask' => sub {
         my $enq = 0;
@@ -508,7 +508,7 @@ subtest 'delete_needles' => sub {
         $mock_needle->redefine(
             remove => sub ($self, $user) {
                 return if $self->id == 23;
-                die OpenQA::Error->new(signal => 'INT', msg => "Not running git command (...) because of signal INT");
+                die OpenQA::Error->new(signal => 'INT', msg => 'Not running git command (...) because of signal INT');
             });
         my %to_remove = ('/foo' => \@needles);
         my @removed_ids;
@@ -525,14 +525,14 @@ subtest 'delete_needles' => sub {
         $mock_needle->redefine(
             _delete_needles => sub ($, $, $, $removed_ids, $) {
                 push @$removed_ids, 23;
-                die OpenQA::Error->new(signal => 'INT', msg => "Not running git command (...) because of signal INT");
+                die OpenQA::Error->new(signal => 'INT', msg => 'Not running git command (...) because of signal INT');
             });
         my $res = run_gru_job(@gru_args);
         is $res->{state}, 'inactive', 'job inactive';
         is $res->{notes}->{removed_ids}->[0], 23, 'removed ids are recorded';
 
         subtest 'Unexpected error' => sub {
-            $mock_needle->redefine(_delete_needles => sub (@) { die "Something else" });
+            $mock_needle->redefine(_delete_needles => sub (@) { die 'Something else' });
             combined_like {
                 $res = run_gru_job(@gru_args);
             }
@@ -561,7 +561,7 @@ subtest ServerAvailability => sub {
     subtest 'file present and older => fail' => sub {
         my $mock_file = $tmpdir->child('foo/mock.gitlab.flag')->touch;
         my $old_time = time - 2000;
-        utime($old_time, $old_time, $mock_file)
+        utime $old_time, $old_time, $mock_file
           or die "Couldn't change mtime on file: $mock_file - $!";
         my $outcome = report_server_unavailable($t->app, 'gitlab');
         is $outcome, 'FAIL', 'Fails the job when mtime >= 1800';
@@ -585,7 +585,7 @@ subtest ServerAvailability => sub {
         ok -f $github_file, 'Created mock.github.flag';
 
         my $old_time = time - 2000;
-        utime($old_time, $old_time, $github_file);
+        utime $old_time, $old_time, $github_file;
         # Re-check
         $outcome_gitlab = report_server_unavailable($t->app, 'gitlab');
         $outcome_github = report_server_unavailable($t->app, 'github');
@@ -616,7 +616,7 @@ subtest ServerAvailability => sub {
         subtest 'Internal API unreachable => fail' => sub {
             $tmpdir->child('foo/mock.gitlab.suse.de.flag')->touch;
             my $old_time = time - 2000;    # "older" than 1800s
-            utime($old_time, $old_time, "$tmpdir/foo/mock.gitlab.suse.de.flag");
+            utime $old_time, $old_time, "$tmpdir/foo/mock.gitlab.suse.de.flag";
             my @gru_args = (
                 $t->app,
                 'git_clone',

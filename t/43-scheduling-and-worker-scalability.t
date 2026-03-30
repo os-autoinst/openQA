@@ -50,7 +50,7 @@ my $load_avg_file = simulate_load('0.93 0.95 3.25 2/2207 1212', '43-scheduling-a
 my $worker_count = $ENV{SCALABILITY_TEST_WORKER_COUNT};
 my $job_count = $ENV{SCALABILITY_TEST_JOB_COUNT} // $worker_count;
 BAIL_OUT 'invalid SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT'
-  unless looks_like_number($worker_count) && looks_like_number($job_count) && $worker_count > 0 && $job_count > 0;
+  if !(looks_like_number($worker_count) && looks_like_number($job_count) && $worker_count > 0 && $job_count > 0);
 note "Running scalability test with $worker_count worker(s) and $job_count job(s).";
 note 'Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust this.';
 
@@ -119,10 +119,10 @@ sub log_jobs {
       # uncoverable statement
       = map {
         # uncoverable statement
-        sprintf('id: %s, state: %s, result: %s, reason: %s', $_->id, $_->state, $_->result, $_->reason // 'none')
+        sprintf 'id: %s, state: %s, result: %s, reason: %s', $_->id, $_->state, $_->result, $_->reason // 'none'
       } $jobs->search({}, {order_by => 'id'});
     # uncoverable statement
-    diag "All jobs:\n - " . join("\n - ", @job_info);
+    diag "All jobs:\n - " . join "\n - ", @job_info;
 }
 my %job_ids;
 my $distri = 'opensuse';
@@ -166,7 +166,7 @@ subtest 'wait for workers to be idle' => sub {
     for my $worker ($workers->all) {
         my $is_idle = $worker->status eq 'idle';
         $worker_ids{$worker->id} = 1 if $is_idle;
-        push(@non_idle_workers, $worker->info)    # uncoverable statement
+        push @non_idle_workers, $worker->info    # uncoverable statement
           if !$is_idle || ($worker->websocket_api_version || 0) != WEBSOCKET_API_VERSION;
     }
     is scalar @non_idle_workers, 0, 'all workers idling' or always_explain \@non_idle_workers;
@@ -218,7 +218,7 @@ subtest 'stop all workers' => sub {
     for my $try (1 .. $polling_tries_workers) {
         @non_offline_workers = ();
         for my $worker ($workers->all) {
-            push(@non_offline_workers, $worker->id) unless $worker->dead;
+            push @non_offline_workers, $worker->id unless $worker->dead;
         }
         last unless @non_offline_workers;
         note "Waiting until all workers are offline, try $try";    # uncoverable statement

@@ -116,7 +116,7 @@ subtest 'create result dir, delete results' => sub {
         $job->discard_changes;
         ok -d ($result_dir = path($job->create_result_dir)), 'result directory created';
         path($result_dir, $_)->spew($file_content) for @fake_results;
-        symlink(path($result_dir, 'video.webm'), my $symlink = path($result_dir, 'video.mkv'))
+        symlink path($result_dir, 'video.webm'), my $symlink = path($result_dir, 'video.mkv')
           or die "Unable to create symlink: $!";
         my $symlink_size = $symlink->lstat->size;
         $job->delete_videos;

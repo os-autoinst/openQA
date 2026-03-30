@@ -21,7 +21,7 @@ sub setup_obs_rsync_test (%args) {
     my $home = path($tempdir, 'openqa-trigger-from-obs');
     my $url = delete $args{url} // '';
     my $more_config = delete $args{config} // {};
-    my $more_config_str = join("\n", map { "$_=$more_config->{$_}" } keys %$more_config);
+    my $more_config_str = join "\n", map { "$_=$more_config->{$_}" } keys %$more_config;
     dircopy($home_template, $home);
     $tempdir->child('openqa.ini')->spew(<<"EOF");
 [global]

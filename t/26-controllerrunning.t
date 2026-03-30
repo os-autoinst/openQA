@@ -2,12 +2,13 @@
 # Copyright 2017-2021 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+use Test::Most;
+
 BEGIN {
     $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} = 0.0;
     $ENV{OPENQA_TEXT_STREAMING_INTERVAL} = 0.0;
 }
 
-use Test::Most;
 use Mojo::Base -base, -signatures;
 
 use FindBin;
@@ -272,7 +273,7 @@ package Job;
 
 sub new {
     my ($class) = @_;
-    my $self = bless({}, $class);
+    my $self = bless {}, $class;
     $self->{worker} = Worker->new;
     return $self;
 }
@@ -289,7 +290,7 @@ use Mojo::File 'tempdir';
 
 sub new {
     my ($class) = @_;
-    my $self = bless({}, $class);
+    my $self = bless {}, $class;
     $self->{WORKER_TMPDIR} = tempdir;
     return $self;
 }
@@ -311,7 +312,7 @@ use Mojo::Base -signatures;
 
 sub new {
     my ($class) = @_;
-    my $self = bless({}, $class);
+    my $self = bless {}, $class;
     $self->{resultset} = Worker->new;
     return $self;
 }
@@ -320,4 +321,4 @@ sub resultset ($self, $name) { FakeSchema::Find->new($name) }
 
 package FakeSchema::Find;
 use Mojo::Base -signatures;
-sub new ($class, $name = '') { bless({name => $name}, $class) }
+sub new ($class, $name = '') { bless {name => $name}, $class }

@@ -117,7 +117,7 @@ subtest 'test lock smoke' => sub {
 
 subtest 'test lock after failure' => sub {
     # now similate error by deleting the script
-    unlink(Mojo::File->new($home, 'script', 'rsync.sh'));
+    unlink Mojo::File->new($home, 'script', 'rsync.sh');
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, 'trigger rsync');
     perform_minion_jobs($t->app->minion);
 

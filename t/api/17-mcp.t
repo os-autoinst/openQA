@@ -84,7 +84,7 @@ subtest 'openqa_get_job_info tool' => sub {
 
     subtest 'Passed job' => sub {
         subtest 'Add comment to test job' => sub {
-            $t->post_ok("/api/v1/jobs/99764/comments" => form => {text => 'Just a test comment'})->status_is(200);
+            $t->post_ok('/api/v1/jobs/99764/comments' => form => {text => 'Just a test comment'})->status_is(200);
         };
 
         my $result = $client->call_tool('openqa_get_job_info', {job_id => 99764});

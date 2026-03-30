@@ -49,7 +49,7 @@ package Test::FakeClient {    # uncoverable statement count:2
     has api_calls => sub { [] };
 
     sub send ($self, $method, $path, %args) {
-        push(@{$self->api_calls}, $method, $path, $args{params});
+        push @{$self->api_calls}, $method, $path, $args{params};
     }
 }    # uncoverable statement
 
@@ -120,7 +120,7 @@ is_deeply \@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client
 combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s, 'setup info';
 
-push(@{$worker->settings->parse_errors}, 'foo', 'bar');
+push @{$worker->settings->parse_errors}, 'foo', 'bar';
 combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors occurred.*foo.*bar.*/s,
   'setup info with parse errors';
@@ -593,7 +593,7 @@ subtest 'check is_ovs_dbus_service_running of D-Bus service' => sub {
     $worker->{_system_dbus} = $mock_net_dbus;
     $mock_net_dbus->set_true('get_service');
     is $worker->is_ovs_dbus_service_running, 1, 'OvS D-Bus service passed on passing get_service';
-    $mock_net_dbus->mock(get_service => sub { die "Fake error" });
+    $mock_net_dbus->mock(get_service => sub { die 'Fake error' });
     is $worker->is_ovs_dbus_service_running, 0, 'OvS D-Bus service failed on failing get_service';
 };
 
@@ -970,10 +970,10 @@ subtest 'worker ipmi' => sub {
     $ioloop_mock->redefine(recurring => sub { $sched = 1; });
     my $global_settings = $settings->global_settings;
     delete $global_settings->{LOG_DIR};
-    $global_settings->{IPMI_HOSTNAME} = "ipmi.host";
-    $global_settings->{IPMI_USER} = "username";
-    $global_settings->{IPMI_PASSWORD} = "password";
-    $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} = "1";
+    $global_settings->{IPMI_HOSTNAME} = 'ipmi.host';
+    $global_settings->{IPMI_USER} = 'username';
+    $global_settings->{IPMI_PASSWORD} = 'password';
+    $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} = '1';
     combined_like { $worker->init }
     qr/IPMI config present/, 'IPMI config detected';
     ok $sched, 'ipmi job scheduled';

@@ -159,7 +159,7 @@ subtest 'cleanup' => sub {
 
 subtest 'handling failed job cancellation' => sub {
     my $jobs_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Jobs');
-    $jobs_mock->redefine(cancel_by_settings => sub { die "fake error" });
+    $jobs_mock->redefine(cancel_by_settings => sub { die 'fake error' });
     $schema->txn_begin;
     my $jobs = {settings_result => [{DISTRI => 'foo', VERSION => 'bar', BUILD => '42'}]};
     $scheduled_products_mock->redefine(_generate_jobs => $jobs);

@@ -29,7 +29,7 @@ my @jobs_cancelled;
 $jobs_mock_module->redefine(
     cancel => sub {
         my ($job) = @_;
-        push(@jobs_cancelled, $job->id);
+        push @jobs_cancelled, $job->id;
     });
 
 my @ipc_messages_for_websocket_server;
@@ -41,7 +41,7 @@ $mock_client->redefine(
         my $self = shift;
         $client_called++;
         die $fake_send_msg_failure if defined $fake_send_msg_failure;
-        push(@ipc_messages_for_websocket_server, [@_]);
+        push @ipc_messages_for_websocket_server, [@_];
     });
 
 # init test case
