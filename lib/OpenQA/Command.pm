@@ -13,6 +13,8 @@ use Mojo::File qw(path);
 use Mojo::Transaction::HTTP;
 use Term::ANSIColor qw(colored);
 
+use constant MOJO_CONNECT_TIMEOUT => $ENV{MOJO_CONNECT_TIMEOUT} // 30;
+
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
   ->stringify_infnan->escape_slash->allow_dupkeys->pretty;
 my $PARAM_RE = qr/^([[:alnum:]_\[\]\.\:]+)=(.*)$/s;
@@ -118,7 +120,7 @@ sub url_for ($self, $path) {
 }
 
 sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
-    $client->connect_timeout($ENV{MOJO_CONNECT_TIMEOUT} // 30);
+    $client->connect_timeout(MOJO_CONNECT_TIMEOUT);
     $delay //= $ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3;
     $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
     my $factor = $ENV{OPENQA_CLI_RETRY_FACTOR} // 1;

@@ -4,13 +4,14 @@
 package OpenQA::Scheduler;
 use Mojo::Base 'Mojolicious', -signatures;
 
-use OpenQA::Setup;
 use Mojo::IOLoop;
-use OpenQA::Log qw(log_debug setup_log);
 use Mojo::Server::Daemon;
+use Scalar::Util qw(looks_like_number);
+use Time::Seconds;
+use OpenQA::Log qw(log_debug setup_log);
 use OpenQA::Schema;
 use OpenQA::Scheduler::Model::Jobs;
-use Scalar::Util qw(looks_like_number);
+use OpenQA::Setup;
 
 # Scheduler default clock. Defaults to 20 s
 # Optimization rule of thumb is:
@@ -92,7 +93,7 @@ sub setup ($self) {
     $self->plugin('Gru');
 
     # check for stale jobs every 2 minutes
-    Mojo::IOLoop->recurring(120 => \&_check_stale);
+    Mojo::IOLoop->recurring(ONE_MINUTE * 2 => \&_check_stale);
 
     # initial schedule
     Mojo::IOLoop->next_tick(

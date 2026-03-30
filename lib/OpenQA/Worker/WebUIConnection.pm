@@ -15,6 +15,9 @@ use HTTP::Status qw(:constants);
 # define it here for now until we can drop support for Leap 15.6
 use constant _HTTP_TOO_EARLY => 425;
 
+use constant DEFAULT_OPENQA_WORKER_CONNECT_RETRIES => 60;
+use constant MAX_WEBSOCKET_SIZE => 1024 * 1024 * 10;
+
 has 'webui_host';    # hostname:port of the web UI to connect to
 has 'url';    # URL of the web UI to connect to - initially deduced from webui_host (Mojo::URL instance)
 has 'ua';    # the OpenQA::Client used to do connections
@@ -210,7 +213,7 @@ sub _setup_websocket_connection ($self, $websocket_url = undef) {
 
                     # note: The worker is supposed to handle this event and e.g. try to re-register again.
                 });
-            $tx->max_websocket_size(10485760);
+            $tx->max_websocket_size(MAX_WEBSOCKET_SIZE);
             $self->websocket_connection($tx);
             $self->send_status();
             $self->_set_status(connected => {});
@@ -265,7 +268,8 @@ sub evaluate_error ($self, $tx, $remaining_tries) {
 }
 
 sub configured_retries ($self) {
-    $ENV{OPENQA_WORKER_CONNECT_RETRIES} // $self->worker->settings->global_settings->{RETRIES} // 60;
+    $ENV{OPENQA_WORKER_CONNECT_RETRIES} // $self->worker->settings->global_settings->{RETRIES}
+      // DEFAULT_OPENQA_WORKER_CONNECT_RETRIES;
 }
 
 # sends a command to the web UI via its REST API

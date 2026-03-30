@@ -8,6 +8,9 @@ use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 use Feature::Compat::Try;
 
+use constant DEFAULT_OPENQA_JOB_DONE_HOOK_RETRIES => 53;
+use constant DEFAULT_OPENQA_JOB_DONE_HOOK_SKIP_RC => 142;
+
 sub register ($self, $app, @args) {
     $app->minion->add_task(finalize_job_results => \&_finalize_results);
 }
@@ -51,8 +54,10 @@ sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {
     my $settings = $openqa_job->settings_hash;
     my $delay = $settings->{_TRIGGER_JOB_DONE_DELAY} // $ENV{OPENQA_JOB_DONE_HOOK_DELAY} // ONE_MINUTE;
     # Linear backoff with 53 retries ~ 1 day
-    my $retries = $settings->{_TRIGGER_JOB_DONE_RETRIES} // $ENV{OPENQA_JOB_DONE_HOOK_RETRIES} // 53;
-    my $skip_rc = $settings->{_TRIGGER_JOB_DONE_SKIP_RC} // $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC} // 142;
+    my $retries = $settings->{_TRIGGER_JOB_DONE_RETRIES} // $ENV{OPENQA_JOB_DONE_HOOK_RETRIES}
+      // DEFAULT_OPENQA_JOB_DONE_HOOK_RETRIES;
+    my $skip_rc = $settings->{_TRIGGER_JOB_DONE_SKIP_RC} // $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC}
+      // DEFAULT_OPENQA_JOB_DONE_HOOK_SKIP_RC;
     $guard->retry(0);
     my $id = $app->minion->enqueue(
         hook_script => [

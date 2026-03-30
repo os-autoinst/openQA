@@ -28,6 +28,8 @@ use List::Util 'max';
 use Time::HiRes qw(usleep);
 use Feature::Compat::Try;
 
+use constant DEFAULT_UPLOAD_CHUNK_SIZE => 1_000_000;
+
 # define attributes for public properties
 has 'worker';
 has 'client';
@@ -973,7 +975,7 @@ sub _upload_asset ($self, $upload_parameter) {
     my $filename = $upload_parameter->{file}->{filename};
     my $file = $upload_parameter->{file}->{file};
     my $global_settings = $self->worker->settings->global_settings;
-    my $chunk_size = $global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $chunk_size = $global_settings->{UPLOAD_CHUNK_SIZE} // DEFAULT_UPLOAD_CHUNK_SIZE;
     my $retries = $global_settings->{UPLOAD_RETRIES} // 10;
     my $local_upload = $global_settings->{LOCAL_UPLOAD} // 1;
     my $ua = $self->client->ua;

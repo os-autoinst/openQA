@@ -13,11 +13,13 @@ use CommonMark;
 
 our @EXPORT_OK = qw(bugref_to_html is_light_color markdown_to_html);
 
+use constant IS_LIGHT_COLOR_THRESHOLD => 380;
+
 sub is_light_color ($color) {
     return undef unless $color =~ m/^#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})$/;
     my ($red, $green, $blue) = ($1, $2, $3);
     my $sum = (hex $red) + (hex $green) + (hex $blue);
-    return $sum > 380;
+    return $sum > IS_LIGHT_COLOR_THRESHOLD;
 }
 
 sub bugref_to_html ($bugref, $fancy = 0) {

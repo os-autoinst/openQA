@@ -41,6 +41,8 @@ use POSIX 'strftime';
 use Mojo::JSON 'decode_json';
 use Feature::Compat::Try;
 
+use constant AVG_SIMILARITY_THRESHOLD => 70;
+
 sub _init ($self) {
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     my %attrs = (rows => 1, order_by => {-desc => 'id'});
@@ -222,7 +224,7 @@ sub edit ($self) {
     #  - tags: tags from the screenshot
     my $default_needle = {};
     my $first_needle = $needles[0];
-    if ($first_needle && ($first_needle->{avg_similarity} || 0) > 70) {
+    if ($first_needle && ($first_needle->{avg_similarity} || 0) > AVG_SIMILARITY_THRESHOLD) {
         $first_needle->{selected} = 1;
         $default_needle->{tags} = $first_needle->{tags};
         $default_needle->{area} = $first_needle->{matches};
@@ -571,7 +573,7 @@ sub viewimg ($self) {
         # note: the same needle can be shown under different tags, hence the selected flag might be occur twice
         #       (even though we check for $has_selection here!)
         my $best_match = $sorted_needles[0];
-        if (!$has_selection && $best_match && $best_match->{avg_similarity} > 70) {
+        if (!$has_selection && $best_match && $best_match->{avg_similarity} > AVG_SIMILARITY_THRESHOLD) {
             $has_selection = $best_match->{selected} = 1;
             $primary_match = $best_match;
         }

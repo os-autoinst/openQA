@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious', -signatures;
 
 use Mojo::SQLite;
 use Mojo::File 'path';
+use Time::Seconds;
 use OpenQA::Worker::Settings;
 use OpenQA::CacheService::Model::Cache;
 use OpenQA::CacheService::Model::Downloads;
@@ -125,7 +126,7 @@ sub run (@args) {
 
     local $ENV{MOJO_LOG_SHORT} = 1;
     my $app = __PACKAGE__->new;
-    $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
+    $ENV{MOJO_INACTIVITY_TIMEOUT} //= ONE_MINUTE * 5;
     $app->log->debug("Starting cache service: $0 @args");
     $app->defaults->{service_pid} = $$;
 

@@ -14,6 +14,8 @@ use Date::Format;
 use Sort::Versions;
 use Time::Seconds;
 
+use constant DEFAULT_BUILD_RESULTS_LIMIT => 400;
+
 sub init_job_figures ($job_result) {
     # relevant distributions for the build (hash is used as a set)
     $job_result->{distris} = {};
@@ -123,7 +125,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     my $sort_column = $buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB ? 'oldest_job' : 'newest_job';
 
     # 400 is the max. limit selectable in the group overview
-    my $row_limit = (defined($limit) && $limit > 400) ? $limit : 400;
+    my $row_limit = (defined($limit) && $limit > DEFAULT_BUILD_RESULTS_LIMIT) ? $limit : DEFAULT_BUILD_RESULTS_LIMIT;
     my @search_cols = qw(VERSION BUILD);
     my %search_opts = (
         select => [@search_cols, {max => 'id', -as => 'newest_job'}, {min => 'id', -as => 'oldest_job'}],

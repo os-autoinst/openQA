@@ -19,6 +19,8 @@ has 'webui_hosts';
 has 'webui_host_specific_settings';
 
 use constant VNCPORT_OFFSET => $ENV{VNCPORT_OFFSET} // 90;
+use constant QEMU_PORT_OFFSET => 20_002;
+use constant DEFAULT_CRITICAL_LOAD_AVG_THRESHOLD => 40;
 
 sub new ($class, $instance_number = undef, $cli_options = {}) {
     my $config_paths = lookup_config_files(undef, 'workers.ini', 1);
@@ -48,12 +50,12 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 
     # Select sensible system CPU load15 threshold to prevent system overload
     # based on experiences with system stability so far
-    $global_settings{CRITICAL_LOAD_AVG_THRESHOLD} //= 40;
+    $global_settings{CRITICAL_LOAD_AVG_THRESHOLD} //= DEFAULT_CRITICAL_LOAD_AVG_THRESHOLD;
 
     # set some environment variables
     # TODO: This should be sent to the scheduler to be included in the worker's table.
     if (defined $instance_number) {
-        $ENV{QEMUPORT} = $instance_number * 10 + 20002;
+        $ENV{QEMUPORT} = $instance_number * 10 + QEMU_PORT_OFFSET;
         $ENV{VNC} = $instance_number + VNCPORT_OFFSET;
     }
 

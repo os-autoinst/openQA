@@ -50,6 +50,9 @@ use constant SCENARIO_WITH_MACHINE_KEYS => (SCENARIO_KEYS, 'MACHINE');
 # job settings which are defined directly as column of the jobs table
 use constant MAIN_SETTINGS => qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD);
 
+use constant MAX_LENGTH_REASON => 300;
+use constant JOB_INVESTIGATE_GIT_TIMEOUT => 20;
+
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
 __PACKAGE__->add_columns(
@@ -1882,7 +1885,8 @@ sub git_log_diff ($self, $dir, $refspec_range, $limit = undef) {
 
 sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
-    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout} // 20;
+    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout}
+      // JOB_INVESTIGATE_GIT_TIMEOUT;
     my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
     my $res = run_cmd_with_log_return_error($cmd);
     my $out = $res->{stdout} . $res->{stderr};
@@ -2198,7 +2202,7 @@ sub _compute_result_and_reason ($self, $new_val, $result, $reason, $restart) {
         # limit length of the reason
         # note: The reason can be anything the worker picked up as useful information so better cut it at a
         # reasonable, human-readable length. This also avoids growing the database too big.
-        $reason = substr($reason, 0, 300) . '…' if length $reason > 300;
+        $reason = substr($reason, 0, MAX_LENGTH_REASON) . '…' if length $reason > MAX_LENGTH_REASON;
         $reason .= $append_reason;
         $new_val->{reason} = $reason;
     }

@@ -8,6 +8,7 @@ use OpenQA::Schema;
 use OpenQA::Log qw(log_trace);
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
+use Time::Seconds;
 
 sub check ($self) {
     my $config = $self->app->config;
@@ -108,7 +109,7 @@ sub auth_admin ($self) {
 sub _is_timestamp_valid ($self, $our_timestamp, $remote_timestamp) {
     my $log = $self->app->log;
     my $tolerance = $self->config->{api_hmac_time_tolerance}
-      // 300;    # make extra sure this value is never empty to avoid security issues
+      // ONE_MINUTE * 5;    # make extra sure this value is never empty to avoid security issues
 
     return 1 if (abs($our_timestamp - $remote_timestamp) <= $tolerance);
     $log->debug(
