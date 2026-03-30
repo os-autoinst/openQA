@@ -321,32 +321,32 @@ function handleKeyDownOnTestDetails(e) {
     return;
   }
 
-  switch (e.which) {
-    case KeyEvent.DOM_VK_LEFT:
+  switch (e.key) {
+    case 'ArrowLeft':
       if (!e.shiftKey) {
         prevPreview();
         e.preventDefault();
       }
       break;
-    case KeyEvent.DOM_VK_RIGHT:
+    case 'ArrowRight':
       if (!e.shiftKey) {
         nextPreview();
         e.preventDefault();
       }
       break;
-    case KeyEvent.DOM_VK_ESCAPE:
+    case 'Escape':
       if (!e.shiftKey) {
         setCurrentPreview(null);
         e.preventDefault();
       }
       break;
-    case KeyEvent.DOM_VK_UP:
+    case 'ArrowUp':
       if (e.shiftKey) {
         prevNeedle();
         e.preventDefault();
       }
       break;
-    case KeyEvent.DOM_VK_DOWN:
+    case 'ArrowDown':
       if (e.shiftKey) {
         nextNeedle();
         e.preventDefault();
