@@ -332,7 +332,7 @@ sub reschedule_state ($self, $state = OpenQA::Jobs::Constants::SCHEDULED) {
     #       already be SETUP/RUNNING after all. In this case we need to abort.
     my $jobs = $self->result_source->schema->resultset('Jobs');
     my %cond = (id => $self->id, state => {-in => [SCHEDULED, ASSIGNED]});
-    my %update = (state => $state, result => NONE, t_started => undef, assigned_worker_id => undef);
+    my %update = (state => $state, result => NONE, t_started => undef, assigned_worker_id => undef, reason => undef);
     return 0 if $jobs->search(\%cond)->update(\%update) == 0;
 
     # cleanup
@@ -358,6 +358,7 @@ sub set_assigned_worker ($self, $worker) {
             state => ASSIGNED,
             t_started => undef,
             assigned_worker_id => $worker_id,
+            reason => undef,
         });
     log_debug("Assigned job '$job_id' to worker ID '$worker_id'");
 }
