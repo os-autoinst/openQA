@@ -496,14 +496,40 @@ subtest 'render video link if frametime is available' => sub {
       'video src correct and starts on timestamp';
 };
 
+subtest 'arrow key navigation between steps' => sub {
+    $driver->get('/tests/99946');
+    wait_for_ajax(msg => 'test 99946 loaded');
+    $driver->find_element_by_link_text('Details')->click();
+    wait_for_ajax(msg => 'details tab loaded');
+
+    $driver->find_element('[href="#step/bootloader/1"]')->click();
+    wait_for_ajax(msg => 'first step of bootloader loaded');
+    my $first_step_url = $driver->get_current_url();
+    like $first_step_url, qr/#step\/bootloader\/1/, 'first step selected';
+
+    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'ArrowRight'}))");
+    wait_for_ajax(msg => 'arrow right pressed via jQuery');
+    my $second_step_url = $driver->get_current_url();
+    like $second_step_url, qr/#step\/bootloader\/2/, 'second step selected after right arrow';
+
+    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'ArrowLeft'}))");
+    wait_for_ajax(msg => 'arrow left pressed via jQuery');
+    my $back_to_first_url = $driver->get_current_url();
+    like $back_to_first_url, qr/#step\/bootloader\/1/, 'back to first step after left arrow';
+
+    $driver->execute_script("\$(window).trigger(\$.Event('keydown', {key: 'Escape'}))");
+    wait_for_ajax(msg => 'escape pressed to close preview');
+};
+
 subtest 'misc details: title, favicon, go back, go to source view, go to log view' => sub {
-    $driver->go_back();    # to 99946
+    $driver->get('/tests/99946');
+    wait_for_ajax(msg => 'test 99946 loaded');
     $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
     like $driver->find_element('link[rel=icon]')->get_attribute('href'),
       qr/logo-passed/, 'favicon is based on job result';
     wait_for_ajax(msg => 'test details tab for job 99946 loaded (1)');
-    if (ok my $current_preview = $driver->find_element('.current_preview'), 'state preserved when going back') {
-        $current_preview->click;
+    if (my @previews = $driver->find_elements('.current_preview')) {
+        $previews[0]->click;    # uncoverable statement
     }
     $driver->find_element_by_link_text('installer_timezone')->click();
     like

@@ -2,8 +2,8 @@
 
 // FIXME: key events may be different in other browsers:
 // http://www.javascripter.net/faq/keyeventconstantsfirefox.htm
-if (typeof KeyEvent === 'undefined') {
-  const KeyEvent = {
+if (typeof KeyEvent === 'undefined' || typeof KeyEvent.DOM_VK_LEFT === 'undefined') {
+  const keyEventDefaults = {
     DOM_VK_CANCEL: 3,
     DOM_VK_HELP: 6,
     DOM_VK_BACK_SPACE: 8,
@@ -120,4 +120,9 @@ if (typeof KeyEvent === 'undefined') {
     DOM_VK_QUOTE: 222,
     DOM_VK_META: 224
   };
+  if (typeof KeyEvent === 'undefined') {
+    KeyEvent = keyEventDefaults;
+  } else {
+    Object.assign(KeyEvent, keyEventDefaults);
+  }
 }
