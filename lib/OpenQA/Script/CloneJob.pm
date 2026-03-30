@@ -168,15 +168,32 @@ sub _format_cmd_error ($command) {
 
 sub _run_cmd ($command, @args) { system $command, @args; return $? == 0 ? '' : _format_cmd_error($command) }
 
-sub mirror ($url_handler, $from, $dst) {
-    my @curl_args = @{$url_handler->{curl_args}};
-    my $secrets = $url_handler->{secrets};
+sub _url_from_cmd ($command, @args) {    # use open (and not qx) to avoid splitting arguments or using a shell
+    open my $fh, '-|', $command, @args or return "Failed to execute '$command': $!";
+    my $out = do { local $/; <$fh> };
+    close $fh;
+    return $? == 0 ? Mojo::URL->new($out) : _format_cmd_error($command);
+}
+
+sub _args_for_header ($headers, $name) {
+    return (map { ('-H', "$name: $_") } @{$headers->every_header($name)});
+}
+
+sub _auth_args ($from, $secrets) {
     my $headers = Mojo::Headers->new;
     OpenQA::UserAgent::add_auth_headers($headers, $from, @$secrets) if $secrets;
-    for my $name (@{$headers->names}) {
-        push @curl_args, '-H', "$name: " . $_ for @{$headers->every_header($name)};
-    }
-    _run_cmd CURL, @curl_args, qw(--continue-at - --output), $dst, $from;
+    return [map { _args_for_header $headers, $_ } @{$headers->names}];
+}
+
+sub _resolve_redirection ($from, $curl_args, $secrets) {
+    my @effective_url_args = qw(--silent --follow --head --output /dev/null -w %{url_effective});
+    return _url_from_cmd CURL, @$curl_args, @{_auth_args($from, $secrets)}, @effective_url_args, $from;
+}
+
+sub mirror ($url_handler, $from, $dst) {
+    my ($curl_args, $secrets) = ($url_handler->{curl_args}, $url_handler->{secrets});
+    return $from if ref($from = _resolve_redirection $from, $curl_args, $secrets) ne 'Mojo::URL';
+    return _run_cmd CURL, @$curl_args, @{_auth_args($from, $secrets)}, qw(--continue-at - --output), $dst, $from;
 }
 
 sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
@@ -229,7 +246,7 @@ sub split_jobid ($url_string) {
 }
 
 sub make_curl_arguments ($options) {
-    my @args = ('--follow', '--retry', $options->{retry}, '--retry-connrefused');
+    my @args = ('--retry', $options->{retry}, '--retry-connrefused');
     push @args, '--no-progress-meter' unless $options->{'show-progress'};
     push @args, '--verbose' if $options->{verbose};
     return \@args;
