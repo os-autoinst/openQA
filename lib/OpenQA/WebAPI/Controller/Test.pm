@@ -995,6 +995,7 @@ sub overview ($self) {
         until => $search_args->{until},
         parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},
         summary_parts => \@summary_parts,
+        max_groups => $config->{misc_limits}->{tests_overview_summary_max_groups} // 7,
         summary_category_query => \%SUMMARY_CATEGORY_QUERY,
         only_distri => $only_distri,
         limit_exceeded => $exceeded_limit,

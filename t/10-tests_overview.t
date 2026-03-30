@@ -302,7 +302,7 @@ subtest 'todo-flag on test overview' => sub {
 # multiple groups can be shown at the same time
 $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
 $summary = get_summary;
-like $summary, qr/Summary of opensuse, opensuse test/i, 'references both groups selected by query';
+like $summary, qr/Summary of opensuse\s*,\s*opensuse test/i, 'references both groups selected by query';
 like
   $summary,
   qr/current time Passed: 2 Scheduled: 1 Running: 2 None: 1/i,
@@ -315,7 +315,7 @@ $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=10
 $summary = get_summary;
 like
   $summary,
-  qr/Summary of opensuse, opensuse test build 0091[^,]/i,
+  qr/Summary of opensuse\s*,\s*opensuse test build 0091[^,]/i,
   'multiple groups with no build specified yield the same, latest build of every group';
 like $summary, qr/current time Passed: 2 Scheduled: 1 Running: 2 None: 1/i;
 
@@ -338,7 +338,7 @@ $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=10
 $summary = get_summary;
 like
   $summary,
-  qr/Summary of opensuse, opensuse test 2 build 0091,0092/i,
+  qr/Summary of opensuse\s*,\s*opensuse test 2 build 0091,0092/i,
   'multiple groups with no build specified yield each build for every group';
 like $summary, qr/current time Passed: 3 Scheduled: 2 Running: 1 None: 1/i, 'summary of 0091,0092';
 
@@ -571,6 +571,39 @@ subtest 'aggregate favicon' => sub {
       ->status_is(200);
     $t->element_exists('link#favicon-16[href*="logo-aggregate-passed-16.png"]');
     $t->element_exists('link#favicon-svg[href*="logo-aggregate-passed.svg"]');
+};
+
+subtest 'Job group filtering and truncation' => sub {
+    $t->get_ok('/tests/overview?build=87.5011&groupid=1001&groupid=1002&distri=opensuse&version=Factory')
+      ->status_is(200);
+    my $summary = get_summary();
+    like $summary, qr/Summary of opensuse\s+Factory build 87.5011/i, 'Summary header shows group with results';
+    unlike $summary, qr/opensuse test/i, 'Summary header excludes group with no results for build';
+
+    for my $i (1 .. 10) {
+        my $g = $schema->resultset('JobGroups')->create({name => "Extra Group $i"});
+        $schema->resultset('Jobs')->create(
+            {
+                group_id => $g->id,
+                priority => 50,
+                state => 'done',
+                BUILD => '0091',
+                DISTRI => 'opensuse',
+                VERSION => '13.1',
+                ARCH => 'x86_64',
+                MACHINE => '64bit',
+                FLAVOR => 'DVD',
+                TEST => "test_$i",
+            });
+    }
+
+    $t->get_ok('/tests/overview?build=0091&group_glob=*')->status_is(200);
+    my $dom = $t->tx->res->dom;
+
+    is $dom->find('.more-groups')->size, 12 - 7,
+      'Correct number of groups are hidden (12 groups total, 7 shown by default)';
+    $t->element_exists('#show-more-groups', 'Ellipsis for more groups exists');
+    is $dom->at('#show-more-groups')->text, "\x{2026}", 'Ellipsis button uses proper unicode character';
 };
 
 done_testing();
