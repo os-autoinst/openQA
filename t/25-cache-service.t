@@ -132,7 +132,7 @@ sub test_sync ($run) {
     qr/rsync error:.*/, 'rsync error message';
 
     my $status2 = $cache_client->status($rsync_request2);
-    is $status2->result, 'exit code 11', "exit code ok, run $run";
+    is $status2->result, 'exit code 23', "exit code as expected, run $run";
     ok $status2->output, "output ok, run $run";
 
     like $status2->output, qr/Calling: rsync .* --timeout 1800 .*/s, "output correct, run $run"
@@ -663,6 +663,18 @@ subtest 'Concurrent rsync' => sub {
 
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
     test_sync $_ for (1 .. 4);
+
+    subtest 'Sync to non-existent parent' => sub {
+        my $from = tempdir;
+        $from->child('testfile')->spew('some data');
+        my $to = tempdir->child('non_existent_parent')->child('target_host');
+        my $rsync_request = $cache_client->rsync_request(from => $from, to => $to);
+        ok !$cache_client->enqueue($rsync_request);
+        perform_minion_jobs($t->app->minion);
+        wait_for_or_bail_out { $cache_client->status($rsync_request)->is_processed } 'rsync';
+        is $cache_client->status($rsync_request)->result, 'exit code 0', 'Sync successful with missing parent';
+        ok -e $to->child('tests')->child('testfile'), 'File synced correctly';
+    };
 };
 
 done_testing;
