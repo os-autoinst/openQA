@@ -101,6 +101,7 @@ on 'test' => sub {
     requires 'App::cpanminus';
     requires 'Selenium::Remote::Driver', '>= 1.23';
     requires 'Selenium::Remote::WDKeys';
+    requires 'Test::Compile';
     requires 'Test::Exception';
     requires 'Test::Fatal';
     requires 'Test::Mock::Time';
@@ -110,7 +111,6 @@ on 'test' => sub {
     requires 'Test::Most';
     requires 'Test::Output';
     requires 'Test::Pod';
-    requires 'Test::Strict';
     requires 'Test::Warnings', '>= 0.029';
 
 };
