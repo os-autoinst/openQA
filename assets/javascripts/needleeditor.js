@@ -69,15 +69,14 @@ NeedleEditor.prototype.init = function () {
   cv.canvas.addEventListener(
     'keyup',
     function (e) {
-      //console.warn("key %d", e.keyCode);
-      if (e.keyCode == KeyEvent.DOM_VK_DELETE) {
+      if (e.key === 'Delete') {
         const idx = cv.get_selection_idx();
         if (idx != -1) {
           editor.needle.area.splice(idx, 1);
           cv.delete_shape_idx(idx);
           editor.UpdateTextArea();
         }
-      } else if (e.keyCode == KeyEvent.DOM_VK_INSERT) {
+      } else if (e.key === 'Insert') {
         const a = {xpos: 0, ypos: 0, width: MINSIZE, height: MINSIZE, type: 'match'};
         cv.addShape(NeedleEditor.ShapeFromArea(a));
         editor.needle.area.push(a);
@@ -583,8 +582,8 @@ function setup_needle_editor(imageurl, default_needle) {
   });
 
   $('#tag_add_button').click(addTag);
-  $('#newtag').keypress(function (event) {
-    if (event.keyCode == 13) return addTag();
+  $('#newtag').on('keypress', function (event) {
+    if (event.key === 'Enter') return addTag();
     return true;
   });
 
