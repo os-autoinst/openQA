@@ -338,8 +338,16 @@ sub list_running_ajax ($self) {
         $job_data;
     } @jobs;
     my %response = (data => \@running);
-    my $max_running = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs};
-    $response{max_running_jobs} = $max_running if $max_running >= 0 && @running >= $max_running;
+    my $config = OpenQA::App->singleton->config->{scheduler};
+    my $max_running = $config->{max_running_jobs};
+    if ($config->{dynamic_job_limit_enabled}) {
+        my $effective = OpenQA::App->singleton->dynamic_limit->current_limit($config);
+        $response{dynamic_job_limit} = $effective if $effective >= 0 && @running >= $effective;
+        $response{max_running_jobs} = $max_running if $max_running >= 0;
+    }
+    elsif ($max_running >= 0 && @running >= $max_running) {
+        $response{max_running_jobs} = $max_running;
+    }
     $self->render(json => \%response);
 }
 

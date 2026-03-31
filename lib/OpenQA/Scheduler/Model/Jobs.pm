@@ -13,6 +13,7 @@ use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::Utils qw(random_string results_storage_above_threshold);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
+use OpenQA::Scheduler::DynamicLimit;
 use OpenQA::Scheduler::WorkerSlotPicker;
 use Time::HiRes 'time';
 use List::Util qw(all any shuffle min sum);
@@ -26,6 +27,7 @@ use constant STARVATION_PROTECTION_PRIORITY_OFFSET => $ENV{OPENQA_SCHEDULER_STAR
 
 has scheduled_jobs => sub { {} };
 has shuffle_workers => 1;
+has dynamic_limit => sub { OpenQA::Scheduler::DynamicLimit->new };
 
 sub determine_free_workers ($shuffle = 0) {
     my @free_workers = grep { !$_->dead } OpenQA::Schema->singleton->resultset('Workers')->search(
@@ -44,18 +46,24 @@ sub determine_scheduled_jobs ($self) {
     return $self->scheduled_jobs;
 }
 
+sub effective_job_limit ($self) {
+    my $config = OpenQA::App->singleton->config->{scheduler};
+    return $config->{max_running_jobs} unless $config->{dynamic_job_limit_enabled};
+    return $self->dynamic_limit->current_limit($config);
+}
+
 sub _allocate_jobs ($self, $free_workers) {
     my ($allocated_workers, $allocated_jobs) = ({}, {});
     my $scheduled_jobs = $self->scheduled_jobs;
     my $schema = OpenQA::Schema->singleton;
     my $running = $schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    my $limit = OpenQA::App->singleton->config->{scheduler}->{max_running_jobs};
+    my $limit = $self->effective_job_limit;
     if (results_storage_above_threshold()) {
         log_debug('Skipping job scheduling: free storage space in results directory below threshold');
         return ({}, {});
     }
     if ($limit >= 0 && $running >= $limit) {
-        log_debug("max_running_jobs ($limit) exceeded, scheduling no additional jobs");
+        log_debug("job limit ($limit) exceeded, scheduling no additional jobs");
         return ({}, {});
     }
     my $max_allocate = $limit >= 0 ? min(MAX_JOB_ALLOCATION, $limit - $running) : MAX_JOB_ALLOCATION;
@@ -135,7 +143,7 @@ sub _allocate_jobs ($self, $free_workers) {
         if ($busy >= $max_allocate || $busy >= @$free_workers) {
             my $free_worker_count = @$free_workers;
             log_debug('limit reached, scheduling no additional jobs'
-                  . " (max_running_jobs=$limit, free workers=$free_worker_count, running=$running, allocated=$busy)");
+                  . " (job_limit=$limit, free workers=$free_worker_count, running=$running, allocated=$busy)");
             last;
         }
     }
