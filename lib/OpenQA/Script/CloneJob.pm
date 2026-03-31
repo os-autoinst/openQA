@@ -96,7 +96,7 @@ sub _handle_txn_error ($tx, $jobid, $ctx) {
 
 sub _get_with_retry ($url_handler, $url, $jobid, $ctx, $options) {
     my $remote = $url_handler->{remote};
-    my $tx = $url_handler->{command}->retry_tx($remote, $remote->get($url), $options->{retry});
+    my $tx = $url_handler->{command}->retry_tx($remote, $remote->build_tx(GET => $url), $options->{retry});
     _handle_txn_error($tx, $jobid, $ctx);
     return $tx->res->json;
 }
@@ -434,7 +434,7 @@ sub post_jobs ($post_params, $url_handler, $options) {
         return undef;
     }
     print STDERR Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};
-    return $local->post($local_url, form => \%composed_params);
+    return $local->build_tx(POST => $local_url, form => \%composed_params);
 }
 
 1;
