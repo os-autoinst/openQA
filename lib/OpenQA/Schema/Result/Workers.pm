@@ -8,7 +8,7 @@ use Mojo::Base 'DBIx::Class::Core', -signatures;
 use DBIx::Class::Timestamps 'now';
 use Feature::Compat::Try;
 use OpenQA::App;
-use OpenQA::Log qw(log_error log_warning);
+use OpenQA::Log qw(log_error log_warning log_info);
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
@@ -209,7 +209,7 @@ sub send_command ($self, %args) {
         my $error_time = time;
         my $within_grace_period = !$first_error_time || ($error_time - $first_error_time) <= WS_SERVER_GRACE_PERIOD;
         $first_error_time //= $error_time;
-        $within_grace_period ? log_warning($msg) : log_error($msg);
+        $within_grace_period ? log_info($msg) : log_error($msg);
         return undef;
     }
     return 1;

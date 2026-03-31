@@ -10,6 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings qw(:all :report_warnings);
 use Test::Output 'stderr_like';
 use Test::Mock::Time;
+use OpenQA::App;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Schema::Result::Workers;
@@ -54,15 +55,16 @@ isnt $last_command, 'foo', 'refuse invalid commands';
 ok $client_called, 'mocked send_msg method has been called';
 
 subtest 'dispatch fails' => sub {
+    OpenQA::App->set_singleton(Mojolicious->new)->log->level('info');
     my $grace_period = OpenQA::Schema::Result::Workers::WS_SERVER_GRACE_PERIOD;
     my $expected_msg = qr/Failed.*command.*quit.*to websocket.*regarding.*localhost.*foo/;
     my $send_cmd = sub () { $worker->send_command(command => WORKER_COMMAND_QUIT) };
     $fake_error = 'foo';
-    stderr_like { $send_cmd->() } qr/\[WARN\] $expected_msg/, 'just a warning';
+    stderr_like { $send_cmd->() } qr/\[info\] $expected_msg/, 'just an info';
     sleep $grace_period;
-    stderr_like { $send_cmd->() } qr/\[WARN\] $expected_msg/, 'still a warning within grace period';
+    stderr_like { $send_cmd->() } qr/\[info\] $expected_msg/, 'still an info within grace period';
     sleep 1;
-    stderr_like { $send_cmd->() } qr/\[ERROR\] $expected_msg/, 'error after grace period exceeded';
+    stderr_like { $send_cmd->() } qr/\[error\] $expected_msg/, 'error after grace period exceeded';
 };
 
 subtest 'ws server does not try to query itself' => sub {
