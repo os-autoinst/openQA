@@ -56,7 +56,7 @@ function setupAdminAssets() {
             data +
             '<a href="#" onclick="deleteAsset(' +
             row.id +
-            ');"><i class="action fa-solid fa-fw fa-circle-xmark-o" title="Delete asset from disk"></i></a>'
+            ');"><i class="action fa-solid fa-fw fa-circle-xmark" title="Delete asset from disk"></i></a>'
           );
         }
       },
