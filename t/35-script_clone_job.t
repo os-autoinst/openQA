@@ -523,7 +523,7 @@ subtest 'invoking curl passing auth headers' => sub {
     my $error = OpenQA::Script::CloneJob::mirror(\%url_handler, Mojo::URL->new('url'), 'path');
     push @expected_default_args, map { -H => $_ } ('X-API-Hash: ?', 'X-API-Key: PERCIVALKEY02', 'X-API-Microtime: ?');
     my @expected_cmds = (
-        [curl => @expected_default_args, qw(--silent --follow --head --output /dev/null -w %{url_effective} url)],
+        [curl => @expected_default_args, qw(--silent --location --head --output /dev/null -w %{url_effective} url)],
         [curl => @expected_default_args, qw(--continue-at - --output path redirected-url)],
     );
     is $error, '', 'no error returned';
