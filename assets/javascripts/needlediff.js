@@ -107,8 +107,7 @@ NeedleDiff.prototype.draw = function () {
       // If some part of the match is at the left of the handle...
       const width = a['width'];
       const x = a['xpos'];
-
-      let orig;
+      const orig = this.areas[idx];
       const lineWidth = 1;
 
       let y_start = a['ypos'] - lineWidth;
@@ -121,7 +120,6 @@ NeedleDiff.prototype.draw = function () {
       }
 
       // draw match/area frames
-      orig = this.areas[idx];
       this.ctx.lineWidth = lineWidth;
       if (split > x && !this.fullNeedleImg) {
         // fill left part with original needle's area
@@ -169,8 +167,6 @@ NeedleDiff.prototype.draw = function () {
 
         let start = split;
         if (split < a['xpos']) start = a['xpos'];
-
-        orig = this.areas[idx];
         const rwidth = a['xpos'] + a['width'] - start;
         this.ctx.drawImage(
           this.screenshotImg,
