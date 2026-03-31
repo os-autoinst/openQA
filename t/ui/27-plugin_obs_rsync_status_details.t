@@ -33,6 +33,7 @@ foreach my $proj (sort keys %params) {
 
     # navigate to page and mock AJAX requests
     $driver->get("/admin/obs_rsync/$parent");
+    $driver->title_like(qr/openQA: OBS synchronization folders( of .*)?/, "on folders page ($parent)");
     $driver->execute_script('
         window.skipObsRsyncDelay = true;
         window.ajaxRequests = [];
@@ -46,6 +47,10 @@ foreach my $proj (sort keys %params) {
             });
         };
     ');
+
+    # check whether table row for folder is present at all (to debug poo#198530)
+    my @folder_row = $driver->find_elements("tr#folder_$ident");
+    is @folder_row, 1, "one row for folder $ident present" or always_explain 'page source:', $driver->get_page_source;
 
     # check project name and other fields are displayed properly
     is $driver->find_element("tr#folder_$ident .project")->get_text, $projfull, "$proj name";
