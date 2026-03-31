@@ -147,7 +147,7 @@ sub wait_for_ajax (%args) {
     while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests')) {
         if ($timeout <= 0) {
             #<<< no perltidy
-            my $s = '`(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests})`'; # uncoverable statement
+            my $s = 'return `(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests})`'; # uncoverable statement
             #>>> no perltidy
             $msg .= $_driver->execute_script($s);    # uncoverable statement
             fail("Wait for AJAX timed out $msg");    # uncoverable statement

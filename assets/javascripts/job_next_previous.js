@@ -137,6 +137,7 @@ function renderJobResults(data, type, row) {
   if (row.comment_data) {
     html += renderComments(row);
   }
+  html += renderRestarts(row);
   return html;
 }
 

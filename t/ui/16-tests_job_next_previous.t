@@ -106,7 +106,7 @@ is $entries, 19, '19 entries found for 99946';
 my $job99946 = $driver->find_element('#job_next_previous_table #job_result_99946');
 my @tds = $driver->find_child_elements($job99946, 'td');
 is +(shift @tds)->get_text(), 'C', '99946 is current job';
-is +(shift @tds)->get_text(), 'zypper_up', 'failed module of 99946';
+is +(shift @tds)->get_text() =~ s/\s+\d+$//r, 'zypper_up', 'failed module of 99946';
 is +(shift @tds)->get_text(), '0091', 'build of 99946 is 0091';
 is +(shift @tds)->get_text(), '3 hours ago ( 01:00 hours )', 'finished and duration of 99946';
 

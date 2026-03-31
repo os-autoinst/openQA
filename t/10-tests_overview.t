@@ -573,4 +573,27 @@ subtest 'aggregate favicon' => sub {
     $t->element_exists('link#favicon-svg[href*="logo-aggregate-passed.svg"]');
 };
 
+subtest 'restart counter' => sub {
+    my $orig = create_job(TEST => 'restart_test', BUILD => '198077');
+    my $clone = $orig->auto_duplicate();
+    ok ref $clone, "Job cloned successfully: $clone" or BAIL_OUT 'Failed to clone job';
+    $clone->update({state => 'done', result => 'passed'});
+    $t->get_ok('/tests/overview' => form => {build => '198077'})->status_is(200);
+    $t->content_like(qr/fa-undo/i, 'Overview contains restart icon');
+    $t->content_like(qr/title="Restarted 1 time"/i, 'Overview contains restart title');
+    create_job(BUILD => '198077_norestart', TEST => 'no_restart_test');
+    $t->get_ok('/tests/overview' => form => {build => '198077_norestart'})->status_is(200);
+    $t->content_unlike(qr/fa-undo/i, 'Overview does not contain restart icon for job with no restarts');
+    my $clone2 = $clone->auto_duplicate();
+    ok ref $clone2, "Job 2 cloned successfully: $clone2" or BAIL_OUT 'Failed to clone job 2';
+    $clone2->update({state => 'done', result => 'passed'});
+    $t->get_ok('/tests/overview' => form => {build => '198077'})->status_is(200);
+    $t->content_like(qr/title="Restarted 2 times"/i, 'Overview contains 2 restarts title');
+    $t->content_like(qr/<i class="fa fa-undo"><\/i> 2/i, 'Overview contains restart count 2');
+    $t->get_ok('/tests/list_ajax' => form => {limit => 100})->status_is(200);
+    my $data = Mojo::JSON::decode_json($t->tx->res->body)->{data};
+    my ($clone2_data) = grep { $_->{id} == $clone2->id } @$data;
+    is $clone2_data->{restarts}, 2, 'AJAX list contains restart count 2';
+};
+
 done_testing();
