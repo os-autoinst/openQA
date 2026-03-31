@@ -591,6 +591,7 @@ subtest 'Job group filtering and truncation' => sub {
       'Correct number of groups are hidden (12 groups total, 7 shown by default)';
     $t->element_exists('#show-more-groups', 'Ellipsis for more groups exists');
     is $dom->at('#show-more-groups')->text, "\x{2026}", 'Ellipsis button uses proper unicode character';
+    unlike get_summary(), qr/, ,/, 'No redundant commas in summary';
 };
 
 subtest 'restart counter' => sub {
