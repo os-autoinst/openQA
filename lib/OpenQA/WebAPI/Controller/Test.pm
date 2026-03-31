@@ -565,11 +565,8 @@ sub infopanel ($self) {
 }
 
 sub _get_current_job ($self, $with_assets = 0) {
-    return $self->reply->not_found unless defined $self->param('testid');
-
-    my $job = $self->schema->resultset('Jobs')
-      ->find($self->param('testid'), {$with_assets ? (prefetch => qw(jobs_assets)) : ()});
-    return $job;
+    return undef unless defined(my $testid = $self->param('testid'));
+    return $self->schema->resultset('Jobs')->find($testid, {$with_assets ? (prefetch => qw(jobs_assets)) : ()});
 }
 
 sub show ($self) { $self->_show($self->_get_current_job(1)) }
@@ -636,7 +633,8 @@ sub _gather_overview_results ($self, %args) {
     my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);
     my $limit = $search_args->{limit};
     my $jobs = $jobs_rs->latest_jobs_from_ids($latest_job_ids, $limit);
-    my ($archs, $results, $aggregated, $job_ids) = $self->_prepare_job_results($jobs, $latest_job_ids, %args);
+    my ($archs, $results, $aggregated, $job_ids, $seen_groups)
+      = $self->_prepare_job_results($jobs, $latest_job_ids, %args);
     return {
         search_args => $search_args,
         groups => $groups,
@@ -646,6 +644,7 @@ sub _gather_overview_results ($self, %args) {
         results => $results,
         aggregated => $aggregated,
         job_ids => $job_ids,
+        seen_groups => $seen_groups,
     };
 }
 
@@ -809,8 +808,10 @@ sub _prepare_job_results ($self, $jobs, $job_ids, %args) {
         ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs($job_ids);
     }
 
+    my %seen_groups;
     foreach my $job (@jobs) {
         my $id = $job->id;
+        $seen_groups{$job->group_id} = 1 if $job->group_id;
         my $result = $job->overview_result(
             job_labels => $comment_data,
             aggregated => $aggregated,
@@ -860,7 +861,7 @@ sub _prepare_job_results ($self, $jobs, $job_ids, %args) {
         my $description = $settings_by_job_id{$id}->{JOB_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
-    return (\%archs, \%results, $aggregated, \@job_ids);
+    return (\%archs, \%results, $aggregated, \@job_ids, \%seen_groups);
 }
 
 sub _prepare_groupids ($self) {
@@ -960,6 +961,11 @@ sub overview ($self) {
     my @summary_parts;
     if (@$groups) {
         # use groups if present
+        my $seen_groups = $data->{seen_groups};
+        $groups = [grep { $seen_groups->{$_->id} } @$groups];
+    }
+
+    if (@$groups) {
         push @summary_parts,
           map { ($self->link_to($_->name => $self->url_for('group_overview', groupid => $_->id)), ', ') } @$groups;
         pop @summary_parts;
@@ -987,6 +993,7 @@ sub overview ($self) {
         until => $search_args->{until},
         parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},
         summary_parts => \@summary_parts,
+        max_groups => $config->{misc_limits}->{tests_overview_summary_max_groups} // 7,
         summary_category_query => \%SUMMARY_CATEGORY_QUERY,
         only_distri => $only_distri,
         limit_exceeded => $exceeded_limit,

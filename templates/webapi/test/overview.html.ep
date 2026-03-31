@@ -19,7 +19,24 @@
     <div id="summary" class="card <%= ($aggregate_status =~ /^(?:failed|not_complete)$/) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
             Overall Summary of
-            % if (@$summary_parts) {
+            % if (@$groups) {
+                <strong>
+                % my @links;
+                % for my $group (@$groups) {
+                    % my $link = link_to $group->name => url_for('group_overview', groupid => $group->id);
+                    % if (@links >= $max_groups) {
+                        % push @links, '<span class="more-groups d-none">, ' . $link . '</span>';
+                    % } else {
+                        % push @links, $link->to_string;
+                    % }
+                % }
+                %== join ', ', @links
+                % if (@$groups > $max_groups) {
+                    <a href="javascript:void(0)" id="show-more-groups" title="Show more" onclick="this.classList.add('d-none'); document.querySelectorAll('.more-groups').forEach(e => e.classList.remove('d-none'));">…</a>
+                % }
+                </strong>
+            % }
+            % elsif (@$summary_parts) {
                 <strong><% for my $part (@$summary_parts) { %><%= $part %><% } %></strong>
             % }
             % else {

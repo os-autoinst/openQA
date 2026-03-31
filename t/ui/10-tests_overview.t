@@ -536,6 +536,25 @@ subtest 'filtering by job group' => sub {
             name => 'SLE 15 SP5 development'
         });
 
+    for my $id (1003 .. 1006) {
+        $jobs->create(
+            {
+                group_id => $id,
+                priority => 50,
+                state => 'done',
+                result => 'passed',
+                BUILD => '0091',
+                DISTRI => 'opensuse',
+                VERSION => '13.1',
+                ARCH => 'x86_64',
+                MACHINE => '64bit',
+                FLAVOR => 'DVD',
+                TEST => "test_group_$id",
+            });
+    }
+    # Also for group 1002 which is 'opensuse test'
+    # Actually 1002 already has jobs in build 0091 in fixtures (job 99961)
+
     my $get_text = sub ($url) {
         $driver->get($url);
         my @el = $driver->find_element('.card-header');
