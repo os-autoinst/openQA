@@ -22,6 +22,7 @@
   /etc/openqa/templates/** r,
   /etc/mailname r,
   /etc/ssl/openssl.cnf r,
+  /proc/loadavg r,
   /proc/meminfo r,
   /tmp/** rwk,
   /usr/bin/bsdcat rix,
