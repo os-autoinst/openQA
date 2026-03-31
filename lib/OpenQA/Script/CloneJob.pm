@@ -186,7 +186,7 @@ sub _auth_args ($from, $secrets) {
 }
 
 sub _resolve_redirection ($from, $curl_args, $secrets) {
-    my @effective_url_args = qw(--silent --follow --head --output /dev/null -w %{url_effective});
+    my @effective_url_args = qw(--silent --location --head --output /dev/null -w %{url_effective});
     return _url_from_cmd CURL, @$curl_args, @{_auth_args($from, $secrets)}, @effective_url_args, $from;
 }
 
