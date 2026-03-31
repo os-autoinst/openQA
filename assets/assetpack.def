@@ -146,7 +146,6 @@
 < javascripts/overview.js
 < javascripts/filter_form.js
 < javascripts/comments.js
-< javascripts/keyevent.js
 < javascripts/fullscreen.js
 < javascripts/obs_rsync.js
 < javascripts/parent_group_overview.js
