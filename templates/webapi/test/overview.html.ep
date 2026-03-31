@@ -22,15 +22,17 @@
             % if (@$groups) {
                 <strong>
                 % my @links;
-                % for my $group (@$groups) {
+                % for my $i (0 .. $#$groups) {
+                    % my $group = $groups->[$i];
                     % my $link = link_to $group->name => url_for('group_overview', groupid => $group->id);
-                    % if (@links >= $max_groups) {
-                        % push @links, '<span class="more-groups d-none">, ' . $link . '</span>';
+                    % my $comma = $i > 0 ? ', ' : '';
+                    % if ($i >= $max_groups) {
+                        % push @links, '<span class="more-groups d-none">' . $comma . $link . '</span>';
                     % } else {
-                        % push @links, $link->to_string;
+                        % push @links, $comma . $link->to_string;
                     % }
                 % }
-                %== join ', ', @links
+                %== join '', @links
                 % if (@$groups > $max_groups) {
                     <a href="javascript:void(0)" id="show-more-groups" title="Show more" onclick="this.classList.add('d-none'); document.querySelectorAll('.more-groups').forEach(e => e.classList.remove('d-none'));">…</a>
                 % }
