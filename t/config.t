@@ -74,6 +74,7 @@ subtest 'Test configuration default modes' => sub {
     $test_config->{logging}->{level} = 'debug';
     $test_config->{global}->{service_port_delta} = 2;
     $test_config->{misc_limits}->{prio_throttling_data} = {MAX_JOB_TIME => {scale => '0.007', reference => 0}};
+    $test_config->{misc_limits}->{prio_group_data} = [{property => 'name', regex => qr/Development/, increment => 50}];
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
     ok delete $config->{'test_preset example'}, 'default values for example tests assigned';
     is_deeply $config, $test_config, '"test" configuration';
@@ -173,7 +174,7 @@ subtest 'openqa.ini documentation check' => sub {
               =~ /^(scm|parallel_children_collapsable_results_sel|file_domain|prio_throttling_data|access_control_allow_origin_header|changelog_file|file_subdomain|search_results_limit)$/;
             next if $section eq 'hypnotoad';
             next if $section eq 'job_settings_ui' && $key eq 'default_data_dir';
-            next if $section eq 'misc_limits' && $key =~ /^(prio_throttling_data|mcp_max_result_size)$/;
+            next if $section eq 'misc_limits' && $key =~ /^(prio_throttling_data|prio_group_data|mcp_max_result_size)$/;
             next if $section eq 'rate_limits' && $key eq 'search';
             next if $section eq 'secrets';
             next if $section eq 'audit' && $key eq 'blacklist';
@@ -327,6 +328,28 @@ subtest 'check throttling configuration validation and application' => sub {
             C => {scale => 0.04, reference => 5}
           },
           'prio_throttling_data parses multiple correctly';
+    };
+
+    subtest 'prio_group_parameters' => sub {
+        subtest 'valid multiple rules' => sub {
+            $config->{misc_limits}->{prio_group_parameters} = 'name:open:10,name:suse:5';
+            my $rules = OpenQA::Setup::_load_prio_group_throttling($app, $config);
+            is_deeply $rules,
+              [
+                {property => 'name', regex => qr/open/, increment => 10},
+                {property => 'name', regex => qr/suse/, increment => 5}
+              ],
+              'prio_group_data parsed correctly';
+        };
+
+        subtest 'invalid rule format' => sub {
+            $config->{misc_limits}->{prio_group_parameters} = 'invalid';
+            stderr_like {
+                my $rules = OpenQA::Setup::_load_prio_group_throttling($app, $config);
+                is $rules, undef, 'returns undef for invalid';
+            }
+            qr/Wrong format/, 'warning logged';
+        };
     };
 };
 

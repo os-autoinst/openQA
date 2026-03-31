@@ -115,12 +115,20 @@
                             <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">
                                 <i class="fa-regular fa-square-minus"></i>
                             </a>
-                            <span class="prio-value"><%= $job->priority %></span>
+                            % if (my $prio_explanation = $job->settings_hash->{_PRIORITY_EXPLANATION}) {
+                                <span class="prio-value" data-bs-toggle="tooltip" title="<%= $prio_explanation %>"><%= $job->priority %></span>
+                            % } else {
+                                <span class="prio-value"><%= $job->priority %></span>
+                            % }
                             <a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(<%= $job->id %>, this);">
                                 <i class="fa-regular fa-square-plus"></i>
                             </a>
                         % } else {
-                            <span class="prio-value"><%= $job->priority %></span>
+                            % if (my $prio_explanation = $job->settings_hash->{_PRIORITY_EXPLANATION}) {
+                                <span class="prio-value" data-bs-toggle="tooltip" title="<%= $prio_explanation %>"><%= $job->priority %></span>
+                            % } else {
+                                <span class="prio-value"><%= $job->priority %></span>
+                            % }
                         % }
                         &nbsp;<a href="https://open.qa/docs/#_job_groups_2" target="_blank"><i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-title="Jobs with lower priority values are scheduled earlier (default: 50)"></i></a>
                     </div>

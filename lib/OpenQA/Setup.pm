@@ -76,6 +76,21 @@ sub _load_prio_throttling ($app, $config) {
     return \%hash;
 }
 
+sub _load_prio_group_throttling ($app, $config) {
+    my $throttling = $config->{misc_limits}->{prio_group_parameters} // return;
+    # format: property:regex:priority_increment
+    my $rule_qr = qr/([^:]+):([^:]+):([+-]?\d+)/;
+    unless ($throttling =~ /^$rule_qr(?:,$rule_qr)*$/) {
+        $app->log->warn("Wrong format in openqa.ini 'prio_group_parameters': $throttling");
+        return;
+    }
+    my @rules = map {
+        my ($prop, $regex, $inc) = $_ =~ $rule_qr;
+        {property => $prop, regex => qr/$regex/, increment => $inc}
+    } split /,/, $throttling;
+    return \@rules;
+}
+
 sub default_config () {
     return {
         global => {
@@ -271,6 +286,8 @@ sub default_config () {
             scheduled_product_min_storage_duration => 34,
             prio_throttling_parameters => 'MAX_JOB_TIME:0.007',
             prio_throttling_data => undef,
+            prio_group_parameters => 'name:Development:50',
+            prio_group_data => undef,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
@@ -326,6 +343,7 @@ sub read_config ($app) {
         $config->{influxdb}->{ignored_failed_minion_jobs} = [split /\s+/, $minion_fail_job_blocklist];
     }
     $config->{misc_limits}->{prio_throttling_data} = _load_prio_throttling($app, $config);
+    $config->{misc_limits}->{prio_group_data} = _load_prio_group_throttling($app, $config);
     my $results = delete $global_config->{parallel_children_collapsable_results};
     $global_config->{parallel_children_collapsable_results_sel}
       = ' .status' . (join '', map { ":not(.result_$_)" } split /\s+/, $results);
