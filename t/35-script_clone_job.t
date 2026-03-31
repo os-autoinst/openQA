@@ -28,7 +28,8 @@ package Test::FakeResult {
 }    # uncoverable statement
 
 my $command_mock = Test::MockModule->new('OpenQA::Command');
-$command_mock->redefine(retry_tx => sub ($self, $client, $tx, $retries) { $tx });
+my $retry_tx_count = 0;
+$command_mock->redefine(retry_tx => sub ($self, $client, $tx, $retries) { ++$retry_tx_count; $tx });
 
 my @argv = (
     qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 FOO=value:with:colon),
@@ -320,19 +321,26 @@ subtest 'cloning with repeat count' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     my @post_args;
     my $tx_handled = 0;
-    $ua_mock->redefine(build_tx => sub { push @post_args, [@_] });
+    $ua_mock->redefine(
+        build_tx => sub ($ua, $method, @args) {
+            is $method, 'POST', 'post tx created';
+            push @post_args, [@args];
+            return $ua_mock->original('build_tx')->($ua, $method, @args);
+        });
     $clone_mock->redefine(handle_tx => sub ($tx, $url_handler, $options, $jobs) { $tx_handled = 1 });
     my %fake_jobs = (42 => {id => 42, name => 'myjob', settings => {TEST => 'myjob'}});
     $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
     my %options = (host => 'foo', from => 'bar', repeat => 100, apikey => 'bar', apisecret => 'bar');
+    $retry_tx_count = 0;
     OpenQA::Script::CloneJob::clone_jobs(42, \%options);
     is $options{repeat}, undef, 'repeat count has been removed from options';
     subtest 'post args' => sub {
-        is scalar @post_args, 100, 'exactly 100 post calls made';
+        is scalar @post_args, 100, 'exactly 100 post transactions created';
+        is $retry_tx_count, 100, 'exactly 100 transactions attempted';
         # check Nth test name ends with -N
-        is $post_args[0]->[4]->{'TEST:42'}, 'myjob-001', 'first index has been appended to test name';
-        is $post_args[41]->[4]->{'TEST:42'}, 'myjob-042', 'random index has been appended to test name';
-        is $post_args[99]->[4]->{'TEST:42'}, 'myjob-100', 'last index has been appended to test name';
+        is $post_args[0]->[2]->{'TEST:42'}, 'myjob-001', 'first index has been appended to test name';
+        is $post_args[41]->[2]->{'TEST:42'}, 'myjob-042', 'random index has been appended to test name';
+        is $post_args[99]->[2]->{'TEST:42'}, 'myjob-100', 'last index has been appended to test name';
     } or always_explain \@post_args;
 };
 
