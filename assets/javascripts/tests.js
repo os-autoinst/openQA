@@ -72,7 +72,7 @@ function renderTestName(data, type, row) {
       // allow to cancel scheduled and running jobs
       const url = cancel_url.replace('REPLACEIT', row.id);
       html += ' <a class="cancel" href="' + url + '">';
-      html += '<i class="action fa-solid fa-fw fa-circle-xmark-o" title="Cancel job"></i></a>';
+      html += '<i class="action fa-solid fa-fw fa-circle-xmark" title="Cancel job"></i></a>';
     }
   }
   html += '<a href="' + urlWithBase('/tests/' + row.id) + '">';
