@@ -330,11 +330,10 @@ sub init ($self) {
 
         # find working directory for host
         # note: This is being also duplicated by OpenQA::Test::Utils since 49c06362d.
-        my @working_dirs = ($host_settings->{SHARE_DIRECTORY}, catdir(prjdir(), 'share'));
-        my ($working_dir) = grep { $_ && -d } @working_dirs;
+        my @working_dirs = grep { $_ } ($host_settings->{SHARE_DIRECTORY}, catdir(prjdir(), 'share'));
+        my ($working_dir) = grep { -d } @working_dirs;
         unless ($working_dir) {
-            $_ and log_debug("Found possible working directory for $host: $_") for @working_dirs;
-            log_error("Ignoring host '$host': Working directory does not exist.");
+            log_error("Ignoring host '$host': Working directory does not exist. (Checked: @working_dirs)");
             next;
         }
         $client->working_directory($working_dir);
