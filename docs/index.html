@@ -632,21 +632,22 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 </ul>
 </li>
 <li><a href="#_referer_settings_to_auto_mark_important_jobs">16.3. Referer settings to auto-mark important jobs</a></li>
-<li><a href="#_worker_settings">16.4. Worker settings</a></li>
-<li><a href="#_further_systemd_units_for_the_worker">16.5. Further systemd units for the worker</a>
+<li><a href="#_scheduler_configuration">16.4. Scheduler configuration</a></li>
+<li><a href="#_worker_settings">16.5. Worker settings</a></li>
+<li><a href="#_further_systemd_units_for_the_worker">16.6. Further systemd units for the worker</a>
 <ul class="sectlevel3">
-<li><a href="#_stoppingrestarting_workers_without_interrupting_currently_running_jobs">16.5.1. Stopping/restarting workers without interrupting currently running jobs</a></li>
+<li><a href="#_stoppingrestarting_workers_without_interrupting_currently_running_jobs">16.6.1. Stopping/restarting workers without interrupting currently running jobs</a></li>
 </ul>
 </li>
-<li><a href="#_configuring_remote_workers">16.6. Configuring remote workers</a></li>
-<li><a href="#_configuring_amqp_message_emission">16.7. Configuring AMQP message emission</a></li>
-<li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">16.8. Configuring worker to use more than one openQA server</a></li>
-<li><a href="#asset-caching">16.9. Asset and test/needle caching</a></li>
-<li><a href="#_alternative_caching_implementations">16.10. Alternative caching implementations</a></li>
-<li><a href="#_enable_linking_files_referred_by_job_settings">16.11. Enable linking files referred by job settings</a></li>
-<li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">16.12. Enable custom hook scripts on "job done" based on result</a></li>
-<li><a href="#_automatic_cloning_of_incomplete_jobs">16.13. Automatic cloning of incomplete jobs</a></li>
-<li><a href="#_enable_automatic_database_backup">16.14. Enable automatic database backup</a></li>
+<li><a href="#_configuring_remote_workers">16.7. Configuring remote workers</a></li>
+<li><a href="#_configuring_amqp_message_emission">16.8. Configuring AMQP message emission</a></li>
+<li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">16.9. Configuring worker to use more than one openQA server</a></li>
+<li><a href="#asset-caching">16.10. Asset and test/needle caching</a></li>
+<li><a href="#_alternative_caching_implementations">16.11. Alternative caching implementations</a></li>
+<li><a href="#_enable_linking_files_referred_by_job_settings">16.12. Enable linking files referred by job settings</a></li>
+<li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">16.13. Enable custom hook scripts on "job done" based on result</a></li>
+<li><a href="#_automatic_cloning_of_incomplete_jobs">16.14. Automatic cloning of incomplete jobs</a></li>
+<li><a href="#_enable_automatic_database_backup">16.15. Enable automatic database backup</a></li>
 </ul>
 </li>
 <li><a href="#auditing">17. Auditing - tracking openQA changes</a>
@@ -2918,6 +2919,35 @@ configured parameters that match the job settings.</p>
 <pre class="pygments highlight"><code><span></span>prio_throttling_parameters = MAX_JOB_TIME:0.007,QEMURAM:0.005:2048</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>Another mechanism for priority adjustment is based on job group properties,
+such as name or description. This is configured via <code>prio_group_parameters</code>
+in <code>openqa.ini</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>prio_group_parameters = property:regex:priority_increment[,…]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>property</code>: the name of a job group property (e.g. <code>name</code>, <code>description</code>)</p>
+</li>
+<li>
+<p><code>regex</code>: a regular expression to match against the property value</p>
+</li>
+<li>
+<p><code>priority_increment</code>: an integer value to add to the job priority if matched</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>By default, job groups with "Development" in the name add +50 to the priority.</p>
+</div>
 </div>
 </div>
 </div>
@@ -3239,7 +3269,76 @@ important.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_worker_settings"><a class="anchor" href="#_worker_settings"></a><a class="link" href="#_worker_settings">16.4. Worker settings</a></h3>
+<h3 id="_scheduler_configuration"><a class="anchor" href="#_scheduler_configuration"></a><a class="link" href="#_scheduler_configuration">16.4. Scheduler configuration</a></h3>
+<div class="paragraph">
+<p>The openQA web UI scheduler supports a dynamic global job limit that scales the effective
+number of allowed running jobs up or down based on the system load of the openQA web UI host.
+This complements the static <code>max_running_jobs</code> setting: when enabled, the effective limit is
+adjusted conservatively within <code>[dynamic_job_limit_min, max_running_jobs]</code> based on the Linux
+load average from <code>/proc/loadavg</code>.</p>
+</div>
+<div class="paragraph">
+<p>System load is defined as the Linux load average (1-minute, 5-minute, and 15-minute values),
+which captures CPU contention, I/O wait, and runnable process count.</p>
+</div>
+<div class="paragraph">
+<p>The feature is disabled by default. To enable it, configure the <code>[scheduler]</code> section of
+<code>openqa.ini</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">File: openqa.ini</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[scheduler]</span>
+<span class="tok-c1"># Enable dynamic job limit scaling based on system load (default: 0 = disabled)</span>
+<span class="tok-na">dynamic_job_limit_enabled</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">1</span>
+
+<span class="tok-c1"># The max_running_jobs is the hard ceiling; the dynamic limit scales within:</span>
+<span class="tok-c1"># [dynamic_job_limit_min .. max_running_jobs]</span>
+<span class="tok-na">max_running_jobs</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">500</span>
+
+<span class="tok-c1"># Floor for the dynamic limit (default: 50)</span>
+<span class="tok-c1">#dynamic_job_limit_min = 50</span>
+
+<span class="tok-c1"># Load average above which the effective limit is scaled down.</span>
+<span class="tok-c1"># 0 = auto-detect from number of CPUs (nproc * 0.85)</span>
+<span class="tok-c1">#dynamic_job_limit_load_threshold = 0</span>
+
+<span class="tok-c1"># Load average for emergency cutback (3x step decrease).</span>
+<span class="tok-c1"># 0 = auto-detect from number of CPUs (nproc * 1.5)</span>
+<span class="tok-c1">#dynamic_job_limit_load_critical = 0</span>
+
+<span class="tok-c1"># Number of jobs to add/remove per adjustment interval (default: 10)</span>
+<span class="tok-c1">#dynamic_job_limit_step = 10</span>
+
+<span class="tok-c1"># Minimum seconds between adjustments (default: 60)</span>
+<span class="tok-c1">#dynamic_job_limit_interval = 60</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The scaling algorithm:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Increases</strong> the limit by <code>step</code> when all load averages are well below the threshold (&lt; 70% of threshold)</p>
+</li>
+<li>
+<p><strong>Decreases</strong> the limit by <code>step</code> when the 1-minute load is above the threshold and rising</p>
+</li>
+<li>
+<p><strong>Emergency decrease</strong> by <code>3 * step</code> when any load average exceeds the critical value</p>
+</li>
+<li>
+<p><strong>Holds steady</strong> when load is near the threshold or falling</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The running jobs heading in the web UI reflects the current dynamic limit when it is active.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_worker_settings"><a class="anchor" href="#_worker_settings"></a><a class="link" href="#_worker_settings">16.5. Worker settings</a></h3>
 <div class="paragraph">
 <p>Default behavior for all workers is to use the QEMU backend and connect to
 <code><a href="http://localhost" class="bare">http://localhost</a></code>. If you want to change some of those options, you can do so
@@ -3254,13 +3353,24 @@ to access files of the host) use the following setting:</p>
 </div>
 </div>
 <div class="paragraph">
+<p>The load of the system can affect test execution and cause failures due to delays of command execution and <a href="https://en.wikipedia.org/wiki/Thrashing_(computer_science)">thrashing</a>. If the average over a period of 15 minutes exceeds the specified value the worker will not accept new jobs.</p>
+</div>
+<div class="listingblock">
+<div class="title">File: workers.ini</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
+<span class="tok-c1"># Set to 0 to disable.</span>
+<span class="tok-c1">#CRITICAL_LOAD_AVG_THRESHOLD = 40</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>Once you got workers running they should show up in the admin section of openQA in
 the workers section as 'idle'. When you get so far, you have your own instance
 of openQA up and running and all that is left is to set up some tests.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_further_systemd_units_for_the_worker"><a class="anchor" href="#_further_systemd_units_for_the_worker"></a><a class="link" href="#_further_systemd_units_for_the_worker">16.5. Further systemd units for the worker</a></h3>
+<h3 id="_further_systemd_units_for_the_worker"><a class="anchor" href="#_further_systemd_units_for_the_worker"></a><a class="link" href="#_further_systemd_units_for_the_worker">16.6. Further systemd units for the worker</a></h3>
 <div class="paragraph">
 <p>The following information is partially openSUSE specific. The <code>openQA-worker</code>
 package provides further systemd units:</p>
@@ -3321,7 +3431,7 @@ section for details)</p>
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_stoppingrestarting_workers_without_interrupting_currently_running_jobs"><a class="anchor" href="#_stoppingrestarting_workers_without_interrupting_currently_running_jobs"></a><a class="link" href="#_stoppingrestarting_workers_without_interrupting_currently_running_jobs">16.5.1. Stopping/restarting workers without interrupting currently running jobs</a></h4>
+<h4 id="_stoppingrestarting_workers_without_interrupting_currently_running_jobs"><a class="anchor" href="#_stoppingrestarting_workers_without_interrupting_currently_running_jobs"></a><a class="link" href="#_stoppingrestarting_workers_without_interrupting_currently_running_jobs">16.6.1. Stopping/restarting workers without interrupting currently running jobs</a></h4>
 <div class="paragraph">
 <p>It is possible to stop a worker as soon as it becomes idle and immediately if it
 is already idling by sending <code>SIGHUP</code> to the worker process.</p>
@@ -3361,7 +3471,7 @@ systemctl<span class="tok-w"> </span><span class="tok-nb">kill</span><span class
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_remote_workers"><a class="anchor" href="#_configuring_remote_workers"></a><a class="link" href="#_configuring_remote_workers">16.6. Configuring remote workers</a></h3>
+<h3 id="_configuring_remote_workers"><a class="anchor" href="#_configuring_remote_workers"></a><a class="link" href="#_configuring_remote_workers">16.7. Configuring remote workers</a></h3>
 <div class="paragraph">
 <p>There are some additional requirements to get remote worker running. First is to
 ensure shared storage between openQA web UI and workers.
@@ -3389,7 +3499,7 @@ NFS server is where openQA web UI is running. Content of <code>/etc/exports</cod
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_amqp_message_emission"><a class="anchor" href="#_configuring_amqp_message_emission"></a><a class="link" href="#_configuring_amqp_message_emission">16.7. Configuring AMQP message emission</a></h3>
+<h3 id="_configuring_amqp_message_emission"><a class="anchor" href="#_configuring_amqp_message_emission"></a><a class="link" href="#_configuring_amqp_message_emission">16.8. Configuring AMQP message emission</a></h3>
 <div class="paragraph">
 <p>You can configure openQA to send events (new comments, tests finished, …)
 to an AMQP message bus.
@@ -3427,7 +3537,7 @@ Then you will need to configure AMQP in
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_worker_to_use_more_than_one_openqa_server"><a class="anchor" href="#_configuring_worker_to_use_more_than_one_openqa_server"></a><a class="link" href="#_configuring_worker_to_use_more_than_one_openqa_server">16.8. Configuring worker to use more than one openQA server</a></h3>
+<h3 id="_configuring_worker_to_use_more_than_one_openqa_server"><a class="anchor" href="#_configuring_worker_to_use_more_than_one_openqa_server"></a><a class="link" href="#_configuring_worker_to_use_more_than_one_openqa_server">16.9. Configuring worker to use more than one openQA server</a></h3>
 <div class="paragraph">
 <p>When there are multiple openQA web interfaces (openQA instances) available a worker
 can be configured to register and accept jobs from all of them.</p>
@@ -3494,7 +3604,7 @@ remote instances.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="asset-caching"><a class="anchor" href="#asset-caching"></a><a class="link" href="#asset-caching">16.9. Asset and test/needle caching</a></h3>
+<h3 id="asset-caching"><a class="anchor" href="#asset-caching"></a><a class="link" href="#asset-caching">16.10. Asset and test/needle caching</a></h3>
 <div class="paragraph">
 <p>If your network is slow or you experience long time to load needles you might
 want to consider enabling caching on your remote workers. To enable caching,
@@ -3574,7 +3684,7 @@ on the worker host:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_alternative_caching_implementations"><a class="anchor" href="#_alternative_caching_implementations"></a><a class="link" href="#_alternative_caching_implementations">16.10. Alternative caching implementations</a></h3>
+<h3 id="_alternative_caching_implementations"><a class="anchor" href="#_alternative_caching_implementations"></a><a class="link" href="#_alternative_caching_implementations">16.11. Alternative caching implementations</a></h3>
 <div class="paragraph">
 <p>Caching described above works well for a single worker host, but in case of
 several hosts in a single site (that is remote from the main openQA webui
@@ -3606,7 +3716,7 @@ will be skipped.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_enable_linking_files_referred_by_job_settings"><a class="anchor" href="#_enable_linking_files_referred_by_job_settings"></a><a class="link" href="#_enable_linking_files_referred_by_job_settings">16.11. Enable linking files referred by job settings</a></h3>
+<h3 id="_enable_linking_files_referred_by_job_settings"><a class="anchor" href="#_enable_linking_files_referred_by_job_settings"></a><a class="link" href="#_enable_linking_files_referred_by_job_settings">16.12. Enable linking files referred by job settings</a></h3>
 <div class="paragraph">
 <p>Specific job settings might refer to files within the test distribution.
 You can configure openQA to display links to these files within the job settings tab.
@@ -3625,7 +3735,7 @@ of <code>CASEDIR</code> or the data folder within <code>CASEDIR</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_enable_custom_hook_scripts_on_job_done_based_on_result"><a class="anchor" href="#_enable_custom_hook_scripts_on_job_done_based_on_result"></a><a class="link" href="#_enable_custom_hook_scripts_on_job_done_based_on_result">16.12. Enable custom hook scripts on "job done" based on result</a></h3>
+<h3 id="_enable_custom_hook_scripts_on_job_done_based_on_result"><a class="anchor" href="#_enable_custom_hook_scripts_on_job_done_based_on_result"></a><a class="link" href="#_enable_custom_hook_scripts_on_job_done_based_on_result">16.13. Enable custom hook scripts on "job done" based on result</a></h3>
 <div id="custom_hook_scripts_job_done" class="paragraph">
 <p>If a job is done, especially if no label could be found for carry-over, often
 more steps are needed for the review of the test result or providing the
@@ -3729,7 +3839,7 @@ General status and stdout output is visible in the GRU minion job dashboard on t
 </div>
 </div>
 <div class="sect2">
-<h3 id="_automatic_cloning_of_incomplete_jobs"><a class="anchor" href="#_automatic_cloning_of_incomplete_jobs"></a><a class="link" href="#_automatic_cloning_of_incomplete_jobs">16.13. Automatic cloning of incomplete jobs</a></h3>
+<h3 id="_automatic_cloning_of_incomplete_jobs"><a class="anchor" href="#_automatic_cloning_of_incomplete_jobs"></a><a class="link" href="#_automatic_cloning_of_incomplete_jobs">16.14. Automatic cloning of incomplete jobs</a></h3>
 <div id="automatic_cloning_incomplete_jobs" class="paragraph">
 <p>By default, when a worker reports an incomplete job due to a cache service related
 problem, the job is automatically cloned. It is possible to extend the regex to cover
@@ -3743,7 +3853,7 @@ configuration and cloned in any case.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_enable_automatic_database_backup"><a class="anchor" href="#_enable_automatic_database_backup"></a><a class="link" href="#_enable_automatic_database_backup">16.14. Enable automatic database backup</a></h3>
+<h3 id="_enable_automatic_database_backup"><a class="anchor" href="#_enable_automatic_database_backup"></a><a class="link" href="#_enable_automatic_database_backup">16.15. Enable automatic database backup</a></h3>
 <div id="automatic_database_cleanup" class="paragraph">
 <p>An optional systemd service, <code>openqa-dump-db.service</code>, can be enabled to
 perform daily database backups. This service is triggered by the
@@ -8480,17 +8590,6 @@ based on company conventions:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">WORKER_CLASS</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">planet-earth,continent-antarctica,location-my_station</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The load of the system can affect test execution and cause failures due to delays of command execution and <a href="https://en.wikipedia.org/wiki/Thrashing_(computer_science)">thrashing</a>. If the average over a period of 15 minutes exceeds the specified value the worker will not accept new jobs.</p>
-</div>
-<div class="listingblock">
-<div class="title">File: workers.ini</div>
-<div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
-<span class="tok-c1"># Set to 0 to disable.</span>
-<span class="tok-c1">#CRITICAL_LOAD_AVG_THRESHOLD = 40</span></code></pre>
 </div>
 </div>
 </div>
@@ -15309,7 +15408,7 @@ contact the openQA instance administrator.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-27 04:44:57 UTC
+Last updated 2026-04-01 04:44:45 UTC
 </div>
 </div>
 </body>
