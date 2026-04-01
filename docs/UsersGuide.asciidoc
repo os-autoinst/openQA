@@ -593,6 +593,10 @@ It supports the same query parameters as the overview page.
 There is an optional parameter `show_build=1` that will prefix the status with
 the build number (or `multi` if multiple builds are targeted).
 
+The parameter `label` can be used to set a custom label on the left side of the
+badge (instead of the default `openQA`). When a custom label is used, the openQA
+logo is omitted to provide more space for the text.
+
 === Build a continuous openQA monitoring dashboard
 
 With just some common tools a dashboard showing the openQA index page with

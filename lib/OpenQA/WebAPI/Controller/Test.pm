@@ -621,17 +621,40 @@ sub _badge ($self, $job) {
     $self->_render_badge($badge_text, $badge_color, $status);
 }
 
+sub _measure_text ($self, $text) {
+    # determine the approximate required width of the text
+    my $charlen = 11;
+    my $width = $charlen * length $text;
+    for my $char (keys %BADGE_CHARLENS) {
+        $width -= $charlen * (() = $text =~ /$char/g) * (1 - $BADGE_CHARLENS{$char});
+    }
+    return $width;
+}
+
 sub _render_badge ($self, $badge_text, $badge_color, $status = HTTP_OK) {
     # determine the approximate required width of the badge
-    my $charlen = 11;
+    my $badge_prefix_text = $self->param('label') // 'openQA';
     my $badge_prefix_width = 85;
-    my $badge_suffix_padding = 2 * 5;
-    my $badge_width = $badge_prefix_width + $badge_suffix_padding + $charlen * length $badge_text;
-    for my $char (keys %BADGE_CHARLENS) {
-        $badge_width -= $charlen * (() = $badge_text =~ /$char/g) * (1 - $BADGE_CHARLENS{$char});
+    my $prefix_x = 29;
+
+    if ($badge_prefix_text ne 'openQA') {
+        my $padding = 10;
+        $badge_prefix_width = $padding + $self->_measure_text($badge_prefix_text);
+        $prefix_x = 5;
     }
 
-    $self->stash({badge_text => $badge_text, badge_color => $badge_color, badge_width => $badge_width});
+    my $badge_suffix_padding = 2 * 5;
+    my $badge_width = $badge_prefix_width + $badge_suffix_padding + $self->_measure_text($badge_text);
+
+    $self->stash(
+        {
+            badge_text => $badge_text,
+            badge_color => $badge_color,
+            badge_width => $badge_width,
+            badge_prefix_text => $badge_prefix_text,
+            badge_prefix_width => $badge_prefix_width,
+            prefix_x => $prefix_x,
+        });
     $self->res->headers->cache_control('max-age=0, no-cache');
     $self->render('test/badge', format => 'svg', status => $status);
 }
