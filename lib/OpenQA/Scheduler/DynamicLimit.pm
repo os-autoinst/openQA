@@ -60,23 +60,18 @@ sub _resolve_threshold ($configured, $factor) {
 # DynamicLimit to the config key names.
 sub _extract_config ($config) {
     my $defaults = DEFAULTS();
+    my %cfg = map { $_ => $config->{$_} // $defaults->{$_} } keys %$defaults;
     return {
-        threshold => _resolve_threshold(
-            $config->{dynamic_job_limit_load_threshold} // $defaults->{dynamic_job_limit_load_threshold},
-            $config->{dynamic_job_limit_load_threshold_factor} // $defaults->{dynamic_job_limit_load_threshold_factor}
-        ),
-        critical => _resolve_threshold(
-            $config->{dynamic_job_limit_load_critical} // $defaults->{dynamic_job_limit_load_critical},
-            $config->{dynamic_job_limit_load_critical_factor} // $defaults->{dynamic_job_limit_load_critical_factor}
-        ),
-        step => $config->{dynamic_job_limit_step} // $defaults->{dynamic_job_limit_step},
-        min => $config->{dynamic_job_limit_min} // $defaults->{dynamic_job_limit_min},
-        max => $config->{max_running_jobs} // $defaults->{max_running_jobs},
-        interval => $config->{dynamic_job_limit_interval} // $defaults->{dynamic_job_limit_interval},
-        scale_up_hysteresis => $config->{dynamic_job_limit_scale_up_hysteresis}
-          // $defaults->{dynamic_job_limit_scale_up_hysteresis},
-        fast_ramp_up_load_factor => $config->{dynamic_job_limit_fast_ramp_up_load_factor}
-          // $defaults->{dynamic_job_limit_fast_ramp_up_load_factor},
+        threshold =>
+          _resolve_threshold($cfg{dynamic_job_limit_load_threshold}, $cfg{dynamic_job_limit_load_threshold_factor}),
+        critical =>
+          _resolve_threshold($cfg{dynamic_job_limit_load_critical}, $cfg{dynamic_job_limit_load_critical_factor}),
+        step => $cfg{dynamic_job_limit_step},
+        min => $cfg{dynamic_job_limit_min},
+        max => $cfg{max_running_jobs},
+        interval => $cfg{dynamic_job_limit_interval},
+        scale_up_hysteresis => $cfg{dynamic_job_limit_scale_up_hysteresis},
+        fast_ramp_up_load_factor => $cfg{dynamic_job_limit_fast_ramp_up_load_factor},
     };
 }
 
