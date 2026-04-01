@@ -110,13 +110,12 @@ ok my $settings = $worker->settings, 'settings instantiated';
 my $global_settings = $settings->global_settings;
 delete $global_settings->{LOG_DIR};
 combined_like { $worker->init }
-qr/Ignoring host.*Working directory does not exist/,
+qr{Ignoring host.*Working directory does not exist.*Checked: t/data/openqa/share},
   'hosts with non-existent working directory ignored and error logged';
 is $worker->app->level, 'debug', 'log level set to debug with verbose switch';
 my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
 is_deeply \@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client for each web UI host'
   or always_explain \@webui_hosts;
-
 
 combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s, 'setup info';
