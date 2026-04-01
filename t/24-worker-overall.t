@@ -109,8 +109,9 @@ ok $worker->no_cleanup, 'no-cleanup flag works';
 ok my $settings = $worker->settings, 'settings instantiated';
 my $global_settings = $settings->global_settings;
 delete $global_settings->{LOG_DIR};
-combined_like { $worker->init }
-qr{Ignoring host.*Working directory does not exist.*Checked: t/data/openqa/share},
+
+combined_like { is ${$worker->init}, 1, 'no working directory found returns 1' }
+qr{Ignoring host.*Working directory does not exist.*Checked: t/data/openqa/share.*Ignoring host .*remotehost.*Checked:}s,
   'hosts with non-existent working directory ignored and error logged';
 is $worker->app->level, 'debug', 'log level set to debug with verbose switch';
 my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
@@ -990,5 +991,19 @@ subtest 'worker ipmi' => sub {
       'ipmitool called correctly';
 };
 
+subtest 'working_directory exists for one of two hosts' => sub {
+    my $worker
+      = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', verbose => 1, 'no-cleanup' => 1});
+    my $tempdir = tempdir("$FindBin::Script-working_dir-XXXX", TMPDIR => 1);
+    my $mock_ws = Test::MockModule->new('OpenQA::Worker::Settings');
+    my $webui_host_specific_settings = {
+        'https://remotehost' => {SHARE_DIRECTORY => "$tempdir"},
+        'http://localhost:9527' => {}};
+    $mock_ws->redefine(webui_host_specific_settings => sub ($self) { $webui_host_specific_settings });
+
+    combined_like { is ${$worker->init}, 0, 'at least one working directory found returns 0' }
+qr{Ignoring host.*Working directory does not exist.*Checked: t/data/openqa/share.*Project dir for host https://remotehost is /tmp}s,
+      'hosts with non-existent working directory ignored and error logged';
+};
 
 done_testing();
