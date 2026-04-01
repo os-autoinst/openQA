@@ -31,6 +31,12 @@ my $SINGLETON;
 use constant DEADLOCK_RETRIES => $ENV{OPENQA_DEADLOCK_RETRIES} // 3;
 use constant DEADLOCK_REGEX => qr/deadlock detected/;
 
+sub set_search_path ($self, $search_path) {
+    my $storage = $self->storage;
+    $storage->dbh->do("SET search_path TO \"$search_path\"");
+    $storage->on_connect_do("SET search_path TO \"$search_path\"");    # handle reconnects
+}
+
 sub connect_db (%args) {
     my $check_deploy = $args{deploy};
     $check_deploy //= 1;
@@ -48,6 +54,9 @@ sub connect_db (%args) {
         my $database_config_for_mode = $database_config ? $database_config->{$mode} : {dsn => 'DBI:Pg:dbname=openqa'};
         die "Could not find database section '$mode' in @$database_config_paths\n" unless $database_config_for_mode;
         $SINGLETON = __PACKAGE__->connect($database_config_for_mode);
+    }
+    if (defined(my $search_path = $ENV{OPENQA_DATABASE_SEARCH_PATH})) {
+        $SINGLETON->set_search_path($search_path);
     }
     deploy $SINGLETON if $check_deploy;
     return $SINGLETON;
