@@ -20,6 +20,7 @@ use List::Util qw(any max);
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants qw(OK_RESULTS);
+use OpenQA::Scheduler::DynamicLimit;
 use OpenQA::Task::Job::Limit;
 use Feature::Compat::Try;
 
@@ -152,13 +153,8 @@ sub default_config () {
         },
         scheduler => {
             max_job_scheduled_time => 7,
-            max_running_jobs => -1,
             dynamic_job_limit_enabled => 0,
-            dynamic_job_limit_min => 50,
-            dynamic_job_limit_load_threshold => 0,
-            dynamic_job_limit_load_critical => 0,
-            dynamic_job_limit_step => 10,
-            dynamic_job_limit_interval => 60,
+            %{OpenQA::Scheduler::DynamicLimit->DEFAULTS},
         },
         logging => {
             level => undef,

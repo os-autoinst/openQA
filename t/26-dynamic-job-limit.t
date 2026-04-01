@@ -13,28 +13,37 @@ use OpenQA::Test::Utils qw(simulate_load);
 use Test::MockModule;
 use Test::Output qw(combined_like);
 use OpenQA::Utils qw(load_avg);
-use OpenQA::Scheduler::DynamicLimit;
+use OpenQA::Scheduler::DynamicLimit qw(MIN STEP EMERGENCY_STEP_MULTIPLIER);
 
-subtest 'load_avg reads /proc/loadavg' => sub {
-    my $f = simulate_load('1.23 4.56 7.89 2/512 1234', '26-dynamic-job-limit');
-    my $load = load_avg();
-    is scalar @$load, 3, 'three load values returned';
-    is_deeply $load, [1.23, 4.56, 7.89], 'correct load values parsed';
-};
+sub test_load_avg ($name, $content, $expected, $msg = undef) {
+    subtest $name => sub {
+        my $safe_name = $name =~ s/[\s\/]/_/gr;
+        my $f = simulate_load($content, "26-load-$safe_name");
+        my $load;
+        if (ref $expected eq 'Regexp') {
+            combined_like { $load = load_avg() } $expected, $msg;
+            is_deeply $load, [], 'empty arrayref on error';
+        }
+        else {
+            $load = load_avg();
+            is_deeply $load, $expected, $msg // 'correct load values parsed';
+        }
+    };
+}
 
-subtest 'load_avg returns empty arrayref on invalid file' => sub {
-    my $f = simulate_load('not_a_number', '26-dynamic-job-limit-invalid');
-    my $load;
-    combined_like { $load = load_avg() } qr/Unable to parse system load/, 'parse error logged';
-    is_deeply $load, [], 'empty arrayref on invalid load data';
-};
-
-subtest 'load_avg returns empty arrayref when file has fewer than 3 fields' => sub {
-    my $f = simulate_load('1.0 2.0', '26-dynamic-job-limit-short');
-    my $load;
-    combined_like { $load = load_avg() } qr/Unable to parse system load/, 'parse error logged for truncated file';
-    is_deeply $load, [], 'empty arrayref when fewer than 3 load values present';
-};
+test_load_avg('reads /proc/loadavg', '1.23 4.56 7.89 2/512 1234', [1.23, 4.56, 7.89]);
+test_load_avg(
+    'returns empty arrayref on invalid file',
+    'not_a_number',
+    qr/Unable to parse system load/,
+    'parse error logged'
+);
+test_load_avg(
+    'returns empty arrayref when file has fewer than 3 fields',
+    '1.0 2.0',
+    qr/Unable to parse system load/,
+    'parse error logged for truncated file'
+);
 
 subtest 'load_avg returns empty arrayref on missing file' => sub {
     local $ENV{OPENQA_LOAD_AVG_FILE} = '/nonexistent/loadavg';
@@ -44,108 +53,78 @@ subtest 'load_avg returns empty arrayref on missing file' => sub {
 };
 
 sub _config (%args) {
-    return {
+    my %config = (
         max_running_jobs => $args{max} // 200,
         dynamic_job_limit_enabled => 1,
-        dynamic_job_limit_min => $args{min} // 50,
-        dynamic_job_limit_load_threshold => $args{threshold} // 8,
-        dynamic_job_limit_load_critical => $args{critical} // 16,
-        dynamic_job_limit_step => $args{step} // 10,
-        dynamic_job_limit_interval => $args{interval} // 0,
+    );
+    my %map = (
+        min => 'dynamic_job_limit_min',
+        threshold => 'dynamic_job_limit_load_threshold',
+        threshold_factor => 'dynamic_job_limit_load_threshold_factor',
+        critical => 'dynamic_job_limit_load_critical',
+        critical_factor => 'dynamic_job_limit_load_critical_factor',
+        step => 'dynamic_job_limit_step',
+        interval => 'dynamic_job_limit_interval',
+        hysteresis => 'dynamic_job_limit_scale_up_hysteresis',
+        fast_up_factor => 'dynamic_job_limit_fast_ramp_up_load_factor',
+    );
+    for my $k (keys %args) {
+        $config{$map{$k} // $k} = $args{$k} if defined $args{$k} && exists $map{$k};
+    }
+    return \%config;
+}
+
+sub test_dynamic_limit (%args) {
+    my $name = $args{name};
+    subtest $name => sub {
+        my $safe_name = $name =~ s/[\s\/]/_/gr;
+        my $f = simulate_load(($args{load} // '1.0 1.0 1.0') . ' 1/1 1', "26-dyn-$safe_name");
+        my $dl = OpenQA::Scheduler::DynamicLimit->new;
+        $dl->effective_limit($args{initial}) if defined $args{initial};
+        $args{block} ? $dl->block_adjustment_for : $dl->force_next_adjustment;
+        my %conf = (threshold => 8, max => 200, %{$args{config} // {}});
+        my $limit = $dl->current_limit(_config(%conf));
+        is $limit, $args{expected}, $args{message} // "limit is $args{expected}";
     };
 }
 
-subtest 'initial limit is dynamic_job_limit_min before first adjustment interval' => sub {
-    my $f = simulate_load('1.0 1.0 1.0 1/1 1', '26-dyn-initial');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->block_adjustment_for;    # interval not yet elapsed
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, interval => 60));
-    is $limit, 50, 'returns min limit when no adjustment has occurred yet';
-};
+my @cases = (
+    {name => 'initial', block => 1, expected => MIN, config => {interval => 60}},
+    {name => 'scales up', initial => 100, load => '4.0 4.0 4.0', expected => 100 + STEP},
+    {name => 'fast up', initial => 100, load => '1.0 1.0 1.0', expected => 100 + STEP * 2},
+    {name => 'steady', initial => 100, load => '6.0 6.5 6.0', expected => 100},
+    {name => 'scales down', initial => 100, load => '10.0 7.0 6.0', expected => 100 - STEP},
+    {
+        name => 'emergency',
+        initial => 100,
+        load => '20.0 18.0 15.0',
+        expected => 100 - STEP * EMERGENCY_STEP_MULTIPLIER,
+        config => {critical => 16}
+    },
+    {name => 'floor', load => '20.0 18.0 15.0', initial => MIN + 5, expected => MIN, config => {critical => 16}},
+    {name => 'ceiling', load => '1.0 1.0 1.0', initial => 195, expected => 200},
+    {
+        name => 'gating',
+        initial => 100,
+        load => '20.0 18.0 15.0',
+        block => 1,
+        expected => 100,
+        config => {interval => 60}
+    },
+    {name => 'unlimited', initial => 100, load => '4.0 4.0 4.0', expected => 100 + STEP, config => {max => -1}},
+);
 
-subtest 'scales up when load well below threshold' => sub {
-    my $f = simulate_load('1.0 1.0 1.0 1/1 1', '26-dyn-scaleup');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(100);
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, step => 10, max => 200));
-    is $limit, 110, 'increases by step when load well below threshold (1.0 < 8*0.7=5.6)';
-};
+test_dynamic_limit(%$_) for @cases;
 
-subtest 'holds steady when load near threshold' => sub {
-    # load is above 70% of threshold (5.6) but below threshold (8), not rising
-    my $f = simulate_load('6.0 6.5 6.0 1/1 1', '26-dyn-steady');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(100);
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, step => 10, max => 200));
-    is $limit, 100, 'no change when load is near threshold';
-};
-
-subtest 'scales down on rising load above threshold' => sub {
-    # load_1m (10) > threshold (8) and load_1m (10) > load_5m (7) => rising
-    my $f = simulate_load('10.0 7.0 6.0 1/1 1', '26-dyn-scaledown');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(100);
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, step => 10, max => 200));
-    is $limit, 90, 'decreases by step on rising load above threshold';
-};
-
-subtest 'emergency cutback on critical load' => sub {
-    my $f = simulate_load('20.0 18.0 15.0 1/1 1', '26-dyn-critical');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(100);
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, critical => 16, step => 10, max => 200));
-    is $limit, 70, 'decreases by 3*step on critical load';
-};
-
-subtest 'floor enforcement: never below min' => sub {
-    my $f = simulate_load('20.0 18.0 15.0 1/1 1', '26-dyn-floor');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(55);    # close to min=50; 3*step=30 would go below
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, critical => 16, step => 10, max => 200));
-    is $limit, 50, 'clamped at min limit';
-};
-
-subtest 'ceiling enforcement: never above max_running_jobs' => sub {
-    my $f = simulate_load('1.0 1.0 1.0 1/1 1', '26-dyn-ceiling');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(195);    # close to max=200; +step=10 would exceed
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, step => 10, max => 200));
-    is $limit, 200, 'clamped at max_running_jobs';
-};
-
-subtest 'interval gating: no adjustment before interval elapses' => sub {
-    my $f = simulate_load('20.0 18.0 15.0 1/1 1', '26-dyn-interval');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(100);
-    $dl->block_adjustment_for;    # interval not yet elapsed
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, critical => 16, step => 10, interval => 60));
-    is $limit, 100, 'no change before interval elapses';
-};
-
-subtest 'no limit when max_running_jobs is -1 (unlimited)' => sub {
-    my $f = simulate_load('1.0 1.0 1.0 1/1 1', '26-dyn-unlimited');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(100);
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 8, step => 10, max => -1));
-    is $limit, 110, 'scales up without ceiling when max_running_jobs=-1';
-};
-
-subtest 'auto-detects threshold from nproc when configured as 0' => sub {
+subtest 'auto-detect threshold (nproc * factor) and fast ramp-up' => sub {
     my $mock_dl = Test::MockModule->new('OpenQA::Scheduler::DynamicLimit');
-    $mock_dl->mock(_nproc => sub { 4 });    # 4 CPUs; threshold = 4*0.85 = 3.4; load 1.0 < 3.4*0.7=2.38 => scale up
-    my $f = simulate_load('1.0 1.0 1.0 1/1 1', '26-dyn-autothresh');
-    my $dl = OpenQA::Scheduler::DynamicLimit->new;
-    $dl->effective_limit(100);
-    $dl->force_next_adjustment;
-    my $limit = $dl->current_limit(_config(min => 50, threshold => 0, step => 10, max => 200));
-    is $limit, 110, 'scales up with auto-detected threshold (mocked 4 CPUs, load 1.0)';
+    $mock_dl->mock(_nproc => sub { 4 });
+    test_dynamic_limit(
+        name => 'autothresh',
+        initial => 100,
+        load => '1.0 1.0 1.0',
+        expected => 100 + STEP * 2,
+        config => {threshold => 0});
 };
 
 subtest '_nproc returns positive number of CPUs' => sub {
