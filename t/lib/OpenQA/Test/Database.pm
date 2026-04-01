@@ -46,9 +46,7 @@ sub create ($self, %options) {
         }
         $schema->search_path_for_tests($schema_name);
         $dbh->do("create schema \"$schema_name\"");
-        $dbh->do("SET search_path TO \"$schema_name\"");
-        # handle reconnects
-        $storage->on_connect_do("SET search_path TO \"$schema_name\"");
+        $schema->set_search_path($schema_name);
     }
 
     $schema->deploy;

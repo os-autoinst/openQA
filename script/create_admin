@@ -24,7 +24,7 @@ my $user = $ARGV[0];
 my $help;
 
 sub usage {
-    print "Usage: $0 [options] user \n\n";
+    print "Usage: $0 user [options]\n\n";
     print "  --email     : Email address.\n";
     print "  --nickname  : Nickname.\n";
     print "  --fullname  : Full name.\n";

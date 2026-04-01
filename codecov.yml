@@ -20,6 +20,7 @@ coverage:
         threshold: 0
         paths:
           - lib/OpenQA/
+          - script/create_admin
       tests:
         target: 100.0
         threshold: 0
