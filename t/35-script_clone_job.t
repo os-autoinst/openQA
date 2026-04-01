@@ -28,7 +28,8 @@ package Test::FakeResult {
 }    # uncoverable statement
 
 my $command_mock = Test::MockModule->new('OpenQA::Command');
-$command_mock->redefine(retry_tx => sub ($self, $client, $tx, $retries) { $tx });
+my $retry_tx_count = 0;
+$command_mock->redefine(retry_tx => sub ($self, $client, $tx, $retries) { ++$retry_tx_count; $tx });
 
 my @argv = (
     qw(WORKER_CLASS=local HDD_1=new.qcow2 HDDSIZEGB=40 FOO=value:with:colon),
@@ -78,7 +79,7 @@ subtest 'getting job' => sub {
     $clone_mock->redefine(_handle_unexpected_return_code => sub ($tx) { die 'unexpected return code' });
     my $fake_res = Test::FakeResult->new(is_success => 0, code => 400, json => {FOO => 'bar'});
     my $fake_txn = Test::MockObject->new->set_always(res => $fake_res)->set_always(error => undef);
-    my $fake_ua = Test::MockObject->new->set_always(get => $fake_txn);
+    my $fake_ua = Test::MockObject->new->set_always(build_tx => $fake_txn);
     $fake_ua->set_always(max_redirects => $fake_ua);
     my %fake_params = (host => 'host', from => 'from', apikey => 'key', apisecret => 'secret');
     my $url_handler = OpenQA::Script::CloneJob::create_url_handler(\%fake_params);
@@ -320,19 +321,26 @@ subtest 'cloning with repeat count' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     my @post_args;
     my $tx_handled = 0;
-    $ua_mock->redefine(post => sub { push @post_args, [@_] });
+    $ua_mock->redefine(
+        build_tx => sub ($ua, $method, @args) {
+            is $method, 'POST', 'post tx created';
+            push @post_args, [@args];
+            return $ua_mock->original('build_tx')->($ua, $method, @args);
+        });
     $clone_mock->redefine(handle_tx => sub ($tx, $url_handler, $options, $jobs) { $tx_handled = 1 });
     my %fake_jobs = (42 => {id => 42, name => 'myjob', settings => {TEST => 'myjob'}});
     $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
     my %options = (host => 'foo', from => 'bar', repeat => 100, apikey => 'bar', apisecret => 'bar');
+    $retry_tx_count = 0;
     OpenQA::Script::CloneJob::clone_jobs(42, \%options);
     is $options{repeat}, undef, 'repeat count has been removed from options';
     subtest 'post args' => sub {
-        is scalar @post_args, 100, 'exactly 100 post calls made';
+        is scalar @post_args, 100, 'exactly 100 post transactions created';
+        is $retry_tx_count, 100, 'exactly 100 transactions attempted';
         # check Nth test name ends with -N
-        is $post_args[0]->[3]->{'TEST:42'}, 'myjob-001', 'first index has been appended to test name';
-        is $post_args[41]->[3]->{'TEST:42'}, 'myjob-042', 'random index has been appended to test name';
-        is $post_args[99]->[3]->{'TEST:42'}, 'myjob-100', 'last index has been appended to test name';
+        is $post_args[0]->[2]->{'TEST:42'}, 'myjob-001', 'first index has been appended to test name';
+        is $post_args[41]->[2]->{'TEST:42'}, 'myjob-042', 'random index has been appended to test name';
+        is $post_args[99]->[2]->{'TEST:42'}, 'myjob-100', 'last index has been appended to test name';
     } or always_explain \@post_args;
 };
 
@@ -340,7 +348,7 @@ subtest 'cloning with --reproduce flag' => sub {
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     my @post_args;
-    $ua_mock->redefine(post => sub { push @post_args, [@_] });
+    $ua_mock->redefine(build_tx => sub { push @post_args, [@_] });
     $clone_mock->redefine(handle_tx => undef);
     my %fake_vars;
     my %fake_jobs = (42 => {id => 42, name => 'reproducer', settings => {TEST => 'reproducer'}, vars => \%fake_vars});
@@ -356,7 +364,7 @@ subtest 'cloning with --reproduce flag' => sub {
     );
     clone_jobs(42, \%options);
     subtest 'job posted with settings to use revision of original job' => sub {
-        is ref(my $settings = $post_args[0]->[3]), 'HASH', 'settings present' or return;
+        is ref(my $settings = $post_args[0]->[4]), 'HASH', 'settings present' or return;
         is $settings->{'TEST:42'}, 'reproducer', 'TEST';
         is $settings->{'CASEDIR:42'}, 'https://…/os-autoinst-distri-opensuse.git', 'CASEDIR';
         is $settings->{'TEST_GIT_REFSPEC:42'}, '53df78e', 'TEST_GIT_REFSPEC';
@@ -371,7 +379,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     my @post_args;
     my $tx_handled = 0;
-    $ua_mock->redefine(post => sub { push @post_args, [@_] });
+    $ua_mock->redefine(build_tx => sub { push @post_args, [@_] });
     $clone_mock->redefine(handle_tx => sub ($tx, $url_handler, $options, $jobs) { $tx_handled = 1 });
 
     # fake the jobs to be cloned
@@ -400,7 +408,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
 
     my $check_common_post_args = sub ($test_suffix = '') {
         is scalar @post_args, 1, 'exactly one post call made' or return undef;
-        my $params = $post_args[0]->[3] // {};
+        my $params = $post_args[0]->[4] // {};
         is delete $params->{is_clone_job}, 1, 'is_clone_job-flag set';
         is delete $params->{'TEST:41'}, "parent$test_suffix", 'parent job 41 cloned';
         is delete $params->{'TEST:42'}, "main$test_suffix", 'main job 42 cloned';
@@ -469,7 +477,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         like $stdout, qr/1 job has been created/, 'Normal output on stdout';
         like $stderr, qr/cloning/i, 'Extra output on stderr';
         subtest 'post args' => sub {
-            my $params = $post_args[0]->[3] // {};
+            my $params = $post_args[0]->[4] // {};
             is $params->{'CLONED_FROM:42'}, 'https://bar/tests/42', 'main job has been cloned';
             is $params->{'CLONED_FROM:43'}, 'https://bar/tests/43', 'child job has been clones';
             is $params->{'_START_AFTER:43'}, '42', 'child job cloned to start after main job 42';
@@ -495,7 +503,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
 
         combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
         subtest 'post args' => sub {
-            my $params = $post_args[0]->[3] // {};
+            my $params = $post_args[0]->[4] // {};
             is $params->{'CLONED_FROM:42'}, 'https://bar/tests/42', 'main job has been cloned';
             is $params->{'CLONED_FROM:43'}, 'https://bar/tests/43', 'child job has been clones';
             ok !$params->{'CLONED_FROM:41'}, 'parent job has not been cloned';
