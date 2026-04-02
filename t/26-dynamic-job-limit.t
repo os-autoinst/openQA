@@ -82,7 +82,7 @@ sub test_dynamic_limit (%args) {
         my $dl = OpenQA::Scheduler::DynamicLimit->new;
         $dl->effective_limit($args{initial}) if defined $args{initial};
         $args{block} ? $dl->block_adjustment_for : $dl->force_next_adjustment;
-        my %conf = (threshold => 8, max => 200, %{$args{config} // {}});
+        my %conf = (threshold => 8, critical => 16, max => 200, %{$args{config} // {}});
         my $limit = $dl->current_limit(_config(%conf));
         is $limit, $args{expected}, $args{message} // "limit is $args{expected}";
     };
@@ -125,6 +125,25 @@ subtest 'auto-detects threshold from nproc when configured as 0' => sub {
         load => '1.0 1.0 1.0',
         expected => 100 + STEP * 2,
         config => {threshold => 0});
+};
+
+subtest 'auto-detects threshold from nproc (1 CPU)' => sub {
+    my $mock_dl = Test::MockModule->new('OpenQA::Scheduler::DynamicLimit');
+    $mock_dl->mock(_nproc => sub { 1 });    # 1 CPU; threshold = 1*0.85 = 0.85; critical = 1*1.5 = 1.5
+    test_dynamic_limit(
+        name => 'autothresh_1cpu_scale_up',
+        initial => 100,
+        load => '0.2 0.2 0.2',
+        # threshold = 0.85. 0.2 < 0.85*0.3 = 0.255. Fast up.
+        expected => 100 + STEP * 2,
+        config => {threshold => 0, critical => 0});
+    test_dynamic_limit(
+        name => 'autothresh_1cpu_emergency',
+        initial => 100,
+        load => '2.0 2.0 2.0',
+        # critical = 1.5. 2.0 > 1.5. Emergency.
+        expected => 100 - STEP * EMERGENCY_STEP_MULTIPLIER,
+        config => {threshold => 0, critical => 0});
 };
 
 subtest '_nproc returns positive number of CPUs' => sub {

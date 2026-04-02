@@ -64,7 +64,7 @@ sub _nproc () {
 # Returns a resolved (non-zero) threshold, falling back to nproc * $factor.
 sub _resolve_threshold ($configured, $factor) {
     return $configured if $configured > 0;
-    state $nproc = _nproc();
+    my $nproc = _nproc();
     return $nproc > 0 ? $nproc * $factor : 10 * $factor;
 }
 

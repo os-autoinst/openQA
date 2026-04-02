@@ -471,7 +471,7 @@ subtest 'dynamic job limit' => sub {
     };
 
     subtest 'dynamic limit enabled with low load: returns current dynamic limit' => sub {
-        my $load_file = simulate_load('0.5 0.5 0.5 1/1 1', '04-scheduler-dynlimit');
+        my $load_file = simulate_load('3.0 3.0 3.0 1/1 1', '04-scheduler-dynlimit');
         local $conf->{dynamic_job_limit_enabled} = 1;
         local $conf->{max_running_jobs} = 100;
         local $conf->{dynamic_job_limit_min} = 30;
@@ -480,7 +480,7 @@ subtest 'dynamic job limit' => sub {
         local $conf->{dynamic_job_limit_step} = 5;
         local $conf->{dynamic_job_limit_interval} = 0;
         $scheduler->dynamic_limit(OpenQA::Scheduler::DynamicLimit->new);
-        # load 0.5 < 8*0.7=5.6 => scale up from min=30 by step=5 => 35
+        # load 3.0 < 8*0.7=5.6 and 3.0 > 8*0.3=2.4 => scale up from min=30 by step=5 => 35
         is $scheduler->effective_job_limit, 35, 'dynamic limit: min+step returned on low load';
     };
 
@@ -496,7 +496,7 @@ subtest 'dynamic job limit' => sub {
         push @dyn_jobs, $jobs->create_from_settings(\%settings2) for 1 .. 5;
         my @dyn_job_ids = map { $_->id } @dyn_jobs;
 
-        my $load_file = simulate_load('0.5 0.5 0.5 1/1 1', '04-scheduler-dynlimit2');
+        my $load_file = simulate_load('3.0 3.0 3.0 1/1 1', '04-scheduler-dynlimit2');
         local $conf->{dynamic_job_limit_enabled} = 1;
         local $conf->{max_running_jobs} = 100;
         local $conf->{dynamic_job_limit_min} = 2;
