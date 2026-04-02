@@ -18,6 +18,12 @@ DocumentRoot /usr/share/openqa/public
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
+<Directory "/var/lib/openqa/cache/archives">
+    AllowOverride None
+    Require all granted
+</Directory>
+Alias /archives "/var/lib/openqa/cache/archives"
+
 <Directory "/var/lib/openqa/images">
   Options SymLinksIfOwnerMatch
   AllowOverride None
@@ -51,6 +57,7 @@ ProxyPass /image !
 ProxyPass /javascripts !
 ProxyPass /stylesheets !
 ProxyPass /assets !
+ProxyPass /archives !
 ProxyPass /error !
 
 # ensure websocket connections are handled as such by the reverse proxy while
