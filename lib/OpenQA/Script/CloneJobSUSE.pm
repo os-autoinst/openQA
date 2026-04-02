@@ -5,10 +5,18 @@ package OpenQA::Script::CloneJobSUSE;
 use Mojo::Base -strict, -signatures;
 use Data::Dump 'pp';
 use Exporter 'import';
+use OpenQA::JobSettings;
 
 our @EXPORT = qw(detect_maintenance_update);
 
 sub collect_incident_repos ($url_handler, $settings) {
+    my ($error, $unexpanded) = OpenQA::JobSettings::expand_placeholders($settings);
+    die "Expanding variables failed: $error\n" if $error;
+    if ($unexpanded && @$unexpanded) {
+        my $vars = join(', ', @$unexpanded);
+        die
+"The following variables are unexpanded: $vars. Specify the necessary variables at the command line for expansion. See https://open.qa/docs/#_variable_expansion for details\n";
+    }
     if (my $repo = $settings->{INCIDENT_REPO}) {
         return verify_incident_repos($url_handler, $repo);
     }
