@@ -4,10 +4,16 @@
   border-spacing: 0;
   border-radius: 0.2rem;
   border: 1px solid $table-border-color;
-  thead, tbody, tfoot, tr, th, td {
+  thead,
+  tbody,
+  tfoot,
+  tr,
+  th,
+  td {
     border-style: none;
   }
-  th, td {
+  th,
+  td {
     vertical-align: middle;
   }
   td {
@@ -20,7 +26,8 @@
   }
 }
 [data-bs-theme='dark'] {
-  .table, .table td {
+  .table,
+  .table td {
     border-color: $table-border-color-dark;
   }
   .table thead tr:first-child th {
@@ -32,7 +39,9 @@
   background-color: rgba(0, 0, 0, 3 / 100);
 }
 .table-hover {
-  > tbody > tr, > tbody > tr > th, > tbody > tr > td {
+  > tbody > tr,
+  > tbody > tr > th,
+  > tbody > tr > td {
     @include transition(all 0.2s);
   }
 }
@@ -49,7 +58,9 @@
 .infotbl img {
   padding-right: 3px;
 }
-.noborder, .noborder tr, .noborder td {
+.noborder,
+.noborder tr,
+.noborder td {
   border: none;
 }
 .table tbody tr {
@@ -88,7 +99,8 @@ table.admintable {
   .key-value-pair .key {
     font-weight: bold;
   }
-  input[type='text'], textarea {
+  input[type='text'],
+  textarea {
     width: 100%;
     box-sizing: border-box;
   }
@@ -140,7 +152,8 @@ table.fixedheader {
   }
 }
 [data-bs-theme='dark'] {
-  th, table.fixedheader th {
+  th,
+  table.fixedheader th {
     background: $default-bg-color-dark;
   }
 }
