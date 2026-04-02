@@ -104,15 +104,21 @@ sub find_child_groups ($group, $subgroup_filter) {
     return filter_subgroups($group, $subgroup_filter);
 }
 
-sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags) {
+sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags,
+    $max_jobs_limit = undef)
+{
     # find relevant child groups taking filter into account
     my $child_groups = find_child_groups($group, $subgroup_filter);
     my $group_ids = $child_groups->{group_ids};
     my $children = $child_groups->{children};
+
+    my $total_jobs_seen = 0;
+    my $limit_exceeded = 0;
     my @sorted_results;
     my %result = (
         build_results => \@sorted_results,
         max_jobs => 0,
+        limit_exceeded => 0,
         children => [map { {id => $_->id, name => $_->name} } @$children],
         group => {
             id => $group->id,
@@ -163,8 +169,15 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
     my $max_jobs = 0;
     my $newest = ($buildver_sort_mode == BUILD_SORT_BY_OLDEST_JOB || $buildver_sort_mode == BUILD_SORT_BY_NAME) ? 0 : 1;
     for my $build (@builds) {
-        last if defined($limit) && (--$limit < 0);
+        if (defined $max_jobs_limit && $total_jobs_seen >= $max_jobs_limit) {
+            $limit_exceeded = 1;
+            last;
+        }
+        last if defined $limit && (--$limit < 0);
         my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
+        my $remaining = defined $max_jobs_limit ? $max_jobs_limit - $total_jobs_seen : undef;
+        my %search_opts = (order_by => 'me.id DESC');
+        $search_opts{rows} = $remaining + 1 if defined $remaining;
         my $jobs = $jobs_resultset->search(
             {
                 VERSION => $version,
@@ -172,7 +185,8 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
                 group_id => {in => $group_ids},
                 clone_id => undef,
             },
-            {order_by => 'me.id DESC'});
+            \%search_opts
+        );
         my %jr = (
             key => $build->{key},
             build => $buildnr,
@@ -182,10 +196,15 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         init_job_figures(\%jr);
         init_job_figures($jr{children}->{$_->id} = {}) for @$children;
         my %seen;
+        my @all_jobs = $jobs->all;
+        if (defined $remaining && @all_jobs > $remaining) {
+            $limit_exceeded = 1;
+            pop @all_jobs;
+        }
         my @jobs = map {
             my $key = $_->TEST . '-' . $_->ARCH . '-' . $_->FLAVOR . '-' . ($_->MACHINE // '');
             $seen{$key}++ ? () : $_;
-        } $jobs->all;
+        } @all_jobs;
         next unless @jobs;
         my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
         for my $job (@jobs) {
@@ -206,6 +225,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
                 add_review_badge($child);
             }
         }
+        $total_jobs_seen += $jr{total};
         $jr{date} = delete $jr{oldest_newest};
         $jr{escaped_version} = $jr{version};
         $jr{escaped_version} =~ s/\W/_/g;
@@ -217,6 +237,8 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
         $max_jobs = $jr{total} if ($jr{total} > $max_jobs);
     }
     $result{max_jobs} = $max_jobs;
+    $result{total_jobs} = $total_jobs_seen;
+    $result{limit_exceeded} = $limit_exceeded ? 1 : 0;
     _map_tags_into_build($result{build_results}, $show_tags) if $show_tags;
     return \%result;
 }
