@@ -15,7 +15,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use Capture::Tiny qw(capture);
 use Test::Output qw(combined_like combined_unlike stderr_like);
@@ -171,13 +171,15 @@ sub usual_status_updates {
     my $job_id = $args{job_id};
 
     my @expected_api_calls;
-    push @expected_api_calls,
+    push
+      @expected_api_calls,
       {
         path => "jobs/$job_id/status",
         json => {status => {uploading => 1, worker_id => 1}},
       };
     push @expected_api_calls, {path => "jobs/$job_id/duplicate", json => undef} if $args{duplicate};
-    push @expected_api_calls,
+    push
+      @expected_api_calls,
       {
         path => "jobs/$job_id/status",
         json => {
@@ -773,7 +775,7 @@ subtest 'Livelog' => sub {
                     serial_terminal => {},
                     serial_terminal_user => {
                         'data' => '',
-                        'offset' => (length $user_console_text)
+                        'offset' => length $user_console_text
                     },
                     test_execution_paused => 0,
                     worker_hostname => undef,
@@ -1032,7 +1034,7 @@ subtest 'Job stopped while uploading' => sub {
     # pretend there's an image with thumbnail and a regular file to be uploaded
     my $test_image = 'test.png';
     path($job->_result_file_path(".thumbs/$test_image"))->touch;
-    $job->images_to_send->{'098f6bcd4621d373cade4e832627b4f6'} = $test_image;
+    $job->images_to_send->{'098f6bcd4621d373cade4e832627b4f6'} = $test_image;    ## no critic (OpenQA::HashKeyQuotes)
     $job->files_to_send->{'some-file.txt'} = 1;
 
     # track whether the final upload is really invoked

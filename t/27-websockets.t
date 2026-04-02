@@ -3,10 +3,10 @@
 # Copyright 2017-2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-use Test::Most;
+use Test::Most;    ## no critic (RedundantStrictWarning)
 use Test::Warnings ':report_warnings';
 
-use 5.018;
+use 5.018;    ## no critic (RedundantStrictWarning)
 use POSIX;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";

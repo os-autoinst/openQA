@@ -5,7 +5,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::Mojo;
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
@@ -17,7 +17,7 @@ my $app = $t->app;
 my $minion = $app->minion;
 
 package FakeMinionJob {
-    use Mojo::Base -base, -signatures;
+    use experimental 'signatures';
     has id => 0;
     has app => sub { $app };
     has retries => 200;

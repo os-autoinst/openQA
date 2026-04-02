@@ -11,7 +11,7 @@ use Test::Output qw(combined_like stderr_like);
 use Test::MockModule;
 use Test::MockObject;
 use Mojolicious;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Mojo::Log;
 use OpenQA::App;
 use OpenQA::Config;
