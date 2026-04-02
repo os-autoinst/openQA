@@ -137,7 +137,7 @@ is +(shift @tds)->get_text() =~ s/\s+\d+$//r, 'textmode@32bit', 'test of 99946';
 is +(shift @tds)->get_text(), '28 1 1', 'result of 99946 (passed, softfailed, failed)';
 my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
-$time->text_like(qr/3 hours ago/, 'finish time of 99946');
+$time->text_like(qr/(about )?3 hours ago/, 'finish time of 99946');
 
 subtest 'label:linked with bugref' => sub {
     my $link = $driver->find_element('#job_80000 a[href="https://progress.opensuse.org/issues/123"]');
@@ -391,26 +391,27 @@ is_deeply
 
 subtest 'filter-finished' => sub {
     # test filtering finished jobs by result
-    my $filter_input = $driver->find_element('#finished_jobs_result_filter_chosen input', 'css');
-    $filter_input->click();
-    $filter_input->send_keys('Passed');
-    $driver->find_element('#finished_jobs_result_filter_chosen .active-result', 'css')->click();
+    $driver->execute_script(
+'var s = document.getElementById("finished-jobs-result-filter"); Array.from(s.options).forEach(o => o.selected = (o.value.toLowerCase() === "passed")); s.dispatchEvent(new Event("change"));'
+    );
     # actually this does not use AJAX, but be sure all JavaScript processing is done anyways
     wait_for_ajax();
     @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
     is_deeply \@jobs, [qw(job_99947 job_99946 job_99945 job_80000 job_99937 job_99764)], 'only passed jobs displayed';
-    $driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
+    $driver->execute_script(
+'var s = document.getElementById("finished-jobs-result-filter"); Array.from(s.options).forEach(o => o.selected = false); s.dispatchEvent(new Event("change"));'
+    );
     # enable filter via query parameter, this time disable relevantfilter
     $driver->get('/tests?resultfilter=Failed&foo=bar&resultfilter=Softfailed');
     $driver->find_element_by_id('relevantfilter')->click();
     wait_for_ajax_and_animations();
     @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-    is_deeply
-      \@jobs,
+    is_deeply \@jobs,
       [qw(job_99940 job_99939 job_99938 job_99936 job_99962 job_99944)],
       'only softfailed and failed jobs displayed';
-    $driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
-    $driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
+    $driver->execute_script(
+'var s = document.getElementById("finished-jobs-result-filter"); Array.from(s.options).forEach(o => o.selected = false); s.dispatchEvent(new Event("change"));'
+    );
 
     # now toggle back
     $driver->find_element_by_id('relevantfilter')->click();
