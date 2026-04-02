@@ -471,7 +471,7 @@ subtest 'dynamic job limit' => sub {
     };
 
     subtest 'dynamic limit enabled with low load: returns current dynamic limit' => sub {
-        my $load_file = simulate_load('3.0 3.0 3.0 1/1 1', '04-scheduler-dynlimit');
+        my $load_file = simulate_load('0.5 0.5 0.5 1/1 1', '04-scheduler-dynlimit');
         local $conf->{dynamic_job_limit_enabled} = 1;
         local $conf->{max_running_jobs} = 100;
         local $conf->{dynamic_job_limit_min} = 30;
@@ -480,8 +480,8 @@ subtest 'dynamic job limit' => sub {
         local $conf->{dynamic_job_limit_step} = 5;
         local $conf->{dynamic_job_limit_interval} = 0;
         $scheduler->dynamic_limit(OpenQA::Scheduler::DynamicLimit->new);
-        # load 3.0 < 8*0.7=5.6 and 3.0 > 8*0.3=2.4 => scale up from min=30 by step=5 => 35
-        is $scheduler->effective_job_limit, 35, 'dynamic limit: min+step returned on low load';
+        # load 0.5 < 8*0.3=2.4 => scale up from min=30 by step=5*2=10 => 40
+        is $scheduler->effective_job_limit, 40, 'dynamic limit: min+step*2 returned on low load';
     };
 
     subtest 'dynamic limit enforced in scheduling: fewer jobs than max_running_jobs allocated' => sub {
@@ -496,7 +496,7 @@ subtest 'dynamic job limit' => sub {
         push @dyn_jobs, $jobs->create_from_settings(\%settings2) for 1 .. 5;
         my @dyn_job_ids = map { $_->id } @dyn_jobs;
 
-        my $load_file = simulate_load('3.0 3.0 3.0 1/1 1', '04-scheduler-dynlimit2');
+        my $load_file = simulate_load('0.5 0.5 0.5 1/1 1', '04-scheduler-dynlimit2');
         local $conf->{dynamic_job_limit_enabled} = 1;
         local $conf->{max_running_jobs} = 100;
         local $conf->{dynamic_job_limit_min} = 2;
@@ -506,8 +506,8 @@ subtest 'dynamic job limit' => sub {
         local $conf->{dynamic_job_limit_interval} = 0;
         $scheduler->dynamic_limit(OpenQA::Scheduler::DynamicLimit->new);
         my $res = $scheduler->schedule();
-        # effective_limit = min=2 + step=1 = 3; only 3 jobs allocated despite 5 scheduled and 5 workers
-        is scalar @$res, 3, 'dynamic limit of 3 (min+step) respected in scheduling';
+        # effective_limit = min=2 + step=1*2 = 4; only 4 jobs allocated despite 5 scheduled and 5 workers
+        is scalar @$res, 4, 'dynamic limit of 4 (min+step*2) respected in scheduling';
 
         # Clean up only the jobs and workers created in this subtest
         $jobs->search({id => \@dyn_job_ids})->delete;

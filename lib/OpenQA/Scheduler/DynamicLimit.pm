@@ -11,6 +11,8 @@ use OpenQA::Utils qw(load_avg);
 use Time::HiRes 'time';
 use Exporter 'import';
 
+our $FIXED_NPROC;
+
 use constant {
     SCALE_UP_HYSTERESIS => 0.7,
     FAST_RAMP_UP_LOAD_FACTOR => 0.3,
@@ -64,8 +66,9 @@ sub _nproc () {
 # Returns a resolved (non-zero) threshold, falling back to nproc * $factor.
 sub _resolve_threshold ($configured, $factor) {
     return $configured if $configured > 0;
-    my $nproc = _nproc();
-    return $nproc > 0 ? $nproc * $factor : 10 * $factor;
+    state $nproc = _nproc();
+    my $val = $FIXED_NPROC // $nproc;
+    return $val > 0 ? $val * $factor : 10 * $factor;
 }
 
 # Extracts and resolves all dynamic-limit parameters from the scheduler config hashref.
