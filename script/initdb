@@ -106,8 +106,8 @@ if ($init_database) {
         exit 0;
     }
     else {
-        print "Unexpected result from deployment!\n";
-        exit 1;
+        print "Unexpected result from deployment!\n";    # uncoverable statement
+        exit 1;    # uncoverable statement
     }
 }
 
