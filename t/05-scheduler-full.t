@@ -104,7 +104,12 @@ subtest 'Scheduler worker job allocation' => sub {
     my $allocated = $job_model->schedule;
     is @$allocated, 0, 'no jobs allocated for no active workers';
 
+    my $jobs = $schema->resultset('Jobs');
+    is $jobs->search({state => SCHEDULED})->first->reason, 'no workers online',
+      'unallocated job has a scheduling reason in the DB';
+
     note 'starting two workers';
+    my $new_job = $schema->resultset('Jobs')->find(80000)->auto_duplicate({settings => {WORKER_CLASS => 'foo'}});
     @workers = map { create_worker(@$worker_settings, $_) } (1, 2);
     wait_for_worker($schema, 3);
     wait_for_worker($schema, 4);
@@ -119,8 +124,15 @@ subtest 'Scheduler worker job allocation' => sub {
     my $different_jobs = isnt $job_id1, $job_id2, 'each of the two jobs allocated to one of the workers';
     always_explain $allocated unless $different_workers && $different_jobs;
 
+    note 'verify scheduling reason for unallocated jobs';
+    is $new_job->discard_changes->reason, 'no free workers for class foo',
+      'unallocated job has a scheduling reason in the DB';
+
     $allocated = $job_model->schedule;
     is @$allocated, 0, 'no more jobs need to be allocated';
+
+    # cleanup
+    $new_job->delete;
 
     stop_workers;
     dead_workers($schema);
@@ -133,7 +145,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     my $jobs = $schema->resultset('Jobs');
     my @latest = $jobs->latest_jobs;
-    shift(@latest)->auto_duplicate();
+    my $duplicated_id = shift(@latest)->auto_duplicate()->id;
 
     # try to allocate to previous worker and fail!
     my $allocated = $job_model->schedule;
@@ -160,12 +172,12 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
         note "scheduler could not yet assign to rejective worker, try: $_";    # uncoverable statement
     }
     is @$allocated, 1, 'one job allocated'
-      and is @{$allocated}[0]->{job}, 99982, 'right job allocated'
+      and is @{$allocated}[0]->{job}, $duplicated_id, 'right job allocated'
       and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
     my $job_assigned = 0;
     my $job_scheduled = 0;
     for (0 .. 100) {
-        my $job_state = $jobs->find(99982)->state;
+        my $job_state = $jobs->find($duplicated_id)->state;
         if ($job_state eq ASSIGNED) {
             note 'job is assigned' unless $job_assigned;    # uncoverable statement
             $job_assigned = 1;    # uncoverable statement
@@ -190,19 +202,19 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
         note "scheduler could not yet assign to broken worker, try: $_";    # uncoverable statement
     }
     is @$allocated, 1, 'one job allocated'
-      and is @{$allocated}[0]->{job}, 99982, 'right job allocated'
+      and is @{$allocated}[0]->{job}, $duplicated_id, 'right job allocated'
       and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
 
     # kill the worker but assume the job has been actually started and is running
     # note: Also setting back assigned_worker_id and result because the worker might have actually picked up the job.
     stop_workers;
-    $jobs->find(99982)->update({assigned_worker_id => 5, state => RUNNING, result => NONE});
+    $jobs->find($duplicated_id)->update({assigned_worker_id => 5, state => RUNNING, result => NONE});
 
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
-    wait_for { $jobs->find(99982)->state eq DONE } 'job 99982 is incompleted', {timeout => 20};
+    wait_for { $jobs->find($duplicated_id)->state eq DONE } "job $duplicated_id is incompleted", {timeout => 20};
 
-    my $job = $jobs->find(99982);
+    my $job = $jobs->find($duplicated_id);
     is $job->state, DONE, 'running job set to done if its worker re-connects claiming not to work on it anymore';
     is $job->result, INCOMPLETE, 'running job incompleted if its worker re-connects claiming not to work on it anymore';
     like $job->reason, qr/abandoned: associated worker .+:\d+ re-connected but abandoned the job/, 'reason is set';

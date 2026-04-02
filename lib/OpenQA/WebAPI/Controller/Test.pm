@@ -18,7 +18,7 @@ use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
-use List::Util qw(first min);
+use List::Util qw(any first min);
 use HTTP::Status qw(:constants);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
@@ -366,7 +366,7 @@ sub list_scheduled_ajax ($self) {
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state clone_id result group_id t_finished t_started t_created t_updated
-              blocked_by_id priority
+              blocked_by_id priority reason
             )
         ],
 
@@ -383,10 +383,12 @@ sub list_scheduled_ajax ($self) {
         $job_data->{blocked_by_id} = $_->blocked_by_id;
         $job_data->{prio} = $_->priority;
         $job_data->{prio_explanation} = $_->settings_hash->{_PRIORITY_EXPLANATION};
+        $job_data->{reason} = $_->reason;
         $job_data;
     } @jobs;
     my %response = (data => \@scheduled);
-    $response{job_skipped_by_disk_limits} = 1 if results_storage_above_threshold();
+    $response{job_skipped_by_disk_limits} = 1
+      if any { ($_->{reason} // '') eq 'storage space below threshold' } @scheduled;
     $self->render(json => \%response);
 }
 
