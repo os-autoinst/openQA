@@ -800,6 +800,10 @@ sub set_listen_address ($port) {
 }
 
 sub service_port ($service) {
+    # \U uppercases the interpolated service name for the environment variable lookup
+    if (my $env_port = $ENV{"OPENQA_PORT_\U$service"}) {
+        return $env_port;
+    }
     my $base = $ENV{OPENQA_BASE_PORT} ||= DEFAULT_OPENQA_BASE_PORT;
     my $offsets = {
         webui => 0,

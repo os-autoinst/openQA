@@ -33,6 +33,7 @@ use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Utils qw(
+  assign_free_service_ports
   create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir
   start_worker stop_service
 );
@@ -40,7 +41,7 @@ use OpenQA::Test::FullstackUtils;
 use OpenQA::SeleniumTest;
 
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
-
+assign_free_service_ports;
 
 my $worker;
 my $ws;
@@ -48,19 +49,19 @@ my $livehandler;
 my $scheduler;
 
 sub turn_down_stack {
-    stop_service($_) for ($worker, $ws, $livehandler, $scheduler);
+    stop_service $_ for $worker, $ws, $livehandler, $scheduler;
 }
 
 driver_missing unless check_driver_modules;
+
+# setup database without fixtures and special admin users 'Demo' and 'otherdeveloper'
+my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
 
 # setup directories
 my $tempdir = setup_fullstack_temp_dir('developer-mode');
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir, "resultdir \"$resultdir\" exists";
-
-# setup database without fixtures and special admin users 'Demo' and 'otherdeveloper'
-my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
 my $users = $schema->resultset('Users');
 $users->create(
     {

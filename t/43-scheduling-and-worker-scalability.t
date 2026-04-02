@@ -23,11 +23,13 @@ require OpenQA::Test::Database;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(setup_log);
 use OpenQA::Test::Utils qw(
-  setup_mojo_app_with_default_worker_timeout
+  assign_free_service_ports setup_mojo_app_with_default_worker_timeout
   create_user_for_workers create_webapi create_websocket_server
   stop_service setup_fullstack_temp_dir simulate_load);
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Utils 'testcasedir';
+
+assign_free_service_ports;
 
 BEGIN {
     # set defaults
