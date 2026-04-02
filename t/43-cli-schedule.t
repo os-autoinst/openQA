@@ -28,7 +28,7 @@ my $schedule = OpenQA::CLI::schedule->new;
 
 # change API to simulate job state/result changes
 my $job_controller_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Job');
-my @job_mock_results = (PASSED, SOFTFAILED, PASSED, USER_CANCELLED, PASSED, SOFTFAILED);
+my @job_mock_results = (PASSED, SOFTFAILED, PASSED, USER_CANCELLED, PASSED, SOFTFAILED, PASSED, SOFTFAILED);
 $job_controller_mock->redefine(
     get_status => sub ($self) {
         # reply as usual
@@ -72,6 +72,7 @@ my @scenarios = ('--param-file', "SCENARIO_DEFINITIONS_YAML=$FindBin::Bin/data/0
 my @settings1 = (qw(DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 TEST=simple_boot));
 my @settings2 = (qw(DISTRI=opensuse VERSION=13.1 FLAVOR=DVD ARCH=i586 BUILD=0091 TEST=autoyast_btrfs));
 my @settings3 = (@settings2, qw(async=1));
+my @settings4 = (qw(distri=opensuse version=13.1 flavor=DVD arch=i586 build=0091 test=autoyast_btrfs));
 
 subtest 'running into error reply' => sub {
     my $res;
@@ -105,6 +106,11 @@ subtest 'scheduling and monitoring set of two jobs' => sub {
     combined_like { $res = $schedule->run(@options, @scenarios, @settings3) }
     qr|"successful_job_ids":\[\d+,\d+\].*passed.*softfailed|s, 'response logged if async=1 flag was used';
     is $res, 0, 'zero return-code if all jobs are ok with async=1 flag';
+
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings4) }
+    qr|2 jobs have been created.*(http://127.0.0.1.*/tests/\d+.*){2}passed.*softfailed|s,
+      'response logged if jobs created correctly from lower-case arguments';
+    is $res, 0, 'zero return-code if all jobs are ok with lower-case arguments';
 
     $fake_scheduled_product_status = OpenQA::Schema::Result::ScheduledProducts::CANCELLED;
     combined_like { $res = $schedule->run(@options, @scenarios, @settings3) }
