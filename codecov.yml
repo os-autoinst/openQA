@@ -21,6 +21,7 @@ coverage:
         paths:
           - lib/OpenQA/
           - script/create_admin
+          - script/initdb
       tests:
         target: 100.0
         threshold: 0

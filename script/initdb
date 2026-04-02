@@ -55,9 +55,7 @@ usage 1 unless $result or $prepare_init or $init_database;
 if ($user) {
     my $uid = getpwnam $user or die "No such login $user";
     my $gid = getgrnam $user;
-    if ($gid) {
-        setgid($gid) || die "can't sgid to $user group";
-    }
+    setgid($gid) || die "can't sgid to $user group" if $gid;
     setuid($uid) || die "can't suid to $user";
 }
 
@@ -106,8 +104,8 @@ if ($init_database) {
         exit 0;
     }
     else {
-        print "Unexpected result from deployment!\n";
-        exit 1;
+        print "Unexpected result from deployment!\n";    # uncoverable statement
+        exit 1;    # uncoverable statement
     }
 }
 
