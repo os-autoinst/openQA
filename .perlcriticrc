@@ -1,12 +1,13 @@
-theme = community + openqa
-severity = 4
+theme = community + openqa + core
+severity = 1
 include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
+exclude = Subroutines::ProhibitExplicitReturnUndef Subroutines::ProhibitSubroutinePrototypes Subroutines::RequireFinalReturn Subroutines::ProhibitBuiltinHomonyms ValuesAndExpressions::ProhibitConstantPragma ControlStructures::ProhibitPostfixControls RegularExpressions::RequireLineBoundaryMatching RegularExpressions::RequireExtendedFormatting RegularExpressions::RequireDotMatchAnything ValuesAndExpressions::RequireInterpolationOfMetachars References::ProhibitDoubleSigils Modules::RequireVersionVar ValuesAndExpressions::ProhibitLongChainsOfMethodCalls ValuesAndExpressions::ProhibitEmptyQuotes Documentation::RequirePodSections RegularExpressions::ProhibitUnusualDelimiters ControlStructures::ProhibitUnlessBlocks NamingConventions::Capitalization
+
+verbose = ::warning file=%f,line=%l,col=%c,title=%m - severity %s::[%p] %e\n
 
 # ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
 # No operators like < =~ ! allowed in 'unless' or 'until', only simple
 # unless $x && @$y
-
-verbose = ::warning file=%f,line=%l,col=%c,title=%m - severity %s::[%p] %e\n
 
 # == Perlcritic Policies
 # -- Test::Most brings in strict & warnings
@@ -51,3 +52,7 @@ severity = 5
 # -- Superfluous use strict/warning.
 [OpenQA::RedundantStrictWarning]
 equivalent_modules = Test::Most
+
+[ValuesAndExpressions::ProhibitMagicNumbers]
+allowed_values = 0.5 -10 -2 -1 0 1 2 3 4 5 6 7 8 9 10 100 127 128 255 1000 1024 80 443
+allowed_types = Hex Octal Float
