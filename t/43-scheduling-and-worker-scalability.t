@@ -25,7 +25,8 @@ use OpenQA::Log qw(setup_log);
 use OpenQA::Test::Utils qw(
   setup_mojo_app_with_default_worker_timeout
   create_user_for_workers create_webapi create_websocket_server
-  stop_service setup_fullstack_temp_dir simulate_load);
+  stop_service setup_fullstack_temp_dir simulate_load setup_random_base_port);
+setup_random_base_port;
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Utils 'testcasedir';
 
@@ -34,6 +35,14 @@ BEGIN {
     $ENV{SCALABILITY_TEST_WORKER_COUNT} //= 5;
     $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST} //= 1;
 }
+
+use OpenQA::Test::Utils qw(
+  setup_mojo_app_with_default_worker_timeout
+  create_user_for_workers create_webapi create_websocket_server
+  stop_service setup_fullstack_temp_dir simulate_load setup_random_base_port);
+setup_random_base_port;
+use OpenQA::Test::TimeLimit '20';
+use OpenQA::Utils 'testcasedir';
 
 setup_mojo_app_with_default_worker_timeout;
 OpenQA::Setup::read_config(my $app = OpenQA::App->singleton);

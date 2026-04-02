@@ -10,15 +10,20 @@ $ENV{MOJO_LOG_LEVEL} = 'info';
 my $tempdir;
 
 BEGIN {
-    use Mojo::File qw(path tempdir);
-
     $ENV{OPENQA_CACHE_SERVICE_QUIET} = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
     $ENV{OPENQA_CACHE_ATTEMPTS} = 3;
     $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0;
     $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
     $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
-    $ENV{OPENQA_BASE_PORT} = 20000 + int rand 10000;
+}
+
+use OpenQA::Test::Utils
+  qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs wait_for setup_random_base_port);
+setup_random_base_port;
+
+BEGIN {
+    use Mojo::File qw(path tempdir);
     $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
 
     $tempdir = tempdir;
@@ -47,7 +52,7 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils
-  qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs wait_for);
+  qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs wait_for setup_random_base_port);
 use OpenQA::Test::TimeLimit '90';
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;

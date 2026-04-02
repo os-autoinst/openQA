@@ -49,8 +49,10 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
-  qw(start_worker stop_service wait_for_or_bail_out);
+  qw(start_worker stop_service wait_for_or_bail_out setup_random_base_port);
+setup_random_base_port;
 use OpenQA::Test::FullstackUtils;
+
 
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
 

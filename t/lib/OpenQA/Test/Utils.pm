@@ -50,6 +50,7 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = qw(
+  setup_random_base_port
   setup_mojo_app_with_default_worker_timeout create_user_for_workers
   create_webapi create_websocket_server create_scheduler create_live_view_handler
   unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job
@@ -60,16 +61,9 @@ our (@EXPORT, @EXPORT_OK);
   simulate_load
 );
 
-# The function OpenQA::Utils::service_port method hardcodes ports in a
-# sequential range starting with OPENQA_BASE_PORT. This can cause problems
-# especially in repeated testing if any of the ports in that range is already
-# occupied. So we inject random, free ports for the services here.
-#
-# Potential point for later improvement: In
-# Mojo::IOLoop::Server::generate_port keep the sock object on the port and
-# reuse it in listen to prevent race condition
-#
-# Potentially this approach can also be used in production code.
+sub setup_random_base_port {
+    $ENV{OPENQA_BASE_PORT} ||= 20000 + int rand 10000;
+}
 
 sub setup_mojo_app_with_default_worker_timeout ($class = 'Mojolicious') {
     my $app = $class->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef);

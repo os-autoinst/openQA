@@ -27,7 +27,7 @@ use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::WebAPI;
 use OpenQA::Worker::WebUIConnection;
-use OpenQA::Utils;
+use OpenQA::Utils qw(service_port);
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(
   setup_mojo_app_with_default_worker_timeout
@@ -35,8 +35,9 @@ use OpenQA::Test::Utils qw(
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
-  wait_for simulate_load
+  wait_for simulate_load setup_random_base_port
 );
+setup_random_base_port;
 use OpenQA::Test::TimeLimit '150';
 
 # treat this test like the fullstack test

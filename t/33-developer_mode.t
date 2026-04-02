@@ -34,8 +34,9 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Utils qw(
   create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir
-  start_worker stop_service
+  start_worker stop_service setup_random_base_port
 );
+setup_random_base_port;
 use OpenQA::Test::FullstackUtils;
 use OpenQA::SeleniumTest;
 
@@ -48,8 +49,12 @@ my $livehandler;
 my $scheduler;
 
 sub turn_down_stack {
-    stop_service($_) for ($worker, $ws, $livehandler, $scheduler);
+    stop_service $scheduler;
+    stop_service $livehandler;
+    stop_service $ws;
+    stop_service $worker;
 }
+
 
 driver_missing unless check_driver_modules;
 
