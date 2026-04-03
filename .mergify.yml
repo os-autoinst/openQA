@@ -1,18 +1,11 @@
 pull_request_rules:
   - name: automatic merge
     conditions:
-      - and: &base_checks
+      - and: &a1
           - base=master
           - -label~=^acceptance-tests-needed|not-ready
-          # wait explicitly for one of the final checks to show up to be on the
-          # safe side even in case of checks not reporting back at all
           - status-success=codecov/project
           - status-success=codecov/patch
-          # Multibuild results will not report the "pending" status:
-          # https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.scm_ci_workflow_integration.html#sec.obs.obs_scm_ci_workflow_integration.setup.status_reporting
-          # "unresolvable" is not reported in general:
-          # https://trello.com/c/0N3jHq5M/2257-report-back-to-scm-when-build-results-arent-failed-and-succeeded
-          # So we need to require the number of tests explicitly:
           - "#check-success>=50"
           - status-success=static-check-containers
           - status-success=webui-docker-compose
@@ -22,21 +15,20 @@ pull_request_rules:
       - and:
           - "#approved-reviews-by>=2"
           - "#changes-requested-reviews-by=0"
-          # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
           - "#review-requested=0"
-    actions: &merge
+    actions: &a2
       merge:
         method: merge
   - name: automatic merge on special label
     conditions:
-      - and: *base_checks
+      - and: *a1
       - label=merge-fast
-    actions: *merge
+    actions: *a2
   - name: automatic merge for dependency bot updates
     conditions:
-      - and: *base_checks
+      - and: *a1
       - author~=^os-autoinst-bot$
-    actions: *merge
+    actions: *a2
   - name: ask to resolve conflict
     conditions:
       - conflict
@@ -45,10 +37,8 @@ pull_request_rules:
         message: This pull request is now in conflicts. Could you fix it? 🙏
   - name: automatic merge for dependabot updates
     conditions:
-      - and: *base_checks
+      - and: *a1
       - and:
-          # mergify config checks needs at least two rules in "and" so we repeat
-          # one from the base checks
           - base=main
           - author=dependabot[bot]
           - label=waited
@@ -58,9 +48,14 @@ pull_request_rules:
   - name: Wait for some days before validating merge
     actions:
       label:
-        add: [ waited ]
-        remove: [ waiting ]
+        add:
+          - waited
+        remove:
+          - waiting
     conditions:
       - and:
           - updated-at<4 days ago
           - author=dependabot[bot]
+queue_rules: []
+merge_queue:
+  status_comments: none
