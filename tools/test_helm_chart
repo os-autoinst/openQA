@@ -4,9 +4,24 @@ set -euo pipefail
 which helm > /dev/null || echo "Error: Helm is not installed"
 which ct > /dev/null || echo "Error: ct is not installed"
 
-cd container/helm
+cd container/helm/
+
+ct_common_args=()
+# Reference schema files from the installed package if they are not in the default locations
+for schema in chart_schema.yaml lintconf.yaml; do
+    if [[ ! -f "$schema" && ! -f "$HOME/.ct/$schema" && ! -f "/etc/ct/$schema" ]]; then
+        pkg_schema="/usr/share/doc/packages/chart-testing/$schema"
+        if [[ -f "$pkg_schema" ]]; then
+            if [[ "$schema" == "chart_schema.yaml" ]]; then
+                ct_common_args+=(--chart-yaml-schema "$pkg_schema")
+            else
+                ct_common_args+=(--lint-conf "$pkg_schema")
+            fi
+        fi
+    fi
+done
 
 ct_extra=(--helm-extra-set-args "--set=gateway.enabled=false --set=image.pullPolicy=IfNotPresent --set=worker.image.pullPolicy=IfNotPresent")
-ct_install_args=()
-[[ "${1:-lint}" != "lint" ]] && ct_install_args=("${ct_extra[@]}")
+ct_install_args=("${ct_common_args[@]}")
+[[ "${1:-lint}" != "lint" ]] && ct_install_args+=("${ct_extra[@]}")
 ct "${1:-lint}" --debug --all --config ct.yaml "${ct_install_args[@]}"
