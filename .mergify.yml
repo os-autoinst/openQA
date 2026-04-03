@@ -64,3 +64,6 @@ pull_request_rules:
       - and:
           - updated-at<4 days ago
           - author=dependabot[bot]
+queue_rules: []
+merge_queue:
+  status_comments: none
