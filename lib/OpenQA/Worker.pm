@@ -317,6 +317,7 @@ sub init ($self) {
     return 1 if $self->_store_package_list($global_settings->{PACKAGES_CMD});
 
     # initialize clients to connect to the web UIs
+    my $found_working_dir;
     for my $host (@$webui_hosts) {
         die "settings for $host not correctly initialized\n"
           unless my $host_settings = $webui_host_specific_settings->{$host};
@@ -336,6 +337,7 @@ sub init ($self) {
             log_error("Ignoring host '$host': Working directory does not exist. (Checked: @working_dirs)");
             next;
         }
+        $found_working_dir = 1;
         $client->working_directory($working_dir);
         log_info("Project dir for host $host is $working_dir");
 
@@ -349,6 +351,7 @@ sub init ($self) {
                 $client->register();
             });
     }
+    $return_code = 1 unless $found_working_dir;
 
     my $interval = $global_settings->{IPMI_AUTOSHUTDOWN_INTERVAL} // DEFAULT_IPMI_AUTOSHUTDOWN_INTERVAL;
     if (   $global_settings->{IPMI_HOSTNAME}
