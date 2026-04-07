@@ -230,17 +230,11 @@
 
     /{usr/,}bin/bash rix,
     /dev/ptmx rw,
-    /etc/ssh/ssh_config r,
     /etc/x3270/ibm_hosts r,
     /proc/*/fd/ r,
     /proc/filesystems r,
     /proc/meminfo r,
-    /usr/bin/head rix,
-    /usr/bin/icewm rix,
-    /usr/bin/ssh rix,
     /usr/bin/x3270 mr,
-    /usr/bin/xterm-console rix,
-    /var/lib/openqa/pool/*/known_hosts w,
     /var/lib/openqa/pool/*/x3scr.*.txt w,
     /var/lib/openqa/pool/*/x3trc.* w,
 
