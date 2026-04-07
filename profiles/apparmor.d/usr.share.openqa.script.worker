@@ -163,6 +163,7 @@
   /usr/lib/utempter/utempter rix,
   /usr/sbin/smbd rix,
   /usr/sbin/ipmiconsole rix,
+  /usr/share/misc/enterprise-numbers r,
   /usr/share/openqa/lib/** r,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
