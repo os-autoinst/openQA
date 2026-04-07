@@ -106,7 +106,7 @@
   /usr/bin/gunzip rix,
   /usr/bin/head rix,
   /usr/bin/hostname rix,
-  /usr/bin/icewm-default rix,
+  /usr/bin/icewm{,-default,-lite} cx -> icewm,
   /usr/bin/ionice rix,
   /usr/bin/ipmitool rix,
   /usr/bin/isotovideo rix,
@@ -185,6 +185,17 @@
   /var/lib/openqa/share/tests/** r,
   owner /sys/**/ rw,
 
+  profile icewm {
+    #include <abstractions/X>
+    #include <abstractions/base>
+    #include <abstractions/fonts>
+
+    /usr/bin/icewm{,-default,-lite} mr,
+    /etc/icewm/** r,
+    /usr/share/icewm/** r,
+    /var/lib/openqa/pool/*/autoinst-log.txt w,
+
+  }
 
   profile /usr/bin/Xvnc {
     #include <abstractions/X>
