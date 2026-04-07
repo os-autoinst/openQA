@@ -241,8 +241,8 @@
     /usr/bin/x3270 mr,
     /usr/bin/xterm-console rix,
     /var/lib/openqa/pool/*/known_hosts w,
-    /var/lib/openqa/pool/1/x3scr.*.txt w,
-    /var/lib/openqa/pool/1/x3trc.* w,
+    /var/lib/openqa/pool/*/x3scr.*.txt w,
+    /var/lib/openqa/pool/*/x3trc.* w,
 
   }
   # Site-specific additions and overrides. See local/README for details.
