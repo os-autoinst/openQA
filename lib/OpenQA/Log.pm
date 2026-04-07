@@ -17,7 +17,6 @@ use File::Spec::Functions 'catfile';
 use Sys::Hostname;
 use Feature::Compat::Try;
 
-our $VERSION = '0.0.1';
 our @EXPORT_OK = qw(
   log_debug
   log_trace

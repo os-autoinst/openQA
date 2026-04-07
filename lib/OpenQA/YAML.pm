@@ -12,7 +12,6 @@ use JSON::Validator;
 use YAML::XS;    # Required by JSON::Validator as a runtime dependency
 use YAML::PP 0.027;
 
-our $VERSION = '0.0.1';
 our @EXPORT_OK = qw(
   &validate_data &load_yaml &dump_yaml
 );
