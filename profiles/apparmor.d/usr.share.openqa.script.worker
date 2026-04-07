@@ -41,7 +41,10 @@
   /etc/qemu/* r,
   /etc/udev/udev.conf r,
   /etc/vde2/vdecmd r,
+  /{usr/,}etc/ssh/ssh_config r,
+  /{usr/,}etc/ssh/ssh_config.d/** r,
   /etc/containers/storage.conf r,
+  /etc/shells r,
   /usr/etc/openqa/client.conf r,
   /usr/etc/openqa/client.conf.d/ r,
   /usr/etc/openqa/client.conf.d/** r,
@@ -85,6 +88,7 @@
   /sys/fs/cgroup/systemd/openqa.slice/** rw,
   /sys/kernel/mm/transparent_hugepage/enabled r,
   /sys/kernel/mm/transparent_hugepage/hpage_pmd_size r,
+  /sys/module/vt/parameters/default_{red,grn,blu} r,
   /tmp/** rwk,
   /usr/bin/Xvnc rCx,
   /{usr/,}bin/cat rix,
@@ -106,7 +110,7 @@
   /usr/bin/gunzip rix,
   /usr/bin/head rix,
   /usr/bin/hostname rix,
-  /usr/bin/icewm-default rix,
+  /usr/bin/icewm{,-default,-lite} cx -> icewm,
   /usr/bin/ionice rix,
   /usr/bin/ipmitool rix,
   /usr/bin/isotovideo rix,
@@ -131,6 +135,8 @@
   /usr/bin/sha1sum rix,
   /usr/bin/slirpvde rix,
   /usr/bin/snd2png rix,
+  /usr/bin/ssh rix,
+  /usr/bin/ssh.hmac r,
   /usr/bin/ssh-keygen rix,
   /usr/bin/tail rix,
   /usr/bin/tee rix,
@@ -140,6 +146,7 @@
   /usr/bin/unxz rix,
   /usr/bin/unzip-plain rix,
   /usr/bin/x3270 cx,
+  /usr/bin/xterm rix,
   /usr/bin/xterm-console rix,
   /usr/bin/xz rix,
   /usr/lib*/qemu/block-curl.so rix,
@@ -156,6 +163,7 @@
   /usr/lib/utempter/utempter rix,
   /usr/sbin/smbd rix,
   /usr/sbin/ipmiconsole rix,
+  /usr/share/misc/enterprise-numbers r,
   /usr/share/openqa/lib/** r,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
@@ -185,6 +193,17 @@
   /var/lib/openqa/share/tests/** r,
   owner /sys/**/ rw,
 
+  profile icewm {
+    #include <abstractions/X>
+    #include <abstractions/base>
+    #include <abstractions/fonts>
+
+    /usr/bin/icewm{,-default,-lite} mr,
+    /etc/icewm/** r,
+    /usr/share/icewm/** r,
+    /var/lib/openqa/pool/*/autoinst-log.txt w,
+
+  }
 
   profile /usr/bin/Xvnc {
     #include <abstractions/X>
@@ -230,19 +249,13 @@
 
     /{usr/,}bin/bash rix,
     /dev/ptmx rw,
-    /etc/ssh/ssh_config r,
     /etc/x3270/ibm_hosts r,
     /proc/*/fd/ r,
     /proc/filesystems r,
     /proc/meminfo r,
-    /usr/bin/head rix,
-    /usr/bin/icewm rix,
-    /usr/bin/ssh rix,
     /usr/bin/x3270 mr,
-    /usr/bin/xterm-console rix,
-    /var/lib/openqa/pool/*/known_hosts w,
-    /var/lib/openqa/pool/1/x3scr.*.txt w,
-    /var/lib/openqa/pool/1/x3trc.* w,
+    /var/lib/openqa/pool/*/x3scr.*.txt w,
+    /var/lib/openqa/pool/*/x3trc.* w,
 
   }
   # Site-specific additions and overrides. See local/README for details.
