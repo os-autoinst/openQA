@@ -939,9 +939,10 @@ sub results_storage_above_threshold () {
     return 1 if $percentage == 100;
 
     my ($available_bytes, $total_bytes);
-    try { ($available_bytes, $total_bytes) = check_df(resultdir()) }
+    my $results_dir = resultdir();
+    try { ($available_bytes, $total_bytes) = check_df($results_dir) }
     catch ($e) {
-        log_warning "check_df failed: $e ";
+        log_error "Job assignments are prevented because free space under '$results_dir' cannot be determined: $e";
         return 1;
     }
     my $free_percentage = $available_bytes / $total_bytes * 100;

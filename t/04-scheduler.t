@@ -347,7 +347,7 @@ subtest 'skip jobs because of results_min_free_disk_space_percentage limits)' =>
     subtest 'check_df fails' => sub {
         $mock_utils->redefine(check_df => sub { die 'df error' });
         combined_like { results_storage_above_threshold() }
-        qr/check_df failed.*df error/, 'warning logged when check_df dies';
+        qr/job assignments.*prevented.*df error/i, 'warning logged when check_df dies';
         ok results_storage_above_threshold(), 'returns true (blocks) when check_df fails';
     };
 
