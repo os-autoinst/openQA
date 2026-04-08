@@ -144,7 +144,7 @@ our @EXPORT = qw(
   is_host_local
   format_tx_error
   regex_match
-  results_storage_above_threshold
+  results_storage_below_threshold
   config_autocommit_enabled
   load_avg
 );
@@ -933,7 +933,7 @@ sub load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
     return \@load;
 }
 
-sub results_storage_above_threshold () {
+sub results_storage_below_threshold () {
     my $percentage = OpenQA::App->singleton->config->{scheduler}->{results_min_free_storage_space_percentage};
     return 0 unless defined $percentage;
     return 1 if $percentage == 100;
