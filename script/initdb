@@ -10,7 +10,6 @@ use strict;
 use warnings;
 use DBIx::Class::DeploymentHandler;
 use File::Basename qw(dirname);
-use POSIX qw(getuid getgid setuid setgid);
 use OpenQA::Schema;
 use Getopt::Long;
 use IO::Dir;
@@ -52,15 +51,8 @@ sub usage {
 usage 0 if $help;
 usage 1 unless $result or $prepare_init or $init_database;
 
-if ($user) {
-    my $uid = getpwnam $user or die "No such login $user";
-    my $gid = getgrnam $user;
-    setgid($gid) || die "can't sgid to $user group" if $gid;
-    setuid($uid) || die "can't suid to $user";
-}
-
-my @databases = qw( PostgreSQL );
-my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
+my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1, user => $user);
+my @databases = qw(PostgreSQL);
 
 if ($prepare_init) {
     my $dh = DBIx::Class::DeploymentHandler->new(
