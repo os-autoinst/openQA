@@ -89,7 +89,6 @@ use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 use constant RANDOM_STRING_DEFAULT_LENGTH => 16;
 use constant DEFAULT_OPENQA_BASE_PORT => 9526;
 
-our $VERSION = sprintf '%d.%03d', q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
   UNCONSTRAINED_BUGREF_REGEX
   BUGREF_REGEX

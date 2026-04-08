@@ -10,7 +10,6 @@ use Mojo::File 'path';
 use Pod::POM;
 use Exporter 'import';
 
-our $VERSION = sprintf '%d.%03d', q$Revision: 0.01 $ =~ /(\d+)/g;
 our @EXPORT = qw(
   get_pod_from_controllers
   set_api_desc
