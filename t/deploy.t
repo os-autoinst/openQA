@@ -105,7 +105,7 @@ subtest 'Full schema init+upgrade cycle works' => sub {
     is $?, 0, 'initdb ok for new version';
     is $out, '', 'initdb shows no errors for new version';
     my $upgradedb = "$FindBin::RealBin/../script/upgradedb";
-    qx{$upgradedb --dir=$new_schema_dir --prepare_upgrades};
+    $out = qx{$upgradedb --dir=$new_schema_dir --prepare_upgrades};
     is $?, 0, 'upgradedb ok';
     is $out, '', 'upgradedb shows no errors';
 };
