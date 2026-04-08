@@ -138,10 +138,13 @@ $schema->txn_rollback;
 $schema->txn_begin;
 
 subtest 'failed->failed flag:carryover comments are carried over' => sub {
-    $t->post_ok("/api/v1/jobs/$old_job/comments", $auth => form => {text => 'flag:carryover'})->status_is(200);
-    $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => 'failed'})->status_is(200);
+    my $comment_text = 'flag:carryover label:force_result:softfailed:bsc#1257825';
+    $t->post_ok("/api/v1/jobs/$old_job/comments", $auth => form => {text => $comment_text})->status_is(200);
+    $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => FAILED})->status_is(200);
     my @comments_new = @{comments("/tests/$job")};
-    like join('', @comments_new), qr(flag:carryover), 'Comment with flag:carryover present in new job';
+    my $expected_text = qr(flag:carryover.*label:force_result:softfailed);
+    like join('', @comments_new), $expected_text, 'Comment with flag:carryover present in new job';
+    is $jobs->find($job)->result, SOFTFAILED, 'force_result label from carried over comment is applied';
 };
 
 # Reset to a clean state
