@@ -138,7 +138,7 @@ $schema->txn_rollback;
 $schema->txn_begin;
 
 subtest 'failed->failed flag:carryover comments are carried over' => sub {
-    my $comment_text = 'flag:carryover label:force_result:softfailed:bsc#1257825';
+    my $comment_text = "flag:carryover label:force_result:softfailed:bsc#1257825\nAutomatic carryover";
     $t->post_ok("/api/v1/jobs/$old_job/comments", $auth => form => {text => $comment_text})->status_is(200);
     $t->post_ok("/api/v1/jobs/$job/set_done", $auth => form => {result => FAILED})->status_is(200);
     my @comments_new = @{comments("/tests/$job")};
