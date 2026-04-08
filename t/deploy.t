@@ -108,6 +108,9 @@ subtest 'Full schema init+upgrade cycle works' => sub {
     $out = qx{$upgradedb --dir=$new_schema_dir --prepare_upgrades};
     is $?, 0, 'upgradedb ok';
     is $out, '', 'upgradedb shows no errors';
+    $out = qx{$upgradedb --dir=$new_schema_dir --prepare_upgrades};
+    is $? >> 8, 1, 'upgradedb exists with non-zero return code if schema dir already exists';
+    like $out, qr/use.*--force/i, 'upgradedb suggests using --force if schmea dir already exists';
 };
 
 done_testing();
