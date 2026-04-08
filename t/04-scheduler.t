@@ -335,7 +335,7 @@ subtest 'skip jobs because of results_min_free_disk_space_percentage limits)' =>
     undef $ws_send_error;
     $worker_db_obj->discard_changes;
     my $mock_utils = Test::MockModule->new('OpenQA::Utils');
-    local OpenQA::App->singleton->config->{misc_limits}->{results_min_free_disk_space_percentage} = 50;
+    local OpenQA::App->singleton->config->{scheduler}->{results_min_free_storage_space_percentage} = 50;
     $mock_utils->redefine(check_df => sub { (10, 100) });
     my @jobs;
     push @jobs, $jobs->create_from_settings(\%settings2) for 1 .. 10;
