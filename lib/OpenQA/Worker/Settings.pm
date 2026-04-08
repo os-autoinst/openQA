@@ -10,6 +10,7 @@ use Mojo::Util 'trim';
 use Config::IniFiles;
 use Time::Seconds;
 use OpenQA::Config;
+use OpenQA::Constants qw(VNCPORT_OFFSET);
 use OpenQA::Log qw(setup_log log_info);
 use OpenQA::Utils 'is_host_local';
 use Net::Domain 'hostfqdn';
@@ -18,7 +19,6 @@ has 'global_settings';
 has 'webui_hosts';
 has 'webui_host_specific_settings';
 
-use constant VNCPORT_OFFSET => $ENV{VNCPORT_OFFSET} // 90;
 use constant QEMU_PORT_OFFSET => 20_002;
 use constant DEFAULT_CRITICAL_LOAD_AVG_THRESHOLD => 40;
 

@@ -10,7 +10,7 @@ use Feature::Compat::Try;
 use OpenQA::App;
 use OpenQA::Log qw(log_error log_warning log_info);
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY);
+use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY VNC_PORT);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 use List::Util qw(any);
@@ -18,8 +18,6 @@ use Time::Seconds;
 use DBI qw(:sql_types);
 
 use constant WS_SERVER_GRACE_PERIOD => $ENV{OPENQA_WEB_SOCKETS_GRACE_PERIOD} // (ONE_MINUTE * 5);
-
-use constant VNC_PORT_OFFSET => 5990;
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -254,7 +252,7 @@ sub reschedule_assigned_jobs ($self, $currently_assigned_jobs = undef) {
 
 sub vnc_argument ($self) {
     my $hostname = $self->get_property('WORKER_HOSTNAME') || $self->host;
-    my $instance = $self->instance + VNC_PORT_OFFSET;
+    my $instance = $self->instance + VNC_PORT;
     return "$hostname:$instance";
 }
 
