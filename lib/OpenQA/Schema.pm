@@ -19,6 +19,7 @@ use OpenQA::Config;
 use OpenQA::Utils qw(:DEFAULT prjdir);
 use Mojo::File qw(path);
 use Feature::Compat::Try;
+use POSIX qw(setuid setgid);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
@@ -31,6 +32,14 @@ my $SINGLETON;
 use constant DEADLOCK_RETRIES => $ENV{OPENQA_DEADLOCK_RETRIES} // 3;
 use constant DEADLOCK_REGEX => qr/deadlock detected/;
 
+sub set_user ($user) {
+    return undef unless $user;
+    my $uid = getpwnam $user or die "No such login $user";
+    my $gid = getgrnam $user;
+    setgid($gid) or die "can't sgid to $user group" if $gid;
+    setuid($uid) or die "can't suid to $user";
+}
+
 sub set_search_path ($self, $search_path) {
     my $storage = $self->storage;
     $storage->dbh->do("SET search_path TO \"$search_path\"");
@@ -41,6 +50,8 @@ sub connect_db (%args) {
     my $check_deploy = $args{deploy};
     $check_deploy //= 1;
     return $SINGLETON if $SINGLETON;
+
+    set_user($args{user});
 
     my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
     if ($mode eq 'test') {

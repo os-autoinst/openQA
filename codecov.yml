@@ -22,6 +22,7 @@ coverage:
           - lib/OpenQA/
           - script/create_admin
           - script/initdb
+          - script/upgradedb
       tests:
         target: 100.0
         threshold: 0
