@@ -206,7 +206,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
             $seen{$key}++ ? () : $_;
         } @all_jobs;
         next unless @jobs;
-        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
+        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs($jobs);
         for my $job (@jobs) {
             $jr{distris}->{$job->DISTRI} = 1;
             if ($newest) {
