@@ -99,8 +99,9 @@ if you need the Bug objects themselves.
 =cut
 
 sub comment_data_for_jobs ($self, $jobs, $args = {}) {
-    my @job_ids = map { $_->id } ref $jobs eq 'ARRAY' ? @$jobs : $jobs->all;
-    my $comments = $self->search({job_id => {in => \@job_ids}}, {order_by => 'me.id', select => [qw(text job_id)]});
+    my $job_id_clause = ref $jobs eq 'ARRAY' ? [map { $_->id } @$jobs] : $jobs->get_column('id')->as_query;
+    my %args = (order_by => 'me.id', select => [qw(text job_id)]);
+    my $comments = $self->search({job_id => {in => $job_id_clause}}, \%args);
     my $bugs = $self->result_source->schema->resultset('Bugs');
 
     my (%res, %bugdetails);
