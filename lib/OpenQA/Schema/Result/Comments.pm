@@ -199,7 +199,7 @@ sub _control_job_result ($self, $c) {
     die "force_result labels only allowed for operators\n" if $c && !$c->is_operator;
     my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
     die "force_result description '$description' does not match pattern '$force_result_re'\n"
-      unless ($description // '') =~ /$force_result_re/;
+      if $force_result_re && (($description // '') !~ /$force_result_re/);
     my $job = $self->job;
     die "force_result only allowed on finished jobs\n"
       unless OpenQA::Jobs::Constants::meta_state($job->state) eq OpenQA::Jobs::Constants::FINAL;
