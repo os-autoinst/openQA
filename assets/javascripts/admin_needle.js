@@ -149,9 +149,9 @@ function setupAdminNeedles() {
       const handleSingleError = function (singleError) {
         $.each(nextIDs, function (index, id) {
           const errorElement = $('<li></li>');
-          errorElement.append($('#deletion-item-' + id).text());
+          errorElement.text($('#deletion-item-' + id).text());
           errorElement.append($('<br>'));
-          errorElement.append(singleError);
+          errorElement.append(document.createTextNode(singleError));
           failedList.append(errorElement);
           $('#deletion-item-' + id).remove();
         });
