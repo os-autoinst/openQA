@@ -117,7 +117,7 @@ function handleAdminTableSubmit(tdElement, response, id) {
       showAdminTableRow(row);
     })
     .catch(error => {
-      addFlash('danger', error);
+      addFlash('danger', htmlEscape(error));
     });
 }
 
