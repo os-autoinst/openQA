@@ -196,10 +196,10 @@ function setupAdminNeedles() {
                 errorContext = $('#deletion-item-' + error.id).text();
               }
               if (errorContext) {
-                errorElement.append(errorContext);
+                errorElement.text(errorContext);
                 errorElement.append($('<br>'));
               }
-              errorElement.append(error.message);
+              errorElement.append(document.createTextNode(error.message));
               failedList.append(errorElement);
             });
           }
