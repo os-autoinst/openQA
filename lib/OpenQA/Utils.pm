@@ -144,7 +144,7 @@ our @EXPORT = qw(
   is_host_local
   format_tx_error
   regex_match
-  results_storage_above_threshold
+  results_storage_below_threshold
   config_autocommit_enabled
   load_avg
 );
@@ -933,15 +933,16 @@ sub load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
     return \@load;
 }
 
-sub results_storage_above_threshold () {
-    my $percentage = OpenQA::App->singleton->config->{misc_limits}->{results_min_free_disk_space_percentage};
+sub results_storage_below_threshold () {
+    my $percentage = OpenQA::App->singleton->config->{scheduler}->{results_min_free_storage_space_percentage};
     return 0 unless defined $percentage;
     return 1 if $percentage == 100;
 
     my ($available_bytes, $total_bytes);
-    try { ($available_bytes, $total_bytes) = check_df(resultdir()) }
+    my $results_dir = resultdir();
+    try { ($available_bytes, $total_bytes) = check_df($results_dir) }
     catch ($e) {
-        log_warning "check_df failed: $e ";
+        log_error "Job assignments are prevented because free space under '$results_dir' cannot be determined: $e";
         return 1;
     }
     my $free_percentage = $available_bytes / $total_bytes * 100;
