@@ -403,10 +403,11 @@ sub build_results ($self) {
 
     my $tags = $show_tags ? $group->tags : undef;
     my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
+    my $max_jobs_per_build = $self->app->config->{misc_limits}->{build_results_max_jobs_per_build};
     my $cbr
       = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
         $time_limit_days, $only_tagged ? $tags : undef,
-        [], $tags, $max_jobs_limit);
+        [], $tags, $max_jobs_limit, $max_jobs_per_build, $self->app);
     $cbr->{limit_exceeded} = $cbr->{limit_exceeded} ? $max_jobs_limit : 0;
     $self->render(json => $cbr);
 }
