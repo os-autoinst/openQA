@@ -91,6 +91,10 @@ for my $job_count (@job_counts) {
     subtest "Scalability test with $worker_count worker(s) and $job_count job(s)" => sub {
         # ensure fresh database for each scenario
         my $schema = OpenQA::Test::Database->new->create;
+
+        # ensure the scheduler starts with a fresh state for each scenario
+        # (the scheduler singleton's scheduled_jobs hash must be cleared since we reuse job IDs across fresh databases)
+        OpenQA::Scheduler::Model::Jobs->singleton->scheduled_jobs({});
         local $ENV{OPENQA_DATABASE_SEARCH_PATH} = $schema->search_path_for_tests;
         my $workers_rs = $schema->resultset('Workers');
         my $jobs_rs = $schema->resultset('Jobs');
@@ -110,16 +114,21 @@ for my $job_count (@job_counts) {
         my $webui_host = "http://localhost:$webui_port";
         $webui_host .= ' http://localhost:12345' if $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST};
 
-        my $log_jobs = sub {
+        my $log_status = sub {
             # uncoverable sub only used in case of failures
-            my @job_info
-              # uncoverable statement
-              = map {
-                # uncoverable statement
-                sprintf 'id: %s, state: %s, result: %s, reason: %s', $_->id, $_->state, $_->result, $_->reason // 'none'
-              } $jobs_rs->search({}, {order_by => 'id'})->all;
-            # uncoverable statement
-            diag "All jobs:\n - " . join "\n - ", @job_info;
+            my @job_info = map {    # uncoverable statement
+                sprintf 'id: %s, state: %s, result: %s, reason: %s', $_->id, $_->state,    # uncoverable statement
+                  $_->result,    # uncoverable statement
+                  $_->reason // 'none'    # uncoverable statement
+            } $jobs_rs->search({}, {order_by => 'id'})->all;    # uncoverable statement
+            diag "All jobs:\n - " . join "\n - ", @job_info;    # uncoverable statement
+
+            my @worker_info = map {    # uncoverable statement
+                sprintf 'id: %s, status: %s, job_id: %s, error: %s', $_->id, $_->status,    # uncoverable statement
+                  $_->job_id // 'none',    # uncoverable statement
+                  $_->error // 'none'    # uncoverable statement
+            } $workers_rs->search({}, {order_by => 'id'})->all;    # uncoverable statement
+            diag "All workers:\n - " . join "\n - ", @worker_info;    # uncoverable statement
         };
 
         # spawn workers
@@ -189,14 +198,14 @@ for my $job_count (@job_counts) {
             for my $try (1 .. $polling_tries_workers) {
                 $scheduler->schedule;
                 last
-                  if $jobs_rs->search({state => {-in => [ASSIGNED, SETUP, RUNNING, DONE]}})->count
-                  >= $expected_allocated;
+                  if $jobs_rs->search({state => {'!=' => SCHEDULED}})->count >= $expected_allocated;
                 sleep $polling_interval;    # uncoverable statement
             }
 
-            my $allocated_count = $jobs_rs->search({state => {-in => [ASSIGNED, SETUP, RUNNING, DONE]}})->count;
+            my $allocated_count = $jobs_rs->search({state => {'!=' => SCHEDULED}})->count;
             ok $allocated_count >= $expected_allocated, 'all workers have a job or all jobs assigned'
               or diag "Allocated count: $allocated_count, expected at least: $expected_allocated";
+            $log_status->() if $allocated_count < $expected_allocated;
 
             my $remaining_jobs = $job_count - $worker_count;
             note 'Remaining ' . ($remaining_jobs > 0 ? ('jobs: ' . $remaining_jobs) : ('workers: ' . -$remaining_jobs));
@@ -212,9 +221,18 @@ for my $job_count (@job_counts) {
                 note "Waiting until all jobs are done ($done_count/$job_count), try $try";
                 sleep $polling_interval;    # uncoverable statement
             }
+
+            # wait for all workers to be idle again, ensuring that all job updates have been processed
+            # and states are consistent in the DB
+            for my $try (1 .. $polling_tries_workers) {
+                my @not_idle = grep { $_->status ne 'idle' } $workers_rs->all;
+                last if @not_idle == 0;
+                sleep $polling_interval;    # uncoverable statement
+            }
+
             my $done = is $jobs_rs->search({state => DONE})->count, $job_count, 'all jobs done';
             my $passed = is $jobs_rs->search({result => PASSED})->count, $job_count, 'all jobs passed';
-            $log_jobs->() unless $done && $passed;
+            $log_status->() unless $done && $passed;
         };
 
         subtest 'stop all workers' => sub {
