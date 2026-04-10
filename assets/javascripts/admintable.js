@@ -231,7 +231,7 @@ function submitAdminTableRow(tdElement, id) {
         handleAdminTableSubmit(tdElement, response, id);
       })
       .catch(error => {
-        addFlash('danger', error);
+        addFlash('danger', htmlEscape(error));
       });
   } else {
     // create new
@@ -248,7 +248,7 @@ function submitAdminTableRow(tdElement, id) {
         handleAdminTableSubmit(tdElement, response, response.id);
       })
       .catch(error => {
-        addFlash('danger', error);
+        addFlash('danger', htmlEscape(error));
       });
   }
 }
@@ -283,7 +283,7 @@ function deleteTableRow(tdElement, id) {
       removeAdminTableRow(tdElement);
     })
     .catch(error => {
-      addFlash('danger', error);
+      addFlash('danger', htmlEscape(error));
     });
 }
 
