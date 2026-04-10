@@ -25,7 +25,7 @@ use Mojo::File 'path';
 use Scalar::Util 'looks_like_number';
 use File::Map 'map_file';
 use List::Util 'max';
-use Time::HiRes qw(usleep);
+use Time::HiRes qw(time usleep);
 use Feature::Compat::Try;
 
 use constant DEFAULT_UPLOAD_CHUNK_SIZE => 1_000_000;
@@ -1001,7 +1001,7 @@ sub _upload_asset ($self, $upload_parameter) {
         'upload_chunk.finish' => sub ($upload, $piece) {
             my $index = $piece->index;
             my $total = $piece->total;
-            my $spent = (time() - $t_start) || 1;
+            my $spent = (time - $t_start) || 1;
             my $kbytes = ($piece->end - $piece->start) / 1024;
             my $speed = sprintf '%.3f', $kbytes / $spent;
             my $show_in_autoinst_log = $index % 10 == 0 || $piece->is_last;
