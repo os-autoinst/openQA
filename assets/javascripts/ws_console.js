@@ -6,13 +6,13 @@ function followLog() {
 }
 
 function logLine(msg) {
-  document.logElement.append('<== ' + msg + '\n');
+  document.logElement.append(document.createTextNode('<== ' + msg + '\n'));
   followLog();
 }
 
 function sendAndLogCommand(ws, command) {
   ws.send(command);
-  document.logElement.append('==> ' + command + '\n');
+  document.logElement.append(document.createTextNode('==> ' + command + '\n'));
   followLog();
 }
 

@@ -149,9 +149,9 @@ function setupAdminNeedles() {
       const handleSingleError = function (singleError) {
         $.each(nextIDs, function (index, id) {
           const errorElement = $('<li></li>');
-          errorElement.append($('#deletion-item-' + id).text());
+          errorElement.text($('#deletion-item-' + id).text());
           errorElement.append($('<br>'));
-          errorElement.append(singleError);
+          errorElement.append(document.createTextNode(singleError));
           failedList.append(errorElement);
           $('#deletion-item-' + id).remove();
         });
@@ -196,10 +196,10 @@ function setupAdminNeedles() {
                 errorContext = $('#deletion-item-' + error.id).text();
               }
               if (errorContext) {
-                errorElement.append(errorContext);
+                errorElement.text(errorContext);
                 errorElement.append($('<br>'));
               }
-              errorElement.append(error.message);
+              errorElement.append(document.createTextNode(error.message));
               failedList.append(errorElement);
             });
           }
