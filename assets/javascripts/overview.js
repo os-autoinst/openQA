@@ -133,7 +133,7 @@ function setupOverview(options) {
   });
   $('.restart').bind('ajax:success', function (event, xhr, status) {
     if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
-      addFlash('danger', '<strong>Unable to restart job.</strong>');
+      addFlash('danger', createElement('span', [createElement('strong', ['Unable to restart job.'])]));
       return;
     }
     showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));

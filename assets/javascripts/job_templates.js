@@ -502,7 +502,11 @@ function submitTemplateEditor(button) {
 function showSubmitResults(form, result) {
   form.find('.buttons').show();
   form.find('.properties-progress-indication').hide();
-  form.find('.properties-status').html(result);
+  const statusElement = form.find('.properties-status')[0];
+  if (statusElement) {
+    statusElement.textContent = '';
+    statusElement.appendChild(result);
+  }
 }
 
 // adds/removes "is-invalid"/"invalid-feedback" classes/elements within the specified form for the specified response
@@ -590,17 +594,28 @@ function submitProperties(form) {
       if (overallError) {
         showSubmitResults(
           editorForm,
-          `<i class="fa-solid fa-circle-exclamation"></i> Unable to apply changes: <strong>${overallError}</strong>`
+          createElement('span', [
+            createElement('i', [], {class: 'fa-solid fa-circle-exclamation'}),
+            ' Unable to apply changes: ',
+            createElement('strong', [overallError])
+          ])
         );
         return;
       }
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
       const warnings = json?.warnings_by_field;
-      const remark =
-        typeof warnings === 'object' && Object.keys(warnings).length > 0
-          ? ', but <strong>there are warnings</strong> (see highlighted fields)'
-          : '';
-      showSubmitResults(editorForm, `<i class="fa-solid fa-floppy-disk"></i> Changes applied${remark}`);
+      const hasWarnings = typeof warnings === 'object' && Object.keys(warnings).length > 0;
+      const remark = hasWarnings
+        ? [', but ', createElement('strong', ['there are warnings']), ' (see highlighted fields)']
+        : [];
+      showSubmitResults(
+        editorForm,
+        createElement('span', [
+          createElement('i', [], {class: 'fa-solid fa-floppy-disk'}),
+          ' Changes applied',
+          ...remark
+        ])
+      );
 
       // show new name
       const newJobName = $('#editor-name').val();
@@ -615,7 +630,11 @@ function submitProperties(form) {
     .catch(error => {
       showSubmitResults(
         editorForm,
-        `<i class="fa-solid fa-circle-exclamation"></i> Unable to apply changes: <strong>${error}</strong>`
+        createElement('span', [
+          createElement('i', [], {class: 'fa-solid fa-circle-exclamation'}),
+          ' Unable to apply changes: ',
+          createElement('strong', [error])
+        ])
       );
     })
     .finally(() => {

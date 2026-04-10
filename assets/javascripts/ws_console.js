@@ -17,7 +17,7 @@ function sendAndLogCommand(ws, command) {
 }
 
 function logStatus(msg) {
-  document.logElement.append('status: ' + msg + '\n');
+  document.logElement.append(document.createTextNode('status: ' + msg + '\n'));
   followLog();
 }
 

@@ -481,7 +481,16 @@ function saveNeedle(overwrite) {
     errors.push('No areas defined.');
   }
   if (errors.length) {
-    addFlash('danger', '<strong>Unable to save needle:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>');
+    addFlash(
+      'danger',
+      createElement('span', [
+        createElement('strong', ['Unable to save needle:']),
+        createElement(
+          'ul',
+          errors.map(e => createElement('li', [e]))
+        )
+      ])
+    );
     return false;
   }
 

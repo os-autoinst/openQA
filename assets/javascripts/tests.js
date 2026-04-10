@@ -475,7 +475,7 @@ function setupTestButtons() {
       const responseJSON = xhr.responseJSON;
       const flashTarget = $('#flash-messages-finished-jobs');
       if (typeof responseJSON !== 'object' || !Array.isArray(responseJSON.test_url)) {
-        addFlash('danger', '<strong>Unable to restart job.</strong>', flashTarget);
+        addFlash('danger', createElement('span', [createElement('strong', ['Unable to restart job.'])]), flashTarget);
         return;
       }
       showJobRestartResults(

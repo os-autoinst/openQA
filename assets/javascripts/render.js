@@ -1,21 +1,5 @@
 // jshint esversion: 9
 
-function createElement(tag, content = [], attrs = {}, options = {}) {
-  const elem = document.createElement(tag);
-
-  for (const [key, value] of Object.entries(attrs)) {
-    if (value !== undefined) {
-      elem.setAttribute(key, value);
-    }
-  }
-
-  elem.append(...content);
-  if (options.preWrap) {
-    elem.style.whiteSpace = 'pre-wrap';
-  }
-  return elem;
-}
-
 function renderTemplate(template, args = {}) {
   if (!template) {
     return '';

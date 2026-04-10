@@ -35,22 +35,52 @@ function fetchWithCSRF(resource, options) {
   return window.fetch(resource, options);
 }
 
+function createElement(tag, content = [], attrs = {}, options = {}) {
+  const elem = document.createElement(tag);
+
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value !== undefined) {
+      elem.setAttribute(key, value);
+    }
+  }
+
+  elem.append(...content);
+  if (options.preWrap) {
+    elem.style.whiteSpace = 'pre-wrap';
+  }
+  return elem;
+}
+
 function makeFlashElement(text) {
-  return typeof text === 'string' ? '<span>' + text + '</span>' : text;
+  return typeof text === 'string' ? createElement('span', [text]) : text;
 }
 
 function addFlash(status, text, container, method = 'append') {
   // add flash messages by default on top of the page
-  if (!container) {
-    container = $('#flash-messages');
-  }
+  const flashContainer =
+    container instanceof jQuery ? container[0] : container || document.getElementById('flash-messages');
 
-  const div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
-  div.append(makeFlashElement(text));
-  div.append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
-  div.addClass('alert-' + status);
-  container[method](div);
-  return div;
+  const div = createElement(
+    'div',
+    [
+      makeFlashElement(text),
+      createElement('button', [], {
+        type: 'button',
+        class: 'btn-close',
+        'data-bs-dismiss': 'alert',
+        'aria-label': 'Close'
+      })
+    ],
+    {
+      class: `alert alert-${status} alert-dismissible fade show`,
+      role: 'alert'
+    }
+  );
+
+  const target = method === 'prepend' && flashContainer.firstChild ? flashContainer.firstChild : null;
+  flashContainer.insertBefore(div, target);
+
+  return $(div);
 }
 
 function addUniqueFlash(status, id, text, container, method = 'append') {
@@ -175,7 +205,7 @@ function renderList(items) {
   const ul = document.createElement('ul');
   items.forEach(function (item) {
     const li = document.createElement('li');
-    li.innerHTML = item;
+    li.textContent = item;
     li.style.whiteSpace = 'pre-wrap';
     ul.appendChild(li);
   });
@@ -246,13 +276,10 @@ function restartJob(ajaxUrl, jobIds, comment) {
     jobIds = [jobIds];
   }
   const showError = function (reason) {
-    let errorMessage = '<strong>Unable to restart job';
-    if (reason) {
-      errorMessage += ':</strong> ' + reason;
-    } else {
-      errorMessage += '.</strong>';
-    }
-    addFlash('danger', errorMessage);
+    addFlash(
+      'danger',
+      createElement('span', [createElement('strong', ['Unable to restart job']), reason ? `: ${reason}` : '.'])
+    );
   };
   const body = new FormData();
   if (comment !== undefined) {
@@ -300,7 +327,11 @@ function restartJob(ajaxUrl, jobIds, comment) {
         if (Array.isArray(newJobUrl)) {
           addFlash(
             'info',
-            'The jobs have been restarted. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
+            createElement('span', [
+              'The jobs have been restarted. ',
+              createElement('a', ['Reload'], {href: 'javascript: location.reload()'}),
+              ' the page to show changes.'
+            ])
           );
         } else {
           window.location.replace(newJobUrl);
