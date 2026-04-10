@@ -12,7 +12,7 @@ function logLine(msg) {
 
 function sendAndLogCommand(ws, command) {
   ws.send(command);
-  document.logElement.append('==> ' + command + '\n');
+  document.logElement.append(document.createTextNode('==> ' + command + '\n'));
   followLog();
 }
 
