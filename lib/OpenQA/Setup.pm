@@ -159,6 +159,7 @@ sub default_config () {
             dynamic_job_limit_load_critical => 0,
             dynamic_job_limit_step => 10,
             dynamic_job_limit_interval => 60,
+            results_min_free_storage_space_percentage => 5,
         },
         logging => {
             level => undef,
@@ -321,7 +322,12 @@ sub read_config ($app) {
     my $defaults = default_config();
 
     # in development and test mode we use fake auth and log to stderr
-    my %devel_and_test_defaults = (auth => {method => 'Fake'}, logging => {file => undef, level => 'debug'});
+    my %devel_and_test_defaults = (
+        auth => {method => 'Fake'},
+        logging => {file => undef, level => 'debug'},
+        # disable results_…_percentage for consistent results despite possibly limited storage in test env
+        scheduler => {results_min_free_storage_space_percentage => 0},
+    );
     my %mode_defaults = (development => \%devel_and_test_defaults, test => \%devel_and_test_defaults);
 
     my $config = _load_config($app, $defaults, \%mode_defaults);

@@ -935,7 +935,7 @@ sub load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
 
 sub results_storage_below_threshold () {
     my $percentage = OpenQA::App->singleton->config->{scheduler}->{results_min_free_storage_space_percentage};
-    return 0 unless defined $percentage;
+    return 0 unless $percentage;
     return 1 if $percentage == 100;
 
     my ($available_bytes, $total_bytes);

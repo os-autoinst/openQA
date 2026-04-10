@@ -52,6 +52,7 @@ subtest 'Test configuration default modes' => sub {
       = ' .status:not(.result_passed):not(.result_softfailed)';
     $test_config->{auth}->{method} = 'Fake';
     $test_config->{minion_task_triggers}->{on_job_done} = [];
+    $test_config->{scheduler}->{results_min_free_storage_space_percentage} = 0;
     for my $l ($test_config->{default_group_limits}, $test_config->{no_group_limits}) {
         $l->{result_storage_duration} = OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS;
         $l->{important_result_storage_duration} = OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS;
@@ -93,6 +94,7 @@ subtest 'Test configuration default modes' => sub {
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{auth}->{method} = 'OpenID';
     $test_config->{global}->{service_port_delta} = 2;
+    $test_config->{scheduler}->{results_min_free_storage_space_percentage} = 5;
     delete $config->{global}->{auto_clone_regex};
     delete $config->{'test_preset example'};
     delete $test_config->{logging};
