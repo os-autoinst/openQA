@@ -159,6 +159,7 @@ sub default_config () {
             dynamic_job_limit_load_critical => 0,
             dynamic_job_limit_step => 10,
             dynamic_job_limit_interval => 60,
+            results_min_free_storage_space_percentage => 0,
         },
         logging => {
             level => undef,
