@@ -6,11 +6,14 @@ use Mojo::Base 'OpenQA::Client::Handler', -signatures;
 
 use OpenQA::File;
 use Carp qw(croak);
+use Exporter qw(import);
 use Mojo::Asset::Memory;
 use Mojo::File qw(path);
 use Feature::Compat::Try;
 
 use constant DEFAULT_CHUNK_SIZE => 10_000_000;
+
+our @EXPORT_OK = qw(DEFAULT_CHUNK_SIZE);
 
 sub _upload_asset_fail ($self, $uri, $form) {
     $form->{state} = 'fail';

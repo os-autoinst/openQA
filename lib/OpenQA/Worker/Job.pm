@@ -12,6 +12,7 @@ use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
 use OpenQA::Log qw(log_error log_warning log_debug log_info redact_settings_in_file);
 use OpenQA::Utils qw(find_video_files usleep_backoff);
+use OpenQA::Client::Upload qw(DEFAULT_CHUNK_SIZE);
 
 use Digest::MD5;
 use Fcntl;
@@ -27,8 +28,6 @@ use File::Map 'map_file';
 use List::Util 'max';
 use Time::HiRes qw(time usleep);
 use Feature::Compat::Try;
-
-use constant DEFAULT_UPLOAD_CHUNK_SIZE => 10_000_000;
 
 # define attributes for public properties
 has 'worker';
@@ -975,7 +974,7 @@ sub _upload_asset ($self, $upload_parameter) {
     my $filename = $upload_parameter->{file}->{filename};
     my $file = $upload_parameter->{file}->{file};
     my $global_settings = $self->worker->settings->global_settings;
-    my $chunk_size = $global_settings->{UPLOAD_CHUNK_SIZE} // DEFAULT_UPLOAD_CHUNK_SIZE;
+    my $chunk_size = $global_settings->{UPLOAD_CHUNK_SIZE} // DEFAULT_CHUNK_SIZE;
     my $retries = $global_settings->{UPLOAD_RETRIES} // 10;
     my $local_upload = $global_settings->{LOCAL_UPLOAD} // 1;
     my $ua = $self->client->ua;

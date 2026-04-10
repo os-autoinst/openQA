@@ -30,6 +30,7 @@ use Mojo::IOLoop;
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT
   WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_TIMEOUT WORKER_EC_ASSET_FAILURE WORKER_EC_CACHE_FAILURE
   WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_BROKEN);
+use OpenQA::Client::Upload qw(DEFAULT_CHUNK_SIZE);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
@@ -1471,11 +1472,10 @@ subtest 'asset upload' => sub {
     my $upload_res;
     combined_like { $upload_res = $job->_upload_asset(\%params) } qr/fake error.*404.*Upload failed for chunk 3/s,
       'upload logged';
+    my %expected_params
+      = (asset => undef, chunk_size => DEFAULT_CHUNK_SIZE, file => 'foo', name => 'bar', local => 1, retries => 10);
     is $upload_res, 1, 'upload succeeded';
-    is_deeply \@params,
-      [[14, {asset => undef, chunk_size => 10000000, file => 'foo', name => 'bar', local => 1, retries => 10}]],
-      'expected params passed'
-      or always_explain \@params;
+    is_deeply \@params, [[14, \%expected_params]], 'expected params passed' or always_explain \@params;
 
     $mock_failure = 1;
     my ($stdout, $stderr, @result) = capture sub { $job->_upload_asset(\%params) };
