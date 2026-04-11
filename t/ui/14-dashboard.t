@@ -14,7 +14,9 @@ use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
+my $test_case = OpenQA::Test::Case->new;
+my $schema = $test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 driver_missing unless my $driver = call_driver;
 
@@ -143,7 +145,36 @@ subtest 'filter form' => sub {
 $driver->get('/dashboard_build_results.json');
 like $driver->get_page_source(), qr("key":"Factory-0048"), 'page rendered as JSON';
 
-# parent group overview: tested in t/22-dashboard.t
+subtest 'Ignore job groups on dashboard' => sub {
+    my $job_groups = $schema->resultset('JobGroups');
+    my $parent_groups = $schema->resultset('JobGroupParents');
+    my $group1 = $job_groups->find(1001);
+    my $group2 = $job_groups->find(1002);
+
+    $driver->get('/');
+    wait_for_ajax;
+    is scalar @{$driver->find_elements('h2', 'css')}, 2, 'initially both job groups shown';
+
+    # 1. Ignore via job group property
+    $group2->update({ignore_on_dashboard => 1});
+    $driver->get('/');
+    wait_for_ajax;
+    is scalar @{$driver->find_elements('h2', 'css')}, 1, 'opensuse test ignored via property';
+    is $driver->find_element('h2')->get_text(), 'opensuse', 'only opensuse shown';
+    $group2->update({ignore_on_dashboard => 0});
+
+    # 2. Ignore via parent group property
+    my $parent = $parent_groups->create({name => 'Test Parent'});
+    $group1->update({parent_id => $parent->id});
+    $parent->update({ignore_on_dashboard => 1});
+    $driver->get('/');
+    wait_for_ajax;
+    is scalar @{$driver->find_elements('h2', 'css')}, 1, 'parent group and its children ignored via property';
+    is $driver->find_element('h2')->get_text(), 'opensuse test', 'only opensuse test (no parent) shown';
+
+    $parent->update({ignore_on_dashboard => 0});
+    $group1->update({parent_id => undef});
+};
 
 kill_driver();
 done_testing();

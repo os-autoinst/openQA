@@ -7,6 +7,7 @@ use Feature::Compat::Try;
 
 use Date::Format;
 use Mojo::File qw(path);
+use Mojo::Util qw(trim);
 use Time::Seconds;
 use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Jobs::Constants;
@@ -36,7 +37,10 @@ sub dashboard_build_results ($self) {
     my $regex_problem = $self->regex_problem($group_params, 'group parameter is invalid');
     return $self->render(json => {error => $regex_problem}, status => 400) if $regex_problem;
 
-    my $groups = $self->stash('job_groups_and_parents');
+    my $groups = $self->stash('job_groups_and_parents')
+      // $self->schema->resultset('JobGroupParents')->job_groups_and_parents;
+    my $ignored_job_groups = $config->{ignored_job_groups} // '';
+    my %ignored_groups = map { trim($_) => 1 } split /,/, $ignored_job_groups;
 
     my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
     my $total_jobs_seen = 0;
@@ -44,6 +48,7 @@ sub dashboard_build_results ($self) {
     my @results;
     try {
         for my $group (@$groups) {
+            next if $ignored_groups{$group->name} || $group->ignore_on_dashboard;
             if (@$group_params) {
                 next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
             }
