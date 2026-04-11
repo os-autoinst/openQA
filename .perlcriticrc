@@ -27,11 +27,6 @@ severity = 4
 add_themes = community
 max_nests = 4
 
-# == Community Policies
-# -- Test::Most brings in strict & warnings
-[Freenode::StrictWarnings]
-extra_importers = Test::Most
-
 # -- Test::Most brings in strict & warnings
 [Community::StrictWarnings]
 extra_importers = Test::Most
