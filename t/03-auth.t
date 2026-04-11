@@ -65,6 +65,45 @@ subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`
     $t->content_unlike(qr/asset-ok/, 'asset via test not accessible when logged out');
 };
 
+subtest None => sub {
+    my $t = test_auth_method_startup('None');
+    $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
+    $t->get_ok('/admin/users')->status_is(200)->content_like(qr/Administrator/);
+
+    my $user = $t->app->schema->resultset('Users')->find({username => 'admin'});
+    ok $user, 'admin user exists';
+    my $key = $user->api_keys->find({key => 'DEADBEEFDEADBEEF'});
+    ok $key, 'admin API key exists';
+    is $key->secret, 'DEADBEEFDEADBEEF', 'admin API secret matches';
+
+    $t->get_ok('/api/v1/auth' => {Authorization => 'Bearer admin:DEADBEEFDEADBEEF:DEADBEEFDEADBEEF'})->status_is(200)
+      ->content_is('ok');
+
+    $user->audit_events->delete;
+    $user->api_keys->delete;
+    $user->delete;
+    $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
+    $user = $t->app->schema->resultset('Users')->find({username => 'admin'});
+    ok $user, 'admin user re-created';
+    ok $user->is_admin && $user->is_operator, 're-created user has admin/operator permissions';
+
+    $user->update({is_admin => 0, is_operator => 0});
+    $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
+    $user->discard_changes;
+    ok $user->is_admin && $user->is_operator, 'helper restored admin/operator permissions';
+
+    $t->get_ok('/')->status_is(200)->content_unlike(qr/Logout/);
+
+    {
+        local $ENV{OPENQA_AUTH_NONE_KEY} = 'CUSTOMKEY';
+        local $ENV{OPENQA_AUTH_NONE_SECRET} = 'CUSTOMSECRET';
+        my $t2 = test_auth_method_startup('None');
+        my $key2 = $t2->app->schema->resultset('ApiKeys')->find({key => 'CUSTOMKEY'});
+        ok $key2, 'custom API key exists';
+        is $key2->secret, 'CUSTOMSECRET', 'custom API secret matches';
+    }
+};
+
 subtest OpenID => sub {
     # OpenID relies on external server which we mock to not rely on external dependencies
     my $openid_mock = Test::MockModule->new('Net::OpenID::Consumer');

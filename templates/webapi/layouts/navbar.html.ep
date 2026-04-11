@@ -100,9 +100,12 @@
                   % if (config->{global}{mcp_enabled} eq 'read-only') {
                       %= link_to 'MCP help' => url_for('mcp_help') => class => 'dropdown-item'
                   % }
-                  %= link_to 'Changelog' => url_for('changelog') => class => 'dropdown-item'
-                  %= link_to 'Logout' => url_for('logout') => 'data-method' => 'delete' => class => 'dropdown-item'
-                </div>
+                   %= link_to 'Changelog' => url_for('changelog') => class => 'dropdown-item'
+                   % if (config->{auth}->{method} ne 'None') {
+                       %= link_to 'Logout' => url_for('logout') => 'data-method' => 'delete' => class => 'dropdown-item'
+                   % }
+                 </div>
+
             </li>
         % } else {
             <li class='nav-item' id="user-action">
