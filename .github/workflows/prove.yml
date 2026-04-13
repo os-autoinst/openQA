@@ -19,7 +19,7 @@ jobs:
     container:
       image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: bash -x tools/ci/build_cache.sh
       - name: Build os-autoinst

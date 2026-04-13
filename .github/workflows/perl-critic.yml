@@ -12,5 +12,5 @@ jobs:
     container:
       image: perldocker/perl-tester
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: make test-critic
