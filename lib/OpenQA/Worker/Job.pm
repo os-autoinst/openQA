@@ -4,9 +4,9 @@
 package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT
-  WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT
-  WORKER_SR_DONE WORKER_SR_DIED);
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_UPLOAD_CHUNK_SIZE DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT
+  WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_BROKEN WORKER_SR_SETUP_FAILURE
+  WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_DONE WORKER_SR_DIED);
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
@@ -27,8 +27,6 @@ use File::Map 'map_file';
 use List::Util 'max';
 use Time::HiRes qw(time usleep);
 use Feature::Compat::Try;
-
-use constant DEFAULT_UPLOAD_CHUNK_SIZE => 1_000_000;
 
 # define attributes for public properties
 has 'worker';
