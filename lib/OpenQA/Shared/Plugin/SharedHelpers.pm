@@ -51,8 +51,17 @@ sub _current_user ($c) {
     # If the value is not in the stash
     my $current_user = $c->stash('current_user');
     unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
-        my $id = $c->session->{user};
+        my $auth_method = $c->app->config->{auth}->{method} // '';
+        my $id = $c->session->{user} // ($auth_method eq 'None' ? 'admin' : undef);
         my $user = $id ? $c->schema->resultset('Users')->find({username => $id}) : undef;
+        if (!$user && $auth_method eq 'None') {
+            $user = $c->schema->resultset('Users')
+              ->create_user('admin', fullname => 'Administrator', email => 'admin@example.com');
+            $user->update({is_admin => 1, is_operator => 1});
+        }
+        if ($user && $auth_method eq 'None' && !($user->is_admin && $user->is_operator)) {
+            $user->update({is_admin => 1, is_operator => 1});
+        }
         $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
     }
 

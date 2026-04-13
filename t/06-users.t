@@ -33,7 +33,7 @@ subtest 'system user presence' => sub {
 
 subtest 'new user is admin if no admin is present' => sub {
     my $admins = $users->search({is_admin => 1});
-    $_->update({is_admin => 0}) while $admins->next;
+    while (my $admin = $admins->next) { $admin->update({is_admin => 0}) }
     ok !$users->search({is_admin => 1})->all, 'no admin is present';
     my $user = $users->create_user('test_user');
     ok $user->is_admin, 'new user is admin by default if there was no admin';
