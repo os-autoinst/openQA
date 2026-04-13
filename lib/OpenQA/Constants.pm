@@ -18,6 +18,8 @@ use constant WEBSOCKET_API_VERSION => 1;
 # Default worker timeout
 use constant DEFAULT_WORKER_TIMEOUT => 30 * ONE_MINUTE;
 
+use constant DEFAULT_UPLOAD_CHUNK_SIZE => 10_000_000;
+
 # Define worker commands; used to validate and differentiate commands
 use constant {
     # stop the current job(s), do *not* upload logs and assets
@@ -122,6 +124,7 @@ our @EXPORT_OK = qw(
   MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME
   DEFAULT_MAX_SETUP_TIME
+  DEFAULT_UPLOAD_CHUNK_SIZE
   DB_TIMESTAMP_ACCURACY
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
   FRAGMENT_REGEX
