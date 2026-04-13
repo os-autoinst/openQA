@@ -13,6 +13,7 @@ sub import {
     return if ($ENV{OPENQA_TEST_TIMEOUT_DISABLE} or $INC{'perl5db.pl'});
     $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} // 3 if Devel::Cover->can('report');
     $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_CI} // 2 if $ENV{CI};
+    $SCALE_FACTOR *= 5 if $ENV{HARNESS_IS_PARALLEL};
     $limit *= $SCALE_FACTOR;
     $SIG{ALRM} = sub { BAIL_OUT "test '$0' exceeds runtime limit of '$limit' seconds\n" };
     alarm $limit;

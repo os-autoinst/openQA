@@ -5,10 +5,14 @@ on: [push, pull_request]
 
 jobs:
   perl-author-tests:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     name: Perl author tests
     container:
       image: registry.opensuse.org/devel/openqa/containers/os-autoinst_dev
     steps:
-      - uses: actions/checkout@v4
-      - run: make test-author
+      - uses: actions/checkout@v6
+      - run: |
+          git config --system --add safe.directory "$GITHUB_WORKSPACE"
+          make test-author

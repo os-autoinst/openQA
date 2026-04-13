@@ -10,4 +10,6 @@ on:
 
 jobs:
   check-commit-message:
+    permissions:
+      contents: read
     uses: ./.github/workflows/base-commit-message-checker.yml
