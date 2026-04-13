@@ -22,13 +22,13 @@ OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/../data/17-mcp")
 my $PERSONAL_ACCESS_TOKEN = 'lance:LANCELOTKEY01:MANYPEOPLEKNOW';
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-my $client = MCP::Client->new(ua => $t->ua, url => $t->ua->server->url->path('/experimental/mcp'));
+my $client = MCP::Client->new(ua => $t->ua, url => $t->ua->server->url->path('/mcp'));
 
 subtest 'Authentication' => sub {
-    $t->get_ok('/experimental/mcp')->status_is(403)->json_is({error => 'no api key'});
+    $t->get_ok('/mcp')->status_is(403)->json_is({error => 'no api key'});
 
     $t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->authorization("Bearer $PERSONAL_ACCESS_TOKEN") });
-    $t->get_ok('/experimental/mcp')->status_is(405);
+    $t->get_ok('/mcp')->status_is(405);
 };
 
 subtest 'Start session' => sub {

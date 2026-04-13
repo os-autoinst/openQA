@@ -79,7 +79,7 @@ sub register ($self, $app, $config) {
     );
 
     my $mcp_auth = $app->routes->under('/')->to('Auth#auth')->name('mcp_ensure_user');
-    $mcp_auth->any('/experimental/mcp' => $mcp->to_action)->name('mcp');
+    $mcp_auth->any('/mcp' => $mcp->to_action)->name('mcp');
 }
 
 sub tool_openqa_get_info ($tool, $args) {

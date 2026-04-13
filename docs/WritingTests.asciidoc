@@ -1938,7 +1938,7 @@ mcp_enabled = read-only
 ----
 
 Once enabled the experimental MCP endpoint becomes available under the path
-`/experimental/mcp`. At the moment all implemented MCP tools are read-only,
+`/mcp`. At the moment all implemented MCP tools are read-only,
 that means LLMs can review information provided by openQA, but are unable to
 make changes or trigger actions. Once write operations become available
 with future updates, they will have to be enabled with a different setting
@@ -1957,7 +1957,7 @@ setting the `Authorization` HTTP header:
 {
   "mcpServers": {
     "openqa": {
-      "url": "http://127.0.0.1:9526/experimental/mcp",
+      "url": "http://127.0.0.1:9526/mcp",
       "headers": {
         "Authorization": "Bearer USER:KEY:SECRET"
       }
@@ -1975,7 +1975,7 @@ https://github.com/google-gemini/gemini-cli[gemini-cli], you can use the
 
 [source,shell]
 ----
-gemini mcp add openqa http://127.0.0.1:9526/experimental/mcp -H 'Authorization: Bearer USER:KEY:SECRET' -t http
+gemini mcp add openqa http://127.0.0.1:9526/mcp -H 'Authorization: Bearer USER:KEY:SECRET' -t http
 ----
 
 After restarting gemini-cli, it will automatically discover available openQA
