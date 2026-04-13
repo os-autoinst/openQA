@@ -17,7 +17,7 @@ TESTS ?=
 # EXTRA_PROVE_ARGS: Additional prove arguments to pass
 EXTRA_PROVE_ARGS ?=
 # PROVE: Test application for Perl tests
-PROVE ?= prove
+PROVE ?= tools/prove_wrapper
 # Number of parallel jobs for prove
 PROVE_JOBS ?= $(shell nproc 2>/dev/null || echo 1)
 PROVE_JOBS_ARGS ?= -j$(PROVE_JOBS)
