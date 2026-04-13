@@ -75,6 +75,7 @@ subtest None => sub {
     my $key = $user->api_keys->find({key => 'DEADBEEFDEADBEEF'});
     ok $key, 'admin API key exists';
     is $key->secret, 'DEADBEEFDEADBEEF', 'admin API secret matches';
+    is $key->t_expiration, undef, 'admin API key has no expiration';
 
     $t->get_ok('/api/v1/auth' => {Authorization => 'Bearer admin:DEADBEEFDEADBEEF:DEADBEEFDEADBEEF'})->status_is(200)
       ->content_is('ok');
