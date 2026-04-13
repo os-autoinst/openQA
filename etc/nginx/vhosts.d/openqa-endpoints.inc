@@ -5,7 +5,7 @@ client_max_body_size 0;
 # The "client_body_buffer_size" value should usually be larger
 # than the UPLOAD_CHUNK_SIZE used by openQA workers, so there is
 # no excessive buffering to disk
-client_body_buffer_size 2m;
+client_body_buffer_size 12m;
 
 # Default is exact which would need an exact match of Last-Modified
 if_modified_since before;

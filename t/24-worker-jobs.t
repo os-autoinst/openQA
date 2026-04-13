@@ -1473,7 +1473,7 @@ subtest 'asset upload' => sub {
       'upload logged';
     is $upload_res, 1, 'upload succeeded';
     is_deeply \@params,
-      [[14, {asset => undef, chunk_size => 1000000, file => 'foo', name => 'bar', local => 1, retries => 10}]],
+      [[14, {asset => undef, chunk_size => 10000000, file => 'foo', name => 'bar', local => 1, retries => 10}]],
       'expected params passed'
       or always_explain \@params;
 

@@ -10,7 +10,7 @@ use Mojo::Asset::Memory;
 use Mojo::File qw(path);
 use Feature::Compat::Try;
 
-use constant DEFAULT_CHUNK_SIZE => 1_000_000;
+use constant DEFAULT_CHUNK_SIZE => 10_000_000;
 
 sub _upload_asset_fail ($self, $uri, $form) {
     $form->{state} = 'fail';

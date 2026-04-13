@@ -28,7 +28,7 @@ use List::Util 'max';
 use Time::HiRes qw(time usleep);
 use Feature::Compat::Try;
 
-use constant DEFAULT_UPLOAD_CHUNK_SIZE => 1_000_000;
+use constant DEFAULT_UPLOAD_CHUNK_SIZE => 10_000_000;
 
 # define attributes for public properties
 has 'worker';
