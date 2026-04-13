@@ -77,6 +77,11 @@ __PACKAGE__->add_columns(
     carry_over_bugrefs => {
         data_type => 'boolean',
         is_nullable => 1,
+    },
+    ignore_on_dashboard => {
+        data_type => 'boolean',
+        default_value => 0,
+        is_nullable => 0,
     });
 
 __PACKAGE__->add_unique_constraint([qw(name)]);

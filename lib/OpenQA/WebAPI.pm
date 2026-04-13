@@ -21,6 +21,10 @@ use Time::Seconds;
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 has dynamic_limit => sub { OpenQA::Scheduler::DynamicLimit->new };
+has ignored_groups => sub ($self) {
+    my $ignored_job_groups = $self->config->{global}->{ignored_job_groups} // '';
+    return {map { $_ => 1 } grep { length } map { trim($_) } split /,/, $ignored_job_groups};
+};
 
 # This method will run once at server start
 sub startup ($self) {

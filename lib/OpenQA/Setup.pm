@@ -129,6 +129,7 @@ sub default_config () {
             frontpage_builds => 3,
             frontpage_time_limit_days => 14,
             scenario_definitions_allowed_hosts => 'github.com raw.githubusercontent.com',
+            ignored_job_groups => '',
         },
         rate_limits => {
             search => 5,

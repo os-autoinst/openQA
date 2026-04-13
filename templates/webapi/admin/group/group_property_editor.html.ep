@@ -54,6 +54,24 @@
                 </div>
             </div>
             <div class="mb-3 row">
+                <label for="editor-ignore-on-dashboard" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Exclude from evaluation for the main dashboard page">Ignore on dashboard</label>
+                <div class="col-sm-10">
+                    <input type="hidden" name="ignore_on_dashboard" value="0">
+                    <input type="checkbox"
+                           id="editor-ignore-on-dashboard" name="ignore_on_dashboard"
+                           value="1"
+                        % if ($group->ignore_on_dashboard) {
+                            checked="checked"
+                        % }
+                    >
+                    <%= help_popover 'Ignore on dashboard' =>
+                        '<p>
+                            If checked, this job group (and all its subgroups if it is a parent group) will be excluded from evaluation for the main dashboard page.
+                        </p>';
+                    %>
+                </div>
+            </div>
+            <div class="mb-3 row">
                 <label for="editor-build-version-sort" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Sets how builds are sorted when groups of them are displayed together">How to sort builds for display</label>
                 <div class="col-sm-10" id="editor-build-version-sort">
                     <input type="radio" id="editor-build-version-sort-name" name="build_version_sort" value="<%= BUILD_SORT_BY_NAME %>"

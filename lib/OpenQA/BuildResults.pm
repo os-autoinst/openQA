@@ -73,44 +73,46 @@ sub add_review_badge ($build_res) {
     $build_res->{commented} = $build_res->{comments} >= $build_res->{failed} ? 1 : 0;
 }
 
-sub filter_subgroups ($group, $subgroup_filter) {
-    my @group_ids;
-    my @children;
-    my $group_name = $group->name;
-    for my $child ($group->children) {
-        my $full_name = $child->full_name;
-        if (grep { $_ eq '' || regex_match($_, $full_name) } @$subgroup_filter) {
-            push @group_ids, $child->id;
-            push @children, $child;
-        }
-    }
-    return {
-        group_ids => \@group_ids,
-        children => \@children,
-    };
-}
-
 sub find_child_groups ($group, $subgroup_filter) {
     # handle regular (non-parent) groups
     return {
         group_ids => [$group->id],
         children => [],
     } unless $group->can('children');
-    # handle simple case where no filter for subgroups present
+
+    my @children = grep { !$_->ignore_on_dashboard } $group->children;
+    if (@$subgroup_filter) {
+        @children = grep {
+            my $full_name = $_->full_name;
+            grep { $_ eq '' || regex_match($_, $full_name) } @$subgroup_filter
+        } @children;
+    }
     return {
-        group_ids => $group->child_group_ids,
-        children => [$group->children],
-    } unless @$subgroup_filter;
-    return filter_subgroups($group, $subgroup_filter);
+        group_ids => [map { $_->id } @children],
+        children => \@children,
+    };
 }
 
-sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags,
-    $max_jobs_limit = undef)
+sub compute_build_results (
+    $group, $limit, $time_limit_days, $tags, $subgroup_filter, $show_tags,
+    $max_jobs_limit = undef,
+    $ignored_groups = undef
+  )
 {
     # find relevant child groups taking filter into account
     my $child_groups = find_child_groups($group, $subgroup_filter);
     my $group_ids = $child_groups->{group_ids};
     my $children = $child_groups->{children};
+
+    if ($ignored_groups) {
+        if (@$children) {
+            $children = [grep { !$ignored_groups->{$_->name} } @$children];
+            $group_ids = [map { $_->id } @$children];
+        }
+        else {
+            $group_ids = [grep { !$ignored_groups->{$group->name} } @$group_ids];
+        }
+    }
 
     my $total_jobs_seen = 0;
     my $limit_exceeded = 0;
