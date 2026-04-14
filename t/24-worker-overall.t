@@ -111,7 +111,7 @@ my $global_settings = $settings->global_settings;
 delete $global_settings->{LOG_DIR};
 
 combined_like { is ${$worker->init}, 1, 'no working directory found returns 1' }
-qr{Ignoring host.*Working directory does not exist.*Checked: t/data/openqa/share.*Ignoring host .*remotehost.*Checked:}s,
+qr{Ignoring host.*Working directory does not exist.*Checked: $workdir/t/data/openqa/share.*Ignoring host .*remotehost.*Checked:}s,
   'hosts with non-existent working directory ignored and error logged';
 is $worker->app->level, 'debug', 'log level set to debug with verbose switch';
 my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
@@ -1002,7 +1002,7 @@ subtest 'working_directory exists for one of two hosts' => sub {
     $mock_ws->redefine(webui_host_specific_settings => sub ($self) { $webui_host_specific_settings });
 
     combined_like { is ${$worker->init}, 0, 'at least one working directory found returns 0' }
-qr{Ignoring host.*Working directory does not exist.*Checked: t/data/openqa/share.*Project dir for host https://remotehost is /tmp}s,
+qr{Ignoring host.*Working directory does not exist.*Checked: $workdir/t/data/openqa/share.*Project dir for host https://remotehost is /tmp}s,
       'hosts with non-existent working directory ignored and error logged';
 };
 

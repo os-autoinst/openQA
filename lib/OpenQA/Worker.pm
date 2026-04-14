@@ -3,6 +3,7 @@
 
 package OpenQA::Worker;
 use Mojo::Base -base, -signatures;
+use Cwd qw(getcwd);
 use IPC::Run ();
 
 BEGIN {
@@ -101,6 +102,7 @@ sub new ($class, $cli_options) {
     $self->{_shall_terminate} = 0;
     $self->{_finishing_off} = undef;
     $self->{_ovs_dbus_service_name} = $ENV{OVS_DBUS_SERVICE_NAME} // 'org.opensuse.os_autoinst.switch';
+    $self->{_initial_working_dir} = getcwd() // '.';
 
     return $self;
 }
@@ -331,7 +333,9 @@ sub init ($self) {
 
         # find working directory for host
         # note: This is being also duplicated by OpenQA::Test::Utils since 49c06362d.
-        my @working_dirs = grep { $_ } ($host_settings->{SHARE_DIRECTORY}, catdir(prjdir(), 'share'));
+        my $base = $self->{_initial_working_dir};
+        my @possible_working_dirs = ($host_settings->{SHARE_DIRECTORY}, catdir(prjdir(), 'share'));
+        my @working_dirs = map { m|^/| ? $_ : "$base/$_" } grep { $_ } @possible_working_dirs;
         my ($working_dir) = grep { -d } @working_dirs;
         unless ($working_dir) {
             log_error("Ignoring host '$host': Working directory does not exist. (Checked: @working_dirs)");
