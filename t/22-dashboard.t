@@ -77,7 +77,7 @@ subtest 'Validation errors' => sub {
     $t->get_ok('/dashboard_build_results/?group=opensuse')->status_is(400)
       ->json_like('/error', qr/invalid regex: fake regex error after validation/i);
     my $build_results_mock = Test::MockModule->new('OpenQA::BuildResults');
-    $build_results_mock->redefine(filter_subgroups => sub { die 'invalid regex: fake regex error after validation' });
+    $build_results_mock->redefine(find_child_groups => sub { die 'invalid regex: fake regex error after validation' });
     $t->get_ok("/parent_group_overview/$id?group=opensuse")->status_is(400)
       ->content_like(qr/invalid regex: fake regex error after validation/i);
 };
@@ -688,6 +688,7 @@ subtest 'Dashboard limit reached between groups' => sub {
     my $res = $t->tx->res->json;
     is scalar @{$res->{results}}, 1, 'Only one group returned';
     is $res->{results}->[0]->{group}->{name}, 'AAA', 'The correct group is returned';
+    $group_aaa->delete;
 };
 
 subtest 'Group overview JSON and comments coverage' => sub {
@@ -720,6 +721,81 @@ subtest 'dashboard_build_results coverage' => sub {
     $t->get_ok('/dashboard_build_results.json')->status_is(200);
     my $res = $t->tx->res->json;
     ok scalar @{$res->{results}} > 0, 'results are returned';
+};
+
+subtest 'Ignore job groups' => sub {
+    $t->app->schema->txn_begin;
+    # Create local groups and jobs for testing to avoid interference with other tests
+    my $g1 = $job_groups->create({name => 'IgnoreMe1'});
+    my $g2 = $job_groups->create({name => 'IgnoreMe2'});
+    my $job_defaults = {
+        TEST => 't',
+        DISTRI => 'd',
+        VERSION => 'v',
+        FLAVOR => 'f',
+        ARCH => 'a',
+        BUILD => 'b',
+        state => 'done',
+        priority => 50
+    };
+    $jobs->create({%$job_defaults, group_id => $g1->id});
+    $jobs->create({%$job_defaults, group_id => $g2->id});
+
+    subtest 'Ignore via openqa.ini (ignored_job_groups)' => sub {
+        $t->app->ignored_groups({IgnoreMe1 => 1});
+        my $res = $t->get_ok('/dashboard_build_results.json')->status_is(200)->tx->res->json;
+        my @group_names = map { $_->{group}->{name} } @{$res->{results}};
+        ok !grep({ $_ eq 'IgnoreMe1' } @group_names), 'IgnoreMe1 is hidden when configured in openqa.ini';
+        ok grep({ $_ eq 'IgnoreMe2' } @group_names), 'IgnoreMe2 remains visible when IgnoreMe1 is ignored';
+
+        $t->app->ignored_groups({IgnoreMe1 => 1, IgnoreMe2 => 1});
+        $res = $t->get_ok('/dashboard_build_results.json')->status_is(200)->tx->res->json;
+        @group_names = map { $_->{group}->{name} } @{$res->{results}};
+        ok !grep({ $_ eq 'IgnoreMe1' } @group_names), 'IgnoreMe1 is hidden when multiple groups are ignored';
+        ok !grep({ $_ eq 'IgnoreMe2' } @group_names), 'IgnoreMe2 is hidden when multiple groups are ignored';
+
+        # sloppiness is handled in the attribute builder, so we test it by resetting and letting it recompute
+        $t->app->config->{global}->{ignored_job_groups} = ' , IgnoreMe1 , , ';
+        delete $t->app->{ignored_groups};
+        $res = $t->get_ok('/dashboard_build_results.json')->status_is(200)->tx->res->json;
+        @group_names = map { $_->{group}->{name} } @{$res->{results}};
+        ok !grep({ $_ eq 'IgnoreMe1' } @group_names), 'IgnoreMe1 is hidden even with sloppy config formatting';
+        ok grep({ $_ eq 'IgnoreMe2' } @group_names), 'IgnoreMe2 remains visible with sloppy config for IgnoreMe1';
+        $t->app->ignored_groups({});
+    };
+
+    subtest 'Ignore child groups via openqa.ini' => sub {
+        my $parent = $parent_groups->create({name => 'Test Parent Config'});
+        $g1->update({parent_id => $parent->id});
+        $g2->update({parent_id => $parent->id});
+
+        $t->app->ignored_groups({IgnoreMe1 => 1});
+        my $res = $t->get_ok('/parent_group_overview/' . $parent->id . '.json')->status_is(200)->tx->res->json;
+        my @child_names = map { $_->{name} } @{$res->{children}};
+        ok !grep({ $_ eq 'IgnoreMe1' } @child_names),
+          'Child IgnoreMe1 is hidden in parent overview when ignored globally';
+        ok grep({ $_ eq 'IgnoreMe2' } @child_names), 'Child IgnoreMe2 remains visible in parent overview';
+        $t->app->ignored_groups({});
+    };
+
+    subtest 'Ignore via database flag (ignore_on_dashboard)' => sub {
+        $g1->update({ignore_on_dashboard => 1});
+        my $res = $t->get_ok('/dashboard_build_results.json')->status_is(200)->tx->res->json;
+        my @group_names = map { $_->{group}->{name} } @{$res->{results}};
+        ok !grep({ $_ eq 'IgnoreMe1' } @group_names), 'IgnoreMe1 is hidden when ignore_on_dashboard flag is set';
+        $g1->update({ignore_on_dashboard => 0});
+    };
+
+    subtest 'Ignore parent group via database flag' => sub {
+        my $parent = $parent_groups->create({name => 'Test Parent DB'});
+        $parent->update({ignore_on_dashboard => 1});
+        my $res = $t->get_ok('/dashboard_build_results.json')->status_is(200)->tx->res->json;
+        my @group_names = map { $_->{group}->{name} } @{$res->{results}};
+        ok !grep({ $_ eq 'Test Parent DB' } @group_names),
+          'Parent group is hidden when its ignore_on_dashboard flag is set';
+    };
+
+    $t->app->schema->txn_rollback;
 };
 
 done_testing;

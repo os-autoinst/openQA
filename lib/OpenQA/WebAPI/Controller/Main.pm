@@ -7,6 +7,7 @@ use Feature::Compat::Try;
 
 use Date::Format;
 use Mojo::File qw(path);
+use Mojo::Util qw(trim);
 use Time::Seconds;
 use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Jobs::Constants;
@@ -36,7 +37,9 @@ sub dashboard_build_results ($self) {
     my $regex_problem = $self->regex_problem($group_params, 'group parameter is invalid');
     return $self->render(json => {error => $regex_problem}, status => 400) if $regex_problem;
 
-    my $groups = $self->stash('job_groups_and_parents');
+    my $groups = $self->stash('job_groups_and_parents')
+      // $self->schema->resultset('JobGroupParents')->job_groups_and_parents;
+    my $ignored_groups = $self->app->ignored_groups;
 
     my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
     my $total_jobs_seen = 0;
@@ -44,6 +47,7 @@ sub dashboard_build_results ($self) {
     my @results;
     try {
         for my $group (@$groups) {
+            next if $ignored_groups->{$group->name} || $group->ignore_on_dashboard;
             if (@$group_params) {
                 next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
             }
@@ -56,7 +60,8 @@ sub dashboard_build_results ($self) {
                 $group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef,
                 $group_params,
                 $show_tags ? $tags : undef,
-                defined $max_jobs_limit ? $max_jobs_limit - $total_jobs_seen : undef
+                defined $max_jobs_limit ? $max_jobs_limit - $total_jobs_seen : undef,
+                $ignored_groups
             );
 
             my $build_results_for_group = $build_results->{build_results};
@@ -155,12 +160,13 @@ sub _group_overview ($self, $resultset, $template) {
 
     my $tags = $group->tags;
     my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
+    my $ignored_groups = $self->app->ignored_groups;
     my $cbr;
     try {
         $cbr
           = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
             $time_limit_days, $only_tagged ? $tags : undef,
-            $group_params, $tags, $max_jobs_limit);
+            $group_params, $tags, $max_jobs_limit, $ignored_groups);
     }
     catch ($e) {
         die $e unless $e =~ qr/^invalid regex: /;
@@ -216,6 +222,7 @@ sub _group_overview ($self, $resultset, $template) {
                     max_jobs => $max_jobs,
                     limit_exceeded => $limit_exceeded ? $max_jobs_limit : 0,
                     description => $group->description,
+                    children => $self->stash('children'),
                     comments => \@comments,
                     pinned_comments => \@pinned_comments
                 });

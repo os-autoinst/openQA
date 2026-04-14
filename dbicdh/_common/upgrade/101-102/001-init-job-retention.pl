@@ -8,7 +8,7 @@ use DBIx::Class::DeploymentHandler;
 
 sub ($schema, @args) {
     # init default_keep_*jobs_in_days with default_keep_*results_in_days so existing groups are treated as before
-    for my $group ($schema->resultset('JobGroupParents')->search({})->all) {
+    for my $group ($schema->resultset('JobGroupParents')->search({}, {columns => [qw(id default_keep_results_in_days default_keep_important_results_in_days)]})->all) {
         if (defined(my $retention = $group->get_column('default_keep_results_in_days'))) {
             $group->update({default_keep_jobs_in_days => $retention});
         }
@@ -18,7 +18,7 @@ sub ($schema, @args) {
     }
 
     # init keep_*jobs_in_days with keep_*results_in_days so existing groups are treated as before
-    for my $group ($schema->resultset('JobGroups')->search({})->all) {
+    for my $group ($schema->resultset('JobGroups')->search({}, {columns => [qw(id keep_results_in_days keep_important_results_in_days)]})->all) {
         if (defined(my $retention = $group->get_column('keep_results_in_days'))) {
             $group->update({keep_jobs_in_days => $retention});
         }

@@ -40,7 +40,7 @@ sub register ($self, $type, $name, $options = {}) {
     my $sth_jobs_assets = $dbh->prepare(<<~'END_SQL');
         INSERT INTO jobs_assets (job_id, asset_id, t_created, t_updated, created_by)
                         VALUES (?,      ?,        now(),     now(),      true)
-            ON CONFLICT ON CONSTRAINT jobs_assets_job_id_asset_id DO UPDATE SET created_by = true
+            ON CONFLICT (job_id, asset_id) DO UPDATE SET created_by = true
         END_SQL
     $schema->txn_do(
         sub {

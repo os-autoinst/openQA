@@ -169,6 +169,7 @@ sub _validate_common_properties ($self) {
     $validation->optional('build_version_sort')->num(0, 2);
     $validation->optional('default_priority')->num(0);
     $validation->optional('carry_over_bugrefs')->num(0, 1);
+    $validation->optional('ignore_on_dashboard')->num(0, 1);
     $validation->optional('description');
     for my $field (qw(logs important_logs results important_results jobs important_jobs)) {
         $validation->optional("keep_${field}_in_days")->num(0);
