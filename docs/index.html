@@ -611,6 +611,7 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 <li><a href="#_openid">12.5.1. OpenID</a></li>
 <li><a href="#_oauth2">12.5.2. OAuth2</a></li>
 <li><a href="#_fake">12.5.3. Fake</a></li>
+<li><a href="#_none">12.5.4. None</a></li>
 </ul>
 </li>
 <li><a href="#priority-throttling">12.6. Job Priority Throttling</a></li>
@@ -2735,8 +2736,8 @@ value format can be found in the <a href="https://metacpan.org/pod/DBD::Pg#DBI-C
 <div class="sect2">
 <h3 id="authentication"><a class="anchor" href="#authentication"></a><a class="link" href="#authentication">12.5. User authentication</a></h3>
 <div class="paragraph">
-<p>openQA supports three different authentication methods: OpenID (default),
-OAuth2 and Fake (for development).</p>
+<p>openQA supports four different authentication methods: OpenID (default),
+OAuth2, Fake (for development) and None (no authentication).</p>
 </div>
 <div class="paragraph">
 <p>Use the <code>auth</code> section in
@@ -2832,11 +2833,17 @@ to use different providers.</p>
 <div class="sect3">
 <h4 id="_fake"><a class="anchor" href="#_fake"></a><a class="link" href="#_fake">12.5.3. Fake</a></h4>
 <div class="paragraph">
-<p>For development purposes only! Fake authentication bypass any authentication and
-automatically allow any login requests as 'Demo user' with administrator privileges
-and without password. To ease worker testing, API key and secret is created (or updated)
-with validity of one day during login.
-You can then use following as <code>/etc/openqa/client.conf</code>:</p>
+<p>For development purposes only! This method is a "mock" authentication provider
+designed for openQA developers to test permissions and role-based access
+control (RBAC). It requires an explicit visit to the <code>/login</code> route but allows
+simulating different user roles (e.g. <code>?user=nobody</code> for a non-privileged
+user).</p>
+</div>
+<div class="paragraph">
+<p>To ease worker testing, an API key and secret are created (or updated) for the
+'Demo user' with administrator privileges and a validity of one day during
+login.
+You can then use the following as <code>/etc/openqa/client.conf</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2850,8 +2857,27 @@ You can then use following as <code>/etc/openqa/client.conf</code>:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>If you switch authentication method from Fake to any other, review your API keys!
-You may be vulnerable for up to a day until Fake API key expires.</p>
+<p>If you switch the authentication method from Fake to any other, review your
+API keys! You may be vulnerable for up to a day until the Fake API key
+expires.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_none"><a class="anchor" href="#_none"></a><a class="link" href="#_none">12.5.4. None</a></h4>
+<div class="paragraph">
+<p>This method bypasses any authentication entirely and automatically treats
+every visitor as an 'admin' user with administrator privileges. No explicit
+login is required. It is ideal for private, local, or trusted network
+instances where any form of login (even a "Fake" one) is considered
+unnecessary, for example in automated CI setups. Do not use for any exposed
+instances!</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[auth]</span>
+<span class="tok-c1"># method name is case sensitive!</span>
+<span class="tok-na">method</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">None</span></code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -8327,11 +8353,6 @@ count into <code>MAX_JOB_TIME</code>. However, the setup time is limited by defa
 hour. This can be changed by setting <code>MAX_SETUP_TIME</code>.</p>
 </div>
 <div class="paragraph">
-<p>To save disk space, increasing <code>MAX_JOB_TIME</code> beyond the default will
-automatically disable the video by adding <code>NOVIDEO=1</code> to the test settings. This
-can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
-</div>
-<div class="paragraph">
 <p>The variable <code>TIMEOUT_SCALE</code> allows to scale <code>MAX_JOB_TIME</code> and timeouts within
 the backend, for example the <a href="#_api">test API</a>. This is supposed to be set
 within the worker settings on slow worker hosts. It has no influence on the
@@ -13149,16 +13170,14 @@ the system service. E.g.</p>
 <p>See the docs for details <a href="https://metacpan.org/pod/Devel::Cover" class="bare">https://metacpan.org/pod/Devel::Cover</a></p>
 </div>
 <div class="paragraph">
-<p>To run the tests with a different command than <code>prove</code> you can set the
-<code>PROVE</code> variable in the Makefile. For example, in our CircleCI tests we
-use <code>tools/prove_wrapper</code> to run the tests. This wrapper is a simple script that
-will run <code>prove</code> and fail the test if there is unhandled output. This is useful
-to avoid having unhandled output in tests. To run the tests with
-<code>tools/prove_wrapper</code> you can do:</p>
+<p>We use <code>tools/prove_wrapper</code> to run the tests. This wrapper is a simple script
+that will run <code>prove</code> and fail the test if there is unhandled output. This is
+useful to avoid having unhandled output in tests. To run tests directly with
+<code>prove</code>, set the <code>PROVE</code> variable when invoking <code>make</code>, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PROVE</span><span class="tok-o">=</span>tools/prove_wrapper<span class="tok-w"> </span>make<span class="tok-w"> </span><span class="tok-nb">test</span><span class="tok-w"> </span><span class="tok-nv">TESTS</span><span class="tok-o">=</span>t/foo.t</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PROVE</span><span class="tok-o">=</span>prove<span class="tok-w"> </span>make<span class="tok-w"> </span><span class="tok-nb">test</span><span class="tok-w"> </span><span class="tok-nv">TESTS</span><span class="tok-o">=</span>t/foo.t</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -15413,7 +15432,7 @@ contact the openQA instance administrator.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-04-02 04:45:04 UTC
+Last updated 2026-04-14 04:45:38 UTC
 </div>
 </div>
 </body>
