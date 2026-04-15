@@ -289,7 +289,7 @@ test-unit-and-integration: node_modules ## Run unit and integration tests (low l
 setup-database: ## Set up the test database
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 
-define RUN_SERVICE_TEST_DB
+define RUN_SERVICE_TEST_ENV
 	OPENQA_BASEDIR=t/data \
 	OPENQA_DATABASE=test \
 	OPENQA_WEBUI_MODE=test \
@@ -297,13 +297,25 @@ define RUN_SERVICE_TEST_DB
 	$(1)
 endef
 
-.PHONY: run-webui-test-db
-run-webui-test-db: setup-database ## Run a local web UI instance using a test database
-	$(call RUN_SERVICE_TEST_DB,script/openqa-webui-daemon)
+.PHONY: run-webui-test-env
+run-webui-test-env: setup-database ## Run a local web UI instance using a test environment
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon)
 
-.PHONY: run-gru-test-db
-run-gru-test-db: setup-database ## Run a local GRU instance using a test database
-	$(call RUN_SERVICE_TEST_DB,script/openqa-gru)
+.PHONY: run-gru-test-env
+run-gru-test-env: setup-database ## Run a local GRU instance using a test environment
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-gru)
+
+.PHONY: run-websockets-test-env
+run-websockets-test-env: setup-database ## Run a local websockets server instance using a test environment
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-websockets-daemon)
+
+.PHONY: run-scheduler-test-env
+run-scheduler-test-env: setup-database ## Run a local scheduler instance using a test environment
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-scheduler-daemon)
+
+.PHONY: run-worker-test-env
+run-worker-test-env: setup-database ## Run a local worker instance using a test environment
+	$(call RUN_SERVICE_TEST_ENV,script/worker)
 
 # prepares running the tests within a container (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables
