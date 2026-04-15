@@ -51,6 +51,20 @@ for my $script (sort keys %types) {
       or diag "Output: $out";
 }
 
+subtest 'YAML validation' => sub {
+    my $script = 'openqa-validate-yaml';
+    my $job_templates = "$Bin/data/job-templates";
+    my ($success, $out, $is_timeout) = run_script $script, ['--validate-schema', "$job_templates/openqa.yaml"];
+    ok $success && !$is_timeout, 'validation passed';
+    like $out, qr/Validating schema/, 'schema validated as well';
+    like $out, qr/openqa.yaml - valid/, 'YAML considered valid';
+    ($success, $out, $is_timeout) = run_script $script, ["$job_templates/openqa-invalid.yaml"];
+    ok !$success, 'validation failed';
+    like $out, qr/not allowed.*invalid.*failed/s, 'YAML considered invalid';
+    $out = qx{cat '$job_templates/openqa-invalid.yaml' | '$Bin/../script/$script' - 2>&1};
+    like $out, qr/not allowed.*invalid.*failed/s, 'can read YAML from stdin' or always_explain "$script: $!";
+};
+
 # cover timeout handling in run_script
 {
     my $run_mock = Test::MockModule->new('main', no_auto => 1);
