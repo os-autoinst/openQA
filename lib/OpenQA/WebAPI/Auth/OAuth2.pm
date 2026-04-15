@@ -85,18 +85,26 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
         fullname => $details->{name},
         email => $details->{email});
 
-    $controller->session->{user} = $user->username;
-    $controller->redirect_to('index');
+    my $session = $controller->session;
+    $session->{user} = $user->username;
+    $controller->redirect_to(Mojo::URL->new($session->{return_page} // 'index')->path_query);
 }
+
+sub auth_logout ($controller) { delete $controller->session->{return_page} }
 
 sub auth_login ($controller) {
     croak 'Config was not parsed' unless my $main_config = $controller->app->config->{oauth2};
     croak 'Setup was not called' unless my $provider_config = $main_config->{provider_config};
 
+    my $handle_login_response_from_provider = defined $controller->param('code');
+    my $handle_login_request = !$handle_login_response_from_provider;
     my $base_url = $controller->app->config->{global}->{base_url};
     my $host = $base_url ? Mojo::URL->new($base_url)->host : $controller->req->url->host;
     my $get_token_args = {redirect_uri => $controller->url_for('login')->userinfo(undef)->host($host)->to_abs};
     $get_token_args->{scope} = $provider_config->{token_scope};
+    if (my $return_page = $handle_login_request ? $controller->return_page : undef) {
+        $controller->session->{return_page} = $return_page;
+    }
     $controller->oauth2->get_token_p($main_config->{provider} => $get_token_args)
       ->then(sub { update_user($controller, $main_config, $provider_config, shift) })
       ->catch(sub { $controller->render(text => shift, status => 403) });

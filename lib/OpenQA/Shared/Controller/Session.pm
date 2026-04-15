@@ -61,6 +61,8 @@ sub _redirect_to_referrer ($self, $ref, $res) {
     return $self->redirect_to($ref);
 }
 
+sub return_page ($self) { $self->param('return_page') || $self->req->headers->referrer }
+
 sub create ($self) {
     my $ref = $self->req->headers->referrer;
     my $config = $self->app->config;

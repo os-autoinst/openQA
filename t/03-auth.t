@@ -197,10 +197,18 @@ subtest OAuth2 => sub {
         my $c = $t->app->build_controller;
         $get_tx->res->error(undef);
         $msg_mock->redefine(json => {id => 42, login => 'Demo'});
+        $t->app->helper(return_page => sub ($c) { 'http://test/foo/bar' });
+        $t->app->config->{oauth2} = {provider_config => \%provider_cfg};
+        throws_ok { OpenQA::WebAPI::Auth::OAuth2::auth_login($c) } qr/invalid provider/i,
+          'auth login executed as far as needed to assign return page';
+        is $c->session->{return_page}, 'http://test/foo/bar', 'page to return to saved via session';
         OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
         is $c->res->code, 302, 'status code (redirection)';
+        is $c->res->headers->header('Location'), '/foo/bar', 'redirection to previous page (only path/query)';
         is $c->session->{user}, '42', 'user set';
         is $users->search(\%expected_user)->count, 1, 'user created';
+        OpenQA::WebAPI::Auth::OAuth2::auth_logout($c);
+        ok !exists $c->session->{return_page}, 'return page cleared on logout';
     };
 };
 
@@ -208,3 +216,5 @@ throws_ok { test_auth_method_startup('nonexistant') } qr/Unable to load auth mod
   'refused to start with non existent auth module';
 
 done_testing;
+
+END { path("$FindBin::Bin/data/openqa/share/factory/tmp")->remove_tree }
