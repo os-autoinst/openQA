@@ -10,6 +10,7 @@ use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
 
 use constant MANDATORY_PARAMETERS => qw(DISTRI VERSION FLAVOR ARCH);
+use constant RESERVED_API_KEYS_RE => qr/^(?:async|scheduled_product_clone_id)$/;
 
 =pod
 
@@ -157,7 +158,9 @@ created, their job ids and the information for jobs that could not be scheduled.
 =cut
 
 sub create ($self) {
-    my $params = $self->req->params->to_hash;
+    my $raw_params = $self->req->params->to_hash;
+    my $params = {map { ($_ !~ RESERVED_API_KEYS_RE ? uc($_) : $_) => $raw_params->{$_} } keys %$raw_params};
+    $self->validation->input({%$params});
     my $async = delete $params->{async};    # whether to run the operation as a Minion job
     my $scheduled_product_clone_id
       = delete $params->{scheduled_product_clone_id};    # ID of a previous product to clone settings from
@@ -202,8 +205,8 @@ sub create ($self) {
     }
 
     # add user-specified $params to %params for the new scheduled product and validate download parameters
-    # note: keys are converted to upper-case, URL-encoded slashes are restored
-    $params{uc $_} = ($params->{$_} =~ s@%2F@/@gr) for keys %$params;
+    # note: URL-encoded slashes are restored
+    $params{$_} = ($params->{$_} =~ s@%2F@/@gr) for keys %$params;
     return undef unless $self->validate_download_parameters(\%params);
 
     # add entry to ScheduledProducts table and log event
