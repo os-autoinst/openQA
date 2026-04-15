@@ -639,7 +639,10 @@ sub is_ovs_dbus_service_running ($self) {
     try { defined &Net::DBus::system or require Net::DBus }
     catch ($e) { return 0 }    # uncoverable statement
     unless (defined $self->{_system_dbus}) {
-        $self->{_system_dbus} = Net::DBus->system(nomainloop => 1);
+        my $dbus;
+        try { $dbus = Net::DBus->system(nomainloop => 1) }
+        catch ($e) { return 0 }    # uncoverable statement
+        $self->{_system_dbus} = $dbus;
         # this avoids piling up signals we never do anything with - POO #183833
         $self->{_system_dbus}->get_bus_object->disconnect_from_signal('NameOwnerChanged', 1);
     }
