@@ -8,6 +8,12 @@ use Carp 'croak';
 use Mojo::Util qw(dumper);
 use OpenQA::Log qw(log_debug);
 
+# The OAuth2 provider handles login requests and responses from the auth provider both via the `/login` route.
+# So both cases are handled in `auth_login` and `auth_response` is not implemented. This is in-line with the
+# helper `get_token_p` from `Mojolicious::Plugin::OAuth2` which is also designed to do these two things at the
+# same time (see https://metacpan.org/pod/Mojolicious::Plugin::OAuth2#oauth2.get_token_p). The distinction
+# between the cases is made by whether `$data` is passed to `update_user`.
+
 sub auth_setup ($server) {
     my $app = $server->app;
     my $config = $app->config->{oauth2};
