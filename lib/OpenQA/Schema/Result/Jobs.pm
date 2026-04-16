@@ -2046,7 +2046,8 @@ sub handle_retry ($self) {
     return 0 unless looks_like_number $retry;
     my $ancestors = $self->ancestors;
     return 0 if $ancestors >= $retry;
-    my $system_user_id = $self->result_source->schema->resultset('Users')->system->id;
+    return 0 unless my $system_user = $self->result_source->schema->resultset('Users')->system({select => ['id']});
+    my $system_user_id = $system_user->id;
     my $msg = "Restarting because RETRY is set to $retry (and only restarted $ancestors times so far)";
     $self->comments->create({text => $msg, user_id => $system_user_id});
     return 1;

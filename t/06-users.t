@@ -11,10 +11,12 @@ require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::Output 'combined_like';
 
 OpenQA::Test::Database->new->create;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-my $users = $t->app->schema->resultset('Users');
+my $schema = $t->app->schema;
+my $users = $schema->resultset('Users');
 
 subtest 'new users are not ops and admins' => sub {
     my $mordred_id = 'https://openid.badguys.uk/mordred';
@@ -29,6 +31,13 @@ subtest 'system user presence' => sub {
     ok !$system_user->is_admin, 'system user is not an admin';
     ok !$system_user->is_operator, 'system user is not an operator';
     is $system_user->email, 'noemail@open.qa', 'system user`s email uses open.qa domain';
+    subtest 'deleted system user handled' => sub {
+        $schema->txn_begin;
+        $users->search({username => 'system', provider => ''})->delete;
+        combined_like { is $users->system, undef, 'system returns undef if user has been deleted' }
+        qr/automatic commenting.*does not work/, 'warning logged if system user is missing';
+        $schema->txn_rollback;
+    };
 };
 
 subtest 'new user is admin if no admin is present' => sub {

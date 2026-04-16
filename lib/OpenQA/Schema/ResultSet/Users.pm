@@ -4,6 +4,10 @@
 package OpenQA::Schema::ResultSet::Users;
 
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
+use OpenQA::Log qw(log_error);
+
+use constant SYSTEM_USER_ERROR =>
+'Unable to find the "system" user (username: "system", provider: "") so automatic commenting and retrying does not work.';
 
 sub create_user ($self, $id, %attrs) {
     return unless $id;
@@ -28,6 +32,9 @@ sub create_user ($self, $id, %attrs) {
     return $user;
 }
 
-sub system ($self, $attrs = undef) { $self->find({username => 'system', provider => ''}, $attrs) }
+sub system ($self, $attrs = undef) {
+    log_error SYSTEM_USER_ERROR unless my $user = $self->find({username => 'system', provider => ''}, $attrs);
+    return $user;
+}
 
 1;
