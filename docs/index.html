@@ -10108,7 +10108,7 @@ needs to be enabled manually in <code>openqa.ini</code>.</p>
 </div>
 <div class="paragraph">
 <p>Once enabled the experimental MCP endpoint becomes available under the path
-<code>/experimental/mcp</code>. At the moment all implemented MCP tools are read-only,
+<code>/mcp</code>. At the moment all implemented MCP tools are read-only,
 that means LLMs can review information provided by openQA, but are unable to
 make changes or trigger actions. Once write operations become available
 with future updates, they will have to be enabled with a different setting
@@ -10129,7 +10129,7 @@ setting the <code>Authorization</code> HTTP header:</p>
 <pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-nt">&quot;mcpServers&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-nt">&quot;openqa&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">      </span><span class="tok-nt">&quot;url&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s2">&quot;http://127.0.0.1:9526/experimental/mcp&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-nt">&quot;url&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s2">&quot;http://127.0.0.1:9526/mcp&quot;</span><span class="tok-p">,</span>
 <span class="tok-w">      </span><span class="tok-nt">&quot;headers&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">        </span><span class="tok-nt">&quot;Authorization&quot;</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s2">&quot;Bearer USER:KEY:SECRET&quot;</span>
 <span class="tok-w">      </span><span class="tok-p">}</span>
@@ -10149,7 +10149,7 @@ setting the <code>Authorization</code> HTTP header:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="shell"><span></span>gemini<span class="tok-w"> </span>mcp<span class="tok-w"> </span>add<span class="tok-w"> </span>openqa<span class="tok-w"> </span>http://127.0.0.1:9526/experimental/mcp<span class="tok-w"> </span>-H<span class="tok-w"> </span><span class="tok-s1">&#39;Authorization: Bearer USER:KEY:SECRET&#39;</span><span class="tok-w"> </span>-t<span class="tok-w"> </span>http</code></pre>
+<pre class="pygments highlight"><code data-lang="shell"><span></span>gemini<span class="tok-w"> </span>mcp<span class="tok-w"> </span>add<span class="tok-w"> </span>openqa<span class="tok-w"> </span>http://127.0.0.1:9526/mcp<span class="tok-w"> </span>-H<span class="tok-w"> </span><span class="tok-s1">&#39;Authorization: Bearer USER:KEY:SECRET&#39;</span><span class="tok-w"> </span>-t<span class="tok-w"> </span>http</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -15432,7 +15432,7 @@ contact the openQA instance administrator.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-04-14 04:45:38 UTC
+Last updated 2026-04-16 04:44:21 UTC
 </div>
 </div>
 </body>
