@@ -47,7 +47,7 @@ sub auth_login ($c) {
     );
 
     my $return_url = Mojo::URL->new(qq{$url/response});
-    if (my $return_page = $c->param('return_page') || $c->req->headers->referrer) {
+    if (my $return_page = $c->return_page) {
         $return_page = Mojo::URL->new($return_page)->path_query;
         # return_page is encoded using base64 (in a version that avoids / and + symbol)
         # as any special characters like / or ? when urlencoded via % symbols,

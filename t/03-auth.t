@@ -40,7 +40,7 @@ sub test_auth_method_startup ($auth, @options) {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     $t->app->helper(icon_url => sub { '/favicon.ico' });
     is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
-    $t->get_ok('/login' => {Referer => 'http://open.qa/tests/42'});
+    $t->get_ok('/login' => {Referer => 'http://open.qa/tests/42'})->status_is(302, 'got redirected');
 }
 
 sub mojo_has_request_debug { $Mojolicious::VERSION <= 9.21 }
@@ -152,19 +152,28 @@ subtest OpenID => sub {
 };
 
 subtest OAuth2 => sub {
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
-    lives_ok { $t->app->plugin(OAuth2 => {mocked => {key => 'deadbeef'}}) } 'auth mocked';
-    throws_ok { test_auth_method_startup 'OAuth2' } qr/No OAuth2 provider selected/, 'Error with no provider selected';
-    throws_ok { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = foo\n")) }
-    qr/OAuth2 provider 'foo' not supported/, 'Error with unsupported provider';
-    combined_like { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n")) }
-    mojo_has_request_debug ? qr/302 Found/ : qr//, 'Plugin loaded';
-
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
     my $msg_mock = Test::MockModule->new('Mojo::Message');
-    my @get_args;
     my $get_tx = Mojo::Transaction->new;
-    $ua_mock->redefine(get => sub { shift; push @get_args, [@_]; $get_tx });
+    my @get_args;
+    $ua_mock->redefine(get => sub ($ua, @args) { push @get_args, [@args]; $get_tx });
+
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    lives_ok { $t->app->plugin(OAuth2 => {mocked => {key => 'deadbeef'}}) } 'auth mocked';
+
+    subtest 'auth_login function via /login route' => sub {
+        throws_ok { test_auth_method_startup 'OAuth2' } qr/No OAuth2 provider selected/,
+          'Error with no provider selected';
+        throws_ok { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = foo\n")) }
+        qr/OAuth2 provider 'foo' not supported/, 'Error with unsupported provider';
+        $msg_mock->redefine(json => {id => 42, login => 'Demo'});
+        combined_like {
+            my $t = test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n"));
+            like $t->tx->res->headers->header('Location'), qr/github\.com/, 'redirection to GitHub';
+            $t->get_ok('/login?code=foo')->status_is(403, 'login with wrong code prevented');
+        }
+        mojo_has_request_debug ? qr/302 Found/ : qr//, 'Plugin loaded';
+    };
 
     my %main_cfg = (provider => 'custom');
     my %provider_cfg
@@ -176,6 +185,7 @@ subtest OAuth2 => sub {
     subtest 'failure when requesting user details' => sub {
         my $c = $t->app->build_controller;
         $get_tx->res->error({code => 500, message => 'Internal server error'});
+        $msg_mock->unmock('json');
         OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
         is $c->res->code, 403, 'status code';
         is $c->res->body, '500 response: Internal server error', 'error message';
@@ -197,10 +207,18 @@ subtest OAuth2 => sub {
         my $c = $t->app->build_controller;
         $get_tx->res->error(undef);
         $msg_mock->redefine(json => {id => 42, login => 'Demo'});
+        $t->app->helper(return_page => sub ($c) { 'http://test/foo/bar' });
+        $t->app->config->{oauth2} = {provider_config => \%provider_cfg};
+        throws_ok { OpenQA::WebAPI::Auth::OAuth2::auth_login($c) } qr/invalid provider/i,
+          'auth login executed as far as needed to assign return page';
+        is $c->session->{return_page}, 'http://test/foo/bar', 'page to return to saved via session';
         OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
         is $c->res->code, 302, 'status code (redirection)';
+        is $c->res->headers->header('Location'), '/foo/bar', 'redirection to previous page (only path/query)';
         is $c->session->{user}, '42', 'user set';
         is $users->search(\%expected_user)->count, 1, 'user created';
+        OpenQA::WebAPI::Auth::OAuth2::auth_logout($c);
+        ok !exists $c->session->{return_page}, 'return page cleared on logout';
     };
 };
 
@@ -208,3 +226,5 @@ throws_ok { test_auth_method_startup('nonexistant') } qr/Unable to load auth mod
   'refused to start with non existent auth module';
 
 done_testing;
+
+END { path("$FindBin::Bin/data/openqa/share/factory/tmp")->remove_tree }

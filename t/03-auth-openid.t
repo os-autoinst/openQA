@@ -36,7 +36,8 @@ my $params = Test::MockObject->new->set_always(pairs => ['openid.op_endpoint', '
 my $req = Test::MockObject->new->set_always(params => $params)->set_always(url => $url);
 my $log = Test::MockObject->new->set_true('error');
 my $app = Test::MockObject->new->set_always(config => {})->set_always(log => $log);
-$c->set_always(req => $req)->set_always(app => $app)->set_true('flash');
+$c->set_always(return_page => undef)->set_always(req => $req)->set_always(app => $app)->set_true('flash');
+Test::MockObject->new->set_always(params => $params)->set_always(url => $url);
 is +OpenQA::WebAPI::Auth::OpenID::auth_response($c), 0, 'can call auth_response';
 $c->app->log->called_ok('error', 'an error was logged for call without proper config');
 
