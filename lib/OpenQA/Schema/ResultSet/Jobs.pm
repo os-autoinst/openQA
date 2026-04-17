@@ -216,8 +216,8 @@ sub _apply_prio_throttling ($settings, $new_job_args, $group = undef) {
     if ($config && $group && (my $group_throttling = $config->{misc_limits}->{prio_group_data})) {
         for my $rule (@$group_throttling) {
             my $prop = $rule->{property};
-            my $val = $group->$prop;
-            if (defined $val && $val =~ $rule->{regex}) {
+            my $val = $group->$prop // '';
+            if ($val =~ $rule->{regex}) {
                 $new_job_args->{priority} += $rule->{increment};
                 my $sign = $rule->{increment} >= 0 ? '+' : '';
                 push @throttling_info, "$sign$rule->{increment} because job group $prop matches $rule->{regex}";

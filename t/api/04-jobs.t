@@ -1134,6 +1134,21 @@ subtest 'priority correctly assigned when posting job' => sub {
         $t->app->config->{misc_limits}->{prio_group_data} = undef;
     };
 
+    subtest 'priority adjustment based on empty job group description' => sub {
+        my $group = $schema->resultset('JobGroups')->find({name => 'opensuse'});
+        $group->update({description => undef});
+        my %new_job_args = (priority => $default_prio);
+        $t->app->config->{misc_limits}->{prio_group_parameters} = 'description:^$:73';
+        $t->app->config->{misc_limits}->{prio_group_data}
+          = OpenQA::Setup::_load_prio_group_throttling($t->app, $t->app->config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling({}, \%new_job_args, $group);
+        is $new_job_args{priority}, $default_prio + 73, 'priority increased based on empty group description';
+
+        # reset for following tests
+        $t->app->config->{misc_limits}->{prio_group_parameters} = '';
+        $t->app->config->{misc_limits}->{prio_group_data} = undef;
+    };
+
     subtest 'priority scaled up due to QEMURAM demand' => sub {
         my %new_job_args = (priority => $default_prio);
         my $add = 20;
