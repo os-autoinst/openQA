@@ -147,7 +147,7 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     # assign scheduled product
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
-    my $debug_msg = _apply_prio_throttling(\%settings, \%new_job_args, $group);
+    my $debug_msg = $self->_apply_prio_throttling(\%settings, \%new_job_args, $group);
     $settings{_PRIORITY_EXPLANATION} = $debug_msg if $debug_msg;
 
     my $job = $self->create(\%new_job_args);
@@ -191,7 +191,7 @@ sub _apply_max_job_time_prio ($factor, $time, $throt_config, $job_args) {
     return $info;
 }
 
-sub _apply_prio_throttling ($settings, $new_job_args, $group = undef) {
+sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
     my $debug_msg;
     my $base_prio = $new_job_args->{priority} // 0;
     my @throttling_info;
@@ -224,6 +224,21 @@ sub _apply_prio_throttling ($settings, $new_job_args, $group = undef) {
             }
         }
     }
+
+    if (my $limits = $config ? $config->{misc_limits} : undef) {
+        my $threshold = $limits->{throttle_failing_job_threshold};
+        my $step = $limits->{throttle_failing_job_prio_step};
+        my $history_length = $limits->{throttle_failing_job_history_length};
+        if (   $threshold > 0
+            && $step > 0
+            && (my $failures = $self->_consecutive_failures($new_job_args, $history_length)) >= $threshold)
+        {
+            my $increment = $step * ($failures - $threshold + 1);
+            $new_job_args->{priority} += $increment;
+            push @throttling_info, sprintf '+%d because of %d consecutive failures in this scenario', $increment,
+              $failures;
+        }
+    }
     if (@throttling_info) {
         my $info_str = join '; ', @throttling_info;
         $debug_msg .= sprintf
@@ -231,6 +246,19 @@ sub _apply_prio_throttling ($settings, $new_job_args, $group = undef) {
           $base_prio, $new_job_args->{priority}, $info_str;
     }
     return $debug_msg;
+}
+
+sub _consecutive_failures ($self, $job_args, $history_length) {
+    my $conds = [
+        {'me.state' => OpenQA::Jobs::Constants::DONE},
+        {'me.result' => {-not_in => [OpenQA::Jobs::Constants::ABORTED_RESULTS]}},
+        map { {"me.$_" => $job_args->{$_}} } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS
+    ];
+    my $attrs = {order_by => ['me.id DESC'], rows => $history_length, select => [qw(me.id me.result)]};
+    my @recent_jobs = $self->search({-and => $conds}, $attrs)->all;
+    my $failures
+      = List::Util::first { OpenQA::Jobs::Constants::is_ok_result($recent_jobs[$_]->result) } 0 .. $#recent_jobs;
+    return $failures // scalar @recent_jobs;
 }
 
 sub _handle_dependency_settings ($self, $settings, $new_job_args) {
