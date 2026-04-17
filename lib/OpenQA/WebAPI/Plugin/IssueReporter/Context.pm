@@ -30,6 +30,9 @@ sub get_context ($c) {
 
 # this takes the logic from the external_reporting.html.ep
 sub get_regression_links ($c, $job) {
+    if (my $regression_links = $c->stash('regression_links')) {
+        return @$regression_links;
+    }
     my $build_link = sub ($j) {
         my $turl = $c->url_for('test', testid => $j->id)->to_abs;
         return '[' . $j->BUILD . "]($turl)";
@@ -45,6 +48,7 @@ sub get_regression_links ($c, $job) {
         }
         $first_known_bad = $build_link->($prev);
     }
+    $c->stash(regression_links => [$first_known_bad, $last_good]);
     return ($first_known_bad, $last_good);
 }
 
