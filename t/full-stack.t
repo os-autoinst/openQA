@@ -17,6 +17,8 @@ BEGIN {
 
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
+
+    $ENV{OS_AUTOINST_STORAGE_KEEP_FREE_RATIO} = 0;
 }
 
 use Test::Warnings ':report_warnings';
