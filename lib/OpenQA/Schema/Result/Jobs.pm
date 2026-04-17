@@ -1660,7 +1660,7 @@ sub needle_dir ($self) {
 }
 
 # return the last X complete jobs of the same scenario
-sub _previous_scenario_jobs ($self, $rows = undef) {
+sub _previous_scenario_jobs ($self, $rows = undef, $search_attrs = {}) {
     my $schema = $self->result_source->schema;
     my $conds = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     for my $key (SCENARIO_WITH_MACHINE_KEYS) {
@@ -1668,7 +1668,8 @@ sub _previous_scenario_jobs ($self, $rows = undef) {
     }
     my %attrs = (
         order_by => ['me.id DESC'],
-        rows => $rows
+        rows => $rows,
+        %$search_attrs,
     );
     return $schema->resultset('Jobs')->search({-and => $conds}, \%attrs)->all;
 }

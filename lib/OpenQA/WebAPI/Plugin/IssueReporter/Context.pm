@@ -41,7 +41,7 @@ sub get_regression_links ($c, $job) {
     my $first_known_bad = $build_link->($job) . ' (current job)';
     my $last_good = '(unknown)';
 
-    for my $prev ($job->_previous_scenario_jobs) {
+    for my $prev ($job->_previous_scenario_jobs(undef, {select => [qw/ me.id me.BUILD me.result /]})) {
         if (($prev->result // '') =~ /(passed|softfailed)/) {
             $last_good = $build_link->($prev);
             last;
