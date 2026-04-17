@@ -56,12 +56,16 @@ sub auth ($self) {
     # Browser with a logged in user
     my ($user, $reason) = (undef, 'Not authorized');
     if ($user = $self->current_user) {
-        ($user, $reason) = (undef, 'Bad CSRF token!') unless $self->req->method eq 'GET' || $self->valid_csrf;
+        if ($self->req->method ne 'GET' && !$self->valid_csrf) {
+            # Invalidate session-based auth if CSRF is missing; fallback to API headers if present
+            $user = undef;
+            $self->render(json => {error => 'Bad CSRF token!'}, status => 403) and return 0
+              unless $self->is_api_request;
+        }
     }
 
     # No session (probably not a browser)
-    else {
-
+    if (!$user) {
         # Personal access token
         if (($self->req->headers->authorization // '') =~ /^Bearer\s+(.+)$/) {
             ($user, $reason) = $self->_token_auth($reason, $1);
@@ -196,6 +200,7 @@ sub _key_auth ($self, $reason, $key) {
 }
 
 sub _valid_hmac ($self, $hash, $request, $our_timestamp, $remote_timestamp, $api_key) {
+    return 0 unless defined $hash;
     return 0 unless $self->_is_timestamp_valid($our_timestamp, $remote_timestamp);
     return 0 if _is_expired($api_key);
     return 0 unless $api_key->secret;
