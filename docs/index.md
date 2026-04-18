@@ -1,7 +1,3 @@
-:sectnums:
-ifdef::basebackend-html\[toc::\[\]\]
-:sectlinks:
-:sectanchors:
 include::GettingStarted.md[]
 include::Installing.md[]
 include::UsersGuide.md[]

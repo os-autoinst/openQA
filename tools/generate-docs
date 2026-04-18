@@ -18,4 +18,4 @@ fi
 # Run pandoc
 # We use a simple perl preprocessor to handle include:: directives
 perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md | \
-pandoc -s -f gfm -o build/index.html --metadata title="openQA documentation" --toc
+pandoc -s -f gfm -o build/index.html --metadata title="openQA documentation" --toc --number-sections
