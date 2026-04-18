@@ -1,5 +1,5 @@
 There are two ways to interact with openQA as a user. The web UI and the REST
-API. In this guide we will focus on the latter. You’ve probably already seen a
+API. In this guide we will focus on the latter. You've probably already seen a
 few examples of its use with `openqa-cli` earlier in the documentation.
 
 Here we will start again from the very beginning to give you a more complete
@@ -54,7 +54,7 @@ openqa-cli api --help
 
 # Authentication
 
-Not all REST endpoints are public, many will return a `403` `Forbidden` error if
+Not all REST endpoints are public, many will return a `403 Forbidden` error if
 you try to access them without proper credentials. The credentials (or API keys)
 are managed in the web UI, to which you will need operator access.
 
@@ -100,7 +100,7 @@ curl -u arthur:1234567890ABCDEF:ABCDEF1234567890 -X DELETE \
     https://openqa.example.com/api/v1/assets/1
 ```
 
-And for HTTP clients that don’t support Basic authentication or where the use
+And for HTTP clients that don't support Basic authentication or where the use
 of plain HTTP headers might be more convenient, you can also send the
 personal access token in the form of a Bearer token.
 
@@ -117,13 +117,13 @@ openqa.example.com and the user arthur
 machine openqa.example.com login arthur password 1234567890ABCDEF:ABCDEF1234567890
 ```
 
-For `curl` one needs to use `curl` `--netrc`.
-For `wget` it’s `wget` `--auth-no-challenge` so that `wget` will provide the
+For `curl` one needs to use `curl --netrc`.
+For `wget` it's `wget --auth-no-challenge` so that `wget` will provide the
 access credentials without being explicitly asked.
 
 # Features
 
-Many of the `openqa-cli` `api` features are designed to be similar to other
+Many of the `openqa-cli api` features are designed to be similar to other
 commonly used tools like `curl`. It helps a lot if you are already familiar with
 the [HTTP protocol](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) and
 [JSON](https://en.wikipedia.org/wiki/JSON). Both will be referenced extensively.
@@ -184,8 +184,8 @@ echo '{"group_id":2}' | openqa-cli api --host http://openqa.example.com -X PUT \
 
 Most data you pass to the openQA API will be key/value form parameters. Either
 in the query string, or encoded as `application/x-www-form-urlencoded` HTTP
-request body. But you don’t have to worry about this too much, because
-`openqa-cli` `api` knows when to use which format automatically, you just provide
+request body. But you don't have to worry about this too much, because
+`openqa-cli api` knows when to use which format automatically, you just provide
 the key/value pairs.
 
 Form parameters are most commonly passed as additional arguments after the path.
@@ -247,7 +247,7 @@ readability.
 ```
 
 The `--json` option (or `-j` for short) can be used to set a
-`Content-Type:` `application/json` request header. Whenever you need to upload a
+`Content-Type: application/json` request header. Whenever you need to upload a
 JSON document.
 
 ``` sh

@@ -1,4 +1,4 @@
-image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg\[link=https://codecov.io/gh/os-autoinst/openQA\] image:https://circleci.com/gh/os-autoinst/openQA/tree/master.svg?style=svg\["CircleCI", link="https://circleci.com/gh/os-autoinst/openQA/tree/master"\] image:https://openqa.opensuse.org/tests/latest/badge?arch=x86_64&distri=openqa&flavor=dev&test=openqa_install%2Bpublish&version=Tumbleweed\[link="https://openqa.opensuse.org/tests/latest?arch=x86_64&distri=openqa&flavor=dev&machine=64bit-2G&test=openqa_install%2Bpublish&version=Tumbleweed"\]
+image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA] image:https://circleci.com/gh/os-autoinst/openQA/tree/master.svg?style=svg["CircleCI", link="https://circleci.com/gh/os-autoinst/openQA/tree/master"] image:https://openqa.opensuse.org/tests/latest/badge?arch=x86_64&distri=openqa&flavor=dev&test=openqa_install%2Bpublish&version=Tumbleweed[link="https://openqa.opensuse.org/tests/latest?arch=x86_64&distri=openqa&flavor=dev&machine=64bit-2G&test=openqa_install%2Bpublish&version=Tumbleweed"]
 
 openQA is a testing framework that allows you to test GUI applications on one
 hand and bootloader and kernel on the other. In both cases, it is difficult to
@@ -17,7 +17,7 @@ is hosted in a separate [repository](https://github.com/os-autoinst/os-autoinst)
 
 # Getting started
 
-The project’s information is organized into four basic documents. As a first
+The project's information is organized into four basic documents. As a first
 step, read the [Starter Guide](docs/GettingStarted.md) and then, if
 needed, proceed to the [Installation Guide](docs/Installing.md).
 
@@ -48,10 +48,10 @@ pull request ;-)
 
 :openqav3: [openQAv3 project](https://progress.opensuse.org/projects/openqav3)
 
-Our main issue tracker is at {openqav3} in openSUSE’s project management
+Our main issue tracker is at [openQAv3 project](https://progress.opensuse.org/projects/openqav3) in openSUSE's project management
 tool. This Redmine instance is used to coordinate the main development
 effort organizing the existing issues (bugs and desired features) into
-’target versions’.
+'target versions'.
 
 Find contact details and meet developers over
 [our contact page](http://open.qa/contact/).

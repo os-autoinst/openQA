@@ -14,7 +14,7 @@
 
 # 403 messages when using scripts
 
-- If you come across messages displaying `ERROR:` `403` `-` `Forbidden`, make
+- If you come across messages displaying `ERROR: 403 - Forbidden`, make
   sure that the correct API key is present in client.conf file.
 
 - If you are using a hostname other than `localhost`, pass **--host foo** to the script.
@@ -29,13 +29,13 @@ There are few things to take into account when running a development version and
 a packaged version of openqa:
 
 If the setup for the development scenario involves sharing `/var/lib/openqa`,
-it would be wise to have a shared group *openqa*, that will have write and execute
-permissions over said directory, so that *geekotest* user and the normal development
+it would be wise to have a shared group _openqa_, that will have write and execute
+permissions over said directory, so that _geekotest_ user and the normal development
 user can share the environment without problems.
 
 This approach will lead to a problem when the openqa package is updated, since the
-directory permissions will be changed again, nothing a `chmod` `-R` `g+rwx` `/var/lib/openqa/`
-and `chgrp` `-R` `openqa` `/var/lib/openqa` can not fix.
+directory permissions will be changed again, nothing a `chmod -R g+rwx /var/lib/openqa/`
+and `chgrp -R openqa /var/lib/openqa` can not fix.
 
 # Performance impact
 
@@ -65,21 +65,24 @@ setting `OPTIMIZE_IMAGES=0`.
 
 As a first step to start using postgreSQL, please, configure postgreSQL database
 according to the
-<a href="#Contributing.asciidoc#setup-postgresql" class="cross-reference">postgreSQL setup guide</a>
+<a href="Contributing.md#setup-postgresql" class="cross-reference">postgreSQL setup guide</a>
 
 To migrate api keys run following commands:
 
 - Export data from the SQlite db:
-  `` ` ``
-  `sqlite3` `db.sqlite` `-csv` `-separator` `’,’` `’select` `*` `from` `api_keys;’` `>` `apikeys.csv`\`
+
+  ```sh
+  sqlite3 db.sqlite -csv -separator ',' 'select * from api_keys;' > apikeys.csv
+  ```
+
   Note: SQlite database file is located in `/var/lib/openqa/db` by default.
 
-<!-- -->
-
 - Import data to the postgreSQL
-  `` ` ``
-  `#` `openqa` `is` `the` `postgreSQL` `database` `name` `and` `apikeys.csv` `is` `api` `keys` `export` `file`
-  `psql` `-U` `postgres` `-d` `openqa` `-c` `"copy` `api_keys` `from` `’apikeys.csv’` `with` `(format` `csv);"`\`
+
+  ```sh
+  # openqa is the postgreSQL database name and apikeys.csv is api keys export file
+  psql -U postgres -d openqa -c "copy api_keys from 'apikeys.csv' with (format csv);"
+  ```
 
 In case you need to migrate job groups, test suites, use openqa-dump-templates and
 openqa-load-templates scripts accordingly.
@@ -87,7 +90,7 @@ openqa-load-templates scripts accordingly.
 # Steps to debug developer mode setup
 
 This is basically a checklist to go through in case the developer mode is broken in your setup
-(e.g. you are getting the error message `unable` `to` `upgrade` `ws` `to` `command` `server`):
+(e.g. you are getting the error message `unable to upgrade ws to command server`):
 
 1.  Be sure to have everything up to date. That includes relevant packages on the
     machine hosting the web UI and on the worker.
@@ -98,12 +101,11 @@ This is basically a checklist to go through in case the developer mode is broken
 
 3.  Check whether the web browser can reach the livehandler daemon. Go to a running test and open
     the live view. Then open the JavaScript console of the web browser. If it contains messages
-    like `Received` `message` `via` `ws` `proxy:` `…` the livehandler daemon can be reached. Otherwise,
+    like `Received message via ws proxy: …` the livehandler daemon can be reached. Otherwise,
     try the following sub-steps:
-
     1.  The installation guide has been updated to cover the developer mode. In case you installed
         your instance before the developer mode has been introduced, make sure that the Apache module
-        `rewrite` is enabled (via `a2enmod` `rewrite`). Also be sure the vhost configuration looks
+        `rewrite` is enabled (via `a2enmod rewrite`). Also be sure the vhost configuration looks
         like the one found in the openQA Git repository (especially the part for the reverse proxies).
 
     2.  Check whether `openqa-livehandler.service` is running. It is supposed to be run on
@@ -112,21 +114,20 @@ This is basically a checklist to go through in case the developer mode is broken
 
 4.  Check whether the livehandler can reach the os-autoinst command server. Go to a running test
     and open the live view. Then open the JavaScript console of the web browser. If it contains messages
-    like `Received` `message` `via` `ws` `proxy:` `{…,"type":"info","what":"cmdsrvmsg"}` the os-autoinst command
+    like `Received message via ws proxy: {…,"type":"info","what":"cmdsrvmsg"}` the os-autoinst command
     server can be reached. Otherwise there should be at least a message like
-    `Received` `message` `via` `ws` `proxy:` `{"what":"connecting` `to` `os-autoinst` `command` `server` `at` `ws://host:20053/xhB84lUuPlMfhDEF/ws",…}`
+    `Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws://host:20053/xhB84lUuPlMfhDEF/ws",…}`
     which contains the URL the livehandler is attempting to query. In this case
     try the following sub-steps:
-
-    1.  If the host is wrong, add `WORKER_HOSTNAME` `=` `correcthost` to
-        <a href="#GettingStarted.asciidoc#_configuration" class="cross-reference">the worker configuration</a>.
+    1.  If the host is wrong, add `WORKER_HOSTNAME = correcthost` to
+        <a href="GettingStarted.md#configuration" class="cross-reference">the worker configuration</a>.
         The worker should then tell the web UI that it is reachable via
         `correcthost` resulting in a correct URL for the os-autoinst command
         server. Be sure the setting appears after the `[global]` section header.
 
     2.  It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
         port. The required port is `QEMUPORT` plus 1.
-        By default, `QEMUPORT` is set to `$worker_instance_number` `*` `10` `+` `20002` by the worker. So to cover
+        By default, `QEMUPORT` is set to `$worker_instance_number * 10 + 20002` by the worker. So to cover
         worker slots from 1 to 10 one would by default require the ports 20013, 20023, … and 20103.
 
 5.  It can also help to look at the [architecture diagram](images/architecture.svg) which shows

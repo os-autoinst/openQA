@@ -10,17 +10,17 @@ the ability to process logs from external harnesses, and display the results int
 within the job results of the webUI.
 
 One could say that a Test Harness is supported if its output is compatible with
-the available {parser-format}, such as LTP, and also xUnit or JUnit, but this can
+the available [parsers](#parser-formats), such as LTP, and also xUnit or JUnit, but this can
 be easily extended to include more formats, such as RSpec or TAP.
 
 The requirements to use this functionality, are quite simple:
 
-- The test harness must produce a compatible format with supported {parser-format}.
+- The test harness must produce a compatible format with supported [parsers](#parser-formats).
 
   \* The test results can be uploaded via \`testapi
   parse_extra_log\` within an openQA tests.
 
-- The test results can also be uploaded via web {api-endpoint}.
+- The test results can also be uploaded via web [Web Api endpoint](#webapi-endpoint).
 
 openQA will store these results in its own internal format for easier presentation,
 but still will allow the original file to be downloaded.
@@ -141,8 +141,8 @@ my $from_json = OpenQA::Parser::Format::JUnit->from_json($json_serialization);
 
 ## openQA internal test result storage
 
-It is important to know that openQA’s internal mapping for test results works operating almost
+It is important to know that openQA's internal mapping for test results works operating almost
 entirely on the filesystem, leaving only the test modules to be registered into the database, this
-leads to the following relation: A test module’s name is used to create a file with details
+leads to the following relation: A test module's name is used to create a file with details
 (details-\$testmodule.json), that will contain a reference to step details, which is a collection of
 references to files, using a field "text" as tie in, and expecting a filename.

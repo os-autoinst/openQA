@@ -102,7 +102,7 @@ You can delete your account, which will:
 
 - Remove your personal information (email, fullname, nickname)
 
-- Anonymize your username (replaced with "deleted-user-\[id\]")
+- Anonymize your username (replaced with "deleted-user-[id]")
 
 - Delete your API keys
 
@@ -131,7 +131,7 @@ No third-party analytics or tracking services are used.
 # Policy Changes
 
 This policy may be updated from time to time. The effective date is noted
-below. Significant changes will be communicated through the openQA instance’s
+below. Significant changes will be communicated through the openQA instance's
 announcement channels.
 
 # Effective Date

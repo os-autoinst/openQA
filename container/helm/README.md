@@ -80,7 +80,7 @@ in `values.yaml` (`baseUrl`):
 Then access the UI at http://openqa.internal.
 
 **Note:** In production, the cloud provider (AWS, GCP, etc.) provisions the
-LoadBalancer automatically — no tunnel or manual IP configuration is needed.
+LoadBalancer automatically -- no tunnel or manual IP configuration is needed.
 
 ### Via port-forward (quick testing)
 

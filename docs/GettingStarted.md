@@ -5,7 +5,7 @@ installation process of an operating system. It uses virtual machines to
 reproduce the process, check the output (both serial console and
 screen) in every step and send the necessary keystrokes and commands to
 proceed to the next. openQA can check whether the system can be installed,
-whether it works properly in ’live’ mode, whether applications work
+whether it works properly in 'live' mode, whether applications work
 or whether the system responds as expected to different installation options and
 commands.
 
@@ -25,7 +25,7 @@ become a happy user.
 
 For a quick start, if you already have an openQA instance available you can
 refer to the section
-[Cloning existing jobs - openqa-clone-job](UsersGuide.md#_cloning_existing_jobs_openqa_clone_job)
+[Cloning existing jobs - openqa-clone-job](UsersGuide.md#cloning_existing_jobs_openqa_clone_job)
 directly to trigger a new test based on already existing job. For a quick
 installation refer directly to
 [Quick bootstrapping under openSUSE](Installing.md#bootstrapping) or
@@ -56,13 +56,13 @@ several components that are hosted in separate repositories as shown in
 
 </div>
 
-The heart of the test engine is a standalone application called ’os-autoinst’
+The heart of the test engine is a standalone application called 'os-autoinst'
 (blue). In each execution, this application creates a virtual machine and uses
-it to run a set of test scripts (red). ’os-autoinst’ generates a video,
+it to run a set of test scripts (red). 'os-autoinst' generates a video,
 screenshots and a JSON file with detailed results.
 
-’openQA’ (green) on the other hand provides a web based user interface and
-infrastructure to run ’os-autoinst’ in a distributed way. The web interface
+'openQA' (green) on the other hand provides a web based user interface and
+infrastructure to run 'os-autoinst' in a distributed way. The web interface
 also provides a JSON based REST-like API for external scripting and for use by
 the worker program. Workers fetch data and input files from openQA for
 os-autoinst to run the tests. A host system can run several workers. The openQA
@@ -127,7 +127,7 @@ Types" in the web interface of openQA
 : equivalent to _product_, used in context of the webUI
 
 **version**
-: one version of a _product_, don’t confuse with _builds_, e.g. "Tumbleweed"
+: one version of a _product_, don't confuse with _builds_, e.g. "Tumbleweed"
 
 **flavor**
 : a specific variant of a _product_ to distinguish differing variants, e.g.
@@ -153,9 +153,9 @@ of _version_, e.g. "Build1234"; **CAUTION:** ambiguity: either with the prefix
 One of the most important features of openQA is that it can be used to test
 several combinations of actions and configurations. For every one of those
 combinations, the system creates a virtual machine, performs certain steps and
-returns an overall result. Every one of those executions is called a ’job’.
+returns an overall result. Every one of those executions is called a 'job'.
 Every job is labeled with a numeric identifier and has several associated
-’settings’ that will drive its behavior.
+'settings' that will drive its behavior.
 
 A job goes through several states. Here is (an incomplete list) of these
 states:
@@ -172,8 +172,8 @@ states:
 - **done** The worker acknowledged that the execution finished or the web UI
   considers the job as abandoned by the worker.
 
-Jobs in the final states ’cancelled’ and ’done’ have typically gone through a
-whole sequence of steps (called ’testmodules’) each one with its own result.
+Jobs in the final states 'cancelled' and 'done' have typically gone through a
+whole sequence of steps (called 'testmodules') each one with its own result.
 But in addition to those partial results, a finished job also provides an
 overall result from the following list.
 
@@ -188,10 +188,10 @@ overall result from the following list.
 - **softfailed** At least one known, non-critical issue has been found. That could be
   that workaround needles are in place, a softfailure has been recorded explicitly
   via `record_soft_failure` (from os-autoinst) or a job failure has been ignored
-  explicitly via a [job label](UsersGuide.md#_labels).
+  explicitly via a [job label](UsersGuide.md#labels).
 
 - **timeout_exceeded** The job was aborted because `MAX_JOB_TIME` or `MAX_SETUP_TIME`
-  has been exceeded, see [Changing timeout](WritingTests.md#_changing_timeouts) for details.
+  has been exceeded, see [Changing timeout](WritingTests.md#changing_timeouts) for details.
 
 - **skipped** Dependencies failed so the job was not started.
 
@@ -209,9 +209,9 @@ Sometimes, the reason of a failure is not an error in the tested operating syste
 itself, but an outdated test or a problem in the execution of the job for some
 external reason. In those situations, it makes sense to re-run a given job from
 the beginning once the problem is fixed or the tests have been updated.
-This is done by means of ’cloning’. Every job can be superseded by a clone which
+This is done by means of 'cloning'. Every job can be superseded by a clone which
 is scheduled to run with exactly the same settings as the original job. If the
-original job is still not in ’done’ state, it’s cancelled immediately.
+original job is still not in 'done' state, it's cancelled immediately.
 From that point in time, the clone becomes the current version and the original
 job is considered outdated (and can be filtered in the listing) but its
 information and results (if any) are kept for future reference.
@@ -219,9 +219,9 @@ information and results (if any) are kept for future reference.
 ## Needles
 
 One of the main mechanisms for openQA to know the state of the virtual machine
-is checking the presence of some elements in the machine’s ’screen’.
+is checking the presence of some elements in the machine's 'screen'.
 This is performed using fuzzy image matching between the screen and the so
-called ’needles’. A needle specifies both the elements to search for and a
+called 'needles'. A needle specifies both the elements to search for and a
 list of tags used to decide which needles should be used at any moment.
 
 A needle consists of a full screenshot in PNG format and a json file with
@@ -249,8 +249,7 @@ tags.
 }
 ```
 
-### Areas ====
-
+### Areas
 There are three kinds of areas:
 
 - **Regular areas** define relevant parts of the screenshot. Those must match
@@ -270,8 +269,7 @@ There are three kinds of areas:
   the concerning area.
   In the needle view exclude areas are displayed as gray boxes.
 
-### Click points ====
-
+### Click points
 Each regular match area in a needle can optionally contain a **click point**.
 This is used with the `testapi::assert_and_click` function to match GUI
 elements such as buttons and then click inside the matched area.
@@ -330,7 +328,7 @@ can place default values deviating from upstream defaults.
 The client configuration can also be put under `~/.config/openqa/client.conf`.
 
 For development, check out the section about
-[customizing the configuration directory](Contributing.md#_customize_configuration_directory).
+[customizing the configuration directory](Contributing.md#customize_configuration_directory).
 
 ### Drop-in configurations
 
@@ -410,12 +408,12 @@ You can read the [Cleanup](UsersGuide.md#cleanup) section for details.
 
 :openqa-personal-configuration: ~/.config/openqa/client.conf
 
-Just as the worker uses an API key+secret every user of the `client` `script`
+Just as the worker uses an API key+secret every user of the `client script`
 must do the same. The same API key+secret as previously created can be used or
 a new one created over the webUI.
 
 The personal configuration should be stored in a file
-`{openqa-personal-configuration}` in the same format as previously described for
+`~/.config/openqa/client.conf` in the same format as previously described for
 the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
 
 # Testing openSUSE or Fedora
@@ -435,7 +433,7 @@ clone a subdirectory under `/var/lib/openqa/tests` for each test distribution
 you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests.
 
 The repositories will be kept up-to-date if `git_auto_update` is enabled in
-[the web UI configuration](GettingStarted.md#_configuration) (which is the
+[the web UI configuration](GettingStarted.md#configuration) (which is the
 default). The updating is triggered when new tests are scheduled. For a periodic
 update (to avoid getting too far behind) you can enable the systemd unit
 `openqa-enqueue-git-auto-update.timer`.
@@ -445,7 +443,7 @@ You can get openSUSE tests and needles from
 easier, you can just run `/usr/share/openqa/script/fetchneedles`. It will
 download tests and needles to the correct location with the correct permissions.
 
-Fedora’s tests are also in
+Fedora's tests are also in
 [git](https://pagure.io/fedora-qa/os-autoinst-distri-fedora). To use them, you may
 do:
 
@@ -481,7 +479,7 @@ For Fedora, similarly, you can call:
 ```
 
 For this to work you need to have a `client.conf` with API key and secret, because
-fifloader doesn’t support setting them on the command line. See the
+fifloader doesn't support setting them on the command line. See the
 [openQA client](Client.md#client) section for more details on this. Also
 see the docstring of `fifloader.py` for details on the alternative template format
 Fedora uses.
@@ -508,11 +506,11 @@ openqa-cli api -X POST isos \
          BUILD=0053
 ```
 
-If your openQA is not running on port 80 on ’localhost’, you can add option
+If your openQA is not running on port 80 on 'localhost', you can add option
 `--host=`[`http://otherhost:9526`](http://otherhost:9526) to specify a different port or host.
 
 > [!WARNING]
-> Use only the ISO filename in the ’client’ command. You must place the
+> Use only the ISO filename in the 'client' command. You must place the
 > file in `/var/lib/openqa/share/factory/iso`. You cannot place the file elsewhere and
 > specify its path in the command. However, openQA also supports a
 > remote-download feature of assets from trusted domains.
