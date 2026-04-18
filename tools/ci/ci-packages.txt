@@ -285,6 +285,7 @@ python313-PyYAML-6.0.2
 python313-setuptools-78.1.1
 python313-sh-2.2.2
 python313-six-1.17.0
+python313-weasyprint
 python313-yamllint-1.36.2
 ShellCheck-0.10.0
 shfmt-3.5.1

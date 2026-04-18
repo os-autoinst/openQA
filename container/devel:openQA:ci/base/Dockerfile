@@ -14,7 +14,7 @@ RUN zypper -n in tar gzip sudo && zypper clean -a
 RUN zypper install -y gcc-c++ cmake ninja pkgconfig\(opencv4\) pkg-config perl\(Module::CPANfile\) pkgconfig\(fftw3\) pkgconfig\(libpng\) pkgconfig\(sndfile\) pkgconfig\(theoraenc\) tesseract-ocr && zypper clean -a
 
 # openQA dependencies
-RUN zypper install -y perl-CSS-Sass ruby-devel npm python3-base python3-requests git-core rsync curl 'postgresql-devel>=14' 'postgresql-server>=14' qemu qemu-tools tar xorg-x11-fonts sudo make && zypper clean -a
+RUN zypper install -y perl-CSS-Sass npm python3-base python3-requests python3-weasyprint git-core rsync curl 'postgresql-devel>=14' 'postgresql-server>=14' qemu qemu-tools tar xorg-x11-fonts sudo make && zypper clean -a
 
 # openQA chromedriver for Selenium tests
 RUN zypper install -y chromedriver && zypper clean -a
