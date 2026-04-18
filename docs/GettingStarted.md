@@ -88,7 +88,7 @@ The following terms are used within the context of openQA
 
 </div>
 
-test modules  
+test modules
 an individual test case in a single perl module file, e.g.
 "sshxterm". If not further specified a test module is denoted with its "short
 name" equivalent to the filename including the test definition. The "full name"
@@ -96,63 +96,63 @@ is composed of the *test group* (TBC), which itself is formed by the top-folder
 of the test module file, and the short name, e.g. "x11-sshxterm" (for
 x11/sshxterm.pm)
 
-test suite  
+test suite
 a collection of *test modules*, e.g. "textmode". All *test
 modules* within one *test suite* are run serially
 
-job  
+job
 one run of individual test cases in a row denoted by a unique number for
 one instance of openQA, e.g. one installation with subsequent testing of
 applications within gnome
 
-test run  
+test run
 equivalent to *job*
 
-test result  
+test result
 the result of one job, e.g. "passed" with the details of each
 individual *test module*
 
-test step  
+test step
 the execution of one *test module* within a *job*
 
-distri  
+distri
 a test distribution but also sometimes referring to a *product*
 (CAUTION: ambiguous, historically a "GNU/Linux distribution"), composed of
 multiple *test modules* in a folder structure that compose *test suites*, e.g.
 "opensuse" (test distribution, short for "os-autoinst-distri-opensuse")
 
-needles  
+needles
 reference images to assert whether what is on the screen matches
 expectations and to locate elements on the screen the tests needs to interact
 with (e.g. to locate a button to click on it)
 
-product  
+product
 the main "system under test" (SUT), e.g. "openSUSE", also called
 "Medium Types" in the web interface of openQA
 
-job group  
+job group
 equivalent to *product*, used in context of the webUI
 
-version  
+version
 one version of a *product*, don’t confuse with *builds*, e.g.
 "Tumbleweed"
 
-flavor  
+flavor
 a specific variant of a *product* to distinguish differing variants,
 e.g. "DVD"
 
-arch  
+arch
 an architecture variant of a *product*, e.g. "x86_64"
 
-machine  
+machine
 additional variant of machine, e.g. used for "64bit", "uefi", etc.
 
-scenario  
+scenario
 A composition of
 `<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>`, e.g.
 "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed *koala*
 
-build  
+build
 Different versions of a product as tested, can be considered a
 "sub-version" of *version*, e.g. "Build1234"; **CAUTION:** ambiguity: either with
 the prefix "Build" included or not

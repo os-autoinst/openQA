@@ -1311,47 +1311,47 @@ The following scheduling parameters exist
 
 </div>
 
-\_OBSOLETE  
+\_OBSOLETE
 Obsolete jobs in older builds with same DISTRI and VERSION
 (The default behavior is not obsoleting). With this option jobs which are currently pending,
 for example scheduled or running, are cancelled when a new medium is triggered.
 
-\_DEPRIORITIZEBUILD  
+\_DEPRIORITIZEBUILD
 Setting this switch to ’1’ will deprioritize the
 unfinished jobs of old builds, and it will obsolete the jobs once the
 configurable limit of the priority value is reached.
 
-\_DEPRIORITIZE_LIMIT  
+\_DEPRIORITIZE_LIMIT
 The configurable limit of priority value up to which
 jobs should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Defaults to 100.
 
-\_ONLY_OBSOLETE_SAME_BUILD  
+\_ONLY_OBSOLETE_SAME_BUILD
 Only obsolete (or deprioritize) jobs for the same BUILD.
 This is useful for cases where a new build appearing does not necessarily
 mean existing jobs for earlier builds with the same DISTRI and VERSION are
 no longer interesting, but you still want to be able to re-submit jobs for a
 build and have existing jobs for the exact same build obsoleted. Needs `_OBSOLETE`.
 
-\_SKIP_CHAINED_DEPS  
+\_SKIP_CHAINED_DEPS
 Do not schedule parent test suites which are specified in `START_AFTER_TEST`
 or `START_DIRECTLY_AFTER_TEST`.
 
-\_INCLUDE_CHILDREN  
+\_INCLUDE_CHILDREN
 Include children that would otherwise not be considered when
 filtering test suites via the `TEST` parameter.
 
-\_GROUP  
+\_GROUP
 Job templates **not** matching the given group name are ignored. Does **not**
 affect obsoletion behavior.
 
-\_GROUP_ID  
+\_GROUP_ID
 Same as `_GROUP` but allows to specify the group directly by ID.
 
-\_PRIORITY  
+\_PRIORITY
 Sets the priority value for the new jobs (which otherwise defaults
 to the priority of the job template)
 
-\_\_…  
+\_\_…
 All parameters starting with `__` will **not** be added as job settings.
 Those parameters can be used to store additional information about the scheduled
 product itself, e.g. the URL of a web page with more context.
@@ -1384,7 +1384,7 @@ passed/failed jobs is counted by openQA itself on the corresponding overview pag
 ``` sh
 openqa-clone-job --skip-chained-deps --repeat=50 --within-instance \
 https://openqa.opensuse.org 123456  BUILD=poo32242_investigation \
-_GROUP="Test Development:openSUSE Tumbleweed" 
+_GROUP="Test Development:openSUSE Tumbleweed"
 ```
 
 To get an overview about the fail ratio and confidence interval of sporadically
@@ -1544,7 +1544,7 @@ The following suffixes exist:
 
 </div>
 
-\_URL  
+\_URL
 Before starting these jobs, try to download these assets into the relevant asset directory
 of the openQA web-UI from trusted domains specified in
 [the web UI configuration file](GettingStarted.md#_configuration).
@@ -1554,7 +1554,7 @@ set as a trusted domain, cause openQA to download the file `foo.iso` to
 `ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will be downloaded
 and renamed to the name set as `ISO_1`.
 
-\_DECOMPRESS_URL  
+\_DECOMPRESS_URL
 Specify a compressed asset to be downloaded that will be uncompressed by openQA.
 For e.g. `ISO_1_DECOMPRESS_URL=`[`http://host/foo2.iso.xz`](http://host/foo2.iso.xz) will download the file `foo2.iso.xz`,
 uncompress it to `foo2.iso`, store it in `/var/lib/openqa/share/factory/iso` and set
@@ -1632,31 +1632,31 @@ independently of each other using different strategies and retention settings.
 
 The following cleanup settings can be done on job-group-level:
 
-Size limit  
+Size limit
 Limits the size of assets. The further sub sections provide an
 overall description of the **asset** cleanup strategy and how to configure it.
 
-Keep logs for  
+Keep logs for
 How long **logs** of non-important jobs are retained after
 they finished. **Logs** are files listed under "Result files" in the
 "Logs & Assets" tab on the job details page, e.g. `autoinst-log.txt`.
 
-Keep important logs for  
+Keep important logs for
 How long logs of an **important** job are retained after
 it finished. This limit only applies if it’s higher than regular logs.
 
-Keep results for  
+Keep results for
 How long **results** of non-important job are retained after
 they finished. **Results** are all additional files stored on disk for a job
 (excluding assets) such as screenshots. This also includes logs and therefore
 this retention must be longer (or equal) than the retention of **logs**.
 
-Keep important results for  
+Keep important results for
 How long results of **important** jobs are retained
 after they finished. This limit only applies if it’s higher than regular
 results.
 
-Keep jobs for  
+Keep jobs for
 How long **database entries** of non-important jobs are retained
 in the database after they finished. The **database entry** for a job is
 required for openQA knowing the job at all and deleting the database entry
@@ -1664,7 +1664,7 @@ also means deleting results stored on disk. This retention must therefore be
 the longest. Note that a job is no longer accounted for in statistics on the
 index and group overview pages after its database entry is deleted.
 
-Keep important jobs for  
+Keep important jobs for
 How long **important** jobs are retained in the database
 after they finished. This limit only applies if it’s higher than regular jobs.
 

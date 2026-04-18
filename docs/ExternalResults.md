@@ -17,7 +17,7 @@ The requirements to use this functionality, are quite simple:
 
 - The test harness must produce a compatible format with supported {parser-format}.
 
-  \* The test results can be uploaded via \`testapi  
+  \* The test results can be uploaded via \`testapi
   parse_extra_log\` within an openQA tests.
 
 - The test results can also be uploaded via web {api-endpoint}.
@@ -45,32 +45,32 @@ parse_extra_log('XUnit','junit-logging.xml');
 
 Current parser formats:
 
-- OpenQA  
+- OpenQA
 
-  Parser  
+  Parser
 
-  Format  
+  Format
   TAP,
 
-  \* OpenQA  
+  \* OpenQA
 
-  Parser  
+  Parser
 
-  Format  
+  Format
   JUnit
 
-  \* OpenQA  
+  \* OpenQA
 
-  Parser  
+  Parser
 
-  Format  
+  Format
   LTP
 
-  \* OpenQA  
+  \* OpenQA
 
-  Parser  
+  Parser
 
-  Format  
+  Format
   XUnit,
 
   == Extending the parser
@@ -80,7 +80,7 @@ Current parser formats:
 The parser is a base class that acts as a serializer/deserializer for the elements
 inside of it, it allows to be extended so new formats can be easily added.
 
-The base class is exposing 4 Mojo  
+The base class is exposing 4 Mojo
 Collections available, according to what openQA
 would require to map the results correctly, 1 extra collection is provided for
 arbitrary data that can be exposed. The collections represents respectively:

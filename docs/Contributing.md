@@ -105,7 +105,7 @@ requests for consideration or create an issue with a code change proposal.
 
   - All external modules and from "lib" folder
 
-    \*\*\* \`use FindBin; use lib "\$FindBin  
+    \*\*\* \`use FindBin; use lib "\$FindBin
     Bin/lib";\` or similar to resolve internal modules
 
   - Internal test modules which provide early checks before other modules
@@ -116,7 +116,7 @@ requests for consideration or create an issue with a code change proposal.
 
 - When using [signatures](https://perldoc.perl.org/perlsub#Signatures) try to follow these rules:
 
-  - Activate the feature with modules we already use if possible, e.g. \`use Mojo  
+  - Activate the feature with modules we already use if possible, e.g. \`use Mojo
     Base ’Something’, -signatures;\`
 
   - Use positional parameters whenever possible, e.g. `sub` `foo` `($first,` `$second)` `{`
@@ -204,46 +204,46 @@ tests. As usual, tests are located under the `t/` directory.
 
 Meaning and purpose of the most important folders within openQA are:
 
-public  
+public
 Static assets published to users over the web UI or API
 
-t  
+t
 Self-tests of openQA
 
-assets  
+assets
 3rd party JavaScript and CSS files
 
-docs  
+docs
 Documentation, including this document
 
-etc  
+etc
 Configuration files including template branding specializations
 
-lib  
+lib
 Main perl module library folder
 
-script  
+script
 Main applications and startup files
 
-.circleci  
+.circleci
 circleCI definitions
 
-dbicdh  
+dbicdh
 Database schema startup and migration files
 
-container  
+container
 Container definitions
 
-profiles  
+profiles
 Apparmor profiles
 
-systemd  
+systemd
 systemd service definitions
 
-templates  
+templates
 HTML templates delivered by web UI
 
-tools  
+tools
 Development tools
 
 # Dependencies
@@ -384,7 +384,7 @@ We use annotations in some places to mark "uncoverable" code such as this:
 
     # uncoverable subroutine
 
-See the docs for details <https://metacpan.org/pod/Devel>  
+See the docs for details <https://metacpan.org/pod/Devel>
 Cover
 
 We use `tools/prove_wrapper` to run the tests. This wrapper is a simple script
@@ -406,7 +406,7 @@ There are some ways to save some time when executing local tests:
 
 - Run `tools/tidyall` `--git` to tidy up modified code before committing in git
 
-  \* Set the environment variable `DIE_ON_FAIL=1` from \`Test  
+  \* Set the environment variable `DIE_ON_FAIL=1` from \`Test
   Most\` for faster
   aborts from failed tests.
 
@@ -1080,9 +1080,9 @@ quite irritating.
 
 ## Test runtime limits
 
-The test modules use \`OpenQA  
+The test modules use \`OpenQA
 
-Test  
+Test
 TimeLimit\` to introduce a test module
 specific timeout. The timeout is automatically scaled up based on environment
 variables, e.g. `CI` for continuous integration environments, as well as when
@@ -1110,9 +1110,9 @@ finished or END blocks are processed. In this case the output can look like
 where "Wstat: 14" and "Non-zero wait status: 14" mean that the test process
 received the "ALRM" signal (signal number 14).
 
-In case of problems with timeouts look into \`OpenQA  
+In case of problems with timeouts look into \`OpenQA
 
-Test  
+Test
 TimeLimit\` to find
 environment variables that can tweaked to disable or change timeout values or
 timeout scale factors. If you want to disable the timeout for indefinite
@@ -1217,11 +1217,11 @@ normal CPAN modules and installed as such alongside openQA.
 Plugins are a good choice especially for extensions to the UI and HTTP API, but
 also for notification systems listening to various events inside the web server.
 
-If your plugin was named \`OpenQA  
+If your plugin was named \`OpenQA
 
-WebAPI  
+WebAPI
 
-Plugin  
+Plugin
 Hello\`, you would install it
 in one of the include directories of the Perl used to run openQA, and then
 configure it in `openqa.ini`. The `plugins` setting in the `global` section will

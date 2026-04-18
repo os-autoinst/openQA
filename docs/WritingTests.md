@@ -24,10 +24,10 @@ document assumes that the reader is already familiar with Perl, Python or Lua.
 
 ------------------------------------------------------------------------
 
-¹ requires the Perl module \`Inline  
+¹ requires the Perl module \`Inline
 Python\` +
 
-² requires the Perl module \`Inline  
+² requires the Perl module \`Inline
 Lua\`
 
 # Test API
@@ -62,11 +62,11 @@ sub run {
 }
 ```
 
-NOTE: The line \`use Mojo  
+NOTE: The line \`use Mojo
 Base …\` automatically enables modern Perl
 conventions/features which is highly recommended. Check out the
 
-<https://docs.mojolicious.org/Mojo/Base#DESCRIPTION>\[Mojo  
+<https://docs.mojolicious.org/Mojo/Base#DESCRIPTION>\[Mojo
 Base description\] for
 details. Alternatively, you may set the test variable
 `ENABLE_MODERN_PERL_FEATURES=1` (e.g. in `main.pm` before invoking `loadtest`).
@@ -219,14 +219,14 @@ sub post_run_hook {
 
 <div id="notes-python-api" wrapper="1">
 
-The Python integration that openQA offers through \`Inline  
+The Python integration that openQA offers through \`Inline
 Python\` also allows
 the test modules to import other Perl modules with the usage of the `perl`
 
-virtual package provided by \`Inline  
+virtual package provided by \`Inline
 Python\`.
 
-Because of the way \`Inline  
+Because of the way \`Inline
 Python\` binds Perl functions to Python it is not
 possible to use keywords arguments from Python to Perl functions. They must be
 passed as positional arguments, for example `"key",` `"value"`.
@@ -280,7 +280,7 @@ references to complex Perl objects to Python.
 
 <div id="notes-lua-api" wrapper="1">
 
-The Lua integration that openQA offers through \`Inline  
+The Lua integration that openQA offers through \`Inline
 Lua\` also allows
 the test modules to import other Perl modules via the `use()` function
 which works similar to Perl’s native `use` function.
@@ -321,7 +321,7 @@ require 'luatestlib'
 luatestlib.testfunc3() -- returns 44
 ```
 
-Because of the way \`Inline  
+Because of the way \`Inline
 Lua\` binds Perl functions to Lua it is not
 possible to use keywords arguments from Lua to Perl functions. They must be
 passed as positional arguments of alternating key and value entries.
@@ -2416,7 +2416,7 @@ external trusted download domain:
     openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup,foo,bar ASSET_1_URL=https://example.org/my/test/bar.pm  ASSET_2_URL=https://example.org/my/test/foo.pm
 
 > [!NOTE]
-> The asset number doesn’t affect the schedule order.  
+> The asset number doesn’t affect the schedule order.
 > The test modules foo.pm and bar.pm will be downloaded into the root of the pool
 > directory where tests and assets are used by isotovideo. For this reason, to
 > schedule them, no path is needed.
@@ -2590,7 +2590,7 @@ GitHub.
 2.  Add the previously created token to the
     [web UI configuration file](GettingStarted.md#_configuration):
 
-  
+
 \[secrets\]
 github_token = \$token
 
