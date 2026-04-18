@@ -1,8 +1,5 @@
 # Introduction
 
-
-
-
 From time to time, a test developer might want to use openQA to execute a test
 suite from a different test harness than openQA, but still use openQA to setup test
 scenarios and prepare the environment for a test suite run; for this case openQA has
@@ -17,8 +14,7 @@ The requirements to use this functionality, are quite simple:
 
 - The test harness must produce a compatible format with supported [parsers](#parser-formats).
 
-  \* The test results can be uploaded via \`testapi
-  parse_extra_log\` within an openQA tests.
+- The test results can be uploaded via `testapi::parse_extra_log` within an openQA test.
 
 - The test results can also be uploaded via web [REST API](UsersGuide.md#rest_api).
 
@@ -36,45 +32,23 @@ location to a the file generated.
 From within a common openQA test distribution, a developer can use `parse_extra_log`
 to upload a text file that contains a supported test output:
 
-``` perl
+```perl
 script_run('prove --verbose --formatter=TAP::Formatter::JUnit t/28-logging.t > junit-logging.xml');
 parse_extra_log('XUnit','junit-logging.xml');
 ```
 
 <a id="parser-formats"></a>
+
 # Available parser formats
 
 Current parser formats:
 
-- OpenQA
+- OpenQA::Parser::Format::TAP,
+- OpenQA::Parser::Format::JUnit
+- OpenQA::Parser::Format::LTP
+- OpenQA::Parser::Format::XUnit,
 
-  Parser
-
-  Format
-  TAP,
-
-  \* OpenQA
-
-  Parser
-
-  Format
-  JUnit
-
-  \* OpenQA
-
-  Parser
-
-  Format
-  LTP
-
-  \* OpenQA
-
-  Parser
-
-  Format
-  XUnit,
-
-  == Extending the parser
+# Extending the parser
 
 ## OOP Interface
 
@@ -99,7 +73,7 @@ or `OpenQA::Parser::Results` respectively.
 
 As an example, JUnit format can be parsed this way:
 
-``` perl
+```perl
 use OpenQA::Parser::Format::JUnit;
 
 my $parser_result = OpenQA::Parser::Format::JUnit->new->load("file.xml");

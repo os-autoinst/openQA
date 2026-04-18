@@ -13,8 +13,8 @@ use as starting points, and adjust as necessary.
 
 # Web UI template
 
-:mojo-website: [Mojolicious](https://mojolicious.org/)
-:mojo-docs: [Mojolicious Documentation](https://docs.mojolicious.org/Mojolicious/Guides/Rendering/)
+
+
 
 openQA uses the [Mojolicious](https://mojolicious.org/) framework's templating
 system; the branding files are included into the openQA templates at

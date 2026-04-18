@@ -44,7 +44,7 @@ Although the project as a whole is referred to as openQA, there are in fact
 several components that are hosted in separate repositories as shown in
 [the following figure](#arch_img).
 
-</div>
+
 
 <a id="arch_img"></a>
 
@@ -53,7 +53,7 @@ several components that are hosted in separate repositories as shown in
 <figcaption aria-hidden="true">openQA architecture</figcaption>
 </figure>
 
-</div>
+
 
 The heart of the test engine is a standalone application called 'os-autoinst'
 (blue). In each execution, this application creates a virtual machine and uses
@@ -281,8 +281,7 @@ elements such as buttons and then click inside the matched area.
 }
 ```
 
-Each click point can have an `id`, and if a needle contains multiple click points
-you must pass it to `testapi::assert_and_click` to select which click point
+Each click point can have an `id`, and if a needle contains multiple click points you must pass it to `testapi::assert_and_click` to select which click point
 to use.
 
 ## Configuration
@@ -301,9 +300,7 @@ files:
 - `workers.ini`, `workers.ini.d/*.ini`: These files are used to configure the
   openQA worker including its additional cache service.
 
-- `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and
-  are used by the openQA worker and other tooling such as `openqa-cli` and
-  `openqa-clone-job` to authenticate with the web interface. One API key/secret
+- `client.conf`, `client.conf.d/*.conf`: These files contain API credentials and are used by the openQA worker and other tooling such as `openqa-cli` and  `openqa-clone-job` to authenticate with the web interface. One API key/secret
   can be configured per web UI host.
 
 If these files are not present, defaults are used.
@@ -316,8 +313,7 @@ configuration files and the possibility of creating drop-in configuration files.
 
 ### Locations
 
-All configuration files can be placed under `/etc/openqa`,
-e.g. `/etc/openqa/openqa.ini`. That is where administrators are expected to
+All configuration files can be placed under `/etc/openqa`, e.g. `/etc/openqa/openqa.ini`. That is where administrators are expected to
 store system-wide configuration.
 
 Configuration files are also looked up under `/usr/etc/openqa` where a
@@ -333,8 +329,7 @@ For development, check out the section about
 
 It is recommended to split the configuration into multiple files and store these
 "drop-in" configuration files in the `….d` sub directory, e.g.
-`/etc/openqa/openqa.ini.d/01-plugins.ini`. This is possible for all config
-files, e.g. `/etc/openqa/workers.ini.d/01-bare-metal-instances.ini` and
+`/etc/openqa/openqa.ini.d/01-plugins.ini`. This is possible for all config files, e.g. `/etc/openqa/workers.ini.d/01-bare-metal-instances.ini` and
 `/etc/openqa/client.conf.d/01-internal.conf` can be created as well to configure
 workers and API credentials. This works also on other locations, e.g.
 `/usr/etc/openqa/openqa.ini.d/01-plugins.ini` will be found as well. Settings
@@ -405,15 +400,14 @@ You can read the [Cleanup](UsersGuide.md#cleanup) section for details.
 
 # Using the client script
 
-:openqa-personal-configuration: ~/.config/openqa/client.conf
+
 
 Just as the worker uses an API key+secret every user of the `client script`
 must do the same. The same API key+secret as previously created can be used or
 a new one created over the webUI.
 
 The personal configuration should be stored in a file
-`~/.config/openqa/client.conf` in the same format as previously described for
-the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
+`~/.config/openqa/client.conf` in the same format as previously described for the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
 
 # Testing openSUSE or Fedora
 
@@ -428,10 +422,7 @@ You can point `CASEDIR` and `NEEDLES_DIR` to Git repositories. openQA will
 check out those repositories automatically and no manual setup is needed.
 
 Otherwise you will need to clone tests and needles manually. For this,
-clone a subdirectory under `/var/lib/openqa/tests` for each test distribution
-you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests.
-
-The repositories will be kept up-to-date if `git_auto_update` is enabled in
+clone a subdirectory under `/var/lib/openqa/tests` for each test distribution you need, e.g. `/var/lib/openqa/tests/opensuse` for openSUSE tests. The repositories will be kept up-to-date if `git_auto_update` is enabled in
 [the web UI configuration](GettingStarted.md#configuration) (which is the
 default). The updating is triggered when new tests are scheduled. For a periodic
 update (to avoid getting too far behind) you can enable the systemd unit
@@ -468,8 +459,7 @@ following command:
 
 This will load some default settings that were used at some point of time in
 openSUSE production openQA. Therefore those should work reasonably well with
-openSUSE tests and needles. This script uses `/usr/share/openqa/script/openqa-load-templates`,
-consider reading its help page (`--help`) for documentation on possible extra arguments.
+openSUSE tests and needles. This script uses `/usr/share/openqa/script/openqa-load-templates`, consider reading its help page (`--help`) for documentation on possible extra arguments.
 
 For Fedora, similarly, you can call:
 
@@ -506,7 +496,7 @@ openqa-cli api -X POST isos \
 ```
 
 If your openQA is not running on port 80 on 'localhost', you can add option
-`--host=`[`http://otherhost:9526`](http://otherhost:9526) to specify a different port or host.
+`--host=http://otherhost:9526` to specify a different port or host.
 
 > **WARNING:** 
 > Use only the ISO filename in the 'client' command. You must place the

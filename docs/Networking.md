@@ -1,9 +1,9 @@
 For tests using the QEMU backend the networking type used is controlled by the
 `NICTYPE` variable. If unset or empty `NICTYPE` defaults to `user`, i.e.
-[QEMU User Networking](#QEMU User Networking) which requires no further configuration.
+[QEMU User Networking](#qemu-user-networking) which requires no further configuration.
 
 For more advanced setups or tests that require multiple jobs to be in the same
-networking the [TAP](#TAP based network) or [VDE](#VDE Based Network) based
+networking the [TAP](#tap-based-network) or [VDE](#vde-based-network) based
 modes can be used.
 
 Other backends can be treated just the same as bare-metal setups. Tests can be
@@ -14,7 +14,7 @@ each other.
 
 # QEMU User Networking
 
-:qemu-user-networking: [user networking](http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29)
+
 
 With QEMU [user networking](http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29) each jobs gets its own isolated network with
 TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
@@ -24,9 +24,7 @@ the machine can be controlled with the `NICMAC` variable. If not set, it is
 # TAP Based Network
 
 os-autoinst can connect QEMU to TAP devices of the host system to
-leverage advanced network setups provided by the host by setting `NICTYPE=tap`.
-
-The TAP device to use can be configured with the `TAPDEV` variable. If not
+leverage advanced network setups provided by the host by setting `NICTYPE=tap`. The TAP device to use can be configured with the `TAPDEV` variable. If not
 defined, it is automatically set to "tap" + (\$worker_instance - 1), i.e.
 worker1 uses tap0, worker 2 uses tap1 and so on.
 
@@ -40,8 +38,7 @@ worker3: tap2 tap66 tap130 ...
 ...
 ```
 
-The MAC address of each virtual NIC is controlled by the `NICMAC` variable or
-automatically computed from `$worker_id` if not set.
+The MAC address of each virtual NIC is controlled by the `NICMAC` variable or automatically computed from `$worker_id` if not set.
 
 In TAP mode the system administrator is expected to configure the network,
 required internet access, etc. on the host as described in the next section.
@@ -87,8 +84,7 @@ a service called _os-autoinst-openvswitch.service_.
 
 > **NOTE:** 
 > _os-autoinst-openvswitch.service_ is a support service that sets the
-> vlan number of Open vSwitch ports based on `NICVLAN` variable - this separates
-> the groups of tests from each other. The `NICVLAN` variable is dynamically
+> vlan number of Open vSwitch ports based on `NICVLAN` variable - this separates the groups of tests from each other. The `NICVLAN` variable is dynamically
 > assigned by the openQA scheduler.
 
 The name of the bridge (default: `br1`) will be set in
@@ -110,16 +106,15 @@ multi-machine worker instance.
 
 > **NOTE:** 
 > The bridge device will also call a script at
-> `/etc/wicked/scripts/gre_tunnel_preup.sh` on \_PRE_UP\_.
+> `/etc/wicked/scripts/gre_tunnel_preup.sh` on _PRE_UP_.
 > This script needs **manual** touch if you want to set up multiple
-> multi-machine worker hosts. Refer to the [GRE tunnels](#GRE tunnels) section below
+> multi-machine worker hosts. Refer to the [GRE tunnels](#gre-tunnels) section below
 > for further information.
 
 #### Configure NAT with firewalld
 
 > **NOTE:** 
-> `os-autoinst-setup-multi-machine` can set this up for you, but using
-> plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
+> `os-autoinst-setup-multi-machine` can set this up for you, but using > plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
 > setup as well) is recommended due to firewalld's suboptimal performance with
 > many tap interfaces present.
 
@@ -337,9 +332,7 @@ To list the rules which are effectively configured in the underlying netfilter
 netfilter is used.
 
 > **NOTE:** 
-> Whether firewalld is using `nftables` or `iptables` is determined by the
-> setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is
-> always using `iptables`.
+> Whether firewalld is using `nftables` or `iptables` is determined by the > setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is > always using `iptables`.
 
 ```sh
 nft list tables           # list all tables

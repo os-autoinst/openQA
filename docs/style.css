@@ -6,6 +6,8 @@ body {
   line-height: 1.6;
   margin: 0;
   display: flex;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 /* Sidebar TOC */
@@ -20,6 +22,30 @@ body {
   box-sizing: border-box;
   font-size: 0.9em;
   z-index: 1000;
+}
+
+/* Add dots after section numbers */
+.toc-section-number::after,
+.header-section-number::after {
+  content: '. ';
+}
+
+/* Responsive design */
+@media (max-width: 800px) {
+  body {
+    flex-direction: column;
+  }
+  #TOC {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+  main {
+    margin-left: 0;
+    padding: 20px;
+  }
 }
 
 #TOC ul {
@@ -46,6 +72,7 @@ main {
   padding: 40px 60px;
   max-width: 1000px;
   flex-grow: 1;
+  min-width: 0;
 }
 
 h1,

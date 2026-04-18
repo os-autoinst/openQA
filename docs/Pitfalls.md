@@ -55,9 +55,7 @@ be delayed. This can lead to problems if the executed tests do not foresee an
 appropriate timeout margin.
 
 On some less powerful systems (like Raspberry Pi), reducing screenshots size
-with `optipng` may take a significant amount of time. In this case, you can
-switch to `pngquant` which is significantly faster, but uses lossy compression.
-To do that, install `pngquant` package and set `USE_PNGQUANT=1` in worker or job
+with `optipng` may take a significant amount of time. In this case, you can switch to `pngquant` which is significantly faster, but uses lossy compression. To do that, install `pngquant` package and set `USE_PNGQUANT=1` in worker or job
 settings. Alternatively, you may disable optimizing images altogether via the
 setting `OPTIMIZE_IMAGES=0`.
 
@@ -122,12 +120,10 @@ This is basically a checklist to go through in case the developer mode is broken
     1.  If the host is wrong, add `WORKER_HOSTNAME = correcthost` to
         <a href="GettingStarted.md#configuration" class="cross-reference">the worker configuration</a>.
         The worker should then tell the web UI that it is reachable via
-        `correcthost` resulting in a correct URL for the os-autoinst command
-        server. Be sure the setting appears after the `[global]` section header.
+        `correcthost` resulting in a correct URL for the os-autoinst command server. Be sure the setting appears after the `[global]` section header.
 
     2.  It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
-        port. The required port is `QEMUPORT` plus 1.
-        By default, `QEMUPORT` is set to `$worker_instance_number * 10 + 20002` by the worker. So to cover
+        port. The required port is `QEMUPORT` plus 1. By default, `QEMUPORT` is set to `$worker_instance_number * 10 + 20002` by the worker. So to cover
         worker slots from 1 to 10 one would by default require the ports 20013, 20023, … and 20103.
 
 5.  It can also help to look at the [architecture diagram](images/architecture.svg) which shows

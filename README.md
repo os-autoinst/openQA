@@ -36,17 +36,17 @@ documentation on how to use it.
 
 # Contributing
 
-<div id="getting_involved" wrapper="1">
+
 
 If you are interested in contributing to openQA itself, check the
 [Developer Guide](docs/Contributing.md), write your code and send a
 pull request ;-)
 
-</div>
+
 
 ## Issue trackers and support
 
-:openqav3: [openQAv3 project](https://progress.opensuse.org/projects/openqav3)
+
 
 Our main issue tracker is at [openQAv3 project](https://progress.opensuse.org/projects/openqav3) in openSUSE's project management
 tool. This Redmine instance is used to coordinate the main development

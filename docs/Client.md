@@ -32,8 +32,7 @@ openqa-cli api --host http://openqa.example.com jobs/overview result=failed
 
 Our example above is quickly translated. The `api` subcommand of `openqa-cli`
 allows you to perform arbitrary HTTP requests against the REST API. The path
-will automatically get the correct version prefix applied (such as `/api/v1`),
-and query parameters can be passed along as `key=value` pairs.
+will automatically get the correct version prefix applied (such as `/api/v1`), and query parameters can be passed along as `key=value` pairs.
 
 # Help
 
@@ -70,9 +69,7 @@ secret = ABCDEF1234567890
 ```
 
 Alternatively specify key and secret in environment variables `OPENQA_API_KEY`
-and `OPENQA_API_SECRET`.
-
-For ad-hoc use all `openqa-cli` subcommands use the `--apikey` and
+and `OPENQA_API_SECRET`. For ad-hoc use all `openqa-cli` subcommands use the `--apikey` and
 `--apisecret` options which will override whatever the environment or config
 files may contain.
 
@@ -91,8 +88,7 @@ authentication with a personal access token. That allows for almost any HTTP
 client to be used with openQA.
 
 This access token is made up of your username, and the same key/secret combo
-the `openqa-cli` authentication mechanism uses. All you have to do is combine
-them as `USERNAME:KEY:SECRET` and you can use `curl` to access operator and
+the `openqa-cli` authentication mechanism uses. All you have to do is combine them as `USERNAME:KEY:SECRET` and you can use `curl` to access operator and
 admin REST endpoints (depending on user privileges of course).
 
 ``` sh
@@ -117,23 +113,18 @@ openqa.example.com and the user arthur
 machine openqa.example.com login arthur password 1234567890ABCDEF:ABCDEF1234567890
 ```
 
-For `curl` one needs to use `curl --netrc`.
-For `wget` it's `wget --auth-no-challenge` so that `wget` will provide the
+For `curl` one needs to use `curl --netrc`. For `wget` it's `wget --auth-no-challenge` so that `wget` will provide the
 access credentials without being explicitly asked.
 
 # Features
 
-Many of the `openqa-cli api` features are designed to be similar to other
-commonly used tools like `curl`. It helps a lot if you are already familiar with
+Many of the `openqa-cli api` features are designed to be similar to other commonly used tools like `curl`. It helps a lot if you are already familiar with
 the [HTTP protocol](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) and
 [JSON](https://en.wikipedia.org/wiki/JSON). Both will be referenced extensively.
 
 ## HTTP Methods
 
-The `--method` option (or `-X` for short) allows you to change the HTTP request
-method from `GET` to something else. In the openQA API you will most commonly
-encounter `POST`, `PUT` and `DELETE`. For example to start testing a new ISO
-image you would use `POST`.
+The `--method` option (or `-X` for short) allows you to change the HTTP request method from `GET` to something else. In the openQA API you will most commonly encounter `POST`, `PUT` and `DELETE`. For example to start testing a new ISO image you would use `POST`.
 
 ``` sh
 openqa-cli api --host http://openqa.example.com -X POST isos \
@@ -275,17 +266,14 @@ openqa-cli api --host http://openqa.example.com --form \
 
 ## Host shortcuts
 
-Aside from the `--host` option, there are also a few shortcuts available. If you
-leave out the `--host` option completely, the default value will be
-[`http://localhost`](http://localhost), which is very convenient for debugging purposes.
+Aside from the `--host` option, there are also a few shortcuts available. If you leave out the `--host` option completely, the default value will be [`http://localhost`](http://localhost), which is very convenient for debugging purposes.
 
 ``` sh
 openqa-cli api jobs/overview
 ```
 
 And organisations that contribute to openQA and are invested in the project can
-also get their very own personalised shortcuts. Currently we have `--osd` for
-[`http://openqa.suse.de`](http://openqa.suse.de), and `--o3` for `openqa.opensuse.org`.
+also get their very own personalised shortcuts. Currently we have `--osd` for [`http://openqa.suse.de`](http://openqa.suse.de), and `--o3` for `openqa.opensuse.org`.
 
 ``` sh
 openqa-cli api --o3 jobs/overview
