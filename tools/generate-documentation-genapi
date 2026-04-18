@@ -3,22 +3,22 @@
 # Copyright 2016-2017 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-# Internal script for generate-documentation to create asciidoc from POD
+# Internal script for generate-documentation to create markdown from POD
 # in os-autoinst
 
 use strict;
 use warnings;
 
-my $adoc;
+my $parser;
 
-eval 'use Pod::AsciiDoctor';
+eval 'use Pod::Markdown';
 eval {
     # make sure compile-all does not barf here
-    $adoc = Pod::AsciiDoctor->new();
+    $parser = Pod::Markdown->new();
 };
 
-if ($@ || !$adoc) {
-    print "Make sure to install Pod::AsciiDoctor if you meant to run this script\n";
+if ($@ || !$parser) {
+    print "Make sure to install Pod::Markdown if you meant to run this script\n";
     die $@;
 }
 
@@ -29,15 +29,21 @@ my @files = grep { /\.pm$/ } readdir DIR;
 foreach my $current_file (@files) {
 
     open(my $ifh, '<', $data_dir . $current_file) or die("Cannot open $current_file");
-    $current_file =~ s/^(.*)\.pm$/$1.asciidoc/;
+    $current_file =~ s/^(.*)\.pm$/$1.md/;
     open(my $ofh, ">", $current_file) or die("Cannot open $current_file");
 
     print "Transforming $current_file\n";
-    $adoc->append("include::header.asciidoc[]");
-    $adoc->append("\n");
-    $adoc->parse_from_filehandle($ifh);
+    # We don't have a direct equivalent of include::header in Pod::Markdown
+    # but we can just write it out if it exists
+    if (-e "header.md") {
+        open(my $hfh, '<', "header.md");
+        print $ofh while <$hfh>;
+        print $ofh "\n";
+        close($hfh);
+    }
+    $parser->parse_from_filehandle($ifh);
 
-    print $ofh $adoc->adoc();
+    print $ofh $parser->as_markdown();
     close($ofh);
     close($ifh);
 

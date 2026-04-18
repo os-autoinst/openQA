@@ -129,7 +129,11 @@ update_api() {
     cd api
     "${scriptroot}"/generate-documentation-genapi
 
-    find . -name '*.asciidoc' -not -name 'header' -exec "${asciidoctor_bin}" {} \;
+    find . -name '*.md' -not -name 'header' -exec pandoc -s -f gfm -o {}.html {} \;
+    while IFS= read -r -d '' file; do
+        mv "$file" "${file%.md.html}.html"
+    done < <(find . -name '*.md.html' -print0)
+
     while IFS= read -r -d '' file; do
         header_template "$file" > "$file.tmp"
         cat "$file" >> "$file.tmp"
@@ -158,7 +162,7 @@ APIFILE
 
 green="\e[23m\e[1m"
 
-asciidoctor_bin="/bin/not/set"
+pandoc_bin="/bin/not/set"
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
 scriptroot="$(
@@ -179,61 +183,36 @@ else
     check_branch_exists "https://github.com/$PULL_REQUEST_USER/openQA" "gh-pages" || exit 0
 fi
 
-check_asciidoctor() {
-    asciidoctor_bin=$(command -v asciidoctor) || true
-    [[ -n "$asciidoctor_bin" ]] \
-        || for asciidoctor_bin in "${GEM_HOME}"/bin/asciidoctor.ruby*; do :; done
+check_pandoc() {
+    pandoc_bin=$(command -v pandoc) || true
 
-    if [[ -z "$asciidoctor_bin" ]] || [[ ! -f $asciidoctor_bin ]]; then
-        echo "Could not find asciidoctor binary in your path, please install it and run this command again:"
-        echo "    sudo gem install asciidoctor"
-        echo "    sudo gem install pygments.rb -v 2.4.1"
-        [[ ${formats[pdf]} ]] && echo "    sudo gem install public_suffix -v 4.0.7"
-        [[ ${formats[pdf]} ]] && echo "    sudo gem install css_parser -v 1.12.0"
-        [[ ${formats[pdf]} ]] && echo "    sudo gem install asciidoctor-pdf -v 1.6.2"
-        echo "or via openSUSE's package manager:"
-        echo "    sudo zypper install 'rubygem(asciidoctor)' 'perl(Pod::AsciiDoctor)'"
+    if [[ -z "$pandoc_bin" ]] || [[ ! -f $pandoc_bin ]]; then
+        echo "Could not find pandoc binary in your path, please install it and run this command again:"
+        echo "    sudo zypper install pandoc"
         exit 1
     fi
 }
 
-install_asciidoctor() {
-    # install dependencies
-    gem install asciidoctor
-
-    ruby_version=$(ruby --version | cut -f 2 -d ' ')
-    if [[ $ruby_version =~ ^2 ]]; then
-        gem install pygments.rb -v 2.4.1 # newer versions need Ruby 2.6
-        [[ ${formats[pdf]} ]] && {
-            gem install public_suffix -v 4.0.7 # newer versions need Ruby 2.6
-            gem install css_parser -v 1.12.0   # newer versions need Ruby 2.7
-            gem install ttfunk -v 1.7.0
-            gem install Ascii85 -v 1.1.1         # newer versions need Ruby 2.7
-            gem install afm -v 0.2.2             # newer versions need Ruby 3.2.0
-            gem install asciidoctor-pdf -v 1.6.2 # newer versions need Ruby 2.7
-        }
-    else
-        gem install pygments.rb
-        [[ ${formats[pdf]} ]] && {
-            gem install asciidoctor-pdf
-        }
-    fi
-
-    cpanm -M https://cpan.metacpan.org --install Pod::AsciiDoctor
+install_pandoc() {
+    # This is a placeholder as pandoc is usually not installed via gems/cpanm
+    echo "Pandoc should be installed via system package manager"
+    cpanm -M https://cpan.metacpan.org --install Pod::Markdown
 }
 
-call_asciidoctor() {
+call_pandoc() {
 
-    check_asciidoctor
+    check_pandoc
 
     cd docs
     mkdir "${tmpwd}"/output 2> /dev/null || true # we don't care if the directory already exists
     cp -r images "${tmpwd}"/output
 
     [[ ${formats[pdf]} ]] \
-        && "${asciidoctor_bin}" -r asciidoctor-pdf -b pdf -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf index.asciidoc -d book
+        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md | \
+        pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf --pdf-engine=wkhtmltopdf
     [[ ${formats[html]} ]] \
-        && "${asciidoctor_bin}" -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html index.asciidoc -d book
+        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md | \
+        pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html --metadata title="openQA documentation" --toc
 
     echo -e "${green}The output has been generated at ${tmpwd}/output"
 
@@ -242,8 +221,8 @@ call_asciidoctor() {
 
 if [[ -n ${CI} ]]; then
     cpanm -M https://cpan.metacpan.org --local-lib=~/perl5 local::lib && eval "$(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)"
-    install_asciidoctor
+    install_pandoc
 fi
 
-call_asciidoctor
+call_pandoc
 update_docs

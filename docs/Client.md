@@ -1,12 +1,5 @@
-
-[[client]]
-= openQA client
-:toc: left
-:toclevels: 6
-:author: openQA Team
-
 There are two ways to interact with openQA as a user. The web UI and the REST
-API. In this guide we will focus on the latter. You've probably already seen a
+API. In this guide we will focus on the latter. You’ve probably already seen a
 few examples of its use with `openqa-cli` earlier in the documentation.
 
 Here we will start again from the very beginning to give you a more complete
@@ -14,18 +7,16 @@ overview of its capabilities. To get started all you need is an openQA instance
 with a few jobs and `curl`. Just replace `openqa.example.com` in the examples
 below with the hostname of your openQA instance.
 
-[source,sh]
-----
+``` sh
 curl http://openqa.example.com/api/v1/jobs/overview
-----
+```
 
 That one-liner will show you the latest jobs from the overview in JSON format.
 You could also append various query parameters to filter the jobs further.
 
-[source,sh]
-----
+``` sh
 curl http://openqa.example.com/api/v1/jobs/overview?result=failed
-----
+```
 
 But using `curl` directly can also get a bit clunky when the data you need to
 submit is more complex, you want to store host and authentication information
@@ -35,38 +26,35 @@ For those cases openQA also contains a dedicated client to help you with that.
 It is called `openqa-cli` and can usually be installed with an `openQA-client`
 package (the name will vary depending on your Linux distribution).
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com jobs/overview result=failed
-----
+```
 
 Our example above is quickly translated. The `api` subcommand of `openqa-cli`
 allows you to perform arbitrary HTTP requests against the REST API. The path
 will automatically get the correct version prefix applied (such as `/api/v1`),
 and query parameters can be passed along as `key=value` pairs.
 
-== Help
+# Help
 
 The `api` subcommand is not the only one available and more will be added over
 time. To get a complete list of all currently available subcommands you can use
 the `--help` option.
 
-[source,sh]
-----
+``` sh
 openqa-cli --help
-----
+```
 
 And each subcommand also contains descriptions for all its available options, as
 well as many common usage examples.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --help
-----
+```
 
-== Authentication
+# Authentication
 
-Not all REST endpoints are public, many will return a `403 Forbidden` error if
+Not all REST endpoints are public, many will return a `403` `Forbidden` error if
 you try to access them without proper credentials. The credentials (or API keys)
 are managed in the web UI, to which you will need operator access.
 
@@ -75,12 +63,11 @@ file or use them ad-hoc from the command line. There are two config files
 `openqa-cli` will try, the global `/etc/openqa/client.conf`, and your personal
 `~/.config/openqa/client.conf`. The format is the same for both.
 
-[source,ini]
-----
+``` ini
 [openqa.example.com]
 key = 1234567890ABCDEF
 secret = ABCDEF1234567890
-----
+```
 
 Alternatively specify key and secret in environment variables `OPENQA_API_KEY`
 and `OPENQA_API_SECRET`.
@@ -89,13 +76,12 @@ For ad-hoc use all `openqa-cli` subcommands use the `--apikey` and
 `--apisecret` options which will override whatever the environment or config
 files may contain.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com --apikey 1234567890ABCDEF \
     --apisecret ABCDEF1234567890 -X POST jobs/2/comments text=hello
-----
+```
 
-=== Personal access token
+## Personal access token
 
 The authentication mechanism used by `openqa-cli` was specifically designed to
 allow secure access to the REST API even via unencrypted HTTP connections. But
@@ -109,294 +95,264 @@ the `openqa-cli` authentication mechanism uses. All you have to do is combine
 them as `USERNAME:KEY:SECRET` and you can use `curl` to access operator and
 admin REST endpoints (depending on user privileges of course).
 
-[source,sh]
-----
+``` sh
 curl -u arthur:1234567890ABCDEF:ABCDEF1234567890 -X DELETE \
     https://openqa.example.com/api/v1/assets/1
-----
+```
 
-And for HTTP clients that don't support Basic authentication or where the use
+And for HTTP clients that don’t support Basic authentication or where the use
 of plain HTTP headers might be more convenient, you can also send the
 personal access token in the form of a Bearer token.
 
-[source,sh]
-----
+``` sh
 curl -H 'Authorization: Bearer arthur:1234567890ABCDEF:ABCDEF1234567890'\
     -X DELETE https://openqa.example.com/api/v1/assets/1
-----
+```
 
-When using `curl` or `wget` one can utilise the `~/.netrc` file to 
+When using `curl` or `wget` one can utilise the `~/.netrc` file to
 automatically add those credentials. See the following template for
 openqa.example.com and the user arthur
 
-[source,txt]
-----
+``` txt
 machine openqa.example.com login arthur password 1234567890ABCDEF:ABCDEF1234567890
-----
+```
 
-For `curl` one needs to use `curl --netrc`.
-For `wget` it's `wget --auth-no-challenge` so that `wget` will provide the 
+For `curl` one needs to use `curl` `--netrc`.
+For `wget` it’s `wget` `--auth-no-challenge` so that `wget` will provide the
 access credentials without being explicitly asked.
 
-== Features
+# Features
 
-Many of the `openqa-cli api` features are designed to be similar to other
+Many of the `openqa-cli` `api` features are designed to be similar to other
 commonly used tools like `curl`. It helps a lot if you are already familiar with
-the https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol[HTTP protocol] and
-https://en.wikipedia.org/wiki/JSON[JSON]. Both will be referenced extensively.
+the [HTTP protocol](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) and
+[JSON](https://en.wikipedia.org/wiki/JSON). Both will be referenced extensively.
 
-=== HTTP Methods
+## HTTP Methods
 
 The `--method` option (or `-X` for short) allows you to change the HTTP request
 method from `GET` to something else. In the openQA API you will most commonly
 encounter `POST`, `PUT` and `DELETE`. For example to start testing a new ISO
 image you would use `POST`.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X POST isos \
     ISO=openSUSE-Factory-NET-x86_64-Build0053-Media.iso DISTRI=opensuse \
     VERSION=Factory FLAVOR=NET ARCH=x86_64 BUILD=0053
-----
+```
 
-=== HTTP Headers
+## HTTP Headers
 
 With the `--header` option (or `-a` for short) you can add one or more custom
 HTTP headers to your request. This feature is currently not used much, but can
 be handy if for example the REST endpoint you are using supports content
 negotiation.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -a 'Accept: application/json' \
     jobs/overview
-----
+```
 
-=== HTTP Body
+## HTTP Body
 
 To change the HTTP request body there are multiple options available. The
 simplest being `--data` (or `-d` for short), which allows you to use a plain
 string as request body. This can be useful for example to change the group id of
 a job.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X PUT jobs/1 \
     --data '{"group_id":2}'
-----
+```
 
 With the `--data-file` option (or `-D` for short) you can also use a file
 instead.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X PUT jobs/1 \
     --data-file ./test.json
-----
+```
 
 Or just pipe the data to `openqa-cli`.
 
-[source,sh]
-----
+``` sh
 echo '{"group_id":2}' | openqa-cli api --host http://openqa.example.com -X PUT \
     jobs/1
-----
+```
 
-=== Forms
+## Forms
 
 Most data you pass to the openQA API will be key/value form parameters. Either
 in the query string, or encoded as `application/x-www-form-urlencoded` HTTP
-request body. But you don't have to worry about this too much, because
-`openqa-cli api` knows when to use which format automatically, you just provide
+request body. But you don’t have to worry about this too much, because
+`openqa-cli` `api` knows when to use which format automatically, you just provide
 the key/value pairs.
 
 Form parameters are most commonly passed as additional arguments after the path.
 For example to post a comment to a job.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments text=abc
-----
+```
 
 This value can also be quoted to include whitespace characters.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments \
     text="Hello openQA!"
-----
+```
 
 And you can use interpolation to include files.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments \
     text="$(cat ./comment.markdown)"
-----
+```
 
 Alternatively you can also use the `--form` option (or `-f` for short) to
 provide all form parameters in JSON format. Here you would reuse the HTTP body
 options, such as `--data` and `--data-file`, to pass the JSON document to be
 turned into form parameters.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com --form --data '{"text":"abc"}' \
     -X POST jobs/2/comments
-----
+```
 
-=== JSON
+## JSON
 
 The primary data exchange format in the openQA API is JSON. And you will even
 see error messages in JSON format most of the time.
 
-[source,json]
-----
+``` json
 {"error":"no api key","error_status":403}
-----
+```
 
 By default the returned JSON is often compressed, for better performance, and
 can be hard to read if the response gets larger. But if you add the `--pretty`
 option (or `-p` for short), `openqa-cli` can reformat it for you.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com --pretty jobs/overview
-----
+```
 
 The JSON will be re-encoded with newlines and indentation for much better
 readability.
 
-[source,json]
-----
+``` json
 {
    "error" : "no api key",
    "error_status" : 403
 }
-----
+```
 
 The `--json` option (or `-j` for short) can be used to set a
-`Content-Type: application/json` request header. Whenever you need to upload a
+`Content-Type:` `application/json` request header. Whenever you need to upload a
 JSON document.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X PUT jobs/1 --json \
     --data '{"group_id":2}'
-----
+```
 
-=== Unicode
+## Unicode
 
 Just use a UTF-8 locale for your terminal and Unicode will pretty much just
 work.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments \
     text="I ♥ Unicode"
-----
+```
 
 JSON documents are always expected to be UTF-8 encoded.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com --form \
     --data '{"text":"I ♥ Unicode"}' -X POST jobobs/407/comments \
     -X POST jobs/2/comments
-----
+```
 
-=== Host shortcuts
+## Host shortcuts
 
 Aside from the `--host` option, there are also a few shortcuts available. If you
 leave out the `--host` option completely, the default value will be
-`http://localhost`, which is very convenient for debugging purposes.
+[`http://localhost`](http://localhost), which is very convenient for debugging purposes.
 
-[source,sh]
-----
+``` sh
 openqa-cli api jobs/overview
-----
+```
 
 And organisations that contribute to openQA and are invested in the project can
 also get their very own personalised shortcuts. Currently we have `--osd` for
-`http://openqa.suse.de`, and `--o3` for `openqa.opensuse.org`.
+[`http://openqa.suse.de`](http://openqa.suse.de), and `--o3` for `openqa.opensuse.org`.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --o3 jobs/overview
-----
+```
 
-=== Debugging
+## Debugging
 
 Often times just seeing the HTTP response body might not be enough to debug a
 problem. With the `--verbose` option (or `-v` for short) you can also get
 additional information printed.
 
-[source,sh]
-----
+``` sh
 openqa-cli api --host http://openqa.example.com --verbose -X POST \
     jobs/407/comments text="Hello openQA!"
-----
+```
 
 This includes the HTTP response status line, as well as headers.
 
-----
-HTTP/1.1 403 Forbidden
-Content-Type: application/json;charset=UTF-8
-Strict-Transport-Security: max-age=31536000; includeSubDomains
-Server: Mojolicious (Perl)
-Content-Length: 41
-Date: Wed, 29 Apr 2020 12:03:11 GMT
+    HTTP/1.1 403 Forbidden
+    Content-Type: application/json;charset=UTF-8
+    Strict-Transport-Security: max-age=31536000; includeSubDomains
+    Server: Mojolicious (Perl)
+    Content-Length: 41
+    Date: Wed, 29 Apr 2020 12:03:11 GMT
 
-{"error":"no api key","error_status":403}
-----
+    {"error":"no api key","error_status":403}
 
 And if that is not enough, you can experiment with the `MOJO_CLIENT_DEBUG`
 environment variable.
 
-[source,sh]
-----
+``` sh
 MOJO_CLIENT_DEBUG=1 openqa-cli api --host http://openqa.example.com -X POST \
     jobs/407/comments text="Hello openQA!"
-----
+```
 
 It will activate a debug feature in the Mojolicious framework, which openQA uses
 internally, and show everything that is being sent or received.
 
-----
-POST /api/v1/jobs/407/comments HTTP/1.1
-Content-Length: 20
-User-Agent: Mojolicious (Perl)
-Content-Type: application/x-www-form-urlencoded
-Host: openqa.example.com
-X-API-Microtime: 1588153057
-X-API-Hash: 8a73f6c37920921d52a8b5352ab417d923ee979e
-Accept-Encoding: gzip
-X-API-Key: AAEAC3E147A1EEE0
-Accept: application/json
+    POST /api/v1/jobs/407/comments HTTP/1.1
+    Content-Length: 20
+    User-Agent: Mojolicious (Perl)
+    Content-Type: application/x-www-form-urlencoded
+    Host: openqa.example.com
+    X-API-Microtime: 1588153057
+    X-API-Hash: 8a73f6c37920921d52a8b5352ab417d923ee979e
+    Accept-Encoding: gzip
+    X-API-Key: AAEAC3E147A1EEE0
+    Accept: application/json
 
-text=Hello+openQA%21
-----
+    text=Hello+openQA%21
 
 Just be aware that this is a feature the openQA team does not control, and the
 exact output as well as how it escapes control characters will change a bit over
 time.
 
-== Archiving individual job results
+# Archiving individual job results
 
 With the `archive` subcommand of `openqa-cli` you can download all the assets
 and test results of a job for archiving or debugging purposes.
 
-----
-openqa-cli archive --host http://openqa.example.com 408 /tmp/openqa_job_408
-----
+    openqa-cli archive --host http://openqa.example.com 408 /tmp/openqa_job_408
 
 Thumbnails are not included by default, but can be added with the
 `--with-thumbnails` option (or `-t` for short).
 
-----
-openqa-cli archive --host http://openqa.example.com --with-thumbnails \
-    408 ~/openqa_job_408
-----
+    openqa-cli archive --host http://openqa.example.com --with-thumbnails \
+        408 ~/openqa_job_408
 
-See also <<UsersGuide.asciidoc#archiving,Archiving>> for automatic archiving
+See also [Archiving](UsersGuide.md#archiving) for automatic archiving
 of old jobs.

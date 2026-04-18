@@ -1,13 +1,7 @@
+# Introduction
 
-[[installing_harness]]
-= openQA test harness result processing
-:toc: left
-:toclevels: 6
-:author: openQA developers
-
-== Introduction
-:parser-formats: <<parser-formats,parsers>>
-:api-endpoint: <<webapi-endpoint,Web Api endpoint>>
+:parser-formats: [parsers](#parser-formats)
+:api-endpoint: [Web Api endpoint](#webapi-endpoint)
 
 From time to time, a test developer might want to use openQA to execute a test
 suite from a different test harness than openQA, but still use openQA to setup test
@@ -21,53 +15,78 @@ be easily extended to include more formats, such as RSpec or TAP.
 
 The requirements to use this functionality, are quite simple:
 
-* The test harness must produce a compatible format with supported {parser-format}.
-* The test results can be uploaded via `testapi::parse_extra_log` within an openQA tests.
-* The test results can also be uploaded via web {api-endpoint}.
+- The test harness must produce a compatible format with supported {parser-format}.
+
+  \* The test results can be uploaded via \`testapi  
+  parse_extra_log\` within an openQA tests.
+
+- The test results can also be uploaded via web {api-endpoint}.
 
 openQA will store these results in its own internal format for easier presentation,
 but still will allow the original file to be downloaded.
 
-== Usage
+# Usage
 
 If a test developer wishes to use the functional interface, after finishing the
 execution of the the testing too, calling `testapi::parse_extra_log` with the
 location to a the file generated.
 
-=== openQA test distribution
+## openQA test distribution
 
 From within a common openQA test distribution, a developer can use `parse_extra_log`
 to upload a text file that contains a supported test output:
 
-[source,perl]
--------------------------------------------------------------------------------
+``` perl
 script_run('prove --verbose --formatter=TAP::Formatter::JUnit t/28-logging.t > junit-logging.xml');
 parse_extra_log('XUnit','junit-logging.xml');
--------------------------------------------------------------------------------
+```
 
-[[parser-formats]]
-== Available parser formats
+# Available parser formats
 
 Current parser formats:
 
-* OpenQA::Parser::Format::TAP,
-* OpenQA::Parser::Format::JUnit
-* OpenQA::Parser::Format::LTP
-* OpenQA::Parser::Format::XUnit,
+- OpenQA  
 
-== Extending the parser
+  Parser  
 
-=== OOP Interface
+  Format  
+  TAP,
+
+  \* OpenQA  
+
+  Parser  
+
+  Format  
+  JUnit
+
+  \* OpenQA  
+
+  Parser  
+
+  Format  
+  LTP
+
+  \* OpenQA  
+
+  Parser  
+
+  Format  
+  XUnit,
+
+  == Extending the parser
+
+## OOP Interface
 
 The parser is a base class that acts as a serializer/deserializer for the elements
 inside of it, it allows to be extended so new formats can be easily added.
 
-The base class is exposing 4 Mojo::Collections available, according to what openQA
+The base class is exposing 4 Mojo  
+Collections available, according to what openQA
 would require to map the results correctly, 1 extra collection is provided for
 arbitrary data that can be exposed. The collections represents respectively:
 test results, test definition and test output.
 
-=== Structured data
+## Structured data
 
 In structured data mode, elements of the collections are objects. They can be
 of any type, even though subclassing or objects of type of `OpenQA::Parser::Result`
@@ -79,8 +98,7 @@ or `OpenQA::Parser::Results` respectively.
 
 As an example, JUnit format can be parsed this way:
 
-[source,perl]
--------------------------------------------------------------------------------
+``` perl
 use OpenQA::Parser::Format::JUnit;
 
 my $parser_result = OpenQA::Parser::Format::JUnit->new->load("file.xml");
@@ -119,12 +137,12 @@ my $json_serialization = $parser->to_json;
 # save it and access it later
 
 my $from_json = OpenQA::Parser::Format::JUnit->from_json($json_serialization);
--------------------------------------------------------------------------------
+```
 
-=== openQA internal test result storage
+## openQA internal test result storage
 
-It is important to know that openQA's internal mapping for test results works operating almost
+It is important to know that openQA’s internal mapping for test results works operating almost
 entirely on the filesystem, leaving only the test modules to be registered into the database, this
-leads to the following relation: A test module's name is used to create a file with details
-(details-$testmodule.json), that will contain a reference to step details, which is a collection of
+leads to the following relation: A test module’s name is used to create a file with details
+(details-\$testmodule.json), that will contain a reference to step details, which is a collection of
 references to files, using a field "text" as tie in, and expecting a filename.

@@ -1,27 +1,19 @@
-
-[[usersguide]]
-= openQA users guide
-:toc: left
-:toclevels: 6
-:author: openQA developers
-
-== Introduction
+# Introduction
 
 This document provides additional information for use of the web interface or
 the REST API as well as administration information.
 For administrators it is recommend to have read the
-<<Installing.asciidoc#installing,Installation Guide>> first to understand the structure
+[Installation Guide](Installing.md#installing) first to understand the structure
 of components as well as the configuration of an installed instance.
 
-[id="job_templates"]
-== Using job templates to automate jobs creation
+# Using job templates to automate jobs creation
 
-=== The problem
+## The problem
 
 When testing an operating system, especially when doing continuous testing,
 there is always a certain combination of jobs, each one with its own
 settings, that needs to be run for every revision. Those combinations can be
-different for different 'flavors' of the same revision, like running a different
+different for different ’flavors’ of the same revision, like running a different
 set of jobs for each architecture or for the Full and the Lite versions. This
 combinational problem can go one step further if openQA is being used for
 different kinds of tests, like running some simple pre-integration tests
@@ -33,22 +25,26 @@ options in the admin area to automatically create all the required jobs for each
 revision of your operating system that needs to be tested. If you are starting
 from scratch, you should probably go through the following order:
 
-1. Define machines in 'Machines' menu
-2. Define medium types (products) you have in 'Medium types' menu
-3. Specify various collections of tests you want to run in the 'Test suites' menu
-4. Define job groups in 'Job groups' menu for groups of tests
-5. Select individual 'Job groups' and decide what combinations make sense and
-   need to be tested
+1.  Define machines in ’Machines’ menu
+
+2.  Define medium types (products) you have in ’Medium types’ menu
+
+3.  Specify various collections of tests you want to run in the ’Test suites’ menu
+
+4.  Define job groups in ’Job groups’ menu for groups of tests
+
+5.  Select individual ’Job groups’ and decide what combinations make sense and
+    need to be tested
 
 Machines, mediums, test suites and job templates can all set various
 configuration variables. The so called job templates within the job groups
 define how the test suites, mediums and machines should be combined in various
-ways to produce individual 'jobs'. All the variables from the test suite,
+ways to produce individual ’jobs’. All the variables from the test suite,
 medium, machine and job template are combined and made available to the actual
-test code run by the 'job', along with variables specified as part of the job
-creation request. Certain variables also influence openQA's and/or
-os-autoinst's own behavior in terms of how it configures the environment for
-the job. Variables that influence os-autoinst's behavior are documented in the
+test code run by the ’job’, along with variables specified as part of the job
+creation request. Certain variables also influence openQA’s and/or
+os-autoinst’s own behavior in terms of how it configures the environment for
+the job. Variables that influence os-autoinst’s behavior are documented in the
 file `doc/backend_vars.md` in the os-autoinst repository.
 
 In openQA we can parameterize a test to describe for what product it will run
@@ -57,43 +53,53 @@ and for what kind of machines it will be executed. For example, a test suite
 like `openSUSE-DVD-x86_64` and `openSUSE-NET-i586`, and can be tested in
 different x86-64 and i586 machines like `64bit`, `64bit_USBBoot`, `32bit`. In
 this example we could have the following test scenarios considering that the
-"`x86_64`" flavor is not compatible with the `32bit` machine:
+“x86_64” flavor is not compatible with the `32bit` machine:
 
-* openSUSE-DVD-x86_64-kde-64bit
-* openSUSE-DVD-x86_64-kde-64bit_USBBoot
-* openSUSE-NET-i586-kde-64bit
-* openSUSE-NET-i586-kde-64bit_USBBoot
-* openSUSE-NET-i586-kde-32bit
+- openSUSE-DVD-x86_64-kde-64bit
+
+- openSUSE-DVD-x86_64-kde-64bit_USBBoot
+
+- openSUSE-NET-i586-kde-64bit
+
+- openSUSE-NET-i586-kde-64bit_USBBoot
+
+- openSUSE-NET-i586-kde-32bit
 
 For every test scenario we need to configure a different instance of the test
 backend, for example `os-autoinst`, with a different set of parameters.
 
-
-=== Machines
+## Machines
 
 You need to have at least one machine set up to be able to run any
 tests. Those machines represent virtual machine types that you want to
-test. To make tests actually happen, you have to have an 'openQA
-worker' connected that can fulfill those specifications.
+test. To make tests actually happen, you have to have an ’openQA
+worker’ connected that can fulfill those specifications.
 
-* *Name.* User defined string - only needed for operator to identify the machine
-configuration.
+- **Name.** User defined string - only needed for operator to identify the machine
+  configuration.
 
-* *Backend.* What backend should be used for this machine. Recommended value is
-`qemu` as it is the most tested one, but other options (such as `kvm2usb` or `vbox`)
-are also possible.
+<!-- -->
 
-* *Variables* Most machine variables influence os-autoinst's behavior in terms
-of how the test machine is set up. A few important examples:
-** `QEMUCPU` can be 'qemu32' or 'qemu64' and specifies the architecture of the
-   virtual CPU.
-** `QEMUCPUS` is an integer that specifies the number of cores you wish for.
-** `LAPTOP` if set to 1, QEMU will create a laptop profile.
-** `USBBOOT` when set to 1, the image will be loaded through an
-   emulated USB stick.
+- **Backend.** What backend should be used for this machine. Recommended value is
+  `qemu` as it is the most tested one, but other options (such as `kvm2usb` or `vbox`)
+  are also possible.
 
+<!-- -->
 
-=== Medium Types (products)
+- **Variables** Most machine variables influence os-autoinst’s behavior in terms
+  of how the test machine is set up. A few important examples:
+
+  - `QEMUCPU` can be ’qemu32’ or ’qemu64’ and specifies the architecture of the
+    virtual CPU.
+
+  - `QEMUCPUS` is an integer that specifies the number of cores you wish for.
+
+  - `LAPTOP` if set to 1, QEMU will create a laptop profile.
+
+  - `USBBOOT` when set to 1, the image will be loaded through an
+    emulated USB stick.
+
+## Medium Types (products)
 
 A medium type (product) in openQA is a simple description without any concrete
 meaning. It basically consists of a name and a set of variables that define or
@@ -101,26 +107,31 @@ characterize this product in os-autoinst.
 
 Some example variables used by openSUSE are:
 
-* `ISO_MAXSIZE` contains the maximum size of the product. There is a test that
+- `ISO_MAXSIZE` contains the maximum size of the product. There is a test that
   checks that the current size of the product is less or equal than this
   variable.
-* `DVD` if it is set to 1, this indicates that the medium is a DVD.
-* `LIVECD` if it is set to 1, this indicates that the medium is a live image
-  (can be a CD or USB)
-* `GNOME` this variable, if it is set to 1, indicates that it is a GNOME only
-  distribution.
-* `PROMO` marks the promotional product.
-* `RESCUECD` is set to 1 for rescue CD images.
 
-The version of a medium can be set to `\*`. Then this medium is considered if a
+- `DVD` if it is set to 1, this indicates that the medium is a DVD.
+
+- `LIVECD` if it is set to 1, this indicates that the medium is a live image
+  (can be a CD or USB)
+
+- `GNOME` this variable, if it is set to 1, indicates that it is a GNOME only
+  distribution.
+
+- `PROMO` marks the promotional product.
+
+- `RESCUECD` is set to 1 for rescue CD images.
+
+The version of a medium can be set to `*`. Then this medium is considered if a
 product is scheduled with a `VERSION` parameter that does not match any other
 medium. This allows having only one medium per version. Note that having a
 medium with a concrete version and one with `*` at the same time is usually not
-a good idea as you will likely run into the scheduling error `no templates found
-for product …` (unless you actually have job templates for all these medium
+a good idea as you will likely run into the scheduling error `no` `templates` `found`
+`for` `product` `…` (unless you actually have job templates for all these medium
 types).
 
-=== Test Suites
+## Test Suites
 
 A test suite consists of a name and a set of test variables that are used
 inside this particular test together with an optional description. The test
@@ -129,43 +140,64 @@ behaviour according to the settings.
 
 Some sample variables used by openSUSE are:
 
-* `BTRFS` if set, the file system will be BtrFS.
-* `DESKTOP` possible values are 'kde' 'gnome' 'lxde' 'xfce' or
-  'textmode'. Used to indicate the desktop selected by the user during
+- `BTRFS` if set, the file system will be BtrFS.
+
+- `DESKTOP` possible values are ’kde’ ’gnome’ ’lxde’ ’xfce’ or
+  ’textmode’. Used to indicate the desktop selected by the user during
   the test.
-* `DOCRUN` used for documentation tests.
-* `DUALBOOT` dual boot testing, needs HDD_1 and HDDVERSION.
-* `ENCRYPT` encrypt the home directory via YaST.
-* `HDDVERSION` used together with HDD_1 to set the operating system
+
+- `DOCRUN` used for documentation tests.
+
+- `DUALBOOT` dual boot testing, needs HDD_1 and HDDVERSION.
+
+- `ENCRYPT` encrypt the home directory via YaST.
+
+- `HDDVERSION` used together with HDD_1 to set the operating system
   previously installed on the hard disk.
-* `INSTALLONLY` only basic installation.
-* `INSTLANG` installation language. Actually used only in documentation
+
+- `INSTALLONLY` only basic installation.
+
+- `INSTLANG` installation language. Actually used only in documentation
   tests.
-* `LIVETEST` the test is on a live medium, do not install the distribution.
-* `LVM` select LVM volume manager.
-* `NICEVIDEO` used for rendering a result video for use in show rooms,
+
+- `LIVETEST` the test is on a live medium, do not install the distribution.
+
+- `LVM` select LVM volume manager.
+
+- `NICEVIDEO` used for rendering a result video for use in show rooms,
   skipping ugly and boring tests.
-* `NOAUTOLOGIN` unmark autologin in YaST
-* `NUMDISKS` total number of disks in QEMU.
-* `REBOOTAFTERINSTALL` if set to 1, will reboot after the installation.
-* `SCREENSHOTINTERVAL` used with NICEVIDEO to improve the video quality.
-* `SPLITUSR` a YaST configuration option.
-* `TOGGLEHOME` a YaST configuration option.
-* `UPGRADE` upgrade testing, need HDD_1 and HDDVERSION.
-* `VIDEOMODE` if the value is 'text', the installation will be done in
+
+- `NOAUTOLOGIN` unmark autologin in YaST
+
+- `NUMDISKS` total number of disks in QEMU.
+
+- `REBOOTAFTERINSTALL` if set to 1, will reboot after the installation.
+
+- `SCREENSHOTINTERVAL` used with NICEVIDEO to improve the video quality.
+
+- `SPLITUSR` a YaST configuration option.
+
+- `TOGGLEHOME` a YaST configuration option.
+
+- `UPGRADE` upgrade testing, need HDD_1 and HDDVERSION.
+
+- `VIDEOMODE` if the value is ’text’, the installation will be done in
   text mode.
 
 Some of the variables usually set in test suites that influence openQA
-and/or os-autoinst's own behavior are:
+and/or os-autoinst’s own behavior are:
 
-* `HDDMODEL` variable to set the HDD hardware model
-* `HDDSIZEGB` hard disk size in GB. Used together with BtrFS variable
-* `HDD_1` path for the pre-created hard disk
-* `RAIDLEVEL` RAID configuration variable
-* `QEMUVGA` parameter to declare the video hardware configuration in QEMU
+- `HDDMODEL` variable to set the HDD hardware model
 
+- `HDDSIZEGB` hard disk size in GB. Used together with BtrFS variable
 
-=== Job Groups
+- `HDD_1` path for the pre-created hard disk
+
+- `RAIDLEVEL` RAID configuration variable
+
+- `QEMUVGA` parameter to declare the video hardware configuration in QEMU
+
+## Job Groups
 
 The job groups are the place where the actual test scenarios are defined by
 the selection of the medium type, the test suite and machine together with a
@@ -184,21 +216,27 @@ groups and categories can be configured by drag-and-drop in the web UI.
 The scenario definitions within the job groups can be created and configured
 by different means:
 
-* A simple web UI wizard which is automatically shown for job groups when a
+- A simple web UI wizard which is automatically shown for job groups when a
   new medium is added to the job group.
 
-* An intuitive table within the web UI for adding additional test scenarios to
+<!-- -->
+
+- An intuitive table within the web UI for adding additional test scenarios to
   existing media including the possibility to configure the priority values.
 
-* The scripts `openqa-load-templates` and `openqa-dump-templates` to quickly
+<!-- -->
+
+- The scripts `openqa-load-templates` and `openqa-dump-templates` to quickly
   dump and load the configuration from custom plain-text dump format files
   using the REST API.
 
-* Using declarative schedule definitions in the YAML format using REST API
+<!-- -->
+
+- Using declarative schedule definitions in the YAML format using REST API
   routes or an online-editor within the web UI including a syntax checker.
 
+## Variable expansion
 
-=== Variable expansion
 Any job setting can refer to another variable using this syntax: `%NAME%`. When
 the test job is created, the string will be substituted with the value of the
 specified variable at that time.
@@ -209,38 +247,42 @@ creating a single set of jobs and to variables specified in the worker config.
 
 Consider this example where a variable is defined within a test suite:
 
-[source,sh]
---------------------------------------------------------------------------------
+``` sh
 PUBLISH_HDD_1 = %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2
---------------------------------------------------------------------------------
+```
 
 It may expanded to this job setting:
 
-[source,sh]
---------------------------------------------------------------------------------
+``` sh
 PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
---------------------------------------------------------------------------------
+```
 
-NOTE: Variables from the worker config are not considered if such a variable is
-also present in any of the other mentioned places. To give variable values from
-the worker config precedence, use double percentage signs. Expansions by the
-worker will *not* be shown in the "Settings" tab on the web UI. They are only
-present in `vars.json` and `worker-log.txt`.
+> [!NOTE]
+> Variables from the worker config are not considered if such a variable is
+> also present in any of the other mentioned places. To give variable values from
+> the worker config precedence, use double percentage signs. Expansions by the
+> worker will **not** be shown in the "Settings" tab on the web UI. They are only
+> present in `vars.json` and `worker-log.txt`.
 
-=== Variable precedence
+## Variable precedence
+
 It is possible to define the same variable in multiple places that would all be
 used for a single job - for instance, you may have a variable defined in both
 a test suite and a product that appear in the same job template. The precedence
 order for variables is as follows (from lowest to highest):
 
-* Product
-* Machine
-* Test suite
-* Job template
-* API POST query parameters
+- Product
+
+- Machine
+
+- Test suite
+
+- Job template
+
+- API POST query parameters
 
 That is, variable values set as part of the API request that triggers the jobs will
-'win' over values set at any of the other locations. It's important to note that
+’win’ over values set at any of the other locations. It’s important to note that
 this precedence applies when a job is created. Test code can modify variable values
 at runtime (e.g. by calling `set_var`). Such runtime modifications will override
 any of the initial settings.
@@ -252,8 +294,8 @@ in openQA has highest precedence.
 If you need to override this precedence - for example, you want the value set in
 one particular test suite to take precedence over a setting of the same value from
 the API request - you can add a leading + to the variable name. For instance, if
-you set `+VARIABLE = foo` in a test suite, and passed `VARIABLE=bar` in the API
-request, the test suite setting would 'win' and the value would be foo.
+you set `+VARIABLE` `=` `foo` in a test suite, and passed `VARIABLE=bar` in the API
+request, the test suite setting would ’win’ and the value would be foo.
 
 If the same variable is set with a + prefix in multiple places, the same precedence
 order described above will apply to those settings.
@@ -261,8 +303,7 @@ order described above will apply to those settings.
 Note that the `WORKER_CLASS` variable is not overridden in the way described above.
 Instead multiple occurrences are combined.
 
-
-== Use of the web interface
+# Use of the web interface
 
 In general the web UI should be intuitive or self-explanatory. Look out for the
 little blue help icons and click them for detailed help on specific sections.
@@ -275,91 +316,123 @@ builds or only show failed jobs or other settings. Additionally, the query
 parameters can be tweaked by hand if you want to provide a link to specific
 views.
 
-
-=== Description of test suites
+## Description of test suites
 
 Test suites can be described using API commands or the admin table for any operator using the web UI.
 
-[[test_suite_description_edit]]
-.Entering a test suite description in the admin table using the web interface:
-image::images/test_suite_description_edit.png[test suite description edit field]
+<div id="test_suite_description_edit" wrapper="1">
+
+<figure>
+<img src="images/test_suite_description_edit.png" alt="test suite description edit field" />
+<figcaption>Entering a test suite description in the admin table using the web interface:</figcaption>
+</figure>
+
+</div>
 
 If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.
 
-[[test_suite_description_shown]]
-.popover in test overview with content as configured in the test suites database:
-image::images/test_suite_description_shown.png[test suite description popup]
+<div id="test_suite_description_shown" wrapper="1">
 
+<figure>
+<img src="images/test_suite_description_shown.png" alt="test suite description popup" />
+<figcaption>popover in test overview with content as configured in the test suites database:</figcaption>
+</figure>
 
-=== /tests/overview - Customizable test overview page
+</div>
+
+## /tests/overview - Customizable test overview page
 
 The overview page is configurable by the filter box. Also, some additional
 query parameters can be provided which can be considered advanced or
 experimental. For example specifying no build will resolve the latest build
 which matches the other parameters specified. Specifying no group will show
 all jobs from all matching job groups. Also specifying multiple groups works,
-see <<overview_multiple_groups,the following example>>.
+see [the following example](#overview_multiple_groups).
 
-[[overview_multiple_groups]]
-.The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.
-image::images/tests-overview_multiple_groups.png[test overview page showing multiple groups]
+<div id="overview_multiple_groups" wrapper="1">
+
+<figure>
+<img src="images/tests-overview_multiple_groups.png" alt="test overview page showing multiple groups" />
+<figcaption>The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.</figcaption>
+</figure>
+
+</div>
 
 Specifying multiple groups with no build will yield the result for the latest
 build of each group. This can be useful to have a static URL for bookmarking.
 
-
-=== Review badges ===
+## Review badges ===
 
 Based on comments in the individual job results for each build a certificate
 icon is shown on the group overview page as well as the index page to indicate
 that every failure has been reviewed, e.g. a bug reference or a test issue
 reason is stated:
 
-image::images/review_badges.png[Review badges]
+<figure>
+<img src="images/review_badges.png" alt="Review badges" />
+</figure>
 
-==== Meaning of the different colors ====
+### Meaning of the different colors ====
 
-* No icon is shown if at least one failure still need to be reviewed.
-* The green tick icon shows up when there is no work to be done.
-* The black certificate icon is shown if all review work has been done.
-* The grey comment icon is shown if all failures have at least one comment.
+- No icon is shown if at least one failure still need to be reviewed.
+
+- The green tick icon shows up when there is no work to be done.
+
+- The black certificate icon is shown if all review work has been done.
+
+- The grey comment icon is shown if all failures have at least one comment.
 
 (To simplify, checking for false-negatives is not considered here.)
 
-=== Bug references, labels and flags
-==== Bug references
+## Bug references, labels and flags
+
+### Bug references
+
 It is possible to reference a bug by writing `<bugtracker_shortname>#<bug_nr>`
 in a comment, e.g. `bsc#1234`. It is also possible to spell out the full URL,
-e.g. `https://bugzilla.suse.com/show_bug.cgi?id=1234` which will then be
+e.g. [`https://bugzilla.suse.com/show_bug.cgi?id=1234`](https://bugzilla.suse.com/show_bug.cgi?id=1234) which will then be
 shortened automatically. A bug reference is rendered as link and a bug icon
 is displayed for the job in various places as shown in the figure below.
 A comment containing a bug reference will also be
-<<UsersGuide.asciidoc#carry-over,carried over>> to reduce manual review work.
+[carried over](UsersGuide.md#carry-over) to reduce manual review work.
 Refer to the Flags section below for other ways to trigger automated comment
 carryover.
 
-WARNING: If you want to reference a bug without making it count as a bug
-reference you need to wrap it into a label (see subsequent section), e.g.
-`label:bsc#1234`.
+> [!WARNING]
+> If you want to reference a bug without making it count as a bug
+> reference you need to wrap it into a label (see subsequent section), e.g.
+> `label:bsc#1234`.
 
-[[bug_icon]]
-.Bug icon for job with bug reference on test result overview
-image::images/bug_icon.png[Bug icon on test result overview]
+<div id="bug_icon" wrapper="1">
+
+<figure>
+<img src="images/bug_icon.png" alt="Bug icon on test result overview" />
+<figcaption>Bug icon for job with bug reference on test result overview</figcaption>
+</figure>
+
+</div>
 
 All bug references are stored within the internal database of openQA.
 The status can be updated using the `/bugs` API route with external tools.
 One can set the bug status this way which will then be shown in the web UI,
 see the figure below.
 
-[[labels_closed_tickets]]
-.Example for visualization of closed issues: The upside down icons in red visualize closed issues.
-image::images/labels_closed_tickets.png[Example for visualization of closed issues]
+<div id="labels_closed_tickets" wrapper="1">
 
-NOTE: Also GitHub pull requests and issues can be linked. Use the generic format
-``<marker>[#<project/repo>]#<id>``, e.g.
-https://github.com/os-autoinst/openQA/issues/1234[`gh#os-autoinst/openQA#1234`].
+<figure>
+<img src="images/labels_closed_tickets.png" alt="Example for visualization of closed issues" />
+<figcaption>Example for visualization of closed issues: The upside down icons in red visualize closed issues.</figcaption>
+</figure>
 
-==== Labels
+</div>
+
+> [!NOTE]
+> Also GitHub pull requests and issues can be linked. Use the generic format
+> `<marker>[#<project/repo>]#<id>`, e.g.
+> [`gh#os-autoinst/openQA#1234`](https://github.com/os-autoinst/openQA/issues/1234).
+
+### Labels
+
 A comment can also contain labels. Use `label:<keyword>` where `<keyword>`
 can be any valid character up to the next whitespace, e.g. `false_positive`.
 A label is rendered as yellow box. The keywords are not defined within openQA
@@ -367,15 +440,22 @@ itself. A valid list of keywords should be decided upon within each project
 or environment of one openQA instance. If a job has a label a special icon
 will be shown next to it in various places as shown in the figure below.
 
-[[label_icon]]
-.Label icon for job with a label on test result overview
-image::images/label_icon.png[Label icon on test result overview]
+<div id="label_icon" wrapper="1">
 
-NOTE: A label containing a bug reference will still be treated as a label,
-not a bugref. The bugref will still be rendered as a link. That means no bug
-icon is shown and the comment does *not* become subject to carry over.
+<figure>
+<img src="images/label_icon.png" alt="Label icon on test result overview" />
+<figcaption>Label icon for job with a label on test result overview</figcaption>
+</figure>
 
-===== Overwrite result of job
+</div>
+
+> [!NOTE]
+> A label containing a bug reference will still be treated as a label,
+> not a bugref. The bugref will still be rendered as a link. That means no bug
+> icon is shown and the comment does **not** become subject to carry over.
+
+#### Overwrite result of job
+
 One special label format is available which allows to forcefully overwrite the
 result of an openQA job using a convenient openQA comment. The expected format
 is `label:force_result:<new_result>[:<description>]`, for example
@@ -383,45 +463,48 @@ is `label:force_result:<new_result>[:<description>]`, for example
 this command to be effective the according user needs to have at least
 operator permissions.
 
-NOTE: `force_result`-labels are evaluated when when a comment is
-<<UsersGuide.asciidoc#carry-over,carried over>>. However, the carry over will
-only happen when the comment *also* contains a bug reference or `flag:carryover`.
+> [!NOTE]
+> `force_result`-labels are evaluated when when a comment is
+> [carried over](UsersGuide.md#carry-over). However, the carry over will
+> only happen when the comment **also** contains a bug reference or `flag:carryover`.
 
-==== Flags
+### Flags
+
 Currently there is only one flag for job comments supported.
 
-===== flag:carryover
+#### flag:carryover
+
 Adding `flag:carryover` to a comment, will result in this comment being
-<<UsersGuide.asciidoc#carry-over,carried over>> to a new job failing for
+[carried over](UsersGuide.md#carry-over) to a new job failing for
 the same reason, without a bugref required.
 
-=== Distinguish product and test issues bugref https://github.com/os-autoinst/openQA/pull/708[gh#708]
+## Distinguish product and test issues bugref <a href="https://github.com/os-autoinst/openQA/pull/708" id="708">gh</a>
 
-"`progress.opensuse.org`" is used to track test issues, bugzilla for product
+“progress.opensuse.org” is used to track test issues, bugzilla for product
 issues, at least for SUSE/openSUSE. openQA bugrefs distinguish this and show
 corresponding icons
 
-image::images/tests-overview-issue_icon.png[Different icons for product and test issues]
+<figure>
+<img src="images/tests-overview-issue_icon.png" alt="Different icons for product and test issues" />
+</figure>
 
+## Build tagging ===
 
-[id="build_tagging"]
-=== Build tagging ===
-
-==== Tag builds with special comments on group overview ====
+### Tag builds with special comments on group overview ====
 
 Based on comments on the group overview individual builds can be tagged. As
-'build' by themselves do not own any data the job group is used to store this
+’build’ by themselves do not own any data the job group is used to store this
 information. A tag has a build to link it to a build. It also has a type
 and an optional description. The type can later on be used to distinguish
 tag types. Note that openQA does not define further tag types besides the
-_important_ tag. However, the user is free to choose any tag type as needed.
+*important* tag. However, the user is free to choose any tag type as needed.
 
 The generic format for tags is
 -------------
-tag:<build_id>:<type>[:<description>], e.g. tag:1234:important:Beta1.
+tag:\<build_id\>:\<type\>\[:\<description\>\], e.g. tag:1234:important:Beta1.
 -------------
 
-The `build_id` should be set to the `BUILD` setting of the jobs (*without* the
+The `build_id` should be set to the `BUILD` setting of the jobs (**without** the
 `Build`-prefix shown in dashboard pages). It is also possible to include the
 `VERSION` setting which then needs to be prepended and separated by a dash
 (e.g. `tag:15-SP5-25.1:important:Alpha-202210-1` where `15-SP5` is the `VERSION`
@@ -430,51 +513,55 @@ and `25.1` the `BUILD`).
 The more recent tag always wins. Tags specifying the `VERSION` as well win over
 generic tags.
 
-A 'tag' icon is shown next to tagged builds together with the description on
+A ’tag’ icon is shown next to tagged builds together with the description on
 the group_overview page. The index page does not show tags by default to prevent
 a potential performance regression. Tags can be enabled on the index page using the
 corresponding option in the filter form at the bottom of the page.
 
-image::images/build_tagging.png[Example of a tag comment and corresponding tagged build]
+<figure>
+<img src="images/build_tagging.png" alt="Example of a tag comment and corresponding tagged build" />
+</figure>
 
-==== Keeping important builds ====
+### Keeping important builds ====
 
 As builds can now be tagged we come up with the convention that the
-'important' type - the only one for now - is used to tag every job that
-corresponds to a build as 'important' and keep the logs for these jobs longer so that
+’important’ type - the only one for now - is used to tag every job that
+corresponds to a build as ’important’ and keep the logs for these jobs longer so that
 we can always refer to the attached data, e.g. for milestone builds, final
 releases, jobs for which long-lasting bug reports exist, etc.
 
-
-=== Filtering test results and builds ===
+## Filtering test results and builds ===
 
 At the top of the test results overview page is a form which allows filtering tests by result,
-architecture and TODO-status. "TODO" means that tests still <<#_review_badges,require review>>.
+architecture and TODO-status. "TODO" means that tests still [require review](##_review_badges).
 
-image::images/filter_form.png[Filter form]
+<figure>
+<img src="images/filter_form.png" alt="Filter form" />
+</figure>
 
 There is also a similar form at the bottom of the index page which allows filtering builds by
 group and customizing the limits.
-Also the 'All tests' table allows filtering by the TODO-status.
+Also the ’All tests’ table allows filtering by the TODO-status.
 
-=== Highlighting job dependencies in 'All tests' table
+## Highlighting job dependencies in ’All tests’ table
 
 When hovering over the branch icon after the test name children of the job will
 be highlighted blue and parents red. So far this only works for jobs displayed on
 the same page of the table.
 
-image::images/highlighting_job_dependencies.png[highlighted child jobs]
+<figure>
+<img src="images/highlighting_job_dependencies.png" alt="highlighted child jobs" />
+</figure>
 
+## Show previous results in test results page <a href="https://github.com/os-autoinst/openQA/pull/538" id="538">gh</a>
 
-=== Show previous results in test results page https://github.com/os-autoinst/openQA/pull/538[gh#538]
-
-On a tests result page there is a tab for "`Next & previous results`" showing
+On a tests result page there is a tab for “Next & previous results” showing
 the result of test runs in the same scenario. This shows next and previous
 builds as well as test runs in the same build. This way you can easily check
 and compare results from before including any comments, labels, bug references
-(see next section). This helps to answer questions like "`Is this a new
-issue`", "`Is it reproducible`", "`has it been seen in before`", "`how does
-the history look like`".
+(see next section). This helps to answer questions like “Is this a new
+issue”, “Is it reproducible”, “has it been seen in before”, “how does
+the history look like”.
 
 Querying the database for former test runs of the same scenario is a
 rather costly operation which we do not want to do for multiple test
@@ -482,54 +569,57 @@ results at once but only for each individual test result (1:1 relation).
 This is why this is done in each individual test result and not for a
 complete build.
 
-Related issue: https://progress.opensuse.org/issues/10212[#10212]
+Related issue: <a href="https://progress.opensuse.org/issues/10212" id="10212">https://progress.opensuse.org/issues/10212</a>
 
 Screenshot of the feature:
 
-image::images/test_details-next_and_previous.png[Next and previous job results]
+<figure>
+<img src="images/test_details-next_and_previous.png" alt="Next and previous job results" />
+</figure>
 
-
-=== Link to latest in scenario name https://github.com/os-autoinst/openQA/pull/836[gh#836]
+## Link to latest in scenario name <a href="https://github.com/os-autoinst/openQA/pull/836" id="836">gh</a>
 
 Find the always latest job in a scenario with the link after the
-scenario name in the tab "`Next & previous results`" Screenshot:
+scenario name in the tab “Next & previous results” Screenshot:
 
-image::images/test_details-link_to_latest.png[Link to latest in scenario]
+<figure>
+<img src="images/test_details-link_to_latest.png" alt="Link to latest in scenario" />
+</figure>
 
-
-=== Add `latest' query route https://github.com/os-autoinst/openQA/pull/815[gh#815]
+## Add \`latest’ query route <a href="https://github.com/os-autoinst/openQA/pull/815" id="815">gh</a>
 
 Should always refer to most recent job for the specified scenario.
 
-* have the same link for test development, i.e. if one retriggers tests,
-the person has to always update the URL. If there would be a static URL
-even the browser can be instructed to reload the page automatically
-* for linking to the always current execution of the last job within one
-scenario, e.g. to respond faster to the standard question in bug reports
-"`does this bug still happen?`"
+- have the same link for test development, i.e. if one retriggers tests,
+  the person has to always update the URL. If there would be a static URL
+  even the browser can be instructed to reload the page automatically
+
+- for linking to the always current execution of the last job within one
+  scenario, e.g. to respond faster to the standard question in bug reports
+  “does this bug still happen?”
 
 Examples:
 
-* `tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit`
-* `tests/latest?flavor=DVD&arch=x86_64&test=kde`
-* `tests/latest?test=foobar` - this searches for the most recent job
-using test_suite `foobar' covering all distri, version, flavor, arch,
-machines. To be more specific, add the other query entries.
+- `tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit`
 
+- `tests/latest?flavor=DVD&arch=x86_64&test=kde`
 
-=== Allow group overview query by result https://github.com/os-autoinst/openQA/pull/531[gh#531]
+- `tests/latest?test=foobar` - this searches for the most recent job
+  using test_suite \`foobar’ covering all distri, version, flavor, arch,
+  machines. To be more specific, add the other query entries.
+
+## Allow group overview query by result <a href="https://github.com/os-autoinst/openQA/pull/531" id="531">gh</a>
 
 This allows e.g. to show only failed builds. Could be included like in
-http://lists.opensuse.org/opensuse-factory/2016-02/msg00018.html for
-"`known defects`".
+<http://lists.opensuse.org/opensuse-factory/2016-02/msg00018.html> for
+“known defects”.
 
 Example: Add query parameters like `…&result=failed&arch=x86_64` to show
 only failed for the single architecture selected.
 
+## Add web UI controls to select more builds in group_overview <a href="https://github.com/os-autoinst/openQA/pull/804" id="804">gh</a>
 
-=== Add web UI controls to select more builds in group_overview https://github.com/os-autoinst/openQA/pull/804[gh#804]
-
-The query parameter `limit_builds' allows to show more than the default
+The query parameter \`limit_builds’ allows to show more than the default
 10 builds on demand. Just like we have for configuring previous results,
 the current commit adds web UI selections to reload the same page with
 higher number of builds on demand. For this, the limit of days is
@@ -537,10 +627,11 @@ increased to show more builds but still limited by the selected number.
 
 Example screenshot:
 
-image::images/job_group-limit_builds.png[Select different limit for number of displayed builds]
+<figure>
+<img src="images/job_group-limit_builds.png" alt="Select different limit for number of displayed builds" />
+</figure>
 
-
-=== More query parameters for configuring last builds https://github.com/os-autoinst/openQA/pull/575[gh#575]
+## More query parameters for configuring last builds <a href="https://github.com/os-autoinst/openQA/pull/575" id="575">gh</a>
 
 By using advanced query parameters in the URLs you can configure the
 search for builds. Higher numbers would yield more complex database
@@ -553,37 +644,35 @@ Example to show up to three week old builds instead of the default two
 weeks with up to 20 builds instead of up to 10 being the default for the
 group overview page:
 
-....
-http://openqa/group_overview/1?time_limit_days=21&limit_builds=20
-....
+    http://openqa/group_overview/1?time_limit_days=21&limit_builds=20
 
+## Web UI controls to filter only tagged or all builds <a href="https://github.com/os-autoinst/openQA/pull/807" id="807">gh</a>
 
-=== Web UI controls to filter only tagged or all builds https://github.com/os-autoinst/openQA/pull/807[gh#807]
-
-Using a new query parameter `only_tagged=[0|1]' the list can be
+Using a new query parameter \`only_tagged=\[0\|1\]’ the list can be
 filtered, e.g. show only tagged (important) builds.
 
 Example screenshot:
 
-image::images/job_group-limit_builds_tagged.png[Show only tagged or all builds]
+<figure>
+<img src="images/job_group-limit_builds_tagged.png" alt="Show only tagged or all builds" />
+</figure>
 
-Related issue: https://progress.opensuse.org/issues/11052[#11052]
+Related issue: <a href="https://progress.opensuse.org/issues/11052" id="11052">https://progress.opensuse.org/issues/11052</a>
 
-
-=== Test result badges https://github.com/os-autoinst/openQA/pull/5022[gh#5022]
+## Test result badges <a href="https://github.com/os-autoinst/openQA/pull/5022" id="5022">gh</a>
 
 For build results or individual job results including the latest job result
 page, there is a corresponding route to get an SVG status badge that can e.g.
 be used to build a status dashboard or for showing the status within a GitHub
 comment.
 
-image::images/badges.png[Test result badges]
+<figure>
+<img src="images/badges.png" alt="Test result badges" />
+</figure>
 
-....
-http://openqa/tests/123/badge
-http://openqa/tests/latest/badge
-http://openqa/tests/overview/badge?distri=opensuse&groupid=1&result=not_ok
-....
+    http://openqa/tests/123/badge
+    http://openqa/tests/latest/badge
+    http://openqa/tests/overview/badge?distri=opensuse&groupid=1&result=not_ok
 
 The first two routes refer to a specific job or the latest job of a scenario.
 The `/tests/overview/badge` route summarizes the status of multiple jobs based
@@ -597,7 +686,7 @@ The parameter `label` can be used to set a custom label on the left side of the
 badge (instead of the default `openQA`). When a custom label is used, the openQA
 logo is omitted to provide more space for the text.
 
-=== Build a continuous openQA monitoring dashboard
+## Build a continuous openQA monitoring dashboard
 
 With just some common tools a dashboard showing the openQA index page with
 continuously updated results can be setup. Example setup using the
@@ -605,8 +694,7 @@ continuously updated results can be setup. Example setup using the
 
 Content of /home/tux/.xinitrc
 
-[source,sh]
-----
+``` sh
 #!/bin/bash
 
 unclutter &
@@ -622,12 +710,11 @@ while sleep 300 ; do
         xdotool key F5
         xdotool windowactivate $(xdotool getactivewindow)
 done
-----
+```
 
 Content of /usr/share/lightdm/lightdm.conf.d/50-suse-defaults.conf
 
-[source,ini]
-----
+``` ini
 [Seat:*]
 pam-service = lightdm
 pam-autologin-service = lightdm-autologin
@@ -639,60 +726,62 @@ session-setup-script=/etc/X11/xdm/Xstartup
 session-cleanup-script=/etc/X11/xdm/Xreset
 autologin-user=tux
 autologin-timeout=0
-----
+```
 
+## Carry over of bug references from previous jobs in same scenario
 
-[id="carry-over"]
-=== Carry over of bug references from previous jobs in same scenario
 Many test failures within the same scenario might be due to the same reason.
 To avoid human reviewers having to add the same bug references again and
 again, bug references are carried over from previous failures in the same
 scenario if a job fails. The same behaviour can be achieved by adding
 `flag:carryover` to a comment.
 This idea is inspired by the
-https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin[Claim plugin] for
+[Claim plugin](https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin) for
 Jenkins.
 
-NOTE: The carry-over feature works on test module level. Only if the same
-set of test module as in a predecessor job fails the latest bug reference
-is carried over.
+> [!NOTE]
+> The carry-over feature works on test module level. Only if the same
+> set of test module as in a predecessor job fails the latest bug reference
+> is carried over.
 
-NOTE: The lookup-depth is limited. The search for candidates will also stop
-early if too many different kinds of failures were seen. Check out the
-descriptions of the relevant settings in the `carry_over` section of
-<<GettingStarted.asciidoc#_configuration,the web UI configuration>> for details.
+> [!NOTE]
+> The lookup-depth is limited. The search for candidates will also stop
+> early if too many different kinds of failures were seen. Check out the
+> descriptions of the relevant settings in the `carry_over` section of
+> [the web UI configuration](GettingStarted.md#_configuration) for details.
 
-NOTE: For an approach to add bug references based on a search expression found
-in the job reason for incomplete jobs or job logs consider to
-<<Installing.asciidoc#_enable_custom_hook_scripts_on_job_done_based_on_result,Enable custom hook scripts on "job done" based on result>>.
+> [!NOTE]
+> For an approach to add bug references based on a search expression found
+> in the job reason for incomplete jobs or job logs consider to
+> [Enable custom hook scripts on "job done" based on result](Installing.md#_enable_custom_hook_scripts_on_job_done_based_on_result).
 
-=== Pinning comments as group description
+## Pinning comments as group description
 
 This is possible by adding the keyword `pinned-description` anywhere in
 a comment on the group overview page. Then the comment will be shown at
 the top of the group overview page. However, it only works as operator
 or admin.
 
-
-=== Dark mode
+## Dark mode
 
 A dark mode theme can be enabled via "Appearance" settings for all logged in users. It can either be forced with
 the "dark mode" setting, or left to browser detection. Switching automatically between light and dark mode is natively
 supported by most modern browsers and can also be controlled manually via flags:
 
- * On Firefox, go to `about:preferences#general` and search for "Website appearance".
- * On Chrome, go to `chrome://flags/` and search for "Dark mode".
+- On Firefox, go to `about:preferences#general` and search for "Website appearance".
+
+- On Chrome, go to `chrome://flags/` and search for "Dark mode".
 
 For more information, see
-https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme[developer.mozilla.org/CSS/@media/prefers-color-scheme]
+<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme" class="mozilla org/CSS/@media/prefers-color-scheme">developer</a>
 
-
-=== Developer mode ===
+## Developer mode ===
 
 The developer mode allows to:
 
-* Create or update needles from `assert_screen` mismatches ("re-needling")
-* Pause the test execution (at a certain module) for manual investigation of the SUT
+- Create or update needles from `assert_screen` mismatches ("re-needling")
+
+- Pause the test execution (at a certain module) for manual investigation of the SUT
 
 It can be accessed via the "Live View" tab of a running test. Only registered
 users can take control over tests. Basic instructions and buttons providing further
@@ -700,31 +789,34 @@ information about the different options are already contained on the web page it
 So I am not repeating that information here and rather explain the overall workflow.
 
 In case the developer mode in not working on your instance, try to follow the
-<<Pitfalls.asciidoc#debugdevelmode,steps for debugging the developer mode under 'Pitfalls'>>.
+[steps for debugging the developer mode under ’Pitfalls’](Pitfalls.md#debugdevelmode).
 
-==== Workflow for creating or updating needles ====
+### Workflow for creating or updating needles ====
 
-1. In case a new needles should be created, add the corresponding `assert_screen` calls
-   to your test.
-2. Start the test with the `assert_screen` calls which are supposed to fail.
-3. Select "``assert_screen`` timeout" under "Pause on screen mismatch" and confirm.
-4. Wait until the test has paused. There is a button to skip the current timeout to speed
-   this up.
-5. A button for accessing the needle editor should occur. It may take a few seconds till
-   it occurs because the screenshots created so far need to be uploaded from the worker to
-   the web UI. Of course it is also possible to go back to the "Details" tab to create a new
-   needle from any previous screenshot/match available.
-6. After creating the new needle, click the resume button to test whether it worked.
+1.  In case a new needles should be created, add the corresponding `assert_screen` calls
+    to your test.
+
+2.  Start the test with the `assert_screen` calls which are supposed to fail.
+
+3.  Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.
+
+4.  Wait until the test has paused. There is a button to skip the current timeout to speed
+    this up.
+
+5.  A button for accessing the needle editor should occur. It may take a few seconds till
+    it occurs because the screenshots created so far need to be uploaded from the worker to
+    the web UI. Of course it is also possible to go back to the "Details" tab to create a new
+    needle from any previous screenshot/match available.
+
+6.  After creating the new needle, click the resume button to test whether it worked.
 
 Steps 4. to 6. can be repeated for further needles without restarting the test.
 
+## Job group editor <a href="https://github.com/os-autoinst/openQA/pull/2111" id="2111">gh</a> ===
 
-=== Job group editor https://github.com/os-autoinst/openQA/pull/2111[gh#2111] ===
+Scenarios are defined as part of a job group. The `Edit` `job` `group` button exposes the editor.
 
-Scenarios are defined as part of a job group. The `Edit job group` button exposes the editor.
-
-
-==== YAML job templates editor
+### YAML job templates editor
 
 Settings can be specified as a key/value pair for each scenario. There is no
 equivalent in the table view so you need to migrate groups to use this feature.
@@ -737,8 +829,7 @@ it, otherwise that would create an inconsistent state.
 Job groups can be updated through the YAML editor or the YAML-related
 REST API routes.
 
-
-==== Deprecated: Table-based (pre-migration)
+### Deprecated: Table-based (pre-migration)
 
 In old versions openQA had a table-based UI for defining job templates, listed
 in a table per medium. Machines can be added by selecting the architecture
@@ -746,7 +837,7 @@ column and picking a machine from the list. Remove scenarios by removing all
 of their machines. Add new scenarios via the blue Plus icon at the top of the
 table. Changes to the priority are applied immediately.
 
-If job groups still exist showing the old mode, the `Edit YAML` button can be
+If job groups still exist showing the old mode, the `Edit` `YAML` button can be
 used to reveal the YAML editor and migrate a group. After saving for the first
 time, the group can only be configured in YAML. The table view will not be
 shown anymore.
@@ -758,20 +849,19 @@ To migrate an old job group using the API the current schedule can be
 retrieved in YAML format and sent back to save as a complete YAML document.
 For example for all job groups in the old format:
 
-[source,sh]
-----
+``` sh
 for i in $(ssh openqa.example.com "sudo -u geekotest psql --no-align --tuples-only --command=\"select id from job_groups where template is null order by id;\" openqa") ; do
     curl -s http://openqa.example.com/api/v1/job_templates_scheduling/$i | openqa-cli api --host http://openqa.example.com -X POST job_templates_scheduling/$i schema=JobTemplates-01.yaml template="$(cat -)"
 done
-----
+```
 
 Note that in some cases you might run into errors where old test suites or
 products have invalid names which the old editor did not enforce:
 
-*Product names* may not contain `:` or `@` characters. Something like
+**Product names** may not contain `:` or `@` characters. Something like
 `Server-DVD-Staging:A` would require replacing the `:` with eg. a `-`.
 
-*Test suites* may not contain `:` or `@` characters. A test suite such as
+**Test suites** may not contain `:` or `@` characters. A test suite such as
 `ext4_uefi@staging` would have been allowed previously. The use of the `@`
 as a suffix could be replaced with a `-` or if it is used for variants of
 the same test suite with different settings, settings can be specified in
@@ -780,14 +870,14 @@ YAML directly.
 More generally the regular expression `[A-Za-z0-9._*-]+` could be used to
 check if a name is allowed for a product or test suite.
 
-== Configuring job groups via YAML documents
+# Configuring job groups via YAML documents
 
 A new job group starts out empty, which in YAML means that the two mandatory
 sections are present but contain nothing. This is what can be seen when
 editing a completely group, and what is also the state to revert to before
 deleting a job group that is no longer useful:
 
-```yaml
+``` yaml
 products: {}
 scenarios: {}
 ```
@@ -798,7 +888,7 @@ be specified to be able to run tests. Going by an example of openSUSE 15.1
 the name, distri, flavor and version could be written like so. Note that the
 version is a string in single quotes.
 
-```yaml
+``` yaml
 products:
   opensuse-15.1-DVD-Updates-x86_64:
     distri: opensuse
@@ -811,7 +901,7 @@ a combination of a test suite, a machine and an architecture. Scenarios must
 also be unique across job groups - trying to add it to multiple job groups is
 an error. Case in point, `textmode` and `gnome` could be defined like so:
 
-```yaml
+``` yaml
 scenarios:
   x86_64:
     opensuse-15.1-DVD-Updates-x86_64:
@@ -823,14 +913,14 @@ scenarios:
           QEMUVGA: cirrus
 ```
 
-=== Defaults
+## Defaults
 
 Now there are two scenarios for `x86_64`, one by giving just the name of the
 test suite and another which has a machine, priority and settings. Both are
 allowed. However since at least one scenario relies on defaults those need to
 be specified once in their own section:
 
-```yaml
+``` yaml
 defaults:
   x86_64:
     machine: 64bit
@@ -843,7 +933,7 @@ those for a single scenario. For instance the example could be amended to use
 settings and run every test suite for that architecture on several machines by
 default.
 
-```yaml
+``` yaml
 defaults:
   x86_64:
     machine: [64bit, 32bit]
@@ -857,7 +947,7 @@ more, all settings can be specified in YAML. Using this together with custom
 job template names, variants of a scenario can even be specified when they
 would normally be considered duplicated:
 
-```yaml
+``` yaml
 scenarios:
   x86_64:
     opensuse-15.1-DVD-Updates-x86_64:
@@ -874,14 +964,14 @@ scenarios:
           FOO: '2'
 ```
 
-=== YAML Aliases
+## YAML Aliases
 
 Even more flexibility can be achieved by using aliases in YAML, or in other
 words reusing a scenario by reference, such as to run the same scenarios in
 two different mediums. `&` is used to define an anchor, while `*` is the alias
 referencing the anchor:
 
-```yaml
+``` yaml
 products:
   opensuse-15.1-DVD-Updates-x86_64:
     distri: opensuse
@@ -911,16 +1001,15 @@ scenarios:
     - gnome_staging: *gnome_staging
 ```
 
-=== YAML Merge Keys
+## YAML Merge Keys
 
-Also link:https://yaml.org/type/merge.html[YAML Merge Keys] are supported.
+Also [YAML Merge Keys](https://yaml.org/type/merge.html) are supported.
 This way you can reuse previously defined anchors and add other values to it.
 Values in the merged alias will be overridden.
 
 You can even merge more than one alias.
 
-
-```yaml
+``` yaml
 products:
   opensuse-15.1-DVD-Updates-x86_64:
     distri: opensuse
@@ -963,173 +1052,192 @@ scenarios:
           FOO: foo # overrides the value from the merge keys
 ```
 
+## General YAML documentation
 
-=== General YAML documentation
-
-The job templates are written in link:https://yaml.org/spec/1.2/spec.html[YAML
-1.2]. In YAML, strings usually do not have to be quoted, except if it is a
+The job templates are written in [YAML
+1.2](https://yaml.org/spec/1.2/spec.html). In YAML, strings usually do not have to be quoted, except if it is a
 special value that would be loaded as a Boolean, NULL or Number. The following
-table shows all special values (See the documentation for the default link:https://yaml.org/spec/1.2/spec.html#id2804923[YAML 1.2 Core Schema] for more information).
+table shows all special values (See the documentation for the default [YAML 1.2 Core Schema](https://yaml.org/spec/1.2/spec.html#id2804923) for more information).
 
-[%header,cols="20%,80%"]
-|=======
-| Type
-| Special Values
-
-| `bool`
-| `true \| True \| TRUE \| false \| False \| FALSE`
-
-| `int (Base 8)`
-| `0o7`, `0o10`, `0o755`
-
-Regular Expression: `0o [0-7]+`
-
-| `int (Base 10)`
-| `23`, `+42`, `0123`, `-314`
-
-Regular Expression: `[-\+]? [0-9]+`
-
-| `int (Base 16)`
-| `0xFF`, `0xa`, `0xc0ffee`
-
-Regular Expression: `0x [0-9a-fA-F]+`
-
-| `float (Number)`
-| `3.14`, `+3.14`, `-3.14`, `3.3e+3`, `3.3e3`, `.14`, `001.23`, `.3E-1`, `3e3`
-
-Regular Expression: `[-\+]? ( \. [0-9]+ \| [0-9]+ ( \. [0-9]* )? ) ( [eE] [-\+]? [0-9]+ )?`
-
-| `float (Infinity)`
-| `.inf`, `+.inf`, `-.inf`, `.Inf` etc.
-
-Regular Expression: `[-+]? \. ( inf \| Inf \| INF )`
-
-| `float (Not a number)`
-| `.nan`, `.NaN`, `.NAN`
-
-Regular Expression: `\. ( nan \| NaN \|NAN )`
-
-| `null`
-| `null \| Null \| NULL \| ~ \| # empty`
-
-| `str`
-| everything else
-|=======
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr>
+<th><p>Type</p></th>
+<th><p>Special Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><code>bool</code></p></td>
+<td><p><code>true</code> <code>|</code> <code>True</code> <code>|</code> <code>TRUE</code> <code>|</code> <code>false</code> <code>|</code> <code>False</code> <code>|</code> <code>FALSE</code></p></td>
+</tr>
+<tr>
+<td><p><code>int</code> <code>(Base</code> <code>8)</code></p></td>
+<td><p><code>0o7</code>, <code>0o10</code>, <code>0o755</code></p>
+<p>Regular Expression: <code>0o</code> <code>[0-7]+</code></p></td>
+</tr>
+<tr>
+<td><p><code>int</code> <code>(Base</code> <code>10)</code></p></td>
+<td><p><code>23</code>, <code>+42</code>, <code>0123</code>, <code>-314</code></p>
+<p>Regular Expression: <code>[-\]?</code> <code>[0-9]</code></p></td>
+</tr>
+<tr>
+<td><p><code>int</code> <code>(Base</code> <code>16)</code></p></td>
+<td><p><code>0xFF</code>, <code>0xa</code>, <code>0xc0ffee</code></p>
+<p>Regular Expression: <code>0x</code> <code>[0-9a-fA-F]+</code></p></td>
+</tr>
+<tr>
+<td><p><code>float</code> <code>(Number)</code></p></td>
+<td><p><code>3.14</code>, <code>+3.14</code>, <code>-3.14</code>, <code>3.3e+3</code>, <code>3.3e3</code>, <code>.14</code>, <code>001.23</code>, <code>.3E-1</code>, <code>3e3</code></p>
+<p>Regular Expression: <code>[-\]?</code> <code>(</code> <code>\.</code> <code>[0-9]</code> <code>|</code> <code>[0-9]+</code> <code>(</code> <code>.</code> <code>[0-9]*</code> <code>)?</code> <code>)</code> <code>(</code> <code>[eE]</code> <code>[-\]?</code> <code>[0-9]</code> <code>)?</code></p></td>
+</tr>
+<tr>
+<td><p><code>float</code> <code>(Infinity)</code></p></td>
+<td><p><code>.inf</code>, <code>+.inf</code>, <code>-.inf</code>, <code>.Inf</code> etc.</p>
+<p>Regular Expression: <code>[-+]?</code> <code>.</code> <code>(</code> <code>inf</code> <code>|</code> <code>Inf</code> <code>|</code> <code>INF</code> <code>)</code></p></td>
+</tr>
+<tr>
+<td><p><code>float</code> <code>(Not</code> <code>a</code> <code>number)</code></p></td>
+<td><p><code>.nan</code>, <code>.NaN</code>, <code>.NAN</code></p>
+<p>Regular Expression: <code>.</code> <code>(</code> <code>nan</code> <code>|</code> <code>NaN</code> <code>|NAN</code> <code>)</code></p></td>
+</tr>
+<tr>
+<td><p><code>null</code></p></td>
+<td><p><code>null</code> <code>|</code> <code>Null</code> <code>|</code> <code>NULL</code> <code>|</code> <code>~</code> <code>|</code> <code>#</code> <code>empty</code></p></td>
+</tr>
+</tbody><tfoot>
+<tr>
+<td><p><code>str</code></p></td>
+<td><p>everything else</p></td>
+</tr>
+</tfoot>
+&#10;</table>
 
 Because we are using the Merge Keys feature, also the unquoted string `<<` is
 special.
 If you need the literal string `<<` (for example as a value in the job
 settings), you have to quote it.
 
-== Use of the REST API
+# Use of the REST API
 
-openQA includes a _client_ script which - depending on the distribution - is
+openQA includes a *client* script which - depending on the distribution - is
 packaged independently to allow interfacing with an existing openQA instance
-without needing to install openQA itself. Call `openqa-cli --help` for help.
-The sub-commands provide further help, e.g. `openqa-cli api --help` contains
+without needing to install openQA itself. Call `openqa-cli` `--help` for help.
+The sub-commands provide further help, e.g. `openqa-cli` `api` `--help` contains
 a lot of examples.
 
 This section focuses on particular API use-cases. Check out the
-<<Client.asciidoc#client,openQA client>> section for further information about
+[openQA client](Client.md#client) section for further information about
 the client itself, how authentication works and how plain `curl` can be used.
 
-=== Finding tests
+## Finding tests
 
 The following example lists all jobs within the job group with the ID `1`
 and the setting `BUILD=20210707` on `openqa.opensuse.org`:
 
-[source,sh]
-----
+``` sh
 curl -s "https://openqa.opensuse.org/api/v1/jobs?groupid=1&build=20210707" | jq
-----
+```
 
 The tool `jq` is used for pretty-printing in this example but it is also useful
-for additional filtering (see js's
-https://stedolan.github.io/jq/tutorial[tutorial]).
+for additional filtering (see js’s
+[tutorial](https://stedolan.github.io/jq/tutorial)).
 
-However, openQA's API provides many more filters on its own. These can be used
+However, openQA’s API provides many more filters on its own. These can be used
 by adding additional query parameters, e.g.:
 
-* `ids`/`state`/`result`: Return only jobs with matching ID/state/result.
+- `ids`/`state`/`result`: Return only jobs with matching ID/state/result.
   Multiple IDs/states/results can be specified by repeating the parameter or
   by passing comma-separated values.
-* `distri`/`version`/`build`/`test`/`arch`/`machine`
+
+- `distri`/`version`/`build`/`test`/`arch`/`machine`
   /`worker_class`/`iso`/`hdd_1`: Return only jobs where the job settings match
   the specified values like in the example above. Note that it is not possible
   to filter by arbitrary job settings although this list might not be complete.
-* `groupid`/`group`: Return only jobs within the job group with the
+
+- `groupid`/`group`: Return only jobs within the job group with the
   specified ID/name like in the example above. These parameters are mutually
   exclusive, `groupid` has precedence.
-* `latest=1`: De-duplicates, so that for the same `DISTRI`, `VERSION`, `BUILD`,
+
+- `latest=1`: De-duplicates, so that for the same `DISTRI`, `VERSION`, `BUILD`,
   `TEST`, `FLAVOR`, `ARCH` and `MACHINE` only the latest job is returned.
-* `limit`/`page`: Limit the number of returned jobs and allow pagination, e.g.
+
+- `limit`/`page`: Limit the number of returned jobs and allow pagination, e.g.
   `page=2&limit=10` would only show results 11-20.
-* `modules`/`modules_result`: Return only jobs which have a test module with the
+
+- `modules`/`modules_result`: Return only jobs which have a test module with the
   specified name/result.
-* `before`/`after`: Return only jobs with a job ID less/greater than the
+
+- `before`/`after`: Return only jobs with a job ID less/greater than the
   specified job ID.
-* `scope=current`: Returns only jobs which have not been cloned yet.
-* `scope=relevant`: Returns only jobs which have not been obsoleted yet and
-  which have not been cloned yet. Clones which are still pending do *not* count.
 
-==== Remarks
+- `scope=current`: Returns only jobs which have not been cloned yet.
 
-* All parameters can be combined with each other unless stated otherwise.
-* When specifying the same parameter multiple times, only the last occurrence
+- `scope=relevant`: Returns only jobs which have not been obsoleted yet and
+  which have not been cloned yet. Clones which are still pending do **not** count.
+
+### Remarks
+
+- All parameters can be combined with each other unless stated otherwise.
+
+- When specifying the same parameter multiple times, only the last occurrence
   is taken into account.
-* All values are matched exactly, so e.g. `group=openSUSE+Leap+15` returns only
-  jobs within the group `openSUSE Leap 15` but not jobs from the group
-  `openSUSE Leap 15 ARM`. This applies to parameters for filtering job settings
+
+- All values are matched exactly, so e.g. `group=openSUSE+Leap+15` returns only
+  jobs within the group `openSUSE` `Leap` `15` but not jobs from the group
+  `openSUSE` `Leap` `15` `ARM`. This applies to parameters for filtering job settings
   as well.
 
-=== Finding tests by querying particular job settings
+## Finding tests by querying particular job settings
 
 In case you are looking for a way to get a list of all the tests based on their
-settings, here is one way to achieve this with `openqa-cli api`:
+settings, here is one way to achieve this with `openqa-cli` `api`:
 
-[source,sh]
-----
+``` sh
 openqa-cli api job_settings/jobs key="*_TEST_ISSUES" list_value=39911
-----
+```
 
 It is possible to use a literal string or a glob for `key` as shown in the
 examples. `list_value` does not support globbing, though.
 openQA configuration sets `job_settings_max_recent_jobs` which limits
 the results.
 
-==== Array-like job settings
+### Array-like job settings
+
 Settings where the key ends with `[]` are split on `,`. So e.g.
 `ISSUES[]=foo,bar,baz` will be stored as `ISSUES[]=foo`, `ISSUES[]=bar` and
 `ISSUES[]=baz`. This allows searching for jobs with a certain job setting value
 more efficiently, e.g.:
 
-[source,sh]
-----
+``` sh
 openqa-cli api job_settings/jobs key=ISSUES value=foo
-----
+```
 
 Note that the suffix `[]` is still part of the setting key and always needs to
 be specified when referring to the setting. That also means that e.g. `ISSUES`
 and `ISSUES[]` are two completely different settings.
 
-==== Using other API routes
+### Using other API routes
+
 It is also possible to use the `jobs` and `jobs/overview` routes which support
 the `job_setting` parameter. More than one `job_setting` parameter can be
 specified and it can also be combined with other filtering parameters, e.g.:
 
-[source,sh]
-----
+``` sh
 openqa-cli api jobs result=none job_setting=ISSUES[]={foo,bar} limit=50
-----
+```
 
-=== Triggering tests
+## Triggering tests
 
 Tests can be triggered over multiple ways, using `openqa-clone-job`,
-`jobs post`, `isos post` as well as retriggering existing jobs or whole media
+`jobs` `post`, `isos` `post` as well as retriggering existing jobs or whole media
 over the web UI.
 
-
-==== Cloning existing jobs - openqa-clone-job ====
+### Cloning existing jobs - openqa-clone-job ====
 
 If one wants to recreate an existing job from any publicly available openQA
 instance the script `openqa-clone-job` can be used to copy the necessary
@@ -1137,22 +1245,19 @@ settings and assets to another instance and schedule the test. For the test to
 be executed it has to be ensured that matching resources can be found, for
 example a worker with matching `WORKER_CLASS` must be registered. More details
 on `openqa-clone-job` can be found in
-<<WritingTests.asciidoc#writingtests,Writing Tests>>.
+[Writing Tests](WritingTests.md#writingtests).
 
+### Spawning single new jobs - jobs post ====
 
-==== Spawning single new jobs - jobs post ====
-
-Single jobs can be spawned using the `jobs post` API route. All necessary
+Single jobs can be spawned using the `jobs` `post` API route. All necessary
 settings on a job must be supplied in the API request. The "openQA client" has
 examples for this.
 
-===== Further examples for advanced dependency handling =====
+#### Further examples for advanced dependency handling =====
 
 It is possible to spawn a single set of jobs using just one API call, e.g.:
 
-```
-openqa-cli api -X POST jobs TEST:0=first-job TEST:1=second-job _START_AFTER:1=0
-```
+    openqa-cli api -X POST jobs TEST:0=first-job TEST:1=second-job _START_AFTER:1=0
 
 The suffixes `0` and `1` are actually freely chosen and are merely used to
 specify which parameters belong to which job and how they depend on each other.
@@ -1163,25 +1268,22 @@ dependencies are possible as well (via `_PARALLEL` and `_START_DIRECTLY_AFTER`).
 Note that this kind of call will return the resulting job ID for each suffix
 that has been used, e.g.:
 
-```
-{"ids":{"0":2531,"1":2530}}
-```
+    {"ids":{"0":2531,"1":2530}}
 
 To use colons within a settings key, just add a trailing `:`, e.g.:
 
-```
-openqa-cli api -X POST jobs TEST=test KEY:WITH:COLONS:=example
-```
+    openqa-cli api -X POST jobs TEST=test KEY:WITH:COLONS:=example
 
-==== Spawning multiple jobs based on templates - isos post ====
+### Spawning multiple jobs based on templates - isos post ====
+
 The most common way of spawning jobs on production instances is using the
-`isos post` API route. Based on settings for media, job groups, machines and
+`isos` `post` API route. Based on settings for media, job groups, machines and
 test suites jobs are triggered based on template matching. These settings
 need to be defined before on the corresponding pages of the web UI (accessible
 to operators from the user menu). The
-<<UsersGuide.asciidoc#job_templates,section on job templates>> already explains
+[section on job templates](UsersGuide.md#job_templates) already explains
 details about these tables. Alternatively, these settings can be
-supplied via a <<UsersGuide.asciidoc#scenarios_yaml,YAML document>>.
+supplied via a [YAML document](UsersGuide.md#scenarios_yaml).
 
 Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
 `FLAVOR` and `ARCH` more parameters can be specified. Those additional
@@ -1189,7 +1291,7 @@ parameters will be added as jobs settings in all triggered jobs.
 
 If there is no medium type matching the specified `VERSION`, the lookup falls
 back to matching any medium with version `*`. Check out
-<<UsersGuide.asciidoc#_medium_types_products,the section about medium types>>
+[the section about medium types](UsersGuide.md#_medium_types_products)
 for details.
 
 The parameters `MACHINE` and `TEST` additionally act as filters and `TEST`
@@ -1201,95 +1303,112 @@ triggering itself is done. These parameters all start with a leading
 underscore but are set as request parameters in the same way as the other
 parameters.
 
-[horizontal]
-.The following scheduling parameters exist
+<div>
 
-_OBSOLETE:: Obsolete jobs in older builds with same DISTRI and VERSION
+<div class="title">
+
+The following scheduling parameters exist
+
+</div>
+
+\_OBSOLETE  
+Obsolete jobs in older builds with same DISTRI and VERSION
 (The default behavior is not obsoleting). With this option jobs which are currently pending,
 for example scheduled or running, are cancelled when a new medium is triggered.
 
-_DEPRIORITIZEBUILD:: Setting this switch to '1' will deprioritize the
+\_DEPRIORITIZEBUILD  
+Setting this switch to ’1’ will deprioritize the
 unfinished jobs of old builds, and it will obsolete the jobs once the
 configurable limit of the priority value is reached.
 
-_DEPRIORITIZE_LIMIT:: The configurable limit of priority value up to which
+\_DEPRIORITIZE_LIMIT  
+The configurable limit of priority value up to which
 jobs should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Defaults to 100.
 
-_ONLY_OBSOLETE_SAME_BUILD:: Only obsolete (or deprioritize) jobs for the same BUILD.
+\_ONLY_OBSOLETE_SAME_BUILD  
+Only obsolete (or deprioritize) jobs for the same BUILD.
 This is useful for cases where a new build appearing does not necessarily
 mean existing jobs for earlier builds with the same DISTRI and VERSION are
 no longer interesting, but you still want to be able to re-submit jobs for a
 build and have existing jobs for the exact same build obsoleted. Needs `_OBSOLETE`.
 
-_SKIP_CHAINED_DEPS:: Do not schedule parent test suites which are specified in `START_AFTER_TEST`
-                     or `START_DIRECTLY_AFTER_TEST`.
+\_SKIP_CHAINED_DEPS  
+Do not schedule parent test suites which are specified in `START_AFTER_TEST`
+or `START_DIRECTLY_AFTER_TEST`.
 
-_INCLUDE_CHILDREN:: Include children that would otherwise not be considered when
-                    filtering test suites via the `TEST` parameter.
+\_INCLUDE_CHILDREN  
+Include children that would otherwise not be considered when
+filtering test suites via the `TEST` parameter.
 
-_GROUP:: Job templates *not* matching the given group name are ignored. Does *not*
-         affect obsoletion behavior.
+\_GROUP  
+Job templates **not** matching the given group name are ignored. Does **not**
+affect obsoletion behavior.
 
-_GROUP_ID:: Same as `_GROUP` but allows to specify the group directly by ID.
-_PRIORITY:: Sets the priority value for the new jobs (which otherwise defaults
+\_GROUP_ID  
+Same as `_GROUP` but allows to specify the group directly by ID.
+
+\_PRIORITY  
+Sets the priority value for the new jobs (which otherwise defaults
 to the priority of the job template)
 
-__…:: All parameters starting with `__` will *not* be added as job settings.
+\_\_…  
+All parameters starting with `__` will **not** be added as job settings.
 Those parameters can be used to store additional information about the scheduled
 product itself, e.g. the URL of a web page with more context.
 
+</div>
+
 Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
 
-[source,sh]
---------------------------------------------------------------------------------
+``` sh
 openqa-cli api -X POST isos async=0 ISO=my_iso.iso DISTRI=my_distri \
          FLAVOR=sweet ARCH=my_arch VERSION=42 BUILD=1234 \
          _DEPRIORITIZEBUILD=1 _DEPRIORITIZE_LIMIT=120 \
---------------------------------------------------------------------------------
+```
 
-*NOTE* By default scheduling products is done synchronously within the requests,
+**NOTE** By default scheduling products is done synchronously within the requests,
 corresponding to the parameter `async=0`. Use `async=1` to avoid possible
 timeouts by performing the task in background.
 This is recommended on big instances but means that the results (and
-possible errors) need to be polled via `openqa-cli api isos/$scheduled_product_id`.
+possible errors) need to be polled via `openqa-cli` `api` `isos/$scheduled_product_id`.
 
+#### Statistical investigation =====
 
-===== Statistical investigation ===== 
-In case issues appear sporadically and are therefore hard to reproduce it can 
-help to trigger many more jobs on a production instance to gather more data 
+In case issues appear sporadically and are therefore hard to reproduce it can
+help to trigger many more jobs on a production instance to gather more data
 first, for example the failure ratio.
 
-Example of triggering 50 jobs in a development group so that the result of 
+Example of triggering 50 jobs in a development group so that the result of
 passed/failed jobs is counted by openQA itself on the corresponding overview page:
-[source,sh]
---------------------------------------------------------------------------------
+
+``` sh
 openqa-clone-job --skip-chained-deps --repeat=50 --within-instance \
 https://openqa.opensuse.org 123456  BUILD=poo32242_investigation \
 _GROUP="Test Development:openSUSE Tumbleweed" 
---------------------------------------------------------------------------------
+```
 
-To get an overview about the fail ratio and confidence interval of sporadically 
-failing applications you can also use a script like 
-https://github.com/okurz/scripts/blob/master/count_fail_ratio[this].
+To get an overview about the fail ratio and confidence interval of sporadically
+failing applications you can also use a script like
+[this](https://github.com/okurz/scripts/blob/master/count_fail_ratio).
 
-[id="scenarios_yaml"]
-===== Defining test scenarios in YAML =====
+#### Defining test scenarios in YAML =====
+
 Instead of relying on the tables for machines, mediums/products, test suites and
 job templates of the openQA instance, one can provide these definitions/settings
 also via a YAML document. This YAML document could be specific to a certain test
 distribution and stored in the same repository as those tests (making the versioning
 easier).
 
-WARNING: This feature is still experimental and may change in an incompatible way
-in future versions.
+> [!WARNING]
+> This feature is still experimental and may change in an incompatible way
+> in future versions.
 
 This YAML document can be specified via the scheduling parameter
 `SCENARIO_DEFINITIONS_YAML`:
 
-[source,sh]
---------------------------------------------------------------------------------
+``` sh
 openqa-cli api … -X POST isos --param-file SCENARIO_DEFINITIONS_YAML=/local/file.yaml …
---------------------------------------------------------------------------------
+```
 
 This command will upload the contents of the local file `/local/file.yaml` to a
 possibly remote openQA instance. The YAML document will only be used within the
@@ -1300,15 +1419,14 @@ If the YAML document already exists on the openQA host, you can also use
 `SCENARIO_DEFINITIONS_YAML_FILE` which expects the file path of the YAML document
 on the openQA host. One can also specify an HTTP/HTTPs URL via that variable
 when `async=1` is used (see
-<<UsersGuide.asciidoc#_spawning_multiple_jobs_based_on_templates_isos_post>>
+[UsersGuide.asciidoc#_spawning_multiple_jobs_based_on_templates_isos_post](UsersGuide.md#_spawning_multiple_jobs_based_on_templates_isos_post)
 for details). Then this file is downloaded by the openQA host. The specified
 host name must be allowed via the configuration setting
 `scenario_definitions_allowed_hosts`.
 
 The YAML document itself should define at least one or more job templates:
 
-[source,sh]
---------------------------------------------------------------------------------
+``` sh
 job_templates:
   create_hdd:
     machine: 64bit
@@ -1320,27 +1438,26 @@ job_templates:
       HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
       START_AFTER_TEST: 'create_hdd'
       WORKER_CLASS: 'job-specific-class'
-
---------------------------------------------------------------------------------
+```
 
 This example would create two jobs. They will run in sequence. The first job
 will upload an HDD image that will then be consumed by the second job.
 
 Note that you can also specify products and machine settings. An example showing
 the full structure can be found in the
-https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml[example distribution].
+[example distribution](https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml).
 
 These definitions are used like their openQA-instance-wide counterparts (so continue
 reading the next section for more details on job templates).
 
-==== Remarks ====
+### Remarks ====
 
 When scheduling a single test (variable `TEST` is specified) attempts to
 obsolete/deprioritize are prevented by default because this is likely not wanted.
 Use `_FORCE_OBSOLETE` or `_FORCE_DEPRIORITIZEBUILD` to nevertheless
-obsolete/deprioritize *all* jobs with matching `DISTRI`, `VERSION`, `FLAVOR` and `ARCH`.
+obsolete/deprioritize **all** jobs with matching `DISTRI`, `VERSION`, `FLAVOR` and `ARCH`.
 
-=== Job template YAML ===
+## Job template YAML ===
 
 Job groups can be queried via the experimental REST API:
 
@@ -1349,20 +1466,17 @@ Job groups can be queried via the experimental REST API:
 The GET request will get the YAML for one or multiple groups while a POST request
 conversely updates the YAML for a particular group.
 
-
 Two scripts using these routes can be used to import and export YAML templates:
 
-[source,sh]
---------------------------------------------------------------------------------
+``` sh
 openqa-dump-templates --json --group test > test.json
---------------------------------------------------------------------------------
+```
 
-[source,sh]
---------------------------------------------------------------------------------
+``` sh
 openqa-load-templates test.json
---------------------------------------------------------------------------------
+```
 
-== Asset handling ==
+# Asset handling ==
 
 Multiple parameters exist to reference "assets" to be used by tests. "Assets"
 are essentially content that is stored by the openQA web-UI and provided to the
@@ -1370,26 +1484,34 @@ workers. Things that are typically assets include the ISOs and other images that
 are tested, for example.
 
 Some assets can also be produced by a job, sent back to the web-UI, and used by a later job (see
-explanation of 'storing' and 'publishing' assets, below). Assets can also be seen in the web-UI
+explanation of ’storing’ and ’publishing’ assets, below). Assets can also be seen in the web-UI
 and downloaded directly (though there is a configuration option to hide some or all asset types
 from public view in the web-UI).
 
 Assets may be shared between the web-UI and the workers by having them literally use a shared
 file system (this used to be the only option), or by having the workers download them from the
 server when needed and cache them locally. Check out the documentation about
-<<Installing.asciidoc#asset-caching,asset caching>> for more on this.
+[asset caching](Installing.md#asset-caching) for more on this.
 
-=== Specifying assets required by a job ===
+## Specifying assets required by a job ===
+
 The following job settings are specifying that an asset is required by a job:
 
-* `ISO` (type `iso`)
-* `ISO_n` (type `iso`)
-* `HDD_n` (type `hdd`)
-* `UEFI_PFLASH_VARS` (type `hdd`) (in some cases, see below)
-* `REPO_n` (type `repo`)
-* `ASSET_n` (type `other`)
-* `KERNEL` (type `other`)
-* `INITRD` (type `other`)
+- `ISO` (type `iso`)
+
+- `ISO_n` (type `iso`)
+
+- `HDD_n` (type `hdd`)
+
+- `UEFI_PFLASH_VARS` (type `hdd`) (in some cases, see below)
+
+- `REPO_n` (type `repo`)
+
+- `ASSET_n` (type `other`)
+
+- `KERNEL` (type `other`)
+
+- `INITRD` (type `other`)
 
 Where you see e.g. `ISO_n`, that means `ISO_1`, `ISO_2` etc. will all be treated as assets.
 
@@ -1400,7 +1522,7 @@ be in the correct subdirectory, so e.g. the file for an asset `HDD_1` must be un
 `/var/lib/openqa/share/factory/hdd`. You may create a subdirectory called `fixed` for any asset
 type and place assets there (e.g. in `/var/lib/openqa/share/factory/hdd/fixed` for `hdd`-type
 assets): this exempts them from the automatic cleanup described in the section about
-<<UsersGuide.asciidoc#asset_cleanup,asset cleanup>>.
+[asset cleanup](UsersGuide.md#asset_cleanup).
 Non-fixed assets are always subject to the cleanup.
 
 `UEFI_PFLASH_VARS` is a special case: whether it is treated as an asset depends on the value. If
@@ -1414,25 +1536,35 @@ for use by a child job which needs to inherit those changes.
 You can also use special suffixes to the basic parameter forms to access some special handling for
 assets.
 
-[horizontal]
-.The following suffixes exist:
+<div>
 
-_URL:: Before starting these jobs, try to download these assets into the relevant asset directory
+<div class="title">
+
+The following suffixes exist:
+
+</div>
+
+\_URL  
+Before starting these jobs, try to download these assets into the relevant asset directory
 of the openQA web-UI from trusted domains specified in
-<<GettingStarted.asciidoc#_configuration,the web UI configuration file>>.
-For example `ISO_1_URL=http://trusted.com/foo.iso` would, if `trusted.com` is
+[the web UI configuration file](GettingStarted.md#_configuration).
+For example `ISO_1_URL=`[`http://trusted.com/foo.iso`](http://trusted.com/foo.iso) would, if `trusted.com` is
 set as a trusted domain, cause openQA to download the file `foo.iso` to
 `/var/lib/openqa/share/factory/iso` and set `ISO_1=foo.iso`. If you set both
 `ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will be downloaded
 and renamed to the name set as `ISO_1`.
 
-_DECOMPRESS_URL:: Specify a compressed asset to be downloaded that will be uncompressed by openQA.
-For e.g. `ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz` will download the file `foo2.iso.xz`,
+\_DECOMPRESS_URL  
+Specify a compressed asset to be downloaded that will be uncompressed by openQA.
+For e.g. `ISO_1_DECOMPRESS_URL=`[`http://host/foo2.iso.xz`](http://host/foo2.iso.xz) will download the file `foo2.iso.xz`,
 uncompress it to `foo2.iso`, store it in `/var/lib/openqa/share/factory/iso` and set
 `ISO_1=foo2.iso`. Again, you can also set `ISO_1` to change the name the file will be downloaded
 and uncompressed as.
 
-=== Specifying assets created by a job ===
+</div>
+
+## Specifying assets created by a job ===
+
 Jobs can upload assets to the web-UI so other jobs can used them as `HDD_n` and
 `UEFI_PFLASH_VARS` assets as described in the previous section.
 
@@ -1443,20 +1575,24 @@ the test will be uploaded back to the web-UI and stored under the name
 `updated.qcow2`. Any other job can then specify `HDD_1=updated.qcow2` to use
 this published image as its `HDD_1`.
 
-IMPORTANT: Assets that are already existing will be overridden. If the same
-asset is uploaded by multiple jobs concurrently this will lead to file
-corruption. So be sure to use unique names or use private assets as explained
-in the subsection below.
+> [!IMPORTANT]
+> Assets that are already existing will be overridden. If the same
+> asset is uploaded by multiple jobs concurrently this will lead to file
+> corruption. So be sure to use unique names or use private assets as explained
+> in the subsection below.
 
-NOTE: Note that assets are by default only uploaded if the job completes
-successfully. To force publishing assets even in case of a failed job one can
-specify the `FORCE_PUBLISH_HDD_` variable.
+> [!NOTE]
+> Note that assets are by default only uploaded if the job completes
+> successfully. To force publishing assets even in case of a failed job one can
+> specify the `FORCE_PUBLISH_HDD_` variable.
 
-NOTE: When using this mechanism you will often also want to use the
-<<UsersGuide.asciidoc#_variable_expansion,variable expansion>> mechanism.
+> [!NOTE]
+> When using this mechanism you will often also want to use the
+> [variable expansion](UsersGuide.md#_variable_expansion) mechanism.
 
-==== Private assets ====
-There is a mechanism to alter an asset's file name automatically to associate
+### Private assets ====
+
+There is a mechanism to alter an asset’s file name automatically to associate
 it with the particular job that produced it (currently, by prepending the job ID
 to the filename). To make use of it, use `STORE_HDD_n` (instead of
 `PUBLISH_HDD_n`). Those assets can then be consumed by chained jobs. For
@@ -1464,17 +1600,19 @@ instance, if a parent job uploads an asset via `STORE_HDD_1=somename.qcow2`, its
 children can use it via `HDD_1=somename.qcow2` without having to worry about
 naming conflicts.
 
-IMPORTANT: This only works if the jobs uploading and consuming jobs have a
-chained dependency. For more on "chained" jobs, see the documentation of
-<<WritingTests.asciidoc#_job_dependencies,job dependencies>>.
+> [!IMPORTANT]
+> This only works if the jobs uploading and consuming jobs have a
+> chained dependency. For more on "chained" jobs, see the documentation of
+> [job dependencies](WritingTests.md#_job_dependencies).
 
-NOTE: Access to private assets is not protected. Theoretically, jobs outside the
-chain can still access the asset by explicitly prepending the ID of the creating
-job.
+> [!NOTE]
+> Access to private assets is not protected. Theoretically, jobs outside the
+> chain can still access the asset by explicitly prepending the ID of the creating
+> job.
 
-[id="cleanup"]
-== Cleanup of assets, results and other data ==
-The cleanup of <<UsersGuide.asciidoc#_asset_handling,assets>>, test results
+# Cleanup of assets, results and other data ==
+
+The cleanup of [assets](UsersGuide.md#_asset_handling), test results
 and certain other data is automated. That means openQA removes assets, job
 results and other data automatically according to configurable limits.
 
@@ -1482,66 +1620,79 @@ All cleanup jobs run within the Minion job queue, normally provided by
 `openqa-gru.service`. The dashboard for Minion jobs is accessible via the
 administrator menu in the web UI. Only one cleanup job can run at the same time
 unless `concurrent` is set to `1` in the `[cleanup]` settings of
-<<GettingStarted.asciidoc#_configuration,the web UI configuration>>. Many other
+[the web UI configuration](GettingStarted.md#_configuration). Many other
 cleanup-related settings can be found within the web UI configuration as well,
 e.g. the `[…_limits]` sections contain various tweaks and allow to change certain
 defaults. Check out the sub section
-<<UsersGuide.asciidoc#_timers_and_triggers,Timers and triggers>> to learn more
+[Timers and triggers](UsersGuide.md#_timers_and_triggers) to learn more
 about how those jobs are triggered.
 
-The cleanup of *assets* and job *results* (and certain other data) is happening
+The cleanup of **assets** and job **results** (and certain other data) is happening
 independently of each other using different strategies and retention settings.
 
 The following cleanup settings can be done on job-group-level:
 
-[horizontal]
-Size limit:: Limits the size of assets. The further sub sections provide an
-  overall description of the *asset* cleanup strategy and how to configure it.
-Keep logs for:: How long *logs* of non-important jobs are retained after
-  they finished. *Logs* are files listed under "Result files" in the
-  "Logs & Assets" tab on the job details page, e.g. `autoinst-log.txt`.
-Keep important logs for:: How long logs of an *important* job are retained after
-  it finished. This limit only applies if it's higher than regular logs.
-Keep results for:: How long *results* of non-important job are retained after
-  they finished. *Results* are all additional files stored on disk for a job
-  (excluding assets) such as screenshots. This also includes logs and therefore
-  this retention must be longer (or equal) than the retention of *logs*.
-Keep important results for:: How long results of *important* jobs are retained
-  after they finished. This limit only applies if it's higher than regular
-  results.
-Keep jobs for:: How long *database entries* of non-important jobs are retained
-  in the database after they finished. The *database entry* for a job is
-  required for openQA knowing the job at all and deleting the database entry
-  also means deleting results stored on disk. This retention must therefore be
-  the longest. Note that a job is no longer accounted for in statistics on the
-  index and group overview pages after its database entry is deleted.
-Keep important jobs for:: How long *important* jobs are retained in the database
-  after they finished. This limit only applies if it's higher than regular jobs.
+Size limit  
+Limits the size of assets. The further sub sections provide an
+overall description of the **asset** cleanup strategy and how to configure it.
+
+Keep logs for  
+How long **logs** of non-important jobs are retained after
+they finished. **Logs** are files listed under "Result files" in the
+"Logs & Assets" tab on the job details page, e.g. `autoinst-log.txt`.
+
+Keep important logs for  
+How long logs of an **important** job are retained after
+it finished. This limit only applies if it’s higher than regular logs.
+
+Keep results for  
+How long **results** of non-important job are retained after
+they finished. **Results** are all additional files stored on disk for a job
+(excluding assets) such as screenshots. This also includes logs and therefore
+this retention must be longer (or equal) than the retention of **logs**.
+
+Keep important results for  
+How long results of **important** jobs are retained
+after they finished. This limit only applies if it’s higher than regular
+results.
+
+Keep jobs for  
+How long **database entries** of non-important jobs are retained
+in the database after they finished. The **database entry** for a job is
+required for openQA knowing the job at all and deleting the database entry
+also means deleting results stored on disk. This retention must therefore be
+the longest. Note that a job is no longer accounted for in statistics on the
+index and group overview pages after its database entry is deleted.
+
+Keep important jobs for  
+How long **important** jobs are retained in the database
+after they finished. This limit only applies if it’s higher than regular jobs.
 
 Further remarks:
 
-* Checkout the <<UsersGuide.asciidoc#build_tagging,Build tagging>> section for
+- Checkout the [Build tagging](UsersGuide.md#build_tagging) section for
   how to mark a job as important on job group level. Jobs can also be marked as
   important by adding a "link label" (e.g.
-  `label:linked Job mentioned on https://…`) in a job comment.
-* New groups use the limits configured in the `[default_group_limits]`
-  section of <<GettingStarted.asciidoc#_configuration,the web UI configuration>>.
+  `label:linked` `Job` `mentioned` `on` [`https://…`](https://…)) in a job comment.
+
+- New groups use the limits configured in the `[default_group_limits]`
+  section of [the web UI configuration](GettingStarted.md#_configuration).
   Jobs outside of any group use the limits configured in the `[no_group_limits]`
   section of the web UI configuration.
-* The <<Installing.asciidoc#auditing,Auditing>> section explains the cleanup of
+
+- The [Auditing](Installing.md#auditing) section explains the cleanup of
   the audit log.
 
-[id="archiving"]
-=== Automatic archiving of old jobs ===
+## Automatic archiving of old jobs ===
 
 Archiving of important jobs can be enabled:
-[source,ini]
---------------------------------------------------------------------------------
+
+``` ini
 [archiving]
 ## Moves results of important jobs which are preserved during the cleanup
 ## to OPENQA_ARCHIVEDIR (/var/lib/openqa/archive/ by default)
 #archive_preserved_important_jobs = 0
---------------------------------------------------------------------------------
+```
 
 When archiving is enabled important job results are moved to the archive
 directory once they reach the expiration for regular job logs. This
@@ -1550,16 +1701,20 @@ a job was archived.
 
 This means a job is "in the archive" if:
 
-1. it is important.
-2. its age is between the retention of regular jobs and important jobs.
-3. thresholds for space-aware cleanup do not prevent the cleanup of job results
-   from happening at all (because if the cleanup is skipped, also archiving is
-   skipped).
+1.  it is important.
 
-NOTE: Archiving does *not* prevent cleanup. If an archived important job exceeds
-the retention for important jobs it is still subject to cleanup.
+2.  its age is between the retention of regular jobs and important jobs.
 
-=== Space-aware cleanup ===
+3.  thresholds for space-aware cleanup do not prevent the cleanup of job results
+    from happening at all (because if the cleanup is skipped, also archiving is
+    skipped).
+
+> [!NOTE]
+> Archiving does **not** prevent cleanup. If an archived important job exceeds
+> the retention for important jobs it is still subject to cleanup.
+
+## Space-aware cleanup ===
+
 The cleanup of logs/results uses time-based retentions and hence is independent
 of actually available space on any assigned storage volumes. To ensure enough
 free space on the file systems storing results one can use the configuration
@@ -1571,10 +1726,13 @@ thresholds.
 
 The deletion happens in the following order:
 
-1. Videos of unimportant jobs
-2. Results of unimportant jobs
-3. Videos of important jobs
-4. Results of important jobs
+1.  Videos of unimportant jobs
+
+2.  Results of unimportant jobs
+
+3.  Videos of important jobs
+
+4.  Results of important jobs
 
 Within each group the oldest jobs are deleted first.
 
@@ -1587,13 +1745,13 @@ cleanup is interrupted/retried because `openqa-gru.service` is restarted, these
 configuration settings may also lead to incomplete cleanup and archiving as long
 as there is enough headroom on the relevant file systems.
 
-NOTE: The space-aware cleanup relies on `df` reporting a valid file system space
-usage. The algorithms also assume that screenshots and test results are stored
-on the same file system. The `…_min_free_disk_space_percentage` settings
-specifically are still experimental.
+> [!NOTE]
+> The space-aware cleanup relies on `df` reporting a valid file system space
+> usage. The algorithms also assume that screenshots and test results are stored
+> on the same file system. The `…_min_free_disk_space_percentage` settings
+> specifically are still experimental.
 
-[id="asset_cleanup"]
-=== Cleanup strategy for assets ===
+## Cleanup strategy for assets ===
 
 To find out whether an asset should be removed, openQA determines by which
 groups the asset is used. If at least one job within a certain job group is
@@ -1605,20 +1763,22 @@ So an asset can belong to multiple job groups or parent job groups. The
 assets table which is accessible via the admin menu shows these groups for
 each asset and also the latest job.
 
-While an asset might belong to multiple groups it is only *accounted*
+While an asset might belong to multiple groups it is only **accounted**
 to the group with the highest asset limit which has still enough room to
 hold that asset. That basically mean that an asset is never counted twice.
 
 If the size limit for assets of a group is exceeded, openQA will remove
 assets which belong to that group:
 
-* Assets belonging to old jobs are preferred.
-* Assets belonging to jobs which are still scheduled or running are not
+- Assets belonging to old jobs are preferred.
+
+- Assets belonging to jobs which are still scheduled or running are not
   considered.
-* Assets which have been accounted to another group that has still space
+
+- Assets which have been accounted to another group that has still space
   left are not considered.
 
-Assets which do _not_ belong to any group are removed after a configurable
+Assets which do *not* belong to any group are removed after a configurable
 duration unless the files are still being updated. Keep in mind that this
 behavior is also enabled on local instances and affects all cloned jobs
 (unless cloned into a job group).
@@ -1626,24 +1786,24 @@ behavior is also enabled on local instances and affects all cloned jobs
 If an asset is just a symlink then only the symlink is cleaned up (but not
 the file or directory it points to).
 
-'Fixed' assets - those placed in the `fixed` subdirectory of the relevant
+’Fixed’ assets - those placed in the `fixed` subdirectory of the relevant
 asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
 always be available for a test to work. Note that relative symlinks in the
 regular assets directory that point into the `fixed` subdirectory are also
 preserved.
 
-=== Configuring limit for assets within job groups ===
+## Configuring limit for assets within job groups ===
 
-To configure the maximum size for the assets of a group, open 'Job groups'
+To configure the maximum size for the assets of a group, open ’Job groups’
 in the operators menu and select a group. The size limit for assets can be
-configured under 'Edit job group properties'. It also shows the size of
+configured under ’Edit job group properties’. It also shows the size of
 assets which belong to that group and not to any other group.
 
 The default size limit for job groups can be adjusted in the
 `default_group_limits` section of the openQA config file.
 
-=== Configuring limit for groupless assets ===
+## Configuring limit for groupless assets ===
 
 Assets not belonging to jobs within a group are deleted automatically
 after a certain number of days. That duration can be adjusted by setting
@@ -1658,17 +1818,17 @@ In simple cases the pattern is just a match on a word.
 
 Consider the following examples to specify custom limits that would match
 assets with the names `testrepo-latest` and `openSUSE-12.3-x86_64.iso`.
-[source,ini]
---------------------------------------------------------------------------------
+
+``` ini
 [assets/storage_duration]
 latest = 30
 openSUSE.+x86_64 = 10
---------------------------------------------------------------------------------
+```
 
 Note that modifications to the file will count against the limit, so if an
 asset was updated within the timespan it will not be removed.
 
-=== Timers and triggers ===
+## Timers and triggers ===
 
 Cleanup can be triggered in different ways. One option is to use
 `minion_task_triggers` and specify tasks via `on_job_done`. Another way to do
@@ -1678,10 +1838,15 @@ run tasks. Both can be used separately or in combination.
 The relevant Minion tasks are:
 
 - limit_assets
+
 - limit_audit_events
+
 - limit_bugs
+
 - limit_results_and_logs
+
 - limit_scheduled_products
+
 - limit_screenshots
 
 These are no-ops if a task is already running so they can safely be enqueued
@@ -1689,20 +1854,19 @@ repeatedly. Note that the tasks can still take considerable time computing
 what to delete, from seconds to minutes. The tasks can be enabled in the
 corresponding config file section.
 
-=== Disabling cleanup ===
+## Disabling cleanup ===
 
 By default the cleanup is enabled with systemd timers if available. To
 completely disable cleanup make sure that no minion cleanup tasks are enabled
 over the config file and prevent individual or all cleanup systemd timers,
 for example for the asset cleanup:
 
-[source,sh]
-----
+``` sh
 systemctl mask openqa-enqueue-asset-cleanup.timer
-----
+```
 
-[id="amqp_events"]
-== Consuming AMQP events from openQA
+# Consuming AMQP events from openQA
+
 The message topic follows the format `SCOPE.APPLICATION.OBJECT.ACTION`, for
 example `opensuse.openqa.job.done` or `opensuse.openqa.comment.create`.
 The `topic_prefix` setting controls the `SCOPE` part; if left empty the topic
@@ -1712,12 +1876,17 @@ word. `opensuse.openqa.#` subscribes to all openQA events, for instance.
 
 Here are the events triggered and published by openQA:
 
-1. `openqa.job.create` when a job is created
-2. `openqa.job.delete` when a job is deleted
-3. `openqa.job.cancel` when a job is cancelled
-4. `openqa.job.restart` when a job is restarted or duplicated
-5. `openqa.job.update_result` when a job result is updated
-6. `openqa.job.done` when a job finishes
+1.  `openqa.job.create` when a job is created
+
+2.  `openqa.job.delete` when a job is deleted
+
+3.  `openqa.job.cancel` when a job is cancelled
+
+4.  `openqa.job.restart` when a job is restarted or duplicated
+
+5.  `openqa.job.update_result` when a job result is updated
+
+6.  `openqa.job.done` when a job finishes
 
 Job event bodies include the job settings (e.g. `BUILD`, `TEST`, `ARCH`,
 `MACHINE`, `FLAVOR`, asset fields like `ISO` or `HDD_1`) plus `id`, `group_id`,
@@ -1727,44 +1896,45 @@ and `bugurl` (only present when a bug reference exists).
 
 Example of a `*.openqa.job.done` message body (at the time of writing):
 
-[source,json]
---------------------------------------------------------------------------------
+``` json
 {"ARCH":"x86_64","BUILD":"N.487.1","FLAVOR":"Staging-DVD","ISO":"openSUSE-Staging:N-Tumbleweed-DVD-x86_64-Build487.1-Media.iso","MACHINE":"64bit","TEST":"autoyast_mini","bugref":null,"failedmodules":[],"group_id":2,"id":5735489,"newbuild":null,"reason":null,"remaining":13,"result":"passed"}
---------------------------------------------------------------------------------
+```
 
 Event for comments are also published:
 
-1. `openqa.comment.create`
-2. `openqa.comment.update`
-3. `openqa.comment.delete`
+1.  `openqa.comment.create`
+
+2.  `openqa.comment.update`
+
+3.  `openqa.comment.delete`
 
 Comment event bodies include: `id`, `job_id`, `group_id`, `parent_group_id`,
 `user`, `text`, `created`, `updated`.
 
 Example `*.openqa.comment.create` message body:
 
-[source,json]
---------------------------------------------------------------------------------
+``` json
 {"created":"2026-03-11T14:35:23Z","group_id":null,"id":865726,"job_id":5735489,"parent_group_id":null,"text":"amqp sent","updated":"2026-03-11T14:35:23Z","user":"demo"}
---------------------------------------------------------------------------------
+```
 
 A real-world example of an AMQP consumer built on top of openQA events is
-https://github.com/dirkmueller/slacky[slacky], a bot that monitors CI/build
+[slacky](https://github.com/dirkmueller/slacky), a bot that monitors CI/build
 pipelines and posts failure notifications to Slack. It subscribes to openQA job
 events and tracks job results per build and job group.
 
-== CLI interface
+# CLI interface
+
 Beside the `daemon` argument to run the actual web service the openQA
 startup script `/usr/share/openqa/script/openqa` supports further arguments.
 
-For a full list of those commands, just invoke `/usr/share/openqa/script/openqa -h`.
-This also works for sub-commands(e.g. `/usr/share/openqa/script/openqa minion -h`,
-`/usr/share/openqa/script/openqa minion job -h`).
+For a full list of those commands, just invoke `/usr/share/openqa/script/openqa` `-h`.
+This also works for sub-commands(e.g. `/usr/share/openqa/script/openqa` `minion` `-h`,
+`/usr/share/openqa/script/openqa` `minion` `job` `-h`).
 
 Note that `prefork` is only supported for the main web service but not for
 other services like the live view handler.
 
-== Suggested workflow for test review
+# Suggested workflow for test review
 
 If an openQA instance is only used by one or few individuals often no strict
 process needs to defined how openQA tests should be reviewed and how
@@ -1778,42 +1948,48 @@ openQA platform can be used. With a comment on openQA in the right format one
 can make a decision, inform automatic tools at the same time as other users
 and have a traceable documentation of the actions taken.
 
-* In openQA parent job groups can be defined with multiple job groups. This
+- In openQA parent job groups can be defined with multiple job groups. This
   allows to segment tests for scopes of individual review teams. The parent
   job group overview pages as well as the central index page of openQA show
   "bullet list" icons that bring you directly to a combined test overview
   showing results from all sub groups. This allows to have queries ready like
-  https://openqa.opensuse.org/tests/overview?groupid=1&groupid=2&groupid=3
+  <https://openqa.opensuse.org/tests/overview?groupid=1&groupid=2&groupid=3>
   which show all openQA test failures within the hierarchy of test results.
   This can be combined with the flag "todo=1" (click the "TODO" checkbox in
   the filter box on test overview pages) to show only tests that need review.
   Other combinations of queries are possible, e.g.
-  https://openqa.opensuse.org/tests/overview?build=my-build&todo=1 to show
+  <https://openqa.opensuse.org/tests/overview?build=my-build&todo=1> to show
   all test results that need review for build "my-build"
-* https://github.com/os-autoinst/openqa_review can be used to produce multiple
+
+- <https://github.com/os-autoinst/openqa_review> can be used to produce multiple
   different generated reports, e.g. all tests that need review, tests that are
   linked to closed bugs, etc.
-* Use
-  https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger[auto-review]
+
+- Use
+  [auto-review](https://github.com/os-autoinst/os-autoinst-scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger)
   to handle flaky issues and even automatically retrigger according tests
-* In case of known sporadic issues that can not be fixed quickly consider
-  automatic retries of jobs http://open.qa/docs/#_automatic_retries_of_jobs
-* In case of known non-sporadic test issues that can not be fixed quickly
+
+- In case of known sporadic issues that can not be fixed quickly consider
+  automatic retries of jobs <http://open.qa/docs/#_automatic_retries_of_jobs>
+
+- In case of known non-sporadic test issues that can not be fixed quickly
   consider overwriting the result of jobs
-  http://open.qa/docs/#_overwrite_result_of_job
-* To quickly label and – as desired - restart multiple jobs consider using the
-  command line application `openqa-label-all`. Call `openqa-label-all --help`
+  <http://open.qa/docs/#_overwrite_result_of_job>
+
+- To quickly label and – as desired - restart multiple jobs consider using the
+  command line application `openqa-label-all`. Call `openqa-label-all` `--help`
   to see all options.
-* For the SUSE maintenance test workflows a "branding" specific approach is
+
+- For the SUSE maintenance test workflows a "branding" specific approach is
   provided: In case of needing to urgently release individual maintenance
   updates before test failures can be resolved consider instructing qem-bot,
   the automation validating and approving release requests based on openQA
   test results, to ignore individual job failures for specific incidents. See
-  https://progress.opensuse.org/issues/95479#Suggestions for the necessary
+  <https://progress.opensuse.org/issues/95479#Suggestions> for the necessary
   comment format or use the comment template from the openqa.suse.de comment
   edit window.
 
-== Where to now?
+# Where to now?
 
 For test developers it is recommended to continue with the
-<<WritingTests.asciidoc#writingtests,Test Developer Guide>>.
+[Test Developer Guide](WritingTests.md#writingtests).

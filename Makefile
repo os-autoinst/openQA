@@ -65,7 +65,7 @@ OS_AUTOINST_BASEDIR =
 help: ## Display this help
 	@echo Call one of the available targets:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-	@echo See docs/Contributing.asciidoc for more details
+	@echo See docs/Contributing.md for more details
 
 man_names = openqa-cli openqa-client openqa-load-templates openqa-dump-templates openqa-clone-job openqa-validate-yaml openqa-label-all
 manpages = $(addprefix $(man_dir)/,$(addsuffix .1,$(man_names)))
@@ -454,7 +454,7 @@ update-deps: ## Update dependencies in cpanfile and specfile
 	tools/update-deps --cpanfile cpanfile --specfile dist/rpm/openQA.spec
 
 .PHONY: generate-docs
-generate-docs: ## Generate documentation from AsciiDoc
+generate-docs: ## Generate documentation from Markdown
 	tools/generate-docs
 
 .PHONY: serve-docs

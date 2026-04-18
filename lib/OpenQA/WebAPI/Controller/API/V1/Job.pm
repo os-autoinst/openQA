@@ -97,7 +97,7 @@ sub list ($self) {
 
     # validate parameters
     # note: When updating parameters, be sure to update the "Finding tests" section within
-    #       docs/UsersGuide.asciidoc accordingly.
+    #       docs/UsersGuide.md accordingly.
     my %args;
     $args{limit} = $limit + 1;
     $args{offset} = $offset;

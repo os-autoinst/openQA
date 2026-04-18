@@ -1,0 +1,16 @@
+:sectnums:
+ifdef::basebackend-html\[toc::\[\]\]
+:sectlinks:
+:sectanchors:
+include::GettingStarted.md[]
+include::Installing.md[]
+include::UsersGuide.md[]
+include::WritingTests.md[]
+include::ExternalResults.md[]
+include::Client.md[]
+include::Pitfalls.md[]
+include::Networking.md[]
+include::Contributing.md[]
+include::Branding.md[]
+include::ContainerizedSetup.md[]
+include::PrivacyPolicy.md[]

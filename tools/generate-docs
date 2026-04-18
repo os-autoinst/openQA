@@ -8,16 +8,14 @@ if [[ ! -e ./build/images ]]; then
     ln -s ../images build/images
 fi
 
-asciidoctor_bin=$(command -v asciidoctor) || true
+pandoc_bin=$(command -v pandoc) || true
 
-if [[ -z "$asciidoctor_bin" ]]; then
-    echo "asciidoc not found in PATH."
-    echo "Fallback to Rubygem's Asciidoc"
-    export BUNDLE_PATH=./vendor/
-    # Make sure dependencies exist
-    bundle install
-    asciidoctor_bin="bundle exec asciidoctor"
+if [[ -z "$pandoc_bin" ]]; then
+    echo "pandoc not found in PATH."
+    exit 1
 fi
 
-# Run asciidoc
-$asciidoctor_bin -o build/index.html ./index.asciidoc -d book
+# Run pandoc
+# We use a simple perl preprocessor to handle include:: directives
+perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md | \
+pandoc -s -f gfm -o build/index.html --metadata title="openQA documentation" --toc
