@@ -20,10 +20,15 @@ cp style.css build/
 
 # Run pandoc
 # We use a simple perl preprocessor to handle include:: directives
+syntax_highlight_opt=""
+if pandoc --help | grep -q 'syntax-highlighting'; then
+    syntax_highlight_opt="--syntax-highlighting=pygments"
+fi
+
 perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md \
     | pandoc -s -f gfm -o build/index.html \
         --template=template.html \
         -c style.css \
-        --syntax-highlighting=pygments \
+        $syntax_highlight_opt \
         --metadata title="openQA Documentation" \
         --toc --number-sections
