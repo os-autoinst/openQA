@@ -431,7 +431,7 @@ also supports NGINX and a custom port to listen on. Try `--help` to
 learn about the available options. Read on for more detailed setup
 instructions with all the details.
 
-> [!NOTE]
+> **NOTE:** 
 > The web proxy might not be allowed to connect to openQA when SELinux is enabled.
 > Therefore the `configure-web-proxy` script will automatically run
 > `semanage boolean -m -1 httpd_can_network_connect` on SELinux systems to change that.
@@ -1628,11 +1628,11 @@ need to be stopped during the (short) migration.
     sudo -u postgres /usr/lib/postgresql$newver/bin/initdb [locale-settings] -D /var/lib/pgsql/data.$newver
     ```
 
-    > [!IMPORTANT]
+    > **IMPORTANT:** 
     > Be sure to use initdb from the target version (like it is done here)
     > and also no newer version which is possibly installed on the system as well.
 
-    > [!IMPORTANT]
+    > **IMPORTANT:** 
     > Lookup the locale settings in
     > `/var/lib/pgsql/data.$oldver/postgresql.conf` or via `sudo -u geekotest psql`
     > `openqa -c 'show all;' | grep lc_` to pass locale settings listed by `initdb`
@@ -1652,7 +1652,7 @@ need to be stopped during the (short) migration.
         /var/lib/pgsql/data.$newver/postgresql.conf
     ```
 
-    > [!IMPORTANT]
+    > **IMPORTANT:** 
     > There shouldn't be a diff in the locale settings, otherwise
     > `pg_upgrade` will complain.
 
@@ -1678,13 +1678,13 @@ need to be stopped during the (short) migration.
         --new-datadir=/var/lib/pgsql/data.$newver
     ```
 
-    > [!IMPORTANT]
+    > **IMPORTANT:** 
     > Be sure to use pg_upgrade from the target version (like it is done here) and
     > also no newer version which is possibly installed on the system as well.
     > Check out the [PostgreSQL documentation](https://www.postgresql.org/docs/current/pgupgrade.html)
     > for details.
 
-    > [!NOTE]
+    > **NOTE:** 
     > This step only takes a few seconds for multiple production DBs because the `--link`
     > option is used.
 
@@ -1705,7 +1705,7 @@ need to be stopped during the (short) migration.
     sudo systemctl start openqa-{webui,websockets,scheduler,livehandler,gru}
     ```
 
-    > [!NOTE]
+    > **NOTE:** 
     > There is no need to take care of starting the new version of the PostgreSQL service.
     > The start script checks the version of the data directory and starts the correct version.
 
@@ -2036,7 +2036,7 @@ key = FOO
 secret = BAR
 ```
 
-> [!NOTE]
+> **NOTE:** 
 > The IPv6 address is written in square brackets as it is internally
 > converted to a URL which requires this notation.
 > This is also the reason why host specific section headers need to

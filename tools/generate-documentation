@@ -220,7 +220,13 @@ call_pandoc() {
             | pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf --pdf-engine=weasyprint --number-sections
     [[ ${formats[html]} ]] \
         && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md \
-        | pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html --metadata title="openQA documentation" --toc --number-sections
+        | pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html \
+            --template=template.html \
+            -c style.css \
+            --embed-resources --standalone \
+            --syntax-highlighting=pygments \
+            --metadata title="openQA documentation" \
+            --toc --number-sections
 
     echo -e "${green}The output has been generated at ${tmpwd}/output"
 

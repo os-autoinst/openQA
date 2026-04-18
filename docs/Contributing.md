@@ -418,7 +418,7 @@ used to store test results) by setting the environment variable
 write access to. Additionally, take into account that the test results and
 assets can need a big amount of disk space.
 
-> [!WARNING]
+> **WARNING:** 
 > Be sure to **clear** that variable when running unit tests locally.
 
 ## Customize configuration directory
@@ -440,7 +440,7 @@ cp -ar etc/openqa etc/mine
 export OPENQA_CONFIG=$PWD/etc/mine
 ```
 
-> [!NOTE]
+> **NOTE:** 
 > `OPENQA_CONFIG` needs to point to the **directory** containing `openqa.ini`,
 > `database.ini`, `client.conf` and `workers.ini` (and **not** a specific file).
 
@@ -477,7 +477,7 @@ specify the user and database name and run it as user `postgres`:
 sudo sudo -u postgres openqa-setup-db your_username openqa-local
 ```
 
-> [!NOTE]
+> **NOTE:** 
 > To remove the database again, you can use e.g. `dropdb openqa-local` as
 > your regular user.
 
@@ -1016,7 +1016,7 @@ Run tests by spawning a container manually, e.g.:
 
 Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 
-> [!NOTE]
+> **NOTE:** 
 > `run-tests-within-container` runs with CONTAINER_TEST enabled by default.
 > It is used to run scripts which are not meant to run inside **openqa_devel** and
 > the image itself does not contain any container engine. Consider disabling it

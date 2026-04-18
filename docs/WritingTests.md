@@ -291,7 +291,7 @@ use("testapi") -- imports all functions that testapi.pm exports
 use("testapi", {"check_screen"}) -- only imports the check_screen function from the testapi
 ```
 
-> [!NOTE]
+> **NOTE:** 
 > The `use()` function will import everything into the global scope.
 
 Libraries written in Lua can be placed as `.lua` files into the `tests/lib/` directory.
@@ -312,7 +312,7 @@ end
 
 The above library can be imported from a Lua test using the `require` function.
 
-> [!NOTE]
+> **NOTE:** 
 > Lua libraries are - other than perl libraries - imported into their own scope.
 
 ``` lua
@@ -926,7 +926,7 @@ To declare a *directly-chained* dependency add the variable
 dependencies. Mismatching worker classes between jobs to run in direct sequence
 on the same worker are considered an error.
 
-> [!NOTE]
+> **NOTE:** 
 > The set of all jobs that have direct or indirect *directly-chained*
 > dependencies between each other is sometimes called a *directly-chained
 > cluster*. All jobs within the cluster will be assigned to a single worker-slot
@@ -948,7 +948,7 @@ during my run". Use a comma separated list for multiple test suite dependencies
 Keep in mind that the parent job *must be running until all children finish*.
 Otherwise the scheduler will cancel child jobs once parent is done.
 
-> [!NOTE]
+> **NOTE:** 
 > The set of all jobs that have direct or indirect *parallel* dependencies
 > between each other is sometimes called a *parallel cluster*. The scheduler can
 > only assign these jobs if there is a sufficient number of free worker-slots. To
@@ -963,7 +963,7 @@ having to connect the physical worker hosts. Use `PARALLEL_ONE_HOST_ONLY=1` to
 enable this. This setting can be applied as a test variable during the time
 of scheduling as well as in the worker configuration file `workers.ini`.
 
-> [!WARNING]
+> **WARNING:** 
 > You need to provide enough worker slots on single worker hosts to fit
 > an entire cluster. So this feature is mainly intended to workaround situations
 > where establishing a physical connection between worker hosts is problematic and
@@ -1786,7 +1786,7 @@ typed in by the user over VNC.
 
 ### Using a serial terminal
 
-> [!IMPORTANT]
+> **IMPORTANT:** 
 > You need a QEMU version \>= 2.6.1 and to set the `VIRTIO_CONSOLE`
 > variable to 1 to use this with the QEMU backend (it is enabled by default for
 > [os-autoinst-distri-
@@ -1822,7 +1822,7 @@ a virtio serial port. A distribution specific call back will be made which
 allows os-autoinst to log into a serial terminal session running on the SUT.
 Once `select_console` returns you should be logged into a TTY as root.
 
-> [!NOTE]
+> **NOTE:** 
 > for [os-autoinst-distri-opensuse](https://github.com/os-autoinst/os-autoinst-distri-opensuse)
 > tests instead of using `select_console('root-virtio-terminal')` directly is the
 > preferred way to use wrapper `select_serial_terminal()`, which handles all
@@ -2174,7 +2174,7 @@ This example adds or overrides `FOO` to be `bar`, removes `BAZ` and appends
 openqa-clone-job --from localhost --host localhost 42 FOO=bar BAZ= TEST+=:PR-123
 ```
 
-> [!NOTE]
+> **NOTE:** 
 > When cloning children via `--clone-children` as well, the children are
 > also affected. Parent jobs (which are cloned as well by default) are *not*
 > affected unless the `--parental-inheritance` flag is used.
@@ -2361,7 +2361,7 @@ The schedule would be:
 
 - console/systemd_testsuite
 
-> [!NOTE]
+> **NOTE:** 
 > Excluding modules that are not scheduled does not raise an error.
 
 ### INCLUDE_MODULES
@@ -2384,7 +2384,7 @@ The schedule would be:
 
 - console/systemd_testsuite
 
-> [!NOTE]
+> **NOTE:** 
 > Including modules that are not scheduled does not raise an error, but they
 > are not scheduled.
 
@@ -2395,7 +2395,7 @@ Additionally it is possible to define a custom schedule using the test variable
 
     openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup
 
-> [!NOTE]
+> **NOTE:** 
 > Any existing test module within **CASEDIR** can be scheduled.
 
 ### SCHEDULE + ASSET\_\<NR\>\_URL
@@ -2410,7 +2410,7 @@ external trusted download domain:
 
     openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup,foo,bar ASSET_1_URL=https://example.org/my/test/bar.pm  ASSET_2_URL=https://example.org/my/test/foo.pm
 
-> [!NOTE]
+> **NOTE:** 
 > The asset number doesn't affect the schedule order.
 > The test modules foo.pm and bar.pm will be downloaded into the root of the pool
 > directory where tests and assets are used by isotovideo. For this reason, to
@@ -2450,7 +2450,7 @@ specifier. `NEEDLES_DIR` can be set in the same way to use custom needles. See
 [the os-autoinst documentation](https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.md)
 for details.
 
-> [!NOTE]
+> **NOTE:** 
 > The openQA worker initializes `CASEDIR` and `NEEDLES_DIR` to point to
 > repositories provided by the openQA instance (usually under
 > `/var/lib/openqa/share/tests`).
@@ -2516,7 +2516,7 @@ An example using GitHub actions and the official container image we provide for
 `openqa-cli` can be found in the example distributions'
 [workflow](https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/.github/workflows/openqa.yml).
 
-> [!NOTE]
+> **NOTE:** 
 > This example makes use of the `SCENARIO_DEFINITIONS_YAML` variable which
 > allows specifying
 > [scenario definitions](https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml)
@@ -2531,7 +2531,7 @@ documentation of the
 [openqa-clone-and-monitor-job-from-pr](https://github.com/os-autoinst/os-autoinst-scripts/blob/master/openqa-clone-and-monitor-job-from-pr)
 script for further information and an example configuration.
 
-> [!NOTE]
+> **NOTE:** 
 > These examples show how API credentials are supplied. It is important to
 > note that using `on:pull_request` would only work for PRs created on the main
 > repository but not for PRs created from forks. Therefore
@@ -2539,7 +2539,7 @@ script for further information and an example configuration.
 > version the variables under `github.event.pull_request.head.*` are utilized
 > (instead of e.g. just `$GITHUB_REF`).
 
-> [!NOTE]
+> **NOTE:** 
 > Due to the use of `on:pull_request_target` the scenario definitions are
 > read from the main repository in this example. This is the conservative
 > approach. To allow scheduling jobs based on the PR version of the scenario
@@ -2591,7 +2591,7 @@ github_token = \$token
 
 3.  Restart the web UI services.
 
-> [!IMPORTANT]
+> **IMPORTANT:** 
 > The user the token has been created with needs at least "Write"
 > permissions to access the repository the CI checks should appear on (for
 > instance by being member of a team with that permissions). Otherwise, GitHub

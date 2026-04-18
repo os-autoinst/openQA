@@ -508,7 +508,7 @@ openqa-cli api -X POST isos \
 If your openQA is not running on port 80 on 'localhost', you can add option
 `--host=`[`http://otherhost:9526`](http://otherhost:9526) to specify a different port or host.
 
-> [!WARNING]
+> **WARNING:** 
 > Use only the ISO filename in the 'client' command. You must place the
 > file in `/var/lib/openqa/share/factory/iso`. You cannot place the file elsewhere and
 > specify its path in the command. However, openQA also supports a

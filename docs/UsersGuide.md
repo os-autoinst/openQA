@@ -258,7 +258,7 @@ It may expanded to this job setting:
 PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
 ```
 
-> [!NOTE]
+> **NOTE:** 
 > Variables from the worker config are not considered if such a variable is
 > also present in any of the other mentioned places. To give variable values from
 > the worker config precedence, use double percentage signs. Expansions by the
@@ -398,7 +398,7 @@ A comment containing a bug reference will also be
 Refer to the Flags section below for other ways to trigger automated comment
 carryover.
 
-> [!WARNING]
+> **WARNING:** 
 > If you want to reference a bug without making it count as a bug
 > reference you need to wrap it into a label (see subsequent section), e.g.
 > `label:bsc#1234`.
@@ -426,7 +426,7 @@ see the figure below.
 
 </div>
 
-> [!NOTE]
+> **NOTE:** 
 > Also GitHub pull requests and issues can be linked. Use the generic format
 > `<marker>[#<project/repo>]#<id>`, e.g.
 > [`gh#os-autoinst/openQA#1234`](https://github.com/os-autoinst/openQA/issues/1234).
@@ -449,7 +449,7 @@ will be shown next to it in various places as shown in the figure below.
 
 </div>
 
-> [!NOTE]
+> **NOTE:** 
 > A label containing a bug reference will still be treated as a label,
 > not a bugref. The bugref will still be rendered as a link. That means no bug
 > icon is shown and the comment does **not** become subject to carry over.
@@ -463,7 +463,7 @@ is `label:force_result:<new_result>[:<description>]`, for example
 this command to be effective the according user needs to have at least
 operator permissions.
 
-> [!NOTE]
+> **NOTE:** 
 > `force_result`-labels are evaluated when when a comment is
 > [carried over](UsersGuide.md#carry-over). However, the carry over will
 > only happen when the comment **also** contains a bug reference or `flag:carryover`.
@@ -735,18 +735,18 @@ This idea is inspired by the
 [Claim plugin](https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin) for
 Jenkins.
 
-> [!NOTE]
+> **NOTE:** 
 > The carry-over feature works on test module level. Only if the same
 > set of test module as in a predecessor job fails the latest bug reference
 > is carried over.
 
-> [!NOTE]
+> **NOTE:** 
 > The lookup-depth is limited. The search for candidates will also stop
 > early if too many different kinds of failures were seen. Check out the
 > descriptions of the relevant settings in the `carry_over` section of
 > [the web UI configuration](GettingStarted.md#configuration) for details.
 
-> [!NOTE]
+> **NOTE:** 
 > For an approach to add bug references based on a search expression found
 > in the job reason for incomplete jobs or job logs consider to
 > [Enable custom hook scripts on "job done" based on result](Installing.md#enable_custom_hook_scripts_on_job_done_based_on_result).
@@ -1386,7 +1386,7 @@ also via a YAML document. This YAML document could be specific to a certain test
 distribution and stored in the same repository as those tests (making the versioning
 easier).
 
-> [!WARNING]
+> **WARNING:** 
 > This feature is still experimental and may change in an incompatible way
 > in future versions.
 
@@ -1557,18 +1557,18 @@ the test will be uploaded back to the web-UI and stored under the name
 `updated.qcow2`. Any other job can then specify `HDD_1=updated.qcow2` to use
 this published image as its `HDD_1`.
 
-> [!IMPORTANT]
+> **IMPORTANT:** 
 > Assets that are already existing will be overridden. If the same
 > asset is uploaded by multiple jobs concurrently this will lead to file
 > corruption. So be sure to use unique names or use private assets as explained
 > in the subsection below.
 
-> [!NOTE]
+> **NOTE:** 
 > Note that assets are by default only uploaded if the job completes
 > successfully. To force publishing assets even in case of a failed job one can
 > specify the `FORCE_PUBLISH_HDD_` variable.
 
-> [!NOTE]
+> **NOTE:** 
 > When using this mechanism you will often also want to use the
 > [variable expansion](UsersGuide.md#variable_expansion) mechanism.
 
@@ -1581,12 +1581,12 @@ instance, if a parent job uploads an asset via `STORE_HDD_1=somename.qcow2`, its
 children can use it via `HDD_1=somename.qcow2` without having to worry about
 naming conflicts.
 
-> [!IMPORTANT]
+> **IMPORTANT:** 
 > This only works if the jobs uploading and consuming jobs have a
 > chained dependency. For more on "chained" jobs, see the documentation of
 > [job dependencies](WritingTests.md#job_dependencies).
 
-> [!NOTE]
+> **NOTE:** 
 > Access to private assets is not protected. Theoretically, jobs outside the
 > chain can still access the asset by explicitly prepending the ID of the creating
 > job.
@@ -1688,7 +1688,7 @@ This means a job is "in the archive" if:
     from happening at all (because if the cleanup is skipped, also archiving is
     skipped).
 
-> [!NOTE]
+> **NOTE:** 
 > Archiving does **not** prevent cleanup. If an archived important job exceeds
 > the retention for important jobs it is still subject to cleanup.
 
@@ -1723,7 +1723,7 @@ cleanup is interrupted/retried because `openqa-gru.service` is restarted, these
 configuration settings may also lead to incomplete cleanup and archiving as long
 as there is enough headroom on the relevant file systems.
 
-> [!NOTE]
+> **NOTE:** 
 > The space-aware cleanup relies on `df` reporting a valid file system space
 > usage. The algorithms also assume that screenshots and test results are stored
 > on the same file system. The `…_min_free_disk_space_percentage` settings
