@@ -80,84 +80,73 @@ complete and detailed. (The diagram can be edited via its underlying
 
 ## Glossary
 
-<div>
+The following terms are used within the context of openQA:
 
-<div class="title">
+**test modules**
+: an individual test case in a single perl module file, e.g. "sshxterm". If not
+further specified a test module is denoted with its "short name" equivalent to
+the filename including the test definition. The "full name" is composed of the
+_test group_ (TBC), which itself is formed by the top-folder of the test module
+file, and the short name, e.g. "x11-sshxterm" (for x11/sshxterm.pm)
 
-The following terms are used within the context of openQA
+**test suite**
+: a collection of _test modules_, e.g. "textmode". All _test modules_ within one
+_test suite_ are run serially
 
-</div>
-
-test modules
-an individual test case in a single perl module file, e.g.
-"sshxterm". If not further specified a test module is denoted with its "short
-name" equivalent to the filename including the test definition. The "full name"
-is composed of the *test group* (TBC), which itself is formed by the top-folder
-of the test module file, and the short name, e.g. "x11-sshxterm" (for
-x11/sshxterm.pm)
-
-test suite
-a collection of *test modules*, e.g. "textmode". All *test
-modules* within one *test suite* are run serially
-
-job
-one run of individual test cases in a row denoted by a unique number for
-one instance of openQA, e.g. one installation with subsequent testing of
+**job**
+: one run of individual test cases in a row denoted by a unique number for one
+instance of openQA, e.g. one installation with subsequent testing of
 applications within gnome
 
-test run
-equivalent to *job*
+**test run**
+: equivalent to _job_
 
-test result
-the result of one job, e.g. "passed" with the details of each
-individual *test module*
+**test result**
+: the result of one job, e.g. "passed" with the details of each individual _test
+module_
 
-test step
-the execution of one *test module* within a *job*
+**test step**
+: the execution of one _test module_ within a _job_
 
-distri
-a test distribution but also sometimes referring to a *product*
-(CAUTION: ambiguous, historically a "GNU/Linux distribution"), composed of
-multiple *test modules* in a folder structure that compose *test suites*, e.g.
-"opensuse" (test distribution, short for "os-autoinst-distri-opensuse")
+**distri**
+: a test distribution but also sometimes referring to a _product_ (CAUTION:
+ambiguous, historically a "GNU/Linux distribution"), composed of multiple _test
+modules_ in a folder structure that compose _test suites_, e.g. "opensuse" (test
+distribution, short for "os-autoinst-distri-opensuse")
 
-needles
-reference images to assert whether what is on the screen matches
-expectations and to locate elements on the screen the tests needs to interact
-with (e.g. to locate a button to click on it)
+**needles**
+: reference images to assert whether what is on the screen matches expectations
+and to locate elements on the screen the tests needs to interact with (e.g. to
+locate a button to click on it)
 
-product
-the main "system under test" (SUT), e.g. "openSUSE", also called
-"Medium Types" in the web interface of openQA
+**product**
+: the main "system under test" (SUT), e.g. "openSUSE", also called "Medium
+Types" in the web interface of openQA
 
-job group
-equivalent to *product*, used in context of the webUI
+**job group**
+: equivalent to _product_, used in context of the webUI
 
-version
-one version of a *product*, don’t confuse with *builds*, e.g.
-"Tumbleweed"
+**version**
+: one version of a _product_, don’t confuse with _builds_, e.g. "Tumbleweed"
 
-flavor
-a specific variant of a *product* to distinguish differing variants,
-e.g. "DVD"
+**flavor**
+: a specific variant of a _product_ to distinguish differing variants, e.g.
+"DVD"
 
-arch
-an architecture variant of a *product*, e.g. "x86_64"
+**arch**
+: an architecture variant of a _product_, e.g. "x86_64"
 
-machine
-additional variant of machine, e.g. used for "64bit", "uefi", etc.
+**machine**
+: additional variant of machine, e.g. used for "64bit", "uefi", etc.
 
-scenario
-A composition of
-`<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>`, e.g.
-"openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed *koala*
+**scenario**
+: A composition of `<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>`,
+e.g. "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed _koala_
 
-build
-Different versions of a product as tested, can be considered a
-"sub-version" of *version*, e.g. "Build1234"; **CAUTION:** ambiguity: either with
-the prefix "Build" included or not
-
-</div>
+**build**
+: Different versions of a product as tested, can be considered a "sub-version"
+of _version_, e.g. "Build1234"; **CAUTION:** ambiguity: either with the prefix
+"Build" included or not
 
 ## Jobs
 
@@ -240,7 +229,7 @@ the same name (e.g. foo.png and foo.json) containing the associated data, like
 which areas inside the full screenshot are relevant or the mentioned list of
 tags.
 
-``` json
+```json
 {
    "area" : [
       {
@@ -287,7 +276,7 @@ Each regular match area in a needle can optionally contain a **click point**.
 This is used with the `testapi::assert_and_click` function to match GUI
 elements such as buttons and then click inside the matched area.
 
-``` json
+```json
 {
   "xpos" : INTEGER, // Relative coordinates inside the match area
   "ypos" : INTEGER,
@@ -335,7 +324,7 @@ e.g. `/etc/openqa/openqa.ini`. That is where administrators are expected to
 store system-wide configuration.
 
 Configuration files are also looked up under `/usr/etc/openqa` where a
-[package maintainer](https://en.opensuse.org/openSUSE:Packaging_UsrEtc#Variant_1_(ideal_case))
+[package maintainer](<https://en.opensuse.org/openSUSE:Packaging_UsrEtc#Variant_1_(ideal_case)>)
 can place default values deviating from upstream defaults.
 
 The client configuration can also be put under `~/.config/openqa/client.conf`.
@@ -460,7 +449,7 @@ Fedora’s tests are also in
 [git](https://pagure.io/fedora-qa/os-autoinst-distri-fedora). To use them, you may
 do:
 
-``` sh
+```sh
 cd /var/lib/openqa/share/tests
 mkdir fedora
 cd fedora
@@ -476,7 +465,7 @@ options to set in the admin interface. If you plan to test openSUSE Factory, usi
 tests mentioned in the previous section, the easiest way to get started is the
 following command:
 
-``` sh
+```sh
 /var/lib/openqa/share/tests/opensuse/products/opensuse/templates [--apikey API_KEY] [--apisecret API_SECRET]
 ```
 
@@ -487,7 +476,7 @@ consider reading its help page (`--help`) for documentation on possible extra ar
 
 For Fedora, similarly, you can call:
 
-``` sh
+```sh
 /var/lib/openqa/share/tests/fedora/fifloader.py -c -l templates.fif.json templates-updates.fif.json
 ```
 
@@ -508,7 +497,7 @@ for more information.
 To start testing a new ISO put it in `/var/lib/openqa/share/factory/iso` and call
 the following commands:
 
-``` sh
+```sh
 # Run the first test
 openqa-cli api -X POST isos \
          ISO=openSUSE-Factory-NET-x86_64-Build0053-Media.iso \
@@ -530,7 +519,7 @@ If your openQA is not running on port 80 on ’localhost’, you can add option
 
 For Fedora, a sample run might be:
 
-``` sh
+```sh
 # Run the first test
 openqa-cli api -X POST isos \
          ISO=Fedora-Everything-boot-x86_64-Rawhide-20160308.n.0.iso \
