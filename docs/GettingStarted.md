@@ -39,7 +39,6 @@ available in the [official repository](https://github.com/os-autoinst/openQA).
 
 # Architecture
 
-<div id="architecture" wrapper="1">
 
 Although the project as a whole is referred to as openQA, there are in fact
 several components that are hosted in separate repositories as shown in
@@ -47,7 +46,7 @@ several components that are hosted in separate repositories as shown in
 
 </div>
 
-<div id="arch_img" wrapper="1">
+<a id="arch_img"></a>
 
 <figure>
 <img src="images/openqa_architecture.png" alt="openQA architecture" />

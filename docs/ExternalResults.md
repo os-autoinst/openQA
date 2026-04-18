@@ -1,7 +1,7 @@
 # Introduction
 
-:parser-formats: [parsers](#parser-formats)
-:api-endpoint: [Web Api endpoint](#webapi-endpoint)
+
+
 
 From time to time, a test developer might want to use openQA to execute a test
 suite from a different test harness than openQA, but still use openQA to setup test
@@ -20,7 +20,7 @@ The requirements to use this functionality, are quite simple:
   \* The test results can be uploaded via \`testapi
   parse_extra_log\` within an openQA tests.
 
-- The test results can also be uploaded via web [Web Api endpoint](#webapi-endpoint).
+- The test results can also be uploaded via web [REST API](UsersGuide.md#rest_api).
 
 openQA will store these results in its own internal format for easier presentation,
 but still will allow the original file to be downloaded.
@@ -41,6 +41,7 @@ script_run('prove --verbose --formatter=TAP::Formatter::JUnit t/28-logging.t > j
 parse_extra_log('XUnit','junit-logging.xml');
 ```
 
+<a id="parser-formats"></a>
 # Available parser formats
 
 Current parser formats:

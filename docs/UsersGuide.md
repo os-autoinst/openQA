@@ -6,6 +6,7 @@ For administrators it is recommend to have read the
 [Installation Guide](Installing.md#installing) first to understand the structure
 of components as well as the configuration of an installed instance.
 
+<a id="job_templates"></a>
 # Using job templates to automate jobs creation
 
 ## The problem
@@ -320,7 +321,7 @@ views.
 
 Test suites can be described using API commands or the admin table for any operator using the web UI.
 
-<div id="test_suite_description_edit" wrapper="1">
+<a id="test_suite_description_edit"></a>
 
 <figure>
 <img src="images/test_suite_description_edit.png" alt="test suite description edit field" />
@@ -331,7 +332,7 @@ Test suites can be described using API commands or the admin table for any opera
 
 If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.
 
-<div id="test_suite_description_shown" wrapper="1">
+<a id="test_suite_description_shown"></a>
 
 <figure>
 <img src="images/test_suite_description_shown.png" alt="test suite description popup" />
@@ -349,7 +350,7 @@ which matches the other parameters specified. Specifying no group will show
 all jobs from all matching job groups. Also specifying multiple groups works,
 see [the following example](#overview_multiple_groups).
 
-<div id="overview_multiple_groups" wrapper="1">
+<a id="overview_multiple_groups"></a>
 
 <figure>
 <img src="images/tests-overview_multiple_groups.png" alt="test overview page showing multiple groups" />
@@ -361,6 +362,7 @@ see [the following example](#overview_multiple_groups).
 Specifying multiple groups with no build will yield the result for the latest
 build of each group. This can be useful to have a static URL for bookmarking.
 
+<a id="review_badges"></a>
 ## Review badges
 Based on comments in the individual job results for each build a certificate
 icon is shown on the group overview page as well as the index page to indicate
@@ -401,7 +403,7 @@ carryover.
 > reference you need to wrap it into a label (see subsequent section), e.g.
 > `label:bsc#1234`.
 
-<div id="bug_icon" wrapper="1">
+<a id="bug_icon"></a>
 
 <figure>
 <img src="images/bug_icon.png" alt="Bug icon on test result overview" />
@@ -415,7 +417,7 @@ The status can be updated using the `/bugs` API route with external tools.
 One can set the bug status this way which will then be shown in the web UI,
 see the figure below.
 
-<div id="labels_closed_tickets" wrapper="1">
+<a id="labels_closed_tickets"></a>
 
 <figure>
 <img src="images/labels_closed_tickets.png" alt="Example for visualization of closed issues" />
@@ -438,7 +440,7 @@ itself. A valid list of keywords should be decided upon within each project
 or environment of one openQA instance. If a job has a label a special icon
 will be shown next to it in various places as shown in the figure below.
 
-<div id="label_icon" wrapper="1">
+<a id="label_icon"></a>
 
 <figure>
 <img src="images/label_icon.png" alt="Label icon on test result overview" />

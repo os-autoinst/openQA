@@ -13,7 +13,6 @@ familiar with openQA and has already read the Starter Guide, available at the
 
 # Basic
 
-<div id="basic" wrapper="1">
 
 This section explains the basic layout of an openQA test and the API available.
 Tests can be written in the programming languages **Perl**, \*Python\*¹ and \*Lua\*².
@@ -32,7 +31,7 @@ Lua\`
 
 # Test API
 
-<div id="api" wrapper="1">
+<a id="api"></a>
 
 :testapi: [os-autoinst](https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm)
 
@@ -217,7 +216,7 @@ sub post_run_hook {
 
 ## Notes on the Python API
 
-<div id="notes-python-api" wrapper="1">
+<a id="notes-python-api"></a>
 
 The Python integration that openQA offers through \`Inline
 Python\` also allows
@@ -278,7 +277,7 @@ references to complex Perl objects to Python.
 
 ## Notes on the Lua API
 
-<div id="notes-lua-api" wrapper="1">
+<a id="notes-lua-api"></a>
 
 The Lua integration that openQA offers through \`Inline
 Lua\` also allows
@@ -346,7 +345,7 @@ x11_start_program('vncviewer :0',
 
 ## Example Perl test modules
 
-<div id="testmodule_perl_examples" wrapper="1">
+<a id="testmodule_perl_examples"></a>
 
 The following examples are short complete test modules written in Perl
 implementing the interface described above.
@@ -468,7 +467,7 @@ sub run {
 
 ## Example Python test modules
 
-<div id="testmodule_python_examples" wrapper="1">
+<a id="testmodule_python_examples"></a>
 
 The following examples are short complete test modules written in Python
 implementing the interface described above.
@@ -2212,7 +2211,7 @@ test development. For example:
 
 ## Using snapshots to speed up development of tests
 
-<div id="snapshots" wrapper="1">
+<a id="snapshots"></a>
 
 For lower turn-around times during test development based on virtual machines
 the QEMU backend provides a feature that allows a job to start from a snapshot

@@ -13,14 +13,15 @@ has already read the \<\<GettingStarted.asciidoc#gettingstarted,Getting Started
 Guide\>\>, also available at the [official
 repository](https://github.com/os-autoinst/openQA).
 
-Continue with the next section [Container based setup](##container_setup) to
+Continue with the next section [Container based setup](#container_setup) to
 setup a simple, ready-to-use container based openQA instance which is useful
 for a single user setup. For a quick bootstrapping under openSUSE go to
-[Quick bootstrapping](##bootstrapping). Else, continue with the more
-advanced section about [Custom installation](##custom_installation). For a
+[Quick bootstrapping](#bootstrapping). Else, continue with the more
+advanced section about [Custom installation](#custom_installation). For a
 setup suitable to develop openQA itself, have a look at the
 [Development setup](Contributing.md#development-setup) section.
 
+<a id="container_setup"></a>
 # Container based setup
 
 openQA is provided in containers. Multiple variants exist.
@@ -169,11 +170,11 @@ Find a guide and the helm charts for Kubernetes deployment of openQA in
 
 # Quick bootstrapping under openSUSE
 
-<div id="bootstrapping" wrapper="1">
+<a id="bootstrapping"></a>
 
 To quickly get a working openQA installation, you can use the openqa-bootstrap
 script. It essentially automates the steps mentioned in the
-[Custom installation](##custom_installation) section.
+[Custom installation](#custom_installation) section.
 
 </div>
 
@@ -298,7 +299,7 @@ the test execution on the local VM instance (`--from openqa.opensuse.org --host`
 
 # Custom installation - repositories and procedure
 
-<div id="custom_installation" wrapper="1">
+<a id="custom_installation"></a>
 
 Keep in mind that there can be disruptive changes between openQA versions.
 You need to be sure that the webui and the worker that you are using have the
@@ -349,6 +350,7 @@ zypper dup --from devel_openQA_Leap --allow-vendor-change
 
 ## Installation
 
+<a id="preparations_on_sle"></a>
 ### Preparations on SLE
 
 On SLE certain modules have to be enabled.
@@ -1334,7 +1336,7 @@ of `CASEDIR` or the data folder within `CASEDIR`.
 
 ## Enable custom hook scripts on "job done" based on result
 
-<div id="custom_hook_scripts_job_done" wrapper="1">
+<a id="custom_hook_scripts_job_done"></a>
 
 If a job is done, especially if no label could be found for carry-over, often
 more steps are needed for the review of the test result or providing the
@@ -1417,7 +1419,7 @@ General status and stdout output is visible in the GRU minion job dashboard on t
 
 ## Automatic cloning of incomplete jobs
 
-<div id="automatic_cloning_incomplete_jobs" wrapper="1">
+<a id="automatic_cloning_incomplete_jobs"></a>
 
 By default, when a worker reports an incomplete job due to a cache service related
 problem, the job is automatically cloned. It is possible to extend the regex to cover
@@ -1432,7 +1434,7 @@ configuration and cloned in any case.
 
 ## Enable automatic database backup
 
-<div id="automatic_database_cleanup" wrapper="1">
+<a id="automatic_database_cleanup"></a>
 
 An optional systemd service, `openqa-dump-db.service`, can be enabled to
 perform daily database backups. This service is triggered by the
@@ -1537,7 +1539,7 @@ events are on the blocklist by default.
 
 # Automatic system upgrades and reboots of openQA hosts
 
-<div id="auto_upgrade" wrapper="1">
+<a id="auto_upgrade"></a>
 
 The distribution package `openQA-auto-update` offers automatic system
 upgrades and reboots of openQA hosts. To use that feature install the package
@@ -1794,7 +1796,7 @@ are using indexes (and not just sequential scans).
 
 # Filesystem layout
 
-<div id="filesystem" wrapper="1">
+<a id="filesystem"></a>
 
 Tests, needles, assets, results and working directories (a.k.a. "pool directories") are located in certain
 subdirectories within `/var/lib/openqa`. This directory is configurable (see
@@ -1942,7 +1944,7 @@ the workers create their own instance directories.
 
 # Automatic installation of the operating systems for openQA machines
 
-<div id="auto_installation_machines" wrapper="1">
+<a id="auto_installation_machines"></a>
 
 As a maintainer of an openQA infrastructure running multiple openQA worker
 machines one likely wants to use installation recipes for automatic
@@ -2052,7 +2054,7 @@ You may consider enabling AppArmor. Profiles are
 and part of the `openQA` and `openQA-worker` packages for openSUSE.
 
 Alternatively, you can also use the already mentioned
-[container based setup](##container_setup) or look into
+[container based setup](#container_setup) or look into
 [hardening via systemd](https://en.opensuse.org/openSUSE:Security_Features#Systemd_hardening_effort).
 An example for setting up an openQA worker host so that the openQA worker slots
 run within containers isolated from each other can be found

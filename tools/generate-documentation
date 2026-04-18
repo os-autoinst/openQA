@@ -193,7 +193,7 @@ check_pandoc() {
     fi
 
     if [[ ${formats[pdf]} ]]; then
-        if ! command -v weasyprint >/dev/null 2>&1; then
+        if ! command -v weasyprint > /dev/null 2>&1; then
             echo "Could not find weasyprint binary in your path (needed for PDF generation), please install it:"
             echo "    sudo zypper install python3-weasyprint"
             exit 1
@@ -216,11 +216,11 @@ call_pandoc() {
     cp -r images "${tmpwd}"/output
 
     [[ ${formats[pdf]} ]] \
-        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md | \
-        pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf --pdf-engine=weasyprint --number-sections
+        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md \
+            | pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf --pdf-engine=weasyprint --number-sections
     [[ ${formats[html]} ]] \
-        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md | \
-        pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html --metadata title="openQA documentation" --toc --number-sections
+        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md \
+        | pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html --metadata title="openQA documentation" --toc --number-sections
 
     echo -e "${green}The output has been generated at ${tmpwd}/output"
 
