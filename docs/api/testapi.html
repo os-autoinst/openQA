@@ -709,6 +709,10 @@ circumstance of the screen being shown this does not imply a longer waiting
 time as the method returns as soon as a successful needle match occurred.</p>
 </div>
 <div class="paragraph">
+<p>Note when using multiple tags the method returns on the first match and an
+additional <code>assert_screen</code> may be needed for consecutive screens.</p>
+</div>
+<div class="paragraph">
 <p>Specify <code>$no_wait</code> to run the screen check as fast as possible that is
 possibly more than once per second which is default. Select this to check a
 screen which can change in a range faster than 1-2 seconds not to miss the
@@ -2162,7 +2166,7 @@ set_serialdev($new);</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-04-16 04:45:14 UTC
+Last updated 2026-04-18 04:46:26 UTC
 </div>
 </div>
 </body>
