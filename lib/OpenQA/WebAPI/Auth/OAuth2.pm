@@ -79,6 +79,7 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
     my $id_field = $provider_config->{id_from} // 'id';
     my $fullname_field = $provider_config->{fullname_from} // 'name';
     my $nickname_field = $provider_config->{nickname_from};
+    my $email_field = $provider_config->{email_from} // 'email';
     if (ref $details ne 'HASH' || !$details->{$id_field} || !$details->{$nickname_field}) {
         log_debug('OAuth2 user provider returned: ' . dumper($details));
         return $controller->render(text => 'User data returned by OAuth2 provider is insufficient', status => 403);
@@ -90,7 +91,7 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
         provider => "oauth2\@$provider_name",
         nickname => $details->{$nickname_field},
         fullname => $details->{$fullname_field},
-        email => $details->{email});
+        email => $details->{$email_field});
 
     my $session = $controller->session;
     $session->{user} = $user->username;

@@ -182,6 +182,7 @@ sub default_config () {
             token_label => '',
             fullname_from => 'name',
             nickname_from => '',
+            email_from => 'email',
             unique_name => '',
             id_from => 'id',
         },
