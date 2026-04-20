@@ -97,6 +97,10 @@ sub set_to_latest_master ($self, $args = undef) {
     return undef;
 }
 
+sub _git_author ($self) {
+    return sprintf '--author=%s <%s>', ($self->user->fullname || $self->user->nickname), $self->user->email;
+}
+
 sub commit ($self, $args = undef) {
     $self->_validate_attributes;
 
@@ -111,9 +115,9 @@ sub commit ($self, $args = undef) {
 
     # commit changes
     my $message = $args->{message};
-    my $author = sprintf '--author=%s <%s>', $self->user->fullname, $self->user->email;
     try {
-        $self->_run_cmd(['commit', '-q', '-m', $message, $author, @files], {croak => 'Unable to commit via Git'});
+        $self->_run_cmd(['commit', '-q', '-m', $message, $self->_git_author, @files],
+            {croak => 'Unable to commit via Git'});
     }
     catch ($e) {
         $self->_run_cmd(['restore', '--staged', @files], {force => 1, croak => 'Unable to restore'})
