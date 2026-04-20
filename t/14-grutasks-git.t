@@ -416,6 +416,14 @@ subtest 'enqueue_git_clones' => sub {
 
 $t->app->log(Mojo::Log->new(level => 'info'));
 
+subtest 'commit author' => sub {
+    my $user = Test::MockObject->new;
+    $user->mock(email => sub { 'someone@somewhere.example' })->mock(nickname => sub { 'nobody' })
+      ->mock(fullname => undef);
+    my $git = OpenQA::Git->new(app => $t->app, user => $user);
+    is $git->_git_author, '--author=nobody <someone@somewhere.example>';
+};
+
 subtest 'delete_needles' => sub {
     my $needledirs = $schema->resultset('NeedleDirs');
     my $needles = $schema->resultset('Needles');
