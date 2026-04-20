@@ -180,7 +180,7 @@
                 </div>
                 <div class="mb-3 row">
                     <label for="editor-keep-important-logs-in-days"
-                    class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of important jobs" title="currently not used">Keep important logs for</label>
+                    class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of important jobs">Keep important logs for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-important-logs-in-days" name="keep_important_logs_in_days" value="<%= $group->keep_important_logs_in_days %>"> days
                         <%= include 'admin/group/cleanup_help' %>
