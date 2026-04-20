@@ -64,6 +64,11 @@ sub auth_setup ($server) {
     $app->plugin(OAuth2 => {$provider => \%provider_args});
 }
 
+sub _render_error ($controller, $details) {
+    log_debug 'OAuth2 user provider returned: ' . dumper($details);
+    return $controller->render(text => 'User data returned by OAuth2 provider is insufficient', status => 403);
+}
+
 sub update_user ($controller, $main_config, $provider_config, $data) {
     return undef unless $data;    # redirect to ID provider
 
@@ -76,22 +81,17 @@ sub update_user ($controller, $main_config, $provider_config, $data) {
         return $controller->render(text => $msg, status => 403);    # return always 403 for consistency
     }
     my $details = $tx->res->json;
-    my $id_field = $provider_config->{id_from} // 'id';
-    my $fullname_field = $provider_config->{fullname_from} // 'name';
-    my $nickname_field = $provider_config->{nickname_from};
-    my $email_field = $provider_config->{email_from} // 'email';
-    if (ref $details ne 'HASH' || !$details->{$id_field} || !$details->{$nickname_field}) {
-        log_debug('OAuth2 user provider returned: ' . dumper($details));
-        return $controller->render(text => 'User data returned by OAuth2 provider is insufficient', status => 403);
-    }
+    return _render_error($controller, $details) if ref $details ne 'HASH';
+    my $id = $details->{$provider_config->{id_from} // 'id'};
+    my $full = $details->{$provider_config->{fullname_from} // 'name'};
+    my $nick = $details->{$provider_config->{nickname_from}};
+    my $email = $details->{$provider_config->{email_from} // 'email'};
+    return _render_error($controller, $details) unless $id && $nick;
     my $provider_name = $main_config->{provider};
     $provider_name = $provider_config->{unique_name} || $provider_name if $provider_name eq 'custom';
-    my $user = $controller->schema->resultset('Users')->create_user(
-        $details->{$id_field},
-        provider => "oauth2\@$provider_name",
-        nickname => $details->{$nickname_field},
-        fullname => $details->{$fullname_field},
-        email => $details->{$email_field});
+    my $provider = "oauth2\@$provider_name";
+    my $users = $controller->schema->resultset('Users');
+    my $user = $users->create_user($id, provider => $provider, nickname => $nick, fullname => $full, email => $email);
 
     my $session = $controller->session;
     $session->{user} = $user->username;
