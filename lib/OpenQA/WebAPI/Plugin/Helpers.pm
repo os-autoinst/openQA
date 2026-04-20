@@ -177,6 +177,20 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(
+        job_group_ignored_info => sub ($c, $group, $is_parent) {
+            my $ignored_groups = $c->app->ignored_groups;
+            my $ignored_by_config = $ignored_groups->{$group->name}
+              || (!$is_parent && $group->parent && $ignored_groups->{$group->parent->name});
+            my $ignored_title = 'Exclude from evaluation for the main dashboard page';
+            if ($ignored_by_config) {
+                my $reason = $ignored_groups->{$group->name} ? 'the group name' : 'the parent group name';
+                $ignored_title
+                  = "Excluded from evaluation for the main dashboard page because $reason is configured in the 'ignored_job_groups' ini file setting";
+            }
+            return {ignored_by_config => $ignored_by_config, ignored_title => $ignored_title};
+        });
+
+    $app->helper(
         # emit_event helper, adds user, connection to events
         emit_event => sub ($c, $event, $data = undef) {
             die 'Missing event name' unless $event;
