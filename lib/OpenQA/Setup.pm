@@ -180,6 +180,7 @@ sub default_config () {
             user_url => '',
             token_scope => '',
             token_label => '',
+            fullname_from => 'name',
             nickname_from => '',
             unique_name => '',
             id_from => 'id',
