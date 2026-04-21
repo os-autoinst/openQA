@@ -134,7 +134,7 @@
   /usr/bin/rsync rix,
   /usr/bin/sha1sum rix,
   /usr/bin/slirpvde rix,
-  /usr/bin/snd2png rix,
+  /usr/{bin,lib/os-autoinst}/snd2png rix,
   /usr/bin/ssh rix,
   /usr/bin/ssh.hmac r,
   /usr/bin/ssh-keygen rix,
