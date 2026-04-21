@@ -9,6 +9,7 @@ use Date::Format 'time2str';
 use Encode qw(decode_utf8);
 use File::Basename 'basename';
 use IPC::Run;
+use OpenQA::Config;
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME);
@@ -24,7 +25,7 @@ use Mojolicious::Validator;
 use Mojolicious::Validator::Validation;
 use Time::HiRes 'time';
 use DateTime;
-use List::Util qw(any);
+use List::Util qw(any uniq);
 use Scalar::Util qw(looks_like_number);
 
 =head2 latest_build
@@ -102,6 +103,35 @@ sub latest_jobs ($self, $until = undef) {
     return @latest;
 }
 
+sub _apply_auto_worker_class_assignment ($settings_ref) {
+    my $app = OpenQA::App->singleton or return undef;
+    my $rules = OpenQA::Config::parse_worker_class_auto_assignment($app->config // {});
+    return unless @$rules;
+
+    my @existing = grep { $_ } split qr/,/, $settings_ref->{WORKER_CLASS} // '';
+    my @to_add = grep {
+        my $pattern = $_->{pattern};
+        !any { $_ =~ $pattern } @existing;
+    } @$rules;
+    return unless @to_add;
+
+    for my $rule (@to_add) {
+        log_info("Auto-assigning worker class '$rule->{class}' to job (no match for pattern '$rule->{pattern}')");
+    }
+    $settings_ref->{WORKER_CLASS} = join ',', sort(uniq(@existing, map { $_->{class} } @to_add));
+}
+
+sub _build_job_settings ($settings_ref) {
+    my $now = now;
+    my @job_settings;
+    for my $key (keys %$settings_ref) {
+        my $val = $settings_ref->{$key};
+        push @job_settings, map { {t_created => $now, t_updated => $now, key => $key, value => $_} }
+          grep { defined $_ } $key =~ qr/(^WORKER_CLASS|\[\])$/ ? split(m/,/, $val // '') : ($val);
+    }
+    return \@job_settings;
+}
+
 sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my %settings = %$settings;
     my %new_job_args;
@@ -112,8 +142,8 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
 
     # validate special settings
     my %special_settings = (TEST => delete $settings{TEST}, _PRIORITY => delete $settings{_PRIORITY});
-    my $validator = Mojolicious::Validator->new;
-    my $v = Mojolicious::Validator::Validation->new(validator => $validator, input => \%special_settings);
+    my $v
+      = Mojolicious::Validator::Validation->new(validator => Mojolicious::Validator->new, input => \%special_settings);
     my $test = $v->required('TEST')->like(TEST_NAME_REGEX)->param;
     my $prio = $v->optional('_PRIORITY')->num->param;
     die 'The following settings are invalid: ' . join(', ', @{$v->failed}) . "\n" if $v->has_error;
@@ -141,20 +171,9 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
         if (my $value = delete $settings{$key}) { $new_job_args{$key} = $value }
     }
 
-    # assign default for WORKER_CLASS
     $settings{WORKER_CLASS} ||= 'qemu_' . ($new_job_args{ARCH} // 'x86_64');
+    _apply_auto_worker_class_assignment(\%settings);
 
-    # Apply auto-assignment rules
-    if (my $app = OpenQA::App->singleton) {
-        my $auto_assignment_rules = OpenQA::Config::parse_worker_class_auto_assignment($app->config // {});
-        if (@$auto_assignment_rules) {
-            my @existing_classes = split qr/,/, $settings{WORKER_CLASS};
-            my @classes_to_add = map { _apply_auto_assignment_rule($_, \@existing_classes) } @$auto_assignment_rules;
-            $settings{WORKER_CLASS} = join ',', sort @existing_classes, @classes_to_add if @classes_to_add;
-        }
-    }
-
-    # assign scheduled product
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
     my $debug_msg = $self->_apply_prio_throttling(\%settings, \%new_job_args, $group);
@@ -163,16 +182,7 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my $job = $self->create(\%new_job_args);
     log_debug(sprintf "(Job %d) $debug_msg", $job->id) if $debug_msg;
 
-    # add job settings
-    my @job_settings;
-    my $now = now;
-    for my $key (keys %settings) {
-        my @values = $key =~ qr/(^WORKER_CLASS|\[\])$/ ? split(m/,/, $settings{$key}) : ($settings{$key});
-        push @job_settings, {t_created => $now, t_updated => $now, key => $key, value => $_} for @values;
-    }
-    $job->settings->populate(\@job_settings);
-
-    # associate currently available assets with job
+    $job->settings->populate(_build_job_settings(\%settings));
     $job->register_assets_from_settings;
 
     log_info('Ignoring invalid group ' . encode_json($group_args) . ' when creating new job ' . $job->id)
@@ -181,12 +191,6 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     return $job;
 }
 
-sub _apply_auto_assignment_rule ($rule, $existing_classes) {
-    my $pattern = $rule->{pattern};
-    return () if any { $_ =~ $pattern } @$existing_classes;
-    log_info("Auto-assigning worker class '$rule->{class}' to job (no match for pattern '$pattern')");
-    return $rule->{class};
-}
 
 sub _update_priority ($value, $throt_config, $job_args) {
     my $scale = $throt_config->{scale} // 0;
