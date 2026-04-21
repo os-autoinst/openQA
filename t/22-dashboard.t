@@ -748,6 +748,13 @@ subtest 'Ignore job groups' => sub {
         ok !grep({ $_ eq 'IgnoreMe1' } @group_names), 'IgnoreMe1 is hidden when configured in openqa.ini';
         ok grep({ $_ eq 'IgnoreMe2' } @group_names), 'IgnoreMe2 remains visible when IgnoreMe1 is ignored';
 
+        $test_case->login($t, 'arthur');
+        $t->get_ok('/admin/job_templates/' . $g1->id)->status_is(200)
+          ->element_exists('input#editor-ignore-on-dashboard[disabled="disabled"]')
+          ->element_exists('input#editor-ignore-on-dashboard[checked="checked"]')
+          ->element_exists('label[for="editor-ignore-on-dashboard"][title*="the group name is configured"]');
+        $test_case->login($t, 'percival');
+
         $t->app->ignored_groups({IgnoreMe1 => 1, IgnoreMe2 => 1});
         $res = $t->get_ok('/dashboard_build_results.json')->status_is(200)->tx->res->json;
         @group_names = map { $_->{group}->{name} } @{$res->{results}};
@@ -775,6 +782,14 @@ subtest 'Ignore job groups' => sub {
         ok !grep({ $_ eq 'IgnoreMe1' } @child_names),
           'Child IgnoreMe1 is hidden in parent overview when ignored globally';
         ok grep({ $_ eq 'IgnoreMe2' } @child_names), 'Child IgnoreMe2 remains visible in parent overview';
+
+        $t->app->ignored_groups({'Test Parent Config' => 1});
+        $test_case->login($t, 'arthur');
+        $t->get_ok('/admin/job_templates/' . $g1->id)->status_is(200)
+          ->element_exists('input#editor-ignore-on-dashboard[disabled="disabled"]')
+          ->element_exists('input#editor-ignore-on-dashboard[checked="checked"]')
+          ->element_exists('label[for="editor-ignore-on-dashboard"][title*="the parent group name is configured"]');
+        $test_case->login($t, 'percival');
         $t->app->ignored_groups({});
     };
 

@@ -53,15 +53,21 @@
                     %>
                 </div>
             </div>
+            % my $ignored_info = job_group_ignored_info($group, $is_parent);
+            % my $ignored_by_config = $ignored_info->{ignored_by_config};
+            % my $ignored_title = $ignored_info->{ignored_title};
             <div class="mb-3 row">
-                <label for="editor-ignore-on-dashboard" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Exclude from evaluation for the main dashboard page">Ignore on dashboard</label>
-                <div class="col-sm-10">
+                <label for="editor-ignore-on-dashboard" class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="<%= $ignored_title %>">Ignore on dashboard</label>
+                <div class="col-sm-10" <% if ($ignored_by_config) { %> data-bs-toggle="tooltip" title="<%= $ignored_title %>" <% } %>>
                     <input type="hidden" name="ignore_on_dashboard" value="0">
                     <input type="checkbox"
                            id="editor-ignore-on-dashboard" name="ignore_on_dashboard"
                            value="1"
-                        % if ($group->ignore_on_dashboard) {
+                        % if ($group->ignore_on_dashboard || $ignored_by_config) {
                             checked="checked"
+                        % }
+                        % if ($ignored_by_config) {
+                            disabled="disabled"
                         % }
                     >
                     <%= help_popover 'Ignore on dashboard' =>
@@ -180,7 +186,7 @@
                 </div>
                 <div class="mb-3 row">
                     <label for="editor-keep-important-logs-in-days"
-                    class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of important jobs" title="currently not used">Keep important logs for</label>
+                    class="form-label col-sm-2 control-label" data-bs-toggle="tooltip" title="Number of days to keep logs of important jobs">Keep important logs for</label>
                     <div class="col-sm-10">
                         <input type="number" min="0" class="form-control" id="editor-keep-important-logs-in-days" name="keep_important_logs_in_days" value="<%= $group->keep_important_logs_in_days %>"> days
                         <%= include 'admin/group/cleanup_help' %>
