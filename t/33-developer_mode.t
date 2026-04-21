@@ -108,7 +108,7 @@ $driver->title_is('openQA', 'back on main page');
 
 # setting TESTING_ASSERT_SCREEN_TIMEOUT is important here (see os-autoinst/t/data/tests/tests/boot.pm)
 schedule_one_job_over_api_and_verify($driver,
-    OpenQA::Test::FullstackUtils::job_setup(TESTING_ASSERT_SCREEN_TIMEOUT => '1'));
+    OpenQA::Test::FullstackUtils::job_setup(TESTING_ASSERT_SCREEN_TIMEOUT => '1', STORAGE_KEEP_FREE_RATIO => '0'));
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
