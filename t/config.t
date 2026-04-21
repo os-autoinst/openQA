@@ -357,6 +357,42 @@ subtest 'check throttling configuration validation and application' => sub {
             qr/Wrong format/, 'warning logged';
         };
     };
+
+    subtest 'parse_worker_class_auto_assignment' => sub {
+        my $config = {
+            worker_class_auto_assignment => {
+                add_worker_class_if_missing =>
+                  ['size-.* -> size-large', 'gpu-.* -> gpu-none', 'invalid line', 'bad regex ( -> size-error',]}};
+
+        my $mock_config = Test::MockModule->new('OpenQA::Config');
+        my @warnings;
+        $mock_config->redefine(log_warning => sub { push @warnings, $_[0] });
+
+        my $rules = OpenQA::Config::parse_worker_class_auto_assignment($config);
+
+        is scalar @$rules, 2, 'parsed 2 valid rules';
+        is $rules->[0]{class}, 'size-large', 'first rule class';
+        ok 'size-small' =~ $rules->[0]{pattern}, 'first rule pattern matches';
+
+        is $rules->[1]{class}, 'gpu-none', 'second rule class';
+        ok 'gpu-anything' =~ $rules->[1]{pattern}, 'second rule pattern matches';
+
+        is scalar @warnings, 2, 'got 2 warnings for invalid lines';
+        like $warnings[0], qr/Missing delimiter/, 'warning for missing delimiter';
+        like $warnings[1], qr/Invalid regex pattern/, 'warning for invalid regex';
+
+        subtest 'single value' => sub {
+            my $config = {worker_class_auto_assignment => {add_worker_class_if_missing => 'size-.* -> size-large'}};
+            my $rules = OpenQA::Config::parse_worker_class_auto_assignment($config);
+            is scalar @$rules, 1, 'parsed 1 rule from single value';
+        };
+
+        subtest 'empty' => sub {
+            is_deeply OpenQA::Config::parse_worker_class_auto_assignment({}), [], 'empty config returns empty array';
+            is_deeply OpenQA::Config::parse_worker_class_auto_assignment({worker_class_auto_assignment => {}}), [],
+              'empty section returns empty array';
+        };
+    };
 };
 
 done_testing();

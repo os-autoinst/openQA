@@ -144,6 +144,16 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     # assign default for WORKER_CLASS
     $settings{WORKER_CLASS} ||= 'qemu_' . ($new_job_args{ARCH} // 'x86_64');
 
+    # Apply auto-assignment rules
+    if (my $app = OpenQA::App->singleton) {
+        my $auto_assignment_rules = OpenQA::Config::parse_worker_class_auto_assignment($app->config // {});
+        if (@$auto_assignment_rules) {
+            my @existing_classes = split qr/,/, $settings{WORKER_CLASS};
+            my @classes_to_add = map { _apply_auto_assignment_rule($_, \@existing_classes) } @$auto_assignment_rules;
+            $settings{WORKER_CLASS} = join ',', sort @existing_classes, @classes_to_add if @classes_to_add;
+        }
+    }
+
     # assign scheduled product
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
@@ -169,6 +179,13 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
       if keys %$group_args && !$group;
     $job->calculate_blocked_by;
     return $job;
+}
+
+sub _apply_auto_assignment_rule ($rule, $existing_classes) {
+    my $pattern = $rule->{pattern};
+    return () if any { $_ =~ $pattern } @$existing_classes;
+    log_info("Auto-assigning worker class '$rule->{class}' to job (no match for pattern '$pattern')");
+    return $rule->{class};
 }
 
 sub _update_priority ($value, $throt_config, $job_args) {
