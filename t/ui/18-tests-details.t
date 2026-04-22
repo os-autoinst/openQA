@@ -683,7 +683,7 @@ subtest 'route to latest' => sub {
 };
 
 # create 2 additional needle files for this particular test; fixtures are deleted in other tests
-my $ntext = <<EOM;
+my $ntext = <<'EOM';
 {
   "area": [
     {

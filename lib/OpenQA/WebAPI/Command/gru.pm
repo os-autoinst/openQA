@@ -5,7 +5,7 @@ package OpenQA::WebAPI::Command::gru;
 use Mojo::Base 'Mojolicious::Commands', -signatures;
 
 has description => 'Gru job queue';
-has hint => <<EOF;
+has hint => <<'EOF';
 See 'APPLICATION gru help COMMAND' for more information on a specific
 command.
 EOF

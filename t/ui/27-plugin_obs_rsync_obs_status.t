@@ -142,7 +142,7 @@ wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort =
 
 my $ssh_keyfile = tempfile("$FindBin::Script-sshkey-XXXXX");
 # using the key from [0] to have a reproduceable output.
-$ssh_keyfile->spew(<<EOF);
+$ssh_keyfile->spew(<<'EOF');
 -----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
 QyNTUxOQAAACBIqlwQI+bxWOj1TOdlL4z9AuOZdeYvOgHGQhtnxn+g+QAAAJiRS1EekUtR

@@ -7,7 +7,7 @@ use Mojo::Util qw(getopt encode);
 use YAML::PP;
 use FindBin '$RealBin';
 
-has hint => <<EOF;
+has hint => <<'EOF';
 
 See 'openqa-cli COMMAND --help' for more information on a specific command.
 EOF
