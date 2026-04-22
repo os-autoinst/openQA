@@ -67,31 +67,34 @@ subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`
 
 subtest None => sub {
     my $t = test_auth_method_startup('None');
+    my $key_val = 'DEADBEEFDEADBEEF';
+    my $bearer_token = "Bearer admin:$key_val:$key_val";
     $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
     $t->get_ok('/admin/users')->status_is(200)->content_like(qr/Administrator/);
 
     my $user = $t->app->schema->resultset('Users')->find({username => 'admin'});
     ok $user, 'admin user exists';
-    my $key = $user->api_keys->find({key => 'DEADBEEFDEADBEEF'});
+    my $key = $user->api_keys->find({key => $key_val});
     ok $key, 'admin API key exists';
-    is $key->secret, 'DEADBEEFDEADBEEF', 'admin API secret matches';
+    is $key->secret, $key_val, 'admin API secret matches';
     is $key->t_expiration, undef, 'admin API key has no expiration';
 
-    $t->get_ok('/api/v1/auth' => {Authorization => 'Bearer admin:DEADBEEFDEADBEEF:DEADBEEFDEADBEEF'})->status_is(200)
-      ->content_is('ok');
+    $t->get_ok('/api/v1/auth' => {Authorization => $bearer_token})->status_is(200)->content_is('ok');
 
     $user->audit_events->delete;
     $user->api_keys->delete;
     $user->delete;
+    $t->get_ok('/login' => 'login as admin')->status_is(302);
     $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
     $user = $t->app->schema->resultset('Users')->find({username => 'admin'});
     ok $user, 'admin user re-created';
     ok $user->is_admin && $user->is_operator, 're-created user has admin/operator permissions';
 
     $user->update({is_admin => 0, is_operator => 0});
+    $t->get_ok('/login' => 're-login as admin')->status_is(302);
     $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
     $user->discard_changes;
-    ok $user->is_admin && $user->is_operator, 'helper restored admin/operator permissions';
+    ok $user->is_admin && $user->is_operator, 'login restored admin/operator permissions';
 
     $t->get_ok('/')->status_is(200)->content_unlike(qr/Logout/);
 
@@ -102,7 +105,36 @@ subtest None => sub {
         my $key2 = $t2->app->schema->resultset('ApiKeys')->find({key => 'CUSTOMKEY'});
         ok $key2, 'custom API key exists';
         is $key2->secret, 'CUSTOMSECRET', 'custom API secret matches';
+
+        $t2->post_ok(
+            '/api/v1/jobs/cancel',
+            {'X-API-Key' => 'CUSTOMKEY', 'X-API-Microtime' => time},
+            'fail auth on forged API header instead of bypassing CSRF'
+        )->status_is(403)->content_unlike(qr/Bad CSRF token/i);
     }
+
+    subtest 'CSRF security' => sub {
+        my $t = test_auth_method_startup('None');
+        my $url = '/api/v1/jobs/cancel';
+        $t->get_ok('/login' => 'establish session')->status_is(302);
+        $t->get_ok('/session/test' => 'logged in as admin')->status_is(200)->content_like(qr/you are admin/);
+
+        $t->post_ok($url, {'X-API-Key' => 'JUNK_KEY'}, 'fail auth on forged API header instead of bypassing CSRF')
+          ->status_is(403)->content_unlike(qr/Bad CSRF token/i);
+
+        $t->post_ok(
+            $url,
+            {Authorization => 'Bearer JUNK_TOKEN'},
+            'fail auth on forged Bearer header instead of bypassing CSRF'
+        )->status_is(403)->content_unlike(qr/Bad CSRF token/i);
+        $t->get_ok(
+            '/api/v1/auth',
+            {Authorization => $bearer_token},
+            'pass auth on valid Bearer header despite existing session and missing CSRF'
+        )->status_is(200)->content_is('ok');
+        $t->post_ok($url, 'fail on missing CSRF token without API headers')->status_is(403)
+          ->content_like(qr/Bad CSRF token/i);
+    };
 };
 
 subtest OpenID => sub {

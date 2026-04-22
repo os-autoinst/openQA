@@ -34,10 +34,9 @@ sub auth_login ($self) {
         $userinfo->{username},
         email => $userinfo->{email},
         nickname => $userinfo->{username},
-        fullname => $userinfo->{fullname});
-    $user->is_admin($userinfo->{admin});
-    $user->is_operator($userinfo->{operator});
-    $user->update;
+        fullname => $userinfo->{fullname},
+        is_admin => $userinfo->{admin},
+        is_operator => $userinfo->{operator});
 
     my $key = $user->api_keys->find_or_create({key => $userinfo->{key}, secret => SECRET});
     # expire in a day after login

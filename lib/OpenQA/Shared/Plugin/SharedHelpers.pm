@@ -19,6 +19,7 @@ sub register ($self, $app, @args) {
     $app->helper(current_user => \&_current_user);
     $app->helper(is_operator => \&_is_operator);
     $app->helper(is_admin => \&_is_admin);
+    $app->helper(is_api_request => \&_is_api_request);
     $app->helper(is_local_request => \&_is_local_request);
     $app->helper(render_specific_not_found => \&_render_specific_not_found);
     $app->helper(via_domain => \&_via_domain);
@@ -52,10 +53,13 @@ sub _current_user ($c) {
     my $current_user = $c->stash('current_user');
     unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
         my $is_auth_method_none = ($c->app->config->{auth}->{method} // '') eq 'None';
-        my $id = $c->session->{user} // ($is_auth_method_none ? 'admin' : undef);
+        # Avoid auto-login as admin for requests with API credentials.
+        # Otherwise, the 'auth' method would reject the request due to a
+        # missing CSRF token before it even checks the API credentials.
+        my $id = $c->session->{user} // ($is_auth_method_none && !$c->is_api_request ? 'admin' : undef);
         my $users = $c->schema->resultset('Users');
         my $user = $id ? $users->find({username => $id}) : undef;
-        if ($is_auth_method_none) {
+        if ($is_auth_method_none && $id && $id eq 'admin') {
             $user ||= $users->create_user('admin', fullname => 'Administrator', email => 'admin@example.com');
             $user->update({is_admin => 1, is_operator => 1}) unless $user->is_admin && $user->is_operator;
         }
@@ -73,6 +77,11 @@ sub _is_operator ($c, $user = undef) {
 sub _is_admin ($c, $user = undef) {
     $user //= $c->current_user;
     return ($user && $user->is_admin);
+}
+
+sub _is_api_request ($c) {
+    my $h = $c->req->headers;
+    return !!($h->authorization || $h->header('X-API-Key'));
 }
 
 sub _is_local_request ($c) {
