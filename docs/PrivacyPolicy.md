@@ -1,3 +1,4 @@
+<a id="privacypolicy"></a>
 # Introduction
 
 openQA is an automated testing framework. This privacy policy describes how we

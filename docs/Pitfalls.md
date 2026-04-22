@@ -1,3 +1,4 @@
+<a id="pitfalls"></a>
 # Needle editing
 
 - If a new needle is created based on a failed test, the new needle
@@ -59,6 +60,7 @@ with `optipng` may take a significant amount of time. In this case, you can swit
 settings. Alternatively, you may disable optimizing images altogether via the
 setting `OPTIMIZE_IMAGES=0`.
 
+<a id="db-migration"></a>
 # DB migration from SQlite to postgreSQL
 
 As a first step to start using postgreSQL, please, configure postgreSQL database
@@ -85,6 +87,7 @@ To migrate api keys run following commands:
 In case you need to migrate job groups, test suites, use openqa-dump-templates and
 openqa-load-templates scripts accordingly.
 
+<a id="debugdevelmode"></a>
 # Steps to debug developer mode setup
 
 This is basically a checklist to go through in case the developer mode is broken in your setup

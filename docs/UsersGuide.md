@@ -1,3 +1,4 @@
+<a id="usersguide"></a>
 # Introduction
 
 This document provides additional information for use of the web interface or
@@ -96,6 +97,7 @@ worker' connected that can fulfill those specifications.
   - `USBBOOT` when set to 1, the image will be loaded through an
     emulated USB stick.
 
+<a id="medium_types_products"></a>
 ## Medium Types (products)
 
 A medium type (product) in openQA is a simple description without any concrete
@@ -694,6 +696,7 @@ autologin-user=tux
 autologin-timeout=0
 ```
 
+<a id="carry-over"></a>
 ## Carry over of bug references from previous jobs in same scenario
 
 Many test failures within the same scenario might be due to the same reason.
@@ -1082,6 +1085,7 @@ special.
 If you need the literal string `<<` (for example as a value in the job
 settings), you have to quote it.
 
+<a id="rest_api"></a>
 # Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
@@ -1178,6 +1182,7 @@ specified and it can also be combined with other filtering parameters, e.g.:
 openqa-cli api jobs result=none job_setting=ISSUES[]={foo,bar} limit=50
 ```
 
+<a id="triggering_tests"></a>
 ## Triggering tests
 
 Tests can be triggered over multiple ways, using `openqa-clone-job`,
@@ -1199,6 +1204,7 @@ Single jobs can be spawned using the `jobs post` API route. All necessary
 settings on a job must be supplied in the API request. The "openQA client" has
 examples for this.
 
+<a id="further_examples_for_advanced_dependency_handling"></a>
 #### Further examples for advanced dependency handling
 
 It is possible to spawn a single set of jobs using just one API call, e.g.:
@@ -1220,6 +1226,7 @@ To use colons within a settings key, just add a trailing `:`, e.g.:
 
     openqa-cli api -X POST jobs TEST=test KEY:WITH:COLONS:=example
 
+<a id="spawning_multiple_jobs_based_on_templates_isos_post"></a>
 ### Spawning multiple jobs based on templates - isos post
 
 The most common way of spawning jobs on production instances is using the
@@ -1316,6 +1323,7 @@ timeouts by performing the task in background.
 This is recommended on big instances but means that the results (and
 possible errors) need to be polled via `openqa-cli api isos/$scheduled_product_id`.
 
+<a id="statistical_investigation"></a>
 #### Statistical investigation
 
 In case issues appear sporadically and are therefore hard to reproduce it can
@@ -1675,6 +1683,7 @@ as there is enough headroom on the relevant file systems.
 > on the same file system. The `…_min_free_disk_space_percentage` settings
 > specifically are still experimental.
 
+<a id="asset_cleanup"></a>
 ## Cleanup strategy for assets
 
 To find out whether an asset should be removed, openQA determines by which

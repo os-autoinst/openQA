@@ -1,3 +1,4 @@
+<a id="gettingstarted"></a>
 # Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
@@ -284,6 +285,7 @@ elements such as buttons and then click inside the matched area.
 Each click point can have an `id`, and if a needle contains multiple click points you must pass it to `testapi::assert_and_click` to select which click point
 to use.
 
+<a id="configuration"></a>
 ## Configuration
 
 The different components of openQA read their configuration from the following
@@ -351,7 +353,7 @@ contains the openID identity and two flags used for access control:
 
 - **admin** Means that the user is able to manage users (granting or revoking
   operator and admin rights) as well as job templates and other related
-  information (see the [the corresponding section](#job_templates)).
+  information (see the [the corresponding section](UsersGuide.md#job_templates)).
 
 Many of the operations in an openQA instance are not performed through the web
 interface but using the REST-like API. The most obvious examples are the
@@ -409,6 +411,7 @@ a new one created over the webUI.
 The personal configuration should be stored in a file
 `~/.config/openqa/client.conf` in the same format as previously described for the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
 
+<a id="get-testing"></a>
 # Testing openSUSE or Fedora
 
 An easy way to start using openQA is to start testing openSUSE or Fedora as they

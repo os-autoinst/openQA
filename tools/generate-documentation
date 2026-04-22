@@ -221,10 +221,10 @@ call_pandoc() {
     fi
 
     [[ ${formats[pdf]} ]] \
-        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md \
+        && perl -e 'sub p{my $f=shift;open my $h,"<",$f or die $!;while(<$h>){if(/^include::([^\]]+)\[\]/){p($1)}else{s/\[([^\]]+)\]\([\w-]+\.md(#[\w-]+)\)/[$1]($2)/g;s/\[([^\]]+)\]\(([\w-]+)\.md\)/"[$1](#".lc($2).")"/ge;print}}}p("index.md")' \
         | pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf --pdf-engine=weasyprint --number-sections
     [[ ${formats[html]} ]] \
-        && perl -ne 'if (/^include::([^\]]+)\[\]/) { open my $f, "<", $1 or die $!; print while <$f>; close $f } else { print }' index.md \
+        && perl -e 'sub p{my $f=shift;open my $h,"<",$f or die $!;while(<$h>){if(/^include::([^\]]+)\[\]/){p($1)}else{s/\[([^\]]+)\]\([\w-]+\.md(#[\w-]+)\)/[$1]($2)/g;s/\[([^\]]+)\]\(([\w-]+)\.md\)/"[$1](#".lc($2).")"/ge;print}}}p("index.md")' \
         | pandoc -s -f gfm -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html \
             --template=template.html \
             -c style.css \

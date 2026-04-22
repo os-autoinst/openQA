@@ -1,3 +1,4 @@
+<a id="installing"></a>
 # Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
@@ -25,6 +26,7 @@ setup suitable to develop openQA itself, have a look at the
 
 openQA is provided in containers. Multiple variants exist.
 
+<a id="single-instance-container"></a>
 ## Single-instance container
 
 The easiest and quickest way to spawn a single instance of openQA with a
@@ -415,6 +417,7 @@ specifications are recommended per openQA worker instance:
 
 - 40GB HDD (preferably SSD or NVMe)
 
+<a id="basic-configuration"></a>
 # Basic configuration
 
 For a local instance setup you can simply execute the script:
@@ -506,6 +509,7 @@ You can do that in
 httpsonly = 0
 ```
 
+<a id="database"></a>
 ## Database
 
 openQA requires PostgreSQL 14 or newer. By default, a database with name
@@ -740,6 +744,7 @@ The use of `SO_REUSEPORT` can cause unintended connection failures which can be 
 there is no corresponding setting for IPv6 but the setting for IPv4 seems to
 help with IPv6 connections as well.
 
+<a id="run_openqa_workers"></a>
 # Run openQA workers
 
 Workers are services running backends to perform the actual testing. The
@@ -1090,6 +1095,7 @@ systemctl mask openqa-worker-auto-restart@{1..28}.service
 systemctl kill --kill-who=main --signal HUP openqa-worker-auto-restart@{1..28}
 ```
 
+<a id="configuring_remote_workers"></a>
 ## Configuring remote workers
 
 There are some additional requirements to get remote worker running. First is to
@@ -1190,6 +1196,7 @@ considered for ordering the job assignment.
 It is possible to mix local openQA instance with remote instances or use only
 remote instances.
 
+<a id="asset-caching"></a>
 ## Asset and test/needle caching
 
 If your network is slow or you experience long time to load needles you might
@@ -1294,9 +1301,9 @@ keys_to_render_as_links=FOO,AUTOYAST
 The files referenced by the configured keys should be located either under the root
 of `CASEDIR` or the data folder within `CASEDIR`.
 
-## Enable custom hook scripts on "job done" based on result
-
 <a id="custom_hook_scripts_job_done"></a>
+<a id="enable_custom_hook_scripts_on_job_done_based_on_result"></a>
+## Enable custom hook scripts on "job done" based on result
 
 If a job is done, especially if no label could be found for carry-over, often
 more steps are needed for the review of the test result or providing the
@@ -1369,9 +1376,8 @@ of the openQA GRU service, except for messages in "complain" mode which end up i
 General status and stdout output is visible in the GRU minion job dashboard on the route
 `/minion/jobs?offset=0&task=finalize_job_results` of the openQA instance.
 
-## Automatic cloning of incomplete jobs
-
 <a id="automatic_cloning_incomplete_jobs"></a>
+## Automatic cloning of incomplete jobs
 
 By default, when a worker reports an incomplete job due to a cache service related
 problem, the job is automatically cloned. It is possible to extend the regex to cover
@@ -1975,6 +1981,7 @@ Without taking any of those additional measures the openQA services will at
 least still run as a distinct user (when using upstream-provided systemd unit
 files).
 
+<a id="authentication"></a>
 ## Authentication
 
 Authentication via OpenID is enabled by default. Do **not** change the

@@ -1,3 +1,4 @@
+<a id="networking"></a>
 For tests using the QEMU backend the networking type used is controlled by the
 `NICTYPE` variable. If unset or empty `NICTYPE` defaults to `user`, i.e.
 [QEMU User Networking](#qemu-user-networking) which requires no further configuration.
@@ -12,6 +13,7 @@ primitives can be used. For the physical network according separation needs to
 be ensured externally where needed as means for machines to be able to access
 each other.
 
+<a id="qemu-user-networking"></a>
 # QEMU User Networking
 
 
@@ -21,6 +23,7 @@ TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
 the machine can be controlled with the `NICMAC` variable. If not set, it is
 `52:54:00:12:34:56`.
 
+<a id="tap-based-network"></a>
 # TAP Based Network
 
 os-autoinst can connect QEMU to TAP devices of the host system to
@@ -130,6 +133,7 @@ firewall-cmd --list-all-zones
 
 ### What is left to do after running os-autoinst-setup-multi-machine
 
+<a id="gre-tunnels"></a>
 #### GRE tunnels
 
 By default all multi-machine workers have to be on a single physical machine.

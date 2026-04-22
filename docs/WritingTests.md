@@ -1,3 +1,4 @@
+<a id="writingtests"></a>
 # Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
@@ -484,6 +485,7 @@ Variables are accessible via the **get_var** and **check_var** functions.
 
 # Advanced test features
 
+<a id="changing_timeouts"></a>
 ## Changing timeouts
 
 By default, tests are aborted after two hours by the worker. To change this
@@ -639,6 +641,7 @@ Sometimes issues are sporadic and therefore hard to reproduce. The section about
 [statistical investigation](UsersGuide.md#statistical_investigation)
 might be helpful in this case.
 
+<a id="assigning_jobs_to_workers"></a>
 ## Assigning jobs to workers
 
 By default, any worker can get any job with the matching architecture.
@@ -733,6 +736,7 @@ causing incomplete jobs.
 [Custom hook scripts on "job done" based on result](Installing.md#custom_hook_scripts_job_done)
 can be used to apply more elaborate issue detection and retriggering of tests.
 
+<a id="job_dependencies"></a>
 ## Job dependencies
 
 There are different dependency **types**, most importantly _chained_ and
@@ -838,6 +842,7 @@ of scheduling as well as in the worker configuration file `workers.ini`.
 > should not be used needlessly. This feature is also still subject to change as
 > we explore ways to make it more flexible.
 
+<a id="inter_machine_dependencies"></a>
 ### Inter-machine dependencies
 
 Those dependencies make it possible to create job dependencies between tests
@@ -1981,6 +1986,7 @@ In both modes there is no need to modify tests (i.e. adding `milestone` test
 flag as the behaviour is implied). In the latter mode every test module is also
 considered `fatal`. This means the job is aborted after the first failed test module (unless subsequent modules are marked with `always_run`).
 
+<a id="snapshots-for-each-module"></a>
 ### Enable snapshots for each module
 
 - Run the worker with `--no-cleanup` parameter. This will preserve the hard
@@ -2142,6 +2148,7 @@ describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
 supplied as new, unambiguous download target file names.
 
+<a id="triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"></a>
 ## Triggering tests based on an any remote Git refspec or open GitHub pull request
 
 openQA also supports to trigger tests using test code from a pull request or

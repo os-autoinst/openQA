@@ -1,3 +1,4 @@
+<a id="contributing"></a>
 # Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
@@ -538,6 +539,7 @@ Also find more details in
   look at the
   [openQA-helper repository](https://github.com/Martchus/openQA-helper).
 
+<a id="quick-container-development-setup"></a>
 ## Quick container development setup
 
 ### Requirements
@@ -1142,6 +1144,7 @@ podman exec -it t1 bash -c 'make test TESTS=t/ui/25-developer_mode.t'
 podman stop -t 0 t1
 ```
 
+<a id="circleci-local-container"></a>
 ## Run tests using the circleci tool
 
 After installing the `circleci` tool the following commands will be available.

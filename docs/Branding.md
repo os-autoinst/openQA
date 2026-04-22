@@ -1,3 +1,4 @@
+<a id="branding"></a>
 You can alter the appearance of the openQA web UI to some extent through
 the "branding" mechanism. The `branding` configuration setting in the `global`
 section of [the web UI configuration](GettingStarted.md#configuration)

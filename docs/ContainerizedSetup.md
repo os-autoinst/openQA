@@ -1,3 +1,4 @@
+<a id="containerizedsetup"></a>
 The installation guide already contains simple one-liners for starting
 the web UI and workers in the
 [Container based setup section](Installing.md#container_setup).
@@ -73,6 +74,7 @@ docker, as a workaround, run:
 
 on the host machine.
 
+<a id="run_the_data_and_web_ui_containers"></a>
 ## Run the data and web UI containers
 
     podman run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
@@ -94,6 +96,7 @@ command substituting `KEY` and `SECRET` with the generated values:
 
     exec -it openqa_data /scripts/client-conf set -l KEY SECRET
 
+<a id="run_the_worker_container"></a>
 ## Run the worker container
 
     podman run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
@@ -313,6 +316,7 @@ Worker instances always expect to find the server as `openqa_webui`; if this wil
 `/data/conf/workers.ini` files in the data container. You will also need to
 adjust these files if you use non-standard ports (see above).
 
+<a id="keeping_all_data_in_the_data_volume_container"></a>
 ## Keeping all data in the Data Volume container
 
 If you decided to keep all the data in the Volume container (`openqa_data`), run the following commands:
@@ -334,6 +338,7 @@ And finally, download the tests and ISOs directly into the container:
 
 The rest of the steps should be the same.
 
+<a id="keeping_all_data_on_the_host_system"></a>
 ## Keeping all data on the host system
 
 If you want to keep all the data in the host system and you prefer not to use

@@ -1,3 +1,4 @@
+<a id="client"></a>
 There are two ways to interact with openQA as a user. The web UI and the REST
 API. In this guide we will focus on the latter. You've probably already seen a
 few examples of its use with `openqa-cli` earlier in the documentation.

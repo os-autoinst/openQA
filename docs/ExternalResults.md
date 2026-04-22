@@ -1,3 +1,4 @@
+<a id="externalresults"></a>
 # Introduction
 
 From time to time, a test developer might want to use openQA to execute a test
