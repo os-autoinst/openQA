@@ -10,7 +10,7 @@ use File::Temp 'tempdir';
 use Feature::Compat::Try;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(log_debug log_info log_warning);
-use OpenQA::Utils qw(random_string results_storage_below_threshold);
+use OpenQA::Utils qw(random_string storage_below_threshold);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
 use OpenQA::Scheduler::DynamicLimit;
@@ -58,7 +58,7 @@ sub _allocate_jobs ($self, $free_workers) {
     my $schema = OpenQA::Schema->singleton;
     my $running = $schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     my $limit = $self->effective_job_limit;
-    if (results_storage_below_threshold()) {
+    if (storage_below_threshold()) {
         log_debug('Skipping job scheduling: free storage space in results directory below threshold');
         return ({}, {});
     }

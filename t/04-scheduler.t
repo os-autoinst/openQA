@@ -19,7 +19,7 @@ use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(setup_mojo_app_with_default_worker_timeout simulate_load);
-use OpenQA::Utils qw(assetdir results_storage_below_threshold);
+use OpenQA::Utils qw(assetdir storage_below_threshold resultdir assetdir archivedir);
 use Test::Mojo;
 use Test::MockModule;
 use Test::Output qw(combined_like);
@@ -335,7 +335,8 @@ subtest 'skip jobs because of results_min_free_disk_space_percentage limits)' =>
     undef $ws_send_error;
     $worker_db_obj->discard_changes;
     my $mock_utils = Test::MockModule->new('OpenQA::Utils');
-    local OpenQA::App->singleton->config->{scheduler}->{results_min_free_storage_space_percentage} = 50;
+    my $config = OpenQA::App->singleton->config;
+    local $config->{scheduler}->{results_min_free_storage_space_percentage} = 50;
     $mock_utils->redefine(check_df => sub { (10, 100) });
     my @jobs;
     push @jobs, $jobs->create_from_settings(\%settings2) for 1 .. 10;
@@ -346,14 +347,20 @@ subtest 'skip jobs because of results_min_free_disk_space_percentage limits)' =>
 
     subtest 'check_df fails' => sub {
         $mock_utils->redefine(check_df => sub { die 'df error' });
-        combined_like { results_storage_below_threshold() }
+        combined_like { storage_below_threshold() }
         qr/job assignments.*prevented.*df error/i, 'warning logged when check_df dies';
-        ok results_storage_below_threshold(), 'returns true (blocks) when check_df fails';
+        ok storage_below_threshold(), 'returns true (blocks) when check_df fails';
     };
 
-    subtest 'disk below threshold let job run' => sub {
-        $mock_utils->redefine(check_df => sub { (60, 100) });
-        ok !results_storage_below_threshold(), 'returns false when disk is sufficient';
+    subtest 'storage below threshold; all locations considered' => sub {
+        local $config->{archiving}->{archive_preserved_important_jobs} = 1;
+        local $config->{scheduler}->{archive_min_free_storage_space_percentage} = 59;
+        local $config->{scheduler}->{assets_min_free_storage_space_percentage} = 59;
+        my @expected_paths = (resultdir, assetdir, archivedir);
+        my @checked_paths;
+        $mock_utils->redefine(check_df => sub ($path) { push @checked_paths, $path; (60, 100) });
+        ok !storage_below_threshold(), 'returns false when storage space is sufficient';
+        is_deeply \@checked_paths, \@expected_paths, 'checked all expected paths' or always_explain \@checked_paths;
     };
     $jobs->find($_->id)->delete for @jobs;
 };
