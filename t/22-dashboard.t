@@ -616,28 +616,6 @@ subtest 're-routing' => sub {
     $t->attr_like('#all_tests .nav-link', 'href', qr|/base/tests|s, 'base applied to navbar link');
 };
 
-subtest 'job skipped count' => sub {
-    my $job_skipped_hash = {
-        id => 12345,
-        BUILD => '0048@0815',
-        DISTRI => 'opensuse',
-        VERSION => 'Factory',
-        FLAVOR => 'tape',
-        ARCH => 'x86_64',
-        MACHINE => 'xxx',
-        TEST => 'dummy',
-        state => OpenQA::Jobs::Constants::DONE,
-        result => OpenQA::Jobs::Constants::SKIPPED,
-    };
-    $jobs->create($job_skipped_hash);
-    my $job_skipped = $jobs->find({id => 12345});
-    my $jr = {skipped => 0, total => 0};
-    OpenQA::BuildResults::count_job($job_skipped, $jr, {});
-
-    is $jr->{skipped}, 1, 'Job with aborted result correctly increments skipped count';
-    is $jr->{total}, 1, 'Total jobs incremented';
-};
-
 subtest 'Group overview limit' => sub {
     $t->get_ok('/group_overview/1001')->status_is(200)->element_exists_not('#max-jobs-limit');
     $t->app->config->{misc_limits}->{job_groups_overview_max_jobs} = 1;
@@ -811,6 +789,60 @@ subtest 'Ignore job groups' => sub {
     };
 
     $t->app->schema->txn_rollback;
+};
+
+subtest 'OpenQA::BuildResults::compute_build_results coverage' => sub {
+    my $group = $job_groups->find(1001);
+    $group->update({build_version_sort => OpenQA::Constants::BUILD_SORT_BY_NAME});
+    my $res = OpenQA::BuildResults::compute_build_results($group, 10, undef, undef, [], undef);
+    ok @{$res->{build_results}}, 'compute_build_results newest=0';
+
+    $group->update({build_version_sort => OpenQA::Constants::BUILD_SORT_BY_NEWEST_JOB});
+    $res = OpenQA::BuildResults::compute_build_results($group, 10, undef, undef, [], undef);
+    ok @{$res->{build_results}}, 'compute_build_results newest=1';
+
+    $res = OpenQA::BuildResults::compute_build_results($group, 10, undef, undef, [], undef, 1);
+    is $res->{limit_exceeded}, 1, 'limit exceeded';
+
+    my $build = 'COVERAGE_BUILD';
+    my $common = {
+        group_id => 1001,
+        VERSION => '13.1',
+        BUILD => $build,
+        ARCH => 'x86_64',
+        FLAVOR => 'DVD',
+        MACHINE => '64bit',
+        DISTRI => 'opensuse',
+    };
+    $jobs->create({%$common, TEST => 'cancelled_job', state => CANCELLED});
+    $jobs->create({%$common, TEST => 'skipped_job', state => DONE, result => SKIPPED});
+    my $failed_job = $jobs->create({%$common, TEST => 'failed_job', state => DONE, result => FAILED});
+    $t->app->schema->resultset('Comments')
+      ->create({job_id => $failed_job->id, user_id => 99901, text => 'some comment'});
+    my $labeled_job = $jobs->create({%$common, TEST => 'labeled_job', state => DONE, result => FAILED});
+    $t->app->schema->resultset('Comments')
+      ->create({job_id => $labeled_job->id, user_id => 99901, text => 'label:reviewed_label'});
+
+    $res = OpenQA::BuildResults::compute_build_results($group, 10, undef, undef, [], undef);
+    my $found = (grep { $_->{build} eq $build } @{$res->{build_results}})[0];
+    is $found->{skipped}, 2, 'skipped jobs counted';
+    is $found->{comments}, 2, 'comments counted';
+    is $found->{labeled}, 1, 'labeled job counted';
+
+    my $parent = $parent_groups->create(
+        {name => 'coverage_parent', build_version_sort => OpenQA::Constants::BUILD_SORT_BY_NAME});
+    $group->update({parent_id => $parent->id});
+    $parent->discard_changes;
+
+    $res = OpenQA::BuildResults::compute_build_results($parent, 10, undef, undef, [], undef);
+    $found = (grep { $_->{build} eq $build } @{$res->{build_results}})[0];
+    ok $found->{children}->{$group->id}, 'child group results';
+    is $found->{children}->{$group->id}->{failed}, 2, 'child group failed jobs';
+
+    my $t_str = '2026-04-20 12:00:00';
+    $jobs->create({%$common, TEST => 'time1', DISTRI => 'd1', t_created => $t_str, state => DONE, result => PASSED});
+    $jobs->create({%$common, TEST => 'time2', DISTRI => 'd2', t_created => $t_str, state => DONE, result => PASSED});
+    ok OpenQA::BuildResults::compute_build_results($parent, 10, undef, undef, [], undef), 'same timestamp';
 };
 
 done_testing;

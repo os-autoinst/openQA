@@ -9,8 +9,9 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
-use OpenQA::Log qw(log_error);
 use Date::Format;
+use DateTime::Format::Pg;
+use List::Util qw(any);
 use Sort::Versions;
 use Time::Seconds;
 
@@ -30,43 +31,6 @@ sub init_job_figures ($job_result) {
     $job_result->{total} = 0;
 }
 
-sub count_job ($job, $jr, $labels) {
-    $jr->{total}++;
-    if ($job->state eq OpenQA::Jobs::Constants::DONE) {
-        if ($job->result eq OpenQA::Jobs::Constants::PASSED) {
-            $jr->{passed}++;
-            return;
-        }
-        if ($job->result eq OpenQA::Jobs::Constants::SOFTFAILED) {
-            $jr->{softfailed}++;
-            return;
-        }
-        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::ABORTED_RESULTS) {
-            $jr->{skipped}++;
-            return;
-        }
-        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
-            my $comment_data = $labels->{$job->id};
-            $jr->{failed}++;
-            if ($comment_data) {
-                $jr->{labeled}++ if $comment_data->{reviewed};
-                $jr->{comments}++ if $comment_data->{comments} || $comment_data->{reviewed};
-            }
-            return;
-        }
-        # note: Incompletes and timeouts are accounted to both categories - failed and skipped.
-    }
-    if ($job->state eq OpenQA::Jobs::Constants::CANCELLED) {
-        $jr->{skipped}++;
-        return;
-    }
-    my $state = $job->state;
-    log_error('Encountered not-implemented state:' . $job->state . ' result:' . $job->result)
-      unless grep { /$state/ } (OpenQA::Jobs::Constants::PENDING_STATES);
-    $jr->{unfinished}++;
-    return;
-}
-
 sub add_review_badge ($build_res) {
     $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total} ? 1 : 0;
     $build_res->{reviewed} = $build_res->{labeled} >= $build_res->{failed} ? 1 : 0;
@@ -74,7 +38,6 @@ sub add_review_badge ($build_res) {
 }
 
 sub find_child_groups ($group, $subgroup_filter) {
-    # handle regular (non-parent) groups
     return {
         group_ids => [$group->id],
         children => [],
@@ -91,6 +54,12 @@ sub find_child_groups ($group, $subgroup_filter) {
         group_ids => [map { $_->id } @children],
         children => \@children,
     };
+}
+
+sub _get_latest_job_ids ($jobs_resultset, $version, $buildnr, $group_ids) {
+    return map { $_->id } $jobs_resultset->search(
+        {VERSION => $version, BUILD => $buildnr, group_id => {in => $group_ids}, clone_id => undef},
+        {select => [{max => 'id'}], as => ['id'], group_by => [qw(TEST ARCH FLAVOR MACHINE)]})->all;
 }
 
 sub compute_build_results (
@@ -177,18 +146,12 @@ sub compute_build_results (
         }
         last if defined $limit && (--$limit < 0);
         my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
-        my $remaining = defined $max_jobs_limit ? $max_jobs_limit - $total_jobs_seen : undef;
-        my %search_opts = (order_by => 'me.id DESC');
-        $search_opts{rows} = $remaining + 1 if defined $remaining;
-        my $jobs = $jobs_resultset->search(
-            {
-                VERSION => $version,
-                BUILD => $buildnr,
-                group_id => {in => $group_ids},
-                clone_id => undef,
-            },
-            \%search_opts
-        );
+        my @latest_ids = _get_latest_job_ids($jobs_resultset, $version, $buildnr, $group_ids);
+        if (defined $max_jobs_limit && $total_jobs_seen + scalar(@latest_ids) > $max_jobs_limit) {
+            $limit_exceeded = 1;
+            splice @latest_ids, $max_jobs_limit - $total_jobs_seen;
+        }
+        next unless @latest_ids;
         my %jr = (
             key => $build->{key},
             build => $buildnr,
@@ -197,36 +160,71 @@ sub compute_build_results (
         );
         init_job_figures(\%jr);
         init_job_figures($jr{children}->{$_->id} = {}) for @$children;
-        my %seen;
-        my @all_jobs = $jobs->all;
-        if (defined $remaining && @all_jobs > $remaining) {
-            $limit_exceeded = 1;
-            pop @all_jobs;
-        }
-        my @jobs = map {
-            my $key = $_->TEST . '-' . $_->ARCH . '-' . $_->FLAVOR . '-' . ($_->MACHINE // '');
-            $seen{$key}++ ? () : $_;
-        } @all_jobs;
-        next unless @jobs;
-        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs($jobs);
-        for my $job (@jobs) {
-            $jr{distris}->{$job->DISTRI} = 1;
+        my $stats_rs = $jobs_resultset->search(
+            {id => {-in => \@latest_ids}},
+            {
+                select =>
+                  [qw(state result DISTRI group_id), {count => '*'}, {($newest ? 'max' : 'min') => 't_created'}],
+                as => [qw(state result DISTRI group_id count t_created_agg)],
+                group_by => [qw(state result DISTRI group_id)],
+            });
+        while (my $stat = $stats_rs->next) {
+            my $count = $stat->get_column('count');
+            $jr{total} += $count;
+            $jr{distris}->{$stat->DISTRI} = 1;
+            my $t_agg = $stat->get_column('t_created_agg');
+            if ($t_agg && !ref $t_agg) {
+                $t_agg = DateTime::Format::Pg->parse_datetime($t_agg);
+            }
             if ($newest) {
-                $jr{oldest_newest} //= $job->t_created;
+                $jr{oldest_newest} = $t_agg if !$jr{oldest_newest} || $t_agg > $jr{oldest_newest};
             }
             else {
-                $jr{oldest_newest} = $job->t_created;
+                $jr{oldest_newest} = $t_agg if !$jr{oldest_newest} || $t_agg < $jr{oldest_newest};
             }
-            count_job($job, \%jr, $comment_data);
-            if ($jr{children}) {
-                my $child = $jr{children}->{$job->group_id};
-                $child->{distris}->{$job->DISTRI} = 1;
-                $child->{version} //= $job->VERSION;
-                $child->{build} //= $job->BUILD;
-                count_job($job, $child, $comment_data);
-                add_review_badge($child);
+            my $cat = 'unfinished';
+            if ($stat->state eq OpenQA::Jobs::Constants::DONE) {
+                if ($stat->result eq OpenQA::Jobs::Constants::PASSED) { $cat = 'passed' }
+                elsif ($stat->result eq OpenQA::Jobs::Constants::SOFTFAILED) { $cat = 'softfailed' }
+                elsif (any { $stat->result eq $_ } OpenQA::Jobs::Constants::ABORTED_RESULTS) {
+                    $cat = 'skipped';
+                }
+                elsif (any { $stat->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
+                    $cat = 'failed';
+                }
+            }
+            elsif ($stat->state eq OpenQA::Jobs::Constants::CANCELLED) { $cat = 'skipped' }
+            $jr{$cat} += $count;
+            if ($jr{children} && (my $child = $jr{children}->{$stat->group_id})) {
+                $child->{total} += $count;
+                $child->{$cat} += $count;
+                $child->{distris}->{$stat->DISTRI} = 1;
+                $child->{version} //= $version;
+                $child->{build} //= $buildnr;
             }
         }
+        my $failed_rs = $jobs_resultset->search(
+            {
+                id => {-in => \@latest_ids},
+                state => OpenQA::Jobs::Constants::DONE,
+                result => {in => [OpenQA::Jobs::Constants::FAILED, OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]},
+            },
+            {select => [qw(id group_id)]});
+        my $failed_id_to_group = {map { $_->id => $_->group_id } $failed_rs->all};
+        if (keys %$failed_id_to_group) {
+            my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs($failed_rs);
+            for my $id (keys %$comment_data) {
+                my $cd = $comment_data->{$id};
+                next unless $cd->{reviewed} || $cd->{comments};
+                $jr{labeled}++ if $cd->{reviewed};
+                $jr{comments}++ if $cd->{comments} || $cd->{reviewed};
+                if ($jr{children} && (my $child = $jr{children}->{$failed_id_to_group->{$id}})) {
+                    $child->{labeled}++ if $cd->{reviewed};
+                    $child->{comments}++ if $cd->{comments} || $cd->{reviewed};
+                }
+            }
+        }
+        add_review_badge($_) for values %{$jr{children} // {}};
         $total_jobs_seen += $jr{total};
         $jr{date} = delete $jr{oldest_newest};
         $jr{escaped_version} = $jr{version};
