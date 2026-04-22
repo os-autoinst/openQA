@@ -1,8 +1,9 @@
 bsdtar-3.8.1
-chrony-4.6.1
-chrony-pool-openSUSE-4.6.1
+chrony-4.8
+chrony-pool-openSUSE-4.8
 cmark-0.31.0
-crypto-policies-scripts-20250124.4d262e7
+crypto-policies-20250714.cd6043a
+crypto-policies-scripts-20250714.cd6043a
 expat-2.7.1
 file-5.46
 file-magic-5.46
@@ -287,5 +288,5 @@ python313-six-1.17.0
 python313-yamllint-1.36.2
 ShellCheck-0.10.0
 shfmt-3.5.1
-sqlite3-3.50.4
+sqlite3-3.51.3
 sshpass-1.10
