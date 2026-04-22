@@ -108,7 +108,7 @@ $driver->title_is('openQA', 'back on main page');
 
 # setting TESTING_ASSERT_SCREEN_TIMEOUT is important here (see os-autoinst/t/data/tests/tests/boot.pm)
 schedule_one_job_over_api_and_verify($driver,
-    OpenQA::Test::FullstackUtils::job_setup(TESTING_ASSERT_SCREEN_TIMEOUT => '1'));
+    OpenQA::Test::FullstackUtils::job_setup(TESTING_ASSERT_SCREEN_TIMEOUT => '1', STORAGE_KEEP_FREE_RATIO => '0'));
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
@@ -125,7 +125,9 @@ my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_promp
 note 'renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}';
 for my $ext (qw(.json .png)) {
     my ($new_location, $old_location) = ($on_prompt_needle_renamed . $ext, $on_prompt_needle . $ext);
-    # ensure needle does not already exist under the new location (might be after unclean exit of previous run)
+    # ensure needle does not already exist under the new location
+    # (might be after unclean exit of previous run or already renamed)
+    next if !-e $old_location && -e $new_location;
     unlink $new_location;
     rename $old_location, $new_location or BAIL_OUT "unable to rename '$old_location' to '$new_location': $!";
 }
@@ -227,6 +229,7 @@ subtest 'pause at assert_screen timeout' => sub {
 
 # rename needle back so assert_screen will succeed
 for my $ext (qw(.json .png)) {
+    next unless -e $on_prompt_needle_renamed . $ext;
     rename $on_prompt_needle_renamed . $ext, $on_prompt_needle . $ext
       or BAIL_OUT "unable to rename needle back from '$on_prompt_needle_renamed$ext' to '$on_prompt_needle$ext': $!";
 }
