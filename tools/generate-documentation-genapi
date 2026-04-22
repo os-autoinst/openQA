@@ -22,29 +22,29 @@ if ($@ || !$parser) {
     die $@;
 }
 
-my $data_dir = "./src/";
-opendir(DIR, $data_dir) or die("Cannot read directories: $data_dir");
-my @files = grep { /\.pm$/ } readdir DIR;
+my $data_dir = './src/';
+opendir my $dh, $data_dir or die "Cannot read directories: $data_dir";
+my @files = grep { /\.pm$/ } readdir $dh;
 
 foreach my $current_file (@files) {
 
-    open(my $ifh, '<', $data_dir . $current_file) or die("Cannot open $current_file");
+    open my $ifh, '<', $data_dir . $current_file or die "Cannot open $current_file";
     $current_file =~ s/^(.*)\.pm$/$1.md/;
-    open(my $ofh, ">", $current_file) or die("Cannot open $current_file");
+    open my $ofh, '>', $current_file or die "Cannot open $current_file";
 
     print "Transforming $current_file\n";
     # We don't have a direct equivalent of include::header in Pod::Markdown
     # but we can just write it out if it exists
-    if (-e "header.md") {
-        open(my $hfh, '<', "header.md");
-        print $ofh while <$hfh>;
+    if (-e 'header.md') {
+        open my $hfh, '<', 'header.md';
+        print {$ofh} <$hfh>;
         print $ofh "\n";
-        close($hfh);
+        close $hfh;
     }
     $parser->parse_from_filehandle($ifh);
 
     print $ofh $parser->as_markdown();
-    close($ofh);
-    close($ifh);
+    close $ofh;
+    close $ifh;
 
 }
