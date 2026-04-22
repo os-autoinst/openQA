@@ -909,7 +909,7 @@ or are manually cancelled or restarted:
 
 ### Handling of dependencies when cloning jobs
 
-Be sure to have ready the [job dependencies](WritingTests.md#_job_dependencies) section to have an understanding of different dependency types
+Be sure to have read the [job dependencies](WritingTests.md#_job_dependencies) section to have an understanding of different dependency types
 and the distinction between parents and children.
 
 When cloning a job via `openqa-clone-job`, parent jobs are cloned as well by default, regardless of the type. Use `--skip-deps` to avoid cloning parent jobs. Use `--skip-chained-deps` to avoid cloning parents of the types `CHAINED` and
