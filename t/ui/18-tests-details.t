@@ -236,7 +236,7 @@ sub check_report_links ($failed_module, $failed_step, $container = undef) {
     is $title[2], 'Report test issue', 'test issue report URL available';
     my @url = map { $_->get_attribute('href') } @report_links;
     like $url[0], qr{bugzilla.*enter_bug.*tests%2F99937}, 'bugzilla link referencing current test';
-    like $url[0], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario';
+    like $url[0], qr{in\+scenario\+%60opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario marked verbatim';
     like $url[1], qr{bugzilla.*enter_bug}, 'kernel product bug uses bugzilla enter_bug';
     like $url[1], qr{(?:\?|&)product=openSUSE\+Distribution(?:&|$)}, 'kernel product bug sets product';
     like $url[1],
@@ -244,7 +244,7 @@ sub check_report_links ($failed_module, $failed_step, $container = undef) {
       'kernel short_desc correct';
     like $url[1], qr{(?:\?|&)comment=}, 'kernel product bug has comment template';
     like $url[2], qr{progress.*new}, 'progress/redmine link for reporting test issues';
-    like $url[2], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'progress/redmine link contains scenario';
+    like $url[2], qr{in\+scenario\+%60opensuse-13\.1-DVD-i586-kde}, 'progress/redmine link contains scenario';
     like $url[2],
       qr{in.*$failed_module.*$failed_module%2Fsteps%2F$failed_step},
       'progress/redmine link refers to right module/step';

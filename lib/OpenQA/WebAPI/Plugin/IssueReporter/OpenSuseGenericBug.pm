@@ -64,7 +64,7 @@ __DATA__
 @@ generic_bug.txt.ep
 ## Observation
 
-openQA test in scenario <%= $scenario %> fails in
+openQA test in scenario `<%= $scenario %>` fails in
 [<%= $module %>](<%= $step_url %>)
 
 ## Test suite description
