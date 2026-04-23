@@ -70,8 +70,7 @@ Find the gateway address:
 kubectl get gateway
 ```
 
-Add the gateway address to `/etc/hosts`, pointing to the hostname configured
-in `values.yaml` (`baseUrl`):
+Add the gateway address to `/etc/hosts`, pointing to the hostname configured in `values.yaml` (`baseUrl`):
 
 ```
 <GATEWAY_ADDRESS> openqa.internal
@@ -80,7 +79,7 @@ in `values.yaml` (`baseUrl`):
 Then access the UI at http://openqa.internal.
 
 **Note:** In production, the cloud provider (AWS, GCP, etc.) provisions the
-LoadBalancer automatically — no tunnel or manual IP configuration is needed.
+LoadBalancer automatically -- no tunnel or manual IP configuration is needed.
 
 ### Via port-forward (quick testing)
 
@@ -113,9 +112,7 @@ openqa-cli api --host http://openqa.internal -X POST jobs \
 ## Configuration
 
 It might be necessary to customize the charts by overriding some of the
-variables inside `openqa/values.yaml` to suit your needs.
-
-For testing, it is also useful to create a `my_values.yaml` and run:
+variables inside `openqa/values.yaml` to suit your needs. For testing, it is also useful to create a `my_values.yaml` and run:
 
 ```bash
 helm install openqa openqa/ -f my_values.yaml

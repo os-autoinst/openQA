@@ -120,6 +120,7 @@ on 'develop' => sub {
     requires 'Perl::Critic';
     requires 'Perl::Critic::Community';
     requires 'Perl::Tidy', '== 20260204.0.0';
+    requires 'Pod::Markdown';
     requires 'Test::CheckGitStatus';
     requires 'Test::Perl::Critic';
 

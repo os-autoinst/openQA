@@ -1,7 +1,7 @@
 paths:
-  "assets/stylesheets/**":
+  'assets/stylesheets/**':
     - Consider providing screenshots in a PR comment to show the difference visually
-  "docs/*.asciidoc":
+  'docs/*.md':
     - Consider generating documentation locally to verify it is rendered correctly. See https://open.qa/docs/#_making_documentation_changes
-  "external/**":
+  'external/**':
     - Consider doing this change in the upstream repository directly, see external/os-autoinst-common/README.md

@@ -21,7 +21,7 @@ use Mojo::File qw(path);
 use Feature::Compat::Try;
 use POSIX qw(setuid setgid);
 
-# after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
+# after bumping the version please look at the instructions in the docs/Contributing.md file
 # on what scripts should be run and how
 our $VERSION = $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} // 105;
 

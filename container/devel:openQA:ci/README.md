@@ -1,0 +1,16 @@
+Dockerfiles which define images for CircleCI
+
+The images are pre-built in OBS
+<https://build.opensuse.org/project/show/devel:openQA:ci>
+
+base - used to determine list of actual dependencies with versions
+installed by openQA-devel package, then used as a base to install
+cached packages inside CI.
+The script tools/ci/build_dependencies.sh will update ci-packages.txt file
+with list of new packages inside base image after installing openQA-devel.
+The script .circeci/build_cache.sh is used inside circleci (both remote and
+local) to create testing environment by installing packages from
+tools/ci/ci-packages.txt onto base image.
+
+These files normally don't need to be maintained, unless processes described
+above must be tweaked now and then.

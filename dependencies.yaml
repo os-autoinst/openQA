@@ -216,6 +216,8 @@ style_check_requires:
   perl(Perl::Critic):
   perl(Perl::Critic::Community):
   perl(Code::TidyAll):
+  perl(Pod::Markdown):
+  pandoc:
   ShellCheck:
   shfmt:
   python3-gitlint:

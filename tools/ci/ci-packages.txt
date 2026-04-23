@@ -26,6 +26,7 @@ lsof-4.99.4
 openssh-clients-10.0p2
 openssh-common-10.0p2
 optipng-0.7.8
+pandoc
 perl-Algorithm-C3-0.110.0
 perl-Algorithm-Diff-1.201
 perl-aliased-0.34
@@ -284,6 +285,7 @@ python313-PyYAML-6.0.2
 python313-setuptools-78.1.1
 python313-sh-2.2.2
 python313-six-1.17.0
+python313-weasyprint
 python313-yamllint-1.36.2
 ShellCheck-0.10.0
 shfmt-3.5.1

@@ -79,7 +79,7 @@ use constant RESULTS => (
     OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED, TIMEOUT_EXCEEDED
 );
 
-# note: See the "Jobs" section of "GettingStarted.asciidoc" for the difference between SOFTFAILED and FAILED and
+# note: See the "Jobs" section of "GettingStarted.md" for the difference between SOFTFAILED and FAILED and
 #       further details.
 
 # "meta" results for the overall job

@@ -1,14 +1,7 @@
-
-[[branding]]
-= openQA branding
-:toc: left
-:toclevels: 6
-:author: Adam Williamson
-
-
+<a id="branding"></a>
 You can alter the appearance of the openQA web UI to some extent through
 the "branding" mechanism. The `branding` configuration setting in the `global`
-section of <<GettingStarted.asciidoc#_configuration,the web UI configuration>>
+section of [the web UI configuration](GettingStarted.md#configuration)
 specifies the branding to use. It defaults to 'openSUSE', and openQA also
 includes the "plain" branding, which is - as its name suggests - plain and
 generic.
@@ -19,12 +12,12 @@ installed). The subdirectory's name will be the name of your branding.
 You can copy the files from `branding/openSUSE` or `branding/plain` to
 use as starting points, and adjust as necessary.
 
-== Web UI template
+# Web UI template
 
-:mojo-website: https://mojolicious.org/[Mojolicious]
-:mojo-docs: https://docs.mojolicious.org/Mojolicious/Guides/Rendering/[Mojolicious Documentation]
 
-openQA uses the {mojo-website} framework's templating
+
+
+openQA uses the [Mojolicious](https://mojolicious.org/) framework's templating
 system; the branding files are included into the openQA templates at
 various points. To see where each branding file is actually included,
 you can search through the files in the `templates` tree for the text
@@ -32,5 +25,5 @@ you can search through the files in the `templates` tree for the text
 with the matching name is being included.
 
 The branding files themselves are Mojolicious 'Embedded Perl' templates just
-like the main template files. You can read the {mojo-docs} for help with the
+like the main template files. You can read the [Mojolicious Documentation](https://docs.mojolicious.org/Mojolicious/Guides/Rendering/) for help with the
 format.

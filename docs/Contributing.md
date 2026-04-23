@@ -1,17 +1,11 @@
-
-[[contributing]]
-= openQA developer guide
-:toc: left
-:toclevels: 6
-:author: openQA Team
-
-== Introduction
+<a id="contributing"></a>
+# Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
-under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
+under the [GPLv2 license](http://www.gnu.org/licenses/gpl-2.0.html). The
 source code and documentation are hosted in the
-https://github.com/os-autoinst[os-autoinst organization on GitHub].
+[os-autoinst organization on GitHub](https://github.com/os-autoinst).
 
 This document provides the information needed to start contributing to the
 openQA development improving the tool, fixing bugs and implementing new
@@ -19,96 +13,130 @@ features. For information about writing or improving openQA tests, refer to the
 Tests Developer Guide. In both documents it's assumed that the reader is already
 familiar with openQA and has already read the Starter Guide. All those documents
 are available at the
-https://github.com/os-autoinst/openQA[official repository].
+[official repository](https://github.com/os-autoinst/openQA).
 
-== Development guidelines
-[id="guidelines"]
+# Development guidelines
+
+<a id="guidelines"></a>
 
 As mentioned, the central point of development is the
-https://github.com/os-autoinst[os-autoinst organization on GitHub] where several
+[os-autoinst organization on GitHub](https://github.com/os-autoinst) where several
 repositories can be found.
 
-[id="repo-urls"]
-=== Repository URLs
-* os-autoinst: https://github.com/os-autoinst/os-autoinst
-    - the "backend" (thing that executes tests and starts/controls the SUT e.g. using QEMU)
-* openQA: https://github.com/os-autoinst/openQA
-    - mainly the web UI and accompanying daemons like the scheduler
-    - the worker (thing that starts the backend and uploads results to the web UI)
-    - documentation
-    - miscellaneous support scripts
-* test distribution: e.g. https://github.com/os-autoinst/os-autoinst-distri-opensuse for openSUSE
-    - the actual tests, in case of `os-autoinst-distri-opensuse` conducted on http://openqa.opensuse.org
-* needles: e.g. https://github.com/os-autoinst/os-autoinst-needles-opensuse for openSUSE
-    - reference images if not already included in the test distribution
-* empty example test distribution: https://github.com/os-autoinst/os-autoinst-distri-example
-   - meant to be used to start writing tests (and creating the corresponding needles) from scratch for a new operating system
+
+
+## Repository URLs
+
+- os-autoinst: <https://github.com/os-autoinst/os-autoinst>
+  - the "backend" (thing that executes tests and starts/controls the SUT e.g. using QEMU)
+
+- openQA: <https://github.com/os-autoinst/openQA>
+  - mainly the web UI and accompanying daemons like the scheduler
+
+  - the worker (thing that starts the backend and uploads results to the web UI)
+
+  - documentation
+
+  - miscellaneous support scripts
+
+- test distribution: e.g. <https://github.com/os-autoinst/os-autoinst-distri-opensuse> for openSUSE
+  - the actual tests, in case of `os-autoinst-distri-opensuse` conducted on <http://openqa.opensuse.org>
+
+- needles: e.g. <https://github.com/os-autoinst/os-autoinst-needles-opensuse> for openSUSE
+  - reference images if not already included in the test distribution
+
+- empty example test distribution: <https://github.com/os-autoinst/os-autoinst-distri-example>
+  - meant to be used to start writing tests (and creating the corresponding needles) from scratch for a new operating system
 
 As in most projects hosted on GitHub, pull request are always welcome and
 are the right way to contribute improvements and fixes.
 
-=== Rules for commits
-[id="rules_for_commits"]
+## Rules for commits
 
-* Every commit is checked in https://circleci.com/dashboard[CI] as soon as
-you create a pull request, but you *should* run the tidy scripts locally, i.e.
-before every commit call:
+<a id="rules_for_commits"></a>
 
-[source,sh]
-----
+- Every commit is checked in [CI](https://circleci.com/dashboard) as soon as
+  you create a pull request, but you **should** run the tidy scripts locally, i.e.
+  before every commit call:
+
+
+
+```sh
 make tidy
-----
+```
 
 to ensure your Perl and JavaScript code changes are consistent with the style
 rules.
 
-* All tests are passed. This is ensured by a CI system. You can also run local
-tests in your development environment to verify everything works as
-expected, see <<Contributing.asciidoc#testing,Conducting tests>>)
+- All tests are passed. This is ensured by a CI system. You can also run local
+  tests in your development environment to verify everything works as
+  expected, see [Conducting tests](Contributing.md#testing))
 
-* For git commit messages use the rules stated on
-  http://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message]
-  as a reference. One especially useful make target for developers is `make
-  setup-hooks` which installs git pre-commit hooks to check commit styles.
+<!-- -->
 
-* Every pull request is reviewed in a peer review to give feedback on possible
-implications and how we can help each other to improve
+- For git commit messages use the rules stated on
+  [How to Write a Git Commit Message](http://chris.beams.io/posts/git-commit/)
+  as a reference. One especially useful make target for developers is `make`
+  `setup-hooks` which installs git pre-commit hooks to check commit styles.
+
+<!-- -->
+
+- Every pull request is reviewed in a peer review to give feedback on possible
+  implications and how we can help each other to improve
 
 If this is too much hassle for you feel free to provide incomplete pull
 requests for consideration or create an issue with a code change proposal.
 
-=== Code style suggestions
-[id="code_style_suggestions"]
+## Code style suggestions
 
-* In Perl files:
+<a id="code_style_suggestions"></a>
 
-** Sort the use statements in this order from top to bottom:
-*** `strict`, `warnings` or other modules that provide static checks
-*** All external modules and from "lib" folder
-*** `use FindBin; use lib "$FindBin::Bin/lib";` or similar to resolve internal modules
-*** Internal test modules which provide early checks before other modules
-*** Other internal test modules
+- In Perl files:
 
-** When using https://perldoc.perl.org/perlsub#Signatures[signatures] try to follow these rules:
-*** Activate the feature with modules we already use if possible, e.g. `use Mojo::Base 'Something', -signatures;`
-*** Use positional parameters whenever possible, e.g. `sub foo ($first, $second) {`
-*** Use default values when appropriate, e.g. `sub foo ($first, $second = 'some value') {`
-*** Use slurpy parameters when appropriate (hash and array), e.g. `sub foo ($first, @more) {`
-*** Use nameless parameters when appropriate (very uncommon), e.g. `sub foo ($first, $, $third) {`
-*** Do *not* get too creative with computational default values, e.g. `sub foo ($first, $second = rand($first)) {`
-*** Do *not* combine sub attributes with signatures (requires Perl 5.28+), e.g. `sub foo :lvalue ($first) {`
 
-== Getting involved into development
-[id="getting_involved"]
+
+- Sort the use statements in this order from top to bottom:
+  - `strict`, `warnings` or other modules that provide static checks
+
+  - All external modules and from "lib" folder
+
+    \*\*\* `use FindBin; use lib "$FindBin/lib";` or similar to resolve internal modules
+
+  - Internal test modules which provide early checks before other modules
+
+  - Other internal test modules
+
+<!-- -->
+
+- When using [signatures](https://perldoc.perl.org/perlsub#Signatures) try to follow these rules:
+  - Activate the feature with modules we already use if possible, e.g. `use Mojo Base 'Something', -signatures;`
+
+  - Use positional parameters whenever possible, e.g. `sub foo ($first, $second) {`
+
+  - Use default values when appropriate, e.g. `sub foo ($first, $second = 'some value') {`
+
+  - Use slurpy parameters when appropriate (hash and array), e.g. `sub foo ($first, @more) {`
+
+  - Use nameless parameters when appropriate (very uncommon), e.g. `sub foo ($first, $, $third) {`
+
+  - Do **not** get too creative with computational default values, e.g. `sub foo ($first, $second = rand($first)) {`
+
+  - Do **not** combine sub attributes with signatures (requires Perl 5.28+), e.g. `sub foo :lvalue ($first) {`
+
+# Getting involved into development
+
+<a id="getting_involved"></a>
 
 Developers willing to get really involved into the development of openQA or
 people interested in following the always-changing roadmap should take a look
-at the https://progress.opensuse.org/projects/openqav3[openQAv3 project] in
+at the [openQAv3 project](https://progress.opensuse.org/projects/openqav3) in
 openSUSE's project management tool. This Redmine instance is used to coordinate
 the main development effort organizing the existing issues (bugs and desired
 features) into 'target versions'.
 
-https://progress.opensuse.org/versions/490[Future improvements] groups
+
+
+[Future improvements](https://progress.opensuse.org/versions/490) groups
 features that are in the developers' and users' wish list but that have little
 chances to be addressed in the short term, normally because they are out of
 the current scope of the development. Developers looking for a place to start
@@ -116,17 +144,16 @@ contributing are encouraged to simply go to that list and assign any open
 issue to themselves.
 
 openQA and os-autoinst repositories also include test suites aimed at preventing
-bugs and regressions in the software. https://codecov.io/[codecov] is
+bugs and regressions in the software. [codecov](https://codecov.io/) is
 configured in the repositories to encourage contributors to raise the tests
 coverage with every commit and pull request. New features and bug fixes are
 expected to be backed with the corresponding tests.
 
 For an architecture overview the AI generated openQA deepwiki can provide a good overview
 about the complete project but without a guarantee for correctness:
-https://deepwiki.com/os-autoinst/openQA
+<https://deepwiki.com/os-autoinst/openQA>
 
-== Technologies
-[id="technologies"]
+# Technologies
 
 Most in openQA, from `os-autoinst` to the web frontend and from the tests to
 the support scripts is written in Perl in combination with other languages. So
@@ -136,93 +163,123 @@ additional tools are required. The easiest way to install all needed
 dependencies is using the available os-autoinst and openQA packages, as
 described in the Installation Guide.
 
-In the case of https://github.com/os-autoinst/os-autoinst[os-autoinst], some
-http://www.cpan.org/[CPAN] modules are required. Additionally, several external
-tools are needed including http://wiki.qemu.org/Main_Page[QEMU],
-https://code.google.com/p/tesseract-ocr/[Tesseract] and
-http://optipng.sourceforge.net/[OptiPNG]. Last but not least, the
-http://opencv.org/[OpenCV] library is the core of the openQA image matching
+
+
+In the case of [os-autoinst](https://github.com/os-autoinst/os-autoinst), some
+[CPAN](http://www.cpan.org/) modules are required. Additionally, several external
+tools are needed including [QEMU](http://wiki.qemu.org/Main_Page),
+[Tesseract](https://code.google.com/p/tesseract-ocr/) and
+[OptiPNG](http://optipng.sourceforge.net/). Last but not least, the
+[OpenCV](http://opencv.org/) library is the core of the openQA image matching
 mechanism, so it must be available on the system.
 
 The openQA package is built on top of Mojolicious, an excellent Perl framework
 for web development that will be extremely familiar to developers coming from
 other modern web frameworks like Sinatra and that have nice and comprehensive
-documentation available at its https://mojolicious.org/[home page].
+documentation available at its [home page](https://mojolicious.org/).
 
 In addition to Mojolicious and its dependencies, several other CPAN modules are
 required by the openQA package. See
-<<Contributing.asciidoc#dependencies,Dependencies>> below.
+[Dependencies](Contributing.md#dependencies) below.
 
 openQA relies on PostgreSQL to store the information. It used to support SQLite,
 but that is no longer possible.
 
 As stated in the previous section, every feature implemented in both packages
 should be backed by proper tests.
-http://perldoc.perl.org/Test/Most.html[Test::Most] is used to implement those
+[Test::Most](http://perldoc.perl.org/Test/Most.html) is used to implement those
 tests. As usual, tests are located under the `t/` directory.
 
-== Folder structure
+# Folder structure
 
 Meaning and purpose of the most important folders within openQA are:
 
-public:: Static assets published to users over the web UI or API
-t:: Self-tests of openQA
-assets:: 3rd party JavaScript and CSS files
-docs:: Documentation, including this document
-etc:: Configuration files including template branding specializations
-lib:: Main perl module library folder
-script:: Main applications and startup files
-.circleci:: circleCI definitions
-dbicdh:: Database schema startup and migration files
-container:: Container definitions
-profiles:: Apparmor profiles
-systemd:: systemd service definitions
-templates:: HTML templates delivered by web UI
-tools:: Development tools
+public
+Static assets published to users over the web UI or API
 
-[[dependencies]]
-== Dependencies
+t
+Self-tests of openQA
+
+assets
+3rd party JavaScript and CSS files
+
+docs
+Documentation, including this document
+
+etc
+Configuration files including template branding specializations
+
+lib
+Main perl module library folder
+
+script
+Main applications and startup files
+
+.circleci
+circleCI definitions
+
+dbicdh
+Database schema startup and migration files
+
+container
+Container definitions
+
+profiles
+Apparmor profiles
+
+systemd
+systemd service definitions
+
+templates
+HTML templates delivered by web UI
+
+tools
+Development tools
+
+# Dependencies
 
 Here we differentiate between these types of dependencies:
 
-* Runtime: run openQA
-* Test: run the test suite of openQA itself
-* For developers: style checks, code coverage etc.
+- Runtime: run openQA
+
+- Test: run the test suite of openQA itself
+
+- For developers: style checks, code coverage etc.
 
 You can get those dependencies in several ways:
 
-* Packaged in openSUSE and other distributions
-* Manually install from source
-* Perl modules via CPAN client
-* Use a prebuilt container
+- Packaged in openSUSE and other distributions
 
-We manage our dependencies via a central `dependencies.yaml` file per
-repository. We generate the `.spec` files for `rpm` as well as a `cpanfile`
+- Manually install from source
+
+- Perl modules via CPAN client
+
+- Use a prebuilt container
+
+We manage our dependencies via a central `dependencies.yaml` file per repository. We generate the `.spec` files for `rpm` as well as a `cpanfile`
 for quicker installation of all Perl modules.
 
-[[runtime-dependencies]]
-=== Runtime Dependencies
+## Runtime Dependencies
 
 For openSUSE you need the packages `openQA` and `os-autoinst`.
 That should be everything necessary to run an openQA instance. For more
-details check <<Installing.asciidoc#_installation,Installation>.
+details check \<\<Installing.asciidoc#\_installation,Installation\>.
 
 If you have to manually install packages, look into the `dependencies.yaml`
-file or the spec file, e.g. `dist/rpm/openQA.spec` (or `dist/rpm/*.spec` in
-general). You can leave out sections starting with `test_requires` for example.
+file or the spec file, e.g. `dist/rpm/openQA.spec` (or `dist/rpm/*.spec` in general). You can leave out sections starting with `test_requires` for example.
 
 A CPAN client will by default also leave out modules for testing and
 development.
 
 As alternative you can try out the
-<<Installing.asciidoc#single-instance-container,Single-Instance Container>> as
+[Single-Instance Container](Installing.md#single-instance-container) as
 a minimal runtime environment.
 
-[[development-dependencies]]
-=== Development Dependencies
+## Development Dependencies
 
 For openSUSE:
-```
+
+```sh
 zypper install openQA-devel
 ```
 
@@ -232,92 +289,80 @@ list dependencies for tests and development.
 
 If you just want to run the test suite to see if it passes on your platform,
 you would not need the developer's dependencies, like `Perl::Tidy` and
-`Devel::Cover`. They are recommended as soon as you plan a contribution.
-
-For the UI tests you need `perl-Selenium-Remote-Driver` as well as
+`Devel::Cover`. They are recommended as soon as you plan a contribution. For the UI tests you need `perl-Selenium-Remote-Driver` as well as
 `chromedriver` and either `chrome` or `chromium`.
 
-See <<Contributing.asciidoc#run-tests-in-container,Run tests in a container>>
+See [Run tests in a container](Contributing.md#run-tests-in-container)
 for a container with all dependencies.
 
-[[development-setup]]
-== Development setup
+# Development setup
 
 The following explains in detail what is necessary to develop openQA code.
 
 For a setup with containers you can check out the
-<<Contributing.asciidoc#quick-container-development-setup,Quick container
-development setup>> below with a complete list of instructions.
+\<\<Contributing.asciidoc#quick-container-development-setup,Quick container
+development setup\>\> below with a complete list of instructions.
 
 Otherwise follow the detailed steps below. This setup is applicable to a
 container environment as well as without.
 
 For developing openQA and os-autoinst itself it makes sense to check out the
-<<Contributing.asciidoc#repo-urls,Git repositories>> and either execute
+[Git repositories](Contributing.md#repo-urls) and either execute
 existing tests or start the daemons manually.
 
 Install the necessary
-<<Contributing.asciidoc#development-dependencies,Development Dependencies>>
+[Development Dependencies](Contributing.md#development-dependencies)
 first.
 
-[[testing]]
-=== Conducting tests
+## Conducting tests
 
 To execute all existing checks and tests simply call:
 
-[source,sh]
-----
+```sh
 make test
-----
+```
 
 for style checks, unit and integration tests.
 
 To execute single tests call `make` with the selected tests in the `TESTS`
 variable specified as a white-space separated list, for example:
 
-[source,sh]
-----
+```sh
 make test TESTS=t/config.t
-----
+```
 
 or
 
-[source,sh]
-----
+```sh
 make test TESTS="t/foo.t t/bar.t"
-----
+```
 
 To run only unit tests without other tests (perltidy or database tests):
 
-[source,sh]
-----
+```sh
 make test-unit-and-integration TESTS=t/foo.t
-----
+```
 
-Or use `prove` after pointing to a local test database in the environment
-variable `TEST_PG`. Also, If you set a custom base directory, be sure to unset
+Or use `prove` after pointing to a local test database in the environment variable `TEST_PG`. Also, If you set a custom base directory, be sure to unset
 it when running tests. Example:
 
-[source,sh]
-----
+```sh
 TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= LC_ALL=C.utf8 LANGUAGE= prove -v t/14-grutasks.t
-----
+```
 
 In the case of wanting to tweak the tests as above, to speed up the test
 initialization, start PostgreSQL using `t/test_postgresql` instead of using
 the system service. E.g.
 
-[source,sh]
-----
+```sh
 t/test_postgresql
-----
+```
 
 To check the coverage by individual test files easily call e.g.
 
-[source,sh]
-----
+```sh
 make coverage TESTS=t/24-worker-engine.t
-----
+```
 
 and take a look into the generated coverage HTML report in
 `cover_db/coverage.html`.
@@ -326,35 +371,34 @@ We use annotations in some places to mark "uncoverable" code such as this:
 
     # uncoverable subroutine
 
-See the docs for details https://metacpan.org/pod/Devel::Cover
+See the docs for details <https://metacpan.org/pod/Devel>
+Cover
 
-We use `tools/prove_wrapper` to run the tests. This wrapper is a simple script
-that will run `prove` and fail the test if there is unhandled output. This is
+We use `tools/prove_wrapper` to run the tests. This wrapper is a simple script that will run `prove` and fail the test if there is unhandled output. This is
 useful to avoid having unhandled output in tests. To run tests directly with
 `prove`, set the `PROVE` variable when invoking `make`, e.g.:
 
-[source,sh]
-----
+```sh
 PROVE=prove make test TESTS=t/foo.t
-----
+```
 
 There are some ways to save some time when executing local tests:
 
-* One option is selecting individual tests to run as explained above
-* Set the make variable `KEEP_DB=1` to keep the test database process spawned
-  for tests for faster re-runs or run tests with `prove` manually after the
+- One option is selecting individual tests to run as explained above
+
+- Set the make variable `KEEP_DB=1` to keep the test database process spawned for tests for faster re-runs or run tests with `prove` manually after the
   test database has been created.
-* Run `tools/tidyall --git` to tidy up modified code before committing in git
-* Set the environment variable `DIE_ON_FAIL=1` from `Test::Most` for faster
+
+- Run `tools/tidyall --git` to tidy up modified code before committing in git \* Set the environment variable `DIE_ON_FAIL=1` from `Test Most` for faster
   aborts from failed tests.
 
-For easier debugging of t/full-stack.t one can set the environment variable
-`OPENQA_FULLSTACK_TEMP_DIR` to a clean directory (relative or absolute path)
-to be used for saving temporary data from the test, for example the log files
-from individual test job runs within the full stack test.
+  For easier debugging of t/full-stack.t one can set the environment variable
+  `OPENQA_FULLSTACK_TEMP_DIR` to a clean directory (relative or absolute path)
+  to be used for saving temporary data from the test, for example the log files
+  from individual test job runs within the full stack test.
 
-[id="customize_base_directory"]
-=== Customize base directory
+## Customize base directory
+
 It is possible to customize the openQA base directory (which is for instance
 used to store test results) by setting the environment variable
 `OPENQA_BASEDIR`. The default value is `/var/lib`. For a development setup, set
@@ -362,75 +406,79 @@ used to store test results) by setting the environment variable
 write access to. Additionally, take into account that the test results and
 assets can need a big amount of disk space.
 
-WARNING: Be sure to *clear* that variable when running unit tests locally.
+> **WARNING:**
+> Be sure to **clear** that variable when running unit tests locally.
 
-=== Customize configuration directory
+## Customize configuration directory
+
 When running openQA from a Git checkout it will find configuration files from
-that checkout under `etc/openqa` and not use any system provided config files
-under e.g. `/etc/openqa`.
+that checkout under `etc/openqa` and not use any system provided config files under e.g. `/etc/openqa`.
 
 It can be necessary during development to change the configuration.
-For example you have to edit `etc/openqa/database.ini` to use another database.
-It can also be useful to set the authentication method to `Fake` and increase
-the log level `etc/openqa/openqa.ini`.
+For example you have to edit `etc/openqa/database.ini` to use another database. It can also be useful to set the authentication method to `Fake` and increase the log level `etc/openqa/openqa.ini`.
 
 To avoid these changes getting in your Git workflow, copy them to a new
 directory and set the environment variable `OPENQA_CONFIG`:
 
-[source,sh]
-----
+```sh
 cp -ar etc/openqa etc/mine
 export OPENQA_CONFIG=$PWD/etc/mine
-----
+```
 
-NOTE: `OPENQA_CONFIG` needs to point to the *directory* containing `openqa.ini`,
-`database.ini`, `client.conf` and `workers.ini` (and *not* a specific file).
+> **NOTE:**
+> `OPENQA_CONFIG` needs to point to the **directory** containing `openqa.ini`, > `database.ini`, `client.conf` and `workers.ini` (and **not** a specific file).
 
-[[setup-postgresql]]
-=== Setting up the PostgreSQL database
+## Setting up the PostgreSQL database
+
 Setting up a PostgreSQL database for openQA takes the following steps:
 
-1. Install PostgreSQL - under openSUSE the following package are required:
-   `postgresql-server postgresql-init`
-2. Start the server: `systemctl start postgresql`
-3. The next two steps need to be done as the user *postgres*: `sudo su - postgres`
-4. Create user: `createuser your_username` where `your_username` must be
-   the same as the UNIX user you start your local openQA instance with. For a
-   development instance that is normally your regular user.
-5. Create database: `createdb -O your_username openqa-local` where
-   `openqa-local` is the name you want to use for the database
-6. Configure openQA to use PostgreSQL as described in the section
-   <<Installing.asciidoc#database,Database>> of the installation guide.
-   User name and password are not required. Of course you need to change the
-   `database.ini` file under your custom config directory (as you have probably
-   done that in the previous section).
-7. openQA will default-initialize the new database on the next startup.
+1.  Install PostgreSQL - under openSUSE the following package are required:
+    `postgresql-server postgresql-init`
 
-The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still
-specify the user and database name and run it as user `postgres`:
+2.  Start the server: `systemctl start postgresql`
 
-[source,sh]
-----
+3.  The next two steps need to be done as the user **postgres**: `sudo su - postgres`
+
+4.  Create user: `createuser your_username` where `your_username` must be
+    the same as the UNIX user you start your local openQA instance with. For a
+    development instance that is normally your regular user.
+
+5.  Create database: `createdb -O your_username openqa-local` where  `openqa-local` is the name you want to use for the database
+
+6.  Configure openQA to use PostgreSQL as described in the section
+    [Database](Installing.md#database) of the installation guide.
+    User name and password are not required. Of course you need to change the
+    `database.ini` file under your custom config directory (as you have probably
+    done that in the previous section).
+
+7.  openQA will default-initialize the new database on the next startup.
+
+The script `openqa-setup-db` can be used to conduct step 4 and 5. You must still specify the user and database name and run it as user `postgres`:
+
+```sh
 sudo sudo -u postgres openqa-setup-db your_username openqa-local
-----
+```
 
-NOTE: To remove the database again, you can use e.g. `dropdb openqa-local` as
-your regular user.
+> **NOTE:**
+> To remove the database again, you can use e.g. `dropdb openqa-local` as
+> your regular user.
 
-==== Importing production data
+### Importing production data
+
 Assuming you have already followed steps 1. to 4. above:
 
-1. Create a separate database: `createdb -O your_username openqa-o3` where
-   `openqa-o3` is the name you want to use for the database
-2. The next steps must be run as the user you start your local openQA
-   instance with, i.e. the `your_username` user.
-3. Import dump: `pg_restore -c -d openqa-o3 path/to/dump`
-   Note that errors of the form `ERROR:  role "geekotest" does not exist` are
-   due to the users in the production setup and can safely be ignored.
-   Everything will be owned by `your_username`.
-4. Configure openQA to use that database as in step 7. above.
+1.  Create a separate database: `createdb -O your_username openqa-o3` where  `openqa-o3` is the name you want to use for the database
 
-=== Manual daemon setup
+2.  The next steps must be run as the user you start your local openQA
+    instance with, i.e. the `your_username` user. 3.  Import dump: `pg_restore -c -d openqa-o3 path/to/dump`
+    Note that errors of the form `ERROR: role "geekotest" does not exist` are
+    due to the users in the production setup and can safely be ignored.
+    Everything will be owned by `your_username`.
+
+4.  Configure openQA to use that database as in step 7. above.
+
+## Manual daemon setup
+
 This section should give you a general idea how to start daemons manually for
 development after you setup a PostgreSQL database as mentioned in the previous
 section.
@@ -438,81 +486,79 @@ section.
 You have to install/update web-related dependencies first, using
 `make node_modules`. To start the web server for development, use
 `scripts/openqa daemon`. The other daemons (mentioned in the
-link:images/architecture.svg[architecture diagram]) are started in the same way,
+[architecture diagram](images/architecture.svg)) are started in the same way,
 e.g. `script/openqa-scheduler daemon`.
 
 You can also have a look at the systemd unit files. Although it likely makes
 not much sense to use them directly you can have a look at them to see how the
-different daemons are started. They are found in the `systemd` directory of
-the openQA repository. You can substitute `/usr/share/openqa/` with the path
+different daemons are started. They are found in the `systemd` directory of the openQA repository. You can substitute `/usr/share/openqa/` with the path
 of your openQA Git checkout.
 
 Of course you can ignore the user specified in these unit files and instead
 start everything as your regular user as mentioned above. However, you need to
 ensure that your user has the permission to the "openQA base directory". That
 is not the case by default so it makes sense to
-<<Contributing.asciidoc#_customize_base_directory,customize it>>.
+[customize it](Contributing.md#customize_base_directory).
 
-You do *not* need to setup an additional web server because the daemons
+You do **not** need to setup an additional web server because the daemons
 already provide one. The port under which a service is available is logged on
 startup (the main web UI port is 9625 by default). Local workers need to be
-configured to connect to the main web UI port (add `HOST =
-http://localhost:9526+ to `workers.ini`).
+configured to connect to the main web UI port (add `HOST = [http://localhost:9526+](http://localhost:9526+) to `workers.ini`).
 
 Note that you can also start services using a temporary database using the unit
 test database setup and data directory:
 
-[source,sh]
-----
+```sh
 t/test_postgresql
 TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_DATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
-----
+```
 
 This creates an empty temporary database and starts the web application using
-that specific database (ignoring the configuration from `database.ini`). Be
-aware that this may cause unwanted changes in the `t/data` directory.
+that specific database (ignoring the configuration from `database.ini`). Be aware that this may cause unwanted changes in the `t/data` directory.
 
 Also find more details in
-<<Contributing.asciidoc#_run_tests_without_container,Run tests without Container>>.
+[Run tests without Container](Contributing.md#run_tests_without_container).
 
-==== Further tips
-* It is also useful to start openQA with morbo which allows applying changes
+### Further tips
+
+- It is also useful to start openQA with morbo which allows applying changes
   without restarting the server:
   `morbo -m development -w assets -w lib -w templates -l http://localhost:9526 script/openqa daemon`
-* In case you have problems with broken rendering of the web page it can help
+
+- In case you have problems with broken rendering of the web page it can help
   to delete the asset cache and let the webserver regenerate it on first
   startup. For this delete the subdirectories `.sass-cache/`, `assets/cache/`
   and `assets/assetpack.db`. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
-* If you get errors like "ERROR: Failed to build gem native extension." make
+
+- If you get errors like "ERROR: Failed to build gem native extension." make
   sure you have all listed dependencies including the "sass" application
   installed.
-* For a concrete example some developers use under openSUSE Tumbleweed have a
+
+- For a concrete example some developers use under openSUSE Tumbleweed have a
   look at the
-  https://github.com/Martchus/openQA-helper[openQA-helper repository].
+  [openQA-helper repository](https://github.com/Martchus/openQA-helper).
 
-[[quick-container-setup]]
-=== Quick container development setup
+<a id="quick-container-development-setup"></a>
+## Quick container development setup
 
-==== Requirements
+### Requirements
 
 In these examples we use the following tools which are all in openSUSE Leap:
 
-* https://podman.io/[`podman`]
-* https://en.opensuse.org/Distrobox[`distrobox`]
+- [`podman`](https://podman.io/) - [`distrobox`](https://en.opensuse.org/Distrobox) You can use similar tools like `docker`, `toolbox` etc. to achieve the same.
 
-You can use similar tools like `docker`, `toolbox` etc. to achieve the same.
-
-==== Intro
+### Intro
 
 These instructions are ready to use without any changes. You only might want to
 change the `OPENQA_BASEDIR` location.
 
 You will run two containers:
 
-* A separate postgres container (so you don't have to deal with the database
+- A separate postgres container (so you don't have to deal with the database
   when updating your dev container)
-* The openQA environment in an openSUSE Leap or Tumbleweed container, which
+
+- The openQA environment in an openSUSE Leap or Tumbleweed container, which
   both can use the same postgres container.
   In this example we will be setting up and using the Leap container.
 
@@ -521,19 +567,22 @@ permissions, and graphical environment.
 
 Some common settings we are using here:
 
-* `OPENQA_BASEDIR=$HOME/openqadev.leap`
-* Database name: `openqa-local`
-* Database user: `geekotest`
-* Database container name: `postgres-openqa`
+- `OPENQA_BASEDIR=$HOME/openqadev.leap`
 
-==== Environment Variables
+- Database name: `openqa-local`
+
+- Database user: `geekotest`
+
+- Database container name: `postgres-openqa`
+
+### Environment Variables
 
 Create a file that you can `source` whenever you want to work in this
 environment:
 
 File: `~/localopenqa.leap.sh`:
-[source,sh]
-----
+
+```sh
 #!/bin/bash
 
 # The directory where openQA operates in and creates everything in:
@@ -560,16 +609,16 @@ PATH=$OPENQA_BASEDIR/perl5/bin:$PATH
 
 export OPENQA_KEY=1234567890ABCDEF
 export OPENQA_SECRET=1234567890ABCDEF
-----
+```
 
-==== Postgres Container
+### Postgres Container
 
 To be able to reuse the database later when stopping the container, we create a
 named volume.
 We are using a Debian postgres container here, but it doesn't matter what
 you use.
-[source,sh]
-----
+
+```sh
 ### host ###
 podman volume create mypostgres
 podman run -it --rm --name postgres-openqa \
@@ -581,12 +630,11 @@ podman run -it --rm --name postgres-openqa \
 
 # Optionally add this to mount a directory for sql dumps to import
 #    -v "$SQL_DUMP_DIR:/sqldumps" \
-----
+```
 
 For the next step you need to execute commands in the container:
 
-[source,sh]
-----
+```sh
 # Create the role and database
 podman exec -it postgres-openqa su - postgres
 
@@ -594,15 +642,14 @@ podman exec -it postgres-openqa su - postgres
 createuser --no-createdb --pwprompt geekotest
 # enter password ('x' in this example)
 createdb -O geekotest openqa-local
-----
+```
 
-==== Distrobox
+### Distrobox
 
 You can use a Leap container and install the requirements, but you can also
 build your own container with the requirements already installed.
 
-[source,sh]
-----
+```sh
 ### host ###
 distrobox create -i registry.opensuse.org/opensuse/leap:16.0 -n box-openqadev-leap
 distrobox enter box-openqadev-leap
@@ -625,14 +672,14 @@ zypper -n ref && zypper -n install ca-certificates-suse \
         os-autoinst-scripts-deps-devel \
         crudini
 # plus your favourite dev tools, e.g. tmux
-----
-Note: https://github.com/pixelb/crudini[`crudini`] is a tool for manipulating
+```
+
+Note: [`crudini`](https://github.com/pixelb/crudini) is a tool for manipulating
 values in ini files.
 
-==== Git
+### Git
 
-[source,sh]
-----
+```sh
 ### distrobox container ###
 # Remember to source this file
 source ~/localopenqa.leap.sh
@@ -643,12 +690,11 @@ mkdir $OPENQA_BASEDIR/openqa $OPENQA_CONFIG $OPENQA_BASEDIR/perl5 $OPENQA_BASEDI
 git clone git@github.com:os-autoinst/openQA $OPENQA_REPOS/openQA
 git clone git@github.com:os-autoinst/os-autoinst $OPENQA_REPOS/os-autoinst
 git clone git@github.com:os-autoinst/os-autoinst-scripts $OPENQA_REPOS/scripts
-----
+```
 
-==== Config Files
+### Config Files
 
-[source,sh]
-----
+```sh
 ### distrobox container ###
 cat >> $OPENQA_CONFIG/client.conf << EOM
 [localhost]
@@ -669,12 +715,11 @@ crudini --set $OPENQA_CONFIG/workers.ini global WORKER_HOSTNAME 127.0.0.1
 
 cp $OPENQA_REPOS/openQA/etc/openqa/openqa.ini $OPENQA_CONFIG/openqa.ini
 crudini --set $OPENQA_CONFIG/openqa.ini auth method Fake
-----
+```
 
-==== Build openQA
+### Build openQA
 
-[source,sh]
-----
+```sh
 ### distrobox container ###
 # Build steps
 cd $OPENQA_REPOS/os-autoinst
@@ -688,17 +733,16 @@ make node_modules
 # Initialize the database schema. This is using the database.ini you
 # created above.
 $OPENQA_REPOS/openQA/script/initdb --init_database
-----
+```
 
-==== Run openQA
+### Run openQA
 
 Ready!
 
 For playing with the web UI, you just need to run the `openqa-webui-daemon`.
 For running openQA jobs, you need all daemons.
 
-[source,sh]
-----
+```sh
 ### distrobox container ###
 # Main web UI (required for web interface and web API)
 openqa-webui-daemon
@@ -717,31 +761,30 @@ openqa-livehandler daemon
 
 # Worker
 worker --isotovideo "$OPENQA_REPOS/os-autoinst/isotovideo" --instance 1 --verbose --apikey $OPENQA_KEY --apisecret $OPENQA_SECRET
-----
+```
 
-For running unit tests, see <<Contributing.asciidoc#testing,Conducting tests>>.
+For running unit tests, see [Conducting tests](Contributing.md#testing).
 
-[[dependency-handling]]
-== Handling of dependencies
+# Handling of dependencies
 
-=== JavaScript and CSS
+## JavaScript and CSS
+
 Install third-party JavaScript and CSS files via their corresponding npm
 packages and add the paths of those files to `assets/assetpack.def`.
 
 If a dependency is not available on npm you may consider adding those files
 under `assets/3rdparty`. Additionally, add the license(s) for the newly added
-third-party code to the root directory of the repository. Do *not* duplicate
+third-party code to the root directory of the repository. Do **not** duplicate
 common/existing licenses; extend the `Files:`-section at the beginning of those
 files instead.
 
-=== Perl and other packages
+## Perl and other packages
+
 In openQA, there is a `dependencies.yaml` file including a list of
 dependencies, separated in groups. For example the openQA client does not need
 all modules required to run openQA. Edit this file to add or change a dependency
-and run `make update-deps`.  This will generate the `cpanfile` and
-`dist/rpm/openQA.spec` files.
-
-The same applies to `os-autoinst` where `make update-deps` will generate the
+and run `make update-deps`. This will generate the `cpanfile` and
+`dist/rpm/openQA.spec` files. The same applies to `os-autoinst` where `make update-deps` will generate the
 `cpanfile`, `os-autoinst.spec` and `container/os-autoinst_dev/Dockerfile`.
 
 If changing any package dependencies make sure packages and updated packages
@@ -750,22 +793,24 @@ development. New package dependencies can be submitted. Before merging the
 according change into the main openQA repo the dependency should be published
 as part of openSUSE Tumbleweed.
 
-=== Remarks regarding CI
-* The CI of os-autoinst and openQA uses the container made using
-  `container/devel:openQA:ci/base/Dockerfile` and further dependencies listed
-  in `tools/ci/ci-packages.txt` (see
-  <<Contributing.asciidoc#circleci-workflow,CircleCI documentation>>).
-* There is an additional check running using OBS to check builds of packages
+## Remarks regarding CI
+
+- The CI of os-autoinst and openQA uses the container made using
+  `container/devel:openQA:ci/base/Dockerfile` and further dependencies listed in `tools/ci/ci-packages.txt` (see
+  [CircleCI documentation](Contributing.md#circleci-workflow)).
+
+- There is an additional check running using OBS to check builds of packages
   against openSUSE Tumbleweed and openSUSE Leap.
 
-== Managing the database
+# Managing the database
 
 During the development process there are cases in which the database schema
 needs to be changed.
 there are some steps that have to be followed so that new database instances
 and upgrades include those changes.
 
-=== When is it required to update the database schema?
+## When is it required to update the database schema?
+
 After modifying files in `lib/OpenQA/Schema/Result`. However, not all changes
 require to update the schema. Adding just another method or altering/adding
 functions like `has_many` doesn't require an update. However, adding new
@@ -774,59 +819,63 @@ mentioned above. In doubt, just follow the instructions below. If an empty
 migration has been emitted (SQL file produced in step 3. does not contain
 any statements) you can just drop the migration again.
 
-=== How to update the database schema
+## How to update the database schema
 
-1. First, you need to increase the database version number in the `$VERSION`
-   variable in the `lib/OpenQA/Schema.pm` file.
-   Note that it is recommended to notify the other developers before doing so,
-   to synchronize in case there are more developers wanting to increase the
-   version number at the same time.
+1.  First, you need to increase the database version number in the `$VERSION`
+    variable in the `lib/OpenQA/Schema.pm` file.
+    Note that it is recommended to notify the other developers before doing so,
+    to synchronize in case there are more developers wanting to increase the
+    version number at the same time.
 
-2. Then you need to generate the deployment files for new installations,
-   this is done by running `./script/initdb --prepare_init`.
+<!-- -->
 
-3. Afterwards you need to generate the deployment files for existing installations,
-   this is done by running `./script/upgradedb --prepare_upgrade`.
-   After doing so, the directories `dbicdh/$ENGINE/deploy/<new version>` and
-   `dbicdh/$ENGINE/upgrade/<prev version>-<new version>` for PostgreSQL
-   should have been created with some SQL files inside containing the statements to
-   initialize the schema and to upgrade from one version
-   to the next in the corresponding database engine.
+2.  Then you need to generate the deployment files for new installations,
+    this is done by running `./script/initdb --prepare_init`.
 
-4. Custom migration scripts to upgrade from previous versions can be added under
-   `dbicdh/_common/upgrade`. Create a `<prev_version>-<new_version>` directory and
-   put some files there with DBIx commands for the migration. For examples just
-   have a look at the migrations which are already there.
-   The custom migration scripts are executed in addition to the automatically
-   generated ones. If the name of the custom migration script comes before
-   `001-auto.sql` in alphabetical order it will be executed *before* the
-   automatically created migration script. That is most of the times *not* desired.
+<!-- -->
+
+3.  Afterwards you need to generate the deployment files for existing installations,
+    this is done by running `./script/upgradedb --prepare_upgrade`. After doing so, the directories `dbicdh/$ENGINE/deploy/<new version>` and  `dbicdh/$ENGINE/upgrade/<prev version>-<new version>` for PostgreSQL
+    should have been created with some SQL files inside containing the statements to
+    initialize the schema and to upgrade from one version
+    to the next in the corresponding database engine.
+
+<!-- -->
+
+4.  Custom migration scripts to upgrade from previous versions can be added under
+    `dbicdh/_common/upgrade`. Create a `<prev_version>-<new_version>` directory and
+    put some files there with DBIx commands for the migration. For examples just
+    have a look at the migrations which are already there.
+    The custom migration scripts are executed in addition to the automatically
+    generated ones. If the name of the custom migration script comes before
+    `001-auto.sql` in alphabetical order it will be executed **before** the
+    automatically created migration script. That is most of the times **not** desired.
 
 The above steps are only for preparing the required SQL statements for the migration.
 
-The migration itself (which alters your database!) is done *automatically* the first
-time the web UI is (re)started. So be sure *to backup your database* before restarting
+The migration itself (which alters your database!) is done **automatically** the first
+time the web UI is (re)started. So be sure **to backup your database** before restarting
 to be able to downgrade again if something goes wrong or you just need to continue
 working on another branch. To do so, the following command can be used to create a copy:
-[source,sh]
-----
+
+```sh
 createdb -O ownername -T originaldb newdb
-----
+```
 
 To initialize or update the database manually before restarting the web UI you can run
 either `./script/initdb --init_database` or `./script/upgradedb --upgrade_database`.
 
 Migrations that affect possibly big tables should be tested against a local import of
 a production database to see how much time they need. Check out the
-<<Contributing.asciidoc#_importing_production_data,Importing production data>> section
+[Importing production data](Contributing.md#importing_production_data) section
 for details.
 
 A migration can cause the analyser to regress so it produces worse query plans leading
 to impaired performance. Check out the
-<<Installing.asciidoc#_working_on_database_related_performance_problems,Working on database-related performance problems>>
+[Working on database-related performance problems](Installing.md#working_on_database_related_performance_problems)
 section for how to tackle this problem.
 
-=== How to add fixtures to the database
+## How to add fixtures to the database
 
 Note: This section is not about the fixtures for the testsuite. Those are located
 under t/fixtures.
@@ -845,33 +894,29 @@ Note that those files (and directories) have to be created manually.
 Executed SQL statements can be traced by setting the `DBIC_TRACE` environment
 variable.
 
-[source,sh]
-----
+```sh
 export DBIC_TRACE=1
-----
+```
 
-== Adding new authentication module
+# Adding new authentication module
 
 openQA comes with two authentication modules providing authentication methods:
-OpenID and Fake (see <<Installing.asciidoc#authentication,User authentication>>).
+OpenID and Fake (see [User authentication](Installing.md#authentication)).
 
-All authentication modules reside in `lib/OpenQA/Auth` directory. During
-openQA start, the `[auth]/method` section of
-<<GettingStarted.asciidoc#_configuration,the web UI configuration>> is read and
+All authentication modules reside in `lib/OpenQA/Auth` directory. During openQA start, the `[auth]/method` section of
+[the web UI configuration](GettingStarted.md#configuration) is read and
 according to its value (or default OpenID) openQA tries to require
 `OpenQA::WebAPI::Auth::$method`. If successful, the module for the given method
 is imported or openQA ends with error.
 
-
-Each authentication module is expected to export `auth_login` and `auth_logout` functions. In case of request-response mechanism (as in
-OpenID), `auth_response` is imported on demand.
+Each authentication module is expected to export `auth_login` and `auth_logout` functions. In case of request-response mechanism (as in OpenID), `auth_response` is imported on demand.
 
 Currently there is no login page because all implemented methods use either 3rd party
 page or none.
 
 Authentication module is expected to return HASH:
-[source,perl]
-----
+
+```perl
 
 %res = (
     # error = 1 signals auth error
@@ -879,120 +924,119 @@ Authentication module is expected to return HASH:
     # where to redirect the user
     redirect => ''
 );
-----
+```
 
 Authentication module is expected to create or update user entry in openQA database
 after user validation. See included modules for inspiration.
 
-== Running tests of openQA itself
+# Running tests of openQA itself
+
 Beside simply running the testsuite, it is also possible to use containers. Using containers,
 tests are executed in the same environment as on CircleCI. This allows to reproduce issues
 specific to that environment.
 
-=== Run tests without container
-[id="run_tests_without_container"]
+## Run tests without container
+
+<a id="run_tests_without_container"></a>
+
 Be sure to install all required dependencies. The package `openQA-devel` will
 provide them.
 
+
+
 For more information look into
-<<Contributing.asciidoc#development-dependencies,Development Dependencies>>.
+[Development Dependencies](Contributing.md#development-dependencies).
 
 To execute the testsuite use `make test`. This will also initialize a
 temporary PostgreSQL database used for testing. To do this step manually run
 `t/test_postgresql` to initialize a temporary PostgreSQL database.
 It is also possible to run a particular test, for example
-`prove t/api/01-workers.t`. When using `prove` directly, make sure an English
-locale is set (e.g. `export LC_ALL=C.utf8 LANGUAGE=` before initializing the database
-and running `prove`).
-
-To keep the test database running after executing tests with the `Makefile`, add
+`prove t/api/01-workers.t`. When using `prove` directly, make sure an English locale is set (e.g. `export LC_ALL=C.utf8 LANGUAGE=` before initializing the database and running `prove`). To keep the test database running after executing tests with the `Makefile`, add
 `KEEP_DB=1` to the make arguments. To access the test database, use
-`psql --host=/dev/shm/tpg openqa_test`.
+`psql --host=/dev/shm/tpg openqa_test`. To watch the execution of the UI tests, set the environment variable `NOT_HEADLESS`.
 
-To watch the execution of the UI tests, set the environment variable `NOT_HEADLESS`.
+## Run tests within a container
 
-[[run-tests-in-container]]
-=== Run tests within a container
 The container used in this section of the documentation is not identical with the container used
 within the CI. To run tests within the CI environment locally, check out the
-<<Contributing.asciidoc#circleci-local-container,CircleCI documentation>> below.
+[CircleCI documentation](Contributing.md#circleci-local-container) below.
 
 To run tests in a container please be sure that a container runtime
 environment, for example podman, is installed.
 To launch the test suite first it is required to pull the container image:
 
-  podman pull registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest
+    podman pull registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest
 
-This container image is provided by the OBS repository https://build.opensuse.org/package/show/devel:openQA/openQA-devel-container
+This container image is provided by the OBS repository <https://build.opensuse.org/package/show/devel:openQA/openQA-devel-container>
 and based on the `Dockerfile` within the `container/devel` sub directory of the openQA repository.
 
 Run tests by spawning a container manually, e.g.:
 
-  podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa_devel:latest make run-tests-within-container
+    podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa_devel:latest make run-tests-within-container
 
 Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 
-NOTE: `run-tests-within-container` runs with CONTAINER_TEST enabled by default.
-It is used to run scripts which are not meant to run inside *openqa_devel* and
-the image itself does not contain any container engine. Consider disabling it
-to run any tests in a container.
+> **NOTE:**
+> `run-tests-within-container` runs with CONTAINER_TEST enabled by default.
+> It is used to run scripts which are not meant to run inside **openqa_devel** and
+> the image itself does not contain any container engine. Consider disabling it
+> to run any tests in a container.
 
 The command line to run tests manually reveals that the Makefile target
-`run-tests-within-container` is used to run the tests *inside* the container.
+`run-tests-within-container` is used to run the tests **inside** the container.
 It does some preparations to be able to run the full stack test within a
 container and considers a few environment variables defining our test matrix:
 
-|============================
-|CHECKSTYLE=1|
-|FULLSTACK=0| UITESTS=0
-|FULLSTACK=0| UITESTS=1
-|FULLSTACK=1|
-|HEAVY=1|
-|GH_PUBLISH=true|
-|============================
+| CHECKSTYLE=1   |           |
+| -------------- | --------- |
+| FULLSTACK=0    | UITESTS=0 |
+| FULLSTACK=0    | UITESTS=1 |
+| FULLSTACK=1    |           |
+| HEAVY=1        |           |
+| GH_PUBLISH=tru |           |
 
 So by replacing VAR1 and VAR2 with those values one can trigger the different tests of the matrix.
 
 Of course it is also possible to run (specific) tests directly via `prove` instead of using the Makefile targets.
 
-==== Tips
+### Tips
 
 Running UI tests in non-headless mode is also possible, eg.:
 
-  xhost +local:root
-  podman run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa_devel:latest prove -v t/ui/14-dashboard.t
-  xhost -local:root
+    xhost +local:root
+    podman run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa_devel:latest prove -v t/ui/14-dashboard.t
+    xhost -local:root
 
 It is also possible to use a custom os-autoinst checkout using the following arguments:
 
-  podman run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make run-tests-within-container
+    podman run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make run-tests-within-container
 
-By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use,
-set `CUSTOM_OS_AUTOINST_SKIP_BUILD` to prevent this. Be aware that the build produced outside of the container might not work inside the
+By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set `CUSTOM_OS_AUTOINST_SKIP_BUILD` to prevent this. Be aware that the build produced outside of the container might not work inside the
 container if both environments provide different, incompatible library versions (eg. OpenCV).
 
 In general, if starting the tests via a container seems to hang, it is a good idea to inspect the process tree to see which command is currently
 executed.
 
-=== Logging behavior
+## Logging behavior
 
 Logs are redirected to a logfile when running tests within the CI. The output
-can therefore not be asserted using `Test::Output`. This can be worked around
-by temporarily assigning a different `Mojo::Log` object to the application. To
+can therefore not be asserted using `Test::Output`. This can be worked around by temporarily assigning a different `Mojo::Log` object to the application. To
 test locally under the same condition set the environment variable
 `OPENQA_LOGFILE`.
 
 Note that redirecting the logs to a logfile only works for tests which run
-`OpenQA::Log::setup_log`. In other tests the log is just printed to the
-standard output. This makes use of `Test::Output` simple but it should be
+`OpenQA::Log::setup_log`. In other tests the log is just printed to the standard output. This makes use of `Test::Output` simple but it should be
 taken care that the test output is not cluttered by log messages which can be
 quite irritating.
 
-=== Test runtime limits
+## Test runtime limits
 
-The test modules use `OpenQA::Test::TimeLimit` to introduce a test module
+The test modules use `OpenQA
+
+Test
+TimeLimit`to introduce a test module
 specific timeout. The timeout is automatically scaled up based on environment
-variables, e.g. `CI` for continuous integration environments, as well as when
+variables, e.g.`CI` for continuous integration environments, as well as when
 executing while test coverage data is collected as longer runtimes should be
 expected in these cases. Consider lowering the timeout value based on usual
 local execution times whenever a test module is optimized in runtime. If the
@@ -1005,16 +1049,14 @@ Please be aware of the exception when the timeout triggers after the actual
 test part of a test module has finished but not all involved processes have
 finished or END blocks are processed. In this case the output can look like
 
-```
-t/my_test.t .. All 1 subtests passed
+    t/my_test.t .. All 1 subtests passed
 
-Test Summary Report
--------------------
-t/my_test.t (Wstat: 14 Tests: 1 Failed: 0)
-  Non-zero wait status: 14
-Files=1, Tests=1,  2 wallclock secs ( 0.03 usr  0.00 sys +  0.09 cusr  0.00 csys =  0.12 CPU)
-Result: FAIL
-```
+    Test Summary Report
+    -------------------
+    t/my_test.t (Wstat: 14 Tests: 1 Failed: 0)
+      Non-zero wait status: 14
+    Files=1, Tests=1,  2 wallclock secs ( 0.03 usr  0.00 sys +  0.09 cusr  0.00 csys =  0.12 CPU)
+    Result: FAIL
 
 where "Wstat: 14" and "Non-zero wait status: 14" mean that the test process
 received the "ALRM" signal (signal number 14).
@@ -1022,32 +1064,29 @@ received the "ALRM" signal (signal number 14).
 In case of problems with timeouts look into `OpenQA::Test::TimeLimit` to find
 environment variables that can tweaked to disable or change timeout values or
 timeout scale factors. If you want to disable the timeout for indefinite
-manual debugging, set the environment variable
-`OPENQA_TEST_TIMEOUT_DISABLE=1`. The option `OPENQA_TEST_TIMEOUT_SCALE_CI` is
-only effective if the environment variable `CI` is set, which e.g. it is in
+manual debugging, set the environment variable `OPENQA_TEST_TIMEOUT_DISABLE=1`. The option `OPENQA_TEST_TIMEOUT_SCALE_CI` is only effective if the environment variable `CI` is set, which e.g. it is in
 circleCI and OBS but not in local development environments. When running with
-coverage analysis enabled the scaling factor of
-`OPENQA_TEST_TIMEOUT_SCALE_COVER` is applied to account for the runtime
+coverage analysis enabled the scaling factor of `OPENQA_TEST_TIMEOUT_SCALE_COVER` is applied to account for the runtime
 overhead.
 
 In case of Selenium based UI tests timing out trying to find a local
 chromedriver instance the variable `OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT` can
 be set to a higher value. See
-https://metacpan.org/pod/Selenium::Chrome#startup_timeout for details.
+<https://metacpan.org/pod/Selenium>::Chrome#startup_timeout for details.
 
-[[circleci-workflow]]
-== CircleCI workflow
+# CircleCI workflow
 
 The goal of the following workflow is to provide a way to run tests with a
 pre-approved list of dependencies both in the CI and locally.
 
-=== Dependency artefacts
+## Dependency artefacts
 
 - ci-packages.txt lists dependencies to test against.
+
 - autoinst.sha contains sha of os-autoinst commit for integration testing.
   The testing will run against the latest master if empty.
 
-=== Managing and troubleshooting dependencies
+## Managing and troubleshooting dependencies
 
 `ci-packages.txt` and `autoinst.sha` are aimed to represent those dependencies
 which change often. In normal workflow these files are generated automatically
@@ -1072,72 +1111,79 @@ Script `tools/ci/build_dependencies.sh` can be also modified when major
 changes are performed, e.g. different OS version or packages from forked OBS
 project, etc.
 
-[[circleci-local-container]]
-=== Run tests locally using a container
+## Run tests locally using a container
 
 One way is to build an image using the `build_local_container.sh` script, start a
 container and then use the same commands one would use to test locally.
 
 Pull the latest base image (otherwise it may be outdated):
-```
+
+```sh
 podman pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
 ```
 
 Create an image called `localtest` based on the contents of `ci-packages.txt`
 and `autoinst`:
-```
+
+```sh
 tools/ci/build_local_container.sh
 ```
 
 Mount the openQA checkout under `/opt/testing_area` within the container and run
 tests as usual, e.g.:
-```
+
+```sh
 podman run -it --rm -v $PWD:/opt/testing_area localtest bash -c 'make test TESTS=t/ui/25*'
 ```
 
 Alternatively, start the container and execute commands via `podman exec`, e.g.:
-```
+
+```sh
 podman run --rm --name t1 -v $PWD:/opt/testing_area localtest tail -f /dev/null & sleep 1
 podman exec -it t1 bash -c 'make test TESTS=t/ui/25-developer_mode.t'
 podman stop -t 0 t1
 ```
 
-=== Run tests using the circleci tool
+<a id="circleci-local-container"></a>
+## Run tests using the circleci tool
 
 After installing the `circleci` tool the following commands will be available.
 They will build the container and use committed changes from current local branch.
 
-```
-circleci local execute --job test1
-circleci local execute --job testui
-circleci local execute --job testfullstack
-circleci local execute --job testdeveloperfullstack
-```
+    circleci local execute --job test1
+    circleci local execute --job testui
+    circleci local execute --job testfullstack
+    circleci local execute --job testdeveloperfullstack
 
-=== Changing config.cnf
+## Changing config.cnf
 
 Command to verify the YAML with the `circleci` tool:
-```
+
+```sh
 circleci config process .circleci/config.yml
 ```
 
-== Building plugins
+# Building plugins
 
 Not all code needs to be included in openQA itself. openQA also supports the use
 of 3rd party plugins that follow the standards for plugins used by the
-https://mojolicious.org[Mojolicious] web framework. These can be distributed as
+[Mojolicious](https://mojolicious.org) web framework. These can be distributed as
 normal CPAN modules and installed as such alongside openQA.
 
 Plugins are a good choice especially for extensions to the UI and HTTP API, but
 also for notification systems listening to various events inside the web server.
 
-If your plugin was named `OpenQA::WebAPI::Plugin::Hello`, you would install it
+If your plugin was named `OpenQA
+
+WebAPI
+
+Plugin
+Hello`, you would install it
 in one of the include directories of the Perl used to run openQA, and then
-configure it in `openqa.ini`. The `plugins` setting in the `global` section will
+configure it in `openqa.ini`. The `plugins`setting in the`global` section will
 tell openQA what plugins to load.
 
-[source,ini]
---------------------------------------------------------------------------------
+```ini
 # Tell openQA to load the plugin
 [global]
 plugins = Hello
@@ -1145,7 +1191,7 @@ plugins = Hello
 # Plugin specific configuration (optional)
 [hello_plugin]
 some = value
---------------------------------------------------------------------------------
+```
 
 The plugin specific configuration is optional, but if defined would be available
 in `$app->config->{hello_plugin}`.
@@ -1154,8 +1200,7 @@ To extend the UI or HTTP API there are various named routes already defined that
 will take care of authentication for your plugin. You just attach the plugin
 routes to them and only authenticated requests will get through.
 
-[source,perl]
---------------------------------------------------------------------------------
+```perl
 package OpenQA::WebAPI::Plugin::Hello;
 use Mojo::Base 'Mojolicious::Plugin';
 
@@ -1177,41 +1222,34 @@ sub register {
 }
 
 1;
---------------------------------------------------------------------------------
+```
 
-The `plugin_links` configuration setting can be modified by plugins to add links
-to the `operator` and `admin` sections of the openQA UI menu. Route names or
+The `plugin_links` configuration setting can be modified by plugins to add links to the `operator` and `admin` sections of the openQA UI menu. Route names or
 fully qualified URLs can be used as link targets. If your plugin uses templates,
 you should reuse the `bootstrap` layout provided by openQA. This will ensure a
 consistent look, and make the UI menu available everywhere.
 
-[source,perl]
---------------------------------------------------------------------------------
+```perl
 % layout 'bootstrap';
 % title 'Hello openQA!';
-<div>
+
   <h2>Hello openQA!</h2>
-</div>
---------------------------------------------------------------------------------
+
+```
 
 For UI plugins there are two named authentication routes defined:
 
-1. `ensure_operator`: under `/admin/`, only allows logged in users with `operator` privileges
-2. `ensure_admin`: under `/admin/`, only allows logged in users with `admin` privileges
+1.  `ensure_operator`: under `/admin/`, only allows logged in users with `operator` privileges 2.  `ensure_admin`: under `/admin/`, only allows logged in users with `admin` privileges
 
 And for HTTP API plugins there are four named authentication routes defined:
 
-1. `api_public`: under `/api/v1/`, allows access to everyone
-2. `api_ensure_user`: under `/api/v1/`, only allows authenticated users
-3. `api_ensure_operator`: under `/api/v1/`, only allows authenticated users with `operator` privileges
-4. `api_ensure_admin`: under `/api/v1/`, only allows authenticated nusers with `admin` privileges
+1.  `api_public`: under `/api/v1/`, allows access to everyone 2.  `api_ensure_user`: under `/api/v1/`, only allows authenticated users 3.  `api_ensure_operator`: under `/api/v1/`, only allows authenticated users with `operator` privileges 4.  `api_ensure_admin`: under `/api/v1/`, only allows authenticated nusers with `admin` privileges
 
 To generate a minimal installable plugin with a CPAN distribution directory
 structure you can use the Mojolicious tools. It can be packaged just like any
 other Perl module from CPAN.
 
-[source,sh]
---------------------------------------------------------------------------------
+```sh
 $ mojo generate plugin -f OpenQA::WebAPI::Plugin::Hello
 ...
 $ cd OpenQA-WebAPI-Plugin-Hello/
@@ -1219,41 +1257,46 @@ $ perl Makefile.PL
 ...
 $ make test
 ...
---------------------------------------------------------------------------------
+```
 
 And if you need code examples, there are some plugins
-https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin[included with openQA].
+[included with openQA](https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin).
 
-== Checking for JavaScript problems
-One can use the tool `jshint` to check for problems within JavaScript code. It can be installed
-easily via `npm`.
+# Checking for JavaScript problems
 
-[source,sh]
---------------------------------------------------------------------------------
+One can use the tool `jshint` to check for problems within JavaScript code. It can be installed easily via `npm`.
+
+```sh
 npm install --no-save --ignore-scripts jshint
 node_modules/jshint/bin/jshint path/to/javascript.js
---------------------------------------------------------------------------------
+```
 
-== Profiling the web UI
-1. Install NYTProf, under openSUSE Tumbleweed: `zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf`
-2. Put `profiling_enabled = 1+ in  `openqa.ini`.
-3. Optionally import production data like described in the official contributors documentation.
-4. Restart the web UI, browse some pages. Profiling is done in the background.
-5. Access profiling data via `/nytprof` route.
+# Profiling the web UI
 
-=== Note
+1.  Install NYTProf, under openSUSE Tumbleweed: `zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf`
+
+2.  Put `profiling_enabled = 1` in `openqa.ini`.
+
+3.  Optionally import production data like described in the official contributors documentation.
+
+4.  Restart the web UI, browse some pages. Profiling is done in the background.
+
+5.  Access profiling data via `/nytprof` route.
+
+## Note
+
 Profiling data is extensive. Remove it if you do not need it anymore and disable the `profiling_enabled`
 configuration again if not needed anymore.
 
-== Making documentation changes
+# Making documentation changes
+
 After changing documentation, consider generating documentation locally to
 verify it is rendered correctly using `tools/generate-docs`. It is possible to
 do that inside the provided development container by invoking:
 
-  podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest make generate-docs
+    podman run --rm -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest make generate-docs
 
-Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
-The documentation will be built inside the container and put into `docs/build/`
+Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code. The documentation will be built inside the container and put into `docs/build/`
 subfolder.
 
 You can also utilize the `make serve-docs` target which will additionally spawn a
@@ -1262,4 +1305,4 @@ browser to port 8000 to view the documentation. That could be handy for example
 in situations where you do not have the filesystem directly accessible (i.e.
 remote development). The magic line in this case would be:
 
-  podman run --rm -it -p 8000:8000 -v .:/opt/openqa openqa_devel:latest make serve-docs
+    podman run --rm -it -p 8000:8000 -v .:/opt/openqa openqa_devel:latest make serve-docs

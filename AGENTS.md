@@ -16,7 +16,7 @@ JavaScript (Bootstrap).
 - Commits: [Conventional
   Commits](https://www.conventionalcommits.org/en/v1.0.0/) format. Include
   motivation and details for "feat" commits.
-- Documentation: AsciiDoc (`.asciidoc`).
+- Documentation: Markdown (`.md`).
 
 ## Agent Guidelines
 
