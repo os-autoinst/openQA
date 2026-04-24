@@ -46,6 +46,14 @@ subtest 'service ports' => sub {
     is service_port('scheduler'), 9533, 'scheduler port';
     is service_port('cache_service'), 9534, 'cache service port';
     throws_ok { service_port('unknown') } qr/Unknown service: unknown/, 'unknown port';
+
+    subtest 'environment variable overrides' => sub {
+        local $ENV{OPENQA_PORT_WEBUI} = 1234;
+        is service_port('webui'), 1234, 'webui port overridden';
+        local $ENV{OPENQA_PORT_SCHEDULER} = 4321;
+        is service_port('scheduler'), 4321, 'scheduler port overridden';
+        is service_port('websocket'), 9531, 'websocket port still uses base port';
+    };
 };
 
 subtest 'set listen address' => sub {

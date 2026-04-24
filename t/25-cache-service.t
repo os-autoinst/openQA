@@ -10,15 +10,14 @@ $ENV{MOJO_LOG_LEVEL} = 'info';
 my $tempdir;
 
 BEGIN {
-    use Mojo::File qw(path tempdir);
-
     $ENV{OPENQA_CACHE_SERVICE_QUIET} = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
     $ENV{OPENQA_CACHE_ATTEMPTS} = 3;
     $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0;
     $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
     $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
-    $ENV{OPENQA_BASE_PORT} = 20000 + int rand 10000;
+
+    use Mojo::File qw(path tempdir);
     $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
 
     $tempdir = tempdir;
@@ -35,7 +34,6 @@ CACHELIMIT = 100');
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-
 use Test::Warnings ':report_warnings';
 use Test::Output qw(stderr_like);
 use Test::Mojo;
@@ -47,13 +45,15 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils
-  qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs wait_for);
+  qw(assign_free_service_ports fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out perform_minion_jobs wait_for);
 use OpenQA::Test::TimeLimit '90';
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
 use Time::Seconds;
+
+assign_free_service_ports;
 
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
 my $port = Mojo::IOLoop::Server->generate_port;
