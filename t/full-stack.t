@@ -296,7 +296,7 @@ subtest 'incomplete job because of setup failure' => sub {
 my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
 ok -e $cache_location, 'Setting up Cache directory';
 
-path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew(<<EOC);
+path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew(<<"EOC");
 [global]
 CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50
