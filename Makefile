@@ -239,7 +239,7 @@ test: test-helm-chart
 endif
 endif
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-author ## Run checkstyle and author tests
+test-checkstyle: test-checkstyle-standalone test-author test-compile ## Run checkstyle, author, and compile tests
 
 .PHONY: test-t
 test-t: node_modules ## Run standard Perl tests
@@ -390,11 +390,11 @@ endif
 
 .PHONY: test-author
 test-author: ## Run author tests (tidy, style, critic, pod, etc.)
-	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS xt/*.t" GLOBIGNORE="$(unstables)"
+	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS xt/*.t" GLOBIGNORE="$(unstables)" COVEROPT=""
 
 .PHONY: test-compile
 test-compile: ## Run compile tests
-	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/compile/*.t" GLOBIGNORE="$(unstables)"
+	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/compile/*.t" GLOBIGNORE="$(unstables)" COVEROPT=""
 
 .PHONY: test-shellcheck
 test-shellcheck: ## Run shellcheck on scripts

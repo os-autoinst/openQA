@@ -8,7 +8,7 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use Mojo::IOLoop;
 use Mojolicious;
@@ -58,7 +58,8 @@ $client->on(
 
         is $event_client, $client, 'client passed correctly';
         is ref $event_data, 'HASH', 'event data is a HASH';
-        push @happened_events,
+        push
+          @happened_events,
           {
             status => $event_data->{status},
             error_message => $event_data->{error_message} // $event_data->{ws_error_message},

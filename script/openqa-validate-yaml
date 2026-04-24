@@ -76,7 +76,7 @@ use Getopt::Long::Descriptive;
 use OpenQA::YAML qw(load_yaml validate_data);
 
 my ($opt, $usage) = describe_options(
-    <<"EOM",
+    <<'EOM',
 $0 %o <yaml-files>
 
 Validate YAML files against a schema.

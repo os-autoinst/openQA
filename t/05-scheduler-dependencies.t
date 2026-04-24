@@ -635,7 +635,7 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA'
       or always_explain \@sorted_got;
     @sorted_got = sort @{$jobQ_deps->{children}->{'Directly chained'}};
-    @sorted_exp = ($jobTA->id);
+    @sorted_exp = sort $jobTA->id;
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA' or always_explain \@sorted_got;
     is $jobT->blocked_by_id, $jobQ->id, 'JobT is blocked by job supposed to run before';
     is $jobTA->blocked_by_id, $jobQ->id, 'JobT2 is blocked by job supposed to run *directly* before';
@@ -705,25 +705,25 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
 
     # check directly chained children
     @sorted_got = sort @{$jobQ->{children}->{'Directly chained'}};
-    @sorted_exp = ($jobTA->{id});
+    @sorted_exp = sort $jobTA->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ is still the only directly chained parent to jobTA'
       or always_explain \@sorted_got;
     @sorted_got = sort @{$jobQ2->{children}->{'Directly chained'}};
-    @sorted_exp = ($jobTA2->{id});
+    @sorted_exp = sort $jobTA2->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobQ2 is directly chained parent to clone jobTA2'
       or always_explain \@sorted_got;
 
     # check chained parents
     @sorted_got = sort @{$jobTA2->{parents}->{Chained}};
-    @sorted_exp = ();
+    @sorted_exp = sort;
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA2 not regularly chained after jobQ' or always_explain \@sorted_got;
 
     # check directly chained parents
     @sorted_got = sort @{$jobTA2->{parents}->{'Directly chained'}};
-    @sorted_exp = ($jobQ2->{id});
+    @sorted_exp = sort $jobQ2->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ' or always_explain \@sorted_got;
     @sorted_got = sort @{$jobTA->{parents}->{'Directly chained'}};
-    @sorted_exp = ($jobQ->{id});
+    @sorted_exp = sort $jobQ->{id};
     is_deeply \@sorted_got, \@sorted_exp, 'jobTA is still directly chained after jobQ' or always_explain \@sorted_got;
     @sorted_got = sort @{$jobTA2->{parents}->{'Directly chained'}};
     @sorted_exp = sort $jobQ2->{id};

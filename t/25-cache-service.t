@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Time::Seconds;
 $ENV{MOJO_LOG_LEVEL} = 'info';
 
@@ -329,6 +329,7 @@ subtest 'Race for same asset' => sub {
     unlink path($cachedir, 'localhost')->child($asset)->to_string;
     ok !$cache_client->asset_exists('localhost', $asset), 'Asset absent'
       or die diag 'Asset already exists - abort test';
+
 
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
     my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
