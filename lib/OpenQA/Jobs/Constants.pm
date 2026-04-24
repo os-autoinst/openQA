@@ -190,6 +190,8 @@ our @EXPORT = qw(
   RESULT_CLEANUP_LOG_FILES
   TAG_ID_COLUMN
   STATUS_PRIORITY
+  meta_result
+  meta_state
 );
 
 # mapping from any specific job state/result to a meta state/result
