@@ -13,7 +13,7 @@ use OpenQA::Test::Utils qw(simulate_load);
 use Test::MockModule;
 use Test::Output qw(combined_like);
 use OpenQA::Utils qw(load_avg);
-use OpenQA::Scheduler::DynamicLimit;
+use OpenQA::Scheduler::DynamicLimit qw(MIN STEP EMERGENCY_STEP_MULTIPLIER);
 
 sub test_load_avg ($name, $content, $expected, $msg = undef) {
     subtest $name => sub {
@@ -53,15 +53,25 @@ subtest 'load_avg returns empty arrayref on missing file' => sub {
 };
 
 sub _config (%args) {
-    return {
+    my %config = (
         max_running_jobs => $args{max} // 200,
         dynamic_job_limit_enabled => 1,
-        dynamic_job_limit_min => $args{min} // 50,
-        dynamic_job_limit_load_threshold => $args{threshold} // 8,
-        dynamic_job_limit_load_critical => $args{critical} // 16,
-        dynamic_job_limit_step => $args{step} // 10,
-        dynamic_job_limit_interval => $args{interval} // 0,
-    };
+    );
+    my %map = (
+        min => 'dynamic_job_limit_min',
+        threshold => 'dynamic_job_limit_load_threshold',
+        threshold_factor => 'dynamic_job_limit_load_threshold_factor',
+        critical => 'dynamic_job_limit_load_critical',
+        critical_factor => 'dynamic_job_limit_load_critical_factor',
+        step => 'dynamic_job_limit_step',
+        interval => 'dynamic_job_limit_interval',
+        hysteresis => 'dynamic_job_limit_scale_up_hysteresis',
+        fast_up_factor => 'dynamic_job_limit_fast_ramp_up_load_factor',
+    );
+    for my $k (keys %args) {
+        $config{$map{$k} // $k} = $args{$k} if defined $args{$k} && exists $map{$k};
+    }
+    return \%config;
 }
 
 sub test_dynamic_limit (%args) {
@@ -72,19 +82,26 @@ sub test_dynamic_limit (%args) {
         my $dl = OpenQA::Scheduler::DynamicLimit->new;
         $dl->effective_limit($args{initial}) if defined $args{initial};
         $args{block} ? $dl->block_adjustment_for : $dl->force_next_adjustment;
-        my %conf = (min => 50, threshold => 8, step => 10, max => 200, %{$args{config} // {}});
+        my %conf = (threshold => 8, max => 200, %{$args{config} // {}});
         my $limit = $dl->current_limit(_config(%conf));
         is $limit, $args{expected}, $args{message} // "limit is $args{expected}";
     };
 }
 
 my @cases = (
-    {name => 'initial', block => 1, expected => 50, config => {interval => 60}},
-    {name => 'scales up', initial => 100, load => '1.0 1.0 1.0', expected => 110},
+    {name => 'initial', block => 1, expected => MIN, config => {interval => 60}},
+    {name => 'scales up', initial => 100, load => '4.0 4.0 4.0', expected => 100 + STEP},
+    {name => 'fast up', initial => 100, load => '1.0 1.0 1.0', expected => 100 + STEP * 2},
     {name => 'steady', initial => 100, load => '6.0 6.5 6.0', expected => 100},
-    {name => 'scales down', initial => 100, load => '10.0 7.0 6.0', expected => 90},
-    {name => 'emergency', initial => 100, load => '20.0 18.0 15.0', expected => 70, config => {critical => 16}},
-    {name => 'floor', load => '20.0 18.0 15.0', initial => 55, expected => 50, config => {critical => 16}},
+    {name => 'scales down', initial => 100, load => '10.0 7.0 6.0', expected => 100 - STEP},
+    {
+        name => 'emergency',
+        initial => 100,
+        load => '20.0 18.0 15.0',
+        expected => 100 - STEP * EMERGENCY_STEP_MULTIPLIER,
+        config => {critical => 16}
+    },
+    {name => 'floor', load => '20.0 18.0 15.0', initial => MIN + 5, expected => MIN, config => {critical => 16}},
     {name => 'ceiling', load => '1.0 1.0 1.0', initial => 195, expected => 200},
     {
         name => 'gating',
@@ -94,19 +111,19 @@ my @cases = (
         expected => 100,
         config => {interval => 60}
     },
-    {name => 'unlimited', initial => 100, load => '1.0 1.0 1.0', expected => 110, config => {max => -1}},
+    {name => 'unlimited', initial => 100, load => '4.0 4.0 4.0', expected => 100 + STEP, config => {max => -1}},
 );
 
 test_dynamic_limit(%$_) for @cases;
 
-subtest 'auto-detects threshold from nproc when configured as 0' => sub {
+subtest 'auto-detect threshold (nproc * factor) and fast ramp-up' => sub {
     my $mock_dl = Test::MockModule->new('OpenQA::Scheduler::DynamicLimit');
-    $mock_dl->mock(_nproc => sub { 4 });    # 4 CPUs; threshold = 4*0.85 = 3.4; load 1.0 < 3.4*0.7=2.38 => scale up
+    $mock_dl->mock(_nproc => sub { 4 });
     test_dynamic_limit(
         name => 'autothresh',
         initial => 100,
         load => '1.0 1.0 1.0',
-        expected => 110,
+        expected => 100 + STEP * 2,
         config => {threshold => 0});
 };
 
