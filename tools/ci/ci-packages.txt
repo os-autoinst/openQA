@@ -2,7 +2,6 @@ bsdtar-3.8.1
 chrony-4.6.1
 chrony-pool-openSUSE-4.6.1
 cmark-0.31.0
-crypto-policies-scripts-20250124.4d262e7
 expat-2.7.1
 file-5.46
 file-magic-5.46
