@@ -144,7 +144,7 @@ our @EXPORT = qw(
   is_host_local
   format_tx_error
   regex_match
-  results_storage_below_threshold
+  storage_below_threshold
   config_autocommit_enabled
   load_avg
 );
@@ -933,20 +933,26 @@ sub load_avg ($path = $ENV{OPENQA_LOAD_AVG_FILE} // '/proc/loadavg') {
     return \@load;
 }
 
-sub results_storage_below_threshold () {
-    my $percentage = OpenQA::App->singleton->config->{scheduler}->{results_min_free_storage_space_percentage};
-    return 0 unless $percentage;
-    return 1 if $percentage == 100;
-
-    my ($available_bytes, $total_bytes);
-    my $results_dir = resultdir();
-    try { ($available_bytes, $total_bytes) = check_df($results_dir) }
-    catch ($e) {
-        log_error "Job assignments are prevented because free space under '$results_dir' cannot be determined: $e";
-        return 1;
-    }
-    my $free_percentage = $available_bytes / $total_bytes * 100;
-    return $free_percentage <= $percentage;
+sub storage_below_threshold () {
+    my $cfg = OpenQA::App->singleton->config;
+    my $scheduler_cfg = $cfg->{scheduler};
+    my $check = sub ($key, $path) {
+        my $config_key = "${key}_min_free_storage_space_percentage";
+        return 0 unless my $percentage = $scheduler_cfg->{$config_key};
+        return 1 if $percentage == 100;
+        my ($available_bytes, $total_bytes);
+        try { ($available_bytes, $total_bytes) = check_df($path) }
+        catch ($e) {
+            log_error "Job assignments are prevented because free space under '$path' cannot be determined: $e";
+            return 1;
+        }
+        my $free_percentage = $available_bytes / $total_bytes * 100;
+        return $free_percentage <= $percentage;
+    };
+    return 1 if $check->(results => resultdir) || $check->(assets => assetdir);
+    my $archiving_enabled = $cfg->{archiving}->{archive_preserved_important_jobs};
+    return 1 if $archiving_enabled && $check->(archive => archivedir);
+    return 0;
 }
 
 1;

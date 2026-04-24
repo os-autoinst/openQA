@@ -386,7 +386,7 @@ sub list_scheduled_ajax ($self) {
         $job_data;
     } @jobs;
     my %response = (data => \@scheduled);
-    $response{job_skipped_by_disk_limits} = 1 if results_storage_below_threshold();
+    $response{job_skipped_by_disk_limits} = 1 if storage_below_threshold();
     $self->render(json => \%response);
 }
 
