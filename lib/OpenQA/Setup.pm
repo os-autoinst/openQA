@@ -296,7 +296,7 @@ sub default_config () {
             throttle_failing_job_history_length => 20,
             prio_throttling_parameters => 'MAX_JOB_TIME:0.007',
             prio_throttling_data => undef,
-            prio_group_parameters => 'name:Development:50',
+            prio_group_parameters => 'full_name:Development:50',
             prio_group_data => undef,
         },
         archiving => {

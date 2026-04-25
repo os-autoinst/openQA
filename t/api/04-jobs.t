@@ -1129,6 +1129,16 @@ subtest 'priority correctly assigned when posting job' => sub {
         OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, {}, \%new_job_args, $group);
         is $new_job_args{priority}, $default_prio + 15, 'priority increased by multiple matching rules';
 
+        my $parent_group = $schema->resultset('JobGroupParents')->create({name => 'Development'});
+        $group->update({parent_id => $parent_group->id});
+        %new_job_args = (priority => $default_prio);
+        $t->app->config->{misc_limits}->{prio_group_parameters} = 'full_name:Development:12';
+        $t->app->config->{misc_limits}->{prio_group_data}
+          = OpenQA::Setup::_load_prio_group_throttling($t->app, $t->app->config);
+        OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, {}, \%new_job_args, $group);
+        is $new_job_args{priority}, $default_prio + 12, 'priority increased based on full group name';
+        $group->update({parent_id => undef});
+
         # reset for following tests
         $t->app->config->{misc_limits}->{prio_group_parameters} = '';
         $t->app->config->{misc_limits}->{prio_group_data} = undef;
