@@ -62,7 +62,7 @@ __DATA__
 @@ progress_issue.txt.ep
 ## Observation
 
-openQA test in scenario <%= $scenario %> fails in
+openQA test in scenario `<%= $scenario %>` fails in
 [<%= $module %>](<%= $step_url %>)
 
 ## Test suite description
