@@ -1,5 +1,7 @@
 <a id="gettingstarted"></a>
-# Introduction
+# Getting Started
+
+## Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It uses virtual machines to
@@ -38,7 +40,7 @@ existing instance see the [Users Guide](UsersGuide.md#usersguide).
 More advanced topics can be found in other documents. All documents are also
 available in the [official repository](https://github.com/os-autoinst/openQA).
 
-# Architecture
+## Architecture
 
 
 Although the project as a whole is referred to as openQA, there are in fact
@@ -76,9 +78,9 @@ Note that the diagram shown above is simplified. There exists
 complete and detailed. (The diagram can be edited via its underlying
 [GraphML file](images/architecture.graphml).)
 
-# Basic concepts
+## Basic concepts
 
-## Glossary
+### Glossary
 
 The following terms are used within the context of openQA:
 
@@ -148,7 +150,7 @@ e.g. "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed _koala_
 of _version_, e.g. "Build1234"; **CAUTION:** ambiguity: either with the prefix
 "Build" included or not
 
-## Jobs
+### Jobs
 
 One of the most important features of openQA is that it can be used to test
 several combinations of actions and configurations. For every one of those
@@ -216,7 +218,7 @@ From that point in time, the clone becomes the current version and the original
 job is considered outdated (and can be filtered in the listing) but its
 information and results (if any) are kept for future reference.
 
-## Needles
+### Needles
 
 One of the main mechanisms for openQA to know the state of the virtual machine
 is checking the presence of some elements in the machine's 'screen'.
@@ -249,7 +251,7 @@ tags.
 }
 ```
 
-### Areas
+#### Areas
 There are three kinds of areas:
 
 - **Regular areas** define relevant parts of the screenshot. Those must match
@@ -269,7 +271,7 @@ There are three kinds of areas:
   the concerning area.
   In the needle view exclude areas are displayed as gray boxes.
 
-### Click points
+#### Click points
 Each regular match area in a needle can optionally contain a **click point**.
 This is used with the `testapi::assert_and_click` function to match GUI
 elements such as buttons and then click inside the matched area.
@@ -286,7 +288,7 @@ Each click point can have an `id`, and if a needle contains multiple click point
 to use.
 
 <a id="configuration"></a>
-## Configuration
+### Configuration
 
 The different components of openQA read their configuration from the following
 files:
@@ -313,7 +315,7 @@ and in the
 Continue reading the next sections for where you can place the actual
 configuration files and the possibility of creating drop-in configuration files.
 
-### Locations
+#### Locations
 
 All configuration files can be placed under `/etc/openqa`, e.g. `/etc/openqa/openqa.ini`. That is where administrators are expected to
 store system-wide configuration.
@@ -327,7 +329,7 @@ The client configuration can also be put under `~/.config/openqa/client.conf`.
 For development, check out the section about
 [customizing the configuration directory](Contributing.md#customize_configuration_directory).
 
-### Drop-in configurations
+#### Drop-in configurations
 
 It is recommended to split the configuration into multiple files and store these
 "drop-in" configuration files in the `….d` sub directory, e.g.
@@ -339,7 +341,7 @@ from drop-in configurations override settings from the main config files.
 Drop-in configurations are read in alphabetical order and subsequent files
 override settings from preceding ones.
 
-## Access management
+### Access management
 
 Some actions in openQA require special privileges. openQA provides
 authentication through [openID](http://en.wikipedia.org/wiki/OpenID). By default,
@@ -377,7 +379,7 @@ of the openQA security model, refer to the
 [detailed
 blog post](http://lizards.opensuse.org/2014/02/28/about-openqa-and-authentication/) about the subject by the openQA development team.
 
-## Job groups
+### Job groups
 
 A job can belong to a job group. Those job groups are displayed on the index
 page when there are recent test results in these job groups and in the `Job`
@@ -393,14 +395,14 @@ inherit properties from the category. The categories are meant to combine job gr
 with common builds so test results for the same build can be shown together on
 the index page.
 
-## Cleanup
+### Cleanup
 
 openQA automatically archives and deletes data that it considers "old" based on
 different settings. For example old jobs and assets are deleted at some point.
 The settings can be adjusted on job-group-level and in the configuration file
 You can read the [Cleanup](UsersGuide.md#cleanup) section for details.
 
-# Using the client script
+## Using the client script
 
 
 
@@ -412,14 +414,14 @@ The personal configuration should be stored in a file
 `~/.config/openqa/client.conf` in the same format as previously described for the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
 
 <a id="get-testing"></a>
-# Testing openSUSE or Fedora
+## Testing openSUSE or Fedora
 
 An easy way to start using openQA is to start testing openSUSE or Fedora as they
 have everything setup and prepared to ease the initial deployment. If you want
 to play deeper, you can configure the whole openQA manually from scratch, but
 this document should help you to get started faster.
 
-## Getting tests
+### Getting tests
 
 You can point `CASEDIR` and `NEEDLES_DIR` to Git repositories. openQA will
 check out those repositories automatically and no manual setup is needed.
@@ -449,7 +451,7 @@ cd ..
 chown -R geekotest fedora/
 ```
 
-## Getting openQA configuration
+### Getting openQA configuration
 
 To get everything configured to actually run the tests, there are plenty of
 options to set in the admin interface. If you plan to test openSUSE Factory, using
@@ -482,7 +484,7 @@ Some Fedora tests require special hard disk images to be present in
 repository can be used to create these. See the documentation in that repo
 for more information.
 
-## Adding a new ISO to test
+### Adding a new ISO to test
 
 To start testing a new ISO put it in `/var/lib/openqa/share/factory/iso` and call
 the following commands:
@@ -523,6 +525,6 @@ openqa-cli api -X POST isos \
 More details on triggering tests can also be found in the
 [Users Guide](UsersGuide.md#usersguide).
 
-# Pitfalls
+## Pitfalls
 
 Take a look at [Documented Pitfalls](Pitfalls.md#pitfalls).

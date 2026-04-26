@@ -1,4 +1,6 @@
 <a id="client"></a>
+# Client
+
 There are two ways to interact with openQA as a user. The web UI and the REST
 API. In this guide we will focus on the latter. You've probably already seen a
 few examples of its use with `openqa-cli` earlier in the documentation.
@@ -35,7 +37,7 @@ Our example above is quickly translated. The `api` subcommand of `openqa-cli`
 allows you to perform arbitrary HTTP requests against the REST API. The path
 will automatically get the correct version prefix applied (such as `/api/v1`), and query parameters can be passed along as `key=value` pairs.
 
-# Help
+## Help
 
 The `api` subcommand is not the only one available and more will be added over
 time. To get a complete list of all currently available subcommands you can use
@@ -52,7 +54,7 @@ well as many common usage examples.
 openqa-cli api --help
 ```
 
-# Authentication
+## Authentication
 
 Not all REST endpoints are public, many will return a `403 Forbidden` error if
 you try to access them without proper credentials. The credentials (or API keys)
@@ -79,7 +81,7 @@ openqa-cli api --host http://openqa.example.com --apikey 1234567890ABCDEF \
     --apisecret ABCDEF1234567890 -X POST jobs/2/comments text=hello
 ```
 
-## Personal access token
+### Personal access token
 
 The authentication mechanism used by `openqa-cli` was specifically designed to
 allow secure access to the REST API even via unencrypted HTTP connections. But
@@ -117,13 +119,13 @@ machine openqa.example.com login arthur password 1234567890ABCDEF:ABCDEF12345678
 For `curl` one needs to use `curl --netrc`. For `wget` it's `wget --auth-no-challenge` so that `wget` will provide the
 access credentials without being explicitly asked.
 
-# Features
+## Features
 
 Many of the `openqa-cli api` features are designed to be similar to other commonly used tools like `curl`. It helps a lot if you are already familiar with
 the [HTTP protocol](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) and
 [JSON](https://en.wikipedia.org/wiki/JSON). Both will be referenced extensively.
 
-## HTTP Methods
+### HTTP Methods
 
 The `--method` option (or `-X` for short) allows you to change the HTTP request method from `GET` to something else. In the openQA API you will most commonly encounter `POST`, `PUT` and `DELETE`. For example to start testing a new ISO image you would use `POST`.
 
@@ -133,7 +135,7 @@ openqa-cli api --host http://openqa.example.com -X POST isos \
     VERSION=Factory FLAVOR=NET ARCH=x86_64 BUILD=0053
 ```
 
-## HTTP Headers
+### HTTP Headers
 
 With the `--header` option (or `-a` for short) you can add one or more custom
 HTTP headers to your request. This feature is currently not used much, but can
@@ -145,7 +147,7 @@ openqa-cli api --host http://openqa.example.com -a 'Accept: application/json' \
     jobs/overview
 ```
 
-## HTTP Body
+### HTTP Body
 
 To change the HTTP request body there are multiple options available. The
 simplest being `--data` (or `-d` for short), which allows you to use a plain
@@ -172,7 +174,7 @@ echo '{"group_id":2}' | openqa-cli api --host http://openqa.example.com -X PUT \
     jobs/1
 ```
 
-## Forms
+### Forms
 
 Most data you pass to the openQA API will be key/value form parameters. Either
 in the query string, or encoded as `application/x-www-form-urlencoded` HTTP
@@ -211,7 +213,7 @@ openqa-cli api --host http://openqa.example.com --form --data '{"text":"abc"}' \
     -X POST jobs/2/comments
 ```
 
-## JSON
+### JSON
 
 The primary data exchange format in the openQA API is JSON. And you will even
 see error messages in JSON format most of the time.
@@ -247,7 +249,7 @@ openqa-cli api --host http://openqa.example.com -X PUT jobs/1 --json \
     --data '{"group_id":2}'
 ```
 
-## Unicode
+### Unicode
 
 Just use a UTF-8 locale for your terminal and Unicode will pretty much just
 work.
@@ -265,7 +267,7 @@ openqa-cli api --host http://openqa.example.com --form \
     -X POST jobs/2/comments
 ```
 
-## Host shortcuts
+### Host shortcuts
 
 Aside from the `--host` option, there are also a few shortcuts available. If you leave out the `--host` option completely, the default value will be [`http://localhost`](http://localhost), which is very convenient for debugging purposes.
 
@@ -280,7 +282,7 @@ also get their very own personalised shortcuts. Currently we have `--osd` for [`
 openqa-cli api --o3 jobs/overview
 ```
 
-## Debugging
+### Debugging
 
 Often times just seeing the HTTP response body might not be enough to debug a
 problem. With the `--verbose` option (or `-v` for short) you can also get
@@ -330,7 +332,7 @@ Just be aware that this is a feature the openQA team does not control, and the
 exact output as well as how it escapes control characters will change a bit over
 time.
 
-# Archiving individual job results
+## Archiving individual job results
 
 With the `archive` subcommand of `openqa-cli` you can download all the assets
 and test results of a job for archiving or debugging purposes.
