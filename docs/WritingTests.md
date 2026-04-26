@@ -1,5 +1,7 @@
 <a id="writingtests"></a>
-# Introduction
+# Writing Tests
+
+## Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
@@ -12,7 +14,7 @@ openQA or to improve the existing ones. It's assumed that the reader is already
 familiar with openQA and has already read the Starter Guide, available at the
 [official repository](https://github.com/os-autoinst/openQA).
 
-# Basic
+## Basic
 
 This section explains the basic layout of an openQA test and the API available.
 Tests can be written in the programming languages **Perl**, \*Python\*¹ and \*Lua\*².
@@ -25,7 +27,7 @@ document assumes that the reader is already familiar with Perl, Python or Lua.
 
 ² requires the Perl module `Inline::Lua`
 
-# Test API
+## Test API
 
 <a id="api"></a>
 
@@ -34,9 +36,9 @@ look at the [test API documentation](http://open.qa/api/testapi) for further
 information. Note that this test API is sometimes also referred to as an openQA
 DSL, because in some contexts it can look like a domain specific language.
 
-# How to write tests
+## How to write tests
 
-## Test module interface
+### Test module interface
 
 An openQA test needs to implement at least the `run` subroutine containing the
 actual test code and the test needs to be loaded in the distribution's
@@ -92,7 +94,7 @@ def pre_run_hook(): -> None # *1
 def post_run_hook(): -> None # *1
 ```
 
-### `run`
+#### `run`
 
 Defines the actual steps to be performed during the module execution.
 
@@ -115,7 +117,7 @@ sub run {
 
 `assert_screen` & `send_key` are provided by [os-autoinst](https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm).
 
-### `test_flags`
+#### `test_flags`
 
 Specifies what should happen when test execution of the current test module is
 finished depending on the result.
@@ -154,7 +156,7 @@ function test_flags(self)
 end
 ```
 
-### `pre_run_hook`
+#### `pre_run_hook`
 
 It is called before the `run` function - mainly useful for a whole group of tests.
 It is useful to setup the start point of the test.
@@ -168,7 +170,7 @@ sub pre_run_hook {
 }
 ```
 
-### `post_fail_hook`
+#### `post_fail_hook`
 
 It is called after `run` failed. It is useful to upload log files or to
 determine the state of the machine.
@@ -182,7 +184,7 @@ sub post_fail_hook {
 }
 ```
 
-### `post_run_hook`
+#### `post_run_hook`
 
 It is called after `run` completes, regardless of its return value, but only if the `run` subroutine completes without any exceptions.
 
@@ -196,7 +198,7 @@ sub post_run_hook {
 }
 ```
 
-## Notes on the Python API
+### Notes on the Python API
 
 <a id="notes-python-api"></a>
 
@@ -252,7 +254,7 @@ Additionally, Python tests do not support `run_args` and treat the presence of
 `run_args` as error. This is because of the way `Inline::Python` does not pass
 references to complex Perl objects to Python.
 
-## Notes on the Lua API
+### Notes on the Lua API
 
 <a id="notes-lua-api"></a>
 
@@ -313,14 +315,14 @@ x11_start_program('vncviewer :0',
 )
 ```
 
-## Example Perl test modules
+### Example Perl test modules
 
 <a id="testmodule_perl_examples"></a>
 
 The following examples are short complete test modules written in Perl
 implementing the interface described above.
 
-### Boot to desktop
+#### Boot to desktop
 
 Boots into desktop when pressing enter at the boot loader screen.
 
@@ -349,7 +351,7 @@ sub test_flags {
 }
 ```
 
-### Install software via `zypper`
+#### Install software via `zypper`
 
 Console test that installs software from remote repository via zypper command
 
@@ -375,7 +377,7 @@ sub run {
 }
 ```
 
-### Sample X11 Test
+#### Sample X11 Test
 
 Typical X11 test testing kate
 
@@ -409,14 +411,14 @@ sub run {
 }
 ```
 
-## Example Python test modules
+### Example Python test modules
 
 <a id="testmodule_python_examples"></a>
 
 The following examples are short complete test modules written in Python
 implementing the interface described above.
 
-### openQA web UI sample test
+#### openQA web UI sample test
 
 Test for the openQA web UI written in Python
 
@@ -450,7 +452,7 @@ def test_flags(self):
     return {'fatal': 1}
 ```
 
-## Example Lua test module
+### Example Lua test module
 
 ```lua
 use("testapi")
@@ -473,7 +475,7 @@ function test_flags(self)
 end
 ```
 
-# Variables
+## Variables
 
 Test case behavior can be controlled via variables. Some basic variables like
 `DISTRI`, `VERSION`, `ARCH` are always set. Others like `DESKTOP` are defined by
@@ -483,10 +485,10 @@ on GitHub](https://github.com/os-autoinst/os-autoinst-distri-opensuse) for examp
 
 Variables are accessible via the **get_var** and **check_var** functions.
 
-# Advanced test features
+## Advanced test features
 
 <a id="changing_timeouts"></a>
-## Changing timeouts
+### Changing timeouts
 
 By default, tests are aborted after two hours by the worker. To change this
 limit, set the test variable `MAX_JOB_TIME` to the desired number of seconds.
@@ -497,7 +499,7 @@ the backend, for example the [test API](#api). This is supposed to be set
 within the worker settings on slow worker hosts. It has no influence on the
 video setting.
 
-## Capturing kernel exceptions and/or any other exceptions from the serial console
+### Capturing kernel exceptions and/or any other exceptions from the serial console
 
 Soft and hard failures can be triggered on demand by regular expressions when
 they match the serial output which is done after the test is executed. In case
@@ -550,12 +552,12 @@ sub run {
 }
 ```
 
-## Traceability and reproducibility of tests
+### Traceability and reproducibility of tests
 
 openQA allows keeping track of the test environment, the version of the test
 code and needles, the test configuration and what specific system was tested.
 
-### General remarks on tracing
+#### General remarks on tracing
 
 The test configuration of a specific test run can be viewed in form of job
 settings on the test details page. Those settings contain the specific test
@@ -576,7 +578,7 @@ since the last good test run.
 
 The next section explains how to keep track of the test environment.
 
-### Logging package versions used for test
+#### Logging package versions used for test
 
 There are two sets of packages that can be included in test logs:
 
@@ -605,7 +607,7 @@ sub run {
 }
 ```
 
-### General remarks on reproducibility
+#### General remarks on reproducibility
 
 Clicking the restart button on a concrete test run will create a new test job
 with the same configuration. The new test will however use the latest version of
@@ -642,7 +644,7 @@ Sometimes issues are sporadic and therefore hard to reproduce. The section about
 might be helpful in this case.
 
 <a id="assigning_jobs_to_workers"></a>
-## Assigning jobs to workers
+### Assigning jobs to workers
 
 By default, any worker can get any job with the matching architecture.
 
@@ -700,7 +702,7 @@ workers.ini
 WORKER_CLASS = planet-earth,continent-antarctica,location-my_station
 ```
 
-## Running a custom worker engine
+### Running a custom worker engine
 
 By default the openQA workers run the "isotovideo" application from PATH on the
 worker host, that is in most cases
@@ -710,7 +712,7 @@ For example to run isotovideo from a custom container image one could use the
 test variable setting
 `ISOTOVIDEO=podman run --pull=always --rm -it registry.example.org/my/container/isotovideo /usr/bin/isotovideo -d`
 
-## Automatic retries of jobs
+### Automatic retries of jobs
 
 You might encounter flaky openQA tests that fail sporadically. The best way to
 address flaky test code is of course to fix the test code itself. For example,
@@ -737,7 +739,7 @@ causing incomplete jobs.
 can be used to apply more elaborate issue detection and retriggering of tests.
 
 <a id="job_dependencies"></a>
-## Job dependencies
+### Job dependencies
 
 There are different dependency **types**, most importantly _chained_ and
 _parallel_ dependencies.
@@ -754,7 +756,7 @@ Additionally, dependencies can be machine-specific (see
 [Inter-machine dependencies](WritingTests.md#inter_machine_dependencies)
 section).
 
-### Declaring dependencies
+#### Declaring dependencies
 
 Dependencies are declared by adding a job setting on the child job specifying
 its parents. There is one variable for each dependency type.
@@ -772,7 +774,7 @@ explained in the
 [Further examples for advanced dependency handling](UsersGuide.md#further_examples_for_advanced_dependency_handling)
 section. The variables mentioned in the subsequent sections do **not** apply.
 
-#### Chained dependencies
+##### Chained dependencies
 
 _Chained_ dependencies declare that one test must only run after another test
 has concluded. For instance, extra tests relying on a successfully finished
@@ -804,7 +806,7 @@ on the same worker are considered an error.
 > cluster_. All jobs within the cluster will be assigned to a single worker-slot
 > at the same time by the scheduler.
 
-#### Parallel dependencies
+##### Parallel dependencies
 
 _Parallel_ dependencies declare that tests must be scheduled to run at the same
 time. An example are "multi-machine tests" which usually test some kind of
@@ -827,7 +829,7 @@ Otherwise the scheduler will cancel child jobs once parent is done.
 > avoid a parallel cluster from starvation its priority is increased gradually and
 > eventually workers can be held back for the cluster.
 
-##### Dependency pinning
+###### Dependency pinning
 
 It is possible to ensure that all jobs within the same _parallel_ cluster are
 executed on the same worker host. This is useful for connecting the SUTs without
@@ -843,7 +845,7 @@ of scheduling as well as in the worker configuration file `workers.ini`.
 > we explore ways to make it more flexible.
 
 <a id="inter_machine_dependencies"></a>
-### Inter-machine dependencies
+#### Inter-machine dependencies
 
 Those dependencies make it possible to create job dependencies between tests
 which are supposed to run on different machines.
@@ -865,7 +867,7 @@ suite(s). Keep in mind to place the machines which have been explicitly defined
 in a variable for each dependent test suite. Check out the following example
 sections to get a better understanding.
 
-### Handling of related jobs on failure / cancellation / restart
+#### Handling of related jobs on failure / cancellation / restart
 
 openQA tries to handle things sensibly when jobs with dependencies either fail,
 or are manually cancelled or restarted:
@@ -901,7 +903,7 @@ or are manually cancelled or restarted:
   failure of one does not imply that the tests run by the other children and the
   parent are invalid.
 
-#### Further notes
+##### Further notes
 
 - The API also allows to skip restarting parents via `skip_parents=1` and to skip restarting children via `skip_children=1`. It is also possible to skip
   restarting only passed and softfailed children via
@@ -912,7 +914,7 @@ or are manually cancelled or restarted:
   needs to restart the parent job instead. Use the mentioned
   `skip_ok_result_children=1` to restart only jobs which are not ok
 
-### Handling of dependencies when cloning jobs
+#### Handling of dependencies when cloning jobs
 
 Be sure to have read the [job dependencies](WritingTests.md#_job_dependencies) section to have an understanding of different dependency types
 and the distinction between parents and children.
@@ -934,7 +936,7 @@ cloned, especially with default parameters. Examples:
   "server" test). When cloning a parallel child, only _that_ child and the parent
   will be cloned but not the siblings (e.g. the other "client" tests).
 
-### Examples
+#### Examples
 
 Assume there is a test suite `A` supposed to run on machine `64bit-8G`.
 Additionally, test suite `B` supposed to run on machine `64bit-1G`.
@@ -946,7 +948,7 @@ results in the following dependency:
 A@64bit-8G --> B@64bit-1G
 ```
 
-#### Implicitly inherit machines from parent
+##### Implicitly inherit machines from parent
 
 Assume test suite `A` is supposed to run on the machines `64bit` and `ppc`. Additionally, test suite `B` is supposed to run on both of these machines as well. This can be achieved by simply adding the variable `START_AFTER_TEST=A` to test suite `B` (omitting the machine at all). openQA take the best matches. This
 results in the following dependencies:
@@ -954,7 +956,7 @@ results in the following dependencies:
     A@64bit --> B@64bit
     A@ppc --> B@ppc
 
-#### Conflicting machines prevent inheritance from parent
+##### Conflicting machines prevent inheritance from parent
 
 Assume test suite `A` is supposed to run on machine `64bit-8G`. Additionally, test suite `B` is supposed to run on machine `64bit-1G`. Adding the variable `START_AFTER_TEST=A` to test suite `B` will **not** work. That
 means openQA will **not** create a job dependency and instead shows an error
@@ -971,7 +973,7 @@ will result in the following dependencies:
 
 openQA will also show errors that test suite `A` is not necessary on the machines `64bit` and `s390x`.
 
-#### Implicitly creating a dependency on same machine
+##### Implicitly creating a dependency on same machine
 
 Assume the value of the variable `START_AFTER_TEST` or `PARALLEL_WITH` **only** contains a test suite name but no machine (e.g. `START_AFTER_TEST=A,B` or
 `PARALLEL_WITH=A,B`).
@@ -979,7 +981,7 @@ Assume the value of the variable `START_AFTER_TEST` or `PARALLEL_WITH` **only** 
 In this case openQA will create job dependencies that are scheduled on the same
 machine if all test suites are placed on the same machine.
 
-### Notes regarding directly chained dependencies
+#### Notes regarding directly chained dependencies
 
 Having multiple jobs with `START_DIRECTLY_AFTER_TEST` pointing to the same
 parent job is possible, e.g.:
@@ -1006,13 +1008,13 @@ This allows to create a dependency tree which contains multiple directly chained
 sub-trees. Be aware that these sub-trees might be executed on **different**
 workers and depending on the tree even be executed in parallel.
 
-### Worker requirements
+#### Worker requirements
 
 `CHAINED` and `DIRECTLY_CHAINED` dependencies require only one worker.
 `PARALLEL` dependencies on the other hand require as many free workers as jobs
 are present in the parallel cluster.
 
-#### Examples
+##### Examples
 
 **`CHAINED` - i.e. test basic functionality before going advanced - requires 1 worker**
 
@@ -1061,7 +1063,7 @@ and then define B,C,D with PARALLEL_WITH=A
 A is parent test suite for B, C, D (all can run in parallel).
 Children B, C, D can run and finish anytime, but A must run until all B, C, D finishes.
 
-## Writing multi-machine tests
+### Writing multi-machine tests
 
 Scenarios requiring more than one system under test (SUT), like High
 Availability testing, are covered as multi-machine tests (MM tests) in this
@@ -1095,7 +1097,7 @@ In short, writing multi-machine tests adds a few more layers of complexity:
 3.  Actual technical realization (i.e.
     [custom networking](Networking.md#networking))
 
-## Test synchronization and locking API
+### Test synchronization and locking API
 
 openQA provides a locking API. To use it in your test files import the `lockapi`
 package (_use lockapi;_). It provides the following functions: `mutex_create`,
@@ -1291,7 +1293,7 @@ sub run {
 }
 ```
 
-## Support Server based tests
+### Support Server based tests
 
 The idea is to have a dedicated "helper server" to allow advanced network based
 testing.
@@ -1301,7 +1303,7 @@ previous section, with the support server being the parent test 'A' and the test
 needing it being the child test 'B'. This ensures that the test 'B' always have
 the support server available.
 
-### Preparing the supportserver
+#### Preparing the supportserver
 
 The support server image is created by calling a special test, based on the
 autoyast test:
@@ -1321,7 +1323,7 @@ well as packages and the common configuration.
 More specific role the supportserver should take is then selected when the
 server is run in the actual test scenario.
 
-### Using the supportserver
+#### Using the supportserver
 
 In the Test suites, the supportserver is defined by setting:
 
@@ -1438,7 +1440,7 @@ diff -u test.txt test2.txt && echo "AUTOYAST OK"
 and the rest is done automatically, using already prepared test modules in
 `tests/autoyast` subdirectory.
 
-## Using text consoles and the serial terminal
+### Using text consoles and the serial terminal
 
 Typically the OS you are testing will boot into a graphical shell e.g. The
 Gnome desktop environment. This is fine if you wish to test a program with a
@@ -1515,7 +1517,7 @@ your code less portable.
 The command `wait_serial` watches the SUT's serial port for text output and matches it against a regex. `type_string` sends a string to the SUT like it was
 typed in by the user over VNC.
 
-### Using a serial terminal
+#### Using a serial terminal
 
 > **IMPORTANT:**
 > You need a QEMU version \>= 2.6.1 and to set the `VIRTIO_CONSOLE`
@@ -1698,7 +1700,7 @@ We choose to wait for the prompt just before sending a command, rather than
 after it, so that Step 5 can be deferred to a later time. In theory this allows
 the test script to perform some other work while the SUT is busy.
 
-### Sending new lines and continuation characters
+#### Sending new lines and continuation characters
 
 The following command will timeout: `script_run("echo "1n2"")`. The reason being `script_run` will call `wait_serial("echo "1n2"")` to check that the
 command was entered successfully and echoed back (see above for explanation of
@@ -1720,7 +1722,7 @@ In general you should be aware that, Perl, the guest kernel and the shell may
 transform whatever character sequence you enter. Transformations can be spotted
 by comparing the input string with what `wait_serial` actually finds.
 
-### Sending signals - ctrl-c and ctrl-d
+#### Sending signals - ctrl-c and ctrl-d
 
 On a VNC based console you simply use `send_key` like follows.
 
@@ -1756,7 +1758,7 @@ The `terminate_with` parameter just exists to display intention. It is also
 possible to send any character using the hex code like 'x0f' which may have the
 effect of pressing the magic SysRq key if you are lucky.
 
-### The virtio serial terminal implementation
+#### The virtio serial terminal implementation
 
 The os-autoinst package supports several types of 'consoles' of which the virtio
 serial terminal is one. The majority of code for this console is located in
@@ -1804,7 +1806,7 @@ SUSE distribution's serial terminal utility library). However some programs
 ignore this, but piping there output into `tee` is usually enough to stop them
 outputting non-printable characters.
 
-## MCP Support
+### MCP Support
 
 The [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) is a standard
 that allows Large Language Models (LLMs) to interact with web services. MCP is
@@ -1844,9 +1846,9 @@ setting the `Authorization` HTTP header:
 }
 ```
 
-### 3rd Party MCP Clients
+#### 3rd Party MCP Clients
 
-#### gemini-cli
+##### gemini-cli
 
 Once you have installed and set up
 [gemini-cli](https://github.com/google-gemini/gemini-cli), you can use the
@@ -1874,9 +1876,9 @@ tools and make use of them on its own:
       ltp_net_features test suite on the x86_64 architecture. Most of the
        tests passed, with a few being skipped.
 
-# Test Development tricks
+## Test Development tricks
 
-## Trigger new tests by modifying settings from existing test runs
+### Trigger new tests by modifying settings from existing test runs
 
 To trigger new tests with custom settings the command line client `openqa-cli`
 can be used. To trigger new tests relying on all settings from existing tests
@@ -1913,7 +1915,7 @@ and the job will not appear as a job in any job group, e.g.:
 openqa-clone-job --from localhost 42 _GROUP=0
 ```
 
-## Backend variables for faster test execution
+### Backend variables for faster test execution
 
 The `os-autoinst` backend offers multiple test variables which are helpful for
 test development. For example:
@@ -1927,7 +1929,7 @@ test development. For example:
   case of expected and known test fails, for examples when you need to create
   needles anyway
 
-## Using snapshots to speed up development of tests
+### Using snapshots to speed up development of tests
 
 <a id="snapshots"></a>
 
@@ -1935,7 +1937,7 @@ For lower turn-around times during test development based on virtual machines
 the QEMU backend provides a feature that allows a job to start from a snapshot
 which can help in this situation.
 
-### How snapshots work internally
+#### How snapshots work internally
 
 Snapshots use QEMU's block device overlay mechanism. Each snapshot creates an
 incremental overlay forming a chain:
@@ -1954,7 +1956,7 @@ incremental overlay forming a chain:
 When reverting (e.g., `SKIPTO=snapshot1`), all forward overlays are removed,
 the snapshot overlay is recreated, and execution continues from that state
 
-### Snapshot modes
+#### Snapshot modes
 
 Depending on the use case, there are two options to help:
 
@@ -1987,7 +1989,7 @@ flag as the behaviour is implied). In the latter mode every test module is also
 considered `fatal`. This means the job is aborted after the first failed test module (unless subsequent modules are marked with `always_run`).
 
 <a id="snapshots-for-each-module"></a>
-### Enable snapshots for each module
+#### Enable snapshots for each module
 
 - Run the worker with `--no-cleanup` parameter. This will preserve the hard
   disks after test runs. If the worker(s) are being started via the systemd
@@ -2012,7 +2014,7 @@ openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=
 
 - Use `qemu-img snapshot -l something.img` to find out what snapshots are in the image. Snapshots are named `"test module category"-"test module name"` (e.g. `installation-start_install`).
 
-### Storing only the last successful snapshot
+#### Storing only the last successful snapshot
 
 - Run the worker with `--no-cleanup` parameter. This will preserve the hard
   disks after test runs.
@@ -2034,7 +2036,7 @@ openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 TESTDEB
 openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1 SKIPTO=consoletest-yast2_i
 ```
 
-## Defining a custom test schedule or custom test modules
+### Defining a custom test schedule or custom test modules
 
 Normally the test schedule, that is which test modules should be executed and
 which order, is prescribed by the `main.pm` file within the test distribution.
@@ -2051,7 +2053,7 @@ the intended test module.
 describes in detail the mentioned test parameters and more. Please consult
 this full reference as well.
 
-### EXCLUDE_MODULES
+#### EXCLUDE_MODULES
 
 If a job has the following schedule:
 
@@ -2074,7 +2076,7 @@ The schedule would be:
 > **NOTE:**
 > Excluding modules that are not scheduled does not raise an error.
 
-### INCLUDE_MODULES
+#### INCLUDE_MODULES
 
 If a job has the following schedule:
 
@@ -2098,7 +2100,7 @@ The schedule would be:
 > Including modules that are not scheduled does not raise an error, but they
 > are not scheduled.
 
-### SCHEDULE
+#### SCHEDULE
 
 Additionally it is possible to define a custom schedule using the test variable
 `SCHEDULE`.
@@ -2108,7 +2110,7 @@ Additionally it is possible to define a custom schedule using the test variable
 > **NOTE:**
 > Any existing test module within **CASEDIR** can be scheduled.
 
-### SCHEDULE + ASSET\_\<NR\>\_URL
+#### SCHEDULE + ASSET\_\<NR\>\_URL
 
 Test modules can be defined and overridden on-the-fly using a downloadable asset
 (combining **ASSET\_\<NR\>\_URL** and **SCHEDULE**).
@@ -2149,7 +2151,7 @@ that the specified asset is only downloaded once. New versions must be
 supplied as new, unambiguous download target file names.
 
 <a id="triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"></a>
-## Triggering tests based on an any remote Git refspec or open GitHub pull request
+### Triggering tests based on an any remote Git refspec or open GitHub pull request
 
 openQA also supports to trigger tests using test code from a pull request or
 any branch or Git refspec. That means that code changes that are not yet
@@ -2198,13 +2200,13 @@ parameter to `openqa-clone-custom-git-refspec` or via the `PRODUCTDIR` variable 
 special care must be taken if the schedule is modified (then it is safer to
 manually specify the schedule via the `SCHEDULE` variable).
 
-# Running openQA jobs as CI checks
+## Running openQA jobs as CI checks
 
 It is possible to run openQA jobs as CI checks of a repository, e.g. a test
 distribution or an arbitrary repository containing software with openQA tests
 as part of the test suite.
 
-## Create and monitor openQA jobs from within the CI runner
+### Create and monitor openQA jobs from within the CI runner
 
 The easiest approach is to create and monitor openQA jobs from within the CI
 runner. To make this easier, `openqa-cli` provides the `schedule` sub-command with the `--monitor` flag. This way you still need an openQA instance to run
@@ -2243,7 +2245,7 @@ script for further information and an example configuration.
 > definitions file one could use e.g.
 > `SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/$GH_REPO/$GH_REF/.github/workflows/openqa.yml` > instead of `- uses: actions/checkout@v3` and > `--param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml`.
 
-## Use webhooks and status reporting APIs of GitHub
+### Use webhooks and status reporting APIs of GitHub
 
 This approach is so far specific to GitHub and is a bit more effort to setup
 than the approach mentioned in the previous section. For this to work, GitHub
@@ -2260,7 +2262,7 @@ from the example distribution for an example. You may append a parameter like
 `SCENARIO_DEFINITIONS_YAML=path/of/yaml` to the query parameters of the webhook
 to change the lookup path of this file.
 
-## Run isotovideo directly in the CI runner
+### Run isotovideo directly in the CI runner
 
 It is also possible to avoid using openQA at all and run the backend
 `isotovideo` directly within the CI runner. This simplifies the setup as no
@@ -2269,7 +2271,7 @@ a web interface as usual. Check out the
 [README of the example test distribution](https://github.com/os-autoinst/os-autoinst-distri-example/blob/main/README.md#local-testing-and-ci-environment)
 for more information.
 
-### Setup a GitHub access token for openQA
+#### Setup a GitHub access token for openQA
 
 This setup is required for openQA to be able to report the status back to
 GitHub.
@@ -2292,7 +2294,7 @@ github_token = \$token
 > might respond with a 404 response (weirdly not necessarily 403) when submitting
 > the CI check status.
 
-### Setup webhook on GitHub
+#### Setup webhook on GitHub
 
 This setup is required for GitHub to be able to inform openQA that a PR has been
 created or updated.
@@ -2325,7 +2327,7 @@ created or updated.
     is setup correctly. Otherwise, check out the response of the delivery to
     investigate what is wrong.
 
-# Integrating test results from external systems
+## Integrating test results from external systems
 
 The openQA web UI is suitable as a test management and reporting platform.
 Next to the automated openQA tests one can integrate test results from

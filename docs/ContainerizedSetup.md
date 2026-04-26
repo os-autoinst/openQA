@@ -1,4 +1,6 @@
 <a id="containerizedsetup"></a>
+# Containerized Setup
+
 The installation guide already contains simple one-liners for starting
 the web UI and workers in the
 [Container based setup section](Installing.md#container_setup).
@@ -9,28 +11,28 @@ and the workers using `docker-compose` or `podman-compose`.
 There is also an approach using Fedora-based images mentioned but it is not
 supported by upstream.
 
-# Get container images
+## Get container images
 
 You can either build the images locally or use Fedora images from Docker Hub.
 
 For the `docker-compose` setup it is required to build the images locally. However, it is done via `docker-compose` and explained later so this section
 can be skipped.
 
-## Download Fedora-based images from the Docker Hub
+### Download Fedora-based images from the Docker Hub
 
     podman pull fedoraqa/openqa_data
     podman pull fedoraqa/openqa_webui
     podman pull fedoraqa/openqa_worker
 
-## Build openSUSE-based images locally
+### Build openSUSE-based images locally
 
     podman build -t openqa_data ./openqa_data
     podman build -t openqa_webui ./webui
     podman build -t openqa_worker ./worker
 
-# Setup with Fedora-based images
+## Setup with Fedora-based images
 
-## Data storage and directory structure
+### Data storage and directory structure
 
 Our intent was to create universal `webui` and `worker` containers and move all data storage and configurations to a third container, called `openqa_data`.
 `openqa_data` is a so called
@@ -62,7 +64,7 @@ setup SELinux properly. If you are having problems with it, run this command:
 
     chcon -Rt svirt_sandbox_file_t data
 
-## Update firewall rules
+### Update firewall rules
 
 There is a [bug in Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=1244124)
 with `docker-1.7.0-6` package that prevents containers to communicate with
@@ -75,7 +77,7 @@ docker, as a workaround, run:
 on the host machine.
 
 <a id="run_the_data_and_web_ui_containers"></a>
-## Run the data and web UI containers
+### Run the data and web UI containers
 
     podman run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
     podman run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui
@@ -89,7 +91,7 @@ next two steps, you will set an OpenID provider (if necessary), create the API
 keys in the openQA's web interface, and store the configuration in the Data
 Container.
 
-### Generate and configure API credentials
+#### Generate and configure API credentials
 
 Go to <https://localhost/api_keys>, generate key and secret. Then run the following
 command substituting `KEY` and `SECRET` with the generated values:
@@ -97,7 +99,7 @@ command substituting `KEY` and `SECRET` with the generated values:
     exec -it openqa_data /scripts/client-conf set -l KEY SECRET
 
 <a id="run_the_worker_container"></a>
-## Run the worker container
+### Run the worker container
 
     podman run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
@@ -108,7 +110,7 @@ container name, so to add worker 2 use:
 
     podman run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
-## Enable services
+### Enable services
 
 Some systemd services are provided to start up the containers, so you do not
 have to keep doing it manually. To install and enable them:
@@ -122,7 +124,7 @@ have to keep doing it manually. To install and enable them:
 Of course, if you set up two workers, also do `sudo systemctl enable`
 `openqa-worker@2.service`, and so on.
 
-## Get tests, ISOs and create disks
+### Get tests, ISOs and create disks
 
 You have to put your tests under `data/tests` directory and ISOs under
 `data/factory/iso` directory. For testing Fedora, run:
@@ -156,12 +158,12 @@ where `VERSION` is the current stable Fedora version (its images will be created
 repository in `/tools` directory. Note that you have to have
 `libguestfs-tools` and `libguestfs-xfs` installed.
 
-# Setup openQA with openSUSE-based images and docker-compose
+## Setup openQA with openSUSE-based images and docker-compose
 
 All relative paths in this section are relative to a checkout of openQA's Git
 repository.
 
-## Configuration
+### Configuration
 
 The web UI will be available under <http://localhost> and <https://localhost>. So it
 is using default HTTP(S) ports. Make sure those ports are not used by
@@ -184,7 +186,7 @@ livehandler and gru.
 
 All the data which normally ends up under `/var/lib/openqa` in the default setup will be stored under `container/webui/workdir/data`. The database will be stored under `container/webui/workdir/db`.
 
-## Build images
+### Build images
 
 `docker-compose` will build images automatically. However, it is also possible
 to build images explicitly:
@@ -195,7 +197,7 @@ to build images explicitly:
     cd container/worker
     docker-compose build       # build worker images
 
-## Run the web UI containers in HA mode
+### Run the web UI containers in HA mode
 
 To start the containers, just run:
 
@@ -213,7 +215,7 @@ Further useful commands:
     docker-compose logs                        # access logs
     docker-compose exec db psql openqa openqa  # open psql shell
 
-## Generate and configure API credentials
+### Generate and configure API credentials
 
 Go to <https://localhost/api_keys> and generate a key/secret and configure it in
 `container/webui/conf/client.conf` **and** `container/worker/conf/client.conf` in
@@ -225,7 +227,7 @@ it is required to restart the web UI containers to apply the changes:
     cd container/webui
     docker-compose restart
 
-## Run the worker container
+### Run the worker container
 
 Configure the number of workers to start via the environment variable
 `OPENQA_WORKER_REPLICAS`. By default, one worker is started.
@@ -247,7 +249,7 @@ consecutive numbers for the `--instance` parameter:
     cd container/worker
     ./launch_workers_pool.sh --size=<number-of-workers>
 
-## Get tests, ISOs and create disks
+### Get tests, ISOs and create disks
 
 You have to put your tests under `data/tests` directory and ISOs under
 `data/factory/iso` directory. For testing openSUSE, follow
@@ -258,7 +260,7 @@ installed into the worker container before tests can run. To install those
 dependencies automatically on the container startup one can add a script called
 `install_deps.sh` in the root of the test distribution which would install the dependencies, e.g. via a `zypper` call.
 
-# Running jobs
+## Running jobs
 
 After performing the "setup" tasks above - do not forget about tests and ISOs.
 
@@ -269,11 +271,11 @@ Then you can use `openqa-cli` as usual with the containerized web UI. It is also
         --host http://localhost:9526 \
         https://openqa.opensuse.org/tests/1896520
 
-# Further configuration options
+## Further configuration options
 
 Most of these options do **not** apply to the docker-compose setup.
 
-## Change the OpenID provider
+### Change the OpenID provider
 
 <https://www.opensuse.org/openid/user/> is set as a default OpenID provider. To
 change it, run:
@@ -282,7 +284,7 @@ change it, run:
 
 and enter the provider's URL.
 
-## Adding workers on other hosts
+### Adding workers on other hosts
 
 You may want to add workers on other hosts, so you do not need one powerful
 host to run the UI and all the workers.
@@ -317,7 +319,7 @@ Worker instances always expect to find the server as `openqa_webui`; if this wil
 adjust these files if you use non-standard ports (see above).
 
 <a id="keeping_all_data_in_the_data_volume_container"></a>
-## Keeping all data in the Data Volume container
+### Keeping all data in the Data Volume container
 
 If you decided to keep all the data in the Volume container (`openqa_data`), run the following commands:
 
@@ -339,7 +341,7 @@ And finally, download the tests and ISOs directly into the container:
 The rest of the steps should be the same.
 
 <a id="keeping_all_data_on_the_host_system"></a>
-## Keeping all data on the host system
+### Keeping all data on the host system
 
 If you want to keep all the data in the host system and you prefer not to use
 a Volume Container, run the following commands:
@@ -362,7 +364,7 @@ run the worker as:
 
 Then continue with tests and ISOs downloading as before.
 
-## Developing tests with container setup
+### Developing tests with container setup
 
 With this setup, the needles created from the web UI will almost certainly have
 a different owner and group than your user account. As we have the tests in

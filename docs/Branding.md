@@ -1,4 +1,6 @@
 <a id="branding"></a>
+# Branding
+
 You can alter the appearance of the openQA web UI to some extent through
 the "branding" mechanism. The `branding` configuration setting in the `global`
 section of [the web UI configuration](GettingStarted.md#configuration)
@@ -12,7 +14,7 @@ installed). The subdirectory's name will be the name of your branding.
 You can copy the files from `branding/openSUSE` or `branding/plain` to
 use as starting points, and adjust as necessary.
 
-# Web UI template
+## Web UI template
 
 
 

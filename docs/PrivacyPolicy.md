@@ -1,5 +1,7 @@
 <a id="privacypolicy"></a>
-# Introduction
+# Privacy Policy
+
+## Introduction
 
 openQA is an automated testing framework. This privacy policy describes how we
 collect, use, and protect your personal information when you use an openQA
@@ -8,9 +10,9 @@ instance.
 This policy applies to users of openQA. Individual openQA instance operators
 may have their own privacy practices.
 
-# Data We Collect
+## Data We Collect
 
-## Account Information
+### Account Information
 
 When you sign in to an openQA instance for the first time via an external
 authentication provider, an account is automatically created. We collect the
@@ -26,13 +28,13 @@ following information provided by that provider:
 
 - Role (operator, admin)
 
-## Authentication Data
+### Authentication Data
 
 - API keys and secrets (stored in hashed form)
 
 - Session data (login time, user ID)
 
-## Activity Data
+### Activity Data
 
 - Comments you post on jobs or test results
 
@@ -42,7 +44,7 @@ following information provided by that provider:
 
 - Developer session data when using the interactive debugging feature
 
-# How We Use Your Data
+## How We Use Your Data
 
 Your data is used for:
 
@@ -58,7 +60,7 @@ Your data is used for:
 
 - No marketing or advertising purposes
 
-# Data Protection
+## Data Protection
 
 We implement appropriate technical and organizational measures:
 
@@ -71,7 +73,7 @@ We implement appropriate technical and organizational measures:
 - When you delete your account, your personal data is anonymized while
   preserving historical records (see User Rights)
 
-# Data Sharing
+## Data Sharing
 
 We do not share your personal data with third parties except:
 
@@ -83,21 +85,21 @@ We do not share your personal data with third parties except:
 
 We do not sell your personal data.
 
-# User Rights
+## User Rights
 
 You have the following rights regarding your personal data:
 
-## Access
+### Access
 
 You can view your account information through the web interface or API.
 
-## Correction
+### Correction
 
 Account details (username, email, fullname, nickname) are retrieved from your
 external authentication provider. To update this information, please do so
 through that provider.
 
-## Deletion
+### Deletion
 
 You can delete your account, which will:
 
@@ -114,32 +116,32 @@ You can delete your account, which will:
 To exercise these rights, use the account deletion feature in your user
 settings or contact the instance administrator.
 
-## Data Portability
+### Data Portability
 
 You can export your data through the openQA API.
 
-## Contact
+### Contact
 
 For privacy inquiries, contact the administrator of your openQA instance.
 
-# Cookies and Tracking
+## Cookies and Tracking
 
 openQA uses session cookies for authentication. These cookies are necessary
 for the service to function and are not used for tracking or advertising.
 
 No third-party analytics or tracking services are used.
 
-# Policy Changes
+## Policy Changes
 
 This policy may be updated from time to time. The effective date is noted
 below. Significant changes will be communicated through the openQA instance's
 announcement channels.
 
-# Effective Date
+## Effective Date
 
 This policy was last updated: March 2026
 
-# Contact Information
+## Contact Information
 
 For questions about this privacy policy or to exercise your data rights,
 contact the openQA instance administrator.
