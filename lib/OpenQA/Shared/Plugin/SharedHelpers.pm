@@ -81,7 +81,7 @@ sub _is_admin ($c, $user = undef) {
 
 sub _is_api_request ($c) {
     my $h = $c->req->headers;
-    return !!($h->authorization || $h->header('X-API-Key'));
+    return !!($h->authorization || $h->header('X-API-Key') || $h->header('X-API-Microtime'));
 }
 
 sub _is_local_request ($c) {

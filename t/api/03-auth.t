@@ -272,4 +272,48 @@ subtest 'auth forbidden via domain' => sub {
     is_deeply $rendered, \@expected, 'normal auth error via regular domain';
 };
 
+subtest 'None authentication provider fallback and admin auto-login' => sub {
+    my $t_none = Test::Mojo->new('OpenQA::WebAPI');
+    $t_none->app->config->{auth}->{method} = 'None';
+    require OpenQA::WebAPI::Auth::None;
+    OpenQA::WebAPI::Auth::None::auth_setup($t_none->app);
+
+    $t_none->get_ok('/')->status_is(200, 'fallback to unauthenticated_user for UI requests');
+    $t_none->get_ok('/api/v1/jobs' => {'X-API-Microtime' => time})
+      ->status_is(200, 'API request without key works if provider supports unauthenticated access');
+    $t_none->json_is('/error' => undef, 'no error returned for valid unauthenticated API access');
+
+    my $user = $t_none->app->schema->resultset('Users')->find({username => 'admin'});
+    die "admin user not found" unless $user;
+    $user->update({is_admin => 0, is_operator => 0});
+    $t_none->get_ok('/')->status_is(200, 'UI request triggers admin/operator flag update if missing');
+    $user->discard_changes;
+    ok $user->is_admin && $user->is_operator, 'admin user has admin and operator flags restored';
+
+    $t_none->post_ok('/login')->status_is(302, 'explicit login redirects');
+    $t_none->get_ok($t_none->tx->res->headers->location)->status_is(200, 'redirected page accessible after login');
+};
+
+subtest 'Auth::check validation including localhost fallback and API key verification' => sub {
+    my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app);
+    my $tx = Mojo::Transaction::HTTP->new;
+    $c->tx($tx);
+
+    $t->app->config->{no_localhost_auth} = 1;
+    my $tx_mock = Test::MockModule->new('Mojo::Transaction::HTTP');
+    $tx_mock->redefine(remote_address => sub { '127.0.0.1' });
+    ok $c->check, 'authentication skipped for localhost when no_localhost_auth is enabled';
+
+    $tx_mock->redefine(remote_address => sub { '1.2.3.4' });
+    $c->req->url->base(Mojo::URL->new('http://localhost'));
+    $c->req->headers->host('localhost');
+    $c->req->headers->header('X-API-Key' => 'ARTHURKEY01');
+    my $microtime = time;
+    $c->req->headers->header('X-API-Microtime' => $microtime);
+    my $hash = hmac_sha1_sum($c->req->url->to_string . $microtime, 'EXCALIBUR');
+    $c->req->headers->header('X-API-Hash' => $hash);
+    ok $c->check, 'API key authentication succeeds with valid HMAC and timestamp';
+};
+
+
 done_testing();
