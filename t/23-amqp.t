@@ -114,11 +114,7 @@ subtest 'mark job with taken over bugref as done' => sub {
     is $previous_job->bugref, 'bsc#123', 'added bugref recognized';
 
     # mark so far running job 99963 as failed which should trigger bug carry over
-    $t->post_ok(
-        '/api/v1/jobs/99963/set_done',
-        form => {
-            result => OpenQA::Jobs::Constants::FAILED
-        })->status_is(200);
+    $t->post_ok('/api/v1/jobs/99963/set_done', form => {result => FAILED})->status_is(200);
     my $job_event = $published{'suse.openqa.job.done'};
     my $comment_event = $published{'suse.openqa.comment.create'};
     is_deeply
@@ -240,9 +236,7 @@ my ($last_publisher, $last_promise);
 $publisher_mock->redefine(
     publish_p => sub ($publisher, $body, $headers, %args) {
         $last_publisher = $publisher;
-        $published{body} = $body;
-        $published{headers} = $headers;
-        $published{args} = \%args;
+        %published = (body => $body, headers => $headers, args => \%args);
         return $last_promise = Mojo::Promise->new;
     });
 
