@@ -129,10 +129,18 @@ update_api() {
     cd api
     "${scriptroot}"/generate-documentation-genapi
 
-    find . -name '*.md' -not -name 'header' -exec pandoc -s -f gfm -o {}.html {} \;
-    while IFS= read -r -d '' file; do
-        mv "$file" "${file%.md.html}.html"
-    done < <(find . -name '*.md.html' -print0)
+    for f in *.md; do
+        [[ -e "$f" ]] || continue
+        [[ "$f" == "header.md" ]] && continue
+        filename=$(basename -s .md "$f")
+        pandoc -s -f gfm -o "$filename.html" "$f" \
+            --template="${scriptroot}/../docs/template.html" \
+            -c ../style.css \
+            --embed-resources --standalone \
+            $syntax_highlight_opt \
+            --metadata title="openQA $filename API" \
+            --toc
+    done
 
     while IFS= read -r -d '' file; do
         header_template "$file" > "$file.tmp"
@@ -214,6 +222,7 @@ call_pandoc() {
     cd docs
     mkdir "${tmpwd}"/output 2> /dev/null || true # we don't care if the directory already exists
     cp -r images "${tmpwd}"/output
+    cp style.css "${tmpwd}"/output/
 
     syntax_highlight_opt=""
     if pandoc --help | grep -q 'syntax-highlighting'; then
