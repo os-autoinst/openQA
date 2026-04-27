@@ -34,7 +34,7 @@ aliases:
   - &chown_hack_for_cache
     name: Chown package cache to user
     command: |
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
+      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp
 
   - &chown_hack_for_cache_fullstack
     name: Chown autoinst cache to user
