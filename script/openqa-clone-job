@@ -184,6 +184,11 @@ Prints an `openqa-cli` command to create the jobs instead of creating them
 directly. This is useful to customize the API call or to review it before
 submitting.
 
+=item B<--badge>
+
+Instead of the normal plain text scenario name and URL outputs a markdown list
+entry of labeled badges and links.
+
 =item B<--reproduce>
 
 Ensure the cloned jobs use the same version of the test code and needles as the
@@ -229,10 +234,11 @@ sub parse_options () {
     GetOptions(
         \%options, 'from=s', 'host=s', 'dir=s',
         'apikey:s', 'apisecret:s', 'verbose|v', 'json-output|j',
-        'skip-deps', 'skip-chained-deps', 'skip-download', 'parental-inheritance',
-        'help|h', 'show-progress', 'within-instance|w=s', 'clone-children',
-        'max-depth:i', 'repeat|r:i', 'retry:i', 'ignore-missing-assets',
-        'export-command', 'skip-checks', 'check-repos', 'reproduce',
+        'badge', 'skip-deps', 'skip-chained-deps', 'skip-download',
+        'parental-inheritance', 'help|h', 'show-progress', 'within-instance|w=s',
+        'clone-children', 'max-depth:i', 'repeat|r:i', 'retry:i',
+        'ignore-missing-assets', 'export-command', 'skip-checks', 'check-repos',
+        'reproduce',
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
