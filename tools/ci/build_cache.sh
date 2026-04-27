@@ -11,4 +11,8 @@ tools/retry sudo zypper --gpg-auto-import-keys ref
 ci_packages=$(sed -e 's/\r//' < tools/ci/ci-packages.txt)
 touch /var/cache/zypp/packages/.keep_packages
 sudo zypper -n in $ci_packages
+if [[ "$(find /var/cache/zypp/packages/ | wc -l)" == 0 ]]; then
+    echo "no packages cached"
+    exit 1
+fi
 echo "build_cache.sh done"
