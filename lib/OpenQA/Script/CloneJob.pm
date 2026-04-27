@@ -316,8 +316,15 @@ sub handle_tx ($tx, $url_handler, $options, $jobs) {
         print Cpanel::JSON::XS->new->pretty->encode($cloned_jobs) and return $cloned_jobs if $options->{'json-output'};
         if (my $job_count = keys %$cloned_jobs) {
             my $base_url = openqa_baseurl($url_handler->{local_url});
-            say $job_count == 1 ? '1 job has been created:' : "$job_count jobs have been created:";
-            say " - $jobs->{$_}->{name} -> $base_url/tests/$cloned_jobs->{$_}" for sort keys %$cloned_jobs;
+            if ($options->{badge}) {
+                say
+"* [![$jobs->{$_}->{name}]($base_url/tests/$cloned_jobs->{$_}/badge?label=$jobs->{$_}->{name})]($base_url/tests/$cloned_jobs->{$_})"
+                  for sort keys %$cloned_jobs;
+            }
+            else {
+                say $job_count == 1 ? '1 job has been created:' : "$job_count jobs have been created:";
+                say " - $jobs->{$_}->{name} -> $base_url/tests/$cloned_jobs->{$_}" for sort keys %$cloned_jobs;
+            }
         }
         return $cloned_jobs;
     }

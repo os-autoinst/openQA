@@ -544,4 +544,17 @@ subtest 'determining base URL' => sub {
     is openqa_baseurl(Mojo::URL->new('http://foo:9526/bar')), 'http://foo:9526', 'custom port preserved';
 };
 
+subtest 'badge output' => sub {
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    $clone_mock->unmock_all;
+    my $res = Test::MockObject->new->set_always(json => {ids => {42 => 43}});
+    my $tx = Test::MockObject->new->set_false('error')->set_always(res => $res);
+    my %url_handler = (local_url => Mojo::URL->new('https://base-url/foo/bar'));
+    my $options = {badge => 1};
+    my $jobs = {42 => {name => 'testjob'}};
+    combined_like { OpenQA::Script::CloneJob::handle_tx($tx, \%url_handler, $options, $jobs) }
+    qr|^\* \[!\[testjob\]\(https://base-url/tests/43/badge\?label=testjob\)\]\(https://base-url/tests/43\)$|m,
+      'badge output format';
+};
+
 done_testing();
