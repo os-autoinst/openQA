@@ -12,6 +12,7 @@ use OpenQA::Test::Client 'client';
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use Test::Output qw(combined_like combined_unlike);
+use Test::MockObject;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -232,10 +233,11 @@ $plugin_mock->unmock('publish_amqp');
 %published = ();
 # ...but we'll mock the thing it calls.
 my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
-my ($last_publisher, $last_promise);
+my ($last_publisher, $last_client, $last_promise);
 $publisher_mock->redefine(
     publish_p => sub ($publisher, $body, $headers, %args) {
         $last_publisher = $publisher;
+        $publisher->client($last_client = Test::MockObject->new->set_true('close'));
         %published = (body => $body, headers => $headers, args => \%args);
         return $last_promise = Mojo::Promise->new;
     });
@@ -291,6 +293,7 @@ subtest 'promise handlers' => sub {
       'failure logged, no attempts remaining';
     combined_unlike { Mojo::IOLoop->one_tick } qr/Sending.*some\.topic/, 'no further retry logged';
     is $last_promise, $previous_promise, 'no further promise has been made (running out of retries)';
+    $last_client->called_ok(close => 'connection was closed');
 };
 
 $app->config->{amqp}{cacertfile} = '/some/cacert.pem';
