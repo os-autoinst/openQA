@@ -22,11 +22,7 @@ use OpenQA::WebAPI::Plugin::AMQP;
 
 my $plugin_mock = Test::MockModule->new('OpenQA::WebAPI::Plugin::AMQP');
 my %published;
-$plugin_mock->redefine(
-    publish_amqp => sub {
-        my ($self, $topic, $data) = @_;
-        $published{$topic} = $data;
-    });
+$plugin_mock->redefine(publish_amqp => sub ($self, $topic, $data) { $published{$topic} = $data });
 
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
@@ -242,20 +238,8 @@ $plugin_mock->unmock('publish_amqp');
 my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
 my ($last_publisher, $last_promise);
 $publisher_mock->redefine(
-    publish_p => sub {
-        $last_publisher = shift;
-        # copied from upstream git master as of 2019-07-24
-        my $body = shift;
-        my $headers = {};
-        my %args = ();
-
-        if (ref($_[0]) eq 'HASH') {
-            $headers = shift;
-        }
-        if (@_) {
-            %args = (@_);
-        }
-        # end copying
+    publish_p => sub ($publisher, $body, $headers, %args) {
+        $last_publisher = $publisher;
         $published{body} = $body;
         $published{headers} = $headers;
         $published{args} = \%args;
