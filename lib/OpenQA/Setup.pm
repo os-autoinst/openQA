@@ -274,7 +274,7 @@ sub default_config () {
             generic_max_limit => 100000,
             tests_overview_max_jobs => 2000,
             tests_overview_summary_max_groups => 7,
-            job_groups_overview_max_jobs => 10000,
+            job_groups_overview_max_jobs => 25000,
             all_tests_default_finished_jobs => 500,
             all_tests_max_finished_jobs => 5000,
             list_templates_default_limit => 5000,
