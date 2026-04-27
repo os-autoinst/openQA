@@ -96,6 +96,7 @@
   /usr/bin/cksum rix,
   /usr/bin/cp rix,
   /usr/bin/date rix,
+  /usr/bin/df rix,
   /usr/bin/dirname rix,
   /usr/bin/eatmydata rix,
   /usr/bin/env rix,
