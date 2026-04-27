@@ -67,22 +67,16 @@ subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`
 
 subtest None => sub {
     my $t = test_auth_method_startup('None');
-    my $key_val = 'DEADBEEFDEADBEEF';
-    my $bearer_token = "Bearer admin:$key_val:$key_val";
     $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
     $t->get_ok('/admin/users')->status_is(200)->content_like(qr/Administrator/);
 
     my $user = $t->app->schema->resultset('Users')->find({username => 'admin'});
     ok $user, 'admin user exists';
-    my $key = $user->api_keys->find({key => $key_val});
-    ok $key, 'admin API key exists';
-    is $key->secret, $key_val, 'admin API secret matches';
-    is $key->t_expiration, undef, 'admin API key has no expiration';
+    is $user->api_keys->count, 0, 'no API keys created by default';
 
-    $t->get_ok('/api/v1/auth' => {Authorization => $bearer_token})->status_is(200)->content_is('ok');
+    $t->get_ok('/api/v1/auth' => {'X-API-Microtime' => time})->status_is(200)->content_is('ok');
 
     $user->audit_events->delete;
-    $user->api_keys->delete;
     $user->delete;
     $t->get_ok('/login' => 'login as admin')->status_is(302);
     $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are admin/);
@@ -99,16 +93,16 @@ subtest None => sub {
     $t->get_ok('/')->status_is(200)->content_unlike(qr/Logout/);
 
     {
-        local $ENV{OPENQA_AUTH_NONE_KEY} = 'CUSTOMKEY';
-        local $ENV{OPENQA_AUTH_NONE_SECRET} = 'CUSTOMSECRET';
-        my $t2 = test_auth_method_startup('None');
-        my $key2 = $t2->app->schema->resultset('ApiKeys')->find({key => 'CUSTOMKEY'});
-        ok $key2, 'custom API key exists';
-        is $key2->secret, 'CUSTOMSECRET', 'custom API secret matches';
+        # Verify that explicit API keys still work if created
+        my $key_val = 'CUSTOMKEY';
+        $user->api_keys->create({key => $key_val, secret => $key_val});
+        my $bearer_token = "Bearer admin:$key_val:$key_val";
 
-        $t2->post_ok(
+        $t->get_ok('/api/v1/auth' => {Authorization => $bearer_token})->status_is(200)->content_is('ok');
+
+        $t->post_ok(
             '/api/v1/jobs/cancel',
-            {'X-API-Key' => 'CUSTOMKEY', 'X-API-Microtime' => time},
+            {'X-API-Key' => $key_val, 'X-API-Hash' => 'WRONG', 'X-API-Microtime' => time},
             'fail auth on forged API header instead of bypassing CSRF'
         )->status_is(403)->content_unlike(qr/Bad CSRF token/i);
     }
@@ -127,11 +121,13 @@ subtest None => sub {
             {Authorization => 'Bearer JUNK_TOKEN'},
             'fail auth on forged Bearer header instead of bypassing CSRF'
         )->status_is(403)->content_unlike(qr/Bad CSRF token/i);
+
         $t->get_ok(
             '/api/v1/auth',
-            {Authorization => $bearer_token},
-            'pass auth on valid Bearer header despite existing session and missing CSRF'
+            {'X-API-Microtime' => time},
+            'pass auth on API request despite existing session and missing CSRF'
         )->status_is(200)->content_is('ok');
+
         $t->post_ok($url, 'fail on missing CSRF token without API headers')->status_is(403)
           ->content_like(qr/Bad CSRF token/i);
     };

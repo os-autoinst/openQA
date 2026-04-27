@@ -78,6 +78,11 @@ sub auth ($self) {
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
         }
+        # Fallback for None auth
+        elsif ($self->app->config->{auth}->{method} eq 'None') {
+            $user = $self->schema->resultset('Users')->find({username => 'admin'});
+            $reason = undef;
+        }
         else {
             $log->trace('No API key from client');
             $reason = 'no api key';
