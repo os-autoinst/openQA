@@ -6,12 +6,12 @@ orbs:
 aliases:
   - &restore_cache
     keys:
-      - v2-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
+      - v3-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
 
   - &save_cache
-    key: v2-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
+    key: v3-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
     paths:
-      - "/var/cache/zypp/packages"
+      - "/var/cache/zypp"
 
   - &restore_fullstack_cache
     keys:
