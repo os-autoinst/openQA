@@ -24,23 +24,6 @@ body {
 .toc-section-number::after, .header-section-number::after {
   content: '. ';
 }
-/* Responsive design */
-@media (width <= 800px) {
-  body {
-    flex-direction: column;
-  }
-  #TOC {
-    position: static;
-    width: 100%;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid #ddd;
-  }
-  main {
-    margin-left: 0;
-    padding: 20px;
-  }
-}
 #TOC ul {
   list-style: none;
   padding-left: 20px;
@@ -152,4 +135,21 @@ footer {
   color: #777;
   border-top: 1px solid #eee;
   padding-top: 20px;
+}
+/* Responsive design */
+@media (width <= 800px) {
+  body {
+    display: block;
+  }
+  #TOC {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+  main {
+    margin-left: 0;
+    padding: 20px;
+  }
 }
