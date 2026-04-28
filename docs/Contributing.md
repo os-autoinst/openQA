@@ -1074,78 +1074,8 @@ chromedriver instance the variable `OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT` can
 be set to a higher value. See
 <https://metacpan.org/pod/Selenium>::Chrome#startup_timeout for details.
 
-# CircleCI workflow
-
-The goal of the following workflow is to provide a way to run tests with a
-pre-approved list of dependencies both in the CI and locally.
-
-## Dependency artefacts
-
-- ci-packages.txt lists dependencies to test against.
-
-- autoinst.sha contains sha of os-autoinst commit for integration testing.
-  The testing will run against the latest master if empty.
-
-## Managing and troubleshooting dependencies
-
-`ci-packages.txt` and `autoinst.sha` are aimed to represent those dependencies
-which change often. In normal workflow these files are generated automatically
-by dedicated Bot, then go in PR through CI, then reviewed and accepted by
-human.
-So, in normal workflow it is guaranteed that everyone always works on list of
-correct and approved dependencies (unless they explicitly tell CI to use
-custom dependencies).
-
-The Bot tracks dependencies only in master branch by default, but this may be
-extended in circleci config file.
-The Bot uses `tools/ci/build_dependencies.sh` script to detect any changes.
-This script can be used manually as well.
-Alternatively just add newly introduced dependencies into ci-packages.txt, so
-CI will run tests with them.
-
-Occasionally it may be a challenge to work with ci-packages.txt
-(e.g. package version is not available anymore). In such case you can either
-try to rebuild ci-packages.txt using `tools/ci/build_dependencies.sh` or
-just remove all entries and put only openQA-devel into it
-Script `tools/ci/build_dependencies.sh` can be also modified when major
-changes are performed, e.g. different OS version or packages from forked OBS
-project, etc.
-
-## Run tests locally using a container
-
-One way is to build an image using the `build_local_container.sh` script, start a
-container and then use the same commands one would use to test locally.
-
-Pull the latest base image (otherwise it may be outdated):
-
-```sh
-podman pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
-```
-
-Create an image called `localtest` based on the contents of `ci-packages.txt`
-and `autoinst`:
-
-```sh
-tools/ci/build_local_container.sh
-```
-
-Mount the openQA checkout under `/opt/testing_area` within the container and run
-tests as usual, e.g.:
-
-```sh
-podman run -it --rm -v $PWD:/opt/testing_area localtest bash -c 'make test TESTS=t/ui/25*'
-```
-
-Alternatively, start the container and execute commands via `podman exec`, e.g.:
-
-```sh
-podman run --rm --name t1 -v $PWD:/opt/testing_area localtest tail -f /dev/null & sleep 1
-podman exec -it t1 bash -c 'make test TESTS=t/ui/25-developer_mode.t'
-podman stop -t 0 t1
-```
-
 <a id="circleci-local-container"></a>
-## Run tests using the circleci tool
+# Run tests using the CircleCI tool
 
 After installing the `circleci` tool the following commands will be available.
 They will build the container and use committed changes from current local branch.
