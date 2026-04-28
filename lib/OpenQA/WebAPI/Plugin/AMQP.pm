@@ -95,7 +95,12 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
             }
             OpenQA::Events->singleton->emit('amqp_handled');
             return log_error $log_msg;
-        })->finally(sub { undef $publisher });
+        }
+    )->finally(
+        sub {
+            if (my $client = $publisher->client) { $client->close }
+            undef $publisher;
+        });
 }
 
 sub on_job_event ($self, $args) {

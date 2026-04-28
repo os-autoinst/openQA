@@ -12,6 +12,7 @@ use OpenQA::Test::Client 'client';
 require OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use Test::Output qw(combined_like combined_unlike);
+use Test::MockObject;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -22,11 +23,7 @@ use OpenQA::WebAPI::Plugin::AMQP;
 
 my $plugin_mock = Test::MockModule->new('OpenQA::WebAPI::Plugin::AMQP');
 my %published;
-$plugin_mock->redefine(
-    publish_amqp => sub {
-        my ($self, $topic, $data) = @_;
-        $published{$topic} = $data;
-    });
+$plugin_mock->redefine(publish_amqp => sub ($self, $topic, $data) { $published{$topic} = $data });
 
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
@@ -118,11 +115,7 @@ subtest 'mark job with taken over bugref as done' => sub {
     is $previous_job->bugref, 'bsc#123', 'added bugref recognized';
 
     # mark so far running job 99963 as failed which should trigger bug carry over
-    $t->post_ok(
-        '/api/v1/jobs/99963/set_done',
-        form => {
-            result => OpenQA::Jobs::Constants::FAILED
-        })->status_is(200);
+    $t->post_ok('/api/v1/jobs/99963/set_done', form => {result => FAILED})->status_is(200);
     my $job_event = $published{'suse.openqa.job.done'};
     my $comment_event = $published{'suse.openqa.comment.create'};
     is_deeply
@@ -240,25 +233,12 @@ $plugin_mock->unmock('publish_amqp');
 %published = ();
 # ...but we'll mock the thing it calls.
 my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
-my ($last_publisher, $last_promise);
+my ($last_publisher, $last_client, $last_promise);
 $publisher_mock->redefine(
-    publish_p => sub {
-        $last_publisher = shift;
-        # copied from upstream git master as of 2019-07-24
-        my $body = shift;
-        my $headers = {};
-        my %args = ();
-
-        if (ref($_[0]) eq 'HASH') {
-            $headers = shift;
-        }
-        if (@_) {
-            %args = (@_);
-        }
-        # end copying
-        $published{body} = $body;
-        $published{headers} = $headers;
-        $published{args} = \%args;
+    publish_p => sub ($publisher, $body, $headers, %args) {
+        $last_publisher = $publisher;
+        $publisher->client($last_client = Test::MockObject->new->set_true('close'));
+        %published = (body => $body, headers => $headers, args => \%args);
         return $last_promise = Mojo::Promise->new;
     });
 
@@ -313,6 +293,7 @@ subtest 'promise handlers' => sub {
       'failure logged, no attempts remaining';
     combined_unlike { Mojo::IOLoop->one_tick } qr/Sending.*some\.topic/, 'no further retry logged';
     is $last_promise, $previous_promise, 'no further promise has been made (running out of retries)';
+    $last_client->called_ok(close => 'connection was closed');
 };
 
 $app->config->{amqp}{cacertfile} = '/some/cacert.pem';
