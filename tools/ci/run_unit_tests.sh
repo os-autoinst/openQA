@@ -19,9 +19,16 @@ export HARNESS='--harness TAP::Harness::JUnit --timer'
 # Activate Test::CheckGitStatus
 export CHECK_GIT_STATUS=1
 mkdir -p test-results/junit
-sudo chown -R $USER test-results
-# circleCI can be particularly slow sometimes since some time around 2021-06
+# CircleCI can be particularly slow sometimes since some time around 2021-06
 export OPENQA_TEST_TIMEOUT_SCALE_CI=3
 export EXTRA_PROVE_ARGS="-v"
 export OPENQA_FULLSTACK_TEMP_DIR=$PWD/test-results/fullstack
-make test-$target
+# Set consistent language
+export LANGUAGE= LANG=C.utf8
+
+# run make as different user to avoid "initdb: error: cannot be run as root"
+chmod 777 "$PWD/.." "$PWD"
+user=testuser
+id -u "$user" &>/dev/null || useradd "$user"
+chown -R "$user:$user" "$PWD"
+sudo --preserve-env -u "$user" make test-"$target"
