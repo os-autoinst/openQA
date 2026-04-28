@@ -21,6 +21,7 @@ sub register ($self, $app, @args) {
     $app->helper(is_admin => \&_is_admin);
     $app->helper(is_api_request => \&_is_api_request);
     $app->helper(is_local_request => \&_is_local_request);
+    $app->helper(remote_address => sub ($c) { $c->tx->remote_address });
     $app->helper(render_specific_not_found => \&_render_specific_not_found);
     $app->helper(via_domain => \&_via_domain);
 }
@@ -86,7 +87,7 @@ sub _is_api_request ($c) {
 
 sub _is_local_request ($c) {
     # IPv4 and IPv6 should be treated the same
-    my $address = $c->tx->remote_address;
+    my $address = $c->remote_address;
     return $address eq '127.0.0.1' || $address eq '::1';
 }
 

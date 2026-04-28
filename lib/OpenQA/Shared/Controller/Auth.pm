@@ -9,6 +9,9 @@ use OpenQA::Log qw(log_trace);
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 use Time::Seconds;
+use Socket
+  qw(AF_INET AF_INET6 inet_pton getnameinfo getaddrinfo NI_NAMEREQD NI_NUMERICHOST NI_NUMERICSERV SOCK_STREAM pack_sockaddr_in pack_sockaddr_in6);
+use List::Util 'any';
 
 sub check ($self) {
     my $config = $self->app->config;
@@ -92,6 +95,46 @@ sub auth ($self) {
 
     $self->render(json => {error => $reason}, status => 403);
     return 0;
+}
+
+sub auth_assets ($self) {
+    my $allowlist = $self->app->config->{auth}->{assets_allowlist} // 'localhost';
+    my $remote_address = $self->remote_address;
+    my @allowed_items = split /\s+/, $allowlist;
+
+    return 1 if any { $_ eq 'localhost' ? $self->is_local_request : $remote_address eq $_ } @allowed_items;
+
+    my @host_allowed = grep { $_ ne 'localhost' && $_ !~ /^[0-9.:]+$/ } @allowed_items;
+    if (@host_allowed) {
+        my $hostname = $self->_reverse_dns($remote_address);
+        if ($hostname && $self->_forward_dns_match($hostname, $remote_address)) {
+            return 1
+              if any {
+                my $host = $_;
+                $host =~ /^\./ ? $hostname =~ /\Q$host\E$/i : lc $hostname eq lc $host
+              } @host_allowed;
+        }
+    }
+
+    return $self->auth;
+}
+
+sub _forward_dns_match ($self, $hostname, $expected_ip) {
+    my ($err, @res) = getaddrinfo($hostname, '', {socktype => SOCK_STREAM});
+    return 0 if $err;
+    for my $res (@res) {
+        my ($err, $ip) = getnameinfo($res->{addr}, NI_NUMERICHOST | NI_NUMERICSERV);
+        return 1 if !$err && $ip eq $expected_ip;
+    }
+    return 0;
+}
+
+sub _reverse_dns ($self, $ip) {
+    my $family = $ip =~ /:/ ? AF_INET6 : AF_INET;
+    my $packed = inet_pton($family, $ip) or return undef;
+    my $sockaddr = $family == AF_INET ? pack_sockaddr_in(0, $packed) : pack_sockaddr_in6(0, $packed);
+    my ($err, $hostname) = getnameinfo($sockaddr, NI_NAMEREQD);
+    return $err ? undef : $hostname;
 }
 
 sub auth_operator ($self) {
