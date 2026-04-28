@@ -108,12 +108,14 @@
     #include <abstractions/consoles>
     #include <abstractions/nameservice>
 
-    /etc/ssh/ssh_config r,
+    /{usr/,}etc/ssh/ssh_config r,
+    /{usr/,}etc/ssh/ssh_config.d/** r,
     /etc/ssh/ssh_known_hosts r,
     /etc/ssl/openssl.cnf r,
     /proc/*/fd/ r,
     /proc/filesystems r,
     /usr/bin/ssh rix,
+    /usr/bin/ssh.hmac r,
     /var/lib/openqa/.ssh/* rw,
 
   }
