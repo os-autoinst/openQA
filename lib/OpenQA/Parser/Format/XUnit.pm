@@ -17,7 +17,6 @@ sub parse ($self, $xml) {
     confess 'No XML given/loaded' unless $xml;
     my $dom = Mojo::DOM->new->xml(1)->parse($xml);
 
-    my @tests;
     my %t_names;
     my $i = 1;
     for my $ts ($dom->find('testsuite')->each) {

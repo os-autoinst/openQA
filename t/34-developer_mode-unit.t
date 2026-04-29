@@ -35,7 +35,7 @@ $jobs_mock_module->redefine(
 my @ipc_messages_for_websocket_server;
 my $fake_send_msg_failure;
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
-my ($client_called, $last_command);
+my $client_called;
 $mock_client->redefine(
     send_msg => sub {
         my $self = shift;

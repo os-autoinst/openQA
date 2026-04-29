@@ -257,7 +257,6 @@ subtest 'to_yaml' => sub {
     my $yaml2 = path("$FindBin::Bin/../data/08-opensuse-test.yaml")->slurp;
     my %yaml = (1001 => $yaml1, 1002 => $yaml2);
 
-    my @templates;
     for my $group ($job_groups->search) {
         my $id = $group->id;
         my $yaml = $group->to_yaml;

@@ -38,7 +38,6 @@ sub parse ($self, $xml) {
     my $dom = Mojo::DOM->new($xml);
     confess 'Failed parsing XML' if @{$dom->tree} <= 2;
 
-    my @tests;
     for my $ts ($dom->find('testsuite')->each) {
         my $ts_category = $ts->{package};
         my $script = $ts->{script} ? $ts->{script} : undef;

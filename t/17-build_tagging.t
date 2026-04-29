@@ -59,7 +59,6 @@ my $job_hash = {
 };
 
 sub create_job_version_build ($version, $build) {
-    my %job_hash;
     $job_hash->{VERSION} = $version;
     $job_hash->{BUILD} = $build;
     $jobs->create($job_hash);
