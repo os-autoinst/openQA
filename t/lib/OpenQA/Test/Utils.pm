@@ -121,6 +121,7 @@ sub fake_asset_server {
     $r->get(
         '/test.tar.xz' => sub ($c) {
             # an xz compressed tar file containing the single file "test-file" with the contents "Archived file!\n"
+            ## no critic (ValuesAndExpressions::ProhibitImplicitNewlines)
             my $data = '/Td6WFoAAATm1rRGAgAhARYAAAB0L+Wj4Af/AHFdADoZSs4dfe+Arz18uNRLppL12Hz5MDHYcLt5
                         /PvM5kdTuJD3iSCXTYLW9zb9MXA9LqgK7raUtSCXM7VLT8xqwGE4kxz2xTNfbS/DRFiYMsutZ7Xq
                         iWj1mj0AgYJejwqLTPCcO1J/4gLpWvPaWPIhX58AAAAAAJpvxi0MvTYnAAGNAYAQAAAg72StscRn

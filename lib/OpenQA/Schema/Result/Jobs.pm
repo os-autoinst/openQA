@@ -1983,12 +1983,13 @@ sub packages_diff ($self, $prev, $ignore, $filename, $fallback = 'Diff of packag
 sub ancestors ($self, $limit = -1) {
     my $ancestors = $self->{_ancestors};
     return $ancestors if defined $ancestors;
-    my $sth = $self->result_source->schema->storage->dbh->prepare('
+    my $sth = $self->result_source->schema->storage->dbh->prepare(<<~'EOM');
         with recursive orig_id as (
             select ? as orig_id, 0 as level
             union all
             select id as orig_id, orig_id.level + 1 as level from jobs join orig_id on orig_id.orig_id = jobs.clone_id where (? < 0 or level < ?))
-        select level from orig_id order by level desc limit 1;');
+        select level from orig_id order by level desc limit 1;
+        EOM
     $sth->bind_param(1, $self->id, SQL_BIGINT);
     $sth->bind_param(2, $limit, SQL_BIGINT);
     $sth->bind_param(3, $limit, SQL_BIGINT);
@@ -1999,12 +2000,13 @@ sub ancestors ($self, $limit = -1) {
 sub descendants ($self, $limit = -1) {
     my $descendants = $self->{_descendants};
     return $descendants if defined $descendants;
-    my $sth = $self->result_source->schema->storage->dbh->prepare('
+    my $sth = $self->result_source->schema->storage->dbh->prepare(<<~'EOM');
         with recursive clone_id as (
             select ? as clone_id, -1 as level
             union all
             select jobs.clone_id as clone_id, clone_id.level + 1 as level from jobs join clone_id on clone_id.clone_id = jobs.id where (? < 0 or level < ?))
-        select level from clone_id order by level desc limit 1;');
+        select level from clone_id order by level desc limit 1;
+        EOM
     $sth->bind_param(1, $self->id, SQL_BIGINT);
     $sth->bind_param(2, $limit, SQL_BIGINT);
     $sth->bind_param(3, $limit, SQL_BIGINT);

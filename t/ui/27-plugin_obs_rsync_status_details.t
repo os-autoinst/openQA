@@ -34,7 +34,7 @@ foreach my $proj (sort keys %params) {
     # navigate to page and mock AJAX requests
     $driver->get("/admin/obs_rsync/$parent");
     $driver->title_like(qr/openQA: OBS synchronization folders( of .*)?/, "on folders page ($parent)");
-    $driver->execute_script('
+    $driver->execute_script(<<~'EOM');
         window.skipObsRsyncDelay = true;
         window.ajaxRequests = [];
         window.fetch = function(url, options) {
@@ -43,10 +43,10 @@ foreach my $proj (sort keys %params) {
             if (Object.keys(options.headers ?? {}).length === 0) delete options.headers;
             options.url = url; window.ajaxRequests.push(options);
             return new Promise((resolve, reject) => {
-                resolve(new Response(\'{"message": "fake response"}\'));
+                resolve(new Response('{"message": "fake response"}'));
             });
         };
-    ');
+        EOM
 
     # check whether table row for folder is present at all (to debug poo#198530)
     my @folder_row = $driver->find_elements("tr#folder_$ident");

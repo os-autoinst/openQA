@@ -36,10 +36,10 @@ subtest 'Back to top button' => sub {
       = sub { $driver->execute_script('return getComputedStyle(document.getElementById("back-to-top")).display') };
     is $check_visibility->(), 'none', 'button is not visible';
     # scroll down resizing the jumbotron to ensure there's enough content for scrolling down
-    $driver->execute_script(
-        'document.getElementsByClassName("jumbotron")[0].style.height = "10000px";
-         window.scrollTo(0, document.body.scrollHeight);'
-    );
+    $driver->execute_script(<<~'EOM');
+        document.getElementsByClassName("jumbotron")[0].style.height = "10000px";
+        window.scrollTo(0, document.body.scrollHeight);
+    EOM
     wait_until sub { $check_visibility->() ne 'none' }, 'button is visible after scrolling down', 10;
     $driver->find_element('#back-to-top')->click;
     wait_until sub { $check_visibility->() eq 'none' }, 'button is not visible anymore after using it', 10;

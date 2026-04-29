@@ -132,11 +132,13 @@ sub _find_existing_minion_job ($self, $task, $args, $job_ids) {
     $args = [$args] if ref $args eq 'HASH';
     my $dtf = $schema->storage->datetime_parser;
     my $dbh = $schema->storage->dbh;
-    my $sql = q{SELECT id, args, created, state, retries, notes, result FROM minion_jobs
-                WHERE state IN ('inactive', 'active', 'finished')
-                AND created >= ? AND task = ? AND args = ?
-                ORDER BY array_position(array['finished'::varchar, 'inactive'::varchar, 'active'::varchar], state::varchar)
-                LIMIT 1};
+    my $sql = <<~'EOM';
+        SELECT id, args, created, state, retries, notes, result FROM minion_jobs
+        WHERE state IN ('inactive', 'active', 'finished')
+        AND created >= ? AND task = ? AND args = ?
+        ORDER BY array_position(array['finished'::varchar, 'inactive'::varchar, 'active'::varchar], state::varchar)
+        LIMIT 1
+        EOM
     my $sth = $dbh->prepare($sql);
     my @args = (
         $dtf->format_datetime(DateTime->now()->subtract(minutes => 1)),
