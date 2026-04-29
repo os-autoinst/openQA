@@ -130,7 +130,6 @@ spec:
               command: ["curl", "-f", "http://localhost:9526"]
         - name: {{ include "openqa.fullname" . }}-nginx
           image: "nginx:alpine"
-          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/nginx.conf
