@@ -3,6 +3,7 @@ baseUrl: openqa.internal
 useHttps: false
 key: 1234567890ABCDEF
 secret: 1234567890ABCDEF
+mojoClientDebug: "0"
 image:
   name: registry.opensuse.org/devel/openqa/containers16.0/openqa_webui
   pullPolicy: Always
