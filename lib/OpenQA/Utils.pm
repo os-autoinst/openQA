@@ -35,7 +35,7 @@ use List::Util qw(all min);
 
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
-my (%BUGREFS, %BUGURLS, $MARKER_REFS, $MARKER_URLS, $BUGREF_REGEX);
+my (%BUGREFS, %BUGURLS, $MARKER_REFS, $MARKER_URLS, $BUGREF_REGEX, $AFTER_TAG_LOOKBEHIND);
 
 BEGIN {
     %BUGREFS = (
@@ -78,10 +78,12 @@ BEGIN {
 
     # <marker>[#<project/repo>]#<id>
     $BUGREF_REGEX = qr{(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[^#\s<>,]+)?\#(?<id>([A-Z]+-)?\d+))};
+
+    $AFTER_TAG_LOOKBEHIND = qr{(?<=<\w{1}>)|(?<=<\w{2}>)|(?<=<\w{3}>)|(?<=<\w{4}>)|(?<=<\w{5}>)|(?<=<\w{6}>)};
 }
 
 use constant UNCONSTRAINED_BUGREF_REGEX => $BUGREF_REGEX;
-use constant BUGREF_REGEX => qr{(?:^|(?<=<p>)|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
+use constant BUGREF_REGEX => qr{(?:^|$AFTER_TAG_LOOKBEHIND|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
 use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#\/-]+))\b/;
 use constant FLAG_REGEX => qr/\bflag:(?<match>([\w:#]+))\b/;
 
