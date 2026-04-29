@@ -106,11 +106,11 @@ sub minion ($self) {
 
     my $dbh = $self->schema->storage->dbh;
     # rc means hook script return code
-    my $sth = $dbh->prepare(
-        q{SELECT COUNT(*) AS rc_failed_count FROM minion_jobs
+    my $sth = $dbh->prepare(<<~'EOM');
+        SELECT COUNT(*) AS rc_failed_count FROM minion_jobs
                  WHERE finished >= ? AND finished < ? AND task = 'hook_script' AND
-                       state = 'finished' AND (notes->'hook_rc')::int != 0}
-    );
+                       state = 'finished' AND (notes->'hook_rc')::int != 0
+        EOM
     $sth->execute("$rc_fail_timespan_start+0", "$rc_fail_timespan_end+0");
 
     my $result = $sth->fetchrow_arrayref;

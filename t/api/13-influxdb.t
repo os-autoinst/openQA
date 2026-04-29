@@ -33,16 +33,16 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{global}->{base_url} = 'http://example.com';
 
 
-$t->get_ok('/admin/influxdb/jobs')->status_is(200)->content_is(
-    'openqa_jobs,url=http://example.com blocked=0i,running=2i,scheduled=3i
-openqa_jobs_by_group,url=http://example.com,group=No\\ Group scheduled=2i
-openqa_jobs_by_group,url=http://example.com,group=opensuse running=1i,scheduled=1i
-openqa_jobs_by_group,url=http://example.com,group=opensuse\\ test running=1i
-openqa_jobs_by_worker,url=http://example.com,worker=localhost running=1i
-openqa_jobs_by_arch,url=http://example.com,arch=i586 scheduled=2i
-openqa_jobs_by_arch,url=http://example.com,arch=x86_64 running=2i
-'
-)->content_unlike(qr/,arch= /);
+$t->get_ok('/admin/influxdb/jobs')->status_is(200)->content_is(<<~'EOM')
+    openqa_jobs,url=http://example.com blocked=0i,running=2i,scheduled=3i
+    openqa_jobs_by_group,url=http://example.com,group=No\ Group scheduled=2i
+    openqa_jobs_by_group,url=http://example.com,group=opensuse running=1i,scheduled=1i
+    openqa_jobs_by_group,url=http://example.com,group=opensuse\ test running=1i
+    openqa_jobs_by_worker,url=http://example.com,worker=localhost running=1i
+    openqa_jobs_by_arch,url=http://example.com,arch=i586 scheduled=2i
+    openqa_jobs_by_arch,url=http://example.com,arch=x86_64 running=2i
+    EOM
+  ->content_unlike(qr/,arch= /);
 
 $t->get_ok('/admin/influxdb/minion')->status_is(200)
   ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=0i,failed=0i,inactive=0i!)
@@ -74,10 +74,10 @@ subtest 'openqa_minion_jobs_hook_rc_failed counter' => sub {
     my $dbh = $schema->storage->dbh;
     my $static_now = DateTime->from_epoch(epoch => 3947);    # 1970-01-01T01:05:47
     my $rc_fail_finished = DateTime->from_epoch(epoch => 3521);    # 1970-01-01T00:46:57
-    my $sth = $dbh->prepare(
-q!INSERT INTO minion_jobs (id, args, created, delayed, finished, priority, result, retried, retries, started, state, task, worker, queue, attempts, parents, notes)
-		VALUES (7291599, '["/bin/true", 11201356, {"delay": 60, "retries": 1440, "skip_rc": 142, "timeout": "10m", "kill_timeout": "10s"}]', '2023-05-26 17:00:50.542916+02', '2023-05-26 17:00:50.542916+02', ?, 0, null, null, 0, '2023-05-26 17:00:50.565839+02', 'finished', 'hook_script', 1388, 'default', 1, '{}', '{"hook_rc": -1, "hook_cmd": "foobar", "hook_result": "Job is '':investigate:'' already, skipping investigation\n"}')!
-    );
+    my $sth = $dbh->prepare(<<~'EOM');
+        INSERT INTO minion_jobs (id, args, created, delayed, finished, priority, result, retried, retries, started, state, task, worker, queue, attempts, parents, notes)
+                VALUES (7291599, '["/bin/true", 11201356, {"delay": 60, "retries": 1440, "skip_rc": 142, "timeout": "10m", "kill_timeout": "10s"}]', '2023-05-26 17:00:50.542916+02', '2023-05-26 17:00:50.542916+02', ?, 0, null, null, 0, '2023-05-26 17:00:50.565839+02', 'finished', 'hook_script', 1388, 'default', 1, '{}', '{"hook_rc": -1, "hook_cmd": "foobar", "hook_result": "Job is '':investigate:'' already, skipping investigation\n"}')
+    EOM
     $sth->execute("$rc_fail_finished+0");
     my $mock_dt = Test::MockModule->new('DateTime');
     $mock_dt->mock(now => sub { $static_now->clone });
