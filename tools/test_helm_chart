@@ -1,8 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-which helm > /dev/null || echo "Error: Helm is not installed"
-which ct > /dev/null || echo "Error: ct is not installed"
+for cmd in helm ct; do
+    if ! command -v "$cmd" > /dev/null; then
+        echo "Error: $cmd is not installed" >&2
+        exit 1
+    fi
+done
+if [[ "${1:-lint}" != "lint" ]]; then
+    if ! command -v kubectl > /dev/null; then
+        echo "Error: kubectl is not installed" >&2
+        exit 1
+    fi
+fi
 
 # Create a temporary directory for isolated testing
 tmp_dir=$(mktemp -d)
