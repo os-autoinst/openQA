@@ -48,11 +48,11 @@ subtest 'source view for jobs using VCS based tests' => sub {
     };
 
     subtest 'unique git hash is read from vars.json if existant' => sub {
-        $vars_file->spew('
-{
-   "TEST_GIT_HASH" : "77b4c9e4bf649d6e489da710b9f08d8008e28af3"
-}
-');
+        $vars_file->spew(<<~'EOM');
+            {
+               "TEST_GIT_HASH" : "77b4c9e4bf649d6e489da710b9f08d8008e28af3"
+            }
+            EOM
         $expected = qr@github.com/me/repo/blob/77b4c9e4bf649d6e489da710b9f08d8008e28af3/tests.*/installer_timezone@;
         $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
     };

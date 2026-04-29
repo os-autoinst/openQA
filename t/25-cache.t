@@ -16,11 +16,12 @@ BEGIN {
     $cachedir->make_path->realpath;
     $db_file = $cachedir->child('cache.sqlite');
     $ENV{OPENQA_CONFIG} = path($cached, 'config')->make_path;
-    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew("
-[global]
-CACHEDIRECTORY = $cachedir
-CACHEWORKERS = 10
-CACHELIMIT = 50");
+    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew(<<~"EOM");
+        [global]
+        CACHEDIRECTORY = $cachedir
+        CACHEWORKERS = 10
+        CACHELIMIT = 50
+        EOM
 
     # make test independent of the journaling setting
     delete $ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE};
@@ -92,17 +93,19 @@ $local_cache_dir->make_path;
 for my $i (1 .. 3) {
     my $file = $local_cache_dir->child("$i.qcow2")->spew("\0" x 84);
     if ($i % 2) {
-        my $sql = "INSERT INTO assets (filename,size, etag, last_use, pending)
-                VALUES ( ?, ?, 'Not valid', strftime('\%s','now'), 0);";
+        my $sql = <<~'EOM';
+        INSERT INTO assets (filename,size, etag, last_use, pending)
+                VALUES ( ?, ?, 'Not valid', strftime('\%s','now'), 0);
+        EOM
         $cache->sqlite->db->query($sql, $file->to_string, 84);
     }
 }
 # create pending asset
 $local_cache_dir->child('4.qcow2')->touch;
-$cache->sqlite->db->query(
-    "INSERT INTO assets (filename,size, etag, last_use)
-                VALUES ( '4.qcow2', 42, 'Not valid', strftime('\%s','now'));"
-);
+$cache->sqlite->db->query(<<'EOM');
+    INSERT INTO assets (filename,size, etag, last_use)
+                VALUES ( '4.qcow2', 42, 'Not valid', strftime('\%s','now'));
+EOM
 
 # initialize the cache
 $cache->downloader->sleep_time(0.01);

@@ -32,6 +32,7 @@ END { session->clean }
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "http://127.0.0.1:$port";
 my $url = "$host/build/%%PROJECT/_result";
+## no critic (ValuesAndExpressions::ProhibitImplicitNewlines)
 my %fake_response_by_project = (
     Proj3 => '
 <!-- This project is published. -->
