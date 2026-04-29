@@ -20,11 +20,13 @@ has ua => sub { OpenQA::UserAgent->new(max_redirects => 5, max_response_size => 
 has res => undef;
 
 sub download ($self, $url, $target, $options = {}) {
-    my $log = $self->log;
-
-    local $ENV{MOJO_TMPDIR} = $self->tmpdir;
+    my $tmpdir = path($self->tmpdir);
+    try { $tmpdir->make_path }
+    catch ($e) { return "Unable to create temporary directory: $e" }
+    local $ENV{MOJO_TMPDIR} = $tmpdir;
 
     my $remaining_attempts = $self->attempts;
+    my $log = $self->log;
     my ($code, $err);
     while (1) {
         $options->{on_attempt}->() if $options->{on_attempt};
