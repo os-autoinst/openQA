@@ -6,12 +6,12 @@ orbs:
 aliases:
   - &restore_cache
     keys:
-      - v2-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
+      - v3-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
 
   - &save_cache
-    key: v2-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
+    key: v3-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
     paths:
-      - "/var/cache/zypp/packages"
+      - "/var/cache/zypp"
 
   - &restore_fullstack_cache
     keys:
@@ -34,7 +34,7 @@ aliases:
   - &chown_hack_for_cache
     name: Chown package cache to user
     command: |
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
+      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp
 
   - &chown_hack_for_cache_fullstack
     name: Chown autoinst cache to user
