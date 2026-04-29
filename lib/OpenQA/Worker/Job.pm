@@ -976,7 +976,7 @@ sub _upload_asset ($self, $upload_parameter) {
     my $local_upload = $global_settings->{LOCAL_UPLOAD} // 1;
     my $ua = $self->client->ua;
     my @channels_worker_only = ('worker');
-    my @channels_both = ('autoinst', 'worker');
+    my @channels_both = qw(autoinst worker);
     my $error;
 
     log_info("Uploading $filename using multiple chunks", channels => \@channels_worker_only, default => 1);

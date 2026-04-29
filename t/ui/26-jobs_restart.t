@@ -24,7 +24,7 @@ my $jobs = $schema->resultset('Jobs');
 
 sub prepare_database () {
     # Populate more cluster jobs
-    my @test_names = ('create_hdd', 'support_server', 'master_node', 'slave_node');
+    my @test_names = qw(create_hdd support_server master_node slave_node);
     for my $n (0 .. 3) {
         my $new = {
             id => 99900 + $n,
