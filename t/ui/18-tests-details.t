@@ -341,12 +341,11 @@ subtest 'running job' => sub {
         my $loading_element = $driver->find_element('#liveview-loading');
         ok $loading_element->is_displayed(), 'liveview-loading is initially visible';
         # simulate the live view starting
-        $driver->execute_script(
-            q{
+        $driver->execute_script(<<~'EOM');
             var canvas = document.getElementById('livestream');
             var dataURL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=';
             loadCanvas(canvas, dataURL);
-        }
+            EOM
         );
         wait_until sub {
             !$loading_element->is_displayed();

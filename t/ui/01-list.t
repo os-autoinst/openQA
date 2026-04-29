@@ -348,10 +348,10 @@ is $parent_e->get_attribute('data-children'), '[99938]', 'child';
 is $parent_e->get_attribute('data-parents'), '[]', 'no parents';
 
 sub get_effective_cell_background ($row_id) {
-    $driver->execute_script(
-        "return Array.from(new Set(Array.from(document.getElementById('$row_id').getElementsByTagName('td'))
-            .map(e => getComputedStyle(e).backgroundColor)))"
-    );
+    $driver->execute_script(<<~"EOM");
+        return Array.from(new Set(Array.from(document.getElementById('$row_id').getElementsByTagName('td'))
+            .map(e => getComputedStyle(e).backgroundColor)))
+        EOM
 }
 
 sub check_no_highlighting {

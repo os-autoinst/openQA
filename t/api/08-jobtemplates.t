@@ -1095,15 +1095,17 @@ subtest 'References' => sub {
         id => $job_group_id4,
         job_group_id => $job_group_id4,
         ids => [37, 32, 38, 34, 39, 36],
-        changes => '@@ -22,7 +22,7 @@
-   i586:
-     opensuse-13.1-DVD-i586: &2
-     - spam
--    - eggs
-+    - foobar
-   ppc64:
-     opensuse-13.1-DVD-ppc64: *2
-   x86_64:'
+        changes => <<~'EOM' =~ s/\n\z//r
+            @@ -22,7 +22,7 @@
+               i586:
+                 opensuse-13.1-DVD-i586: &2
+                 - spam
+            -    - eggs
+            +    - foobar
+               ppc64:
+                 opensuse-13.1-DVD-ppc64: *2
+               x86_64:
+            EOM
       },
       'Diff reflects changes in the YAML';
 };

@@ -26,11 +26,12 @@ BEGIN {
     $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
     $ENV{OPENQA_BASEDIR} = $basedir;
     $ENV{OPENQA_CONFIG} = path($basedir, 'config')->make_path;
-    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew('
-[global]
-CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
-CACHEWORKERS = 10
-CACHELIMIT = 100');
+    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew(<<~"EOM");
+        [global]
+        CACHEDIRECTORY = $ENV{OPENQA_CACHE_DIR}
+        CACHEWORKERS = 10
+        CACHELIMIT = 100
+        EOM
 }
 
 use FindBin;
@@ -201,10 +202,11 @@ subtest 'Configurable minion workers' => sub {
     is_deeply [OpenQA::CacheService::setup_workers(qw(minion daemon))],
       [qw(minion daemon)], 'minion worker setup with daemon';
 
-    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew("
-[global]
-CACHEDIRECTORY = $cachedir
-CACHELIMIT = 100");
+    path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew(<<~"EOM");
+        [global]
+        CACHEDIRECTORY = $cachedir
+        CACHELIMIT = 100
+        EOM
 
     is_deeply [OpenQA::CacheService::setup_workers(qw(run))], [qw(run -j 5)], 'minion worker setup with parallel jobs';
 };

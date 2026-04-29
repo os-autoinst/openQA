@@ -194,12 +194,12 @@ subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
     my $t_dir = tempdir;
     local $ENV{OPENQA_CONFIG} = $t_dir;
     OpenQA::App->set_singleton(my $app = Mojolicious->new(log => $quiet_log));
-    my $data = '
+    my $data = <<~'EOM';
         [global]
         appname =  openQA  
         hide_asset_types = repo iso  
         recognized_referers =   bugzilla.suse.com   progress.opensuse.org github.com
-    ';
+    EOM
     $t_dir->child('openqa.ini')->spew($data);
     my $global_config = OpenQA::Setup::read_config($app)->{global};
     is $global_config->{appname}, 'openQA', 'appname';
