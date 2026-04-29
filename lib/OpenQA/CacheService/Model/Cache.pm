@@ -16,7 +16,7 @@ use Mojo::Util 'scope_guard';
 use Time::HiRes qw(gettimeofday);
 
 # Only consider files larger than 250 MB for metrics (rates for smaller files are unrealistic)
-use constant METRICS_DOWNLOAD_SIZE => $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} // 262144000;
+use constant METRICS_DOWNLOAD_SIZE => $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} // 262_144_000;
 
 has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite min_free_percentage)];

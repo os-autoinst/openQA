@@ -1423,7 +1423,7 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
             # Perform weak check on the number of bytes if the file size is > 250 MB
             my $temp_final_str = $temp_final_file->to_string;
             my ($sum, $real_sum)
-              = $chunk->end > 250000000
+              = $chunk->end > 250_000_000
               ? ($chunk->end, -s $temp_final_str)
               : ($chunk->total_cksum, $chunk->file_digest($temp_final_str));
 
