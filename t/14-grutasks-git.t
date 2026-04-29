@@ -461,7 +461,7 @@ subtest 'delete_needles' => sub {
     $openqa_git->redefine(
         run_cmd_with_log_return_error => sub ($cmd, %args) {
             push @cmds, "@$cmd";
-            if (grep m/push/, @$cmd) {
+            if (grep { m/push/ } @$cmd) {
                 return {
                     status => 0,
                     return_code => 128,
