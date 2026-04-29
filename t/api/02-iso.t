@@ -512,7 +512,7 @@ subtest 'Catch cycles in chained dependencies' => sub {
     is $res->json->{count}, 0, 'no jobs scheduled if cycle detected';
     like
       $res->json->{failed}->[0]->{error_messages}->[0],
-      qr/There is a cycle in the dependencies of chained-(a|b|c|d)/,
+      qr/There is a cycle in the dependencies of chained-[abcd]/,
       'cycle reported';
     $schema->txn_rollback;
 };
@@ -583,7 +583,7 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
 
         my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test'});
         is $res->json->{count}, 0, 'none of the jobs has been scheduled';
-        like $_->{error_messages}->[0], qr/chained-(c|d|e) \(bar,baz\) does not match .* \(foo\)/, 'error reported'
+        like $_->{error_messages}->[0], qr/chained-[cde] \(bar,baz\) does not match .* \(foo\)/, 'error reported'
           for @{$res->json->{failed}};
         $schema->txn_rollback;
     };

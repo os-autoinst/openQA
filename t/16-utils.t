@@ -153,7 +153,7 @@ walker(
     $t3 => sub {
         my ($k, $v, $ks, $what) = @_;
         next if reftype $what eq 'HASH' && exists $what->{_data};
-        like $_[0], qr/bar|baz|foo|0|1|fish$|fish2|boring/, 'Walked';
+        like $_[0], qr/bar|baz|foo|[01]|fish$|fish2|boring/, 'Walked';
 
         $what->[$k] = {_type => ref $v, _data => $v} if reftype $what eq 'ARRAY';
         $what->{$k} = {_type => ref $v, _data => $v} if reftype $what eq 'HASH';
