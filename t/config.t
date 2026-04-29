@@ -77,7 +77,8 @@ subtest 'Test configuration default modes' => sub {
     $test_config->{logging}->{level} = 'debug';
     $test_config->{global}->{service_port_delta} = 2;
     $test_config->{misc_limits}->{prio_throttling_data} = {MAX_JOB_TIME => {scale => '0.007', reference => 0}};
-    $test_config->{misc_limits}->{prio_group_data} = [{property => 'name', regex => qr/Development/, increment => 50}];
+    $test_config->{misc_limits}->{prio_group_data}
+      = [{property => 'full_name', regex => qr/Development/, increment => 50}];
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
     ok delete $config->{'test_preset example'}, 'default values for example tests assigned';
     is_deeply $config, $test_config, '"test" configuration';
