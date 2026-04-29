@@ -75,7 +75,8 @@ my $patched_pp_leave;    # apply 134812 fix below
     *B::Deparse::pp_leave = \&pp_leave;
 }
 
-sub pp_leave {    # fix https://rt.cpan.org/Ticket/Display.html?id=134812
+# fix https://rt.cpan.org/Ticket/Display.html?id=134812
+sub pp_leave {    ## no critic (Subroutines::RequireArgUnpacking)
     my $self = shift;
     my ($op) = @_;
 

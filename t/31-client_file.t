@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 use Test::Warnings ':report_warnings';
 
 use FindBin;
@@ -13,7 +14,7 @@ use Digest::SHA 'sha1_base64';
 use Mojo::File qw(path tempfile tempdir);
 use OpenQA::Test::TimeLimit '15';
 
-sub file_path { OpenQA::File->new(file => path(@_)) }
+sub file_path (@args) { OpenQA::File->new(file => path(@args)) }
 
 subtest 'base' => sub {
     my $file = file_path($FindBin::Bin, 'data', 'ltp_test_result_format.json');

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 use Test::Warnings qw(warning :report_warnings);
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -12,10 +13,10 @@ use Test::MockModule;
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data";
 
-sub test_once {
+sub test_once (@args) {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    test_cmd('script/openqa-clone-job', @_);
+    test_cmd('script/openqa-clone-job', @args);
 }
 
 require "$FindBin::Bin/../script/openqa-clone-job";

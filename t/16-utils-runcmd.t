@@ -281,9 +281,9 @@ subtest 'saving needle via Git' => sub {
     package Test::FakeMinionJob {
         sub finish { }
 
-        sub fail {
+        sub fail (@args) {
             Test::Most::fail 'Minion job should not have failed.';    # uncoverable statement
-            Test::Most::note Data::Dumper::Dumper(\@_);    # uncoverable statement
+            Test::Most::note Data::Dumper::Dumper(\@args);    # uncoverable statement
         }
     }    # uncoverable statement
 

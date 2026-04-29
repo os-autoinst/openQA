@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -183,8 +184,8 @@ my %settings = (
     ARCH => 'x86_64',
 );
 
-sub _job_create {
-    my $job = $schema->resultset('Jobs')->create_from_settings(@_);
+sub _job_create (@args) {
+    my $job = $schema->resultset('Jobs')->create_from_settings(@args);
     # reload all values from database so we can check against default values
     $job->discard_changes;
     return $job;

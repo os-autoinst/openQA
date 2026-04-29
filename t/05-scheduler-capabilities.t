@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -130,9 +131,7 @@ $settingsI{WORKER_CLASS} = 'client,qemu_x86_64';
 $settingsJ{TEST} = 'J';
 $settingsJ{WORKER_CLASS} = 'qemu_x86_64';
 
-sub job_create {
-    return $schema->resultset('Jobs')->create_from_settings(@_);
-}
+sub job_create (@args) { $schema->resultset('Jobs')->create_from_settings(@args) }
 
 my $jobA = job_create(\%settingsA);
 my $jobB = job_create(\%settingsB);
