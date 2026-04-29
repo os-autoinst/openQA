@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-for cmd in helm ct; do
+for cmd in helm ct yamale yamllint; do
     if ! command -v "$cmd" > /dev/null; then
         echo "Error: $cmd is not installed" >&2
         exit 1
