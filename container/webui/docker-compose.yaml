@@ -115,6 +115,9 @@ services:
     environment:
       MODE: "webui"
       MOJO_LISTEN: "http://0.0.0.0:9526"
+    depends_on:
+      db:
+        condition: service_healthy
     entrypoint: "sh -c 'chmod -R a+rwX /data/{factory,images,testresults}; /root/run_openqa.sh'"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
@@ -133,16 +136,11 @@ services:
     volumes:
       - ./workdir/db:/var/lib/postgresql:Z
     healthcheck:
-      test:
-        - CMD-SHELL
-        - >-
-          pg_isready -U openqa -d openqa
-          && echo 'select * from api_keys;'
-          | psql -U openqa -v 'ON_ERROR_STOP=1' openqa
+      test: ["CMD-SHELL", "pg_isready -U openqa -d openqa"]
       interval: 10s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 30s
 
   nginx:
     image: openqa_webui_lb
