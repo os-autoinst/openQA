@@ -53,9 +53,16 @@ sub update_note ($self, $distri, $version, $flavor, $arch, $build, $note) {
     return {updated_product_id => $sth->fetchrow_arrayref->[0]};
 }
 
-sub job_statistics ($self, $distri, $version, $flavor, $arch, $build) {
+sub job_statistics ($self, $distri, $version, $flavor, $arch, $build, $group_ids = undef, $include_null_groups = 0) {
+    my $group_filter = '';
+    my @binds;
+    if ($group_ids && @$group_ids) {
+        $group_filter = 'AND (mrj.group_id = ANY(?)' . ($include_null_groups ? ' OR mrj.group_id IS NULL' : '') . ')';
+        @binds = ($group_ids);
+    }
+
     my $sth = $self->result_source->schema->storage->dbh->prepare(
-        <<~'END_SQL'
+        <<~"END_SQL"
         WITH RECURSIVE
         -- get the initial set of jobs in the scheduled product
         initial_job_ids AS (
@@ -114,6 +121,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build) {
             JOIN jobs AS mrj ON mrj.id = latest_job_id
             WHERE
                 latest_job_id IS NOT NULL
+                $group_filter
             ORDER BY
                 job_id,
                 level DESC
@@ -132,12 +140,7 @@ sub job_statistics ($self, $distri, $version, $flavor, $arch, $build) {
             latest_job_result
         END_SQL
     );
-    $sth->bind_param(1, $distri);
-    $sth->bind_param(2, $version);
-    $sth->bind_param(3, $flavor);
-    $sth->bind_param(4, $arch);
-    $sth->bind_param(5, $build);
-    $sth->execute;
+    $sth->execute($distri, $version, $flavor, $arch, $build, @binds);
     return $sth->fetchall_hashref([qw(latest_job_state latest_job_result)]);
 }
 
