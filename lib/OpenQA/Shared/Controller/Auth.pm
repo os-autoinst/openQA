@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Schema;
 use OpenQA::Log qw(log_trace);
+use OpenQA::Constants 'DEFAULT_ADMIN';
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 use Time::Seconds;
@@ -77,6 +78,11 @@ sub auth ($self) {
         # API key
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
+        }
+        # Fallback for None auth
+        elsif ($self->app->config->{auth}->{method} eq 'None') {
+            $user = $self->schema->resultset('Users')->find({username => DEFAULT_ADMIN});
+            $reason = undef;
         }
         else {
             $log->trace('No API key from client');

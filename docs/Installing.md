@@ -648,8 +648,15 @@ This method bypasses any authentication entirely and automatically treats
 every visitor as an 'admin' user with administrator privileges. No explicit
 login is required. It is ideal for private, local, or trusted network
 instances where any form of login (even a "Fake" one) is considered
-unnecessary, for example in automated CI setups. Do not use for any exposed
-instances!
+unnecessary, for example in automated CI setups or quick local testing.
+Do not use for any exposed instances!
+
+An API key and secret are not required. You can use `openqa-cli` or other tools
+without any further configuration. Browser sessions are also automatically
+authenticated as the 'admin' user.
+
+If you still want to use API keys (e.g. for testing specific key-based
+logic), you can still create them on the `Manage API keys` page.
 
 ``` ini
 [auth]
