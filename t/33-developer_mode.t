@@ -87,7 +87,7 @@ my $max_login_attempts = $ENV{OPENQA_DEVEL_MODE_TEST_MAX_LOGIN_ATTEMPTS} // 10;
 sub relogin_as ($user) {
     my $login_text = '';
     my $expected_login_text = 'Logged in as ' . $user;
-    for (my $attempts = 0; $attempts < $max_login_attempts; ++$attempts) {
+    for my $attempts (0 .. $max_login_attempts - 1) {
         if ($login_text ne 'Login') {
             $driver->get('/logout');
             $login_text = $driver->find_element('#user-action a')->get_text;

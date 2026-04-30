@@ -310,7 +310,7 @@ subtest 'Plugins handling' => sub {
         my ($key, $value, $keys) = @_;
 
         my $r_hash = \%reconstructed_hash;
-        for (my $i = 0; $i < scalar @$keys; $i++) {
+        for my $i (0 .. $#$keys) {
             $r_hash->{$keys->[$i]} //= {};
             $r_hash = $r_hash->{$keys->[$i]} if $i < (scalar @$keys) - 1;
         }
