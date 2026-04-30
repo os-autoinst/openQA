@@ -109,6 +109,7 @@
     #include <abstractions/nameservice>
 
     /{usr/,}etc/ssh/ssh_config r,
+    /{usr/,}etc/ssh/ssh_config.d/ r,
     /{usr/,}etc/ssh/ssh_config.d/** r,
     /etc/ssh/ssh_known_hosts r,
     /etc/ssl/openssl.cnf r,
