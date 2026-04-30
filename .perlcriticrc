@@ -1,6 +1,6 @@
 theme = community + openqa
 severity = 4
-include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables ValuesAndExpressions::RequireNumberSeparators CodeLayout::ProhibitQuotedWordLists RegularExpressions::ProhibitSingleCharAlternation
+include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables ValuesAndExpressions::RequireNumberSeparators CodeLayout::ProhibitQuotedWordLists RegularExpressions::ProhibitSingleCharAlternation Community::EmptyReturn
 
 # ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
 # No operators like < =~ ! allowed in 'unless' or 'until', only simple
