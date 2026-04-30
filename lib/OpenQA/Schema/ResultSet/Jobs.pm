@@ -103,9 +103,8 @@ sub latest_jobs ($self, $until = undef) {
     return @latest;
 }
 
-sub _apply_auto_worker_class_assignment ($settings_ref) {
-    my $app = OpenQA::App->singleton or return undef;
-    my $rules = OpenQA::Config::parse_worker_class_auto_assignment($app->config // {});
+sub _apply_auto_worker_class_assignment ($settings_ref, $config = {}) {
+    my $rules = OpenQA::Config::parse_worker_class_auto_assignment($config);
     return unless @$rules;
 
     my @existing = grep { $_ } split qr/,/, $settings_ref->{WORKER_CLASS} // '';
@@ -172,11 +171,12 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     }
 
     $settings{WORKER_CLASS} ||= 'qemu_' . ($new_job_args{ARCH} // 'x86_64');
-    _apply_auto_worker_class_assignment(\%settings);
+    my $config = OpenQA::App->singleton && OpenQA::App->singleton->config;
+    _apply_auto_worker_class_assignment(\%settings, $config);
 
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
-    my $debug_msg = $self->_apply_prio_throttling(\%settings, \%new_job_args, $group);
+    my $debug_msg = $self->_apply_prio_throttling(\%settings, \%new_job_args, $group, $config);
     $settings{_PRIORITY_EXPLANATION} = $debug_msg if $debug_msg;
 
     my $job = $self->create(\%new_job_args);
@@ -212,11 +212,10 @@ sub _apply_max_job_time_prio ($factor, $time, $throt_config, $job_args) {
     return $info;
 }
 
-sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
+sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef, $config = undef) {
     my $debug_msg;
     my $base_prio = $new_job_args->{priority} // 0;
     my @throttling_info;
-    my $config = OpenQA::App->singleton && OpenQA::App->singleton->config;
     if ($config && (my $throttling = $config->{misc_limits}->{prio_throttling_data})) {
         if (
             my $mjt_info = _apply_max_job_time_prio(
