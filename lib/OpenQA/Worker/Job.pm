@@ -186,7 +186,7 @@ sub _compute_timeouts ($job_settings) {
 
 sub _handle_timeout ($self, $engine = undef) {
     # prevent to determine status of job from exit_status
-    eval {
+    eval {    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
         if (my $child = $engine->{child}) {
             $child->session->_protect(sub { $child->unsubscribe('collected') });
         }
