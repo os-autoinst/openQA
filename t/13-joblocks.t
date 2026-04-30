@@ -245,32 +245,33 @@ $t->delete_ok($b_prefix . '/barrier1')->status_is(403);
 
 
 
-sub test_barrier_destroy ($state, $test) {
+sub test_barrier_destroy ($state, $testname) {
     # create barrier succeeds with 3 expected tasks
-    my $jA = job_create_with_worker('testA');
-    my $jB = job_create_with_worker('testB', $jA);
-    my $jC = job_create_with_worker('testC', $jA);
+    my %tests;
+    $tests{jA} = job_create_with_worker('testA');
+    $tests{jB} = job_create_with_worker('testB', $tests{jA});
+    $tests{jC} = job_create_with_worker('testC', $tests{jA});
 
-    $test = eval "\$$test";
-    set_token_header($t->ua, 'token' . $jA);
+    my $test = $tests{$testname};
+    set_token_header($t->ua, 'token' . $tests{jA});
     $t->post_ok($b_prefix, form => {name => 'barrier2', tasks => 3},)->status_is(200);
     # barrier is not unlocked after one task
     $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(409);
     # barrier is not unlocked after two tasks
-    set_token_header($t->ua, 'token' . $jB);
+    set_token_header($t->ua, 'token' . $tests{jB});
     $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
 
     my $job = $schema->resultset('Jobs')->find($test)->update({result => $state});
 
     # barrier will be destroyed
-    set_token_header($t->ua, 'token' . $jA);
+    set_token_header($t->ua, 'token' . $tests{jA});
     $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(410);
     # barrier is not there  for all jobs
-    set_token_header($t->ua, 'token' . $jC);
+    set_token_header($t->ua, 'token' . $tests{jC});
     $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(410);
-    set_token_header($t->ua, 'token' . $jA);
+    set_token_header($t->ua, 'token' . $tests{jA});
     $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(410);
-    set_token_header($t->ua, 'token' . $jB);
+    set_token_header($t->ua, 'token' . $tests{jB});
     $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(410);
     return 1;
 }
