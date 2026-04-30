@@ -25,7 +25,6 @@ my %patterns_for_event_categories = (
 );
 
 sub delete_expired_entries ($self, %options) {
-    my @event_type_globs;
     my @queries;
     my $other_time_constraint;
 

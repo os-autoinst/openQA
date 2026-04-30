@@ -62,7 +62,6 @@ sub _help ($self, $name = undef) {
 }
 
 sub _print_options ($label, $options) {
-    my @rows;
     my @getopts;
     for my $option (@$options) {
         my ($spec, $desc);

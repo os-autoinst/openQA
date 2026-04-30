@@ -970,7 +970,6 @@ sub _generate_job_setting ($self, $args) {
     my $schema = $self->schema;
 
     my %settings;    # Machines, product and test suite settings for the job
-    my @classes;    # Populated with WORKER_CLASS settings from machines and products
     my %params = (input_args => $args, settings => \%settings);
 
     # Populated with Product settings if there are DISTRI, VERSION, FLAVOR, ARCH in arguments.
