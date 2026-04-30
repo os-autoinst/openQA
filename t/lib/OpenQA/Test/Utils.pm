@@ -304,8 +304,8 @@ sub create_websocket_server ($port, $bogus, $with_embedded_scheduler = undef, $n
         if ($bogus) {
             monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws => sub {
                 my $c = shift;
-                $c->on(json => \&OpenQA::WebSockets::Controller::Worker::_message);
-                $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
+                $c->on(json => \&OpenQA::WebSockets::Controller::Worker::_message);    ## no critic (Variables::ProtectPrivateVars)
+                $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);    ## no critic (Variables::ProtectPrivateVars)
             };
         }
         local @ARGV = ('daemon');
