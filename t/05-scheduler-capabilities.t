@@ -13,6 +13,8 @@ use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::MockModule;
+use Test::MockObject;
 use Mojo::Util 'monkey_patch';
 use OpenQA::Test::TimeLimit '10';
 
@@ -202,5 +204,34 @@ $job = $sent->{$w9_id}->{job}->to_hash;
 is $job->{id}, $jobI->id, 'this worker can do jobI, child - client';
 
 # job G is not grabbed because there is no worker with class 'special'
+
+subtest 'auto_worker_class' => sub {
+    my $mock_app = Test::MockModule->new('OpenQA::App', no_auto => 1);
+    my $mock_app_obj = Test::MockObject->new;
+    $mock_app_obj->set_always(
+        config => {
+            global => {worker_timeout => 60},
+            misc_limits => {
+                throttle_failing_job_threshold => 0,
+                throttle_failing_job_prio_step => 0,
+                throttle_failing_job_history_length => 0,
+            },
+            worker_class_auto_assignment => {
+                add_worker_class_if_missing => 'size-.* -> size-large'
+            }});
+    my $mock_log = Test::MockObject->new;
+    $mock_log->set_always(info => 1);
+    $mock_log->set_always(level => 'info');
+    $mock_app_obj->set_always(log => $mock_log);
+    $mock_app->redefine(singleton => $mock_app_obj);
+
+    my $job = job_create({TEST => 'auto_class_test', ARCH => 'x86_64'});
+    my @classes = sort map { $_->value } $job->settings->search({key => 'WORKER_CLASS'})->all;
+    is_deeply \@classes, ['qemu_x86_64', 'size-large'], 'auto-assigned size-large';
+
+    $job = job_create({TEST => 'auto_class_test_existing', ARCH => 'x86_64', WORKER_CLASS => 'size-small,qemu_x86_64'});
+    @classes = sort map { $_->value } $job->settings->search({key => 'WORKER_CLASS'})->all;
+    is_deeply \@classes, ['qemu_x86_64', 'size-small'], 'kept existing size-small';
+};
 
 done_testing();

@@ -6,16 +6,45 @@ use Mojo::Base -strict, -signatures;
 
 use Config::IniFiles;
 use Exporter qw(import);
-use OpenQA::Log qw(log_info);
+use OpenQA::Log qw(log_info log_warning);
 use Mojo::File qw(path);
+use Feature::Compat::Try;
 
-our @EXPORT = qw(config_dir_within_app_home lookup_config_files parse_config_files parse_config_files_as_hash);
+our @EXPORT
+  = qw(config_dir_within_app_home lookup_config_files parse_config_files parse_config_files_as_hash parse_worker_class_auto_assignment);
 
 sub _config_dirs ($config_dir_within_home) {
     return [[$ENV{OPENQA_CONFIG} // ()], [$config_dir_within_home // ()], ['/etc/openqa', '/usr/etc/openqa']];
 }
 
 sub config_dir_within_app_home ($app) { $app->child('etc', 'openqa') }
+
+sub _parse_auto_assignment_entry ($entry) {
+    my ($pattern_str, $class) = split /\s*->\s*/, $entry, 2;
+    if (!defined $class) {
+        log_warning("Missing delimiter ' -> ' in worker_class_auto_assignment: $entry");
+        return ();
+    }
+    my $pattern_regex;
+    try { $pattern_regex = qr/$pattern_str/ }
+    catch ($e) {
+        log_warning("Invalid regex pattern in worker_class_auto_assignment: $pattern_str");
+        return ();
+    }
+    return {pattern => $pattern_regex, class => $class};
+}
+
+sub parse_worker_class_auto_assignment ($config) {
+    return $config->{_worker_class_auto_assignment_rules} if $config->{_worker_class_auto_assignment_rules};
+
+    my $section = $config->{worker_class_auto_assignment} or return [];
+    my $entries = $section->{add_worker_class_if_missing} or return [];
+    $entries = [$entries] unless ref $entries eq 'ARRAY';
+
+    my $rules = [map { _parse_auto_assignment_entry($_) } grep { $_ } @$entries];
+    $config->{_worker_class_auto_assignment_rules} = $rules;
+    return $rules;
+}
 
 sub lookup_config_files ($config_dir_within_home, $name, $silent = 0) {
     my $config_name;
@@ -32,7 +61,7 @@ sub lookup_config_files ($config_dir_within_home, $name, $silent = 0) {
             last if $has_main_config;
         }
         if (@config_file_paths) {
-            log_info "Reading $config_name config from: @config_file_paths" unless $silent;
+            log_info("Reading $config_name config from: @config_file_paths") unless $silent;
             last;
         }
     }
