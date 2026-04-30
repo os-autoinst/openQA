@@ -3,7 +3,7 @@
         <tr><th colspan="2">Settings</th></tr>
     </thead>
     <tbody>
-        % my $s = $job->settings_hash;
+        % my $s = $job->redacted_settings_hash;
         % for my $k (sort keys %$s) {
           % my $v = $s->{$k};
           <tr>
