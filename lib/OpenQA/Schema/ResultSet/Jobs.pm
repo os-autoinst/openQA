@@ -136,7 +136,7 @@ sub create_from_settings ($self, $settings, $scheduled_product_id = undef) {
     my %settings = %$settings;
     my %new_job_args;
 
-    my @invalid_keys = grep { $_ =~ /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
+    my @invalid_keys = grep { /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
       keys %settings;
     die 'The ' . join(',', @invalid_keys) . " cannot include / in value\n" if @invalid_keys;
 
@@ -338,7 +338,7 @@ sub _search_modules ($self, $module_re) {
         my $stderr;
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
         next if $stderr;
-        push @results, map { $_ =~ s/\..*$//; basename $_ } split /\n/, $stdout;
+        push @results, map { s/\..*$//; basename $_ } split /\n/, $stdout;
     }
     return \@results;
 }

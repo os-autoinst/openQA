@@ -464,8 +464,8 @@ is used.
 sub _parse_dep_variable ($value, $job_settings) {
     return unless defined $value;
     return map {
-        if ($_ =~ /^(.+)\@([^@]+)$/) { [$1, $2] }
-        elsif ($_ =~ /^(.+):([^:]+)$/) { [$1, $2] }    # for backwards compatibility
+        if (m/^(.+)\@([^@]+)$/) { [$1, $2] }
+        elsif (m/^(.+):([^:]+)$/) { [$1, $2] }    # for backwards compatibility
         else { [$_, $job_settings->{MACHINE}] }
     } split /\s*,\s*/, $value;
 }

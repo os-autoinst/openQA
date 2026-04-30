@@ -211,7 +211,7 @@ sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
 }
 
 sub redact_settings ($vars) {
-    return {map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ($_ => $vars->{$_}) : ($_ => '[redacted]') } keys %$vars};
+    return {map { m/(^_SECRET_|_PASSWORD)/ ? ($_ => '[redacted]') : ($_ => $vars->{$_}) } keys %$vars};
 }
 
 sub redact_settings_in_file ($file) {

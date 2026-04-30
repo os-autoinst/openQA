@@ -71,7 +71,7 @@ sub _load_prio_throttling ($app, $config) {
         $app->log->warn("Wrong format in openqa.ini 'prio_throttling_parameters': $throttling");
         return;
     }
-    my %hash = map { my ($k, $s, $r) = $_ =~ /$u/g; $k => {scale => $s, reference => $r // 0} }
+    my %hash = map { my ($k, $s, $r) = /$u/g; $k => {scale => $s, reference => $r // 0} }
       split /,/, $throttling;
     return \%hash;
 }
