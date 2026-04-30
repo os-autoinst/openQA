@@ -24,7 +24,7 @@ sub auth_login ($c) {
     my $claimed_id = $csr->claimed_identity($c->config->{openid}->{provider});
     if (!defined $claimed_id) {
         log_error("Claiming OpenID identity for URL '$url' failed: " . $csr->err);
-        return;
+        return undef;
     }
     $claimed_id->set_extension_args(
         'http://openid.net/extensions/sreg/1.1',

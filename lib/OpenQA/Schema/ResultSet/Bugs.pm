@@ -8,7 +8,7 @@ use OpenQA::App;
 
 # inserts the bug if it is new, returns the bug if it has been refreshed, undef otherwise
 sub get_bug ($self, $bugid = undef, %attrs) {
-    return unless $bugid;
+    return undef unless $bugid;
     my $bug = $self->find_or_new({bugid => $bugid, %attrs});
     return ($bug->refreshed && $bug->existing) ? $bug : undef if $bug->in_storage;
     $bug->insert;

@@ -486,7 +486,7 @@ Sets priority for a given job.
 =cut
 
 sub prio ($self) {
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
+    return undef unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $v = $self->validation;
     my $prio = $v->required('prio')->num->param;
     return $self->reply->validation_error({format => 'json'}) if $v->has_error;
@@ -617,7 +617,7 @@ Columns group_id and priority cannot be set.
 =cut
 
 sub update ($self) {
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
+    return undef unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $json = $self->req->json;
     return $self->render(
         json => {error => 'No updates provided (must be provided as JSON)'},

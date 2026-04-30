@@ -5,9 +5,9 @@ package OpenQA::WebAPI::Controller::API::V1;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 sub auth_jobtoken ($self) {
-    $self->render(json => {error => 'no JobToken received'}, status => 403) && return
+    $self->render(json => {error => 'no JobToken received'}, status => 403) && return undef
       unless my $token = $self->req->headers->header('X-API-JobToken');
-    $self->render(json => {error => 'invalid jobtoken'}, status => 403) && return
+    $self->render(json => {error => 'invalid jobtoken'}, status => 403) && return undef
       unless my $job = $self->schema->resultset('Jobs')->search(
         {'properties.key' => 'JOBTOKEN', 'properties.value' => $token},
         {columns => ['id'], join => {worker => 'properties'}})->single;

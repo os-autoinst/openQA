@@ -106,14 +106,14 @@ sub latest_jobs ($self, $until = undef) {
 sub _apply_auto_worker_class_assignment ($settings_ref) {
     my $app = OpenQA::App->singleton or return undef;
     my $rules = OpenQA::Config::parse_worker_class_auto_assignment($app->config // {});
-    return unless @$rules;
+    return undef unless @$rules;
 
     my @existing = grep { $_ } split qr/,/, $settings_ref->{WORKER_CLASS} // '';
     my @to_add = grep {
         my $pattern = $_->{pattern};
         !any { $_ =~ $pattern } @existing;
     } @$rules;
-    return unless @to_add;
+    return undef unless @to_add;
 
     for my $rule (@to_add) {
         log_info("Auto-assigning worker class '$rule->{class}' to job (no match for pattern '$rule->{pattern}')");

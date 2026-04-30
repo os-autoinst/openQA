@@ -287,7 +287,7 @@ Updates the properties of a job group.
 =cut
 
 sub update ($self) {
-    return unless my $group = $self->find_group;
+    return undef unless my $group = $self->find_group;
 
     my $validation = $self->validation;
     # Don't check group name if sorting group by dragging
@@ -325,7 +325,7 @@ List jobs belonging to a job group.
 =cut
 
 sub list_jobs ($self) {
-    return unless my $group = $self->find_group;
+    return undef unless my $group = $self->find_group;
 
     my @jobs;
     if ($self->param('expired')) {
@@ -349,7 +349,7 @@ If not empty (there are existing jobs), it will return an error.
 =cut
 
 sub delete ($self) {
-    return unless my $group = $self->find_group;
+    return undef unless my $group = $self->find_group;
 
     if ($group->can('jobs') && $group->jobs->count != 0) {
         return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 409);

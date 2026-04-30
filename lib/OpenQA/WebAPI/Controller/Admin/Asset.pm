@@ -14,7 +14,7 @@ sub index ($self) {
 
 sub _serve_status_json_from_cache ($self) {
     my $cache_file = OpenQA::Schema::ResultSet::Assets::status_cache_file();
-    return unless (-f $cache_file);
+    return undef unless (-f $cache_file);
 
     log_debug('Serving static asset status: ' . $cache_file);
     $self->{static} = Mojolicious::Static->new;

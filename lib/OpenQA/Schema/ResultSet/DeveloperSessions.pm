@@ -13,12 +13,12 @@ use OpenQA::Log 'log_error';
 sub _find_or_create_session ($self, $job_id, $user_id) {
     # refuse if no worker assigned
     my $worker = $self->result_source->schema->resultset('Workers')->find({job_id => $job_id});
-    return unless ($worker);
+    return undef unless ($worker);
 
     my $session = $self->find({job_id => $job_id});
     my $is_session_already_existing = defined $session;
     # allow only one session per job
-    return if $is_session_already_existing && $session->user_id ne $user_id;
+    return undef if $is_session_already_existing && $session->user_id ne $user_id;
     # create a new session if none existed before
     $session = $self->create({job_id => $job_id, user_id => $user_id}) unless $is_session_already_existing;
     return ($session, $worker->id, $is_session_already_existing);

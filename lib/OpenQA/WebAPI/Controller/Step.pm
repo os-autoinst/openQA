@@ -63,7 +63,7 @@ sub check_tabmode ($self) {
     my $module = $self->stash('module');
     my $details = $module->results->{details};
     my $testindex = $self->param('stepid');
-    return if ($testindex > @$details);
+    return undef if ($testindex > @$details);
 
     my $tabmode = 'screenshot';    # default
     my $module_detail = $details->[$testindex - 1];
@@ -413,7 +413,7 @@ sub save_needle_ajax ($self) {
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     # read parameter
-    my $job = $self->find_job_or_render_not_found($self->param('testid')) or return;
+    my $job = $self->find_job_or_render_not_found($self->param('testid')) or return undef;
     my $job_id = $job->id;
     my $needledir = needledir($job->DISTRI, $job->VERSION);
     my $needlename = $validation->param('needlename');

@@ -141,7 +141,7 @@ sub wait_for_developer_console_like ($driver, $message_regex, $diag_info, $timeo
         # print updated log so we see what's going on
         note("waiting for $diag_info, developer console contains:\n$log") if $log ne $previous_log;
         wait_for_ajax(msg => $message_regex . " remaining wait time ${timeout}s");
-        javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return;
+        javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return undef;
         $previous_log = $log;
         $log = $log_textarea->get_text();
     }

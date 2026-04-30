@@ -10,7 +10,7 @@ use constant SYSTEM_USER_ERROR =>
 'Unable to find the "system" user (username: "system", provider: "") so automatic commenting and retrying does not work.';
 
 sub create_user ($self, $id, %attrs) {
-    return unless $id;
+    return undef unless $id;
 
     $attrs{username} = $id;
     $attrs{provider} //= '';

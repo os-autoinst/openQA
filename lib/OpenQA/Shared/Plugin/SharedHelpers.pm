@@ -35,9 +35,9 @@ sub _determine_connection_params_for_job ($c, $job) {
     return undef unless my $host = $worker->get_property('WORKER_HOSTNAME') || $worker->host;
 
     # determine port
-    my $cmd_srv_raw_url = $worker->get_property('CMD_SRV_URL') or return;
+    my $cmd_srv_raw_url = $worker->get_property('CMD_SRV_URL') or return undef;
     my $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url);
-    my $port = $cmd_srv_url->port() or return;
+    my $port = $cmd_srv_url->port() or return undef;
     return ("ws://$host:$port/$job_token/ws", $worker->vnc_argument);
 }
 

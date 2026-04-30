@@ -88,10 +88,10 @@ sub needle_json_by_id ($self) {
 
 sub _set_test ($self) {
     $self->{job} = $self->schema->resultset('Jobs')->find({'me.id' => $self->param('testid')});
-    return unless $self->{job};
+    return undef unless $self->{job};
 
     $self->{testdirname} = $self->{job}->result_dir;
-    return unless $self->{testdirname};
+    return undef unless $self->{testdirname};
     push @{$self->static->paths}, $self->{testdirname}, "$self->{testdirname}/ulogs";
     return 1;
 }

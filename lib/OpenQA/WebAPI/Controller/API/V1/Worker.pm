@@ -191,7 +191,7 @@ sub create ($self) {
         }
         return undef;
     }
-    return unless defined $id;
+    return undef unless defined $id;
 
     my %event_data = (id => $id, host => $host, instance => $instance);
     $self->emit_event('openqa_worker_register', \%event_data);
