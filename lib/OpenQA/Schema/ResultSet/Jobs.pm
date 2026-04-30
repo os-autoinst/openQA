@@ -261,7 +261,7 @@ sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef, $co
     }
     if (@throttling_info) {
         my $info_str = join '; ', @throttling_info;
-        $debug_msg .= sprintf
+        $debug_msg = sprintf
           '- Adjusting job priority from %d to %d based on resource requirement(s): %s',
           $base_prio, $new_job_args->{priority}, $info_str;
     }
