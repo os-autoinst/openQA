@@ -19,7 +19,6 @@ export HARNESS='--harness TAP::Harness::JUnit --timer'
 # Activate Test::CheckGitStatus
 export CHECK_GIT_STATUS=1
 mkdir -p test-results/junit
-sudo chown -R $USER test-results
 # circleCI can be particularly slow sometimes since some time around 2021-06
 export OPENQA_TEST_TIMEOUT_SCALE_CI=3
 export EXTRA_PROVE_ARGS="-v"
