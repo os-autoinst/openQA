@@ -27,7 +27,8 @@ sub parse ($self, $json) {
         my $t_name = $res->{nodeid} // $res->{name};
         die 'IPA result misses test name / node ID' unless $t_name;
 
-        if ($t_name =~ /^(?<path>[\w\/]+\/)?(?<file>\w+)\.py::(?<method>\w+)\[\w+:\/\/(\d+\.){3}\d+(-(?<param>.+))?\]$/)
+        if ($t_name
+            =~ /^(?<path>[\w\/]+\/)?(?<file>\w+)\.py::(?<method>\w+)\[\w+:\/\/(?:\d+\.){3}\d+(?:-(?<param>.+))?\]$/)
         {
             $t_name = '';
             $t_name .= $+{path} if ($+{path});

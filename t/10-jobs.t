@@ -82,13 +82,13 @@ subtest 'latest jobs' => sub {
 
     my $ids = $jobs->complex_query_latest_ids;
     # These two jobs have later clones in the fixture set, so should not appear
-    ok grep(!/^(99962|99945)$/, @$ids), 'jobs with later clones do not show up in latest jobs';
+    ok grep(!/^(?:99962|99945)$/, @$ids), 'jobs with later clones do not show up in latest jobs';
     # These are the later clones, they should appear
     ok grep(/^99963$/, @$ids), 'cloned jobs appear as latest job';
     ok grep(/^99946$/, @$ids), 'cloned jobs appear as latest job (2nd)';
 
     my $filtered_ids = $jobs->complex_query_latest_ids(filters => [{result => {-in => [FAILED, PASSED]}}]);
-    ok grep(!/^(99962|99945)$/, @$filtered_ids), 'jobs with later clones still not present';
+    ok grep(!/^(?:99962|99945)$/, @$filtered_ids), 'jobs with later clones still not present';
     ok grep(/^99946$/, @$filtered_ids), 'failed/passed job still returned';
     ok grep(!/^99963$/, @$filtered_ids), 'running job filtered out';
 };
