@@ -32,8 +32,8 @@ my %settings = (
     ARCH => 'x86_64',
 );
 
-sub _job_create {
-    my $job = $jobs->create_from_settings(@_);
+sub _job_create (@args) {
+    my $job = $jobs->create_from_settings(@args);
     # reload all values from database so we can check against default values
     $job->discard_changes;
     return $job;

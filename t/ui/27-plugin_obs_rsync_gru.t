@@ -21,8 +21,8 @@ package FakeMinionJob {
     has id => 0;
     has app => sub { $app };
     has retries => 200;
-    sub finish { $_[0]->{state} = 'finished'; $_[0]->{result} = $_[1] }
-    sub info { {notes => {project_lock => 1}} }
+    sub finish ($self, $result) { $self->{state} = 'finished'; $self->{result} = $result }
+    sub info (@) { {notes => {project_lock => 1}} }
 }    # uncoverable statement
 
 $t->post_ok('/admin/obs_rsync/Proj1/runs' => $params)->status_is(201, 'trigger rsync');

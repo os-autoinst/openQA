@@ -301,8 +301,8 @@ sub get_property { shift->{WORKER_TMPDIR} }
 
 package Mojo::Transaction::Fake;
 use Mojo::Base 'Mojo::Transaction', -signatures;
-sub resume { ++$_[0]{writing} and return $_[0]->emit('resume') }
-sub connection { shift->{fakestream} }
+sub resume ($self) { ++$self->{writing} and return $self->emit('resume') }
+sub connection ($self) { $self->{fakestream} }
 sub remote_address { '::1' }
 sub error { $fake_error }
 sub finish ($self) { $self->emit(finish => $self) }

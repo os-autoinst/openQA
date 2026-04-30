@@ -20,16 +20,16 @@ use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
 
 
-sub test_once {
+sub test_once (@args) {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    test_cmd(path(curfile->dirname, '../script/openqa-load-templates')->realpath, @_);
+    test_cmd(path(curfile->dirname, '../script/openqa-load-templates')->realpath, @args);
 }
 
-sub dump_templates {
+sub dump_templates (@args) {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    test_cmd(path(curfile->dirname, '../script/openqa-dump-templates')->realpath, @_);
+    test_cmd(path(curfile->dirname, '../script/openqa-dump-templates')->realpath, @args);
 }
 
 sub decode { Cpanel::JSON::XS->new->relaxed->decode(path(shift)->slurp); }

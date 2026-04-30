@@ -127,7 +127,7 @@ package Test::FakeClient {
         Mojo::IOLoop->next_tick(sub { $args{callback}->(\%cb_args) }) if $args{callback} && $args{callback} ne 'no';
     }
     sub reset_last_error { shift->last_error(undef) }
-    sub send_status { push @{shift->sent_messages}, @_ }
+    sub send_status ($self, @args) { push @{$self->sent_messages}, @args }
     sub register { shift->register_called(1) }
 
     sub add_context_to_last_error {
@@ -135,7 +135,7 @@ package Test::FakeClient {
         $self->last_error($self->last_error . " on $context");
     }
     sub _retry_delay { 0 }
-    sub evaluate_error { OpenQA::Worker::WebUIConnection::evaluate_error(@_) }
+    sub evaluate_error (@args) { OpenQA::Worker::WebUIConnection::evaluate_error(@args) }
 }    # uncoverable statement count:1
 
 package Test::FakeEngine {

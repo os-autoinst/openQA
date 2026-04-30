@@ -82,8 +82,8 @@ subtest 'API' => sub {
     is $awake, 2, 'scheduler has been woken up again';
 };
 
-sub list_jobs {
-    [map { $_->to_hash(assets => 1) } $jobs->complex_query(@_)->all]
+sub list_jobs (@args) {
+    [map { $_->to_hash(assets => 1) } $jobs->complex_query(@args)->all]
 }
 sub job_get { $jobs->find({id => shift}) }
 

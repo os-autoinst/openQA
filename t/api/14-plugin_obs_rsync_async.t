@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use IPC::Run qw(start);
 use FindBin;
@@ -29,13 +30,13 @@ sub start_gru {
 # we need gru running to test response 200
 my $gru = start_gru();
 
-sub _jobs {
-    my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => \@_});
+sub _jobs (@args) {
+    my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => \@args});
     return $results->{total}, $results->{jobs};
 }
 
-sub _jobs_cnt {
-    (my $cnt, undef) = _jobs(@_);
+sub _jobs_cnt (@args) {
+    (my $cnt, undef) = _jobs(@args);
     return $cnt;
 }
 
@@ -73,16 +74,16 @@ sub sleep_until_all_jobs_finished {
 
 # this function communicates with t/data/openqa-trigger-from-obs/script/rsync.sh
 # when file .$project-ready is created, then rsync process should finish
-sub signal_rsync_ready {
-    foreach (@_) {
+sub signal_rsync_ready (@args) {
+    foreach (@args) {
         my $filename = Mojo::File->new($home, 'script', ".$_-ready")->to_string;
         open my $fh, '>', $filename || die "Cannot create file $filename: $!";
         close $fh;
     }
 }
 
-sub unlink_signal_rsync_ready {
-    foreach (@_) {
+sub unlink_signal_rsync_ready (@args) {
+    foreach (@args) {
         my $filename = Mojo::File->new($home, 'script', ".$_-ready")->to_string;
         -f $filename || next;
         unlink $filename || die "Cannot unlink file $filename: $!";

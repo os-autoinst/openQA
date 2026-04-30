@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -14,12 +15,12 @@ use OpenQA::Test::Utils qw(run_cmd test_cmd);
 # prevent all network access to stay local
 my $cmd = 'unshare -r -n script/openqa-clone-custom-git-refspec';
 
-sub run_once { run_cmd($cmd, @_) }
+sub run_once (@args) { run_cmd($cmd, @args) }
 
-sub test_once {
+sub test_once (@args) {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    test_cmd($cmd, @_);
+    test_cmd($cmd, @args);
 }
 
 # instruct openqa-clone-custom-git-refspec to use dry-run modes for all calls

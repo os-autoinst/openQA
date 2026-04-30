@@ -114,7 +114,7 @@ $options{instance} ||= 1;
 my $worker = OpenQA::Worker->new(\%options);
 $worker->log_setup_info();
 
-sub catch_exit { $worker->handle_signal(@_) }    # uncoverable statement
+sub catch_exit (@args) { $worker->handle_signal(@args) }    # uncoverable statement
 $SIG{HUP} = \*catch_exit;
 $SIG{TERM} = \*catch_exit;
 $SIG{INT} = \*catch_exit;
