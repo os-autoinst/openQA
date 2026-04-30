@@ -128,7 +128,7 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
     for (;; --$retries) {
         my $new_tx = $client->start(Mojo::Transaction::HTTP->new(req => $tx->req));
         my $res_code = $new_tx->res->code // 0;
-        return $self->handle_result($new_tx, $tx) if $res_code !~ /^(50[23]|0)$/ || $retries <= 0;
+        return $self->handle_result($new_tx, $tx) if $res_code !~ /^(?:50[23]|0)$/ || $retries <= 0;
         my $waited = time - $start;
         my $error = $new_tx->error;
         my $error_msg = $error ? " ($error->{message})" : '';
