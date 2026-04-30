@@ -91,7 +91,7 @@ sub job_get_hash {
     my ($id) = @_;
 
     my $job = job_get($id);
-    return unless $job;
+    return undef unless $job;
     my $ref = $job->to_hash(assets => 1);
     $ref->{worker_id} = $job->worker_id;
     return $ref;
