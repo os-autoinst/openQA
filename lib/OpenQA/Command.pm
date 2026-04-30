@@ -125,7 +125,7 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
     $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
     my $factor = $ENV{OPENQA_CLI_RETRY_FACTOR} // 1;
     my $start = time;
-    for (;; --$retries) {
+    for (;; --$retries) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         my $new_tx = $client->start(Mojo::Transaction::HTTP->new(req => $tx->req));
         my $res_code = $new_tx->res->code // 0;
         return $self->handle_result($new_tx, $tx) if $res_code !~ /^(50[23]|0)$/ || $retries <= 0;

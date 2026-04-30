@@ -42,7 +42,7 @@ sub _reduce_matching_workers ($self) {
     #       of those jobs and prioritize the jobs as usual via _allocate_worker_with_priority.
     my $picked_matching_worker_slots = $self->{_picked_matching_worker_slots};
     my $to_be_scheduled = $self->{_to_be_scheduled};
-    for (my $i = 0; $i != @$to_be_scheduled; ++$i) {
+    for my $i (0 .. $#$to_be_scheduled) {
         $to_be_scheduled->[$i]->{matching_workers} = [$picked_matching_worker_slots->[$i] // ()];
     }
     return $picked_matching_worker_slots;
@@ -91,7 +91,7 @@ sub _swap_slot_with_competitor_job ($self, $visited_worker_slots_by_host, $match
         next if $self->{_one_host_only} && $self->_worker_host($alternative_matching_worker) ne $host;
 
         # make the competitor job use the alternative we have just found
-        for (my $i = 0; $i != @$matching_worker_slots; ++$i) {
+        for my $i (0 .. $#$matching_worker_slots) {
             next unless $matching_worker_slots->[$i]->id == $id;
             $matching_worker_slots->[$i] = $alternative_matching_worker;
             last;

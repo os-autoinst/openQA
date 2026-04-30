@@ -136,7 +136,7 @@ sub restore_tree_section ($ref) {
     try {
         walker $ref => sub ($key, $value, $keys, $parent) {
             my $hash = $ref;
-            for (my $i = 0; $i < scalar @$keys - 1; $i++) {
+            for my $i (0 .. $#$keys - 1) {
                 my ($type, $kk) = @{$keys->[$i]};
                 $hash = $hash->{$kk} if $type eq 'HASH';
                 $hash = $hash->[$kk] if $type eq 'ARRAY';

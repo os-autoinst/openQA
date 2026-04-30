@@ -82,7 +82,7 @@ sub _limit ($job, $args = undef) {
     my $screenshots_per_minion_job = $batches_per_minion_job * $screenshots_per_batch;
     my @screenshot_cleanup_info;
     my @parent_minion_job_ids = ($job->id);
-    for (my $i = $min_id; $i < $max_id; $i += $screenshots_per_minion_job) {
+    for (my $i = $min_id; $i < $max_id; $i += $screenshots_per_minion_job) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         my %args = (
             min_screenshot_id => $i,
             max_screenshot_id => min($max_id, $i + $screenshots_per_minion_job - 1),
@@ -129,7 +129,7 @@ sub _limit_screenshots ($job, $args) {
          AND links_outer.screenshot_id is NULL'
     );
     my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(dbh => $dbh);
-    for (my $i = $min_id; $i <= $max_id; $i += $screenshots_per_batch) {
+    for (my $i = $min_id; $i <= $max_id; $i += $screenshots_per_batch) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         log_debug "Removing screenshot batch $i";
         $unused_screenshots_query->execute($i, min($max_id, $i + $screenshots_per_batch - 1));
         $screenshot_deletion->delete_screenshot(@$_) for @{$unused_screenshots_query->fetchall_arrayref};

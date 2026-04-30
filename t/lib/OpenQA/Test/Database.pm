@@ -76,7 +76,7 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
         }
 
         # Arrayref of hashrefs, multiple tables per file
-        for (my $i = 0; $i < @$info; $i++) {
+        for (my $i = 0; $i < @$info; $i++) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
             my $class = $info->[$i];
             my $ri = $info->[++$i];
             try {

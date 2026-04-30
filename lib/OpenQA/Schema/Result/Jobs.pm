@@ -1611,7 +1611,7 @@ sub allocate_network ($self, $name) {
     my $job_id = $self->id;
     my $dbh = $schema->storage->dbh;
     my $sth = $dbh->prepare('INSERT INTO job_networks (job_id, name, vlan) VALUES (?, ?, ?) ON CONFLICT DO NOTHING');
-    for ($vlan = 1;; ++$vlan) {
+    for ($vlan = 1;; ++$vlan) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         log_debug "at vlan $name:$vlan";
         next if $used{$vlan};
         try { $sth->execute($job_id, $name, $vlan) }
@@ -1858,7 +1858,7 @@ sub test_resultfile_list ($self) {
     }
 
     my $virtio_console_num = $self->settings_hash->{VIRTIO_CONSOLE_NUM} // 1;
-    for (my $i = 1; $i < $virtio_console_num; ++$i) {
+    for my $i (1 .. $virtio_console_num - 1) {
         my $f = "serial_terminal$i.txt";
         push @$filelist_existing, $f if -s "$testresdir/$f";
     }

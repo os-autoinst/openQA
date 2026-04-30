@@ -112,7 +112,7 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     # note: Populating the database is not done atomically so a worker might already show up but relevant
     #       properties (most importantly WEBSOCKET_API_VERSION and WORKER_CLASS) have not been populated yet.
     my ($elapsed, $free_workers) = (0, []);
-    for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {
+    for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         for my $worker (@{$free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers}) {
             next unless $worker->check_class($worker_class);
             pass "at least one free worker with class $worker_class registered";
@@ -139,7 +139,7 @@ ok javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings af
 sub assign_jobs ($worker_class = undef) {
     my ($to_be_scheduled, $elapsed) = check_scheduled_job_and_wait_for_free_worker $worker_class // 'qemu_i386';
     my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
-    for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {
+    for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         return if @{$scheduler->schedule} >= $to_be_scheduled;
     }
     fail "Unable to assign $to_be_scheduled jobs after $elapsed seconds";    # uncoverable statement
