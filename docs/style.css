@@ -1,5 +1,4 @@
 /* openQA Documentation Style (Mimicking Asciidoctor) */
-
 body {
   font-family: 'Open Sans', 'DejaVu Sans', sans-serif;
   color: #333;
@@ -7,9 +6,7 @@ body {
   margin: 0;
   display: flex;
   overflow-wrap: break-word;
-  word-wrap: break-word;
 }
-
 /* Sidebar TOC */
 #TOC {
   position: fixed;
@@ -23,49 +20,24 @@ body {
   font-size: 0.9em;
   z-index: 1000;
 }
-
 /* Add dots after section numbers */
-.toc-section-number::after,
-.header-section-number::after {
+.toc-section-number::after, .header-section-number::after {
   content: '. ';
 }
-
-/* Responsive design */
-@media (max-width: 800px) {
-  body {
-    flex-direction: column;
-  }
-  #TOC {
-    position: static;
-    width: 100%;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid #ddd;
-  }
-  main {
-    margin-left: 0;
-    padding: 20px;
-  }
-}
-
 #TOC ul {
   list-style: none;
   padding-left: 20px;
 }
-
 #TOC > ul {
   padding-left: 0;
 }
-
 #TOC a {
   text-decoration: none;
   color: #0056b3;
 }
-
 #TOC a:hover {
   text-decoration: underline;
 }
-
 /* Main Content */
 main {
   margin-left: 300px;
@@ -74,19 +46,12 @@ main {
   flex-grow: 1;
   min-width: 0;
 }
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   color: #ba3925;
   font-weight: 300;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
 }
-
 h1 {
   font-size: 2.2em;
   border-bottom: 1px solid #eee;
@@ -100,7 +65,6 @@ h2 {
 h3 {
   font-size: 1.4em;
 }
-
 /* Section Anchors */
 .anchor {
   margin-left: 10px;
@@ -109,16 +73,9 @@ h3 {
   font-size: 0.8em;
   text-decoration: none;
 }
-
-h1:hover .anchor,
-h2:hover .anchor,
-h3:hover .anchor,
-h4:hover .anchor,
-h5:hover .anchor,
-h6:hover .anchor {
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, h5:hover .anchor, h6:hover .anchor {
   visibility: visible;
 }
-
 /* Code blocks */
 pre {
   background: #f4f4f4;
@@ -127,7 +84,6 @@ pre {
   border-radius: 4px;
   overflow-x: auto;
 }
-
 code {
   font-family: 'Droid Sans Mono', 'Courier New', monospace;
   background: #fdf6f2;
@@ -135,13 +91,11 @@ code {
   border-radius: 3px;
   color: #ba3925;
 }
-
 pre code {
   background: transparent;
   padding: 0;
   color: inherit;
 }
-
 /* Admonitions */
 blockquote {
   margin: 1.5em 0;
@@ -149,18 +103,12 @@ blockquote {
   border-left: 5px solid #ccc;
   background: #f9f9f9;
 }
-
 /* Specific styling for Note/Warning/Tip */
-p > strong:first-child:contains('Note:'),
-p > strong:first-child:contains('Warning:'),
-p > strong:first-child:contains('Tip:'),
-p > strong:first-child:contains('Important:'),
-p > strong:first-child:contains('Caution:') {
+p > strong:first-child:contains('Note:'), p > strong:first-child:contains('Warning:'), p > strong:first-child:contains('Tip:'), p > strong:first-child:contains('Important:'), p > strong:first-child:contains('Caution:') {
   display: block;
   margin-bottom: 5px;
   text-transform: uppercase;
 }
-
 /* We use a different approach since :contains is not standard CSS */
 .admonition-note {
   border-left-color: #1f70c2;
@@ -174,7 +122,6 @@ p > strong:first-child:contains('Caution:') {
   border-left-color: #28a745;
   background: #f6fff6;
 }
-
 /* Images */
 img {
   max-width: 100%;
@@ -182,11 +129,27 @@ img {
   display: block;
   margin: 1em 0;
 }
-
 footer {
   margin-top: 50px;
   font-size: 0.8em;
   color: #777;
   border-top: 1px solid #eee;
   padding-top: 20px;
+}
+/* Responsive design */
+@media (width <= 800px) {
+  body {
+    display: block;
+  }
+  #TOC {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+  main {
+    margin-left: 0;
+    padding: 20px;
+  }
 }
