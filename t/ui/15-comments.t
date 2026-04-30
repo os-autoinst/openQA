@@ -13,6 +13,7 @@ use OpenQA::Log qw(log_debug);
 use OpenQA::Test::TimeLimit '37';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
+use Syntax::Keyword::Try;
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database::generate_schema_name;
@@ -67,7 +68,8 @@ my $max_write_attempts = $ENV{OPENQA_COMMENTS_TEST_MAX_WRITE_ATTEMPTS} // 10;
 
 sub write_comment ($text, $desc) {
     for (my $attempts = 1;; ++$attempts) {
-        eval {
+        my $error;
+        try {
             wait_for_element(
                 selector => '#commentForm textarea[name="text"]',
                 is_displayed => 1,
@@ -75,8 +77,9 @@ sub write_comment ($text, $desc) {
             )->send_keys($text);
             $driver->find_element_by_id('submitComment')->click;
             wait_for_ajax msg => $desc;
-        };
-        return undef unless my $error = $@;
+            return undef;
+        }
+        catch ($e) { $error = $e }
         die $error if ($error !~ qr/unexpected alert/i) || ($attempts >= $max_write_attempts);   # uncoverable statement
 
         # try to dismiss the alert "The comment text mustn't be empty." that is for some reason possibly shown
