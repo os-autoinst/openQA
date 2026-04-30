@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Schema;
 use OpenQA::Log qw(log_trace);
+use OpenQA::Constants 'DEFAULT_ADMIN';
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 use Time::Seconds;
@@ -80,7 +81,7 @@ sub auth ($self) {
         }
         # Fallback for None auth
         elsif ($self->app->config->{auth}->{method} eq 'None') {
-            $user = $self->schema->resultset('Users')->find({username => 'admin'});
+            $user = $self->schema->resultset('Users')->find({username => DEFAULT_ADMIN});
             $reason = undef;
         }
         else {

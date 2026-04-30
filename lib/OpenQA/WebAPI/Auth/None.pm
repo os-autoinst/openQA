@@ -3,8 +3,7 @@
 
 package OpenQA::WebAPI::Auth::None;
 use Mojo::Base -base, -signatures;
-
-use constant DEFAULT_ADMIN => 'admin';
+use OpenQA::Constants 'DEFAULT_ADMIN';
 
 sub auth_setup ($app) {
     $app->schema->resultset('Users')->create_user(

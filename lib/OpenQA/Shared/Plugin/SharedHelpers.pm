@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::URL;
 use OpenQA::Schema;
+use OpenQA::Constants 'DEFAULT_ADMIN';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
@@ -56,11 +57,11 @@ sub _current_user ($c) {
         # Avoid auto-login as admin for requests with API credentials.
         # Otherwise, the 'auth' method would reject the request due to a
         # missing CSRF token before it even checks the API credentials.
-        my $id = $c->session->{user} // ($is_auth_method_none && !$c->is_api_request ? 'admin' : undef);
+        my $id = $c->session->{user} // ($is_auth_method_none && !$c->is_api_request ? DEFAULT_ADMIN : undef);
         my $users = $c->schema->resultset('Users');
         my $user = $id ? $users->find({username => $id}) : undef;
-        if ($is_auth_method_none && $id && $id eq 'admin') {
-            $user ||= $users->create_user('admin', fullname => 'Administrator', email => 'admin@example.com');
+        if ($is_auth_method_none && $id && $id eq DEFAULT_ADMIN) {
+            $user ||= $users->create_user(DEFAULT_ADMIN, fullname => 'Administrator', email => 'admin@example.com');
             $user->update({is_admin => 1, is_operator => 1}) unless $user->is_admin && $user->is_operator;
         }
         $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
