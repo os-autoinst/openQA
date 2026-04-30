@@ -432,6 +432,11 @@ sub settings_hash ($self, $prefetched = undef) {
     return $settings;
 }
 
+sub redacted_settings_hash ($self, $prefetched = undef) {
+    require OpenQA::Log;
+    return OpenQA::Log::redact_settings($self->settings_hash($prefetched));
+}
+
 sub add_result_dir_prefix ($self, $result_dir, $archived = undef) {
     return $result_dir ? catfile($self->num_prefix_dir($archived), $result_dir) : undef;
 }
@@ -482,7 +487,7 @@ sub to_hash ($job, %args) {
     if (my $reason = $job->reason) {
         $j->{reason} = $reason;
     }
-    $j->{settings} = $job->settings_hash($settings);
+    $j->{settings} = $args{redact} ? $job->redacted_settings_hash($settings) : $job->settings_hash($settings);
     # hashes are left for script compatibility with schema version 38
     $j->{test} = $job->TEST;
     if ($args{assets}) {

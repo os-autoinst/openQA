@@ -197,6 +197,7 @@ sub list ($self) {
             dependencies => {children => $children{$id}, parents => $parents{$id}},
             settings => $settings{$id},
             origin => $origins{$id},
+            redact => 1,
         );
         $jobhash->{modules} = [];
         for my $module (@{$job->{_modules}}) {
@@ -450,7 +451,14 @@ sub show ($self) {
     my $follow = $self->param('follow');
     return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
     $job = $job->latest_job if $follow;
-    $job = $job->to_hash(assets => 1, check_assets => $check_assets, deps => 1, details => $details, parent_group => 1);
+    $job = $job->to_hash(
+        assets => 1,
+        check_assets => $check_assets,
+        deps => 1,
+        details => $details,
+        parent_group => 1,
+        redact => 1
+    );
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
     $self->render(json => {job => $job});
 }
