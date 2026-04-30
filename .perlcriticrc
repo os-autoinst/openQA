@@ -1,6 +1,6 @@
 theme = community + openqa
 severity = 4
-include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables
+include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables ValuesAndExpressions::RequireNumberSeparators
 
 # ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
 # No operators like < =~ ! allowed in 'unless' or 'until', only simple
@@ -46,3 +46,7 @@ severity = 5
 # -- Superfluous use strict/warning.
 [OpenQA::RedundantStrictWarning]
 equivalent_modules = Test::Most
+
+[ValuesAndExpressions::RequireNumberSeparators]
+min_value = 1000000
+

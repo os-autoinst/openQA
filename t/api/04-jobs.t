@@ -48,7 +48,7 @@ $ENV{OPENQA_CONFIG} = $tempdir;
 my @data = ("[audit]\n", "blocklist = job_grab\n");
 $tempdir->child('openqa.ini')->spew(join '', @data);
 
-my $chunk_size = 10000000;
+my $chunk_size = 10_000_000;
 
 my $io_loop_mock = mock_io_loop(subprocess => 1);
 
@@ -60,7 +60,7 @@ sub calculate_file_md5 ($file) {
 }
 
 # allow up to 200MB - videos mostly
-$ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
+$ENV{MOJO_MAX_MESSAGE_SIZE} = 207_741_824;
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $cfg = $t->app->config;
@@ -333,7 +333,7 @@ subtest 'jobs for job settings' => sub {
     $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
       ->json_is({jobs => []});
 
-    local $t->app->config->{misc_limits}{job_settings_max_recent_jobs} = 1000000000;
+    local $t->app->config->{misc_limits}{job_settings_max_recent_jobs} = 1_000_000_000;
     $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})->status_is(200)
       ->json_is({jobs => [99981]});
     $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)

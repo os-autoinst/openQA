@@ -816,7 +816,7 @@ subtest 're-schedule product' => sub {
 
     my $res = schedule_iso($t, {scheduled_product_clone_id => 'foobar'}, 400);
     like $res->body, qr/scheduled_product_id.*invalid/, 'error returned if scheduled product to clone from is invalid';
-    $res = schedule_iso($t, {scheduled_product_clone_id => 1234567}, 404);
+    $res = schedule_iso($t, {scheduled_product_clone_id => 1_234_567}, 404);
     like $res->body, qr/to clone.*not found/, 'error returned if scheduled product to clone from does not exist';
 
     $res = schedule_iso($t, {scheduled_product_clone_id => $scheduled_product_id}, 200, {async => 1});

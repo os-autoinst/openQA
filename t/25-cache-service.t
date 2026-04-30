@@ -101,8 +101,8 @@ sub test_sync ($run) {
     my $dir2 = tempdir;
     my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
 
-    my $t_dir = int rand 13432432;
-    my $data = int rand 348394280934820842093;
+    my $t_dir = int rand 13_432_432;
+    my $data = int rand 348_394_280_934_820_842_093;
     $dir->child($t_dir)->spew($data);
     my $expected = $dir2->child('tests')->child($t_dir);
 

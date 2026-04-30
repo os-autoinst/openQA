@@ -18,10 +18,10 @@ use Mojo::Util qw(scope_guard);
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
-my $chunk_size = 10000000;
+my $chunk_size = 10_000_000;
 
 # allow up to 200MB - videos mostly
-$ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
+$ENV{MOJO_MAX_MESSAGE_SIZE} = 207_741_824;
 
 my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
 chdir $tempdir;

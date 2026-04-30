@@ -136,7 +136,8 @@ subtest 'openqa_get_log_file tool' => sub {
 
     subtest 'Job does not exist' => sub {
         local $t->app->config->{misc_limits}{mcp_max_result_size} = 100;
-        my $result = $client->call_tool('openqa_get_log_file', {job_id => 999999999, file_name => 'autoinst-log.txt'});
+        my $result
+          = $client->call_tool('openqa_get_log_file', {job_id => 999_999_999, file_name => 'autoinst-log.txt'});
         ok $result->{isError}, 'is an error';
         my $text = $result->{content}[0]{text};
         like $text, qr/Job does not exist/, 'error message';

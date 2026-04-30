@@ -81,20 +81,21 @@ subtest 'random number generator' => sub {
 };
 
 subtest 'download speed' => sub {
-    is download_rate([1638459407, 528237], [1638459408, 628237], 1024), '930.91';
-    is download_rate([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024), '976128930.91';
-    is download_rate([1638459407, 528237], [1638459407, 528237], 1024), undef;
+    is download_rate([1_638_459_407, 528237], [1_638_459_408, 628237], 1024), '930.91';
+    is download_rate([1_638_459_407, 528237], [1_638_459_408, 628237], 1024 * 1024 * 1024), '976128930.91';
+    is download_rate([1_638_459_407, 528237], [1_638_459_407, 528237], 1024), undef;
 
-    is download_speed([1638459407, 528237], [1638459408, 628237], 1024), '930.91 Byte/s';
-    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024), '931 KiB/s';
-    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024), '931 MiB/s';
-    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024 * 1024), '931 GiB/s';
-    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024 * 1024 * 1024), '953251 GiB/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_408, 628237], 1024), '930.91 Byte/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_408, 628237], 1024 * 1024), '931 KiB/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_408, 628237], 1024 * 1024 * 1024), '931 MiB/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_408, 628237], 1024 * 1024 * 1024 * 1024), '931 GiB/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_408, 628237], 1024 * 1024 * 1024 * 1024 * 1024),
+      '953251 GiB/s';
 
-    is download_speed([1638459407, 528237], [1638459508, 628237], 1024 * 1024 * 512), '5.1 MiB/s';
-    is download_speed([1638459407, 528237], [1638459407, 588237], 123456789), '1.9 GiB/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_508, 628237], 1024 * 1024 * 512), '5.1 MiB/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_407, 588237], 123_456_789), '1.9 GiB/s';
 
-    is download_speed([1638459407, 528237], [1638459407, 528237], 1024), '??/s';
+    is download_speed([1_638_459_407, 528237], [1_638_459_407, 528237], 1024), '??/s';
 };
 
 subtest 'labels' => sub {
@@ -534,10 +535,10 @@ subtest 'signal blocker' => sub {
 subtest 'human readable size' => sub {
     is human_readable_size(0), '0 Byte', 'zero';
     is human_readable_size(1), '1 Byte', 'one';
-    is human_readable_size(13443399680), '13 GiB', 'two digits GB';
-    is human_readable_size(8007188480), '7.5 GiB', 'smaller GB';
-    is human_readable_size(-8007188480), '-7.5 GiB', 'negative smaller GB';
-    is human_readable_size(717946880), '685 MiB', 'large MB';
+    is human_readable_size(13_443_399_680), '13 GiB', 'two digits GB';
+    is human_readable_size(8_007_188_480), '7.5 GiB', 'smaller GB';
+    is human_readable_size(-8_007_188_480), '-7.5 GiB', 'negative smaller GB';
+    is human_readable_size(717_946_880), '685 MiB', 'large MB';
     is human_readable_size(245760), '240 KiB', 'less than a MB';
 };
 

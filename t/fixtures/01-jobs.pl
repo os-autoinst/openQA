@@ -61,7 +61,7 @@ use Time::Seconds;
         settings => [
             {key => 'DESKTOP', value => 'minimalx'},
             {key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},
-            {key => 'ISO_MAXSIZE', value => 737280000},
+            {key => 'ISO_MAXSIZE', value => 737_280_000},
             {key => 'ISO_1', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},
             {key => 'BASE_TEST_ISSUES', value => '26103'}
         ],
@@ -429,7 +429,7 @@ use Time::Seconds;
         priority => 50,
         result => 'skipped',
         state => 'cancelled',
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3000100, 'UTC'),
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3_000_100, 'UTC'),
         t_started => undef,
         t_finished => undef,
         TEST => 'RAID0',
