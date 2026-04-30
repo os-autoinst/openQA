@@ -131,6 +131,7 @@
   /opt/openqa-trigger-from-obs/*:*/*products* rw,
   /opt/openqa-trigger-from-obs/*:*/*/*products* rw,
 
+  /opt/os-autoinst-scripts/ r,
   /opt/os-autoinst-scripts/** rix,
   /usr/share/openqa/script/openqa-cli px,
   /usr/share/openqa/script/openqa-clone-job mrix,
