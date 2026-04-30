@@ -117,6 +117,7 @@
   /usr/bin/isotovideo rix,
   /usr/bin/isoinfo rix,
   /usr/bin/jq rix,
+  /usr/bin/jsonnet rix,
   /usr/bin/podman rix,
   /usr/bin/lscpu rCx,
   /{usr/,}bin/mkdir rix,
