@@ -29,7 +29,9 @@
 </div>
 
 <div>
-    <h2 id="scheduled_jobs_heading">Scheduled jobs</h2>
+    <h2 id="scheduled_jobs_heading" style="display: inline-block">Scheduled jobs</h2><%=
+      help_popover 'Why is my test not getting executed?' => 'No scheduling issues detected',
+      undef, undef, undef, id => 'scheduled_jobs_help_icon', style => 'vertical-align: text-top'; %>
     <div id="scheduled_jobs_warning" class="alert alert-primary alert-dismissible d-none" role="alert">
         Jobs will not be assigned because storage is almost full.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
