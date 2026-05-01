@@ -405,7 +405,7 @@ sub test_junit_file {
     $testdir->list_tree->each(
         sub {
             fail 'json result: filename expected to be like result-\d_.*\.json but is ' . $_
-              unless $_ =~ qr/result-\d_.*\.json/;
+              unless m/result-\d_.*\.json/;
             my $res = decode_json $_->slurp;
             is ref $res, 'HASH', 'json result: can be decoded' or always_explain $_->slurp;
             fail 'json result: exists $res->{result}' unless exists $res->{result};
@@ -488,7 +488,7 @@ sub test_xunit_file {
     $testdir->list_tree->each(
         sub {
             fail 'json result: filename expected to be like result-.*\.json but is ' . $_
-              unless $_ =~ qr/result-.*\.json/;
+              unless m/result-.*\.json/;
             my $res = decode_json $_->slurp;
             is ref $res, 'HASH', 'json result: can be decoded' or always_explain $_->slurp;
             fail 'json result: exists $res->{result}' unless exists $res->{result};
