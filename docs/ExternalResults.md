@@ -1,5 +1,7 @@
 <a id="externalresults"></a>
-# Introduction
+# External Results
+
+## Introduction
 
 From time to time, a test developer might want to use openQA to execute a test
 suite from a different test harness than openQA, but still use openQA to setup test
@@ -22,13 +24,13 @@ The requirements to use this functionality, are quite simple:
 openQA will store these results in its own internal format for easier presentation,
 but still will allow the original file to be downloaded.
 
-# Usage
+## Usage
 
 If a test developer wishes to use the functional interface, after finishing the
 execution of the the testing too, calling `testapi::parse_extra_log` with the
 location to a the file generated.
 
-## openQA test distribution
+### openQA test distribution
 
 From within a common openQA test distribution, a developer can use `parse_extra_log`
 to upload a text file that contains a supported test output:
@@ -40,7 +42,7 @@ parse_extra_log('XUnit','junit-logging.xml');
 
 <a id="parser-formats"></a>
 
-# Available parser formats
+## Available parser formats
 
 Current parser formats:
 
@@ -49,9 +51,9 @@ Current parser formats:
 - OpenQA::Parser::Format::LTP
 - OpenQA::Parser::Format::XUnit,
 
-# Extending the parser
+## Extending the parser
 
-## OOP Interface
+### OOP Interface
 
 The parser is a base class that acts as a serializer/deserializer for the elements
 inside of it, it allows to be extended so new formats can be easily added.
@@ -62,7 +64,7 @@ would require to map the results correctly, 1 extra collection is provided for
 arbitrary data that can be exposed. The collections represents respectively:
 test results, test definition and test output.
 
-## Structured data
+### Structured data
 
 In structured data mode, elements of the collections are objects. They can be
 of any type, even though subclassing or objects of type of `OpenQA::Parser::Result`
@@ -115,7 +117,7 @@ my $json_serialization = $parser->to_json;
 my $from_json = OpenQA::Parser::Format::JUnit->from_json($json_serialization);
 ```
 
-## openQA internal test result storage
+### openQA internal test result storage
 
 It is important to know that openQA's internal mapping for test results works operating almost
 entirely on the filesystem, leaving only the test modules to be registered into the database, this

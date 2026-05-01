@@ -1,4 +1,6 @@
 <a id="networking"></a>
+# Networking
+
 For tests using the QEMU backend the networking type used is controlled by the
 `NICTYPE` variable. If unset or empty `NICTYPE` defaults to `user`, i.e.
 [QEMU User Networking](#qemu-user-networking) which requires no further configuration.
@@ -14,7 +16,7 @@ be ensured externally where needed as means for machines to be able to access
 each other.
 
 <a id="qemu-user-networking"></a>
-# QEMU User Networking
+## QEMU User Networking
 
 
 
@@ -24,7 +26,7 @@ the machine can be controlled with the `NICMAC` variable. If not set, it is
 `52:54:00:12:34:56`.
 
 <a id="tap-based-network"></a>
-# TAP Based Network
+## TAP Based Network
 
 os-autoinst can connect QEMU to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting `NICTYPE=tap`. The TAP device to use can be configured with the `TAPDEV` variable. If not
@@ -46,7 +48,7 @@ The MAC address of each virtual NIC is controlled by the `NICMAC` variable or au
 In TAP mode the system administrator is expected to configure the network,
 required internet access, etc. on the host as described in the next section.
 
-## Multi-machine test setup
+### Multi-machine test setup
 
 The complete multi-machine test setup can be provided from the script
 `os-autoinst-setup-multi-machine` provided by "os-autoinst". The script can be
@@ -78,9 +80,9 @@ The script `os-autoinst-setup-multi-machine` can be run like this:
 instances=30 bash -x $(which os-autoinst-setup-multi-machine)
 ```
 
-### What os-autoinst-setup-multi-machine does
+#### What os-autoinst-setup-multi-machine does
 
-#### Set up Open vSwitch
+##### Set up Open vSwitch
 
 The script will install and configure Open vSwitch as well as
 a service called _os-autoinst-openvswitch.service_.
@@ -102,7 +104,7 @@ the same time with conflicting IP addresses. These intermediate IP addresses
 can then be NATed (again) to upstream networks by regular iptables/NFT
 masquerading rules.
 
-#### Configure virtual interfaces
+##### Configure virtual interfaces
 
 The script will add the bridge device and the tap devices for every
 multi-machine worker instance.
@@ -114,7 +116,7 @@ multi-machine worker instance.
 > multi-machine worker hosts. Refer to the [GRE tunnels](#gre-tunnels) section below
 > for further information.
 
-#### Configure NAT with firewalld
+##### Configure NAT with firewalld
 
 > **NOTE:** 
 > `os-autoinst-setup-multi-machine` can set this up for you, but using > plain NFT instead of firewalld (which `os-autoinst-setup-multi-machine` can
@@ -131,10 +133,10 @@ IP-Forwarding will be enabled.
 firewall-cmd --list-all-zones
 ```
 
-### What is left to do after running os-autoinst-setup-multi-machine
+#### What is left to do after running os-autoinst-setup-multi-machine
 
 <a id="gre-tunnels"></a>
-#### GRE tunnels
+##### GRE tunnels
 
 By default all multi-machine workers have to be on a single physical machine.
 You can join multiple physical machines and its OVS bridges together by a GRE
@@ -175,7 +177,7 @@ Ensure to make gre_tunnel_preup.sh executable.
 > that value on support_server itself and it does MTU advertisement for DHCP
 > clients as well.
 
-#### Configure openQA workers
+##### Configure openQA workers
 
 Allow worker instances to run multi-machine jobs by modifying
 [the worker configuration](GettingStarted.md#configuration):
@@ -196,7 +198,7 @@ Enable worker instances to be started on system boot:
 systemctl enable openqa-worker@{1..3}
 ```
 
-## Verify the setup
+### Verify the setup
 
 Simply run a MM test scenario. For openSUSE, you can find many relevant tests on
 [o3](https://openqa.opensuse.org), e.g. look for networking-related tests like
@@ -220,7 +222,7 @@ WORKER_CLASS:wicked_basic_sut+=,worker_bar
 Also be sure to reboot the worker host to make sure the setup is actually
 persistent.
 
-### Start test VMs manually
+#### Start test VMs manually
 
 You may also start VMs manually to verify the setup.
 
@@ -278,7 +280,7 @@ for details). When running ping you can add/remove machines to/from the GRE
 network to bisect problematic hosts/connections (via `ovs-vsctl add-port …` and
 `ovs-vsctl del-port …`).
 
-## Debugging Open vSwitch Configuration
+### Debugging Open vSwitch Configuration
 
 Boot sequence with wicked (version 0.6.23 and newer):
 
@@ -366,9 +368,9 @@ packet count in the forward chain between the br1 and external interface.
 > [counters](https://wiki.nftables.org/wiki-nftables/index.php/Counters) (which can
 > be [added to existing rules](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules)).
 
-## Debugging GRE tunnels and MTU sizes
+### Debugging GRE tunnels and MTU sizes
 
-### Initial setup for all experiments
+#### Initial setup for all experiments
 
 ```sh
 # Enable ip forwarding
@@ -387,7 +389,7 @@ systemctl enable --now openvswitch
 > **NOTE:** 
 > instead of having two /24 networks, it is also possible to assign addresses from one bigger network (which have the benefit of not needing explicit route assignment).
 
-### Simple scenario
+#### Simple scenario
 
 Two servers with a single bridge on each side connected with GRE tunnel.
 
@@ -404,7 +406,7 @@ ping -c 3 -M do -s 1300 192.168.42.1
 ping -c 3 -M do -s 1300 192.168.43.1
 ```
 
-### Scenario with openvswitch
+#### Scenario with openvswitch
 
 Two servers with a one virtual bridge connected with GRE tunnel.
 
@@ -434,7 +436,7 @@ ping -c 3 -M do -s 1300 192.168.43.1
                     type: system
         ovs_version: "3.1.0"
 
-### GRE tunnel made in openvswitch
+#### GRE tunnel made in openvswitch
 
 openvswitch uses flow-based GRE tunneling, i.e. one interface `gre_sys` for all tunnels, the tunnel can be created by `ovs-vsctl`. After that, everything works as expected.
 
@@ -464,7 +466,7 @@ ping -c 3 -M do -s 1300 192.168.43.1
                     options: {remote_ip="192.0.2.2"}
         ovs_version: "3.1.0"
 
-# VDE Based Network
+## VDE Based Network
 
 Virtual Distributed Ethernet provides a software switch that runs in
 user space. It allows to connect several QEMU instances without
@@ -473,7 +475,7 @@ affecting the system's network configuration.
 The openQA workers need a vde_switch instance running. The workers
 reconfigure the switch as needed by the job.
 
-## Basic, Single Machine Tests
+### Basic, Single Machine Tests
 
 To start with a basic configuration like QEMU user mode networking,
 create a machine with the following settings:
