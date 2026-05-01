@@ -1,21 +1,38 @@
 #!/bin/bash
 set -euo pipefail
 
-which helm > /dev/null || echo "Error: Helm is not installed"
-which ct > /dev/null || echo "Error: ct is not installed"
+for cmd in helm ct yamale yamllint; do
+    if ! command -v "$cmd" > /dev/null; then
+        echo "Error: $cmd is not installed" >&2
+        exit 1
+    fi
+done
+if [[ "${1:-lint}" != "lint" ]]; then
+    if ! command -v kubectl > /dev/null; then
+        echo "Error: kubectl is not installed" >&2
+        exit 1
+    fi
+fi
 
-cd container/helm/
+# Create a temporary directory for isolated testing
+tmp_dir=$(mktemp -d)
+trap 'rm -rf "$tmp_dir"' EXIT
+
+# Copy the helm chart files to the temporary directory
+cp -a container/helm/. "$tmp_dir/"
+cd "$tmp_dir"
 
 ct_common_args=()
+ct_lint_args=()
 # Reference schema files from the installed package if they are not in the default locations
 for schema in chart_schema.yaml lintconf.yaml; do
     if [[ ! -f "$schema" && ! -f "$HOME/.ct/$schema" && ! -f "/etc/ct/$schema" ]]; then
         pkg_schema="/usr/share/doc/packages/chart-testing/$schema"
         if [[ -f "$pkg_schema" ]]; then
             if [[ "$schema" == "chart_schema.yaml" ]]; then
-                ct_common_args+=(--chart-yaml-schema "$pkg_schema")
+                ct_lint_args+=(--chart-yaml-schema "$pkg_schema")
             else
-                ct_common_args+=(--lint-conf "$pkg_schema")
+                ct_lint_args+=(--lint-conf "$pkg_schema")
             fi
         fi
     fi
@@ -23,5 +40,6 @@ done
 
 ct_extra=(--helm-extra-set-args "--set=gateway.enabled=false --set=image.pullPolicy=IfNotPresent --set=worker.image.pullPolicy=IfNotPresent")
 ct_install_args=("${ct_common_args[@]}")
+[[ "${1:-lint}" == "lint" ]] && ct_install_args+=("${ct_lint_args[@]}")
 [[ "${1:-lint}" != "lint" ]] && ct_install_args+=("${ct_extra[@]}")
 ct "${1:-lint}" --debug --all --config ct.yaml "${ct_install_args[@]}"
