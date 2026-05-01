@@ -78,9 +78,18 @@ sub auth ($self) {
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
         }
+        # Fallback for unauthenticated access (polymorphic)
         else {
-            $log->trace('No API key from client');
-            $reason = 'no api key';
+            my $auth_method = $self->app->config->{auth}->{method} // '';
+            my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
+            if (my $sub = $auth_module->can('unauthenticated_user')) {
+                $user = $auth_module->$sub($self->app);
+                $reason = undef if $user;
+            }
+            unless ($user) {
+                $log->trace('No API key from client');
+                $reason = 'no api key';
+            }
         }
     }
 

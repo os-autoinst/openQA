@@ -116,7 +116,7 @@ chown -R postgres: /var/lib/pgsql/ # fix broken postgres working dir permissions
 start-database
 su postgres -c "$OPENQA_DIR/script/setup-db" "$dbuser" "$dbname"
 
-# setup webserver and fake-auth
+# setup webserver and none-auth
 proxy_args=""
 [[ -n "$setup_web_proxy" ]] && proxy_args="--proxy=$setup_web_proxy"
 setup=$OPENQA_DIR/script/configure-web-proxy
@@ -125,7 +125,7 @@ if command -v "$setup"; then
 else
     curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex -s -- "$proxy_args"
 fi
-echo -e "[auth]\nmethod = Fake" > /etc/openqa/openqa.ini.d/01-enable-fake-auth.ini
+echo -e "[auth]\nmethod = None" > /etc/openqa/openqa.ini.d/01-enable-none-auth.ini
 
 if [[ -z $skip_suse_specifics ]] && ping -c1 download.suse.de. > /dev/null 2>&1 && (! rpm -q ca-certificates-suse); then
     # add internal CA if executed within suse network
@@ -180,17 +180,14 @@ while ! curl -o /dev/null -w "%{http_code}" -sIL http://localhost/ | grep 200; d
     sleep 3
 done
 
-# create api key
-curl http://localhost/login # create demo user (id=2)
-API_KEY=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
-API_SECRET=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
-echo "INSERT INTO api_keys (key, secret, user_id, t_created, t_updated) VALUES ('${API_KEY}', '${API_SECRET}', 2, NOW(), NOW());" | su postgres -c "psql $dbname"
-
-cat >> /etc/openqa/client.conf << EOF
+# setup api key for client
+if [[ -n "${OPENQA_AUTH_NONE_KEY:-}" ]]; then
+    cat >> /etc/openqa/client.conf << EOF
 [localhost]
-key = ${API_KEY}
-secret = ${API_SECRET}
+key = ${OPENQA_AUTH_NONE_KEY}
+secret = ${OPENQA_AUTH_NONE_SECRET:-${OPENQA_AUTH_NONE_KEY}}
 EOF
+fi
 
 start-worker
 

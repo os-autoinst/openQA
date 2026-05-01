@@ -52,17 +52,15 @@ sub _current_user ($c) {
     # If the value is not in the stash
     my $current_user = $c->stash('current_user');
     unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
-        my $is_auth_method_none = ($c->app->config->{auth}->{method} // '') eq 'None';
-        # Avoid auto-login as admin for requests with API credentials.
-        # Otherwise, the 'auth' method would reject the request due to a
-        # missing CSRF token before it even checks the API credentials.
-        my $id = $c->session->{user} // ($is_auth_method_none && !$c->is_api_request ? 'admin' : undef);
-        my $users = $c->schema->resultset('Users');
-        my $user = $id ? $users->find({username => $id}) : undef;
-        if ($is_auth_method_none && $id && $id eq 'admin') {
-            $user ||= $users->create_user('admin', fullname => 'Administrator', email => 'admin@example.com');
-            $user->update({is_admin => 1, is_operator => 1}) unless $user->is_admin && $user->is_operator;
+        my $auth_method = $c->app->config->{auth}->{method} // '';
+        my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
+        my $fallback_user;
+        if (!$c->is_api_request && (my $sub = $auth_module->can('unauthenticated_user'))) {
+            $fallback_user = $auth_module->$sub($c->app);
         }
+
+        my $id = $c->session->{user};
+        my $user = $id ? $c->schema->resultset('Users')->find({username => $id}) : $fallback_user;
         $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
     }
 
@@ -81,7 +79,7 @@ sub _is_admin ($c, $user = undef) {
 
 sub _is_api_request ($c) {
     my $h = $c->req->headers;
-    return !!($h->authorization || $h->header('X-API-Key'));
+    return !!($h->authorization || $h->header('X-API-Key') || $h->header('X-API-Microtime'));
 }
 
 sub _is_local_request ($c) {
