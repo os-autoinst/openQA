@@ -8,6 +8,7 @@
   #include <abstractions/nameservice>
   #include <abstractions/perl>
 
+  /dev/tty wr,
   /etc/gitconfig r,
   /etc/openqa/client.conf r,
   /etc/openqa/client.conf.d/ r,
