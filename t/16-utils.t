@@ -287,12 +287,12 @@ subtest 'Plugins handling' => sub {
     is path_to_class('foo/bar.pm'), 'foo::bar';
     is path_to_class('foo/bar/baz.pm'), 'foo::bar::baz';
 
-    ok grep('OpenQA::Utils', loaded_modules), 'Can detect loaded modules';
-    ok grep('Test::Most', loaded_modules), 'Can detect loaded modules';
+    ok + (grep { $_ eq 'OpenQA::Utils' } loaded_modules), 'Can detect loaded modules';
+    ok + (grep { $_ eq 'Test::Most' } loaded_modules), 'Can detect loaded modules';
 
     is_deeply [loaded_plugins('OpenQA::Utils', 'Test::Most')], ['OpenQA::Utils', 'Test::Most', 'Test::Most::Exception'],
       'Can detect loaded plugins, filtering by namespace';
-    ok grep('Test::Most', loaded_plugins),
+    ok + (grep { $_ eq 'Test::Most' } loaded_plugins),
       'loaded_plugins() behave like loaded_modules() when no arguments are supplied';
 
     my $test_hash = {
