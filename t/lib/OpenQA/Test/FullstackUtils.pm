@@ -83,7 +83,7 @@ sub wait_for_result_panel ($driver, $result_panel, $context = undef, $fail_on_in
     my $msg = "Expected result for $context not found";
 
     my $timeout = OpenQA::Test::TimeLimit::scale_timeout(30) / $check_interval;
-    for (my $count = 0; $count < $timeout; $count++) {
+    for my $count (0 .. $timeout - 1) {
         wait_for_ajax(msg => "wait_for_result_panel: waiting for '$result_panel' (count $count of $timeout)");
         my $status_text = find_status_text($driver);
         return 1 if $status_text =~ $result_panel;

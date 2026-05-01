@@ -169,7 +169,7 @@ sub compare {
 
     is OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!';
 
-    for (my $i = 1; $i <= $pieces->size; $i++) {
+    for my $i (1 .. $pieces->size) {
         my $piece = $original->get_piece($i => $chunk_size);
         my $from_split = $pieces->get($i - 1);
         is_deeply $piece, $from_split, 'Structs are matching';

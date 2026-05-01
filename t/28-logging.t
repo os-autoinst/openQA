@@ -82,7 +82,7 @@ subtest 'Logging to stdout' => sub {
 
     like $output, qr/$$/, 'Pid is printed in debug mode';
     is @matches / 2, 3, 'Worker log matches';
-    for (my $i = 0; $i < @matches; $i += 2) {
+    for (my $i = 0; $i < @matches; $i += 2) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         like $matches[$i], qr/$matches[$i + 1]/, "OK $matches[$i]";
     }
 };
@@ -108,7 +108,7 @@ subtest 'Logging to file' => sub {
     # Tests
     my @matches = (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
     is @matches / 2, 3, 'Worker log matches';
-    for (my $i = 0; $i < @matches; $i += 2) {
+    for (my $i = 0; $i < @matches; $i += 2) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         is $matches[$i], $matches[$i + 1], "OK $matches[$i]";
     }
 };

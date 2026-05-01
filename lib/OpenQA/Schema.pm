@@ -179,7 +179,7 @@ sub read_application_secrets ($self) {
 sub is_deadlock ($self, $error) { $error =~ DEADLOCK_REGEX }
 
 sub txn_do_retry_on_deadlock ($self, $sub, $deadlock_cb = undef) {
-    for (my $tries = 0;; ++$tries) {
+    for (my $tries = 0;; ++$tries) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         try { return $self->txn_do($sub) }
         catch ($e) {
             die $e if $tries >= DEADLOCK_RETRIES || !$self->is_deadlock($e);    # uncoverable statement

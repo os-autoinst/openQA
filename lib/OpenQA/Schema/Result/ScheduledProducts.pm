@@ -495,7 +495,7 @@ sub _sort_dep ($list) {
     my (%done, %count, @out);
     ++$count{_job_ref($_)} for @$list;
 
-    for (my $added;; $added = 0) {
+    for (my $added;; $added = 0) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         for my $job (@$list) {
             next if $done{$job};
             my $has_parents_to_go_before;
@@ -862,7 +862,7 @@ sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained
     $jobs = _sort_dep($jobs);
 
     # iterate in reverse order to go though children first and being able to easily delete from $jobs
-    for (my $i = $#{$jobs}; $i >= 0; --$i) {
+    for my $i (reverse 0 .. $#$jobs) {
         my $job = $jobs->[$i];
 
         # parse relevant parents from job settings

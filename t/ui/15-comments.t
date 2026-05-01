@@ -66,7 +66,7 @@ my $user_name = 'Demo';
 my $max_write_attempts = $ENV{OPENQA_COMMENTS_TEST_MAX_WRITE_ATTEMPTS} // 10;
 
 sub write_comment ($text, $desc) {
-    for (my $attempts = 1;; ++$attempts) {
+    for (my $attempts = 1;; ++$attempts) {    ## no critic (ControlStructures::ProhibitCStyleForLoops)
         eval {
             wait_for_element(
                 selector => '#commentForm textarea[name="text"]',

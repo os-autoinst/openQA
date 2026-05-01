@@ -854,7 +854,7 @@ sub _restart ($self, %args) {
 
     my $duplicates = $res->{duplicates};
     my @urls;
-    for (my $i = 0; $i < @$duplicates; $i++) {
+    for my $i (0 .. $#$duplicates) {
         my $result = $duplicates->[$i];
         my %event_data = (id => $jobs->[$i], result => $result, auto => $auto);
         $event_data{comment} = $comment if defined $comment;

@@ -555,7 +555,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
 
     # add 6 new needles (makes 7 new needles in total since one has already been added)
     my $needle_name_input = $driver->find_element_by_id('needleeditor_name');
-    for (my $i = 0; $i != 7; ++$i) {
+    for my $i (0 .. 6) {
         # enter new needle name
         my $new_needle_name = "$needlename-$i";
         $needle_name_input->clear();
