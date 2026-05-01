@@ -5,6 +5,7 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
+use Mojo::Base -signatures;
 use utf8;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -20,6 +21,7 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '10';
 use Mojo::File qw(tempdir);
+use Test::MockModule;
 
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "127.0.0.1:$port";
@@ -66,6 +68,12 @@ my $tempdir = tempdir;
 my $to = $tempdir->child('test.qcow');
 
 $ua->connect_timeout(0.25)->inactivity_timeout(0.25);
+
+subtest 'Unable to create temporary directory' => sub {
+    my $file_mock = Test::MockModule->new('Mojo::File');
+    $file_mock->redefine(make_path => sub ($self) { die 'fake error' });
+    like $downloader->download('from', 'to'), qr/temp.*dir.*fake error/, 'error returned';
+};
 
 subtest 'Connection refused' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
