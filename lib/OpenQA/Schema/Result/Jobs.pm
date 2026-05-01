@@ -620,7 +620,7 @@ sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_chil
     if (my $test_suffix = delete $spec_settings{'TEST+'}) { $main_settings{TEST} .= $test_suffix }
     my ($group_args, $group) = extract_group_args_from_settings(\%spec_settings);
     die "Specified _GROUP/_GROUP_ID settings are invalid\n" if keys %$group_args && !$group;
-    my @settings = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
+    my @settings = grep { $_->key !~ /^(?:NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
     my @new_settings = map {
         my $key = $_->key;
         my $value = (delete $spec_settings{$key}) // $_->value;
@@ -1943,7 +1943,7 @@ sub investigate ($self, %args) {
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
         my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
-        $inv{diff_to_last_good} = join "\n", grep { !/(^@@|$ignore)/ } split /\n/, $diff;
+        $inv{diff_to_last_good} = join "\n", grep { !/(?:^@@|$ignore)/ } split /\n/, $diff;
         my $prev_vars = decode_json($prev_file // '{}');
         my $effective_distri = effective_distri($self_vars);
         my $casedir = testcasedir($effective_distri, $self->VERSION);
@@ -1977,7 +1977,7 @@ sub packages_diff ($self, $prev, $ignore, $filename, $fallback = 'Diff of packag
     return $fallback unless -e $prev_file;
     my @files_packages = map { $_->slurp } ($prev_file, $current_file);
     my $diff_packages = eval { diff(\$files_packages[0], \$files_packages[1], {CONTEXT => 0}) };
-    return join "\n", grep { !/(^@@|$ignore)/ } split /\n/, $diff_packages;
+    return join "\n", grep { !/(?:^@@|$ignore)/ } split /\n/, $diff_packages;
 }
 
 sub ancestors ($self, $limit = -1) {

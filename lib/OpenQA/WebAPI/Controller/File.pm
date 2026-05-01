@@ -165,7 +165,7 @@ sub _set_headers ($self, $path) {
             {
                 $allow_insecure = 1 if $file_domain eq $self->req->url->to_abs->host_port;
             }
-            $as_attachment = 0 if ($allow_insecure || $filetype !~ m/(html|svg)/) && $ext ne 'iso';
+            $as_attachment = 0 if ($allow_insecure || $filetype !~ m/(?:html|svg)/) && $ext ne 'iso';
         }
         # force saveAs
         $headers->content_disposition("attachment; filename=$filename;") if $as_attachment;

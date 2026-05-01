@@ -148,7 +148,8 @@ e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 
 sub tag ($self) {
     $self->text
-      =~ /\btag:(((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w]+)|"((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w\s\+:]+)"):(?<type>[-@\d\w]+)(:(?<description>[-.@\d\w]+))?\b/;
+      =~ /\btag:(((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w]+)|"((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w\s\+:]+)"):(?<type>[-@\d\w]+)(:(?<description>[-.@\d\w]+))?\b/
+      ;    ## no critic (RegularExpressions::ProhibitUnusedCapture)
     return $+{build}, $+{type}, $+{description}, $+{version};
 }
 

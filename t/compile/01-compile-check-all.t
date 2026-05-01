@@ -37,12 +37,12 @@ if (-d '.git' and which('git')) {
     chomp @all_git_files;
     my %skip = map { $_ => undef } @$SKIP;
     @files = map { $root . $_ }
-      grep { !-l $_ && !exists $skip{$_} && $_ !~ /^(external|t|xt)\// } @all_git_files;    # Exclude files to skip
+      grep { !-l $_ && !exists $skip{$_} && $_ !~ /^(?:external|t|xt)\// } @all_git_files;    # Exclude files to skip
 }
 else {
     @files = ($test->all_pm_files('lib'), $test->all_pl_files('script'));
     my %skip = map { $_ => undef } @$SKIP;
-    @files = grep { my $f = s{^\./}{}r; !exists $skip{$f} && $f !~ /^(external|t|xt)\// } @files;
+    @files = grep { my $f = s{^\./}{}r; !exists $skip{$f} && $f !~ /^(?:external|t|xt)\// } @files;
 }
 
 # Only check perl files and skip test scripts (already executed)
