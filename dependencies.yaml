@@ -85,6 +85,7 @@ devel_no_selenium_requires:
   sudo:
   tar:
   xorg-x11-fonts:
+  python3-typer:
   perl(Perl::Tidy): '== 20260204.0.0'
   perl(Test::CheckGitStatus):
 

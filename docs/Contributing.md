@@ -409,6 +409,25 @@ assets can need a big amount of disk space.
 > **WARNING:**
 > Be sure to **clear** that variable when running unit tests locally.
 
+For convenience you can use the `openqa-run` wrapper to call openQA services with
+`OPENQA_BASEDIR` set to your local development environment. By default it uses
+`t/data` from your working copy. It runs as the current user.
+
+For example to start the openQA GRU service call:
+
+```sh
+tools/openqa-run openqa-gru
+```
+
+You can also use a temporary test database by passing `--test-db`:
+
+```sh
+tools/openqa-run --test-db openqa-webui-daemon
+```
+
+See `tools/openqa-run --help` for more options.
+
+
 ## Customize configuration directory
 
 When running openQA from a Git checkout it will find configuration files from
