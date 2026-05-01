@@ -1148,7 +1148,7 @@ $job_mock->unmock($_) for qw(_upload_results _upload_results_step_1_post_status 
 
 subtest 'Dynamic schedule' => sub {
     my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-    my $orig = \&OpenQA::Worker::Job::_read_json_file;
+    my $orig = \&OpenQA::Worker::Job::_read_json_file;    ## no critic (Variables::ProtectPrivateVars)
     my $read_schedule = 0;
     $job_mock->redefine(
         _read_json_file => sub {
@@ -1228,7 +1228,7 @@ subtest 'Dynamic schedule' => sub {
 };
 
 subtest 'image optimization' => sub {
-    my $opt = \&OpenQA::Worker::Job::_optimize_image;
+    my $opt = \&OpenQA::Worker::Job::_optimize_image;    ## no critic (Variables::ProtectPrivateVars)
     local $ENV{OPENQA_LOGFILE} = undef;
     combined_like {
         is $opt->('foo', {OPTIMIZE_IMAGES => 0}), 0, 'image optimization can be skipped';

@@ -52,7 +52,7 @@ my %parent_settings = (
 );
 
 subtest 'running command' => sub {
-    my $run = \&OpenQA::Script::CloneJob::_run_cmd;
+    my $run = \&OpenQA::Script::CloneJob::_run_cmd;    ## no critic (Variables::ProtectPrivateVars)
     combined_like {
         like $run->('does-not-exist'), qr/Failed.*does-not-exist.*No such/i, 'error if command does not exist'
     }
@@ -61,7 +61,7 @@ subtest 'running command' => sub {
     is $run->('true'), '', 'no error if command succeeds';
 
     subtest 'get URL from command' => sub {
-        my $url_from_cmd = \&OpenQA::Script::CloneJob::_url_from_cmd;
+        my $url_from_cmd = \&OpenQA::Script::CloneJob::_url_from_cmd;    ## no critic (Variables::ProtectPrivateVars)
         my $res = $url_from_cmd->(echo => qw(-n http://foo/bar));
         is $res, 'http://foo/bar', 'got URL';
         is ref $res, 'Mojo::URL', 'URL returned as Mojo::URL ref';

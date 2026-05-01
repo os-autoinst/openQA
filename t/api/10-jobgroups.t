@@ -597,7 +597,7 @@ subtest 'update default_keep_logs_in_days and default_keep_results_in_days' => s
 };
 
 subtest 'helper for removing test suite defaults' => sub {
-    my $helper = \&OpenQA::Schema::Result::JobGroups::_remove_test_suite_defaults;
+    my $helper = \&OpenQA::Schema::Result::JobGroups::_remove_test_suite_defaults;    ## no critic (Variables::ProtectPrivateVars)
     my $group = {scenarios => {x86_64 => {product => [{foo => {machine => '64bit'}}]}}};
     my $test_suites = {x86_64 => {foo => 1}};
     my $scenarios = [];
