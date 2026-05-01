@@ -84,7 +84,7 @@ sub update_dirty_status ($job, $args) {
     my $app = $job->app;
     my $project = $args->{project};
     my $helper = $app->obs_rsync;
-    eval { $helper->is_status_dirty($project, 1); 1 };
+    eval { $helper->is_status_dirty($project, 1); 1 };    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
     return $job->finish(0);
 }
 

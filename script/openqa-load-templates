@@ -87,7 +87,7 @@ try {
     dd $info;
 }
 catch ($e) {
-    $info = eval $datafile;
+    $info = eval $datafile;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
     if (my $error = $@) { die "Error in data file: $error\n" }
 }
 

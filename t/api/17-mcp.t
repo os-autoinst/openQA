@@ -106,7 +106,7 @@ subtest 'openqa_get_job_info tool' => sub {
     };
 
     subtest 'Input validation failed' => sub {
-        eval { $client->call_tool('openqa_get_job_info', {job_id => 'abc'}) };
+        eval { $client->call_tool('openqa_get_job_info', {job_id => 'abc'}) };    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
         like $@, qr/Error -32602: Invalid arguments/, 'right error message';
     };
 };
@@ -121,9 +121,9 @@ subtest 'openqa_get_log_file tool' => sub {
     };
 
     subtest 'Input validation failed' => sub {
-        eval { $client->call_tool('openqa_get_log_file', {job_id => 'abc', file_name => 'autoinst-log.txt'}) };
+        eval { $client->call_tool('openqa_get_log_file', {job_id => 'abc', file_name => 'autoinst-log.txt'}) };    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
         like $@, qr/Error -32602: Invalid arguments/, 'right error message';
-        eval { $client->call_tool('openqa_get_log_file', {job_id => 99938, file_name => ''}) };
+        eval { $client->call_tool('openqa_get_log_file', {job_id => 99938, file_name => ''}) };    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
         like $@, qr/Error -32602: Invalid arguments/, 'right error message';
     };
 
