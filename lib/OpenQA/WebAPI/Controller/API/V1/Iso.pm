@@ -91,8 +91,13 @@ could also be used to generate a more detailed report.
 
 sub job_statistics ($self) {
     return undef unless my $params = $self->_get_iso_params_and_validate;
+    my $groups = $self->groups_for_globs;
+    return $self->render(json => {}) if !defined $groups;
+    my $group_ids = @$groups ? [map { $_->id } @$groups] : undef;
+    my $include_null_groups
+      = ($self->validation->param('not_group_glob') && !$self->validation->param('group_glob')) ? 1 : 0;
     my $scheduled_products = $self->app->schema->resultset('ScheduledProducts');
-    $self->render(json => $scheduled_products->job_statistics(@$params));
+    $self->render(json => $scheduled_products->job_statistics(@$params, $group_ids, $include_null_groups));
 }
 
 =over 4
