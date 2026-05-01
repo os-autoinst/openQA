@@ -137,6 +137,7 @@ sub default_config () {
         auth => {
             method => 'OpenID',
             require_for_assets => 0,
+            assets_allowlist => 'localhost',
         },
         'scm git' => {
             git_auto_commit => '',

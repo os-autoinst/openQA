@@ -49,7 +49,7 @@ combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_requ
   'Plugin loaded';
 
 subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`' => sub {
-    my $t = test_auth_method_startup('Fake', "require_for_assets = 1\n");
+    my $t = test_auth_method_startup('Fake', "require_for_assets = 1\nassets_allowlist = \n");
     $t->get_ok('/session/test')->status_is(200)->content_like(qr/you are Demo/);
     $t->app->helper(valid_csrf => sub { 0 });
     $t->post_ok('/admin/users/1')->status_is(403)->content_like(qr/bad csrf token/i);
@@ -63,6 +63,97 @@ subtest 'restricted asset downloads with setting `[auth] require_for_assets = 1`
     $t->content_unlike(qr/asset-ok/, 'asset not accessible when logged out');
     $t->get_ok('/tests/42/asset/iso/test.iso')->status_is(403, '403 response via test when logged out');
     $t->content_unlike(qr/asset-ok/, 'asset via test not accessible when logged out');
+};
+
+sub check_asset_access ($t, $expected_status, $msg) {
+    my $test = $t->get_ok('/assets/iso/test.iso')->status_is($expected_status, $msg);
+    $test->content_is('asset-ok') if $expected_status == 200;
+}
+
+subtest 'allow-list configuration and host/IP matching' => sub {
+    my $remote_address = '127.0.0.1';
+    my $mocked_hostname = undef;
+
+    my $auth_mock = Test::MockModule->new('OpenQA::Shared::Controller::Auth');
+    $auth_mock->redefine(
+        _reverse_dns => sub { $mocked_hostname },
+        _forward_dns_match => sub { 1 });
+
+    my $create_t = sub (@options) {
+        my $t = test_auth_method_startup('Fake', @options);
+        $t->app->helper(remote_address => sub { $remote_address });
+        $t->get_ok('/logout');
+        return $t;
+    };
+
+    subtest 'allow-listed asset downloads via IP' => sub {
+        my $t = $create_t->("require_for_assets = 1\nassets_allowlist = 1.2.3.4 5.6.7.8\n");
+
+        my @cases = (
+            ['1.1.1.1', 403, 'Assets forbidden for unauthorized external IP address'],
+            ['1.2.3.4', 200, 'Assets accessible for IP address in allow-list'],
+            ['5.6.7.8', 200, 'Assets accessible for multiple IP addresses in allow-list'],
+        );
+        for my $case (@cases) {
+            $remote_address = $case->[0];
+            check_asset_access($t, $case->[1], $case->[2]);
+        }
+
+        $remote_address = '1.1.1.1';
+        $t->get_ok('/login')->status_is(302);
+        check_asset_access($t, 200, 'Assets allowed when logged in despite IP not being in allow-list');
+    };
+
+    subtest 'allow-listed asset downloads via Hostname and Domain' => sub {
+        my $t = $create_t->("require_for_assets = 1\nassets_allowlist = worker1.example.com .suse.de\n");
+
+        my @cases = (
+            ['10.0.0.1', 'worker1.example.com', 200, 'Assets accessible when reverse DNS matches allowed FQDN'],
+            ['10.0.0.2', 'worker2.example.com', 403, 'Assets forbidden when reverse DNS does not match allowed FQDN'],
+            ['10.160.0.1', 'somehost.suse.de', 200, 'Assets accessible when reverse DNS matches allowed domain suffix'],
+            [
+                '10.160.0.2', 'otherhost.suse.de.evil.com',
+                403, 'Assets forbidden when reverse DNS only contains allowed domain suffix as substring'
+            ],
+        );
+        for my $case (@cases) {
+            ($remote_address, $mocked_hostname) = @{$case}[0, 1];
+            check_asset_access($t, $case->[2], $case->[3]);
+        }
+    };
+
+    subtest 'default allow-list' => sub {
+        my $t = $create_t->("require_for_assets = 1\n");
+
+        my @cases = (
+            ['127.0.0.1', 200, 'Localhost IPv4 is allowed by default'],
+            ['::1', 200, 'Localhost IPv6 is allowed by default'],
+            ['1.1.1.1', 403, 'External IP is forbidden by default'],
+        );
+        for my $case (@cases) {
+            $remote_address = $case->[0];
+            check_asset_access($t, $case->[1], $case->[2]);
+        }
+    };
+
+    subtest 'explicit localhost in allow-list' => sub {
+        my $t = $create_t->("require_for_assets = 1\nassets_allowlist = localhost\n");
+
+        my @cases = (
+            ['127.0.0.1', 200, 'Localhost IPv4 allowed when explicitly configured'],
+            ['::1', 200, 'Localhost IPv6 allowed when explicitly configured'],
+        );
+        for my $case (@cases) {
+            $remote_address = $case->[0];
+            check_asset_access($t, $case->[1], $case->[2]);
+        }
+    };
+
+    subtest 'require_for_assets = 0' => sub {
+        my $t = $create_t->("require_for_assets = 0\n");
+        $remote_address = '1.1.1.1';
+        check_asset_access($t, 200, 'Assets publicly accessible when require_for_assets is disabled');
+    };
 };
 
 subtest None => sub {

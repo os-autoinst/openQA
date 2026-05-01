@@ -147,7 +147,8 @@ sub startup ($self) {
     # only provide a URL helper - this is overtaken by apache
     my $config = $app->config;
     my $require_auth_for_assets = $config->{auth}->{require_for_assets};
-    my $assets_r = $require_auth_for_assets ? $auth_any_user : $r;
+    my $assets_auth = $r->under('/')->to('Auth#auth_assets');
+    my $assets_r = $require_auth_for_assets ? $assets_auth : $r;
     $assets_r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
     my $test_path = '/tests/<testid:num>';
