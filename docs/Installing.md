@@ -1987,10 +1987,13 @@ files).
 Authentication via OpenID is enabled by default. Do **not** change the
 authentication method to `Fake` unless access is otherwise restricted.
 
-Note that read-access to most data is possible even without being logged-in. So
-you need to be careful exposing an instance to the public even if authentication
-is enabled. To protect assets, the configuration setting
-`[auth] require_for_assets = 1` can be used. To prevent setting values from being logged, setting keys like *`SECRET`*`…` and `…_PASSWORD` can be used.
+Note that read-access to most data is possible even without being logged-in.
+So you need to be careful exposing an instance to the public even if
+authentication is enabled. To protect assets, the configuration setting
+`[auth] require_for_assets = 1` can be used. To prevent setting values from
+being logged or displayed in the UI, setting keys matching `^_SECRET_` or
+`_PASSWORD` are redacted by default. A custom regex for redacting additional
+variables can be specified via the `_HIDE_SECRETS_REGEX` job setting.
 
 ## Configuration settings with security implications
 

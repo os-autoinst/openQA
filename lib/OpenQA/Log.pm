@@ -29,6 +29,7 @@ our @EXPORT_OK = qw(
   log_format_callback
   get_channel_handle
   setup_log
+  redact_settings
   redact_settings_in_file
   format_settings
 );
@@ -210,8 +211,18 @@ sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
     }
 }
 
+# same approach as in os-autoinst bmwqemu.pm
 sub redact_settings ($vars) {
-    return {map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ($_ => $vars->{$_}) : ($_ => '[redacted]') } keys %$vars};
+    my $default_hide_re = '^_SECRET_|_PASSWORD';
+    my ($custom_hide_re, $error);
+    if ($vars->{_HIDE_SECRETS_REGEX}) {
+        try { $custom_hide_re = qr/$vars->{_HIDE_SECRETS_REGEX}/ }
+        catch ($e) { $error = $e }
+    }
+    my $hide_re = $custom_hide_re ? qr/$default_hide_re|$custom_hide_re/ : qr/$default_hide_re/;
+    my $redacted = {map { $_ =~ $hide_re ? ($_ => '[redacted]') : ($_ => $vars->{$_}) } keys %$vars};
+    $redacted->{_HIDE_SECRETS_REGEX} = "(invalid regex specified: $error)" if $error;
+    return $redacted;
 }
 
 sub redact_settings_in_file ($file) {
