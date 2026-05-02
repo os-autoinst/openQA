@@ -1006,4 +1006,8 @@ qr{Ignoring host.*Working directory does not exist.*Checked: $workdir/t/data/ope
       'hosts with non-existent working directory ignored and error logged';
 };
 
+subtest 'worker token generation' => sub {
+    is OpenQA::Worker::encode_token('my_host@123456@789ABC'), 'owqt-', 'can generate token';
+};
+
 done_testing();
