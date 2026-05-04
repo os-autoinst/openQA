@@ -141,28 +141,15 @@ sub status ($self, %options) {
             END_SQL
     }
 
-    # define a query to find the latest job for each asset by group
-    my $max_job_by_group_query;
-    if ($options{compute_max_job_by_group}) {
-        $max_job_by_group_query = <<~'END_SQL';
-            select a.id as asset_id, max(j.id) as max_job
-            from jobs_assets ja
-              join jobs j on j.id=ja.job_id
-              join assets a on a.id=ja.asset_id
-              where group_id = ?
-            group by a.id;
-            END_SQL
-    }
-    else {
-        $max_job_by_group_query = <<~'END_SQL';
-            select a.id as asset_id
-            from jobs_assets ja
-              join jobs j on j.id=ja.job_id
-              join assets a on a.id=ja.asset_id
-              where group_id = ?
-            group by a.id;
-            END_SQL
-    }
+    # fetch all asset-group associations in a single batch query
+    my $max_job_by_group_query = <<~'END_SQL';
+        select a.id as asset_id, j.group_id, max(j.id) as max_job
+        from jobs_assets ja
+          join jobs j on j.id=ja.job_id
+          join assets a on a.id=ja.asset_id
+          where j.group_id IS NOT NULL
+        group by a.id, j.group_id;
+        END_SQL
     my $max_job_by_group_prepared_query = $dbh->prepare($max_job_by_group_query);
 
     # define variables; add "zero group" for groupless assets
@@ -217,6 +204,13 @@ sub status ($self, %options) {
                 push @assets, \%asset;
             }
 
+            # query all asset-group associations in one batch
+            $max_job_by_group_prepared_query->execute();
+            my %group_assets;
+            while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
+                $group_assets{$result->{group_id}}{$result->{asset_id}} = $result->{max_job};
+            }
+
             # query list of job groups to show assets by job group
             # note: We collect data required for /admin/assets *and* the limit_assets task.
             my $groups = $schema->resultset('JobGroups');
@@ -249,12 +243,12 @@ sub status ($self, %options) {
                     group => $group->full_name,
                 };
 
-                # add the max job ID for this group
-                $max_job_by_group_prepared_query->execute($group_id);
-                while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
-                    my $asset_info = $asset_info{$result->{asset_id}} or next;
+                # populate asset-group associations from the pre-fetched batch
+                my $assets_for_group = $group_assets{$group_id} // {};
+                for my $asset_id (keys %$assets_for_group) {
+                    my $asset_info = $asset_info{$asset_id} or next;
                     my $init_max_job = $asset_info->{max_job} || 0;
-                    my $res_max_job = $result->{max_job};
+                    my $res_max_job = $assets_for_group->{$asset_id};
                     $asset_info->{groups}->{$group_id} = $res_max_job;
                     $asset_info->{parents}->{$parent_id} = 1 if defined $parent_id;
 
