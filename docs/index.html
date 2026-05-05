@@ -362,7 +362,7 @@ padding: 20px;
       <li><a href="#advanced-configuration" id="toc-advanced-configuration"><span class="toc-section-number">16</span> Advanced configuration</a>
       <ul>
       <li><a href="#cleanup-1" id="toc-cleanup-1"><span class="toc-section-number">16.1</span> Cleanup</a></li>
-      <li><a href="#setting-up-git-support" id="toc-setting-up-git-support"><span class="toc-section-number">16.2</span> Setting up git support</a>
+      <li><a href="#setting-up-git-support" id="toc-setting-up-git-support"><span class="toc-section-number">16.2</span> Setting up Git support</a>
       <ul>
       <li><a href="#configuration-of-automatic-needle-commit-feature" id="toc-configuration-of-automatic-needle-commit-feature"><span class="toc-section-number">16.2.1</span> Configuration of
       automatic needle commit feature</a></li>
@@ -2088,19 +2088,19 @@ tasks are scheduled via systemd timer units and run via
 places within the web UI. If you want to tweak the cleanup to your
 needs, have a look at the <a href="#cleanup">Cleanup of assets, results
 and other data</a> section.</p>
-<h2 data-number="16.2" id="setting-up-git-support"><span class="header-section-number">16.2</span> Setting up git support</h2>
-<p>If your tests and needles are stored in git, openQA can perform
+<h2 data-number="16.2" id="setting-up-git-support"><span class="header-section-number">16.2</span> Setting up Git support</h2>
+<p>If your tests and needles are stored in Git, openQA can perform
 various operations:</p>
 <ul>
 <li><p>Automatically commit needles created in the web UI editor back to
 the repository</p></li>
 <li><p>Automatically update the repository when scheduling
 tests</p></li>
-<li><p>Update the server&#39;s tests and needles from git repos specified in
+<li><p>Update the server&#39;s tests and needles from Git repos specified in
 a job&#39;s <code>CASEDIR</code> and <code>NEEDLES_DIR</code>
 variables</p></li>
 <li><p>Attempt to have the web UI display the correct needles each job
-was executed with via temporary git checkouts, based on its
+was executed with via temporary Git checkouts, based on its
 variables</p></li>
 </ul>
 <p>By default, cloning based on <code>CASEDIR</code> and
@@ -2123,10 +2123,12 @@ value is the empty string &#39;&#39;).</p></li>
 updating when scheduling tests.</p></li>
 <li><p><code>git_auto_clone</code> controls the automatic cloning of
 repos referenced by <code>CASEDIR</code> and <code>NEEDLES_DIR</code>,
-at job schedule time.</p></li>
+at job schedule time. Check out the <a href="#terms-and-variables-for-certain-directories-used-by-openqa-and-isotovideo">section
+about directories</a> for where the repositories will be
+stored.</p></li>
 <li><p><code>checkout_needles_sha</code> controls the feature whereby,
 when a job viewed in the web UI has variables indicating the needles
-came from a specific git repository and ref, openQA will attempt to
+came from a specific Git repository and ref, openQA will attempt to
 clone that ref and display the needles from it.</p></li>
 </ul>
 <h3 data-number="16.2.1" id="configuration-of-automatic-needle-commit-feature"><span class="header-section-number">16.2.1</span> Configuration of automatic
@@ -2156,7 +2158,7 @@ the following to your openqa.ini (along with the previous snippet):</p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[scm git]</span></span>
 <span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="dt">do_cleanup </span><span class="ot">=</span><span class="st"> </span><span class="kw">yes</span></span></code></pre></div>
 <p>If you clone the needle repository via HTTP, you can still make
-<code>geekotest</code> able to push via SSH with a git configuration.
+<code>geekotest</code> able to push via SSH with a Git configuration.
 For GitHub, it would look like this:</p>
 <div class="sourceCode" id="cb56"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> config <span class="at">--global</span> url.<span class="st">&quot;git@github.com:&quot;</span>.pushInsteadOf https://github.com/</span></code></pre></div>
 <p>This way <code>git push</code> will automatically rewrite HTTP urls
@@ -2164,7 +2166,7 @@ to SSH for every repository, even if it&#39;s already cloned.</p>
 <p>Or put it in the <code>~/.gitconfig</code> file manually:</p>
 <div class="sourceCode" id="cb57"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[url &quot;git@github.com:&quot;]</span></span>
 <span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="dt">  pushInsteadOf </span><span class="ot">=</span><span class="st"> https://github.com/</span></span></code></pre></div>
-<p>You can apply the same kind of thing for any other git hosting
+<p>You can apply the same kind of thing for any other Git hosting
 provider.</p>
 <h2 data-number="16.3" id="referer-settings-to-auto-mark-important-jobs"><span class="header-section-number">16.3</span> Referer settings to auto-mark
 important jobs</h2>
@@ -2449,9 +2451,8 @@ case of several hosts in a single site (that is remote from the main
 openQA webui instance) it results in downloading the same assets several
 times. In such case, one can setup local cache on their own (without
 using openqa-worker-cacheservice service) and share it with workers
-using some network filesystem (see [Installing.asciidoc#Configuring
-remote workers](Installing.md#Configuring remote workers) section
-above). Such setups can use <code>SYNC_ASSETS_HOOK</code> in <a href="#configuration">the web UI configuration</a> to ensure the cache
+using some network filesystem (see <a href="#configuring_remote_workers">Configuring remote workers</a>
+section above). Such setups can use <code>SYNC_ASSETS_HOOK</code> in <a href="#configuration">the web UI configuration</a> to ensure the cache
 is up to date before starting the job (or resuming test in developer
 mode). The setting takes a shell command that is executed just before
 evaluating assets. It is up to the system administrator to decide what
@@ -2972,66 +2973,104 @@ certain directories used by openQA and isotovideo</h2>
 <ul>
 <li><p>the &quot;base directory&quot;</p>
 <ul>
-<li><p>by default <code>/var/lib</code></p></li>
-<li><p>configurable via environment variable
-<code>OPENQA_BASEDIR</code></p></li>
-<li><p>referred as <code>$basedir</code> within openQA</p></li>
+<li>by default <code>/var/lib</code></li>
+<li>configurable via environment variable
+<code>OPENQA_BASEDIR</code></li>
+<li>referred as <code>$basedir</code> within openQA</li>
 </ul></li>
 <li><p>the &quot;project directory&quot;</p>
 <ul>
-<li><p>defined as <code>$basedir/openqa</code>, by default
-<code>/var/lib/openqa</code></p></li>
-<li><p>referred as <code>$prjdir</code> within openQA</p></li>
+<li>defined as <code>$basedir/openqa</code>, by default
+<code>/var/lib/openqa</code></li>
+<li>referred as <code>$prjdir</code> within openQA</li>
 </ul></li>
 <li><p>the &quot;archive directory&quot;</p>
 <ul>
-<li><p>defined as <code>$prjdir/openqa</code>, by default
-<code>/var/lib/openqa/archive</code></p></li>
-<li><p>referred as <code>$archivedir</code> within openQA</p></li>
+<li>defined as <code>$prjdir/openqa</code>, by default
+<code>/var/lib/openqa/archive</code></li>
+<li>referred as <code>$archivedir</code> within openQA</li>
 </ul></li>
 <li><p>the &quot;share directory&quot;: contains directories shared between web UI
 and (remote) workers</p>
 <ul>
-<li><p>defined as <code>$prjdir/share</code>, by default
-<code>/var/lib/openqa/share</code></p></li>
-<li><p>referred as <code>$sharedir</code> within openQA</p></li>
+<li>defined as <code>$prjdir/share</code>, by default
+<code>/var/lib/openqa/share</code></li>
+<li>referred as <code>$sharedir</code> within openQA</li>
 </ul></li>
 <li><p>the &quot;test case directory&quot;: contains a test distribution</p>
 <ul>
-<li><p>by default <code>$sharedir/tests/$distri</code> or
-<code>$sharedir/tests/$distri-$version</code></p></li>
-<li><p>configurable via the test variable <code>CASEDIR</code> (see
-backend variables documentation) - this default is provided by openQA;
-when starting isotovideo manually the <code>CASEDIR</code> variable
-<strong>must</strong> be initialized by hand</p></li>
-<li><p>relative paths are relative to <code>$sharedir/tests</code>; to
+<li>by default <code>$sharedir/tests/$distri</code> or
+<code>$sharedir/tests/$distri-$version</code></li>
+<li>configurable via the test variable <code>CASEDIR</code> (see backend
+variables documentation) - this default is provided by openQA; when
+starting isotovideo manually the <code>CASEDIR</code> variable
+<strong>must</strong> be initialized by hand</li>
+<li>relative paths are relative to <code>$sharedir/tests</code>; to
 avoid symlinking, use e.g. <code>CASEDIR=opensuse</code> for
 <code>$sharedir/tests/opensuse</code> despite differing
-<code>DISTRI</code></p></li>
-<li><p>might contain the sub directory <code>lib</code> for placing Perl
-modules used by the tests - the &quot;product directory&quot;: contains the test
-schedule (<code>main.pm</code>) for a certain product within a test
-distribution</p></li>
-<li><p>by default identical to the &quot;test case directory&quot;</p></li>
-<li><p>usually a directory <code>products/$distri</code> within the
-&quot;test case directory&quot; - configurable via the test variable
-<code>PRODUCTDIR</code> (see backend variables documentation)</p></li>
+<code>DISTRI</code></li>
+<li>specifying a Git URL as <code>CASEDIR</code> is also possible; with
+<code>git_auto_clone</code> enabled, openQA will create a checkout of
+the repository under the mentioned default location if it does not
+already exist
+<ul>
+<li>no de-duplication is done, e.g.
+<code>CASEDIR=https://github.com/…/…-distri-opensuse.git</code> will
+lead to a checkout under <code>$sharedir/tests/opensuse</code> with
+<code>DISTRI=opensuse</code> and a separate checkout under
+<code>$sharedir/tests/microos</code> with <code>DISTRI=microos</code>
+<ul>
+<li>separate checkouts can be avoided by manual symlinking, e.g. a
+symlink for <code>microos</code> pointing to <code>opensuse</code> will
+prevent the duplicate checkouts in this example</li>
+</ul></li>
+</ul></li>
+<li>might contain the sub directory <code>lib</code> for placing Perl
+modules used by the tests</li>
+</ul></li>
+<li><p>the &quot;product directory&quot;: contains the test schedule
+(<code>main.pm</code>) for a certain product within a test
+distribution</p>
+<ul>
+<li>by default identical to the &quot;test case directory&quot;</li>
+<li>usually a directory <code>products/$distri</code> within the &quot;test
+case directory&quot;</li>
+<li>configurable via the test variable <code>PRODUCTDIR</code> (see
+backend variables documentation)</li>
 </ul></li>
 <li><p>the &quot;needles directory&quot;: contains reference images for a certain
 product within a test distribution</p>
 <ul>
-<li><p>by default <code>$PRODUCTDIR/needles</code></p></li>
-<li><p>configurable via the test variable <code>NEEDLES_DIR</code> (see
-backend variables documentation)</p></li>
+<li>by default <code>$PRODUCTDIR/needles</code></li>
+<li>configurable via the test variable <code>NEEDLES_DIR</code> (see
+backend variables documentation)</li>
+<li>specifying a Git URL as <code>NEEDLES_DIR</code> is also possible;
+with <code>git_auto_clone</code> enabled, openQA will create a checkout
+of the repository under the mentioned default location if it does not
+already exist</li>
 </ul></li>
 </ul>
 <h3 data-number="22.1.1" id="further-notes"><span class="header-section-number">22.1.1</span> Further notes</h3>
 <ul>
+<li><p>The mentioned <code>git_auto_clone</code> setting is part of the
+general <a href="#setting-up-git-support">Git support</a> and works best
+if used consistently. If e.g. only specifying a Git URL for
+<code>CASEDIR</code> but not for <code>NEEDLES_DIR</code>, only the
+former will be cloned and needles will be missing if they are provided
+by a separate repository.</p>
+<ul>
+<li>As mentioned, there is no de-duplication of checkouts. So when
+cloning a job with e.g.
+<code>CASEDIR=https://github.com/…/…-distri-opensuse.git</code> and
+<code>DISTRI=microos</code> but no <code>NEEDLES_DIR</code>, needles
+will be missing despite being present for
+<code>DISTRI=opensuse</code>.</li>
+</ul></li>
 <li><p>Setting the test variables has only an influence on os-autoinst.
 The web UI on the other hand always relies on the directory structure
 described above. For the exact details how these paths are computed by
 the web UI have a look at <code>lib/OpenQA/Utils.pm</code>.</p></li>
-<li><p>When enabling the worker cache parts of the usual &quot;share
+<li><p>When enabling the worker cache, parts of the usual &quot;share
 directory&quot; are located in the specified cache directory on the worker
 host.</p></li>
 </ul>
@@ -4440,9 +4479,10 @@ request. No settings are stored/altered on the openQA instance.</p>
 use <code>SCENARIO_DEFINITIONS_YAML_FILE</code> which expects the file
 path of the YAML document on the openQA host. One can also specify an
 HTTP/HTTPs URL via that variable when <code>async=1</code> is used (see
-<a href="#spawning_multiple_jobs_based_on_templates_isos_post">UsersGuide.asciidoc#_spawning_multiple_jobs_based_on_templates_isos_post</a>
-for details). Then this file is downloaded by the openQA host. The
-specified host name must be allowed via the configuration setting
+<a href="#spawning_multiple_jobs_based_on_templates_isos_post">Spawning
+multiple jobs based on templates - isos post</a> for details). Then this
+file is downloaded by the openQA host. The specified host name must be
+allowed via the configuration setting
 <code>scenario_definitions_allowed_hosts</code>.</p>
 <p>The YAML document itself should define at least one or more job
 templates:</p>
@@ -4934,9 +4974,11 @@ etc.</p></li>
 to handle flaky issues and even automatically retrigger according
 tests</p></li>
 <li><p>In case of known sporadic issues that can not be fixed quickly
-consider automatic retries of jobs <a href="http://open.qa/docs/#_automatic_retries_of_jobs">http://open.qa/docs/#_automatic_retries_of_jobs</a></p></li>
+consider <a href="#automatic-retries-of-jobs">automatic retries of
+jobs</a>.</p></li>
 <li><p>In case of known non-sporadic test issues that can not be fixed
-quickly consider overwriting the result of jobs <a href="http://open.qa/docs/#_overwrite_result_of_job">http://open.qa/docs/#_overwrite_result_of_job</a></p></li>
+quickly consider <a href="#overwrite-result-of-job">overwriting the
+result of jobs</a>.</p></li>
 <li><p>To quickly label and - as desired - restart multiple jobs
 consider using the command line application
 <code>openqa-label-all</code>. Call <code>openqa-label-all --help</code>
@@ -5733,7 +5775,7 @@ which are not ok</p></li>
 </ul>
 <h3 data-number="43.7.4" id="handling-of-dependencies-when-cloning-jobs"><span class="header-section-number">43.7.4</span> Handling of dependencies
 when cloning jobs</h3>
-<p>Be sure to have read the <a href="#_job_dependencies">job
+<p>Be sure to have read the <a href="#job-dependencies">job
 dependencies</a> section to have an understanding of different
 dependency types and the distinction between parents and children.</p>
 <p>When cloning a job via <code>openqa-clone-job</code>, parent jobs are
@@ -8178,8 +8220,7 @@ specializations</p>
 <h2 data-number="69.1" id="runtime-dependencies"><span class="header-section-number">69.1</span> Runtime Dependencies</h2>
 <p>For openSUSE you need the packages <code>openQA</code> and
 <code>os-autoinst</code>. That should be everything necessary to run an
-openQA instance. For more details check
-&lt;&lt;Installing.asciidoc#_installation,Installation&gt;.</p>
+openQA instance. For more details check <a href="#installation">Installation</a>.</p>
 <p>If you have to manually install packages, look into the
 <code>dependencies.yaml</code> file or the spec file, e.g.
 <code>dist/rpm/openQA.spec</code> (or <code>dist/rpm/*.spec</code> in
@@ -8208,10 +8249,8 @@ for a container with all dependencies.</p>
 <h1 data-number="70" id="development-setup"><span class="header-section-number">70</span> Development setup</h1>
 <p>The following explains in detail what is necessary to develop openQA
 code.</p>
-<p>For a setup with containers you can check out the
-&lt;&lt;Contributing.asciidoc#quick-container-development-setup,Quick
-container development setup&gt;&gt; below with a complete list of
-instructions.</p>
+<p>For a setup with containers you can check out the <a href="#quick-container-development-setup">Quick container development
+setup</a> below with a complete list of instructions.</p>
 <p>Otherwise follow the detailed steps below. This setup is applicable
 to a container environment as well as without.</p>
 <p>For developing openQA and os-autoinst itself it makes sense to check
@@ -9352,8 +9391,7 @@ using consecutive numbers for the <code>--instance</code> parameter:</p>
 disks</h2>
 <p>You have to put your tests under <code>data/tests</code> directory
 and ISOs under <code>data/factory/iso</code> directory. For testing
-openSUSE, follow <a href="https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#testing-opensuse-or-fedora">this
-guide</a>.</p>
+openSUSE, follow <a href="#get-testing">this guide</a>.</p>
 <p>The test distribution might have additional dependencies which need
 to be installed into the worker container before tests can run. To
 install those dependencies automatically on the container startup one
