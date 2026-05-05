@@ -165,7 +165,7 @@ subtest 'wrong api key - replay attack' => sub {
         start => sub ($ua, $tx) {
             my $timestamp = 0;
             my $headers = $tx->req->headers;
-            my $hash = hmac_sha1_sum(OpenQA::UserAgent::_path_query($tx->req->url)) . $timestamp, $ua->apisecret;
+            my $hash = hmac_sha1_sum(OpenQA::UserAgent::_path_query($tx->req->url) . $timestamp, $ua->apisecret);
             $headers->header('X-API-Microtime', $timestamp);
             $headers->header('X-API-Key', $ua->apikey);
             $headers->header('X-API-Hash', $hash);
@@ -284,7 +284,7 @@ subtest 'None authentication provider fallback and admin auto-login' => sub {
     $t_none->json_is('/error' => undef, 'no error returned for valid unauthenticated API access');
 
     my $user = $t_none->app->schema->resultset('Users')->find({username => 'admin'});
-    die "admin user not found" unless $user;
+    die 'admin user not found' unless $user;
     $user->update({is_admin => 0, is_operator => 0});
     $t_none->get_ok('/')->status_is(200, 'UI request triggers admin/operator flag update if missing');
     $user->discard_changes;
