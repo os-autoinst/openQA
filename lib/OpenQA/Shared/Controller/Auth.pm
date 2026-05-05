@@ -159,7 +159,7 @@ sub _token_auth ($self, $reason, $userinfo) {
             else { $log->debug("$reject_msg, wrong key") }
         }
         else {
-            $log->debug('Peronal access token can only be used via HTTPS or from localhost');
+            $log->debug('Personal access token can only be used via HTTPS or from localhost');
             $reason = 'personal access token can only be used via HTTPS or from localhost';
         }
     }
