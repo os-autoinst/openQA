@@ -122,6 +122,17 @@ jobs:
           command: npm clean-install --ignore-scripts
       - save_cache: *save_npm_cache
 
+  log-installed-packages:
+    docker:
+      - <<: *devel
+    steps:
+      - run:
+          name: "Log installed rpm packages"
+          command: |
+            mkdir -p logs
+            rpm -q --all | sort > ./logs/packages.txt
+      - store_artifacts: *store_logs
+
   checkstyle: &test-template
     docker:
       - <<: *devel
@@ -216,6 +227,7 @@ workflows:
   test:
     jobs:
       - cache-npm
+      - log-installed-packages
       - checkstyle: &requires
           requires:
             - cache-npm
