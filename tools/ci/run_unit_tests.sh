@@ -31,4 +31,9 @@ chmod 777 "$PWD/.." "$PWD"
 user=testuser
 id -u "$user" &>/dev/null || useradd "$user"
 chown -R "$user:$user" "$PWD"
+
+# avoid running into "The authenticity of host 'github.com (…)' can't be established." in `test-gitlint` target
+cp -vr "$HOME/.ssh" "/home/$user/.ssh"
+chown -R "$user:$user" "/home/$user/.ssh"
+
 sudo --preserve-env -u "$user" make test-"$target"
