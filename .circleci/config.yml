@@ -101,7 +101,6 @@ jobs:
     steps:
       - checkout
       - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
       - store_artifacts: *store_logs
       - run:
           name: "Build os-autoinst if not cached"
@@ -227,6 +226,7 @@ workflows:
   test:
     jobs:
       - cache-npm
+      - cache-fullstack
       - log-installed-packages
       - checkstyle: &requires
           requires:
@@ -245,10 +245,9 @@ workflows:
       # - unstable:
       #     requires:
       #       - cache-npm
-      - cache-fullstack:
-          <<: *requires
       - fullstack: &requires_fullstack
           requires:
+            - cache-npm
             - cache-fullstack
       - fullstack-unstable:
           <<: *requires_fullstack
