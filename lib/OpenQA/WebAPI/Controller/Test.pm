@@ -116,7 +116,11 @@ my %SUMMARY_CATEGORY_QUERY = (
     running => {result => undef, state => [EXECUTION_STATES]},
     cancelled => {result => undef, state => [CANCELLED]},
     aborted => {result => [ABORTED_RESULTS], state => undef},
-    none => {result => NONE, state => undef},
+    # "none" includes all jobs with unknown states/results (or jobs in state DONE and unknown result), not just NONE
+    none => {
+        result__not => [COMPLETE_RESULTS, NOT_COMPLETE_RESULTS, ABORTED_RESULTS],
+        state__not => [PRE_EXECUTION_STATES, EXECUTION_STATES, CANCELLED]
+    },
 );
 
 sub referer_check ($self) {
