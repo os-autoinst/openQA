@@ -2379,18 +2379,12 @@ sub overview_result ($self, %args) {
     my $jobid = $self->id;
     my $todo = $args{todo};
     my $aggregated = $args{aggregated};
-    if ($self->state eq OpenQA::Jobs::Constants::DONE) {
-        return $self->_overview_result_done($jobid, %args);
-    }
+    my $state = $self->state;
+    if ($state eq DONE) { return $self->_overview_result_done($jobid, %args) }
     return undef if $todo;
-    my $result = {
-        state => $self->state,
-        jobid => $jobid,
-        restarts => $args{restarts} // 0,
-    };
-    if ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
-        $aggregated->{running}++;
-    }
+    my $result = {state => $state, jobid => $jobid, restarts => $args{restarts} // 0};
+    if ($state eq CANCELLED) { $aggregated->{cancelled}++ }
+    elsif ($state eq RUNNING) { $aggregated->{running}++ }
     else {
         $result->{priority} = $self->priority;
         if ($self->state eq OpenQA::Jobs::Constants::SCHEDULED) {

@@ -49,7 +49,7 @@ subtest 'Basic overview display' => sub {
 
     my $summary = get_summary;
     like $summary, qr/Overall Summary of opensuse 13\.1 build 0091/i, 'Summary header shows distri, version and build';
-    like $summary, qr/Passed: 3 Scheduled: 2 Running: 2 None: 1/i, 'Summary shows correct job counts per category';
+    like $summary, qr/Passed: 3 Scheduled: 2 Running: 2 Cancelled: 1/i, 'Summary shows correct job counts per category';
 
     $t->element_exists('#flavor_DVD_arch_i586', 'header for flavor DVD arch i586 exists');
     $t->element_exists('#flavor_DVD_arch_x86_64', 'header for flavor DVD arch x86_64 exists');
@@ -120,7 +120,7 @@ subtest 'Default overview for 13.1' => sub {
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
     my $summary = get_summary;
     like $summary, qr/Summary of opensuse 13\.1 build 0091/i, 'Default build for 13.1 is 0091';
-    like $summary, qr/Passed: 3 Scheduled: 2 Running: 2 None: 1/i, 'Counts for 13.1 build 0091 match';
+    like $summary, qr/Passed: 3 Scheduled: 2 Running: 2 Cancelled: 1/i, 'Counts for 13.1 build 0091 match';
 
     my $form = {distri => 'opensuse', version => '13.1', groupid => 1001};
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
@@ -302,7 +302,7 @@ subtest 'Multiple groups display' => sub {
     like $summary, qr/Summary of opensuse\s*,\s*opensuse test/i, 'references both groups selected by query';
     like
       $summary,
-      qr/current time Passed: 2 Scheduled: 1 Running: 2 None: 1/i,
+      qr/current time Passed: 2 Scheduled: 1 Running: 2 Cancelled: 1/i,
       'shows latest jobs from both groups 1001/1002';
     $t->element_exists('#res_DVD_i586_kde', 'job from group 1001 is shown');
     $t->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'another job from group 1001');
@@ -314,7 +314,7 @@ subtest 'Multiple groups display' => sub {
       $summary,
       qr/Summary of opensuse\s*,\s*opensuse test build 0091[^,]/i,
       'multiple groups with no build specified yield the same, latest build of every group';
-    like $summary, qr/current time Passed: 2 Scheduled: 1 Running: 2 None: 1/i;
+    like $summary, qr/current time Passed: 2 Scheduled: 1 Running: 2 Cancelled: 1/i;
 
     my $jobGroup = $schema->resultset('JobGroups')->create(
         {
@@ -337,7 +337,8 @@ subtest 'Multiple groups display' => sub {
       $summary,
       qr/Summary of opensuse\s*,\s*opensuse test 2 build 0091,0092/i,
       'multiple groups with no build specified yield each build for every group';
-    like $summary, qr/current time Passed: 3 Scheduled: 2 Running: 1 None: 1/i, 'summary of 0091,0092 counts match';
+    like $summary, qr/current time Passed: 3 Scheduled: 2 Running: 1 Cancelled: 1/i,
+      'summary of 0091,0092 counts match';
 
     $t->get_ok('/tests/overview?arch=&flavor=&machine=&test=&modules=kate&module_re=&groupid=1001')->status_is(200);
     $summary = get_summary;
@@ -360,7 +361,7 @@ subtest 'Generic overview search' => sub {
     like $summary, qr/Summary of opensuse/i, 'shows all available latest jobs for the only present distri';
     like
       $summary,
-      qr/current time Passed: 3 Scheduled: 2 Running: 2 None: 1/i,
+      qr/current time Passed: 3 Scheduled: 2 Running: 2 Cancelled: 1/i,
       'shows latest jobs from all distri, version, build, flavor, arch';
     $t->element_exists('#res_DVD_i586_kde', 'passed DVD i586 kde job shown');
     $t->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'cancelled GNOME-Live i686 RAID0 job shown');
@@ -374,7 +375,7 @@ subtest 'Incomplete result accounting' => sub {
     $jobs->search({id => 99764})->update({result => OpenQA::Jobs::Constants::USER_CANCELLED});
 
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
-    like get_summary, qr/\QIncomplete: 2 Scheduled: 2 Running: 2 Aborted: 1 None: 1/i,
+    like get_summary, qr/\QIncomplete: 2 Scheduled: 2 Running: 2 Cancelled: 1 Aborted: 1/i,
       'INCOMPLETE and TIMEOUT_EXCEEDED accounted as incomplete';
     $schema->txn_rollback;
 };
@@ -464,7 +465,7 @@ subtest 'Inverted filters' => sub {
     $t->get_ok('/tests/overview?distri=opensuse&version=13.1&build=0091&result__not=passed')->status_is(200);
     my $summary = get_summary;
     unlike $summary, qr/Passed: [1-9]/i, 'Passed jobs are excluded via result__not';
-    like $summary, qr/Scheduled: 2 Running: 2 None: 1/i, 'Other categories remain';
+    like $summary, qr/Scheduled: 2 Running: 2 Cancelled: 1/i, 'Other categories remain';
 
     $t->get_ok('/tests/overview?distri=opensuse&version=Factory&build=0048&result__not=failed&result__not=softfailed')
       ->status_is(200);

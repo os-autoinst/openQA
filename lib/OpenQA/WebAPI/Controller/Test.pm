@@ -114,6 +114,7 @@ my %SUMMARY_CATEGORY_QUERY = (
     not_complete => {result => [NOT_COMPLETE_RESULTS], state => undef},
     scheduled => {result => undef, state => SCHEDULED},
     running => {result => undef, state => [EXECUTION_STATES]},
+    cancelled => {result => undef, state => [CANCELLED]},
     aborted => {result => [ABORTED_RESULTS], state => undef},
     none => {result => NONE, state => undef},
 );
