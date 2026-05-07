@@ -400,7 +400,8 @@ the index page.
 openQA automatically archives and deletes data that it considers "old" based on
 different settings. For example old jobs and assets are deleted at some point.
 The settings can be adjusted on job-group-level and in the configuration file
-You can read the [Cleanup](UsersGuide.md#cleanup) section for details.
+You can read the [Cleanup](UsersGuide.md#cleanup-of-assets-results-and-other-data)
+section for details.
 
 ## Using the client script
 
