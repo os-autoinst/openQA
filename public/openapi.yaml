@@ -1,0 +1,64 @@
+openapi: 3.1.1
+info:
+  title: OpenQA API
+  version: v1
+servers:
+  - url: /api/v1
+
+paths:
+
+  /jobs/{jobid}:
+    parameters:
+      - &jobid
+        name: jobid
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      description: >
+        Shows details for a specific job, such as the assets associated, assigned
+        worker id, children and parents, job id, group id, name, parent group id
+        and name, priority, result, settings, state and times of startup and
+        finish of the job.
+      tags: [ job ]
+      x-mojo-name: apiv1_job
+      x-mojo-to: job#show
+      parameters:
+        - name: follow
+          description: >
+            Enable following job clones and report most recent result for a given
+            job id
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+      responses: {}
+
+  /jobs/{jobid}/details:
+    parameters:
+      - *jobid
+    get:
+      description: Show job with details (logs, testresults)
+      tags: [ job ]
+      x-mojo-name: apiv1_job_details
+      x-mojo-to: job#show_details
+      responses: {}
+
+  /jobs/{jobid}/prio:
+    parameters:
+      - *jobid
+    post:
+      description: Sets priority for a given job.
+      tags: [ job ]
+      x-mojo-name: apiv1_job_prio
+      x-mojo-to: job#prio
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              required: [ prio ]
+              properties:
+                prio:
+                  type: integer
+      responses: {}
