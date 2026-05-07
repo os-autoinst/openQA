@@ -112,7 +112,7 @@ my %SUMMARY_CATEGORY_QUERY = (
     softfailed => {result => SOFTFAILED, state => undef},
     failed => {result => FAILED, state => undef},
     not_complete => {result => [NOT_COMPLETE_RESULTS], state => undef},
-    scheduled => {result => undef, state => SCHEDULED},
+    scheduled => {result => undef, state => [PRE_EXECUTION_STATES]},
     running => {result => undef, state => [EXECUTION_STATES]},
     cancelled => {result => undef, state => [CANCELLED]},
     aborted => {result => [ABORTED_RESULTS], state => undef},

@@ -2382,12 +2382,13 @@ sub overview_result ($self, %args) {
     my $state = $self->state;
     if ($state eq DONE) { return $self->_overview_result_done($jobid, %args) }
     return undef if $todo;
+    my $meta_state = OpenQA::Jobs::Constants::meta_state($state);
     my $result = {state => $state, jobid => $jobid, restarts => $args{restarts} // 0};
     if ($state eq CANCELLED) { $aggregated->{cancelled}++ }
-    elsif ($state eq RUNNING) { $aggregated->{running}++ }
+    elsif ($meta_state eq OpenQA::Jobs::Constants::EXECUTION) { $aggregated->{running}++ }
     else {
         $result->{priority} = $self->priority;
-        if ($self->state eq OpenQA::Jobs::Constants::SCHEDULED) {
+        if ($meta_state eq OpenQA::Jobs::Constants::PRE_EXECUTION) {
             $aggregated->{scheduled}++;
             $result->{blocked} = 1 if defined $self->blocked_by_id;
         }
