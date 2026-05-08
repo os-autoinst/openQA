@@ -127,7 +127,7 @@ sub _search_job_modules ($self, $keywords, $limit) {
             next;
         }
         $last_job = $job_module->job_id;
-        push @results, {occurrence => $job_module->job->name, contents => $contents};
+        push @results, {occurrence => $job_module->job->name, contents => $contents, job_id => $job_module->job_id};
     }
     return \@results;
 }
