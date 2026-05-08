@@ -65,9 +65,9 @@
             </button>
             % }
             % my @badges = qw(success warning     danger secondary  info      primary light   light);
-            % my @labels = qw(Passed  Soft-Failed Failed Incomplete Scheduled Running Aborted None);
+            % my @labels = qw(Passed  Soft-Failed Failed Incomplete Scheduled Running Cancelled Aborted None);
             % my $index  = 0;
-            % for my $category (qw(passed softfailed failed not_complete scheduled running aborted none)) {
+            % for my $category (qw(passed softfailed failed not_complete scheduled running cancelled aborted none)) {
                 % my ($label, $badge) = ($labels[$index], $badges[$index++]);
                 % next unless my $count = delete $aggregated->{$category};
                 <a href="<%= url_with->query($summary_category_query->{$category}) %>" class="badge-btn btn btn-sm btn-outline-<%= $badge %> mb-1 d-inline-flex align-items-center"><%= $label %>: <span class="badge text-bg-<%= $badge %> ms-1"><%= $count %></span></a>
