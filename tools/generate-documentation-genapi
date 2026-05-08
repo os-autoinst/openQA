@@ -43,7 +43,10 @@ foreach my $current_file (@files) {
     }
     $parser->parse_from_filehandle($ifh);
 
-    print $ofh $parser->as_markdown();
+    my $content = $parser->as_markdown();
+    # Fix for pandoc misinterpreting things as TeX math
+    $content =~ s/_\$([a-zA-Z0-9_]+)_/`\$$1`/g;
+    print $ofh $content;
     close $ofh;
     close $ifh;
 
