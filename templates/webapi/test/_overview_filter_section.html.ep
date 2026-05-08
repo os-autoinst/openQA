@@ -1,7 +1,7 @@
 <div class="mb-3" id="filter-<%= $id_suffix %>">
     <div class="d-flex align-items-center mb-1">
-        <input type="checkbox" class="filter-bulk-master form-check-input me-2" title="Select all / None">
-        <strong class="me-2"><%= $label %></strong>
+        <input id="filter-all-cb-<%= $id_suffix %>" type="checkbox" class="filter-bulk-master form-check-input me-2" title="Select all / None">
+        <label for="filter-all-cb-<%= $id_suffix %>"><strong class="me-2"><%= $label %></strong></label>
         <span class="small">
             <a href="#" class="filter-bulk-invert text-decoration-none" title="Invert selection"><i class="fa-solid fa-rotate"></i></a>
         </span>
