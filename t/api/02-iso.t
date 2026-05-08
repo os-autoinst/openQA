@@ -441,6 +441,32 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     is scalar @jobs, 31, 'only the important jobs, jobs from the current build and the important builds are scheduled';
 };
 
+subtest 'specifying parameters twice' => sub {
+    my %params = (
+        async => 1,
+        distri => [qw(sle arch)],
+        version => [qw(1)],
+        flavor => [qw(bar1 bar2)],
+        arch => [qw(x86_64 aarch64)],
+        iso => [qw(a b)],
+        build => [qw(1 2 3)],
+    );
+    $t->post_ok(Mojo::URL->new('/api/v1/isos')->query(\%params));
+    $t->status_is(200, 'request with multiple parameters is accepted');
+    $t->json_like('/scheduled_product_id', qr/\d+/, 'single scheduled product ID returned');
+    $t->or(sub { always_explain $t->tx->res->json });
+
+    my %expected_params = (
+        distri => '{"sle","arch"}',
+        version => '1',
+        flavor => '{"bar1","bar2"}',
+        arch => '{"x86_64","aarch64"}',
+        iso => '{"a","b"}',
+        build => '{"1","2","3"}'
+    );
+    is $scheduled_products->search(\%expected_params)->count, 1, 'parameters are combined';
+};
+
 subtest 'build obsoletion/depriorization' => sub {
     $res = schedule_iso($t, {%iso, BUILD => '0095', _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
