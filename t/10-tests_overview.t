@@ -9,6 +9,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '18';
+use OpenQA::Jobs::Constants;
 use OpenQA::App;
 use Date::Format 'time2str';
 use Mojo::Parameters;
@@ -226,8 +227,15 @@ subtest 'summary card border' => sub {
 };
 
 subtest 'clickable summary buttons' => sub {
-    $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'})
-      ->status_is(200);
+    $schema->txn_begin;
+    my %params = (distri => 'opensuse', version => 'Factory', build => '0048');
+    my @create_params = map { (uc $_ => $params{$_}) } keys %params;
+    my @none_job_params = (
+        {TEST => 'unknown-state', state => 'foo', result => NONE, @create_params},
+        {TEST => 'unknown-result', state => DONE, result => 'baz', @create_params},
+    );
+    my @none_job_ids = map { $jobs->create($_)->id } @none_job_params;
+    $t->get_ok('/tests/overview' => form => \%params)->status_is(200);
     my $summary = $t->tx->res->dom->at('#summary .card-body');
     my $failed_link = $summary->at('a[href*="result=failed"]');
     ok $failed_link, 'Failed count is clickable';
@@ -241,6 +249,14 @@ subtest 'clickable summary buttons' => sub {
     ok $softfailed_link, 'Soft-failed count is clickable';
     like $softfailed_link->attr('href'), qr/result=softfailed/, 'link sets softfailed filter';
 
+    my $none_link = $summary->at('a:last-child')->previous;
+    is $none_link->all_text, 'None: 2', 'link to filter for "None"';
+    like $none_link->attr('href'), qr/result__not=.+/, 'none filters for all unknown results';
+    like $none_link->attr('href'), qr/state__not=.+/, 'none filters for all unknown states';
+    $t->get_ok($none_link->attr('href'), 'filtering for "None"')->status_is(200);
+    my $dom = $t->tx->res->dom;
+    ok $dom->at("#res-$_"), "job $_ present in filtering for \"None\"" for @none_job_ids;
+
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
     $summary = $t->tx->res->dom->at('#summary .card-body');
     my $passed_link = $summary->at('a[href*="result=passed"]');
@@ -250,6 +266,7 @@ subtest 'clickable summary buttons' => sub {
     my $all_link = $summary->at('a:last-child');
     is $all_link->text, 'All', 'All button is present';
     unlike $all_link->attr('href'), qr/result=/, 'All button clears result filter';
+    $schema->txn_rollback;
 };
 
 subtest 'todo-flag on test overview' => sub {
