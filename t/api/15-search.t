@@ -69,7 +69,8 @@ subtest 'Job modules' => sub {
     $t->json_is(
         '/data/results/modules/0' => {
             occurrence => 'lorem',
-            contents => "tests/lorem/ipsum.pm\n" . 'tests/lorem/ipsum_dolor.py'
+            contents => "tests/lorem/ipsum.pm\n" . 'tests/lorem/ipsum_dolor.py',
+            job_id => $job->id
         },
         'job module found'
     );
