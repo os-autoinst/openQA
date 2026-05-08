@@ -150,6 +150,33 @@ sub validate_download_parameters ($self, $params) {
     return 0;
 }
 
+sub _as_array_ref ($value) { ref $value eq 'ARRAY' ? $value : [$value] }
+
+=over 4
+
+=item _generate_parameter_set()
+
+Generates parameter sets from the specified user-provided parameters with the
+specified base parameters and validates download parameters.
+
+=back
+
+=cut
+
+sub _generate_parameter_sets ($self, $base_parameters, $user_parameters) {
+    my @parameter_sets;
+    my $flavors = _as_array_ref($user_parameters->{FLAVOR} // $base_parameters->{FLAVOR});
+    my $archs = _as_array_ref($user_parameters->{ARCH} // $base_parameters->{ARCH});
+    for my $flavor (@$flavors) {
+        for my $arch (@$archs) {
+            my %params = (%$base_parameters, %$user_parameters, FLAVOR => $flavor, ARCH => $arch);
+            return undef unless $self->validate_download_parameters(\%params);
+            push @parameter_sets, \%params;
+        }
+    }
+    return \@parameter_sets;
+}
+
 =over 4
 
 =item create()
@@ -209,49 +236,55 @@ sub create ($self) {
         }
     }
 
-    # add user-specified $params to %params for the new scheduled product and validate download parameters
-    # note: URL-encoded slashes are restored
-    $params{$_} = ($params->{$_} =~ s@%2F@/@gr) for keys %$params;
-    return undef unless $self->validate_download_parameters(\%params);
+    # restore URL-encoded slashes in user-provided parameters
+    $params->{$_} =~ s@%2F@/@g for keys %$params;
 
-    # add entry to ScheduledProducts table and log event
-    my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user);
-    my $scheduled_product_id = $scheduled_product->id;
+    # generate parameters sets from user-specified $params and validate download parameters
+    return undef unless my $param_sets = $self->_generate_parameter_sets(\%params, $params);
 
-    # only spawn Minion job and return IDs if async flag has been passed
-    return $self->render(json => $scheduled_product->enqueue_minion_job(\%params)) if $async;
+    my (@scheduled_product_ids, @minion_jobs, @successful_job_ids, @failed_job_info, @errors);
+    my $status_code = 200;
+    for my $param_set (@$param_sets) {
+        # add entry to ScheduledProducts table and log event
+        my $scheduled_product = $scheduled_products->create_with_event($param_set, $self->current_user);
+        push @scheduled_product_ids, $scheduled_product->id;
 
-    # schedule jobs synchronously (hopefully within the timeout)
-    my $scheduled_jobs = $scheduled_product->schedule_iso(\%params, undef);
-    my $error = $scheduled_jobs->{error};
-    return $self->render(
-        json => {
-            scheduled_product_id => $scheduled_product_id,
-            error => $error,
-            count => 0,
-            ids => [],
-            failed => {},
-        },
-        status => $scheduled_jobs->{error_code},
-    ) if $error;
+        # only enqueue Minion job and return IDs if async flag has been passed
+        if ($async) {
+            push @minion_jobs, $scheduled_product->enqueue_minion_job($param_set);
+            next;
+        }
 
-    my $successful_job_ids = $scheduled_jobs->{successful_job_ids};
-    my $failed_job_info = $scheduled_jobs->{failed_job_info};
-    my $created_job_count = scalar @$successful_job_ids;
+        # schedule jobs synchronously (hopefully within the timeout)
+        my $scheduled_jobs = $scheduled_product->schedule_iso($param_set, undef);
+        if (my $e = $scheduled_jobs->{error}) {
+            $status_code = $scheduled_jobs->{error_code} // 400;
+            push @errors, $e;
+            next;
+        }
+        push @successful_job_ids, @{$scheduled_jobs->{successful_job_ids}};
+        push @failed_job_info, @{$scheduled_jobs->{failed_job_info}};
+    }
 
+    my $created_job_count = scalar @successful_job_ids;
     my $debug_message = "Created $created_job_count jobs";
-    if (my $failed_job_count = scalar @$failed_job_info) {
+    if (my $failed_job_count = scalar @failed_job_info) {
         $debug_message .= " but failed to create $failed_job_count jobs";
     }
     $log->debug($debug_message);
 
-    $self->render(
+    return $self->render(
+        status => $status_code,
         json => {
-            scheduled_product_id => $scheduled_product_id,
+            scheduled_product_ids => \@scheduled_product_ids,
             count => $created_job_count,
-            ids => $successful_job_ids,
-            failed => $failed_job_info,
-        });
+            ids => \@successful_job_ids,
+            failed => \@failed_job_info,
+            (@errors ? (error => join "\n", @errors) : ()),
+            # return ID of first scheduled product as extra field for compatibility
+            scheduled_product_id => $scheduled_product_ids[0],
+            # return details of first Minion job on top-level for compatibility
+            (@minion_jobs ? (%{$minion_jobs[0]}) : ())});
 }
 
 =over 4

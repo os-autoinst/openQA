@@ -1249,6 +1249,10 @@ Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
 `FLAVOR` and `ARCH` more parameters can be specified. Those additional
 parameters will be added as jobs settings in all triggered jobs.
 
+The parameters `FLAVOR` and `ARCH` may be specified more than one time. openQA
+will then create one scheduled product for each `FLAVOR`/`ARCH` combination and
+the API call will return more than one scheduled product ID.
+
 If there is no medium type matching the specified `VERSION`, the lookup falls back to matching any medium with version `*`. Check out
 [the section about medium types](UsersGuide.md#medium_types_products)
 for details.

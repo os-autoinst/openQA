@@ -442,29 +442,37 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
 };
 
 subtest 'specifying parameters twice' => sub {
+    # specify more than one flavor and arch to create more than one scheduled product in a single call
+    # note: Other parameters might be specified multiple times as well but they will be combined into a single value
+    #       used in all scheduled products. It would perhaps make more sense to forbid such requests as combining the
+    #       values is probably not very useful.
     my %params = (
         async => 1,
-        distri => [qw(sle arch)],
-        version => [qw(1)],
-        flavor => [qw(bar1 bar2)],
-        arch => [qw(x86_64 aarch64)],
-        iso => [qw(a b)],
-        build => [qw(1 2 3)],
+        distri => [qw(sle arch)],    # will be combined into `{"sle","arch"}`
+        version => [qw(1)],    # only specified once, no special behavior
+        flavor => [qw(bar1 bar2)],    # one product per flavor will be scheduled
+        arch => [qw(x86_64 aarch64)],    # one product per flavor will be scheduled
+        iso => [qw(a b)],    # will be combined into `{"a","b"}`
+        build => [qw(1 2 3)],    # will be combined into `{"1","2","3"}`
     );
+
     $t->post_ok(Mojo::URL->new('/api/v1/isos')->query(\%params));
     $t->status_is(200, 'request with multiple parameters is accepted');
-    $t->json_like('/scheduled_product_id', qr/\d+/, 'single scheduled product ID returned');
+    $t->json_hasnt('/error', 'no error returned');
+    $t->json_like('/scheduled_product_id', qr/\d+/, 'single scheduled product ID returned for compatibility');
     $t->or(sub { always_explain $t->tx->res->json });
 
-    my %expected_params = (
-        distri => '{"sle","arch"}',
-        version => '1',
-        flavor => '{"bar1","bar2"}',
-        arch => '{"x86_64","aarch64"}',
-        iso => '{"a","b"}',
-        build => '{"1","2","3"}'
-    );
-    is $scheduled_products->search(\%expected_params)->count, 1, 'parameters are combined';
+    my @base_params = (distri => '{"sle","arch"}', version => '1', iso => '{"a","b"}', build => '{"1","2","3"}');
+    my @product_ids;
+    for my $flavor (qw(bar1 bar2)) {
+        for my $arch (qw(x86_64 aarch64)) {
+            my $products = $scheduled_products->search({@base_params, flavor => $flavor, arch => $arch});
+            my @ids = map { $_->id } $products->all;
+            is scalar @ids, 1, "product for combination of $flavor and $arch scheduled";
+            push @product_ids, @ids;
+        }
+    }
+    $t->json_is('/scheduled_product_ids', [sort @product_ids], 'scheduled product IDs returned');
 };
 
 subtest 'build obsoletion/depriorization' => sub {
