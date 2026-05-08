@@ -1,5 +1,7 @@
 <a id="pitfalls"></a>
-# Needle editing
+# Pitfalls
+
+## Needle editing
 
 - If a new needle is created based on a failed test, the new needle
   will not be listed in old tests. However, when opening the needle
@@ -13,7 +15,7 @@
 - If a needle is deleted, old tests may display an error when viewing
   them in the web UI.
 
-# 403 messages when using scripts
+## 403 messages when using scripts
 
 - If you come across messages displaying `ERROR: 403 - Forbidden`, make
   sure that the correct API key is present in client.conf file.
@@ -24,7 +26,7 @@
   you can simply logout and log in again in the webUI and the expiration will be automatically
   updated
 
-# Mixed production and development environment
+## Mixed production and development environment
 
 There are few things to take into account when running a development version and
 a packaged version of openqa:
@@ -38,7 +40,7 @@ This approach will lead to a problem when the openqa package is updated, since t
 directory permissions will be changed again, nothing a `chmod -R g+rwx /var/lib/openqa/`
 and `chgrp -R openqa /var/lib/openqa` can not fix.
 
-# Performance impact
+## Performance impact
 
 openQA workers can cause high I/O load, especially when creating VM snapshots.
 The impact therefore gets more severe when `MAKETESTSNAPSHOTS` is enabled.
@@ -61,7 +63,7 @@ settings. Alternatively, you may disable optimizing images altogether via the
 setting `OPTIMIZE_IMAGES=0`.
 
 <a id="db-migration"></a>
-# DB migration from SQlite to postgreSQL
+## DB migration from SQlite to postgreSQL
 
 As a first step to start using postgreSQL, please, configure postgreSQL database
 according to the
@@ -88,7 +90,7 @@ In case you need to migrate job groups, test suites, use openqa-dump-templates a
 openqa-load-templates scripts accordingly.
 
 <a id="debugdevelmode"></a>
-# Steps to debug developer mode setup
+## Steps to debug developer mode setup
 
 This is basically a checklist to go through in case the developer mode is broken in your setup
 (e.g. you are getting the error message `unable to upgrade ws to command server`):
