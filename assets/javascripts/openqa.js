@@ -383,6 +383,12 @@ function renderSearchResults(query, url) {
           contents.appendChild(document.createTextNode(value.contents));
           item.appendChild(contents);
         }
+        if (value.job_id) {
+          const link = document.createElement('a');
+          link.href = urlWithBase('/tests/' + value.job_id);
+          link.text = 'Go to job';
+          item.appendChild(link);
+        }
         results.append(item);
       });
     });
