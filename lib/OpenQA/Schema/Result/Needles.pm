@@ -3,7 +3,6 @@
 
 package OpenQA::Schema::Result::Needles;
 
-## no critic (OpenQA::RedundantStrictWarning)
 use 5.018;
 
 use Mojo::Base 'DBIx::Class::Core', -signatures;
