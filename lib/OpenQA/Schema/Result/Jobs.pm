@@ -281,7 +281,11 @@ sub name ($self) {
     return $self->{_name} if $self->{_name};
     my %formats = (BUILD => 'Build%s',);
     my @name_keys = qw(DISTRI VERSION FLAVOR ARCH BUILD TEST);
-    my @a = map { my $c = $self->get_column($_); $c ? sprintf(($formats{$_} || '%s'), $c) : () } @name_keys;
+    my @a;
+    for my $key (@name_keys) {
+        next unless my $c = $self->get_column($key);
+        push @a, sprintf $formats{$key} || '%s', $c;
+    }
     my $name = join '-', @a;
     my $machine = $self->MACHINE;
     $name .= ('@' . $machine) if $machine;
@@ -627,11 +631,12 @@ sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_chil
     my ($group_args, $group) = extract_group_args_from_settings(\%spec_settings);
     die "Specified _GROUP/_GROUP_ID settings are invalid\n" if keys %$group_args && !$group;
     my @settings = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
-    my @new_settings = map {
-        my $key = $_->key;
-        my $value = (delete $spec_settings{$key}) // $_->value;
-        {key => $key, value => $value}
-    } @settings;
+    my @new_settings;
+    for my $setting (@settings) {
+        my $key = $setting->key;
+        my $value = (delete $spec_settings{$key}) // $setting->value;
+        push @new_settings, {key => $key, value => $value};
+    }
     push @new_settings, {key => $_, value => $spec_settings{$_}} for keys %spec_settings;
 
     my $rset = $self->result_source->resultset;

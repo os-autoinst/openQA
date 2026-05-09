@@ -21,7 +21,8 @@ sub remove ($self, $index) { delete $self->[$index] }
 
 sub new ($class, @args) {
     OpenQA::Parser::restore_tree_section(\@args);
-    return $class->SUPER::new(map { OpenQA::Parser::restore_el($_); $_ } @args);
+    OpenQA::Parser::restore_el($_) for @args;
+    return $class->SUPER::new(@args);
 }
 
 # Mojo will call TO_JSON

@@ -18,7 +18,9 @@ sub new ($class, @args) { $class->SUPER::new(@args)->parsed_details }
 
 # Adds _source => 'parser' to all the details of the result
 sub parsed_details ($self) {
-    return $self->details([map { $_->{_source} = 'parser'; $_ } @{$self->details}]);
+    my $details = $self->details;
+    $_->{_source} = 'parser' for @$details;
+    return $self->details($details);
 }
 
 sub search_in_details ($self, $field, $re) {
