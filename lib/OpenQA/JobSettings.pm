@@ -28,7 +28,7 @@ sub generate_settings ($params) {
     }
     $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
     if (my $input_args = $params->{input_args}) {
-        $settings->{uc $_} = $input_args->{$_} for keys %$input_args;
+        $settings->{+uc} = $input_args->{$_} for keys %$input_args;
     }
 
     # Prevent the MACHINE from being overridden by input args when doing isos post

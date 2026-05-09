@@ -825,7 +825,7 @@ sub _merge_settings_and_worker_classes ($source_settings, $destination_settings,
 
 sub _merge_settings_uppercase ($source_settings, $destination_settings, $exception) {
     for (keys %$source_settings) {
-        $destination_settings->{uc $_} = $source_settings->{$_} if $_ ne $exception;
+        $destination_settings->{+uc} = $source_settings->{$_} if $_ ne $exception;
     }
 }
 

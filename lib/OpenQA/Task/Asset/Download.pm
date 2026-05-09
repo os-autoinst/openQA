@@ -50,7 +50,7 @@ sub _download ($job, $url, $assetpaths, $do_extract) {
     # skip download if the one dest file exists (in case multiple downloads of same ISO are scheduled)
     my @existing_dest_files;
     my @missing_dest_files;
-    -e $_ ? push @existing_dest_files, $_ : push @missing_dest_files, $_ for @$assetpaths;
+    -e ? push @existing_dest_files, $_ : push @missing_dest_files, $_ for @$assetpaths;
     if (@existing_dest_files) {
         $ctx->info(my $msg = qq{Skipping download of "$url" because file "$existing_dest_files[0]" already exists});
         _create_symlinks($job, $ctx, $existing_dest_files[0], \@missing_dest_files) if @missing_dest_files;
