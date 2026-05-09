@@ -479,11 +479,13 @@ is used.
 
 sub _parse_dep_variable ($value, $job_settings) {
     return () unless defined $value;
-    return map {
-        if (m/^(.+)\@([^@]+)$/) { [$1, $2] }
-        elsif (m/^(.+):([^:]+)$/) { [$1, $2] }    # for backwards compatibility
-        else { [$_, $job_settings->{MACHINE}] }
-    } split /\s*,\s*/, $value;
+    my @deps;
+    for (split /\s*,\s*/, $value) {
+        if (m/^(.+)\@([^@]+)$/) { push @deps, [$1, $2] }
+        elsif (m/^(.+):([^:]+)$/) { push @deps, [$1, $2] }    # for backwards compatibility
+        else { push @deps, [$_, $job_settings->{MACHINE}] }
+    }
+    return @deps;
 }
 
 sub _chained_parents ($job) {

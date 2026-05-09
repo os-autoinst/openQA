@@ -338,12 +338,12 @@ sub list_running_ajax ($self) {
     my $job_ids = [map { $_->id } @jobs];
     my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
 
-    my @running = map {
-        my $job_id = $_->id;
-        my $job_data = $self->_format_ajax_job($_, $ancestors_by_job->{$job_id} || 0);
-        $job_data->{progress} = $_->progress_info;
-        $job_data;
-    } @jobs;
+    my @running;
+    for my $job (@jobs) {
+        my $job_data = $self->_format_ajax_job($job, $ancestors_by_job->{$job->id} || 0);
+        $job_data->{progress} = $job->progress_info;
+        push @running, $job_data;
+    }
     my %response = (data => \@running);
     my $app = OpenQA::App->singleton;
     my $config = $app->config->{scheduler};
@@ -396,15 +396,15 @@ sub list_scheduled_ajax ($self) {
     my $job_ids = [map { $_->id } @jobs];
     my $ancestors_by_job = $self->schema->resultset('Jobs')->ancestors_count_for_jobs($job_ids);
 
-    my @scheduled = map {
-        my $job_id = $_->id;
-        my $job_data = $self->_format_ajax_job($_, $ancestors_by_job->{$job_id} || 0);
-        $job_data->{blocked_by_id} = $_->blocked_by_id;
-        $job_data->{prio} = $_->priority;
-        $job_data->{prio_explanation} = $_->settings_hash->{_PRIORITY_EXPLANATION};
-        $job_data->{reason} = $_->reason;
-        $job_data;
-    } @jobs;
+    my @scheduled;
+    for my $job (@jobs) {
+        my $job_data = $self->_format_ajax_job($job, $ancestors_by_job->{$job->id} || 0);
+        $job_data->{blocked_by_id} = $job->blocked_by_id;
+        $job_data->{prio} = $job->priority;
+        $job_data->{prio_explanation} = $job->settings_hash->{_PRIORITY_EXPLANATION};
+        $job_data->{reason} = $job->reason;
+        push @scheduled, $job_data;
+    }
     my %response = (data => \@scheduled);
     $response{job_skipped_by_disk_limits} = 1
       if any { ($_->{reason} // '') eq 'storage space below threshold' } @scheduled;
@@ -573,17 +573,17 @@ sub _stash_clone_info ($self, $job) {
 }
 
 sub _gru_tasks_items ($self, $job) {
-    return [
-        map {
-            my $task = $_->gru_task;
-            my $label = 'id: ' . $task->id . ', name: ' . $task->taskname;
-            my $href = '';
-            if ($self->is_operator) {
-                $href = $self->url_for('/minion/jobs')->query(note => 'gru_id_' . $task->id, task => $task->taskname);
-            }
-            {label => $label, href => $href}
-        } $job->gru_dependencies
-    ];
+    my @items;
+    for my $dependency ($job->gru_dependencies) {
+        my $task = $dependency->gru_task;
+        my $label = 'id: ' . $task->id . ', name: ' . $task->taskname;
+        my $href = '';
+        if ($self->is_operator) {
+            $href = $self->url_for('/minion/jobs')->query(note => 'gru_id_' . $task->id, task => $task->taskname);
+        }
+        push @items, {label => $label, href => $href};
+    }
+    return \@items;
 }
 
 sub infopanel ($self) {
