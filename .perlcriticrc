@@ -1,6 +1,6 @@
 theme = community + openqa
 severity = 4
-include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables ValuesAndExpressions::RequireNumberSeparators CodeLayout::ProhibitQuotedWordLists RegularExpressions::ProhibitSingleCharAlternation BuiltinFunctions::RequireBlockGrep RegularExpressions::ProhibitUselessTopic Variables::ProtectPrivateVars Subroutines::RequireArgUnpacking Modules::ProhibitExcessMainComplexity Miscellanea::ProhibitUselessNoCritic BuiltinFunctions::ProhibitUselessTopic Documentation::RequirePackageMatchesPodName ValuesAndExpressions::ProhibitQuotesAsQuotelikeOperatorDelimiters ControlStructures::ProhibitCascadingIfElse
+include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables ValuesAndExpressions::RequireNumberSeparators CodeLayout::ProhibitQuotedWordLists RegularExpressions::ProhibitSingleCharAlternation BuiltinFunctions::RequireBlockGrep RegularExpressions::ProhibitUselessTopic Variables::ProtectPrivateVars Subroutines::RequireArgUnpacking Modules::ProhibitExcessMainComplexity Miscellanea::ProhibitUselessNoCritic BuiltinFunctions::ProhibitUselessTopic Documentation::RequirePackageMatchesPodName ValuesAndExpressions::ProhibitQuotesAsQuotelikeOperatorDelimiters ControlStructures::ProhibitCascadingIfElse Subroutines::ProhibitExcessComplexity
 
 # ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
 # No operators like < =~ ! allowed in 'unless' or 'until', only simple
@@ -57,3 +57,7 @@ max_mccabe = 83
 [ControlStructures::ProhibitCascadingIfElse]
 # Reduce me!
 max_elsif = 5
+
+[Subroutines::ProhibitExcessComplexity]
+# Reduce me!
+max_mccabe = 63
