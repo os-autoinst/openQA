@@ -103,7 +103,7 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
 
 =head1 NAME
 
-Test::Database
+OpenQA::Test::Database
 
 =head1 DESCRIPTION
 
