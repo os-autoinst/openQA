@@ -86,7 +86,7 @@ subtest 'git clone' => sub {
                 }
             }
             elsif ($action eq 'ls-remote') {
-                $stdout = 'ref: refs/heads/master	HEAD';
+                $stdout = "ref: refs/heads/master\tHEAD";
                 $stdout = 'ref: something' if "@$cmd" =~ m/nodefault/;
             }
             elsif ($action eq 'branch') {
