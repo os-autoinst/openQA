@@ -90,14 +90,15 @@ sub find_candidate_needles ($enabled_expected = 1) {
 
     # read the tags/needles from the HTML structure
     my @section_elements = $driver->find_elements('#needlediff_selector ul table');
-    my %needles_by_tag = map {
+    my %needles_by_tag;
+    for my $section_element (@section_elements) {
         # find tag name
-        my @tag_elements = $driver->find_child_elements($_, 'thead > tr');
+        my @tag_elements = $driver->find_child_elements($section_element, 'thead > tr');
         is scalar @tag_elements, 1, 'exactly one tag header present' . "\n";
 
         # find needle names
         my @needles;
-        my @needle_elements = $driver->find_child_elements($_, 'tbody > tr');
+        my @needle_elements = $driver->find_child_elements($section_element, 'tbody > tr');
         for my $needle_element (@needle_elements) {
             my @needle_parts = $driver->find_child_elements($needle_element, 'td');
             next unless @needle_parts;
@@ -108,8 +109,8 @@ sub find_candidate_needles ($enabled_expected = 1) {
               . OpenQA::Test::Case::trim_whitespace($needle_parts[1]->get_text());
         }
 
-        OpenQA::Test::Case::trim_whitespace($tag_elements[0]->get_text()) => \@needles;
-    } @section_elements;
+        $needles_by_tag{OpenQA::Test::Case::trim_whitespace($tag_elements[0]->get_text())} = \@needles;
+    }
 
     # further assertions
     my $selected_needle_count = scalar @{$driver->find_elements('#needlediff_selector tr.selected')};
