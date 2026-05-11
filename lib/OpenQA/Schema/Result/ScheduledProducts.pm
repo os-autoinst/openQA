@@ -3,7 +3,6 @@
 
 package OpenQA::Schema::Result::ScheduledProducts;
 
-## no critic (OpenQA::RedundantStrictWarning)
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use DBIx::Class::Timestamps 'now';

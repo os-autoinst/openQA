@@ -3,7 +3,6 @@
 
 package OpenQA::Schema::Result::JobNextPrevious;
 
-## no critic (OpenQA::RedundantStrictWarning)
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use Moose;
