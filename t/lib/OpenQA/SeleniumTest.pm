@@ -27,25 +27,26 @@ use OpenQA::Utils;
 use OpenQA::Test::Utils qw(wait_for);
 use POSIX '_exit';
 
-our $_driver;
-our $webapi;
-our $mojoport;
-our $startingpid = 0;
-our $find_method = 'css';
+our $_DRIVER;
+our $WEBAPI;
+our $MOJOPORT;
+our $STARTINGPID = 0;
+
+use constant FIND_METHOD => 'css';
 
 sub _start_app ($args) {
-    $mojoport = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
-    $startingpid = $$;
-    $webapi = OpenQA::Test::Utils::create_webapi($mojoport);
-    return $mojoport;
+    $MOJOPORT = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
+    $STARTINGPID = $$;
+    $WEBAPI = OpenQA::Test::Utils::create_webapi($MOJOPORT);
+    return $MOJOPORT;
 }
 
 sub enable_timeout () {
-    $_driver->set_implicit_wait_timeout(2000);
+    $_DRIVER->set_implicit_wait_timeout(2000);
 }
 
 sub disable_timeout () {
-    $_driver->set_implicit_wait_timeout(0);
+    $_DRIVER->set_implicit_wait_timeout(0);
 }
 
 sub start_driver ($mojoport) {
@@ -63,7 +64,7 @@ sub start_driver ($mojoport) {
 
         my %opts = (
             base_url => "http://localhost:$mojoport/",
-            default_finder => $find_method,
+            default_finder => FIND_METHOD,
             webelement_class => 'Test::Selenium::Remote::WebElement',
             extra_capabilities => {
                 loggingPrefs => {browser => 'ALL'},
@@ -90,18 +91,18 @@ sub start_driver ($mojoport) {
               for @chrome_option_keys;
         }
         my $startup_timeout = $ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10;
-        $_driver = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
-        $_driver->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
+        $_DRIVER = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
+        $_DRIVER->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
         enable_timeout;
         # Scripts are considered stuck after this timeout
-        $_driver->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
-        $_driver->set_window_size(600, 800);
-        $_driver->get("http://localhost:$mojoport/");
+        $_DRIVER->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
+        $_DRIVER->set_window_size(600, 800);
+        $_DRIVER->get("http://localhost:$mojoport/");
 
     }
     catch ($e) { die $e }    # uncoverable statement
 
-    return $_driver;
+    return $_DRIVER;
 }
 
 # opens a new tab/window for the specified URL and returns its handle
@@ -111,10 +112,10 @@ sub start_driver ($mojoport) {
 sub open_new_tab ($url) {
     # open new window using JavaScript API (Selenium::Remote::Driver doesn't seem to provide a method)
     $url = $url ? qq{"$url"} : 'window.location';
-    $_driver->execute_script("window.open($url);");
+    $_DRIVER->execute_script("window.open($url);");
 
     # assume the last window handle is the one of the newly created window
-    return $_driver->get_window_handles()->[-1];
+    return $_DRIVER->get_window_handles()->[-1];
 }
 
 sub check_driver_modules () {
@@ -144,12 +145,12 @@ sub wait_for_ajax (%args) {
     my $slept = 0;
     my $msg = $args{msg} ? (': ' . $args{msg}) : '';
 
-    while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests')) {
+    while (!$_DRIVER->execute_script('return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests')) {
         if ($timeout <= 0) {
             #<<< no perltidy
             my $s = 'return `(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests})`'; # uncoverable statement
             #>>> no perltidy
-            $msg .= $_driver->execute_script($s);    # uncoverable statement
+            $msg .= $_DRIVER->execute_script($s);    # uncoverable statement
             fail("Wait for AJAX timed out $msg");    # uncoverable statement
             return undef;    # uncoverable statement
         }
@@ -170,7 +171,7 @@ sub disable_bootstrap_animations () {
         "'.collapsing', '-webkit-transition: none !important; transition: none !important;'",
     );
     for my $rule (@rules) {
-        $_driver->execute_script("document.styleSheets[0].addRule($rule, 1);");
+        $_DRIVER->execute_script("document.styleSheets[0].addRule($rule, 1);");
     }
 }
 
@@ -180,7 +181,7 @@ sub wait_for_ajax_and_animations (%args) {
 }
 
 sub javascript_console_has_no_warnings_or_errors ($test_name_suffix = '') {
-    my $log = $_driver->get_log('browser');
+    my $log = $_DRIVER->get_log('browser');
     my @errors;
     for my $log_entry (@$log) {
         my $level = $log_entry->{level};
@@ -235,12 +236,12 @@ sub mock_js_functions (%functions_to_mock) {
     $java_script .= "window.$_ = function(arg1, arg2) { $functions_to_mock{$_} };" for (keys %functions_to_mock);
 
     print "injecting JavaScript: $java_script\n";
-    $_driver->execute_script($java_script);
+    $_DRIVER->execute_script($java_script);
 }
 
 # asserts that an element is visible and optionally whether it does (not) contain the expected phrases
 sub element_visible ($selector, $like = undef, $unlike = undef, $test_description = undef) {
-    my @elements = $_driver->find_elements($selector);
+    my @elements = $_DRIVER->find_elements($selector);
     is(scalar @elements, 1, $selector . ' present exactly once');
 
     my $element = $elements[0];
@@ -269,7 +270,7 @@ sub element_visible ($selector, $like = undef, $unlike = undef, $test_descriptio
 
 # asserts that an element is part of the page but hidden
 sub element_hidden ($selector, $test_description = undef) {
-    my @elements = $_driver->find_elements($selector);
+    my @elements = $_DRIVER->find_elements($selector);
     is scalar @elements, 1, $selector . ' present exactly once';
     my $hidden = !$elements[0]->is_displayed || $elements[0]->get_css_attribute('display') eq 'none';
     ok $hidden, $test_description // ($selector . ' hidden');
@@ -277,7 +278,7 @@ sub element_hidden ($selector, $test_description = undef) {
 
 # asserts that an element is not part of the page
 sub element_not_present ($selector, $test_description = undef) {
-    my @elements = $_driver->find_elements($selector);
+    my @elements = $_DRIVER->find_elements($selector);
     is scalar @elements, 0, $test_description // ($selector . ' not present');
 }
 
@@ -286,15 +287,15 @@ sub element_not_present ($selector, $test_description = undef) {
 #       because they ceased to work in some cases with chromedriver 91.0.4472.77. (Whether the functions work or
 #       not likely depends on how the property is populated.)
 sub element_prop ($element_id, $property = 'value') {
-    return $_driver->execute_script("return document.getElementById('$element_id').$property;");
+    return $_DRIVER->execute_script("return document.getElementById('$element_id').$property;");
 }
 
 sub element_prop_by_selector ($element_selector, $property = 'value') {
-    return $_driver->execute_script("return document.querySelector('$element_selector').$property;");
+    return $_DRIVER->execute_script("return document.querySelector('$element_selector').$property;");
 }
 
 sub map_elements ($selector, $mapping) {
-    return $_driver->execute_script("return Array.from(document.querySelectorAll('$selector')).map(e => [$mapping]);");
+    return $_DRIVER->execute_script("return Array.from(document.querySelectorAll('$selector')).map(e => [$mapping]);");
 }
 
 sub wait_until ($check_function, $check_description, $timeout = undef, $check_interval = undef) {
@@ -317,7 +318,7 @@ sub wait_until ($check_function, $check_description, $timeout = undef, $check_in
 sub wait_until_element_gone ($selector, @args) {
     wait_until(
         sub {
-            return scalar(@{$_driver->find_elements($selector)}) == 0;
+            return scalar(@{$_DRIVER->find_elements($selector)}) == 0;
         },
         $selector . ' gone',
         @args,
@@ -328,13 +329,13 @@ sub wait_for_element (%args) {
     my $selector = $args{selector};
     my $expected_is_displayed = $args{is_displayed};
     my $trigger_function = $args{trigger_function};
-    my $method = $args{method} // $find_method;
+    my $method = $args{method} // FIND_METHOD;
 
     my $element;
     wait_until(
         sub {
             $trigger_function->() if $trigger_function;
-            my @elements = $_driver->find_elements($selector, $method);
+            my @elements = $_DRIVER->find_elements($selector, $method);
             if (scalar @elements >= 1
                 && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
             {
@@ -354,7 +355,7 @@ sub wait_for_data_table ($table, $expected_row_count) {
     my @entries;
     wait_for_ajax msg => 'DataTable query';
     wait_for {
-        @entries = $_driver->find_child_elements($table, 'tbody/tr', 'xpath');
+        @entries = $_DRIVER->find_child_elements($table, 'tbody/tr', 'xpath');
         scalar @entries == $expected_row_count;
     }
     "$expected_row_count rows present", {timeout => OpenQA::Test::TimeLimit::scale_timeout(10)};
@@ -363,19 +364,19 @@ sub wait_for_data_table ($table, $expected_row_count) {
 }
 
 sub kill_driver () {
-    return unless $startingpid && $$ == $startingpid;
-    if ($_driver) {
-        $_driver->quit();
-        $_driver->shutdown_binary;
-        $_driver = undef;
+    return unless $STARTINGPID && $$ == $STARTINGPID;
+    if ($_DRIVER) {
+        $_DRIVER->quit();
+        $_DRIVER->shutdown_binary;
+        $_DRIVER = undef;
     }
-    if ($webapi) {
-        $webapi->signal('TERM');
-        $webapi->finish;
+    if ($WEBAPI) {
+        $WEBAPI->signal('TERM');
+        $WEBAPI->finish;
     }
 }
 
-sub get_mojoport () { $mojoport }
+sub get_mojoport () { $MOJOPORT }
 
 # uncoverable subroutine
 # uncoverable statement
