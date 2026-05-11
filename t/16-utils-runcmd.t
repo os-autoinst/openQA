@@ -138,7 +138,7 @@ subtest 'invoke Git commands for real testing error handling' => sub {
         my $test_file_4 = "$empty_tmp_dir/barinus";
         like
           $git->cache_ref($ref, "file://$git_remote_dir/.git", 'bar', $test_file_4),
-          qr"Unable to cache Git ref .* 'bar' exists on disk, but not in",
+          qr{Unable to cache Git ref .* 'bar' exists on disk, but not in},
           'checking out non existing file fails';
         ok !-f $test_file_4, 'task failed successfuly';
     };
