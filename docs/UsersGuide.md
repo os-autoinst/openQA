@@ -1095,6 +1095,9 @@ packaged independently to allow interfacing with an existing openQA instance
 without needing to install openQA itself. Call `openqa-cli --help` for help. The sub-commands provide further help, e.g. `openqa-cli api --help` contains
 a lot of examples.
 
+Shell completion for `bash` and `zsh` is available via the
+`openqa-client-bash-completion` and `openqa-client-zsh-completion` packages.
+
 This section focuses on particular API use-cases. Check out the
 [openQA client](Client.md#client) section for further information about
 the client itself, how authentication works and how plain `curl` can be used.
