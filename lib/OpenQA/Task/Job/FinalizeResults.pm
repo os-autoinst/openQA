@@ -44,6 +44,7 @@ sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = unde
         _run_hook_script($minion_job, $openqa_job, $app, $ensure_task_retry_on_termination_signal_guard);
         $app->minion->enqueue($_ => []) for @{$app->config->{minion_task_triggers}->{on_job_done}};
     }
+    return undef;
 }
 
 sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {

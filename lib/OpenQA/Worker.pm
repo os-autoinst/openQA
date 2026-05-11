@@ -802,6 +802,7 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
             $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
     }
+    return undef;
 }
 
 sub _check_system_utilization (
@@ -887,6 +888,7 @@ sub find_current_or_pending_job ($self, $job_id) {
     if (my $queue = $self->{_queue}) {
         return _find_job_in_queue($job_id, $queue->{pending_jobs});
     }
+    return undef;    # uncoverable statement
 }
 
 sub current_job_ids ($self) {
