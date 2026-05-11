@@ -1095,7 +1095,7 @@ sub update_result ($self, $result, $state = undef) {
 
 sub insert_module ($self, $tm, $skip_jobs_update = undef) {
     my @required_fields = ($tm->{name}, $tm->{category}, $tm->{script});
-    return 0 unless all { defined $_ } @required_fields;
+    return 0 unless all { defined } @required_fields;
 
     # prepare query to insert job module
     my $insert_sth = $self->{_insert_job_module_sth};

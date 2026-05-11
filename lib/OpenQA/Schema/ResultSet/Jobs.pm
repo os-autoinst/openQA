@@ -127,7 +127,7 @@ sub _build_job_settings ($settings_ref) {
     for my $key (keys %$settings_ref) {
         my $val = $settings_ref->{$key};
         push @job_settings, map { {t_created => $now, t_updated => $now, key => $key, value => $_} }
-          grep { defined $_ } $key =~ qr/(^WORKER_CLASS|\[\])$/ ? split(m/,/, $val // '') : ($val);
+          grep { defined } $key =~ qr/(^WORKER_CLASS|\[\])$/ ? split(m/,/, $val // '') : ($val);
     }
     return \@job_settings;
 }

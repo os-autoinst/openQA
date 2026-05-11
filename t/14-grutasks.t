@@ -482,9 +482,9 @@ subtest 'limit_temp_needle_refs task cleans up temp needle refs exceeding retent
     my $job_info = $minion->job($id)->info;
     subtest 'cleanup result' => sub {
         is $job_info->{state}, 'finished', 'job finished';
-        ok !-e $_, "old file '$_' cleaned up" for @old_needle_files;
+        ok !-e, "old file '$_' cleaned up" for @old_needle_files;
         ok !-e "$temp_dir/ref1", 'empty directory removed';
-        ok -e $_, "new file '$_' preserved" for @new_needle_files;
+        ok -e, "new file '$_' preserved" for @new_needle_files;
     } or diag explain $job_info;
 };
 

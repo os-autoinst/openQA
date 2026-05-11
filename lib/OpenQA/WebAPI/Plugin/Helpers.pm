@@ -466,7 +466,7 @@ sub _compose_job_overview_search_args ($c) {
 }
 
 sub _every_non_empty_param ($c, $param_key) {
-    [map { split /,/, $_ } @{$c->every_param($param_key)}]
+    [map { split /,/ } @{$c->every_param($param_key)}]
 }
 
 sub _every_key_value_param ($c, $param_key) {

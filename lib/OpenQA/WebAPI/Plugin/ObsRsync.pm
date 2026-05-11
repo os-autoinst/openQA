@@ -238,7 +238,7 @@ sub _split_alias ($, $alias) {
 
 sub _get_batches ($c, $project, $only_first = undef) {
     my $home = $c->obs_rsync->home;
-    my $batches = Mojo::File->new($home, $project)->list({dir => 1})->grep(sub { -d $_ })->map('basename');
+    my $batches = Mojo::File->new($home, $project)->list({dir => 1})->grep(sub { -d })->map('basename');
     return $batches->to_array() unless $only_first;
     return '' if !$batches->size;
     return $batches->to_array()->[0];

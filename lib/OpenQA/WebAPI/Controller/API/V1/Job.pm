@@ -308,7 +308,7 @@ be merged ($job_specific_params takes precedence).
 sub _create_job ($self, $global_params, $job_suffix, $job_specific_params, $minion_ids) {
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $global_params->{$_} } keys %$global_params;
-    $up_params{uc $_} = $job_specific_params->{$_} for keys %$job_specific_params;
+    $up_params{+uc} = $job_specific_params->{$_} for keys %$job_specific_params;
 
     # restore URL encoded /
     my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
@@ -748,7 +748,7 @@ sub upload_state ($self) {
         $self->app->log->debug("FAIL chunk upload of $file");
         path(assetdir(), 'tmp', $scope)->list_tree({dir => 1})->each(
             sub {
-                $_->remove_tree if -d $_ && $_->basename eq $file . '.CHUNKS';
+                $_->remove_tree if -d && $_->basename eq $file . '.CHUNKS';
             });
     }
     $self->render(text => 'OK');

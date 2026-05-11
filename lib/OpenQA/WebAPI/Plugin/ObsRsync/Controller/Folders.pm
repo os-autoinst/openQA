@@ -10,7 +10,7 @@ my $non_project_folders = '^(t|profiles|script|xml)$';
 
 sub list ($self) {
     my $helper = $self->obs_rsync;
-    my $folders = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')->to_array;
+    my $folders = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d })->map('basename')->to_array;
     my @res;
     for my $folder (@$folders) {
         next if $folder =~ /$non_project_folders/;
@@ -30,7 +30,7 @@ sub index ($self, $obs_project = undef, $folders = undef) {
     my %folder_info_by_name;
     if (!$folders) {
         $folders
-          = Mojo::File->new($helper->home, $obs_project // '')->list({dir => 1})->grep(sub { -d $_ })->map('basename')
+          = Mojo::File->new($helper->home, $obs_project // '')->list({dir => 1})->grep(sub { -d })->map('basename')
           ->to_array;
         @$folders = grep { !/$non_project_folders/ } @$folders;
     }

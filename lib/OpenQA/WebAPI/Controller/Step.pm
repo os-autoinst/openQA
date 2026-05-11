@@ -318,7 +318,7 @@ sub _basic_needle_info (
 
     # Transform string-workaround-properties into HASH-workaround-properties
     $needle->{properties}
-      = [map { ref($_) eq 'HASH' ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
+      = [map { ref eq 'HASH' ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
 
     return ($needle, undef);
 }
