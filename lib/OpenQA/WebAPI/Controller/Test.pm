@@ -115,7 +115,7 @@ my %SUMMARY_CATEGORY_QUERY = (
     scheduled => {result => undef, state => [PRE_EXECUTION_STATES]},
     running => {result => undef, state => [EXECUTION_STATES]},
     cancelled => {result => undef, state => [CANCELLED]},
-    aborted => {result => [ABORTED_RESULTS], state => undef},
+    aborted => {result => [ABORTED_RESULTS], state => [DONE]},
     # "none" includes all jobs with unknown states/results (or jobs in state DONE and unknown result), not just NONE
     none => {
         result__not => [COMPLETE_RESULTS, NOT_COMPLETE_RESULTS, ABORTED_RESULTS],
