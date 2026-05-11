@@ -86,7 +86,7 @@ sub split ($self, $chunk_size = undef) {
     my $n_chunks = _chunk_size($self->size(), $chunk_size);
     my $files = OpenQA::Files->new();
 
-    for (my $i = 1; $i <= $n_chunks; $i++) {
+    for my $i (1 .. $n_chunks) {
         #$piece->generate_sum; # XXX: Generate sha here and ditch content?
         $files->add($self->_chunk($i, $n_chunks, $chunk_size, $residual, $total_cksum));
     }
