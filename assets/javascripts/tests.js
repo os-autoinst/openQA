@@ -79,10 +79,14 @@ function renderTestName(data, type, row) {
   if (row.result !== 'none') {
     html += '<i class="status fa-solid fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
   } else if (row.state === 'scheduled') {
+    let title = 'Scheduled';
+    if (row.reason) {
+      title += ': ' + row.reason;
+    }
     if (typeof row.blocked_by_id === 'number') {
       html += '<i class="status fa-solid fa-circle state_blocked" title="Blocked"></i>';
     } else {
-      html += '<i class="status fa-solid fa-circle state_scheduled" title="Scheduled"></i>';
+      html += '<i class="status fa-solid fa-circle state_scheduled" title="' + htmlEscape(title) + '"></i>';
     }
   } else if (row.state === 'assigned') {
     html += '<i class="status fa-solid fa-circle state_running" title="Assigned"></i>';
@@ -323,9 +327,13 @@ function renderTestLists() {
       dataSrc: function (json) {
         // update heading when JSON is available
         let blockedCount = 0;
-        jQuery.each(json.data, function (index, row) {
-          if (row && typeof row.blocked_by_id === 'number') {
+        const reasons = {};
+        json.data.forEach(row => {
+          if (row && row.blocked_by_id) {
             ++blockedCount;
+          }
+          if (row && row.reason) {
+            reasons[row.reason] = (reasons[row.reason] || 0) + 1;
           }
         });
         let text = json.data.length + ' scheduled jobs';
@@ -334,6 +342,26 @@ function renderTestLists() {
         }
         $('#scheduled_jobs_heading').text(text);
         $('#scheduled_jobs_warning').toggleClass('d-none', !json.job_skipped_by_disk_limits);
+
+        const reasonKeys = Object.keys(reasons).sort();
+        const popoverContent = reasonKeys.length
+          ? `<ul>${reasonKeys.map(r => '<li>' + reasons[r] + ' job(s): ' + htmlEscape(r) + '</li>').join('')}</ul>`
+          : 'No scheduling issues detected';
+
+        const popoverIcon = document.getElementById('scheduled_jobs_help_icon');
+        if (popoverIcon) {
+          popoverIcon.classList.toggle('text-muted', !reasonKeys.length);
+          popoverIcon.setAttribute('data-bs-content', popoverContent);
+
+          // Update active instance if it exists
+          if (window.bootstrap && bootstrap.Popover) {
+            const popover = bootstrap.Popover.getInstance(popoverIcon);
+            if (popover) {
+              popover.setContent({'.popover-body': popoverContent});
+            }
+          }
+        }
+
         return json.data;
       }
     },

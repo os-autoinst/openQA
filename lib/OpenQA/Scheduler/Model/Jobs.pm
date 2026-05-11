@@ -55,15 +55,19 @@ sub effective_job_limit ($self) {
 sub _allocate_jobs ($self, $free_workers) {
     my ($allocated_workers, $allocated_jobs) = ({}, {});
     my $scheduled_jobs = $self->scheduled_jobs;
+    $scheduled_jobs->{$_}->{current_reason} = undef for keys %$scheduled_jobs;
+
     my $schema = OpenQA::Schema->singleton;
     my $running = $schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     my $limit = $self->effective_job_limit;
     if (storage_below_threshold()) {
         log_debug('Skipping job scheduling: free storage space in results directory below threshold');
+        $_->{current_reason} = 'storage space below threshold' for values %$scheduled_jobs;
         return ({}, {});
     }
     if ($limit >= 0 && $running >= $limit) {
         log_debug("job limit ($limit) exceeded, scheduling no additional jobs");
+        $_->{current_reason} = "job limit reached (max_running_jobs=$limit)" for values %$scheduled_jobs;
         return ({}, {});
     }
     my $max_allocate = $limit >= 0 ? min(MAX_JOB_ALLOCATION, $limit - $running) : MAX_JOB_ALLOCATION;
@@ -73,7 +77,10 @@ sub _allocate_jobs ($self, $free_workers) {
     for my $id (keys %$scheduled_jobs) {
         my $jobinfo = $scheduled_jobs->{$id};
         $jobinfo->{matching_workers} = _matching_workers($jobinfo, $free_workers, \%rejected);
-        delete $scheduled_jobs->{$id} unless @{$jobinfo->{matching_workers}};
+        if (!@{$jobinfo->{matching_workers}}) {
+            my @needed = sort @{$jobinfo->{worker_classes}};
+            $jobinfo->{current_reason} = @needed ? "no free workers for class @needed" : 'no workers online';
+        }
     }
     if (keys %rejected) {
         my @rejected = sort { $rejected{$b} <=> $rejected{$a} || $a cmp $b } keys %rejected;
@@ -94,10 +101,14 @@ sub _allocate_jobs ($self, $free_workers) {
     my %checked_jobs;
     for my $j (@sorted) {
         my $job_id = $j->{id};
-        next if $checked_jobs{$job_id} || defined $allocated_jobs->{$job_id} || !@{$j->{matching_workers}};
+        if ($checked_jobs{$job_id} || defined $allocated_jobs->{$job_id} || !@{$j->{matching_workers}}) {
+            $checked_jobs{$job_id} = 1;
+            next;
+        }
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
         if (!defined $tobescheduled) {
             log_debug "Skipping job $job_id because dependent jobs are not ready";
+            $j->{current_reason} = 'parallel dependencies not ready';
             next;
         }
         OpenQA::Scheduler::WorkerSlotPicker->new($tobescheduled)->pick_slots_with_common_worker_host;
@@ -125,6 +136,7 @@ sub _allocate_jobs ($self, $free_workers) {
                     my ($picked_worker, $job_info) = @{$taken{$worker}};
                     $self->_allocate_worker_with_priority($prio, $job_info, $j, $allocated_workers, $picked_worker);
                 }
+                $_->{current_reason} = 'incomplete parallel cluster' for @tobescheduled;
                 %taken = ();
                 last;
             }
@@ -144,6 +156,10 @@ sub _allocate_jobs ($self, $free_workers) {
             my $free_worker_count = @$free_workers;
             log_debug('limit reached, scheduling no additional jobs'
                   . " (job_limit=$limit, free workers=$free_worker_count, running=$running, allocated=$busy)");
+            for my $id (keys %$scheduled_jobs) {
+                next if defined $allocated_jobs->{$id} || $checked_jobs{$id};
+                $scheduled_jobs->{$id}->{current_reason} //= "scheduling limit reached (max_running_jobs=$limit)";
+            }
             last;
         }
     }
@@ -183,7 +199,7 @@ sub _assign_multiple_jobs ($self, $schema, $worker, $worker_id, $jobs, $directly
     #       need to set it here immediately to be sure the scheduler does not consider the worker
     #       free anymore.
     return $self->_assign_single_job($schema, $worker, $jobs->[0]) if @$jobs == 1;
-    my %worker_assignment = (state => ASSIGNED, t_started => undef, assigned_worker_id => $worker_id);
+    my %worker_assignment = (state => ASSIGNED, t_started => undef, assigned_worker_id => $worker_id, reason => undef);
     $schema->txn_do(
         sub {
             $_->update(\%worker_assignment) for @$jobs;
@@ -211,6 +227,7 @@ sub schedule ($self) {
 
     my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($free_workers);
 
+    $self->_update_job_reasons_in_db($schema, $scheduled_jobs);
     my @successfully_allocated;
 
     # assign the allocated job-worker pairs
@@ -332,6 +349,26 @@ sub schedule ($self) {
     $self->emit('conclude');
 
     return (\@successfully_allocated);
+}
+
+sub _update_job_reasons_in_db ($self, $schema, $scheduled_jobs) {
+    # batch update job reasons if they changed
+    my %reasons_to_update;
+    for my $id (keys %$scheduled_jobs) {
+        my $info = $scheduled_jobs->{$id};
+        my $curr = $info->{current_reason};
+        my $last = $info->{last_reason};
+        if (($curr // '') ne ($last // '')) {
+            push @{$reasons_to_update{$curr // 'NULL'}}, $id;
+            $info->{last_reason} = $curr;
+        }
+    }
+    my $jobs = $schema->resultset('Jobs');
+    for my $reason (keys %reasons_to_update) {
+        my $ids = $reasons_to_update{$reason};
+        my $val = $reason eq 'NULL' ? undef : $reason;
+        $jobs->search({id => {-in => $ids}})->update({reason => $val});
+    }
 }
 
 sub singleton ($class = undef) { state $jobs ||= ($class // __PACKAGE__)->new }

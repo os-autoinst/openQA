@@ -69,7 +69,7 @@
                         <abbr class="timeago" title="<%= $job->t_created->datetime() %>Z"><%= format_time($job->t_created) %></abbr>
                     % }
                     % if (my $reason = $job->reason) {
-                        <br>Reason: <%= $reason %>
+                        <br><%= $job->state eq SCHEDULED ? 'Scheduling info' : 'Reason' %>: <%= $reason %>
                     % }
                 </div>
                 % if (my $developer_session = $job->developer_session) {
