@@ -321,6 +321,9 @@ sub _create_job ($self, $global_params, $job_suffix, $job_specific_params, $mini
         die "$result->{error_message}\n" if defined $result->{error_message};
         $job_settings = $result->{settings_result};
     }
+    else {
+        OpenQA::JobSettings::parse_url_settings($job_settings);
+    }
     my $downloads = create_downloads_list($job_settings);
     $self->_eval_dependency($job_suffix, $job_settings, _START_AFTER => CHAINED);
     $self->_eval_dependency($job_suffix, $job_settings, _START_DIRECTLY_AFTER => DIRECTLY_CHAINED);
