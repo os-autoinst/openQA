@@ -95,7 +95,7 @@
 %define qemu qemu
 %endif
 # The following line is generated from dependencies.yaml
-%define style_check_requires ShellCheck perl(Code::TidyAll) perl(Perl::Critic) perl(Perl::Critic::Community) perl(Pod::Markdown) perl(Test::Perl::Critic) python3-gitlint python3-yamllint shfmt
+%define style_check_requires ShellCheck perl(Code::TidyAll) perl(Perl::Critic) perl(Perl::Critic::Community) perl(Pod::Markdown) perl(Test::Perl::Critic) python3-gitlint python3-ruff python3-yamllint shfmt
 # The following line is generated from dependencies.yaml
 %define cover_requires perl(Devel::Cover) perl(Devel::Cover::Report::Codecovbash)
 # The following line is generated from dependencies.yaml
