@@ -519,7 +519,7 @@ sub _accept_or_skip_next_job_in_queue ($self) {
     if (my $e = $self->current_error) {
         if ($self->current_error_is_fatal) {
             log_info "Skipping job $next_job_id from queue because worker is broken ($e)";
-            return $self->_prepare_and_skip_job($next_job);
+            return $self->_prepare_and_skip_job($next_job, WORKER_SR_BROKEN);
         }
         else {
             log_info "Continuing with job $next_job_id as it is already enqueued despite current error ($e)";

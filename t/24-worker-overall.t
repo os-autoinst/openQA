@@ -18,6 +18,7 @@ use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
 use Test::MockObject;
 use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_FINISH_OFF);
+use OpenQA::Jobs::Constants;
 use OpenQA::Utils qw(load_avg);
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
@@ -855,7 +856,8 @@ subtest 'handle job status changes' => sub {
             $worker_mock->redefine(is_qemu_running => sub { return 17377; });
 
             # pretend we're still running the fake job and also that there's another pending job
-            my $pending_job = OpenQA::Worker::Job->new($worker, $fake_client, {id => 769, some => 'info'});
+            my $fake_client_2 = Test::FakeClient->new;
+            my $pending_job = OpenQA::Worker::Job->new($worker, $fake_client_2, {id => 769, some => 'info'});
             $worker->current_job($fake_job);
             $worker->_init_queue([$pending_job]);
             $worker->{_shall_terminate} = 0;
@@ -876,7 +878,7 @@ subtest 'handle job status changes' => sub {
             combined_like {
                 $worker->_handle_job_status_changed($pending_job, {status => 'stopped', reason => 'skipped'});
             }
-            qr/Job 769 from some-host finished - reason: skipped/s, 'assume skipping of job 769 is complete';
+            qr/Job 769 from fake finished - reason: skipped/s, 'assume skipping of job 769 is complete';
             is $worker->status->{status}, 'broken', 'worker still considered broken';
 
             # assume error is fatal so job is supposed to be skipped
@@ -887,8 +889,13 @@ subtest 'handle job status changes' => sub {
             };
             $reset_job_and_queue->();
             $worker->current_error('fake fatal error')->current_error_is_fatal(1);
+            $job_mock->unmock('skip');
             combined_like { $worker->_accept_or_skip_next_job_in_queue() }
-            qr/Skipping job.*worker is broken \(fake fatal error\)/s, 'skipping logged';
+            qr/Skipping job 769.*worker is broken \(fake fatal error\)/s, 'skipping logged';
+            is $pending_job->client, $fake_client_2, 'fake client still assigned';
+            my $done_params = $fake_client_2->api_calls->[-1];
+            is $done_params->{result}, SKIPPED, 'job considered skipped';
+            is $done_params->{reason}, 'worker broken: fake fatal error', 'reason for skipping passed to web UI';
 
             # assume the average load exceeds configured threshold
             $reset_job_and_queue->();

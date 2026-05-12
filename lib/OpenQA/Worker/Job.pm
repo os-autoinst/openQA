@@ -550,7 +550,8 @@ sub _format_reason ($self, $state, $result, $reason) {
     return undef if $reason eq WORKER_COMMAND_CANCEL;
     # return upload errors due to the worker being broken itself
     my $result_upload_error = $self->{_result_upload_internal_error} // $self->{_result_upload_error};
-    return "worker broken: $result_upload_error" if $reason eq WORKER_SR_BROKEN && $result_upload_error;
+    my $error = $result_upload_error // $self->worker->current_error;
+    return "worker broken: $error" if $reason eq WORKER_SR_BROKEN && $error;
 
     # consider other reasons as os-autoinst specific; retrieve extended reason if available
     if ($state) {
