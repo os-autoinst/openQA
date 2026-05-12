@@ -416,7 +416,8 @@ sub _get_builds_in_folder ($folder) {
         sub {
             _get_builds_in_file(shift->to_string, \%seen);
         });
-    return sort { $b cmp $a } keys %seen;
+    my @builds = sort { $b cmp $a } keys %seen;
+    return @builds;
 }
 
 # Obs builds are parsed from files_iso.lst, which is updated from ObsRsync Gru tasks
