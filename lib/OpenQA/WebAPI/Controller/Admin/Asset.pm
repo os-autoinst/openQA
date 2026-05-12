@@ -41,10 +41,7 @@ sub status_json ($self) {
     }
 
     # generate new static JSON file
-    $assets->status(
-        compute_pending_state_and_max_job => $force_refresh,
-        compute_max_job_by_group => 0,
-    );
+    $assets->status(compute_pending_state_and_max_job => $force_refresh);
 
     return !!$self->rendered if $self->_serve_status_json_from_cache;
     $self->render(json => {error => 'Cache file for asset status could not be generated.'}, status => 500);

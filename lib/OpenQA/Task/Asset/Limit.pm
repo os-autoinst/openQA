@@ -64,7 +64,6 @@ sub _limit ($app, $job) {
 
         my $asset_status = $schema->resultset('Assets')->status(
             compute_pending_state_and_max_job => 1,
-            compute_max_job_by_group => 1,
             fail_on_inconsistent_status => 1,
             skip_cache_file => 1,
         );
@@ -127,10 +126,7 @@ sub _limit ($app, $job) {
         _update_exclusively_kept_asset_size($dbh, job_group_parents => $asset_status->{parents});
 
         # recompute the status (after the cleanup) and produce cache file for /admin/assets
-        $schema->resultset('Assets')->status(
-            compute_pending_state_and_max_job => 0,
-            compute_max_job_by_group => 0,
-        );
+        $schema->resultset('Assets')->status(compute_pending_state_and_max_job => 0);
     }
     catch ($e) {
         # retry on errors which are most likely caused by race conditions (we want to avoid locking the tables here)

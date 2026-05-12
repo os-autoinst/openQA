@@ -440,10 +440,7 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
 subtest 'asset status with pending state, max_job and max_job by group' => sub {
     my $asset_status;
     stdout_like {
-        $asset_status = $schema->resultset('Assets')->status(
-            compute_pending_state_and_max_job => 1,
-            compute_max_job_by_group => 1,
-        )
+        $asset_status = $schema->resultset('Assets')->status(compute_pending_state_and_max_job => 1)
     }
     qr/Skipping asset $empty_asset_id because its name is empty/, 'warning about skipped asset';
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
@@ -466,20 +463,13 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
     for my $asset (@expected_assets_with_max_job) {
         $asset->{pending} = undef;
         $asset->{last_job} = undef;
-        my $groups = $asset->{groups};
-        for my $group_id (keys %$groups) {
-            $groups->{$group_id} = undef;
-        }
     }
     for my $asset_name (keys %expected_assets_without_max_job) {
         my $asset = $expected_assets_without_max_job{$asset_name};
         $asset->{pending} = undef;
     }
 
-    my $asset_status = $schema->resultset('Assets')->status(
-        compute_pending_state_and_max_job => 0,
-        compute_max_job_by_group => 0,
-    );
+    my $asset_status = $schema->resultset('Assets')->status(compute_pending_state_and_max_job => 0);
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     $assets_with_max_job->[5]->{id} = undef;    # might vary
     is_deeply $assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job'
