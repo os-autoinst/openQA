@@ -82,6 +82,10 @@ subtest 'isotovideo version' => sub {
     }
     qr{Path to isotovideo invalid}, 'isotovideo version path invalid';
 
+    my $not_isotovideo = path($FindBin::Bin)->child('../script/openqa-cli');
+    my $version = OpenQA::Worker::Engines::isotovideo::set_engine_exec($not_isotovideo);
+    is $version, 0, 'zero returned if printed output does not match version pattern';
+
     # init does not fail without isotovideo parameter
     # note that this might set the isotovideo version because the isotovideo path defaults
     # to /usr/bin/isotovideo

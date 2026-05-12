@@ -4,21 +4,12 @@ orbs:
   codecov: codecov/codecov@5.3.0
 
 aliases:
-  - &restore_cache
-    keys:
-      - v2-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
-
-  - &save_cache
-    key: v2-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
-    paths:
-      - "/var/cache/zypp/packages"
-
   - &restore_fullstack_cache
     keys:
-      - v2-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
+      - v3-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
 
   - &save_fullstack_cache
-    key: v2-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
+    key: v3-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
     paths:
       - "/var/cache/autoinst"
 
@@ -31,33 +22,9 @@ aliases:
     paths:
       - "~/project/node_modules"
 
-  - &chown_hack_for_cache
-    name: Chown package cache to user
-    command: |
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
-
-  - &chown_hack_for_cache_fullstack
-    name: Chown autoinst cache to user
-    command: |
-      # hack as we don't want run container as root
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || {
-        sudo mkdir -p /var/cache/autoinst
-        sudo chown -R squamata /var/cache/autoinst
-      }
-
-  - &check_cache
-    name: Log cached packages
-    command: |
-      mkdir -p logs
-      find /var/cache/zypp/packages/ -iname *.rpm > ./logs/packages.txt
-
   - &store_logs
     path: logs
     destination: artifacts
-
-  - &install_cached_packages
-    name: Install cached packages
-    command: tools/ci/build_or_install_from_cache.sh
 
   - &store_test_results
     path: test-results/junit
@@ -75,11 +42,11 @@ aliases:
     command: |
       if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
         rm -rf ../os-autoinst
-        sudo cp -r /var/cache/autoinst ../os-autoinst
-        sudo chown -R 1000 ../os-autoinst
+        cp -r /var/cache/autoinst ../os-autoinst
+        chown -R 1000 ../os-autoinst
       else # only in local run
-         tools/ci/build_autoinst.sh
-       fi
+        tools/ci/build_autoinst.sh
+      fi
 
   - &make_test
     name: "Running unit tests"
@@ -95,7 +62,6 @@ aliases:
 
 images:
   - &docker_config
-    user: squamata
     environment:
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
       # Exclude container specific tests needing a container runtime
@@ -103,12 +69,12 @@ images:
       CONTAINER_TEST: 0
       HELM_TEST: 0
 
-  - &base
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+  - &devel
+    image: registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest
     <<: *docker_config
 
   - &dependency_bot
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    image: registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest
     environment:
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
@@ -129,35 +95,12 @@ jobs:
           name: "Prepare dependency PR"
           command: tools/ci/prepare_dependency_pr.sh
 
-  cache:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: ls -la && pwd
-      - run: cat tools/ci/ci-packages.txt
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run:
-          name: "Build zypper cache"
-          command: |
-            if [ ! -d /var/cache/zypp/packages/openQA ]; then
-              bash -x tools/ci/build_cache.sh
-            fi
-      - save_cache: *save_cache
-
   cache-fullstack:
     docker:
-      - <<: *base
+      - <<: *devel
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
-      - restore_cache: *restore_cache
       - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
       - store_artifacts: *store_logs
       - run:
           name: "Build os-autoinst if not cached"
@@ -169,26 +112,32 @@ jobs:
 
   cache-npm:
     docker:
-      - <<: *base
+      - <<: *devel
     steps:
       - checkout
-      - run: *chown_hack_for_cache
       - restore_cache: *restore_npm_cache
       - run:
           name: "Install npm dependencies"
           command: npm clean-install --ignore-scripts
       - save_cache: *save_npm_cache
 
+  log-installed-packages:
+    docker:
+      - <<: *devel
+    steps:
+      - run:
+          name: "Log installed rpm packages"
+          command: |
+            mkdir -p logs
+            rpm -q --all | sort > ./logs/packages.txt
+      - store_artifacts: *store_logs
+
   checkstyle: &test-template
     docker:
-      - <<: *base
+      - <<: *devel
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
       - store_artifacts: *store_logs
-      - run: *install_cached_packages
       - restore_cache: *restore_npm_cache
       - run: *make_test
       - persist_to_workspace:
@@ -200,16 +149,11 @@ jobs:
 
   fullstack: &test-fullstack-template
     docker:
-      - <<: *base
+      - <<: *devel
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
-      - restore_cache: *restore_cache
       - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
       - store_artifacts: *store_logs
-      - run: *install_cached_packages
       - restore_cache: *restore_npm_cache
       - run: *build_autoinst
       - run: *make_test
@@ -245,14 +189,10 @@ jobs:
 
   codecov:
     docker:
-      - <<: *base
+      - <<: *devel
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
       - store_artifacts: *store_logs
-      - run: *install_cached_packages
       - restore_cache: *restore_npm_cache
       - attach_workspace:
           at: .
@@ -270,14 +210,10 @@ jobs:
 
   build-docs: &docs-template
     docker:
-      - <<: *base
+      - <<: *devel
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
       - store_artifacts: *store_logs
-      - run: *install_cached_packages
       - restore_cache: *restore_npm_cache
       - run: *git_token_authentication
       - run: tools/ci/build-docs
@@ -289,11 +225,11 @@ workflows:
   version: 2
   test:
     jobs:
-      - cache
       - cache-npm
+      - cache-fullstack
+      - log-installed-packages
       - checkstyle: &requires
           requires:
-            - cache
             - cache-npm
       - compile:
           <<: *requires
@@ -308,12 +244,10 @@ workflows:
       # put unstable tests in tools/unstable_tests.txt and uncomment if necessary to handle with retries
       # - unstable:
       #     requires:
-      #       - cache
       #       - cache-npm
-      - cache-fullstack:
-          <<: *requires
       - fullstack: &requires_fullstack
           requires:
+            - cache-npm
             - cache-fullstack
       - fullstack-unstable:
           <<: *requires_fullstack
@@ -344,7 +278,6 @@ workflows:
     jobs:
       # We also need the package cache for build-docs
       # https://progress.opensuse.org/issues/123867
-      - cache
       - cache-npm
       - cache-fullstack:
           <<: *requires

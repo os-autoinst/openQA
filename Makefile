@@ -225,7 +225,7 @@ endif
 #       regular tests). Development tests/tooling like `js-tidy` will invoke `npm clean-install …` to install missing
 #       dependencies on its own anyway.
 node_modules: package-lock.json ## Build web-related dependencies (NPM, JS, CSS)
-	@which local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
+	@command -v local-npm-registry >/dev/null 2>&1 || npm clean-install --no-audit --no-fund --ignore-scripts --omit=dev
 	@touch node_modules
 
 .PHONY: test
@@ -405,23 +405,23 @@ test-compile: ## Run compile tests
 
 .PHONY: test-shellcheck
 test-shellcheck: ## Run shellcheck on scripts
-	@which shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
+	@command -v shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
 	shellcheck -x $(shellfiles)
 
 .PHONY: test-yaml
 test-yaml: ## Run yamllint on YAML files
-	@which yamllint >/dev/null 2>&1 || (echo "Command 'yamllint' not found, can not execute YAML syntax checks" && false)
+	@command -v yamllint >/dev/null 2>&1 || (echo "Command 'yamllint' not found, can not execute YAML syntax checks" && false)
 	@# Fall back to find if there is no git, e.g. in package builds
 	yamllint --strict $$((git ls-files "*.yml" "*.yaml" 2>/dev/null || find -name '*.y*ml') | grep -v ^dbicdh)
 
 .PHONY: test-shfmt
 test-shfmt: ## Run shfmt on scripts
-	@which shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
+	@command -v shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
 .PHONY: test-gitlint
 test-gitlint: ## Run commit message checks using gitlint
-	@which gitlint >/dev/null 2>&1 || (echo "Command 'gitlint' not found, can not execute commit message checks. Install with 'python3-gitlint' (openSUSE) or 'pip install gitlint-core'" && false)
+	@command -v gitlint >/dev/null 2>&1 || (echo "Command 'gitlint' not found, can not execute commit message checks. Install with 'python3-gitlint' (openSUSE) or 'pip install gitlint-core'" && false)
 	@BASES=$$(for i in upstream/master upstream/main origin/master origin/main master main; do git rev-parse --verify $$i 2>/dev/null; done ||:); \
 	BASE=$$(git merge-base --independent $$BASES | head -n 1); \
 	gitlint --commits "$$BASE..HEAD"

@@ -17,11 +17,9 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+      image: registry.opensuse.org/devel/openqa/containers/opensuse/openqa_devel:latest
     steps:
       - uses: actions/checkout@v6
-      - name: Install dependencies
-        run: bash -x tools/ci/build_cache.sh
       - name: Build os-autoinst
         run: bash -x tools/ci/build_autoinst.sh
       - name: Make project folder user-writable
