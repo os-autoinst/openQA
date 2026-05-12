@@ -330,6 +330,34 @@ subtest 'job statistics can be queried about the scheduled product' => sub {
       'scheduled jobs';
 };
 
+subtest 'job statistics can be filtered by job groups' => sub {
+    $schema->txn_begin;
+    my $dev_group = $schema->resultset('JobGroups')->create({name => 'Development Group', sort_order => 10});
+    my $prod_group = $schema->resultset('JobGroups')->create({name => 'Production Group', sort_order => 20});
+
+    $jobs->find(99985)->update({state => DONE, result => INCOMPLETE, group_id => $dev_group->id});
+    $jobs->find(99988)->update({state => DONE, result => FAILED, group_id => $prod_group->id});
+    $jobs->find(99993)->update({state => DONE, result => PASSED, group_id => undef});
+
+    $t->get_ok("/api/v1/isos/job_stats?$params")->status_is(200);
+    is_deeply [sort keys %{$t->tx->res->json->{done}}], [FAILED, INCOMPLETE, PASSED],
+      'statistics include all jobs when no group filters are applied';
+
+    $t->get_ok("/api/v1/isos/job_stats?$params&not_group_glob=Development*")->status_is(200);
+    is_deeply [sort keys %{$t->tx->res->json->{done}}], [FAILED, PASSED],
+      'negative group glob filters out development jobs but keeps ungrouped jobs';
+
+    $t->get_ok("/api/v1/isos/job_stats?$params&group_glob=Development*")->status_is(200);
+    is_deeply [sort keys %{$t->tx->res->json->{done}}], [INCOMPLETE],
+      'positive group glob includes only matching development jobs and excludes ungrouped jobs';
+
+    $t->get_ok("/api/v1/isos/job_stats?$params&group_glob=NonExistent*")->status_is(200);
+    is_deeply $t->tx->res->json, {}, 'empty statistics result for non-matching group glob';
+
+    $schema->txn_rollback;
+};
+
+
 subtest 'note can be updated by distri, version, flavor, arch and build parameters' => sub {
     $t->put_ok("/api/v1/experimental/isos/note?$params");
     $t->status_is(400, 'error returned if parameter missing');
