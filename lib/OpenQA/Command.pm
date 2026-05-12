@@ -5,6 +5,8 @@ package OpenQA::Command;
 use Mojo::Base 'Mojolicious::Command', -signatures;
 
 use Cpanel::JSON::XS ();
+use IO::Interactive qw(is_interactive);
+use IO::Select;
 use OpenQA::Client;
 use Mojo::IOLoop;
 use Mojo::Util qw(encode decode getopt);
@@ -33,8 +35,12 @@ sub client ($self, $url) {
 }
 
 sub data_from_stdin ($self = undef) {
-    vec(my $r = '', fileno(STDIN), 1) = 1;
-    return !-t STDIN && (select $r, undef, undef, 0) ? join '', <STDIN> : '';
+    return '' if is_interactive;
+    my $s = IO::Select->new();
+    $s->add(\*STDIN);
+    return '' unless $s->can_read(0);
+    local $/;
+    return <STDIN>;
 }
 
 sub decode_args ($self, @args) {
