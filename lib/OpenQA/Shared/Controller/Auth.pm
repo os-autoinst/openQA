@@ -11,6 +11,8 @@ use Mojo::Util qw(hmac_sha1_sum secure_compare);
 use Mojo::URL;
 use Time::Seconds;
 
+sub _auth_method_is_none ($self) { ($self->app->config->{auth}->{method} // '') eq 'None' }
+
 sub check ($self) {
     my $config = $self->app->config;
     return 1 if $config->{no_localhost_auth} && $self->is_local_request;
@@ -33,11 +35,15 @@ sub check ($self) {
             if (!$exp || $exp->epoch > time) {
                 if (my $secret = $api_key->secret) {
                     my $sum = hmac_sha1_sum($self->req->url->to_string . $remote_timestamp, $secret);
-                    $user = $api_key->user;
-                    log_trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator);
+                    $user = $api_key->user if secure_compare($hash, $sum);
+                    log_trace(sprintf 'API auth by user: %s, operator: %d', $user->username, $user->is_operator)
+                      if $user;
                 }
             }
         }
+    }
+    elsif ($self->_auth_method_is_none()) {
+        $user = $schema->resultset('Users')->find({username => DEFAULT_ADMIN});
     }
     return 1 if ($user && $user->is_operator);
 
@@ -79,8 +85,7 @@ sub auth ($self) {
         elsif (my $key = $self->req->headers->header('X-API-Key')) {
             ($user, $reason) = $self->_key_auth($reason, $key);
         }
-        # Fallback for None auth
-        elsif (($self->app->config->{auth}->{method} // '') eq 'None') {
+        elsif ($self->_auth_method_is_none()) {
             $user = $self->schema->resultset('Users')->find({username => DEFAULT_ADMIN});
             $reason = undef;
         }

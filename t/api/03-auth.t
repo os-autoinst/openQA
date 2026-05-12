@@ -292,6 +292,14 @@ subtest 'None authentication provider fallback and admin auto-login' => sub {
 
     $t_none->post_ok('/login')->status_is(302, 'explicit login redirects');
     $t_none->get_ok($t_none->tx->res->headers->location)->status_is(200, 'redirected page accessible after login');
+
+    $t_none->app->routes->find('api_ensure_admin')->put('/admin_plugin_none' => sub { shift->render(text => 'ok') });
+    $t_none->put_ok('/api/v1/admin_plugin_none' => {'X-API-Microtime' => time})
+      ->status_is(200, 'Auth::auth fallback works via route')->content_is('ok');
+
+    $t_none->app->routes->under('/check_fallback')->to('Auth#check')->get('/' => sub { shift->render(text => 'ok') });
+    $t_none->get_ok('/check_fallback' => {'X-API-Microtime' => time})
+      ->status_is(200, 'Auth::check fallback works via route')->content_is('ok');
 };
 
 subtest 'Auth::check validation including localhost fallback and API key verification' => sub {
@@ -310,7 +318,10 @@ subtest 'Auth::check validation including localhost fallback and API key verific
     $c->req->headers->header('X-API-Key' => 'ARTHURKEY01');
     my $microtime = time;
     $c->req->headers->header('X-API-Microtime' => $microtime);
-    my $hash = hmac_sha1_sum($c->req->url->to_string . $microtime, 'EXCALIBUR');
+    my $hash = 'WRONG';
+    $c->req->headers->header('X-API-Hash' => $hash);
+    ok !$c->check, 'API key authentication fails with INVALID HMAC';
+    $hash = hmac_sha1_sum($c->req->url->to_string . $microtime, 'EXCALIBUR');
     $c->req->headers->header('X-API-Hash' => $hash);
     ok $c->check, 'API key authentication succeeds with valid HMAC and timestamp';
 };
