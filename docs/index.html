@@ -1199,7 +1199,8 @@ the same build can be shown together on the index page.</p>
 <p>openQA automatically archives and deletes data that it considers
 &quot;old&quot; based on different settings. For example old jobs and assets are
 deleted at some point. The settings can be adjusted on job-group-level
-and in the configuration file You can read the <a href="#cleanup">Cleanup</a> section for details.</p>
+and in the configuration file You can read the <a href="#cleanup-of-assets-results-and-other-data">Cleanup</a> section for
+details.</p>
 <h2 data-number="1.4" id="using-the-client-script"><span class="header-section-number">1.4</span> Using the client script</h2>
 <p>Just as the worker uses an API key+secret every user of the
 <code>client script</code> must do the same. The same API key+secret as
@@ -4098,6 +4099,9 @@ existing openQA instance without needing to install openQA itself. Call
 <code>openqa-cli --help</code> for help. The sub-commands provide
 further help, e.g. <code>openqa-cli api --help</code> contains a lot of
 examples.</p>
+<p>Shell completion for <code>bash</code> and <code>zsh</code> is
+available via the <code>openqa-client-bash-completion</code> and
+<code>openqa-client-zsh-completion</code> packages.</p>
 <p>This section focuses on particular API use-cases. Check out the <a href="#client">openQA client</a> section for further information about
 the client itself, how authentication works and how plain
 <code>curl</code> can be used.</p>
