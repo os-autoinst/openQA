@@ -607,8 +607,8 @@ to <code>$distri-&gt;script_run</code>. In the default implementation,
 mean slower typing).</p>
 <p><code>script_run</code> will throw an exception if the timeout has
 expired.</p>
-<p><Returns> exit code received from _<span class="math inline">$cmd_ or
-undef if `$</span>timeout` is 0.</p>
+<p><Returns> exit code received from <code>$cmd</code> or undef if
+<code>$timeout</code> is 0.</p>
 <p><em>The implementation is distribution specific and not always
 available.</em></p>
 <p>The default implementation should work on *nix operating systems with
@@ -621,7 +621,7 @@ Remember to redirect output, otherwise the PID marker may get
 corrupted.</p>
 <p><code>$output</code> can be used as an explanatory text that will be
 displayed with the execution of the command.</p>
-<p><Returns> PID of the <em>$cmd</em> process running in the
+<p><Returns> PID of the <code>$cmd</code> process running in the
 background.</p>
 <p><em>The implementation is distribution specific and not always
 available.</em></p>
