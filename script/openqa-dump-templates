@@ -289,8 +289,8 @@ sub handle_table ($table) {
 handle_table($_) for keys %result;
 
 if ($options{json}) {
-    use Mojo::JSON;    # booleans
-    use Cpanel::JSON::XS;
+    require Mojo::JSON;    # booleans
+    require Cpanel::JSON::XS;
     print Cpanel::JSON::XS->new->ascii->pretty->canonical(1)->encode(\%result);
 }
 else {
