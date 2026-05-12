@@ -166,7 +166,7 @@ sub capabilities ($self) {
     }
     else {
         open my $LSCPU, '-|', 'LC_ALL=C lscpu';
-        for my $line (<$LSCPU>) {
+        while (my $line = <$LSCPU>) {
             chomp $line;
             if ($line =~ m/Model name:\s+(.+)$/) {
                 $caps->{cpu_modelname} = $1;
