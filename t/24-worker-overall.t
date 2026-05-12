@@ -865,26 +865,33 @@ subtest 'handle job status changes' => sub {
             combined_like {
                 $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'});
             }
-qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skipping job 769 from queue because worker is broken/s,
-              'status logged';
+            qr/Job 42 from some-host finished - reason: done.*enqueued despite.*error.*A QEMU instance using/s,
+              'next job being enqueued despite error is logged';
             is
               $worker->current_error,
               'A QEMU instance using the current pool directory is still running (PID: 17377)',
               'error status recomputed';
-            ok $worker->current_error_is_fatal, 'leftover QEMU process considered fatal';
-            is $pending_job->status, 'skipped: ?', 'pending job is supposed to be skipped due to the error';
+            ok !$worker->current_error_is_fatal, 'leftover QEMU process not considered fatal';
+            is $pending_job->status, 'accepted', 'pending job is not to be skipped due to the error';
             combined_like {
                 $worker->_handle_job_status_changed($pending_job, {status => 'stopped', reason => 'skipped'});
             }
             qr/Job 769 from some-host finished - reason: skipped/s, 'assume skipping of job 769 is complete';
             is $worker->status->{status}, 'broken', 'worker still considered broken';
 
-            # set back the job/queue for another test
-            $pending_job->{_status} = 'new';
-            $worker->current_job($fake_job);
-            $worker->_init_queue([$pending_job]);
+            # assume error is fatal so job is supposed to be skipped
+            my $reset_job_and_queue = sub () {
+                $pending_job->{_status} = 'new';
+                $worker->current_job($fake_job);
+                $worker->_init_queue([$pending_job]);
+            };
+            $reset_job_and_queue->();
+            $worker->current_error('fake fatal error')->current_error_is_fatal(1);
+            combined_like { $worker->_accept_or_skip_next_job_in_queue() }
+            qr/Skipping job.*worker is broken \(fake fatal error\)/s, 'skipping logged';
 
             # assume the average load exceeds configured threshold
+            $reset_job_and_queue->();
             $worker_mock->unmock('is_qemu_running');
             $worker->settings->global_settings->{CRITICAL_LOAD_AVG_THRESHOLD} = '10';
             combined_like { $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'}) }

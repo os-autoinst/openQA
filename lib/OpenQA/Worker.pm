@@ -666,12 +666,12 @@ sub check_availability ($self) {
     if (my $cache_service_client = $self->{_cache_service_client}) {
         my $error = $cache_service_client->info->availability_error;
         my $host = $cache_service_client->host // '?';
-        return (0, "Worker cache not available via $host: $error") if $error;
+        return (1, "Worker cache not available via $host: $error") if $error;
     }
 
     # check whether qemu is still running
     if (my $qemu_pid = $self->is_qemu_running) {
-        return (0, "A QEMU instance using the current pool directory is still running (PID: $qemu_pid)");
+        return (1, "A QEMU instance using the current pool directory is still running (PID: $qemu_pid)");
     }
 
     # ensure pool directory is locked
@@ -679,10 +679,10 @@ sub check_availability ($self) {
 
     # auto-detect worker address if not specified explicitly
     my $settings = $self->settings;
-    return (0, 'Unable to determine worker address (WORKER_HOSTNAME)') unless $settings->auto_detect_worker_address;
+    return (1, 'Unable to determine worker address (WORKER_HOSTNAME)') unless $settings->auto_detect_worker_address;
 
     # check org.opensuse.os_autoinst.switch if it is a MM-capable worker slot
-    return (0, "D-Bus service '$self->{_ovs_dbus_service_name}' is not running")
+    return (1, "D-Bus service '$self->{_ovs_dbus_service_name}' is not running")
       if $settings->has_class('tap') && !$self->is_ovs_dbus_service_running;
 
     # continue with enqueued jobs in any case but avoid picking up new jobs if system utilization is critical
