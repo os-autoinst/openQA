@@ -7,7 +7,6 @@ use Test::Most;
 use Test::Warnings ':report_warnings';
 
 use 5.018;
-use POSIX;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
