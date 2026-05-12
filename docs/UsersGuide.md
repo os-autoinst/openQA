@@ -826,7 +826,9 @@ Note that in some cases you might run into errors where old test suites or
 products have invalid names which the old editor did not enforce:
 
 **Product names** may not contain `:` or `@` characters. Something like
-`Server-DVD-Staging:A` would require replacing the `:` with eg. a `-`. **Test suites** may not contain `:` or `@` characters. A test suite such as
+`Server-DVD-Staging:A` would require replacing the `:` with eg. a `-`.
+
+**Test suites** may not contain `:` or `@` characters. A test suite such as
 `ext4_uefi@staging` would have been allowed previously. The use of the `@`
 as a suffix could be replaced with a `-` or if it is used for variants of
 the same test suite with different settings, settings can be specified in
