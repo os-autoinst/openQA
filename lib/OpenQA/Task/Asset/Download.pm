@@ -22,6 +22,7 @@ sub _create_symlinks ($job, $ctx, $assetpath, $other_destinations) {
         $ctx->error(my $msg = join "\n", @error_message);
         return $job->fail($msg);
     }
+    return undef;
 }
 
 sub _download ($job, $url, $assetpaths, $do_extract) {

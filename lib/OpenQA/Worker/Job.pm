@@ -293,6 +293,7 @@ sub _handle_engine_startup ($self, $engine, $max_job_time) {
 sub kill ($self) {
     return undef unless my $engine = $self->engine;
     if (my $child = $engine->{child}) { $child->stop }
+    return undef;
 }
 
 sub skip ($self, $reason = undef) {
