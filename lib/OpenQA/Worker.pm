@@ -40,7 +40,7 @@ use File::Spec::Functions 'catdir';
 use List::Util qw(max min);
 use Mojo::IOLoop;
 use Mojo::File 'path';
-use POSIX;
+use POSIX ();
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants
   qw(WEBSOCKET_API_VERSION WORKER_COMMAND_QUIT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_SR_FINISH_OFF);
