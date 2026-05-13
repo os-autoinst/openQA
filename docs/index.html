@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
           <title>openQA Documentation</title>
     <style>
+
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -21,8 +22,9 @@ vertical-align: middle;
 }
 .display.math{display: block; text-align: center; margin: 0.5rem auto;}
 
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -33,7 +35,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -737,28 +739,19 @@ padding: 20px;
       <li><a href="#logging-behavior" id="toc-logging-behavior"><span class="toc-section-number">9.11.3</span> Logging behavior</a></li>
       <li><a href="#test-runtime-limits" id="toc-test-runtime-limits"><span class="toc-section-number">9.11.4</span> Test runtime
       limits</a></li>
-      </ul></li>
-      <li><a href="#circleci-workflow" id="toc-circleci-workflow"><span class="toc-section-number">9.12</span> CircleCI workflow</a>
-      <ul>
-      <li><a href="#dependency-artefacts" id="toc-dependency-artefacts"><span class="toc-section-number">9.12.1</span> Dependency
-      artefacts</a></li>
-      <li><a href="#managing-and-troubleshooting-dependencies" id="toc-managing-and-troubleshooting-dependencies"><span class="toc-section-number">9.12.2</span> Managing and
-      troubleshooting dependencies</a></li>
-      <li><a href="#run-tests-locally-using-a-container" id="toc-run-tests-locally-using-a-container"><span class="toc-section-number">9.12.3</span> Run tests locally using a
-      container</a></li>
-      <li><a href="#run-tests-using-the-circleci-tool" id="toc-run-tests-using-the-circleci-tool"><span class="toc-section-number">9.12.4</span> Run tests using the
+      <li><a href="#run-tests-using-the-circleci-tool" id="toc-run-tests-using-the-circleci-tool"><span class="toc-section-number">9.11.5</span> Run tests using the
       circleci tool</a></li>
-      <li><a href="#changing-configcnf" id="toc-changing-configcnf"><span class="toc-section-number">9.12.5</span> Changing
+      <li><a href="#changing-configcnf" id="toc-changing-configcnf"><span class="toc-section-number">9.11.6</span> Changing
       config.cnf</a></li>
       </ul></li>
-      <li><a href="#building-plugins" id="toc-building-plugins"><span class="toc-section-number">9.13</span> Building plugins</a></li>
-      <li><a href="#checking-for-javascript-problems" id="toc-checking-for-javascript-problems"><span class="toc-section-number">9.14</span> Checking for JavaScript
+      <li><a href="#building-plugins" id="toc-building-plugins"><span class="toc-section-number">9.12</span> Building plugins</a></li>
+      <li><a href="#checking-for-javascript-problems" id="toc-checking-for-javascript-problems"><span class="toc-section-number">9.13</span> Checking for JavaScript
       problems</a></li>
-      <li><a href="#profiling-the-web-ui" id="toc-profiling-the-web-ui"><span class="toc-section-number">9.15</span> Profiling the web UI</a>
+      <li><a href="#profiling-the-web-ui" id="toc-profiling-the-web-ui"><span class="toc-section-number">9.14</span> Profiling the web UI</a>
       <ul>
-      <li><a href="#note" id="toc-note"><span class="toc-section-number">9.15.1</span> Note</a></li>
+      <li><a href="#note" id="toc-note"><span class="toc-section-number">9.14.1</span> Note</a></li>
       </ul></li>
-      <li><a href="#making-documentation-changes" id="toc-making-documentation-changes"><span class="toc-section-number">9.16</span> Making documentation
+      <li><a href="#making-documentation-changes" id="toc-making-documentation-changes"><span class="toc-section-number">9.15</span> Making documentation
       changes</a></li>
       </ul></li>
       <li><a href="#branding" id="toc-branding"><span class="toc-section-number">10</span> Branding</a>
@@ -3861,13 +3854,13 @@ enforce:</p>
 <p><strong>Product names</strong> may not contain <code>:</code> or
 <code>@</code> characters. Something like
 <code>Server-DVD-Staging:A</code> would require replacing the
-<code>:</code> with eg. a <code>-</code>. <strong>Test suites</strong>
-may not contain <code>:</code> or <code>@</code> characters. A test
-suite such as <code>ext4_uefi@staging</code> would have been allowed
-previously. The use of the <code>@</code> as a suffix could be replaced
-with a <code>-</code> or if it is used for variants of the same test
-suite with different settings, settings can be specified in YAML
-directly.</p>
+<code>:</code> with eg. a <code>-</code>.</p>
+<p><strong>Test suites</strong> may not contain <code>:</code> or
+<code>@</code> characters. A test suite such as
+<code>ext4_uefi@staging</code> would have been allowed previously. The
+use of the <code>@</code> as a suffix could be replaced with a
+<code>-</code> or if it is used for variants of the same test suite with
+different settings, settings can be specified in YAML directly.</p>
 <p>More generally the regular expression <code>[A-Za-z0-9._*-]+</code>
 could be used to check if a name is allowed for a product or test
 suite.</p>
@@ -4967,7 +4960,7 @@ explicitly set it to <code>0</code> to disable the behavior for all
 backends even though it is not possible to roll back.</p>
 <p>An example usage:</p>
 <div class="sourceCode" id="cb144"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">test_flags</span> {</span>
-<span id="cb144-2"><a href="#cb144-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> {fatal =&gt; <span class="dv">1</span>};</span>
+<span id="cb144-2"><a href="#cb144-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {fatal =&gt; <span class="dv">1</span>};</span>
 <span id="cb144-3"><a href="#cb144-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <div class="sourceCode" id="cb145"><pre class="sourceCode lua"><code class="sourceCode lua"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> test_flags<span class="op">(</span><span class="va">self</span><span class="op">)</span></span>
 <span id="cb145-2"><a href="#cb145-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">{</span><span class="va">fatal</span> <span class="op">=</span> <span class="dv">1</span><span class="op">}</span></span>
@@ -5120,7 +5113,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <span id="cb156-15"><a href="#cb156-15" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb156-16"><a href="#cb156-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb156-17"><a href="#cb156-17" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">test_flags</span> {</span>
-<span id="cb156-18"><a href="#cb156-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> {fatal =&gt; <span class="dv">1</span>};</span>
+<span id="cb156-18"><a href="#cb156-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {fatal =&gt; <span class="dv">1</span>};</span>
 <span id="cb156-19"><a href="#cb156-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <h4 data-number="4.4.4.2" id="install-software-via-zypper"><span class="header-section-number">4.4.4.2</span> Install software via
 <code>zypper</code></h4>
@@ -5140,7 +5133,7 @@ command</p>
 <span id="cb157-12"><a href="#cb157-12" aria-hidden="true" tabindex="-1"></a>    script_run <span class="ot">&quot;</span><span class="st">echo &#39;xdelta_installed&#39; &gt; /dev/</span><span class="dt">$serialdev</span><span class="ot">&quot;</span>;</span>
 <span id="cb157-13"><a href="#cb157-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb157-14"><a href="#cb157-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># detecting whether &#39;xdelta_installed&#39; appears in the serial within 200 seconds</span></span>
-<span id="cb157-15"><a href="#cb157-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">die</span> <span class="ot">&quot;</span><span class="st">we could not see expected output</span><span class="ot">&quot;</span> <span class="kw">unless</span> wait_serial <span class="ot">&quot;</span><span class="st">xdelta_installed</span><span class="ot">&quot;</span>, <span class="dv">200</span>;</span>
+<span id="cb157-15"><a href="#cb157-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">die</span> <span class="ot">&quot;</span><span class="st">we could not see expected output</span><span class="ot">&quot;</span> <span class="cf">unless</span> wait_serial <span class="ot">&quot;</span><span class="st">xdelta_installed</span><span class="ot">&quot;</span>, <span class="dv">200</span>;</span>
 <span id="cb157-16"><a href="#cb157-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb157-17"><a href="#cb157-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># capture a screenshot and compare with needle &#39;test-zypper_in&#39;</span></span>
 <span id="cb157-18"><a href="#cb157-18" aria-hidden="true" tabindex="-1"></a>    assert_screen <span class="ot">&#39;</span><span class="ss">test-zypper_in</span><span class="ot">&#39;</span>;</span>
@@ -5338,7 +5331,7 @@ file <code>sut_packages.txt</code> in the current worker directory. If
 <code>upload_logs()</code> is used, the resulting file needs to be
 copied/moved.</p>
 <p>Logging SUT package versions</p>
-<div class="sourceCode" id="cb164"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb164-1"><a href="#cb164-1" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::File</span> <span class="ot">qw(</span>path<span class="ot">)</span>;</span>
+<div class="sourceCode" id="cb164"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb164-1"><a href="#cb164-1" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::File</span> <span class="fu">qw</span>(path);</span>
 <span id="cb164-2"><a href="#cb164-2" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">run</span> {</span>
 <span id="cb164-3"><a href="#cb164-3" aria-hidden="true" tabindex="-1"></a>    ...</span>
 <span id="cb164-4"><a href="#cb164-4" aria-hidden="true" tabindex="-1"></a>    assert_script_run(<span class="ot">&quot;</span><span class="st">rpm -qa &gt; sut_packages.txt</span><span class="ot">&quot;</span>);</span>
@@ -5980,8 +5973,8 @@ useless actions when one of the worker jobs dies.</p>
 <span id="cb180-6"><a href="#cb180-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># returns a hash ref containing (id =&gt; state) for all children</span></span>
 <span id="cb180-7"><a href="#cb180-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$children</span> = get_children();</span>
 <span id="cb180-8"><a href="#cb180-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb180-9"><a href="#cb180-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> <span class="kw">my</span> <span class="dt">$job_id</span> (<span class="fu">keys</span> %<span class="dt">$children</span>) {</span>
-<span id="cb180-10"><a href="#cb180-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">print</span> <span class="ot">&quot;</span><span class="dt">$job_id</span><span class="st"> is cancelled</span><span class="ch">\n</span><span class="ot">&quot;</span> <span class="kw">if</span> <span class="dt">$children</span>-&gt;{<span class="dt">$job_id</span>} <span class="ot">eq</span> <span class="ot">&#39;</span><span class="ss">cancelled</span><span class="ot">&#39;</span>;</span>
+<span id="cb180-9"><a href="#cb180-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="kw">my</span> <span class="dt">$job_id</span> (<span class="fu">keys</span> %<span class="dt">$children</span>) {</span>
+<span id="cb180-10"><a href="#cb180-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">print</span> <span class="ot">&quot;</span><span class="dt">$job_id</span><span class="st"> is cancelled</span><span class="ch">\n</span><span class="ot">&quot;</span> <span class="cf">if</span> <span class="dt">$children</span>-&gt;{<span class="dt">$job_id</span>} <span class="ot">eq</span> <span class="ot">&#39;</span><span class="ss">cancelled</span><span class="ot">&#39;</span>;</span>
 <span id="cb180-11"><a href="#cb180-11" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb180-12"><a href="#cb180-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb180-13"><a href="#cb180-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># returns an array with parent ids, all parents are in running state (see Job dependencies above)</span></span>
@@ -6169,10 +6162,10 @@ directly.</p>
 <code>script_output</code> commands</p>
 <div class="sourceCode" id="cb190"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb190-1"><a href="#cb190-1" aria-hidden="true" tabindex="-1"></a>assert_script_run(<span class="ot">&#39;</span><span class="ss">cd /proc</span><span class="ot">&#39;</span>);</span>
 <span id="cb190-2"><a href="#cb190-2" aria-hidden="true" tabindex="-1"></a><span class="kw">my</span> <span class="dt">$cpuinfo</span> = script_output(<span class="ot">&#39;</span><span class="ss">cat cpuinfo</span><span class="ot">&#39;</span>);</span>
-<span id="cb190-3"><a href="#cb190-3" aria-hidden="true" tabindex="-1"></a><span class="kw">if</span>(<span class="dt">$cpuinfo</span> =~ <span class="ot">m/avx2/</span>) {</span>
+<span id="cb190-3"><a href="#cb190-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="dt">$cpuinfo</span> =~ <span class="ot">m/avx2/</span>) {</span>
 <span id="cb190-4"><a href="#cb190-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Do something which needs avx2</span></span>
 <span id="cb190-5"><a href="#cb190-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb190-6"><a href="#cb190-6" aria-hidden="true" tabindex="-1"></a><span class="kw">else</span> {</span>
+<span id="cb190-6"><a href="#cb190-6" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> {</span>
 <span id="cb190-7"><a href="#cb190-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Do some workaround</span></span>
 <span id="cb190-8"><a href="#cb190-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>This returns the contents of the SUT&#39;s /proc/cpuinfo file to the test
@@ -6257,7 +6250,7 @@ on a serial terminal console.</p>
 <p>Distributions usually wrap <code>select_console</code>, so instead of
 using it directly, you can use something like the following which is
 from the OpenSUSE test suite.</p>
-<div class="sourceCode" id="cb193"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb193-1"><a href="#cb193-1" aria-hidden="true" tabindex="-1"></a><span class="kw">if</span> (select_serial_terminal()) {</span>
+<div class="sourceCode" id="cb193"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb193-1"><a href="#cb193-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (select_serial_terminal()) {</span>
 <span id="cb193-2"><a href="#cb193-2" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Do something which only works, or is necessary, on a serial terminal</span></span>
 <span id="cb193-3"><a href="#cb193-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>This selects the virtio based serial terminal console if possible. If
@@ -6293,13 +6286,13 @@ numbered the lines which correspond to the steps above.</p>
 <span id="cb194-4"><a href="#cb194-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb194-5"><a href="#cb194-5" aria-hidden="true" tabindex="-1"></a><span class="co"># More variables and other stuff</span></span>
 <span id="cb194-6"><a href="#cb194-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb194-7"><a href="#cb194-7" aria-hidden="true" tabindex="-1"></a><span class="kw">if</span> (is_serial_terminal) {</span>
+<span id="cb194-7"><a href="#cb194-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (is_serial_terminal) {</span>
 <span id="cb194-8"><a href="#cb194-8" aria-hidden="true" tabindex="-1"></a>        script_run(<span class="dt">$klog_stamp</span>);</span>
 <span id="cb194-9"><a href="#cb194-9" aria-hidden="true" tabindex="-1"></a>        wait_serial(serial_term_prompt(), <span class="fu">undef</span>, <span class="dv">0</span>, no_regex =&gt; <span class="dv">1</span>); <span class="co">#Step 1</span></span>
 <span id="cb194-10"><a href="#cb194-10" aria-hidden="true" tabindex="-1"></a>        type_string(<span class="dt">$cmd_text</span>);                             <span class="co">#Step 2</span></span>
 <span id="cb194-11"><a href="#cb194-11" aria-hidden="true" tabindex="-1"></a>        wait_serial(<span class="dt">$cmd_text</span>, <span class="fu">undef</span>, <span class="dv">0</span>, no_regex =&gt; <span class="dv">1</span>);        <span class="co">#Step 3</span></span>
 <span id="cb194-12"><a href="#cb194-12" aria-hidden="true" tabindex="-1"></a>        type_string(<span class="ot">&quot;</span><span class="ch">\n</span><span class="ot">&quot;</span>);                                  <span class="co">#Step 4</span></span>
-<span id="cb194-13"><a href="#cb194-13" aria-hidden="true" tabindex="-1"></a>} <span class="kw">else</span> {</span>
+<span id="cb194-13"><a href="#cb194-13" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
 <span id="cb194-14"><a href="#cb194-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># None serial terminal console code (e.g. the VNC console)</span></span>
 <span id="cb194-15"><a href="#cb194-15" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb194-16"><a href="#cb194-16" aria-hidden="true" tabindex="-1"></a><span class="kw">my</span> <span class="dt">$test_log</span> = wait_serial(<span class="ot">qr/</span><span class="dt">$fin_msg</span><span class="bn">\d</span><span class="ch">+</span><span class="ot">/</span>, <span class="dt">$timeout</span>, <span class="dv">0</span>, record_output =&gt; <span class="dv">1</span>); <span class="co">#Step 5</span></span></code></pre></div>
@@ -8824,59 +8817,8 @@ chromedriver instance the variable
 <code>OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT</code> can be set to a higher
 value. See <a href="https://metacpan.org/pod/Selenium">https://metacpan.org/pod/Selenium</a>::Chrome#startup_timeout
 for details.</p>
-<h2 data-number="9.12" id="circleci-workflow"><span class="header-section-number">9.12</span> CircleCI workflow</h2>
-<p>The goal of the following workflow is to provide a way to run tests
-with a pre-approved list of dependencies both in the CI and locally.</p>
-<h3 data-number="9.12.1" id="dependency-artefacts"><span class="header-section-number">9.12.1</span> Dependency artefacts</h3>
-<ul>
-<li><p>ci-packages.txt lists dependencies to test against.</p></li>
-<li><p>autoinst.sha contains sha of os-autoinst commit for integration
-testing. The testing will run against the latest master if
-empty.</p></li>
-</ul>
-<h3 data-number="9.12.2" id="managing-and-troubleshooting-dependencies"><span class="header-section-number">9.12.2</span> Managing and troubleshooting
-dependencies</h3>
-<p><code>ci-packages.txt</code> and <code>autoinst.sha</code> are aimed
-to represent those dependencies which change often. In normal workflow
-these files are generated automatically by dedicated Bot, then go in PR
-through CI, then reviewed and accepted by human. So, in normal workflow
-it is guaranteed that everyone always works on list of correct and
-approved dependencies (unless they explicitly tell CI to use custom
-dependencies).</p>
-<p>The Bot tracks dependencies only in master branch by default, but
-this may be extended in circleci config file. The Bot uses
-<code>tools/ci/build_dependencies.sh</code> script to detect any
-changes. This script can be used manually as well. Alternatively just
-add newly introduced dependencies into ci-packages.txt, so CI will run
-tests with them.</p>
-<p>Occasionally it may be a challenge to work with ci-packages.txt (e.g.
-package version is not available anymore). In such case you can either
-try to rebuild ci-packages.txt using
-<code>tools/ci/build_dependencies.sh</code> or just remove all entries
-and put only openQA-devel into it Script
-<code>tools/ci/build_dependencies.sh</code> can be also modified when
-major changes are performed, e.g. different OS version or packages from
-forked OBS project, etc.</p>
-<h3 data-number="9.12.3" id="run-tests-locally-using-a-container"><span class="header-section-number">9.12.3</span> Run tests locally using a
-container</h3>
-<p>One way is to build an image using the
-<code>build_local_container.sh</code> script, start a container and then
-use the same commands one would use to test locally.</p>
-<p>Pull the latest base image (otherwise it may be outdated):</p>
-<div class="sourceCode" id="cb309"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb309-1"><a href="#cb309-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> pull registry.opensuse.org/devel/openqa/ci/containers/base:latest</span></code></pre></div>
-<p>Create an image called <code>localtest</code> based on the contents
-of <code>ci-packages.txt</code> and <code>autoinst</code>:</p>
-<div class="sourceCode" id="cb310"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb310-1"><a href="#cb310-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tools/ci/build_local_container.sh</span></span></code></pre></div>
-<p>Mount the openQA checkout under <code>/opt/testing_area</code> within
-the container and run tests as usual, e.g.:</p>
-<div class="sourceCode" id="cb311"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb311-1"><a href="#cb311-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-it</span> <span class="at">--rm</span> <span class="at">-v</span> <span class="va">$PWD</span>:/opt/testing_area localtest bash <span class="at">-c</span> <span class="st">&#39;make test TESTS=t/ui/25*&#39;</span></span></code></pre></div>
-<p>Alternatively, start the container and execute commands via
-<code>podman exec</code>, e.g.:</p>
-<div class="sourceCode" id="cb312"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb312-1"><a href="#cb312-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">--rm</span> <span class="at">--name</span> t1 <span class="at">-v</span> <span class="va">$PWD</span>:/opt/testing_area localtest tail <span class="at">-f</span> /dev/null <span class="kw">&amp;</span> <span class="fu">sleep</span> 1</span>
-<span id="cb312-2"><a href="#cb312-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec <span class="at">-it</span> t1 bash <span class="at">-c</span> <span class="st">&#39;make test TESTS=t/ui/25-developer_mode.t&#39;</span></span>
-<span id="cb312-3"><a href="#cb312-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> stop <span class="at">-t</span> 0 t1</span></code></pre></div>
 <p><a id="circleci-local-container"></a></p>
-<h3 data-number="9.12.4" id="run-tests-using-the-circleci-tool"><span class="header-section-number">9.12.4</span> Run tests using the circleci
+<h3 data-number="9.11.5" id="run-tests-using-the-circleci-tool"><span class="header-section-number">9.11.5</span> Run tests using the circleci
 tool</h3>
 <p>After installing the <code>circleci</code> tool the following
 commands will be available. They will build the container and use
@@ -8885,10 +8827,10 @@ committed changes from current local branch.</p>
 circleci local execute --job testui
 circleci local execute --job testfullstack
 circleci local execute --job testdeveloperfullstack</code></pre>
-<h3 data-number="9.12.5" id="changing-configcnf"><span class="header-section-number">9.12.5</span> Changing config.cnf</h3>
+<h3 data-number="9.11.6" id="changing-configcnf"><span class="header-section-number">9.11.6</span> Changing config.cnf</h3>
 <p>Command to verify the YAML with the <code>circleci</code> tool:</p>
-<div class="sourceCode" id="cb314"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb314-1"><a href="#cb314-1" aria-hidden="true" tabindex="-1"></a><span class="ex">circleci</span> config process .circleci/config.yml</span></code></pre></div>
-<h2 data-number="9.13" id="building-plugins"><span class="header-section-number">9.13</span> Building plugins</h2>
+<div class="sourceCode" id="cb310"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb310-1"><a href="#cb310-1" aria-hidden="true" tabindex="-1"></a><span class="ex">circleci</span> config process .circleci/config.yml</span></code></pre></div>
+<h2 data-number="9.12" id="building-plugins"><span class="header-section-number">9.12</span> Building plugins</h2>
 <p>Not all code needs to be included in openQA itself. openQA also
 supports the use of 3rd party plugins that follow the standards for
 plugins used by the <a href="https://mojolicious.org">Mojolicious</a>
@@ -8902,40 +8844,40 @@ inside the web server.</p>
 <p>Plugin
 Hello<code>, you would install it in one of the include directories of the Perl used to run openQA, and then configure it in </code>openqa.ini<code>. The </code>plugins<code>setting in the</code>global`
 section will tell openQA what plugins to load.</p>
-<div class="sourceCode" id="cb315"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb315-1"><a href="#cb315-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tell openQA to load the plugin</span></span>
-<span id="cb315-2"><a href="#cb315-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[global]</span></span>
-<span id="cb315-3"><a href="#cb315-3" aria-hidden="true" tabindex="-1"></a><span class="dt">plugins </span><span class="ot">=</span><span class="st"> Hello</span></span>
-<span id="cb315-4"><a href="#cb315-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb315-5"><a href="#cb315-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Plugin specific configuration (optional)</span></span>
-<span id="cb315-6"><a href="#cb315-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[hello_plugin]</span></span>
-<span id="cb315-7"><a href="#cb315-7" aria-hidden="true" tabindex="-1"></a><span class="dt">some </span><span class="ot">=</span><span class="st"> value</span></span></code></pre></div>
+<div class="sourceCode" id="cb311"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb311-1"><a href="#cb311-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tell openQA to load the plugin</span></span>
+<span id="cb311-2"><a href="#cb311-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[global]</span></span>
+<span id="cb311-3"><a href="#cb311-3" aria-hidden="true" tabindex="-1"></a><span class="dt">plugins </span><span class="ot">=</span><span class="st"> Hello</span></span>
+<span id="cb311-4"><a href="#cb311-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb311-5"><a href="#cb311-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Plugin specific configuration (optional)</span></span>
+<span id="cb311-6"><a href="#cb311-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[hello_plugin]</span></span>
+<span id="cb311-7"><a href="#cb311-7" aria-hidden="true" tabindex="-1"></a><span class="dt">some </span><span class="ot">=</span><span class="st"> value</span></span></code></pre></div>
 <p>The plugin specific configuration is optional, but if defined would
 be available in <code>$app-&gt;config-&gt;{hello_plugin}</code>.</p>
 <p>To extend the UI or HTTP API there are various named routes already
 defined that will take care of authentication for your plugin. You just
 attach the plugin routes to them and only authenticated requests will
 get through.</p>
-<div class="sourceCode" id="cb316"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb316-1"><a href="#cb316-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> <span class="fu">OpenQA::WebAPI</span>::<span class="fu">Plugin</span>::<span class="fu">Hello</span>;</span>
-<span id="cb316-2"><a href="#cb316-2" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::Base</span> <span class="ot">&#39;</span><span class="ss">Mojolicious::Plugin</span><span class="ot">&#39;</span>;</span>
-<span id="cb316-3"><a href="#cb316-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb316-4"><a href="#cb316-4" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">register</span> {</span>
-<span id="cb316-5"><a href="#cb316-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> (<span class="dt">$self</span>, <span class="dt">$app</span>, <span class="dt">$config</span>) = <span class="dt">@_</span>;</span>
-<span id="cb316-6"><a href="#cb316-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb316-7"><a href="#cb316-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Only operators may use our plugin</span></span>
-<span id="cb316-8"><a href="#cb316-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$ensure_operator</span> = <span class="dt">$app</span>-&gt;<span class="dt">routes</span>-&gt;<span class="dt">find</span>(<span class="ot">&#39;</span><span class="ss">ensure_operator</span><span class="ot">&#39;</span>);</span>
-<span id="cb316-9"><a href="#cb316-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$plugin_prefix</span> = <span class="dt">$ensure_operator</span>-&gt;<span class="dt">any</span>(<span class="ot">&#39;</span><span class="ss">/hello_plugin</span><span class="ot">&#39;</span>);</span>
-<span id="cb316-10"><a href="#cb316-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb316-11"><a href="#cb316-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plain text response (under &quot;/admin/hello_plugin/&quot;)</span></span>
-<span id="cb316-12"><a href="#cb316-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$plugin_prefix</span>-&gt;<span class="dt">get</span>(<span class="ot">&#39;</span><span class="ss">/</span><span class="ot">&#39;</span> =&gt; <span class="kw">sub </span>{</span>
-<span id="cb316-13"><a href="#cb316-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">my</span> <span class="dt">$c</span> = <span class="fu">shift</span>;</span>
-<span id="cb316-14"><a href="#cb316-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$c</span>-&gt;<span class="dt">render</span>(text =&gt; <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>);</span>
-<span id="cb316-15"><a href="#cb316-15" aria-hidden="true" tabindex="-1"></a>    })-&gt;name(<span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>);</span>
-<span id="cb316-16"><a href="#cb316-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb316-17"><a href="#cb316-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add a link to the UI menu</span></span>
-<span id="cb316-18"><a href="#cb316-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$app</span>-&gt;<span class="dt">config</span>-&gt;{plugin_links}{operator}{<span class="ot">&#39;</span><span class="ss">Hello</span><span class="ot">&#39;</span>} = <span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>;</span>
-<span id="cb316-19"><a href="#cb316-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb316-20"><a href="#cb316-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb316-21"><a href="#cb316-21" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb312"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb312-1"><a href="#cb312-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> <span class="fu">OpenQA::WebAPI</span>::<span class="fu">Plugin</span>::<span class="fu">Hello</span>;</span>
+<span id="cb312-2"><a href="#cb312-2" aria-hidden="true" tabindex="-1"></a><span class="fu">use</span> <span class="fu">Mojo::Base</span> <span class="ot">&#39;</span><span class="ss">Mojolicious::Plugin</span><span class="ot">&#39;</span>;</span>
+<span id="cb312-3"><a href="#cb312-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb312-4"><a href="#cb312-4" aria-hidden="true" tabindex="-1"></a><span class="kw">sub </span><span class="fu">register</span> {</span>
+<span id="cb312-5"><a href="#cb312-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> (<span class="dt">$self</span>, <span class="dt">$app</span>, <span class="dt">$config</span>) = <span class="dt">@_</span>;</span>
+<span id="cb312-6"><a href="#cb312-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb312-7"><a href="#cb312-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Only operators may use our plugin</span></span>
+<span id="cb312-8"><a href="#cb312-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$ensure_operator</span> = <span class="dt">$app</span>-&gt;<span class="dt">routes</span>-&gt;<span class="dt">find</span>(<span class="ot">&#39;</span><span class="ss">ensure_operator</span><span class="ot">&#39;</span>);</span>
+<span id="cb312-9"><a href="#cb312-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">my</span> <span class="dt">$plugin_prefix</span> = <span class="dt">$ensure_operator</span>-&gt;<span class="dt">any</span>(<span class="ot">&#39;</span><span class="ss">/hello_plugin</span><span class="ot">&#39;</span>);</span>
+<span id="cb312-10"><a href="#cb312-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb312-11"><a href="#cb312-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plain text response (under &quot;/admin/hello_plugin/&quot;)</span></span>
+<span id="cb312-12"><a href="#cb312-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$plugin_prefix</span>-&gt;<span class="dt">get</span>(<span class="ot">&#39;</span><span class="ss">/</span><span class="ot">&#39;</span> =&gt; <span class="kw">sub </span>{</span>
+<span id="cb312-13"><a href="#cb312-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">my</span> <span class="dt">$c</span> = <span class="fu">shift</span>;</span>
+<span id="cb312-14"><a href="#cb312-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$c</span>-&gt;<span class="dt">render</span>(text =&gt; <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>);</span>
+<span id="cb312-15"><a href="#cb312-15" aria-hidden="true" tabindex="-1"></a>    })-&gt;name(<span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>);</span>
+<span id="cb312-16"><a href="#cb312-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb312-17"><a href="#cb312-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add a link to the UI menu</span></span>
+<span id="cb312-18"><a href="#cb312-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">$app</span>-&gt;<span class="dt">config</span>-&gt;{plugin_links}{operator}{<span class="ot">&#39;</span><span class="ss">Hello</span><span class="ot">&#39;</span>} = <span class="ot">&#39;</span><span class="ss">hello_plugin_index</span><span class="ot">&#39;</span>;</span>
+<span id="cb312-19"><a href="#cb312-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb312-20"><a href="#cb312-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb312-21"><a href="#cb312-21" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>;</span></code></pre></div>
 <p>The <code>plugin_links</code> configuration setting can be modified
 by plugins to add links to the <code>operator</code> and
 <code>admin</code> sections of the openQA UI menu. Route names or fully
@@ -8943,10 +8885,10 @@ qualified URLs can be used as link targets. If your plugin uses
 templates, you should reuse the <code>bootstrap</code> layout provided
 by openQA. This will ensure a consistent look, and make the UI menu
 available everywhere.</p>
-<div class="sourceCode" id="cb317"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb317-1"><a href="#cb317-1" aria-hidden="true" tabindex="-1"></a>% layout <span class="ot">&#39;</span><span class="ss">bootstrap</span><span class="ot">&#39;</span>;</span>
-<span id="cb317-2"><a href="#cb317-2" aria-hidden="true" tabindex="-1"></a>% title <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>;</span>
-<span id="cb317-3"><a href="#cb317-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb317-4"><a href="#cb317-4" aria-hidden="true" tabindex="-1"></a>  &lt;h2&gt;Hello openQA!&lt;/h2&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb313"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb313-1"><a href="#cb313-1" aria-hidden="true" tabindex="-1"></a>% layout <span class="ot">&#39;</span><span class="ss">bootstrap</span><span class="ot">&#39;</span>;</span>
+<span id="cb313-2"><a href="#cb313-2" aria-hidden="true" tabindex="-1"></a>% title <span class="ot">&#39;</span><span class="ss">Hello openQA!</span><span class="ot">&#39;</span>;</span>
+<span id="cb313-3"><a href="#cb313-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb313-4"><a href="#cb313-4" aria-hidden="true" tabindex="-1"></a>  &lt;h2&gt;Hello openQA!&lt;/h2&gt;</span></code></pre></div>
 <p>For UI plugins there are two named authentication routes defined:</p>
 <ol type="1">
 <li><code>ensure_operator</code>: under <code>/admin/</code>, only
@@ -8968,22 +8910,22 @@ authenticated nusers with <code>admin</code> privileges</li>
 <p>To generate a minimal installable plugin with a CPAN distribution
 directory structure you can use the Mojolicious tools. It can be
 packaged just like any other Perl module from CPAN.</p>
-<div class="sourceCode" id="cb318"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb318-1"><a href="#cb318-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mojo generate plugin <span class="at">-f</span> OpenQA::WebAPI::Plugin::Hello</span>
-<span id="cb318-2"><a href="#cb318-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
-<span id="cb318-3"><a href="#cb318-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd OpenQA-WebAPI-Plugin-Hello/</span>
-<span id="cb318-4"><a href="#cb318-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perl Makefile.PL</span>
-<span id="cb318-5"><a href="#cb318-5" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
-<span id="cb318-6"><a href="#cb318-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make test</span>
-<span id="cb318-7"><a href="#cb318-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb314"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb314-1"><a href="#cb314-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mojo generate plugin <span class="at">-f</span> OpenQA::WebAPI::Plugin::Hello</span>
+<span id="cb314-2"><a href="#cb314-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb314-3"><a href="#cb314-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd OpenQA-WebAPI-Plugin-Hello/</span>
+<span id="cb314-4"><a href="#cb314-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perl Makefile.PL</span>
+<span id="cb314-5"><a href="#cb314-5" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb314-6"><a href="#cb314-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> make test</span>
+<span id="cb314-7"><a href="#cb314-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span></code></pre></div>
 <p>And if you need code examples, there are some plugins <a href="https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin">included
 with openQA</a>.</p>
-<h2 data-number="9.14" id="checking-for-javascript-problems"><span class="header-section-number">9.14</span> Checking for JavaScript
+<h2 data-number="9.13" id="checking-for-javascript-problems"><span class="header-section-number">9.13</span> Checking for JavaScript
 problems</h2>
 <p>One can use the tool <code>jshint</code> to check for problems within
 JavaScript code. It can be installed easily via <code>npm</code>.</p>
-<div class="sourceCode" id="cb319"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb319-1"><a href="#cb319-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--no-save</span> <span class="at">--ignore-scripts</span> jshint</span>
-<span id="cb319-2"><a href="#cb319-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node_modules/jshint/bin/jshint</span> path/to/javascript.js</span></code></pre></div>
-<h2 data-number="9.15" id="profiling-the-web-ui"><span class="header-section-number">9.15</span> Profiling the web UI</h2>
+<div class="sourceCode" id="cb315"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb315-1"><a href="#cb315-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--no-save</span> <span class="at">--ignore-scripts</span> jshint</span>
+<span id="cb315-2"><a href="#cb315-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node_modules/jshint/bin/jshint</span> path/to/javascript.js</span></code></pre></div>
+<h2 data-number="9.14" id="profiling-the-web-ui"><span class="header-section-number">9.14</span> Profiling the web UI</h2>
 <ol type="1">
 <li><p>Install NYTProf, under openSUSE Tumbleweed:
 <code>zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf</code></p></li>
@@ -8995,11 +8937,11 @@ contributors documentation.</p></li>
 background.</p></li>
 <li><p>Access profiling data via <code>/nytprof</code> route.</p></li>
 </ol>
-<h3 data-number="9.15.1" id="note"><span class="header-section-number">9.15.1</span> Note</h3>
+<h3 data-number="9.14.1" id="note"><span class="header-section-number">9.14.1</span> Note</h3>
 <p>Profiling data is extensive. Remove it if you do not need it anymore
 and disable the <code>profiling_enabled</code> configuration again if
 not needed anymore.</p>
-<h2 data-number="9.16" id="making-documentation-changes"><span class="header-section-number">9.16</span> Making documentation
+<h2 data-number="9.15" id="making-documentation-changes"><span class="header-section-number">9.15</span> Making documentation
 changes</h2>
 <p>After changing documentation, consider generating documentation
 locally to verify it is rendered correctly using
