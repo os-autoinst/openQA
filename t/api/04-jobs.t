@@ -1938,6 +1938,41 @@ subtest 'handle git_clone without CASEDIR' => sub {
     };
 };
 
+subtest 'handle is_clone_job with ISO_URL' => sub {
+    my %base_params = (
+        MACHINE => '64bit',
+        DISTRI => 'opensuse',
+        is_clone_job => 1,
+    );
+    my @test_cases = (
+        {
+            name => 'ISO variable deduced from ISO_URL',
+            params => {%base_params, TEST => 'deduce', ISO_URL => 'http://localhost/cloned.iso'},
+            expected_iso => 'cloned.iso',
+        },
+        {
+            name => 'explicit ISO override preserved',
+            params =>
+              {%base_params, TEST => 'override', ISO_URL => 'http://localhost/cloned.iso', ISO => 'explicit.iso'},
+            expected_iso => 'explicit.iso',
+        },
+        {
+            name => 'explicit ISO clearing preserved',
+            params => {%base_params, TEST => 'clear', ISO_URL => 'http://localhost/cloned.iso', ISO => ''},
+            expected_iso => '',
+        },
+    );
+
+    for my $case (@test_cases) {
+        subtest $case->{name} => sub {
+            $t->post_ok('/api/v1/jobs', form => $case->{params})->status_is(200);
+            my $job_id = $t->tx->res->json->{id};
+            my $job_settings = $jobs->find($job_id)->settings_hash;
+            is $job_settings->{ISO}, $case->{expected_iso}, $case->{name};
+        };
+    }
+};
+
 subtest 'show parent group name and id when getting job details' => sub {
     my $parent_group = $schema->resultset('JobGroupParents')->create({name => 'Foo'});
     my $parent_group_id = $parent_group->id;
