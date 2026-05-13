@@ -83,17 +83,18 @@ subtest 'isotovideo version' => sub {
     qr{Path to isotovideo invalid}, 'isotovideo version path invalid';
 
     my $not_isotovideo = path($FindBin::Bin)->child('../script/openqa-cli');
-    my $version = OpenQA::Worker::Engines::isotovideo::set_engine_exec($not_isotovideo);
-    is $version, 0, 'zero returned if printed output does not match version pattern';
-
-    # init does not fail without isotovideo parameter
-    # note that this might set the isotovideo version because the isotovideo path defaults
-    # to /usr/bin/isotovideo
-    my $worker1 = OpenQA::Worker->new({apikey => 'foo', apisecret => 'bar', instance => 1});
+    combined_like {
+        my $version = OpenQA::Worker::Engines::isotovideo::set_engine_exec($not_isotovideo);
+        is $version, 0, 'zero returned if printed output does not match version pattern';
+    }
+    qr/invalid command/i, 'specified executable invoked';
 
     my $isotovideo = path($FindBin::Bin)->child('fake-isotovideo.pl');
-    my $worker2 = OpenQA::Worker->new({apikey => 'foo', apisecret => 'bar', instance => 1, isotovideo => $isotovideo});
-    is $worker2->isotovideo_interface_version, 15, 'isotovideo version set from os-autoinst';
+    my $worker = OpenQA::Worker->new({apikey => 'foo', apisecret => 'bar', instance => 1, isotovideo => $isotovideo});
+    is $worker->isotovideo_interface_version, 15, 'isotovideo version set from os-autoinst';
+
+    lives_ok { OpenQA::Worker->new({apikey => 'foo', apisecret => 'bar', instance => 1}) }
+    'init does not fail without isotovideo parameter';
 };
 
 subtest 'asset settings' => sub {
