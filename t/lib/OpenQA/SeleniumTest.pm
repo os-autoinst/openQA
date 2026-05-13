@@ -5,7 +5,8 @@ use Mojo::Base 'Exporter', -signatures;
 
 require OpenQA::Test::Database;
 
-our @EXPORT = qw(driver_missing check_driver_modules enable_timeout
+our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
+  qw(driver_missing check_driver_modules enable_timeout
   disable_timeout start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   wait_for_ajax_and_animations
