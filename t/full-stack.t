@@ -52,7 +52,8 @@ use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
   qw(start_worker stop_service wait_for_or_bail_out);
-use OpenQA::Test::FullstackUtils;
+use OpenQA::Test::FullstackUtils
+  qw(get_connect_args client_output client_call find_status_text wait_for_result_panel wait_for_job_running wait_for_developer_console_like wait_for_developer_console_available enter_developer_console_cmd schedule_one_job_over_api_and_verify);
 
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
 

@@ -9,7 +9,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
-use OpenQA::Test::Client;
+use OpenQA::Test::Client qw(client);
 use OpenQA::Constants qw(BUILD_SORT_BY_NAME BUILD_SORT_BY_NEWEST_JOB BUILD_SORT_BY_OLDEST_JOB);
 use Mojo::IOLoop;
 use Mojo::JSON 'decode_json';

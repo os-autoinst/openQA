@@ -6,7 +6,7 @@ use Mojo::Base -strict, -signatures;
 use Data::Dump 'pp';
 use Exporter 'import';
 
-our @EXPORT = qw(detect_maintenance_update);
+our @EXPORT_OK = qw(detect_maintenance_update);
 
 sub collect_incident_repos ($url_handler, $settings) {
     if (my $repo = $settings->{INCIDENT_REPO}) {

@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Utils qw(run_cmd test_cmd);
+use OpenQA::Script::CloneJob qw(create_url_handler);
 use Test::MockModule;
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data";

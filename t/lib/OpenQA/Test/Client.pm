@@ -5,7 +5,7 @@ use OpenQA::Client;
 
 use Exporter 'import';
 
-our @EXPORT = qw(client);
+our @EXPORT_OK = qw(client);
 
 # setup test application with API access
 # note: Test::Mojo looses its app when setting a new ua (see https://github.com/kraih/mojo/issues/598).
