@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -70,7 +71,7 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
 subtest 'exception during stale job detection handled and logged' => sub {
     my $mock_schema = Test::MockModule->new('OpenQA::Schema');
     my $mock_singleton_called;
-    $mock_schema->redefine(singleton => sub { $mock_singleton_called++; bless {} });
+    $mock_schema->redefine(singleton => sub ($class) { $mock_singleton_called++; bless {}, $class });
     combined_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
     qr/Failed stale job detection/, 'failure logged';
     ok $mock_singleton_called, 'mocked singleton method has been called';
