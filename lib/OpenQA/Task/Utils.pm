@@ -11,8 +11,7 @@ use Scalar::Util qw(looks_like_number);
 use Time::Seconds;
 use Feature::Compat::Try;
 
-our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK = (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage));
+our @EXPORT_OK = (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage));
 
 # acquire lock to prevent multiple limit_* tasks to run in parallel unless
 # concurrency is configured to be allowed

@@ -48,8 +48,7 @@ BEGIN {
     $ENV{OS_AUTOINST_BASEDIR} //= '../os-autoinst';
 }
 
-our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK = qw(
+our @EXPORT_OK = qw(
   setup_mojo_app_with_default_worker_timeout create_user_for_workers
   create_webapi create_websocket_server create_scheduler create_live_view_handler
   unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job

@@ -12,8 +12,7 @@ use Test::Mojo;
 use Mojo::File qw(tempdir path);
 use File::Copy::Recursive 'dircopy';
 
-our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK = (qw(setup_obs_rsync_test));
+our @EXPORT_OK = (qw(setup_obs_rsync_test));
 
 sub setup_obs_rsync_test (%args) {
     my $tempdir = tempdir;
