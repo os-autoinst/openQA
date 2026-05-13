@@ -6,8 +6,8 @@ package OpenQA::Test::FullstackUtils;
 use Test::Most;
 use Mojo::Base 'Exporter', -signatures;
 
-our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
-  reload_manually find_status_text wait_for_result_panel
+our @EXPORT = qw(get_connect_args client_output client_call
+  find_status_text wait_for_result_panel
   wait_for_job_running wait_for_developer_console_like
   wait_for_developer_console_available enter_developer_console_cmd
   verify_one_job_displayed_as_scheduled
