@@ -6,6 +6,11 @@ updates:
     directory: /
     schedule:
       interval: daily
+    cooldown:
+      default-days: 5
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
     allow:
       # Allow both direct and indirect updates for all packages
       - dependency-type: all
