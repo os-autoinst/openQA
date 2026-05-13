@@ -314,7 +314,7 @@ subtest 'no cleanup of important builds' => sub {
             keep_important_results_in_days => 100,
         });
 
-    open my $fh, ">>$filename" or die "touch $filename: $!\n";
+    open my $fh, '>>', $filename or die "touch $filename: $!\n";
     close $fh;
 
     $t->app->gru->enqueue('limit_results_and_logs');
