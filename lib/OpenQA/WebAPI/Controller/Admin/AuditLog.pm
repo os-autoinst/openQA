@@ -34,10 +34,27 @@ sub productlog_ajax ($self) {
         push @filter_conds, {-or => [map { $_ => \%condition } @searchable_columns]};
     }
 
+    # NOTE: The column list must be aligned with the column order of the
+    # DataTable defined in `assets/javascripts/audit_log.js` so that
+    # sorting requests refer to the intended database columns.
+    my @columns = (
+        'me.id',    # 0: ID
+        'me.t_created',    # 1: Time
+        'me.t_created',    # 2: User (orderable: false, placeholder)
+        'me.status',    # 3: Status
+        'me.distri',    # 4: Distri
+        'me.version',    # 5: Version
+        'me.flavor',    # 6: Flavor
+        'me.arch',    # 7: Arch
+        'me.build',    # 8: Build
+        'me.iso',    # 9: ISO
+        'me.id',    # 10: Actions (orderable: false, placeholder)
+    );
+
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
         resultset => 'ScheduledProducts',
-        columns => [qw(me.id me.t_created me.status me.settings me.results), @searchable_columns],
+        columns => \@columns,
         filter_conds => (@filter_conds ? \@filter_conds : undef),
         additional_params => {prefetch => 'triggered_by', cache => 1},
         prepare_data_function => sub {
