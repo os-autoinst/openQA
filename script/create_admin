@@ -12,45 +12,37 @@ use lib "$RealBin/../lib";
 use OpenQA::Schema::Result::ApiKeys;
 use OpenQA::Schema;
 use OpenQA::Utils 'random_hex';
-use Getopt::Long;
+use Getopt::Long::Descriptive;
 
-my $email = 'admin@example.com';
-my $nickname = 'admin';
-my $fullname = 'Administrator';
-my $key = '';
-my $secret = '';
-my $user = $ARGV[0];
-my $help;
+my ($opt, $usage) = describe_options(
+    <<"EOM",
+$0 %o <user>
 
-sub usage ($rc) {
-    print "Usage: $0 user [options]\n\n";
-    print "  --email     : Email address.\n";
-    print "  --nickname  : Nickname.\n";
-    print "  --fullname  : Full name.\n";
-    print "  --key       : API key (will be randomly generated if not set).\n";
-    print "  --secret    : API secret (will be randomly generated if not set).\n";
-    print "  user        : User ID (e.g. OpenID URL).\n";
-    exit $rc;
-}
-
-# need to count this *before* calling GetOptions
-my $numargs = scalar @ARGV;
-
-my $result = GetOptions(
-    'email=s' => \$email,
-    'nickname=s' => \$nickname,
-    'fullname=s' => \$fullname,
-    'key=s' => \$key,
-    'secret=s' => \$secret,
-    'help' => \$help,
+Create the initial admin account. The mandatory <user> argument is the
+user ID (e.g. an OpenID URL).
+EOM
+    ['email|e=s', 'Email address', {default => 'admin@example.com'}],
+    ['nickname|n=s', 'Nickname', {default => 'admin'}],
+    ['fullname|f=s', 'Full name', {default => 'Administrator'}],
+    ['key|k=s', 'API key (will be randomly generated if not set)', {default => ''}],
+    ['secret|s=s', 'API secret (will be randomly generated if not set)', {default => ''}],
+    ['help|h', 'Print usage message and exit', {shortcircuit => 1}],
 );
 
-usage 0 if $help;
-usage 1 if !($result && $user && $numargs > 1);
+if ($opt->help) {
+    print $usage->text;
+    exit 0;
+}
 
-if (($key || $secret)
-    && !($key =~ /^[[:xdigit:]]{16}$/ && $secret =~ /^[[:xdigit:]]{16}$/))
-{
+my $user = shift @ARGV;
+unless ($user) {
+    print STDERR $usage->text;
+    exit 1;
+}
+
+my $key = $opt->key;
+my $secret = $opt->secret;
+if (($key || $secret) && !($key =~ /^[[:xdigit:]]{16}$/ && $secret =~ /^[[:xdigit:]]{16}$/)) {
     die "--key and --secret must both be 16 digit hexadecimals.\n";
 }
 
@@ -69,11 +61,10 @@ if (scalar @admins != 0) {
 }
 my $account = $schema->resultset('Users')->create_user(
     $user,
-    email => $email,
-    nickname => $nickname,
-    fullname => $fullname,
+    email => $opt->email,
+    nickname => $opt->nickname,
+    fullname => $opt->fullname,
     is_admin => 1
 );
 
 $schema->resultset('ApiKeys')->create({user_id => $account->id, key => $key, secret => $secret});
-
