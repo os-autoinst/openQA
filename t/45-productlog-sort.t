@@ -11,7 +11,8 @@ use Mojo::URL;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
-use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::TimeLimit '5';
+use OpenQA::Schema::Result::ScheduledProducts qw(ADDED CANCELLING SCHEDULING);
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -24,31 +25,31 @@ my $user = $schema->resultset('Users')->create_user('foo');
 # server-side `columns` array and the DataTable column order detectable.
 my @products = (
     {
-        status => 'cancelling',
-        distri => 'd-c',
-        version => 'v-c',
-        flavor => 'f-c',
-        arch => 'a-c',
-        build => 'b-c',
-        iso => 'i-c'
+        status => CANCELLING,
+        distri => 'opensuse-tumbleweed',
+        version => '3-tumbleweed',
+        flavor => 'server-dvd',
+        arch => 'x86_64',
+        build => '20260514',
+        iso => 'opensuse-tumbleweed-server-dvd-x86_64-20260514.iso'
     },
     {
-        status => 'added',
-        distri => 'd-a',
-        version => 'v-b',
-        flavor => 'f-a',
-        arch => 'a-b',
-        build => 'b-a',
-        iso => 'i-b'
+        status => ADDED,
+        distri => 'opensuse-leap',
+        version => '1-leap-15.6',
+        flavor => 'dvd',
+        arch => 'ppc64le',
+        build => 'build0012',
+        iso => 'opensuse-leap-15.6-dvd-ppc64le-build0012.iso'
     },
     {
-        status => 'scheduling',
-        distri => 'd-b',
-        version => 'v-a',
-        flavor => 'f-b',
-        arch => 'a-a',
-        build => 'b-b',
-        iso => 'i-a'
+        status => SCHEDULING,
+        distri => 'sle',
+        version => '2-sle-15-sp6',
+        flavor => 'online',
+        arch => 'aarch64',
+        build => 'build0042',
+        iso => 'sle-15-sp6-online-aarch64-build0042.iso'
     },
 );
 my @created_ids = map { $scheduled_products->create({%$_, user_id => $user->id, settings => {}})->id } @products;
@@ -67,24 +68,31 @@ sub _ids_in_set ($rows) {
 }
 
 subtest 'sort by each column maps to the expected database field' => sub {
-    # The expected order below is determined by the values stored above:
-    # sorting by flavor asc must group "f-a" before "f-b" before "f-c", and so on.
+    # The expected order below is determined by the values stored above.
     my %expected = (
         # column_index => [expected order of created scheduled products]
         0 => [sort { $a <=> $b } @created_ids],    # ID asc
         3 => [@created_ids[1, 0, 2]],    # Status: added, cancelling, scheduling
-        4 => [@created_ids[1, 2, 0]],    # Distri: d-a, d-b, d-c
-        5 => [@created_ids[2, 1, 0]],    # Version: v-a, v-b, v-c
-        6 => [@created_ids[1, 2, 0]],    # Flavor: f-a, f-b, f-c
-        7 => [@created_ids[2, 1, 0]],    # Arch: a-a, a-b, a-c
-        8 => [@created_ids[1, 2, 0]],    # Build: b-a, b-b, b-c
-        9 => [@created_ids[2, 1, 0]],    # ISO: i-a, i-b, i-c
+        4 => [@created_ids[1, 0, 2]],    # Distri: opensuse-leap, opensuse-tumbleweed, sle
+        5 => [@created_ids[1, 2, 0]],    # Version: 1-leap-15.6, 2-sle-15-sp6, 3-tumbleweed
+        6 => [@created_ids[1, 2, 0]],    # Flavor: dvd, online, server-dvd
+        7 => [@created_ids[2, 1, 0]],    # Arch: aarch64, ppc64le, x86_64
+        8 => [@created_ids[0, 1, 2]],    # Build: 20260514, build0012, build0042
+        9 => [@created_ids[1, 0, 2]],    # ISO: opensuse-leap..., opensuse-tumbleweed..., sle...
     );
     for my $column_index (sort { $a <=> $b } keys %expected) {
         my $rows = _fetch_order($column_index, 'asc');
         is_deeply _ids_in_set($rows), $expected{$column_index},
           "ascending sort by column $column_index returns rows in expected order"
           or always_explain {column => $column_index, rows => $rows};
+    }
+};
+
+subtest 'non-orderable columns fall back to ID order' => sub {
+    my $expected = [sort { $a <=> $b } @created_ids];
+    for my $column_index (2, 10) {
+        my $rows = _fetch_order($column_index, 'asc');
+        is_deeply _ids_in_set($rows), $expected, "column $column_index does not add a misleading sort";
     }
 };
 

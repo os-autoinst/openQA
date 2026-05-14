@@ -40,7 +40,7 @@ sub productlog_ajax ($self) {
     my @columns = (
         'me.id',    # 0: ID
         'me.t_created',    # 1: Time
-        'me.t_created',    # 2: User (orderable: false, placeholder)
+        undef,    # 2: User (orderable: false)
         'me.status',    # 3: Status
         'me.distri',    # 4: Distri
         'me.version',    # 5: Version
@@ -48,7 +48,7 @@ sub productlog_ajax ($self) {
         'me.arch',    # 7: Arch
         'me.build',    # 8: Build
         'me.iso',    # 9: ISO
-        'me.id',    # 10: Actions (orderable: false, placeholder)
+        undef,    # 10: Actions (orderable: false)
     );
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
