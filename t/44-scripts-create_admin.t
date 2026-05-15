@@ -49,4 +49,27 @@ subtest 'attempt to supply an invalid key/secret' => sub {
     like $output, qr/must.*be.*hexadecimals/i, 'expected explanation';
 };
 
+subtest 'no positional argument' => sub {
+    my $output = qx{"$cmd" --email someone\@example.com 2>&1};
+    is $? >> 8, 1, 'command exited with return code 1';
+    like $output, qr/usage/i, 'usage shown when user argument is missing';
+};
+
+subtest '--help prints usage and exits cleanly' => sub {
+    my $output = qx{"$cmd" --help 2>&1};
+    is $? >> 8, 0, 'command exited with return code 0';
+    like $output, qr/usage/i, 'usage shown';
+    like $output, qr/--email/, 'email option documented';
+    like $output, qr/--nickname/, 'nickname option documented';
+};
+
+subtest 'options before the positional argument are accepted' => sub {
+    # The Getopt::Long permute behavior allows options to be interspersed with
+    # positional arguments which is more user friendly than requiring a strict
+    # order.
+    my $output = qx{"$cmd" --email leading\@example.com test-user3 2>&1};
+    is $? >> 8, 1, 'command exited with return code 1 because admin already exists';
+    like $output, qr/already exists/i, 'admin check still triggered, proving the user argument was parsed';
+};
+
 done_testing;
