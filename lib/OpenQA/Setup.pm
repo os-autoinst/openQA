@@ -421,7 +421,7 @@ sub update_config ($config, @namespaces) {
         # If it is a Mojo::Base class, it requires to be instantiated
         # because the attributes are not populated until creation.
         my $fields
-          = UNIVERSAL::isa($plugin, 'Mojo::Base')
+          = $plugin->isa('Mojo::Base')
           ? do { $plugin->new->configuration_fields() }
           : $plugin->configuration_fields();
 
