@@ -654,6 +654,7 @@ fi
 %dir %{_sysconfdir}/nginx
 %dir %{_sysconfdir}/nginx/vhosts.d
 %config %{_sysconfdir}/nginx/vhosts.d/openqa.conf.template
+%config %{_sysconfdir}/nginx/vhosts.d/openqa-llm.conf.template
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-assets.inc
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-endpoints.inc
 %config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-locations.inc

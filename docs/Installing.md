@@ -790,6 +790,16 @@ install the dedicated sub-package:
 zypper in openQA-llm-server
 ```
 
+To configure a unified API endpoint across multiple LLM-enabled workers,
+copy and configure the provided Nginx template on your web UI server:
+
+``` sh
+cp /etc/nginx/vhosts.d/openqa-llm.conf.template /etc/nginx/vhosts.d/openqa-llm.conf
+```
+
+Edit the `llm_backend` upstream block inside `openqa-llm.conf` to include your
+workers, then reload Nginx.
+
 To allow workers to access your instance, you need to log into openQA as
 operator and create a pair of API key and secret. Once you are logged in, in the
 top right corner, is the user menu, follow the link 'Manage API keys'. Click

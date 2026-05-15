@@ -139,7 +139,7 @@ install-generic: generate-assets generate-completions ## Install generic compone
 	done
 
 	install -d -m 755 "$(DESTDIR)"/etc/nginx/vhosts.d
-	for i in openqa-assets.inc openqa-endpoints.inc openqa-locations.inc openqa-upstreams.inc openqa.conf.template; do \
+	for i in openqa-assets.inc openqa-endpoints.inc openqa-locations.inc openqa-upstreams.inc openqa.conf.template openqa-llm.conf.template; do \
 		install -m 644 etc/nginx/vhosts.d/$$i "$(DESTDIR)"/etc/nginx/vhosts.d ;\
 	done
 
