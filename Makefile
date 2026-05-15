@@ -160,6 +160,7 @@ install-generic: generate-assets generate-completions ## Install generic compone
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -d -m 755 "$(DESTDIR)"/usr/lib/tmpfiles.d
+	install -d -m 755 "$(DESTDIR)"/usr/share/containers/systemd
 	eval "$$(perl -V:installvendorlib)" && sed -i -e "s^installvendorlib^$$installvendorlib^" systemd/openqa-minion-restart.path
 	for i in systemd/*.{service,slice,target,timer,path}; do \
 		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
@@ -178,6 +179,7 @@ install-generic: generate-assets generate-completions ## Install generic compone
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
 	install -m 644 systemd/tmpfiles-openqa-webui.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa-webui.conf
+	install -m 644 container/systemd/openqa-llm-server.container "$(DESTDIR)"/usr/share/containers/systemd/openqa-llm-server.container
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-gru.service.requires
 	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-gru.service.requires/postgresql.service
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-scheduler.service.requires

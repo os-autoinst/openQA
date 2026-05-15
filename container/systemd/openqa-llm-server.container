@@ -1,0 +1,18 @@
+[Unit]
+Description=Llama Cpp Server for openQA
+After=network-online.target
+
+[Container]
+Image=ghcr.io/ggml-org/llama.cpp:server
+ContainerName=openqa-llm-server
+Volume=/opt/llm/models:/models
+PublishPort=8080:8080
+Exec=-hf unsloth/gemma-4-E4B-it-GGUF:UD-IQ2_M --temp 1.0 --top-p 0.95 --top-k 64 --ctx-size 65536
+User=_openqa-worker
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

@@ -361,6 +361,16 @@ Supplements:    (%{name}-client and zsh)
 %description client-zsh-completion
 The official zsh completion script for openqa-cli.
 
+%package llm-server
+Summary:        Local LLM Server features for openQA workers
+Requires:       %{name}-worker = %{version}
+Requires:       podman
+
+%description llm-server
+openQA workers can optionally host a local llama.cpp server to provide
+LLM features directly from the worker node. This package provides the
+Podman Quadlet configuration to automatically manage the server.
+
 %prep
 %setup -q
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
@@ -606,6 +616,17 @@ fi
 
 %postun local-db
 %service_del_postun %{openqa_localdb_services}
+
+%post llm-server
+# ensure the Podman Quadlet generator is run to create the .service unit
+[ -x /usr/bin/systemctl ] && /usr/bin/systemctl daemon-reload || :
+%service_add_post openqa-llm-server.service
+
+%preun llm-server
+%service_del_preun openqa-llm-server.service
+
+%postun llm-server
+%service_del_postun openqa-llm-server.service
 
 %files
 %doc README.md
@@ -903,5 +924,10 @@ fi
 
 %files mcp
 %{_datadir}/openqa/lib/OpenQA/WebAPI/Plugin/MCP.pm
+
+%files llm-server
+%dir %{_datadir}/containers
+%dir %{_datadir}/containers/systemd
+%{_datadir}/containers/systemd/openqa-llm-server.container
 
 %changelog
