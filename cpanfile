@@ -117,7 +117,7 @@ on 'test' => sub {
 
 on 'develop' => sub {
     requires 'Code::TidyAll';
-    requires 'Perl::Critic';
+    requires 'Perl::Critic', '>= 1.156.0';
     requires 'Perl::Critic::Community';
     requires 'Perl::Tidy', '== 20260204.0.0';
     requires 'Pod::Markdown';

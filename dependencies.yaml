@@ -216,7 +216,7 @@ test_requires:
 style_check_requires:
   python3-yamllint:
   perl(Test::Perl::Critic):
-  perl(Perl::Critic):
+  perl(Perl::Critic): '>= 1.156.0'
   perl(Perl::Critic::Community):
   perl(Code::TidyAll):
   perl(Pod::Markdown):
