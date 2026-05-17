@@ -10,8 +10,10 @@ use OpenQA::Log qw(log_info log_warning);
 use Mojo::File qw(path);
 use Feature::Compat::Try;
 
-our @EXPORT
-  = qw(config_dir_within_app_home lookup_config_files parse_config_files parse_config_files_as_hash parse_worker_class_auto_assignment);
+our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
+  qw(config_dir_within_app_home lookup_config_files
+  parse_config_files parse_config_files_as_hash
+  parse_worker_class_auto_assignment);
 
 sub _config_dirs ($config_dir_within_home) {
     return [[$ENV{OPENQA_CONFIG} // ()], [$config_dir_within_home // ()], ['/etc/openqa', '/usr/etc/openqa']];

@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
 use Mojo::File 'tempdir';
 use OpenQA::Jobs::Constants;
-use OpenQA::Script::CloneJob;
+use OpenQA::Script::CloneJob qw(create_url_handler clone_job_get_job);
 use OpenQA::Test::Client 'client';
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(create_webapi stop_service);

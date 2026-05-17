@@ -12,7 +12,7 @@ use Test::Warnings;
 use Test::MockModule;
 use Digest::SHA qw(hmac_sha256_hex);
 use OpenQA::App;
-use OpenQA::Schema::Result::ScheduledProducts;
+use OpenQA::Schema::Result::ScheduledProducts qw(:STATE);
 use OpenQA::Test::TimeLimit '5';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(perform_minion_jobs);

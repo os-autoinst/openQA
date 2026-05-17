@@ -109,7 +109,8 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
-our @EXPORT = qw(ADDED SCHEDULING SCHEDULED CANCELLING CANCELLED);
+our @EXPORT_OK = qw(ADDED SCHEDULING SCHEDULED CANCELLING CANCELLED);
+our %EXPORT_TAGS = (STATE => [@EXPORT_OK]);
 
 sub sqlt_deploy_hook ($self, $sqlt_table, @) {
     $sqlt_table->add_index(name => 'scheduled_products_idx_webhook_id', fields => ['webhook_id']);

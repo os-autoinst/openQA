@@ -22,7 +22,7 @@ package OpenQA::Script::CloneJob::Command {
     sub handle_result ($self, $tx, $orig_tx = undef) { $tx }
 }
 
-our @EXPORT = qw(
+our @EXPORT_OK = qw(
   clone_jobs
   clone_job_apply_settings
   clone_job_get_job

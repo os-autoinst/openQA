@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '6';
 use Mojo::Base -signatures;
 use Test::MockModule;
-use OpenQA::Script::CloneJobSUSE;
+use OpenQA::Script::CloneJobSUSE qw(detect_maintenance_update);
 use Mojo::URL;
 
 # define fake client

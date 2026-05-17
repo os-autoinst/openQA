@@ -36,7 +36,8 @@ use OpenQA::Test::Utils qw(
   create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir
   start_worker stop_service
 );
-use OpenQA::Test::FullstackUtils;
+use OpenQA::Test::FullstackUtils
+  qw(get_connect_args find_status_text wait_for_result_panel wait_for_job_running wait_for_developer_console_like wait_for_developer_console_available enter_developer_console_cmd schedule_one_job_over_api_and_verify);
 use OpenQA::SeleniumTest;
 
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};

@@ -9,8 +9,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
-
-use OpenQA::Test::Client;
+use OpenQA::Test::Client qw(client);
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
 

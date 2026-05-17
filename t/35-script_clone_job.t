@@ -11,7 +11,8 @@ use Mojo::Base -signatures;
 use Test::Output qw(combined_like combined_unlike output_from);
 use Test::MockObject;
 use Test::MockModule;
-use OpenQA::Script::CloneJob;
+use OpenQA::Script::CloneJob
+  qw(clone_jobs clone_job_get_job clone_job_apply_settings clone_job_download_assets openqa_baseurl);
 use HTTP::Response;
 use Mojo::JSON qw(decode_json);
 use Mojo::URL;
@@ -332,7 +333,7 @@ subtest 'cloning with repeat count' => sub {
     $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
     my %options = (host => 'foo', from => 'bar', repeat => 100, apikey => 'bar', apisecret => 'bar');
     $retry_tx_count = 0;
-    OpenQA::Script::CloneJob::clone_jobs(42, \%options);
+    clone_jobs(42, \%options);
     is $options{repeat}, undef, 'repeat count has been removed from options';
     subtest 'post args' => sub {
         is scalar @post_args, 100, 'exactly 100 post transactions created';
@@ -398,12 +399,10 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
 
     my %options
       = (host => 'foo', from => 'bar', 'clone-children' => 1, 'skip-download' => 1, verbose => 1, args => ['FOO=bar']);
-    throws_ok { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr|API key/secret for 'foo' missing|,
-      'dies on missing API credentials';
+    throws_ok { clone_jobs(42, \%options) } qr|API key/secret for 'foo' missing|, 'dies on missing API credentials';
 
     $options{apikey} = $options{apisecret} = 'bar';
-    combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr|parent.*main.*child|s,
-      'verbose output printed';
+    combined_like { clone_jobs(42, \%options) } qr|parent.*main.*child|s, 'verbose output printed';
     ok $tx_handled, 'transaction handled';
 
     my $check_common_post_args = sub ($test_suffix = '') {
@@ -430,7 +429,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         @post_args = ();
         $options{'clone-children'} = undef;
         $options{'parental-inheritance'} = 1;
-        combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
+        combined_like { clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
         subtest 'post args' => sub {
             my $params = $check_common_post_args->() or return;
             is delete $params->{'FOO:41'}, 'bar', 'setting passed to parent job';
@@ -454,7 +453,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         $options{'parental-inheritance'} = undef;
         local $options{'json-output'} = 1;
         push @{$options{args}}, 'TEST+=:suffix';
-        my ($stdout, $stderr) = output_from { OpenQA::Script::CloneJob::clone_jobs(41, \%options) };
+        my ($stdout, $stderr) = output_from { clone_jobs(41, \%options) };
         my $json_output = decode_json $stdout;
         unlike $stderr, qr/cloning/i, 'no extra logs end up in stderr';
         is_deeply $json_output, {1 => 2}, 'fake response printed as JSON' or always_explain $json_output;
@@ -473,7 +472,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         local $options{'clone-children'} = 1;
         local $options{'skip-deps'} = 1;
 
-        my ($stdout, $stderr) = output_from { OpenQA::Script::CloneJob::clone_jobs(42, \%options) };
+        my ($stdout, $stderr) = output_from { clone_jobs(42, \%options) };
         like $stdout, qr/1 job has been created/, 'Normal output on stdout';
         like $stderr, qr/cloning/i, 'Extra output on stderr';
         subtest 'post args' => sub {
@@ -501,7 +500,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         local $options{'clone-children'} = 1;
         local $options{'skip-chained-deps'} = 1;
 
-        combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
+        combined_like { clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
         subtest 'post args' => sub {
             my $params = $post_args[0]->[4] // {};
             is $params->{'CLONED_FROM:42'}, 'https://bar/tests/42', 'main job has been cloned';

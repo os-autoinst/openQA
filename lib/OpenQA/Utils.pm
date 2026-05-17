@@ -91,7 +91,8 @@ use constant ONE_SECOND_IN_MICROSECONDS => 1_000_000;
 use constant RANDOM_STRING_DEFAULT_LENGTH => 16;
 use constant DEFAULT_OPENQA_BASE_PORT => 9526;
 
-our @EXPORT = qw(
+our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
+  qw(
   UNCONSTRAINED_BUGREF_REGEX
   BUGREF_REGEX
   LABEL_REGEX
@@ -149,7 +150,7 @@ our @EXPORT = qw(
   storage_below_threshold
   config_autocommit_enabled
   load_avg
-);
+  );
 
 our @EXPORT_OK = qw(
   prjdir

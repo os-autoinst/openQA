@@ -136,7 +136,8 @@ use constant STATUS_PRIORITY => (FAILED, NOT_COMPLETE, SOFTFAILED, ABORTED, RUNN
 # the "column" to query for a tag ID in accordance with parse_tags_from_comments() and _important_builds()
 use constant TAG_ID_COLUMN => "concat(VERSION, '-', BUILD)";
 
-our @EXPORT = qw(
+our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
+  qw(
   TEST_NAME_ALLOWED_CHARS
   TEST_NAME_ALLOWED_CHARS_PLUS_MINUS
   TEST_NAME_REGEX
@@ -190,7 +191,7 @@ our @EXPORT = qw(
   RESULT_CLEANUP_LOG_FILES
   TAG_ID_COLUMN
   STATUS_PRIORITY
-);
+  );
 
 # mapping from any specific job state/result to a meta state/result
 my %META_STATE_MAPPING = (

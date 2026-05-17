@@ -10,7 +10,7 @@ use Mojo::File 'path';
 use Pod::POM;
 use Exporter 'import';
 
-our @EXPORT = qw(
+our @EXPORT_OK = qw(
   get_pod_from_controllers
   set_api_desc
 );

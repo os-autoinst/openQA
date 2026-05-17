@@ -27,7 +27,7 @@ use OpenQA::Test::Utils 'perform_minion_jobs';
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Log 'log_debug';
-use OpenQA::Script::CloneJob;
+use OpenQA::Script::CloneJob qw(clone_job_apply_settings);
 use OpenQA::Utils 'locate_asset';
 use Mojo::IOLoop;
 use Mojo::File qw(path tempfile tempdir);
