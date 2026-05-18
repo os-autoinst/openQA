@@ -106,7 +106,7 @@
 Name:           openQA
 Version:        5
 Release:        0
-Summary:        The openQA web-frontend, scheduler and tools
+Summary:        Automated web-frontend testing framework, scheduler and tools
 License:        GPL-2.0-or-later
 Url:            http://os-autoinst.github.io/openQA/
 Source0:        %{name}-%{version}.tar.xz
