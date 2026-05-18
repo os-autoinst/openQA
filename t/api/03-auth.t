@@ -50,7 +50,7 @@ subtest 'authentication routes for plugins' => sub {
 client($t, apikey => undef, apisecret => undef);
 
 subtest 'key+secret from env variables' => sub {
-    my $t_new = Test::Mojo->new('OpenQA::WebAPI');
+    my $t_new = Test::Mojo->new($t->app);
     $t_new->delete_ok('/api/v1/assets/1')->status_is(403, 'clean user agent has no credentials');
     local $ENV{OPENQA_API_KEY} = 'LANCELOTKEY01';
     local $ENV{OPENQA_API_SECRET} = 'MANYPEOPLEKNOW';
@@ -187,7 +187,7 @@ subtest 'personal access token' => sub {
         $t->ua->once(start => sub ($ua, $tx) { $tx->req->url->userinfo($userinfo) });
         return $t;
     };
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    my $t = Test::Mojo->new($t->app);
     $t->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'no api key'}, undef, 'access token is required');
     $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404, 'valid access token');
@@ -237,7 +237,7 @@ subtest 'personal access token (with reverse proxy)' => sub {
         return $t;
     };
     local $ENV{MOJO_REVERSE_PROXY} = 1;
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    my $t = Test::Mojo->new($t->app);
     $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'personal access token can only be used via HTTPS or from localhost'},
         undef, 'not https or localhost denied');
@@ -273,7 +273,7 @@ subtest 'auth forbidden via domain' => sub {
 };
 
 subtest 'None authentication provider fallback and admin auto-login' => sub {
-    my $t_none = Test::Mojo->new('OpenQA::WebAPI');
+    my $t_none = Test::Mojo->new($t->app);
     $t_none->app->config->{auth}->{method} = 'None';
     require OpenQA::WebAPI::Auth::None;
     OpenQA::WebAPI::Auth::None::auth_setup($t_none->app);
