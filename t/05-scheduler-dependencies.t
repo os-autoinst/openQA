@@ -1295,7 +1295,8 @@ subtest 'starvation of parallel jobs prevented' => sub {
     is $mocked_jobs{1}->{priority_offset}, 10, 'priority of parallel parent increased (once per child)';
     is_deeply $allocated_workers, {}, 'no workers "held" so far while still increased prio'
       or always_explain $allocated_workers;
-    is $mocked_jobs{$_}->{current_reason}, 'no matching worker is free', "reason assigned for job $_" for (1, 2, 3);
+    like $mocked_jobs{1}->{current_reason}, qr/no matching worker.*parallel.*free/, 'reason assigned for job 1';
+    like $mocked_jobs{$_}->{current_reason}, qr/no matching worker.*free/, "reason assigned for job $_" for (2, 3);
 
     # run the scheduler again assuming highest prio for parallel parent; worker supposed to be "held"
     $mocked_jobs{1}->{priority} = 0;
