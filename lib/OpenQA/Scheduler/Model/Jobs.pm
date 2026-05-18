@@ -136,7 +136,7 @@ sub _allocate_jobs ($self, $free_workers) {
                     my ($picked_worker, $job_info) = @{$taken{$worker}};
                     $self->_allocate_worker_with_priority($prio, $job_info, $j, $allocated_workers, $picked_worker);
                 }
-                $_->{current_reason} = 'incomplete parallel cluster' for @tobescheduled;
+                $_->{current_reason} = 'no matching worker is free' for @tobescheduled;
                 %taken = ();
                 last;
             }
