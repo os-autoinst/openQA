@@ -430,7 +430,7 @@ ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-l
 %endif
 
 install -d -m 755 %{buildroot}%{_datadir}/openqa/client
-install -m 755 public/openqa-cli.yaml %{buildroot}%{_datadir}/openqa/client/openqa-cli.yaml
+install -m 644 public/openqa-cli.yaml %{buildroot}%{_datadir}/openqa/client/openqa-cli.yaml
 
 # munin
 %if %{with munin_package}
