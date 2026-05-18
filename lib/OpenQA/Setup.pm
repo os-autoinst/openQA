@@ -62,7 +62,7 @@ sub _load_config ($app, $defaults, $mode_specific_defaults) {
 }
 
 sub _load_prio_throttling ($app, $config) {
-    return unless my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
+    return undef unless my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
     # floating point number
     my $n = qr/[+-]?(?:\d+\.?\d*|\.\d+)/;
     # Unit format = Param.name: scale: reference(optional)
@@ -70,7 +70,7 @@ sub _load_prio_throttling ($app, $config) {
     $throttling =~ s/\s+//g;
     unless ($throttling =~ qr/^$u(?:,$u)*$/i) {
         $app->log->warn("Wrong format in openqa.ini 'prio_throttling_parameters': $throttling");
-        return;
+        return undef;
     }
     my %hash = map { my ($k, $s, $r) = /$u/g; $k => {scale => $s, reference => $r // 0} }
       split /,/, $throttling;
@@ -78,12 +78,12 @@ sub _load_prio_throttling ($app, $config) {
 }
 
 sub _load_prio_group_throttling ($app, $config) {
-    my $throttling = $config->{misc_limits}->{prio_group_parameters} // return;
+    my $throttling = $config->{misc_limits}->{prio_group_parameters} // return undef;
     # format: property:regex:priority_increment
     my $rule_qr = qr/([^:]+):([^:]+):([+-]?\d+)/;
     unless ($throttling =~ /^$rule_qr(?:,$rule_qr)*$/) {
         $app->log->warn("Wrong format in openqa.ini 'prio_group_parameters': $throttling");
-        return;
+        return undef;
     }
     my @rules = map {
         my ($prop, $regex, $inc) = $_ =~ $rule_qr;

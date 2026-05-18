@@ -36,7 +36,7 @@ sub _needles ($app, $job) {
             $needle->update;
         }
     }
-    return;
+    return undef;
 }
 
 1;

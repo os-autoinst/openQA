@@ -46,7 +46,7 @@ sub _obj_comments ($self, $param, $table, $label) {
     my $obj = $self->app->schema->resultset($table)->find($id);
     return $obj->search_related(comments => {}, {rows => $limit}) if $obj;
     $self->render(json => {error => "$label $id does not exist"}, status => 404);
-    return;
+    return undef;
 }
 
 =over 4
@@ -106,7 +106,7 @@ comment does not exist, or 200 on success.
 
 sub text ($self) {
     my $comments = $self->_comments();
-    return unless $comments;
+    return undef unless $comments;
     my $comment_id = $self->param('comment_id');
     my $comment = $comments->find($comment_id);
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
@@ -127,7 +127,7 @@ new comment id or 400 if no text is specified for the comment.
 
 sub create ($self) {
     my $comments = $self->_comments();
-    return unless $comments;
+    return undef unless $comments;
 
     my $validation = $self->validation;
     $validation->required('text')->like(qr/^(?!\s*$).+/);
@@ -224,7 +224,7 @@ author of the comment.
 
 sub update ($self) {
     my $comments = $self->_comments();
-    return unless $comments;
+    return undef unless $comments;
 
     my $validation = $self->validation;
     $validation->required('text')->like(qr/^(?!\s*$).+/);
@@ -261,7 +261,7 @@ Deletes an existing comment specified by job/group id and comment id.
 
 sub delete ($self) {
     my $comments = $self->_comments();
-    return unless $comments;
+    return undef unless $comments;
 
     my $comment_id = $self->param('comment_id');
     my $comment = $comments->find($self->param('comment_id'));

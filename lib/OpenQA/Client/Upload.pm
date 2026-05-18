@@ -91,7 +91,7 @@ sub asset ($self, $job_id, $opts) {
 
     $self->emit('upload_chunk.error', $final_error) if $failed;
 
-    return;
+    return undef;
 }
 
 1;

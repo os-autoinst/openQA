@@ -1212,7 +1212,7 @@ sub _calculate_file_md5 ($self, $file) {
 sub _read_last_screen ($self) {
     my $pooldir = $self->worker->pool_directory;
     my $lastlink = readlink "$pooldir/qemuscreenshot/last.png";
-    return if !$lastlink || $self->last_screenshot eq $lastlink;
+    return undef if !$lastlink || $self->last_screenshot eq $lastlink;
     my $png = encode_base64(path($pooldir, "qemuscreenshot/$lastlink")->slurp);
     $self->{_last_screenshot} = $lastlink;
     return {name => $lastlink, png => $png};

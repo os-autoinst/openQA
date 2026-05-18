@@ -79,7 +79,7 @@ sub create ($self) {
     my %res = $self->$sub;
     return $self->_render_forbidden unless keys %res;
     return $self->_render_forbidden($res{error}) if $res{error};
-    return if $res{manual};
+    return undef if $res{manual};
     return $self->_redirect_to_referrer($ref, \%res);
 }
 

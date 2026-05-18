@@ -462,7 +462,7 @@ is used.
 =cut
 
 sub _parse_dep_variable ($value, $job_settings) {
-    return unless defined $value;
+    return () unless defined $value;
     return map {
         if (m/^(.+)\@([^@]+)$/) { [$1, $2] }
         elsif (m/^(.+):([^:]+)$/) { [$1, $2] }    # for backwards compatibility
@@ -567,7 +567,7 @@ sub _generate_jobs ($self, $args, $notes, $skip_chained_deps, $include_children)
     my $group_name = delete $args->{_GROUP};
     if (!defined $group_id && defined $group_name) {
         my $groups = $schema->resultset('JobGroups')->search({name => $group_name});
-        my $group = $groups->next or return;
+        my $group = $groups->next or return undef;
         $group_id = $group->id;
     }
 

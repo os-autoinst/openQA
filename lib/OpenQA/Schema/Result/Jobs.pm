@@ -1075,10 +1075,10 @@ sub save_screenshot ($self, $screen) {
 }
 
 sub append_log ($self, $log, $file_name) {
-    return unless length($log->{data});
+    return undef unless length($log->{data});
 
     my $path = $self->worker->get_property('WORKER_TMPDIR');
-    return unless -d $path;    # we can't help
+    return undef unless -d $path;    # we can't help
     $path .= "/$file_name";
     return log_error "can't open $path: $!" unless open my $fd, '>>', $path;
     print $fd $log->{data};
@@ -1328,7 +1328,7 @@ sub store_image ($self, $asset, $md5, $thumb = undef) {
 
 sub parse_extra_tests ($self, $asset, $type, $script = undef) {
 
-    return unless ($type eq 'JUnit'
+    return undef unless ($type eq 'JUnit'
         || $type eq 'XUnit'
         || $type eq 'LTP'
         || $type eq 'IPA');
@@ -1525,7 +1525,7 @@ sub register_assets_from_settings ($self) {
 
     my %assets = %{parse_assets_from_settings($settings)};
 
-    return unless keys %assets;
+    return undef unless keys %assets;
 
     my $parent_job_ids = $self->_parent_job_ids;
 
@@ -1725,7 +1725,7 @@ sub _carry_over_candidate ($self) {
     log_debug(sprintf "$label: _failure_reason=%s", $current_failure_reason);
 
     # we only do carryover for jobs with some kind of (soft) failure
-    return if $current_failure_reason eq 'GOOD';
+    return undef if $current_failure_reason eq 'GOOD';
 
     # search for previous jobs
     for my $job ($self->_previous_scenario_jobs($lookup_depth)) {
@@ -1748,10 +1748,10 @@ sub _carry_over_candidate ($self) {
         # that the carry over is pointless
         if ($state_changes > $state_changes_limit) {
             log_debug("$label: changed state more than $state_changes_limit ($state_changes), aborting search");
-            return;
+            return undef;
         }
     }
-    return;
+    return undef;
 }
 
 =head2 carry_over_bugrefs

@@ -109,14 +109,14 @@ sub _git_clone ($git, $ctx, $path, $url, $origin_url) {
             $ctx->info(<<~"END_OF_MESSAGE");
                 Local checkout at $path has origin $origin_url but requesting to clone from $url. The requested URL will not be cloned.
                 END_OF_MESSAGE
-            return;
+            return undef;
         }
     }
     else {
         $url = $origin_url;
     }
 
-    return if ($requested_branch and $requested_branch !~ tr/a-f0-9//c and $git->check_sha($requested_branch));
+    return undef if ($requested_branch and $requested_branch !~ tr/a-f0-9//c and $git->check_sha($requested_branch));
 
     die <<~"END_OF_MESSAGE" unless $git->is_workdir_clean;
         NOT updating dirty Git checkout at '$path'.
