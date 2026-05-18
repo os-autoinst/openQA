@@ -230,7 +230,7 @@ First, download a suitable image and launch a VM in the same way `os-autoinst`
 would do for MM jobs:
 
 ```sh
-wget http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
+wget https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
 qemu-system-x86_64 -m 2048 -enable-kvm -vnc :42 -snapshot \
 -netdev tap,id=qanet0,ifname=tap40,script=no,downscript=no \
 -device virtio-net,netdev=qanet0,mac=52:54:00:13:0b:4a \

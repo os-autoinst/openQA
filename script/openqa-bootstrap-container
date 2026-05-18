@@ -23,9 +23,9 @@ fi
 
 ARCH="${ARCH:=$(arch)}"
 if [ "$ARCH" = "x86_64" ]; then
-    DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/tumbleweed/repo/oss/"}"
+    DEFAULT_REPO="${DEFAULT_REPO:="https://download.opensuse.org/tumbleweed/repo/oss/"}"
 else
-    DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/ports/$ARCH/tumbleweed/repo/oss/"}"
+    DEFAULT_REPO="${DEFAULT_REPO:="https://download.opensuse.org/ports/$ARCH/tumbleweed/repo/oss/"}"
 fi
 
 # Workaround for https://bugzilla.suse.com/show_bug.cgi?id=1248857#c9
