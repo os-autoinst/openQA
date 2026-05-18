@@ -8,7 +8,7 @@
 FROM opensuse/tumbleweed
 
 # hadolint ignore=DL3037
-RUN zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed' devel_openQA && \
+RUN zypper ar -p 95 -f 'https://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed' devel_openQA && \
     zypper --gpg-auto-import-keys ref && \
     zypper in -y os-autoinst-devel openQA-devel nodejs-default perl-TAP-Harness-JUnit && \
     zypper clean -a
