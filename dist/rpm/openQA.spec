@@ -252,7 +252,7 @@ Summary:        Helper package to ease setup of postgresql DB
 Requires:       %{name} = %{version}
 Requires:       postgresql-server
 BuildRequires:  postgresql-server
-Supplements:    packageand(%name:postgresql-server)
+Supplements:    (%{name} and postgresql-server)
 
 %description local-db
 You only need this package if you have a local postgresql server
