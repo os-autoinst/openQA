@@ -7,7 +7,7 @@ use Mojo::Base 'DBIx::Class::Core', -signatures;
 use Fcntl;
 use DateTime;
 use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
-use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error);
+use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error redact_settings);
 use OpenQA::Utils (
     qw(create_git_clone_list parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string effective_distri),
@@ -369,7 +369,7 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
     $self->log_debug_job('Prepare for being processed by worker ' . $worker->id);
 
     my $job_hashref = {};
-    $job_hashref = $self->to_hash(assets => 1);
+    $job_hashref = $self->to_hash(assets => 1, unredacted => 1);
 
     # set JOBTOKEN for test access to API
     my $job_token = $worker_properties->{JOBTOKEN} // random_string();
@@ -433,6 +433,10 @@ sub settings_hash ($self, $prefetched = undef) {
     return $settings;
 }
 
+sub redacted_settings_hash ($self, $prefetched = undef) {
+    return redact_settings($self->settings_hash($prefetched));
+}
+
 sub add_result_dir_prefix ($self, $result_dir, $archived = undef) {
     return $result_dir ? catfile($self->num_prefix_dir($archived), $result_dir) : undef;
 }
@@ -483,7 +487,7 @@ sub to_hash ($job, %args) {
     if (my $reason = $job->reason) {
         $j->{reason} = $reason;
     }
-    $j->{settings} = $job->settings_hash($settings);
+    $j->{settings} = $args{unredacted} ? $job->settings_hash($settings) : $job->redacted_settings_hash($settings);
     # hashes are left for script compatibility with schema version 38
     $j->{test} = $job->TEST;
     if ($args{assets}) {
