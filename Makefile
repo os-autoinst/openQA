@@ -455,8 +455,13 @@ tidy-js: ## Format JavaScript code
 tidy-perl: ## Format Perl code
 	tools/tidyall -a
 
+.PHONY: tidy-python
+tidy-python: ## Format Python code
+	@command -v ruff >/dev/null 2>&1 || echo "Command 'ruff' not found, can not format python code"
+	@if [ -n "$(pyfiles)" ]; then ruff format $(pyfiles); fi
+
 .PHONY: tidy
-tidy: tidy-js tidy-perl ## Format both JS and Perl code
+tidy: tidy-js tidy-perl tidy-python ## Format JavaScript, Perl and Python code
 
 .PHONY: test-containers-compose
 test-containers-compose: ## Run docker-compose tests
