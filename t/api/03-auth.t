@@ -50,7 +50,7 @@ subtest 'authentication routes for plugins' => sub {
 client($t, apikey => undef, apisecret => undef);
 
 subtest 'key+secret from env variables' => sub {
-    my $t_new = Test::Mojo->new('OpenQA::WebAPI');
+    my $t_new = Test::Mojo->new($t->app);
     $t_new->delete_ok('/api/v1/assets/1')->status_is(403, 'clean user agent has no credentials');
     local $ENV{OPENQA_API_KEY} = 'LANCELOTKEY01';
     local $ENV{OPENQA_API_SECRET} = 'MANYPEOPLEKNOW';
@@ -165,7 +165,7 @@ subtest 'wrong api key - replay attack' => sub {
         start => sub ($ua, $tx) {
             my $timestamp = 0;
             my $headers = $tx->req->headers;
-            my $hash = hmac_sha1_sum(OpenQA::UserAgent::_path_query($tx->req->url)) . $timestamp, $ua->apisecret;
+            my $hash = hmac_sha1_sum(OpenQA::UserAgent::_path_query($tx->req->url) . $timestamp, $ua->apisecret);
             $headers->header('X-API-Microtime', $timestamp);
             $headers->header('X-API-Key', $ua->apikey);
             $headers->header('X-API-Hash', $hash);
@@ -187,7 +187,7 @@ subtest 'personal access token' => sub {
         $t->ua->once(start => sub ($ua, $tx) { $tx->req->url->userinfo($userinfo) });
         return $t;
     };
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    my $t = Test::Mojo->new($t->app);
     $t->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'no api key'}, undef, 'access token is required');
     $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404, 'valid access token');
@@ -237,7 +237,7 @@ subtest 'personal access token (with reverse proxy)' => sub {
         return $t;
     };
     local $ENV{MOJO_REVERSE_PROXY} = 1;
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    my $t = Test::Mojo->new($t->app);
     $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'personal access token can only be used via HTTPS or from localhost'},
         undef, 'not https or localhost denied');
@@ -271,5 +271,60 @@ subtest 'auth forbidden via domain' => sub {
     $expected_json{error} = 'no api key';
     is_deeply $rendered, \@expected, 'normal auth error via regular domain';
 };
+
+subtest 'None authentication provider fallback and admin auto-login' => sub {
+    my $t_none = Test::Mojo->new($t->app);
+    $t_none->app->config->{auth}->{method} = 'None';
+    require OpenQA::WebAPI::Auth::None;
+    OpenQA::WebAPI::Auth::None::auth_setup($t_none->app);
+
+    $t_none->get_ok('/')->status_is(200, 'fallback to unauthenticated_user for UI requests');
+    $t_none->get_ok('/api/v1/jobs' => {'X-API-Microtime' => time})
+      ->status_is(200, 'API request without key works if provider supports unauthenticated access');
+    $t_none->json_is('/error' => undef, 'no error returned for valid unauthenticated API access');
+
+    my $user = $t_none->app->schema->resultset('Users')->find({username => 'admin'});
+    die 'admin user not found' unless $user;
+    $user->update({is_admin => 0, is_operator => 0});
+    $t_none->get_ok('/')->status_is(200, 'UI request triggers admin/operator flag update if missing');
+    $user->discard_changes;
+    ok $user->is_admin && $user->is_operator, 'admin user has admin and operator flags restored';
+
+    $t_none->post_ok('/login')->status_is(302, 'explicit login redirects');
+    $t_none->get_ok($t_none->tx->res->headers->location)->status_is(200, 'redirected page accessible after login');
+
+    $t_none->app->routes->find('api_ensure_admin')->put('/admin_plugin_none' => sub { shift->render(text => 'ok') });
+    $t_none->put_ok('/api/v1/admin_plugin_none' => {'X-API-Microtime' => time})
+      ->status_is(200, 'Auth::auth fallback works via route')->content_is('ok');
+
+    $t_none->app->routes->under('/check_fallback')->to('Auth#check')->get('/' => sub { shift->render(text => 'ok') });
+    $t_none->get_ok('/check_fallback' => {'X-API-Microtime' => time})
+      ->status_is(200, 'Auth::check fallback works via route')->content_is('ok');
+};
+
+subtest 'Auth::check validation including localhost fallback and API key verification' => sub {
+    my $c = OpenQA::Shared::Controller::Auth->new(app => $t->app);
+    my $tx = Mojo::Transaction::HTTP->new;
+    $c->tx($tx);
+
+    $t->app->config->{no_localhost_auth} = 1;
+    my $tx_mock = Test::MockModule->new('Mojo::Transaction::HTTP');
+    $tx_mock->redefine(remote_address => sub { '127.0.0.1' });
+    ok $c->check, 'authentication skipped for localhost when no_localhost_auth is enabled';
+
+    $tx_mock->redefine(remote_address => sub { '1.2.3.4' });
+    $c->req->url->base(Mojo::URL->new('http://localhost'));
+    $c->req->headers->host('localhost');
+    $c->req->headers->header('X-API-Key' => 'ARTHURKEY01');
+    my $microtime = time;
+    $c->req->headers->header('X-API-Microtime' => $microtime);
+    my $hash = 'WRONG';
+    $c->req->headers->header('X-API-Hash' => $hash);
+    ok !$c->check, 'API key authentication fails with INVALID HMAC';
+    $hash = hmac_sha1_sum($c->req->url->to_string . $microtime, 'EXCALIBUR');
+    $c->req->headers->header('X-API-Hash' => $hash);
+    ok $c->check, 'API key authentication succeeds with valid HMAC and timestamp';
+};
+
 
 done_testing();
