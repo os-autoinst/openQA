@@ -62,7 +62,7 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
     my %ids;
     foreach my $fixture (glob "$fixtures_glob") {
 
-        my $info = eval path($fixture)->slurp;
+        my $info = eval path($fixture)->slurp;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
         chdir $cwd, croak "Could not insert fixture $fixture: $EVAL_ERROR" if $EVAL_ERROR;
         # Arrayrefs of rows, (dbic syntax) table defined by fixture filename
         if (ref $info->[0] eq 'HASH') {

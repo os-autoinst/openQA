@@ -9,12 +9,10 @@
 use strict;
 use warnings;
 
-my $parser;
-
-eval 'use Pod::Markdown';
-eval {
+my $parser = eval {
+    require Pod::Markdown;
     # make sure compile-all does not barf here
-    $parser = Pod::Markdown->new();
+    Pod::Markdown->new();
 };
 
 if ($@ || !$parser) {

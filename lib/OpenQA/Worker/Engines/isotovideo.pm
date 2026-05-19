@@ -483,13 +483,13 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
         });
     $child->on(
         collected => sub ($proc) {
-            eval { log_info('Isotovideo exit status: ' . $proc->exit_status, channels => 'autoinst'); };
+            eval { log_info('Isotovideo exit status: ' . $proc->exit_status, channels => 'autoinst'); };    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
             $job->stop($proc->exit_status == 0 ? WORKER_SR_DONE : WORKER_SR_DIED);
         });
 
     session->on(
         register => sub ($sess, $proc) {
-            eval { log_debug('Registered process:' . $proc->pid, channels => 'worker'); };
+            eval { log_debug('Registered process:' . $proc->pid, channels => 'worker'); };    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
         });
 
     my $container
