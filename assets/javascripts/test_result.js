@@ -1,6 +1,8 @@
 // jshint multistr: true
 // jshint esversion: 6
 
+const testGitInfoRe = /TEST_GIT_HASH=([a-fA-F0-9]+) TEST_GIT_URL=([^\p{Cc}]+)/u;
+
 const testStatus = {
   state: null,
   result: null,
@@ -635,6 +637,19 @@ function filterLogLines(input, viaSearchBox = true) {
       return;
     }
     const lines = Array.from(content);
+    let foundGitHash = false;
+    if (!logFileElement.dataset.testGitHash) {
+      for (const line of lines) {
+        const found = line.match(testGitInfoRe);
+        if (found) {
+          logFileElement.dataset.testGitHash = found[1];
+          logFileElement.dataset.testGitUrl = found[2];
+          logFileElement.dataset.baseUrl = logFileElement.dataset.testGitUrl + '/blob/' + logFileElement.dataset.testGitHash;
+          break;
+        }
+      }
+    }
+
     let lineNumber = 0;
     let matchingLines = 0;
     if (string.length > 0) {
@@ -669,6 +684,20 @@ function filterEmbeddedLogFiles() {
   loadEmbeddedLogFiles(filterLogLines.bind(null, searchBox, false));
 }
 
+const stepRe = / \[step:[a-zA-Z0-9-]+,[a-zA-Z0-9-]+,[0-9]+\] /;
+const sourceRe = /(?<= )([a-zA-Z0-9_/.-]+\.p[my]):(\d+)/g;
+function createSourceLinks(logFileElement, lineContentElement) {
+  const found = lineContentElement.innerHTML.match(stepRe);
+  if (found) {
+    lineContentElement.innerHTML = lineContentElement.innerHTML.replace(
+      sourceRe,
+      (match, filePath, lineNumber) => {
+        return `<a href="${logFileElement.dataset.baseUrl}/${filePath}#L${lineNumber}" target="_blank"><i class="fa-solid fa-file-code fa-lg"></i> ${filePath}:${lineNumber}</a>`;
+      }
+    );
+  }
+}
+
 function showLogLines(logFileElement, lines, viaSearchBox = false) {
   const tableElement = document.createElement('table');
   const currentHash = document.location.hash;
@@ -700,6 +729,9 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
       lineNumberLinkElement.onclick();
     }
     lineContentElement.innerHTML = ansiToHtml(line);
+
+    createSourceLinks(logFileElement, lineContentElement);
+
     lineNumberElement.appendChild(lineNumberLinkElement);
     lineElement.append(lineNumberElement, lineContentElement);
     tableElement.appendChild(lineElement);
