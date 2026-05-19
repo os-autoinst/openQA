@@ -49,8 +49,6 @@ sub new ($class, $webui_host, $cli_options) {
     # we do
     $ua->max_connections(0)->max_redirects(3);
 
-    die "API key and secret are needed for the worker connecting $webui_host\n" unless ($ua->apikey && $ua->apisecret);
-
     return $class->SUPER::new(
         webui_host => $webui_host,
         url => $url,

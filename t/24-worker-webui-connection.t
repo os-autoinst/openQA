@@ -39,10 +39,8 @@ OpenQA::App->set_singleton(Mojolicious->new);
 my $app = OpenQA::App->singleton;
 $app->log->level('info');
 
-throws_ok {
-    OpenQA::Worker::WebUIConnection->new('http://127.0.0.1:1', {});
-}
-qr{API key and secret are needed for the worker connecting http://127\.0\.0\.1:1.*}, 'auth required';
+my $client_no_auth = OpenQA::Worker::WebUIConnection->new('http://127.0.0.1:1', {});
+isa_ok $client_no_auth, 'OpenQA::Worker::WebUIConnection', 'auth not strictly required for instantiation';
 
 my $client = OpenQA::Worker::WebUIConnection->new(
     'http://127.0.0.1:1',
