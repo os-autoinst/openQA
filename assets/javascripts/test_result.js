@@ -1,6 +1,8 @@
 // jshint multistr: true
 // jshint esversion: 6
 
+const testGitInfoRe = /TEST_GIT_HASH=([a-fA-F0-9]+) TEST_GIT_URL=([^\p{Cc}]+)/u;
+
 const testStatus = {
   state: null,
   result: null,
@@ -616,6 +618,17 @@ function delay(callback, ms) {
   };
 }
 
+let testGitHash = '';
+let testGitUrl = '';
+
+function findGitHash(line) {
+  const found = line.match(testGitInfoRe);
+  if (found) {
+    testGitHash = found[1];
+    testGitUrl = found[2];
+  }
+}
+
 function filterLogLines(input, viaSearchBox = true) {
   if (input === undefined) {
     return;
@@ -639,6 +652,9 @@ function filterLogLines(input, viaSearchBox = true) {
     let matchingLines = 0;
     if (string.length > 0) {
       for (const line of lines) {
+        if (!testGitHash) {
+          findGitHash(line);
+        }
         const lineAsText = ansiToText(line);
         if (regex ? lineAsText.match(regex) : lineAsText.includes(string)) {
           ++matchingLines;
@@ -667,6 +683,21 @@ function filterEmbeddedLogFiles() {
     }
   }
   loadEmbeddedLogFiles(filterLogLines.bind(null, searchBox, false));
+}
+
+const stepRe = / \[step:[a-zA-Z0-9-]+,[a-zA-Z0-9-]+,[0-9]+\] /;
+const sourceRe = /(?<= )(([a-zA-Z0-9_/.-]+\.p[my])):(\d+)/g;
+function createSourceLinks(lineContentElement) {
+  const baseUrl = testGitUrl + '/blob/' + testGitHash;
+  const found = lineContentElement.innerHTML.match(stepRe);
+  if (found) {
+    lineContentElement.innerHTML = lineContentElement.innerHTML.replace(
+      sourceRe,
+      (match, filePath, executionMatch, lineNumber) => {
+        return `<a href="${baseUrl}/${filePath}#L${lineNumber}" target="_blank"><i class="fa-solid fa-file-code fa-lg"></i> ${filePath}:${lineNumber}</a>`;
+      }
+    );
+  }
 }
 
 function showLogLines(logFileElement, lines, viaSearchBox = false) {
@@ -699,7 +730,13 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
     if (hash === currentHash) {
       lineNumberLinkElement.onclick();
     }
+    if (!testGitHash) {
+      findGitHash(line);
+    }
     lineContentElement.innerHTML = ansiToHtml(line);
+
+    createSourceLinks(lineContentElement);
+
     lineNumberElement.appendChild(lineNumberLinkElement);
     lineElement.append(lineNumberElement, lineContentElement);
     tableElement.appendChild(lineElement);
