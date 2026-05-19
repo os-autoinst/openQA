@@ -53,7 +53,8 @@ function createLogLink(module, step) {
   const E = createElement;
   const params = new URLSearchParams({
     filename: 'autoinst-log.txt',
-    filter: `[step:${module.category},${module.name},${step.num}]`
+    filter: `[step:${module.category},${module.name},${step.num}]`,
+    sl: 1
   });
   const currentPath = window.location.pathname.replace(/\/$/, '');
   const logHref = `${currentPath}/logfile?${params.toString()}`;

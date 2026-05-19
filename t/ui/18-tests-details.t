@@ -492,8 +492,18 @@ subtest 'render log links from steps' => sub {
             my $link = $log_link_elems[0];
             is $link->get_attribute('title'), 'Jump to logfile', 'log link exists';
             like $link->get_attribute('href'),
-              qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step},
+              qr{/tests/99946/logfile\?filename=autoinst-log\.txt&filter=.*step.*installation.*bootloader.*$step.*sl=1},
               'log href correct';
+
+            $link->click;
+            wait_for_ajax msg => 'log contents';
+            like $driver->find_element('.embedded-logfile')->get_text,
+              qr/ \[step:installation,bootloader,$step\].* called /, 'test';
+            my @source_links = $driver->find_element_by_class('source-link');
+            my $sl = $source_links[0];
+            is $sl->get_attribute('href'),
+              'https://example.org/fortest/blob/c0ffee/tests/installaton/bootloader.pm#L5', 'source link ok';
+            $driver->go_back;
         };
     }
 };
@@ -579,14 +589,14 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     like $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm}, 'qemu-kvm is shown in log viewer';
 
     $driver->find_element('#filter-log-file')->send_keys('kate');
-    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 3 / 1292 lines} },
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 3 / 1296 lines} },
         'Showing filter result info for substring');
     unlike $driver->find_element('.embedded-logfile')->get_text, qr{/usr/bin/qemu-kvm},
       'qemu-kvm is not shown when filtering for something else';
     $driver->find_element('#filter-log-file')->clear;
     wait_until(sub { $driver->find_element('#filter-info')->get_text eq '' }, 'Filter result info cleared');
     $driver->find_element('#filter-log-file')->send_keys('/kate-[12]/');
-    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 2 / 1292 lines} },
+    wait_until(sub { $driver->find_element('#filter-info')->get_text =~ qr{Showing 2 / 1296 lines} },
         'Showing filter result info for regex');
 
     my $url = Mojo::URL->new($driver->execute_script('return document.location.toString()'));
