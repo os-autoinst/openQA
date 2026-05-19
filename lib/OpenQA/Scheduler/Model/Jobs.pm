@@ -136,7 +136,7 @@ sub _allocate_jobs ($self, $free_workers) {
                     my ($picked_worker, $job_info) = @{$taken{$worker}};
                     $self->_allocate_worker_with_priority($prio, $job_info, $j, $allocated_workers, $picked_worker);
                 }
-                $_->{current_reason} = 'incomplete parallel cluster' for @tobescheduled;
+                $_->{current_reason} //= 'no matching worker is free' for @tobescheduled;
                 %taken = ();
                 last;
             }
@@ -174,6 +174,7 @@ sub _allocate_worker_with_priority ($self, $prio, $job_info, $j, $allocated_work
           . ', reducing priority by '
           . STARVATION_PROTECTION_PRIORITY_OFFSET;
         $j->{priority_offset} += STARVATION_PROTECTION_PRIORITY_OFFSET;
+        $j->{current_reason} //= 'no matching worker for all other jobs in the parallel cluster is free';
     }
     else {
         # don't "take" the worker, but make sure it's not
