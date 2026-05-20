@@ -469,14 +469,14 @@ sudo sudo -u postgres openqa-setup-db your_username openqa-local
 
 Assuming you have already followed steps 1. to 4. above:
 
-1.  Create a separate database: `createdb -O your_username openqa-o3` where  `openqa-o3` is the name you want to use for the database
-
+1.  Create a separate database: `createdb -O your_username openqa-o3` where
+    `openqa-o3` is the name you want to use for the database
 2.  The next steps must be run as the user you start your local openQA
-    instance with, i.e. the `your_username` user. 3.  Import dump: `pg_restore -c -d openqa-o3 path/to/dump`
+    instance with, i.e. the `your_username` user.
+3.  Import dump: `pg_restore -c -d openqa-o3 path/to/dump`
     Note that errors of the form `ERROR: role "geekotest" does not exist` are
     due to the users in the production setup and can safely be ignored.
     Everything will be owned by `your_username`.
-
 4.  Configure openQA to use that database as in step 7. above.
 
 ### Manual daemon setup
