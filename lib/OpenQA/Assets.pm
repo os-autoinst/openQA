@@ -33,6 +33,13 @@ sub setup ($server) {
           if $e =~ qr/could not find input asset.*node_modules/i;    # uncoverable statement
         die $e;    # uncoverable statement
     }
+
+    # Clean up file handles to avoid "Too many open files"
+    for my $asset (map { @$_ } values %{$server->asset->{by_topic} // {}}) {
+        delete $asset->{_asset}{handle} if $asset->{_asset} && $asset->{_asset}->isa('Mojo::Asset::File');
+    }
+    delete $server->asset->{input};
+    delete $server->asset->store->{assets};
 }
 
 sub _path ($url) { path('assets', ref $url eq 'Mojo::URL' ? $url->path : $url)->realpath->to_rel }
