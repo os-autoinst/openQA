@@ -93,10 +93,13 @@ sub barrier_create ($name = undef, $jobid = undef, $expected_jobs = undef) {
     my $barriers = _get_lock($name, $jobid, 'all');
     return 0 if $barriers && $barriers->single;
     my $dbh = OpenQA::Schema->singleton->storage->dbh;
+    # note: Using execute() return value instead of $sth->rows which is unreliable for ON CONFLICT DO NOTHING
+    # https://github.com/bucardo/dbdpg/issues/194
     my $sth = $dbh->prepare('INSERT INTO job_locks (name, owner, count) VALUES (?, ?, ?) ON CONFLICT DO NOTHING');
-    try { $sth->execute($name, $jobid, $expected_jobs) }
+    my $rows;
+    try { $rows = $sth->execute($name, $jobid, $expected_jobs) }
     catch ($e) { die "Unable to create barrier for job $jobid with name '$name': $e" }    # uncoverable statement
-    return $sth->rows > 0;
+    return $rows > 0;
 }
 
 sub barrier_wait ($name = undef, $jobid = undef, $where = undef, $check_dead_job = 0) {

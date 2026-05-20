@@ -674,10 +674,10 @@ subtest 'allocating network' => sub {
         #       a transaction (as of 3c52abbe3d6364c02f73c6f9fe4afe44f89688f6) makes one think it may be
         #       necassary. If we ever encounter this error in production we should find out what exactly is
         #       causing it and what behavior would make most sense in that situation.
-        my $jobs_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
-        $jobs_mock->redefine(_find_network => undef);
+        $mock_result->redefine(_find_network => undef);
         throws_ok { $job->prepare_for_work($worker) } qr/unable to alloc.*foo.*already exists/i,
           'explicit error if network to be created already exists';
+        $mock_result->unmock('_find_network');
         $networks = _get_job_networks($job_networks);
         is_deeply $networks, \@expected_networks, 'still only 2 job networks' or always_explain $networks;
     };

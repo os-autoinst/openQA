@@ -1116,7 +1116,9 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
     # execute query to insert job module
     # note: We have 'important' in the DB but 'ignore_failure' in the flags for historical reasons (see #1266).
     my $flags = $tm->{flags};
-    $insert_sth->execute(
+    # note: Using execute() return value instead of $sth->rows which is unreliable for ON CONFLICT DO NOTHING
+    # https://github.com/bucardo/dbdpg/issues/194
+    my $rows = $insert_sth->execute(
         $self->id, @required_fields,
         $flags->{milestone} ? 1 : 0,
         $flags->{ignore_failure} ? 0 : 1,
@@ -1124,7 +1126,7 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
         $flags->{always_rollback} ? 1 : 0,
         $flags->{always_run} ? 1 : 0,
     );
-    return 0 unless $insert_sth->rows;
+    return 0 if $rows <= 0;
 
     # update job module statistics for that job (jobs with default result NONE are accounted as skipped)
     $self->update({skipped_module_count => \'skipped_module_count + 1'}) unless $skip_jobs_update;
@@ -1619,9 +1621,12 @@ sub allocate_network ($self, $name) {
     for ($vlan = 1;; ++$vlan) {
         log_debug "at vlan $name:$vlan";
         next if $used{$vlan};
-        try { $sth->execute($job_id, $name, $vlan) }
+        # note: Using execute() return value instead of $sth->rows which is unreliable for ON CONFLICT DO NOTHING
+        # https://github.com/bucardo/dbdpg/issues/194
+        my $rows;
+        try { $rows = $sth->execute($job_id, $name, $vlan) }
         catch ($e) { die "Failed to create new vlan tag '$vlan' for job $job_id: $e\n" }    # uncoverable statement
-        die "Unable to allocate network for job $job_id: network '$name' already exists" unless $sth->rows;
+        die "Unable to allocate network for job $job_id: network '$name' already exists" if $rows <= 0;
         log_debug "Created network for $job_id: $vlan";
         for my $cluster_job_id (keys %{$self->cluster_jobs}) {
             # apply it for the whole cluster so that the vlan only appears if all of the cluster is gone
