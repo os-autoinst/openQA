@@ -500,7 +500,7 @@ Of course you can ignore the user specified in these unit files and instead
 start everything as your regular user as mentioned above. However, you need to
 ensure that your user has the permission to the "openQA base directory". That
 is not the case by default so it makes sense to
-[customize it](Contributing.md#customize_base_directory).
+[customize it](Contributing.md#customize-base-directory).
 
 You do **not** need to setup an additional web server because the daemons
 already provide one. The port under which a service is available is logged on
@@ -519,7 +519,7 @@ This creates an empty temporary database and starts the web application using
 that specific database (ignoring the configuration from `database.ini`). Be aware that this may cause unwanted changes in the `t/data` directory.
 
 Also find more details in
-[Run tests without Container](Contributing.md#run_tests_without_container).
+[Run tests without Container](Contributing.md#run-tests-without-container).
 
 #### Further tips
 
@@ -869,12 +869,12 @@ either `./script/initdb --init_database` or `./script/upgradedb --upgrade_databa
 
 Migrations that affect possibly big tables should be tested against a local import of
 a production database to see how much time they need. Check out the
-[Importing production data](Contributing.md#importing_production_data) section
+[Importing production data](Contributing.md#importing-production-data) section
 for details.
 
 A migration can cause the analyser to regress so it produces worse query plans leading
 to impaired performance. Check out the
-[Working on database-related performance problems](Installing.md#working_on_database_related_performance_problems)
+[Working on database-related performance problems](Installing.md#working-on-database-related-performance-problems)
 section for how to tackle this problem.
 
 ### How to add fixtures to the database
