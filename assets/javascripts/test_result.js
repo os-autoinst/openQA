@@ -745,7 +745,7 @@ function loadEmbeddedLogFiles(filter) {
         logFileElement.dataset.contentsLoaded = true;
       })
       .catch(error => {
-        log.error(error);
+        console.error(error);
         logFileElement.appendChild(document.createTextNode(`Unable to load logfile: ${error}`));
       });
   });
