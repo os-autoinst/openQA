@@ -1,7 +1,7 @@
 [project]
 name = "openQA"
 dynamic = ["version"]
-description = "openQA web-frontend, scheduler and tools."
+description = "Framework for automated system-level testing (web-frontend, scheduler and tools)"
 readme = "README.md"
 requires-python = ">=3.6"
 license = "GPL-2-or-later"
