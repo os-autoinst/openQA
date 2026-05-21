@@ -468,6 +468,10 @@ function updateToggleClickCoordinatesButton(hasClickCoorinates) {
   }
 }
 
+function hasMatchAreas(areas) {
+  return Array.isArray(areas) && areas.find(area => area.type === 'match');
+}
+
 function saveNeedle(overwrite) {
   const form = document.getElementById('save_needle_form');
   const errors = [];
@@ -477,8 +481,8 @@ function saveNeedle(overwrite) {
   }
   const areaSelection = window.needles[$('#area_select').val()];
   const takeMatches = $('#take_matches').prop('checked');
-  if ((!takeMatches && !areaSelection.area.length) || (takeMatches && !areaSelection.matches.length)) {
-    errors.push('No areas defined.');
+  if (!hasMatchAreas(takeMatches ? areaSelection.matches : areaSelection.area)) {
+    errors.push('At least one match area must be defined.');
   }
   if (errors.length) {
     addFlash('danger', '<strong>Unable to save needle:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>');

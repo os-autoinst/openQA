@@ -384,7 +384,7 @@ subtest 'Create new needle' => sub {
     wait_for_ajax(with_minion => $minion);
     is
       $driver->find_element('.alert-danger span')->get_text(),
-      "Unable to save needle:\nNo areas defined.",
+      "Unable to save needle:\nAt least one match area must be defined.",
       'areas verified via JavaScript when "Copy areas from: None" selected';
     # dismiss the alert (can't use click because of fade effect)
     $driver->execute_script('$(".alert-danger").remove()');
@@ -455,8 +455,8 @@ subtest 'Saving needle with only OCR areas' => sub {
     wait_for_ajax(msg => 'wait for needle with only OCR areas created', with_minion => $minion);
     like
       $driver->find_element('#flash-messages .alert:last-child span')->get_text(),
-      qr/Cannot create a needle with only OCR areas/,
-      'error displayed for OCR-only needle';
+      qr/At least one match area must be defined/,
+      'error displayed when only an OCR needle is present';
     $driver->find_element('#flash-messages .alert:last-child .btn-close')->click();
 };
 
@@ -619,7 +619,7 @@ subtest 'areas/tags verified via JavaScript' => sub {
     $driver->find_element_by_id('save')->click();
     is
       $driver->find_element('.alert-danger span')->get_text(),
-      "Unable to save needle:\nNo tags specified.\nNo areas defined.",
+      "Unable to save needle:\nNo tags specified.\nAt least one match area must be defined.",
       'areas/tags verified via JavaScript';
     $driver->find_element('.alert-danger button')->click();
 };
