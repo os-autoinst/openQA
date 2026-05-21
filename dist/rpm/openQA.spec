@@ -107,6 +107,7 @@ Name:           openQA
 Version:        5
 Release:        0
 Summary:        Automated web-frontend testing framework, scheduler and tools
+Group:          Development/Tools/Other
 License:        GPL-2.0-or-later
 Url:            http://os-autoinst.github.io/openQA/
 Source0:        %{name}-%{version}.tar.xz
@@ -201,6 +202,7 @@ openQA workers.
 
 %package worker
 Summary:        The openQA worker
+Group:          Development/Tools/Other
 %define worker_requires_including_uncovered_in_tests %worker_requires perl(SQL::SplitStatement)
 Requires:       %{worker_requires_including_uncovered_in_tests}
 # FIXME: use proper Requires(pre/post/preun/...)
@@ -224,6 +226,7 @@ The openQA worker manages test engine (provided by os-autoinst package).
 
 %package mcp
 Summary:        Additional MCP package for AI support in openQA
+Group:          Development/Tools/Other
 Requires:       %{mcp_requires}
 
 %description mcp
@@ -231,6 +234,7 @@ This package contains a plugin for AI support in openQA.
 
 %package client
 Summary:        Client tools for remote openQA management
+Group:          Development/Tools/Other
 Requires:       openQA-common = %{version}
 Requires:       %client_requires
 
@@ -241,6 +245,7 @@ a convenient helper for interacting with openQA webui REST API.
 %if %{with python_scripts}
 %package python-scripts
 Summary:        Additional scripts in python
+Group:          Development/Tools/Other
 Requires:       %python_scripts_requires
 
 %description python-scripts
@@ -249,6 +254,7 @@ Additional scripts for the use of openQA in the python programming language.
 
 %package local-db
 Summary:        Helper package to ease setup of postgresql DB
+Group:          Development/Tools/Other
 Requires:       %{name} = %{version}
 Requires:       postgresql-server
 BuildRequires:  postgresql-server
@@ -260,6 +266,7 @@ next to the webui.
 
 %package single-instance
 Summary:        Convenience package for a single-instance setup using apache proxy
+Group:          Development/Tools/Other
 Provides:       %{name}-single-instance-apache
 Provides:       %{name}-single-instance-apache2
 Requires:       %{name}-local-db
@@ -272,6 +279,7 @@ Use this package to setup a local instance with all services provided together.
 
 %package single-instance-nginx
 Summary:        Convenience package for a single-instance setup using nginx proxy
+Group:          Development/Tools/Other
 Requires:       %{name}-local-db
 Requires:       %{name} = %{version}
 Requires:       %{name}-worker = %{version}
@@ -282,6 +290,7 @@ Use this package to setup a local instance with all services provided together.
 
 %package bootstrap
 Summary:        Automated openQA setup
+Group:          Development/Tools/Other
 Requires:       curl
 Requires:       iputils
 Requires:       procps
@@ -292,6 +301,7 @@ or within a systemd-nspawn container.
 
 %package doc
 Summary:        The openQA documentation
+Group:          Development/Tools/Other
 
 %description doc
 Documentation material covering installation, configuration, basic test writing, etc.
@@ -299,6 +309,7 @@ Covering both openQA and also os-autoinst test engine.
 
 %package auto-update
 Summary:        Automatically upgrade and reboot the system when required
+Group:          Development/Tools/Other
 Requires:       %{name}-common
 Requires:       curl
 Requires:       rebootmgr
@@ -309,6 +320,7 @@ and rebooting the system if devel:openQA packages are stable.
 
 %package continuous-update
 Summary:        Continuously update packages from devel:openQA
+Group:          Development/Tools/Other
 Requires:       %{name}-common
 Requires:       curl
 
@@ -321,6 +333,7 @@ regardless of whether devel:openQA contains updates.
 %if %{with munin_package}
 %package munin
 Summary:        Munin scripts
+Group:          Development/Tools/Other
 Requires:       munin
 Requires:       munin-node
 Requires:       curl
@@ -333,6 +346,7 @@ statistics.
 
 %package client-bash-completion
 Summary:        Bash Completion for %{name}
+Group:          Development/Tools/Other
 Requires:       bash-completion
 Supplements:    (%{name}-client and bash)
 
@@ -341,6 +355,7 @@ The official bash completion script for openqa-cli.
 
 %package client-zsh-completion
 Summary:        Zsh Completion for %{name}
+Group:          Development/Tools/Other
 Supplements:    (%{name}-client and zsh)
 
 %description client-zsh-completion
