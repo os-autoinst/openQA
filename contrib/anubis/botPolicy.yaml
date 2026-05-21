@@ -266,11 +266,12 @@ dnsbl: false
 
 #       <!-- ... -->
 
+
 # Open Graph passthrough configuration, see here for more information:
 # https://anubis.techaro.lol/docs/admin/configuration/open-graph/
 openGraph:
   # Enables Open Graph passthrough
-  enabled: false
+  enabled: true
   # Enables the use of the HTTP host in the cache key, this enables
   # caching metadata for multiple http hosts at once.
   considerHost: false
@@ -280,15 +281,20 @@ openGraph:
   # # the target service.
   # #
   # # Correlates to properties in https://ogp.me/
-  # override:
+  override:
   #   # og:title is required, it is the title of the website
-  #   "og:title": "Techaro Anubis"
-  #   "og:description": >-
-  #     Anubis is a Web AI Firewall Utility that helps you fight the bots
-  #     away so that you can maintain uptime at work!
-  #   "description": >-
-  #     Anubis is a Web AI Firewall Utility that helps you fight the bots
-  #     away so that you can maintain uptime at work!
+    "og:title": "OpenQA - OpenSUSE automated test tool for operating systems"
+    "og:description": >-
+      openQA is an automated test tool that makes it possible to test the whole
+      installation process of an operating system. It uses virtual machines to reproduce
+      the process, check the output (both serial console and screen) in every step and
+      send the necessary keystrokes and commands to proceed to the next. openQA can
+      check whether the system can be installed, whether it works properly in 'live'
+      mode, whether applications work or whether the system responds as expected to
+      different installation options and commands.
+    "description": >-
+      Automated testing for openSUSE distributions.
+      Hosted by openSUSE.
 
 # By default, send HTTP 200 back to clients that either get issued a challenge
 # or a denial. This seems weird, but this is load-bearing due to the fact that
@@ -370,4 +376,3 @@ thresholds:
       algorithm: fast
       difficulty: 5
       report_as: 5
-

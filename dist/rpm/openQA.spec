@@ -344,7 +344,6 @@ Use this package to install munin scripts that allow to monitor some openQA
 statistics.
 %endif
 
-<<<<<<< HEAD
 %package client-bash-completion
 Summary:        Bash Completion for %{name}
 Group:          Development/Tools/Other
@@ -361,7 +360,6 @@ Supplements:    (%{name}-client and zsh)
 
 %description client-zsh-completion
 The official zsh completion script for openqa-cli.
-=======
 %package anubis
 Summary:        Anubis bot integration for openQA
 Requires:       docker
@@ -370,7 +368,6 @@ Requires:       %{name} = %{version}
 
 %description anubis
 Use this package to install a anubis container alongside its default configuration
->>>>>>> 1673c0292 (Add a sub-package for Anubis configuration)
 
 %package llm-server
 Summary:        Local LLM Server features for openQA workers
