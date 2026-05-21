@@ -1,0 +1,42 @@
+# Local LLM Server Proxy Configuration
+#
+# To enable the LLM proxy:
+# 1. Copy this file to openqa-llm.conf:
+#    cp openqa-llm.conf.template openqa-llm.conf
+# 2. Edit the 'llm_backend' upstream block below to include all your
+#    workers that are running the openQA-llm-server.
+# 3. Adjust the 'allow' directive to match your internal network.
+# 4. Reload nginx: systemctl reload nginx
+
+upstream llm_backend {
+    least_conn;
+    # Replace the following with your actual worker hostnames or IPs
+    server openqaworker1:8080 max_fails=3 fail_timeout=30s;
+    # server openqaworker2:8080 max_fails=3 fail_timeout=30s;
+}
+
+server {
+    listen 80;
+    server_name openqa-llm;
+
+    location / {
+        proxy_pass http://llm_backend;
+
+        # LLMs are slow, don't time out early
+        proxy_read_timeout 600s;
+        proxy_connect_timeout 600s;
+        proxy_send_timeout 600s;
+
+        # Crucial for "streaming" tokens (Real-time typing)
+        proxy_buffering off;
+        proxy_redirect off;
+
+        # Ensure we pass the real worker IP for logging
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # Security: Internal network only (Adjust to your subnet)
+        allow 10.0.0.0/8;
+        deny all;
+    }
+}
