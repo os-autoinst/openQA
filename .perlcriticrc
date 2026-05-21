@@ -1,6 +1,6 @@
-theme = community + openqa
-severity = 4
-include = strict ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitParensWithBuiltins BuiltinFunctions::RequireBlockMap BuiltinFunctions::ProhibitStringySplit ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions ValuesAndExpressions::RequireQuotedHeredocTerminator Variables::ProhibitUnusedVariables ValuesAndExpressions::RequireNumberSeparators CodeLayout::ProhibitQuotedWordLists RegularExpressions::ProhibitSingleCharAlternation BuiltinFunctions::RequireBlockGrep RegularExpressions::ProhibitUselessTopic Variables::ProtectPrivateVars Subroutines::RequireArgUnpacking Modules::ProhibitExcessMainComplexity Miscellanea::ProhibitUselessNoCritic BuiltinFunctions::ProhibitUselessTopic Documentation::RequirePackageMatchesPodName ValuesAndExpressions::ProhibitQuotesAsQuotelikeOperatorDelimiters ControlStructures::ProhibitCascadingIfElse Subroutines::ProhibitExcessComplexity Modules::ProhibitConditionalUseStatements CodeLayout::ProhibitHardTabs Community::ConditionalImplicitReturn Variables::ProhibitPackageVars TestingAndDebugging::ProhibitNoWarnings ClassHierarchies::ProhibitOneArgBless Community::POSIXImports InputOutput::ProhibitReadlineInForLoop Subroutines::ProhibitReturnSort Community::OpenArgs InputOutput::ProhibitTwoArgOpen BuiltinFunctions::ProhibitUniversalIsa Subroutines::ProhibitManyArgs Modules::ProhibitAutomaticExportation Community::EmptyReturn ErrorHandling::RequireCheckingReturnValueOfEval BuiltinFunctions::ProhibitStringyEval
+theme = community + openqa + core
+severity = 1
+exclude = BuiltinFunctions::ProhibitBooleanGrep BuiltinFunctions::ProhibitComplexMappings BuiltinFunctions::ProhibitReverseSortBlock BuiltinFunctions::ProhibitVoidMap ClassHierarchies::ProhibitAutoloading CodeLayout::RequireTrailingCommas Community::DiscouragedModules Community::Prototypes ControlStructures::ProhibitCStyleForLoops ControlStructures::ProhibitMutatingListFunctions ControlStructures::ProhibitPostfixControls ControlStructures::ProhibitUnlessBlocks ControlStructures::ProhibitUntilBlocks Documentation::PodSpelling Documentation::RequirePodAtEnd Documentation::RequirePodSections ErrorHandling::RequireCarping InputOutput::ProhibitBacktickOperators InputOutput::ProhibitExplicitStdin InputOutput::ProhibitInteractiveTest InputOutput::ProhibitJoinedReadline InputOutput::RequireBracedFileHandleWithPrint InputOutput::RequireBriefOpen InputOutput::RequireCheckedClose InputOutput::RequireCheckedOpen InputOutput::RequireCheckedSyscalls Miscellanea::ProhibitTies Modules::ProhibitMultiplePackages Modules::RequireBarewordIncludes Modules::RequireEndWithOne Modules::RequireExplicitPackage Modules::RequireFilenameMatchesPackage Modules::RequireNoMatchVarsWithUseEnglish Modules::RequireVersionVar NamingConventions::Capitalization NamingConventions::ProhibitAmbiguousNames References::ProhibitDoubleSigils RegularExpressions::ProhibitCaptureWithoutTest RegularExpressions::ProhibitComplexRegexes RegularExpressions::ProhibitEnumeratedClasses RegularExpressions::ProhibitEscapedMetacharacters RegularExpressions::ProhibitFixedStringMatches RegularExpressions::ProhibitUnusedCapture RegularExpressions::ProhibitUnusualDelimiters RegularExpressions::RequireBracesForMultiline RegularExpressions::RequireDotMatchAnything RegularExpressions::RequireExtendedFormatting RegularExpressions::RequireLineBoundaryMatching Subroutines::ProhibitBuiltinHomonyms Subroutines::ProhibitExplicitReturnUndef Subroutines::ProhibitSubroutinePrototypes Subroutines::ProhibitUnusedPrivateSubroutines Subroutines::ProtectPrivateSubs Subroutines::RequireFinalReturn ValuesAndExpressions::ProhibitCommaSeparatedStatements ValuesAndExpressions::ProhibitConstantPragma ValuesAndExpressions::ProhibitEmptyQuotes ValuesAndExpressions::ProhibitEscapedCharacters ValuesAndExpressions::ProhibitImplicitNewlines ValuesAndExpressions::ProhibitLeadingZeros ValuesAndExpressions::ProhibitLongChainsOfMethodCalls ValuesAndExpressions::ProhibitMagicNumbers ValuesAndExpressions::ProhibitMismatchedOperators ValuesAndExpressions::ProhibitMixedBooleanOperators ValuesAndExpressions::ProhibitNoisyQuotes ValuesAndExpressions::RequireConstantVersion ValuesAndExpressions::RequireInterpolationOfMetachars Variables::ProhibitAugmentedAssignmentInDeclaration Variables::ProhibitLocalVars Variables::ProhibitPunctuationVars Variables::ProhibitReusedNames Variables::RequireInitializationForLocalVars Variables::RequireLocalizedPunctuationVars
 
 # ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions
 # No operators like < =~ ! allowed in 'unless' or 'until', only simple
@@ -50,6 +50,23 @@ equivalent_modules = Test::Most
 [ValuesAndExpressions::RequireNumberSeparators]
 min_value = 1000000
 
+[Variables::ProhibitPackageVars]
+add_packages = Config::IniFiles
+
+[Community::DiscouragedModules]
+allowed_modules = FindBin
+
+[TestingAndDebugging::ProhibitNoWarnings]
+allow = redefine
+
+# The following policies might be interesting:
+# InputOutput::ProhibitInteractiveTest
+# InputOutput::ProhibitExplicitStdin
+# BuiltinFunctions::ProhibitComplexMappings
+# RegularExpressions::ProhibitUnusedCapture
+
+# The following thresholds should ideally be reduced
+# https://progress.opensuse.org/issues/201318
 [Modules::ProhibitExcessMainComplexity]
 # Reduce me!
 max_mccabe = 83
@@ -61,12 +78,6 @@ max_elsif = 5
 [Subroutines::ProhibitExcessComplexity]
 # Reduce me!
 max_mccabe = 63
-
-[Variables::ProhibitPackageVars]
-add_packages = Config::IniFiles
-
-[TestingAndDebugging::ProhibitNoWarnings]
-allow = redefine
 
 [Subroutines::ProhibitManyArgs]
 # Reduce me!
