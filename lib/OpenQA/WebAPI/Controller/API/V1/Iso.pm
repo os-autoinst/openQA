@@ -165,12 +165,12 @@ created, their job ids and the information for jobs that could not be scheduled.
 sub create ($self) {
     my $raw_params = $self->req->params->to_hash;
     my $params = {map { ($_ !~ RESERVED_API_KEYS_RE ? uc : $_) => $raw_params->{$_} } keys %$raw_params};
-    $self->validation->input({%$params});
+    my $validation = $self->validation;
+    $validation->input({%$params});
     my $async = delete $params->{async};    # whether to run the operation as a Minion job
     my $scheduled_product_clone_id
       = delete $params->{scheduled_product_clone_id};    # ID of a previous product to clone settings from
     my $log = $self->app->log;
-    my $validation = $self->validation;
     my $scheduled_products = $self->schema->resultset('ScheduledProducts');
 
     # validate parameter
