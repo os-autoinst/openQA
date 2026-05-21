@@ -1611,7 +1611,7 @@ after they finished. This limit only applies if it's higher than regular jobs.
 
 Further remarks:
 
-- Checkout the [Build tagging](UsersGuide.md#build-tagging) section for
+- Check out the [Build tagging](UsersGuide.md#build-tagging) section for
   how to mark a job as important on job group level. Jobs can also be marked as
   important by adding a "link label" (e.g.
   `label:linked Job mentioned on https://…`) in a job comment. - New groups use the limits configured in the `[default_group_limits]`
