@@ -19,6 +19,6 @@
 </ul>
 <p>
     There is also separate retentions for <strong>important</strong> jobs so these jobs can be stored longer. Jobs can be marked as important on job group level
-    via <a href="https://open.qa/docs/#build_tagging">build tagging</a> and on job level via "link labels", e.g. <code>label:linked Job mentioned on https://…</code>.
+    via <a href="https://open.qa/docs/#build-tagging">build tagging</a> and on job level via "link labels", e.g. <code>label:linked Job mentioned on https://…</code>.
 </p>
 '; %>

@@ -2224,7 +2224,7 @@ An example using GitHub actions and the official container image we provide for
 > [scenario definitions](https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml)
 > in a way that is independent from openQA's normal scheduling tables. This
 > feature is explained in further detail in the corresponding
-> [users guide section](UsersGuide.md#scenarios_yaml).
+> [users guide section](UsersGuide.md#defining-test-scenarios-in-yaml).
 
 It is also possible to create a GitHub workflow that will clone and monitor an
 openQA job which is mentioned in the PR description or comment. The scripts
