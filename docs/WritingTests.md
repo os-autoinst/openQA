@@ -2144,12 +2144,11 @@ sub post_run_hook {}
 ```
 
 For example this can be used in bug investigations or trying out new test
-modules which are hard to test locally.
-The
-section "Asset handling" in the [Users Guide](UsersGuide.md#usersguide)
-describes how downloadable assets can be specified. It is important to note
-that the specified asset is only downloaded once. New versions must be
-supplied as new, unambiguous download target file names.
+modules which are hard to test locally. The section
+[Asset handling](UsersGuide.md#asset-handling) describes how downloadable assets
+can be specified. It is important to note that the specified asset is only
+downloaded once. New versions must be supplied as new, unambiguous download
+target file names.
 
 <a id="triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"></a>
 ### Triggering tests based on an any remote Git refspec or open GitHub pull request
