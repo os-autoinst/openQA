@@ -744,7 +744,7 @@ sub cluster_jobs ($self, @args) {
 
     # handle re-visiting job
     if (defined $job) {
-        # checkout the children after all when revisiting this job without $skip_children but children
+        # check out the children after all when revisiting this job without $skip_children but children
         # have previously been skipped
         return $self->_cluster_children($jobs, $cancelmode) if !$skip_children && delete $job->{children_skipped};
         # otherwise skip the already visisted job

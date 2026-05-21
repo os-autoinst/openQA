@@ -28,7 +28,7 @@ become a happy user.
 
 For a quick start, if you already have an openQA instance available you can
 refer to the section
-[Cloning existing jobs - openqa-clone-job](UsersGuide.md#cloning_existing_jobs_openqa_clone_job)
+[Cloning existing jobs - openqa-clone-job](UsersGuide.md#cloning-existing-jobs---openqa-clone-job)
 directly to trigger a new test based on already existing job. For a quick
 installation refer directly to
 [Quick bootstrapping under openSUSE](Installing.md#bootstrapping) or
@@ -327,7 +327,7 @@ can place default values deviating from upstream defaults.
 The client configuration can also be put under `~/.config/openqa/client.conf`.
 
 For development, check out the section about
-[customizing the configuration directory](Contributing.md#customize_configuration_directory).
+[customizing the configuration directory](Contributing.md#customize-configuration-directory).
 
 #### Drop-in configurations
 

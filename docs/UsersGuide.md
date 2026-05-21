@@ -1243,7 +1243,7 @@ need to be defined before on the corresponding pages of the web UI (accessible
 to operators from the user menu). The
 [section on job templates](UsersGuide.md#job_templates) already explains
 details about these tables. Alternatively, these settings can be
-supplied via a [YAML document](UsersGuide.md#scenarios_yaml).
+supplied via a [YAML document](UsersGuide.md#defining-test-scenarios-in-yaml).
 
 Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
 `FLAVOR` and `ARCH` more parameters can be specified. Those additional
@@ -1531,7 +1531,7 @@ the test will be uploaded back to the web-UI and stored under the name
 
 > **NOTE:**
 > When using this mechanism you will often also want to use the
-> [variable expansion](UsersGuide.md#variable_expansion) mechanism.
+> [variable expansion](UsersGuide.md#variable-expansion) mechanism.
 
 #### Private assets
 
@@ -1553,7 +1553,7 @@ naming conflicts.
 
 ## Cleanup of assets, results and other data
 
-The cleanup of [assets](UsersGuide.md#asset_handling), test results
+The cleanup of [assets](UsersGuide.md#asset-handling), test results
 and certain other data is automated. That means openQA removes assets, job
 results and other data automatically according to configurable limits.
 
@@ -1565,7 +1565,7 @@ unless `concurrent` is set to `1` in the `[cleanup]` settings of
 cleanup-related settings can be found within the web UI configuration as well,
 e.g. the `[…_limits]` sections contain various tweaks and allow to change certain
 defaults. Check out the sub section
-[Timers and triggers](UsersGuide.md#timers_and_triggers) to learn more
+[Timers and triggers](UsersGuide.md#timers-and-triggers) to learn more
 about how those jobs are triggered.
 
 The cleanup of **assets** and job **results** (and certain other data) is happening
@@ -1611,7 +1611,7 @@ after they finished. This limit only applies if it's higher than regular jobs.
 
 Further remarks:
 
-- Checkout the [Build tagging](UsersGuide.md#build_tagging) section for
+- Check out the [Build tagging](UsersGuide.md#build-tagging) section for
   how to mark a job as important on job group level. Jobs can also be marked as
   important by adding a "link label" (e.g.
   `label:linked Job mentioned on https://…`) in a job comment. - New groups use the limits configured in the `[default_group_limits]`

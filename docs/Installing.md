@@ -88,7 +88,7 @@ podman run -e skip_suse_specifics= -e skip_suse_tests= \
 
 The `skip_suse_specifics=` and `skip_suse_tests=` options ensure the test files
 and needles required for openSUSE/SUSE tests are downloaded. Refer to the
-[example video above](Installing.md#how_to_run_a_test_with_single_instance_container_in_5_minutes)
+[example video above](Installing.md#how-to-run-a-test-with-single-instance-container-in-5-minutes)
 and the [get testing](GettingStarted.md#get-testing) section for more
 details.
 
@@ -209,7 +209,7 @@ The above command will bootstrap an openQA installation and immediately
 afterwards start a local test job clone from a test job from a remote instance
 with optional, overridden parameters. More information about
 `openqa-clone-job` can be found in
-[Cloning existing jobs - openqa-clone-job](UsersGuide.md#cloning_existing_jobs_openqa_clone_job).
+[Cloning existing jobs - openqa-clone-job](UsersGuide.md#cloning-existing-jobs---openqa-clone-job).
 
 You can also run `openqa-bootstrap` repeatedly. For example when you stop a
 container and the openQA daemons and database are stopped, calling
@@ -1138,7 +1138,7 @@ The messages consist of a topic and a body.
 The body contains json encoded info about the event.
 See [amqp_infra](https://github.com/openSUSE/suse_msg/blob/master/amqp_infra.md)
 for more info about the server and the message topic format or take a look at
-[Consuming AMQP events from openQA](UsersGuide.md#amqp_events) to find
+[Consuming AMQP events from openQA](UsersGuide.md#consuming-amqp-events-from-openqa) to find
 detailed instructions how to configure the AMQP server.
 
 To let openQA send messages to an AMQP message bus,
@@ -1754,7 +1754,7 @@ are using indexes (and not just sequential scans).
 
 Tests, needles, assets, results and working directories (a.k.a. "pool directories") are located in certain
 subdirectories within `/var/lib/openqa`. This directory is configurable (see
-[Customize base directory](Contributing.md#customize_base_directory)). Here we assume the default is in place.
+[Customize base directory](Contributing.md#customize-base-directory)). Here we assume the default is in place.
 
 
 

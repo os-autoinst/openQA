@@ -48,9 +48,9 @@ container (so you do not have any dependency on your host system) or to leave
 out the `openqa_data` container altogether (so you have only `webui` and
 `worker` containers and data is loaded and saved completely into your host
 system). If this is what you prefer, check out the sections
-[Keeping all data in the Data Volume Container](ContainerizedSetup.md#keeping_all_data_in_the_data_volume_container)
+[Keeping all data in the Data Volume Container](ContainerizedSetup.md#keeping-all-data-in-the-data-volume-container)
 and
-[Keeping all data on the host system](ContainerizedSetup.md#keeping_all_data_on_the_host_system)
+[Keeping all data on the host system](ContainerizedSetup.md#keeping-all-data-on-the-host-system)
 respectively.
 
 Otherwise, when you want to have the big files (isos and disk images, tests and
@@ -327,7 +327,7 @@ If you decided to keep all the data in the Volume container (`openqa_data`), run
     podman exec openqa_data chmod -R 777 data/factory/{iso,hdd} data/tests
 
 In the
-[section about running the web UI and data container](ContainerizedSetup.md#run_the_data_and_web_ui_containers),
+[section about running the web UI and data container](ContainerizedSetup.md#run-the-data-and-web-ui-containers),
 use the `openqa_data`
 container like this instead:
 
@@ -350,14 +350,14 @@ a Volume Container, run the following commands:
     chcon -Rt svirt_sandbox_file_t data
 
 In the
-[section about running the web UI and data container](ContainerizedSetup.md#run_the_data_and_web_ui_containers),
+[section about running the web UI and data container](ContainerizedSetup.md#run-the-data-and-web-ui-containers),
 do **not** run the `openqa_data`
 container and run the `webui` container like this instead: podman run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 443:443 -p 80:80 fedoraqa/openqa_webui:4.1-3.12 Change OpenID provider in `data/conf/openqa.ini` under `provider` in
 `[openid]` section and then put Key and Secret under both sections in
 `data/conf/client.conf`.
 
 In the
-[run worker container section](ContainerizedSetup.md#run_the_worker_container),
+[run worker container section](ContainerizedSetup.md#run-the-worker-container),
 run the worker as:
 
     podman run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker:4.1-3.12 1

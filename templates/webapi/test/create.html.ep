@@ -68,7 +68,7 @@
     <div class="col-md-6">
       <label for="create-tests-scenario-definitions" class="form-label"><strong>Scenario definitions</strong></label>
       <%= help_popover('Scenario definitions' => '<p>A YAML document that defines sets of settings. These settings are then combined to create one or more test jobs.</p>',
-        'https://open.qa/docs/#scenarios_yaml', 'the documentation', 'left') %>
+        'https://open.qa/docs/#defining-test-scenarios-in-yaml', 'the documentation', 'left') %>
       <textarea class="form-control" id="create-tests-scenario-definitions" rows="15"><%= $preset->{scenario_definitions} // q(---
 # example
 

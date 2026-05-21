@@ -959,7 +959,7 @@ function handleWebsocketConnectionClosed(wsConnection) {
 
 function addLivehandlerFlash(status, id, text) {
   text +=
-    '<p><hr>For troubleshooting, checkout the <a href="https://open.qa/docs/#debugdevelmode" \
+    '<p><hr>For troubleshooting, check out the <a href="https://open.qa/docs/#debugdevelmode" \
     target="blank">documentation about debugging the developer mode setup</a>.</p>';
   addUniqueFlash(status, id, text, $('#developer-flash-messages'));
 }

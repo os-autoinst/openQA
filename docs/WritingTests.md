@@ -2144,12 +2144,11 @@ sub post_run_hook {}
 ```
 
 For example this can be used in bug investigations or trying out new test
-modules which are hard to test locally.
-The
-section "Asset handling" in the [Users Guide](UsersGuide.md#usersguide)
-describes how downloadable assets can be specified. It is important to note
-that the specified asset is only downloaded once. New versions must be
-supplied as new, unambiguous download target file names.
+modules which are hard to test locally. The section
+[Asset handling](UsersGuide.md#asset-handling) describes how downloadable assets
+can be specified. It is important to note that the specified asset is only
+downloaded once. New versions must be supplied as new, unambiguous download
+target file names.
 
 <a id="triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request"></a>
 ### Triggering tests based on an any remote Git refspec or open GitHub pull request
@@ -2224,7 +2223,7 @@ An example using GitHub actions and the official container image we provide for
 > [scenario definitions](https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml)
 > in a way that is independent from openQA's normal scheduling tables. This
 > feature is explained in further detail in the corresponding
-> [users guide section](UsersGuide.md#scenarios_yaml).
+> [users guide section](UsersGuide.md#defining-test-scenarios-in-yaml).
 
 It is also possible to create a GitHub workflow that will clone and monitor an
 openQA job which is mentioned in the PR description or comment. The scripts
