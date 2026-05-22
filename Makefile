@@ -25,6 +25,7 @@ ifeq ($(TESTS),)
 PROVE_ARGS ?= --trap -r ${EXTRA_PROVE_ARGS} t
 else
 CHECKSTYLE ?= 0
+COMPILE_TEST ?= 0
 PROVE_ARGS ?= --trap ${EXTRA_PROVE_ARGS} $(TESTS)
 endif
 PROVE_LIB_ARGS ?= -l
@@ -236,7 +237,14 @@ checkstyle_tests =
 else
 checkstyle_tests = test-checkstyle-standalone
 endif
-test: $(checkstyle_tests) test-compile test-with-database ## Run all tests (including checkstyle, compile test and database tests)
+
+ifeq ($(COMPILE_TEST),0)
+compile_tests =
+else
+compile_tests = test-compile
+endif
+
+test: $(checkstyle_tests) $(compile_tests) test-with-database ## Run all tests (including checkstyle, compile test and database tests)
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
