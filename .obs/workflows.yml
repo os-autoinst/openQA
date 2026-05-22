@@ -16,18 +16,11 @@ pr:
               - target_project: devel:openQA
                 target_repository: openSUSE_Tumbleweed
             architectures: [ x86_64 ]
-          - name: openSUSE_Leap_15.6
+          - name: SLE_15_SP7_Backports
             paths:
-              - target_project: devel:openQA:Leap:15.6
-                target_repository: openSUSE_Leap_15.6
-              - target_project: devel:openQA
-                target_repository: openSUSE_Leap_15.6
-            architectures: [ x86_64 ]
-          - name: SLE_15_SP6_Backports
-            paths:
-              - target_project: devel:openQA:Leap:15.6
-                target_repository: '15.6'
-              - target_project: openSUSE:Backports:SLE-15-SP6:Update
+              - target_project: devel:openQA:Leap:15.7
+                target_repository: SLE_15_SP7_Backports
+              - target_project: openSUSE:Backports:SLE-15-SP7:Update
                 target_repository: standard
             architectures: [ x86_64 ]
           - name: '16.0'
