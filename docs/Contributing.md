@@ -72,7 +72,7 @@ rules.
 
 - All tests are passed. This is ensured by a CI system. You can also run local
   tests in your development environment to verify everything works as
-  expected, see [Conducting tests](Contributing.md#testing))
+  expected, see [Conducting tests](Contributing.md#conducting-tests))
 
 <!-- -->
 
