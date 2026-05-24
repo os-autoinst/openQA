@@ -316,6 +316,16 @@ define RUN_SERVICE_TEST_ENV
 	$(1)
 endef
 
+.PHONY: run-test-env
+run-test-env: setup-database ## Run all local test services (webui, websockets, scheduler, worker, gru)
+	trap 'kill 0' SIGINT SIGTERM; \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-websockets-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-scheduler-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/worker) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-gru) & \
+	wait
+
 .PHONY: run-webui-test-env
 run-webui-test-env: setup-database ## Run a local web UI instance using a test environment
 	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon)
