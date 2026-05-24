@@ -308,7 +308,8 @@ setup-database: ## Set up the test database
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 
 define RUN_SERVICE_TEST_ENV
-	OPENQA_BASEDIR=t/data \
+	OPENQA_BASEDIR="$(CURDIR)/t/data" \
+	OPENQA_CONFIG="$(CURDIR)/t/data" \
 	OPENQA_DATABASE=test \
 	OPENQA_WEBUI_MODE=test \
 	TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)" \
