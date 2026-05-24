@@ -12,7 +12,7 @@ sub register ($self, $app, @args) {
     $app->minion->add_task(create_zip_archive => \&_create_zip_archive);
 }
 
-sub _create_zip_archive ($minion_job, $job_id) {
+sub _create_zip_archive ($minion_job, $job_id, $category = 'all') {
     my $app = $minion_job->app;
 
     # avoid running too many archive generation jobs in parallel
@@ -26,7 +26,7 @@ sub _create_zip_archive ($minion_job, $job_id) {
         return undef;
     }
     try {
-        OpenQA::Archive::create_job_archive($job);
+        OpenQA::Archive::create_job_archive($job, $category);
         $minion_job->finish;
     }
     catch ($e) {

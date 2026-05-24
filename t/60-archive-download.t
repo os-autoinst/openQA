@@ -332,4 +332,61 @@ subtest 'Controller extra tests' => sub {
     $t->get_ok('/tests/' . $job->id . '/archive')->status_is(500)->content_is('Internal Server Error');
 };
 
+subtest 'Category specific archives' => sub {
+    my $job = $schema->resultset('Jobs')->create(
+        {
+            DISTRI => 'archtest',
+            VERSION => '1.0',
+            FLAVOR => 'test',
+            ARCH => 'x86_64',
+            TEST => 'category_test',
+            state => 'done',
+            result => 'passed',
+        });
+    my $res_dir = path($job->create_result_dir);
+    $res_dir->child('vars.json')->spew('{}');    # COMMON_RESULT_FILES includes vars.json
+    $res_dir->child('ulogs')->make_path->child('ulog.txt')->spew('ulog data');
+    my $asset = $schema->resultset('Assets')->create({type => 'iso', name => 'asset.iso'});
+    $schema->resultset('JobsAssets')->create({job_id => $job->id, asset_id => $asset->id});
+    path(assetdir(), 'iso', 'asset.iso')->dirname->make_path->child('asset.iso')->spew('asset data');
+
+    $case->login($t, 'admin');
+
+    # Test resultfiles category
+    $t->get_ok('/tests/' . $job->id . '/archive?category=resultfiles')->status_is(302)
+      ->header_like('Location' => qr|/archives/job_\d+_resultfiles.zip|);
+    $t->get_ok($t->tx->res->headers->location)->status_is(200);
+    my $zip_file = $tmp->child('resultfiles.zip');
+    $zip_file->spew($t->tx->res->body);
+    my $zip = Archive::Zip->new();
+    is $zip->read($zip_file->to_string), AZ_OK, 'Resultfiles zip is valid';
+    ok $zip->memberNamed('testresults/vars.json'), 'Contains result file';
+    ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
+    ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
+
+    # Test ulogs category
+    $t->get_ok('/tests/' . $job->id . '/archive?category=ulogs')->status_is(302)
+      ->header_like('Location' => qr|/archives/job_\d+_ulogs.zip|);
+    $t->get_ok($t->tx->res->headers->location)->status_is(200);
+    $zip_file = $tmp->child('ulogs.zip');
+    $zip_file->spew($t->tx->res->body);
+    $zip = Archive::Zip->new();
+    is $zip->read($zip_file->to_string), AZ_OK, 'Ulogs zip is valid';
+    ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
+    ok $zip->memberNamed('testresults/ulogs/ulog.txt'), 'Contains ulog';
+    ok !$zip->memberNamed('iso/asset.iso'), 'Does not contain asset';
+
+    # Test assets category
+    $t->get_ok('/tests/' . $job->id . '/archive?category=assets')->status_is(302)
+      ->header_like('Location' => qr|/archives/job_\d+_assets.zip|);
+    $t->get_ok($t->tx->res->headers->location)->status_is(200);
+    $zip_file = $tmp->child('assets.zip');
+    $zip_file->spew($t->tx->res->body);
+    $zip = Archive::Zip->new();
+    is $zip->read($zip_file->to_string), AZ_OK, 'Assets zip is valid';
+    ok !$zip->memberNamed('testresults/vars.json'), 'Does not contain result file';
+    ok !$zip->memberNamed('testresults/ulogs/ulog.txt'), 'Does not contain ulog';
+    ok $zip->memberNamed('iso/asset.iso'), 'Contains asset';
+};
+
 done_testing;

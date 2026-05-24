@@ -8,11 +8,23 @@
 % }
 
 % if(@$resultfiles) {
-    <h5>Result files</h5>
+    <h5>Result files
+        % if (current_user) {
+            %= link_to url_for('test_archive', testid => $job->id)->query(category => 'resultfiles') => (class => 'btn btn-outline-primary btn-sm ms-2', title => 'Download result files as a ZIP archive', rel => 'nofollow') => begin
+                <i class="fa fa-download"></i> Download (ZIP)
+            % end
+        % }
+    </h5>
     %= include 'test/result_file_list', resultfiles => $resultfiles, is_userfile => 0
 % }
 % if (@$ulogs) {
-    <h6>Uploaded logs</h6>
+    <h6>Uploaded logs
+        % if (current_user) {
+            %= link_to url_for('test_archive', testid => $job->id)->query(category => 'ulogs') => (class => 'btn btn-outline-primary btn-sm ms-2', title => 'Download uploaded logs as a ZIP archive', rel => 'nofollow') => begin
+                <i class="fa fa-download"></i> Download (ZIP)
+            % end
+        % }
+    </h6>
     %= include 'test/result_file_list', resultfiles => $ulogs, is_userfile => 1
 % }
 
@@ -38,6 +50,12 @@
     % }
 % }
 % if (length(content('asset_box'))) {
-    <h5>Assets</h5>
+    <h5>Assets
+        % if (current_user) {
+            %= link_to url_for('test_archive', testid => $job->id)->query(category => 'assets') => (class => 'btn btn-outline-primary btn-sm ms-2', title => 'Download assets as a ZIP archive', rel => 'nofollow') => begin
+                <i class="fa fa-download"></i> Download (ZIP)
+            % end
+        % }
+    </h5>
     <ul id="asset-list"><%= content 'asset_box' %></ul>
 % }
