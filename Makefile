@@ -318,7 +318,7 @@ endef
 
 .PHONY: run-test-env
 run-test-env: setup-database ## Run all local test services (webui, websockets, scheduler, worker, gru)
-	trap 'kill 0' SIGINT SIGTERM; \
+	trap 'trap "" SIGINT SIGTERM EXIT; kill 0; wait' SIGINT SIGTERM EXIT; \
 	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon) & \
 	$(call RUN_SERVICE_TEST_ENV,script/openqa-websockets-daemon) & \
 	$(call RUN_SERVICE_TEST_ENV,script/openqa-scheduler-daemon) & \
