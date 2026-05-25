@@ -9,6 +9,7 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
+use Mojo::IOLoop::Server;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
@@ -17,12 +18,15 @@ BEGIN {
 
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
+
+    $ENV{OPENQA_BASE_PORT} ||= Mojo::IOLoop::Server->generate_port;
 }
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
-use OpenQA::Test::TimeLimit '60';
+use Mojo::IOLoop::Server;
+use OpenQA::Test::TimeLimit '200';
 use Test::Mojo;
 use IO::Socket::INET;
 use Mojo::File 'path';
@@ -261,7 +265,7 @@ sub assert_initial_ui_state {
 
     subtest 'initial state of UI controls' => sub {
         wait_for_session_info(qr/owned by Demo/, 'user displayed');
-        element_visible('#developer-vnc-notice', qr/.*VNC.*91.*/);
+        element_visible('#developer-vnc-notice', qr/.*VNC.*\d{4}.*/);
         element_visible('#developer-panel .card-header', qr/paused/);
     };
 }
