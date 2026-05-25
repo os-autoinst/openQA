@@ -54,6 +54,7 @@ sub startup ($self) {
         'reply.exception' => sub ($c, $error) {
             $error = $c->$code($error)->stash('exception');
             return unless $error =~ qr/(database|no such (table|column))/;
+            return if $error =~ qr/database is locked/i;
 
             my $app = $c->app;
             $app->exit_code(1);    # ensure the return code is non-zero
