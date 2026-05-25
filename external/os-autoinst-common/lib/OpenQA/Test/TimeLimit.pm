@@ -4,23 +4,30 @@
 package OpenQA::Test::TimeLimit;
 use Test::Most;
 
-my $SCALE_FACTOR = $ENV{OPENQA_TEST_TIMEOUT_SCALE_FACTOR} // 1;
+my $SCALE_FACTOR;
 
-sub import {
-    my ($package, $limit) = @_;
-    die "$package: Need argument on import, e.g. use: use OpenQA::Test::TimeLimit '42';" unless $limit;
-    # disable timeout if requested by ENV variable or running within debugger
-    return if ($ENV{OPENQA_TEST_TIMEOUT_DISABLE} or $INC{'perl5db.pl'});
+sub _calculate_scale_factor {
+    return $SCALE_FACTOR if defined $SCALE_FACTOR;
+    $SCALE_FACTOR = $ENV{OPENQA_TEST_TIMEOUT_SCALE_FACTOR} // 1;
     $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} // 3 if Devel::Cover->can('report');
     $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_CI} // 2 if $ENV{CI};
     $SCALE_FACTOR *= 5 if $ENV{HARNESS_IS_PARALLEL};
+    return $SCALE_FACTOR;
+}
+
+sub import {
+    my ($package, $limit) = @_;
+    _calculate_scale_factor();
+    return unless $limit;
+    # disable timeout if requested by ENV variable or running within debugger
+    return if ($ENV{OPENQA_TEST_TIMEOUT_DISABLE} or $INC{'perl5db.pl'});
     $limit *= $SCALE_FACTOR;
     $SIG{ALRM} = sub { BAIL_OUT "test '$0' exceeds runtime limit of '$limit' seconds\n" };
     alarm $limit;
 }
 
 sub scale_timeout {
-    return $_[0] * $SCALE_FACTOR;
+    return $_[0] * _calculate_scale_factor();
 }
 
 1;
