@@ -25,6 +25,7 @@ use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
 use OpenQA::Log 'log_info';
 use OpenQA::Utils;
+use OpenQA::Test::TimeLimit ();
 use OpenQA::Test::Utils qw(wait_for);
 use POSIX '_exit';
 
@@ -91,7 +92,7 @@ sub start_driver ($mojoport) {
             push @{$opts{extra_capabilities}{$_}{args}}, qw(--headless --disable-gpu --no-sandbox)
               for @chrome_option_keys;
         }
-        my $startup_timeout = $ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10;
+        my $startup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10);
         $_DRIVER = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
         $_DRIVER->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
         enable_timeout;
@@ -142,7 +143,7 @@ sub call_driver ($args = undef) {
 
 sub wait_for_ajax (%args) {
     my $check_interval = $args{interval} || 0.25;
-    my $timeout = $args{timeout} // 30;
+    my $timeout = OpenQA::Test::TimeLimit::scale_timeout($args{timeout} // 30);
     my $slept = 0;
     my $msg = $args{msg} ? (': ' . $args{msg}) : '';
 
@@ -300,7 +301,7 @@ sub map_elements ($selector, $mapping) {
 }
 
 sub wait_until ($check_function, $check_description, $timeout = undef, $check_interval = undef) {
-    $timeout //= 100;
+    $timeout = OpenQA::Test::TimeLimit::scale_timeout($timeout // 100);
     $check_interval //= .1;
     while (1) {
         if ($check_function->()) {
