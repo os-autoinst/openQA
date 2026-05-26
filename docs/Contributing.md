@@ -67,8 +67,8 @@ are the right way to contribute improvements and fixes.
 make tidy
 ```
 
-to ensure your Perl and JavaScript code changes are consistent with the style
-rules.
+to ensure your Perl, JavaScript and Python code changes are consistent with the
+style rules.
 
 - All tests are passed. This is ensured by a CI system. You can also run local
   tests in your development environment to verify everything works as

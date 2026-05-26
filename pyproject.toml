@@ -1,0 +1,149 @@
+[project]
+name = "openQA"
+dynamic = ["version"]
+description = "Framework for automated system-level testing (web-frontend, scheduler and tools)"
+readme = "README.md"
+requires-python = ">=3.6"
+license = "GPL-2-or-later"
+authors = [
+    { name = "SUSE LLC" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+]
+
+[project.urls]
+Homepage = "https://open.qa"
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "vulture",
+    "ty>=0.0.21",
+]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
+
+[tool.pytest.ini_options]
+addopts = "-p no:anyio -p no:doctest -p no:pastebin -p no:nose"
+testpaths = ["tests"]
+python_files = "test_*.py"
+markers = ["qem_behavior(mode): configure the fake_qem fixture behavior"]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.ruff]
+line-length = 120
+exclude = ["t/data"]
+preview = true
+
+[tool.ruff.lint]
+# E, F: Standard pycodestyle and Pyflakes (default flake8)
+# D: pydocstyle (for D100, D101, etc.)
+# Q: flake8-quotes (for Q000)
+# PL: Pylint
+extend-select =[
+    "E", "F", "D", "Q", "PL",
+    "T100", # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
+    "T2", # https://docs.astral.sh/ruff/rules/#flake8-print-t20
+    "TD", # https://docs.astral.sh/ruff/rules/#flake8-todos-td
+    "W",
+    "I", # https://docs.astral.sh/ruff/rules/#isort-i
+    "ERA",
+    "B",
+    "SIM",
+    "C4",
+    "T10",
+    "FIX",
+    "ISC",
+    "ICN",
+    "INP",
+    "PIE",
+    "T20",
+    "RSE",
+    "RET",
+    "SLF",
+    "FURB",
+    "EXE",
+    "BLE",
+    "A",
+    "DTZ",
+    "LOG",
+    "G",
+    "C90",
+    "PERF",
+    "PGH",
+    "ARG",
+    "RUF",
+    "ANN",
+    "S", # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+    "FBT", # https://docs.astral.sh/ruff/rules/#flake8-boolean-trap-fbt
+    "TRY", # https://docs.astral.sh/ruff/rules/#tryceratops-try
+    "DOC", # https://docs.astral.sh/ruff/rules/#pydoclint-doc
+    "YTT", # https://docs.astral.sh/ruff/rules/#flake8-2020-ytt
+    "ASYNC", # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    "COM", # https://docs.astral.sh/ruff/rules/#flake8-commas-com
+    "CPY", # https://docs.astral.sh/ruff/rules/#flake8-copyright-cpy
+    "EM", # https://docs.astral.sh/ruff/rules/#flake8-errmsg-em
+    "INT", # https://docs.astral.sh/ruff/rules/#flake8-gettext-int
+    "PYI", # https://docs.astral.sh/ruff/rules/#flake8-pyi-pyi
+    "PT", # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "SLOT", # https://docs.astral.sh/ruff/rules/#flake8-slots-slot
+    "TID", # https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
+    "TC", # https://docs.astral.sh/ruff/rules/#flake8-type-checking-tc
+    "PTH", # https://docs.astral.sh/ruff/rules/#flake8-use-pathlib-pth
+    "FLY", # https://docs.astral.sh/ruff/rules/#flynt-fly
+    "NPY", # https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
+    "PD", # https://docs.astral.sh/ruff/rules/#pandas-vet-pd
+    "N", # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    "PLE", # https://docs.astral.sh/ruff/rules/#error-ple
+    "PLR", # https://docs.astral.sh/ruff/rules/#refactor-plr
+    "PLW", # https://docs.astral.sh/ruff/rules/#warning-plw
+    "FA", # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
+    "UP", # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+]
+
+ignore = [
+    "D203",   # incorrect-blank-line-before-class
+    "PLC1802", # use-implicit-booleaness-not-len
+    "D213", # multi-line-summary-second-line
+    "PLR0904", # too-many-public-methods
+    "DOC201", # docstring-missing-returns
+    "DOC501", # docstring-missing-exception
+    "COM812", # missing-trailing-comma
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 9
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR2004", "ANN401", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103"]
+
+[tool.ruff.format]
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
+
+[tool.ruff.lint.flake8-copyright]
+author = "SUSE LLC"
+notice-rgx = "Copyright"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"os.system".msg = "Use `subprocess.run` or `sh` library instead."
+"subprocess.call".msg = "Use `subprocess.run` with `check=True`."
+
+[tool.ty.terminal]
+error-on-warning = true

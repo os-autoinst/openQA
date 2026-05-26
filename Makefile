@@ -51,6 +51,7 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 unstables := $(shell cat tools/unstable_tests.txt | tr '\n' :)
 shellfiles := $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
+pyfiles ?= $(shell git ls-files | xargs file --mime-type 2>/dev/null | grep -E 'text/x-script\.python|text/x-python' | grep --invert-match -E '^(t/data|container/openqa_data/)' | cut -d: -f1)
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
@@ -400,7 +401,7 @@ setup-hooks: ## Install pre-commit git hooks
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint ## Run all style and static analysis checks
+test-checkstyle-standalone: test-shellcheck test-yaml test-shfmt test-gitlint test-python-static-checks ## Run all style and static analysis checks
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
@@ -429,6 +430,22 @@ test-shfmt: ## Run shfmt on scripts
 	@command -v shfmt >/dev/null 2>&1 || (echo "Command 'shfmt' not found, can not execute bash script syntax checks" && false)
 	shfmt -d -i 4 -bn -ci -sr $(shellfiles)
 
+.PHONY: test-python-static-checks ## Run all static checks on Python scripts
+test-python-static-checks: test-ruff test-python-conventions
+
+.PHONY: test-ruff
+test-ruff: ## Run `ruff format --check` and `ruff check` on Python scripts
+	@command -v ruff >/dev/null 2>&1 || echo "Command 'ruff' not found, can not execute python style checks"
+	@if [ -n "$(pyfiles)" ]; then ruff format --check $(pyfiles) && ruff check $(pyfiles); fi
+
+.PHONY: test-python-conventions
+test-python-conventions: ## Checks whether Python scripts follow certain coding conventions
+	@if [[ -d tests/ ]] && git grep -nE '^\s*@(unittest\.mock\.|mock\.)?patch' tests/; then \
+		echo "Error: @patch decorator detected. Avoid to prevent argument ordering bugs."; \
+		echo "   Fix: Use the 'mocker' fixture (pytest-mock) or a 'with patch():' context manager."; \
+		exit 1; \
+	fi
+
 .PHONY: test-gitlint
 test-gitlint: ## Run commit message checks using gitlint
 	@command -v gitlint >/dev/null 2>&1 || (echo "Command 'gitlint' not found, can not execute commit message checks. Install with 'python3-gitlint' (openSUSE) or 'pip install gitlint-core'" && false)
@@ -448,8 +465,13 @@ tidy-js: ## Format JavaScript code
 tidy-perl: ## Format Perl code
 	tools/tidyall -a
 
+.PHONY: tidy-python
+tidy-python: ## Format Python code
+	@command -v ruff >/dev/null 2>&1 || echo "Command 'ruff' not found, can not format python code"
+	@if [ -n "$(pyfiles)" ]; then ruff format $(pyfiles); fi
+
 .PHONY: tidy
-tidy: tidy-js tidy-perl ## Format both JS and Perl code
+tidy: tidy-js tidy-perl tidy-python ## Format JavaScript, Perl and Python code
 
 .PHONY: test-containers-compose
 test-containers-compose: ## Run docker-compose tests
