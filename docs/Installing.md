@@ -1904,12 +1904,13 @@ the workers create their own instance directories.
     `DISTRI=microos` but no `NEEDLES_DIR`, needles will be missing despite being
     present for `DISTRI=opensuse`.
 
-- Setting the test variables has only an influence on os-autoinst. The web UI on the other hand always relies
-  on the directory structure described above. For the exact details how these paths are computed by the web UI
-  have a look at `lib/OpenQA/Utils.pm`.
+- Setting the test variables has only an influence on os-autoinst. The web UI on
+  the other hand always relies on the directory structure described above. For
+  the exact details how these paths are computed by the web UI have a look at
+  `lib/OpenQA/Utils.pm`.
 
-- When enabling the worker cache, parts of the usual "share directory" are located in the specified cache
-  directory on the worker host.
+- When enabling the worker cache, parts of the usual "share directory" are
+  located in the specified cache directory on the worker host.
 
 ## Automatic installation of the operating systems for openQA machines
 
