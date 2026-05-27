@@ -1074,29 +1074,28 @@ of openQA up and running and all that is left is to set up some tests.
 The following information is partially openSUSE specific. The `openQA-worker`
 package provides further systemd units:
 
-- `openqa-worker-plain@.service`: standard worker service, this is the default and `openqa-worker@.service` is just a symlink to this service
+- `openqa-worker-plain@.service`: standard worker service, this is the default
+  and `openqa-worker@.service` is just a symlink to this service
 - `openqa-worker-no-cleanup@.service`: see
   [enabling snapshots](WritingTests.md#snapshots-for-each-module)
-
 - `openqa-worker-auto-restart@.service`: worker that restarts automatically
   after processing assigned jobs
-
 - `openqa-worker-cacheservice`/`openqa-worker-cacheservice-minion`: services
   for [the asset cache](Installing.md#asset-caching)
-
 - `openqa-worker.target`
-
   - Starts `openqa-worker@.service` (but no other worker units) when started.
-
     - The number of started worker slots depends on the pool directories present
-      under `/var/lib/openqa/pool`. This information is determined via a systemd generator and can be refreshed via `systemctl daemon-reload`. - Stops `openqa-worker-no-cleanup@.service` and other units conflicting with  `openqa-worker@.service` when started.
-
+      under `/var/lib/openqa/pool`. This information is determined via a systemd
+      generator and can be refreshed via `systemctl daemon-reload`.
+    - Stops `openqa-worker-no-cleanup@.service` and other units conflicting with
+      `openqa-worker@.service` when started.
   - Stops/restarts **all** worker units when stopped/restarted.
-
-  - Is restarted automatically when the `openQA-worker` package is updated (unless `DISABLE_RESTART_ON_UPDATE="yes"` is set in `/etc/sysconfig/services`).
-- `openqa-reload-worker-auto-restart@.path`: allows to restart the worker service
-  automatically on configuration changes without interrupting jobs (see next
-  section for details)
+  - Is restarted automatically when the `openQA-worker` package is updated
+    (unless `DISABLE_RESTART_ON_UPDATE="yes"` is set in
+    `/etc/sysconfig/services`).
+- `openqa-reload-worker-auto-restart@.path`: allows to restart the worker
+  service automatically on configuration changes without interrupting jobs (see
+  next section for details)
 
 #### Stopping/restarting workers without interrupting currently running jobs
 
