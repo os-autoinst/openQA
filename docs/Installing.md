@@ -878,7 +878,7 @@ features are disabled. To control these features, you can use these config setti
 
 ``` ini
 [scm git]
-git_auto_commit = yes|no|''
+git_auto_commit = yes|no
 git_auto_clone = yes|no
 git_auto_update = yes|no
 checkout_needles_sha = yes|no
