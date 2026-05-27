@@ -1892,8 +1892,7 @@ the workers create their own instance directories.
     `git_auto_clone` enabled, openQA will create a checkout of the repository
     under the mentioned default location if it does not already exist
 
-<<<<<<< HEAD
-### Further notes
+#### Further notes
 - The mentioned `git_auto_clone` setting is part of the general
   [Git support](Installing.md#setting-up-git-support) and works best if used
   consistently. If e.g. only specifying a Git URL for `CASEDIR` but not for
@@ -1904,11 +1903,6 @@ the workers create their own instance directories.
     with e.g. `CASEDIR=https://github.com/…/…-distri-opensuse.git` and
     `DISTRI=microos` but no `NEEDLES_DIR`, needles will be missing despite being
     present for `DISTRI=opensuse`.
-||||||| parent of 642ae58d5 (docs: show document levels in generated TOC)
-### Further notes
-=======
-#### Further notes
->>>>>>> 642ae58d5 (docs: show document levels in generated TOC)
 
 - Setting the test variables has only an influence on os-autoinst. The web UI on the other hand always relies
   on the directory structure described above. For the exact details how these paths are computed by the web UI
