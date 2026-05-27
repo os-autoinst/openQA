@@ -1,0 +1,2 @@
+#!/bin/bash -e
+perl -e 'sub p{my $f=shift;open my $h,"<",$f or die $!;while(<$h>){if(/^include::([^\]]+)\[\]/){p($1)}else{s/\[([^\]]+)\]\([\w-]+\.md(#[\w-]+)\)/[$1]($2)/g;s/\[([^\]]+)\]\(([\w-]+)\.md\)/"[$1](#".lc($2).")"/ge;print}}}p("index.md")'
