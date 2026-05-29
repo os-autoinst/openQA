@@ -122,13 +122,21 @@ Some example variables used by openSUSE are:
 - `PROMO` marks the promotional product.
 - `RESCUECD` is set to 1 for rescue CD images.
 
-The version of a medium can be set to `*`. Then this medium is considered if a
-product is scheduled with a `VERSION` parameter that does not match any other
-medium. This allows having only one medium per version. Note that having a
-medium with a concrete version and one with `*` at the same time is usually not
-a good idea as you will likely run into the scheduling error `no templates found`
-`for product …` (unless you actually have job templates for all these medium
-types).
+The version of a medium can contain the `*` character. This enables a fallback
+lookup using globbing in case no medium with an exactly matching version is
+present when scheduling a product. This can be useful in the following cases:
+
+- One can avoid having individual medium types per version by specifying `*` as
+  medium type version. Note that having a medium with a concrete version and one
+  with `*` at the same time is usually not a good idea as you will likely run
+  into the scheduling error `no templates found for product …` (unless you
+  actually have job templates for all these medium types).
+- One can schedule products with e.g. `VERSION=15-SP7:PR-1234` if those jobs
+  are not supposed to be considered for consecutive builds (to avoid e.g. wrong
+  carry over and a cluttered "Next & Previous" table). To make this work one can
+  specify a version like `15-SP7:PR-*` in the medium type. This medium type will
+  then be used for all scheduled products where the `VERSION` starts with
+  `15-SP7:PR-`.
 
 ### Test Suites
 
@@ -1252,7 +1260,7 @@ against medium types (product definitions). Jobs will be generated for the
 matching medium types based on the relevant job templates for each job group.
 
 If there is no medium type matching the specified `VERSION`, the lookup falls
-back to matching any medium with version `*`. Check out
+back to using globbing. Check out
 [the section about medium types](UsersGuide.md#medium_types_products) for
 details.
 
