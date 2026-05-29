@@ -1247,9 +1247,9 @@ to operators from the user menu). The
 details about these tables. Alternatively, these settings can be
 supplied via a [YAML document](UsersGuide.md#defining-test-scenarios-in-yaml).
 
-Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
-`FLAVOR` and `ARCH` more parameters can be specified. Those additional
-parameters will be added as jobs settings in all triggered jobs.
+The necessary parameters `DISTRI`, `VERSION`, `FLAVOR` and `ARCH` are matched
+against medium types (product definitions). Jobs will be generated for the
+matching medium types based on the relevant job templates for each job group.
 
 If there is no medium type matching the specified `VERSION`, the lookup falls
 back to matching any medium with version `*`. Check out
@@ -1259,6 +1259,10 @@ details.
 The parameters `MACHINE` and `TEST` additionally act as filters and `TEST`
 supports multiple comma-separated values. So adding e.g. `TEST=foo,bar` will
 only consider the test suites `foo` and `bar`.
+
+It is also possible to add additional parameters like `FOO=bar`. These
+parameters won't enable any special behavior but they will be added as jobs
+settings in all triggered jobs.
 
 There are also special parameters which only have an influence on the way the
 triggering itself is done. These parameters all start with a leading
