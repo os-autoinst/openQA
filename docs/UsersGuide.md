@@ -122,9 +122,11 @@ Some example variables used by openSUSE are:
 - `PROMO` marks the promotional product.
 - `RESCUECD` is set to 1 for rescue CD images.
 
-The version of a medium can be set to `*`. Then this medium is considered if a product is scheduled with a `VERSION` parameter that does not match any other
+The version of a medium can be set to `*`. Then this medium is considered if a
+product is scheduled with a `VERSION` parameter that does not match any other
 medium. This allows having only one medium per version. Note that having a
-medium with a concrete version and one with `*` at the same time is usually not a good idea as you will likely run into the scheduling error `no templates found`
+medium with a concrete version and one with `*` at the same time is usually not
+a good idea as you will likely run into the scheduling error `no templates found`
 `for product …` (unless you actually have job templates for all these medium
 types).
 
