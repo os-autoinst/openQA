@@ -1249,54 +1249,50 @@ Additionally to the necessary template matching parameters `DISTRI`, `VERSION`,
 `FLAVOR` and `ARCH` more parameters can be specified. Those additional
 parameters will be added as jobs settings in all triggered jobs.
 
-If there is no medium type matching the specified `VERSION`, the lookup falls back to matching any medium with version `*`. Check out
-[the section about medium types](UsersGuide.md#medium_types_products)
-for details.
+If there is no medium type matching the specified `VERSION`, the lookup falls
+back to matching any medium with version `*`. Check out
+[the section about medium types](UsersGuide.md#medium_types_products) for
+details.
 
 The parameters `MACHINE` and `TEST` additionally act as filters and `TEST`
-supports multiple comma-separated values. So adding e.g. `TEST=foo,bar` will only consider the test suites `foo` and `bar`.
+supports multiple comma-separated values. So adding e.g. `TEST=foo,bar` will
+only consider the test suites `foo` and `bar`.
 
 There are also special parameters which only have an influence on the way the
 triggering itself is done. These parameters all start with a leading
 underscore but are set as request parameters in the same way as the other
 parameters.
 
-
-
-
-
 The following scheduling parameters exist
 
-
-
 \_OBSOLETE
-Obsolete jobs in older builds with same DISTRI and VERSION
-(The default behavior is not obsoleting). With this option jobs which are currently pending,
+Obsolete jobs in older builds with same DISTRI and VERSION. (The default
+behavior is not obsoleting). With this option jobs which are currently pending,
 for example scheduled or running, are cancelled when a new medium is triggered.
 
 \_DEPRIORITIZEBUILD
-Setting this switch to '1' will deprioritize the
-unfinished jobs of old builds, and it will obsolete the jobs once the
-configurable limit of the priority value is reached.
+Setting this switch to '1' will deprioritize the unfinished jobs of old builds,
+and it will obsolete the jobs once the configurable limit of the priority value
+is reached.
 
 \_DEPRIORITIZE_LIMIT
-The configurable limit of priority value up to which
-jobs should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Defaults to 100.
+The configurable limit of priority value up to which jobs should be
+deprioritized. Needs `_DEPRIORITIZEBUILD`. Defaults to 100.
 
 \_ONLY_OBSOLETE_SAME_BUILD
 Only obsolete (or deprioritize) jobs for the same BUILD.
-This is useful for cases where a new build appearing does not necessarily
-mean existing jobs for earlier builds with the same DISTRI and VERSION are
-no longer interesting, but you still want to be able to re-submit jobs for a
-build and have existing jobs for the exact same build obsoleted. Needs `_OBSOLETE`.
+This is useful for cases where a new build appearing does not necessarily mean
+existing jobs for earlier builds with the same DISTRI and VERSION are no longer
+interesting, but you still want to be able to re-submit jobs for a build and
+have existing jobs for the exact same build obsoleted. Needs `_OBSOLETE`.
 
 \_SKIP_CHAINED_DEPS
-Do not schedule parent test suites which are specified in `START_AFTER_TEST`
-or `START_DIRECTLY_AFTER_TEST`.
+Do not schedule parent test suites which are specified in `START_AFTER_TEST` or
+`START_DIRECTLY_AFTER_TEST`.
 
 \_INCLUDE_CHILDREN
-Include children that would otherwise not be considered when
-filtering test suites via the `TEST` parameter.
+Include children that would otherwise not be considered when filtering test
+suites via the `TEST` parameter.
 
 \_GROUP
 Job templates **not** matching the given group name are ignored. Does **not**
@@ -1314,9 +1310,7 @@ All parameters starting with `__` will **not** be added as job settings.
 Those parameters can be used to store additional information about the scheduled
 product itself, e.g. the URL of a web page with more context.
 
-
-
-Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
+Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`:
 
 ```sh
 openqa-cli api -X POST isos async=0 ISO=my_iso.iso DISTRI=my_distri \
