@@ -1098,27 +1098,50 @@ subtest 'Expand specified variables when scheduling iso' => sub {
     $schema->txn_rollback;
 };
 
-my %prod_params = (distri => 'opensuse', version => '*', flavor => 'DVD', arch => 'i586', name => 'generic');
-my $product = $products->create(\%prod_params);
-my $job_template = $job_templates->create({@job_template_params, product_id => $product->id});
+my @prod_params = (distri => 'opensuse', flavor => 'DVD', arch => 'i586', name => 'generic');
 
-subtest 'fallback to version "*"' => sub {
-    my $res = schedule_iso($t, {%iso, VERSION => 'foobar', _GROUP => 'opensuse test'});
-    my $scheduled_product = $scheduled_products->find($res->json->{scheduled_product_id});
-    my $results = $scheduled_product->results;
-    is @{$results->{successful_job_ids}}, 1, 'job successfully scheduled';
-    is $results->{notes}->[0], 'no products found for version "foobar", falling back to "*"', 'note present'
-      or always_explain $results;
+sub create_product_and_schedule_iso (
+    $product_version, $scheduling_version,
+    $job_template_params = undef,
+    $scheduling_params = undef
+  )
+{
+    my $product = $products->create({@prod_params, version => $product_version});
+    $job_templates->create({@$job_template_params, product_id => $product->id}) if $job_template_params;
+    my $scheduling_settings = {%iso, VERSION => $scheduling_version, _GROUP => 'opensuse test'};
+    my $res = schedule_iso($t, $scheduling_settings, $scheduling_params ? @$scheduling_params : ());
+    return $scheduled_products->find($res->json->{scheduled_product_id})->results;
+}
+
+subtest 'version matching with "*"' => sub {
+    subtest 'globbing used at the end for "starts with" matching' => sub {
+        $schema->txn_begin;
+        my $res = create_product_and_schedule_iso('15.7:PR-*', '15.7:PR-0815', \@job_template_params);
+        like $res->{notes}->[0], qr/no products.*"15\.7:PR-0815".*globbing/, 'note present' or always_explain $res;
+        is @{$res->{successful_job_ids}}, 1, 'job successfully scheduled' or return;
+        ok my $job = $jobs->find($res->{successful_job_ids}->[0]), 'job created' or return;
+        is $job->VERSION, '15.7:PR-0815', 'job scheduled with full version';
+        $schema->txn_rollback;
+    };
+    subtest 'a single "*" can be used to match all versions' => sub {
+        $schema->txn_begin;
+        my $res = create_product_and_schedule_iso('*', 'foobar', \@job_template_params);
+        is @{$res->{successful_job_ids}}, 1, 'job successfully scheduled';
+        like $res->{notes}->[0], qr/no products.*"foobar".*globbing/, 'note present' or always_explain $res;
+        is $res->{notes}->[0], 'no products found for version "foobar", considering globbing via "*"', 'note present'
+          or always_explain $res;
+        $schema->txn_rollback;
+    };
 };
 
 subtest 'no templates found for product' => sub {
-    $job_template->delete;    # assume no job template exists
-    my $res = schedule_iso($t, {%iso, VERSION => 'foobar', _GROUP => 'opensuse test'}, 404);
-    my $scheduled_product = $scheduled_products->find($res->json->{scheduled_product_id});
-    my $results = $scheduled_product->results;
-    is @{$results->{successful_job_ids}}, 0, 'no jobs scheduled';
-    is $results->{error}, 'no templates found for product opensuse-*-DVD-i586', 'error contains considered product'
-      or always_explain $results;
+    $schema->txn_begin;
+    my $res = create_product_and_schedule_iso('*', 'foobar', undef, [404]);
+    is @{$res->{successful_job_ids}}, 0, 'no jobs scheduled';
+    is $res->{notes}, undef, 'no notes present';
+    like $res->{error}, qr/no templates.*opensuse-\*-DVD-i586/, 'error contains considered product'
+      or always_explain $res;
+    $schema->txn_rollback;
 };
 
 done_testing();
