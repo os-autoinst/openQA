@@ -270,8 +270,6 @@ sub create_url_handler ($options) {
         options => $options
     );
     my $local = $command->client($local_url)->max_redirects(3);
-    die "API key/secret for '$options->{host}' missing. Check out '$0 --help' for the config file syntax/lookup.\n"
-      if !$options->{'export-command'} && !($local->apikey && $local->apisecret);
 
     # configure the default for the number of retries and use exponential backoff by default
     $options->{retry} //= 5;

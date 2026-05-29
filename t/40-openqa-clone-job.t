@@ -35,9 +35,6 @@ subtest 'usage' => sub {
     like warning {
         throws_ok { main::main() } qr/missing job reference/, 'hit for mandatory parameter';
     }, qr{Unknown option: invalid-arg}, 'expected warning';
-
-    @ARGV = 'http://openqa.local.foo/t1';
-    throws_ok { main::main() } qr|API key/secret for 'localhost' missing|, 'fails without API key/secret';
 };
 
 subtest errors => sub {
