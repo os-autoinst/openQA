@@ -348,7 +348,7 @@ statistics.
 Summary:        Bash Completion for %{name}
 Group:          Development/Tools/Other
 Requires:       bash-completion
-Supplements:    (%{name}-client and bash)
+Supplements:    (%{name}-client and bash-completion)
 
 %description client-bash-completion
 The official bash completion script for openqa-cli.
