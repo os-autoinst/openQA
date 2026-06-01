@@ -878,7 +878,7 @@ features are disabled. To control these features, you can use these config setti
 
 ``` ini
 [scm git]
-git_auto_commit = yes|no|''
+git_auto_commit = yes|no
 git_auto_clone = yes|no
 git_auto_update = yes|no
 checkout_needles_sha = yes|no
@@ -1074,29 +1074,28 @@ of openQA up and running and all that is left is to set up some tests.
 The following information is partially openSUSE specific. The `openQA-worker`
 package provides further systemd units:
 
-- `openqa-worker-plain@.service`: standard worker service, this is the default and `openqa-worker@.service` is just a symlink to this service
+- `openqa-worker-plain@.service`: standard worker service, this is the default
+  and `openqa-worker@.service` is just a symlink to this service
 - `openqa-worker-no-cleanup@.service`: see
   [enabling snapshots](WritingTests.md#snapshots-for-each-module)
-
 - `openqa-worker-auto-restart@.service`: worker that restarts automatically
   after processing assigned jobs
-
 - `openqa-worker-cacheservice`/`openqa-worker-cacheservice-minion`: services
   for [the asset cache](Installing.md#asset-caching)
-
 - `openqa-worker.target`
-
   - Starts `openqa-worker@.service` (but no other worker units) when started.
-
     - The number of started worker slots depends on the pool directories present
-      under `/var/lib/openqa/pool`. This information is determined via a systemd generator and can be refreshed via `systemctl daemon-reload`. - Stops `openqa-worker-no-cleanup@.service` and other units conflicting with  `openqa-worker@.service` when started.
-
+      under `/var/lib/openqa/pool`. This information is determined via a systemd
+      generator and can be refreshed via `systemctl daemon-reload`.
+    - Stops `openqa-worker-no-cleanup@.service` and other units conflicting with
+      `openqa-worker@.service` when started.
   - Stops/restarts **all** worker units when stopped/restarted.
-
-  - Is restarted automatically when the `openQA-worker` package is updated (unless `DISABLE_RESTART_ON_UPDATE="yes"` is set in `/etc/sysconfig/services`).
-- `openqa-reload-worker-auto-restart@.path`: allows to restart the worker service
-  automatically on configuration changes without interrupting jobs (see next
-  section for details)
+  - Is restarted automatically when the `openQA-worker` package is updated
+    (unless `DISABLE_RESTART_ON_UPDATE="yes"` is set in
+    `/etc/sysconfig/services`).
+- `openqa-reload-worker-auto-restart@.path`: allows to restart the worker
+  service automatically on configuration changes without interrupting jobs (see
+  next section for details)
 
 #### Stopping/restarting workers without interrupting currently running jobs
 
@@ -1892,8 +1891,7 @@ the workers create their own instance directories.
     `git_auto_clone` enabled, openQA will create a checkout of the repository
     under the mentioned default location if it does not already exist
 
-<<<<<<< HEAD
-### Further notes
+#### Further notes
 - The mentioned `git_auto_clone` setting is part of the general
   [Git support](Installing.md#setting-up-git-support) and works best if used
   consistently. If e.g. only specifying a Git URL for `CASEDIR` but not for
@@ -1904,18 +1902,14 @@ the workers create their own instance directories.
     with e.g. `CASEDIR=https://github.com/…/…-distri-opensuse.git` and
     `DISTRI=microos` but no `NEEDLES_DIR`, needles will be missing despite being
     present for `DISTRI=opensuse`.
-||||||| parent of 642ae58d5 (docs: show document levels in generated TOC)
-### Further notes
-=======
-#### Further notes
->>>>>>> 642ae58d5 (docs: show document levels in generated TOC)
 
-- Setting the test variables has only an influence on os-autoinst. The web UI on the other hand always relies
-  on the directory structure described above. For the exact details how these paths are computed by the web UI
-  have a look at `lib/OpenQA/Utils.pm`.
+- Setting the test variables has only an influence on os-autoinst. The web UI on
+  the other hand always relies on the directory structure described above. For
+  the exact details how these paths are computed by the web UI have a look at
+  `lib/OpenQA/Utils.pm`.
 
-- When enabling the worker cache, parts of the usual "share directory" are located in the specified cache
-  directory on the worker host.
+- When enabling the worker cache, parts of the usual "share directory" are
+  located in the specified cache directory on the worker host.
 
 ## Automatic installation of the operating systems for openQA machines
 

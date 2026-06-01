@@ -2178,10 +2178,15 @@ for details.
 > - If only one of `CASEDIR` or `NEEDLES_DIR` is customized the other variable
 >   will still be initialized to point to the default repository.
 > - A relative `NEEDLES_DIR` is treated to be relative to the default `CASEDIR`
->   (even if `CASEDIR` is customized). To have it treated to be relative to the > custom `CASEDIR`, prefix the relative path with `%CASEDIR%/`. So specifying > e.g. `CASEDIR=https://github.com/…` and `NEEDLES_DIR=%%CASEDIR%%/the-needles`
->   will lead to `%CASEDIR%` being substituted with the path of the Git checkout > created for the custom `CASEDIR`. That results in needles found in
+>   (even if `CASEDIR` is customized). To have it treated to be relative to the
+>   custom `CASEDIR`, prefix the relative path with `%CASEDIR%/`. So specifying
+>   e.g. `CASEDIR=https://github.com/…` and `NEEDLES_DIR=%%CASEDIR%%/the-needles`
+>   will lead to `%CASEDIR%` being substituted with the path of the Git checkout
+>   created for the custom `CASEDIR`. That results in needles found in
 >   <https://github.com/…/tree/…/the-needles> to be used. Note that double
->   `%`-signs are to avoid variable substitution. When using `curl`, you need to > escape the `%`-sign as `%25` **in addition**. A helper script `openqa-clone-custom-git-refspec` is available for
+>   `%`-signs are to avoid variable substitution. When using `curl`, you need to
+>   escape the `%`-sign as `%25` **in addition**.
+>   A helper script `openqa-clone-custom-git-refspec` is available for
 >   convenience that supports some combinations.
 
 To clone one job within a remote instance based on an open github pull request
@@ -2193,12 +2198,15 @@ For example:
 
     openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6649 https://openqa.opensuse.org/tests/839191
 
-As noted above, customizing `CASEDIR` does **not** mean needles will be loaded from there, even if the repository specified as `CASEDIR` contains needles. To load needles from that repository, it needs to be specified as `NEEDLES_DIR` as
+As noted above, customizing `CASEDIR` does **not** mean needles will be loaded
+from there, even if the repository specified as `CASEDIR` contains needles. To
+load needles from that repository, it needs to be specified as `NEEDLES_DIR` as
 described in the note above.
 
 Keep in mind that if `PRODUCTDIR` is overwritten as well, it might not relate to
 the state of the specified git refspec that is passed via the command line
-parameter to `openqa-clone-custom-git-refspec` or via the `PRODUCTDIR` variable to `openqa-clone-job`. Both can still be used when overwriting `PRODUCTDIR`, but
+parameter to `openqa-clone-custom-git-refspec` or via the `PRODUCTDIR` variable
+to `openqa-clone-job`. Both can still be used when overwriting `PRODUCTDIR`, but
 special care must be taken if the schedule is modified (then it is safer to
 manually specify the schedule via the `SCHEDULE` variable).
 
@@ -2238,7 +2246,9 @@ script for further information and an example configuration.
 > These examples show how API credentials are supplied. It is important to
 > note that using `on:pull_request` would only work for PRs created on the main
 > repository but not for PRs created from forks. Therefore
-> `on:pull_request_target` is used instead. To still run the tests on the PR > version the variables under `github.event.pull_request.head.*` are utilized > (instead of e.g. just `$GITHUB_REF`).
+> `on:pull_request_target` is used instead. To still run the tests on the PR
+> version the variables under `github.event.pull_request.head.*` are utilized
+> (instead of e.g. just `$GITHUB_REF`).
 
 > **NOTE:**
 > Due to the use of `on:pull_request_target` the scenario definitions are
