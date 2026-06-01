@@ -122,21 +122,23 @@ Some example variables used by openSUSE are:
 - `PROMO` marks the promotional product.
 - `RESCUECD` is set to 1 for rescue CD images.
 
-The version of a medium can contain the `*` character. This enables a fallback
-lookup using globbing in case no medium with an exactly matching version is
-present when scheduling a product. This can be useful in the following cases:
+#### Using Wildcards in Medium Versions
+You can use the `*` character within a medium version to enable a fallback
+lookup using globbing. This is particularly helpful for the following scenarios:
 
-- One can avoid having individual medium types per version by specifying `*` as
-  medium type version. Note that having a medium with a concrete version and one
-  with `*` at the same time is usually not a good idea as you will likely run
-  into the scheduling error `no templates found for product …` (unless you
-  actually have job templates for all these medium types).
-- One can schedule products with e.g. `VERSION=15-SP7:PR-1234` if those jobs
-  are not supposed to be considered for consecutive builds (to avoid e.g. wrong
-  carry over and a cluttered "Next & Previous" table). To make this work one can
-  specify a version like `15-SP7:PR-*` in the medium type. This medium type will
-  then be used for all scheduled products where the `VERSION` starts with
-  `15-SP7:PR-`.
+- *Consolidating generic medium types:* Instead of creating a unique medium
+  type for every single version, you can use `*` as a catch-all version.
+    - Tip: Avoid defining a concrete version (e.g., `16.1`) and a wildcard
+      version (`*`) within one schedule definition unless you have matching job
+      templates for both, as this can trigger a scheduling error
+      (`no templates found for product...`).
+- *Handling isolated tests for individual submissions (e.g. pull-requests):*
+  When testing such submissions, schedule the products with e.g.,
+  `VERSION=16.1:PR-1234`. This will avoid cluttering the "Next & Previous" table
+  and prevent unintended carry-overs. Then specify a partial-match as the medium
+  version. For example by specifying `16.1:PR-*` in the medium type, openQA will
+  automatically match and use this type for any scheduled product where the
+  `VERSION` begins with `16.1:PR-`.
 
 ### Test Suites
 
