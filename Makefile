@@ -470,8 +470,13 @@ tidy-python: ## Format Python code
 	@command -v ruff >/dev/null 2>&1 || echo "Command 'ruff' not found, can not format python code"
 	@if [ -n "$(pyfiles)" ]; then ruff format $(pyfiles); fi
 
+.PHONY: tidy-sh
+tidy-sh: ## Format shell scripts with shfmt
+	@command -v shfmt >/dev/null 2>&1 || echo "Command 'shfmt' not found, can not format shell code"
+	shfmt --write -i 4 -bn -ci -sr $(shellfiles)
+
 .PHONY: tidy
-tidy: tidy-js tidy-perl tidy-python ## Format JavaScript, Perl and Python code
+tidy: tidy-js tidy-perl tidy-python tidy-sh ## Format JavaScript, Perl, Python and Shell code
 
 .PHONY: test-containers-compose
 test-containers-compose: ## Run docker-compose tests

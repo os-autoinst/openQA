@@ -1,0 +1,20 @@
+#!/bin/perl
+
+use strict;
+use warnings;
+use experimental 'signatures';
+
+sub process_file ($file) {
+    open my $handle, '<', $file or die $!;
+    while (my $line = <$handle>) {
+        if ($line =~ /^include::([^\]]+)\[\]/) { process_file($1) }
+        else {
+            $line =~ s/\[([^\]]+)\]\([\w-]+\.md(#[\w-]+)\)/[$1]($2)/g;
+            $line =~ s/\[([^\]]+)\]\(([\w-]+)\.md\)/[$1](#\L$2\E)/g;
+            print $line;
+        }
+    }
+    close $handle;
+}
+
+process_file('index.md');
