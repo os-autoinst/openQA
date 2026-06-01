@@ -343,14 +343,26 @@ sub list_running_ajax ($self) {
         $job_data;
     } @jobs;
     my %response = (data => \@running);
-    my $config = OpenQA::App->singleton->config->{scheduler};
+    my $app = OpenQA::App->singleton;
+    my $config = $app->config->{scheduler};
     my $max_running = $config->{max_running_jobs};
+    my $has_filters
+      = $self->get_match_param
+      || $self->param('comment')
+      || $self->param('groupid')
+      || %{$self->every_key_value_param('job_setting')};
+    my $global_running
+      = $has_filters
+      ? $self->schema->resultset('Jobs')->count({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]})
+      : scalar @jobs;
     if ($config->{dynamic_job_limit_enabled}) {
-        my $effective = OpenQA::App->singleton->dynamic_limit->current_limit($config);
-        $response{dynamic_job_limit} = $effective if $effective >= 0 && @running >= $effective;
-        $response{max_running_jobs} = $max_running if $max_running >= 0;
+        my $effective = $app->dynamic_limit->current_limit($config);
+        if ($effective >= 0 && $global_running >= $effective) {
+            $response{dynamic_job_limit} = $effective;
+            $response{max_running_jobs} = $max_running if $max_running >= 0;
+        }
     }
-    elsif ($max_running >= 0 && @running >= $max_running) {
+    elsif ($max_running >= 0 && $global_running >= $max_running) {
         $response{max_running_jobs} = $max_running;
     }
     $self->render(json => \%response);

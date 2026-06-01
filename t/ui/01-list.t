@@ -210,16 +210,57 @@ $t->content_like(qr/State.*running/, 'Running jobs are marked');
 
 $t->get_ok('/tests/list_running_ajax')->status_is(200);
 
+my $app = OpenQA::App->singleton;
+my $scheduler_config = $app->config->{scheduler};
+
 subtest 'running jobs list with static limit' => sub {
-    local OpenQA::App->singleton->config->{scheduler}->{dynamic_job_limit_enabled} = 0;
-    local OpenQA::App->singleton->config->{scheduler}->{max_running_jobs} = 2;
+    local $scheduler_config->{dynamic_job_limit_enabled} = 0;
+    local $scheduler_config->{max_running_jobs} = 2;
     $t->get_ok('/tests/list_running_ajax')->status_is(200);
     my $json = $t->tx->res->json;
     is $json->{max_running_jobs}, 2, 'max_running_jobs included in response when static limit reached';
 };
 
+subtest 'running jobs list limit info based on global count' => sub {
+    my $dl = $app->dynamic_limit;
+
+    local $scheduler_config->{dynamic_job_limit_enabled} = 1;
+    local $scheduler_config->{dynamic_job_limit_min} = 3;
+    local $scheduler_config->{max_running_jobs} = 10;
+    local $scheduler_config->{dynamic_job_limit_load_threshold} = 100;
+    $dl->effective_limit(3);
+    $dl->block_adjustment_for(9999);
+
+    # Global count is 3 (99961, 99963, 99970). Filter by groupid=1001 (99963).
+    $t->get_ok('/tests/list_running_ajax?groupid=1001')->status_is(200);
+    my $json = $t->tx->res->json;
+    is scalar @{$json->{data}}, 1, 'only one job matches filter (group 1001)';
+    is $json->{dynamic_job_limit}, 3,
+      'dynamic_job_limit included based on global count even when filtered list is smaller';
+
+    # Global count (3) is below limit (4).
+    local $scheduler_config->{dynamic_job_limit_min} = 4;
+    $dl->effective_limit(4);
+    $t->get_ok('/tests/list_running_ajax')->status_is(200);
+    $json = $t->tx->res->json;
+    ok !exists $json->{dynamic_job_limit}, 'dynamic_job_limit omitted when global count is below limit';
+    ok !exists $json->{max_running_jobs},
+      'max_running_jobs omitted when below dynamic limit to avoid misleading "limited by server config"';
+
+    subtest 'static limit behavior when dynamic limit is disabled' => sub {
+        local $scheduler_config->{dynamic_job_limit_enabled} = 0;
+        local $scheduler_config->{max_running_jobs} = 3;
+        $t->get_ok('/tests/list_running_ajax')->status_is(200);
+        is $t->tx->res->json->{max_running_jobs}, 3, 'max_running_jobs included when reached';
+
+        local $scheduler_config->{max_running_jobs} = 4;
+        $t->get_ok('/tests/list_running_ajax')->status_is(200);
+        ok !exists $t->tx->res->json->{max_running_jobs}, 'max_running_jobs omitted when below limit';
+    };
+};
+
 subtest 'all tests server-side limit has precedence over user-specified limit' => sub {
-    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limits = $app->config->{misc_limits};
     $limits->{all_tests_max_finished_jobs} = 5;    # set low low maximum limit
     $limits->{all_tests_default_finished_jobs} = 2;    # set low default limit
 

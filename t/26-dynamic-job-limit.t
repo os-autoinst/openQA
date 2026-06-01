@@ -116,7 +116,7 @@ my @cases = (
 
 test_dynamic_limit(%$_) for @cases;
 
-subtest 'auto-detects threshold from nproc when configured as 0' => sub {
+subtest 'auto-detect threshold (nproc * factor) and fast ramp-up' => sub {
     my $mock_dl = Test::MockModule->new('OpenQA::Scheduler::DynamicLimit');
     $mock_dl->mock(_nproc => sub { 4 });    # 4 CPUs; threshold = 4*0.85 = 3.4; load 1.0 < 3.4*0.3=1.02 => fast up
     test_dynamic_limit(
