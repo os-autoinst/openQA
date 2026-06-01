@@ -399,11 +399,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
 
     my %options
       = (host => 'foo', from => 'bar', 'clone-children' => 1, 'skip-download' => 1, verbose => 1, args => ['FOO=bar']);
-    throws_ok { clone_jobs(42, \%options) } qr|API key/secret for 'foo' missing|, 'dies on missing API credentials';
 
-    $options{apikey} = $options{apisecret} = 'bar';
-    combined_like { clone_jobs(42, \%options) } qr|parent.*main.*child|s, 'verbose output printed';
-    ok $tx_handled, 'transaction handled';
 
     my $check_common_post_args = sub ($test_suffix = '') {
         is scalar @post_args, 1, 'exactly one post call made' or return undef;
@@ -415,7 +411,24 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         is delete $params->{'group_id:42'}, 21, 'group of 42 preserved';
         return $params;
     };
+    subtest 'post args with no API key' => sub {
+        @post_args = ();
+        $options{apikey} = $options{apisecret} = 'bar';
+        combined_like { clone_jobs(42, \%options) } qr|parent.*main.*child|s, 'clone without API key';
+        ok $tx_handled, 'transaction handled';
+        my $params = $check_common_post_args->() or return;
+        is delete $params->{'FOO:42'}, 'bar', 'setting passed to main job';
+        is delete $params->{'TEST:43'}, 'child', 'child job 43 cloned';
+        is delete $params->{'FOO:43'}, 'bar', 'setting passed to child job';
+        is delete $params->{'_START_AFTER:43'}, '42', 'child job cloned to start after main job 42';
+        is delete $params->{"CLONED_FROM:$_"}, "https://bar/tests/$_", "CLONED_FROM set ($_)" for 41, 42, 43;
+        is scalar keys %$params, 0, 'exactly 3 jobs posted, so no further settings';
+    } or always_explain \@post_args;
     subtest 'post args' => sub {
+        @post_args = ();
+        $options{apikey} = $options{apisecret} = 'bar';
+        combined_like { clone_jobs(42, \%options) } qr|parent.*main.*child|s, 'verbose output printed - with API key';
+        ok $tx_handled, 'transaction handled';
         my $params = $check_common_post_args->() or return;
         is delete $params->{'FOO:42'}, 'bar', 'setting passed to main job';
         is delete $params->{'TEST:43'}, 'child', 'child job 43 cloned';
