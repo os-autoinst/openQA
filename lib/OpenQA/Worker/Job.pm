@@ -234,10 +234,11 @@ sub start ($self) {
 
     # ensure log files are empty/removed
     if (my $pooldir = $worker->pool_directory) {
-        open my $fd, '>', "$pooldir/worker-log.txt" or log_error("Could not open worker log: $!");
+        open my $fd, '>', "$pooldir/worker-log.txt"
+          or log_error("Could not open worker log '$pooldir/worker-log.txt': $!");
         foreach my $file (qw(serial0.txt autoinst-log.txt serial_terminal.txt)) {
             next unless -e "$pooldir/$file";
-            unlink "$pooldir/$file" or log_error("Could not unlink '$file': $!");
+            unlink "$pooldir/$file" or log_error("Could not unlink '$pooldir/$file': $!");
         }
     }
 
