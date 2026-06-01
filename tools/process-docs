@@ -10,7 +10,7 @@ sub process_file ($file) {
         if ($line =~ /^include::([^\]]+)\[\]/) { process_file($1) }
         else {
             $line =~ s/\[([^\]]+)\]\([\w-]+\.md(#[\w-]+)\)/[$1]($2)/g;
-            $line =~ s/\[([^\]]+)\]\(([\w-]+)\.md\)/"[$1](#".lc($2).")"/ge;
+            $line =~ s/\[([^\]]+)\]\(([\w-]+)\.md\)/[$1](#\L$2\E)/g;
             print $line;
         }
     }
