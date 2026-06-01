@@ -14,6 +14,7 @@ JavaScript (Bootstrap).
 - `cover -report text -select_re 'path/to/modified_file'`: Generate and view a
   fast text-based coverage report restricted to the specific file you changed
   (run this after generating the coverage database).
+- `make test-gitlint`: Must pass after creating or amending git commits.
 - `make test`: Full test suite.
 
 ## Conventions
@@ -42,4 +43,5 @@ JavaScript (Bootstrap).
   git rm on this directory or delete files from there.
 - Never run git clean or any command that deletes unversioned files. Ask the
   user for confirmation.
-- Commit message format: 50/80 rule, 80-char limit, wrap in single quotes.
+- Commit message format: 50/80 rule. You MUST explicitly insert physical
+  newlines to hard-wrap the body text at 80 characters.
