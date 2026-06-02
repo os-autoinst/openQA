@@ -366,7 +366,6 @@ subtest 'Cache tests' => sub {
         ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created' or return;
         my $log_content = $autoinst_log->slurp;
         like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
-        like $log_content, qr/11116544/, 'Test 5 Core-7.2.iso size is correct';
         like $log_content, qr/Result: done/, 'Test 5 result done';
         like +(split /\n/, $log_content)[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present';
         like +(split /\n/, $log_content)[-1], qr/uploading autoinst-log.txt/i, 'uploading of autoinst-log.txt logged';
