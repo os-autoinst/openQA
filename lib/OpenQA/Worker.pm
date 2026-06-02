@@ -575,7 +575,10 @@ sub enqueue_jobs_and_accept_first ($self, $client, $job_info) {
 
 sub _inform_webuis_before_stopping ($self, $callback) {
     my $clients_by_webui_host = $self->clients_by_webui_host;
-    return undef unless defined $clients_by_webui_host;
+    if (!defined $clients_by_webui_host || !keys %$clients_by_webui_host) {
+        Mojo::IOLoop->next_tick($callback) if $callback;
+        return undef;
+    }
     my $outstanding_transactions = scalar keys %$clients_by_webui_host;
     for my $host (keys %$clients_by_webui_host) {
         log_debug("Informing $host that we are going offline");
