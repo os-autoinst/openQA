@@ -21,7 +21,8 @@ JavaScript (Bootstrap).
 
 - Commits: [Conventional
   Commits](https://www.conventionalcommits.org/en/v1.0.0/) format. Include
-  motivation and details for "feat" commits.
+  motivation and details for "feat" commits. Atomic commits are REQUIRED: split
+  refactorings, bug fixes, and features into separate commits.
 - Documentation: Markdown (`.md`).
 
 ## Agent Guidelines
