@@ -308,12 +308,23 @@ setup-database: ## Set up the test database
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 
 define RUN_SERVICE_TEST_ENV
-	OPENQA_BASEDIR=t/data \
+	OPENQA_BASEDIR="$(CURDIR)/t/data" \
+	OPENQA_CONFIG="$(CURDIR)/t/data" \
 	OPENQA_DATABASE=test \
 	OPENQA_WEBUI_MODE=test \
 	TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)" \
 	$(1)
 endef
+
+.PHONY: run-test-env
+run-test-env: setup-database ## Run all local test services (webui, websockets, scheduler, worker, gru)
+	trap 'kill 0' SIGINT SIGTERM; \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-webui-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-websockets-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-scheduler-daemon) & \
+	$(call RUN_SERVICE_TEST_ENV,script/worker) & \
+	$(call RUN_SERVICE_TEST_ENV,script/openqa-gru) & \
+	wait
 
 .PHONY: run-webui-test-env
 run-webui-test-env: setup-database ## Run a local web UI instance using a test environment
