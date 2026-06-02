@@ -49,6 +49,7 @@ BEGIN {
 }
 
 our @EXPORT_OK = qw(
+  assign_free_service_ports
   setup_mojo_app_with_default_worker_timeout create_user_for_workers
   create_webapi create_websocket_server create_scheduler create_live_view_handler
   unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job
@@ -69,6 +70,12 @@ our @EXPORT_OK = qw(
 # reuse it in listen to prevent race condition
 #
 # Potentially this approach can also be used in production code.
+
+sub assign_free_service_ports {
+    for my $service (qw(webui websocket livehandler scheduler cache_service)) {
+        $ENV{"OPENQA_PORT_\U$service"} //= Mojo::IOLoop::Server->generate_port;
+    }
+}
 
 sub setup_mojo_app_with_default_worker_timeout ($class = 'Mojolicious') {
     my $app = $class->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef);

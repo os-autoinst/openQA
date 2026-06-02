@@ -27,20 +27,20 @@ use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::WebAPI;
 use OpenQA::Worker::WebUIConnection;
-use OpenQA::Utils;
+use OpenQA::Utils qw(service_port);
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(
-  setup_mojo_app_with_default_worker_timeout
+  assign_free_service_ports setup_mojo_app_with_default_worker_timeout
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
   wait_for simulate_load
 );
-use OpenQA::Test::TimeLimit '150';
-
 # treat this test like the fullstack test
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
+use OpenQA::Test::TimeLimit '150';
+assign_free_service_ports;
 
 my $load_avg_file = simulate_load('0.93 0.95 3.25 2/2207 1212', '05-scheduler-full');
 
