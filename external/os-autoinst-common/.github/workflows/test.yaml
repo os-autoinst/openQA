@@ -9,7 +9,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: perldocker/perl-tester
+      image: registry.opensuse.org/devel/openqa/containers/os-autoinst_dev
     steps:
       - uses: actions/checkout@v6
       - run: make test-t

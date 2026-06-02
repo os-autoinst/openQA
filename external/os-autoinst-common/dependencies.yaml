@@ -31,5 +31,6 @@ cover_requires:
   perl(Devel::Cover::Report::Codecov):
 
 test_requires:
+  perl(Test::Compile):
   perl(Test::Most):
   perl(Test::Warnings):
