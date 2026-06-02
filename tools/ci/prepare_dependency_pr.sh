@@ -18,7 +18,7 @@ new_sha=$(curl -s https://api.github.com/repos/os-autoinst/os-autoinst/commits |
 
 echo -n "$new_sha" > "$sha_file"
 
-sudo zypper -n install git hub curl
+sudo zypper -n --gpg-auto-import-keys install git hub curl
 hub --version
 git add "$sha_file"
 git commit -m "$msg"
