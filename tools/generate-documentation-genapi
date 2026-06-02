@@ -21,8 +21,8 @@ if ($@ || !$parser) {
 }
 
 my $data_dir = './src/';
-opendir my $dh, $data_dir or die "Cannot read directories: $data_dir";
-my @files = grep { /\.pm$/ } readdir $dh;
+opendir my $dfh, $data_dir or die "Cannot read directories: $data_dir";
+my @files = grep { /\.pm$/ } readdir $dfh;
 
 foreach my $current_file (@files) {
 
@@ -34,8 +34,8 @@ foreach my $current_file (@files) {
     # We don't have a direct equivalent of include::header in Pod::Markdown
     # but we can just write it out if it exists
     if (-e 'header.md') {
-        open my $hfh, '<', 'header.md';
-        print {$ofh} <$hfh>;
+        open my $hfh, '<', 'header.md' or die 'Cannot open header.md';
+        print $ofh $_ while <$hfh>;
         print $ofh "\n";
         close $hfh;
     }

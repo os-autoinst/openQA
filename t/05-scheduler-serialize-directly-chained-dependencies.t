@@ -141,8 +141,8 @@ $cluster_info{$_}->{state} = SCHEDULED for (1, 9);
 
 # provide a sort function to control the order between multiple children of the same parent
 my %sort_criteria = (12 => 'anfang', 7 => 'danach', 6 => 'mitte', 8 => 'nach mitte', 1 => 'zuletzt');
-my $sort_function = sub ($items) {
-    return [sort { ($sort_criteria{$a} // $a) cmp($sort_criteria{$b} // $b) } @$items];
+my $sort_function = sub {
+    return [sort { ($sort_criteria{$a} // $a) cmp($sort_criteria{$b} // $b) } @{shift}];
 };
 @expected_sequence = (0, 12, 7, 6, [8, [10, 11], 9], [1, [2, 3], [4, 5]]);
 ($computed_sequence, $visited)

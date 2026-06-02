@@ -21,7 +21,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use OpenQA::Test::TimeLimit '60';
 use Test::Mojo;
 use IO::Socket::INET;

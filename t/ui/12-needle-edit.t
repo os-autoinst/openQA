@@ -8,7 +8,7 @@ use Test::Most;
 $ENV{MOJO_INACTIVITY_TIMEOUT} = 120;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Encode 'encode_utf8';
 use Test::MockModule;
 use Test::Mojo;

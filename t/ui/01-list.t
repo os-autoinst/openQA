@@ -6,7 +6,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 
 use Date::Format 'time2str';
 use Test::Mojo;

@@ -7,7 +7,7 @@ BEGIN { $ENV{OPENQA_DEPENDENCY_DEBUG_INFO} = 1 }
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '20';
@@ -85,8 +85,8 @@ sub get_tooltip ($job_id) {
     $driver->execute_script("return \$('#nodeTable$job_id').closest('.node').data('bs-original-title');");
 }
 
-sub node_name ($name, $a, $d, $as_child, $pd) {
-    "opensuse-$name (ancestors: $a, descendants: $d, as child: $as_child, preferred depth: $pd)";
+sub node_name ($name, $ancestors, $descendants, $as_child, $pd) {
+    "opensuse-$name (ancestors: $ancestors, descendants: $descendants, as child: $as_child, preferred depth: $pd)";
 }
 
 subtest 'dependency json' => sub {

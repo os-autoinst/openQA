@@ -5,7 +5,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Mojo::Base -signatures;
+use experimental 'signatures';
 use Test::Warnings;
 use OpenQA::Test::TimeLimit '60';
 use OpenQA::SeleniumTest;
