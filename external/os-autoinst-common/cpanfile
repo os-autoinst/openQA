@@ -8,6 +8,7 @@ requires 'Module::CPANfile';
 requires 'Storable', '>= 3.06';
 
 on 'test' => sub {
+    requires 'Test::Compile';
     requires 'Test::Most';
     requires 'Test::Warnings';
 

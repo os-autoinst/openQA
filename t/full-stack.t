@@ -9,6 +9,7 @@
 #    execution)
 
 use Test::Most;
+use Mojo::IOLoop::Server;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
@@ -19,6 +20,8 @@ BEGIN {
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
 
     $ENV{OS_AUTOINST_STORAGE_KEEP_FREE_RATIO} = 0;
+
+    $ENV{OPENQA_BASE_PORT} ||= Mojo::IOLoop::Server->generate_port;
 }
 
 use Test::Warnings ':report_warnings';
@@ -26,6 +29,7 @@ use Mojo::Base -signatures;
 use List::Util ();
 use Test::Mojo;
 use Test::MockModule;
+use Mojo::IOLoop::Server;
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';
@@ -49,6 +53,7 @@ session->enable;
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
+  qw(MAX_WORKER_INSTANCES),
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
   qw(start_worker stop_service wait_for_or_bail_out);
@@ -152,9 +157,11 @@ sub start_worker_and_assign_jobs ($worker_class = undef) {
     assign_jobs $worker_class;
 }
 
+my $instance = ($$ % MAX_WORKER_INSTANCES) + 1;
+
 sub logfile ($job_id, $filename) {
     my $log = path($resultdir, '00000', sprintf "%08d-$job_name", $job_id)->child($filename);
-    return -e $log ? $log : path("$resultdir/../pool/1/")->child($filename);
+    return -e $log ? $log : path("$resultdir/../pool/$instance/")->child($filename);
 }
 
 sub print_log ($job_id) {
@@ -306,7 +313,7 @@ LOCAL_UPLOAD = 0
 # Ensure fullstack tests run even under high load.
 CRITICAL_LOAD_AVG_THRESHOLD = 0
 
-[1]
+[1-99]
 WORKER_CLASS = qemu_i386,qemu_x86_64
 
 [http://localhost:$mojoport]
@@ -347,7 +354,7 @@ subtest 'Cache tests' => sub {
         ok !-d path($cache_location, 'test_directory'), 'Directory within cache, not present after deploy';
         ok !-e $cache_location->child('test.file'), 'File within cache, not present after deploy';
 
-        my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child('Core-7.2.iso');
+        my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', $instance)->child('Core-7.2.iso');
         wait_for_or_bail_out { -e $link } 'finished download';
 
         my $cached = $cache_location->child('localhost', 'Core-7.2.iso');

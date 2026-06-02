@@ -12,8 +12,9 @@ use OpenQA::Worker;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
 use OpenQA::App;
-use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT);
 use OpenQA::Log qw(log_error log_info log_debug);
+
 use OpenQA::Utils 'service_port';
 use OpenQA::WebSockets;
 use OpenQA::WebSockets::Client;
@@ -33,8 +34,11 @@ use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Test::MockModule;
+use OpenQA::Test::TimeLimit ();
 use Feature::Compat::Try;
 use Time::HiRes 'sleep';
+
+use constant MAX_WORKER_INSTANCES => 64;
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -49,6 +53,7 @@ BEGIN {
 }
 
 our @EXPORT_OK = qw(
+  MAX_WORKER_INSTANCES
   setup_mojo_app_with_default_worker_timeout create_user_for_workers
   create_webapi create_websocket_server create_scheduler create_live_view_handler
   unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job
@@ -422,7 +427,8 @@ sub start_worker ($connect_args) {
     $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
     # enable additional diagnostics for serialization errors
     $ENV{DEBUG_JSON} = 1;
-    my @cmd = ('perl', './script/worker', "--isotovideo=$isotovideo_path", '--verbose');
+    my $instance = ($$ % MAX_WORKER_INSTANCES) + 1;
+    my @cmd = ('perl', './script/worker', "--instance=$instance", "--isotovideo=$isotovideo_path", '--verbose');
     push @cmd, @$connect_args;
     start \@cmd;
 }
@@ -567,7 +573,7 @@ sub test_cmd (
 
 sub wait_for ($function, $description, $args = {}) {
     # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
-    my $timeout = $args->{timeout} // 60;
+    my $timeout = OpenQA::Test::TimeLimit::scale_timeout($args->{timeout} // 60);
     my $interval = $args->{interval} // $ENV{OPENQA_TEST_WAIT_INTERVAL} // .1;
 
     note "Waiting for '$description' to become available (timeout: $timeout)";
