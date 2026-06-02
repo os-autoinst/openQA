@@ -130,8 +130,13 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
         my $res_code = $new_tx->res->code // 0;
         return $self->handle_result($new_tx, $tx) if $res_code !~ /^(50[23]|0)$/ || $retries <= 0;
         my $waited = time - $start;
+        my $error = $new_tx->error;
+        my $error_msg = $error ? " ($error->{message})" : '';
+        my $url = $new_tx->req->url;
+        my $port = $url->port // ($url->scheme && $url->scheme eq 'https' ? 443 : 80);
+        my $target = ($url->host || 'localhost') . ":$port";
         print STDERR encode('UTF-8',
-"Request failed, hit error $res_code, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"
+"Request to $target failed, hit error $res_code$error_msg, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"
         );
         sleep $delay;
         $delay *= $factor;
