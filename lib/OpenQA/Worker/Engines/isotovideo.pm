@@ -341,26 +341,28 @@ sub engine_workit ($job, $callback) {
 }
 
 sub _configure_cgroupv2 ($job_info) {
-    # create cgroup for current job within detected slice
+    # create cgroup within /sys/fs/cgroup/systemd
     log_info('Preparing cgroup to start isotovideo');
     my $carp_guard;
     if (is_loaded('Carp::Always')) {
         $carp_guard = scope_guard sub { Carp::Always->import };    # uncoverable statement
         Carp::Always->unimport;    # uncoverable statement
     }
+    my $cgroup_name = 'systemd';
     my $cgroup_slice = CGROUP_SLICE;
     if (!defined $cgroup_slice) {
         # determine cgroup slice of the current process
         try {
-            my $cgroups = path('/proc/self/cgroup')->slurp;
-            ($cgroup_slice) = $cgroups =~ /name=systemd:(.*)/;
-            ($cgroup_slice) = $cgroups =~ /^0::(.*)/m unless defined $cgroup_slice;
+            my $pid = $$;
+            $cgroup_slice = (grep { /name=$cgroup_name:/ } split /\n/, path('/proc', $pid, 'cgroup')->slurp)[0]
+              if defined $pid;
+            $cgroup_slice =~ s/^.*name=$cgroup_name:/$cgroup_name/g if defined $cgroup_slice;
         }
         catch ($e) { }
     }
     my $cgroup;
     try {
-        $cgroup = cgroupv2(parent => path($cgroup_slice // '')->child($job_info->{id})->to_string);
+        $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice // '')->child($job_info->{id})->create;
         my $query_cgroup_path = $cgroup->can('_cgroup');
         log_info('Using cgroup ' . $query_cgroup_path->($cgroup)) if $query_cgroup_path;
     }
