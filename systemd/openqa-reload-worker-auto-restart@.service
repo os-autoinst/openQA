@@ -3,5 +3,5 @@ Description=Restart openqa-worker-auto-restart@%i.service ASAP without interrupt
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/systemctl reload openqa-worker-auto-restart@%i.service
+ExecStart=/usr/bin/systemctl reload-or-restart openqa-worker-auto-restart@%i.service
 Slice=openqa-worker.slice
