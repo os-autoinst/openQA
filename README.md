@@ -1,3 +1,5 @@
+just a test
+
 image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA] image:https://circleci.com/gh/os-autoinst/openQA/tree/master.svg?style=svg["CircleCI", link="https://circleci.com/gh/os-autoinst/openQA/tree/master"] image:https://openqa.opensuse.org/tests/latest/badge?arch=x86_64&distri=openqa&flavor=dev&test=openqa_install%2Bpublish&version=Tumbleweed[link="https://openqa.opensuse.org/tests/latest?arch=x86_64&distri=openqa&flavor=dev&machine=64bit-2G&test=openqa_install%2Bpublish&version=Tumbleweed"]
 
 openQA is a testing framework that allows you to test GUI applications on one
