@@ -333,9 +333,9 @@ how to use openQA, please visit <a href="http://open.qa/documentation">http://op
 <h2 id="_calculate_clickpoint">_calculate_clickpoint</h2>
 <p>This subroutine is used to by several subroutines dealing with mouse
 clicks to calculate a clickpoint, when only the needle area is
-available. It takes the area coordinates and returns the center of that
-area. It is meant to be a helper subroutine not available to be used in
-tests.</p>
+available. It takes the area coordinates and returns the configured
+clickpoint or else the center of that area. It is meant to be a helper
+subroutine not available to be used in tests.</p>
 <h2 id="init">init</h2>
 <p>Used for internal initialization, do not call from tests.</p>
 <h2 id="set_distribution">set_distribution</h2>
@@ -800,7 +800,7 @@ areas. Alternatively, you can set all the coordinates explicitly with
 <code>$endy</code>. You can also set one point using a needle and
 another one using coordinates. If both the coordinates and the needle
 are provided, the coordinates will be used to set up the locations and
-the needle location will be overridden.</p>
+the needle location will be ignored.</p>
 <h1 id="multi-console-support">multi console support</h1>
 <p>All <code>testapi</code> commands that interact with the system under
 test do that through a console. <code>send_key</code>,
