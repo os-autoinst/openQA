@@ -33,6 +33,9 @@ pr:
 
   filters:
     event: pull_request
+    branches:
+      only:
+        - master
 
 # Setup:
 # 1. Put this .obs/workflows.yml in the main branch of openQA
