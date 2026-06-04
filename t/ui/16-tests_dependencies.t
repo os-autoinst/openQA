@@ -19,6 +19,18 @@ use OpenQA::JobDependencies::Constants qw(CHAINED DIRECTLY_CHAINED PARALLEL);
 use OpenQA::Jobs::Constants;
 use OpenQA::WebAPI::Controller::Test;
 
+my $test_case = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database::generate_schema_name;
+my $schema = $test_case->init_data(
+    schema_name => $schema_name,
+    fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl'
+);
+
+my $jobs = $schema->resultset('Jobs');
+my $dependencies = $schema->resultset('JobDependencies');
+
+driver_missing unless my $driver = call_driver;
+
 subtest 'detailed behavior of merging parallel jobs into clusters' => sub {
     my (%clusters, %cluster_by_job);
     my %data = (cluster => \%clusters, cluster_by_job => \%cluster_by_job);
@@ -48,16 +60,6 @@ subtest 'detailed behavior of merging parallel jobs into clusters' => sub {
     is_deeply \%cluster_by_job, {map { $_ => 'cluster_2' } 1 .. 6}, 'all jobs in one cluster after merge';
 };
 
-my $test_case = OpenQA::Test::Case->new;
-my $schema_name = OpenQA::Test::Database::generate_schema_name;
-my $schema = $test_case->init_data(
-    schema_name => $schema_name,
-    fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl'
-);
-
-my $jobs = $schema->resultset('Jobs');
-my $dependencies = $schema->resultset('JobDependencies');
-
 # make doc job a clone of the textmode job
 my $doc_job_id = 99938;
 my $textmode_job = $jobs->find(99945);
@@ -79,7 +81,6 @@ $dependencies->create({child_job_id => 99945, parent_job_id => 99937, dependency
 $dependencies->create({child_job_id => 99927, parent_job_id => 99961, dependency => DIRECTLY_CHAINED});
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-driver_missing unless my $driver = call_driver;
 
 sub get_tooltip ($job_id) {
     $driver->execute_script("return \$('#nodeTable$job_id').closest('.node').data('bs-original-title');");
