@@ -1,0 +1,18 @@
+---
+pr:
+  steps:
+    - branch_package:
+        source_project: devel:openQA
+        source_package: openQA
+        target_project: devel:openQA:GitHub
+        add_repositories: disabled
+
+  filters:
+    event: pull_request
+    branches:
+      only:
+        - master
+
+# This is just a minimal file to prevent OBS from complaining when
+# creating a PR to gh-pages
+# https://progress.opensuse.org/issues/201978
