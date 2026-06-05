@@ -125,7 +125,7 @@ subtest 'Scheduler worker job allocation' => sub {
     always_explain $allocated unless $different_workers && $different_jobs;
 
     note 'verify scheduling reason for unallocated jobs';
-    is $new_job->discard_changes->reason, 'no free workers for class foo',
+    is $new_job->discard_changes->reason, 'no workers online for requested class foo at all',
       'unallocated job has a scheduling reason in the DB';
 
     $allocated = $job_model->schedule;
