@@ -37,12 +37,6 @@ pull_request_rules:
       - and: *base_checks
       - author~=^os-autoinst-bot$
     actions: *merge
-  - name: ask to resolve conflict
-    conditions:
-      - conflict
-    actions:
-      comment:
-        message: This pull request is now in conflicts. Could you fix it? 🙏
   - name: automatic merge for dependabot updates
     conditions:
       - and: *base_checks
