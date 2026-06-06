@@ -49,6 +49,7 @@ BEGIN {
         poo => 'https://progress.opensuse.org/issues/',
         gh => 'https://github.com/',
         kde => 'https://bugs.kde.org/show_bug.cgi?id=',
+        kdi => 'https://invent.kde.org/',
         fdo => 'https://bugs.freedesktop.org/show_bug.cgi?id=',
         jsc => 'https://jira.suse.com/browse/',
         pio => 'https://pagure.io/',
@@ -66,6 +67,7 @@ BEGIN {
         $BUGREFS{poo} => 'poo',
         $BUGREFS{gh} => 'gh',
         $BUGREFS{kde} => 'kde',
+        $BUGREFS{kdi} => 'kdi',
         $BUGREFS{fdo} => 'fdo',
         $BUGREFS{jsc} => 'jsc',
         $BUGREFS{pio} => 'pio',
@@ -441,6 +443,8 @@ sub bugurl ($bugref) {
     # same page as https://github.com/os-autoinst/openQA/pull/966 and vice
     # versa for both an issue as well as pull request
     # for pagure.io it has to be "issue", not "issues"
+    # gitlab rebranded "issues" to "work_items" in 2026, but so far
+    # they're keeping a redirect so we can still use "issues" for now
     $bugref =~ BUGREF_REGEX or return $bugref;
     my $issuetext = $+{marker} eq 'pio' ? 'issue' : 'issues';
     return $BUGREFS{$+{marker}} . ($+{repo} ? "$+{repo}/$issuetext/" : '') . $+{id};
@@ -464,7 +468,8 @@ sub href_to_bugref ($text) {
     # interchangeable, see comment in 'bugurl', too
     # gitlab URLs have an odd /-/ after the repo name, e.g.
     # https://gitlab.gnome.org/GNOME/gnome-shell/-/issues/5244
-    $regex = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*?)/(-/)?(issues?|pull)/)?(?<id>([A-Z]+-)?\d+)(?![\w])};
+    $regex
+      = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*?)/(-/)?(issues?|pull|work_items)/)?(?<id>([A-Z]+-)?\d+)(?![\w])};
     $text =~ s{$regex}{@{[$BUGURLS{$+{url_root}} . ($+{repo} ? '#' . $+{repo} : '')]}#$+{id}}gi;
     return $text;
 }
