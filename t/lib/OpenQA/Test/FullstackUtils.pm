@@ -113,7 +113,9 @@ sub wait_for_job_running ($driver, $fail_on_incomplete = undef) {
 # matches a regex; returns the index of the end of the match on success and otherwise -1
 # note: using a separate function here because $+[0] is not accessible from outer block when used in while
 sub _match_regex_returning_index ($regex, $message, $start_index = 0) {
-    (substr($message, $start_index) =~ $regex) ? $+[0] : -1;
+    my $match_index = (substr($message, $start_index) =~ $regex) ? $+[0] : -1;
+    BAIL_OUT "job terminated prematurely: $message"    # uncoverable statement
+      if $match_index < 0 && $message =~ m/command server not available, job is likely not running/;
 }
 
 # waits until the developer console content matches the specified regex
