@@ -40,9 +40,12 @@ subtest 'form is pre-filled' => sub {
         'create-tests-build' => 'openqa',
         'create-tests-test' => 'simple_boot',
         'create-tests-casedir' => 'https://github.com/os-autoinst/os-autoinst-distri-example.git',
-        'create-tests-needlesdir' => '',
+        'create-tests-needlesdir' => '%%CASEDIR%%/needles',
     );
     is element_prop($_), $expected_values{$_}, "$_ is pre-filled" for keys %expected_values;
+    my $get_settings = "return document.querySelector('#create-tests-settings-container pre').innerText";
+    like $driver->execute_script($get_settings), qr/PRODUCTDIR=\./, 'settings pre-filled';
+
 };
 
 subtest 'form can be submitted' => sub {

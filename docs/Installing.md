@@ -69,6 +69,7 @@ openqa-cli schedule --monitor async=1 \
     DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 \
     TEST=simple_boot _GROUP_ID=0 BUILD=test \
     CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-example.git \
+    PRODUCTDIR=. \
     NEEDLES_DIR=%%CASEDIR%%/needles
 
 openqa-clone-job https://openqa.opensuse.org/tests/1

@@ -319,6 +319,8 @@ sub default_config () {
             casedir => 'https://github.com/os-autoinst/os-autoinst-distri-example.git',
             distri => 'example',
             build => 'openqa',
+            needles_dir => '%%CASEDIR%%/needles',
+            settings => 'PRODUCTDIR=.',
         }};
 }
 
