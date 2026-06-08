@@ -600,7 +600,7 @@ fi
 #        "$1 -ge 1" checks for a package upgrade
 if [ -x /usr/bin/systemctl ] && [ $1 -ge 1 ]; then
     /usr/bin/systemctl daemon-reload || :
-    /usr/bin/systemctl reload 'openqa-worker-auto-restart@*.service' || :
+    /usr/bin/systemctl reload-or-restart 'openqa-worker-auto-restart@*.service' || :
 fi
 
 %postun auto-update
