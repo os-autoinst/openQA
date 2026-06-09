@@ -59,6 +59,8 @@ sub startup ($self) {
 
     # register route for live streaming of image
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');
+    $test_r->get('/livelog')->name('streaming')->to('running#livelog');
+    $test_r->get('/liveterminal')->name('streaming')->to('running#liveterminal');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
 }

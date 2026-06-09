@@ -167,8 +167,6 @@ sub startup ($self) {
     $test_r->get('/investigation_ajax')->name('test_investigation')->to('test#investigate');
     $test_r->get('/infopanel_ajax')->name('test_infopanel')->to('test#infopanel');
     $test_r->get('/status')->name('status')->to('running#status');
-    $test_r->get('/livelog')->name('livelog')->to('running#livelog');
-    $test_r->get('/liveterminal')->name('liveterminal')->to('running#liveterminal');
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
     $test_r->get('/badge')->name('test_result_badge')->to('test#badge');
 

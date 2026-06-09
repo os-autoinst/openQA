@@ -651,6 +651,7 @@ subtest 'open needle editor for running test' => sub {
 
 subtest 'error handling when opening needle editor for running test' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
+    my $l = Test::Mojo->new('OpenQA::LiveHandler');
 
     subtest 'no worker assigned' => sub {
         $t->get_ok('/tests/99946/edit')->status_is(404);
@@ -660,8 +661,8 @@ qr/Needle Editor.*The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has
         );
 
         # test error handling for other 'Running.pm' routes as well
-        $t->get_ok('/tests/99946/livelog')->status_is(404);
-        $t->content_like(
+        $l->get_ok('/liveviewhandler/tests/99946/livelog')->status_is(404);
+        $l->content_like(
 qr/Page not found.*The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so this route is not available\./,
             'error message'
         );
