@@ -1347,9 +1347,10 @@ e.g.:</p>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 <span class="dt">\</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    TEST=simple_boot _GROUP_ID=0 BUILD=test <span class="dt">\</span></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    CASEDIR=https://github.com/os-autoinst/os-autoinst-distri-example.git <span class="dt">\</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    NEEDLES_DIR=%%CASEDIR%%/needles</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-clone-job</span> https://openqa.opensuse.org/tests/1</span></code></pre></div>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    PRODUCTDIR=. <span class="dt">\</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    NEEDLES_DIR=%%CASEDIR%%/needles</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ex">openqa-clone-job</span> https://openqa.opensuse.org/tests/1</span></code></pre></div>
 <p>More details on triggering tests can also be found in the <a href="#usersguide">Users Guide</a>.</p>
 <p>You can also run the container and directly clone tests, e.g.:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-e</span> skip_suse_specifics= <span class="at">-e</span> skip_suse_tests= <span class="dt">\</span></span>
