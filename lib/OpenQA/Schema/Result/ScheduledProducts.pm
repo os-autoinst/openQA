@@ -520,6 +520,14 @@ sub _sort_dep ($list) {
     return \@out;
 }
 
+# define SQL code for WHERE-condition to search for products using globbing as fallback
+# - Escape present '%' and '_' characters so they are still matched literally.
+# - Replace '*' with '%' to support regular globbing via the SQL LIKE-expression.
+my $VERSION_COND_WITH_GLOBBING = <<~"END_SQL"
+    distri = ? and ? like replace(replace(replace(version, '%', '\%'), '_', '\_'), '*', '%') and flavor = ? and arch = ?
+    END_SQL
+  ;
+
 =over 4
 
 =item _generate_jobs()
@@ -535,23 +543,15 @@ method used in the B<schedule_iso()> method.
 sub _generate_jobs ($self, $args, $notes, $skip_chained_deps, $include_children) {
     my $ret = [];
     my $schema = $self->result_source->schema;
-    my @products = $schema->resultset('Products')->search(
-        {
-            distri => _distri_key($args),
-            version => $args->{VERSION},
-            flavor => $args->{FLAVOR},
-            arch => $args->{ARCH},
-        });
 
+    my $products = $schema->resultset('Products');
+    my $distri = _distri_key($args);
+    my @products = $products->search(
+        {distri => $distri, version => $args->{VERSION}, flavor => $args->{FLAVOR}, arch => $args->{ARCH}});
     unless (@products) {
-        push @$notes, qq|no products found for version "$args->{VERSION}", falling back to "*"|;
-        @products = $schema->resultset('Products')->search(
-            {
-                distri => _distri_key($args),
-                version => '*',
-                flavor => $args->{FLAVOR},
-                arch => $args->{ARCH},
-            });
+        push @$notes, qq|no products found for version "$args->{VERSION}", considering globbing via "*"|;
+        @products = $products->search(
+            \[$VERSION_COND_WITH_GLOBBING, $distri, $args->{VERSION}, $args->{FLAVOR}, $args->{ARCH}]);
     }
 
     if (!@products) {
