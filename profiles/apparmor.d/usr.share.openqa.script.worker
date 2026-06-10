@@ -147,6 +147,7 @@
   /usr/bin/unixcmd rix,
   /usr/bin/unxz rix,
   /usr/bin/unzip-plain rix,
+  /usr/bin/virt-fw-vars rix,
   /usr/bin/x3270 cx,
   /usr/bin/xterm rix,
   /usr/bin/xterm-console rix,
