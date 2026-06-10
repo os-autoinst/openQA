@@ -53,6 +53,7 @@ location /liveviewhandler/ {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
     proxy_set_header Host $host;
+    proxy_buffering off;
 }
 
 location / {
@@ -65,4 +66,19 @@ location / {
     proxy_set_header X-Forwarded-Server $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location ~ /tests/[0-9]+/(livelog|liveterminal)$ {
+    # Duplicate settings for location /, nginx can't merge locations :-(
+    proxy_pass "http://webui";
+    tcp_nodelay        on;
+    proxy_read_timeout 900;
+    proxy_send_timeout 900;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host:$server_port;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_buffering off;
 }
