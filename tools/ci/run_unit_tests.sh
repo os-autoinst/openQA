@@ -1,6 +1,7 @@
 #!/bin/bash
 set -ex
 target="${1:?"Specify a makefile target"}"
+shift
 # Set to 1 to temporarily ignore warnings
 export PERL_TEST_WARNINGS_ONLY_REPORT_WARNINGS=0
 export COVERAGE=1
@@ -37,4 +38,4 @@ mkdir -p "$HOME/.ssh"
 cp -vr "$HOME/.ssh" "/home/$user/.ssh"
 chown -R "$user:$user" "/home/$user/.ssh"
 
-sudo --preserve-env -u "$user" make test-"$target"
+sudo --preserve-env -u "$user" make test-"$target" "$@"
