@@ -203,34 +203,35 @@ sub streaming ($self) {
     my $last_png = "$basepath/last.png";
     my $backend_run_file = "$basepath/backend.run";
     my $lastfile = '';
-    $timer_id = Mojo::IOLoop->recurring(
-        IMAGE_STREAMING_INTERVAL() => sub (@) {
-            my $newfile = readlink($last_png) || '';
-            return if $lastfile eq $newfile;
+    my $send_image = sub (@) {
+        my $newfile = readlink($last_png) || '';
+        return if $lastfile eq $newfile;
 
-            my ($file, $close);
-            if (!-l $newfile || !$lastfile) {
-                $file = path($basepath, $newfile);
-                $lastfile = $newfile;
-            }
-            elsif (!-e $backend_run_file) {
-                # show special image when backend has terminated
-                $file = $self->app->static->file('images/suse-tested.png');
-                $close = 1;
-            }
-            try {
-                my $data_base64 = b64_encode(path($basepath, $newfile)->slurp, '');
-                $self->write("data: data:image/png;base64,$data_base64\n\n", $close ? $close_connection : undef);
-            }
-            catch ($e) {
-                # log the error as server-sent events message and close the connection
-                # note: This should be good enough for debugging on the client-side. The client will re-attempt
-                #       streaming. Avoid logging on the server-side here to avoid flooding the log for this
-                #       non-critical problem.
-                chomp $e;
-                $self->write("data: Unable to read image: $e\n\n", $close_connection);
-            }
-        });
+        my ($file, $close);
+        if (!-l $newfile || !$lastfile) {
+            $file = path($basepath, $newfile);
+            $lastfile = $newfile;
+        }
+        elsif (!-e $backend_run_file) {
+            # show special image when backend has terminated
+            $file = $self->app->static->file('images/suse-tested.png');
+            $close = 1;
+        }
+        try {
+            my $data_base64 = b64_encode(path($basepath, $newfile)->slurp, '');
+            $self->write("data: data:image/png;base64,$data_base64\n\n", $close ? $close_connection : undef);
+        }
+        catch ($e) {
+            # log the error as server-sent events message and close the connection
+            # note: This should be good enough for debugging on the client-side. The client will re-attempt
+            #       streaming. Avoid logging on the server-side here to avoid flooding the log for this
+            #       non-critical problem.
+            chomp $e;
+            $self->write("data: Unable to read image: $e\n\n", $close_connection);
+        }
+    };
+
+    $timer_id = Mojo::IOLoop->recurring(IMAGE_STREAMING_INTERVAL() => $send_image);
 
     # ask worker to create live stream
     log_debug("Asking the worker $worker_id to start providing livestream for job $job_id");
@@ -253,6 +254,10 @@ sub streaming ($self) {
     );
     my $cb = sub ($error) { $self->write("data: $error\n\n", $close_connection) if defined $error };
     _send_livestream_command_to_worker($client, WORKER_COMMAND_LIVELOG_START, 'start', $worker_id, $job_id, $cb);
+
+    # Try to send the current state immediately without waiting for the timer.
+    # Noop if no image arrived yet.
+    $send_image->();
 }
 
 1;
