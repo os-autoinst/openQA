@@ -76,7 +76,9 @@ subtest 'Test configuration default modes' => sub {
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{logging}->{level} = 'debug';
     $test_config->{global}->{service_port_delta} = 2;
-    $test_config->{misc_limits}->{prio_throttling_data} = {MAX_JOB_TIME => {scale => '0.007', reference => 0}};
+    $test_config->{misc_limits}->{prio_throttling_data} = {
+        MAX_JOB_TIME => [{scale => '0.007', reference => 0}],
+        CASEDIR => [{adjustment => 15, operator => '!~', regex => qr/^https?:/, regex_str => '^https?:'}]};
     $test_config->{misc_limits}->{prio_group_data}
       = [{property => 'full_name', regex => qr/Development/, increment => 50}];
     is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
@@ -298,6 +300,7 @@ subtest 'Lookup precedence/hiding' => sub {
 subtest 'check throttling configuration validation and application' => sub {
     my $app = OpenQA::App->singleton();
     my $config = $app->config;
+    local $config->{misc_limits}->{prio_throttling_patterns} = '';
 
     subtest 'invalid prio_throttling_parameters' => sub {
         $config->{misc_limits}->{prio_throttling_parameters} = 'invalid';
@@ -305,24 +308,25 @@ subtest 'check throttling configuration validation and application' => sub {
             $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
         }
         qr/Wrong format/, 'warn expected';
-        is_deeply $config->{misc_limits}->{prio_throttling_data}, undef,
-          'prio_throttling_data is empty hash for invalid';
+        is_deeply $config->{misc_limits}->{prio_throttling_data}, {},
+          'prio_throttling_data is empty hash for invalid parameters';
     };
     subtest 'no prio_throttling_parameters' => sub {
         $config->{misc_limits}->{prio_throttling_parameters} = undef;
         $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
-        is $config->{misc_limits}->{prio_throttling_data}, undef, 'prio_throttling_data is undef when no parameters';
+        is_deeply $config->{misc_limits}->{prio_throttling_data}, {},
+          'prio_throttling_data is empty when no parameters';
     };
     subtest 'empty string' => sub {
         $config->{misc_limits}->{prio_throttling_parameters} = '';
         $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
-        is $config->{misc_limits}->{prio_throttling_data}, undef, 'prio_throttling_data is undef for empty string';
+        is_deeply $config->{misc_limits}->{prio_throttling_data}, {}, 'prio_throttling_data is empty for empty string';
     };
     subtest 'valid prio_throttling_parameter with space separators' => sub {
         $config->{misc_limits}->{prio_throttling_parameters} = 'KEY1ONE:  1.5';
         $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
         is_deeply $config->{misc_limits}->{prio_throttling_data},
-          {KEY1ONE => {scale => 1.5, reference => 0}},
+          {KEY1ONE => [{scale => 1.5, reference => 0}]},
           'prio_throttling_data parsed correctly';
     };
     subtest 'valid multiple prio_throttling_parameters keys' => sub {
@@ -330,11 +334,52 @@ subtest 'check throttling configuration validation and application' => sub {
         $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
         is_deeply $config->{misc_limits}->{prio_throttling_data},
           {
-            A => {scale => 1.04, reference => 0},
-            B => {scale => 2, reference => 3},
-            C => {scale => 0.04, reference => 5}
+            A => [{scale => 1.04, reference => 0}],
+            B => [{scale => 2, reference => 3}],
+            C => [{scale => 0.04, reference => 5}],
           },
           'prio_throttling_data parses multiple correctly';
+    };
+
+    subtest 'invalid prio_throttling_patterns' => sub {
+        local $config->{misc_limits}->{prio_throttling_parameters} = '';
+        local $config->{misc_limits}->{prio_throttling_patterns} = 'CASEDIR:invalid';
+        stderr_like {
+            $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
+        }
+        qr/Wrong format in openqa.ini 'prio_throttling_patterns'/, 'warn expected';
+        is_deeply $config->{misc_limits}->{prio_throttling_data}, {},
+          'prio_throttling_data is empty for invalid patterns';
+    };
+    subtest 'valid prio_throttling_patterns' => sub {
+        local $config->{misc_limits}->{prio_throttling_parameters} = '';
+        local $config->{misc_limits}->{prio_throttling_patterns} = 'CASEDIR:15:!~^https?:';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
+        is_deeply $config->{misc_limits}->{prio_throttling_data},
+          {CASEDIR => [{adjustment => 15, operator => '!~', regex => qr/^https?:/, regex_str => '^https?:'}]},
+          'prio_throttling_data parses patterns correctly';
+    };
+    subtest 'valid multiple prio_throttling_patterns keys with spaces' => sub {
+        local $config->{misc_limits}->{prio_throttling_parameters} = '';
+        local $config->{misc_limits}->{prio_throttling_patterns} = 'CASEDIR:15:!~^https?:,  FOO:-10:=~^bar$';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
+        is_deeply $config->{misc_limits}->{prio_throttling_data},
+          {
+            CASEDIR => [{adjustment => 15, operator => '!~', regex => qr/^https?:/, regex_str => '^https?:'}],
+            FOO => [{adjustment => -10, operator => '=~', regex => qr/^bar$/, regex_str => '^bar$'}],
+          },
+          'prio_throttling_data parses multiple patterns with spaces correctly';
+    };
+    subtest 'combining parameters and patterns' => sub {
+        local $config->{misc_limits}->{prio_throttling_parameters} = 'MAX_JOB_TIME:0.007';
+        local $config->{misc_limits}->{prio_throttling_patterns} = 'CASEDIR:15:!~^https?:';
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($app, $config);
+        is_deeply $config->{misc_limits}->{prio_throttling_data},
+          {
+            MAX_JOB_TIME => [{scale => 0.007, reference => 0}],
+            CASEDIR => [{adjustment => 15, operator => '!~', regex => qr/^https?:/, regex_str => '^https?:'}],
+          },
+          'prio_throttling_data combines parameters and patterns correctly';
     };
 
     subtest 'prio_group_parameters' => sub {

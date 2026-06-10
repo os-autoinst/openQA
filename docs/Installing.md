@@ -700,6 +700,20 @@ Its scale only applies to jobs having that value exceeding
 configuration, administrators must explicitly include the `MAX_JOB_TIME` rule,
 to retain runtime-based throttling.
 
+It is also possible to define throttling patterns:
+
+    prio_throttling_patterns = parameter_n:adjustment_n:=~regex_n[,…]
+    prio_throttling_patterns = parameter_n:adjustment_n:!~regex_n[,…]
+
+where:
+
+- `parameter_n`: the name of the parameter
+- `adjustment_n`: a positive or negative number that is added to the job
+  priority
+- `=~` or `!~`: the former applies `adjustment_n` if `regex_n` matches, the
+  latter applies `adjustment_n` if `regex_n` does not match
+- `regex_n`: a regex to match the value of `parameter_n` against
+
 The final priority of a job is the sum of a base priority, defined in the job
 templates or scenario definitions, plus all adjustments calculated for the
 configured parameters that match the job settings.
