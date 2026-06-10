@@ -3195,15 +3195,30 @@ that it is a GNOME only distribution.</p></li>
 <li><p><code>PROMO</code> marks the promotional product.</p></li>
 <li><p><code>RESCUECD</code> is set to 1 for rescue CD images.</p></li>
 </ul>
-<p>The version of a medium can be set to <code>*</code>. Then this
-medium is considered if a product is scheduled with a
-<code>VERSION</code> parameter that does not match any other medium.
-This allows having only one medium per version. Note that having a
-medium with a concrete version and one with <code>*</code> at the same
-time is usually not a good idea as you will likely run into the
-scheduling error <code>no templates found</code>
-<code>for product …</code> (unless you actually have job templates for
-all these medium types).</p>
+<h4 data-number="3.2.3.1" id="using-wildcards-in-medium-versions"><span class="header-section-number">3.2.3.1</span> Using Wildcards in Medium
+Versions</h4>
+<p>You can use the <code>*</code> character within a medium version to
+enable a fallback lookup using globbing. This is particularly helpful
+for the following scenarios:</p>
+<ul>
+<li><em>Consolidating generic medium types:</em> Instead of creating a
+unique medium type for every single version, you can use <code>*</code>
+as a catch-all version.
+<ul>
+<li>Tip: Avoid defining a concrete version (e.g., <code>16.1</code>) and
+a wildcard version (<code>*</code>) within one schedule definition
+unless you have matching job templates for both, as this can trigger a
+scheduling error (<code>no templates found for product...</code>).</li>
+</ul></li>
+<li><em>Handling isolated tests for individual submissions (e.g.
+pull-requests):</em> When testing such submissions, schedule the
+products with e.g., <code>VERSION=16.1:PR-1234</code>. This will avoid
+cluttering the &quot;Next &amp; Previous&quot; table and prevent unintended
+carry-overs. Then specify a partial-match as the medium version. For
+example by specifying <code>16.1:PR-*</code> in the medium type, openQA
+will automatically match and use this type for any scheduled product
+where the <code>VERSION</code> begins with <code>16.1:PR-</code>.</li>
+</ul>
 <h3 data-number="3.2.4" id="test-suites"><span class="header-section-number">3.2.4</span> Test Suites</h3>
 <p>A test suite consists of a name and a set of test variables that are
 used inside this particular test together with an optional description.
@@ -4238,9 +4253,9 @@ document</a>.</p>
 types (product definitions). Jobs will be generated for the matching
 medium types based on the relevant job templates for each job group.</p>
 <p>If there is no medium type matching the specified
-<code>VERSION</code>, the lookup falls back to matching any medium with
-version <code>*</code>. Check out <a href="#medium_types_products">the
-section about medium types</a> for details.</p>
+<code>VERSION</code>, the lookup falls back to using globbing. Check out
+<a href="#medium_types_products">the section about medium types</a> for
+details.</p>
 <p>The parameters <code>MACHINE</code> and <code>TEST</code>
 additionally act as filters and <code>TEST</code> supports multiple
 comma-separated values. So adding e.g. <code>TEST=foo,bar</code> will
