@@ -33,6 +33,7 @@ id -u "$user" &>/dev/null || useradd "$user"
 chown -R "$user:$user" "$PWD"
 
 # avoid running into "The authenticity of host 'github.com (…)' can't be established." in `test-gitlint` target
+mkdir -p "$HOME/.ssh"
 cp -vr "$HOME/.ssh" "/home/$user/.ssh"
 chown -R "$user:$user" "/home/$user/.ssh"
 
