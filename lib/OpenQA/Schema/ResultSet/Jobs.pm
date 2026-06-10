@@ -218,20 +218,32 @@ sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
     my @throttling_info;
     my $config = OpenQA::App->singleton && OpenQA::App->singleton->config;
     if ($config && (my $throttling = $config->{misc_limits}->{prio_throttling_data})) {
-        if (
-            my $mjt_info = _apply_max_job_time_prio(
-                $settings->{TIMEOUT_SCALE},
-                $settings->{MAX_JOB_TIME},
-                $throttling->{MAX_JOB_TIME},
-                $new_job_args
-            ))
-        {
-            push @throttling_info, $mjt_info;
+        my @timeout_settings = ($settings->{TIMEOUT_SCALE}, $settings->{MAX_JOB_TIME});
+        for my $mjt_rule (@{$throttling->{MAX_JOB_TIME} // []}) {
+            next if exists $mjt_rule->{operator};
+            my $info = _apply_max_job_time_prio(@timeout_settings, $mjt_rule, $new_job_args);
+            push @throttling_info, $info if $info;
         }
         for my $resource (keys %$throttling) {
-            next if (!defined $settings->{$resource} || $resource eq 'MAX_JOB_TIME');
-            push @throttling_info,
-              $resource . _update_priority($settings->{$resource}, $throttling->{$resource}, $new_job_args);
+            next unless defined(my $value = $settings->{$resource});
+            for my $rule (@{$throttling->{$resource}}) {
+                my $op = $rule->{operator};
+                if (!defined $op) {
+                    push @throttling_info, $resource . _update_priority($value, $rule, $new_job_args)
+                      if $resource ne 'MAX_JOB_TIME';
+                    next;
+                }
+                my $val = $value;
+                my $regex = $rule->{regex};
+                my $adj = $rule->{adjustment};
+                my $matches = $val =~ $regex;
+                if (($op eq '=~' && $matches) || ($op eq '!~' && !$matches)) {
+                    $new_job_args->{priority} += $adj;
+                    my $sign = $adj >= 0 ? '+' : '';
+                    push @throttling_info, sprintf '%s [%s%s: value %s %s %s]', $resource, $sign, $adj, $val, $op,
+                      $rule->{regex_str};
+                }
+            }
         }
     }
     if ($config && $group && (my $group_throttling = $config->{misc_limits}->{prio_group_data})) {
