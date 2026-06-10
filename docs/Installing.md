@@ -685,17 +685,20 @@ where:
 - `parameter_n`: the name of a parameter
 - `reference_n`: an optional threshold or reference, that can be zero, making
   the scale negative or positive for values lower or higher than it.
-
 - `scale_n`: the priority scale factor applied to the difference between the
-  parameter and its reference. This number is based on experience and custom needs.
-  When it is missing or zero, the throttling isn't applied for the parameter n.
+  parameter and its reference. This number is based on experience and custom
+  needs. When it is missing or zero, the throttling isn't applied for the
+  parameter n.
 
 `MAX_JOB_TIME`, the max duration of the job in seconds, can also have a
 throttling scale configured to encourage shorter test runtimes. When this
-parameter is missing in the settings, a `DEFAULT_MAX_JOB_TIME` value is assumed (refer to openQA code). A positive `TIMEOUT_SCALE`, 1 by default, may also be
+parameter is missing in the settings, a `DEFAULT_MAX_JOB_TIME` value is assumed
+(refer to openQA code). A positive `TIMEOUT_SCALE`, 1 by default, may also be
 defined to multiply the job time and the scale applies to the resulting product.
-Its scale only applies to jobs having that value exceeding `DEFAULT_MAX_JOB_TIME`. When defining a custom `prio_throttling_parameters` configuration, administrators must explicitly include the `MAX_JOB_TIME` rule, to retain
-runtime-based throttling.
+Its scale only applies to jobs having that value exceeding
+`DEFAULT_MAX_JOB_TIME`. When defining a custom `prio_throttling_parameters`
+configuration, administrators must explicitly include the `MAX_JOB_TIME` rule,
+to retain runtime-based throttling.
 
 The final priority of a job is the sum of a base priority, defined in the job
 templates or scenario definitions, plus all adjustments calculated for the
