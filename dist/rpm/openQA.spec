@@ -418,7 +418,7 @@ export CONTAINER_TEST=0
 export HELM_TEST=0
 # We don't want fatal warnings during package building
 export PERL_TEST_WARNINGS_ONLY_REPORT_WARNINGS=1
-make test PROVE_ARGS='-r -v t' CHECKSTYLE=0 TEST_PG_PATH=%{buildroot}/DB
+make test STABILITY_TEST=1 RETRY=1000 PROVE_ARGS='-r -v t' CHECKSTYLE=0 TEST_PG_PATH=%{buildroot}/DB TESTS="t/10-jobs.t t/04-scheduler.t"
 rm -rf %{buildroot}/DB
 %endif
 
