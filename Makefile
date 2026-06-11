@@ -498,7 +498,7 @@ test-helm-chart: test-helm-lint test-helm-install ## Run helm chart tests (lint 
 
 .PHONY: test-helm-lint
 test-helm-lint: ## Lint helm chart
-	tools/test_helm_chart lint
+	RETRY=${RETRY} timeout --foreground -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry tools/test_helm_chart lint
 
 .PHONY: test-helm-install
 test-helm-install: test-helm-lint ## Install helm chart for testing
