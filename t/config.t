@@ -261,7 +261,7 @@ subtest 'Multiple config files' => sub {
     $openqa_d->child('01-appname-and-scm.ini')->spew($data_01);
     $openqa_d->child('02-appname.ini')->spew($data_02);
     my $global_config = OpenQA::Setup::read_config($app)->{global};
-    is $global_config->{appname}, 'openQA override 2', 'appname overriden by config from openqa.ini.d, last one wins';
+    is $global_config->{appname}, 'openQA override 2', 'appname overridden by config from openqa.ini.d, last one wins';
     is $global_config->{branding}, 'fedora', 'scm set by config from openqa.ini.d, not overriden';
     is $global_config->{hide_asset_types}, 'repo iso', 'types set from main config, not overriden';
 };
@@ -294,7 +294,7 @@ subtest 'Lookup precedence/hiding' => sub {
 
     @expected = ("$t_dir/override/openqa.ini.d/override-drop-in.ini");
     $t_dir->child('override')->child('openqa.ini.d')->make_path->child('override-drop-in.ini')->touch;
-    is_deeply lookup_config_files(@args), \@expected, 'drop-in in overriden dir hides all other config';
+    is_deeply lookup_config_files(@args), \@expected, 'drop-in in overridden dir hides all other config';
 };
 
 subtest 'check throttling configuration validation and application' => sub {
