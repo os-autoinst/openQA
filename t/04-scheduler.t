@@ -304,7 +304,7 @@ subtest 'getting sort criteria for job from cluster that is not scheduled' => su
     my $scheduler_mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
     my $fake_allocated = {worker => 1, job => 1};
     $scheduler_mock->redefine(
-        _allocate_jobs => sub ($self, $free_workers, $online_workers = undef) { ({}, {1 => $fake_allocated}) });
+        _allocate_jobs => sub ($self, $online_workers = undef, $free_workers = undef) { ({}, {1 => $fake_allocated}) });
     my $running = $jobs->create({TEST => 'running', state => RUNNING});
     $job_dependencies->create({child_job_id => 1, parent_job_id => $running->id, dependency => PARALLEL});
     my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
