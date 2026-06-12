@@ -13,10 +13,13 @@ permalink: /api/testapi/
           <title>openQA testapi API</title>
     <style>
 
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 
 ul.task-list[class]{list-style: none;}
@@ -268,7 +271,7 @@ padding: 20px;
       <li><a href="#select_console" id="toc-select_console">select_console</a></li>
       <li><a href="#console" id="toc-console">console</a></li>
       <li><a href="#reset_consoles" id="toc-reset_consoles">reset_consoles</a></li>
-      <li></li>
+      <li><a href="#current_console" id="toc-current_console">current_console</a></li>
       </ul></li>
       <li><a href="#audio-support" id="toc-audio-support">audio
       support</a>
@@ -861,8 +864,7 @@ commands to here.</p>
 <p>will make sure the next select_console will activate the console.
 This is important if you did something to the system that affects the
 console (e.g. trigger reboot).</p>
-<h2></h2>
-<pre><code>current\_console</code></pre>
+<h2 id="current_console">current_console</h2>
 <p>Return the currently selected console, a call when no console is
 selected, will return <code>undef</code>.</p>
 <h1 id="audio-support">audio support</h1>
