@@ -47,10 +47,11 @@ my $settings = {
     # %%%%CASEDIR%%% will be preserved, number of surrounding % preserved except for outermost pair
     # %CASEDIR% will still be substituted, despite other escaped occurrences in same value
     NEEDLES_DIR => '%%CASEDIR%%/bar/%%%%CASEDIR%%%/%CASEDIR%',
+    ENCODED_URL => 'https://example.org/url%20with%20spaces%20unchanged',
 };
 
 subtest expand_placeholders => sub {
-    my $error = OpenQA::JobSettings::expand_placeholders($settings);
+    my ($error) = OpenQA::JobSettings::expand_placeholders($settings);
     my $match_settings = {
         BUILD_SDK => '1234',
         BETA => 1,
@@ -84,6 +85,7 @@ subtest expand_placeholders => sub {
         WORKAROUND_MODULES => 'base,desktop,serverapp,script,sdk',
         CASEDIR => 'foo',
         NEEDLES_DIR => '%CASEDIR%/bar/%%%CASEDIR%%/foo',
+        ENCODED_URL => 'https://example.org/url%20with%20spaces%20unchanged',
     };
     is $error, undef, 'no error returned';
     is_deeply $settings, $match_settings, 'Settings replaced';
@@ -103,8 +105,9 @@ subtest circular_reference => sub {
         VERSION => '15-SP1',
         MACHINE => '64bit',
     };
+    my ($circular_error) = OpenQA::JobSettings::expand_placeholders($circular_settings);
     like
-      OpenQA::JobSettings::expand_placeholders($circular_settings),
+      $circular_error,
       qr/The key (\w+) contains a circular reference, its value is %\w+%/,
       'circular reference exit successfully';
 };
@@ -123,14 +126,23 @@ subtest 'handle_plus_in_settings' => sub {
 subtest 'two-pass variable expansion' => sub {
     my %settings = (FOO => 'http://%BAR%/', NEEDLES_DIR => '%%CASEDIR%%/needles');
 
-    is OpenQA::JobSettings::expand_placeholders(\%settings), undef, 'web UI pass of expand_placeholders';
+    my ($web_ui_error) = OpenQA::JobSettings::expand_placeholders(\%settings);
+    is $web_ui_error, undef, 'web UI pass of expand_placeholders';
     is $settings{FOO}, 'http://%BAR%/', 'placeholder referring to non-existing key not removed during web UI pass';
     is $settings{NEEDLES_DIR}, '%CASEDIR%/needles', 'one level of %-signs stripped during web UI pass';
 
-    is OpenQA::JobSettings::expand_placeholders(\%settings, 0), undef, 'worker pass of expand_placeholders';
+    my ($worker_error) = OpenQA::JobSettings::expand_placeholders(\%settings, 0);
+    is $worker_error, undef, 'worker pass of expand_placeholders';
     is $settings{FOO}, 'http:///', 'placeholder referring to non-existing key finally removed by worker';
     is $settings{NEEDLES_DIR}, '%CASEDIR%/needles',
       '%CASEDIR% preserved during worker pass, handled instead by _engine_workit_step_2';
+};
+
+subtest 'unexpanded variables' => sub {
+    my %settings = (URL => 'http://%MIRROR%/repo/%VERSION%', VERSION => '15-SP1');
+    my ($error, $unexpanded) = OpenQA::JobSettings::expand_placeholders(\%settings);
+    is $error, undef, 'no error';
+    is_deeply $unexpanded, ['MIRROR'], 'MIRROR detected as unexpanded';
 };
 
 done_testing;
