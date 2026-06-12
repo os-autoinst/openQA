@@ -40,6 +40,10 @@ sub determine_online_workers ($shuffle = 0) {
     return $shuffle ? shuffle(\@online_workers) : \@online_workers;
 }
 
+sub determine_free_workers ($online_workers) {
+    return [grep { !$_->job_id } @$online_workers];
+}
+
 sub determine_scheduled_jobs ($self) {
     $self->_update_scheduled_jobs;
     return $self->scheduled_jobs;
@@ -51,8 +55,9 @@ sub effective_job_limit ($self) {
     return $self->dynamic_limit->current_limit($config);
 }
 
-sub _allocate_jobs ($self, $online_workers = undef) {
+sub _allocate_jobs ($self, $online_workers = undef, $free_workers = undef) {
     $online_workers //= determine_online_workers($self->shuffle_workers);
+    $free_workers //= determine_free_workers($online_workers);
     my ($allocated_workers, $allocated_jobs) = ({}, {});
     my $scheduled_jobs = $self->scheduled_jobs;
     $scheduled_jobs->{$_}->{current_reason} = undef for keys %$scheduled_jobs;
@@ -81,7 +86,7 @@ sub _allocate_jobs ($self, $online_workers = undef) {
         if (!@{$jobinfo->{matching_workers}}) {
             my @needed = sort @{$jobinfo->{worker_classes}};
             $jobinfo->{current_reason}
-              = !@needed ? ($has_matching_online ? 'no free workers' : 'no workers online')
+              = !@needed ? 'job has no worker class'
               : $has_matching_online ? "no free workers for class @needed"
               : "no workers online for requested class @needed at all";
         }
@@ -103,7 +108,6 @@ sub _allocate_jobs ($self, $online_workers = undef) {
 
     my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %$scheduled_jobs;
     my %checked_jobs;
-    my $free_workers = [grep { !$_->job_id } @$online_workers];
     for my $j (@sorted) {
         my $job_id = $j->{id};
         if ($checked_jobs{$job_id} || defined $allocated_jobs->{$job_id} || !@{$j->{matching_workers}}) {
@@ -224,7 +228,7 @@ sub schedule ($self) {
     my $start_time = time;
     my $schema = OpenQA::Schema->singleton;
     my $online_workers = determine_online_workers($self->shuffle_workers);
-    my $free_workers = [grep { !$_->job_id } @$online_workers];
+    my $free_workers = determine_free_workers($online_workers);
     my $worker_count = $schema->resultset('Workers')->count;
     my $free_worker_count = @$free_workers;
 
@@ -232,7 +236,7 @@ sub schedule ($self) {
     log_debug("Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: "
           . (scalar keys %$scheduled_jobs));
 
-    my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($online_workers);
+    my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($online_workers, $free_workers);
 
     $self->_update_job_reasons_in_db($schema, $scheduled_jobs);
     my @successfully_allocated;
