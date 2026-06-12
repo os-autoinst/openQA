@@ -581,5 +581,4 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
 
     return ('perl', $isotovideo, '-d');
 }
-
 1;
