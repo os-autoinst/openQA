@@ -81,7 +81,7 @@ sub _allocate_jobs ($self, $online_workers = undef) {
         if (!@{$jobinfo->{matching_workers}}) {
             my @needed = sort @{$jobinfo->{worker_classes}};
             $jobinfo->{current_reason}
-              = !@needed ? ($has_matching_online ? 'no free workers' : 'no workers online')
+              = !@needed ? 'job has no worker class'
               : $has_matching_online ? "no free workers for class @needed"
               : "no workers online for requested class @needed at all";
         }
