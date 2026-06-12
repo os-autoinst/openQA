@@ -7,10 +7,13 @@
           <title>openQA Documentation</title>
     <style>
 
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 
 ul.task-list[class]{list-style: none;}
@@ -1781,14 +1784,14 @@ the following syntax:</p>
 <pre><code>prio_throttling_parameters = parameter_n:scale_n[:reference_n][,…]</code></pre>
 <p>where:</p>
 <ul>
-<li><p><code>parameter_n</code>: the name of a parameter</p></li>
-<li><p><code>reference_n</code>: an optional threshold or reference,
-that can be zero, making the scale negative or positive for values lower
-or higher than it.</p></li>
-<li><p><code>scale_n</code>: the priority scale factor applied to the
+<li><code>parameter_n</code>: the name of a parameter</li>
+<li><code>reference_n</code>: an optional threshold or reference, that
+can be zero, making the scale negative or positive for values lower or
+higher than it.</li>
+<li><code>scale_n</code>: the priority scale factor applied to the
 difference between the parameter and its reference. This number is based
 on experience and custom needs. When it is missing or zero, the
-throttling isn&#39;t applied for the parameter n.</p></li>
+throttling isn&#39;t applied for the parameter n.</li>
 </ul>
 <p><code>MAX_JOB_TIME</code>, the max duration of the job in seconds,
 can also have a throttling scale configured to encourage shorter test
