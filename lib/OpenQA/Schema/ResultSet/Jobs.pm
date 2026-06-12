@@ -212,6 +212,11 @@ sub _apply_max_job_time_prio ($factor, $time, $throt_config, $job_args) {
     return $info;
 }
 
+sub _change_prio_returning_sign ($new_job_args, $adjustment) {
+    $new_job_args->{priority} += $adjustment;
+    return $adjustment >= 0 ? '+' : '';
+}
+
 sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
     my $debug_msg;
     my $base_prio = $new_job_args->{priority} // 0;
@@ -238,8 +243,7 @@ sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
                 my $adj = $rule->{adjustment};
                 my $matches = $val =~ $regex;
                 if (($op eq '=~' && $matches) || ($op eq '!~' && !$matches)) {
-                    $new_job_args->{priority} += $adj;
-                    my $sign = $adj >= 0 ? '+' : '';
+                    my $sign = _change_prio_returning_sign($new_job_args, $adj);
                     push @throttling_info, sprintf '%s [%s%s: value %s %s %s]', $resource, $sign, $adj, $val, $op,
                       $rule->{regex_str};
                 }
@@ -251,8 +255,7 @@ sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
             my $prop = $rule->{property};
             my $val = $group->$prop // '';
             if ($val =~ $rule->{regex}) {
-                $new_job_args->{priority} += $rule->{increment};
-                my $sign = $rule->{increment} >= 0 ? '+' : '';
+                my $sign = _change_prio_returning_sign($new_job_args, $rule->{increment});
                 push @throttling_info, "$sign$rule->{increment} because job group $prop matches $rule->{regex}";
             }
         }
