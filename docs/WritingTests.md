@@ -501,6 +501,18 @@ the backend, for example the [test API](#api). This is supposed to be set
 within the worker settings on slow worker hosts. It has no influence on the
 video setting.
 
+### Enabling UEFI with QEMU
+Use `UEFI=1` to enable UEFI with the QEMU backend. If your image does not boot
+due to SecureBoot, you can specify the certificate you image is signed with via
+e.g. `UEFI_PFLASH_CERTS=custom.crt` (and use e.g. `ASSET_1=custom.crt` to track
+the certificate as [asset](UsersGuide.md#asset-handling)). It is also possible
+to disable SecureBoot completely via `UEFI_PFLASH_SECURE_BOOT=1`.
+
+When enabling UEFI, you can set the firmware resolution using
+`UEFI_PFLASH_RESOLUTION`, e.g. `UEFI_PFLASH_RESOLUTION=1024x768`. Check out the
+[QEMU backend variables documentation](https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.md#qemu-backend)
+for further UEFI-related settings.
+
 ### Capturing kernel exceptions and/or any other exceptions from the serial console
 
 Soft and hard failures can be triggered on demand by regular expressions when
