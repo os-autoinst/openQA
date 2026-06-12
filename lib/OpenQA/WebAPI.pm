@@ -89,6 +89,7 @@ sub startup ($self) {
     # set cookie timeout to 48 hours (will be updated on each request)
     my $app = $self->app;
     $app->sessions->default_expiration(2 * ONE_DAY);
+    $app->sessions->encrypted(1) if $app->sessions->can('encrypted');
 
     # commands
     push @{$self->commands->namespaces}, 'OpenQA::WebAPI::Command';
