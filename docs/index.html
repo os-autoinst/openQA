@@ -557,27 +557,29 @@ padding: 20px;
       <li><a href="#advanced-test-features" id="toc-advanced-test-features"><span class="toc-section-number">4.6</span> Advanced test features</a>
       <ul>
       <li><a href="#changing-timeouts" id="toc-changing-timeouts"><span class="toc-section-number">4.6.1</span> Changing timeouts</a></li>
-      <li><a href="#capturing-kernel-exceptions-andor-any-other-exceptions-from-the-serial-console" id="toc-capturing-kernel-exceptions-andor-any-other-exceptions-from-the-serial-console"><span class="toc-section-number">4.6.2</span> Capturing kernel
+      <li><a href="#enabling-uefi-with-qemu" id="toc-enabling-uefi-with-qemu"><span class="toc-section-number">4.6.2</span> Enabling UEFI with
+      QEMU</a></li>
+      <li><a href="#capturing-kernel-exceptions-andor-any-other-exceptions-from-the-serial-console" id="toc-capturing-kernel-exceptions-andor-any-other-exceptions-from-the-serial-console"><span class="toc-section-number">4.6.3</span> Capturing kernel
       exceptions and/or any other exceptions from the serial
       console</a></li>
-      <li><a href="#traceability-and-reproducibility-of-tests" id="toc-traceability-and-reproducibility-of-tests"><span class="toc-section-number">4.6.3</span> Traceability and
+      <li><a href="#traceability-and-reproducibility-of-tests" id="toc-traceability-and-reproducibility-of-tests"><span class="toc-section-number">4.6.4</span> Traceability and
       reproducibility of tests</a></li>
-      <li><a href="#assigning-jobs-to-workers" id="toc-assigning-jobs-to-workers"><span class="toc-section-number">4.6.4</span> Assigning jobs to
+      <li><a href="#assigning-jobs-to-workers" id="toc-assigning-jobs-to-workers"><span class="toc-section-number">4.6.5</span> Assigning jobs to
       workers</a></li>
-      <li><a href="#running-a-custom-worker-engine" id="toc-running-a-custom-worker-engine"><span class="toc-section-number">4.6.5</span> Running a custom worker
+      <li><a href="#running-a-custom-worker-engine" id="toc-running-a-custom-worker-engine"><span class="toc-section-number">4.6.6</span> Running a custom worker
       engine</a></li>
-      <li><a href="#automatic-retries-of-jobs" id="toc-automatic-retries-of-jobs"><span class="toc-section-number">4.6.6</span> Automatic retries of
+      <li><a href="#automatic-retries-of-jobs" id="toc-automatic-retries-of-jobs"><span class="toc-section-number">4.6.7</span> Automatic retries of
       jobs</a></li>
-      <li><a href="#job-dependencies" id="toc-job-dependencies"><span class="toc-section-number">4.6.7</span> Job dependencies</a></li>
-      <li><a href="#writing-multi-machine-tests" id="toc-writing-multi-machine-tests"><span class="toc-section-number">4.6.8</span> Writing multi-machine
+      <li><a href="#job-dependencies" id="toc-job-dependencies"><span class="toc-section-number">4.6.8</span> Job dependencies</a></li>
+      <li><a href="#writing-multi-machine-tests" id="toc-writing-multi-machine-tests"><span class="toc-section-number">4.6.9</span> Writing multi-machine
       tests</a></li>
-      <li><a href="#test-synchronization-and-locking-api" id="toc-test-synchronization-and-locking-api"><span class="toc-section-number">4.6.9</span> Test synchronization and
+      <li><a href="#test-synchronization-and-locking-api" id="toc-test-synchronization-and-locking-api"><span class="toc-section-number">4.6.10</span> Test synchronization and
       locking API</a></li>
-      <li><a href="#support-server-based-tests" id="toc-support-server-based-tests"><span class="toc-section-number">4.6.10</span> Support Server based
+      <li><a href="#support-server-based-tests" id="toc-support-server-based-tests"><span class="toc-section-number">4.6.11</span> Support Server based
       tests</a></li>
-      <li><a href="#using-text-consoles-and-the-serial-terminal" id="toc-using-text-consoles-and-the-serial-terminal"><span class="toc-section-number">4.6.11</span> Using text consoles and
+      <li><a href="#using-text-consoles-and-the-serial-terminal" id="toc-using-text-consoles-and-the-serial-terminal"><span class="toc-section-number">4.6.12</span> Using text consoles and
       the serial terminal</a></li>
-      <li><a href="#mcp-support" id="toc-mcp-support"><span class="toc-section-number">4.6.12</span> MCP Support</a></li>
+      <li><a href="#mcp-support" id="toc-mcp-support"><span class="toc-section-number">4.6.13</span> MCP Support</a></li>
       </ul></li>
       <li><a href="#test-development-tricks" id="toc-test-development-tricks"><span class="toc-section-number">4.7</span> Test Development tricks</a>
       <ul>
@@ -5272,7 +5274,19 @@ changed by setting <code>MAX_SETUP_TIME</code>. The variable
 timeouts within the backend, for example the <a href="#api">test
 API</a>. This is supposed to be set within the worker settings on slow
 worker hosts. It has no influence on the video setting.</p>
-<h3 data-number="4.6.2" id="capturing-kernel-exceptions-andor-any-other-exceptions-from-the-serial-console"><span class="header-section-number">4.6.2</span> Capturing kernel exceptions
+<h3 data-number="4.6.2" id="enabling-uefi-with-qemu"><span class="header-section-number">4.6.2</span> Enabling UEFI with QEMU</h3>
+<p>Use <code>UEFI=1</code> to enable UEFI with the QEMU backend. If your
+image does not boot due to SecureBoot, you can specify the certificate
+you image is signed with via e.g.
+<code>UEFI_PFLASH_CERTS=custom.crt</code> (and use e.g.
+<code>ASSET_1=custom.crt</code> to track the certificate as <a href="#asset-handling">asset</a>). It is also possible to disable
+SecureBoot completely via <code>UEFI_PFLASH_SECURE_BOOT=1</code>.</p>
+<p>When enabling UEFI, you can set the firmware resolution using
+<code>UEFI_PFLASH_RESOLUTION</code>, e.g.
+<code>UEFI_PFLASH_RESOLUTION=1024x768</code>. Check out the <a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.md#qemu-backend">QEMU
+backend variables documentation</a> for further UEFI-related
+settings.</p>
+<h3 data-number="4.6.3" id="capturing-kernel-exceptions-andor-any-other-exceptions-from-the-serial-console"><span class="header-section-number">4.6.3</span> Capturing kernel exceptions
 and/or any other exceptions from the serial console</h3>
 <p>Soft and hard failures can be triggered on demand by regular
 expressions when they match the serial output which is done after the
@@ -5314,12 +5328,12 @@ test modules.</p>
 <span id="cb165-3"><a href="#cb165-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">push</span> <span class="dt">@$self</span>-&gt;{serial_failures}, {type =&gt; <span class="ot">&#39;</span><span class="ss">soft</span><span class="ot">&#39;</span>, message =&gt; <span class="ot">&#39;</span><span class="ss">known issue</span><span class="ot">&#39;</span>,  pattern =&gt; <span class="fu">quotemeta</span> <span class="ot">&#39;</span><span class="ss">Error</span><span class="ot">&#39;</span>};</span>
 <span id="cb165-4"><a href="#cb165-4" aria-hidden="true" tabindex="-1"></a>    ...</span>
 <span id="cb165-5"><a href="#cb165-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<h3 data-number="4.6.3" id="traceability-and-reproducibility-of-tests"><span class="header-section-number">4.6.3</span> Traceability and
+<h3 data-number="4.6.4" id="traceability-and-reproducibility-of-tests"><span class="header-section-number">4.6.4</span> Traceability and
 reproducibility of tests</h3>
 <p>openQA allows keeping track of the test environment, the version of
 the test code and needles, the test configuration and what specific
 system was tested.</p>
-<h4 data-number="4.6.3.1" id="general-remarks-on-tracing"><span class="header-section-number">4.6.3.1</span> General remarks on
+<h4 data-number="4.6.4.1" id="general-remarks-on-tracing"><span class="header-section-number">4.6.4.1</span> General remarks on
 tracing</h4>
 <p>The test configuration of a specific test run can be viewed in form
 of job settings on the test details page. Those settings contain the
@@ -5340,7 +5354,7 @@ under the &quot;Logs &amp; Assets&quot; tab.</p>
 has changed since the last good test run.</p>
 <p>The next section explains how to keep track of the test
 environment.</p>
-<h4 data-number="4.6.3.2" id="logging-package-versions-used-for-test"><span class="header-section-number">4.6.3.2</span> Logging package versions
+<h4 data-number="4.6.4.2" id="logging-package-versions-used-for-test"><span class="header-section-number">4.6.4.2</span> Logging package versions
 used for test</h4>
 <p>There are two sets of packages that can be included in test logs:</p>
 <ol type="1">
@@ -5367,7 +5381,7 @@ copied/moved.</p>
 <span id="cb166-6"><a href="#cb166-6" aria-hidden="true" tabindex="-1"></a>    path(<span class="ot">&quot;</span><span class="st">ulogs/</span><span class="dt">$fname</span><span class="ot">&quot;</span>)-&gt;move_to(<span class="ot">&quot;</span><span class="st">sut_packages.txt</span><span class="ot">&quot;</span>);</span>
 <span id="cb166-7"><a href="#cb166-7" aria-hidden="true" tabindex="-1"></a>    ...</span>
 <span id="cb166-8"><a href="#cb166-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<h4 data-number="4.6.3.3" id="general-remarks-on-reproducibility"><span class="header-section-number">4.6.3.3</span> General remarks on
+<h4 data-number="4.6.4.3" id="general-remarks-on-reproducibility"><span class="header-section-number">4.6.4.3</span> General remarks on
 reproducibility</h4>
 <p>Clicking the restart button on a concrete test run will create a new
 test job with the same configuration. The new test will however use the
@@ -5399,7 +5413,7 @@ controlled by openQA test variables.</p>
 section about <a href="#statistical_investigation">statistical
 investigation</a> might be helpful in this case.</p>
 <p><a id="assigning_jobs_to_workers"></a></p>
-<h3 data-number="4.6.4" id="assigning-jobs-to-workers"><span class="header-section-number">4.6.4</span> Assigning jobs to
+<h3 data-number="4.6.5" id="assigning-jobs-to-workers"><span class="header-section-number">4.6.5</span> Assigning jobs to
 workers</h3>
 <p>By default, any worker can get any job with the matching
 architecture.</p>
@@ -5454,7 +5468,7 @@ location tags based on company conventions:</p>
 <p>workers.ini</p>
 <div class="sourceCode" id="cb168"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb168-1"><a href="#cb168-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[global]</span></span>
 <span id="cb168-2"><a href="#cb168-2" aria-hidden="true" tabindex="-1"></a><span class="dt">WORKER_CLASS </span><span class="ot">=</span><span class="st"> planet-earth,continent-antarctica,location-my_station</span></span></code></pre></div>
-<h3 data-number="4.6.5" id="running-a-custom-worker-engine"><span class="header-section-number">4.6.5</span> Running a custom worker
+<h3 data-number="4.6.6" id="running-a-custom-worker-engine"><span class="header-section-number">4.6.6</span> Running a custom worker
 engine</h3>
 <p>By default the openQA workers run the &quot;isotovideo&quot; application from
 PATH on the worker host, that is in most cases <a href="https://github.com/os-autoinst/os-autoinst/blob/master/isotovideo">isotovideo</a>.
@@ -5462,7 +5476,7 @@ A custom worker engine command can be set with the test variable
 <code>ISOTOVIDEO</code>. For example to run isotovideo from a custom
 container image one could use the test variable setting
 <code>ISOTOVIDEO=podman run --pull=always --rm -it registry.example.org/my/container/isotovideo /usr/bin/isotovideo -d</code></p>
-<h3 data-number="4.6.6" id="automatic-retries-of-jobs"><span class="header-section-number">4.6.6</span> Automatic retries of
+<h3 data-number="4.6.7" id="automatic-retries-of-jobs"><span class="header-section-number">4.6.7</span> Automatic retries of
 jobs</h3>
 <p>You might encounter flaky openQA tests that fail sporadically. The
 best way to address flaky test code is of course to fix the test code
@@ -5489,7 +5503,7 @@ administrators handling known issues causing incomplete jobs.</p>
 done&quot; based on result</a> can be used to apply more elaborate issue
 detection and retriggering of tests.</p>
 <p><a id="job_dependencies"></a></p>
-<h3 data-number="4.6.7" id="job-dependencies"><span class="header-section-number">4.6.7</span> Job dependencies</h3>
+<h3 data-number="4.6.8" id="job-dependencies"><span class="header-section-number">4.6.8</span> Job dependencies</h3>
 <p>There are different dependency <strong>types</strong>, most
 importantly <em>chained</em> and <em>parallel</em> dependencies.</p>
 <p>A dependency is always between two jobs where one of the jobs is the
@@ -5500,7 +5514,7 @@ have multiple children and multiple parents at the same time and each
 child/parent-relation can be of an arbitrary type.</p>
 <p>Additionally, dependencies can be machine-specific (see <a href="#inter_machine_dependencies">Inter-machine dependencies</a>
 section).</p>
-<h4 data-number="4.6.7.1" id="declaring-dependencies"><span class="header-section-number">4.6.7.1</span> Declaring dependencies</h4>
+<h4 data-number="4.6.8.1" id="declaring-dependencies"><span class="header-section-number">4.6.8.1</span> Declaring dependencies</h4>
 <p>Dependencies are declared by adding a job setting on the child job
 specifying its parents. There is one variable for each dependency
 type.</p>
@@ -5516,7 +5530,7 @@ job).</p>
 declared as explained in the <a href="#further_examples_for_advanced_dependency_handling">Further
 examples for advanced dependency handling</a> section. The variables
 mentioned in the subsequent sections do <strong>not</strong> apply.</p>
-<h5 data-number="4.6.7.1.1" id="chained-dependencies"><span class="header-section-number">4.6.7.1.1</span> Chained dependencies</h5>
+<h5 data-number="4.6.8.1.1" id="chained-dependencies"><span class="header-section-number">4.6.8.1.1</span> Chained dependencies</h5>
 <p><em>Chained</em> dependencies declare that one test must only run
 after another test has concluded. For instance, extra tests relying on a
 successfully finished installation should declare a chained dependency
@@ -5549,7 +5563,7 @@ sometimes called a <em>directly-chained cluster</em>. All jobs within
 the cluster will be assigned to a single worker-slot at the same time by
 the scheduler.</p>
 </blockquote>
-<h5 data-number="4.6.7.1.2" id="parallel-dependencies"><span class="header-section-number">4.6.7.1.2</span> Parallel
+<h5 data-number="4.6.8.1.2" id="parallel-dependencies"><span class="header-section-number">4.6.8.1.2</span> Parallel
 dependencies</h5>
 <p><em>Parallel</em> dependencies declare that tests must be scheduled
 to run at the same time. An example are &quot;multi-machine tests&quot; which
@@ -5574,7 +5588,7 @@ jobs if there is a sufficient number of free worker-slots. To avoid a
 parallel cluster from starvation its priority is increased gradually and
 eventually workers can be held back for the cluster.</p>
 </blockquote>
-<h6 data-number="4.6.7.1.2.1" id="dependency-pinning"><span class="header-section-number">4.6.7.1.2.1</span> Dependency pinning</h6>
+<h6 data-number="4.6.8.1.2.1" id="dependency-pinning"><span class="header-section-number">4.6.8.1.2.1</span> Dependency pinning</h6>
 <p>It is possible to ensure that all jobs within the same
 <em>parallel</em> cluster are executed on the same worker host. This is
 useful for connecting the SUTs without having to connect the physical
@@ -5591,7 +5605,7 @@ needlessly. This feature is also still subject to change as we explore
 ways to make it more flexible.</p>
 </blockquote>
 <p><a id="inter_machine_dependencies"></a></p>
-<h4 data-number="4.6.7.2" id="inter-machine-dependencies"><span class="header-section-number">4.6.7.2</span> Inter-machine
+<h4 data-number="4.6.8.2" id="inter-machine-dependencies"><span class="header-section-number">4.6.8.2</span> Inter-machine
 dependencies</h4>
 <p>Those dependencies make it possible to create job dependencies
 between tests which are supposed to run on different machines.</p>
@@ -5607,7 +5621,7 @@ is used for the dependent test suite.</p>
 test suite(s). Keep in mind to place the machines which have been
 explicitly defined in a variable for each dependent test suite. Check
 out the following example sections to get a better understanding.</p>
-<h4 data-number="4.6.7.3" id="handling-of-related-jobs-on-failure--cancellation--restart"><span class="header-section-number">4.6.7.3</span> Handling of related jobs on
+<h4 data-number="4.6.8.3" id="handling-of-related-jobs-on-failure--cancellation--restart"><span class="header-section-number">4.6.8.3</span> Handling of related jobs on
 failure / cancellation / restart</h4>
 <p>openQA tries to handle things sensibly when jobs with dependencies
 either fail, or are manually cancelled or restarted:</p>
@@ -5641,7 +5655,7 @@ various children but the children themselves are not closely related and
 a failure of one does not imply that the tests run by the other children
 and the parent are invalid.</p></li>
 </ul>
-<h5 data-number="4.6.7.3.1" id="further-notes-1"><span class="header-section-number">4.6.7.3.1</span> Further notes</h5>
+<h5 data-number="4.6.8.3.1" id="further-notes-1"><span class="header-section-number">4.6.8.3.1</span> Further notes</h5>
 <ul>
 <li><p>The API also allows to skip restarting parents via
 <code>skip_parents=1</code> and to skip restarting children via
@@ -5654,7 +5668,7 @@ possible. So one needs to restart the parent job instead. Use the
 mentioned <code>skip_ok_result_children=1</code> to restart only jobs
 which are not ok</p></li>
 </ul>
-<h4 data-number="4.6.7.4" id="handling-of-dependencies-when-cloning-jobs"><span class="header-section-number">4.6.7.4</span> Handling of dependencies
+<h4 data-number="4.6.8.4" id="handling-of-dependencies-when-cloning-jobs"><span class="header-section-number">4.6.8.4</span> Handling of dependencies
 when cloning jobs</h4>
 <p>Be sure to have read the <a href="#job-dependencies">job
 dependencies</a> section to have an understanding of different
@@ -5683,7 +5697,7 @@ be cloned (e.g. the &quot;server&quot; test). When cloning a parallel child, onl
 <em>that</em> child and the parent will be cloned but not the siblings
 (e.g. the other &quot;client&quot; tests).</p></li>
 </ul>
-<h4 data-number="4.6.7.5" id="examples"><span class="header-section-number">4.6.7.5</span> Examples</h4>
+<h4 data-number="4.6.8.5" id="examples"><span class="header-section-number">4.6.8.5</span> Examples</h4>
 <p>Assume there is a test suite <code>A</code> supposed to run on
 machine <code>64bit-8G</code>. Additionally, test suite <code>B</code>
 supposed to run on machine <code>64bit-1G</code>.</p>
@@ -5691,7 +5705,7 @@ supposed to run on machine <code>64bit-1G</code>.</p>
 <code>START_AFTER_TEST=A@64bit-8G</code>. This results in the following
 dependency:</p>
 <pre><code>A@64bit-8G --&gt; B@64bit-1G</code></pre>
-<h5 data-number="4.6.7.5.1" id="implicitly-inherit-machines-from-parent"><span class="header-section-number">4.6.7.5.1</span> Implicitly inherit
+<h5 data-number="4.6.8.5.1" id="implicitly-inherit-machines-from-parent"><span class="header-section-number">4.6.8.5.1</span> Implicitly inherit
 machines from parent</h5>
 <p>Assume test suite <code>A</code> is supposed to run on the machines
 <code>64bit</code> and <code>ppc</code>. Additionally, test suite
@@ -5702,7 +5716,7 @@ the machine at all). openQA take the best matches. This results in the
 following dependencies:</p>
 <pre><code>A@64bit --&gt; B@64bit
 A@ppc --&gt; B@ppc</code></pre>
-<h5 data-number="4.6.7.5.2" id="conflicting-machines-prevent-inheritance-from-parent"><span class="header-section-number">4.6.7.5.2</span> Conflicting machines
+<h5 data-number="4.6.8.5.2" id="conflicting-machines-prevent-inheritance-from-parent"><span class="header-section-number">4.6.8.5.2</span> Conflicting machines
 prevent inheritance from parent</h5>
 <p>Assume test suite <code>A</code> is supposed to run on machine
 <code>64bit-8G</code>. Additionally, test suite <code>B</code> is
@@ -5727,7 +5741,7 @@ dependencies:</p>
 B@ppc-1G  C@ppc-2G  D@ppc64le</code></pre>
 <p>openQA will also show errors that test suite <code>A</code> is not
 necessary on the machines <code>64bit</code> and <code>s390x</code>.</p>
-<h5 data-number="4.6.7.5.3" id="implicitly-creating-a-dependency-on-same-machine"><span class="header-section-number">4.6.7.5.3</span> Implicitly creating a
+<h5 data-number="4.6.8.5.3" id="implicitly-creating-a-dependency-on-same-machine"><span class="header-section-number">4.6.8.5.3</span> Implicitly creating a
 dependency on same machine</h5>
 <p>Assume the value of the variable <code>START_AFTER_TEST</code> or
 <code>PARALLEL_WITH</code> <strong>only</strong> contains a test suite
@@ -5736,7 +5750,7 @@ name but no machine (e.g. <code>START_AFTER_TEST=A,B</code> or
 <p>In this case openQA will create job dependencies that are scheduled
 on the same machine if all test suites are placed on the same
 machine.</p>
-<h4 data-number="4.6.7.6" id="notes-regarding-directly-chained-dependencies"><span class="header-section-number">4.6.7.6</span> Notes regarding directly
+<h4 data-number="4.6.8.6" id="notes-regarding-directly-chained-dependencies"><span class="header-section-number">4.6.8.6</span> Notes regarding directly
 chained dependencies</h4>
 <p>Having multiple jobs with <code>START_DIRECTLY_AFTER_TEST</code>
 pointing to the same parent job is possible, e.g.:</p>
@@ -5761,12 +5775,12 @@ be mixed. This allows to create a dependency tree which contains
 multiple directly chained sub-trees. Be aware that these sub-trees might
 be executed on <strong>different</strong> workers and depending on the
 tree even be executed in parallel.</p>
-<h4 data-number="4.6.7.7" id="worker-requirements"><span class="header-section-number">4.6.7.7</span> Worker requirements</h4>
+<h4 data-number="4.6.8.7" id="worker-requirements"><span class="header-section-number">4.6.8.7</span> Worker requirements</h4>
 <p><code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> dependencies
 require only one worker. <code>PARALLEL</code> dependencies on the other
 hand require as many free workers as jobs are present in the parallel
 cluster.</p>
-<h5 data-number="4.6.7.7.1" id="examples-1"><span class="header-section-number">4.6.7.7.1</span> Examples</h5>
+<h5 data-number="4.6.8.7.1" id="examples-1"><span class="header-section-number">4.6.8.7.1</span> Examples</h5>
 <p><strong><code>CHAINED</code> - i.e. test basic functionality before
 going advanced - requires 1 worker</strong></p>
 <pre><code>A --&gt; B --&gt; C</code></pre>
@@ -5807,7 +5821,7 @@ depending on worker availability) and all must finish before A finish.
 and then define B,C,D with PARALLEL_WITH=A A is parent test suite for B,
 C, D (all can run in parallel). Children B, C, D can run and finish
 anytime, but A must run until all B, C, D finishes.</p>
-<h3 data-number="4.6.8" id="writing-multi-machine-tests"><span class="header-section-number">4.6.8</span> Writing multi-machine
+<h3 data-number="4.6.9" id="writing-multi-machine-tests"><span class="header-section-number">4.6.9</span> Writing multi-machine
 tests</h3>
 <p>Scenarios requiring more than one system under test (SUT), like High
 Availability testing, are covered as multi-machine tests (MM tests) in
@@ -5842,7 +5856,7 @@ tests</p></li>
 <li><p>Actual technical realization (i.e. <a href="#networking">custom
 networking</a>)</p></li>
 </ol>
-<h3 data-number="4.6.9" id="test-synchronization-and-locking-api"><span class="header-section-number">4.6.9</span> Test synchronization and
+<h3 data-number="4.6.10" id="test-synchronization-and-locking-api"><span class="header-section-number">4.6.10</span> Test synchronization and
 locking API</h3>
 <p>openQA provides a locking API. To use it in your test files import
 the <code>lockapi</code> package (<em>use lockapi;</em>). It provides
@@ -6025,7 +6039,7 @@ useless actions when one of the worker jobs dies.</p>
 <span id="cb182-30"><a href="#cb182-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># !!! this does not work, VNC is set by backend !!!</span></span>
 <span id="cb182-31"><a href="#cb182-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># my $parent_vnc = $parent_info-&gt;{settings}-&gt;{VNC}</span></span>
 <span id="cb182-32"><a href="#cb182-32" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<h3 data-number="4.6.10" id="support-server-based-tests"><span class="header-section-number">4.6.10</span> Support Server based
+<h3 data-number="4.6.11" id="support-server-based-tests"><span class="header-section-number">4.6.11</span> Support Server based
 tests</h3>
 <p>The idea is to have a dedicated &quot;helper server&quot; to allow advanced
 network based testing.</p>
@@ -6033,7 +6047,7 @@ network based testing.</p>
 described in the previous section, with the support server being the
 parent test &#39;A&#39; and the test needing it being the child test &#39;B&#39;. This
 ensures that the test &#39;B&#39; always have the support server available.</p>
-<h4 data-number="4.6.10.1" id="preparing-the-supportserver"><span class="header-section-number">4.6.10.1</span> Preparing the
+<h4 data-number="4.6.11.1" id="preparing-the-supportserver"><span class="header-section-number">4.6.11.1</span> Preparing the
 supportserver</h4>
 <p>The support server image is created by calling a special test, based
 on the autoyast test:</p>
@@ -6047,7 +6061,7 @@ supportserver. The &#39;autoyast_supportserver.xml&#39; should define correct
 user and password, as well as packages and the common configuration.</p>
 <p>More specific role the supportserver should take is then selected
 when the server is run in the actual test scenario.</p>
-<h4 data-number="4.6.10.2" id="using-the-supportserver"><span class="header-section-number">4.6.10.2</span> Using the
+<h4 data-number="4.6.11.2" id="using-the-supportserver"><span class="header-section-number">4.6.11.2</span> Using the
 supportserver</h4>
 <p>In the Test suites, the supportserver is defined by setting:</p>
 <div class="sourceCode" id="cb184"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb184-1"><a href="#cb184-1" aria-hidden="true" tabindex="-1"></a><span class="dt">HDD_1</span><span class="ot">=</span><span class="st">supportserver.qcow2</span></span>
@@ -6139,7 +6153,7 @@ something like:</p>
 <span id="cb190-5"><a href="#cb190-5" aria-hidden="true" tabindex="-1"></a><span class="fu">diff</span> <span class="at">-u</span> test.txt test2.txt <span class="kw">&amp;&amp;</span> <span class="bu">echo</span> <span class="st">&quot;AUTOYAST OK&quot;</span></span></code></pre></div>
 <p>and the rest is done automatically, using already prepared test
 modules in <code>tests/autoyast</code> subdirectory.</p>
-<h3 data-number="4.6.11" id="using-text-consoles-and-the-serial-terminal"><span class="header-section-number">4.6.11</span> Using text consoles and the
+<h3 data-number="4.6.12" id="using-text-consoles-and-the-serial-terminal"><span class="header-section-number">4.6.12</span> Using text consoles and the
 serial terminal</h3>
 <p>Typically the OS you are testing will boot into a graphical shell
 e.g. The Gnome desktop environment. This is fine if you wish to test a
@@ -6206,7 +6220,7 @@ also make your code less portable.</p>
 <p>The command <code>wait_serial</code> watches the SUT&#39;s serial port
 for text output and matches it against a regex. <code>type_string</code>
 sends a string to the SUT like it was typed in by the user over VNC.</p>
-<h4 data-number="4.6.11.1" id="using-a-serial-terminal"><span class="header-section-number">4.6.11.1</span> Using a serial
+<h4 data-number="4.6.12.1" id="using-a-serial-terminal"><span class="header-section-number">4.6.12.1</span> Using a serial
 terminal</h4>
 <blockquote>
 <p><strong>IMPORTANT:</strong> You need a QEMU version &gt;= 2.6.1 and
@@ -6379,7 +6393,7 @@ the next call to <code>script_run</code>.</p>
 rather than after it, so that Step 5 can be deferred to a later time. In
 theory this allows the test script to perform some other work while the
 SUT is busy.</p>
-<h4 data-number="4.6.11.2" id="sending-new-lines-and-continuation-characters"><span class="header-section-number">4.6.11.2</span> Sending new lines and
+<h4 data-number="4.6.12.2" id="sending-new-lines-and-continuation-characters"><span class="header-section-number">4.6.12.2</span> Sending new lines and
 continuation characters</h4>
 <p>The following command will timeout:
 <code>script_run(&quot;echo &quot;1n2&quot;&quot;)</code>. The reason being
@@ -6400,7 +6414,7 @@ echo).</p>
 shell may transform whatever character sequence you enter.
 Transformations can be spotted by comparing the input string with what
 <code>wait_serial</code> actually finds.</p>
-<h4 data-number="4.6.11.3" id="sending-signals---ctrl-c-and-ctrl-d"><span class="header-section-number">4.6.11.3</span> Sending signals - ctrl-c
+<h4 data-number="4.6.12.3" id="sending-signals---ctrl-c-and-ctrl-d"><span class="header-section-number">4.6.12.3</span> Sending signals - ctrl-c
 and ctrl-d</h4>
 <p>On a VNC based console you simply use <code>send_key</code> like
 follows.</p>
@@ -6425,7 +6439,7 @@ also send ETX with:</p>
 intention. It is also possible to send any character using the hex code
 like &#39;x0f&#39; which may have the effect of pressing the magic SysRq key if
 you are lucky.</p>
-<h4 data-number="4.6.11.4" id="the-virtio-serial-terminal-implementation"><span class="header-section-number">4.6.11.4</span> The virtio serial terminal
+<h4 data-number="4.6.12.4" id="the-virtio-serial-terminal-implementation"><span class="header-section-number">4.6.12.4</span> The virtio serial terminal
 implementation</h4>
 <p>The os-autoinst package supports several types of &#39;consoles&#39; of which
 the virtio serial terminal is one. The majority of code for this console
@@ -6476,7 +6490,7 @@ terminal (see the SUSE distribution&#39;s serial terminal utility library).
 However some programs ignore this, but piping there output into
 <code>tee</code> is usually enough to stop them outputting non-printable
 characters.</p>
-<h3 data-number="4.6.12" id="mcp-support"><span class="header-section-number">4.6.12</span> MCP Support</h3>
+<h3 data-number="4.6.13" id="mcp-support"><span class="header-section-number">4.6.13</span> MCP Support</h3>
 <p>The <a href="https://modelcontextprotocol.io/">Model Context
 Protocol</a> (MCP) is a standard that allows Large Language Models
 (LLMs) to interact with web services. MCP is supported natively by
@@ -6506,8 +6520,8 @@ access token by setting the <code>Authorization</code> HTTP header:</p>
 <span id="cb202-8"><a href="#cb202-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
 <span id="cb202-9"><a href="#cb202-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
 <span id="cb202-10"><a href="#cb202-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
-<h4 data-number="4.6.12.1" id="3rd-party-mcp-clients"><span class="header-section-number">4.6.12.1</span> 3rd Party MCP Clients</h4>
-<h5 data-number="4.6.12.1.1" id="gemini-cli"><span class="header-section-number">4.6.12.1.1</span> gemini-cli</h5>
+<h4 data-number="4.6.13.1" id="3rd-party-mcp-clients"><span class="header-section-number">4.6.13.1</span> 3rd Party MCP Clients</h4>
+<h5 data-number="4.6.13.1.1" id="gemini-cli"><span class="header-section-number">4.6.13.1.1</span> gemini-cli</h5>
 <p>Once you have installed and set up <a href="https://github.com/google-gemini/gemini-cli">gemini-cli</a>, you
 can use the <code>gemini mcp</code> command to add openQA:</p>
 <pre class="shell"><code>gemini mcp add openqa http://127.0.0.1:9526/mcp -H &#39;Authorization: Bearer USER:KEY:SECRET&#39; -t http</code></pre>
