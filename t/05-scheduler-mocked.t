@@ -116,4 +116,22 @@ subtest 'partially blocked clusters are not scheduled' => sub {
     is_deeply $allocated_workers, {}, 'no workers allocated' or always_explain $allocated_workers;
 };
 
+subtest 'scheduling reason when workers are busy' => sub {
+    my $job_id = 1;
+    $_->update({job_id => $job_id++}) for @mocked_free_workers;
+    my ($allocated_workers, $allocated_jobs);
+    combined_like {
+        ($allocated_workers, $allocated_jobs) = OpenQA::Scheduler::Model::Jobs->singleton->_allocate_jobs()
+    }
+    qr/Skipping 2 jobs because of no free workers for requested worker classes/, 'logging busy workers';
+    is $mocked_jobs{1}->{current_reason}, 'no free workers for class qemu_x86_64',
+      'scheduling reason is busy workers when workers are online but not free';
+
+    $_->update({job_id => undef}) for @mocked_free_workers;
+    my $jobinfo = $mocked_jobs{1};
+    my $online_workers = OpenQA::Scheduler::Model::Jobs::determine_online_workers();
+    my $temp_matching = OpenQA::Scheduler::Model::Jobs::_matching_workers($jobinfo, $online_workers);
+    is_deeply $temp_matching, \@mocked_free_workers, 'matching workers found without optional parameters';
+};
+
 done_testing();
