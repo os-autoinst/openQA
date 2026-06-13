@@ -2,7 +2,5 @@
 # With Gateway API CRD disabled for chart-testing
 chart-dirs:
   - .
-chart-repos:
-  - bitnami=https://charts.bitnami.com/bitnami
 validate-maintainers: false
 kubectl-timeout: "500s"

@@ -26,6 +26,8 @@ jobs:
 
       - name: Run chart-testing
         run: make test-helm-lint
+        env:
+          RETRY: 3
   install-chart:
     permissions:
       contents: read
