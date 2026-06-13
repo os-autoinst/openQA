@@ -737,12 +737,12 @@ subtest 'filter by state and result' => sub {
     $query->query(result => 'nonexistant_result');
     $t->get_ok($query->path_query)->status_is(200);
     my $res = $t->tx->res->json;
-    ok !@{$res->{jobs}}, 'no result for non-existant result';
+    ok !@{$res->{jobs}}, 'no result for non-existent result';
 
     $query->query(state => 'nonexistant_state');
     $t->get_ok($query->path_query)->status_is(200);
     $res = $t->tx->res->json;
-    ok !@{$res->{jobs}}, 'no result for non-existant state';
+    ok !@{$res->{jobs}}, 'no result for non-existent state';
 };
 
 subtest 'update job status' => sub {
@@ -1193,6 +1193,36 @@ subtest 'priority correctly assigned when posting job' => sub {
         is $new_job_args{priority}, $default_prio + $add, 'increased prio value';
     };
 
+    subtest 'priority adjustment based on prio_throttling_patterns' => sub {
+        my $limits = $t->app->config->{misc_limits};
+        local $limits->{prio_throttling_parameters} = '';
+        local $limits->{prio_throttling_patterns} = 'CASEDIR:15:!~^https?:';
+        my $config = OpenQA::Setup::read_config($t->app);
+        $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+
+        subtest 'CASEDIR with local path: prio adjusted because CASEDIR does not match negative regex' => sub {
+            my %new_job_args = (priority => $default_prio);
+            local $jobs_post_params{CASEDIR} = 'local_casedir';
+            OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
+            is $new_job_args{priority}, $default_prio + 15, 'prio adjusted because CASEDIR does not match regex';
+        };
+        subtest 'CASEDIR with URL: prio not adjusted because CASEDIR does match negative regex' => sub {
+            my %new_job_args = (priority => $default_prio);
+            local $jobs_post_params{CASEDIR} = 'https://some-url/distri';
+            OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
+            is $new_job_args{priority}, $default_prio, 'prio not adjusted because CASEDIR matches https?:';
+        };
+        subtest 'CASEDIR with URL: prio adjusted because CASEDIR does match positive regex' => sub {
+            my %new_job_args = (priority => $default_prio);
+            local $jobs_post_params{CASEDIR} = 'https://some-url/distri';
+            local $limits->{prio_throttling_patterns} = 'CASEDIR:15:=~^https?:';
+            $config = OpenQA::Setup::read_config($t->app);
+            $config->{misc_limits}->{prio_throttling_data} = OpenQA::Setup::_load_prio_throttling($t->app, $config);
+            OpenQA::Schema::ResultSet::Jobs::_apply_prio_throttling($jobs, \%jobs_post_params, \%new_job_args);
+            is $new_job_args{priority}, $default_prio + 15, 'prio adjusted because CASEDIR matches https?: with =~';
+        };
+    };
+
     subtest 'priority adjustment based on consecutive failures' => sub {
         my $add = 20;
         my %job_data = (
@@ -1224,7 +1254,7 @@ subtest 'priority correctly assigned when posting job' => sub {
     $t->json_is('/job/group', 'opensuse test', 'group assigned (2)');
     $t->json_is('/job/priority', 42, 'default priority from group assigned');
 
-    # post new job with explicitely specified _PRIORITY setting
+    # post new job with explicitly specified _PRIORITY setting
     $jobs_post_params{_PRIORITY} = 43;
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
@@ -1232,7 +1262,7 @@ subtest 'priority correctly assigned when posting job' => sub {
     $t->json_is('/job/priority', 43, 'explicitely specified priority assigned');
     $t->json_is('/job/settings/_PRIORITY', undef, 'priority not added as setting');
 
-    # post new job with invalid explicitely specified _PRIORITY setting
+    # post new job with invalid explicitly specified _PRIORITY setting
     $jobs_post_params{_PRIORITY} = 43.5;
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(400);
     $t->json_like('/error', qr/settings.*invalid.*_PRIORITY/, 'error returned');
@@ -1762,7 +1792,7 @@ subtest 'marking job as done' => sub {
         $t->json_like('/error', qr/Refusing.*because.*assigned to worker 1/, 'error message returned');
         $t->post_ok('/api/v1/jobs/99961/set_done?result=failed&reason=test&worker_id=1');
         $t->status_is(200, 'set_done accepted with correct worker_id');
-        $t->json_is('/result' => FAILED, 'post yields failed result (explicitely specified)');
+        $t->json_is('/result' => FAILED, 'post yields failed result (explicitly specified)');
         perform_minion_jobs($t->app->minion);
         my $job = $jobs->find(99961);
         is $job->clone_id, undef, 'job not cloned when reason does not match configured regex';
@@ -1774,7 +1804,7 @@ subtest 'marking job as done' => sub {
         $t->json_is('/result' => INCOMPLETE, 'post yields incomplete result (calculated)');
         $t->success or always_explain $t->tx->res->json;
         $job = $jobs->find(99961);
-        is $job->result, INCOMPLETE, 'result is incomplete (no modules and no reason explicitely specified)';
+        is $job->result, INCOMPLETE, 'result is incomplete (no modules and no reason explicitly specified)';
         is $job->reason, 'no test modules scheduled/uploaded', 'reason for incomplete set';
         $schema->txn_rollback;
 

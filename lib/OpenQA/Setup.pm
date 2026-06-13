@@ -61,20 +61,41 @@ sub _load_config ($app, $defaults, $mode_specific_defaults) {
     return $config;
 }
 
-sub _load_prio_throttling ($app, $config) {
-    return undef unless my $throttling = $config->{misc_limits}->{prio_throttling_parameters};
-    # floating point number
-    my $n = qr/[+-]?(?:\d+\.?\d*|\.\d+)/;
-    # Unit format = Param.name: scale: reference(optional)
-    my $u = qr/([A-Z_][A-Z0-9_]*):($n)(?::($n))?/i;
+my $N = qr/[+-]?(?:\d+\.?\d*|\.\d+)/;    # floating point number
+my $U = qr/([A-Z_][A-Z0-9_]*):($N)(?::($N))?/i;    # Unit format = Param.name: scale: reference(optional)
+
+sub _load_throttling_parameters ($app, $res, $throttling) {
+    return undef unless $throttling;
     $throttling =~ s/\s+//g;
-    unless ($throttling =~ qr/^$u(?:,$u)*$/i) {
-        $app->log->warn("Wrong format in openqa.ini 'prio_throttling_parameters': $throttling");
-        return undef;
+    return $app->log->warn("Wrong format in openqa.ini 'prio_throttling_parameters': $throttling")
+      unless ($throttling =~ qr/^$U(?:,$U)*$/i);
+    for my $item (split /,/, $throttling) {
+        next unless $item;
+        my ($k, $s, $r) = $item =~ /$U/;
+        push @{$res->{$k} //= []}, {scale => $s, reference => $r // 0};
     }
-    my %hash = map { my ($k, $s, $r) = /$u/g; $k => {scale => $s, reference => $r // 0} }
-      split /,/, $throttling;
-    return \%hash;
+}
+
+sub _load_throttling_patterns ($app, $res, $throttling_patterns) {
+    return undef unless $throttling_patterns;
+    $throttling_patterns =~ s/^\s+|\s+$//g;
+    my $pattern_def = qr/([A-Z_][A-Z0-9_]*):($N):(([=!])~)(.+)/i;
+    return $app->log->warn("Wrong format in openqa.ini 'prio_throttling_patterns': $throttling_patterns")
+      unless $throttling_patterns =~ qr/^$pattern_def(?:\s*,\s*$pattern_def)*$/i;
+    for my $item (split /\s*,\s*/, $throttling_patterns) {
+        next unless $item;
+        my ($k, $adj, $op, $ignored, $regex_str) = $item =~ qr/^$pattern_def$/i;
+        push @{$res->{$k} //= []},
+          {adjustment => $adj, operator => $op, regex => qr/$regex_str/, regex_str => $regex_str};
+    }
+}
+
+sub _load_prio_throttling ($app, $config) {
+    my $misc_limits = $config->{misc_limits};
+    my %res;
+    _load_throttling_parameters($app, \%res, $misc_limits->{prio_throttling_parameters} // '');
+    _load_throttling_patterns($app, \%res, $misc_limits->{prio_throttling_patterns} // '');
+    return \%res;
 }
 
 sub _load_prio_group_throttling ($app, $config) {
@@ -291,6 +312,7 @@ sub default_config () {
             throttle_failing_job_prio_step => 10,
             throttle_failing_job_history_length => 20,
             prio_throttling_parameters => 'MAX_JOB_TIME:0.007',
+            prio_throttling_patterns => 'CASEDIR:15:!~^https?:',
             prio_throttling_data => undef,
             prio_group_parameters => 'full_name:Development:50',
             prio_group_data => undef,
