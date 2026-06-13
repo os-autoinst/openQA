@@ -29,16 +29,15 @@ has scheduled_jobs => sub { {} };
 has shuffle_workers => 1;
 has dynamic_limit => sub { OpenQA::Scheduler::DynamicLimit->new };
 
-sub determine_free_workers ($shuffle = 0) {
-    my @free_workers = grep { !$_->dead } OpenQA::Schema->singleton->resultset('Workers')->search(
+sub determine_online_workers ($shuffle = 0) {
+    my @online_workers = grep { !$_->dead } OpenQA::Schema->singleton->resultset('Workers')->search(
         {
-            job_id => undef,
             error => undef,
             'properties.key' => 'WEBSOCKET_API_VERSION',
             'properties.value' => WEBSOCKET_API_VERSION
         },
         {join => 'properties'})->all;
-    return $shuffle ? shuffle(\@free_workers) : \@free_workers;
+    return $shuffle ? shuffle(\@online_workers) : \@online_workers;
 }
 
 sub determine_scheduled_jobs ($self) {
@@ -52,7 +51,8 @@ sub effective_job_limit ($self) {
     return $self->dynamic_limit->current_limit($config);
 }
 
-sub _allocate_jobs ($self, $free_workers) {
+sub _allocate_jobs ($self, $online_workers = undef) {
+    $online_workers //= determine_online_workers($self->shuffle_workers);
     my ($allocated_workers, $allocated_jobs) = ({}, {});
     my $scheduled_jobs = $self->scheduled_jobs;
     $scheduled_jobs->{$_}->{current_reason} = undef for keys %$scheduled_jobs;
@@ -76,10 +76,14 @@ sub _allocate_jobs ($self, $free_workers) {
     my %rejected;
     for my $id (keys %$scheduled_jobs) {
         my $jobinfo = $scheduled_jobs->{$id};
-        $jobinfo->{matching_workers} = _matching_workers($jobinfo, $free_workers, \%rejected);
+        my $has_matching_online = 0;
+        $jobinfo->{matching_workers} = _matching_workers($jobinfo, $online_workers, \%rejected, \$has_matching_online);
         if (!@{$jobinfo->{matching_workers}}) {
             my @needed = sort @{$jobinfo->{worker_classes}};
-            $jobinfo->{current_reason} = @needed ? "no free workers for class @needed" : 'no workers online';
+            $jobinfo->{current_reason}
+              = !@needed ? 'job has no worker class'
+              : $has_matching_online ? "no free workers for class @needed"
+              : "no workers online for requested class @needed at all";
         }
     }
     if (keys %rejected) {
@@ -99,6 +103,7 @@ sub _allocate_jobs ($self, $free_workers) {
 
     my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %$scheduled_jobs;
     my %checked_jobs;
+    my $free_workers = [grep { !$_->job_id } @$online_workers];
     for my $j (@sorted) {
         my $job_id = $j->{id};
         if ($checked_jobs{$job_id} || defined $allocated_jobs->{$job_id} || !@{$j->{matching_workers}}) {
@@ -218,7 +223,8 @@ sub _assign_jobs ($self, @args) {
 sub schedule ($self) {
     my $start_time = time;
     my $schema = OpenQA::Schema->singleton;
-    my $free_workers = determine_free_workers($self->shuffle_workers);
+    my $online_workers = determine_online_workers($self->shuffle_workers);
+    my $free_workers = [grep { !$_->job_id } @$online_workers];
     my $worker_count = $schema->resultset('Workers')->count;
     my $free_worker_count = @$free_workers;
 
@@ -226,7 +232,7 @@ sub schedule ($self) {
     log_debug("Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: "
           . (scalar keys %$scheduled_jobs));
 
-    my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($free_workers);
+    my ($allocated_workers, $allocated_jobs) = $self->_allocate_jobs($online_workers);
 
     $self->_update_job_reasons_in_db($schema, $scheduled_jobs);
     my @successfully_allocated;
@@ -374,15 +380,16 @@ sub _update_job_reasons_in_db ($self, $schema, $scheduled_jobs) {
 
 sub singleton ($class = undef) { state $jobs ||= ($class // __PACKAGE__)->new }
 
-sub _matching_workers ($jobinfo, $free_workers, $rejected = {}) {
-    my @filtered;
+sub _matching_workers ($jobinfo, $online_workers, $rejected = {}, $has_matching_online_ref = undef) {
+    my @free_matching;
     my @needed = sort @{$jobinfo->{worker_classes}};
-    for my $worker (@$free_workers) {
-        my $matched_all = all { $worker->check_class($_) } @needed;
-        push @filtered, $worker if $matched_all;
+    for my $worker (@$online_workers) {
+        next unless all { $worker->check_class($_) } @needed;
+        $$has_matching_online_ref = 1 if $has_matching_online_ref;
+        push @free_matching, $worker unless $worker->job_id;
     }
-    $rejected->{join ',', @needed}++ unless @filtered;
-    return \@filtered;
+    $rejected->{join ',', @needed}++ unless @free_matching;
+    return \@free_matching;
 }
 
 sub _jobs_in_execution ($need) {
