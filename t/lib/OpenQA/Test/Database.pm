@@ -66,6 +66,8 @@ sub insert_fixtures ($self, $schema, $fixtures_glob = '*.pl') {
         chdir $cwd, croak "Could not insert fixture $fixture: $EVAL_ERROR" if $EVAL_ERROR;
         # Arrayrefs of rows, (dbic syntax) table defined by fixture filename
         if (ref $info->[0] eq 'HASH') {
+            warn __PACKAGE__.':'.__LINE__.": !!!!!!!!!!!!!!!!!! $fixture\n";
+            warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$info], ['info']);
             my $rs_name = (split /\./, $fixture)[0];
             $rs_name =~ s/s$//;
 
