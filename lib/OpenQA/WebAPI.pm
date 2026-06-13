@@ -78,6 +78,8 @@ sub startup ($self) {
       = $api_public->under('/')->to('Auth#auth_admin')->name('api_ensure_admin');
     my $api_auth_any_user
       = $api_public->under('/')->to('Auth#auth')->name('api_ensure_user');
+    my $api_maybe_auth = $api_public->under('/')->to('Auth#auth_maybe');
+
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
@@ -289,6 +291,8 @@ sub startup ($self) {
     my $api_ro = $api_auth_operator->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_ra = $api_auth_admin->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_public_r = $api_public->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_maybe_auth_r = $api_maybe_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+
 
     $api_public_r->get('/routes')->name('api_v1_list_routes')->to('routes#list');
     push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
@@ -323,8 +327,8 @@ sub startup ($self) {
     $api_ra->delete('/parent_groups/<group_id:num>')->name('apiv1_delete_parent_group')->to('job_group#delete');
 
     # api/v1/jobs
-    $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
-    $api_public_r->get('/jobs/overview')->name('apiv1_jobs_overview')->to('job#overview');
+    $api_maybe_auth_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
+    $api_maybe_auth_r->get('/jobs/overview')->name('apiv1_jobs_overview')->to('job#overview');
     $api_ro->post('/jobs')->name('apiv1_create_job')->to('job#create');
     $api_ro->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
@@ -334,9 +338,10 @@ sub startup ($self) {
 
     my $job_r = $api_ro->any('/jobs/<jobid:num>');
     push @api_routes, $job_r;
-    $api_public_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
+    $api_maybe_auth_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
     $api_public_r->get('/experimental/jobs/<jobid:num>/status')->name('apiv1_get_status')->to('job#get_status');
-    $api_public_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
+    $api_maybe_auth_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
+
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');

@@ -52,11 +52,22 @@ sub check ($self) {
 }
 
 sub auth ($self) {
+    return 1 if $self->_auth;
+    $self->render(json => {error => $self->stash('auth_error') // 'Not authorized'}, status => 403);
+    return 0;
+}
+
+sub auth_maybe ($self) {
+    $self->_auth;
+    return 1;
+}
+
+sub _auth ($self) {
     my $log = $self->app->log;
 
     # Prevent authentication via file domain (where potentially untrusted HTML is served)
     if ($self->via_domain($self->config->{global}->{file_domain})) {
-        $self->render(json => {error => 'Forbidden via file domain'}, status => 403);
+        $self->stash(auth_error => 'Forbidden via file domain');
         return 0;
     }
 
@@ -66,8 +77,8 @@ sub auth ($self) {
         if ($self->req->method ne 'GET' && !$self->valid_csrf) {
             # Invalidate session-based auth if CSRF is missing; fallback to API headers if present
             $user = undef;
-            $self->render(json => {error => 'Bad CSRF token!'}, status => 403) and return 0
-              unless $self->is_api_request;
+            $self->stash(auth_error => 'Bad CSRF token!');
+            return 0 unless $self->is_api_request;
         }
     }
 
@@ -101,7 +112,7 @@ sub auth ($self) {
         return 1;
     }
 
-    $self->render(json => {error => $reason}, status => 403);
+    $self->stash(auth_error => $reason);
     return 0;
 }
 
