@@ -4,6 +4,10 @@
 
 use Test::Most;
 use Test::Mojo;
+use Mojo::Base -signatures;
+use Test::MockModule;
+use Mojo::File qw(tempdir path);
+use File::Copy::Recursive qw(dircopy);
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -11,6 +15,19 @@ use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
+
+my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+my $tempdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+my $opensuse_src = path($FindBin::Bin, '..', 'data', 'openqa', 'share', 'tests', 'opensuse')->realpath;
+my $opensuse_dest = $tempdir->child('opensuse');
+dircopy($opensuse_src, $opensuse_dest) or die "copy failed: $!";
+
+$utils_mock->redefine(
+    testcasedir => sub ($distri = undef, $version = undef, $rootfortests = undef) {
+        return $tempdir->child($distri) if defined $distri;
+        return "$tempdir";
+    });
+
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{rate_limits}->{search} = 10;
 
