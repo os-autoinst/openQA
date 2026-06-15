@@ -1,26 +1,25 @@
+# Last Modified: Fri Jun 12 11:54:18 2026
+include <tunables/global>
+
 # Copyright 2015 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
-#include <tunables/global>
 
 
-/usr/share/openqa/script/worker {
-  #include <abstractions/X>
-  #include <abstractions/authentication>
-  #include <abstractions/base>
-  #include <abstractions/bash>
-  #include <abstractions/nameservice>
-  #include <abstractions/openssl>
-  #include <abstractions/perl>
-  #include <abstractions/python>
+/usr/share/openqa/script/worker flags=(complain) {
+  include <abstractions/X>
+  include <abstractions/authentication>
+  include <abstractions/base>
+  include <abstractions/bash>
+  include <abstractions/nameservice>
+  include <abstractions/openssl>
+  include <abstractions/perl>
+  include <abstractions/python>
+  include <local/usr.share.openqa.script.worker>
 
   capability sys_ptrace,
 
   network netbeui raw,
 
-  /{usr/,}bin/{b,d}ash rix,
-  /usr/bin/bsdcat rix,
-  /usr/bin/bsdtar rix,
-  /{usr/,}bin/pkill rix,
   /boot/*.fd rk,
   /dev/ r,
   /dev/bus/usb/ r,
@@ -29,7 +28,9 @@
   /dev/net/tun rw,
   /dev/ptmx rw,
   /dev/pts/* rw,
+  /dev/shm/libpod_rootless_lock_* rw,
   /dev/tty rw,
+  /etc/containers/storage.conf r,
   /etc/gitconfig r,
   /etc/libnl/classid r,
   /etc/openqa/client.conf r,
@@ -39,41 +40,26 @@
   /etc/openqa/workers.ini.d/ r,
   /etc/openqa/workers.ini.d/** r,
   /etc/qemu/* r,
+  /etc/shells r,
   /etc/udev/udev.conf r,
   /etc/vde2/vdecmd r,
-  /{usr/,}etc/ssh/ssh_config r,
-  /{usr/,}etc/ssh/ssh_config.d/** r,
-  /etc/containers/storage.conf r,
-  /etc/shells r,
-  /usr/etc/openqa/client.conf r,
-  /usr/etc/openqa/client.conf.d/ r,
-  /usr/etc/openqa/client.conf.d/** r,
-  /usr/etc/openqa/workers.ini r,
-  /usr/etc/openqa/workers.ini.d/ r,
-  /usr/etc/openqa/workers.ini.d/** r,
-  /usr/share/containers/containers.conf r,
-  /usr/bin/conmon rix,
-  /usr/lib/cni/bridge rix,
-  /usr/lib/cni/portmap rix,
-  /usr/lib/cni/tuning rix,
-  /usr/lib/cni/firewall rix,
-  /proc/*/task/*/comm rw,
-  /proc/*/task/*/ns/net r,
-  /dev/shm/libpod_rootless_lock_* rw,
   /proc/*/auxv r,
   /proc/*/cmdline r,
   /proc/*/mountinfo r,
   /proc/*/net/psched r,
   /proc/*/stat r,
   /proc/*/status r,
+  /proc/*/task/*/comm rw,
+  /proc/*/task/*/ns/net r,
   /proc/[0-9]*/cgroup r,
   /proc/filesystems r,
   /proc/loadavg r,
-  /proc/meminfo r,
   /proc/loadavg r,
-  /proc/sys/vm/overcommit_memory r,
+  /proc/meminfo r,
   /proc/sys/fs/pipe-max-size r,
+  /proc/sys/vm/max_map_count r,
   /proc/sys/vm/nr_hugepages r,
+  /proc/sys/vm/overcommit_memory r,
   /run/nscd/group r,
   /run/openqa/vde.ctl/* rw,
   /run/udev/queue.bin r,
@@ -91,43 +77,41 @@
   /sys/module/vt/parameters/default_{red,grn,blu} r,
   /tmp/** rwk,
   /usr/bin/Xvnc rCx,
-  /{usr/,}bin/cat rix,
+  /usr/bin/bsdcat rix,
+  /usr/bin/bsdtar rix,
   /usr/bin/chattr rix,
   /usr/bin/cksum rix,
+  /usr/bin/conmon rix,
   /usr/bin/cp rix,
   /usr/bin/date rix,
   /usr/bin/df rix,
   /usr/bin/dirname rix,
+  /usr/bin/du rix,
   /usr/bin/eatmydata rix,
   /usr/bin/env rix,
+  /usr/bin/ffmpeg rix,
   /usr/bin/find rix,
   /usr/bin/flock rix,
   /usr/bin/fuser rix,
   /usr/bin/git rix,
-  /usr/bin/du rix,
   /usr/bin/git-lfs rix,
-  /{usr/,}bin/grep rix,
-  /usr/bin/gzip rix,
   /usr/bin/gunzip rix,
+  /usr/bin/gzip rix,
   /usr/bin/head rix,
   /usr/bin/hostname rix,
   /usr/bin/icewm{,-default,-lite} cx -> icewm,
   /usr/bin/ionice rix,
   /usr/bin/ipmitool rix,
-  /usr/bin/isotovideo rix,
   /usr/bin/isoinfo rix,
+  /usr/bin/isotovideo rix,
   /usr/bin/jq rix,
   /usr/bin/jsonnet rix,
-  /usr/bin/podman rix,
   /usr/bin/lscpu rCx,
-  /{usr/,}bin/mkdir rix,
-  /{usr/,}bin/mktemp mrix,
   /usr/bin/nice rix,
-  /usr/bin/swtpm rix,
   /usr/bin/optipng rix,
-  /usr/bin/pngquant rix,
   /usr/bin/ping rix,
-  /{usr/,}bin/pwd rix,
+  /usr/bin/pngquant rix,
+  /usr/bin/podman rix,
   /usr/bin/python3.* ix,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
@@ -136,10 +120,10 @@
   /usr/bin/rsync rix,
   /usr/bin/sha1sum rix,
   /usr/bin/slirpvde rix,
-  /usr/{bin,lib/os-autoinst}/snd2png rix,
   /usr/bin/ssh rix,
-  /usr/bin/ssh.hmac r,
   /usr/bin/ssh-keygen rix,
+  /usr/bin/ssh.hmac r,
+  /usr/bin/swtpm rix,
   /usr/bin/tail rix,
   /usr/bin/tee rix,
   /usr/bin/tesseract rix,
@@ -152,37 +136,48 @@
   /usr/bin/xterm rix,
   /usr/bin/xterm-console rix,
   /usr/bin/xz rix,
+  /usr/etc/openqa/client.conf r,
+  /usr/etc/openqa/client.conf.d/ r,
+  /usr/etc/openqa/client.conf.d/** r,
+  /usr/etc/openqa/workers.ini r,
+  /usr/etc/openqa/workers.ini.d/ r,
+  /usr/etc/openqa/workers.ini.d/** r,
   /usr/lib*/qemu/block-curl.so rix,
   /usr/lib*/qemu/block-iscsi.so mr,
   /usr/lib*/qemu/block-rbd.so mr,
   /usr/lib*/qemu/block-ssh.so mr,
+  /usr/lib/cni/bridge rix,
+  /usr/lib/cni/firewall rix,
+  /usr/lib/cni/portmap rix,
+  /usr/lib/cni/tuning rix,
+  /usr/lib/os-autoinst/script/check_qemu_oom raCx,
+  /usr/lib/os-autoinst/videoencoder rix,
+  /usr/lib/utempter/utempter rix,
   /usr/lib{,exec}/git{,-core}/git rix,
   /usr/lib{,exec}/git{,-core}/git-remote-http rix,
   /usr/lib{,exec}/git{,-core}/git-remote-https rix,
   /usr/lib{,exec}/git{,-core}/git-write-tree rix,
-  /usr/lib/os-autoinst/videoencoder rix,
-  /usr/lib/os-autoinst/script/check_qemu_oom arCx,
-  /usr/bin/ffmpeg rix,
-  /usr/lib/utempter/utempter rix,
-  /usr/sbin/smbd rix,
   /usr/sbin/ipmiconsole rix,
+  /usr/sbin/smbd rix,
+  /usr/share/containers/containers.conf r,
+  /usr/share/git-core/templates/ r,
+  /usr/share/git-core/templates/** r,
   /usr/share/misc/enterprise-numbers r,
   /usr/share/openqa/lib/** r,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
   /usr/share/openqa/script/worker r,
-  /usr/share/git-core/templates/ r,
-  /usr/share/git-core/templates/** r,
-  /usr/share/tessdata/* r,
   /usr/share/qemu/* rk,
-  /usr/share/seabios/* r,
   /usr/share/qemu/keymaps/* r,
+  /usr/share/seabios/* r,
+  /usr/share/tessdata/* r,
   /usr/share/{AA,O}VMF/* rk,
+  /usr/{bin,lib/os-autoinst}/snd2png rix,
   /var/lib/openqa/cache/ r,
   /var/lib/openqa/cache/** rwk,
   /var/lib/openqa/pool/ r,
   /var/lib/openqa/pool/*/ r,
-  /var/lib/openqa/pool/*/** rwkl,
+  /var/lib/openqa/pool/*/** rwlk,
   /var/lib/openqa/pool/*/*/.git/hooks/post-checkout rix,
   /var/lib/openqa/share/* r,
   /var/lib/openqa/share/factory/hdd/ r,
@@ -194,63 +189,54 @@
   /var/lib/openqa/share/factory/tmp/ rw,
   /var/lib/openqa/share/factory/tmp/** rw,
   /var/lib/openqa/share/tests/** r,
+  /{usr/,}bin/cat rix,
+  /{usr/,}bin/grep rix,
+  /{usr/,}bin/mkdir rix,
+  /{usr/,}bin/mktemp mrix,
+  /{usr/,}bin/pkill rix,
+  /{usr/,}bin/pwd rix,
+  /{usr/,}bin/{b,d}ash rix,
+  /{usr/,}etc/ssh/ssh_config r,
+  /{usr/,}etc/ssh/ssh_config.d/** r,
+  owner /proc/**/ r,
   owner /sys/**/ rw,
 
-  profile icewm {
-    #include <abstractions/X>
-    #include <abstractions/base>
-    #include <abstractions/fonts>
-
-    /usr/bin/icewm{,-default,-lite} mr,
-    /etc/icewm/** r,
-    /usr/share/icewm/** r,
-    /var/lib/openqa/pool/*/autoinst-log.txt w,
-
-  }
 
   profile /usr/bin/Xvnc {
-    #include <abstractions/X>
-    #include <abstractions/base>
-    #include <abstractions/consoles>
-    #include <abstractions/fonts>
-    #include <abstractions/nameservice>
+    include <abstractions/X>
+    include <abstractions/base>
+    include <abstractions/consoles>
+    include <abstractions/fonts>
+    include <abstractions/nameservice>
 
-    /{usr/,}bin/bash rix,
     /proc/*/cmdline r,
     /tmp/* rwlk,
     /usr/bin/Xvnc mr,
     /usr/bin/xkbcomp rix,
     /var/lib/openqa/pool/*/autoinst-log.txt w,
+    /{usr/,}bin/bash rix,
 
-  }
-
-  profile /usr/lib/os-autoinst/script/check_qemu_oom {
-    #include <abstractions/base>
-    #include <abstractions/perl>
-    /usr/bin/dmesg rix,
-    /dev/kmsg r,
-    /var/lib/openqa/pool/*/autoinst-log.txt w,
   }
 
   profile /usr/bin/lscpu {
-    #include <abstractions/base>
+    include <abstractions/base>
 
     /proc/ r,
     /proc/** r,
     /sys/devices/** r,
+    /sys/kernel/cpu_byteorder r,
     /usr/bin/lscpu mr,
 
   }
 
   profile /usr/bin/x3270 {
-    #include <abstractions/X>
-    #include <abstractions/base>
-    #include <abstractions/consoles>
-    #include <abstractions/freedesktop.org>
-    #include <abstractions/nameservice>
-    #include <abstractions/openssl>
+    include <abstractions/X>
+    include <abstractions/base>
+    include <abstractions/consoles>
+    include <abstractions/freedesktop.org>
+    include <abstractions/nameservice>
+    include <abstractions/openssl>
 
-    /{usr/,}bin/bash rix,
     /dev/ptmx rw,
     /etc/x3270/ibm_hosts r,
     /proc/*/fd/ r,
@@ -259,6 +245,29 @@
     /usr/bin/x3270 mr,
     /var/lib/openqa/pool/*/x3scr.*.txt w,
     /var/lib/openqa/pool/*/x3trc.* w,
+    /{usr/,}bin/bash rix,
+
+  }
+
+  profile /usr/lib/os-autoinst/script/check_qemu_oom {
+    include <abstractions/base>
+    include <abstractions/perl>
+
+    /dev/kmsg r,
+    /usr/bin/dmesg rix,
+    /var/lib/openqa/pool/*/autoinst-log.txt w,
+
+  }
+
+  profile icewm {
+    include <abstractions/X>
+    include <abstractions/base>
+    include <abstractions/fonts>
+
+    /etc/icewm/** r,
+    /usr/bin/icewm{,-default,-lite} mr,
+    /usr/share/icewm/** r,
+    /var/lib/openqa/pool/*/autoinst-log.txt w,
 
   }
   # Site-specific additions and overrides. See local/README for details.
