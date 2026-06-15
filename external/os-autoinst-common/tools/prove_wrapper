@@ -7,8 +7,11 @@ set -euo pipefail
 prove_cmd=(prove -I .)
 
 # skip the check for unhandled output when running in verbose mode
-for arg in "$@"; do [[ $arg =~ (-v|--verbose) ]] && TEST_VERBOSE=1 && break; done
-[[ ${TEST_VERBOSE:-} && $TEST_VERBOSE != 0 ]] && exec "${prove_cmd[@]}" "$@"
+for arg in "$@"; do [[ $arg =~ ^(-v|--verbose)$ ]] && TEST_VERBOSE=$arg && break; done
+if [[ ${TEST_VERBOSE:-} && $TEST_VERBOSE != 0 ]]; then
+    echo "Skipping TAP output check as tests are running in verbose mode (arg/env: $TEST_VERBOSE) ..."
+    exec "${prove_cmd[@]}" "$@"
+fi
 
 echo "Running prove with TAP output check ..."
 
