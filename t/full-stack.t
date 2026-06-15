@@ -67,7 +67,10 @@ my $ws;
 my $livehandler;
 
 sub turn_down_stack {
-    stop_service($_) for ($worker, $ws, $livehandler);
+    for my $service (grep { defined } $worker, $ws, $livehandler) {
+        stop_service($service);
+        $service->finish;
+    }
 }
 sub stop_worker { stop_service $worker }
 
