@@ -28,6 +28,7 @@ has ignored_groups => sub ($self) {
 
 # This method will run once at server start
 sub startup ($self) {
+    $self->moniker('openqa_webapi');
 
     # Some plugins are shared between openQA micro services
     push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';

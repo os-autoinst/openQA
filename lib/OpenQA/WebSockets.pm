@@ -16,6 +16,7 @@ use constant MAX_CONNECTIONS_HEADROOM => 10;
 our $RUNNING;
 
 sub startup ($self) {
+    $self->moniker('openqa_websockets');
     OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
 
     $self->_setup if $RUNNING;
