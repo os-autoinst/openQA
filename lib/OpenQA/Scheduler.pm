@@ -24,6 +24,8 @@ use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 2000
 our $RUNNING;
 
 sub startup ($self) {
+    $self->moniker('openqa_scheduler');
+
     # Provide help to users early to prevent failing later on misconfigurations
     return if $ENV{MOJO_HELP};
 

@@ -18,6 +18,7 @@ has [qw(cmd_srv_transactions_by_job devel_java_script_transactions_by_job status
 
 # This method will run once at server start
 sub startup ($self) {
+    $self->moniker('openqa_webapi');
     $self->defaults(appname => 'openQA Live Handler');
 
     $self->ua->max_redirects(3);
@@ -29,6 +30,7 @@ sub startup ($self) {
     OpenQA::Setup::read_config($self);
     setup_log($self);
     OpenQA::Setup::add_build_tx_time_header($self);
+    $self->sessions->encrypted(1) if $self->sessions->can('encrypted');
 
     # Some plugins are shared between openQA micro services
     push @{$self->plugins->namespaces}, 'OpenQA::LiveHandler::Plugin', 'OpenQA::Shared::Plugin';

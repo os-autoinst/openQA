@@ -43,6 +43,7 @@ sub _open_sqlite_database ($self, $db_file) {
 }
 
 sub startup ($self) {
+    $self->moniker('openqa_cache_service');
     $self->defaults(appname => 'openQA Cache Service');
     # Provide help to users early to prevent failing later on
     # misconfigurations

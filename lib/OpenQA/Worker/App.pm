@@ -9,6 +9,7 @@ has [qw(log_name level instance log_dir)];
 # This is a mock application, so OpenQA::Setup can be reused to set up logging
 # for the workers
 sub startup ($self) {
+    $self->moniker('openqa_worker_app');
     $self->mode('production');
 }
 
