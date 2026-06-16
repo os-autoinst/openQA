@@ -12,11 +12,12 @@ use Test::MockModule;
 use Test::MockObject;
 use Test::Output qw(combined_like);
 use OpenQA::Jobs::Constants;
-use OpenQA::Schema::Result::ScheduledProducts qw(ADDED SCHEDULED SCHEDULING CANCELLING CANCELLED);
+use OpenQA::Schema::Result::ScheduledProducts qw(ADDED SCHEDULED SCHEDULING CANCELLING CANCELLED FATAL_ERROR);
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
 use OpenQA::Utils;
 use DateTime;
+use HTTP::Status qw(:constants);
 
 OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -40,8 +41,9 @@ my $scheduled_products_mock = Test::MockModule->new('OpenQA::Schema::Result::Sch
 $scheduled_products_mock->redefine(_generate_jobs => undef);    # prevent job creation
 
 my $scheduled_product;
+my ($sp1, $sp2, $sp3);
 subtest 'handling assets with invalid name' => sub {
-    $scheduled_product = $scheduled_products->create(\%settings);
+    $sp1 = $scheduled_product = $scheduled_products->create(\%settings);
     $schema->txn_begin;
     is_deeply
       $scheduled_product->schedule_iso({REPO_0 => ''}, $signal_guard),
@@ -57,7 +59,7 @@ subtest 'handling assets with invalid name' => sub {
     $scheduled_product->discard_changes;
     is $scheduled_product->status, SCHEDULED, 'product marked as scheduled, though';
 
-    $scheduled_product = $scheduled_products->create(\%settings);
+    $sp2 = $scheduled_product = $scheduled_products->create(\%settings);
     is_deeply
       $scheduled_product->schedule_iso({REPO_0 => 'invalid'}, $signal_guard),
       {
@@ -71,6 +73,19 @@ subtest 'handling assets with invalid name' => sub {
     is $scheduled_product->status, SCHEDULED, 'product marked as scheduled, though';
 };
 
+subtest '_FAIL_IF_NO_JOBS fails on empty schedule but preserves product' => sub {
+    my $fail_sp = $scheduled_products->create(\%settings);
+    my $sp_id = $fail_sp->id;
+    is_deeply
+      $fail_sp->schedule_iso({REPO_0 => 'invalid', _FAIL_IF_NO_JOBS => 1}, $signal_guard),
+      {error => 'No jobs scheduled.', error_code => HTTP_BAD_REQUEST},
+      'schedule_iso fails on no jobs scheduled when _FAIL_IF_NO_JOBS is set';
+    my $found = $scheduled_products->find($sp_id);
+    ok $found, 'scheduled product is not deleted from DB';
+    is $found->status, FATAL_ERROR, 'status is FATAL_ERROR';
+    is_deeply $found->results, {error => 'No jobs scheduled.', error_code => HTTP_BAD_REQUEST}, 'results contain error';
+};
+
 is $scheduled_product->schedule_iso(\%settings, $signal_guard), undef, 'scheduling the same product again prevented';
 
 subtest 'asset registration on scheduling' => sub {
@@ -78,7 +93,7 @@ subtest 'asset registration on scheduling' => sub {
     my %asset_info = (type => 'iso', name => 'dvdsize42.iso');
     $schema->storage->dbh->prepare('delete from assets where name = ? ')->execute('dvdsize42.iso');
     is $assets->find(\%asset_info), undef, 'dvdsize42.iso is not known yet';
-    $scheduled_product = $scheduled_products->create(\%settings);
+    $sp3 = $scheduled_product = $scheduled_products->create(\%settings);
     $scheduled_product->schedule_iso({ISO => 'dvdsize42.iso'}, $signal_guard);
     is $assets->find(\%asset_info)->size, 42, 'dvdsize42.iso has known size';
     $scheduled_product->discard_changes;
@@ -150,11 +165,11 @@ subtest 'settings not modified when creating jobs (so it can be retried)' => sub
 };
 
 subtest 'cleanup' => sub {
-    $scheduled_products->search({id => 1})->update({t_created => DateTime->now->subtract(days => 35)});
+    $scheduled_products->search({id => $sp1->id})->update({t_created => DateTime->now->subtract(days => 35)});
     $scheduled_products->delete_expired_entries;
-    ok !$scheduled_products->find(1), 'old scheduled product without jobs deleted';
-    ok $scheduled_products->find(2), 'new scheduled product without jobs still present)';
-    ok $scheduled_products->find(3), 'scheduled product with jobs still present';
+    ok !$scheduled_products->find($sp1->id), 'old scheduled product without jobs deleted';
+    ok $scheduled_products->find($sp2->id), 'new scheduled product without jobs still present)';
+    ok $scheduled_products->find($sp3->id), 'scheduled product with jobs still present';
 };
 
 subtest 'handling failed job cancellation' => sub {

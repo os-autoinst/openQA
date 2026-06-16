@@ -395,6 +395,36 @@ is $t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled";
 
 schedule_iso($t, {iso => $iso, tests => 'kde/usb'}, 400, {}, 'invalid parameters');
 schedule_iso($t, {%iso, FLAVOR => 'cherry'}, 200, {}, 'no product found');
+{
+    my $count_before = $scheduled_products->count;
+    my $res = schedule_iso($t, {%iso, FLAVOR => 'cherry', _FAIL_IF_NO_JOBS => 1}, 400, {}, 'fail on no jobs scheduled');
+    is $res->json->{error}, 'no products found for opensuse-cherry-i586', 'correct error message';
+    is $scheduled_products->count, $count_before + 1, 'scheduled product is preserved in DB';
+    my $sp_id = $res->json->{scheduled_product_id};
+    ok $sp_id, 'scheduled_product_id is returned';
+    my $sp = $scheduled_products->find($sp_id);
+    ok $sp, 'scheduled product exists in DB';
+    is $sp->status, 'fatal_error', 'status is fatal_error';
+    is $sp->results->{error}, 'no products found for opensuse-cherry-i586', 'results contain correct error';
+
+    my $res_async = schedule_iso(
+        $t, {%iso, FLAVOR => 'cherry', _FAIL_IF_NO_JOBS => 1},
+        200,
+        {async => 1},
+        '_FAIL_IF_NO_JOBS allowed with async'
+    );
+    my $sp_id_async = $res_async->json->{scheduled_product_id};
+    ok $sp_id_async, 'scheduled_product_id is returned for async';
+    my $sp_async = $scheduled_products->find($sp_id_async);
+    is $sp_async->status, 'added', 'status is added initially';
+
+    perform_minion_jobs($t->app->minion);
+
+    $sp_async->discard_changes;
+    is $sp_async->status, 'fatal_error', 'status becomes fatal_error after minion job';
+    is $sp_async->results->{error}, 'no products found for opensuse-cherry-i586',
+      'results contain correct error for async';
+}
 schedule_iso($t, {%iso, _GROUP_ID => 12345}, 404, {}, 'no templates found');
 
 # handle list of tests
