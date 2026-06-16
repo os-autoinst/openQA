@@ -605,6 +605,7 @@ subtest '_construct_isotovideo_cmd' => sub {
         like $cmd[0], qr/HOME=\Q$podman_dir\E/, 'sets correct home directory under openqa cache';
         like $cmd[0], qr/XDG_CONFIG_HOME=\Q$podman_dir\E\/config/, 'sets correct config home';
         like $cmd[0], qr/podman --storage-opt ignore_chown_errors=true/, 'uses podman';
+        like $cmd[0], qr/run --init --rm/, 'runs with --init and --rm for signal handling and cleanup';
         like $cmd[0], qr/--device \/dev\/kvm/, 'passes kvm device';
         like $cmd[0], qr/-v \$\(pwd\):\/pool/, 'mounts pwd to pool';
         like $cmd[0], qr/-w \/pool/, 'sets pool working directory';
