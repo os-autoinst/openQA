@@ -8,6 +8,7 @@ use File::Basename;
 use OpenQA::Utils;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
+use HTTP::Status qw(:constants);
 
 use constant MANDATORY_PARAMETERS => qw(DISTRI VERSION FLAVOR ARCH);
 use constant RESERVED_API_KEYS_RE => qr/^(?:async|scheduled_product_clone_id)$/;
@@ -157,6 +158,10 @@ sub validate_download_parameters ($self, $params) {
 Schedule jobs for assets matching the required settings DISTRI, VERSION, FLAVOR and ARCH
 passed to the method as arguments. Returns a JSON block containing the number of jobs
 created, their job ids and the information for jobs that could not be scheduled.
+
+Supports an optional C<_FAIL_IF_NO_JOBS> parameter. When set to C<1>, the request fails with
+a C<400 Bad Request> if no jobs are scheduled (unless C<async=1> is used). In either case, the
+scheduled product status is set to C<fatal_error>.
 
 =back
 
