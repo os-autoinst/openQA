@@ -544,7 +544,7 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
           . "XDG_DATA_HOME=$podman_dir/data "
           . "XDG_RUNTIME_DIR=$podman_dir/run "
           . 'podman --storage-opt ignore_chown_errors=true --cgroup-manager=cgroupfs '
-          . '--events-backend=file run --entrypoint "" --device /dev/kvm -v $(pwd):/pool '
+          . '--events-backend=file run --init --rm --entrypoint "" --device /dev/kvm -v $(pwd):/pool '
           . "-w /pool $image sh -c 'git clone --branch=$branch --depth=1 $repo && "
           . "make -C os-autoinst && os-autoinst/isotovideo -d'";
         return $cmd;
