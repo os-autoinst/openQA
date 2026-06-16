@@ -15,7 +15,7 @@ use Fcntl;
 use File::Spec::Functions qw(abs2rel catdir file_name_is_absolute);
 use File::Basename qw(basename fileparse);
 use Errno;
-use Cwd 'abs_path';
+use Cwd qw(abs_path getcwd);
 use OpenQA::CacheService::Client;
 use OpenQA::CacheService::Request;
 use Time::HiRes 'sleep';
@@ -537,17 +537,26 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
           // 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest';
 
         my $podman_dir = prjdir() . '/cache/podman';
-        my $cmd
-          = "mkdir -p $podman_dir/run $podman_dir/config $podman_dir/data && "
-          . "env HOME=$podman_dir "
-          . "XDG_CONFIG_HOME=$podman_dir/config "
-          . "XDG_DATA_HOME=$podman_dir/data "
-          . "XDG_RUNTIME_DIR=$podman_dir/run "
-          . 'podman --storage-opt ignore_chown_errors=true --cgroup-manager=cgroupfs '
-          . '--events-backend=file run --init --rm --entrypoint "" --device /dev/kvm -v $(pwd):/pool '
-          . "-w /pool $image sh -c 'git clone --branch=$branch --depth=1 $repo && "
-          . "make -C os-autoinst && os-autoinst/isotovideo -d'";
-        return $cmd;
+        my @cmd = (
+            'env',
+            "HOME=$podman_dir",
+            'podman',
+            '--root', "$podman_dir/data/containers/storage",
+            '--runroot', "$podman_dir/run/containers",
+            '--storage-opt', 'ignore_chown_errors=true',
+            '--cgroup-manager=cgroupfs',
+            '--events-backend=file',
+            'run',
+            '--init',
+            '--rm',
+            '--entrypoint', '',
+            '--device', '/dev/kvm',
+            '-v', getcwd() . ':/pool',
+            '-w', '/pool',
+            $image,
+            'sh', '-c', "git clone --branch=$branch --depth=1 $repo && make -C os-autoinst && os-autoinst/isotovideo -d"
+        );
+        return @cmd;
     }
 
     return ('perl', $isotovideo, '-d');
