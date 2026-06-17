@@ -182,6 +182,7 @@ install-generic: generate-assets generate-completions ## Install generic compone
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
 	install -m 644 systemd/tmpfiles-openqa-webui.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa-webui.conf
 	install -m 644 container/systemd/openqa-llm-server.container "$(DESTDIR)"/usr/share/containers/systemd/openqa-llm-server.container
+	install -d -m 755 "$(DESTDIR)"/opt/llm/models
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-gru.service.requires
 	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-gru.service.requires/postgresql.service
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-scheduler.service.requires
