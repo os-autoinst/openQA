@@ -931,5 +931,7 @@ fi
 %dir %{_datadir}/containers
 %dir %{_datadir}/containers/systemd
 %{_datadir}/containers/systemd/openqa-llm-server.container
+%dir /opt/llm
+%dir /opt/llm/models
 
 %changelog
