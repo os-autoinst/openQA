@@ -287,6 +287,7 @@ sub default_config () {
             worker_limit_retry_delay => ONE_HOUR / 4,
             mcp_max_result_size => 500000,
             scheduled_product_min_storage_duration => 34,
+            create_zip_archive_limit => 2,
             throttle_failing_job_threshold => 2,
             throttle_failing_job_prio_step => 10,
             throttle_failing_job_history_length => 20,
@@ -297,6 +298,12 @@ sub default_config () {
         },
         archiving => {
             archive_preserved_important_jobs => 0,
+        },
+        job_details_archive => {
+            job_details_archive_cache_dir => undef,
+            job_details_archive_cache_limit_gb => 5,
+            job_details_archive_cache_min_free_percentage => 10,
+            job_details_archive_cache_watermark_percentage => 80,
         },
         job_settings_ui => {
             keys_to_render_as_links => '',

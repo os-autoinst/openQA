@@ -1,0 +1,20 @@
+% layout 'bootstrap';
+% title 'Preparing Archive - ' . $job->id;
+
+% content_for 'head' => begin
+%= asset 'archive_wait.js'
+% end
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h3>Preparing Archive for Job <%= $job->id %></h3>
+            <p class="lead">Please wait while the ZIP archive is being created. This might take a while for large jobs.</p>
+            <div class="spinner-border text-primary my-4" role="status">
+                <span class="sr-only">Loading…</span>
+            </div>
+            <div id="archive-error" class="alert alert-danger d-none my-4" role="alert"></div>
+            <p>You will be automatically redirected once the download is ready.</p>
+        </div>
+    </div>
+</div>
