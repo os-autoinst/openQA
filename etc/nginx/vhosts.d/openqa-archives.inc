@@ -1,4 +1,4 @@
-alias /var/lib/openqa/cache/archives/;
+alias /var/lib/openqa/webui/cache/archives/;
 autoindex          on;
 tcp_nopush         on;
 sendfile           on;

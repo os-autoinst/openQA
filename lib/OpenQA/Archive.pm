@@ -17,7 +17,7 @@ sub archive_cache_dir () {
     return $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR} if $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR};
     my $config = OpenQA::App->singleton->config->{job_details_archive};
     return $config->{job_details_archive_cache_dir} if $config->{job_details_archive_cache_dir};
-    return path(OpenQA::Utils::prjdir(), 'cache', 'archives')->to_string;
+    return path(OpenQA::Utils::prjdir(), 'webui', 'cache', 'archives')->to_string;
 }
 
 sub get_cache_limit () {

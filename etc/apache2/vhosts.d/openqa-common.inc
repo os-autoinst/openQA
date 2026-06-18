@@ -18,11 +18,11 @@ DocumentRoot /usr/share/openqa/public
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
-<Directory "/var/lib/openqa/cache/archives">
+<Directory "/var/lib/openqa/webui/cache/archives">
     AllowOverride None
     Require all granted
 </Directory>
-Alias /archives "/var/lib/openqa/cache/archives"
+Alias /archives "/var/lib/openqa/webui/cache/archives"
 
 <Directory "/var/lib/openqa/images">
   Options SymLinksIfOwnerMatch

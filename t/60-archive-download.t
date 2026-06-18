@@ -163,7 +163,7 @@ subtest 'Cache limit calculation' => sub {
     ok OpenQA::Archive::is_cache_limit_exceeded(100, 10, 100), 'Limit exceeded by free percentage';
     ok !OpenQA::Archive::is_cache_limit_exceeded(100, 30, 100), 'Limit not exceeded';
     delete $app->config->{job_details_archive}->{job_details_archive_cache_dir};
-    like OpenQA::Archive::archive_cache_dir(), qr|/cache/archives$|, 'Default cache dir';
+    like OpenQA::Archive::archive_cache_dir(), qr|/webui/cache/archives$|, 'Default cache dir';
     delete $app->config->{job_details_archive};
     is OpenQA::Archive::get_cache_limit(), 5 * 1024 * 1024 * 1024, 'Default limit';
     $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR} = $orig_env;
