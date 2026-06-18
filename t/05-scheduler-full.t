@@ -86,17 +86,14 @@ sub dead_workers {
 
 sub wait_for_worker {
     my ($schema, $id, %opts) = @_;
-
-    note "Waiting for worker with ID $id";    # uncoverable statement
-    for (0 .. 40) {
+    my $expected_error = $opts{error};
+    wait_for {
         my $worker = $schema->resultset('Workers')->find($id);
-        if (defined $worker && !$worker->dead) {
-            next if $opts{error} && ($worker->error // '') ne $opts{error};
-            return undef;
-        }
-        sleep .5;    # uncoverable statement
+        defined $worker
+          && !$worker->dead
+          && (!defined $expected_error || ($worker->error // '') eq $expected_error);
     }
-    note "No worker with ID $id active";    # uncoverable statement
+    "worker $id to be active";
 }
 
 my $job_model = OpenQA::Scheduler::Model::Jobs->singleton;
