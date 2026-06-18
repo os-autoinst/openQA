@@ -99,6 +99,7 @@
   /var/lib/openqa/testresults/ r,
   /var/lib/openqa/testresults/** rw,
   /var/lib/openqa/webui/** rw,
+  /var/lib/openqa/webui/cache/archives/** rwk,
   /var/log/openqa rwk,
   /var/tmp/* rwk,
   owner /var/lib/openqa/share/tests/** rwl,
