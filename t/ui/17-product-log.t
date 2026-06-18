@@ -155,5 +155,21 @@ subtest 'showing a particular scheduled product' => sub {
       qr/check for dependency typos and dependency cycles/, 'results';
 };
 
+subtest 'searching by URL query parameter' => sub {
+    $driver->get($url . '/admin/productlog?q=bar');
+    like $driver->get_title(), qr/Scheduled products log/, 'on product log';
+    wait_for_ajax(msg => 'search applied from query parameter');
+    my $table = $driver->find_element_by_id('product_log_table');
+    ok $table, 'products table found';
+    my @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
+    is scalar @rows, 2, 'both rows shown because they match "bar" in settings';
+
+    $driver->get($url . '/admin/productlog?q=nonexistent_search_term');
+    wait_for_ajax(msg => 'search applied from nonexistent query parameter');
+    my $table2 = $driver->find_element_by_id('product_log_table');
+    my @rows2 = $driver->find_child_elements($table2, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
+    is scalar @rows2, 0, 'no rows shown when searching for nonexistent term';
+};
+
 kill_driver();
 done_testing();

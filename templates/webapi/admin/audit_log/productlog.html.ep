@@ -23,9 +23,17 @@
 </div>
 
 <div class="row">
-    <div class="col-sm-12" = id="scheduled-products">
+    <div class="col-sm-12" id="scheduled-products">
         <h2><%= title %></h2>
         %= include 'layouts/info'
+        <span class="search-popover">
+            <%= help_popover('Search' => '
+                <p>Allows filtering the log.</p>
+                <p>It is possible to search via the <code>q</code> query parameter, e.g. <code>?q=git:</code>.</p>
+                <p>The search also covers scheduled job settings (including Git URLs).</p>
+                ', undef, undef, 'left');
+            %>
+        </span>
         <table id="product_log_table" class="table table-striped" style="width: 100%">
             <thead>
                 <tr>
