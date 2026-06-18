@@ -22,6 +22,8 @@ pr:
                 target_repository: SLE_15_SP7_Backports
               - target_project: openSUSE:Backports:SLE-15-SP7:Update
                 target_repository: standard
+              - target_project: devel:openQA  # needed to inherit project config
+                target_repository: '15.7'
             architectures: [ x86_64 ]
           - name: '16.0'
             paths:

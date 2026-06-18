@@ -29,6 +29,12 @@ ExcludeArch:   %{ix86}
 ExclusiveArch:  do_not_build
 %endif
 
+# disable openQA-devel-test in consistency with use of `%bcond_with devel_package`
+# in the main openQA spec file
+%if (0%{?suse_version} && !0%{?is_opensuse}) || (0%{?is_opensuse} && 0%{?suse_version} < 1600)
+ExclusiveArch:  do_not_build
+%endif
+
 %description
 .
 
