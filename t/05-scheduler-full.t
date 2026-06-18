@@ -35,7 +35,7 @@ use OpenQA::Test::Utils qw(
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
-  wait_for simulate_load
+  wait_for wait_for_or_bail_out simulate_load
 );
 use OpenQA::Test::TimeLimit '150';
 
@@ -87,7 +87,7 @@ sub dead_workers {
 sub wait_for_worker {
     my ($schema, $id, %opts) = @_;
     my $expected_error = $opts{error};
-    wait_for {
+    wait_for_or_bail_out {
         my $worker = $schema->resultset('Workers')->find($id);
         defined $worker
           && !$worker->dead
