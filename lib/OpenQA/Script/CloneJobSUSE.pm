@@ -5,18 +5,21 @@ package OpenQA::Script::CloneJobSUSE;
 use Mojo::Base -strict, -signatures;
 use Data::Dump 'pp';
 use Exporter 'import';
+use OpenQA::JobSettings;
 
 our @EXPORT_OK = qw(detect_maintenance_update);
 
 sub collect_incident_repos ($url_handler, $settings) {
+    my ($error, $unexpanded) = OpenQA::JobSettings::expand_placeholders($settings);
+    die "Expanding variables failed: $error\n" if $error;
     if (my $repo = $settings->{INCIDENT_REPO}) {
-        return verify_incident_repos($url_handler, $repo);
+        return verify_incident_repos($url_handler, $repo, $unexpanded);
     }
     my @urls;
     if (my $addons = $settings->{SCC_ADDONS}) {
         foreach my $SCC_ADDON (split /,/, $addons) {
             if (my $repo = $settings->{uc($SCC_ADDON) . '_TEST_REPOS'}) {
-                my $incident_urls = verify_incident_repos($url_handler, $repo);
+                my $incident_urls = verify_incident_repos($url_handler, $repo, $unexpanded);
                 push @urls, @$incident_urls;
             }
         }
@@ -24,10 +27,17 @@ sub collect_incident_repos ($url_handler, $settings) {
     return \@urls;
 }
 
-sub verify_incident_repos ($url_handler, $incident_repos) {
+sub verify_incident_repos ($url_handler, $incident_repos, $unexpanded = []) {
     my @incident_urls;
     my $ua = $url_handler->{ua};
     foreach my $incident (split /,/, $incident_repos) {
+        my @vars = grep { $incident =~ /%\Q$_\E%/ } @$unexpanded;
+        if (@vars) {
+            my $vars_str = join ', ', @vars;
+            warn
+"URL '$incident' contains unexpanded variables: $vars_str. Specify the necessary variables at the command line for expansion. Skipping verification.\n";
+            next;
+        }
         push @incident_urls, $incident unless $ua->get($incident)->is_success;
     }
     return \@incident_urls;

@@ -305,7 +305,7 @@ sub engine_workit ($job, $callback) {
     );
 
     # do final variable expansion so placeholders of variables defined in worker config are replaced as well
-    my $error = OpenQA::JobSettings::expand_placeholders(\%vars, 0);
+    my ($error) = OpenQA::JobSettings::expand_placeholders(\%vars, 0);
     log_error("Expanding placeholders failed: $error") if $error;
     log_debug "Job settings:\n" . format_settings(\%vars);
 
