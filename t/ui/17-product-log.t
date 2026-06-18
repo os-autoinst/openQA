@@ -75,6 +75,9 @@ subtest 'scheduled product displayed' => sub {
     my @cell_contents = map { $_->get_text } @cells;
     ok shift @cell_contents, 'ID present';
     ok shift @cell_contents, 'time present';
+    my $time_span = $driver->find_child_element($cells[1], 'span', 'css');
+    like $time_span->get_attribute('title'), qr/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}Z$/,
+      'timestamp hover title present';
     is_deeply
       \@cell_contents,
       [qw(perci scheduled opensuse 13.1 DVD i586 0091 whatever.iso), ''],

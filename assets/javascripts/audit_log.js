@@ -365,7 +365,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
       {
         targets: 1,
         render: function (data, type, row) {
-          return type === 'display' ? timeago.format(data + 'Z') : data;
+          return type === 'display' ? '<span title="' + data + 'Z">' + timeago.format(data + 'Z') + '</span>' : data;
         }
       },
       {targets: 2, orderable: false},
