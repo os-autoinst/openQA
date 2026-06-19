@@ -13,6 +13,8 @@ use File::Basename;
 use Feature::Compat::Try;
 use Fcntl qw(:flock);
 
+use constant VALID_CATEGORIES => qw(all resultfiles ulogs assets);
+
 sub archive_cache_dir () {
     return $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR} if $ENV{OPENQA_JOB_DETAILS_ARCHIVE_CACHE_DIR};
     my $config = OpenQA::App->singleton->config->{job_details_archive};
@@ -34,11 +36,15 @@ sub get_watermark_percentage () {
       // 80;
 }
 
-sub create_job_archive ($job) {
+sub job_archive_filename ($job_id, $category = 'all') {
+    return $category eq 'all' ? "job_$job_id.zip" : "job_${job_id}_$category.zip";
+}
+
+sub create_job_archive ($job, $category = 'all') {
     my $job_id = $job->id;
     my $cache_dir = path(archive_cache_dir());
     $cache_dir->make_path unless -d $cache_dir;
-    my $archive_name = "job_$job_id.zip";
+    my $archive_name = job_archive_filename($job_id, $category);
     my $archive_path = $cache_dir->child($archive_name);
     my $lock_path = $cache_dir->child("$archive_name.lock");
     open my $lock_fh, '>', $lock_path->to_string
@@ -48,20 +54,39 @@ sub create_job_archive ($job) {
         close $lock_fh;
         return $archive_path;
     }
-    log_info "Creating archive for job $job_id at $archive_path";
+    log_info "Creating archive for job $job_id (category: $category) at $archive_path";
     # Archive::Zip does not keep all member data in memory. When using addFile or
     # addTree, it only remembers the filenames. writeToFileNamed then streams
     # the content from the original files to the output zip.
     my $zip = Archive::Zip->new();
-    if (my $res_dir = $job->result_dir) {
-        log_debug "Adding results from $res_dir to archive";
-        $zip->addTree($res_dir, 'testresults/') if -d $res_dir;
+    my $res_dir = $job->result_dir;
+
+    if ($res_dir && -d $res_dir) {
+        if ($category eq 'all') {
+            log_debug "Adding results from $res_dir to archive";
+            $zip->addTree($res_dir, 'testresults/');
+        }
+        elsif ($category eq 'resultfiles') {
+            for my $file (@{$job->test_resultfile_list}) {
+                my $full_path = path($res_dir)->child($file);
+                $zip->addFile($full_path->to_string, "testresults/$file") if -e $full_path;
+            }
+        }
+        elsif ($category eq 'ulogs') {
+            my $ulogs_dir = path($res_dir)->child('ulogs');
+            for my $file (@{$job->test_uploadlog_list}) {
+                my $full_path = $ulogs_dir->child($file);
+                $zip->addFile($full_path->to_string, "testresults/ulogs/$file") if -e $full_path;
+            }
+        }
     }
-    my $assets = $job->jobs_assets;
-    while (my $ja = $assets->next) {
-        my $asset = $ja->asset;
-        my $disk_file = $asset->disk_file;
-        if ($disk_file && -e $disk_file) {
+
+    if ($category eq 'all' || $category eq 'assets') {
+        my $assets = $job->jobs_assets;
+        while (my $ja = $assets->next) {
+            my $asset = $ja->asset;
+            my $disk_file = $asset->disk_file;
+            next unless $disk_file && -e $disk_file;
             log_debug 'Adding asset ' . $asset->name . ' to archive';
             my $zip_path = $asset->type . '/' . $asset->name;
             if (-d $disk_file) {
@@ -72,6 +97,7 @@ sub create_job_archive ($job) {
             }
         }
     }
+
     cleanup_cache();
     my $temp_path = $cache_dir->child($archive_name . '.tmp.' . random_hex(8));
     my $status = $zip->writeToFileNamed($temp_path->to_string);
@@ -100,7 +126,8 @@ sub cleanup_cache () {
 
 sub _perform_cache_cleanup ($cache_dir) {
     my ($available, $total) = check_df($cache_dir->to_string);
-    my $archives = $cache_dir->list->grep(sub { $_->basename =~ /^job_\d+\.zip$/ })->map(
+    my $category_regex = join '|', VALID_CATEGORIES;
+    my $archives = $cache_dir->list->grep(sub { $_->basename =~ /^job_\d+(?:_(?:$category_regex))?\.zip$/ })->map(
         sub {
             my $stat = $_->stat;
             {path => $_, mtime => $stat->mtime, size => $stat->size};

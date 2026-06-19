@@ -160,21 +160,24 @@ sub test_asset ($self) {
 
 sub archive ($self) {
     return $self->reply->not_found unless my $job = $self->schema->resultset('Jobs')->find($self->param('testid'));
+    my $category = $self->param('category') // 'all';
+    my %valid = map { $_ => 1 } OpenQA::Archive::VALID_CATEGORIES;
+    return $self->reply->not_found unless $valid{$category};
     my $job_id = $job->id;
-    my $archive_name = "job_$job_id.zip";
+    my $archive_name = OpenQA::Archive::job_archive_filename($job_id, $category);
     my $cache_dir = path(OpenQA::Archive::archive_cache_dir());
     my $archive_path = $cache_dir->child($archive_name);
     return $self->_redirect_to_archive($archive_path) if -e $archive_path;
     try {
         if (my $minion = $self->app->can('minion') ? $self->app->minion : undef) {
-            $self->app->log->info("Enqueuing create_zip_archive for job $job_id");
+            $self->app->log->info("Enqueuing create_zip_archive for job $job_id (category: $category)");
             $minion->enqueue(
-                create_zip_archive => [$job_id],
-                {notes => {job_id => $job_id}, priority => -10, expire => 3600});
+                create_zip_archive => [$job_id, $category],
+                {notes => {job_id => $job_id, category => $category}, priority => -10, expire => 3600});
         }
         else {
             # Fallback for environments without a fully-functional Minion (e.g. tests)
-            return $self->_redirect_to_archive(OpenQA::Archive::create_job_archive($job));
+            return $self->_redirect_to_archive(OpenQA::Archive::create_job_archive($job, $category));
         }
     }
     catch ($e) {
