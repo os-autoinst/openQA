@@ -102,13 +102,14 @@ subtest 'test_result' => sub {
 
 sub lock_test {
     # use BAIL_OUT because only first failure is important
-    BAIL_OUT('Cannot lock') unless $helper->lock('Proj1');
-    BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');
-    BAIL_OUT('Cannot unlock') unless $helper->unlock('Proj1');
-    BAIL_OUT('Cannot lock') unless $helper->lock('Proj1');
-    BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');
-    BAIL_OUT('Cannot unlock') unless $helper->unlock('Proj1');
-    ok 1, 'lock/unlock behaves as expected';
+    my $guard1 = $helper->guard('Proj1');
+    BAIL_OUT('Cannot lock via guard') unless $guard1;
+    BAIL_OUT('Shouldnt lock twice') if $helper->guard('Proj1');
+    undef $guard1;
+    my $guard2 = $helper->guard('Proj1');
+    BAIL_OUT('Cannot lock via guard after release') unless $guard2;
+    undef $guard2;
+    ok 1, 'guard behaves as expected';
 }
 
 subtest 'test lock smoke' => sub {

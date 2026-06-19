@@ -22,7 +22,7 @@ package FakeMinionJob {
     has app => sub { $app };
     has retries => 200;
     sub finish ($self, $result) { $self->{state} = 'finished'; $self->{result} = $result }
-    sub info (@) { {notes => {project_lock => 1}} }
+    sub note ($self, @args) { }
 }    # uncoverable statement
 
 $t->post_ok('/admin/obs_rsync/Proj1/runs' => $params)->status_is(201, 'trigger rsync');
@@ -52,7 +52,10 @@ subtest 'process minion jobs' => sub {
 };
 
 subtest 'retrying' => sub {
-    my $obs_rsync = Test::MockObject->new->set_always(home => 'home')->set_true('unlock');
+    my $obs_rsync
+      = Test::MockObject->new->set_always(home => 'home')->set_true('unlock')
+      ->set_always(guard => Test::MockObject->new)->set_always(retry_interval => 120)
+      ->set_always(retry_max_count => 200);
     $obs_rsync->mock(is_status_dirty => sub { die "is_status_dirty failed\n" });
     my $job = FakeMinionJob->new(app => Test::MockObject->new->set_always(obs_rsync => $obs_rsync));
     OpenQA::WebAPI::Plugin::ObsRsync::Task::run($job, {project => 'foo'});
