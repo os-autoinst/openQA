@@ -12,6 +12,11 @@ Environment=HF_HOME=/models
 Environment=LLAMA_CACHE=/models
 
 [Service]
+Nice=12
+CPUWeight=50
+IOSchedulingClass=best-effort
+IOSchedulingPriority=5
+OOMScoreAdjust=500
 Restart=always
 TimeoutStartSec=900
 
