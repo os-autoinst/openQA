@@ -477,8 +477,9 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
             # them in the spawned process as it does not belong to openQA code
             local $ENV{PERL5OPT} = '';
             # Allow to override isotovideo executable with an arbitrary
-            # command line based on a config option
-            exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
+            # command line based on a config option or environment variables
+            my @cmd = _construct_isotovideo_cmd($job_settings, $isotovideo);
+            @cmd == 1 ? exec($cmd[0]) : exec(@cmd);
             die "exec failed: $!\n";    # uncoverable statement
         });
     $child->on(
@@ -519,6 +520,29 @@ sub locate_local_assets ($vars, $assetkeys, $pooldir) {
         $vars->{$key} = $link_result->{basename};
     }
     return undef;
+}
+
+sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
+    if (my $custom_cmd = $job_settings->{ISOTOVIDEO}) {
+        return $custom_cmd;
+    }
+
+    if (my $repo = $job_settings->{OS_AUTOINST_GIT_REPO}) {
+        my $branch = $job_settings->{OS_AUTOINST_GIT_BRANCH} // 'master';
+        my $image = $job_settings->{OS_AUTOINST_CONTAINER_IMAGE}
+          // 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest';
+
+        my $cmd
+          = "env HOME=/var/tmp XDG_CONFIG_HOME=/var/tmp/openqa/podman/config "
+          . "XDG_DATA_HOME=/var/tmp/openqa/podman/data XDG_RUNTIME_DIR=/var/tmp "
+          . "podman --storage-opt ignore_chown_errors=true --cgroup-manager=cgroupfs "
+          . "--events-backend=file run --entrypoint \"\" --device /dev/kvm -v \$(pwd):/pool "
+          . "-w /pool $image sh -c 'git clone --branch=$branch --depth=1 $repo && "
+          . "make -C os-autoinst && os-autoinst/isotovideo -d'";
+        return $cmd;
+    }
+
+    return ('perl', $isotovideo, '-d');
 }
 
 1;
