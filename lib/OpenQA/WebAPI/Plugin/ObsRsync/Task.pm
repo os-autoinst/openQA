@@ -24,7 +24,6 @@ sub _retry_or_finish ($job, $helper, $project = undef, $retry_interval = undef, 
     return $job->retry({delay => $retry_interval})
       if !$retry_max_count || $job->retries < $retry_max_count;
 
-    $helper->unlock($project) if $project;
     return $job->finish(
         {code => 2, message => "Exceeded retry count $retry_max_count. Consider job will be re-triggered later"});
 }
@@ -46,18 +45,18 @@ sub run ($job, $args) {
     my $helper = $app->obs_rsync;
     my $home = $helper->home;
 
-    if ($job->info && !$job->info->{notes}{project_lock}) {
-        return _retry_or_finish($job, $helper) unless $helper->lock($project);
-        $job->note(project_lock => 1);
-    }
+    return _retry_or_finish($job, $helper)
+      unless my $project_guard = $helper->guard($project);
+    $job->note(project_lock => 1);
+
     my $dirty = 0;
     try { $dirty = $helper->is_status_dirty($project, 1) }
     catch ($e) {
-        return _retry_or_finish($job, $helper, $project, RETRY_INTERVAL_ON_EXCEPTION, RETRY_MAX_COUNT_ON_EXCEPTION);
+        return _retry_or_finish($job, $helper, undef, RETRY_INTERVAL_ON_EXCEPTION, RETRY_MAX_COUNT_ON_EXCEPTION);
     }
-    return _retry_or_finish($job, $helper, $project) if $dirty;
+    return _retry_or_finish($job, $helper) if $dirty;
 
-    return _retry_or_finish($job, $helper, $project)
+    return _retry_or_finish($job, $helper)
       unless my $concurrency_guard = $helper->concurrency_guard();
 
     $helper->log_job_id($project, $job->id);
@@ -68,7 +67,6 @@ sub run ($job, $args) {
     try { IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error); $exit_code = $?; }
     catch ($e) { $error_from_exception = $e }
 
-    $helper->unlock($project);
     return $job->finish(0) if (!$exit_code);
 
     $error ||= $error_from_exception;
