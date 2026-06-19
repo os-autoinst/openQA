@@ -25,7 +25,7 @@ use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Test::FakeWorker;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
-use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
+use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host prjdir);
 use Cwd qw(getcwd);
 use Mojo::Util 'scope_guard';
 use File::Copy::Recursive qw(dircopy);
@@ -578,6 +578,77 @@ subtest 'using cgroupv2' => sub {
     $file_mock->noop('make_path');
     combined_like { OpenQA::Worker::Engines::isotovideo::_configure_cgroupv2({id => 42}) }
     qr|Using cgroup /sys/fs/cgroup/.*/42|, 'use of cgroup logged';
+};
+
+subtest '_construct_isotovideo_cmd' => sub {
+    my $isotovideo = '/usr/bin/isotovideo';
+
+    subtest 'default command' => sub {
+        my $settings = {};
+        my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+        is_deeply \@cmd, ['perl', '/usr/bin/isotovideo', '-d'], 'returns default execution array';
+    };
+
+    subtest 'custom ISOTOVIDEO override' => sub {
+        my $settings = {ISOTOVIDEO => 'some custom command'};
+        my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+        is_deeply \@cmd, ['some custom command'], 'returns custom command string';
+    };
+
+    subtest 'containerized with OS_AUTOINST_GIT_REPO' => sub {
+        my $settings = {OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git'};
+        my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+        is scalar(@cmd), 26, 'returns a list of execution arguments';
+        my $podman_dir = prjdir() . '/cache/podman';
+        is $cmd[0], 'env', 'uses env';
+        is $cmd[1], "HOME=$podman_dir", 'sets correct home directory under openqa cache';
+        is $cmd[2], 'podman', 'runs podman';
+        is $cmd[3], '--root', 'uses --root';
+        is $cmd[4], "$podman_dir/data/containers/storage", 'sets correct root directory';
+        is $cmd[5], '--runroot', 'uses --runroot';
+        is $cmd[6], "$podman_dir/run/containers", 'sets correct run root directory';
+        is $cmd[7], '--storage-opt', 'sets storage-opt';
+        is $cmd[8], 'ignore_chown_errors=true', 'ignores chown errors';
+        is $cmd[9], '--cgroup-manager=cgroupfs', 'uses cgroupfs manager';
+        is $cmd[10], '--events-backend=file', 'uses file events backend';
+        is $cmd[11], 'run', 'runs the container';
+        is $cmd[12], '--init', 'runs with --init for signal handling';
+        is $cmd[13], '--rm', 'runs with --rm for auto-cleanup';
+        is $cmd[14], '--entrypoint', 'specifies entrypoint';
+        is $cmd[15], '', 'clears entrypoint';
+        is $cmd[16], '--device', 'adds device';
+        is $cmd[17], '/dev/kvm', 'passes kvm';
+        is $cmd[18], '-v', 'mounts a volume';
+        is $cmd[19], getcwd() . ':/pool', 'mounts getcwd() to pool';
+        is $cmd[20], '-w', 'sets working dir flag';
+        is $cmd[21], '/pool', 'sets working dir';
+        is $cmd[22], 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest', 'uses default image';
+        is $cmd[23], 'sh', 'executes sh';
+        is $cmd[24], '-c', 'runs shell command';
+        like $cmd[25], qr/git clone --branch=master --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+          'clones master branch by default';
+    };
+
+    subtest 'containerized with OS_AUTOINST_GIT_BRANCH and custom image' => sub {
+        my $settings = {
+            OS_AUTOINST_GIT_REPO => 'https://github.com/foo/os-autoinst.git',
+            OS_AUTOINST_GIT_BRANCH => 'my_feature',
+            OS_AUTOINST_CONTAINER_IMAGE => 'my_custom_image:latest'
+        };
+        my @cmd = OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+        is scalar(@cmd), 26, 'returns a list of execution arguments';
+        is $cmd[22], 'my_custom_image:latest', 'uses custom image';
+        like $cmd[25], qr/git clone --branch=my_feature --depth=1 https:\/\/github.com\/foo\/os-autoinst\.git/,
+          'clones custom branch';
+    };
+
+    subtest 'containerized without OS_AUTOINST_GIT_REPO' => sub {
+        my $settings = {OS_AUTOINST_CONTAINER_IMAGE => 'my_custom_image:latest'};
+        throws_ok {
+            OpenQA::Worker::Engines::isotovideo::_construct_isotovideo_cmd($settings, $isotovideo);
+        }
+        qr/OS_AUTOINST_CONTAINER_IMAGE requires OS_AUTOINST_GIT_REPO/, 'dies with helpful error message';
+    };
 };
 
 done_testing();

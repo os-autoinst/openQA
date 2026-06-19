@@ -726,6 +726,16 @@ For example to run isotovideo from a custom container image one could use the
 test variable setting
 `ISOTOVIDEO=podman run --pull=always --rm -it registry.example.org/my/container/isotovideo /usr/bin/isotovideo -d`
 
+Alternatively, you can run the worker engine inside a rootless Podman
+container by setting `OS_AUTOINST_GIT_REPO` to a Git repository URL.
+openQA will construct a Podman command to clone, build, and execute
+`os-autoinst` from that repository.
+The following optional test variables are supported:
+* `OS_AUTOINST_GIT_BRANCH`: The branch to clone (defaults to `master`).
+* `OS_AUTOINST_CONTAINER_IMAGE`: A custom container image to use (defaults to
+  `registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest`).
+  `OS_AUTOINST_CONTAINER_IMAGE` requires `OS_AUTOINST_GIT_REPO` to be set.
+
 ### Automatic retries of jobs
 
 You might encounter flaky openQA tests that fail sporadically. The best way to
