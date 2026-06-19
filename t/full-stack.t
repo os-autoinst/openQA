@@ -304,6 +304,7 @@ subtest 'incomplete job because of setup failure' => sub {
 my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
 ok -e $cache_location, 'Setting up Cache directory';
 
+my $max_instances = MAX_WORKER_INSTANCES;
 path($ENV{OPENQA_CONFIG})->child('workers.ini')->spew(<<"EOC");
 [global]
 CACHEDIRECTORY = $cache_location
@@ -313,7 +314,7 @@ LOCAL_UPLOAD = 0
 # Ensure fullstack tests run even under high load.
 CRITICAL_LOAD_AVG_THRESHOLD = 0
 
-[1-99]
+[1-$max_instances]
 WORKER_CLASS = qemu_i386,qemu_x86_64
 
 [http://localhost:$mojoport]

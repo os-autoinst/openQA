@@ -38,7 +38,11 @@ use OpenQA::Test::TimeLimit ();
 use Feature::Compat::Try;
 use Time::HiRes 'sleep';
 
-use constant MAX_WORKER_INSTANCES => 64;
+use constant MAX_WORKER_INSTANCES => 1024;
+# That is the highest power of two that still leaves os-autoinst enough headroom
+# to compute port numbers. This means there is only a < 0.1 % chance of running
+# into a conflict when running two fullstack tests in parallel and we still avoid
+# exceeding the maximum port number.
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
