@@ -5,10 +5,9 @@ After=network-online.target
 [Container]
 Image=ghcr.io/ggml-org/llama.cpp:server
 ContainerName=openqa-llm-server
-Volume=/opt/llm/models:/models:U
+Volume=/opt/llm/models:/models
 PublishPort=8080:8080
 Exec=-hf unsloth/gemma-4-E4B-it-GGUF:UD-IQ2_M --temp 1.0 --top-p 0.95 --top-k 64 --ctx-size 65536
-UserNS=auto
 Environment=HF_HOME=/models
 Environment=LLAMA_CACHE=/models
 
