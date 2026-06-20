@@ -5491,6 +5491,20 @@ A custom worker engine command can be set with the test variable
 <code>ISOTOVIDEO</code>. For example to run isotovideo from a custom
 container image one could use the test variable setting
 <code>ISOTOVIDEO=podman run --pull=always --rm -it registry.example.org/my/container/isotovideo /usr/bin/isotovideo -d</code></p>
+<p>Alternatively, you can run the worker engine inside a rootless Podman
+container by setting <code>OS_AUTOINST_GIT_REPO</code> to a Git
+repository URL. openQA will construct a Podman command to clone, build,
+and execute <code>os-autoinst</code> from that repository. The following
+optional test variables are supported:</p>
+<ul>
+<li><code>OS_AUTOINST_GIT_BRANCH</code>: The branch to clone (defaults
+to <code>master</code>).</li>
+<li><code>OS_AUTOINST_CONTAINER_IMAGE</code>: A custom container image
+to use (defaults to
+<code>registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest</code>).
+<code>OS_AUTOINST_CONTAINER_IMAGE</code> requires
+<code>OS_AUTOINST_GIT_REPO</code> to be set.</li>
+</ul>
 <h3 data-number="4.6.7" id="automatic-retries-of-jobs"><span class="header-section-number">4.6.7</span> Automatic retries of
 jobs</h3>
 <p>You might encounter flaky openQA tests that fail sporadically. The
