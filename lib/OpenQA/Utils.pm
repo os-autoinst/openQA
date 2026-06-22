@@ -619,7 +619,6 @@ sub human_readable_size ($size) {
 sub read_test_modules ($job) {
     return undef unless my $testresultdir = $job->result_dir;
 
-    my $category;
     my $has_parser_text_results = 0;
     my (@modlist, @errors);
 
@@ -655,6 +654,7 @@ sub read_test_modules ($job) {
           {
             name => $module->name,
             result => $module->result,
+            category => $module->category,
             details => \@details,
             milestone => $module->milestone,
             important => $module->important,
@@ -664,12 +664,6 @@ sub read_test_modules ($job) {
             has_parser_text_result => $has_module_parser_text_result,
             execution_time => change_sec_to_word($module_results->{execution_time}),
           };
-
-        if (!$category || $category ne $module->category) {
-            $category = $module->category;
-            $modlist[-1]->{category} = $category;
-        }
-
     }
 
     return {modules => \@modlist, errors => \@errors, has_parser_text_results => $has_parser_text_results};

@@ -240,6 +240,7 @@ function batchProcess(items, processor, options = {}) {
   const {batchSize = DEFAULT_BATCH_SIZE, shouldContinue = () => true} = options;
   let currentIndex = 0;
 
+  let category = '';
   return new Promise((resolve, reject) => {
     function processNextBatch() {
       if (!shouldContinue()) {
@@ -250,7 +251,7 @@ function batchProcess(items, processor, options = {}) {
       const end = Math.min(currentIndex + batchSize, items.length);
       try {
         for (; currentIndex < end; currentIndex++) {
-          processor(items[currentIndex], currentIndex);
+          category = processor(items[currentIndex], currentIndex, category);
         }
       } catch (err) {
         reject(err);
@@ -293,13 +294,14 @@ async function renderModuleTable(container, response, shouldContinue = () => tru
 
   return batchProcess(
     response.modules,
-    module => {
-      if (module.category) {
+    (module, i, category) => {
+      if (module.category !== category) {
         tbody.appendChild(
           E('tr', [E('td', [E('i', [], {class: 'fa-regular fa-folderpen'}), '\u00a0' + module.category], {colspan: 3})])
         );
       }
       tbody.appendChild(renderModuleRow(module, response.snippets));
+      return module.category;
     },
     {shouldContinue}
   );
