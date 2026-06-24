@@ -134,12 +134,16 @@ subtest 'error handling when loading test modules' => sub {
 };
 
 subtest 'tab navigation via history' => sub {
+    $driver->get('/tests');
+    $driver->find_element('a[href="/tests/99982"]')->click();
     is current_tab, 'Details', 'starting on Details tab for completed job';
     $driver->find_element_by_link_text('Settings')->click();
     is current_tab, 'Settings', 'switched to settings tab';
     $driver->go_back();
-    is current_tab, 'Details', 'back to details tab';
+    ok $driver->get_current_url =~ /\/tests$/, 'back to job list';
 };
+
+$driver->get('/tests/99937');
 
 subtest 'show job modules execution time' => sub {
     my $tds = $driver->find_elements('.component');

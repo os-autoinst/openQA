@@ -191,7 +191,7 @@ function setCurrentPreview(stepPreviewContainer, force) {
   ) {
     $('.current_preview').removeClass('current_preview');
     hidePreviewContainer();
-    setPageHashAccordingToCurrentTab('', true);
+    setPageHashAccordingToCurrentTab('');
     return;
   }
 
@@ -203,7 +203,7 @@ function setCurrentPreview(stepPreviewContainer, force) {
   if (textResultElement.length) {
     stepPreviewContainer.addClass('current_preview');
     hidePreviewContainer();
-    setPageHashAccordingToCurrentTab(textResultElement.data('href'), true);
+    setPageHashAccordingToCurrentTab(textResultElement.data('href'));
 
     // ensure element is in viewport
     const aOffset = stepPreviewContainer.offset().top;
@@ -225,7 +225,7 @@ function setCurrentPreview(stepPreviewContainer, force) {
   }
   if (link.data('text')) {
     stepPreviewContainer.addClass('current_preview');
-    setPageHashAccordingToCurrentTab(link.attr('href'), true);
+    setPageHashAccordingToCurrentTab(link.attr('href'));
     const text = unescape(link.data('text'));
     previewSuccess(stepPreviewContainer, text, force);
     return;
@@ -234,7 +234,7 @@ function setCurrentPreview(stepPreviewContainer, force) {
     return;
   }
   stepPreviewContainer.addClass('current_preview');
-  setPageHashAccordingToCurrentTab(link.attr('href'), true);
+  setPageHashAccordingToCurrentTab(link.attr('href'));
   $.get({
     url: link.data('url'),
     success: function (data) {
@@ -355,7 +355,7 @@ function handleKeyDownOnTestDetails(e) {
   }
 }
 
-function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
+function setPageHashAccordingToCurrentTab(tabNameOrHash) {
   // don't mess with #step hashes within details tab
   const currentHash = window.location.hash;
   if (tabNameOrHash === 'details' && (currentHash.startsWith('#step/') || currentHash.startsWith('#line-'))) {
@@ -367,10 +367,8 @@ function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
   if (newHash === currentHash || (newHash === '#' && !currentHash)) {
     return;
   }
-  if (replace && history.replaceState) {
+  if (history.replaceState) {
     history.replaceState(null, null, newHash);
-  } else if (!replace && history.pushState) {
-    history.pushState(null, null, newHash);
   } else {
     window.location.hash = newHash;
   }
