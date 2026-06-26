@@ -85,12 +85,15 @@ sub dead_workers {
 }
 
 sub wait_for_worker {
-    my ($schema, $id) = @_;
+    my ($schema, $id, %opts) = @_;
 
     note "Waiting for worker with ID $id";    # uncoverable statement
     for (0 .. 40) {
         my $worker = $schema->resultset('Workers')->find($id);
-        return undef if defined $worker && !$worker->dead;
+        if (defined $worker && !$worker->dead) {
+            next if $opts{error} && ($worker->error // '') ne $opts{error};
+            return undef;
+        }
         sleep .5;    # uncoverable statement
     }
     note "No worker with ID $id active";    # uncoverable statement
@@ -153,7 +156,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     # simulate a worker in broken state; it will register itself but declare itself as broken
     @workers = broken_worker(@$worker_settings, 3, 'out of order');
-    wait_for_worker($schema, 5);
+    wait_for_worker($schema, 5, error => 'out of order');
     $allocated = $job_model->schedule;
     is @$allocated, 0, 'scheduler does not consider broken worker for allocating job';
     stop_workers;
