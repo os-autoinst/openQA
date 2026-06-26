@@ -483,17 +483,19 @@ subtest 'render video link if frametime is available' => sub {
     $driver->find_element_by_link_text('Details')->click();
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     wait_for_ajax(msg => 'first step of bootloader test module loaded');
-    my @links = $driver->find_elements('.step_actions .fa-regular.fa-file-video');
+    my @links = $driver->find_elements('.step_actions .fa-file-video');
     is $#links, -1, 'no link without frametime';
 
     $driver->find_element('[href="#step/bootloader/2"]')->click();
     wait_for_ajax(msg => 'second step of bootloader test module loaded');
-    my @video_link_elems = $driver->find_elements('.step_actions .fa-regular.fa-file-video');
-    is $video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists';
-    like $video_link_elems[0]->get_attribute('href'),
-      qr!/tests/99946/video\?filename=video\.ogv&t=0\.00,1\.00!,
-      'video href correct';
-    $video_link_elems[0]->click();
+
+    my @video_link_elems
+      = $driver->find_elements(q{//span[contains(@class, 'step_actions')]//i[contains(@class, 'fa-file-video')]/../..},
+        'xpath');
+    my $link = $video_link_elems[0];
+    is $link->get_attribute('title'), 'Jump to video', 'video link exists';
+    like $link->get_attribute('href'), qr!/tests/99946/video\?filename=video\.ogv&t=0\.00,1\.00!, 'video href correct';
+    $link->click();
     like
       $driver->find_element('video')->get_attribute('src'),
       qr!/tests/99946/file/video\.ogv#t=0!,
