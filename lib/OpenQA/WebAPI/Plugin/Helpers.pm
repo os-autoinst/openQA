@@ -72,8 +72,10 @@ sub register ($self, $app, $config) {
         stepvideolink_for => sub ($c, $testid, $file_name, $frametime) {
             my $t = sprintf '&t=%s,%s', $frametime->[0], $frametime->[1];
             my $url = $c->url_for('video', testid => $testid)->query(filename => $file_name) . $t;
-            my $class = 'step_action fa-regular fa-file-video fa-lg';
-            return $c->link_to($url => (title => 'Jump to video', class => $class) => sub { '' });
+            my $icon = 'fa-file-video';
+            my $icons = $c->t(i => (class => "fa-regular fa-lg fa-stack-1x $icon"));
+            my $content = $c->t(span => (class => 'fa-stack') => sub { $icons });
+            return $c->link_to($url => (title => 'Jump to video', class => 'step_action') => sub { $content });
         });
 
     $app->helper(rendered_refs_no_shortening => sub ($c, $text) { render_escaped_refs($text) });
