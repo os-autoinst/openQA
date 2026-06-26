@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseKernelBug;
 use OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseGenericBug;
+use OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseBCIbug;
 use OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseProgressIssue;
 
 sub register ($self, $app, $config) {
@@ -14,6 +15,7 @@ sub register ($self, $app, $config) {
             return [
                 @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseGenericBug::actions($c)},
                 @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseKernelBug::actions($c)},
+                @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseBCIbug::actions($c)},
                 @{OpenQA::WebAPI::Plugin::IssueReporter::OpenSuseProgressIssue::actions($c)},
             ];
         });
