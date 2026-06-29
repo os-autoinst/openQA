@@ -11,6 +11,11 @@ BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} = 100;
+
+    # avoid delays due to long retry interval of worker
+    $ENV{OPENQA_WORKER_CONNECT_INTERVAL} = 0;
+    $ENV{MOJO_CONNECT_TIMEOUT} = 1;
+
     OpenQA::Utils::reserve_ports;
 }
 
@@ -278,7 +283,6 @@ subtest 'Websocket server - close connection test' => sub {
 
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
-    local $ENV{OPENQA_WORKER_CONNECT_INTERVAL} = 0;
 
     my $log;
     # create unstable ws
