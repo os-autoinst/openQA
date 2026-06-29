@@ -11,7 +11,8 @@ use Scalar::Util qw(looks_like_number);
 use Time::Seconds;
 use Feature::Compat::Try;
 
-our @EXPORT_OK = (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage));
+our @EXPORT_OK
+  = (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage is_disk_usage_below_percentage));
 
 # acquire lock to prevent multiple limit_* tasks to run in parallel unless
 # concurrency is configured to be allowed
@@ -24,7 +25,7 @@ sub acquire_limit_lock_or_retry ($job) {
     return 0;
 }
 
-sub finish_job_if_disk_usage_below_percentage (%args) {
+sub is_disk_usage_below_percentage (%args) {
     my $job = $args{job};
     my $percentage = $job->app->config->{misc_limits}->{$args{setting}};
 
@@ -44,9 +45,16 @@ sub finish_job_if_disk_usage_below_percentage (%args) {
 
     my $free_percentage = $available_bytes / $total_bytes * 100;
     return undef if $free_percentage <= $percentage;
-    $job->finish("Skipping, free disk space on '$dir' exceeds configured percentage $percentage %"
-          . " (free percentage: $free_percentage %)");
-    return 1;
+    return
+"Skipping, free disk space on '$dir' exceeds configured percentage $percentage % (free percentage: $free_percentage %)";
+}
+
+sub finish_job_if_disk_usage_below_percentage (%args) {
+    if (my $msg = is_disk_usage_below_percentage(%args)) {
+        $args{job}->finish($msg);
+        return 1;
+    }
+    return undef;
 }
 
 1;

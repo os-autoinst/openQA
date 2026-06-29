@@ -90,6 +90,27 @@ subtest 'abort early if there is enough free disk space' => sub {
     is $job->{state}, undef, 'job not finished when proceeding with cleanup';
 };
 
+subtest 'abort early during the loop' => sub {
+    # We will simulate `df` returning low space on the first call, and high space on the second call.
+    my $df_call_count = 0;
+    my @bavail = (5);
+    $df_mock->redefine(df => sub ($dir, @) { {bavail => $bavail[$df_call_count++] // 20, blocks => 100} });
+    $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
+
+    # We need to make sure there are JobGroups to iterate over
+    # There is already a `JobGroup` created below, but maybe we can just run the minion job and check the note.
+    # To check the note, we must retrieve the minion job from the db.
+    my $group_bar = $app->schema->resultset('JobGroups')->create({name => 'bar'});
+    my $loop_job = run_gru_job($app, limit_results_and_logs => []);
+    is $loop_job->{state}, 'finished', 'result cleanup still considered successful';
+    like $loop_job->{notes}->{early_abort_results},
+      qr|Skipping.*/openqa/testresults.*exceeds configured percentage 10 % \(free percentage: 20 %\)|,
+      'result cleanup aborted early inside the loop';
+    $group_bar->delete;
+
+    $mock_df->();    # restore
+};
+
 $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
 $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 100;
 $app->config->{misc_limits}->{dry_min_free_disk_space_cleanup} = 1;
