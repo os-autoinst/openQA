@@ -9,7 +9,7 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
-use Mojo::IOLoop::Server;
+use OpenQA::Utils;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
@@ -19,13 +19,12 @@ BEGIN {
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
 
-    $ENV{OPENQA_BASE_PORT} ||= Mojo::IOLoop::Server->generate_port;
+    OpenQA::Utils::reserve_ports;
 }
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
-use Mojo::IOLoop::Server;
 use OpenQA::Test::TimeLimit '200';
 use Test::Mojo;
 use IO::Socket::INET;

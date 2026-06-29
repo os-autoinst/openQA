@@ -29,7 +29,7 @@ driver_missing unless my $driver = call_driver;
 my $t = client;
 
 # we need to talk to the phantom instance or else we're using wrong database
-my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
+my $url = OpenQA::SeleniumTest::get_mojo_url;
 
 # schedule an ISO
 $t->post_ok(

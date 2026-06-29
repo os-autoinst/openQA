@@ -4,7 +4,6 @@ use Mojo::Base -base, -signatures;
 
 use Exporter 'import';
 use FindBin;
-use IO::Socket::INET;
 use Storable qw(lock_store lock_retrieve);
 use Mojolicious;
 use POSIX qw(_exit WNOHANG);
@@ -15,7 +14,7 @@ use OpenQA::App;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT);
 use OpenQA::Log qw(log_error log_info log_debug);
 
-use OpenQA::Utils 'service_port';
+use OpenQA::Utils qw(raw_service_port to_plain_service_port make_listen_url make_access_url);
 use OpenQA::WebSockets;
 use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler;
@@ -25,6 +24,7 @@ use Mojo::File qw(path tempfile tempdir);
 use Mojo::Util 'dumper';
 use Mojo::URL;
 use Cwd qw(abs_path getcwd);
+use IO::Socket::IP;
 use IPC::Run qw(start);
 use Mojo::Util qw(b64_decode gzip);
 use Scalar::Util ();
@@ -33,6 +33,7 @@ use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
+use Mojo::UserAgent;
 use Test::MockModule;
 use OpenQA::Test::TimeLimit ();
 use Feature::Compat::Try;
@@ -107,9 +108,9 @@ sub cache_worker_service {
             # this service can be very noisy
             require OpenQA::CacheService;    # uncoverable statement
             local $ENV{MOJO_MODE} = 'test';    # uncoverable statement
-            my $port = service_port 'cache_service';    # uncoverable statement
+            my $port = raw_service_port 'cache_service';    # uncoverable statement
             note("Starting worker cache service on port $port");    # uncoverable statement
-            OpenQA::CacheService::run('daemon', '-l', "http://*:$port");    # uncoverable statement
+            OpenQA::CacheService::run('daemon', '-l', make_listen_url($port));    # uncoverable statement
             note("Worker cache service on port $port stopped");    # uncoverable statement
             Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
             _exit(0);    # uncoverable statement
@@ -268,39 +269,37 @@ sub stop_service {
 }
 
 sub create_webapi ($port = undef, $no_cover = undef) {
-    $port //= service_port 'webui';
+    $port //= raw_service_port 'webui';
     note("Starting WebUI service. Port: $port");
 
     my $h = _setup_sigchld_handler 'openqa-webapi', start sub {
         _setup_sub_process 'openqa-webapi';
         local $ENV{MOJO_MODE} = 'test';
 
-        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
+        my $daemon = Mojo::Server::Daemon->new(listen => [make_listen_url($port)], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
         Devel::Cover::report() if !$no_cover && Devel::Cover->can('report');
     };
     # as this might download assets on first test, we need to wait a while
     my $wait = time + 50;
+    my $ua = Mojo::UserAgent->new(connect_timeout => 1, inactivity_timeout => 1);
+    my $address = make_access_url($port);
     while (time < $wait) {
         my $t = time;
-        my $socket = IO::Socket::INET->new(
-            PeerHost => '127.0.0.1',
-            PeerPort => $port,
-            Proto => 'tcp',
-        );
-        last if $socket;
+        note "Waiting for web UI on $address";
+        last if $ua->get($address)->res->is_success;
         sleep 1 if time - $t < 1;
     }
     return $h;
 }
 
 sub create_websocket_server ($port, $bogus, $with_embedded_scheduler = undef, $no_cover = undef) {
-    OpenQA::WebSockets::Client->singleton->port($port //= service_port 'websocket');
+    OpenQA::WebSockets::Client->singleton->port(to_plain_service_port($port //= raw_service_port('websocket')));
     note "Starting WebSocket service (port: $port, bogus: $bogus)";
     my $h = _setup_sigchld_handler 'openqa-websocket', start sub {
         _setup_sub_process 'openqa-websocket';
-        local $ENV{MOJO_LISTEN} = "http://127.0.0.1:$port";
+        local $ENV{MOJO_LISTEN} = make_listen_url($port);
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
 
         use OpenQA::WebSockets;
@@ -339,12 +338,12 @@ sub create_websocket_server ($port, $bogus, $with_embedded_scheduler = undef, $n
     return $h;
 }
 
-sub create_scheduler ($port = service_port 'scheduler') {
+sub create_scheduler ($port = raw_service_port('scheduler')) {
     note("Starting Scheduler service. Port: $port");
-    OpenQA::Scheduler::Client->singleton->port($port);
+    OpenQA::Scheduler::Client->singleton->port(to_plain_service_port($port));
     _setup_sigchld_handler 'openqa-scheduler', start sub {
         _setup_sub_process 'openqa-scheduler';
-        local $ENV{MOJO_LISTEN} = "http://127.0.0.1:$port";
+        local $ENV{MOJO_LISTEN} = make_listen_url($port);
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
         local @ARGV = ('daemon');
         OpenQA::Scheduler::run;
@@ -352,12 +351,10 @@ sub create_scheduler ($port = service_port 'scheduler') {
     };
 }
 
-sub create_live_view_handler {
-    my ($port) = @_;
-    $port //= service_port 'livehandler';
+sub create_live_view_handler ($port = raw_service_port 'livehandler') {
     _setup_sigchld_handler 'openqa-livehandler', start sub {
         _setup_sub_process 'openqa-livehandler';
-        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
+        my $daemon = Mojo::Server::Daemon->new(listen => [make_listen_url($port)], silent => 1);
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');

@@ -9,7 +9,7 @@ use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
 use OpenQA::WebAPI;
-use OpenQA::Utils qw(service_port set_listen_address fix_top_level_help);
+use OpenQA::Utils qw(set_listen_address fix_top_level_help);
 
 fix_top_level_help;
 
@@ -19,6 +19,6 @@ $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
 # the default is EV, and this heavily screws with our children handling
 $ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
 
-set_listen_address(service_port('webui'));
+set_listen_address('webui');
 OpenQA::WebAPI::run;
 

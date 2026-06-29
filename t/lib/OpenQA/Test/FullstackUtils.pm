@@ -49,8 +49,7 @@ sub job_setup (%override) {
 }
 
 sub get_connect_args () {
-    my $mojoport = OpenQA::SeleniumTest::get_mojoport;
-    return ['--apikey=1234567890ABCDEF', '--apisecret=1234567890ABCDEF', "--host=http://localhost:$mojoport"];
+    ['--apikey=1234567890ABCDEF', '--apisecret=1234567890ABCDEF', '--host=' . OpenQA::SeleniumTest::get_mojo_url];
 }
 
 sub client_output ($args) { qx{perl ./script/openqa-cli api @{get_connect_args()} $args} }

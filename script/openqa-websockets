@@ -9,9 +9,9 @@ use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
 use OpenQA::WebSockets;
-use OpenQA::Utils qw(service_port set_listen_address fix_top_level_help);
+use OpenQA::Utils qw(set_listen_address fix_top_level_help);
 
 fix_top_level_help;
 
-set_listen_address(service_port('websocket'));
+set_listen_address('websocket');
 OpenQA::WebSockets::run;

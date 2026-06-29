@@ -37,7 +37,7 @@ sub check_data_table_entries ($expected_entry_count, $test_name) {
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using wrong database
-my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
+my $url = OpenQA::SeleniumTest::get_mojo_url;
 
 # Scheduled isos are only available to operators and admins
 $t->get_ok($url . '/admin/auditlog')->status_is(302);

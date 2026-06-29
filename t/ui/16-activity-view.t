@@ -29,7 +29,7 @@ driver_missing unless my $driver = call_driver;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using the wrong database
-my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
+my $url = OpenQA::SeleniumTest::get_mojo_url;
 
 subtest 'Access activity view via the menu' => sub {
     $driver->find_element_by_link_text('Login')->click();
