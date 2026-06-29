@@ -35,7 +35,7 @@ use OpenQA::Test::Utils qw(
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
-  wait_for simulate_load
+  wait_for wait_for_or_bail_out simulate_load
 );
 use OpenQA::Test::TimeLimit '150';
 
@@ -85,15 +85,15 @@ sub dead_workers {
 }
 
 sub wait_for_worker {
-    my ($schema, $id) = @_;
-
-    note "Waiting for worker with ID $id";    # uncoverable statement
-    for (0 .. 40) {
+    my ($schema, $id, %opts) = @_;
+    my $expected_error = $opts{error};
+    wait_for_or_bail_out {
         my $worker = $schema->resultset('Workers')->find($id);
-        return undef if defined $worker && !$worker->dead;
-        sleep .5;    # uncoverable statement
+        defined $worker
+          && !$worker->dead
+          && (!defined $expected_error || ($worker->error // '') eq $expected_error);
     }
-    note "No worker with ID $id active";    # uncoverable statement
+    "worker $id to be active";
 }
 
 my $job_model = OpenQA::Scheduler::Model::Jobs->singleton;
@@ -153,7 +153,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     # simulate a worker in broken state; it will register itself but declare itself as broken
     @workers = broken_worker(@$worker_settings, 3, 'out of order');
-    wait_for_worker($schema, 5);
+    wait_for_worker($schema, 5, error => 'out of order');
     $allocated = $job_model->schedule;
     is @$allocated, 0, 'scheduler does not consider broken worker for allocating job';
     stop_workers;
