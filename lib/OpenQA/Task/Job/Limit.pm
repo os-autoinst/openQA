@@ -8,7 +8,8 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT resultdir archivedir check_df);
-use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage);
+use OpenQA::Task::Utils
+  qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage is_disk_usage_below_percentage);
 use OpenQA::Task::SignalGuard;
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
@@ -55,6 +56,16 @@ sub _limit ($job, $args = undef) {
     my $gru = $app->gru;
     my %options = (priority => -20, ttl => 2 * ONE_DAY);
     while (my $group = $groups->next) {
+        if (
+            my $msg = is_disk_usage_below_percentage(
+                job => $job,
+                setting => 'result_cleanup_max_free_percentage',
+                dir => resultdir
+            ))
+        {
+            $job->note(early_abort_results => $msg);
+            last;
+        }
         my @preserved_important_jobs;
         $group->limit_results_and_logs(\@preserved_important_jobs);
 
