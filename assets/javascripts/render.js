@@ -49,6 +49,23 @@ function moduleResultCSS(result) {
   return 'resultunknown';
 }
 
+function createLogLink(module, step) {
+  const E = createElement;
+  const params = new URLSearchParams({
+    filename: 'autoinst-log.txt',
+    filter: `[step:${module.category},${module.name},${step.num}]`
+  });
+  const currentPath = window.location.pathname.replace(/\/$/, '');
+  const logHref = `${currentPath}/logfile?${params.toString()}`;
+  const logLinkText = E('i', [''], {
+    class: 'step_action fa-regular fa-file-lines fa-lg',
+    title: 'Jump to logfile'
+  });
+  const logStepAction = E('span', [logLinkText], {class: 'fa-stack'});
+  const logLink = E('a', [logStepAction], {class: 'view_log', href: logHref});
+  return logLink;
+}
+
 function renderModuleRow(module, snippets) {
   const E = createElement;
   const rowid = 'module_' + module.name.replace(/[^a-z0-9_-]+/gi, '-');
@@ -186,6 +203,9 @@ function renderModuleRow(module, snippets) {
     if (step.text && title !== 'Soft Failed') {
       const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
+
+      stepActions.append(createLogLink(module, step));
+
       const textresult = E('pre', [textData]);
       let html = stepActions.outerHTML;
       html += textresult.outerHTML;
