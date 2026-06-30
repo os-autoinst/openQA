@@ -9,6 +9,7 @@ use File::Temp qw(tempfile);
 use Mojo::Base -signatures;
 use Mojo::File qw(path curfile);
 require OpenQA::Test::Database;
+use OpenQA::Utils qw(to_plain_service_port);
 use OpenQA::Test::Utils;
 use Test::Output;
 use Test::Warnings ':report_warnings';
@@ -49,8 +50,8 @@ my $args = "--host $host $filename";
 test_once $args, qr/unknown error code - host $host unreachable?/, 'invalid host error', 22, 'error on invalid host';
 
 $ENV{MOJO_LOG_LEVEL} = 'fatal';
-my $mojoport = Mojo::IOLoop::Server->generate_port;
-$host = "localhost:$mojoport";
+my $mojoport = OpenQA::Utils::reserve_ports(['webui'])->sockport;
+$host = 'localhost:' . to_plain_service_port($mojoport);
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $webapi = OpenQA::Test::Utils::create_webapi($mojoport, sub { });
 END { stop_service $webapi; }

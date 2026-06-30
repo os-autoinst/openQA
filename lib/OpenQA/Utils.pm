@@ -822,8 +822,9 @@ sub raw_service_port ($service) {
     return $base + $SERVICE_OFFSETS{$service};
 }
 
-sub reserve_ports () {
-    for my $service (keys %SERVICE_OFFSETS) {
+sub reserve_ports ($services = [keys %SERVICE_OFFSETS], %options) {
+    for my $service (@$services) {
+        next if exists $RESERVED_SOCKETS{$service} && !$options{force};
         my $socket = IO::Socket::IP->new(LocalAddr => '0.0.0.0', Listen => SOMAXCONN, ReuseAddr => 1, ReusePort => 1);
         die "Failed to reserve port for $service: $!\n" unless $socket;
         $RESERVED_SOCKETS{$service} = $socket;
@@ -831,7 +832,12 @@ sub reserve_ports () {
         $ENV{"OPENQA_PORT_\U$service"} = "$port&fd=" . $socket->fileno;
         log_info "Reserved port for $service: $port";
     }
-    $ENV{OPENQA_SERVICE_PORT_DELTA} = $RESERVED_SOCKETS{livehandler}->sockport - $RESERVED_SOCKETS{webui}->sockport;
+    my $webui_socket = $RESERVED_SOCKETS{webui};
+    my $livehandler_socket = $RESERVED_SOCKETS{livehandler};
+    if ($webui_socket && $livehandler_socket) {
+        $ENV{OPENQA_SERVICE_PORT_DELTA} = $livehandler_socket->sockport - $webui_socket->sockport;
+    }
+    return @$services == 1 ? $RESERVED_SOCKETS{$services->[0]} : \%RESERVED_SOCKETS;
 }
 
 sub random_string ($length = RANDOM_STRING_DEFAULT_LENGTH, $chars = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_']) {

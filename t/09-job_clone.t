@@ -20,7 +20,7 @@ use Test::Output 'combined_like';
 
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-my $mojoport = Mojo::IOLoop::Server->generate_port;
+my $mojoport = OpenQA::Utils::reserve_ports(['webui'])->sockport;
 my $host = "localhost:$mojoport";
 my @common_options = (host => $host, from => $host, apikey => 'foo', apisecret => 'bar');
 my $webapi = create_webapi($mojoport, sub { });

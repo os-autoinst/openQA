@@ -18,7 +18,6 @@ BEGIN {
     $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
     $ENV{OPENQA_RSYNC_RETRIES} = 1;
     $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} = 1024;
-    $ENV{OPENQA_BASE_PORT} = 20000 + int rand 10000;
     $ENV{OPENQA_TEST_WAIT_INTERVAL} = 0.05;
 
     $tempdir = tempdir;
@@ -39,10 +38,9 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings ':report_warnings';
 use Test::Output qw(stderr_like);
 use Test::Mojo;
-use OpenQA::Utils;
+use OpenQA::Utils qw(make_access_url make_listen_url);
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
-use Mojo::IOLoop::Server;
 use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
@@ -56,10 +54,7 @@ use OpenQA::CacheService::Client;
 use Time::Seconds;
 
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
-my $port = Mojo::IOLoop::Server->generate_port;
-my $host = "http://localhost:$port";
-
-my $cache_client = OpenQA::CacheService::Client->new();
+my ($sockets, $host, $cache_client);
 
 END { session->clean }
 
@@ -68,8 +63,8 @@ my $t = Test::Mojo->new('OpenQA::CacheService');
 
 my $server_instance = process sub {
     # Connect application with web server and start accepting connections
-    my $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
-    $daemon->run;
+    my $listen = [make_listen_url($sockets->{webui}->sockport)];
+    Mojo::Server::Daemon->new(app => fake_asset_server, listen => $listen, silent => 1)->run;
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
   },
@@ -79,6 +74,9 @@ my $server_instance = process sub {
   kill_sleeptime => 0;
 
 sub start_servers () {
+    $sockets = OpenQA::Utils::reserve_ports([qw(webui cache_service)]);
+    $host = make_access_url($sockets->{webui}->sockport);
+    $cache_client = OpenQA::CacheService::Client->new;
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     perform_minion_jobs($t->app->minion);
@@ -209,6 +207,8 @@ CACHELIMIT = 100");
     is_deeply [OpenQA::CacheService::setup_workers(qw(run))], [qw(run -j 5)], 'minion worker setup with parallel jobs';
 };
 
+start_servers;
+
 subtest 'Cache Requests' => sub {
     my $asset_request = $cache_client->asset_request(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
     my $rsync_request = $cache_client->rsync_request(from => 'foo', to => 'bar');
@@ -225,8 +225,6 @@ subtest 'Cache Requests' => sub {
     throws_ok { $base->to_array } qr/to_array\(\) not implemented in OpenQA::CacheService::Request/,
       'to_array() not implemented in base request';
 };
-
-start_servers;
 
 subtest 'Invalid requests' => sub {
     my $url = $cache_client->url('/status/12345');
@@ -302,7 +300,10 @@ subtest 'Job progress (guard against parallel downloads of the same file)' => su
 
 subtest 'Client can check if there are available workers' => sub {
     $cache_service->stop;
+    $cache_client->ua->connect_timeout(1)->inactivity_timeout(1);
     ok !$cache_client->info->available, 'Cache server is not available';
+    OpenQA::Utils::reserve_ports([qw(cache_service)], force => 1);
+    $cache_client = OpenQA::CacheService::Client->new;
     $cache_service->restart;
     perform_minion_jobs($t->app->minion);
     wait_for_or_bail_out { $cache_client->info->available } 'cache service';

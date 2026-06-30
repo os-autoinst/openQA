@@ -5,13 +5,13 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use OpenQA::Utils qw(make_access_url make_listen_url to_plain_service_port);
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils qw(perform_minion_jobs wait_for_or_bail_out);
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 use Mojolicious;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
-use Mojo::IOLoop::Server;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use Mojo::File qw(path tempfile);
@@ -29,8 +29,8 @@ $SIG{INT} = sub { session->clean };    # uncoverable statement count:2
 
 END { session->clean }
 
-my $port = Mojo::IOLoop::Server->generate_port;
-my $host = "http://127.0.0.1:$port";
+my $port = OpenQA::Utils::reserve_ports(['test'])->sockport;
+my $host = make_access_url($port);
 my $url = "$host/build/%%PROJECT/_result";
 my %fake_response_by_project = (
     Proj3 => '
@@ -122,7 +122,7 @@ my $server_process = sub {
                 return $c->render(status => 200, text => $fake_response_by_project{$project});
             });
     }
-    my $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
+    my $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [make_listen_url($port)]);
     $daemon->run;
     note 'Fake API server stopped';
     Devel::Cover::report() if Devel::Cover->can('report');
@@ -138,7 +138,7 @@ my $server_instance = process(
 );
 
 $server_instance->set_pipes(0)->start;
-wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'API';
+wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => to_plain_service_port($port)) } 'API';
 
 my $ssh_keyfile = tempfile("$FindBin::Script-sshkey-XXXXX");
 # using the key from [0] to have a reproduceable output.

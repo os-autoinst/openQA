@@ -19,7 +19,6 @@ use Carp;
 use Data::Dump 'pp';
 use Feature::Compat::Try;
 use IPC::Run qw(start);
-use Mojo::IOLoop::Server;
 use Mojo::Server::Daemon;
 use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
@@ -37,7 +36,8 @@ our $STARTINGPID = 0;
 use constant FIND_METHOD => 'css';
 
 sub _start_app ($args) {
-    $MOJOPORT = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
+    $MOJOPORT = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT}
+      // OpenQA::Utils::reserve_ports(['webui'])->sockport;
     $STARTINGPID = $$;
     $WEBAPI = OpenQA::Test::Utils::create_webapi($MOJOPORT);
     return $MOJOPORT;
