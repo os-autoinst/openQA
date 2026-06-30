@@ -5,11 +5,13 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
+use OpenQA::Utils;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} = 100;
+    OpenQA::Utils::reserve_ports;
 }
 
 use Test::MockModule;
@@ -27,7 +29,6 @@ use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::WebAPI;
 use OpenQA::Worker::WebUIConnection;
-use OpenQA::Utils;
 require OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(
   setup_mojo_app_with_default_worker_timeout
