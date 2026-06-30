@@ -10,9 +10,9 @@ jobs:
     name: Checklist job
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checklist
-        uses: wyozi/contextual-qa-checklist-action@master
+        uses: wyozi/contextual-qa-checklist-action@dd4b6b51d85a59f537b7ca9e2f162164627ec811  # master
         with:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           input-file: .github/checklist.yml
