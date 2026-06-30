@@ -276,7 +276,8 @@ sub create_webapi ($port = undef, $no_cover = undef) {
         _setup_sub_process 'openqa-webapi';
         local $ENV{MOJO_MODE} = 'test';
 
-        my $daemon = Mojo::Server::Daemon->new(listen => [make_listen_url($port)], silent => 1);
+        my $daemon
+          = Mojo::Server::Daemon->new(listen => [make_listen_url($port)], silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1);
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
         Devel::Cover::report() if !$no_cover && Devel::Cover->can('report');
@@ -354,7 +355,8 @@ sub create_scheduler ($port = raw_service_port('scheduler')) {
 sub create_live_view_handler ($port = raw_service_port 'livehandler') {
     _setup_sigchld_handler 'openqa-livehandler', start sub {
         _setup_sub_process 'openqa-livehandler';
-        my $daemon = Mojo::Server::Daemon->new(listen => [make_listen_url($port)], silent => 1);
+        my $daemon
+          = Mojo::Server::Daemon->new(listen => [make_listen_url($port)], silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1);
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');

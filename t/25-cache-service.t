@@ -64,7 +64,8 @@ my $t = Test::Mojo->new('OpenQA::CacheService');
 my $server_instance = process sub {
     # Connect application with web server and start accepting connections
     my $listen = [make_listen_url($sockets->{webui}->sockport)];
-    Mojo::Server::Daemon->new(app => fake_asset_server, listen => $listen, silent => 1)->run;
+    Mojo::Server::Daemon->new(app => fake_asset_server, listen => $listen, silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1)
+      ->run;
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
   },

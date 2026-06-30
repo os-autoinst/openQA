@@ -67,7 +67,11 @@ my $port = OpenQA::Utils::reserve_ports(['test'])->sockport;
 my $host = make_access_url($port);
 my $server_instance = process sub {
     # uncoverable statement
-    Mojo::Server::Daemon->new(app => fake_asset_server, listen => [make_listen_url($port)], silent => 1)->run;
+    Mojo::Server::Daemon->new(
+        app => fake_asset_server,
+        listen => [make_listen_url($port)],
+        silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1
+    )->run;
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
   },

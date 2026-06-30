@@ -41,7 +41,7 @@ my $client = OpenQA::CacheService::Client->new;
 my $log = Mojo::Log->new(level => 'error');
 my $app = OpenQA::CacheService->new(log => $log);
 my $daemon = Mojo::Server::Daemon->new(
-    silent => 1,
+    silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1,
     listen => ['http://127.0.0.1'],
     ioloop => $client->ua->ioloop,
     app => $app

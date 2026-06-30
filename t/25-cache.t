@@ -73,7 +73,7 @@ sub start_server {
         Mojo::Server::Daemon->new(
             app => fake_asset_server,
             listen => [make_listen_url(raw_service_port('test'))],
-            silent => 1
+            silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1
         )->run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
