@@ -14,7 +14,7 @@ use OpenQA::SeleniumTest;
 
 my $schema = OpenQA::Test::Case->new->init_data;
 driver_missing unless my $driver = call_driver;
-my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
+my $url = OpenQA::SeleniumTest::get_mojo_url;
 
 subtest 'navigation to form' => sub {
     $driver->get("$url/tests/create");

@@ -9,7 +9,7 @@
 #    execution)
 
 use Test::Most;
-use Mojo::IOLoop::Server;
+use OpenQA::Utils;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
@@ -21,7 +21,7 @@ BEGIN {
 
     $ENV{OS_AUTOINST_STORAGE_KEEP_FREE_RATIO} = 0;
 
-    $ENV{OPENQA_BASE_PORT} ||= Mojo::IOLoop::Server->generate_port;
+    OpenQA::Utils::reserve_ports;
 }
 
 use Test::Warnings ':report_warnings';
@@ -29,7 +29,6 @@ use Mojo::Base -signatures;
 use List::Util ();
 use Test::Mojo;
 use Test::MockModule;
-use Mojo::IOLoop::Server;
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';

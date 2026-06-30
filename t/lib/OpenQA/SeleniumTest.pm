@@ -63,9 +63,10 @@ sub start_driver ($mojoport) {
         # pass options for Chromium via chromeOptions *and* goog:chromeOptions to support all versions of
         # Selenium::Remote::Driver which switched to use goog:chromeOptions in version 1.36
         my @chrome_option_keys = (qw(chromeOptions goog:chromeOptions));
-
+        my $base_url = make_access_url($mojoport);
+        note "Starting Selenium under port $mojoport: $base_url";
         my %opts = (
-            base_url => "http://localhost:$mojoport/",
+            base_url => make_access_url($mojoport),
             default_finder => FIND_METHOD,
             webelement_class => 'Test::Selenium::Remote::WebElement',
             extra_capabilities => {
@@ -99,7 +100,7 @@ sub start_driver ($mojoport) {
         # Scripts are considered stuck after this timeout
         $_DRIVER->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
         $_DRIVER->set_window_size(600, 800);
-        $_DRIVER->get("http://localhost:$mojoport/");
+        $_DRIVER->get($base_url);
 
     }
     catch ($e) { die $e }    # uncoverable statement
@@ -378,7 +379,7 @@ sub kill_driver () {
     }
 }
 
-sub get_mojoport () { $MOJOPORT }
+sub get_mojo_url () { make_access_url($MOJOPORT) }
 
 # uncoverable subroutine
 # uncoverable statement

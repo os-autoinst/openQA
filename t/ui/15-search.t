@@ -21,7 +21,7 @@ driver_missing unless my $driver = call_driver;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using wrong database
-my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
+my $url = OpenQA::SeleniumTest::get_mojo_url;
 
 subtest 'Perl modules' => sub {
     my $search = $driver->find_element_by_id('global-search');

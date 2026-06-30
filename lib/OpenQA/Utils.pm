@@ -137,8 +137,12 @@ our @EXPORT =    ## no critic (Modules::ProhibitAutomaticExportation)
   read_test_modules
   walker
   ensure_timestamp_appended
+  make_listen_url
+  make_access_url
   set_listen_address
+  to_plain_service_port
   service_port
+  raw_service_port
   change_sec_to_word
   find_video_files
   fix_top_level_help
@@ -794,24 +798,40 @@ sub walker ($hash, $callback, $keys = []) {
     }
 }
 
-sub set_listen_address ($port) {
-    return if $ENV{MOJO_LISTEN};
-    # Show IPv6 compatible "localhost" instead of IPv4 loopback 127.0.0.1
-    # Also explicitly bind to 127.0.0.1 to ensure both IPv4 and IPv6 are supported
-    $ENV{MOJO_LISTEN} = "http://localhost:$port?reuse=1,http://127.0.0.1:$port?reuse=1";
+# Show IPv6 compatible "localhost" instead of IPv4 loopback 127.0.0.1
+# Also explicitly bind to 127.0.0.1 to ensure both IPv4 and IPv6 are supported
+sub make_listen_url ($raw_port) {
+    $raw_port =~ m/&fd=(.*)/
+      ? "http://*?fd=$1"
+      : "http://localhost:$raw_port?reuse=1,http://127.0.0.1:$raw_port?reuse=1";
+}
+sub to_plain_service_port ($raw_port) { $raw_port =~ m/^(\d+)/ ? $1 : die "invalid port: $raw_port" }
+sub make_access_url ($raw_port) { 'http://localhost:' . to_plain_service_port($raw_port) }
+sub service_port ($service) { to_plain_service_port(raw_service_port($service)) }
+sub set_listen_address ($service) { $ENV{MOJO_LISTEN} //= make_listen_url(raw_service_port($service)) }
+
+my %SERVICE_OFFSETS = (webui => 0, websocket => 1, livehandler => 2, scheduler => 3, cache_service => 4);
+my %RESERVED_SOCKETS;
+
+sub raw_service_port ($service) {
+    my $base = $ENV{OPENQA_BASE_PORT} ||= DEFAULT_OPENQA_BASE_PORT;
+    if (my $env_port = $ENV{"OPENQA_PORT_\U$service"}) {    # \U uppercases the interpolated variable
+        return $env_port;
+    }
+    croak "Unknown service: $service" unless exists $SERVICE_OFFSETS{$service};
+    return $base + $SERVICE_OFFSETS{$service};
 }
 
-sub service_port ($service) {
-    my $base = $ENV{OPENQA_BASE_PORT} ||= DEFAULT_OPENQA_BASE_PORT;
-    my $offsets = {
-        webui => 0,
-        websocket => 1,
-        livehandler => 2,
-        scheduler => 3,
-        cache_service => 4
-    };
-    croak "Unknown service: $service" unless exists $offsets->{$service};
-    return $base + $offsets->{$service};
+sub reserve_ports () {
+    for my $service (keys %SERVICE_OFFSETS) {
+        my $socket = IO::Socket::IP->new(LocalAddr => '0.0.0.0', Listen => SOMAXCONN, ReuseAddr => 1, ReusePort => 1);
+        die "Failed to reserve port for $service: $!\n" unless $socket;
+        $RESERVED_SOCKETS{$service} = $socket;
+        my $port = $socket->sockport;
+        $ENV{"OPENQA_PORT_\U$service"} = "$port&fd=" . $socket->fileno;
+        log_info "Reserved port for $service: $port";
+    }
+    $ENV{OPENQA_SERVICE_PORT_DELTA} = $RESERVED_SOCKETS{livehandler}->sockport - $RESERVED_SOCKETS{webui}->sockport;
 }
 
 sub random_string ($length = RANDOM_STRING_DEFAULT_LENGTH, $chars = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_']) {
