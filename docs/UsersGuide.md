@@ -1871,6 +1871,12 @@ A real-world example of an AMQP consumer built on top of openQA events is
 pipelines and posts failure notifications to Slack. It subscribes to openQA job
 events and tracks job results per build and job group.
 
+Another option to receive custom notifications on a smartphone or PC is
+[suse_notify](https://github.com/openSUSE/suse_notify/).
+It is a small daemon listening on AMQP events and sending notifications to
+[ntfy.sh](https://ntfy.sh).
+SUSE is running an instance of this daemon listening on [rabbit.opensuse.org](https://rabbit.opensuse.org).
+
 ## CLI interface
 
 Beside the `daemon` argument to run the actual web service the openQA startup script `/usr/share/openqa/script/openqa` supports further arguments. For a full list of those commands, just invoke `/usr/share/openqa/script/openqa -h`. This also works for sub-commands(e.g. `/usr/share/openqa/script/openqa minion -h`,
