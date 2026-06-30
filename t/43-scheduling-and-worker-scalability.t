@@ -33,6 +33,7 @@ BEGIN {
     # set defaults
     $ENV{SCALABILITY_TEST_WORKER_COUNT} //= 5;
     $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST} //= 1;
+    OpenQA::Utils::reserve_ports;
 }
 
 setup_mojo_app_with_default_worker_timeout;
