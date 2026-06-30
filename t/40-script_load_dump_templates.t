@@ -20,7 +20,6 @@ use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
 
-
 sub test_once (@args) {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
@@ -43,7 +42,7 @@ sub check_property ($schema, $table, $property, $values) {
 test_once '--help', qr/Usage:/, 'help text shown', 0, 'openqa-load-templates with no arguments shows usage';
 test_once '--host', qr/Option host requires an argument/, 'host argument error shown', 1, 'required arguments missing';
 
-my $host = 'testhost:1234';
+my $host = '123.456.789:0';
 my $filename = 't/data/40-templates.pl';
 my $morefilename = 't/data/40-templates-more.pl';
 my $args = "--host $host $filename";
