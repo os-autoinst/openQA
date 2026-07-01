@@ -10,5 +10,5 @@ regex=^https?:\/\/\S+$
 [ignore-by-title]
 # "git subrepo" creates automatic, non-conventional commits we need to accept
 # https://progress.opensuse.org/issues/198254
-regex=^git subrepo pull
+regex=^(git subrepo pull|(chore|build)\(deps(-dev)?\): bump)
 ignore=all
