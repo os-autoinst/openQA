@@ -4821,6 +4821,11 @@ events is <a href="https://github.com/dirkmueller/slacky">slacky</a>, a
 bot that monitors CI/build pipelines and posts failure notifications to
 Slack. It subscribes to openQA job events and tracks job results per
 build and job group.</p>
+<p>Another option to receive custom notifications on a smartphone or PC
+is <a href="https://github.com/openSUSE/suse_notify/">suse_notify</a>.
+It is a small daemon listening on AMQP events and sending notifications
+to <a href="https://ntfy.sh">ntfy.sh</a>. SUSE is running an instance of
+this daemon listening on <a href="https://rabbit.opensuse.org">rabbit.opensuse.org</a>.</p>
 <h2 data-number="3.9" id="cli-interface"><span class="header-section-number">3.9</span> CLI interface</h2>
 <p>Beside the <code>daemon</code> argument to run the actual web service
 the openQA startup script <code>/usr/share/openqa/script/openqa</code>
