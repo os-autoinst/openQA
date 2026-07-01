@@ -59,7 +59,6 @@ use Data::Dump 'dd';
 use Mojo::Util qw(decamelize);
 use Mojo::URL;
 use OpenQA::Client;
-#use OpenQA::Script::Client;
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
 

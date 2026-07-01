@@ -48,7 +48,7 @@ my $jobs = $schema->resultset('Jobs');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # launch an additional app to serve some file for testing blocking downloads
-my $mojo_port = Mojo::IOLoop::Server->generate_port;
+my $mojo_port = OpenQA::Utils::reserve_ports(['webui'])->sockport;
 my $webapi = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 
 # prevent writing to a log file to enable use of combined_like in the following tests

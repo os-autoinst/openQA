@@ -36,9 +36,8 @@ use Carp 'croak';
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::Mojo;
-use OpenQA::Utils qw(:DEFAULT base_host);
+use OpenQA::Utils qw(:DEFAULT base_host make_listen_url to_plain_service_port);
 use OpenQA::CacheService;
-use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Mojo::SQLite;
@@ -49,8 +48,8 @@ use IPC::Run qw(start);
 use OpenQA::Test::Utils qw(fake_asset_server stop_service wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '30';
 
-my $port = Mojo::IOLoop::Server->generate_port;
-my $host = "localhost:$port";
+my $port = 0;
+my $host = 'localhost:0';
 
 # Capture logs
 my $log = Mojo::Log->new;
@@ -64,21 +63,26 @@ $log->on(
 
 END { session->clean }
 
+my $app = OpenQA::CacheService->new(log => $log);
+my $ua = $app->ua->connect_timeout(0.25)->inactivity_timeout(0.25);
+my $cache = $app->cache;
 my $server_instance;
 
 sub start_server {
     $server_instance = start sub {
-        Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
+        Mojo::Server::Daemon->new(
+            app => fake_asset_server,
+            listen => [make_listen_url(raw_service_port('test'))],
+            silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1
+        )->run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
     };
-    wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'cache service';
+    wait_for_or_bail_out { $app->ua->get("http://$host/test")->res->is_success } 'cache service';
 }
 
 END { stop_service($server_instance) }
 
-my $app = OpenQA::CacheService->new(log => $log);
-my $cache = $app->cache;
 is $cache->sqlite->migrations->latest, 5, 'Current version is the latest version';
 is $cache->sqlite->migrations->active, 5, 'Current version is the active version';
 like $cache_log, qr/Creating cache directory tree for "$cachedir"/, 'Cache directory tree created';
@@ -150,8 +154,8 @@ like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2" f
 like $cache_log, qr/failed: Connection refused/, 'Asset download fails with: Connection refused';
 $cache_log = '';
 
-$port = Mojo::IOLoop::Server->generate_port;
-$host = "127.0.0.1:$port";
+$port = OpenQA::Utils::reserve_ports(['test'])->sockport;
+$host = '127.0.0.1:' . to_plain_service_port($port);
 start_server;
 
 $cache->limit(1024);

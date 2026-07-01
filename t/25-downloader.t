@@ -11,20 +11,16 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use OpenQA::Downloader;
-use IO::Socket::INET;
 use Mojo::Server::Daemon;
-use Mojo::IOLoop::Server;
 use Mojo::Log;
 use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use OpenQA::Utils qw(make_listen_url make_access_url to_plain_service_port);
 use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '10';
 use Mojo::File qw(tempdir);
 use Test::MockModule;
-
-my $port = Mojo::IOLoop::Server->generate_port;
-my $host = "127.0.0.1:$port";
 
 # Capture logs
 my $log = Mojo::Log->new;
@@ -40,33 +36,11 @@ $SIG{INT} = sub { session->clean };
 
 END { session->clean }
 
-my $server_instance = process sub {
-    # uncoverable statement
-    Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
-    Devel::Cover::report() if Devel::Cover->can('report');
-    _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
-  },
-  max_kill_attempts => 0,
-  blocking_stop => 1,
-  _default_blocking_signal => POSIX::SIGTERM,
-  kill_sleeptime => 0;
-
-sub start_server {
-    $server_instance->set_pipes(0)->start;
-    wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'worker';
-}
-
-sub stop_server {
-    # now kill the worker
-    $server_instance->stop();
-}
-
 my $mojo_tmpdir = tempdir;
 my $downloader = OpenQA::Downloader->new(log => $log, sleep_time => 0.05, attempts => 3, tmpdir => $mojo_tmpdir);
 my $ua = $downloader->ua;
 my $tempdir = tempdir;
 my $to = $tempdir->child('test.qcow');
-
 $ua->connect_timeout(0.25)->inactivity_timeout(0.25);
 
 subtest 'Unable to create temporary directory' => sub {
@@ -76,7 +50,7 @@ subtest 'Unable to create temporary directory' => sub {
 };
 
 subtest 'Connection refused' => sub {
-    my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
+    my $from = "http://127.0.0.1:0/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
     like $downloader->download($from, $to), qr/Download of "$to" failed: Connection refused/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -89,12 +63,28 @@ subtest 'Connection refused' => sub {
     $cache_log = '';
 };
 
-$port = Mojo::IOLoop::Server->generate_port;
-$host = "127.0.0.1:$port";
-start_server;
+my $port = OpenQA::Utils::reserve_ports(['test'])->sockport;
+my $host = make_access_url($port);
+my $server_instance = process sub {
+    # uncoverable statement
+    Mojo::Server::Daemon->new(
+        app => fake_asset_server,
+        listen => [make_listen_url($port)],
+        silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1
+    )->run;
+    Devel::Cover::report() if Devel::Cover->can('report');
+    _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
+  },
+  max_kill_attempts => 0,
+  blocking_stop => 1,
+  _default_blocking_signal => POSIX::SIGTERM,
+  kill_sleeptime => 0;
+$server_instance->set_pipes(0)->start;
+wait_for_or_bail_out { defined $ua->get($host)->res->code } 'worker';
+sub stop_server { $server_instance->stop() }
 
 subtest 'Not found' => sub {
-    my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404@64bit.qcow2";
+    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404@64bit.qcow2";
     like $downloader->download($from, $to), qr/Download of "$to" failed: 404 Not Found/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -106,7 +96,7 @@ subtest 'Not found' => sub {
 };
 
 subtest 'Success' => sub {
-    my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200@64bit.qcow2";
+    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200@64bit.qcow2";
     is $downloader->download($from, $to), undef, 'Success';
 
     ok -e $to, 'File downloaded';
@@ -119,7 +109,7 @@ subtest 'Success' => sub {
 };
 
 subtest 'Connection closed early' => sub {
-    my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_close@64bit.qcow2";
+    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_close@64bit.qcow2";
     like $downloader->download($from, $to), qr/Download of "$to" failed: Premature connection close/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -132,7 +122,7 @@ subtest 'Connection closed early' => sub {
 };
 
 subtest 'Server error' => sub {
-    my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_server_error@64bit.qcow2";
+    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_server_error@64bit.qcow2";
     like $downloader->download($from, $to), qr/Download of "$to" failed: 500 Internal Server Error/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -145,7 +135,7 @@ subtest 'Server error' => sub {
 };
 
 subtest 'Size differs' => sub {
-    my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-589@64bit.qcow2";
+    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-589@64bit.qcow2";
     like $downloader->download($from, $to), qr/Size of .* differs, expected \d+ Byte but downloaded \d+ Byte/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -159,7 +149,7 @@ subtest 'Size differs' => sub {
 
 subtest 'Non-compressed files kept as-is - no complaint about unknown archive format' => sub {
     $to = $tempdir->child('test.txt');
-    my $from = "http://$host/test";
+    my $from = "$host/test";
     # don't check the error message as it is not interesting
     # (it's a generic error message that the archive is invalid)
     is $downloader->download($from, $to, {extract => 1}), undef, 'Success';
@@ -172,7 +162,7 @@ subtest 'Non-compressed files kept as-is - no complaint about unknown archive fo
 
 subtest 'Decompressing file' => sub {
     $to = $tempdir->child('test');
-    my $from = "http://$host/test.gz";
+    my $from = "$host/test.gz";
     is $downloader->download($from, $to, {extract => 1}), undef, 'Success';
     ok -e $to, 'File downloaded and decompressed';
     is $to->slurp, 'This file was compressed!', 'File was decompressed';
@@ -184,7 +174,7 @@ subtest 'Decompressing file' => sub {
 
 subtest 'Decompressing archive' => sub {
     $to = $tempdir->child('test');
-    my $from = "http://$host/test.tar.xz";
+    my $from = "$host/test.tar.xz";
     is $downloader->download($from, $to, {extract => 1}), undef, 'Success';
     ok -d $to, 'File downloaded, uncompressed and extracted';
     is $to->child('test-file')->slurp, "Archived file!\n", 'File was extracted';
@@ -196,7 +186,7 @@ subtest 'Decompressing archive' => sub {
 
 subtest 'Error when decompressing archive' => sub {
     $to = $tempdir->child('fake-archive');
-    my $from = "http://$host/fake-archive.tar.xz";
+    my $from = "$host/fake-archive.tar.xz";
     like $downloader->download($from, $to, {extract => 1}), qr/Unrecognized archive format/, 'Failed';
     ok !-e $to, 'Target not created';
     like $cache_log, qr/Downloading "fake-archive" from "$from"/, 'Download attempt';

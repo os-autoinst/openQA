@@ -20,7 +20,7 @@ $ENV{OPENQA_DATABASE} = 'test';
 $ENV{OPENQA_DATABASE_SEARCH_PATH} = $schema_name;
 $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} = $schema_version;
 
-my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => 1, from_script => 1);
+my $schema = OpenQA::Schema::connect_db(deploy => 0, silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1, from_script => 1);
 $schema->storage->dbh->do("create schema \"$schema_name\"");
 
 my $tempdir = tempdir;

@@ -9,6 +9,7 @@ use File::Temp qw(tempfile);
 use Mojo::Base -signatures;
 use Mojo::File qw(path curfile);
 require OpenQA::Test::Database;
+use OpenQA::Utils qw(to_plain_service_port);
 use OpenQA::Test::Utils;
 use Test::Output;
 use Test::Warnings ':report_warnings';
@@ -18,7 +19,6 @@ use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
-
 
 sub test_once (@args) {
     # Report failure at the callsite instead of the test function
@@ -42,15 +42,15 @@ sub check_property ($schema, $table, $property, $values) {
 test_once '--help', qr/Usage:/, 'help text shown', 0, 'openqa-load-templates with no arguments shows usage';
 test_once '--host', qr/Option host requires an argument/, 'host argument error shown', 1, 'required arguments missing';
 
-my $host = 'testhost:1234';
+my $host = '123.456.789:0';
 my $filename = 't/data/40-templates.pl';
 my $morefilename = 't/data/40-templates-more.pl';
 my $args = "--host $host $filename";
 test_once $args, qr/unknown error code - host $host unreachable?/, 'invalid host error', 22, 'error on invalid host';
 
 $ENV{MOJO_LOG_LEVEL} = 'fatal';
-my $mojoport = Mojo::IOLoop::Server->generate_port;
-$host = "localhost:$mojoport";
+my $mojoport = OpenQA::Utils::reserve_ports(['webui'])->sockport;
+$host = 'localhost:' . to_plain_service_port($mojoport);
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $webapi = OpenQA::Test::Utils::create_webapi($mojoport, sub { });
 END { stop_service $webapi; }
