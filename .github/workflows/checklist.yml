@@ -16,3 +16,4 @@ jobs:
         with:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           input-file: .github/checklist.yml
+          include-hidden-files: true
