@@ -181,13 +181,23 @@ subtest 'git clone' => sub {
     };
 
     subtest 'git clone retried on failure' => sub {
-        $ENV{OPENQA_GIT_CLONE_RETRIES} = 1;
+        $ENV{OPENQA_GIT_CLONE_RETRIES} = 3;
         my $openqa_clone = Test::MockModule->new('OpenQA::Task::Git::Clone');
         $openqa_clone->redefine(_git_clone => sub (@) { die "fake error\n" });
+
         $res = run_gru_job(@gru_args);
         is $res->{retries}, 1, 'job retries incremented';
         is $res->{state}, 'inactive', 'job set back to inactive';
+        is +($res->{delayed} - $res->{retried}), 2, 'delay as expected';
+
+        my $job_info = $t->app->minion->jobs({tasks => ['git_clone']})->next;
+        $t->app->minion->job($job_info->{id})->retry({delay => 0});
+        perform_minion_jobs($t->app->minion);
+        $res = $t->app->minion->jobs({tasks => ['git_clone']})->next;
+        is $res->{retries}, 3, 'number of retries as expected';
+        is +($res->{delayed} - $res->{retried}), 8, 'delay after 3 retries as expected';
     };
+
     subtest 'git clone fails when all retry attempts exhausted' => sub {
         $ENV{OPENQA_GIT_CLONE_RETRIES} = 0;
         my $openqa_clone = Test::MockModule->new('OpenQA::Task::Git::Clone');
