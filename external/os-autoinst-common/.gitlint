@@ -12,3 +12,8 @@ regex=^https?:\/\/\S+$
 # https://progress.opensuse.org/issues/198254
 regex=^git subrepo pull
 ignore=all
+
+[ignore-by-author-name]
+# Match commits by author name (e.g. ignore dependabot commits)
+regex=dependabot
+ignore=all
