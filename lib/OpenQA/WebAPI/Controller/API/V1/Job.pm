@@ -228,6 +228,7 @@ So this works in the same way as the test results overview in the GUI.
 
 sub overview ($self) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    return undef unless $search_args;
     my $failed_modules = $self->param_hash('failed_modules');
     my $jobs_rs = $self->schema->resultset('Jobs');
     my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);

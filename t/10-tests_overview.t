@@ -72,9 +72,9 @@ subtest 'Basic overview display' => sub {
 };
 
 subtest 'Job group selection' => sub {
-    my $form = {distri => 'opensuse', version => '13.1', build => '0091', group => 'opensuse 13.1'};
+    my $form = {distri => 'opensuse', version => '13.1', build => '0091', group => 'opensuse'};
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
-    like get_summary, qr/Overall Summary of opensuse 13\.1 build 0091/i, 'specifying group parameter';
+    like get_summary, qr/Overall Summary of opensuse build 0091/i, 'specifying group parameter';
 
     $form = {distri => 'opensuse', version => '13.1', build => '0091', groupid => 1001};
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
@@ -133,6 +133,11 @@ subtest 'Default overview for 13.1' => sub {
 
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', groupid => 'a'})->status_is(200);
     like flash_msg, qr/Specified "groupid" is invalid/i, 'error message for invalid groupid';
+};
+
+subtest 'Nonexistent job group' => sub {
+    $t->get_ok('/tests/overview' => form => {groupid => 12345})->status_is(400);
+    $t->get_ok('/tests/overview' => form => {group => 'nonexistent_group'})->status_is(400);
 };
 
 subtest 'Default overview for Factory' => sub {

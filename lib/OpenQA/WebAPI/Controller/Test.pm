@@ -680,6 +680,7 @@ sub _render_badge ($self, $badge_text, $badge_color, $status = HTTP_OK) {
 
 sub _gather_overview_results ($self, %args) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    return undef unless $search_args;
     my $jobs_rs = $self->schema->resultset('Jobs');
     my $latest_job_ids = $jobs_rs->complex_query_latest_ids(%$search_args);
     my $limit = $search_args->{limit};
@@ -701,6 +702,7 @@ sub _gather_overview_results ($self, %args) {
 
 sub overview_badge ($self) {
     my $data = $self->_gather_overview_results(only_aggregated => 1);
+    return undef unless $data;
     my $aggregated = $data->{aggregated};
 
     my $status = (grep { $aggregated->{$_} } OVERVIEW_STATUS_PRIORITY)[0] // 'none';
@@ -978,6 +980,7 @@ sub _add_distri_and_version_to_summary ($array_to_add_parts_to, $distri, $versio
 # A generic query page showing test results in a configurable matrix
 sub overview ($self) {
     my $data = $self->_gather_overview_results;
+    return undef unless $data;
     my $search_args = $data->{search_args};
     my $groups = $data->{groups};
     my $latest_job_ids = $data->{latest_job_ids};

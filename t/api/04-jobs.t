@@ -267,6 +267,11 @@ subtest 'job overview' => sub {
         $t->json_is('' => [\%job_99940], 'latest build present');
     };
 
+    subtest 'nonexistent job group in API overview' => sub {
+        $query->query(groupid => '12345');
+        $t->get_ok($query->path_query)->status_is(400)->json_is('/error', 'Group does not exist');
+    };
+
     subtest 'specific build without additional parameters' => sub {
         $query->query(build => '0048');
         $t->get_ok($query->path_query)->status_is(200);
