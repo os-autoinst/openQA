@@ -4,7 +4,7 @@
 package OpenQA::WebAPI::Auth::OpenID;
 use Mojo::Base -base, -signatures;
 
-use OpenQA::Log qw(log_error);
+use OpenQA::Log qw(log_info);
 use LWP::UserAgent;
 use Net::OpenID::Consumer;
 use MIME::Base64 qw(encode_base64url decode_base64url);
@@ -23,7 +23,7 @@ sub auth_login ($c) {
 
     my $claimed_id = $csr->claimed_identity($c->config->{openid}->{provider});
     if (!defined $claimed_id) {
-        log_error("Claiming OpenID identity for URL '$url' failed: " . $csr->err);
+        log_info("Claiming OpenID identity for URL '$url' failed: " . $csr->err);
         return undef;
     }
     $claimed_id->set_extension_args(
