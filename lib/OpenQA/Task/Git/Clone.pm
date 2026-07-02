@@ -77,7 +77,8 @@ sub _git_clone_all ($job, $clones) {
 
         # unblock openQA jobs despite network errors under best-effort configuration
         my $retries = $job->retries;
-        my $max_retries = $ENV{OPENQA_GIT_CLONE_RETRIES} // 10;
+        my $retry_delay_on_error = ($ENV{OPENQA_GIT_CLONE_RETRY_DELAY_ON_ERROR} // 2)**($retries + 1);
+        my $max_retries = $ENV{OPENQA_GIT_CLONE_RETRIES} // 9;    # 2+4+...+512 = 1022 total delay
         my $max_best_effort_retries = min($max_retries, $ENV{OPENQA_GIT_CLONE_RETRIES_BEST_EFFORT} // 2);
         my $gru_task_id = $job->info->{notes}->{gru_id};
         if (   $is_path_only
@@ -89,7 +90,7 @@ sub _git_clone_all ($job, $clones) {
             $app->schema->resultset('GruDependencies')->search({gru_task_id => $gru_task_id})->delete;
         }
 
-        return $job->retry($retry_delay) if $retries < $max_retries;
+        return $job->retry({delay => $retry_delay_on_error}) if $retries < $max_retries;
         return $job->fail($error);
     }
 }
