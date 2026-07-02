@@ -42,6 +42,7 @@ sub dashboard_build_results ($self) {
     my $ignored_groups = $self->app->ignored_groups;
 
     my $max_jobs_limit = $self->app->config->{misc_limits}->{job_groups_overview_max_jobs};
+    my $max_jobs_per_build = $self->app->config->{misc_limits}->{build_results_max_jobs_per_build};
     my $total_jobs_seen = 0;
     my $limit_reached = 0;
     my @results;
@@ -61,7 +62,9 @@ sub dashboard_build_results ($self) {
                 $group_params,
                 $show_tags ? $tags : undef,
                 defined $max_jobs_limit ? $max_jobs_limit - $total_jobs_seen : undef,
-                $ignored_groups
+                $ignored_groups,
+                $max_jobs_per_build,
+                $self->app
             );
 
             my $build_results_for_group = $build_results->{build_results};
@@ -166,7 +169,7 @@ sub _group_overview ($self, $resultset, $template) {
         $cbr
           = OpenQA::BuildResults::compute_build_results($group, $limit_builds,
             $time_limit_days, $only_tagged ? $tags : undef,
-            $group_params, $tags, $max_jobs_limit, $ignored_groups);
+            $group_params, $tags, $max_jobs_limit, $ignored_groups, undef, $self->app);
     }
     catch ($e) {
         die $e unless $e =~ qr/^invalid regex: /;
