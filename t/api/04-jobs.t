@@ -2040,4 +2040,30 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
 $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
-done_testing();
+subtest 'redacted settings' => sub {
+    my $job = $jobs->find(99926);
+    $job->set_property('_SECRET_PASSWORD', 'supersecret');
+
+    my $t_guest = Test::Mojo->new('OpenQA::WebAPI');
+    $t_guest->get_ok('/api/v1/jobs/99926', 'guest: GET /api/v1/jobs/99926')->status_is(200);
+    is $t_guest->tx->res->json->{job}->{settings}->{_SECRET_PASSWORD}, '[redacted]', 'guest: secrets are redacted';
+
+    $t->get_ok('/api/v1/jobs/99926', 'operator: GET /api/v1/jobs/99926')->status_is(200);
+    is $t->tx->res->json->{job}->{settings}->{_SECRET_PASSWORD}, '[redacted]',
+      'operator: secrets are redacted by default';
+
+    $t->get_ok('/api/v1/jobs/99926?unredacted=1', 'operator: GET /api/v1/jobs/99926?unredacted=1')->status_is(200);
+    is $t->tx->res->json->{job}->{settings}->{_SECRET_PASSWORD}, 'supersecret',
+      'operator: secrets are revealed when requested';
+
+    my $t_non_op = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW');
+    $t_non_op->get_ok('/api/v1/jobs/99926?unredacted=1', 'non-operator: GET /api/v1/jobs/99926?unredacted=1')
+      ->status_is(200);
+    is $t_non_op->tx->res->json->{job}->{settings}->{_SECRET_PASSWORD}, '[redacted]',
+      'non-operator: secrets remain redacted even if requested';
+
+    $job->settings->find({key => '_SECRET_PASSWORD'})->delete;
+};
+
+done_testing;
+

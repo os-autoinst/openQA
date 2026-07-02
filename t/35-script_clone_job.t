@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-use Test::Warnings qw(:report_warnings warning);
+use Test::Warnings qw(:report_warnings warning warnings);
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -78,20 +78,39 @@ subtest 'running command' => sub {
 subtest 'getting job' => sub {
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
     $clone_mock->redefine(_handle_unexpected_return_code => sub ($tx) { die 'unexpected return code' });
-    my $fake_res = Test::FakeResult->new(is_success => 0, code => 400, json => {FOO => 'bar'});
-    my $fake_txn = Test::MockObject->new->set_always(res => $fake_res)->set_always(error => undef);
-    my $fake_ua = Test::MockObject->new->set_always(build_tx => $fake_txn);
-    $fake_ua->set_always(max_redirects => $fake_ua);
+    $clone_mock->redefine(
+        _get_with_retry => sub ($url_handler, $url, $jobid, $ctx, $options) {
+            return {job => {settings => {}}} if $ctx eq 'job';
+            return {FOO => 'bar'} if $ctx eq 'vars.json of job';
+            die "Unexpected ctx: $ctx";
+        });
+
     my %fake_params = (host => 'host', from => 'from', apikey => 'key', apisecret => 'secret');
     my $url_handler = OpenQA::Script::CloneJob::create_url_handler(\%fake_params);
-    $url_handler->{remote} = $fake_ua;
     $url_handler->{remote_url} = Mojo::URL->new('foo');
     my $options = {'ignore-missing-assets' => 1, reproduce => 1};
-    throws_ok { clone_job_get_job(42, $url_handler, $options) } qr/unexpected return code/,
-      'unexpected return code handled';
-    $fake_res->is_success(1)->code(200);
+
     my $job = clone_job_get_job(42, $url_handler, $options);
-    is_deeply $job, {vars => {FOO => 'bar'}}, 'vars assigned' or always_explain $job;
+    is_deeply $job, {settings => {}, vars => {FOO => 'bar'}}, 'vars assigned' or always_explain $job;
+    throws_ok { OpenQA::Script::CloneJob::_get_with_retry(undef, undef, undef, 'invalid', undef) }
+    qr/Unexpected ctx: invalid/, 'Mock throws on unexpected ctx';
+};
+
+subtest 'getting job with redacted secrets' => sub {
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    $clone_mock->redefine(
+        _get_with_retry => sub {
+            return {job => {id => 42, settings => {_SECRET_VAR => '[redacted]', NORMAL_VAR => 'visible'}}};
+        });
+    $clone_mock->redefine(_get_vars => sub { {} });
+
+    my $url_handler = {remote_url => Mojo::URL->new('http://remote')};
+    my $options = {'ignore-missing-assets' => 1};
+
+    my @w = warnings { clone_job_get_job(42, $url_handler, $options) };
+    like $w[0], qr/Job 42 has redacted secrets: _SECRET_VAR/,
+      'warning is emitted when settings contain redacted secrets'
+      or diag explain \@w;
 };
 
 subtest 'clone job apply settings tests' => sub {
