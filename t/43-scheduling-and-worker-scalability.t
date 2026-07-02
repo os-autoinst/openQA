@@ -190,7 +190,9 @@ for my $job_count (@job_counts) {
 
             # ensure the scheduler also sees them as free
             for my $try (1 .. $polling_tries_workers) {
-                last if scalar @{OpenQA::Scheduler::Model::Jobs::determine_free_workers()} == $worker_count;
+                last
+                  if scalar @{[grep { !$_->job_id } @{OpenQA::Scheduler::Model::Jobs::determine_online_workers()}]}
+                  == $worker_count;
                 sleep $polling_interval;    # uncoverable statement
             }
 

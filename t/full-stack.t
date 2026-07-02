@@ -66,7 +66,10 @@ my $ws;
 my $livehandler;
 
 sub turn_down_stack {
-    stop_service($_) for ($worker, $ws, $livehandler);
+    for my $service (grep { defined } $worker, $ws, $livehandler) {
+        stop_service($service);
+        $service->finish;
+    }
 }
 sub stop_worker { stop_service $worker }
 
@@ -118,8 +121,9 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     #       properties (most importantly WEBSOCKET_API_VERSION and WORKER_CLASS) have not been populated yet.
     my ($elapsed, $free_workers) = (0, []);
     for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {
-        for my $worker (@{$free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers}) {
-            next unless $worker->check_class($worker_class);
+        $free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers(
+            OpenQA::Scheduler::Model::Jobs::determine_online_workers());
+        if (List::Util::any { $_->check_class($worker_class) } @$free_workers) {
             pass "at least one free worker with class $worker_class registered";
             return ($relevant_jobs, $elapsed);
         }
