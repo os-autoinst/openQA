@@ -26,6 +26,7 @@ use constant {
     ADDED => 'added',    # no jobs have been created yet
     SCHEDULING => 'scheduling',    # jobs are being created
     CANCELLING => 'cancelling',    # jobs are being cancelled (so far only possible as reaction to webhook event)
+    FATAL_ERROR => 'fatal_error',
 };
 
 __PACKAGE__->table('scheduled_products');
@@ -109,7 +110,7 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
-our @EXPORT_OK = qw(ADDED SCHEDULING SCHEDULED CANCELLING CANCELLED);
+our @EXPORT_OK = qw(ADDED SCHEDULING SCHEDULED CANCELLING CANCELLED FATAL_ERROR);
 our %EXPORT_TAGS = (STATE => [@EXPORT_OK]);
 
 sub sqlt_deploy_hook ($self, $sqlt_table, @) {
@@ -215,13 +216,14 @@ sub schedule_iso ($self, $args, $guard) {
 }
 
 sub set_done ($self, $result) {
+    my $status = ref $result eq 'HASH' ? (delete $result->{status} // SCHEDULED) : SCHEDULED;
     # set the status to be either …
     if ($self->_update_status_if(CANCELLED, status => CANCELLING)) {
         $self->update({results => $result});
         $self->cancel;    # … CANCELLED if meanwhile CANCELLING and invoke cancel again (as it backed off)
     }
     else {
-        $self->update({status => SCHEDULED, results => $result});    # … SCHEDULED if remained SCHEDULING
+        $self->update({status => $status, results => $result});    # … SCHEDULED if remained SCHEDULING
         $self->report_status_to_github;
     }
 }
@@ -333,6 +335,7 @@ sub _schedule_iso ($self, $args, $guard) {
 
     # read arguments for deprioritization and obsoleten
     my $deprioritize = delete $args->{_DEPRIORITIZEBUILD} // 0;
+    my $fail_if_no_jobs = delete $args->{_FAIL_IF_NO_JOBS} // 0;
     my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
     my $obsolete = delete $args->{_OBSOLETE} // 0;
     my $onlysame = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
@@ -360,8 +363,10 @@ sub _schedule_iso ($self, $args, $guard) {
     else {
         $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps, $include_children);
     }
-    return {error => $result->{error_message}, error_code => $result->{error_code} // HTTP_BAD_REQUEST}
-      if defined $result->{error_message};
+    if (defined $result->{error_message}) {
+        return $self->_fail_scheduling($result->{error_message}) if $fail_if_no_jobs;
+        return {error => $result->{error_message}, error_code => $result->{error_code} // HTTP_BAD_REQUEST};
+    }
     my $jobs = $result->{settings_result};
     # take some attributes from the first job to guess what old jobs to cancel
     # note: We should have distri object that decides which attributes are relevant here.
@@ -424,12 +429,23 @@ sub _schedule_iso ($self, $args, $guard) {
 
     OpenQA::Scheduler::Client->singleton->wakeup;
 
+    return $self->_fail_scheduling('No jobs scheduled.')
+      if $fail_if_no_jobs && !@successful_job_ids;
+
     my %results = (
         successful_job_ids => \@successful_job_ids,
         failed_job_info => \@failed_job_info,
     );
     $results{notes} = \@notes if (@notes);
     return \%results;
+}
+
+sub _fail_scheduling ($self, $error, $error_code = HTTP_BAD_REQUEST) {
+    return {
+        error => $error,
+        error_code => $error_code,
+        status => FATAL_ERROR,
+    };
 }
 
 =over 4
