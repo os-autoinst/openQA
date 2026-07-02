@@ -34,7 +34,8 @@
     &:focus {
       background-color: $bg;
     }
-    &:hover, &:active:hover {
+    &:hover,
+    &:active:hover {
       background-color: darken($bg, 6%);
     }
     &:active {
@@ -53,7 +54,8 @@
     border-radius: $btn-border-radius-base;
     @include box-shadow(none);
     color: $btn-default-color;
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       @include box-shadow(none);
       color: $btn-default-color;
       text-decoration: none;
@@ -66,11 +68,17 @@
   }
 }
 .btn-group {
-  .btn + .btn, .btn + .btn-group, .btn-group + .btn, .btn-group + .btn-group {
+  .btn + .btn,
+  .btn + .btn-group,
+  .btn-group + .btn,
+  .btn-group + .btn-group {
     margin-left: 0;
   }
   &-vertical {
-    > .btn + .btn, > .btn + .btn-group, > .btn-group + .btn, > .btn-group + .btn-group {
+    > .btn + .btn,
+    > .btn + .btn-group,
+    > .btn-group + .btn,
+    > .btn-group + .btn-group {
       margin-top: 0;
     }
   }

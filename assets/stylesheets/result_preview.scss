@@ -150,7 +150,8 @@
           td {
             border: none !important;
             padding: 5pt;
-            &:nth-child(1), &:nth-child(3) {
+            &:nth-child(1),
+            &:nth-child(3) {
               text-align: right;
               white-space: nowrap;
             }
@@ -179,7 +180,8 @@
 }
 [data-bs-theme='dark'] {
   .candidates-selection {
-    #candidatesMenu, #candidatesMenu.dropdown-toggle {
+    #candidatesMenu,
+    #candidatesMenu.dropdown-toggle {
       box-shadow: 0 0 0 1px rgba(231, 229, 227, 15 / 100) inset;
       background-color: $default-bg-color-dark;
       color: $default-font-color-dark;
