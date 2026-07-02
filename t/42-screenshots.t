@@ -269,4 +269,53 @@ subtest 'deleting untracked screenshots' => sub {
     is $error_count, 0, 'deletion happened without errors (1)';
 };
 
+subtest 'populate_images_to_job handling of deleted/non-existent jobs' => sub {
+    use Test::MockModule;
+    my $mock_screenshots = Test::MockModule->new('OpenQA::Schema::ResultSet::Screenshots');
+    $mock_screenshots->redefine(log_debug => sub { });
+
+    my $mock_rs = Test::MockModule->new('DBIx::Class::ResultSet');
+    $mock_rs->redefine(
+        create => sub {
+            my ($self, @args) = @_;
+            if ($self->result_source->source_name eq 'ScreenshotLinks') {
+                my $job_id = $args[0]->{job_id};
+                if ($job_id == 123456 || $job_id == 99927) {
+                    die 'DBIx::Class::Storage::DBI::_dbh_execute_for_fetch(): '
+                      . 'execute_for_fetch() aborted with \'ERROR:  insert or update on table "screenshot_links" '
+                      . 'violates foreign key constraint "screenshot_links_fk_job_id"\'';
+                }
+                if ($job_id == 88888) {
+                    die 'DBIx::Class::Storage::DBI::_dbh_execute_for_fetch(): '
+                      . 'execute_for_fetch() aborted with \'ERROR:  insert or update on table "screenshot_links" '
+                      . 'violates foreign key constraint "screenshot_links_fk_screenshot_id"\'';
+                }
+                if ($job_id == 77777) {
+                    die 'DBIx::Class::Storage::DBI::_dbh_execute_for_fetch(): some other error';
+                }
+            }
+            return $mock_rs->original('create')->($self, @args);
+        });
+
+    lives_ok { $screenshots->populate_images_to_job(['foo'], 123456) }
+    'does not crash when job does not exist';
+
+    lives_ok { $screenshots->populate_images_to_job(['foo'], 99927) }
+    'handles race condition and does not crash when job is deleted during populate';
+
+    lives_ok { $screenshots->populate_images_to_job(['foo'], 88888) }
+    'handles race condition and does not crash when screenshot is deleted during populate';
+
+    dies_ok { $screenshots->populate_images_to_job(['foo'], 77777) }
+    're-throws unexpected exceptions';
+
+    my $job = $jobs->create({TEST => 'dummy_for_cov'});
+    lives_ok { $screenshots->populate_images_to_job(['foo'], $job->id) }
+    'can successfully create screenshot link';
+    $job->delete;
+
+    $mock_rs->unmock_all;
+    $mock_screenshots->unmock_all;
+};
+
 done_testing();
