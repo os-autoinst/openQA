@@ -5,7 +5,7 @@ package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Jobs::Constants;
-use OpenQA::Log 'log_debug';
+use OpenQA::Log qw(log_debug log_info);
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT resultdir archivedir check_df);
 use OpenQA::Task::Utils
@@ -63,6 +63,7 @@ sub _limit ($job, $args = undef) {
                 dir => resultdir
             ))
         {
+            log_info "Early abort during job groups loop: $msg";
             $job->note(early_abort_results => $msg);
             last;
         }
