@@ -52,7 +52,13 @@ sub _limit ($job, $args = undef) {
     my $schema = $app->schema;
     $schema->resultset('JobGroups')->new({})->limit_results_and_logs;
 
-    my $groups = $schema->resultset('JobGroups');
+    my $groups = $schema->resultset('JobGroups')->search(
+        undef,
+        {
+            join => 'jobs',
+            group_by => ['me.id', 'me.name'],
+            order_by => 'COUNT(jobs.id) DESC'
+        });
     my $gru = $app->gru;
     my %options = (priority => -20, ttl => 2 * ONE_DAY);
     while (my $group = $groups->next) {

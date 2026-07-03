@@ -370,4 +370,38 @@ subtest 'deleted screenshots always accounted to main storage' => sub {
       'not finished as job that gained disk space only did so by deleting screenshots on main storage';
 };
 
+subtest 'job groups are prioritized by job count' => sub {
+    $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
+
+    # Create groups and their respective count of jobs
+    my %group_job_counts = (g_one => 1, g_two => 2, g_three => 3);
+    my @created_groups = map {
+        my $name = $_;
+        my $g = $app->schema->resultset('JobGroups')->create({name => $name});
+        $app->schema->resultset('Jobs')->create({TEST => "job-$name-$_", group_id => $g->id})
+          for 1 .. $group_job_counts{$name};
+        $g;
+    } keys %group_job_counts;
+
+    # Mock limit_results_and_logs to trace the invocation order
+    my $job_group_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+    my @processed;
+    $job_group_mock->redefine(
+        limit_results_and_logs => sub ($self, @args) {
+            push @processed, $self->name if $self->name;
+        });
+
+    run_gru_job($app, limit_results_and_logs => []);
+
+    my %our_groups = (g_one => 1, g_two => 1, g_three => 1);
+    my @processed_filtered = grep { $our_groups{$_} } @processed;
+
+    is_deeply \@processed_filtered, ['g_three', 'g_two', 'g_one'],
+      'job groups processed in descending order of job count';
+
+    # Clean up
+    $app->schema->resultset('Jobs')->search({group_id => [map { $_->id } @created_groups]})->delete;
+    $_->delete for @created_groups;
+};
+
 done_testing();
