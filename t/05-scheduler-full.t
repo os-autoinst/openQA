@@ -90,6 +90,7 @@ sub dead_workers {
       for $schema->resultset('Workers')->all();
 }
 
+# waits until a worker with the given ID has registered; this does not mean its ws connection is ready so we might still need to retry job allocation
 sub wait_for_worker {
     my ($schema, $id, %opts) = @_;
     my $expected_error = $opts{error};
@@ -121,7 +122,7 @@ subtest 'Scheduler worker job allocation' => sub {
     wait_for_worker($schema, 4);
 
     note 'assigning one job to each worker';
-    $allocated = $job_model->schedule;
+    wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 2 } 'two jobs allocated';
     my $job_id1 = $allocated->[0]->{job};
     my $job_id2 = $allocated->[1]->{job};
     my $wr_id1 = $allocated->[0]->{worker};
@@ -167,16 +168,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     # simulate a worker in idle state that rejects all jobs assigned to it
     @workers = rejective_worker(@$worker_settings, 3, 'rejection reason');
+    $allocated = [];
     wait_for_worker($schema, 5);
 
     note 'waiting for job to be assigned and set back to re-scheduled';
-    # the loop is needed as the scheduler sometimes needs a second
-    # cycle before the worker is seen as unusable
-    for (1 .. 2) {
-        $allocated = $job_model->schedule;
-        last if $allocated && @$allocated >= 1;
-        note "scheduler could not yet assign to rejective worker, try: $_";    # uncoverable statement
-    }
+    wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 1 } 'at least one job allocated';
     is @$allocated, 1, 'one job allocated'
       and is @{$allocated}[0]->{job}, $duplicated_id, 'right job allocated'
       and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
@@ -201,12 +197,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     # start an unstable worker; it will register itself but ignore any job assignment (also not explicitly reject
     # assignments)
     @workers = unstable_worker(@$worker_settings, 3, -1);
+    $allocated = [];
     wait_for_worker($schema, 5);
-    for (1 .. 2) {
-        $allocated = $job_model->schedule;
-        last if $allocated && @$allocated >= 1;
-        note "scheduler could not yet assign to broken worker, try: $_";    # uncoverable statement
-    }
+    wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 1 } 'at least one job allocated';
     is @$allocated, 1, 'one job allocated'
       and is @{$allocated}[0]->{job}, $duplicated_id, 'right job allocated'
       and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
@@ -239,7 +232,8 @@ subtest 'Simulation of heavy unstable load' => sub {
     my $i = 2;
     wait_for_worker($schema, ++$i) for 1 .. $nr;
 
-    my $allocated = $job_model->schedule;    # Will try to allocate to previous worker and fail!
+    my $allocated = [];    # Will try to allocate to previous worker and fail!
+    wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 10 } 'at least ten jobs allocated';
     is @$allocated, 10, 'Allocated maximum number of jobs that could have been allocated' or die;
     my %jobs;
     my %w;
