@@ -5,7 +5,7 @@ package OpenQA::Task::Utils;
 use Mojo::Base -signatures;
 
 use Exporter qw(import);
-use OpenQA::Log qw(log_warning);
+use OpenQA::Log qw(log_warning log_info);
 use OpenQA::Utils qw(check_df);
 use Scalar::Util qw(looks_like_number);
 use Time::Seconds;
@@ -51,6 +51,7 @@ sub is_disk_usage_below_percentage (%args) {
 
 sub finish_job_if_disk_usage_below_percentage (%args) {
     if (my $msg = is_disk_usage_below_percentage(%args)) {
+        log_info $msg;
         $args{job}->finish($msg);
         return 1;
     }

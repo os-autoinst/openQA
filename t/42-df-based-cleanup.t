@@ -62,14 +62,19 @@ $mock_df->();
 subtest 'abort early if there is enough free disk space' => sub {
 
     $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
-    my $job = run_gru_job($app, limit_results_and_logs => []);
+    my $job;
+    combined_like { $job = run_gru_job($app, limit_results_and_logs => []) }
+    qr/Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 11 %\)/,
+      'result cleanup early abort logged';
     is $job->{state}, 'finished', 'result cleanup still considered successful';
     like $job->{result},
       qr|Skipping.*/openqa/testresults.*exceeds configured percentage 10 % \(free percentage: 11 %\)|,
       'result cleanup aborted early';
 
     $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 9;
-    $job = run_gru_job($app, limit_assets => []);
+    combined_like { $job = run_gru_job($app, limit_assets => []) }
+    qr/Skipping, free disk space on '.*' exceeds configured percentage 9 % \(free percentage: 11 %\)/,
+      'asset cleanup early abort logged';
     is $job->{state}, 'finished', 'asset cleanup still considered successful';
     like $job->{result},
       qr|Skipping.*/openqa/share/factory.*exceeds configured percentage 9 % \(free percentage: 11 %\)|,
@@ -101,7 +106,10 @@ subtest 'abort early during the loop' => sub {
     # There is already a `JobGroup` created below, but maybe we can just run the minion job and check the note.
     # To check the note, we must retrieve the minion job from the db.
     my $group_bar = $app->schema->resultset('JobGroups')->create({name => 'bar'});
-    my $loop_job = run_gru_job($app, limit_results_and_logs => []);
+    my $loop_job;
+    combined_like { $loop_job = run_gru_job($app, limit_results_and_logs => []) }
+qr/Early abort during job groups loop: Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 20 %\)/,
+      'early abort during loop logged';
     is $loop_job->{state}, 'finished', 'result cleanup still considered successful';
     like $loop_job->{notes}->{early_abort_results},
       qr|Skipping.*/openqa/testresults.*exceeds configured percentage 10 % \(free percentage: 20 %\)|,
