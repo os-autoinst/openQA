@@ -91,6 +91,8 @@ disable_bootstrap_animations;
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
 
+sub flash_messages { $driver->find_element('#flash-messages')->get_text }
+
 subtest 'restart job from info panel in test results' => sub {
     subtest 'parent job shows options for advanced restart' => sub {
         $driver->get_ok('/tests/99900', 'go to job 99900');
@@ -122,10 +124,8 @@ subtest 'restart job from info panel in test results' => sub {
         $driver->find_element('#restart-result')->click();
         wait_for_ajax(msg => 'fail to start job with missing asset and no parent');
         like $driver->get_current_url, qr|tests/99939|, 'no auto refresh when there are errors/warnings';
-        like
-          $driver->find_element('#flash-messages')->get_text,
-          qr/Job 99939 misses.*\.iso.*Ensure to provide mandatory assets/s,
-          'restarting job with missing asset results in an error';
+        wait_until(sub { flash_messages =~ m/Job 99939 misses.*\.iso.*Ensure to provide mandatory assets/s },
+            'restarting job with missing asset results in an error', 20);
     };
     subtest 'assets missing; there is a parent' => sub {
         $schema->resultset('JobDependencies')
@@ -133,11 +133,8 @@ subtest 'restart job from info panel in test results' => sub {
             {child_job_id => 99939, parent_job_id => 99947, dependency => OpenQA::JobDependencies::Constants::CHAINED});
         is $driver->get('/tests/99939'), 1, 'go to job 99939';
         $driver->find_element('#restart-result')->click();
-        wait_for_ajax(msg => 'fail to start job with missing asset and no parent');
-        like
-          $driver->find_element('#flash-messages')->get_text,
-          qr/Job 99939 misses.*\.iso.*You may try to retrigger the parent job/s,
-          'restarting job with missing asset results in an error';
+        wait_until(sub { flash_messages =~ m/Job 99939 misses.*\.iso.*You may try to retrigger the parent job/s },
+            'restarting job with missing asset results in an error', 20);
     };
     subtest 'force restart' => sub {
         update_last_job_id;
