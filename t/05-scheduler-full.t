@@ -54,6 +54,7 @@ my $load_avg_file = simulate_load('0.93 0.95 3.25 2/2207 1212', '05-scheduler-fu
 # setup directories and database
 my $tempdir = setup_fullstack_temp_dir('scheduler');
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl');
+my $workers = $schema->resultset('Workers');
 my $api_credentials = create_user_for_workers;
 my $api_key = $api_credentials->key;
 my $api_secret = $api_credentials->secret;
@@ -84,16 +85,15 @@ sub create_worker ($apikey, $apisecret, $host, $instance, $log = undef) {
 
 sub stop_workers { stop_service($_, 1) for @workers }
 
-sub dead_workers ($schema) {
-    $_->update({t_seen => DateTime->from_epoch(epoch => time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY)})
-      for $schema->resultset('Workers')->all();
+sub mark_all_workers_as_dead ($schema) {
+    $workers->update({t_seen => DateTime->from_epoch(epoch => time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY)});
 }
 
 # waits until a worker with the given ID has registered; this does not mean its ws connection is ready so we might still need to retry job allocation
 sub wait_for_worker ($schema, $id, %opts) {
     my $expected_error = $opts{error};
     wait_for_or_bail_out {
-        my $worker = $schema->resultset('Workers')->find($id);
+        my $worker = $workers->find($id);
         defined $worker
           && !$worker->dead
           && (!defined $expected_error || ($worker->error // '') eq $expected_error);
@@ -140,7 +140,7 @@ subtest 'Scheduler worker job allocation' => sub {
     $new_job->delete;
 
     stop_workers;
-    dead_workers($schema);
+    mark_all_workers_as_dead($schema);
 };
 
 subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes offline' => sub {
@@ -162,7 +162,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     $allocated = $job_model->schedule;
     is @$allocated, 0, 'scheduler does not consider broken worker for allocating job';
     stop_workers;
-    dead_workers($schema);
+    mark_all_workers_as_dead($schema);
 
     # simulate a worker in idle state that rejects all jobs assigned to it
     @workers = rejective_worker(@$worker_settings, 3, 'rejection reason');
@@ -190,7 +190,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     }
     ok $job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job';
     stop_workers;
-    dead_workers($schema);
+    mark_all_workers_as_dead($schema);
 
     # start an unstable worker; it will register itself but ignore any job assignment (also not explicitly reject
     # assignments)
@@ -217,11 +217,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     like $job->reason, qr/abandoned: associated worker .+:\d+ re-connected but abandoned the job/, 'reason is set';
 
     stop_workers;
-    dead_workers($schema);
+    mark_all_workers_as_dead($schema);
 };
 
 subtest 'behavior in presence of unresponsive and unstable workers' => sub {
-    dead_workers($schema);
+    mark_all_workers_as_dead($schema);
 
     # duplicate latest jobs ignoring failures
     my @duplicated = map { my $dup = $_->auto_duplicate; ref $dup ? $dup : () } $schema->resultset('Jobs')->latest_jobs;
@@ -250,7 +250,7 @@ subtest 'behavior in presence of unresponsive and unstable workers' => sub {
         is $dup->state, SCHEDULED, 'Job(' . $dup->id . ') back in scheduled state';
     }
     stop_workers;
-    dead_workers($schema);
+    mark_all_workers_as_dead($schema);
 
     my $unstable_workers = $ENV{OPENQA_SCHEDULER_TEST_UNSTABLE_COUNT} // 10;
     @workers = map { unstable_worker(@$worker_settings, $_, 3) } (1 .. $unstable_workers);
