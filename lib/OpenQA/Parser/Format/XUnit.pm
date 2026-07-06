@@ -11,7 +11,7 @@ sub _add_single_result ($self, @args) { $self->results->add(OpenQA::Parser::Resu
 
 sub addproperty ($self, $prop) { $self->{properties}->add(OpenQA::Parser::Result::XUnit::Property->new($prop)) }
 
-my %TC_RESULT_BY_TAG = (softfailure => 'softfail', failure => 'fail', error => 'fail');
+my %TC_RESULT_BY_TAG = (softfailure => 'softfail', failure => 'fail', error => 'fail', skipped => 'missing');
 
 sub parse ($self, $xml) {
     confess 'No XML given/loaded' unless $xml;
