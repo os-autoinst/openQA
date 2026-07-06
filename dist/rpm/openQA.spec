@@ -834,6 +834,7 @@ fi
 %dir %{_localstatedir}/lib/openqa/pool
 %defattr(-,_openqa-worker,root)
 %dir %{_localstatedir}/lib/openqa/cache
+%dir %{_localstatedir}/lib/openqa/cache/podman
 # own one pool - to create the others is task of the admin
 %dir %{_localstatedir}/lib/openqa/pool/1
 %if 0%{?suse_version} > 1500
