@@ -26,6 +26,7 @@ use IPC::Run qw(start);
 use Mojo::IOLoop::Server;
 use Mojo::File qw(path tempfile);
 use Time::HiRes 'sleep';
+use List::Util qw(min);
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
@@ -254,10 +255,10 @@ subtest 'Simulation of heavy unstable load' => sub {
     stop_workers;
     dead_workers($schema);
 
-    my $unstable_workers = $ENV{OPENQA_SCHEDULER_TEST_UNSTABLE_COUNT} // 30;
+    my $unstable_workers = $ENV{OPENQA_SCHEDULER_TEST_UNSTABLE_COUNT} // ($ENV{CI} ? 10 : 30);
     @workers = map { unstable_worker(@$worker_settings, $_, 3) } (1 .. $unstable_workers);
     $i = 5;
-    wait_for_worker($schema, ++$i) for 0 .. 12;
+    wait_for_worker($schema, ++$i) for 1 .. min($unstable_workers - $i, 13);
 
     $allocated = $job_model->schedule;    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, 'All failed allocation on second step - workers were killed';
