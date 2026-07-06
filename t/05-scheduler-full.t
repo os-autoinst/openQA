@@ -5,6 +5,7 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
+use Mojo::Base -signatures;
 use OpenQA::Utils;
 
 BEGIN {
@@ -70,8 +71,7 @@ my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir, "results directory created under $resultdir";
 
-sub create_worker {
-    my ($apikey, $apisecret, $host, $instance, $log) = @_;
+sub create_worker ($apikey, $apisecret, $host, $instance, $log = undef) {
     my @connect_args = ("--instance=${instance}", "--apikey=${apikey}", "--apisecret=${apisecret}", "--host=${host}");
     note "Starting standard worker. Instance: $instance for host $host";
     # save testing time as we do not test a webUI host being down for
@@ -84,15 +84,13 @@ sub create_worker {
 
 sub stop_workers { stop_service($_, 1) for @workers }
 
-sub dead_workers {
-    my $schema = shift;
+sub dead_workers ($schema) {
     $_->update({t_seen => DateTime->from_epoch(epoch => time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY)})
       for $schema->resultset('Workers')->all();
 }
 
 # waits until a worker with the given ID has registered; this does not mean its ws connection is ready so we might still need to retry job allocation
-sub wait_for_worker {
-    my ($schema, $id, %opts) = @_;
+sub wait_for_worker ($schema, $id, %opts) {
     my $expected_error = $opts{error};
     wait_for_or_bail_out {
         my $worker = $schema->resultset('Workers')->find($id);
