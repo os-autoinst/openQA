@@ -452,6 +452,7 @@ sub show ($self) {
     my $details = $self->stash('details') || 0;
     my $check_assets = !!$self->param('check_assets');
     my $follow = $self->param('follow');
+    my $unredacted = $self->param('unredacted') && $self->is_operator;
     return unless my $job = $self->find_job_or_render_not_found($job_id, $follow ? {prefetch => 'settings'} : {});
     $job = $job->latest_job if $follow;
     $job = $job->to_hash(
@@ -460,6 +461,7 @@ sub show ($self) {
         deps => 1,
         details => $details,
         parent_group => 1,
+        unredacted => $unredacted,
     );
     $job->{followed_id} = $job_id if ($job_id != $job->{id});
     $self->render(json => {job => $job});

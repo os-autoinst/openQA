@@ -109,8 +109,15 @@ sub _get_vars ($jobid, $url_handler, $options) {
 sub clone_job_get_job ($jobid, $url_handler, $options) {
     my $url = $url_handler->{remote_url}->clone;
     $url->path("jobs/$jobid");
+    $url->query->merge(unredacted => 1);
     $url->query->merge(check_assets => 1) unless $options->{'ignore-missing-assets'};
     my $job = _get_with_retry($url_handler, $url, $jobid, 'job', $options)->{job};
+
+    if (my @redacted = grep { ($job->{settings}->{$_} // '') eq '[redacted]' } keys %{$job->{settings}}) {
+        warn "Job $jobid has redacted secrets: " . join(', ', sort @redacted) . "\n";
+        warn "These clone as '[redacted]'. Use operator credentials for actual secrets.\n";
+    }
+
     print STDERR Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
     $job->{vars} = _get_vars($jobid, $url_handler, $options) if $options->{reproduce};
     return $job;
