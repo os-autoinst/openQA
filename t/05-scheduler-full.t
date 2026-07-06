@@ -72,6 +72,9 @@ my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir, "results directory created under $resultdir";
 
+my $last_worker_id = $workers->find({}, {order_by => {-desc => 'id'}, rows => 1})->id;
+sub expected_worker_id ($instance_number) { $last_worker_id + $instance_number }
+
 sub create_worker ($apikey, $apisecret, $host, $instance, $log = undef) {
     my @connect_args = ("--instance=${instance}", "--apikey=${apikey}", "--apisecret=${apisecret}", "--host=${host}");
     note "Starting standard worker. Instance: $instance for host $host";
@@ -90,15 +93,16 @@ sub mark_all_workers_as_dead ($schema) {
 }
 
 # waits until a worker with the given ID has registered; this does not mean its ws connection is ready so we might still need to retry job allocation
-sub wait_for_worker ($schema, $id, %opts) {
+sub wait_for_worker ($schema, $instance_number, %opts) {
+    my $expected_id = expected_worker_id($instance_number);
     my $expected_error = $opts{error};
     wait_for_or_bail_out {
-        my $worker = $workers->find($id);
+        my $worker = $workers->find($expected_id);
         defined $worker
           && !$worker->dead
           && (!defined $expected_error || ($worker->error // '') eq $expected_error);
     }
-    "worker $id to be active";
+    "worker instance $instance_number has registered with ID $expected_id";
 }
 
 my $job_model = OpenQA::Scheduler::Model::Jobs->singleton;
@@ -116,8 +120,7 @@ subtest 'Scheduler worker job allocation' => sub {
     note 'starting two workers';
     my $new_job = $schema->resultset('Jobs')->find(80000)->auto_duplicate({settings => {WORKER_CLASS => 'foo'}});
     @workers = map { create_worker(@$worker_settings, $_) } (1, 2);
-    wait_for_worker($schema, 3);
-    wait_for_worker($schema, 4);
+    wait_for_worker($schema, $_) for (1, 2);
 
     note 'assigning one job to each worker';
     wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 2 } 'two jobs allocated';
@@ -158,7 +161,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     # simulate a worker in broken state; it will register itself but declare itself as broken
     @workers = broken_worker(@$worker_settings, 3, 'out of order');
-    wait_for_worker($schema, 5, error => 'out of order');
+    wait_for_worker($schema, 3, error => 'out of order');
     $allocated = $job_model->schedule;
     is @$allocated, 0, 'scheduler does not consider broken worker for allocating job';
     stop_workers;
@@ -167,13 +170,13 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     # simulate a worker in idle state that rejects all jobs assigned to it
     @workers = rejective_worker(@$worker_settings, 3, 'rejection reason');
     $allocated = [];
-    wait_for_worker($schema, 5);
+    wait_for_worker($schema, 3);
 
     note 'waiting for job to be assigned and set back to re-scheduled';
     wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 1 } 'at least one job allocated';
     is @$allocated, 1, 'one job allocated'
       and is @{$allocated}[0]->{job}, $duplicated_id, 'right job allocated'
-      and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
+      and is @{$allocated}[0]->{worker}, expected_worker_id(3), 'job allocated to expected worker';
     my $job_assigned = 0;
     my $job_scheduled = 0;
     for (0 .. 100) {
@@ -196,19 +199,20 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     # assignments)
     @workers = unstable_worker(@$worker_settings, 3, -1);
     $allocated = [];
-    wait_for_worker($schema, 5);
+    wait_for_worker($schema, 3);
     wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 1 } 'at least one job allocated';
     is @$allocated, 1, 'one job allocated'
       and is @{$allocated}[0]->{job}, $duplicated_id, 'right job allocated'
-      and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
+      and is @{$allocated}[0]->{worker}, expected_worker_id(3), 'job allocated to expected worker';
 
     # kill the worker but assume the job has been actually started and is running
     # note: Also setting back assigned_worker_id and result because the worker might have actually picked up the job.
     stop_workers;
-    $jobs->find($duplicated_id)->update({assigned_worker_id => 5, state => RUNNING, result => NONE});
+    $jobs->find($duplicated_id)
+      ->update({assigned_worker_id => expected_worker_id(3), state => RUNNING, result => NONE});
 
     @workers = unstable_worker(@$worker_settings, 3, -1);
-    wait_for_worker($schema, 5);
+    wait_for_worker($schema, 3);
     wait_for { $jobs->find($duplicated_id)->state eq DONE } "job $duplicated_id is incompleted", {timeout => 20};
 
     my $job = $jobs->find($duplicated_id);
@@ -227,8 +231,7 @@ subtest 'behavior in presence of unresponsive and unstable workers' => sub {
     my @duplicated = map { my $dup = $_->auto_duplicate; ref $dup ? $dup : () } $schema->resultset('Jobs')->latest_jobs;
     my $nr = $ENV{OPENQA_SCHEDULER_TEST_UNRESPONSIVE_COUNT} // 10;
     @workers = map { unresponsive_worker(@$worker_settings, $_) } (1 .. $nr);
-    my $i = 2;
-    wait_for_worker($schema, ++$i) for 1 .. $nr;
+    wait_for_worker($schema, $_) for 1 .. $nr;
 
     my $allocated = [];    # Will try to allocate to previous worker and fail!
     wait_for_or_bail_out { push @$allocated, @{$job_model->schedule}; @$allocated >= 10 } 'at least ten jobs allocated';
@@ -254,8 +257,7 @@ subtest 'behavior in presence of unresponsive and unstable workers' => sub {
 
     my $unstable_workers = $ENV{OPENQA_SCHEDULER_TEST_UNSTABLE_COUNT} // 10;
     @workers = map { unstable_worker(@$worker_settings, $_, 3) } (1 .. $unstable_workers);
-    $i = 5;
-    wait_for_worker($schema, ++$i) for 1 .. $unstable_workers - $i;
+    wait_for_worker($schema, $_) for 1 .. $unstable_workers;
 
     $allocated = $job_model->schedule;    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, 'All failed allocation on second step - workers were killed';
