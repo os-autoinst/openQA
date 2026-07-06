@@ -643,7 +643,6 @@ fi
 %dir %{_sysconfdir}/openqa/database.ini.d
 %{_datadir}/doc/openqa/examples/openqa.ini
 %{_datadir}/doc/openqa/examples/database.ini
-%dir %{_datadir}/openqa
 %config %{_sysconfdir}/logrotate.d
 # apache vhost
 %dir %{_sysconfdir}/apache2
