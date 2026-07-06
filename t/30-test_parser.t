@@ -454,6 +454,8 @@ sub test_xunit_file {
       'Overall 11 testsuites, 2 tests does not have title containing bacon';
     is $parser->results->search_in_details('text', qr/bacon/)->size, 16,
       'Overall 11 testsuites, 15 tests are for bacon';
+    is $parser->results->search_in_details('result', qr/^missing$/)->size, 3,
+      'skipped testcases are mapped to missing, not ok';
     is $parser->generated_tests_output->size, 24, '24 Outputs';
 
     my $resultsdir = tempdir;
