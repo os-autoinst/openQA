@@ -100,8 +100,6 @@ sub register ($self, $app, $config) {
         $app->helper('obs_rsync.log_failure' => \&_log_failure);
         $app->helper('obs_rsync.concurrency_guard' => \&_concurrency_guard);
         $app->helper('obs_rsync.guard' => \&_guard);
-        $app->helper('obs_rsync.lock' => \&_lock);
-        $app->helper('obs_rsync.unlock' => \&_unlock);
 
         # Templates
         push @{$app->renderer->paths},
@@ -447,14 +445,6 @@ sub _concurrency_guard ($c) {
 
 sub _guard ($c, $project) {
     return $c->app->minion->guard('obs_rsync_project_' . $project . '_lock', LOCK_TIMEOUT);
-}
-
-sub _lock ($c, $project) {
-    return $c->app->minion->lock('obs_rsync_project_' . $project . '_lock', LOCK_TIMEOUT);
-}
-
-sub _unlock ($c, $project) {
-    return $c->app->minion->unlock('obs_rsync_project_' . $project . '_lock');
 }
 
 sub _log_job_id ($c, $project, $job_id) {
