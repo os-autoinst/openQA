@@ -62,14 +62,19 @@ $mock_df->();
 subtest 'abort early if there is enough free disk space' => sub {
 
     $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
-    my $job = run_gru_job($app, limit_results_and_logs => []);
+    my $job;
+    combined_like { $job = run_gru_job($app, limit_results_and_logs => []) }
+    qr/Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 11 %\)/,
+      'result cleanup early abort logged';
     is $job->{state}, 'finished', 'result cleanup still considered successful';
     like $job->{result},
       qr|Skipping.*/openqa/testresults.*exceeds configured percentage 10 % \(free percentage: 11 %\)|,
       'result cleanup aborted early';
 
     $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 9;
-    $job = run_gru_job($app, limit_assets => []);
+    combined_like { $job = run_gru_job($app, limit_assets => []) }
+    qr/Skipping, free disk space on '.*' exceeds configured percentage 9 % \(free percentage: 11 %\)/,
+      'asset cleanup early abort logged';
     is $job->{state}, 'finished', 'asset cleanup still considered successful';
     like $job->{result},
       qr|Skipping.*/openqa/share/factory.*exceeds configured percentage 9 % \(free percentage: 11 %\)|,
@@ -88,6 +93,27 @@ subtest 'abort early if there is enough free disk space' => sub {
     $mock_df->();
     ok !finish_job_if_disk_usage_below_percentage(@check_args), 'cleanup done if not enough free disk space available';
     is $job->{state}, undef, 'job not finished when proceeding with cleanup';
+};
+
+subtest 'abort early during the loop' => sub {
+    # We will simulate `df` returning low space on the first call, and high space on the second call.
+    my $df_call_count = 0;
+    my @bavail = (5);
+    $df_mock->redefine(df => sub ($dir, @) { {bavail => $bavail[$df_call_count++] // 20, blocks => 100} });
+    $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
+
+    my $group_bar = $app->schema->resultset('JobGroups')->create({name => 'bar'});
+    my $loop_job;
+    combined_like { $loop_job = run_gru_job($app, limit_results_and_logs => []) }
+qr/Early abort during job groups loop: Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 20 %\)/,
+      'early abort during loop logged';
+    is $loop_job->{state}, 'finished', 'result cleanup still considered successful';
+    like $loop_job->{notes}->{early_abort_results},
+      qr|Skipping.*/openqa/testresults.*exceeds configured percentage 10 % \(free percentage: 20 %\)|,
+      'result cleanup aborted early inside the loop';
+    $group_bar->delete;
+
+    $mock_df->();    # restore
 };
 
 $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
