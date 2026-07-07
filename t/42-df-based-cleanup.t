@@ -102,9 +102,6 @@ subtest 'abort early during the loop' => sub {
     $df_mock->redefine(df => sub ($dir, @) { {bavail => $bavail[$df_call_count++] // 20, blocks => 100} });
     $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
 
-    # We need to make sure there are JobGroups to iterate over
-    # There is already a `JobGroup` created below, but maybe we can just run the minion job and check the note.
-    # To check the note, we must retrieve the minion job from the db.
     my $group_bar = $app->schema->resultset('JobGroups')->create({name => 'bar'});
     my $loop_job;
     combined_like { $loop_job = run_gru_job($app, limit_results_and_logs => []) }
