@@ -91,7 +91,7 @@
         % if ($video_file_name && $frametime) {
             %= stepvideolink_for $testid, $video_file_name, $frametime
         % }
-        %= steploglink_for 'Jump to logfile' => url_for('logfile')->query(filename => 'autoinst-log.txt', filter => sprintf("[step:%s,%s,%d]", $module->category, $module->name, param 'stepid')), 'fa-file-lines', 'view_log'
+        %= steploglink_for 'Jump to logfile' => url_for('logfile')->query(filename => 'autoinst-log.txt', filter => sprintf("[step:%s,%s,%d]", $module->category, $module->name, param 'stepid'), sl => 1), 'fa-file-lines', 'view_log'
     </span>
 </div>
 <div id="needle_diff">

@@ -1,6 +1,8 @@
 // jshint multistr: true
 // jshint esversion: 6
 
+const testGitInfoRe = /TEST_GIT_HASH=([a-fA-F0-9]+) TEST_GIT_URL=([^\p{Cc}]+)/u;
+
 const testStatus = {
   state: null,
   result: null,
@@ -635,6 +637,16 @@ function filterLogLines(input, viaSearchBox = true) {
       return;
     }
     const lines = Array.from(content);
+    if (logFileElement.dataset.showSourceLinks && !logFileElement.dataset.gitBaseUrl) {
+      for (const line of lines) {
+        const found = line.match(testGitInfoRe);
+        if (found) {
+          logFileElement.dataset.gitBaseUrl = found[2] + '/blob/' + found[1];
+          break;
+        }
+      }
+    }
+
     let lineNumber = 0;
     let matchingLines = 0;
     if (string.length > 0) {
@@ -669,6 +681,24 @@ function filterEmbeddedLogFiles() {
   loadEmbeddedLogFiles(filterLogLines.bind(null, searchBox, false));
 }
 
+const stepRe = / \[step:[a-zA-Z0-9-]+,[a-zA-Z0-9-]+,[0-9]+\] /;
+const sourceRe = /(?<= )([a-zA-Z0-9_/.-]+\.p[my]):(\d+)/g;
+function createSourceLinks(logFileElement, lineContentElement) {
+  const E = createElement;
+  const found = lineContentElement.innerHTML.match(stepRe);
+  if (found) {
+    lineContentElement.innerHTML = lineContentElement.innerHTML.replace(sourceRe, (match, filePath, lineNumber) => {
+      const i = E('i', [''], {class: 'fa-regular fa-file-code fa-lg'});
+      const a = E('a', [i, ` ${filePath}:${lineNumber}`], {
+        class: 'source-link',
+        target: '_blank',
+        href: `${logFileElement.dataset.gitBaseUrl}/${filePath}#L${lineNumber}`
+      });
+      return a.outerHTML;
+    });
+  }
+}
+
 function showLogLines(logFileElement, lines, viaSearchBox = false) {
   const tableElement = document.createElement('table');
   const currentHash = document.location.hash;
@@ -700,6 +730,10 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
       lineNumberLinkElement.onclick();
     }
     lineContentElement.innerHTML = ansiToHtml(line);
+    if (logFileElement.dataset.gitBaseUrl) {
+      createSourceLinks(logFileElement, lineContentElement);
+    }
+
     lineNumberElement.appendChild(lineNumberLinkElement);
     lineElement.append(lineNumberElement, lineContentElement);
     tableElement.appendChild(lineElement);
@@ -729,10 +763,16 @@ function showLogLines(logFileElement, lines, viaSearchBox = false) {
   window.hasHandlerForUpdatingCurrentLine = true;
 }
 
+const srcRe = /tests\/.*\/file\/autoinst-log\.txt/;
 function loadEmbeddedLogFiles(filter) {
   $('.embedded-logfile').each(function (index, logFileElement) {
     if (logFileElement.dataset.contentsLoaded) {
       return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const found = logFileElement.dataset.src.match(srcRe);
+    if (found && params.get('sl')) {
+      logFileElement.dataset.showSourceLinks = true;
     }
     fetch(logFileElement.dataset.src)
       .then(response => {
