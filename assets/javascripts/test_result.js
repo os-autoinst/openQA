@@ -641,7 +641,7 @@ function filterLogLines(input, viaSearchBox = true) {
       for (const line of lines) {
         const found = line.match(testGitInfoRe);
         if (found) {
-          logFileElement.dataset.gitBaseUrl = found[2] + '/blob/' + found[1];
+          logFileElement.dataset.gitBaseUrl = found[2].replace(/\.git$/, '') + '/blob/' + found[1];
           break;
         }
       }
