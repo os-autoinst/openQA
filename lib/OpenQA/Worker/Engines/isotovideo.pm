@@ -537,6 +537,7 @@ sub _construct_isotovideo_cmd ($job_settings, $isotovideo) {
           // 'registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest';
 
         my $podman_dir = prjdir() . '/cache/podman';
+        path($podman_dir)->make_path;
         my @cmd = (
             'env',
             "HOME=$podman_dir",

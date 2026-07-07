@@ -120,7 +120,7 @@ install-generic: generate-assets generate-completions ## Install generic compone
 		install -m 644 -D --target-directory="$(DESTDIR)/usr/share/openqa/$${f%/*}" "$$f";\
 	done
 
-	for i in db images testresults pool/1 cache webui/cache backup; do \
+	for i in db images testresults pool/1 cache cache/podman webui/cache backup; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 # shared dirs between openQA web and workers + compatibility links

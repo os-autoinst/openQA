@@ -643,7 +643,6 @@ fi
 %dir %{_sysconfdir}/openqa/database.ini.d
 %{_datadir}/doc/openqa/examples/openqa.ini
 %{_datadir}/doc/openqa/examples/database.ini
-%dir %{_datadir}/openqa
 %config %{_sysconfdir}/logrotate.d
 # apache vhost
 %dir %{_sysconfdir}/apache2
@@ -834,6 +833,7 @@ fi
 %dir %{_localstatedir}/lib/openqa/pool
 %defattr(-,_openqa-worker,root)
 %dir %{_localstatedir}/lib/openqa/cache
+%dir %{_localstatedir}/lib/openqa/cache/podman
 # own one pool - to create the others is task of the admin
 %dir %{_localstatedir}/lib/openqa/pool/1
 %if 0%{?suse_version} > 1500
