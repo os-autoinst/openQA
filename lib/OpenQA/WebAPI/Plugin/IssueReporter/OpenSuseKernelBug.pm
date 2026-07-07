@@ -16,7 +16,9 @@ sub actions ($c) {
     my $job = $ctx->{job};
     my $raw_distri = $job->DISTRI // '';
     my $bugzilla_distri = get_bugzilla_distri_name($raw_distri);
-    my $bugzilla_product = get_bugzilla_product_name($job, $raw_distri, \$bugzilla_distri);
+    # kernel regressions are frequently against unreleased kernels, so never route them to the
+    # customer-visible PUBLIC
+    my $bugzilla_product = get_bugzilla_product_name($job, $raw_distri, \$bugzilla_distri, 0);
     my $bugzilla_url = get_bugzilla_url($raw_distri);
     my ($first_known_bad, $last_good) = get_regression_links($c, $job);
     my $latest = $c->url_for('latest')->query($job->scenario_hash)->to_abs;

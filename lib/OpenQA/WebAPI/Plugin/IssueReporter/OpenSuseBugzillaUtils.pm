@@ -60,8 +60,8 @@ sub get_bugzilla_distri_name ($raw_distri) {
 
 # taken from the external_reporting.html.ep
 # likely this could be improved
-sub get_bugzilla_product_name ($job, $raw_distri, $distri_ref) {
-    return _sle_product($job, $distri_ref) if $raw_distri eq 'sle';
+sub get_bugzilla_product_name ($job, $raw_distri, $distri_ref, $allow_public = 1) {
+    return _sle_product($job, $distri_ref, $allow_public) if $raw_distri eq 'sle';
     return _sle_micro_product($job) if $raw_distri eq 'sle-micro';
     return _opensuse_product($job) if $raw_distri eq 'opensuse' || $raw_distri eq 'microos';
     return _caasp_product($job) if $raw_distri eq 'caasp';
@@ -69,7 +69,9 @@ sub get_bugzilla_product_name ($job, $raw_distri, $distri_ref) {
     return '';
 }
 
-sub _sle_product ($job, $distri_ref) {
+# $allow_public can be disabled by callers (e.g. kernel bug reports) for which routing to the
+# customer-visible PUBLIC product would be inappropriate, e.g. regressions in unreleased kernels
+sub _sle_product ($job, $distri_ref, $allow_public = 1) {
     my $subproduct = $job->FLAVOR // '';
     $subproduct =~ s/(\w*)(-\w*)?/$1/;
 
@@ -82,7 +84,7 @@ sub _sle_product ($job, $distri_ref) {
 
     my $sle_product = FLAVOR_TO_PROD_SLE->{$subproduct} // 'Server';
 
-    if (my $public = PUBLIC_SLE_PRODUCTS->{$sle_product}) {
+    if ($allow_public && (my $public = PUBLIC_SLE_PRODUCTS->{$sle_product})) {
         if ($version =~ /(\d+)\s+SP(\d+)/ && $1 == 15 && $2 >= 3) {
             $$distri_ref = "PUBLIC $$distri_ref";
             $sle_product = $public;

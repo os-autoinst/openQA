@@ -68,6 +68,11 @@ subtest 'get_bugzilla_product_name' => sub {
     is get_bugzilla_product_name(Test::FakeJob->new(VERSION => '4.5'), 'caasp', undef), '4', 'caasp';
     is get_bugzilla_product_name(Test::FakeJob->new(), 'openqa', undef), 'openQA', 'openqa';
     is get_bugzilla_product_name(Test::FakeJob->new(), 'test-unknown', undef), '', 'unknown';
+
+    $distri = 'SUSE Linux Enterprise';
+    is get_bugzilla_product_name(Test::FakeJob->new(FLAVOR => 'Server', VERSION => '15 SP3'), 'sle', \$distri, 0),
+      'Server 15 SP3', 'allow_public=0 keeps product name for 15 SP3+';
+    is $distri, 'SUSE Linux Enterprise', 'allow_public=0 suppresses PUBLIC rewrite for 15 SP3+';
 };
 
 done_testing;
