@@ -25,7 +25,9 @@ has is_busy => 0;
 has settings => sub { Test::FakeSettings->new };
 has enqueued_job_info => undef;
 has is_executing_single_job => 1;
+has job_guard_expiration_updated => 0;
 
+sub update_job_guard_expiration ($self) { $self->job_guard_expiration_updated(1) }
 sub stop_current_job ($self, $reason) { $self->stop_current_job_called($reason) }
 sub stop ($self) { $self->is_stopping(1) }
 sub status ($self) { {fake_status => 1, reason => $self->current_error} }

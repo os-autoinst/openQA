@@ -11,9 +11,11 @@ use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Utils qw(simulate_load);
 use Data::Dumper;
+use DateTime::Format::Pg;
 use Mojo::File qw(tempdir tempfile path);
 use Mojo::Util 'scope_guard';
 use Mojolicious;
+use Time::Seconds qw(ONE_MINUTE);
 use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
 use Test::MockObject;
@@ -33,6 +35,7 @@ $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 $ENV{OPENQA_LOGFILE} = undef;
 
 my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+$ENV{OPENQA_CACHE_DIR} = $workdir;
 chdir $workdir;
 my $guard = scope_guard sub { chdir $FindBin::Bin };
 
@@ -126,6 +129,57 @@ push @{$worker->settings->parse_errors}, 'foo', 'bar';
 combined_like { $worker->log_setup_info }
 qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors occurred.*foo.*bar.*/s,
   'setup info with parse errors';
+
+sub get_locks () {
+    $worker->{_minion_sqlite}->db->query(q(select expires from minion_locks order by expires;))->arrays;
+}
+
+subtest 'job lock for throttling' => sub {
+    is $worker->acquire_job_guard, undef, 'no attempt to acquire job lock if not configured';
+
+    my $settings = $worker->settings->global_settings;
+    local $settings->{LOCK_NAME} = 'foo';
+    local $settings->{LOCK_LIMIT} = 2;
+
+    ok ref(my $guard_1 = $worker->acquire_job_guard), 'was able to acquire lock';
+    is $worker->{_guard_or_error}, $guard_1, 'worker keeps a hold on the lock';
+    ok $worker->app->minion->is_locked('foo'), 'expected lock acquired';
+    ok $worker->can_acquire_job_guard, 'there is room for one more lock';
+    ok ref(my $guard_2 = $worker->acquire_job_guard), 'was able to acquire second lock (still within limit)';
+    ok !$worker->can_acquire_job_guard, 'limit has been reached';
+    my ($available, $error) = $worker->check_availability;
+    is $error, undef, 'no availability error as we have not tried to go beyond limit';
+
+    subtest 'updating expiration' => sub {
+        is $worker->update_job_guard_expiration->rows, 1, 'one lock updated';
+        my $locks = get_locks;
+        is @$locks, 2, 'the two locks are present' or return;
+        # DateTime::Format::Pg works for these SQLite datetimes as well
+        my $expiration_1 = DateTime::Format::Pg->parse_datetime($locks->[0]->[0])->epoch;
+        my $expiration_2 = DateTime::Format::Pg->parse_datetime($locks->[1]->[0])->epoch;
+        my $diff = abs $expiration_1 - $expiration_2;
+        cmp_ok $diff, '>', ONE_MINUTE, 'expirations differ in the order of minutes after update_job_guard_expiration';
+    };
+
+    subtest 'unable to acquire lock' => sub {
+        is $worker->acquire_job_guard, "Limited by configured lock 'foo'",
+          'was unable to acquire third lock (exceeds limit)';
+        is $worker->{_guard_or_error}, "Limited by configured lock 'foo'", 'error recorded';
+        ($available, $error) = $worker->check_availability;
+        is $error, "Limited by configured lock 'foo'", 'availability error returned as we tried to go beyond limit';
+    };
+
+    subtest 'releasing locks' => sub {
+        undef $guard_1;
+        undef $guard_2;
+        is @{get_locks()}, 0, 'locks are released by setting guards to undef';
+        ($available, $error) = $worker->check_availability;
+        is $error, undef, 'availability error cleared';
+        is $worker->{_guard_or_error}, undef, 'guard/error cleared';
+    };
+
+    undef $worker->{_guard_or_error};
+};
 
 subtest 'worker load' => sub {
     my $load = OpenQA::Utils::load_avg();
