@@ -4,9 +4,12 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
+use Mojo::Base -signatures;
+use Test::MockObject;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use OpenQA::App;
 use OpenQA::JobSettings;
 use OpenQA::Test::TimeLimit '3';
 
@@ -143,6 +146,49 @@ subtest 'unexpanded variables' => sub {
     my ($error, $unexpanded) = OpenQA::JobSettings::expand_placeholders(\%settings);
     is $error, undef, 'no error';
     is_deeply $unexpanded, ['MIRROR'], 'MIRROR detected as unexpanded';
+};
+
+sub mock_setting ($key, $val) { Test::MockObject->new->set_always(key => $key)->set_always(value => $val) }
+
+subtest 'generate_settings with global test settings' => sub {
+    my $mock_app = Test::MockObject->new->set_always(
+        config => {
+            test_settings => {
+                pretty_serial_marker => '1',
+                worker_class => 'global_worker',
+                test_setting_var => 'global_val',
+                '+overridden_var' => 'global_plus',
+                overridden_by_plus => 'global_normal',
+            }});
+    my $orig_app = OpenQA::App->singleton;
+    OpenQA::App->set_singleton($mock_app);
+    my $mock_product = Test::MockObject->new->set_list(
+        settings => (
+            mock_setting('PRODUCT_VAR', 'prod_val'),
+            mock_setting('OVERRIDDEN_VAR', 'prod_overwrites_global'),
+            mock_setting('WORKER_CLASS', 'product_worker'),
+            mock_setting('+OVERRIDDEN_BY_PLUS', 'prod_plus_overwrites_global_normal'),
+        ));
+    my $params = {
+        settings => {},
+        product => $mock_product,
+        input_args => {
+            input_var => 'input_val',
+        }};
+    my $error = OpenQA::JobSettings::generate_settings($params);
+    is $error, undef, 'no error during generate_settings';
+    my $expected_settings = {
+        PRETTY_SERIAL_MARKER => '1',
+        WORKER_CLASS => 'global_worker,product_worker',
+        TEST_SETTING_VAR => 'global_val',
+        OVERRIDDEN_VAR => 'global_plus',
+        OVERRIDDEN_BY_PLUS => 'prod_plus_overwrites_global_normal',
+        PRODUCT_VAR => 'prod_val',
+        INPUT_VAR => 'input_val',
+    };
+    is_deeply $params->{settings}, $expected_settings,
+'generate_settings correctly applies lowest-precedence global test settings, respects +, and combines WORKER_CLASS';
+    OpenQA::App->set_singleton($orig_app);
 };
 
 done_testing;
