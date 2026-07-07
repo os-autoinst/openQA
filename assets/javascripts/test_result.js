@@ -681,7 +681,7 @@ function filterEmbeddedLogFiles() {
   loadEmbeddedLogFiles(filterLogLines.bind(null, searchBox, false));
 }
 
-const stepRe = / \[step:[a-zA-Z0-9-]+,[a-zA-Z0-9-]+,[0-9]+\] /;
+const stepRe = / \[step:[a-zA-Z0-9_-]+,[a-zA-Z0-9_-]+,[0-9]+\] /;
 const sourceRe = /(?<= )([a-zA-Z0-9_/.-]+\.p[my]):(\d+)/g;
 function createSourceLinks(logFileElement, lineContentElement) {
   const E = createElement;
