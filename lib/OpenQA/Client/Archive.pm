@@ -63,7 +63,7 @@ sub _download_test_result_details ($self, $url, $path, $module, $options) {
     }
     elsif ($module->{text}) {
         my $file = $path->child('testresults', $module->{text});
-        $file->spew($module->{text_data} // "No data\n");
+        $file->spew($module->{text_data} // "No data\n", 'UTF-8');
     }
     return undef;
 }
