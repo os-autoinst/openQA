@@ -327,6 +327,9 @@ subtest 'Plugins handling' => sub {
 subtest asset_type_from_setting => sub {
     use OpenQA::Utils 'asset_type_from_setting';
     is asset_type_from_setting('ISO'), 'iso', 'simple from ISO';
+    is asset_type_from_setting('UEFI_PFLASH_CODE'), 'hdd', 'simple from UEFI_PFLASH_CODE';
+    is asset_type_from_setting('UEFI_PFLASH_CODE', 'relative'), 'hdd', 'relative from UEFI_PFLASH_CODE';
+    is asset_type_from_setting('UEFI_PFLASH_CODE', '/absolute'), '', 'absolute from UEFI_PFLASH_CODE';
     is asset_type_from_setting('UEFI_PFLASH_VARS'), 'hdd', 'simple from UEFI_PFLASH_VARS';
     is asset_type_from_setting('UEFI_PFLASH_VARS', 'relative'), 'hdd', 'relative from UEFI_PFLASH_VARS';
     is asset_type_from_setting('UEFI_PFLASH_VARS', '/absolute'), '', 'absolute from UEFI_PFLASH_VARS';
@@ -371,8 +374,10 @@ subtest parse_assets_from_settings => sub {
     };
     is_deeply $assets, $refassets, 'correct with absolute UEFI_PFLASH_VARS';
     # now make this relative: it should now be seen as an asset type
+    $settings->{UEFI_PFLASH_CODE} = 'uefi_pflash_code.qcow2';
     $settings->{UEFI_PFLASH_VARS} = 'uefi_pflash_vars.qcow2';
     $assets = parse_assets_from_settings($settings);
+    $refassets->{UEFI_PFLASH_CODE} = {type => 'hdd', name => 'uefi_pflash_code.qcow2'};
     $refassets->{UEFI_PFLASH_VARS} = {type => 'hdd', name => 'uefi_pflash_vars.qcow2'};
     is_deeply $assets, $refassets, 'correct with relative UEFI_PFLASH_VARS';
     # KERNEL/INITRD are treated similar to UEFI_PFLASH_VARS
@@ -380,7 +385,6 @@ subtest parse_assets_from_settings => sub {
     $assets = parse_assets_from_settings($settings);
     $refassets->{KERNEL} = {type => 'other', name => '/path/vmlinuz'};
     is_deeply $assets, $refassets, 'correct with absolute KERNEL';
-
 };
 
 subtest 'base_host' => sub {

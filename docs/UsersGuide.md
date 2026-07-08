@@ -1468,6 +1468,7 @@ The following job settings are specifying that an asset is required by a job:
 - `ISO` (type `iso`)
 - `ISO_n` (type `iso`)
 - `HDD_n` (type `hdd`)
+- `UEFI_PFLASH_CODE` (type `hdd`) (in some cases, see below)
 - `UEFI_PFLASH_VARS` (type `hdd`) (in some cases, see below)
 - `REPO_n` (type `repo`)
 - `ASSET_n` (type `other`)
@@ -1485,7 +1486,8 @@ assets): this exempts them from the automatic cleanup described in the section a
 [asset cleanup](UsersGuide.md#asset_cleanup).
 Non-fixed assets are always subject to the cleanup.
 
-`UEFI_PFLASH_VARS` is a special case: whether it is treated as an asset depends on the value. If the value looks like an absolute path (starts with `/`), it will not be treated as an asset (and
+`UEFI_PFLASH_CODE` and `_VARS` are a special case: whether it is treated as an asset depends on the value.
+If the value looks like an absolute path (starts with `/`), it will not be treated as an asset (and
 so the value should be an absolute path for a file which exists on the relevant worker system(s)).
 Otherwise, it is treated as an `hdd`-type asset. This allows tests to use a stock base image
 (like the ones provided by edk2) for a simple case, but also allows a job to upload its image on
