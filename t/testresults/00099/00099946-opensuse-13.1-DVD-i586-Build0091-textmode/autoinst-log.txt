@@ -1281,7 +1281,7 @@ WARNING: read qmp 85 - {"timestamp": {"seconds": 1392728646, "microseconds": 936
  waiting for console read thread to quit...
 WARNING: read qmp 145 - {"timestamp": {"seconds": 1392728646, "microseconds": 936768}, "event": "DEVICE_TRAY_MOVED", "data": {"device": "ide1-cd0", "tray-open": true}}
 
-[2026-06-22T20:28:39.215621+02:00] [debug] [pid:14231] TEST_GIT_HASH=c0ffee TEST_GIT_URL=https://example.org/fortest
+[2026-06-22T20:28:39.215621+02:00] [debug] [pid:14231] TEST_GIT_HASH=c0ffee TEST_GIT_URL=https://example.org/fortest.git
 [2026-06-22T20:29:10.379120+02:00] [debug] [pid:14264] [step:installation,bootloader,1] tests/installaton/bootloader.pm:5 called utils::wait_for_desktop -> lib/utils.pm:47 called utils::handle_gui_password
 [2026-06-22T20:29:10.379120+02:00] [debug] [pid:14264] [step:installation,bootloader,2] tests/installaton/bootloader.pm:5 called utils::wait_for_desktop -> lib/utils.pm:47 called utils::handle_gui_password
 
