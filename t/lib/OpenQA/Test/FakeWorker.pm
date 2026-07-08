@@ -1,6 +1,8 @@
 package OpenQA::Test::FakeWorker;
 use Mojo::Base -base, -signatures;
 
+use Mojo::IOLoop;
+
 package Test::FakeSettings {
     use Mojo::Base -base;
     has global_settings => sub { {RETRIES => 3, RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
@@ -17,6 +19,7 @@ has is_stopping => 0;
 has skipped_jobs => sub { [] };
 has current_error => undef;
 has current_job => undef;
+has current_error_is_ephemeral => 0;
 has pending_job => undef;
 has has_pending_jobs => 0;
 has pending_job_ids => sub { [] };
@@ -30,7 +33,14 @@ has job_guard_expiration_updated => 0;
 sub update_job_guard_expiration ($self) { $self->job_guard_expiration_updated(1) }
 sub stop_current_job ($self, $reason) { $self->stop_current_job_called($reason) }
 sub stop ($self) { $self->is_stopping(1) }
-sub status ($self) { {fake_status => 1, reason => $self->current_error} }
+
+sub status ($self) {
+    if ($self->current_error_is_ephemeral) {
+        $self->current_error('another error')->current_error_is_ephemeral(0);
+        Mojo::IOLoop->stop;
+    }
+    return {fake_status => 1, reason => $self->current_error};
+}
 
 sub accept_job ($self, $client, $job_info) {
     $self->current_job(OpenQA::Worker::Job->new($self, $client, $job_info));
