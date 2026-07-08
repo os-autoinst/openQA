@@ -379,12 +379,12 @@ sub run_cmd_with_log_return_error ($cmd, %args) {
 }
 
 # passing $value is optional but makes the result more accurate
-# (it affects only UEFI_PFLASH_VARS currently).
+# (it affects only UEFI_PFLASH_(CODE|VARS) currently).
 sub asset_type_from_setting ($setting, $value = undef) {
     return 'iso' if $setting eq 'ISO' || $setting =~ /^ISO_\d+$/;
     return 'hdd' if $setting =~ /^HDD_\d+$/;
-    # non-absolute-path value of UEFI_PFLASH_VARS treated as HDD asset
-    return 'hdd' if $setting eq 'UEFI_PFLASH_VARS' && ($value // '') !~ m,^/,;
+    # non-absolute-path value of UEFI_PFLASH_(CODE|VARS) treated as HDD asset
+    return 'hdd' if $setting =~ /^UEFI_PFLASH_(?:CODE|VARS)$/ && ($value // '') !~ m{^/};
     return 'repo' if $setting =~ /^REPO_\d+$/;
     return 'other' if $setting =~ /^ASSET_\d+$/ || $setting eq 'KERNEL' || $setting eq 'INITRD';
     # empty string if this doesn't look like an asset type
