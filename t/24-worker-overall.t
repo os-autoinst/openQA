@@ -53,9 +53,9 @@ package Test::FakeClient {    # uncoverable statement count:2
     has service_port_delta => 2;
     has api_calls => sub { [] };
 
-    sub send ($self, $method, $path, %args) {
-        push @{$self->api_calls}, $method, $path, $args{params};
-    }
+    sub send ($self, $method, $path, %args) { push @{$self->api_calls}, $method, $path, $args{params} }
+    sub send_status ($self, @args) { push @{$self->api_calls}, 'send_status', @args }
+    sub reject_jobs ($self, @args) { push @{$self->api_calls}, 'reject_jobs', @args }
 }    # uncoverable statement
 
 package Test::FakeJob {    # uncoverable statement count:2
@@ -167,6 +167,12 @@ subtest 'job lock for throttling' => sub {
         is $worker->{_guard_or_error}, "Limited by configured lock 'foo'", 'error recorded';
         ($available, $error) = $worker->check_availability;
         is $error, "Limited by configured lock 'foo'", 'availability error returned as we tried to go beyond limit';
+
+        my $client = Test::FakeClient->new;
+        $worker->_ensure_job_guard($client, [42]);
+        my @expected = (send_status => (on_error => 1), reject_jobs => ([42], "Limited by configured lock 'foo'"));
+        is_deeply $client->api_calls, \@expected, 'status sent to web UI and assignment rejected'
+          or always_explain $client->api_calls;
     };
 
     subtest 'releasing locks' => sub {
