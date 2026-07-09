@@ -207,6 +207,7 @@ jobs:
       - codecov/upload:
           files: cover_db/codecov.json
           verbose: true
+      - run: ./tools/check-line-coverage cover_db/codecov.json
 
   build-docs: &docs-template
     docker:
