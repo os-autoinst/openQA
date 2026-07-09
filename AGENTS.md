@@ -11,6 +11,7 @@ JavaScript (Bootstrap).
 - `make test-unit-and-integration TESTS=t/your_test.t`: Run specific tests.
 - `COVERAGE=1 make test-unit-and-integration TESTS=t/your_test.t`: Run
   specific tests with statement coverage enabled.
+- `make check-line-coverage`: Check for uncovered lines in current cover_db.
 - `cover -report text -select_re 'path/to/modified_file'`: Generate and view a
   fast text-based coverage report restricted to the specific file you changed
   (run this after generating the coverage database).
@@ -34,9 +35,9 @@ JavaScript (Bootstrap).
   creating git commits.
 - **Strict Statement Coverage:** Full statement coverage is a hard
   requirement. You MUST run tests with `COVERAGE=1` for your specific test
-  adaptations and verify that all new/modified lines are covered using `cover
-  -report text` before creating git commits. Do not wait for CI/Codecov in PRs
-  to catch missing coverage.
+  adaptations, and then run `make check-line-coverage` to verify that all
+  new/modified lines are covered. Do not wait for CI/Codecov in PRs to catch
+  missing coverage.
 
 ## Constraints
 
