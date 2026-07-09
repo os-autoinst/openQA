@@ -303,7 +303,8 @@ subtest 'getting sort criteria for job from cluster that is not scheduled' => su
     my $rollback = scope_guard sub { $schema->txn_rollback };
     my $scheduler_mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
     my $fake_allocated = {worker => 1, job => 1};
-    $scheduler_mock->redefine(_allocate_jobs => sub ($self, $free_workers) { ({}, {1 => $fake_allocated}) });
+    $scheduler_mock->redefine(
+        _allocate_jobs => sub ($self, $online_workers = undef, $free_workers = undef) { ({}, {1 => $fake_allocated}) });
     my $running = $jobs->create({TEST => 'running', state => RUNNING});
     $job_dependencies->create({child_job_id => 1, parent_job_id => $running->id, dependency => PARALLEL});
     my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
@@ -440,11 +441,11 @@ subtest 'scheduler limits' => sub {
         my @classes = qw(atari c64 quantum);
         my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
         my $scheduled_jobs = $scheduler->determine_scheduled_jobs;
-        my $free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers();
+        my $online_workers = OpenQA::Scheduler::Model::Jobs::determine_online_workers();
         my %rejected;
         for my $jobinfo (values %$scheduled_jobs) {
             $jobinfo->{matching_workers}
-              = OpenQA::Scheduler::Model::Jobs::_matching_workers($jobinfo, $free_workers, \%rejected);
+              = OpenQA::Scheduler::Model::Jobs::_matching_workers($jobinfo, $online_workers, \%rejected);
         }
         my $expected = {atari => 3, c64 => 3, quantum => 3};
         is_deeply \%rejected, $expected, 'Rejected worker classes statistics like expected';
