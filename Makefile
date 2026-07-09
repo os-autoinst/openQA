@@ -386,6 +386,10 @@ coverage-report-codecov: ## Generate codecov report
 	export DEVEL_COVER_DB_FORMAT=JSON;\
 	cover $(COVER_REPORT_OPTS) -report codecovbash
 
+.PHONY: check-line-coverage
+check-line-coverage: coverage-report-codecov ## Check for uncovered lines in current cover_db
+	./tools/check-line-coverage cover_db/codecov.json
+
 .PHONY: coverage-codecov
 coverage-codecov: coverage ## Run coverage and generate codecov report
 	$(MAKE) coverage-report-codecov
