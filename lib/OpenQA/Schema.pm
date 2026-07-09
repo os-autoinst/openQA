@@ -18,7 +18,6 @@ use OpenQA::App;
 use OpenQA::Config;
 use OpenQA::Utils qw(:DEFAULT prjdir);
 use Mojo::File qw(path);
-use Feature::Compat::Try;
 use POSIX qw(setuid setgid);
 
 # after bumping the version please look at the instructions in the docs/Contributing.md file
