@@ -1,7 +1,7 @@
 # Copyright SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-package OpenQA::CacheService::Db;
+package OpenQA::CacheService::DB;
 use Mojo::Base -strict, -signatures;
 
 use Mojo::SQLite;

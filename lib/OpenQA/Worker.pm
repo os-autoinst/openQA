@@ -47,7 +47,7 @@ use OpenQA::Constants
   qw(WEBSOCKET_API_VERSION WORKER_COMMAND_QUIT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_SR_FINISH_OFF);
 use OpenQA::Client;
 use OpenQA::CacheService::Client;
-use OpenQA::CacheService::Db;
+use OpenQA::CacheService::DB;
 use OpenQA::Log qw(log_error log_warning log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Utils qw(prjdir load_avg);
 use OpenQA::Worker::WebUIConnection;
@@ -89,9 +89,9 @@ sub new ($class, $cli_options) {
     $settings->apply_to_app($app);
 
     # init Minion for locking
-    my $location = OpenQA::CacheService::Db::location($settings->global_settings) // (prjdir . '/cache');
-    my $db_file = OpenQA::CacheService::Db::db_file($location, 'worker-locks.sqlite');
-    my $sqlite = OpenQA::CacheService::Db::open_sqlite_database($app->log, $db_file);
+    my $location = OpenQA::CacheService::DB::location($settings->global_settings) // (prjdir . '/cache');
+    my $db_file = OpenQA::CacheService::DB::db_file($location, 'worker-locks.sqlite');
+    my $sqlite = OpenQA::CacheService::DB::open_sqlite_database($app->log, $db_file);
     $app->plugin(Minion => {SQLite => $sqlite});
 
     # setup the isotovideo engine

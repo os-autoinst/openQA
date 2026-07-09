@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious', -signatures;
 
 use Time::Seconds;
 use OpenQA::Worker::Settings;
-use OpenQA::CacheService::Db;
+use OpenQA::CacheService::DB;
 use OpenQA::CacheService::Model::Cache;
 use OpenQA::CacheService::Model::Downloads;
 
@@ -40,7 +40,7 @@ sub startup ($self) {
 
     # Worker settings
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
-    my $location = OpenQA::CacheService::Db::location($global_settings);
+    my $location = OpenQA::CacheService::DB::location($global_settings);
     die "Cache directory unspecified. Set environment variable 'OPENQA_CACHE_DIR' or config variable 'CACHEDIRECTORY'\n"
       unless defined $location;
     my $limit = $global_settings->{CACHELIMIT};
@@ -58,7 +58,7 @@ sub startup ($self) {
     $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
     # Increase busy timeout to 5 minutes
-    my $sqlite = OpenQA::CacheService::Db::open_default_sqlite_database($self->log, $location);
+    my $sqlite = OpenQA::CacheService::DB::open_default_sqlite_database($self->log, $location);
     $sqlite->migrations->name('cache_service')->from_data;
 
     my @cache_params = (sqlite => $sqlite, log => $self->log, location => $location);
