@@ -840,6 +840,17 @@ sub reserve_ports ($services = [keys %SERVICE_OFFSETS], %options) {
     return @$services == 1 ? $RESERVED_SOCKETS{$services->[0]} : \%RESERVED_SOCKETS;
 }
 
+# Map a plain reserved port back to its "port&fd=…" form so a child daemon reuses
+# the parent's already-bound socket instead of binding a fresh one (which only
+# succeeds on IPv6 loopback and deadlocks IPv4 clients). Returns the port
+# unchanged if it was not reserved.
+sub raw_port_for_reserved ($plain) {
+    for my $socket (values %RESERVED_SOCKETS) {
+        return "$plain&fd=" . $socket->fileno if $socket->sockport == $plain;
+    }
+    return $plain;
+}
+
 sub random_string ($length = RANDOM_STRING_DEFAULT_LENGTH, $chars = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_']) {
     return join '', map { $chars->[rand @$chars] } 1 .. $length;
 }

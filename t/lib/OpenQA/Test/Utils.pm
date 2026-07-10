@@ -269,6 +269,9 @@ sub stop_service {
 }
 
 sub create_webapi ($port = undef, $no_cover = undef) {
+    # Callers commonly pass the plain reserved port via `reserve_ports(...)->sockport`;
+    # restore its socket fd so the daemon reuses the parent's bound socket.
+    $port = OpenQA::Utils::raw_port_for_reserved($port) if defined $port && $port =~ /^\d+$/;
     $port //= raw_service_port 'webui';
     note("Starting WebUI service. Port: $port");
 
