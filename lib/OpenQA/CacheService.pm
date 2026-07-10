@@ -4,43 +4,15 @@
 package OpenQA::CacheService;
 use Mojo::Base 'Mojolicious', -signatures;
 
-use Mojo::SQLite;
-use Mojo::File 'path';
 use Time::Seconds;
 use OpenQA::Worker::Settings;
+use OpenQA::CacheService::DB;
 use OpenQA::CacheService::Model::Cache;
 use OpenQA::CacheService::Model::Downloads;
 
 use constant DEFAULT_MINION_WORKERS => 5;
 
-# Default to 10 minutes
-use constant SQLITE_BUSY_TIMEOUT => $ENV{OPENQA_SQLITE_BUSY_TIMEOUT} // 600000;
-
-# Defaults to 1 minute
-use constant SQLITE_SLOW_QUERY => $ENV{OPENQA_SQLITE_SLOW_QUERY} // 60000;
-
 has exit_code => undef;
-
-sub _configure_sqlite_database ($self, $sqlite, $dbh) {
-    # default to using DELETE journaling mode to avoid database corruption seen in production (see poo#67000)
-    # check out https://www.sqlite.org/pragma.html#pragma_journal_mode for possible values
-    my $sqlite_mode = uc($ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} || 'DELETE');
-    $dbh->sqlite_busy_timeout(SQLITE_BUSY_TIMEOUT);
-    $dbh->do("pragma journal_mode=$sqlite_mode");
-    $dbh->do('pragma synchronous=NORMAL') if $sqlite_mode eq 'WAL';
-
-    # Log slow queries
-    $dbh->sqlite_profile(
-        sub ($statement, $elapsed, @) {
-            $self->log->info(qq{Slow SQLite query: "$statement" -> ${elapsed}ms}) if $elapsed > SQLITE_SLOW_QUERY;
-        });
-}
-
-sub _open_sqlite_database ($self, $db_file) {
-    my $sqlite = Mojo::SQLite->new->from_string("file://$db_file?no_wal=1");
-    $sqlite->on(connection => sub ($sqlite, $dbh) { $self->_configure_sqlite_database($sqlite, $dbh) });
-    return $sqlite;
-}
 
 sub startup ($self) {
     $self->moniker('openqa_cache_service');
@@ -68,7 +40,7 @@ sub startup ($self) {
 
     # Worker settings
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
-    my $location = $ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY};
+    my $location = OpenQA::CacheService::DB::location($global_settings);
     die "Cache directory unspecified. Set environment variable 'OPENQA_CACHE_DIR' or config variable 'CACHEDIRECTORY'\n"
       unless defined $location;
     my $limit = $global_settings->{CACHELIMIT};
@@ -86,7 +58,7 @@ sub startup ($self) {
     $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
     # Increase busy timeout to 5 minutes
-    my $sqlite = $self->_open_sqlite_database(path($location, 'cache.sqlite'));
+    my $sqlite = OpenQA::CacheService::DB::open_default_sqlite_database($self->log, $location);
     $sqlite->migrations->name('cache_service')->from_data;
 
     my @cache_params = (sqlite => $sqlite, log => $self->log, location => $location);

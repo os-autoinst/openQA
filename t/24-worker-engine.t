@@ -31,6 +31,7 @@ use Mojo::Util 'scope_guard';
 use File::Copy::Recursive qw(dircopy);
 
 my $workdir = tempdir("$FindBin::Script-XXXX", TMPDIR => 1);
+$ENV{OPENQA_CACHE_DIR} = $workdir;
 chdir $workdir;
 my $guard = scope_guard sub { chdir $FindBin::Bin };
 dircopy "$FindBin::Bin/$_", "$workdir/t/$_" or BAIL_OUT($!) for qw(data);
@@ -367,6 +368,8 @@ subtest 'syncing tests' => sub {
     OpenQA::Worker::Engines::isotovideo::sync_tests(OpenQA::CacheService::Client->new, @args);
     Mojo::IOLoop->start;
     is $result, 'cache-dir/webuihost/tests', 'returns synced test directory on success' or always_explain $result;
+
+    is $worker->job_guard_expiration_updated, 0, 'job guard not updated while just syncing tests';
 };
 
 subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
@@ -401,12 +404,13 @@ subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
         like $result->{error}, qr/The source directory $casedir\/needles does not exist/,
           'symlink needles directory failed because source directory does not exist';
     };
-
     subtest 'good case: direct invocation of helper function for symlinking' => sub {
         my $casedir = testcasedir('opensuse', undef, undef);
         my $result = OpenQA::Worker::Engines::isotovideo::_link_repo($casedir, $pool_directory, 'opensuse');
         is $result, undef, 'create symlink successfully';
     };
+
+    is $worker->job_guard_expiration_updated, 0, 'job guard not updated';
 
     my @custom_casedir_settings = (
         CASEDIR_DOMAIN => 'github.com',
@@ -432,6 +436,7 @@ subtest 'symlink testrepo, logging behavior, variable expansion' => sub {
           'PRODUCTDIR still defaults to a relative path when CASEDIR is a URL to main.pm from custom test repo is used';
         is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to its basename';
         is $result->{error}, undef, 'no error occurred (1)';
+        is $worker->job_guard_expiration_updated, 1, 'job guard updated as the engine was started';
     };
 
     subtest 'good case: custom CASEDIR and custom NEEDLES_DIR specified and both are Git repos' => sub {

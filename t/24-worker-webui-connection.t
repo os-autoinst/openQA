@@ -10,6 +10,8 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 
+BEGIN { $ENV{OPENQA_WORKER_EPHEMERAL_RECHECK_INTERVAL} = 0 }
+
 use Mojo::IOLoop;
 use Mojolicious;
 use Test::Output 'combined_like';
@@ -368,7 +370,14 @@ subtest 'send status' => sub {
     $client->send_status();
     is_deeply $ws->sent_messages, [{json => {fake_status => 1, reason => 'some error'}}], 'status sent'
       or always_explain $ws->sent_messages;
-    combined_like { $client->send_status_delayed } qr/some error.*checking again/, 'error logged in callback';
+
+    # consider the error ephemeral; it is expected to be re-checked and replaced by the FakeWorker with "another error"
+    $client->worker->current_error_is_ephemeral(1);
+    combined_like {
+        $client->send_status_delayed;
+        Mojo::IOLoop->start;
+    }
+    qr/another error.*checking again/, 'error logged in callback';
 };
 
 subtest 'quit' => sub {

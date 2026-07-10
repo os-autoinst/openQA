@@ -42,9 +42,12 @@ use Mojo::IOLoop;
 use Mojo::File 'path';
 use POSIX ();
 use Scalar::Util 'looks_like_number';
+use Time::Seconds qw(ONE_HOUR);
 use OpenQA::Constants
   qw(WEBSOCKET_API_VERSION WORKER_COMMAND_QUIT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_SR_FINISH_OFF);
 use OpenQA::Client;
+use OpenQA::CacheService::Client;
+use OpenQA::CacheService::DB;
 use OpenQA::Log qw(log_error log_warning log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Utils qw(prjdir load_avg);
 use OpenQA::Worker::WebUIConnection;
@@ -64,6 +67,7 @@ has 'current_webui_host';
 has 'current_job';
 has 'current_error';
 has 'current_error_is_fatal';
+has 'current_error_is_ephemeral';
 has 'worker_hostname';
 has 'isotovideo_interface_version';
 
@@ -84,6 +88,12 @@ sub new ($class, $cli_options) {
     $settings->auto_detect_worker_address($short_hostname);
     $settings->apply_to_app($app);
 
+    # init Minion for locking
+    my $location = OpenQA::CacheService::DB::location($settings->global_settings) // (prjdir . '/cache');
+    my $db_file = OpenQA::CacheService::DB::db_file($location, 'worker-locks.sqlite');
+    my $sqlite = OpenQA::CacheService::DB::open_sqlite_database($app->log, $db_file);
+    $app->plugin(Minion => {SQLite => $sqlite});
+
     # setup the isotovideo engine
     my $isotovideo_interface_version = OpenQA::Worker::Engines::isotovideo::set_engine_exec($cli_options->{isotovideo});
 
@@ -103,9 +113,39 @@ sub new ($class, $cli_options) {
     $self->{_finishing_off} = undef;
     $self->{_ovs_dbus_service_name} = $ENV{OVS_DBUS_SERVICE_NAME} // 'org.opensuse.os_autoinst.switch';
     $self->{_initial_working_dir} = getcwd() // '.';
-
+    $self->{_minion_sqlite} = $sqlite;
     return $self;
 }
+
+sub guard ($self, @args) { $self->app->minion->guard(@args) }
+
+sub _job_guard ($self) {
+    my $settings = $self->settings->global_settings;
+    return undef unless defined(my $lock_name = $settings->{LOCK_NAME});
+    return $self->guard($lock_name, ONE_HOUR, {limit => $settings->{LOCK_LIMIT} // 1})
+      // "Limited by configured lock '$lock_name'";
+}
+
+sub can_acquire_job_guard ($self) { !!(ref $self->_job_guard) }
+
+sub acquire_job_guard ($self) {
+    $self->{_guard_or_error} = undef if ref $self->{_guard_or_error};
+    $self->{_guard_or_error} = $self->_job_guard;
+}
+
+# reduces the expiration of the lock with the longest expiration from the initial ONE_HOUR to the configured LOCK_EXPIRATION
+# note: This function is called by the engine when the setup is over and the actual execution starts and thus an increased load
+#       is expected.
+sub update_job_guard_expiration ($self) {
+    return 0 unless ref $self->{_guard_or_error};    # skip if we don't hold a lock
+    my $settings = $self->settings->global_settings;
+    return undef unless defined(my $lock_name = $settings->{LOCK_NAME});
+    my $expiration = int($settings->{LOCK_EXPIRATION} // 30);
+    my $query = q(update minion_locks set expires = datetime('now', ?) where name = ? order by expires desc limit 1);
+    $self->{_minion_sqlite}->db->query($query, "+$expiration seconds", $lock_name);
+}
+
+sub release_job_guard ($self) { undef $self->{_guard_or_error} }
 
 # logs the basic configuration of the worker instance
 sub log_setup_info ($self) {
@@ -541,9 +581,19 @@ sub _accept_or_skip_next_job_in_queue ($self) {
     return $next_job->accept;
 }
 
+sub _ensure_job_guard ($self, $client, $job_ids) {
+    my $guard_or_error = $self->acquire_job_guard;
+    return 1 if !defined $guard_or_error || ref $guard_or_error;
+    $client->send_status(on_error => 1);
+    $client->reject_jobs($job_ids, $guard_or_error);
+    log_info "Rejecting job: $guard_or_error";
+    return 0;
+}
+
 # accepts a single job from the job info received via the 'grab_job' command
 sub accept_job ($self, $client, $job_info) {
     $self->_assert_whether_job_acceptance_possible;
+    $self->_ensure_job_guard($client, [$job_info->{id}]) or return 0;
     $self->{_queue} = undef;
     $self->_prepare_job_execution(OpenQA::Worker::Job->new($self, $client, $job_info));
     $self->current_job->accept;
@@ -569,6 +619,7 @@ sub enqueue_jobs_and_accept_first ($self, $client, $job_info) {
     #       if one job fails.
 
     $self->_assert_whether_job_acceptance_possible;
+    $self->_ensure_job_guard($client, [keys %{$job_info->{data}}]) or return 0;
     $self->_enqueue_job_sub_sequence($client, $self->_init_queue, $job_info->{sequence}, $job_info->{data});
     $self->_accept_or_skip_next_job_in_queue;
 }
@@ -657,6 +708,8 @@ sub is_ovs_dbus_service_running ($self) {
 # returns whether the worker is available and a reason
 # note: This is used to check certain error conditions *before* starting a job to prevent incompletes and
 #       being able to propagate the brokenness to the web UIs.
+# note: This function returns a value >0 if there is no fatal problem and >1 if the problem is even expected
+#       to be resolved soon.
 # note: High load will yield a corresponding error message as reason so the worker becomes broken and
 #       thus will not pick up any new jobs. However, a worker under high load is still considered being
 #       able to work on jobs that are already enqueued. Hence this function returns a "1" for the
@@ -686,13 +739,25 @@ sub check_availability ($self) {
       if $settings->has_class('tap') && !$self->is_ovs_dbus_service_running;
 
     # continue with enqueued jobs in any case but avoid picking up new jobs if system utilization is critical
-    return (1, $self->_check_system_utilization);
+    if (my $system_utilization_error = $self->_check_system_utilization) {
+        return (1, $system_utilization_error);
+    }
+
+    # check whether we failed to get the job lock (and would still not be able to get it)
+    if (defined(my $guard_or_error = $self->{_guard_or_error})) {
+        my $is_error = !ref $guard_or_error;
+        return (2, $guard_or_error) if $is_error && !$self->can_acquire_job_guard;
+        undef $self->{_guard_or_error} if $is_error;
+    }
+
+    return (1, undef);
 }
 
 sub set_current_error_based_on_availability ($self) {
-    my ($is_available, $reason) = $self->check_availability;
+    my ($availability, $reason) = $self->check_availability;
     $self->current_error($reason);
-    $self->current_error_is_fatal(!$is_available);
+    $self->current_error_is_fatal($availability < 1);
+    $self->current_error_is_ephemeral($availability > 1);
     return $reason;
 }
 
@@ -777,6 +842,7 @@ sub _handle_job_status_changed ($self, $job, $event_data) {
         if (my $error_message = $event_data->{error_message}) { log_error($error_message) }
         $self->current_job(undef);
         $self->current_webui_host(undef);
+        $self->release_job_guard;
         if (my $queue = $self->{_queue}) {
             $queue->{failed_jobs}->{$job_id} = $reason if $reason ne WORKER_SR_DONE || !$event_data->{ok};
         }
