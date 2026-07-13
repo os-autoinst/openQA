@@ -813,7 +813,12 @@ sub set_listen_address ($service) { $ENV{MOJO_LISTEN} //= make_listen_url(raw_se
 my %SERVICE_OFFSETS = (webui => 0, websocket => 1, livehandler => 2, scheduler => 3, cache_service => 4);
 my %RESERVED_SOCKETS;
 
-sub raw_service_port ($service) {
+sub raw_service_port ($service, $port = undef) {
+    if (defined $port) {
+        $port = raw_port_for_reserved($port) if $port =~ /^\d+$/;
+        return $port;
+    }
+
     my $base = $ENV{OPENQA_BASE_PORT} ||= DEFAULT_OPENQA_BASE_PORT;
     if (my $env_port = $ENV{"OPENQA_PORT_\U$service"}) {    # \U uppercases the interpolated variable
         return $env_port;

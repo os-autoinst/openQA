@@ -556,4 +556,12 @@ subtest 'create downloads list' => sub {
       'valid download for asset URL';
 };
 
+subtest 'reserved ports' => sub {
+    is raw_service_port('webui', 1234), 1234, 'unreserved port unchanged';
+    my $socket = OpenQA::Utils::reserve_ports(['webui'], force => 1);
+    my $port = $socket->sockport;
+    my $fileno = $socket->fileno;
+    is raw_service_port('webui', $port), "$port&fd=$fileno", 'reserved port mapped to fd form';
+};
+
 done_testing;

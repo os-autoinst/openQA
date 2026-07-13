@@ -269,10 +269,7 @@ sub stop_service {
 }
 
 sub create_webapi ($port = undef, $no_cover = undef) {
-    # Callers commonly pass the plain reserved port via `reserve_ports(...)->sockport`;
-    # restore its socket fd so the daemon reuses the parent's bound socket.
-    $port = OpenQA::Utils::raw_port_for_reserved($port) if defined $port && $port =~ /^\d+$/;
-    $port //= raw_service_port 'webui';
+    $port = raw_service_port('webui', $port);
     note("Starting WebUI service. Port: $port");
 
     my $h = _setup_sigchld_handler 'openqa-webapi', start sub {
@@ -299,7 +296,7 @@ sub create_webapi ($port = undef, $no_cover = undef) {
 }
 
 sub create_websocket_server ($port, $bogus, $with_embedded_scheduler = undef, $no_cover = undef) {
-    OpenQA::WebSockets::Client->singleton->port(to_plain_service_port($port //= raw_service_port('websocket')));
+    OpenQA::WebSockets::Client->singleton->port(to_plain_service_port($port = raw_service_port('websocket', $port)));
     note "Starting WebSocket service (port: $port, bogus: $bogus)";
     my $h = _setup_sigchld_handler 'openqa-websocket', start sub {
         _setup_sub_process 'openqa-websocket';
@@ -342,7 +339,8 @@ sub create_websocket_server ($port, $bogus, $with_embedded_scheduler = undef, $n
     return $h;
 }
 
-sub create_scheduler ($port = raw_service_port('scheduler')) {
+sub create_scheduler ($port = undef) {
+    $port = raw_service_port('scheduler', $port);
     note("Starting Scheduler service. Port: $port");
     OpenQA::Scheduler::Client->singleton->port(to_plain_service_port($port));
     _setup_sigchld_handler 'openqa-scheduler', start sub {
@@ -355,7 +353,8 @@ sub create_scheduler ($port = raw_service_port('scheduler')) {
     };
 }
 
-sub create_live_view_handler ($port = raw_service_port 'livehandler') {
+sub create_live_view_handler ($port = undef) {
+    $port = raw_service_port('livehandler', $port);
     _setup_sigchld_handler 'openqa-livehandler', start sub {
         _setup_sub_process 'openqa-livehandler';
         my $daemon
