@@ -33,7 +33,7 @@
          % }
          % if ($res->{restarts}) {
             <span class="restarts" title="Restarted <%= $res->{restarts} %> time<%= $res->{restarts} != 1 ? 's' : '' %>">
-                <i class="fa fa-undo"></i> <%= $res->{restarts} %>
+                <i class="action fa fa-clock-rotate-left"></i> <%= $res->{restarts} %>
             </span>
          % }
          %= include 'test/tr_job_result_details', jobid => $jobid, res => $res
