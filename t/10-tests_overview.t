@@ -15,7 +15,7 @@ use Date::Format 'time2str';
 use Mojo::Parameters;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
+$test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl 06-job_dependencies.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
@@ -639,6 +639,17 @@ subtest 'restart counter' => sub {
     my $data = Mojo::JSON::decode_json($t->tx->res->body)->{data};
     my ($clone2_data) = grep { $_->{id} == $clone2->id } @$data;
     is $clone2_data->{restarts}, 2, 'AJAX list contains restart count 2';
+};
+
+subtest 'advanced restart options' => sub {
+    $test_case->login($t, 'percival');
+    $t->get_ok('/tests/overview?groupid=1001&distri=opensuse&version=13.1&build=0091');
+    $t->element_exists('#restart-button-options-99937', 'menu with advanced restart options present');
+    my $links = $t->tx->res->dom->find('#restart-button-options-99937 + .dropdown-menu a')->map(attr => 'href')->sort;
+    my @expected_params = qw(skip_children skip_ok_result_children skip_parents);
+    my @expected_links = map { "/api/v1/jobs/99937/restart?$_=1" } @expected_params;
+    is_deeply $links, \@expected_links, 'advanced restart links present' or always_explain $links;
+    $t->element_exists_not('#restart-button-options-99946', 'menu not present if job has no dependencies');
 };
 
 done_testing();

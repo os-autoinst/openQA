@@ -6,6 +6,9 @@
              % if ($state eq DONE || $state eq CANCELLED) {
                  %= link_post url_for('apiv1_restart', jobid => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
                  <i class="action fa-solid fa-rotate-left" title="Restart the job"></i><%= end %>
+                 % if ($res->{dep_count}) {
+                    %= include 'test/restart_options', btn_type => 'btn-link', btn_style => 'padding: 0px';
+                 % }
              % }
              % elsif (any { $_ eq $state } PENDING_STATES) {
                  %= link_post url_for('apiv1_cancel', jobid => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
