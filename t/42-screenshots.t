@@ -15,7 +15,7 @@ use OpenQA::Test::Utils qw(run_gru_job);
 use OpenQA::ScreenshotDeletion;
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
-use Test::Output qw(combined_like combined_unlike);
+use Test::Output qw(combined_like combined_unlike combined_from);
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use DateTime;
@@ -110,7 +110,9 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
     };
 
     # run a limit_results_and_logs job with customized batch parameters
-    run_gru_job($app, limit_results_and_logs => [{screenshots_per_batch => 20, batches_per_minion_job => 5}]);
+    combined_from {
+        run_gru_job($app, limit_results_and_logs => [{screenshots_per_batch => 20, batches_per_minion_job => 5}])
+    };
 
     # check whether "limit_results_and_logs" enqueues further "limit_screenshots" and "ensure_results_below_threshold"
     # jobs
@@ -156,7 +158,7 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
       or always_explain \@remaining_screenshots;
 
     subtest 'run a limit_results_and_logs job with batch parameters from config' => sub {
-        run_gru_job($app, limit_results_and_logs => [{}]);
+        combined_from { run_gru_job($app, limit_results_and_logs => [{}]) };
         my $enqueued_minion_jobs
           = get_enqueued_minion_jobs($minion, {states => ['inactive'], tasks => ['limit_screenshots']});
         my $enququed_minion_job_args = $enqueued_minion_jobs->{enqueued_job_args};
@@ -166,7 +168,8 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
           'limit_screenshots task with default batch size from config enqueued'
           or always_explain $enququed_minion_job_args;
 
-        my $job_info = run_gru_job($app, limit_results_and_logs => [{}]);
+        my $job_info;
+        combined_from { $job_info = run_gru_job($app, limit_results_and_logs => [{}]) };
         like $job_info->{notes}->{screenshot_cleanup}, qr/skipping.*still 1.*job/i,
           'screenshot limit tasks not enqueued again'
           or always_explain $job_info;
