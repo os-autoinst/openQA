@@ -148,6 +148,7 @@ sub create ($self) {
     }
     $self->emit_event('openqa_comment_create', $comment->event_data);
     $txn_guard->commit;
+    $self->flash(info => 'The comments have been created.');
     $self->render(json => {id => $comment->id});
 }
 
