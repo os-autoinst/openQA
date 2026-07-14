@@ -813,7 +813,12 @@ sub set_listen_address ($service) { $ENV{MOJO_LISTEN} //= make_listen_url(raw_se
 my %SERVICE_OFFSETS = (webui => 0, websocket => 1, livehandler => 2, scheduler => 3, cache_service => 4);
 my %RESERVED_SOCKETS;
 
-sub raw_service_port ($service) {
+sub raw_service_port ($service, $port = undef) {
+    if (defined $port) {
+        $port = raw_port_for_reserved($port) if $port =~ /^\d+$/;
+        return $port;
+    }
+
     my $base = $ENV{OPENQA_BASE_PORT} ||= DEFAULT_OPENQA_BASE_PORT;
     if (my $env_port = $ENV{"OPENQA_PORT_\U$service"}) {    # \U uppercases the interpolated variable
         return $env_port;
@@ -838,6 +843,17 @@ sub reserve_ports ($services = [keys %SERVICE_OFFSETS], %options) {
         $ENV{OPENQA_SERVICE_PORT_DELTA} = $livehandler_socket->sockport - $webui_socket->sockport;
     }
     return @$services == 1 ? $RESERVED_SOCKETS{$services->[0]} : \%RESERVED_SOCKETS;
+}
+
+# Map a plain reserved port back to its "port&fd=…" form so a child daemon reuses
+# the parent's already-bound socket instead of binding a fresh one (which only
+# succeeds on IPv6 loopback and deadlocks IPv4 clients). Returns the port
+# unchanged if it was not reserved.
+sub raw_port_for_reserved ($plain) {
+    for my $socket (values %RESERVED_SOCKETS) {
+        return "$plain&fd=" . $socket->fileno if $socket->sockport == $plain;
+    }
+    return $plain;
 }
 
 sub random_string ($length = RANDOM_STRING_DEFAULT_LENGTH, $chars = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_']) {
