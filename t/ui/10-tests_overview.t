@@ -637,9 +637,9 @@ subtest 'add comments' => sub {
     $driver->find_element_by_id('text')->send_keys($comment_text);
     is $submit_button->get_text, 'Comment on all 2 jobs', 'submit button displayed with number of jobs';
     $submit_button->click;
-    wait_for_ajax msg => 'comments created';
-    like $driver->find_element_by_id('flash-messages')->get_text, qr/The comments have been created. Reload/,
+    ok wait_for_element(selector => '#flash-messages .alert-info', like => qr/The comments have been created\./),
       'info about success shown';
+    ok wait_for_element(selector => '.label_comment', is_displayed => 1), 'comment shown without manual reloading';
 
     my @failed_job_ids = map { $_->id } $jobs->search({result => FAILED})->all;
     is $comments->search({job_id => {-in => \@failed_job_ids}, text => $comment_text})->count, 2,
@@ -675,6 +675,8 @@ subtest 'add comments' => sub {
         is $submit_button->get_text, 'Comment on all 1 jobs',
           'submit button displayed with number of jobs (reduced by TODO filter)';
         $submit_button->click;
+        ok wait_for_element(selector => '#flash-messages .alert-info', like => qr/The comments have been created\./),
+          'info about success shown';
 
         # reload without TO-DO filter to check whether only the one job that matched the TO-DO filter was commented on
         $driver->get('/tests/overview?build=0048&distri=opensuse&version=Factory&groupid=1001');

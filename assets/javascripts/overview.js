@@ -259,6 +259,13 @@ function setupOverview(options) {
     parentChild[i].addEventListener('mouseover', highlightDeps);
     parentChild[i].addEventListener('mouseout', unhighlightDeps);
   }
+
+  const cookies = new URLSearchParams(document.cookie);
+  const flash = cookies.get('flash');
+  if (flash) {
+    addFlash(...flash.split(':', 2));
+    document.cookie = 'flash=; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+  }
 }
 
 function setCheckboxStatesForFlags(containerId, flags) {
@@ -339,11 +346,9 @@ function addComments(btn) {
   fetchWithCSRF(apiUrl, {method: 'POST', body: new FormData(form)})
     .then(response => {
       if (!response.ok) throw `Server returned ${response.status}: ${response.statusText}`;
-      addFlash(
-        'info',
-        'The comments have been created. <a href="javascript: location.reload()">Reload</a> the page to show changes.'
-      );
+      document.cookie = 'flash=info:The comments have been created.';
       done();
+      location.reload();
     })
     .catch(error => {
       addFlash('danger', `The comments could not be added: ${error}`);
