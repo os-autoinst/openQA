@@ -1173,9 +1173,9 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
 
     # show only the latest child jobs but still require the cloned job to be an actual child
     if ($as_child_of) {
-        my $clone = $job->clone;
-        if ($clone && $clone->is_child_of($as_child_of)) {
-            return _add_job($dependency_data, $clone, $as_child_of, $preferred_depth);
+        my $latest_job = $job->latest_job;
+        if ($latest_job != $job && $latest_job->is_child_of($as_child_of)) {
+            return _add_job($dependency_data, $latest_job, $as_child_of, $preferred_depth);
         }
     }
 
