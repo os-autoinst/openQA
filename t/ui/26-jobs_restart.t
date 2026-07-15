@@ -96,26 +96,26 @@ sub flash_messages { $driver->find_element('#flash-messages')->get_text }
 subtest 'restart job from info panel in test results' => sub {
     subtest 'parent job shows options for advanced restart' => sub {
         $driver->get_ok('/tests/99900', 'go to job 99900');
-        is @{$driver->find_elements('//a[contains(@id, "restart")]', 'xpath')}, 4, 'multiple restart actions found';
-        ok !$driver->find_element('#restart-result-skip-parents')->is_displayed, 'advanced restart entries present';
-        $driver->find_element('#restart-button-options')->click;
-        my $restart_parent = $driver->find_element('#restart-result-skip-parents');
+        is @{$driver->find_elements('//a[contains(@class, "restart")]', 'xpath')}, 4, 'multiple restart actions found';
+        ok !$driver->find_element('.restart-result-skip-parents')->is_displayed, 'advanced restart entries present';
+        $driver->find_element('.restart-button-options')->click;
+        my $restart_parent = $driver->find_element('.restart-result-skip-parents');
         ok $restart_parent->is_displayed, 'advanced restart entries shown';
         $restart_parent->attribute_like('href', qr/skip_parents=1/, 'skip parents API URL correct');
-        $driver->find_element('#restart-result-skip-ok-children')
+        $driver->find_element('.restart-result-skip-ok-children')
           ->attribute_like('href', qr/skip_ok_result_children=1/, 'skip OK children API URL correct');
-        $driver->find_element('#restart-result-skip-children')->click;
+        $driver->find_element('.restart-result-skip-children')->click;
         wait_until(sub { $driver->get_current_url =~ qr{/tests/99982} }, 'shows cloned job');
         $jobs->find(99982)->delete;
     };
     subtest 'child job shows options for advanced restart' => sub {
         $driver->get_ok('/tests/99901', 'go to job 99901');
-        ok !$driver->find_element('#restart-result-skip-parents')->is_displayed, 'advanced restart present for child';
-        $driver->find_element('#restart-button-options')->click;
-        my $restart_parent = $driver->find_element('#restart-result-skip-parents');
+        ok !$driver->find_element('.restart-result-skip-parents')->is_displayed, 'advanced restart present for child';
+        $driver->find_element('.restart-button-options')->click;
+        my $restart_parent = $driver->find_element('.restart-result-skip-parents');
         ok $restart_parent->is_displayed, 'advanced restart entries shown for child';
         $restart_parent->attribute_like('href', qr/skip_parents=1/, 'skip parents API URL correct for child');
-        $driver->find_element('#restart-result-skip-ok-children')
+        $driver->find_element('.restart-result-skip-ok-children')
           ->attribute_like('href', qr/skip_ok_result_children=1/, 'skip OK children API URL correct for child');
     };
     subtest 'assets missing; there is no parent' => sub {

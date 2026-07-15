@@ -5,32 +5,30 @@
          <i class="action fa-solid fa-fw fa-copy" title="Copy job id"></i></a>
              % if ($state eq DONE || $state eq CANCELLED) {
                  %= link_post url_for('apiv1_restart', jobid => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
-                 <i class="action fa-solid fa-rotate-left" title="Restart the job"></i>
-                 % end
+                 <i class="action fa-solid fa-rotate-left" title="Restart the job"></i><%= end %>
+                 % if ($res->{dep_count}) {
+                    %= include 'test/restart_options', btn_type => 'btn-link', btn_style => 'padding: 0px';
+                 % }
              % }
              % elsif (any { $_ eq $state } PENDING_STATES) {
                  %= link_post url_for('apiv1_cancel', jobid => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
-                     <i class="action fa-regular fa-circle-xmark" title="Cancel the job"></i>
-                 % end
+                     <i class="action fa-regular fa-circle-xmark" title="Cancel the job"></i><%= end %>
              % }
          % }
 
              <span id="res-<%= $jobid %>">
          % if ($state eq DONE) {
                  <a href="<%= url_for('test', 'testid' => $jobid) %>">
-                     <i class="status fa-solid fa-circle result_<%= $res->{overall} %>" title="Done: <%= $res->{overall} %>"></i>
-                 </a>
+                     <i class="status fa-solid fa-circle result_<%= $res->{overall} %>" title="Done: <%= $res->{overall} %>"></i></a>
          % }
          % elsif ($state eq SCHEDULED) {
              % my $substate = $res->{blocked} ? 'blocked' : 'scheduled';
              <a href="<%= url_for('test', 'testid' => $jobid) %>">
-                 <i class="status state_<%= $substate %> fa-solid fa-circle" title="<%= $substate %>@<%= $res->{priority} %>"></i>
-             </a>
+                 <i class="status state_<%= $substate %> fa-solid fa-circle" title="<%= $substate %>@<%= $res->{priority} %>"></i></a>
          % }
          % else {
              <a href="<%= url_for('test', 'testid' => $jobid) %>">
-                 <i class="status state_<%= $state %> fa-solid fa-circle" title="<%= $state %>"></i>
-             </a>
+                 <i class="status state_<%= $state %> fa-solid fa-circle" title="<%= $state %>"></i></a>
          % }
              </span>
          % if ($res->{failures}) {
@@ -38,7 +36,7 @@
          % }
          % if ($res->{restarts}) {
             <span class="restarts" title="Restarted <%= $res->{restarts} %> time<%= $res->{restarts} != 1 ? 's' : '' %>">
-                <i class="fa fa-undo"></i> <%= $res->{restarts} %>
+                <i class="action fa fa-clock-rotate-left"></i> <%= $res->{restarts} %>
             </span>
          % }
          %= include 'test/tr_job_result_details', jobid => $jobid, res => $res

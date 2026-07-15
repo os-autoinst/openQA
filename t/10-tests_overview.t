@@ -15,7 +15,7 @@ use Date::Format 'time2str';
 use Mojo::Parameters;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
+$test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl 06-job_dependencies.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
@@ -623,21 +623,33 @@ subtest 'restart counter' => sub {
     ok ref $clone, "Job cloned successfully: $clone" or BAIL_OUT 'Failed to clone job';
     $clone->update({state => 'done', result => 'passed'});
     $t->get_ok('/tests/overview' => form => {build => '198077'})->status_is(200);
-    $t->content_like(qr/fa-undo/i, 'Overview contains restart icon');
-    $t->content_like(qr/title="Restarted 1 time"/i, 'Overview contains restart title');
+    $t->element_exists('.restarts .fa-clock-rotate-left', 'Overview contains restart icon');
+    $t->element_exists('[title="Restarted 1 time"]', 'Overview contains restart title');
     create_job(BUILD => '198077_norestart', TEST => 'no_restart_test');
     $t->get_ok('/tests/overview' => form => {build => '198077_norestart'})->status_is(200);
-    $t->content_unlike(qr/fa-undo/i, 'Overview does not contain restart icon for job with no restarts');
+    $t->element_exists_not('.restarts .fa-clock-rotate-left', 'no restart icon for job with no restarts');
     my $clone2 = $clone->auto_duplicate();
     ok ref $clone2, "Job 2 cloned successfully: $clone2" or BAIL_OUT 'Failed to clone job 2';
     $clone2->update({state => 'done', result => 'passed'});
     $t->get_ok('/tests/overview' => form => {build => '198077'})->status_is(200);
+    $t->element_exists('[title="Restarted 2 times"]', 'Overview contains 2 restarts title');
     $t->content_like(qr/title="Restarted 2 times"/i, 'Overview contains 2 restarts title');
-    $t->content_like(qr/<i class="fa fa-undo"><\/i> 2/i, 'Overview contains restart count 2');
+    $t->content_like(qr/fa-clock-rotate-left"><\/i> 2/i, 'Overview contains restart count 2');
     $t->get_ok('/tests/list_ajax' => form => {limit => 100})->status_is(200);
     my $data = Mojo::JSON::decode_json($t->tx->res->body)->{data};
     my ($clone2_data) = grep { $_->{id} == $clone2->id } @$data;
     is $clone2_data->{restarts}, 2, 'AJAX list contains restart count 2';
+};
+
+subtest 'advanced restart options' => sub {
+    $test_case->login($t, 'percival');
+    $t->get_ok('/tests/overview?groupid=1001&distri=opensuse&version=13.1&build=0091');
+    $t->element_exists('#restart-button-options-99937', 'menu with advanced restart options present');
+    my $links = $t->tx->res->dom->find('#restart-button-options-99937 + .dropdown-menu a')->map(attr => 'href')->sort;
+    my @expected_params = qw(skip_children skip_ok_result_children skip_parents);
+    my @expected_links = map { "/api/v1/jobs/99937/restart?$_=1" } @expected_params;
+    is_deeply $links, \@expected_links, 'advanced restart links present' or always_explain $links;
+    $t->element_exists_not('#restart-button-options-99946', 'menu not present if job has no dependencies');
 };
 
 done_testing();

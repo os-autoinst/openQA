@@ -880,7 +880,11 @@ sub _prepare_job_results ($self, $jobs, $job_ids, %args) {
         my $test = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch = $job->ARCH || 'noarch';
-        $result->{deps} = to_json($job->dependencies($children_by_job->{$id} || [], $parents_by_job->{$id} || []));
+        my $children = $children_by_job->{$id} || [];
+        my $parents = $parents_by_job->{$id} || [];
+        my $deps = $job->dependencies($children, $parents);
+        $result->{dep_count} = (scalar @$children) + (scalar @$parents);
+        $result->{deps} = to_json($deps);
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE
         # for the jobs architecture
