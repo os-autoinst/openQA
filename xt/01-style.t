@@ -31,7 +31,7 @@ qx{git grep -l -e '^sub \\S\\+ [^(]\\+' --and --not -e 'sub [(\{]' --and --not -
 is qx{git grep -I -l 'sub [a-z_A-Z0-9]\\+()' ':!docs/'}, '',
   'Consistent space before function signatures (this is not ensured by perltidy)';
 is
-qx{git grep -Pr "(?<!->)(?<!sub )\\b(ok|is|isnt|like|unlike|cmp_ok|can_ok|isa_ok|subtest|diag|note|explain|pass|fail|new_ok|is_deeply)\\s*\\(" {t,xt}/ | grep -vE "(t|xt)/(lib|testresults)/"},
+qx{git grep -Pr "(?<!->)(?<!sub )(?<!\\#.{,254})\\b(ok|is|isnt|like|unlike|cmp_ok|can_ok|isa_ok|subtest|diag|note|explain|pass|fail|new_ok|is_deeply)\\s*\\(" {t,xt}/ | grep -vE "(t|xt)/(lib|testresults)/"},
   '',
   'Consistent Test::More call format (no parentheses)';
 
