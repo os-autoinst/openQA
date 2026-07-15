@@ -15,12 +15,14 @@ use OpenQA::SeleniumTest;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use Date::Format 'time2str';
+use Mojo::Util 'scope_guard';
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database::generate_schema_name;
 my $fixtures = '01-jobs.pl 06-job_dependencies.pl';
 my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 my $jobs = $schema->resultset('Jobs');
+my $job_deps = $schema->resultset('JobDependencies');
 
 sub prepare_database () {
     # Populate more cluster jobs
@@ -128,15 +130,54 @@ subtest 'restart job from info panel in test results' => sub {
             'restarting job with missing asset results in an error', 20);
     };
     subtest 'assets missing; there is a parent' => sub {
-        $schema->resultset('JobDependencies')
-          ->create(
-            {child_job_id => 99939, parent_job_id => 99947, dependency => OpenQA::JobDependencies::Constants::CHAINED});
+        $job_deps->create({child_job_id => 99939, parent_job_id => 99947, dependency => CHAINED});
         is $driver->get('/tests/99939'), 1, 'go to job 99939';
         $driver->find_element('#restart-result')->click();
         wait_until(sub { flash_messages =~ m/Job 99939 misses.*\.iso.*You may try to retrigger the parent job/s },
             'restarting job with missing asset results in an error', 20);
     };
+    subtest 'restart parent skipping OK children option on directly chained dependency error' => sub {
+        # cleanup after leaving subtest (not using txn here as the forked process needs to see changes)
+        my $job_deps_search = {parent_job_id => 99937, child_job_id => 99938};
+        my $cleanup = scope_guard sub {
+            $job_deps->search($job_deps_search)->update({dependency => CHAINED});
+            $jobs->search({id => [99937, 99938]})->update({clone_id => undef});
+            $jobs->search({id => [99983, 99984]})->delete;
+            $schema->storage->dbh->do('ALTER SEQUENCE jobs_id_seq RESTART WITH 99983');
+        };
+
+        # create a parent-prefixed asset to satisfy the missing asset check, change dependency to directly chained
+        $schema->resultset('Assets')->find_or_create(
+            {
+                name => '00099937-openSUSE-Factory-DVD-x86_64-Build0048-Media.iso',
+                type => 'iso',
+                size => 0,
+            });
+        $job_deps->search($job_deps_search)->update({dependency => DIRECTLY_CHAINED});
+
+        is $driver->get('/tests/99938'), 1, 'go to job 99938 (directly chained child)';
+        $driver->find_element('#restart-result')->click();
+        wait_for_ajax(msg => 'fail to restart job because of directly chained parent');
+        wait_until(sub { flash_messages =~ m/Direct parent 99937 needs to be cloned as well/s },
+            'direct parent error shown', 20);
+
+        ok my $toggle = $driver->find_element('#flash-messages .dropdown-toggle'), 'dropdown toggle button is present'
+          or return;
+        $toggle->click();    # open dropdown and find our new option
+        my $option = $driver->find_element('.restart-parent-skip-ok');
+        is $option->get_text(), 'Restart parent job skipping passed/softfailed children',
+          'dropdown option text is correct';
+        $option->click();    # click the dropdown option to restart parent job skipping OK children
+
+        # since it successfully restarts, it should redirect to the newly cloned parent job.
+        wait_for_ajax(msg => 'parent job restarted skipping OK children');
+        wait_until(sub { $driver->get_current_url =~ qr{/tests/(\d+)} && $1 != 99938 },
+            'redirects to restarted parent job');
+    };
     subtest 'force restart' => sub {
+        is $driver->get('/tests/99939'), 1, 'go to job 99939';
+        $driver->find_element('#restart-result')->click();
+        wait_for_ajax(msg => 'fail to start job with missing asset and parent');
         update_last_job_id;
         $driver->find_element('#flash-messages button.force-restart')->click();
         wait_for_ajax(msg => 'forced job restart');

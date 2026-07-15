@@ -193,13 +193,57 @@ function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetEle
   }
   const container = document.createElement('div');
   if (hasResponse && responseJSON.enforceable && retryFunction) {
+    let parentId;
+    if (Array.isArray(errors)) {
+      for (const error of errors) {
+        const match = error.match(/Direct parent (\d+) needs to be cloned as well/);
+        if (match) {
+          parentId = match[1];
+          break;
+        }
+      }
+    }
+
     const button = document.createElement('button');
     button.onclick = retryFunction;
     button.className = 'btn btn-danger force-restart';
-    button.style.float = 'right';
     button.appendChild(document.createTextNode('Force restart'));
-    container.appendChild(button);
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'btn-group';
+    btnGroup.style.float = 'right';
+    btnGroup.appendChild(button);
+
+    if (parentId) {
+      const dropdownToggle = document.createElement('button');
+      dropdownToggle.type = 'button';
+      dropdownToggle.className = 'btn btn-danger dropdown-toggle dropdown-toggle-split';
+      dropdownToggle.setAttribute('data-bs-toggle', 'dropdown');
+      dropdownToggle.setAttribute('aria-expanded', 'false');
+
+      const srOnly = document.createElement('span');
+      srOnly.className = 'visually-hidden sr-only';
+      srOnly.appendChild(document.createTextNode('Toggle Dropdown'));
+      dropdownToggle.appendChild(srOnly);
+      btnGroup.appendChild(dropdownToggle);
+
+      const dropdownMenu = document.createElement('div');
+      dropdownMenu.className = 'dropdown-menu dropdown-menu-end';
+
+      const item = document.createElement('a');
+      item.className = 'dropdown-item restart-parent-skip-ok';
+      item.href = '#';
+      item.appendChild(document.createTextNode('Restart parent job skipping passed/softfailed children'));
+      item.onclick = function (e) {
+        e.preventDefault();
+        restartJob(urlWithBase(`/api/v1/jobs/${parentId}/restart?skip_ok_result_children=1`), parentId);
+      };
+      dropdownMenu.appendChild(item);
+      btnGroup.appendChild(dropdownMenu);
+    }
+
+    container.appendChild(btnGroup);
   }
+
   if (hasWarnings) {
     container.appendChild(document.createTextNode('Warnings occurred when restarting jobs:'));
     container.appendChild(renderList(warnings));
