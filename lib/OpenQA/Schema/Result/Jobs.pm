@@ -2046,8 +2046,20 @@ sub incomplete_ancestors ($self, $limit = -1) {
 }
 
 sub latest_job ($self) {
-    return $self unless my $clone = $self->clone;
-    return $clone->latest_job;
+    my $latest = $self->{_latest};
+    return $latest if defined $latest;
+    my $self_id = $self->id;
+    my $schema = $self->result_source->schema;
+    my $sth = $schema->storage->dbh->prepare('
+        with recursive clone_id as (
+            select ? as clone_id
+            union all
+            select jobs.clone_id as clone_id from jobs join clone_id on clone_id.clone_id = jobs.id where jobs.clone_id is not null)
+        select clone_id from clone_id order by clone_id desc limit 1;');
+    $sth->bind_param(1, $self_id, SQL_BIGINT);
+    $sth->execute;
+    my $latest_id = $sth->fetchrow_array;
+    $self->{_latest} = $latest_id == $self_id ? $self : $schema->resultset('Jobs')->find($latest_id);
 }
 
 sub handle_retry ($self) {

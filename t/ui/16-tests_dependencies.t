@@ -109,7 +109,11 @@ subtest 'dependency json' => sub {
     always_explain $t->tx->res->json unless $t->success;
 
     %cluster = (cluster_99963 => [99963, 99961]);
-    @edges = ({from => 99937, to => 99938}, {from => 99961, to => 99927}, {from => 99938, to => 99963});
+    @edges = (
+        {from => 99937, to => 99945},
+        {from => 99937, to => 99938},
+        {from => 99961, to => 99927},
+        {from => 99938, to => 99963});
     @nodes = (
         {
             @basic_node,
@@ -127,6 +131,16 @@ subtest 'dependency json' => sub {
             result => PASSED,
             state => DONE,
             name => node_name('13.1-DVD-i586-Build0091-kde@32bit', 0, 0, 0, 2),
+        },
+        {
+            @basic_node,
+            id => 99945,
+            label => 'textmode@32bit',
+            result => PASSED,
+            state => DONE,
+            name => node_name('13.1-DVD-i586-Build0091-textmode@32bit', 1, 1, 99937, 2),
+            chained => ['kde'],
+            parallel => [],
         },
         {
             @basic_node,
@@ -227,8 +241,8 @@ subtest 'graph rendering' => sub {
         is scalar @child_elements, $expected_count, $test_name;
     };
     $check_element_quandity->('.cluster', 1, 'one cluster present');
-    $check_element_quandity->('.edgePath', 3, 'three edges present');
-    $check_element_quandity->('.node', 5, 'five nodes present');
+    $check_element_quandity->('.edgePath', 4, 'three edges present');
+    $check_element_quandity->('.node', 6, 'five nodes present');
 
     like
       get_tooltip(99938),
