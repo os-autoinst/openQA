@@ -132,11 +132,12 @@ sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
         my $waited = time - $start;
         my $error = $new_tx->error;
         my $error_msg = $error ? " ($error->{message})" : '';
+        my $error_info = $res_code == 0 ? "connection error$error_msg" : "error $res_code$error_msg";
         my $url = $new_tx->req->url;
         my $port = $url->port // ($url->scheme && $url->scheme eq 'https' ? 443 : 80);
         my $target = ($url->host || 'localhost') . ":$port";
         print STDERR encode('UTF-8',
-"Request to $target failed, hit error $res_code$error_msg, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"
+"Request to $target failed, hit $error_info, retrying up to $retries more times after waiting … (delay: $delay; waited ${waited}s)\n"
         );
         sleep $delay;
         $delay *= $factor;
