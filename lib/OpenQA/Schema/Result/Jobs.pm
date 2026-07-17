@@ -1675,11 +1675,22 @@ sub needle_dir ($self) {
 # test-visible settings; only this meta-setting carries the underscore prefix.
 use constant HISTORY_ISOLATION_SETTING => '_HISTORY_ISOLATION_KEYS';
 
-# The isolation keys declared by this job via HISTORY_ISOLATION_SETTING as a
-# sorted list. Returns an empty list when the meta-setting is unset.
+# reserved, well-known isolation key used as the default so tests can enable the
+# feature by just setting SUBMISSION_ID without supplying HISTORY_ISOLATION_SETTING
+use constant HISTORY_ISOLATION_DEFAULT_KEY => 'SUBMISSION_ID';
+
+# The isolation keys effective for this job as a sorted list. Semantics of the
+# HISTORY_ISOLATION_SETTING meta-setting:
+#   - unset: default to HISTORY_ISOLATION_DEFAULT_KEY, but only if the job
+#     actually carries that setting (so it stays a no-op for existing jobs);
+#   - empty string: isolation explicitly disabled;
+#   - comma-separated keys: exactly those keys (overrides/extends the default).
 sub history_isolation_keys ($self) {
-    my $declared = $self->settings_hash->{HISTORY_ISOLATION_SETTING()};
-    return () unless defined $declared && length $declared;
+    my $settings = $self->settings_hash;
+    my $declared = $settings->{HISTORY_ISOLATION_SETTING()};
+    unless (defined $declared) {
+        return exists $settings->{HISTORY_ISOLATION_DEFAULT_KEY()} ? (HISTORY_ISOLATION_DEFAULT_KEY) : ();
+    }
     return sort grep { length } split /\s*,\s*/, $declared;
 }
 

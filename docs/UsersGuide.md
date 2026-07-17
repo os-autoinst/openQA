@@ -155,24 +155,33 @@ pull-requests) that share all these keys are therefore treated as one
 consecutive history, causing unintended carry-overs and misleading "last good"
 builds.
 
-Set the job setting `_HISTORY_ISOLATION_KEYS` to a comma-separated list of other
-job settings whose values must additionally match for two jobs to share a
-history. For example, tagging each submission with a `PR_ID` and setting
-`_HISTORY_ISOLATION_KEYS=PR_ID` keeps `VERSION` pristine while separating the
-history per pull-request:
+The simplest way to enable this is the reserved, well-known job setting
+`SUBMISSION_ID`. Tagging each independent submission with a distinct
+`SUBMISSION_ID` value keeps `VERSION` pristine while separating the history per
+submission, without any further configuration:
 
 ```
 VERSION=16.1
-PR_ID=1234
-_HISTORY_ISOLATION_KEYS=PR_ID
+SUBMISSION_ID=1234
 ```
 
-The named settings (here `PR_ID`) are ordinary, test-visible settings; only the
+For finer control, set the meta-setting `_HISTORY_ISOLATION_KEYS` to a
+comma-separated list of the job settings whose values must additionally match
+for two jobs to share a history:
+
+- unset (default): isolate on `SUBMISSION_ID` if the job carries it, otherwise
+  no isolation (so existing jobs are unaffected);
+- empty (`_HISTORY_ISOLATION_KEYS=`): isolation disabled, even if
+  `SUBMISSION_ID` is present;
+- explicit keys (e.g. `_HISTORY_ISOLATION_KEYS=PR_ID,SUBMISSION_ID`): exactly
+  those keys, overriding or extending the default.
+
+The named settings are ordinary, test-visible settings; only the
 `_HISTORY_ISOLATION_KEYS` meta-setting carries the leading underscore marking it
-as openQA-internal. Carry-over and investigation isolate on all declared keys
+as openQA-internal. Carry-over and investigation isolate on the effective keys
 automatically. The "Next & Previous" tab keeps showing the generalized history
-by default and offers a switch to the isolated ("strict") view when a job
-declares isolation keys.
+by default and offers a switch to the isolated ("strict") view when a job has
+isolation keys in effect.
 
 ### Test Suites
 

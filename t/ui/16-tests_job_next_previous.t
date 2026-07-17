@@ -359,6 +359,22 @@ subtest 'history isolation toggle for "Next & Previous"' => sub {
         wait_for_ajax msg => 'table reloaded after enabling strict';
         like $driver->get_current_url, qr/strict=1/, 'URL reflects the strict view for sharing';
     };
+
+    subtest 'reserved SUBMISSION_ID enables isolation without meta-setting' => sub {
+        my $sub_id = $base_id + 10;
+        for my $spec ([10, 'a'], [11, 'a'], [12, 'b']) {
+            my ($n, $sid) = @$spec;
+            $jobs_rs->create({%base, id => $base_id + $n, settings => [{key => 'SUBMISSION_ID', value => $sid}]});
+        }
+        my $cur = $base_id + 11;    # SUBMISSION_ID=a
+        $t->get_ok("/tests/$cur/ajax?strict=1", 'strict via default key')->status_is(200);
+        my %strict = map { $_->{id} => 1 } @{$t->tx->res->json->{data}};
+        ok $strict{$base_id + 10}, 'keeps same-submission job';
+        ok !$strict{$base_id + 12}, 'excludes a different submission';
+        $driver->get("/tests/$cur#next_previous");
+        like $driver->find_element('label[for=next_previous_strict]')->get_text, qr/isolate history by SUBMISSION_ID/,
+          'toggle labelled with the default SUBMISSION_ID key';
+    };
 };
 
 kill_driver();
