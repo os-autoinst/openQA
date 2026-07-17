@@ -1776,8 +1776,9 @@ sub _carry_over_candidate ($self) {
     # we only do carryover for jobs with some kind of (soft) failure
     return undef if $current_failure_reason eq 'GOOD';
 
-    # search for previous jobs
-    for my $job ($self->_previous_scenario_jobs($lookup_depth)) {
+    # search for previous jobs, isolating on all declared history isolation keys
+    # so bugrefs are not carried over between independent submissions
+    for my $job ($self->_previous_scenario_jobs($lookup_depth, {}, undef)) {
         my $job_fr = $job->_failure_reason;
         log_debug(sprintf "$label: checking take over from %d: _failure_reason=%s", $job->id, $job_fr);
         if ($job_fr eq $current_failure_reason) {

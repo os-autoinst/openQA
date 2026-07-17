@@ -193,6 +193,37 @@ subtest 'failure reason still computed without results, modules without results 
     like $curr_job->_failure_reason, qr/amarok:none,aplay:failed,.*yast2_lan:failed,.*zypper_up:none/, 'failure reason';
 };
 
+subtest 'history isolation keys prevent carry-over between independent PRs' => sub {
+    my %base = (
+        DISTRI => 'iso',
+        VERSION => '1',
+        FLAVOR => 'f',
+        ARCH => 'x86_64',
+        TEST => 'carryiso',
+        MACHINE => 'm',
+        BUILD => 'b',
+        _HISTORY_ISOLATION_KEYS => 'PR_ID',
+    );
+    my $mk = sub ($pr) {
+        my $j = $jobs->create_from_settings({%base, PR_ID => $pr});
+        $j->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+        $j->update_module('a', {result => 'fail', details => []});
+        $j->update({state => DONE, result => FAILED});
+        $j->discard_changes;
+        return $j;
+    };
+    my $prev = $mk->(1);
+    $prev->comments->create({text => 'bsc#4321', user_id => $schema->resultset('Users')->first->id});
+
+    my $other_pr = $mk->(2);
+    $other_pr->carry_over_bugrefs;
+    is $other_pr->comments->count, 0, 'no carry-over to a different PR despite matching scenario+failure';
+
+    my $same_pr = $mk->(1);
+    $same_pr->carry_over_bugrefs;
+    like $same_pr->comments->first->text, qr/bsc#4321/, 'carry-over still happens within the same PR';
+};
+
 subtest 'too many state changes' => sub {
     $t->app->config->{carry_over}->{state_changes_limit} = 1;
     my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
@@ -201,7 +232,7 @@ subtest 'too many state changes' => sub {
             {99961 => 'a:failed', 99962 => 'b:failed', 99963 => 'c:failed'}->{$self->id};
         });
     $mock->redefine(
-        _previous_scenario_jobs => sub ($self, $depth) {
+        _previous_scenario_jobs => sub ($self, $depth = undef, $search_attrs = {}, $isolation_keys = []) {
             map { $jobs->find($_) } qw(99962 99961);
         });
     my $job = $jobs->find(99963);
