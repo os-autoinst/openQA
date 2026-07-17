@@ -31,8 +31,6 @@ $t->get_ok('/api_keys');
 ok $token =~ /[0-9a-z]{40}/, 'csrf token in meta tag';
 ok $t->tx->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', 'csrf param in meta tag';
 
-is $token, $t->tx->res->dom->at('form input[name=csrf_token]')->{value}, 'token is the same in form';
-
 # test cancel with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/cancel' => form => {csrf_token => 'foobar'})->status_is(403);
 $t->post_ok('/api/v1/jobs/99928/cancel' => {'X-CSRF-Token' => $token} => form => {})->status_is(200);

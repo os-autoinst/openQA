@@ -7,8 +7,9 @@ package OpenQA::Schema::ResultSet::Screenshots;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use Mojo::File qw(path);
-use OpenQA::Log qw(log_trace log_error);
+use OpenQA::Log qw(log_trace log_debug log_error);
 use OpenQA::Utils qw(imagesdir);
+use Feature::Compat::Try;
 
 sub create_screenshot ($self, $img) {
     my $dbh = $self->result_source->schema->storage->dbh;
@@ -22,14 +23,31 @@ sub create_screenshot ($self, $img) {
 
 # insert the symlinks into the DB
 sub populate_images_to_job ($self, $imgs, $job_id) {
-    my %ids;
+    my $schema = $self->result_source->schema;
+    my $screenshot_links_rs = $schema->resultset('ScreenshotLinks');
+
     for my $img (@$imgs) {
         log_trace "creating $img";
-        my $res = $self->create_screenshot($img)->fetchrow_arrayref;
-        $ids{$img} = $res ? $res->[0] : $self->find({filename => $img})->id;
+        try {
+            $schema->txn_do(
+                sub {
+                    my $res = $self->create_screenshot($img)->fetchrow_arrayref;
+                    my $screenshot_id = $res ? $res->[0] : $self->find({filename => $img})->id;
+                    $screenshot_links_rs->create({screenshot_id => $screenshot_id, job_id => $job_id});
+                });
+        }
+        catch ($err) {
+            if ($err =~ /screenshot_links_fk_job_id/) {
+                log_debug "Job $job_id has been deleted, skipping screenshot links";
+            }
+            elsif ($err =~ /screenshot_links_fk_screenshot_id/) {
+                log_debug "Screenshot $img has been deleted, skipping screenshot link";
+            }
+            else {
+                die $err;
+            }
+        }
     }
-    my @data = map { [$_, $job_id] } values %ids;
-    $self->result_source->schema->resultset('ScreenshotLinks')->populate([[qw(screenshot_id job_id)], @data]);
 }
 
 # scans the image directories for untracked screenshots and deletes them
