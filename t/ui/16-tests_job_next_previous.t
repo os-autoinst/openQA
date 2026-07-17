@@ -349,6 +349,16 @@ subtest 'history isolation toggle for "Next & Previous"' => sub {
     ok !$strict{$base_id + 4}, 'strict view excludes jobs from the other PR';
     ok $strict{$base_id + 1}, 'strict view keeps same-PR jobs';
     ok $strict{$current}, 'strict view keeps the current job';
+
+    subtest 'toggle renders and syncs the URL' => sub {
+        $driver->get("/tests/$current#next_previous");
+        my $toggle = wait_for_element selector => '#next_previous_strict', desc => 'strict toggle present';
+        like $driver->find_element('label[for=next_previous_strict]')->get_text, qr/isolate history by PR_ID/,
+          'toggle labelled with the isolation key';
+        $toggle->click;
+        wait_for_ajax msg => 'table reloaded after enabling strict';
+        like $driver->get_current_url, qr/strict=1/, 'URL reflects the strict view for sharing';
+    };
 };
 
 kill_driver();
