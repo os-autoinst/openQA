@@ -29,7 +29,7 @@ sub check ($self) {
     my $schema = OpenQA::Schema->singleton;
     my $api_key = $schema->resultset('ApiKeys')->find({key => $key});
     if ($api_key) {
-        if ($self->_is_timestamp_valid(time, $remote_timestamp)) {
+        if (($self->_is_timestamp_valid(time, $remote_timestamp))[0]) {
             my $exp = $api_key->t_expiration;
             # It has no expiration date or it's in the future
             if (!$exp || $exp->epoch > time) {
@@ -137,11 +137,15 @@ sub _is_timestamp_valid ($self, $our_timestamp, $remote_timestamp) {
     my $tolerance = $self->config->{api_hmac_time_tolerance}
       // ONE_MINUTE * 5;    # make extra sure this value is never empty to avoid security issues
 
-    return 1 if (abs($our_timestamp - $remote_timestamp) <= $tolerance);
+    return (1, undef) if (abs($our_timestamp - $remote_timestamp) <= $tolerance);
     $log->debug(
 qq{Timestamp mismatch over ${tolerance}s; our_timestamp: $our_timestamp, X-API-Microtime (from worker): $remote_timestamp}
     );
-    return 0;
+    my $tolerance_str = defined $tolerance ? "${tolerance}s" : 'unknown';
+    my $client_ip = $self->tx ? $self->tx->remote_address : 'unknown';
+    my $reason = 'timestamp mismatch - check whether clocks on the local host and the web UI host are in sync'
+      . " (local host IP: $client_ip, server time: $our_timestamp, client time: $remote_timestamp, tolerance: $tolerance_str)";
+    return (0, $reason);
 }
 
 sub _is_expired ($api_key) {
@@ -205,8 +209,9 @@ sub _key_auth ($self, $reason, $key) {
         my $reject_msg
           = sprintf 'Rejecting authentication for user "%s" with ip "%s", valid key "%s", secret "%s"',
           $username, $self->tx->remote_address, $api_key->key, $api_key->secret;
-        if (!$self->_is_timestamp_valid($our_timestamp, $remote_timestamp)) {
-            $reason = 'timestamp mismatch - check whether clocks on the local host and the web UI host are in sync';
+        my ($timestamp_valid, $timestamp_reason) = $self->_is_timestamp_valid($our_timestamp, $remote_timestamp);
+        if (!$timestamp_valid) {
+            $reason = $timestamp_reason;
         }
         elsif (_is_expired($api_key)) {
             $reason = 'api key expired';
@@ -223,7 +228,7 @@ sub _key_auth ($self, $reason, $key) {
 
 sub _valid_hmac ($self, $hash, $request, $our_timestamp, $remote_timestamp, $api_key) {
     return 0 unless defined $hash;
-    return 0 unless $self->_is_timestamp_valid($our_timestamp, $remote_timestamp);
+    return 0 unless ($self->_is_timestamp_valid($our_timestamp, $remote_timestamp))[0];
     return 0 if _is_expired($api_key);
     return 0 unless $api_key->secret;
 
