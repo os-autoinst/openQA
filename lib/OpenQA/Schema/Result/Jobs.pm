@@ -1669,8 +1669,35 @@ sub needle_dir ($self) {
     return $self->{_needle_dir};
 }
 
-# return the last X complete jobs of the same scenario
-sub _previous_scenario_jobs ($self, $rows = undef, $search_attrs = {}) {
+# names of job settings that additionally separate the scenario history, e.g.
+# to keep the history of independent submissions (PRs) apart despite otherwise
+# equal scenario keys. The referenced settings themselves are ordinary,
+# test-visible settings; only this meta-setting carries the underscore prefix.
+use constant HISTORY_ISOLATION_SETTING => '_HISTORY_ISOLATION_KEYS';
+
+# The isolation keys declared by this job via HISTORY_ISOLATION_SETTING as a
+# sorted list. Returns an empty list when the meta-setting is unset.
+sub history_isolation_keys ($self) {
+    my $declared = $self->settings_hash->{HISTORY_ISOLATION_SETTING()};
+    return () unless defined $declared && length $declared;
+    return sort grep { length } split /\s*,\s*/, $declared;
+}
+
+# The key/value pairs to additionally match on to isolate the history, limited
+# to the requested subset of $self's declared isolation keys. An undefined
+# $keys means "all declared keys"; an empty array-ref means "none".
+sub history_isolation_values ($self, $keys = undef) {
+    my @keys = defined $keys ? @$keys : $self->history_isolation_keys;
+    return {} unless @keys;
+    my $settings = $self->settings_hash;
+    return {map { $_ => $settings->{$_} } @keys};
+}
+
+# return the last X complete jobs of the same scenario. When $isolation_keys is
+# passed (an array-ref subset of the declared isolation keys, or undef for all
+# declared keys), jobs are additionally required to match $self's values for
+# those job settings so that independent histories stay separate.
+sub _previous_scenario_jobs ($self, $rows = undef, $search_attrs = {}, $isolation_keys = []) {
     my $schema = $self->result_source->schema;
     my $conds = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     for my $key (SCENARIO_WITH_MACHINE_KEYS) {
@@ -1681,6 +1708,19 @@ sub _previous_scenario_jobs ($self, $rows = undef, $search_attrs = {}) {
         rows => $rows,
         %$search_attrs,
     );
+    my $isolation = $self->history_isolation_values($isolation_keys);
+    if (my @keys = sort keys %$isolation) {
+        # match each isolation key/value via a correlated job_settings subquery
+        my $settings_rs = $schema->resultset('JobSettings');
+        for my $key (@keys) {
+            push @$conds,
+              {
+                'me.id' => {
+                    -in =>
+                      $settings_rs->search({key => $key, value => $isolation->{$key}})->get_column('job_id')->as_query
+                }};
+        }
+    }
     return $schema->resultset('Jobs')->search({-and => $conds}, \%attrs)->all;
 }
 

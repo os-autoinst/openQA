@@ -1210,4 +1210,47 @@ subtest 'adding logs to result file list, including virtio console logs' => sub 
     is_deeply $files, \@expected, 'list of existing result files returned' or always_explain $files;
 };
 
+subtest 'history isolation keys separate the scenario history' => sub {
+    my %s = (%settings, TEST => 'isolation', DISTRI => 'iso-distri');
+    my $mk = sub (%extra) {
+        my $job = _job_create({%s, %extra});
+        $job->update({state => DONE, result => PASSED});
+        $job->discard_changes;
+        return $job;
+    };
+    # independent PRs sharing every scenario key but differing in PR_ID
+    my %iso = (PACKAGE_TESTED => 'vim', _HISTORY_ISOLATION_KEYS => 'PR_ID,PACKAGE_TESTED');
+    my $pr1a = $mk->(%iso, PR_ID => 1);
+    my $pr1b = $mk->(%iso, PR_ID => 1);
+    my $pr2 = $mk->(%iso, PR_ID => 2);
+    my $cur = $mk->(%iso, PR_ID => 1);
+
+    is_deeply [$cur->history_isolation_keys], [qw(PACKAGE_TESTED PR_ID)], 'declared keys parsed and sorted';
+    is_deeply $cur->history_isolation_values, {PR_ID => 1, PACKAGE_TESTED => 'vim'}, 'all declared values';
+    is_deeply $cur->history_isolation_values(['PR_ID']), {PR_ID => 1}, 'subset of values';
+    is_deeply $cur->history_isolation_values([]), {}, 'empty subset yields no values';
+
+    my $ids = sub ($j, @args) {
+        [sort { $a <=> $b } map { $_->id } $j->_previous_scenario_jobs(@args)]
+    };
+    my @same_pr = sort { $a <=> $b } ($pr1a->id, $pr1b->id);
+    my @all = sort { $a <=> $b } ($pr1a->id, $pr1b->id, $pr2->id);
+    is_deeply $ids->($cur), \@all, 'without isolation all previous jobs match';
+    is_deeply $ids->($cur, undef, {}, undef), \@same_pr, 'full isolation keeps only same PR and package';
+    is_deeply $ids->($cur, undef, {}, ['PR_ID']), \@same_pr, 'isolating on PR_ID only keeps same-PR jobs';
+    is_deeply $ids->($cur, undef, {}, ['PACKAGE_TESTED']), \@all,
+      'isolating on same package keeps all PRs testing that package';
+    is_deeply $ids->($cur, undef, {}, []), \@all, 'empty isolation key-set matches generalized history';
+
+    subtest 'job without isolation meta-setting is unaffected' => sub {
+        my %p = (%settings, TEST => 'plain', DISTRI => 'plain-distri');
+        my $prev = _job_create(\%p);
+        $prev->update({state => DONE, result => PASSED});
+        my $now = _job_create(\%p);
+        is_deeply [$now->history_isolation_keys], [], 'no declared keys';
+        is_deeply [map { $_->id } $now->_previous_scenario_jobs(undef, {}, undef)], [$prev->id],
+          'undef isolation with no declared keys behaves generalized';
+    };
+};
+
 done_testing();
