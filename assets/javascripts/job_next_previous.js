@@ -18,6 +18,7 @@ function setupJobNextPrevious() {
   };
 
   const tableElement = document.getElementById('job_next_previous_table');
+  const strictToggle = document.getElementById('next_previous_strict');
   const table = $(tableElement).DataTable({
     ajax: {
       url: tableElement.dataset.ajaxUrl,
@@ -27,6 +28,9 @@ function setupJobNextPrevious() {
         }
         if (typeof params.next_limit != 'undefined') {
           d.next_limit = params.next_limit.toString();
+        }
+        if (strictToggle && strictToggle.checked) {
+          d.strict = '1';
         }
       }
     },
@@ -71,6 +75,11 @@ function setupJobNextPrevious() {
     setupLazyLoadingFailedSteps();
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => new bootstrap.Tooltip(e));
   });
+  if (strictToggle) {
+    strictToggle.addEventListener('change', function () {
+      table.ajax.reload();
+    });
+  }
 }
 
 function renderMarks(data, type, row) {

@@ -584,11 +584,23 @@ sub next_previous_jobs_query ($self, $job, $jobid, %args) {
     }
     push @params, $jobid, $n_limit, $jobid, $p_limit, $jobid;
 
-    my $jobs_rs = $self->result_source->schema->resultset('JobNextPrevious')->search(
-        {},
-        {
-            bind => \@params
-        });
+    my $schema = $self->result_source->schema;
+    my $jobs_rs = $schema->resultset('JobNextPrevious')->search({}, {bind => \@params});
+
+    # optionally isolate the history to the requested subset of the job's
+    # declared isolation keys; keep the raw-SQL view for the base scenario and
+    # filter its (already limited) result set via correlated job_settings
+    # subqueries to preserve performance
+    my $isolation = $job->history_isolation_values($args{isolation_keys});
+    if (my @keys = sort keys %$isolation) {
+        my $settings_rs = $schema->resultset('JobSettings');
+        my @conds = map {
+            {'me.id' =>
+                  {-in => $settings_rs->search({key => $_, value => $isolation->{$_}})->get_column('job_id')->as_query}}
+        } @keys;
+        # never filter out the current job so the table can still anchor on it
+        $jobs_rs = $jobs_rs->search({-or => [{'me.id' => $jobid}, {-and => \@conds}]});
+    }
     return $jobs_rs;
 }
 
