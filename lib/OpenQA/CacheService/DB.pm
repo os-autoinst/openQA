@@ -38,6 +38,6 @@ sub open_sqlite_database ($log, $db_file) {
     return $sqlite;
 }
 
-sub open_default_sqlite_database ($log, $location) { open_sqlite_database($location, db_file($location)) }
+sub open_default_sqlite_database ($log, $location) { open_sqlite_database($log, db_file($location)) }
 
 1;
