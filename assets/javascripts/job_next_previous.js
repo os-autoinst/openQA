@@ -19,6 +19,9 @@ function setupJobNextPrevious() {
 
   const tableElement = document.getElementById('job_next_previous_table');
   const strictToggle = document.getElementById('next_previous_strict');
+  if (strictToggle && params.strict && params.strict[0] === '1') {
+    strictToggle.checked = true; // restore the shared/bookmarked strict view
+  }
   const table = $(tableElement).DataTable({
     ajax: {
       url: tableElement.dataset.ajaxUrl,
@@ -77,6 +80,13 @@ function setupJobNextPrevious() {
   });
   if (strictToggle) {
     strictToggle.addEventListener('change', function () {
+      const p = parseQueryParams();
+      if (strictToggle.checked) {
+        p.strict = ['1'];
+      } else {
+        delete p.strict;
+      }
+      updateQueryParams(p); // keep the view bookmarkable/shareable
       table.ajax.reload();
     });
   }
