@@ -1251,6 +1251,18 @@ subtest 'history isolation keys separate the scenario history' => sub {
         is_deeply [map { $_->id } $now->_previous_scenario_jobs(undef, {}, undef)], [$prev->id],
           'undef isolation with no declared keys behaves generalized';
     };
+
+    subtest 'investigation picks last good from the isolated history' => sub {
+        my %inv_s = (%settings, TEST => 'inviso', DISTRI => 'inv-distri', _HISTORY_ISOLATION_KEYS => 'PR_ID');
+        my $good_same = $mk->(%inv_s, PR_ID => 1);    # isolated last good
+        my $good_other = $mk->(%inv_s, PR_ID => 2);    # unrelated PR, must be ignored
+        my $cur = _job_create({%inv_s, PR_ID => 1});
+        $cur->update({state => DONE, result => FAILED});
+        $cur->discard_changes;
+        $cur->create_result_dir;
+        my $inv = $cur->investigate;
+        is $inv->{last_good}{link}, '/tests/' . $good_same->id, 'last good is the same-PR job, not the newer other PR';
+    };
 };
 
 done_testing();

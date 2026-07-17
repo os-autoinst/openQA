@@ -1972,7 +1972,9 @@ good" job in the same scenario.
 =cut
 
 sub investigate ($self, %args) {
-    my @previous = $self->_previous_scenario_jobs;
+    # isolate on all declared history isolation keys so "last good" refers to
+    # this job's own isolated history (e.g. the same PR), not an unrelated one
+    my @previous = $self->_previous_scenario_jobs(undef, {}, undef);
     return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
     my %inv;
     return {error => 'No result directory available for current job'} unless $self->result_dir();
