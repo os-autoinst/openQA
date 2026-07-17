@@ -122,7 +122,7 @@ sub guard ($self, @args) { $self->app->minion->guard(@args) }
 sub _job_guard ($self) {
     my $settings = $self->settings->global_settings;
     return undef unless defined(my $lock_name = $settings->{LOCK_NAME});
-    return $self->guard($lock_name, ONE_HOUR, {limit => $settings->{LOCK_LIMIT} // 5})
+    return $self->guard($lock_name, ONE_HOUR, {limit => $settings->{LOCK_LIMIT} // 1})
       // "Limited by configured lock '$lock_name'";
 }
 
