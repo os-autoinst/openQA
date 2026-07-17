@@ -17,7 +17,6 @@ use constant _HTTP_TOO_EARLY => 425;
 
 use constant DEFAULT_OPENQA_WORKER_CONNECT_RETRIES => 60;
 use constant MAX_WEBSOCKET_SIZE => 1024 * 1024 * 10;
-use constant EPHEMERAL_RECHECK_INTERVAL => $ENV{OPENQA_WORKER_EPHEMERAL_RECHECK_INTERVAL} // 10;
 
 has 'webui_host';    # hostname:port of the web UI to connect to
 has 'url';    # URL of the web UI to connect to - initially deduced from webui_host (Mojo::URL instance)
@@ -381,23 +380,12 @@ sub send_status ($self, %args) {
     # send the worker status (unless the websocket connection has been lost)
     my $websocket_connection = $self->websocket_connection;
     return undef unless $websocket_connection;
-    my $status = $self->{_last_worker_status} = $args{status} // $self->worker->status;
+    my $status = $self->{_last_worker_status} = $self->worker->status;
     $websocket_connection->send({json => $status}) if !$args{on_error} || defined $status->{reason};
 }
 
 sub send_status_delayed ($self) {
     return undef if $self->{_send_status_timer} || !$self->websocket_connection;
-
-    # re-evaluate the error status after just a few seconds if the current error is ephemeral
-    return $self->{_send_status_timer} = Mojo::IOLoop->timer(
-        EPHEMERAL_RECHECK_INTERVAL,
-        sub {
-            my $worker = $self->worker;
-            my $status = $self->{_last_worker_status} = $self->worker->status;
-            return $self->send_status(status => $status) unless $worker->current_error;
-            delete $self->{_send_status_timer};
-            $self->send_status_delayed;
-        }) if $self->worker->current_error_is_ephemeral;
 
     my $status_update_interval = $self->calculate_status_update_interval;
     my $webui_host = $self->webui_host;

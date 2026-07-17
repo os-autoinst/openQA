@@ -67,7 +67,6 @@ has 'current_webui_host';
 has 'current_job';
 has 'current_error';
 has 'current_error_is_fatal';
-has 'current_error_is_ephemeral';
 has 'worker_hostname';
 has 'isotovideo_interface_version';
 
@@ -708,8 +707,6 @@ sub is_ovs_dbus_service_running ($self) {
 # returns whether the worker is available and a reason
 # note: This is used to check certain error conditions *before* starting a job to prevent incompletes and
 #       being able to propagate the brokenness to the web UIs.
-# note: This function returns a value >0 if there is no fatal problem and >1 if the problem is even expected
-#       to be resolved soon.
 # note: High load will yield a corresponding error message as reason so the worker becomes broken and
 #       thus will not pick up any new jobs. However, a worker under high load is still considered being
 #       able to work on jobs that are already enqueued. Hence this function returns a "1" for the
@@ -746,7 +743,7 @@ sub check_availability ($self) {
     # check whether we failed to get the job lock (and would still not be able to get it)
     if (defined(my $guard_or_error = $self->{_guard_or_error})) {
         my $is_error = !ref $guard_or_error;
-        return (2, $guard_or_error) if $is_error && !$self->can_acquire_job_guard;
+        return (1, $guard_or_error) if $is_error && !$self->can_acquire_job_guard;
         undef $self->{_guard_or_error} if $is_error;
     }
 
@@ -754,10 +751,9 @@ sub check_availability ($self) {
 }
 
 sub set_current_error_based_on_availability ($self) {
-    my ($availability, $reason) = $self->check_availability;
+    my ($is_available, $reason) = $self->check_availability;
     $self->current_error($reason);
-    $self->current_error_is_fatal($availability < 1);
-    $self->current_error_is_ephemeral($availability > 1);
+    $self->current_error_is_fatal(!$is_available);
     return $reason;
 }
 
