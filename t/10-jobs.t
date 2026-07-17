@@ -1252,6 +1252,23 @@ subtest 'history isolation keys separate the scenario history' => sub {
           'undef isolation with no declared keys behaves generalized';
     };
 
+    subtest 'next_previous_jobs_query honors isolation keys' => sub {
+        # the raw view returns rows under multiple sources (l/n/p/c); assert on
+        # the unique id set which is the meaningful isolation contract
+        my $uniq_ids = sub ($j, %a) {
+            my %seen;
+            $seen{$_->id} = 1
+              for $jobs->next_previous_jobs_query($j, $j->id, previous_limit => 10, next_limit => 10, %a)->all;
+            return [sort { $a <=> $b } keys %seen];
+        };
+        my @all = sort { $a <=> $b } ($pr1a->id, $pr1b->id, $pr2->id, $cur->id);
+        my @same = sort { $a <=> $b } ($pr1a->id, $pr1b->id, $cur->id);
+        # empty key-set = generalized (matches the controller default), undef/full = strict
+        is_deeply $uniq_ids->($cur, isolation_keys => []), \@all, 'generalized query returns all PRs plus current';
+        is_deeply $uniq_ids->($cur, isolation_keys => undef), \@same, 'strict query keeps same-PR jobs and current';
+        is_deeply $uniq_ids->($cur, isolation_keys => ['PR_ID']), \@same, 'isolating on PR_ID keeps same-PR jobs';
+    };
+
     subtest 'investigation picks last good from the isolated history' => sub {
         my %inv_s = (%settings, TEST => 'inviso', DISTRI => 'inv-distri', _HISTORY_ISOLATION_KEYS => 'PR_ID');
         my $good_same = $mk->(%inv_s, PR_ID => 1);    # isolated last good

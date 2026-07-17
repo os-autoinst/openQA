@@ -732,10 +732,16 @@ sub job_next_previous_ajax ($self) {
 
     my $schema = $self->schema;
     my $jobs_rs = $schema->resultset('Jobs');
+    # history isolation: `strict=1` isolates on all declared keys, an explicit
+    # `isolation_keys` comma-list selects a subset; default is the generalized
+    # history matching legacy behavior
+    my $isolation_keys
+      = $self->param('strict') ? undef : [grep { length } split /\s*,\s*/, $self->param('isolation_keys') // ''];
     my @jobs = $jobs_rs->next_previous_jobs_query(
         $main_job, $main_jobid,
         previous_limit => $p_limit,
         next_limit => $n_limit,
+        isolation_keys => $isolation_keys,
     )->all;
 
     my $job_ids = [map { $_->id } @jobs];
