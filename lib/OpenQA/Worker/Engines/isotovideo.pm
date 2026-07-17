@@ -497,7 +497,6 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     $container->on(container_error => sub ($cont, $e) { log_error("Container error: @{$e}", channels => 'worker') });
 
     log_info('Starting isotovideo container');
-    $worker->update_job_guard_expiration;
     $container->start();
     $workerpid = $child->pid();
     return $callback->({child => $child});
