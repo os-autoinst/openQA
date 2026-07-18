@@ -8,6 +8,7 @@ use Mojo::Base -strict, -signatures;
 use File::Basename;
 use Mojo::URL;
 use Mojo::Util 'url_unescape';
+use OpenQA::App;
 use OpenQA::Log 'log_debug';
 use OpenQA::Utils qw(asset_type_from_setting get_url_short);
 use Feature::Compat::Try;
@@ -17,6 +18,21 @@ my $PLACEHOLDER_RE = qr/(%+)(\w+)(%+)/;
 sub generate_settings ($params) {
     my $settings = $params->{settings};
     my @worker_class;
+
+    if (my $app = OpenQA::App->singleton) {
+        if (my $global_test_settings = $app->config->{test_settings}) {
+            for my $k (keys %$global_test_settings) {
+                my $uc_k = uc $k;
+                if ($uc_k eq 'WORKER_CLASS') {
+                    push @worker_class, $global_test_settings->{$k};
+                }
+                else {
+                    $settings->{$uc_k} = $global_test_settings->{$k};
+                }
+            }
+        }
+    }
+
     for my $entity (qw (product machine test_suite job_template)) {
         next unless $params->{$entity};
         my @entity_settings = $params->{$entity}->settings;

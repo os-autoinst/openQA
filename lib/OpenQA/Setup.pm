@@ -341,6 +341,7 @@ sub default_config () {
             ignored_failed_minion_jobs => '',
         },
         carry_over => {%CARRY_OVER_DEFAULTS},
+        test_settings => {},
         'test_preset example' => {
             title => 'Create example test',
             info => 'Parameters to create an example test have been pre-filled in the following form. '

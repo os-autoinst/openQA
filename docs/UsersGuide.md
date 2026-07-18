@@ -262,14 +262,11 @@ used for a single job - for instance, you may have a variable defined in both
 a test suite and a product that appear in the same job template. The precedence
 order for variables is as follows (from lowest to highest):
 
+- Instance-wide test settings (defined in the `[test_settings]` section of `openqa.ini`)
 - Product
-
 - Machine
-
 - Test suite
-
 - Job template
-
 - API POST query parameters
 
 That is, variable values set as part of the API request that triggers the jobs will
