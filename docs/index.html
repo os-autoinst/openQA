@@ -3360,11 +3360,13 @@ variable defined in both a test suite and a product that appear in the
 same job template. The precedence order for variables is as follows
 (from lowest to highest):</p>
 <ul>
-<li><p>Product</p></li>
-<li><p>Machine</p></li>
-<li><p>Test suite</p></li>
-<li><p>Job template</p></li>
-<li><p>API POST query parameters</p></li>
+<li>Instance-wide test settings (defined in the
+<code>[test_settings]</code> section of <code>openqa.ini</code>)</li>
+<li>Product</li>
+<li>Machine</li>
+<li>Test suite</li>
+<li>Job template</li>
+<li>API POST query parameters</li>
 </ul>
 <p>That is, variable values set as part of the API request that triggers
 the jobs will &#39;win&#39; over values set at any of the other locations. It&#39;s
