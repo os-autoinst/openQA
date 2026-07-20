@@ -75,6 +75,9 @@ subtest 'scheduled product displayed' => sub {
     my @cell_contents = map { $_->get_text } @cells;
     ok shift @cell_contents, 'ID present';
     ok shift @cell_contents, 'time present';
+    my $time_span = $driver->find_child_element($cells[1], 'span', 'css');
+    like $time_span->get_attribute('title'), qr/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}Z$/,
+      'timestamp hover title present';
     is_deeply
       \@cell_contents,
       [qw(perci scheduled opensuse 13.1 DVD i586 0091 whatever.iso), ''],
@@ -153,6 +156,22 @@ subtest 'showing a particular scheduled product' => sub {
     like $driver->find_element('#scheduled-products h3 + table')->get_text, qr/FOO.*bar/, 'settings';
     like $driver->find_element('#scheduled-products .alert-danger')->get_text,
       qr/check for dependency typos and dependency cycles/, 'results';
+};
+
+subtest 'searching by URL query parameter' => sub {
+    $driver->get($url . '/admin/productlog?q=bar');
+    like $driver->get_title(), qr/Scheduled products log/, 'on product log';
+    wait_for_ajax(msg => 'search applied from query parameter');
+    my $table = $driver->find_element_by_id('product_log_table');
+    ok $table, 'products table found';
+    my @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
+    is scalar @rows, 2, 'both rows shown because they match "bar" in settings';
+
+    $driver->get($url . '/admin/productlog?q=nonexistent_search_term');
+    wait_for_ajax(msg => 'search applied from nonexistent query parameter');
+    my $table2 = $driver->find_element_by_id('product_log_table');
+    my @rows2 = $driver->find_child_elements($table2, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
+    is scalar @rows2, 0, 'no rows shown when searching for nonexistent term';
 };
 
 kill_driver();

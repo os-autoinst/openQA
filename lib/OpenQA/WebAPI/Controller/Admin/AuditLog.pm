@@ -31,7 +31,9 @@ sub productlog_ajax ($self) {
     }
     if (my $search_value = $self->param('search[value]')) {
         my %condition = (like => "\%$search_value%");
-        push @filter_conds, {-or => [map { $_ => \%condition } @searchable_columns]};
+        my @or_conds = (map { $_ => \%condition } @searchable_columns);
+        push @or_conds, 'CAST(me.settings AS text)' => \%condition;
+        push @filter_conds, {-or => \@or_conds};
     }
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(

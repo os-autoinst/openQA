@@ -315,6 +315,7 @@ function showSettingsAndResults(rowData) {
 function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
   const params = new URLSearchParams(document.location.search.substring(1));
   const id = params.get('id');
+  const q = params.get('q');
   let settingsAndResultsShown = false;
   if (id) {
     dataTableUrl += '?id=' + encodeURIComponent(id);
@@ -326,6 +327,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
     processing: true,
     serverSide: true,
     order: [[1, 'desc']],
+    search: {search: q || ''},
     ajax: {
       url: dataTableUrl,
       type: 'GET',
@@ -363,7 +365,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
       {
         targets: 1,
         render: function (data, type, row) {
-          return type === 'display' ? timeago.format(data + 'Z') : data;
+          return type === 'display' ? '<span title="' + data + 'Z">' + timeago.format(data + 'Z') + '</span>' : data;
         }
       },
       {targets: 2, orderable: false},
