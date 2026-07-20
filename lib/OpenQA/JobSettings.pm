@@ -15,16 +15,13 @@ use Feature::Compat::Try;
 
 my $PLACEHOLDER_RE = qr/(%+)(\w+)(%+)/;
 
-sub generate_settings ($params) {
-    my $settings = $params->{settings};
-    my @worker_class;
-
+sub apply_global_test_settings ($settings, $worker_classes) {
     if (my $app = OpenQA::App->singleton) {
         if (my $global_test_settings = $app->config->{test_settings}) {
             for my $k (keys %$global_test_settings) {
                 my $uc_k = uc $k;
                 if ($uc_k eq 'WORKER_CLASS') {
-                    push @worker_class, $global_test_settings->{$k};
+                    push @$worker_classes, $global_test_settings->{$k};
                 }
                 else {
                     $settings->{$uc_k} = $global_test_settings->{$k};
@@ -32,6 +29,13 @@ sub generate_settings ($params) {
             }
         }
     }
+}
+
+sub generate_settings ($params) {
+    my $settings = $params->{settings};
+    my @worker_class;
+
+    apply_global_test_settings($settings, \@worker_class);
 
     for my $entity (qw (product machine test_suite job_template)) {
         next unless $params->{$entity};
