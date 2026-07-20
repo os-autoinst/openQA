@@ -814,12 +814,8 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
         }
 
         # handle further settings
-        $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
         _merge_settings_uppercase($args, $settings, 'TEST');
-        $settings->{DISTRI} = _distri_key($settings) if $settings->{DISTRI};
-        OpenQA::JobSettings::parse_url_settings($settings);
-        OpenQA::JobSettings::handle_plus_in_settings($settings);
-        my ($error) = OpenQA::JobSettings::expand_placeholders($settings);
+        my ($error) = OpenQA::JobSettings::finalize_job_settings($settings, \@worker_class);
         $error_msg .= $error if defined $error;
         _populate_wanted_jobs_for_test_arg($args, $settings, \%wanted);
         push @job_templates, $settings;

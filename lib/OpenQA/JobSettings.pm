@@ -31,6 +31,17 @@ sub apply_global_test_settings ($settings, $worker_classes) {
     }
 }
 
+sub finalize_job_settings ($settings, $worker_classes) {
+    $settings->{WORKER_CLASS} = join ',', sort @$worker_classes if @$worker_classes > 0;
+
+    # make sure that the DISTRI is lowercase
+    $settings->{DISTRI} = lc($settings->{DISTRI}) if $settings->{DISTRI};
+
+    parse_url_settings($settings);
+    handle_plus_in_settings($settings);
+    return expand_placeholders($settings);
+}
+
 sub generate_settings ($params) {
     my $settings = $params->{settings};
     my @worker_class;
@@ -48,7 +59,6 @@ sub generate_settings ($params) {
             $settings->{$setting->key} = $setting->value;
         }
     }
-    $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
     if (my $input_args = $params->{input_args}) {
         $settings->{+uc} = $input_args->{$_} for keys %$input_args;
     }
@@ -59,9 +69,6 @@ sub generate_settings ($params) {
         $settings->{MACHINE} = $machine->name;
     }
 
-    # make sure that the DISTRI is lowercase
-    $settings->{DISTRI} = lc($settings->{DISTRI}) if $settings->{DISTRI};
-
     # add properties from dedicated database columns to settings
     if (my $job_template = $params->{job_template}) {
         $settings->{TEST} = $job_template->name || $job_template->test_suite->name;
@@ -69,9 +76,7 @@ sub generate_settings ($params) {
         $settings->{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
     }
 
-    parse_url_settings($settings);
-    handle_plus_in_settings($settings);
-    my ($error) = expand_placeholders($settings);
+    my ($error) = finalize_job_settings($settings, \@worker_class);
     return $error;
 }
 
