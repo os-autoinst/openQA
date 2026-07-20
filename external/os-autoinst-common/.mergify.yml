@@ -25,9 +25,14 @@ pull_request_rules:
     actions:
       merge:
         method: merge
-  - name: ask to resolve conflict
+  - name: automatic merge for dependabot updates
     conditions:
-      - conflict
+      - base=master
+      - author=dependabot[bot]
+      - -label~=^acceptance-tests-needed|not-ready
+      - "#check-failure=0"
+      - "#check-pending=0"
+      - linear-history
     actions:
-      comment:
-        message: This pull request is now in conflicts. Could you fix it? 🙏
+      merge:
+        method: squash
