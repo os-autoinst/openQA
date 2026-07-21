@@ -149,7 +149,7 @@ ok -e $pending_asset, 'Not so old asset (3.qcow2) was preserved (despite not bei
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
-my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
+my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2";
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2" from "$from"/, 'Asset download attempt';
 like $cache_log, qr/failed: Connection refused/, 'Asset download fails with: Connection refused';
 $cache_log = '';
@@ -227,7 +227,7 @@ like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-503\@64bit.qcow2" from/,
 like $cache_log, qr/Download of ".*0368-503\@64bit.qcow2" failed: 503 Service Unavailable/,
   'Asset download fails with 503 - Server not available';
 like $cache_log, qr/Download error 503, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
-like $cache_log, qr/Purging ".*-503@64bit.qcow2" because of too many download errors/,
+like $cache_log, qr/Purging ".*-503\@64bit.qcow2" because of too many download errors/,
   'Bailing out after too many retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-503@64bit.qcow2'), 'Asset does not exist in cache';
 $cache_log = '';
@@ -245,12 +245,13 @@ $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
-like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
+like $cache_log, qr/Content of ".*0368-200\@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
-like $cache_log, qr/Content of ".*-0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
+like $cache_log, qr/Content of ".*-0368-200\@64bit.qcow2" has not changed, updating last use/,
+  'Content has not changed';
 $cache_log = '';
 
 subtest 'cache purging after successful download' => sub {
@@ -293,7 +294,7 @@ $cache_log = '';
 
 $cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
-like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
+like $cache_log, qr/Content of ".*0368-200\@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 is $cache->asset($cachedir->child(base_host("http://$host"), 'sle-12-SP3-x86_64-0368-200@64bit.qcow2'))->{pending}, 0,
   'Pending flag unset if asset unchanged';
 $cache_log = '';
@@ -344,7 +345,7 @@ subtest 'cache directory is symlink' => sub {
 
     $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
     like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
-    like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/,
+    like $cache_log, qr/Content of ".*0368-200\@64bit.qcow2" has not changed, updating last use/,
       'Content has not changed';
     $cache_log = '';
 
@@ -354,7 +355,7 @@ subtest 'cache directory is symlink' => sub {
     $cache_log = '';
 
     $cache->limit(512)->refresh;
-    like $cache_log, qr/Purging ".*200@64bit.qcow2" because we need space for new assets, reclaiming 1024 Byte/,
+    like $cache_log, qr/Purging ".*200\@64bit.qcow2" because we need space for new assets, reclaiming 1024 Byte/,
       'Reclaimed 1024 Byte';
     like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 512 Byte/, 'Cache limit is 512 Byte';
     $cache_log = '';
