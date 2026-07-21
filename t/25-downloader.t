@@ -96,7 +96,7 @@ subtest 'Not found' => sub {
 };
 
 subtest 'Success' => sub {
-    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200@64bit.qcow2";
+    my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200\@64bit.qcow2";
     is $downloader->download($from, $to), undef, 'Success';
 
     ok -e $to, 'File downloaded';

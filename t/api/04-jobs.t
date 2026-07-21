@@ -1297,7 +1297,7 @@ subtest 'Job with JOB_TEMPLATE_NAME' => sub {
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200, 'posted job with job template name');
     like
       $jobs->find($t->tx->res->json->{id})->settings_hash->{NAME},
-      qr/\d+-opensuse-Tumbleweed-DVD-aarch64-Build1234-foo@64bit/,
+      qr/\d+-opensuse-Tumbleweed-DVD-aarch64-Build1234-foo\@64bit/,
       'job template name reflected in scenario name';
     delete $jobs_post_params{JOB_TEMPLATE_NAME};
 };
