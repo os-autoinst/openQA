@@ -22,6 +22,8 @@ use List::Util qw(any first min);
 use HTTP::Status qw(:constants);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
+use constant DEPENDENCY_BREADTH_LIMIT => $ENV{OPENQA_DEPENDENCY_BREADTH_LIMIT} // 200;
+use constant DEPENDENCY_DEPTH_LIMIT => $ENV{OPENQA_DEPENDENCY_DEPTH_LIMIT} // 25;
 
 
 # inspired by assets/stylesheets/openqa_theme.scss
@@ -1164,7 +1166,12 @@ sub _add_dependency_to_node ($node, $parent, $dependency_type) {
     }
 }
 
-sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
+sub _add_job (
+    $dependency_data, $job, $as_child_of, $preferred_depth,
+    $breadth_limit = DEPENDENCY_BREADTH_LIMIT,
+    $depth_limit = DEPENDENCY_DEPTH_LIMIT
+  )
+{
 
     # add current job; return if already visited
     my $job_id = $job->id;
@@ -1199,20 +1206,23 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
     push @{$dependency_data->{nodes}}, \%node;
 
     # add parents
-    for my $parent ($job->parents->all) {
+    return $job_id if --$depth_limit <= 0;
+    for my $parent ($job->parents->search({}, {rows => $breadth_limit})) {
         my ($parent_job, $dependency_type) = ($parent->parent, $parent->dependency);
-        my $parent_job_id = _add_job($dependency_data, $parent_job, $as_child_of, $preferred_depth) or next;
+        my $parent_job_id
+          = _add_job($dependency_data, $parent_job, $as_child_of, $preferred_depth, $breadth_limit, $depth_limit)
+          or next;
         _add_dependency_to_graph($dependency_data, $parent_job_id, $job_id, $dependency_type);
         _add_dependency_to_node(\%node, $parent_job, $dependency_type);
     }
 
     # add children
-    for my $child ($job->children->all) {
+    for my $child ($job->children->search({}, {rows => $breadth_limit})) {
         # add chained deps only if we're still on the preferred depth to avoid dragging too many jobs into the tree
         next
           if ($ancestors //= $job->ancestors) > $preferred_depth
           && $child->dependency != OpenQA::JobDependencies::Constants::PARALLEL;
-        _add_job($dependency_data, $child->child, $job_id, $preferred_depth);
+        _add_job($dependency_data, $child->child, $job_id, $preferred_depth, $breadth_limit, $depth_limit);
     }
 
     return $job_id;
