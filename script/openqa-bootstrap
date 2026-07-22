@@ -36,7 +36,22 @@ start-database() {
     fi
 }
 
+setup-subuids() {
+    if [[ -f /etc/subuid ]] && ! grep -q "^_openqa-worker:" /etc/subuid; then
+        echo "Adding subuid/subgid ranges for _openqa-worker"
+        local start=100000
+        if [[ -s /etc/subuid ]]; then
+            local max_end
+            max_end=$(awk -F: 'BEGIN {max=100000} {end=$2+$3; if(end>max) max=end} END {print max}' /etc/subuid)
+            start=$max_end
+        fi
+        local end=$((start + 65535))
+        usermod --add-subuids "$start-$end" --add-subgids "$start-$end" _openqa-worker || true
+    fi
+}
+
 start-worker() {
+    setup-subuids
     if [[ -z $running_systemd ]]; then
         /usr/bin/install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/1
         su _openqa-worker -c "$OPENQA_DIR/script/worker --instance 1" &
