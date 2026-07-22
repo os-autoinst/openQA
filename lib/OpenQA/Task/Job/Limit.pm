@@ -5,15 +5,18 @@ package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Jobs::Constants;
-use OpenQA::Log qw(log_debug log_info);
+use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::ScreenshotDeletion;
-use OpenQA::Utils qw(:DEFAULT resultdir archivedir check_df);
+use OpenQA::Utils qw(:DEFAULT prjdir resultdir archivedir check_df);
 use OpenQA::Task::Utils
   qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage is_disk_usage_below_percentage);
 use OpenQA::Task::SignalGuard;
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 use Time::Seconds;
+use Mojo::JSON qw(decode_json encode_json);
+use Mojo::File;
+use Feature::Compat::Try;
 
 # define default parameters for batch processing
 use constant DEFAULT_SCREENSHOTS_PER_BATCH => 200000;
@@ -52,10 +55,36 @@ sub _limit ($job, $args = undef) {
     my $schema = $app->schema;
     $schema->resultset('JobGroups')->new({})->limit_results_and_logs;
 
-    my $groups = $schema->resultset('JobGroups');
+    my $cache_file_path = prjdir() . '/webui/cache/cleanup-status.json';
+    my $last_id;
+    if (-f $cache_file_path) {
+        try {
+            my $content = Mojo::File->new($cache_file_path)->slurp;
+            my $data = decode_json($content);
+            $last_id = $data->{last_processed_job_group_id};
+            log_debug "Resuming job group cleanup after group ID $last_id" if $last_id;
+        }
+        catch ($e) {
+            log_warning("Unable to read cleanup status from $cache_file_path: $e");
+        }
+    }
+
+    my $groups_rs = $schema->resultset('JobGroups')->search(undef, {order_by => 'id ASC'});
+    my @all_groups = $groups_rs->all;
+
+    if (defined $last_id) {
+        my @greater_than = grep { $_->id > $last_id } @all_groups;
+        my @less_or_equal = grep { $_->id <= $last_id } @all_groups;
+        @all_groups = (@greater_than, @less_or_equal);
+    }
+
+    my $groups_count = scalar @all_groups;
+    log_info "Starting cleanup for $groups_count job groups";
+
     my $gru = $app->gru;
     my %options = (priority => -20, ttl => 2 * ONE_DAY);
-    while (my $group = $groups->next) {
+    my $last_processed_id;
+    for my $group (@all_groups) {
         if (
             my $msg = is_disk_usage_below_percentage(
                 job => $job,
@@ -63,7 +92,7 @@ sub _limit ($job, $args = undef) {
                 dir => resultdir
             ))
         {
-            log_info "Early abort during job groups loop: $msg";
+            log_info "Early abort during job groups loop (halted before processing group '@{[$group->name]}'): $msg";
             $job->note(early_abort_results => $msg);
             last;
         }
@@ -72,6 +101,21 @@ sub _limit ($job, $args = undef) {
 
         # archive openQA jobs that were preserved because they are important
         $gru->enqueue(archive_job_results => [$_->id], \%options) for @preserved_important_jobs;
+
+        $last_processed_id = $group->id;
+    }
+
+    if (defined $last_processed_id) {
+        try {
+            my $cache_file = Mojo::File->new("$cache_file_path.new");
+            $cache_file->dirname->make_path();
+            $cache_file->spew(encode_json({last_processed_job_group_id => $last_processed_id}))
+              ->move_to($cache_file_path);
+            log_debug "Saved cleanup status: last processed group ID is $last_processed_id";
+        }
+        catch ($e) {
+            log_warning("Unable to write cleanup status to $cache_file_path: $e");
+        }
     }
 
     $ensure_task_retry_on_termination_signal_guard->retry(0);

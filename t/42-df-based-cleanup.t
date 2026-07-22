@@ -13,7 +13,8 @@ require OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
 use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
 use OpenQA::Test::Utils qw(perform_minion_jobs run_gru_job);
-use OpenQA::Utils qw(assetdir resultdir archivedir);
+use OpenQA::Utils qw(prjdir assetdir resultdir archivedir);
+use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like combined_from);
@@ -105,7 +106,7 @@ subtest 'abort early during the loop' => sub {
     my $group_bar = $app->schema->resultset('JobGroups')->create({name => 'bar'});
     my $loop_job;
     combined_like { $loop_job = run_gru_job($app, limit_results_and_logs => []) }
-qr/Early abort during job groups loop: Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 20 %\)/,
+qr/Early abort during job groups loop \(halted before processing group 'bar'\): Skipping, free disk space on '.*' exceeds configured percentage 10 % \(free percentage: 20 %\)/,
       'early abort during loop logged';
     is $loop_job->{state}, 'finished', 'result cleanup still considered successful';
     like $loop_job->{notes}->{early_abort_results},
@@ -365,6 +366,77 @@ subtest 'deleted screenshots always accounted to main storage' => sub {
     is $job->{state}, 'failed', 'job considered failed';
     is $job->{result}, join("\n", @expected_messages),
       'not finished as job that gained disk space only did so by deleting screenshots on main storage';
+};
+
+subtest 'job groups are processed in stateful round-robin order' => sub {
+    $schema->txn_begin;
+
+    $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
+
+    my $cache_file_path = prjdir() . '/webui/cache/cleanup-status.json';
+    unlink $cache_file_path;
+
+    my $g1 = $job_groups->create({name => 'g_one'});
+    my $g2 = $job_groups->create({name => 'g_two'});
+    my $g3 = $job_groups->create({name => 'g_three'});
+
+    my $job_group_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+    my @processed;
+    $job_group_mock->redefine(
+        limit_results_and_logs => sub ($self, @args) {
+            push @processed, $self->name if $self->name;
+        });
+
+    subtest 'processing default ascending ID order when no state cache exists' => sub {
+        combined_like { run_gru_job($app, limit_results_and_logs => []) }
+        qr/Saved cleanup status: last processed group ID is \d+/, 'saved cleanup status logged';
+
+        my %our_groups = (g_one => 1, g_two => 1, g_three => 1);
+        my @processed_filtered = grep { $our_groups{$_} } @processed;
+
+        is_deeply \@processed_filtered, ['g_one', 'g_two', 'g_three'],
+          'job groups are processed in default order g_one -> g_two -> g_three';
+
+        ok -f $cache_file_path, 'state cache file is automatically created upon processing groups';
+        my $content = Mojo::File->new($cache_file_path)->slurp;
+        my $data = decode_json($content);
+        is $data->{last_processed_job_group_id}, $g3->id, 'state cache records g_three ID as the last processed group';
+    };
+
+    subtest 'resuming iteration from the group following last_processed_job_group_id with wrap-around' => sub {
+        Mojo::File->new($cache_file_path)->spew(encode_json({last_processed_job_group_id => $g1->id}));
+
+        @processed = ();
+        combined_like { run_gru_job($app, limit_results_and_logs => []) }
+qr/Resuming job group cleanup after group ID @{[$g1->id]}.*Saved cleanup status: last processed group ID is @{[$g1->id]}/s,
+          'resuming job group cleanup and saving status logged';
+        my %our_groups = (g_one => 1, g_two => 1, g_three => 1);
+        my @processed_filtered = grep { $our_groups{$_} } @processed;
+
+        is_deeply \@processed_filtered, ['g_two', 'g_three', 'g_one'],
+          'groups are processed starting with g_two and wrapping back to g_one';
+    };
+
+    subtest 'invalid JSON in state cache triggers read warning' => sub {
+        Mojo::File->new($cache_file_path)->spew('{"invalid JSON');
+
+        combined_like { run_gru_job($app, limit_results_and_logs => []) }
+        qr/Unable to read cleanup status from \Q$cache_file_path\E:/, 'warning logged on read failure';
+    };
+
+    subtest 'unable to write state cache triggers write warning' => sub {
+        unlink $cache_file_path;
+        my $new_cache_file = "$cache_file_path.new";
+        mkdir $new_cache_file;
+
+        combined_like { run_gru_job($app, limit_results_and_logs => []) }
+        qr/Unable to write cleanup status to \Q$cache_file_path\E:/, 'warning logged on write failure';
+
+        rmdir $new_cache_file;
+    };
+
+    unlink $cache_file_path;
+    $schema->txn_rollback;
 };
 
 done_testing();
