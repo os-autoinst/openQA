@@ -170,6 +170,13 @@ subtest 'asset download' => sub {
     my %job = (
         id => $job_id,
         parents => {Chained => [2]},
+        settings => {
+            ISO_1 => 'foo.iso',
+            ISO_2 => 'bar.iso',
+            HDD_1 => 'some.qcow2',
+            HDD_2 => 'uefi-vars.qcow2',
+            HDD_3 => 'another.qcow2',
+        },
         assets => {
             repo => 'supposed to be skipped',
             iso => [qw(foo.iso bar.iso)],
@@ -237,6 +244,14 @@ subtest 'asset download' => sub {
     ok -f "$temp_assetdir/iso/bar.iso", 'foo touched';
 
     %mirrored = ();
+    # assets are always referenced by asset-typed settings (see register_assets_from_settings)
+    $job{settings} = {
+        ISO_1 => 'foo.iso',
+        ISO_2 => 'bar.iso',
+        HDD_1 => 'another.qcow2',
+        HDD_2 => 'some.qcow2',
+        HDD_3 => 'uefi-vars.qcow2',
+    };
     $options{'skip-deps'} = 1;
     $expected_downloads{"http://foo/tests/$job_id/asset/hdd/some.qcow2"} = "$temp_assetdir/hdd/some.qcow2";
     $expected_downloads{"http://foo/tests/$job_id/asset/hdd/uefi-vars.qcow2"} = "$temp_assetdir/hdd/uefi-vars.qcow2";
@@ -253,6 +268,27 @@ subtest 'asset download' => sub {
       'downloading logged (2)';
     is_deeply \%mirrored, \%expected_downloads,
       'assets downloadeded except uefi-vars because no parent produces it anyways'
+      or always_explain \%mirrored;
+
+    %mirrored = ();
+    my %new_settings = %{$job{settings}};
+    delete $new_settings{ISO_1};    # assume overridden by command line `ISO_1=`
+    delete $expected_downloads{"http://foo/tests/$job_id/asset/iso/foo.iso"};
+    combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options, \%new_settings) }
+    qr/downloading/,
+      'downloading logged with overridden settings';
+    is_deeply \%mirrored, \%expected_downloads, 'foo.iso skipped because ISO_1 setting was removed'
+      or always_explain \%mirrored;
+
+    %mirrored = ();
+    delete $new_settings{ISO_2};    # asset setting removed …
+    $new_settings{UNRELATED} = 'bar.iso';    # … but an unrelated setting mentions the same file
+    delete $expected_downloads{"http://foo/tests/$job_id/asset/iso/bar.iso"};
+    combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options, \%new_settings) }
+    qr/downloading/,
+      'downloading logged with unrelated setting mentioning removed asset';
+    is_deeply \%mirrored, \%expected_downloads,
+      'bar.iso skipped: unrelated non-asset setting mentioning the file does not keep the download'
       or always_explain \%mirrored;
 };
 
