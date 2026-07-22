@@ -123,7 +123,7 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {
         $free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers(
             OpenQA::Scheduler::Model::Jobs::determine_online_workers());
-        if (my @matching = grep { $_->check_class($worker_class) } @$free_workers) {
+        if (grep { $_->check_class($worker_class) } @$free_workers) {
             pass "at least one free worker with class $worker_class registered";
             return ($relevant_jobs, $elapsed);
         }
