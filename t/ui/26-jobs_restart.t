@@ -228,7 +228,7 @@ subtest 'check single job restart in /tests page' => sub {
         # open restart link then verify its test name
         $driver->find_child_element($td, "./a[\@title='new test']", 'xpath')->click();
         like $driver->find_element('#info_box .card-header')->get_text(),
-          qr/minimalx@32bit/, 'restarted job is correct';
+          qr/minimalx\@32bit/, 'restarted job is correct';
     };
 };
 

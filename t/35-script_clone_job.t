@@ -276,7 +276,7 @@ subtest 'get 2 nodes HA cluster with get_deps' => sub {
         WORKER_CLASS => 'tap,qemu_x86_64',
     );
     my %supportserver_settings = (
-        NAME => "00007934-sle-15-SP3-Online-x86_64-Build67.1-sles4sap_hana_supportserver@64bit-2gbram",
+        NAME => '00007934-sle-15-SP3-Online-x86_64-Build67.1-sles4sap_hana_supportserver@64bit-2gbram',
         TEST => 'sles4sap_hana_supportserver',
         HDD_1 => 'openqa_support_server_sles12sp3.x86_64.qcow2',
         HDDSIZEGB => 60,

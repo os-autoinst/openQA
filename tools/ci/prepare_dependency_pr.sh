@@ -12,11 +12,13 @@ git status
 set +o pipefail
 
 sha_file=tools/ci/autoinst.sha
-current_sha=$(cat "$sha_file")
+perl_version=$(perl -e 'print $]')
 new_sha=$(curl -s https://api.github.com/repos/os-autoinst/os-autoinst/commits | grep sha | head -n 1 | grep -o -E '[0-9a-f]{40}')
-[[ $current_sha == "$new_sha" ]] && exit 0
+new_ver=$perl_version-$new_sha
+current_ver=$(cat "$sha_file")
+[[ $current_ver == "$new_ver" ]] && exit 0
 
-echo -n "$new_sha" > "$sha_file"
+echo -n "$new_ver" > "$sha_file"
 
 sudo zypper -n --gpg-auto-import-keys install git hub curl
 hub --version
