@@ -736,6 +736,12 @@ The following optional test variables are supported:
   `registry.opensuse.org/devel/openqa/containers/os-autoinst_dev:latest`).
   `OS_AUTOINST_CONTAINER_IMAGE` requires `OS_AUTOINST_GIT_REPO` to be set.
 
+*Note*: Running `os-autoinst` in a rootless container requires that the
+`_openqa-worker` user has subuid/subgid ranges assigned in `/etc/subuid`
+and `/etc/subgid`. If they are missing, you can configure them by running:
+`usermod --add-subuids 100000-165535 --add-subgids 100000-165535 _openqa-worker`.
+Additionally, AppArmor must allow `podman` to run unconfined (e.g. `pux`).
+
 ### Automatic retries of jobs
 
 You might encounter flaky openQA tests that fail sporadically. The best way to
