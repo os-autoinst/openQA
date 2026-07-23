@@ -52,6 +52,7 @@ use constant MAIN_SETTINGS => qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD);
 
 use constant MAX_LENGTH_REASON => 300;
 use constant JOB_INVESTIGATE_GIT_TIMEOUT => 20;
+use constant RETURN_CODE_TIMEOUT_EXCEEDED => 124;    # see `man timeout`
 
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
@@ -1916,9 +1917,10 @@ sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     $cmd = ['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range];
     $res = run_cmd_with_log_return_error($cmd, stdout => 'trace');
     $out = $res->{stdout} . $res->{stderr};
-    if ($res->{return_code}) {
-        log_warning "Problem with [@$cmd] rc=$res->{return_code}: $out";
-        return 'Cannot display diff because of a git problem';
+    if (my $return_code = $res->{return_code}) {
+        my $is_timeout = $return_code == RETURN_CODE_TIMEOUT_EXCEEDED;
+        log_warning "Problem with [@$cmd] rc=$return_code: $out" unless $is_timeout;
+        return $is_timeout ? 'Computing diff timed out' : 'Cannot display diff because of a git problem';
     }
     return $out;
 }
