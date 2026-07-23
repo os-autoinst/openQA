@@ -161,13 +161,10 @@ subtest 'restart job from info panel in test results' => sub {
         wait_until(sub { flash_messages =~ m/Direct parent 99937 needs to be cloned as well/s },
             'direct parent error shown', 20);
 
-        ok my $toggle = $driver->find_element('#flash-messages .dropdown-toggle'), 'dropdown toggle button is present'
-          or return;
-        $toggle->click();    # open dropdown and find our new option
-        my $option = $driver->find_element('.restart-parent-skip-ok');
-        is $option->get_text(), 'Restart parent job skipping passed/softfailed children',
-          'dropdown option text is correct';
-        $option->click();    # click the dropdown option to restart parent job skipping OK children
+        my $button = $driver->find_element('#flash-messages .restart-parent-skip-ok');
+        ok $button, 'restart parent skipping OK children button is present' or return;
+        is $button->get_text, 'Restart parent job skipping passed/softfailed children', 'button text';
+        $button->click;    # click the button to restart parent job skipping OK children
 
         # since it successfully restarts, it should redirect to the newly cloned parent job.
         wait_for_ajax(msg => 'parent job restarted skipping OK children');

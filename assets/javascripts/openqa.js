@@ -214,31 +214,15 @@ function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetEle
     btnGroup.appendChild(button);
 
     if (parentId) {
-      const dropdownToggle = document.createElement('button');
-      dropdownToggle.type = 'button';
-      dropdownToggle.className = 'btn btn-danger dropdown-toggle dropdown-toggle-split';
-      dropdownToggle.setAttribute('data-bs-toggle', 'dropdown');
-      dropdownToggle.setAttribute('aria-expanded', 'false');
-
-      const srOnly = document.createElement('span');
-      srOnly.className = 'visually-hidden sr-only';
-      srOnly.appendChild(document.createTextNode('Toggle Dropdown'));
-      dropdownToggle.appendChild(srOnly);
-      btnGroup.appendChild(dropdownToggle);
-
-      const dropdownMenu = document.createElement('div');
-      dropdownMenu.className = 'dropdown-menu dropdown-menu-end';
-
-      const item = document.createElement('a');
-      item.className = 'dropdown-item restart-parent-skip-ok';
-      item.href = '#';
-      item.appendChild(document.createTextNode('Restart parent job skipping passed/softfailed children'));
-      item.onclick = function (e) {
+      const skipOkButton = document.createElement('button');
+      skipOkButton.type = 'button';
+      skipOkButton.className = 'btn btn-secondary restart-parent-skip-ok';
+      skipOkButton.appendChild(document.createTextNode('Restart parent job skipping passed/softfailed children'));
+      skipOkButton.onclick = function (e) {
         e.preventDefault();
         restartJob(urlWithBase(`/api/v1/jobs/${parentId}/restart?skip_ok_result_children=1`), parentId);
       };
-      dropdownMenu.appendChild(item);
-      btnGroup.appendChild(dropdownMenu);
+      btnGroup.appendChild(skipOkButton);
     }
 
     container.appendChild(btnGroup);
