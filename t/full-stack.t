@@ -135,7 +135,7 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
 
 sub show_job_info ($job_id) {
     my $job = $schema->resultset('Jobs')->find($job_id);
-    always_explain 'job info: ', $job ? $job->to_hash : undef;
+    always_explain 'job info: ', $job ? $job->to_hash : undef;    # uncoverable statement
 }
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
