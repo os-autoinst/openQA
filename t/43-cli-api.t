@@ -13,6 +13,7 @@ use Mojo::Server::Daemon;
 use Mojo::JSON qw(decode_json);
 use Mojo::File qw(tempfile);
 use Mojo::Util qw(encode);
+use Test::MockModule;
 use OpenQA::CLI;
 use OpenQA::CLI::api;
 use OpenQA::Test::Case;
@@ -468,6 +469,13 @@ EOF
     ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
     like $stderr, qr/Connection refused/, 'aborts on connection refused';
     like $stderr, qr/failed.*retrying/, 'requests are retried on error if requested';
+
+    {
+        my $mock_tx = Test::MockModule->new('Mojo::Transaction::HTTP');
+        $mock_tx->redefine(error => sub { return undef });
+        ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
+        like $stderr, qr/hit connection error, retrying/, 'shows connection error without details when error is undef';
+    }
 };
 
 subtest 'Pretty print JSON' => sub {
