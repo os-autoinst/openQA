@@ -87,6 +87,7 @@ devel_no_selenium_requires:
   tar:
   xorg-x11-fonts:
   pandoc:  # for generating HTML documentation
+  python3-typer:
   python3-weasyprint:  # for generating PDF documentation
   perl(Perl::Tidy): '== 20260705'
   perl(Test::CheckGitStatus):
