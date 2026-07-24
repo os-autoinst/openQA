@@ -663,6 +663,8 @@ distrobox enter box-openqadev-leap
 # Leap 16.0
 zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/16.0 devel-openqa \
     && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/16.0/16.0/ devel-openqa-leap
+    && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/Cloud:OpenStack:Factory/16.0/Cloud:OpenStack:Factory.repo
+    && zypper addrepo -G -p 95 https://download.opensuse.org/repositories/SUSE:/CA/16.0/SUSE:CA.repo
 
 # Tumbleweed
 #zypper addrepo -G -p 95 https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Tumbleweed devel-openqa \
