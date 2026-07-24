@@ -86,7 +86,8 @@
   min-width: 820px;
   width: calc(73% + (23% - 280px));
 }
-#liveterminal, #livelog {
+#liveterminal,
+#livelog {
   padding: 0;
   margin: 0;
   border: none;
@@ -139,10 +140,12 @@ div.flags {
 .state_blocked[class*='fa-'] {
   color: $color-state-blocked;
 }
-.state_obsolete[class*='fa-'], .state_cancelled[class*='fa-'] {
+.state_obsolete[class*='fa-'],
+.state_cancelled[class*='fa-'] {
   color: $color-state-cancelled;
 }
-.state_running[class*='fa-'], .state_uploading[class*='fa-'] {
+.state_running[class*='fa-'],
+.state_uploading[class*='fa-'] {
   color: $color-state-running;
 }
 [class*='fa-'].module_failed {
@@ -160,7 +163,8 @@ div.flags {
 [class*='fa-'].module_skipped {
   color: $color-module-skipped;
 }
-[class*='fa-'].result_failed, [class*='fa-'].result_fail {
+[class*='fa-'].result_failed,
+[class*='fa-'].result_fail {
   color: $color-failed;
 }
 [class*='fa-'].result_incomplete {
@@ -181,13 +185,15 @@ div.flags {
 [class*='fa-'].result_parallel_restarted {
   color: $color-module-none;
 }
-[class*='fa-'].result_passed, [class*='fa-'].result_ok {
+[class*='fa-'].result_passed,
+[class*='fa-'].result_ok {
   color: $color-module-passed !important;
 }
 [class*='fa-'].result_skipped {
   color: $color-module-none;
 }
-[class*='fa-'].result_softfailed, [class*='fa-'].result_softfail {
+[class*='fa-'].result_softfailed,
+[class*='fa-'].result_softfail {
   color: $color-softfailed;
 }
 [class*='fa-'].result_unknown {
@@ -199,7 +205,11 @@ div.flags {
 [class*='fa-'].result_user_restarted {
   color: $color-module-none;
 }
-[class*='fa-'].comment, [class*='fa-'].bookmark, [class*='fa-'].bug, [class*='fa-'].certificate, [class*='fa-'].tag {
+[class*='fa-'].comment,
+[class*='fa-'].bookmark,
+[class*='fa-'].bug,
+[class*='fa-'].certificate,
+[class*='fa-'].tag {
   color: $color-labels;
 }
 .label_bug[class*='fa-bolt'] {
@@ -240,7 +250,8 @@ div.flags {
   text-align: left;
 }
 html:not([data-bs-theme='dark']) {
-  #settings_box, #investigation_status_entry {
+  #settings_box,
+  #investigation_status_entry {
     padding-top: 9px;
   }
 }
@@ -258,7 +269,8 @@ span.thumbnail {
   display: inline-block;
   margin: 6px;
 }
-.ui-oo-content-wrapper .ui-oo-box-shadow > * > .thumbnail:first-child, .content-wrapper .box > * > .thumbnail:first-child {
+.ui-oo-content-wrapper .ui-oo-box-shadow > * > .thumbnail:first-child,
+.content-wrapper .box > * > .thumbnail:first-child {
   margin-top: 6px;
 }
 span.thumbnail.current {
@@ -274,10 +286,12 @@ span.thumbnail.current {
 .resborder_fail {
   border-color: $color-resborder-fail;
 }
-.resborder_unk, .resborder_missing {
+.resborder_unk,
+.resborder_missing {
   border-color: $color-resborder-unk;
 }
-.resborder_softfailed, .resborder_softfail {
+.resborder_softfailed,
+.resborder_softfail {
   border-color: $color-softfailed;
 }
 [data-bs-theme='dark'] {
@@ -287,10 +301,12 @@ span.thumbnail.current {
   .resborder_fail {
     border-color: darken($color-resborder-fail, 15%);
   }
-  .resborder_unk, .resborder_missing {
+  .resborder_unk,
+  .resborder_missing {
     border-color: darken($color-resborder-unk, 15%);
   }
-  .resborder_softfailed, .resborder_softfail {
+  .resborder_softfailed,
+  .resborder_softfail {
     border-color: darken($color-softfailed, 15%);
   }
 }
@@ -314,7 +330,8 @@ span.resborder {
     background-repeat: no-repeat;
     background-position: center center;
   }
-  [class*='fa-question'], .step_actions {
+  .fa-question,
+  .step_actions {
     padding: 5px;
   }
   .step_actions {
@@ -341,7 +358,8 @@ span.resborder_na {
     height: auto;
   }
 }
-.text-result, .serial-result-preview {
+.text-result,
+.serial-result-preview {
   .resborder {
     font-family: monospace;
     text-align: left;
@@ -360,7 +378,8 @@ span.resborder_na {
   }
 }
 [data-bs-theme='dark'] {
-  .text-result, .serial-result-preview {
+  .text-result,
+  .serial-result-preview {
     .resborder {
       background-color: $default-bg-color-dark;
       color: lighten($link-color-dark, 25%);
@@ -553,11 +572,13 @@ ul.modcategory {
   }
   .card#info_box {
     background-color: $default-bg-color-dark;
-    .btn-secondary, .btn-secondary:hover {
+    .btn-secondary,
+    .btn-secondary:hover {
       color: $default-font-color-dark;
       background-color: lighten($default-bg-color-dark, 25%);
     }
-    .btn-warning, .btn-warning:hover {
+    .btn-warning,
+    .btn-warning:hover {
       color: $default-bg-color-dark;
     }
   }
