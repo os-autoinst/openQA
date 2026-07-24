@@ -4,6 +4,7 @@
 
 use Test::Most;
 use Test::Warnings ':report_warnings';
+use Mojo::Base -signatures;
 
 my $sleep_count = 0;
 my $tempdir;
@@ -48,8 +49,7 @@ my $daemon = Mojo::Server::Daemon->new(
 )->start;
 $client->host('http://127.0.0.1:' . $daemon->ports->[0])->set_port($daemon->ports->[0]);
 
-sub _refuse_connection {
-    my ($ua, $tx) = @_;
+sub _refuse_connection ($ua, $tx) {
     my $port = Mojo::IOLoop::Server->generate_port;
     $client->set_port($port);
     $tx->req->url->port($port);

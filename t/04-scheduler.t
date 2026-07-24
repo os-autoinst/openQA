@@ -85,11 +85,9 @@ subtest 'API' => sub {
 sub list_jobs (@args) {
     [map { $_->to_hash(assets => 1) } $jobs->complex_query(@args)->all]
 }
-sub job_get { $jobs->find({id => shift}) }
+sub job_get ($id) { $jobs->find({id => $id}) }
 
-sub job_get_hash {
-    my ($id) = @_;
-
+sub job_get_hash ($id) {
     my $job = job_get($id);
     return undef unless $job;
     my $ref = $job->to_hash(assets => 1);

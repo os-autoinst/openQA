@@ -68,7 +68,7 @@ my $ua = $app->ua->connect_timeout(0.25)->inactivity_timeout(0.25);
 my $cache = $app->cache;
 my $server_instance;
 
-sub start_server {
+sub start_server () {
     $server_instance = start sub {
         Mojo::Server::Daemon->new(
             app => fake_asset_server,

@@ -166,8 +166,7 @@ foreach my $j (@{$rsp->json->{ids}}) {
     like $ret->{result}, qr/incomplete|skipped/, 'Job skipped/incompleted';
 }
 
-sub get_gru_tasks {
-    my $job_ids = shift;
+sub get_gru_tasks ($job_ids) {
     my %gru_task_ids;
     foreach my $job_id (@$job_ids) {
         my @gru_dependencies = $gru_dependencies->search({job_id => $job_id});

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -20,12 +21,11 @@ $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
 
-sub get_summary { OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text) }
+sub get_summary () { OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text) }
 
 my $jobs = $schema->resultset('Jobs');
 
-sub create_job {
-    my %args = @_;
+sub create_job (%args) {
     return $jobs->create(
         {
             group_id => 1001,
@@ -128,7 +128,7 @@ subtest 'Default overview for 13.1' => sub {
     like get_summary, qr/Summary of opensuse build 0091/i,
       'specifying groupid without build yields latest build in group';
 
-    sub flash_msg { $t->tx->res->dom->at('#flash-messages')->all_text }
+    sub flash_msg () { $t->tx->res->dom->at('#flash-messages')->all_text }
     unlike flash_msg, qr/Specified "groupid" is invalid/i, 'no error message for valid groupid';
 
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', groupid => 'a'})->status_is(200);

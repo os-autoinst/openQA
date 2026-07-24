@@ -54,7 +54,7 @@ my @job_params = (
 # Customize the database based on fixtures.
 # We do not need job 99981 right now so delete it here just to have a helpful
 # example for customizing the test database
-sub prepare_database {
+sub prepare_database () {
     my $bugs = $schema->resultset('Bugs');
     my %bug_args = (refreshed => 1, existing => 1);
     $bugs->create({bugid => 'poo#1', title => 'open poo bug', open => 1, %bug_args});
@@ -395,7 +395,7 @@ sub get_effective_cell_background ($row_id) {
     );
 }
 
-sub check_no_highlighting {
+sub check_no_highlighting () {
     is scalar @{$driver->find_elements('#job_99937.highlight_parent')}, 0, 'parent not highlighted';
     is scalar @{$driver->find_elements('#job_99938.highlight_child')}, 0, 'child not highlighted';
 }

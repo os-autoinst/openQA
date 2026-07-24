@@ -24,7 +24,7 @@ my $schema = $test_case->init_data(
 my $jobs = $schema->resultset('Jobs');
 my $comments = $schema->resultset('Comments');
 
-sub prepare_database {
+sub prepare_database () {
     my $bugs = $schema->resultset('Bugs');
 
     $comments->create(
@@ -173,7 +173,7 @@ my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
 is scalar @open_bugs, 1, 'open bug correctly shown, and only once despite the 2 comments';
 is scalar @closed_bugs, 0, 'open bug not shown as closed bug';
 
-sub check_build_0091_defaults {
+sub check_build_0091_defaults () {
     wait_for_element selector => '#flavor_DVD_arch_i586', is_displayed => 1, like => qr/i586/;
     wait_for_element selector => '#flavor_DVD_arch_x86_64', is_displayed => 1, like => qr/x86_64/;
     wait_for_element selector => '#flavor_GNOME-Live_arch_i686', is_displayed => 1, like => qr/i686/;

@@ -195,8 +195,7 @@ subtest 'duplicate and cancel job' => sub {
       'job cancel triggers amqp';
 };
 
-sub assert_common_comment_json {
-    my ($json) = @_;
+sub assert_common_comment_json ($json) {
     ok $json->{id}, 'id';
     is $json->{job_id}, undef, 'job id';
     is $json->{text}, 'test', 'text';

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -84,8 +85,7 @@ subtest 'screenshots are unique' => sub {
     is $whatever[1], undef, 'no second result';
 };
 
-sub get_enqueued_minion_jobs {
-    my ($minion, $job_query_args) = @_;
+sub get_enqueued_minion_jobs ($minion, $job_query_args) {
 
     my $enqueued_jobs = $minion->jobs($job_query_args);
     my (@enqueued_job_ids, @enqueued_job_args);

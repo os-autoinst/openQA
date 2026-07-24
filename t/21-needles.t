@@ -63,9 +63,8 @@ $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
 my $module = $job->modules->find({name => 'a'});
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-sub process {
-    return unless (m/.json$/);
-    # add needle to database
+sub process () {
+    return unless m/\.json$/;
     OpenQA::Schema::Result::Needles::update_needle($_, $module, 0);
 }
 
