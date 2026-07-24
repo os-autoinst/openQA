@@ -14,6 +14,7 @@ use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
 use OpenQA::Script::CloneJobSUSE;
+use OpenQA::Utils 'asset_type_from_setting';
 use List::Util 'any';
 use HTTP::Status qw(:constants);
 
@@ -203,13 +204,19 @@ sub mirror ($url_handler, $from, $dst) {
     return _run_cmd CURL, @$curl_args, @{_auth_args($from, $secrets)}, qw(--continue-at - --output), $dst, $from;
 }
 
-sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
+sub clone_job_download_assets ($jobid, $job, $url_handler, $options, $settings = undef) {
+    $settings //= $job->{settings};
     my $parents = _get_chained_parents($job, $url_handler, $options);
     _check_for_missing_assets($job, $parents, $options);
     my $remote_url = $url_handler->{remote_url};
+    # consider only settings that actually reference an asset to avoid matching unrelated settings
+    my %new_assets = map { asset_type_from_setting($_, $settings->{$_}) ? ($settings->{$_} => 1) : () } keys %$settings;
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo';    # we can't download repos
         for my $file (@{$job->{assets}->{$type}}) {
+            # skip assets whose setting was overridden or cleared for the new job
+            next unless $new_assets{$file};
+
             my $dst = $file;
             # skip downloading published assets if we are also cloning the generation job or
             # if the only cloned job *is* the generation job
@@ -423,7 +430,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     clone_job_apply_settings($options->{args}, $relation eq 'children' ? 0 : $depth, $settings, $options);
     OpenQA::Script::CloneJobSUSE::detect_maintenance_update($jobid, $url_handler, $settings)
       if $options->{'check-repos'};
-    clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
+    clone_job_download_assets($jobid, $job, $url_handler, $options, $settings) unless $options->{'skip-download'};
 }
 
 sub _assign_existing_dependencies ($name, $deps, $settings, $jobs) {
