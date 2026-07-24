@@ -5514,6 +5514,14 @@ to use (defaults to
 <code>OS_AUTOINST_CONTAINER_IMAGE</code> requires
 <code>OS_AUTOINST_GIT_REPO</code> to be set.</li>
 </ul>
+<p><em>Note</em>: Running <code>os-autoinst</code> in a rootless
+container requires that the <code>_openqa-worker</code> user has
+subuid/subgid ranges assigned in <code>/etc/subuid</code> and
+<code>/etc/subgid</code>. If they are missing, you can configure them by
+running:
+<code>usermod --add-subuids 100000-165535 --add-subgids 100000-165535 _openqa-worker</code>.
+Additionally, AppArmor must allow <code>podman</code> to run unconfined
+(e.g. <code>pux</code>).</p>
 <h3 data-number="4.6.7" id="automatic-retries-of-jobs"><span class="header-section-number">4.6.7</span> Automatic retries of
 jobs</h3>
 <p>You might encounter flaky openQA tests that fail sporadically. The
