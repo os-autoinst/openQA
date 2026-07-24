@@ -1079,6 +1079,7 @@ subtest 'git log diff' => sub {
             }
             elsif ("@$cmd" =~ m/diff --stat/) {
                 if ("@$cmd" =~ m/difffail/) { $stdout = 'git failed'; $rc = 1; }
+                elsif ("@$cmd" =~ m/longrange/) { $rc = 124; }    # see `man timeout`
                 else { $stdout = '2 files changed'; }
             }
             return {stdout => $stdout, stderr => $stderr, return_code => $rc};
@@ -1107,6 +1108,9 @@ subtest 'git log diff' => sub {
         like $fail, qr{Cannot display diff because of a git problem}, 'git diff exited with non-zero';
     }
     qr{git failed}, 'git diff exited with non-zero - warning is logged';
+
+    my $fail = $job->git_diff('/foo', 'longrange', 10);
+    like $fail, qr{Computing diff timed out}, 'timeout logged specifically';
 
     my $res = $job->git_diff('/foo', 'invalidrange', 10);
     like $res, qr{Cannot display diff: Invalid revision range}, 'error about invalid range returned';
