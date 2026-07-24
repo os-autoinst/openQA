@@ -1670,8 +1670,46 @@ sub needle_dir ($self) {
     return $self->{_needle_dir};
 }
 
-# return the last X complete jobs of the same scenario
-sub _previous_scenario_jobs ($self, $rows = undef, $search_attrs = {}) {
+# names of job settings that additionally separate the scenario history, e.g.
+# to keep the history of independent submissions (PRs) apart despite otherwise
+# equal scenario keys. The referenced settings themselves are ordinary,
+# test-visible settings; only this meta-setting carries the underscore prefix.
+use constant HISTORY_ISOLATION_SETTING => '_HISTORY_ISOLATION_KEYS';
+
+# reserved, well-known isolation key used as the default so tests can enable the
+# feature by just setting SUBMISSION_ID without supplying HISTORY_ISOLATION_SETTING
+use constant HISTORY_ISOLATION_DEFAULT_KEY => 'SUBMISSION_ID';
+
+# The isolation keys effective for this job as a sorted list. Semantics of the
+# HISTORY_ISOLATION_SETTING meta-setting:
+#   - unset: default to HISTORY_ISOLATION_DEFAULT_KEY, but only if the job
+#     actually carries that setting (so it stays a no-op for existing jobs);
+#   - empty string: isolation explicitly disabled;
+#   - comma-separated keys: exactly those keys (overrides/extends the default).
+sub history_isolation_keys ($self) {
+    my $settings = $self->settings_hash;
+    my $declared = $settings->{HISTORY_ISOLATION_SETTING()};
+    unless (defined $declared) {
+        return exists $settings->{HISTORY_ISOLATION_DEFAULT_KEY()} ? (HISTORY_ISOLATION_DEFAULT_KEY) : ();
+    }
+    return sort grep { length } split /\s*,\s*/, $declared;
+}
+
+# The key/value pairs to additionally match on to isolate the history, limited
+# to the requested subset of $self's declared isolation keys. An undefined
+# $keys means "all declared keys"; an empty array-ref means "none".
+sub history_isolation_values ($self, $keys = undef) {
+    my @keys = defined $keys ? @$keys : $self->history_isolation_keys;
+    return {} unless @keys;
+    my $settings = $self->settings_hash;
+    return {map { $_ => $settings->{$_} } @keys};
+}
+
+# return the last X complete jobs of the same scenario. When $isolation_keys is
+# passed (an array-ref subset of the declared isolation keys, or undef for all
+# declared keys), jobs are additionally required to match $self's values for
+# those job settings so that independent histories stay separate.
+sub _previous_scenario_jobs ($self, $rows = undef, $search_attrs = {}, $isolation_keys = []) {
     my $schema = $self->result_source->schema;
     my $conds = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     for my $key (SCENARIO_WITH_MACHINE_KEYS) {
@@ -1682,6 +1720,19 @@ sub _previous_scenario_jobs ($self, $rows = undef, $search_attrs = {}) {
         rows => $rows,
         %$search_attrs,
     );
+    my $isolation = $self->history_isolation_values($isolation_keys);
+    if (my @keys = sort keys %$isolation) {
+        # match each isolation key/value via a correlated job_settings subquery
+        my $settings_rs = $schema->resultset('JobSettings');
+        for my $key (@keys) {
+            push @$conds,
+              {
+                'me.id' => {
+                    -in =>
+                      $settings_rs->search({key => $key, value => $isolation->{$key}})->get_column('job_id')->as_query
+                }};
+        }
+    }
     return $schema->resultset('Jobs')->search({-and => $conds}, \%attrs)->all;
 }
 
@@ -1737,8 +1788,9 @@ sub _carry_over_candidate ($self) {
     # we only do carryover for jobs with some kind of (soft) failure
     return undef if $current_failure_reason eq 'GOOD';
 
-    # search for previous jobs
-    for my $job ($self->_previous_scenario_jobs($lookup_depth)) {
+    # search for previous jobs, isolating on all declared history isolation keys
+    # so bugrefs are not carried over between independent submissions
+    for my $job ($self->_previous_scenario_jobs($lookup_depth, {}, undef)) {
         my $job_fr = $job->_failure_reason;
         log_debug(sprintf "$label: checking take over from %d: _failure_reason=%s", $job->id, $job_fr);
         if ($job_fr eq $current_failure_reason) {
@@ -1933,7 +1985,9 @@ good" job in the same scenario.
 =cut
 
 sub investigate ($self, %args) {
-    my @previous = $self->_previous_scenario_jobs;
+    # isolate on all declared history isolation keys so "last good" refers to
+    # this job's own isolated history (e.g. the same PR), not an unrelated one
+    my @previous = $self->_previous_scenario_jobs(undef, {}, undef);
     return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
     my %inv;
     return {error => 'No result directory available for current job'} unless $self->result_dir();

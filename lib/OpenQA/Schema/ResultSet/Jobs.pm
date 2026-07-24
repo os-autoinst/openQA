@@ -573,23 +573,32 @@ sub cancel_by_settings (
 sub next_previous_jobs_query ($self, $job, $jobid, %args) {
     my $p_limit = $args{previous_limit};
     my $n_limit = $args{next_limit};
-    my @params = (
-        'done',    # only consider jobs with state 'done'
-        OpenQA::Jobs::Constants::ABORTED_RESULTS,    # ignore aborted results
-    );
-    for (1 .. 2) {
-        for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
-            push @params, $job->get_column($key);
-        }
-    }
-    push @params, $jobid, $n_limit, $jobid, $p_limit, $jobid;
+    my $schema = $self->result_source->schema;
 
-    my $jobs_rs = $self->result_source->schema->resultset('JobNextPrevious')->search(
-        {},
-        {
-            bind => \@params
-        });
-    return $jobs_rs;
+    # optionally isolate the history to the requested subset of the job's
+    # declared isolation keys by folding an EXISTS clause per key into the CTE
+    # (see OpenQA::Schema::Result::JobNextPrevious::query_sql and tasks/096 for
+    # the benchmark that motivated this form over an outer id-IN filter)
+    my $isolation = $job->history_isolation_values($args{isolation_keys});
+    my @iso_keys = sort keys %$isolation;
+
+    # binds for the `allofjobs` CTE: state, aborted results, scenario keys, then
+    # the (key, value) pairs for each isolation EXISTS clause
+    my @cte = ('done', OpenQA::Jobs::Constants::ABORTED_RESULTS);
+    push @cte, $job->get_column($_) for OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS;
+    push @cte, $_, $isolation->{$_} for @iso_keys;
+
+    # binds for the `l` (latest) subquery: only the isolation-free view still
+    # filters by scenario keys there; the isolated variant reuses the CTE
+    my @latest = @iso_keys ? () : map { $job->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS;
+
+    my @params = (@cte, @latest, $jobid, $n_limit, $jobid, $p_limit, $jobid);
+    my $rs = $schema->resultset('JobNextPrevious');
+    # generalized: reuse the static view. isolated: override the view SQL with
+    # the EXISTS-augmented variant, binding its parameters via the `from` clause
+    return $rs->search({}, {bind => \@params}) unless @iso_keys;
+    my $sql = OpenQA::Schema::Result::JobNextPrevious::query_sql(scalar @iso_keys);
+    return $rs->search({}, {from => \["($sql) me", @params]});
 }
 
 

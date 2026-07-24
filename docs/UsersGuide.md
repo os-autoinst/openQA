@@ -139,6 +139,49 @@ lookup using globbing. This is particularly helpful for the following scenarios:
   version. For example by specifying `16.1:PR-*` in the medium type, openQA will
   automatically match and use this type for any scheduled product where the
   `VERSION` begins with `16.1:PR-`.
+  Note that overloading `VERSION` this way pollutes the version string that test
+  code may rely on being a "proper" value (e.g. `16.1`); to keep `VERSION`
+  pristine, prefer the dedicated
+  [history isolation keys](#history-isolation-keys) mechanism instead.
+
+<a id="history-isolation-keys"></a>
+#### Separating the history of independent submissions
+
+Features that operate on the history of a scenario (bug reference
+[carry-over](#carry-over), the investigation "last good" build and the "Next &
+Previous" list) match jobs by the scenario keys `DISTRI`, `VERSION`, `FLAVOR`,
+`ARCH`, `TEST` and `MACHINE`. Independent submissions (e.g. different
+pull-requests) that share all these keys are therefore treated as one
+consecutive history, causing unintended carry-overs and misleading "last good"
+builds.
+
+The simplest way to enable this is the reserved, well-known job setting
+`SUBMISSION_ID`. Tagging each independent submission with a distinct
+`SUBMISSION_ID` value keeps `VERSION` pristine while separating the history per
+submission, without any further configuration:
+
+```
+VERSION=16.1
+SUBMISSION_ID=1234
+```
+
+For finer control, set the meta-setting `_HISTORY_ISOLATION_KEYS` to a
+comma-separated list of the job settings whose values must additionally match
+for two jobs to share a history:
+
+- unset (default): isolate on `SUBMISSION_ID` if the job carries it, otherwise
+  no isolation (so existing jobs are unaffected);
+- empty (`_HISTORY_ISOLATION_KEYS=`): isolation disabled, even if
+  `SUBMISSION_ID` is present;
+- explicit keys (e.g. `_HISTORY_ISOLATION_KEYS=PR_ID,SUBMISSION_ID`): exactly
+  those keys, overriding or extending the default.
+
+The named settings are ordinary, test-visible settings; only the
+`_HISTORY_ISOLATION_KEYS` meta-setting carries the leading underscore marking it
+as openQA-internal. Carry-over and investigation isolate on the effective keys
+automatically. The "Next & Previous" tab keeps showing the generalized history
+by default and offers a switch to the isolated ("strict") view when a job has
+isolation keys in effect.
 
 ### Test Suites
 
@@ -734,6 +777,11 @@ Jenkins.
 > For an approach to add bug references based on a search expression found
 > in the job reason for incomplete jobs or job logs consider to
 > [Enable custom hook scripts on "job done" based on result](Installing.md#enable_custom_hook_scripts_on_job_done_based_on_result).
+
+> **NOTE:**
+> To keep the carry-over of independent submissions (e.g. pull-requests) apart
+> despite otherwise equal scenario keys, use
+> [history isolation keys](#history-isolation-keys).
 
 ### Pinning comments as group description
 
