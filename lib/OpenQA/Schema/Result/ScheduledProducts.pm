@@ -775,10 +775,13 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
     my ($error_msg, %wanted, @job_templates);
     for my $key (sort keys %$job_templates) {
         my $job_template = $job_templates->{$key};
-        my $settings = $job_template->{settings} // {};
-        $settings->{TEST} = $key;
+        my $settings = {};
         my @worker_class;
-        push @worker_class, $settings->{WORKER_CLASS} if $settings->{WORKER_CLASS};
+        OpenQA::JobSettings::apply_global_test_settings($settings, \@worker_class);
+        # overlay job template settings
+        my $jt_settings = $job_template->{settings} // {};
+        _merge_settings_and_worker_classes($jt_settings, $settings, \@worker_class);
+        $settings->{TEST} = $key;
 
         # add settings from product (or skip if there is no such product) if a product is specified
         if (my $product_name = $job_template->{product}) {
@@ -811,12 +814,8 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @l
         }
 
         # handle further settings
-        $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
         _merge_settings_uppercase($args, $settings, 'TEST');
-        $settings->{DISTRI} = _distri_key($settings) if $settings->{DISTRI};
-        OpenQA::JobSettings::parse_url_settings($settings);
-        OpenQA::JobSettings::handle_plus_in_settings($settings);
-        my ($error) = OpenQA::JobSettings::expand_placeholders($settings);
+        my ($error) = OpenQA::JobSettings::finalize_job_settings($settings, \@worker_class);
         $error_msg .= $error if defined $error;
         _populate_wanted_jobs_for_test_arg($args, $settings, \%wanted);
         push @job_templates, $settings;
