@@ -34,12 +34,13 @@ sub setup ($server) {
         die $e;    # uncoverable statement
     }
 
-    # Clean up file handles to avoid "Too many open files"
+    # Clean up file handles to avoid "Too many open files".
+    # This is a workaround for Mojolicious::Plugin::AssetPack keeping file descriptors open.
+    # Calling ->path() with a string replaces the underlying Mojo::Asset::File with a fresh
+    # instance where the file handle is evaluated lazily, effectively closing the old one.
     for my $asset (map { @$_ } values %{$server->asset->{by_topic} // {}}) {
-        delete $asset->{_asset}{handle} if $asset->{_asset} && $asset->{_asset}->isa('Mojo::Asset::File');
+        $asset->path($asset->path->to_string) if $asset->path;
     }
-    delete $server->asset->{input};
-    delete $server->asset->store->{assets};
 }
 
 sub _path ($url) { path('assets', ref $url eq 'Mojo::URL' ? $url->path : $url)->realpath->to_rel }
