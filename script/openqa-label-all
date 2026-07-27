@@ -7,7 +7,7 @@
 import argparse
 import json
 import logging
-import subprocess  # noqa: S404
+import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
 from urllib.parse import urljoin
 
@@ -74,7 +74,7 @@ def _parse_args() -> argparse.Namespace:
 
 def _call(cmds: list, args: argparse.Namespace) -> int:
     log.debug("call: %s", cmds)
-    return subprocess.run((["echo", "Simulating: "] if args.dry_run else []) + cmds, check=True).returncode  # noqa: S603
+    return subprocess.run((["echo", "Simulating: "] if args.dry_run else []) + cmds, check=True).returncode  # ruff:ignore[subprocess-without-shell-equals-true]
 
 
 def _openqa_call(cmds: list) -> int:
@@ -83,7 +83,7 @@ def _openqa_call(cmds: list) -> int:
 
 def _comments(job: dict) -> list:
     log.debug("Retrieving comments on job %s", job["id"])
-    completed_process = subprocess.run([*openqa_cmd, f"jobs/{job['id']}/comments"], capture_output=True, check=True)  # noqa: S603
+    completed_process = subprocess.run([*openqa_cmd, f"jobs/{job['id']}/comments"], capture_output=True, check=True)  # ruff:ignore[subprocess-without-shell-equals-true]
     job_comments = completed_process.stdout
     comments = " ".join([i["text"] for i in json.loads(job_comments)])
     log.debug("Comments: %s", comments)
@@ -97,7 +97,7 @@ def _needs_label(label: str, job: dict) -> bool:
 
 
 def _main() -> int:
-    global args, openqa_cmd  # noqa: PLW0603
+    global args, openqa_cmd  # ruff:ignore[global-statement]
     args = _parse_args()
     request_params = {"result": args.result, "latest": 1, "scope": "relevant"}
 
