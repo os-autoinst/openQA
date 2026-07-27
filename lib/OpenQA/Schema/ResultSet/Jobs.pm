@@ -229,7 +229,7 @@ sub _apply_prio_throttling ($self, $settings, $new_job_args, $group = undef) {
             my $info = _apply_max_job_time_prio(@timeout_settings, $mjt_rule, $new_job_args);
             push @throttling_info, $info if $info;
         }
-        for my $resource (keys %$throttling) {
+        for my $resource (sort keys %$throttling) {
             next unless defined(my $value = $settings->{$resource});
             for my $rule (@{$throttling->{$resource}}) {
                 my $op = $rule->{operator};
