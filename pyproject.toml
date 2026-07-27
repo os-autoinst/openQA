@@ -58,7 +58,7 @@ preview = true
 # PL: Pylint
 extend-select =[
     "E", "F", "D", "Q", "PL",
-    "T100", # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
+    "debugger", # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
     "T2", # https://docs.astral.sh/ruff/rules/#flake8-print-t20
     "TD", # https://docs.astral.sh/ruff/rules/#flake8-todos-td
     "W",
@@ -118,20 +118,20 @@ extend-select =[
 ]
 
 ignore = [
-    "D203",   # incorrect-blank-line-before-class
-    "PLC1802", # use-implicit-booleaness-not-len
-    "D213", # multi-line-summary-second-line
-    "PLR0904", # too-many-public-methods
-    "DOC201", # docstring-missing-returns
-    "DOC501", # docstring-missing-exception
-    "COM812", # missing-trailing-comma
+    "incorrect-blank-line-before-class",
+    "len-test",
+    "multi-line-summary-second-line",
+    "too-many-public-methods",
+    "docstring-missing-returns",
+    "docstring-missing-exception",
+    "missing-trailing-comma",
 ]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 9
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004", "ANN401", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103"]
+"tests/*" = ["magic-value-comparison", "any-type", "too-many-arguments", "assert", "hardcoded-password-string", "hardcoded-password-func-arg", "too-many-positional-arguments", "undocumented-public-function"]
 
 [tool.ruff.format]
 # Enable reformatting of code snippets in docstrings.
