@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Test::MockObject;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -142,6 +143,25 @@ subtest 'schedule from yaml file: wildcard version' => sub {
         PRODUCT_SETTING => 'foo',
     );
     is_deeply $job_settings, \%expected, 'job1 scheduled with expected settings' or always_explain $job_settings;
+};
+
+subtest 'schedule from yaml applies global test settings' => sub {
+    # mock global test settings
+    my $orig_config = OpenQA::App->singleton->config;
+    OpenQA::App->singleton->config->{test_settings} = {PRETTY_SERIAL_MARKER => '1', GLOBAL_VAR => 'global_val'};
+
+    my $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
+    my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'autoyast_btrfs');
+    my $res = schedule_iso($t, \%args);
+    my $json = $res->json;
+    ok $json->{ids}, 'jobs scheduled';
+
+    my $job = $jobs->find($json->{ids}->[0]);
+    my $settings = {map { $_->key => $_->value } $job->settings};
+    is $settings->{PRETTY_SERIAL_MARKER}, '1', 'global PRETTY_SERIAL_MARKER applied';
+    is $settings->{GLOBAL_VAR}, 'global_val', 'global test setting applied';
+
+    OpenQA::App->singleton->config->{test_settings} = $orig_config->{test_settings};
 };
 
 done_testing();
