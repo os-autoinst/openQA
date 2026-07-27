@@ -8,8 +8,10 @@ destdir=${1:-../os-autoinst}
 sha=${2:-$(cat tools/ci/autoinst.sha)}
 
 echo "Building os-autoinst $destdir $sha"
-git clone https://github.com/os-autoinst/os-autoinst.git "$destdir"
-git -C "$destdir" checkout "${sha##*-}"
-cmake -S "$destdir" -B "$destdir" -G Ninja -DCMAKE_BUILD_TYPE=Release
+if [[ ! -d $destdir ]]; then
+    git clone https://github.com/os-autoinst/os-autoinst.git "$destdir"
+    git -C "$destdir" checkout "${sha##*-}"
+    cmake -S "$destdir" -B "$destdir" -G Ninja -DCMAKE_BUILD_TYPE=Release
+fi
 cmake --build "$destdir" --target symlinks
 chown -R 1000 "$destdir"

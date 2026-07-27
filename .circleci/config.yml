@@ -103,11 +103,9 @@ jobs:
       - restore_cache: *restore_fullstack_cache
       - store_artifacts: *store_logs
       - run:
-          name: "Build os-autoinst if not cached"
+          name: "Build os-autoinst (noop if cached)"
           command: |
-            if [ ! -d /var/cache/autoinst/t ]; then
-              bash -x tools/ci/build_autoinst.sh "/var/cache/autoinst"
-            fi
+            bash -x tools/ci/build_autoinst.sh "/var/cache/autoinst"
       - save_cache: *save_fullstack_cache
 
   cache-npm:
