@@ -4,6 +4,7 @@ import autoprefixer from 'autoprefixer';
 import inject from '@rollup/plugin-inject';
 
 export default defineConfig({
+  base: '/dist/',
   plugins: [
     inject({
       $: 'jquery',
