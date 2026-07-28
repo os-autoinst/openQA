@@ -212,7 +212,7 @@ function updateStatus() {
       updateTestStatus(json);
       // continue polling for job state updates until the job state is done
       if (testStatus.state !== 'done') {
-        setTimeout(updateStatus, 5000);
+        setTimeout(window.updateStatus, 5000);
       }
     })
     .catch(error => {
@@ -379,7 +379,7 @@ function setupRunning(jobid, status_url) {
   handleJobStateTransition(undefined, testStatus.state, testStatus.result);
   testStatus.jobid = jobid;
   testStatus.status_url = status_url;
-  updateStatus();
+  window.updateStatus();
 }
 
 function refreshInfoPanel() {
@@ -558,7 +558,7 @@ function updateDeveloperMode() {
   }
   updateDeveloperPanel();
   if (!developerMode.wsConnection) {
-    setupWebsocketConnection();
+    window.setupWebsocketConnection();
   }
 }
 
@@ -617,7 +617,7 @@ function setupDeveloperPanel() {
   document.getElementById('developer-pause-on-failure').onchange = handlePauseOnFailureToggled;
 
   updateDeveloperPanel();
-  setupWebsocketConnection();
+  window.setupWebsocketConnection();
 }
 
 // hides the specified options up to the specified index
@@ -827,7 +827,7 @@ function handleModuleToPauseAtSelected() {
     selectedModuleName = category + '-' + selectedModuleOption.text();
   }
   if (selectedModuleName !== developerMode.moduleToPauseAt) {
-    sendWsCommand({
+    window.sendWsCommand({
       cmd: 'set_pause_at_test',
       name: selectedModuleName
     });
@@ -851,7 +851,7 @@ function handlePauseOnMismatchSelected() {
       pauseOn = selectedValue;
       break;
   }
-  sendWsCommand({
+  window.sendWsCommand({
     cmd: 'set_pause_on_screen_mismatch',
     pause_on: pauseOn
   });
@@ -860,7 +860,7 @@ function handlePauseOnMismatchSelected() {
 function handleBooleanBehaviorSwitchToggled(developerModeProperty, command, checkboxId) {
   // send command only if owning development session and property is known
   if (developerMode.ownSession && developerMode[developerModeProperty] !== undefined) {
-    sendWsCommand({cmd: command, flag: document.getElementById(checkboxId).checked});
+    window.sendWsCommand({cmd: command, flag: document.getElementById(checkboxId).checked});
   }
 }
 
@@ -948,11 +948,11 @@ function handleWebsocketConnectionClosed(wsConnection) {
 
   // reconnect instantly in first connection error
   if (developerMode.reconnectAttempts === 0) {
-    setupWebsocketConnection();
+    window.setupWebsocketConnection();
   } else {
     // otherwise try to reconnect every 2 seconds
     setTimeout(function () {
-      setupWebsocketConnection();
+      window.setupWebsocketConnection();
     }, 2000);
   }
 }
@@ -1237,7 +1237,7 @@ function processWsCommand(obj) {
     // check whether the development session is ours to change to the proxy with write-access
     if (!developerMode.useDeveloperWsRoute && developerMode.ownSession) {
       developerMode.useDeveloperWsRoute = true;
-      setupWebsocketConnection();
+      window.setupWebsocketConnection();
     }
     updateDeveloperPanel();
   }
@@ -1261,12 +1261,12 @@ function sendWsCommand(obj) {
 
 // resumes the test execution (if currently paused)
 function resumeTestExecution(ignoreFailure) {
-  sendWsCommand({cmd: 'resume_test_execution', options: {ignore_failure: ignoreFailure}});
+  window.sendWsCommand({cmd: 'resume_test_execution', options: {ignore_failure: ignoreFailure}});
 }
 
 // sets the timeout of the currently ongoing assert/check_screen to zero
 function skipTimeout() {
-  sendWsCommand({
+  window.sendWsCommand({
     cmd: 'set_assert_screen_timeout',
     timeout: 0
   });
@@ -1276,7 +1276,7 @@ function skipTimeout() {
 function startDeveloperSession() {
   if (!developerMode.useDeveloperWsRoute) {
     developerMode.useDeveloperWsRoute = true;
-    setupWebsocketConnection();
+    window.setupWebsocketConnection();
   }
 }
 
@@ -1289,7 +1289,7 @@ function quitDeveloperSession() {
   developerMode.panelExplicitelyCollapsed = true;
   developerMode.panelExpanded = false;
   updateDeveloperPanel();
-  sendWsCommand({cmd: 'quit_development_session'});
+  window.sendWsCommand({cmd: 'quit_development_session'});
 }
 
 function disableDeveloperMode() {
@@ -1308,3 +1308,44 @@ function disableDeveloperMode() {
 }
 
 // vim: set sw=4 et:
+window.reloadBrokenThumbnails = reloadBrokenThumbnails;
+window.updateTestStatus = updateTestStatus;
+window.updateStatus = updateStatus;
+window.scrollToBottomOfLiveLog = scrollToBottomOfLiveLog;
+window.removeDataListener = removeDataListener;
+window.addDataListener = addDataListener;
+window.initLivelogAndTerminal = initLivelogAndTerminal;
+window.loadCanvas = loadCanvas;
+window.initLivestream = initLivestream;
+window.disableLivestream = disableLivestream;
+window.setupRunning = setupRunning;
+window.refreshInfoPanel = refreshInfoPanel;
+window.handleJobStateTransition = handleJobStateTransition;
+window.resumeLiveView = resumeLiveView;
+window.pauseLiveView = pauseLiveView;
+window.updateDeveloperMode = updateDeveloperMode;
+window.setupDeveloperPanel = setupDeveloperPanel;
+window.updateModuleSelection = updateModuleSelection;
+window.updateDeveloperPanel = updateDeveloperPanel;
+window.handleModuleToPauseAtSelected = handleModuleToPauseAtSelected;
+window.handlePauseOnMismatchSelected = handlePauseOnMismatchSelected;
+window.handleBooleanBehaviorSwitchToggled = handleBooleanBehaviorSwitchToggled;
+window.handlePauseOnNextCommandToggled = handlePauseOnNextCommandToggled;
+window.handlePauseOnFailureToggled = handlePauseOnFailureToggled;
+window.submitCurrentSelection = submitCurrentSelection;
+window.closeWebsocketConnection = closeWebsocketConnection;
+window.clearLivehandlerFlashMessages = clearLivehandlerFlashMessages;
+window.handleWebsocketConnectionOpened = handleWebsocketConnectionOpened;
+window.handleWebsocketConnectionClosed = handleWebsocketConnectionClosed;
+window.addLivehandlerFlash = addLivehandlerFlash;
+window.handleMessageFromWebsocketConnection = handleMessageFromWebsocketConnection;
+window.setupWebsocketConnection = setupWebsocketConnection;
+window.handlePausedMessage = handlePausedMessage;
+window.processWsCommand = processWsCommand;
+window.sendWsCommand = sendWsCommand;
+window.resumeTestExecution = resumeTestExecution;
+window.skipTimeout = skipTimeout;
+window.startDeveloperSession = startDeveloperSession;
+window.quitDeveloperSession = quitDeveloperSession;
+window.disableDeveloperMode = disableDeveloperMode;
+window.developerMode = developerMode;

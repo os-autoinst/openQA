@@ -15,3 +15,4 @@ function backToTop() {
     });
   });
 }
+window.backToTop = backToTop;

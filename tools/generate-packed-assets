@@ -1,47 +1,7 @@
 #!/bin/bash -e
 
-# Copyright 2016-2019 SUSE LLC
-# Copyright 2016 Red Hat
-# SPDX-License-Identifier: GPL-2.0-or-later
-
-# this script runs a minimal openQA codepath with a predefined config.
-# The purpose is to trigger the creation of the packed web assets by
-# the AssetPack plugin, if you do not wish to allow openQA write
-# access to the packed asset directory in normal use (thus this script
-# is expected to execute with higher permissions than openQA would
-# have when run normally; if openQA has write access to the packed
-# asset directory, there is no need to use this at all).
-
-# It is expected to be run by a package trigger on initial install of
-# the package and whenever there is a change to the packages involved
-# in producing the generated assets (so AssetPack, Bootstrap3, and any
-# packages they source from), or alternatively, run once during
-# package build with the generated assets included in the package.
-# There are advantages and disadvantages to each of the three ways
-# to do this generation.
-
-# By default the script will run and generate assets for a system
-# install of openQA; for use during package build, one optional
-# argument can be specified, an alternative path to the top level
-# openQA directory. e.g.:
-# ./tools/generate-packed-assets ./
-# would be appropriate if running from the top level of an openQA
-# source tree.
-
-BUILD_CACHE="plugin AssetPack => LoadFile(app->home->child('assets', 'assetpack.yml')) and app->asset->process()"
-BUILD_CACHE_OPTS='-Ilib/ -MMojolicious::Lite -MYAML::PP=LoadFile'
-
 generate() {
-    local rc=0
-    # shellcheck disable=SC2039
-    for _ in {1..3}; do
-        # shellcheck disable=SC2086
-        env MOJO_MODE="$1" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null && return 0
-        rc=$?
-        sleep 1
-    done
-    return "$rc"
+    npm run build
 }
 
-generate "test" || exit $?
-generate "development" || exit $?
+generate || exit $?
