@@ -36,3 +36,4 @@ t/data/openqa/share/factory/iso/Core-7.2.iso
 t/log_chromedriver
 container/webui/workdir
 __pycache__/
+/public/dist/
