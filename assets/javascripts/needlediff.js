@@ -419,3 +419,6 @@ function setNeedle(sel, kind) {
     new bootstrap.Dropdown('#candidatesMenu').toggle();
   }
 }
+window.NeedleDiff = NeedleDiff;
+window.setDiffScreenshot = setDiffScreenshot;
+window.setNeedle = setNeedle;

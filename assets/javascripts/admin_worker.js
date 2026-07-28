@@ -75,3 +75,6 @@ function deleteWorker(deleteBtn) {
       addFlash('danger', "The worker couldn't be deleted: " + error);
     });
 }
+window.setupWorkerNeedles = setupWorkerNeedles;
+window.loadWorkerTable = loadWorkerTable;
+window.deleteWorker = deleteWorker;

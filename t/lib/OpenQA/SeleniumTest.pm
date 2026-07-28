@@ -96,6 +96,39 @@ sub start_driver ($mojoport) {
         my $startup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10);
         $_DRIVER = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
         $_DRIVER->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
+
+        # Wait for JS module execution on page loads
+        my $orig_get = $_DRIVER->can('get');
+        {
+            no warnings 'redefine';
+            *Selenium::Remote::Driver::get = sub {
+                my ($self, @args) = @_;
+                my $ret = $orig_get->($self, @args);
+                my $timeout = 30;
+                while (1) {
+                    my $jsReady
+                      = $_DRIVER->execute_script('if (!document.body) return false; '
+                          . 'var hasModule = !!document.querySelector(\'script[type="module"]\'); '
+                          . 'if (hasModule && document.body.dataset.jsLoaded !== "true") return false; '
+                          . 'if (window.nEditor && (!window.nEditor.bgImage || !window.nEditor.bgImage.complete)) return false; '
+                          . 'return true;');
+                    last if $jsReady;
+                    if ($timeout <= 0) {
+                        my $src = eval { $_DRIVER->get_page_source } // 'could not get page source';
+                        my $curr_url = eval { $_DRIVER->get_current_url } // 'could not get current url';
+                        my $log = eval { $_DRIVER->get_log('browser') } // [];
+                        my $log_str = join "\n", map { $_->{level} . ': ' . $_->{message} } @$log;
+                        die
+                          "Timeout waiting for jsLoaded flag in get(). URL was: $curr_url.\nLOGS:\n$log_str\nHTML was: "
+                          . substr $src, 0, 1000;
+                    }
+                    $timeout -= 0.1;
+                    Time::HiRes::sleep(0.1);
+                }
+                return $ret;
+            };
+        }
+
         enable_timeout;
         # Scripts are considered stuck after this timeout
         $_DRIVER->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
@@ -152,10 +185,14 @@ sub wait_for_ajax (%args) {
     my $slept = 0;
     my $msg = $args{msg} ? (': ' . $args{msg}) : '';
 
-    while (!$_DRIVER->execute_script('return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests')) {
+    while (
+        !$_DRIVER->execute_script(
+'return window.jQuery && jQuery.active === 0 && !window.runningFetchRequests && (!document.querySelector(\'script[type="module"]\') || (document.body && document.body.dataset.jsLoaded === "true"))'
+        ))
+    {
         if ($timeout <= 0) {
             #<<< no perltidy
-            my $s = 'return `(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests})`'; # uncoverable statement
+            my $s = 'return `(jQuery: ${window.jQuery && jQuery.active}, fetch: ${window.runningFetchRequests}, jsLoaded: ${document.body && document.body.dataset && document.body.dataset.jsLoaded})`'; # uncoverable statement
             #>>> no perltidy
             $msg .= $_DRIVER->execute_script($s);    # uncoverable statement
             fail("Wait for AJAX timed out $msg");    # uncoverable statement

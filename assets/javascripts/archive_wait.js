@@ -47,3 +47,5 @@ function showArchiveError(message) {
 }
 
 document.addEventListener('DOMContentLoaded', checkArchiveStatus);
+window.checkArchiveStatus = checkArchiveStatus;
+window.showArchiveError = showArchiveError;

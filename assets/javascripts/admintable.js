@@ -503,3 +503,22 @@ function setupAdminTable(isAdmin) {
     event.stopPropagation();
   });
 }
+window.updateTextArea = updateTextArea;
+window.extendAdminTableSearch = extendAdminTableSearch;
+window.showAdminTableRow = showAdminTableRow;
+window.addAdminTableRow = addAdminTableRow;
+window.isEditingAdminTableRow = isEditingAdminTableRow;
+window.setEditingAdminTableRow = setEditingAdminTableRow;
+window.refreshAdminTableRow = refreshAdminTableRow;
+window.adminTableApiUrl = adminTableApiUrl;
+window.handleAdminTableSubmit = handleAdminTableSubmit;
+window.getAdminTableRowData = getAdminTableRowData;
+window.submitAdminTableRow = submitAdminTableRow;
+window.removeAdminTableRow = removeAdminTableRow;
+window.deleteTableRow = deleteTableRow;
+window.renderAdminTableValue = renderAdminTableValue;
+window.renderAdminTableSettingsList = renderAdminTableSettingsList;
+window.renderAdminTableDescription = renderAdminTableDescription;
+window.renderAdminTableActions = renderAdminTableActions;
+window.renderEditableAdminTableActions = renderEditableAdminTableActions;
+window.setupAdminTable = setupAdminTable;

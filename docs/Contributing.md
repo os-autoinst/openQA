@@ -483,8 +483,8 @@ This section should give you a general idea how to start daemons manually for
 development after you setup a PostgreSQL database as mentioned in the previous
 section.
 
-You have to install/update web-related dependencies first, using
-`make node_modules`. To start the web server for development, use
+You have to install/update web-related dependencies and build frontend assets first, using
+`make node_modules` (this also executes the Vite build process). To start the web server for development, use
 `scripts/openqa daemon`. The other daemons (mentioned in the
 [architecture diagram](images/architecture.svg)) are started in the same way,
 e.g. `script/openqa-scheduler daemon`.

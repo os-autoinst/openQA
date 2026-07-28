@@ -574,6 +574,7 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
       $driver->get_current_url(),
       qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
       'on src page for installer_timezone test';
+    wait_for_element(selector => '.ace_comment');
     is @{$driver->find_elements('.ace_comment')}[0]->get_text, '#!/usr/bin/env perl', 'shebang rendered as comment';
 
     # load "Logs & Assets" tab contents directly because accessing the tab within the whole page in a straight forward

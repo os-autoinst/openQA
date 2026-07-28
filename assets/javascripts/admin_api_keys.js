@@ -6,3 +6,4 @@ function toggleExpiration(expirationCheckBox) {
     expirationDateTimeField.name = 't_expiration';
   }
 }
+window.toggleExpiration = toggleExpiration;
