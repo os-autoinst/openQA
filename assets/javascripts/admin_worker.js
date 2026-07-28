@@ -212,3 +212,6 @@ function deleteWorker(deleteBtn) {
     }
   );
 }
+window.setupWorkerNeedles = setupWorkerNeedles;
+window.loadWorkerTable = loadWorkerTable;
+window.deleteWorker = deleteWorker;

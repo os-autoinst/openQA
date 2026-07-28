@@ -120,3 +120,11 @@ function setupWebSocketConsole() {
   form.submit(submitWebSocketCommand);
   document.getElementById('msg').focus();
 }
+window.followLog = followLog;
+window.logLine = logLine;
+window.sendAndLogCommand = sendAndLogCommand;
+window.logStatus = logStatus;
+window.replayStashedCommands = replayStashedCommands;
+window.establishWebSocketConnection = establishWebSocketConnection;
+window.submitWebSocketCommand = submitWebSocketCommand;
+window.setupWebSocketConsole = setupWebSocketConsole;

@@ -13,3 +13,4 @@ function backToTop() {
     return false;
   });
 }
+window.backToTop = backToTop;

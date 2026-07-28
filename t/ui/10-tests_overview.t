@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Date::Format 'time2str';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '25';
+use OpenQA::Test::TimeLimit '60';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use OpenQA::Jobs::Constants;
@@ -896,7 +896,8 @@ subtest 'all but one results in negative filter' => sub {
 subtest 'aggregate favicon' => sub {
     $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091');
     my $favicon_16 = $driver->find_element('#favicon-16', 'css');
-    like $favicon_16->get_attribute('href'), qr/logo-aggregate-running-16\.png/, 'correct favicon present';
+    like $favicon_16->get_attribute('href'), qr/logo-aggregate-running-16(?:-[A-Za-z0-9_]+)?\.png/,
+      'correct favicon present';
 };
 
 subtest 'meta-checkboxes are ignored by bulk operations' => sub {

@@ -69,3 +69,6 @@ function postAndRedirect(btn, redir = '') {
       addFlash('danger', `Error: ${error}`);
     });
 }
+window.fetchValue = fetchValue;
+window.postAndRedrawElement = postAndRedrawElement;
+window.postAndRedirect = postAndRedirect;
